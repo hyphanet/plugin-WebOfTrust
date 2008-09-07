@@ -61,7 +61,12 @@ public class TrustTest extends TestCase {
 	public void testTrustPersistence() throws MalformedURLException, UnknownIdentityException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
 		
 		db.close();
-		// TODO Force a garbage collection/finalization
+		
+		System.gc();
+		System.runFinalization();
+		try{ Thread.sleep(2000); } 
+		catch (InterruptedException e){}
+		
 		db = Db4o.openFile("trustTest.db4o");
 		
 		a = Identity.getByURI(db, uriA);
