@@ -19,6 +19,7 @@ import junit.framework.TestCase;
  */
 public class IdentityTest extends TestCase {
 	
+	private String uri = "USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/WoT/0";
 	private Identity identity;
 	private ObjectContainer db;
 	
@@ -28,13 +29,11 @@ public class IdentityTest extends TestCase {
 	
 	protected void setUp() throws Exception {
 		super.setUp();
-		identity = new Identity("USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0",
-				"Seed Identity",
-				"true",
-				"boostrap");
+		identity = new Identity(uri, "test", "true", "bar");
 		
 		db = Db4o.openFile("identityTest.db4o");
 		db.store(identity);
+		db.commit();
 	}
 
 	protected void tearDown() throws Exception {
@@ -48,7 +47,7 @@ public class IdentityTest extends TestCase {
 	}
 	
 	public void testGetByURI() throws MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		assertNotNull(Identity.getByURI(db, "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0"));
+		assertNotNull(Identity.getByURI(db, uri));
 	}
 
 	public void testContexts() throws InvalidParameterException  {
@@ -77,5 +76,12 @@ public class IdentityTest extends TestCase {
 			fail();
 		} catch (InvalidParameterException e) {}
 	}
-
+	
+	public void testPersistence() throws MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
+		db.close();
+		// TODO Force a garbage collection/finalization
+		db = Db4o.openFile("scoreTest.db4o");
+		
+		assertNotNull(Identity.getByURI(db, uri));
+	}
 }
