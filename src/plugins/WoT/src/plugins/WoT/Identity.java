@@ -86,6 +86,14 @@ public class Identity {
 	public static Identity getByURI (ObjectContainer db, FreenetURI uri) throws UnknownIdentityException, DuplicateIdentityException {
 		return getById(db, new ByteArrayWrapper(uri.getRoutingKey()));
 	}
+
+	public static int getNbIdentities(ObjectContainer db) {
+		return db.queryByExample(Identity.class).size() - OwnIdentity.getNbOwnIdentities(db);
+	}
+	
+	public static ObjectSet<Identity> getAllIdentities(ObjectContainer db) {
+		return db.queryByExample(Identity.class);
+	}
 	
 	
 	
@@ -167,7 +175,7 @@ public class Identity {
 	}
 	
 	public void updateScore (ObjectContainer db) throws DuplicateScoreException, DuplicateTrustException {
-		ObjectSet<OwnIdentity> treeOwners = OwnIdentity.getAll(db);
+		ObjectSet<OwnIdentity> treeOwners = OwnIdentity.getAllOwnIdentities(db);
 		while(treeOwners.hasNext())
 			updateScore (db, treeOwners.next());
 	}

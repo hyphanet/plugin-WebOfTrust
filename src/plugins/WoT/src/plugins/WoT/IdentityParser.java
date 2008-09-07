@@ -30,16 +30,14 @@ import freenet.support.Logger;
 public class IdentityParser {
 	
 	ObjectContainer db;
-	WoT wot;
 	HighLevelSimpleClient client;
 	IdentityFetcher fetcher;
 	SAXParser saxParser;
 	Identity identity;
 	
-	public IdentityParser(ObjectContainer db, WoT wot, HighLevelSimpleClient client, IdentityFetcher fetcher) throws ParserConfigurationException, SAXException {
+	public IdentityParser(ObjectContainer db, HighLevelSimpleClient client, IdentityFetcher fetcher) throws ParserConfigurationException, SAXException {
 
 		this.db = db;
-		this.wot = wot;
 		this.client = client;
 		this.fetcher = fetcher;
 		saxParser = SAXParserFactory.newInstance().newSAXParser();

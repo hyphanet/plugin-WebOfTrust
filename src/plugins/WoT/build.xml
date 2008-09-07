@@ -82,7 +82,7 @@
 		description="generate the distribution" >
 		<jar jarfile="${dist}/wot.jar" duplicate="fail">
 			<manifest>
-				<attribute name="Plugin-Main-Class" value="plugins.WoT.WoTplugin"/>
+				<attribute name="Plugin-Main-Class" value="plugins.WoT.WoT"/>
 			</manifest>
 			<fileset dir="." casesensitive="no">
 				<include name="*.txt"/>
