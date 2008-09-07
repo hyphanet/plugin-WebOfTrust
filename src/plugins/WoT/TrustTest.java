@@ -64,8 +64,6 @@ public class TrustTest extends TestCase {
 		
 		System.gc();
 		System.runFinalization();
-		try{ Thread.sleep(2000); } 
-		catch (InterruptedException e){}
 		
 		db = Db4o.openFile("trustTest.db4o");
 		
