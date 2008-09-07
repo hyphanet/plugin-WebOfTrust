@@ -49,6 +49,10 @@ public class IdentityTest extends TestCase {
 	public void testGetByURI() throws MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		assertNotNull(Identity.getByURI(db, uri));
 	}
+	
+	public void testGetNbIdentities() {
+		assertEquals(Identity.getNbIdentities(db), 1);
+	}
 
 	public void testContexts() throws InvalidParameterException  {
 		assertFalse(identity.hasContext("foo"));
@@ -77,11 +81,16 @@ public class IdentityTest extends TestCase {
 		} catch (InvalidParameterException e) {}
 	}
 	
-	public void testPersistence() throws MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
+	public void testPersistence() throws MalformedURLException, DuplicateIdentityException {
 		db.close();
 		System.gc();
-		db = Db4o.openFile("scoreTest.db4o");
+		db = Db4o.openFile("identityTest.db4o");
 		
-		assertNotNull(Identity.getByURI(db, uri));
+		assertEquals(Identity.getNbIdentities(db), 1);
+		try {
+			Identity.getByURI(db, uri);
+		} catch (UnknownIdentityException e) {
+			fail();
+		}
 	}
 }
