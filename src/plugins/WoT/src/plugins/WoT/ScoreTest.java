@@ -65,8 +65,6 @@ public class ScoreTest extends TestCase {
 		
 		System.gc();
 		System.runFinalization();
-		try{ Thread.sleep(2000); } 
-		catch (InterruptedException e){}
 		
 		db = Db4o.openFile("scoreTest.db4o");
 		
