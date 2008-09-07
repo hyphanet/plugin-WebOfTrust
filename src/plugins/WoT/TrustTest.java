@@ -6,6 +6,7 @@
 package plugins.WoT;
 
 import java.io.File;
+import java.net.MalformedURLException;
 
 import junit.framework.TestCase;
 
@@ -24,7 +25,6 @@ public class TrustTest extends TestCase {
 	private Identity b;
 	
 	private ObjectContainer db;
-	private boolean firstRun = false;
 	
 	public TrustTest(String name) {
 		super(name);
@@ -34,38 +34,40 @@ public class TrustTest extends TestCase {
 		
 		super.setUp();
 		db = Db4o.openFile("trustTest.db4o");
-		
-		try {
-			a = Identity.getByURI(db, uriA);
-			b = Identity.getByURI(db, uriB);
-		} catch (UnknownIdentityException e) {
-			a = new Identity(uriA, "A", "true", "test");
-			b = new Identity(uriB, "B", "true", "test");
-			db.store(a);
-			db.store(b);
-			firstRun = true;
-			System.out.println("First run of the trust test. Run it again to check data persistency");
-		}
+
+		a = new Identity(uriA, "A", "true", "test");
+		b = new Identity(uriB, "B", "true", "test");
+		Trust trust = new Trust(a,b,100,"test");
+		db.store(trust);
+		db.store(a);
+		db.store(b);
+		db.commit();
 	}
 	
 	protected void tearDown() throws Exception {
 		db.close();
-		if(!firstRun) new File("trustTest.db4o").delete();
+		new File("trustTest.db4o").delete();
 	}
 	
-	/*
-	 * You have to run 'ant' twice in order to really perform this test. The goal is to check if db4o 
-	 * is able to find a Trust object by its Identities pointers, even across Database restarts. 
-	 */
 	public void testTrust() throws InvalidParameterException, NotTrustedException, DuplicateTrustException {
-		Trust trust;
+
+		Trust trust = a.getGivenTrust(b, db);
+		assertTrue(trust.getTruster() == a);
+		assertTrue(trust.getTrustee() == b);
+		assertTrue(trust.getValue() == 100);
+		assertTrue(trust.getComment().equals("test"));
+	}
+	
+	public void testTrustPersistence() throws MalformedURLException, UnknownIdentityException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
 		
-		if(firstRun) {
-			trust = new Trust(a,b,100,"test");
-			db.store(trust);
-		} else {
-			trust = a.getGivenTrust(b, db);
-		}
+		db.close();
+		// TODO Force a garbage collection/finalization
+		db = Db4o.openFile("trustTest.db4o");
+		
+		a = Identity.getByURI(db, uriA);
+		b = Identity.getByURI(db, uriB);
+		Trust trust = a.getGivenTrust(b, db);
+		
 		assertTrue(trust.getTruster() == a);
 		assertTrue(trust.getTrustee() == b);
 		assertTrue(trust.getValue() == 100);
