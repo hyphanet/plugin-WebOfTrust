@@ -68,7 +68,7 @@ public class OwnIdentity extends Identity {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static OwnIdentity getById (ObjectContainer db, ByteArrayWrapper id) throws UnknownIdentityException, DuplicateIdentityException {
+	public static OwnIdentity getById (ObjectContainer db, String id) throws UnknownIdentityException, DuplicateIdentityException {
 		Query query = db.query();
 		query.constrain(OwnIdentity.class);
 		query.descend("id").constrain(id);
@@ -84,7 +84,7 @@ public class OwnIdentity extends Identity {
 	}
 
 	public static OwnIdentity getByURI (ObjectContainer db, FreenetURI uri) throws UnknownIdentityException, DuplicateIdentityException {
-		return getById(db, new ByteArrayWrapper(uri.getRoutingKey()));
+		return getById(db, getIdFromURI(uri));
 	}
 	
 	public static int getNbOwnIdentities(ObjectContainer db) {
