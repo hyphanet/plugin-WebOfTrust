@@ -30,14 +30,12 @@ import freenet.support.Logger;
 public class IdentityFetcher implements ClientCallback {
 
 	private ObjectContainer db;
-	private WoT wot;
 	private HighLevelSimpleClient client;
 	private ArrayList<ClientGetter> requests;
 	
-	public IdentityFetcher(ObjectContainer db, WoT wot, HighLevelSimpleClient client) {
+	public IdentityFetcher(ObjectContainer db, HighLevelSimpleClient client) {
 
 		this.db = db;
-		this.wot = wot;
 		this.client = client;
 		requests = new ArrayList<ClientGetter>();
 	}
@@ -113,7 +111,7 @@ public class IdentityFetcher implements ClientCallback {
 
 		try {
 			Logger.debug(this, "Sucessfully fetched identity "+ state.getURI().toString());
-			new IdentityParser(db, wot, client, this).parse(result.asBucket().getInputStream(), state.getURI());
+			new IdentityParser(db, client, this).parse(result.asBucket().getInputStream(), state.getURI());
 			db.commit();		
 			state.restart(state.getURI().setSuggestedEdition(state.getURI().getSuggestedEdition() + 1));
 		} catch (Exception e) {

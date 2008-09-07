@@ -30,14 +30,12 @@ public class WebInterface {
 	private PageMaker pm;
 	private HighLevelSimpleClient client;
 	private String SELF_URI;
-	private WoT wot;
 	private ObjectContainer db;
 
-	public WebInterface(PluginRespirator pr, ObjectContainer db, HighLevelSimpleClient client, String uri, WoT wot) {
+	public WebInterface(PluginRespirator pr, ObjectContainer db, HighLevelSimpleClient client, String uri) {
 		this.pr = pr;
 		this.client = client;
 		this.SELF_URI = uri;
-		this.wot = wot;
 		this.db = db;
 		
 		pm = pr.getPageMaker();
@@ -51,8 +49,8 @@ public class WebInterface {
 		
 		HTMLNode list = new HTMLNode("ul");
 		
-		list.addChild(new HTMLNode("li", "Own Identities : " + wot.getNbOwnIdentities()));
-		list.addChild(new HTMLNode("li", "Known Identities : " + wot.getNbIdentities()));
+		list.addChild(new HTMLNode("li", "Own Identities : " + OwnIdentity.getNbOwnIdentities(db)));
+		list.addChild(new HTMLNode("li", "Known Identities : " + Identity.getNbIdentities(db)));
 		list.addChild(new HTMLNode("li", "Trust relationships : " + Trust.getNb(db)));
 		list.addChild(new HTMLNode("li", "Scores : " + Score.getNb(db)));
 		
@@ -75,7 +73,7 @@ public class WebInterface {
 		HTMLNode boxContent = pm.getContentNode(box);
 
 		
-		ObjectSet<OwnIdentity> ownIdentities = OwnIdentity.getAll(db);
+		ObjectSet<OwnIdentity> ownIdentities = OwnIdentity.getAllOwnIdentities(db);
 		if(ownIdentities.size() == 0) {
 			boxContent.addChild("p", "You have no own identity yet, you should create one...");
 		}
@@ -170,7 +168,7 @@ public class WebInterface {
 		HTMLNode listBox = pm.getInfobox("Known Identities");
 		HTMLNode listBoxContent = pm.getContentNode(listBox);
 		
-		int nbOwnIdentities = wot.getNbOwnIdentities();
+		int nbOwnIdentities = OwnIdentity.getNbOwnIdentities(db);
 		
 		if (nbOwnIdentities == 0) {
 			listBoxContent.addChild("p", "You should create an identity first...");
@@ -178,12 +176,12 @@ public class WebInterface {
 			return pageNode.generate();
 		}
 		else if (nbOwnIdentities == 1) {
-			treeOwner = OwnIdentity.getAll(db).next();
+			treeOwner = OwnIdentity.getAllOwnIdentities(db).next();
 		}
 		else {
 			// Get the identity the user asked for, or the first one if he didn't
 			if(owner.equals("")) {
-				treeOwner = OwnIdentity.getAll(db).next();
+				treeOwner = OwnIdentity.getAllOwnIdentities(db).next();
 			}
 			else {
 				try {
@@ -197,7 +195,7 @@ public class WebInterface {
 			HTMLNode selectForm = pr.addFormChild(listBoxContent, SELF_URI + "/viewTree", "selectForm");
 			HTMLNode selectBox = selectForm.addChild("select", "name", "ownerURI");
 			
-			ObjectSet<OwnIdentity> ownIdentities = wot.getOwnIdentities();
+			ObjectSet<OwnIdentity> ownIdentities = OwnIdentity.getAllOwnIdentities(db);
 			while(ownIdentities.hasNext()) {
 				OwnIdentity ownIdentity = ownIdentities.next();
 				if(ownIdentity == treeOwner) {
@@ -219,7 +217,7 @@ public class WebInterface {
 		row.addChild("th", "Score (Rank)");
 		row.addChild("th", "Trust/Comment");
 		
-		ObjectSet<Identity> identities = wot.getAllIdentities();
+		ObjectSet<Identity> identities = Identity.getAllIdentities(db);
 		while(identities.hasNext()) {
 			Identity id = identities.next();
 			

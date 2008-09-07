@@ -34,15 +34,13 @@ import freenet.support.io.TempBucketFactory;
  */
 public class IdentityInserter implements Runnable {
 	
-	WoT wot;
 	ObjectContainer db;
 	HighLevelSimpleClient client;
 	final TempBucketFactory tBF;
 	
 	boolean isRunning;
 	
-	public IdentityInserter(WoT wot, ObjectContainer db, HighLevelSimpleClient client, TempBucketFactory tbf) {
-		this.wot = wot;
+	public IdentityInserter(ObjectContainer db, HighLevelSimpleClient client, TempBucketFactory tbf) {
 		this.db = db;
 		this.client = client;
 		isRunning = true;
@@ -54,7 +52,7 @@ public class IdentityInserter implements Runnable {
 			Thread.sleep(30 * 1000); // Let the node start up (30 seconds)
 		} catch (InterruptedException e){}
 		while(isRunning) {
-			ObjectSet<OwnIdentity> identities = wot.getOwnIdentities();
+			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
 			while(identities.hasNext()) {
 				OwnIdentity identity = identities.next();
 				if(identity.needsInsert()) {

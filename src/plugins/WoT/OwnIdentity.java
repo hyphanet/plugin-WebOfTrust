@@ -87,7 +87,11 @@ public class OwnIdentity extends Identity {
 		return getById(db, new ByteArrayWrapper(uri.getRoutingKey()));
 	}
 	
-	public static ObjectSet<OwnIdentity> getAll (ObjectContainer db) {
+	public static int getNbOwnIdentities(ObjectContainer db) {
+		return db.queryByExample(OwnIdentity.class).size();
+	}
+	
+	public static ObjectSet<OwnIdentity> getAllOwnIdentities (ObjectContainer db) {
 		return db.queryByExample(OwnIdentity.class);
 	}
 

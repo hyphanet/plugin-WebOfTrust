@@ -20,7 +20,6 @@ import junit.framework.TestCase;
 public class WoTTest extends TestCase {
 	
 	private ObjectContainer db;
-	private WoT wot;
 	
 	private String uriA = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0";
 	private String uriB = "USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WoT/0";
@@ -34,7 +33,6 @@ public class WoTTest extends TestCase {
 		
 		super.setUp();
 		db = Db4o.openFile("wotTest.db4o");
-		wot = new WoT(db);
 	}
 	
 	protected void tearDown() throws Exception {
@@ -48,8 +46,8 @@ public class WoTTest extends TestCase {
 		db.store(a);
 		a.initTrustTree(db);
 		
-		assertTrue(wot.getNbIdentities() == 0);
-		assertTrue(wot.getNbOwnIdentities() == 1);
+		assertTrue(Identity.getNbIdentities(db) == 0);
+		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 1);
 		assertTrue(Trust.getNb(db) == 0);
 		assertTrue(Score.getNb(db) == 1);
 
@@ -74,8 +72,8 @@ public class WoTTest extends TestCase {
 		// With A's trust tree not initialized, B shouldn't get a Score.
 		a.setTrust(db, b, 10, "Foo");
 
-		assertTrue(wot.getNbIdentities() == 1);
-		assertTrue(wot.getNbOwnIdentities() == 1);
+		assertTrue(Identity.getNbIdentities(db) == 1);
+		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 1);
 		assertTrue(Trust.getNb(db) == 1);
 		assertTrue(Score.getNb(db) == 0);
 		
@@ -84,8 +82,8 @@ public class WoTTest extends TestCase {
 		a.setTrust(db, b, 100, "Foo");
 		
 		// Check we have the correct number of objects
-		assertTrue(wot.getNbIdentities() == 1);
-		assertTrue(wot.getNbOwnIdentities() == 1);
+		assertTrue(Identity.getNbIdentities(db) == 1);
+		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 1);
 		assertTrue(Trust.getNb(db) == 1);
 		assertTrue(Score.getNb(db) == 2);
 		
@@ -109,8 +107,8 @@ public class WoTTest extends TestCase {
 		a.setTrust(db, b, 50, "Bar");
 		
 		// Check we have the correct number of objects
-		assertTrue(wot.getNbIdentities() == 1);
-		assertTrue(wot.getNbOwnIdentities() == 1);
+		assertTrue(Identity.getNbIdentities(db) == 1);
+		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 1);
 		assertTrue(Trust.getNb(db) == 1);
 		assertTrue(Score.getNb(db) == 2);
 		
@@ -147,8 +145,8 @@ public class WoTTest extends TestCase {
 		b.setTrust(db, c, 50, "Bar");
 		
 		// Check we have the correct number of objects
-		assertTrue(wot.getNbOwnIdentities() == 1);
-		assertTrue(wot.getNbIdentities() == 2);
+		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 1);
+		assertTrue(Identity.getNbIdentities(db) == 2);
 		assertTrue(Trust.getNb(db) == 2);
 		assertTrue(Score.getNb(db) == 3);
 		
@@ -170,8 +168,8 @@ public class WoTTest extends TestCase {
 		a.setTrust(db, b, -1, "Bastard");
 		
 		// Check we have the correct number of objects
-		assertTrue(wot.getNbOwnIdentities() == 1);
-		assertTrue(wot.getNbIdentities() == 2);
+		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 1);
+		assertTrue(Identity.getNbIdentities(db) == 2);
 		assertTrue(Trust.getNb(db) == 2);
 		assertTrue(Score.getNb(db) == 2);
 		
@@ -211,8 +209,8 @@ public class WoTTest extends TestCase {
 		c.setTrust(db, b, 50, "Oops");
 		
 		// Check we have the correct number of objects
-		assertTrue(wot.getNbOwnIdentities() == 1);
-		assertTrue(wot.getNbIdentities() == 2);
+		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 1);
+		assertTrue(Identity.getNbIdentities(db) == 2);
 		assertTrue(Trust.getNb(db) == 4);
 		assertTrue(Score.getNb(db) == 3);
 		
@@ -243,8 +241,8 @@ public class WoTTest extends TestCase {
 		b.setTrust(db, a, 100, "Bar");
 		
 		// Check we have the correct number of objects
-		assertTrue(wot.getNbOwnIdentities() == 2);
-		assertTrue(wot.getNbIdentities() == 0);
+		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 2);
+		assertTrue(Identity.getNbIdentities(db) == 0);
 		assertTrue(Trust.getNb(db) == 2);
 		assertTrue(Score.getNb(db) == 4);
 		
