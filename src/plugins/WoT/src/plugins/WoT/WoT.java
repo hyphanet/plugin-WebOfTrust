@@ -119,18 +119,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
-		
-		String page = request.getPath().substring(SELF_URI.length());
-		
+
 		try {
-			if(page.equals("/ownidentities")) {
+			if(request.getParam("page").equals("ownidentities")) {
 				return web.makeOwnIdentitiesPage();
 			}
-			if(page.equals("/knownidentities")) {
+			if(request.getParam("page").equals("knownidentities")) {
 				return web.makeKnownIdentitiesPage();
-			}
-			if(page.equals("/wotTestDrive")) {
-				return web.makeTestWarningPage();
 			}
 			else {
 				return web.makeHomePage();
@@ -147,32 +142,30 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword)) {
 			return "Buh! Invalid form password";
 		}
-
-		String page = request.getPath().substring(SELF_URI.length());
-
+		
 		try {
-			if(page.equals("/createIdentity")) {
+			if(request.getPartAsString("page",50).equals("createIdentity")) {
 				return web.makeCreateIdentityPage(request);
 			}
-			else if(page.equals("/createIdentity2")) {
+			else if(request.getPartAsString("page",50).equals("createIdentity2")) {
 				createIdentity(request);
 				return web.makeOwnIdentitiesPage();
 			}
-			else if(page.equals("/addIdentity")) {
+			else if(request.getPartAsString("page",50).equals("addIdentity")) {
 				addIdentity(request);
 				return web.makeKnownIdentitiesPage();
 			}
-			else if(page.equals("/viewTree")) {
+			else if(request.getPartAsString("page",50).equals("viewTree")) {
 				return web.makeKnownIdentitiesPage(request);
 			}
-			else if (page.equals("/setTrust")) {
+			else if(request.getPartAsString("page",50).equals("setTrust")) {
 				setTrust(request);
 				return web.makeKnownIdentitiesPage(request.getPartAsString("truster", 1024));
 			}
-			else if(page.equals("/editIdentity")) {
+			else if(request.getPartAsString("page",50).equals("editIdentity")) {
 				return web.makeEditIdentityPage(request.getPartAsString("id", 1024));
 			}
-			else if(page.equals("/restoreIdentity")) {
+			else if(request.getPartAsString("page",50).equals("restoreIdentity")) {
 				// restoreIdentity(request.getPartAsString("requestURI", 1024), request.getPartAsString("insertURI", 1024));
 				return web.makeOwnIdentitiesPage();
 			}
