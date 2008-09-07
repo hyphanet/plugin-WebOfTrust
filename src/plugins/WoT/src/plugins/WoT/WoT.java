@@ -121,10 +121,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
 
 		try {
-			if(request.getParam("page").equals("ownidentities")) {
+			if(request.isParameterSet("ownidentities")) {
 				return web.makeOwnIdentitiesPage();
 			}
-			if(request.getParam("page").equals("knownidentities")) {
+			if(request.isParameterSet("knownidentities")) {
 				return web.makeKnownIdentitiesPage();
 			}
 			else {
@@ -286,13 +286,12 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 		catch (UnknownIdentityException e) {
 			// TODO Only add the identity after it is successfully fetched
-				/*
-				identity = new Identity(requestURI, new Date(0), "Not found yet...", "false");
-				db.store(identity);
-				db.commit();
-				Logger.debug(this, "Trying to fetch manually added identity (" + identity.getRequestURI() + ")");
-				fetcher.fetch(identity);
-				*/
+
+			identity = new Identity(requestURI, "Not found yet...", "false", "test");
+			db.store(identity);
+			db.commit();
+			Logger.debug(this, "Trying to fetch manually added identity (" + identity.getRequestURI() + ")");
+			fetcher.fetch(identity);
 		}
 		return identity;
 	}
