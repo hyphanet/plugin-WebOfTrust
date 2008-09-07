@@ -56,7 +56,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private Identity seed;
 	private Config config;
 
-	public static String SELF_URI = "/plugins/plugins.WoT.WoTplugin";
+	public static String SELF_URI = "/plugins/plugins.WoT.WoT";
 
 	public void runPlugin(PluginRespirator pr) {
 
