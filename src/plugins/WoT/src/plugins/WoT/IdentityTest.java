@@ -79,7 +79,7 @@ public class IdentityTest extends TestCase {
 	
 	public void testPersistence() throws MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		db.close();
-		// TODO Force a garbage collection/finalization
+		System.gc();
 		db = Db4o.openFile("scoreTest.db4o");
 		
 		assertNotNull(Identity.getByURI(db, uri));
