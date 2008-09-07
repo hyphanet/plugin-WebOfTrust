@@ -328,7 +328,7 @@ public class Identity {
 	}
 
 	public FreenetURI getRequestURI() {
-		return requestURI;
+		return requestURI.setMetaString(new String[] {"identity.xml"} );
 	}
 
 	public Date getLastChange() {
