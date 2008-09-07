@@ -36,7 +36,6 @@ import com.db4o.ext.Db4oIOException;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
-import freenet.support.ByteArrayWrapper;
 
 /**
  * A local Identity (it belongs to the user)

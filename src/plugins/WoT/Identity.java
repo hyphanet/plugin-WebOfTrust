@@ -17,7 +17,6 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
-import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
 
 /**
