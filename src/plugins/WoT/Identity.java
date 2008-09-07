@@ -39,7 +39,7 @@ public class Identity {
 	};			// Identities with negative score have zero capacity
 
 	@SuppressWarnings("unused")
-	private ByteArrayWrapper id;
+	private String id;
 	private FreenetURI requestURI;
 	
 	private Date lastChange;
@@ -57,7 +57,7 @@ public class Identity {
 		props = new HashMap<String, String>();
 		contexts = new ArrayList<String>();
 		contexts.add(context);
-		id = new ByteArrayWrapper(getRequestURI().getRoutingKey());
+		id = getIdFromURI(getRequestURI());
 	}
 
 	public Identity (String requestURI, String nickName, String publishTrustList, String context) throws InvalidParameterException, MalformedURLException {
@@ -67,7 +67,7 @@ public class Identity {
 
 	
 	@SuppressWarnings("unchecked")
-	public static Identity getById (ObjectContainer db, ByteArrayWrapper id) throws DuplicateIdentityException, UnknownIdentityException {
+	private static Identity getById (ObjectContainer db, String id) throws DuplicateIdentityException, UnknownIdentityException {
 
 		Query query = db.query();
 		query.constrain(Identity.class);
@@ -84,7 +84,7 @@ public class Identity {
 	}
 	
 	public static Identity getByURI (ObjectContainer db, FreenetURI uri) throws UnknownIdentityException, DuplicateIdentityException {
-		return getById(db, new ByteArrayWrapper(uri.getRoutingKey()));
+		return getById(db, getIdFromURI(uri));
 	}
 
 	public static int getNbIdentities(ObjectContainer db) {
@@ -95,6 +95,12 @@ public class Identity {
 		return db.queryByExample(Identity.class);
 	}
 	
+	private static String getIdFromURI (FreenetURI uri) {
+		int begin = uri.toString().indexOf(',') + 1;
+		int end = uri.toString().indexOf(',', begin);
+		return uri.toString().substring(begin, end);
+	}
+
 	
 	
 	@SuppressWarnings("unchecked")
@@ -359,6 +365,4 @@ public class Identity {
 	public boolean hasContext(String context) {
 		return contexts.contains(context.trim());
 	}
-	
-
 }
