@@ -40,8 +40,8 @@ public class WebInterface {
 		
 		pm = pr.getPageMaker();
 		pm.addNavigationLink(SELF_URI, "Home", "Home page", false, null);
-		pm.addNavigationLink(SELF_URI + "/ownidentities", "Own Identities", "Manage your own identities", false, null);
-		pm.addNavigationLink(SELF_URI + "/knownidentities", "Known Identities", "Manage others identities", false, null);
+		pm.addNavigationLink(SELF_URI + "?page=ownidentities", "Own Identities", "Manage your own identities", false, null);
+		pm.addNavigationLink(SELF_URI + "?page=knownidentities", "Known Identities", "Manage others identities", false, null);
 		pm.addNavigationLink("/plugins/", "Plugins page", "Back to Plugins page", false, null);
 	}
 	
@@ -105,13 +105,15 @@ public class WebInterface {
 				row.addChild("td", id.doesPublishTrustList() ? "Yes" : "No");
 				
 				HTMLNode editCell = row.addChild("td");
-				HTMLNode editForm = pr.addFormChild(editCell, SELF_URI + "/editIdentity", "editForm");
+				HTMLNode editForm = pr.addFormChild(editCell, SELF_URI, "editIdentity");
+				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "editIdentity" });
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getRequestURI().toString() });
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", "Edit" });
 			}
 		}
 
-		HTMLNode createForm = pr.addFormChild(boxContent, SELF_URI + "/createIdentity", "createForm");
+		HTMLNode createForm = pr.addFormChild(boxContent, SELF_URI, "createIdentity");
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "createIdentity" });
 		createForm.addChild("span", new String[] {"title", "style"}, new String[] { "No spaces or special characters.", "border-bottom: 1px dotted; cursor: help;"} , "NickName : ");
 		createForm.addChild("input", new String[] {"type", "name", "size"}, new String[] {"text", "nickName", "30"});
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "create", "Create a new identity !" });
@@ -125,7 +127,8 @@ public class WebInterface {
 		
 		restoreBoxContent.addChild("p", "Use this if you lost your database for some reason (crash, reinstall...) but still have your identity's keys :");
 		
-		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, SELF_URI + "/restoreIdentity", "restoreForm");
+		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, SELF_URI, "restoreIdentity");
+		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "restoreIdentity" });
 		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "requestURI", "70", "Request URI" });
 		restoreForm.addChild("br");
 		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "insertURI", "70", "InsertURI" });
@@ -158,7 +161,8 @@ public class WebInterface {
 		HTMLNode addBox = pm.getInfobox("Add an identity");
 		HTMLNode addBoxContent = pm.getContentNode(addBox);
 		
-		HTMLNode createForm = pr.addFormChild(addBoxContent, SELF_URI + "/addIdentity", "addForm");
+		HTMLNode createForm = pr.addFormChild(addBoxContent, SELF_URI, "addIdentity");
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "addIdentity" });
 		createForm.addChild("span", new String[] {"title", "style"}, new String[] { "This must be a valid Freenet URI.", "border-bottom: 1px dotted; cursor: help;"} , "Identity URI : ");
 		createForm.addChild("input", new String[] {"type", "name", "size"}, new String[] {"text", "identityURI", "70"});
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", "Add this identity !" });	
@@ -192,7 +196,8 @@ public class WebInterface {
 			}
 			
 			// Display a form to select the tree owner 
-			HTMLNode selectForm = pr.addFormChild(listBoxContent, SELF_URI + "/viewTree", "selectForm");
+			HTMLNode selectForm = pr.addFormChild(listBoxContent, SELF_URI, "viewTree");
+			selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "viewTree" });
 			HTMLNode selectBox = selectForm.addChild("select", "name", "ownerURI");
 			
 			ObjectSet<OwnIdentity> ownIdentities = OwnIdentity.getAllOwnIdentities(db);
@@ -257,7 +262,8 @@ public class WebInterface {
 			} catch (NotTrustedException e) {}
 			
 			HTMLNode cell = row.addChild("td");
-			HTMLNode trustForm = pr.addFormChild(cell, SELF_URI + "/setTrust", "setTrustForm");
+			HTMLNode trustForm = pr.addFormChild(cell, SELF_URI, "setTrust");
+			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "setTrust" });
 			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "truster", treeOwner.getRequestURI().toString() });
 			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "trustee", id.getRequestURI().toString() });
 			trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "value", "2", trustValue });
@@ -279,7 +285,8 @@ public class WebInterface {
 		
 		FreenetURI[] keypair = client.generateKeyPair("WoT");
 		
-		HTMLNode createForm = pr.addFormChild(boxContent, SELF_URI + "/createIdentity2", "createForm");
+		HTMLNode createForm = pr.addFormChild(boxContent, SELF_URI, "createIdentity2");
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "createIdentity2" });
 		createForm.addChild("#", "Request URI : ");
 		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "requestURI", "70", keypair[1].toString() });
 		createForm.addChild("br");
@@ -300,20 +307,6 @@ public class WebInterface {
 		return pm.getPageNode("Web of Trust", null);
 	}
 
-	public String makeTestWarningPage() {
-		HTMLNode pageNode = getPageNode();
-		HTMLNode contentNode = pm.getContentNode(pageNode);
-		HTMLNode box = pm.getInfobox("WoT testDrive");
-		HTMLNode boxContent = pm.getContentNode(box);
-		
-		boxContent.addChild("p", "Warning ! These tests will destroy your database, you might want to backup 'WoT.db4o' in your freenet directory...");
-		HTMLNode form = pr.addFormChild(boxContent, SELF_URI + "/wotTestDrive", "form");
-		form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", "Perform self tests !" });
-				
-		contentNode.addChild(box);
-		return pageNode.generate();
-	}
-
 	public String makeEditIdentityPage(String requestURI) throws MalformedURLException, InvalidParameterException, UnknownIdentityException, DuplicateIdentityException {
 		
 		OwnIdentity id = OwnIdentity.getByURI(db, requestURI);
@@ -323,7 +316,9 @@ public class WebInterface {
 		HTMLNode box = pm.getInfobox("Identity edition");
 		HTMLNode boxContent = pm.getContentNode(box);
 		
-		HTMLNode createForm = pr.addFormChild(boxContent, SELF_URI + "/editIdentity2", "editForm");
+		HTMLNode createForm = pr.addFormChild(boxContent, SELF_URI, "editIdentity2");
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "editIdentity2"});
+		
 		createForm.addChild("#", "NickName : ");
 		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "nickName", "20", id.getNickName() });
 		createForm.addChild("br");
