@@ -83,7 +83,12 @@ public class IdentityTest extends TestCase {
 	
 	public void testPersistence() throws MalformedURLException, DuplicateIdentityException {
 		db.close();
+		
 		System.gc();
+		System.runFinalization();
+		try{ Thread.sleep(2000); } 
+		catch (InterruptedException e){}
+		
 		db = Db4o.openFile("identityTest.db4o");
 		
 		assertEquals(Identity.getNbIdentities(db), 1);

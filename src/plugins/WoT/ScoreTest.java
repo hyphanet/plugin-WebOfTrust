@@ -62,7 +62,12 @@ public class ScoreTest extends TestCase {
 	public void testScorePersistence() throws NotInTrustTreeException, DuplicateScoreException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
 		db.close();
-		// TODO Force a garbage collection/finalization
+		
+		System.gc();
+		System.runFinalization();
+		try{ Thread.sleep(2000); } 
+		catch (InterruptedException e){}
+		
 		db = Db4o.openFile("scoreTest.db4o");
 		
 		a = OwnIdentity.getByURI(db, uriA);
