@@ -95,7 +95,7 @@ public class Identity {
 		return db.queryByExample(Identity.class);
 	}
 	
-	private static String getIdFromURI (FreenetURI uri) {
+	public static String getIdFromURI (FreenetURI uri) {
 		int begin = uri.toString().indexOf(',') + 1;
 		int end = uri.toString().indexOf(',', begin);
 		return uri.toString().substring(begin, end);
