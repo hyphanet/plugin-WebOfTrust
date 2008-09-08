@@ -57,6 +57,8 @@ public class Identity {
 		contexts = new ArrayList<String>();
 		contexts.add(context);
 		id = getIdFromURI(getRequestURI());
+		
+		Logger.debug(this, "New identity : " + getNickName());
 	}
 
 	public Identity (String requestURI, String nickName, String publishTrustList, String context) throws InvalidParameterException, MalformedURLException {
@@ -168,19 +170,20 @@ public class Identity {
 			if(trust.getValue() != value) {
 				trust.setValue(value);
 				db.store(trust);
-				Logger.debug(this, "Updated trust value, now updating Score.");
+				Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
 				trustee.updateScore(db);
 			}
 		} catch (NotTrustedException e) {
 			trust = new Trust(this, trustee, value, comment);
 			db.store(trust);
-			Logger.debug(this, "New trust value, now updating Score.");
+			Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
 			trustee.updateScore(db);
 		} 
 	}
 	
 	public void updateScore (ObjectContainer db) throws DuplicateScoreException, DuplicateTrustException {
 		ObjectSet<OwnIdentity> treeOwners = OwnIdentity.getAllOwnIdentities(db);
+		Logger.error(this, "There is no own identity");
 		while(treeOwners.hasNext())
 			updateScore (db, treeOwners.next());
 	}
@@ -193,6 +196,8 @@ public class Identity {
 		boolean changedCapacity = false;
 		Score score;
 		
+		Logger.debug(this, "Updating " + getNickName() + "'s score in " + treeOwner.getNickName() + "'s trust tree");
+		
 		int value = computeScoreValue(db, treeOwner);
 		int rank = computeRank(db, treeOwner);
 		
@@ -201,6 +206,7 @@ public class Identity {
 				score = getScore(treeOwner, db);
 				db.delete(score); // He had a score, we delete it
 				changedCapacity = true;
+				Logger.debug(this, getNickName() + " is not in " + treeOwner.getNickName() + "'s trust tree anymore");
 			} catch (NotInTrustTreeException e) {} 
 		}
 		else { // The identity is in the trust tree
@@ -217,7 +223,10 @@ public class Identity {
 			
 			// Does the treeOwner personally distrust this identity ?
 			try {
-				if(getReceivedTrust(treeOwner, db).getValue() < 0) hasNegativeTrust = true;
+				if(getReceivedTrust(treeOwner, db).getValue() < 0) {
+					hasNegativeTrust = true;
+					Logger.debug(this, getNickName() + " received negative trust from " + treeOwner.getNickName() + " and therefore has no capacity in his trust tree.");
+				}
 			} catch (NotTrustedException e) {}
 			
 			if(hasNegativeTrust) score.setCapacity(0);
@@ -225,9 +234,11 @@ public class Identity {
 			
 			if(score.getCapacity() != oldCapacity) changedCapacity = true;
 			db.store(score);
+			Logger.debug(this, score.toString());
 		}
 		
 		if(changedCapacity) { // We have to update trustees' score
+			Logger.debug(this, getNickName() + "'s capacity has changed in " + treeOwner.getNickName() + "'s trust tree, updating his trustees");
 			ObjectSet<Trust> trustees = getGivenTrusts(db);
 			while(trustees.hasNext()) trustees.next().getTrustee().updateScore(db, treeOwner);
 		}
