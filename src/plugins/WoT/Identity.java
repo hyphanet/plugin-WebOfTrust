@@ -238,8 +238,8 @@ public class Identity {
 		}
 		
 		if(changedCapacity) { // We have to update trustees' score
-			Logger.debug(this, getNickName() + "'s capacity has changed in " + treeOwner.getNickName() + "'s trust tree, updating his trustees");
 			ObjectSet<Trust> trustees = getGivenTrusts(db);
+			Logger.debug(this, getNickName() + "'s capacity has changed in " + treeOwner.getNickName() + "'s trust tree, updating his ("+trustees.size()+")trustees");
 			while(trustees.hasNext()) trustees.next().getTrustee().updateScore(db, treeOwner);
 		}
 	}
