@@ -83,11 +83,11 @@ public class IdentityParser {
 				else if (elt_name.equals("trust")) {
 	
 					Identity trustee;
+					int value = Integer.parseInt(attrs.getValue("value"));
+					String comment = attrs.getValue("comment");
+					
 					try{
 						trustee = Identity.getByURI(db, attrs.getValue("uri"));
-						int value = Integer.parseInt(attrs.getValue("value"));
-						String comment = attrs.getValue("comment");
-		
 						identity.setTrust(db, trustee, value, comment);
 					}
 					catch (UnknownIdentityException e) {
@@ -96,6 +96,7 @@ public class IdentityParser {
 						
 						trustee = new Identity(attrs.getValue("uri"), "Not found yet...", "false", "test");
 						db.store(trustee);
+						identity.setTrust(db, trustee, value, comment);
 						fetcher.fetch(trustee); 
 					}
 											
