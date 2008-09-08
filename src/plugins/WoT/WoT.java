@@ -317,10 +317,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		OwnIdentity identity = new OwnIdentity(insertURI, requestURI, nickName, publishTrustList, "testing");
 		db.store(identity);
 		identity.initTrustTree(db);		
-
-		// This identity has capacity on its own trust tree
-		Score score = new Score(identity, identity, 100, 0, 100);  
-		db.store(score);
 		
 		// This identity trusts the seed identity
 		identity.setTrust(db, seed, 100, "I trust the WoT plugin");
