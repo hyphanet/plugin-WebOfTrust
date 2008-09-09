@@ -57,6 +57,7 @@ public class IdentityInserter implements Runnable {
 				OwnIdentity identity = identities.next();
 				if(identity.needsInsert()) {
 					try {
+						Logger.debug(this, "Starting insert of "+identity.getNickName());
 						insert(identity);
 						// We set the date now, so if the identity is modified during the insert, we'll insert it again next time
 						identity.setLastInsert(new Date()); 
