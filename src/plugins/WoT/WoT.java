@@ -65,21 +65,29 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		// Init
 		this.pr = pr;
 		db = Db4o.openFile("WoT.db4o");
+		
+		/*
 		client = pr.getHLSimpleClient();
 		web = new WebInterface(pr, db, client, SELF_URI);
+		*/
 		
-		ObjectSet<Config> result = db.queryByExample(Config.class);
-		if(result.size() == 0) {
-			Logger.debug(this, "Created new config");
-			config = new Config(db);
-			db.store(config);
+		try {
+			ObjectSet<Config> result = db.queryByExample(Config.class);
+			if(result.size() == 0) {
+				Logger.debug(this, "Created new config");
+				config = new Config(db);
+				db.store(config);
+			}
+			else {
+				Logger.debug(this, "Loaded config");
+				config = result.next();
+				config.initDefault(false);
+			}
 		}
-		else {
-			Logger.debug(this, "Loaded config");
-			config = result.next();
-			config.initDefault(false);
+		catch(Exception e) {
+			Logger.error(this, e.getMessage(), e);
 		}
-		
+		/*
 		// Create the seed Identity if it doesn't exist
 		try {
 			seed = Identity.getByURI(db, seedURI);
@@ -87,15 +95,16 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			try {
 				seed = new Identity(seedURI, "Fetching seed identity...", "true", "bootstrap");
 			} catch (Exception e1) {
-				Logger.error(this, "Seed identity error", e);
+				Logger.error(this, "Seed identity creation error", e);
 				return;
 			}
 			db.store(seed);
 			db.commit();
 		} catch (Exception e) {
-			Logger.error(this, "Seed identity error", e);
+			Logger.error(this, "Seed identity loading error", e);
 			return;
 		}
+		
 		
 		// Start the inserter thread
 		inserter = new IdentityInserter(db, client, pr.getNode().clientCore.tempBucketFactory);
@@ -109,13 +118,24 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		while (identities.hasNext()) {
 			fetcher.fetch(identities.next(), true);
 		}
+		
+		*/
 	}
 	
 	public void terminate() {
-		inserter.stop();
-		fetcher.stop();
+		/*
+		if(inserter == null) // Can't figure out why executor.execute() makes it null, but stop screwing the unload process.
+			Logger.error(this, "Inserter's thread reference is null, can't stop it !" );
+		else 
+			inserter.stop(); 
+		*/
+		Logger.debug(this, "Cleanly closing the database");
 		db.commit();
 		db.close();
+		
+		/*
+		fetcher.stop(); // Do this after cleanly closing the database, as it sometimes locks
+		*/
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
