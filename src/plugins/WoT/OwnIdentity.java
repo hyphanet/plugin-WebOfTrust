@@ -51,6 +51,7 @@ public class OwnIdentity extends Identity {
 	public OwnIdentity (FreenetURI insertURI, FreenetURI requestURI, String nickName, String publishTrustList, String context) throws InvalidParameterException {	
 		super(requestURI, nickName, publishTrustList, context);
 		setInsertURI(insertURI);
+		setLastInsert(new Date(0));
 	}
 
 	public OwnIdentity (String insertURI, String requestURI, String nickName, String publishTrustList, String context) throws InvalidParameterException, MalformedURLException {
