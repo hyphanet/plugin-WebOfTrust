@@ -69,7 +69,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		/*
 		client = pr.getHLSimpleClient();
 		web = new WebInterface(pr, db, client, SELF_URI);
-		*/
 		
 		try {
 			ObjectSet<Config> result = db.queryByExample(Config.class);
@@ -87,7 +86,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		catch(Exception e) {
 			Logger.error(this, e.getMessage(), e);
 		}
-		/*
+		*/
+		
 		// Create the seed Identity if it doesn't exist
 		try {
 			seed = Identity.getByURI(db, seedURI);
@@ -104,7 +104,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			Logger.error(this, "Seed identity loading error", e);
 			return;
 		}
-		
+		/*
 		
 		// Start the inserter thread
 		inserter = new IdentityInserter(db, client, pr.getNode().clientCore.tempBucketFactory);
