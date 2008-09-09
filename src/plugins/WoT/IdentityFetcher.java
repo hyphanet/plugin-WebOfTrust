@@ -68,6 +68,7 @@ public class IdentityFetcher implements ClientCallback {
 
 	public void stop() {
 		Iterator<ClientGetter> i = requests.iterator();
+		Logger.debug(this, "Trying to stop "+requests.size()+" requests");
 		while (i.hasNext()) i.next().cancel();
 		Logger.debug(this, "Stopped all current requests");
 	}
