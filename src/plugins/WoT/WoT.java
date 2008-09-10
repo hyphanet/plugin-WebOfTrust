@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Iterator;
 
+import javax.security.auth.login.Configuration;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -64,7 +65,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 		// Init
 		this.pr = pr;
-		db = Db4o.openFile("WoT.db4o");
+		Configuration config = Db4o.newConfiguration();
+		db = Db4o.openFile("WoT.db4o", config);
 		
 		/*
 		client = pr.getHLSimpleClient();
