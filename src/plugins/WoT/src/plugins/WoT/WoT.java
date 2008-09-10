@@ -66,6 +66,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		// Init
 		this.pr = pr;
 		Configuration config = Db4o.newConfiguration();
+		config.objectClass(Identity.class).objectField("id").indexed(true);
 		db = Db4o.openFile(config, "WoT.db4o");
 		
 		/*
