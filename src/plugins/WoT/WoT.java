@@ -11,12 +11,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Iterator;
 
-import javax.security.auth.login.Configuration;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import com.db4o.Db4o;
+import com.db4o.Configuration;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.ext.DatabaseClosedException;
