@@ -77,6 +77,7 @@ public class IdentityInserter implements Runnable {
 	
 	public void stop() {
 		isRunning = false;
+		Logger.debug(this, "Stopping IdentityInserter thread");
 	}
 	
 	public void insert(OwnIdentity identity) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException, InsertException {
