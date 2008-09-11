@@ -183,7 +183,7 @@ public class Identity {
 	
 	public void updateScore (ObjectContainer db) throws DuplicateScoreException, DuplicateTrustException {
 		ObjectSet<OwnIdentity> treeOwners = OwnIdentity.getAllOwnIdentities(db);
-		Logger.error(this, "There is no own identity");
+		if(treeOwners.size() == 0) Logger.error(this, "Can't update "+ getNickName()+"'s score : there is no own identity yet");
 		while(treeOwners.hasNext())
 			updateScore (db, treeOwners.next());
 	}
