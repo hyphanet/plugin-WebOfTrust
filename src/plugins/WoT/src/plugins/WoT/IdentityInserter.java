@@ -8,6 +8,7 @@ package plugins.WoT;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Date;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -81,11 +82,13 @@ public class IdentityInserter implements Runnable {
 	public void insert(OwnIdentity identity) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException, InsertException {
 
 		Bucket tempB = tBF.makeBucket(1);
+		OutputStream os = tempB.getOutputStream();
 		FreenetURI iURI;
 		try {
-		// Create XML file to insert
-			identity.exportToXML(db, tempB.getOutputStream());
+			// Create XML file to insert
+			identity.exportToXML(db, os);
 		
+			os.close();
 			tempB.setReadOnly();
 		
 			// Prepare the insert
