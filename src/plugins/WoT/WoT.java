@@ -101,7 +101,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			seed = Identity.getByURI(db, seedURI);
 		} catch (UnknownIdentityException e) {
 			try {
-				seed = new Identity(seedURI, "Fetching seed identity...", "true", "bootstrap");
+				seed = new Identity(seedURI, "Fetching seed identity...", "true");
 			} catch (Exception e1) {
 				Logger.error(this, "Seed identity creation error", e);
 				return;
@@ -303,7 +303,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		catch (UnknownIdentityException e) {
 			// TODO Only add the identity after it is successfully fetched
 
-			identity = new Identity(requestURI, "Not found yet...", "false", "test");
+			identity = new Identity(requestURI, "Not found yet...", "false");
 			db.store(identity);
 			db.commit();
 			Logger.debug(this, "Trying to fetch manually added identity (" + identity.getRequestURI() + ")");
@@ -330,7 +330,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private OwnIdentity createIdentity(String insertURI, String requestURI, String nickName, String publishTrustList, String context) throws InvalidParameterException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 
 		// TODO Add context in the creation form
-		OwnIdentity identity = new OwnIdentity(insertURI, requestURI, nickName, publishTrustList, "testing");
+		OwnIdentity identity = new OwnIdentity(insertURI, requestURI, nickName, publishTrustList);
 		db.store(identity);
 		identity.initTrustTree(db);		
 		

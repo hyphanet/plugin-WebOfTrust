@@ -94,7 +94,7 @@ public class IdentityParser {
 						
 						// TODO Don't create Identity object before we succesfully fetched it !
 						
-						trustee = new Identity(attrs.getValue("uri"), "Not found yet...", "false", "test");
+						trustee = new Identity(attrs.getValue("uri"), "Not found yet...", "false");
 						db.store(trustee);
 						identity.setTrust(db, trustee, value, comment);
 						fetcher.fetch(trustee); 

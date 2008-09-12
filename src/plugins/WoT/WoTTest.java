@@ -42,7 +42,7 @@ public class WoTTest extends TestCase {
 	
 	public void testInitTrustTree() throws DuplicateScoreException, NotInTrustTreeException, MalformedURLException, InvalidParameterException {
 		
-		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true", "test");
+		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true");
 		db.store(a);
 		a.initTrustTree(db);
 		
@@ -64,8 +64,8 @@ public class WoTTest extends TestCase {
 	
 	public void testSetTrust() throws DuplicateTrustException, InvalidParameterException, DuplicateScoreException, NotTrustedException, NotInTrustTreeException, MalformedURLException {
 
-		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true", "test");
-		Identity b = new Identity(uriB, "B", "true", "test");
+		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true");
+		Identity b = new Identity(uriB, "B", "true");
 		db.store(a);
 		db.store(b);
 		
@@ -134,9 +134,9 @@ public class WoTTest extends TestCase {
 	}
 	
 	public void testRemoveTrust() throws MalformedURLException, InvalidParameterException, DuplicateScoreException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException {
-		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true", "test");
-		Identity b = new Identity(uriB, "B", "true", "test");
-		Identity c = new Identity(uriC, "C", "true", "test");
+		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true");
+		Identity b = new Identity(uriB, "B", "true");
+		Identity c = new Identity(uriC, "C", "true");
 		db.store(a);
 		db.store(b);
 		db.store(c);
@@ -196,9 +196,9 @@ public class WoTTest extends TestCase {
 	}
 	
 	public void testTrustLoop() throws MalformedURLException, InvalidParameterException, DuplicateScoreException, DuplicateTrustException, NotInTrustTreeException {
-		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true", "test");
-		Identity b = new Identity(uriB, "B", "true", "test");
-		Identity c = new Identity(uriC, "C", "true", "test");
+		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true");
+		Identity b = new Identity(uriB, "B", "true");
+		Identity c = new Identity(uriC, "C", "true");
 		db.store(a);
 		db.store(b);
 		db.store(c);
@@ -231,8 +231,8 @@ public class WoTTest extends TestCase {
 	}
 	
 	public void testOwnIndentitiesTrust() throws MalformedURLException, InvalidParameterException, DuplicateScoreException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException {
-		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true", "test");
-		OwnIdentity b = new OwnIdentity(uriB, uriB, "B", "true", "test");
+		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true");
+		OwnIdentity b = new OwnIdentity(uriB, uriB, "B", "true");
 		db.store(a);
 		db.store(b);
 		a.initTrustTree(db);
