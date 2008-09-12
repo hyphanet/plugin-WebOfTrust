@@ -44,6 +44,10 @@ public class WebInterface {
 		pm.addNavigationLink(SELF_URI + "?knownidentities", "Known Identities", "Manage others identities", false, null);
 		pm.addNavigationLink("/plugins/", "Plugins page", "Back to Plugins page", false, null);
 	}
+
+	private HTMLNode getPageNode() {
+		return pm.getPageNode("Web of Trust", null);
+	}
 	
 	public String makeHomePage() {
 		
@@ -301,10 +305,6 @@ public class WebInterface {
 		
 		contentNode.addChild(box);
 		return pageNode.generate();
-	}
-
-	private HTMLNode getPageNode() {
-		return pm.getPageNode("Web of Trust", null);
 	}
 
 	public String makeEditIdentityPage(String requestURI) throws MalformedURLException, InvalidParameterException, UnknownIdentityException, DuplicateIdentityException {
