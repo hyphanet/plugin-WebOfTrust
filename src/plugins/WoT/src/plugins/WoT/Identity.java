@@ -37,8 +37,8 @@ public class Identity {
 			1	// Every identity above rank 5 can give 1 point
 	};			// Identities with negative score have zero capacity
 
-	@SuppressWarnings("unused")
 	private String id;
+
 	private FreenetURI requestURI;
 	
 	private Date lastChange;
@@ -348,6 +348,10 @@ public class Identity {
 		
 	public void updated() {
 		lastChange = new Date();
+	}
+	
+	public String getId() {
+		return id;
 	}
 
 	public FreenetURI getRequestURI() {
