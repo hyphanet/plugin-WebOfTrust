@@ -225,6 +225,8 @@ public class WebInterface {
 		row.addChild("th", "Publish TrustList ?");
 		row.addChild("th", "Score (Rank)");
 		row.addChild("th", "Trust/Comment");
+		row.addChild("th", "Trusters");
+		row.addChild("th", "Trustees");
 		
 		ObjectSet<Identity> identities = Identity.getAllIdentities(db);
 		while(identities.hasNext()) {
@@ -242,11 +244,11 @@ public class WebInterface {
 			else row.addChild("td", id.getLastChange().toString());
 			
 			// Publish TrustList
-			row.addChild("td", id.doesPublishTrustList() ? "Yes" : "No");
+			row.addChild("td", new String[] { "align" }, new String[] { "center" } , id.doesPublishTrustList() ? "Yes" : "No");
 			
 			//Score
 			try {
-				row.addChild("td", String.valueOf(id.getScore((OwnIdentity)treeOwner, db).getScore())+" ("+id.getScore((OwnIdentity)treeOwner, db).getRank()+")");
+				row.addChild("td", new String[] { "align" }, new String[] { "center" } , String.valueOf(id.getScore((OwnIdentity)treeOwner, db).getScore())+" ("+id.getScore((OwnIdentity)treeOwner, db).getRank()+")");
 			}
 			catch (NotInTrustTreeException e) {
 				// This only happen with identities added manually by the user
@@ -273,6 +275,14 @@ public class WebInterface {
 			trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "value", "2", trustValue });
 			trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "comment", "20", trustComment });
 			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", "Update !" });
+			
+			// Trusters
+			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+			trustersCell.addChild(new HTMLNode("a", "href", SELF_URI + "?getTrusters&id="+id.getId(), Long.toString(id.getNbReceivedTrusts(db))));
+			
+			//Trustees
+			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+			trusteesCell.addChild(new HTMLNode("a", "href", SELF_URI + "?getTrustees&id="+id.getId(), Long.toString(id.getNbGivenTrusts(db))));
 		}
 		contentNode.addChild(addBox);
 		contentNode.addChild(listBox);
