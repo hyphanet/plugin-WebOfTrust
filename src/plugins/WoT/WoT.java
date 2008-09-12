@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Iterator;
+import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
@@ -187,7 +188,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				return web.makeEditIdentityPage(request.getPartAsString("id", 1024));
 			}
 			else if(request.getPartAsString("page",50).equals("restoreIdentity")) {
-				// restoreIdentity(request.getPartAsString("requestURI", 1024), request.getPartAsString("insertURI", 1024));
+				restoreIdentity(request.getPartAsString("requestURI", 1024), request.getPartAsString("insertURI", 1024));
 				return web.makeOwnIdentitiesPage();
 			}
 			else {
@@ -199,10 +200,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 	}
 	
-	// TODO This is OwnIdentity's job, move it there
-
-	/*
-	private void restoreIdentity(String requestURI, String insertURI) throws InvalidParameterException, MalformedURLException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException {
+	private void restoreIdentity(String requestURI, String insertURI) throws InvalidParameterException, MalformedURLException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, DuplicateTrustException {
 		
 		OwnIdentity id;
 		
@@ -210,65 +208,64 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			Identity old = Identity.getByURI(db, requestURI);
 			
 			// We already have fetched this identity as a stranger's one. We need to update the database.
-			id = new OwnIdentity(insertURI, requestURI, old.getLastChange(), new Date(), old.getNickName(), old.doesPublishTrustList() ? "true" : "false");
-			id.setContexts(old.getContexts(), db); 
-			id.setProps(old.getProps(), db); 
+			id = new OwnIdentity(insertURI, requestURI, old.getNickName(), old.doesPublishTrustList() ? "true" : "false");
+			
+			Iterator<String> i1 = old.getContexts();
+			while (i1.hasNext()) id.addContext(i1.next(), db);
+			
+			Iterator<Entry<String, String>> i2 = old.getProps();
+			while (i2.hasNext()) {
+				Entry<String, String> prop = i2.next();
+				id.setProp(prop.getKey(), prop.getValue(), db);
+			}
 			
 			// Update all received trusts
-			ObjectSet<Trust> receivedTrusts = db.queryByExample(new Trust(null, old, 0));
+			ObjectSet<Trust> receivedTrusts = old.getReceivedTrusts(db);
 			while(receivedTrusts.hasNext()) {
 				Trust receivedTrust = receivedTrusts.next();
 				receivedTrust.setTrustee(id);
 				db.store(receivedTrust);
 			}
-			
+
 			// Update all received scores
-			ObjectSet<Score> scores = db.queryByExample(new Score(null, old, 0, 0, 0));
+			ObjectSet<Score> scores = old.getScores(db);
 			while(scores.hasNext()) {
 				Score score = scores.next();
 				score.setTarget(id);
 				db.store(score);
 			}
 
-			// Initialize the trust tree
-			Score score = new Score(id, id, 100, 0, 100);  
-			db.store(score);
-			
 			// Store the new identity
 			db.store(id);
+			id.initTrustTree(db);
 			
 			// Update all given trusts
-			ObjectSet<Trust> givenTrusts = db.queryByExample(new Trust(old, null, 0));
+			ObjectSet<Trust> givenTrusts = old.getGivenTrusts(db);
 			while(givenTrusts.hasNext()) {
 				Trust givenTrust = givenTrusts.next();
-				givenTrust.setTruster(id);
-				wot.setTrust(givenTrust);
+				id.setTrust(db, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 				db.delete(givenTrust);
 			}
-			
+
 			// Remove the old identity
 			db.delete(old);
 			
 			Logger.debug(this, "Successfully restored an already known identity from Freenet (" + id.getNickName() + ")");
 			
 		} catch (UnknownIdentityException e) {
-			id = new OwnIdentity(insertURI, requestURI, new Date(), new Date(0), "Restore in progress...", "false");
-			
-			// Initialize the trust tree
-			Score score = new Score(id, id, 100, 0, 100);  
-			db.store(score);
+			id = new OwnIdentity(insertURI, requestURI, "Restore in progress...", "false");
 			
 			// Store the new identity
 			db.store(id);
+			id.initTrustTree(db);
+			
+			// Fetch the identity from freenet
+			fetcher.fetch(id);
 			
 			Logger.debug(this, "Trying to restore a not-yet-known identity from Freenet (" + id.getRequestURI() + ")");
 		}
-		
 		db.commit();
-		
-		fetcher.fetch(id);
 	}
-	 */
 	
 	private void setTrust(HTTPRequest request) throws NumberFormatException, TransformerConfigurationException, FileNotFoundException, InvalidParameterException, UnknownIdentityException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
 		

@@ -116,6 +116,14 @@ public class Identity {
 	}
 	
 	@SuppressWarnings("unchecked")
+	public ObjectSet<Score> getScores(ObjectContainer db) {
+		Query query = db.query();
+		query.constrain(Score.class);
+		query.descend("target").constrain(this);
+		return query.execute();
+	}
+		
+	@SuppressWarnings("unchecked")
 	public Trust getReceivedTrust(Identity truster, ObjectContainer db) throws NotTrustedException, DuplicateTrustException {
 		Query query = db.query();
 		query.constrain(Trust.class);
