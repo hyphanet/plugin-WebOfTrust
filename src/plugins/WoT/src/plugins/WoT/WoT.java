@@ -385,7 +385,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public String getVersion() {
-		return "0.3.0 r"+Version.getSvnRevision();
+		return "0.3.1 r"+Version.getSvnRevision();
 	}
 
 	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
