@@ -67,6 +67,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		this.pr = pr;
 		Configuration config = Db4o.newConfiguration();
 		config.objectClass(Identity.class).objectField("id").indexed(true);
+		config.objectClass(OwnIdentity.class).objectField("id").indexed(true);
 		config.objectClass(Trust.class).objectField("truster").indexed(true);
 		config.objectClass(Trust.class).objectField("trustee").indexed(true);
 		config.objectClass(Score.class).objectField("treeOwner").indexed(true);
@@ -111,11 +112,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			Logger.error(this, "Seed identity loading error", e);
 			return;
 		}
-		/*
+		
 		// Start the inserter thread
 		inserter = new IdentityInserter(db, client, pr.getNode().clientCore.tempBucketFactory);
 		pr.getNode().executor.execute(inserter, "WoTinserter");
-		*/
+		
 		// Create the fetcher
 		fetcher = new IdentityFetcher(db, client);
 		
@@ -127,7 +128,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	public void terminate() {
-		/*
+		
 		if(inserter == null) {// Can't figure out why executor.execute() makes it null, but stop screwing the unload process.
 			Logger.error(this, "Inserter's thread reference is null, can't stop it !" );
 		}
@@ -135,7 +136,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			Logger.debug(this, "Calling inserter.stop()");
 			inserter.stop();
 		}
-		*/
+		
 		Logger.debug(this, "Cleanly closing the database");
 		db.commit();
 		db.close();
