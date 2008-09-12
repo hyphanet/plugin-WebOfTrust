@@ -48,14 +48,14 @@ public class OwnIdentity extends Identity {
 	private FreenetURI insertURI;
 	private Date lastInsert;
 	
-	public OwnIdentity (FreenetURI insertURI, FreenetURI requestURI, String nickName, String publishTrustList, String context) throws InvalidParameterException {	
-		super(requestURI, nickName, publishTrustList, context);
+	public OwnIdentity (FreenetURI insertURI, FreenetURI requestURI, String nickName, String publishTrustList) throws InvalidParameterException {	
+		super(requestURI, nickName, publishTrustList);
 		setInsertURI(insertURI);
 		setLastInsert(new Date(0));
 	}
 
-	public OwnIdentity (String insertURI, String requestURI, String nickName, String publishTrustList, String context) throws InvalidParameterException, MalformedURLException {
-		this(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList, context);
+	public OwnIdentity (String insertURI, String requestURI, String nickName, String publishTrustList) throws InvalidParameterException, MalformedURLException {
+		this(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 	}
 	
 	public void initTrustTree (ObjectContainer db) throws DuplicateScoreException {

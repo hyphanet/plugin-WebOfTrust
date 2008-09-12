@@ -29,9 +29,12 @@ public class IdentityTest extends TestCase {
 	
 	protected void setUp() throws Exception {
 		super.setUp();
-		identity = new Identity(uri, "test", "true", "bar");
 		
 		db = Db4o.openFile("identityTest.db4o");
+		
+		identity = new Identity(uri, "test", "true");
+		identity.addContext("bleh", db);
+		
 		db.store(identity);
 		db.commit();
 	}

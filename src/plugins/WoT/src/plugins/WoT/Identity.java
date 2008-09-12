@@ -48,21 +48,20 @@ public class Identity {
 	private ArrayList<String> contexts;
 
 	
-	public Identity (FreenetURI requestURI, String nickName, String publishTrustList, String context) throws InvalidParameterException {
+	public Identity (FreenetURI requestURI, String nickName, String publishTrustList) throws InvalidParameterException {
 		
 		setRequestURI(requestURI);
 		setNickName(nickName);
 		setPublishTrustList(publishTrustList);
 		props = new HashMap<String, String>();
 		contexts = new ArrayList<String>();
-		contexts.add(context);
 		id = getIdFromURI(getRequestURI());
 		
 		Logger.debug(this, "New identity : " + getNickName());
 	}
 
-	public Identity (String requestURI, String nickName, String publishTrustList, String context) throws InvalidParameterException, MalformedURLException {
-		this(new FreenetURI(requestURI), nickName, publishTrustList, context);
+	public Identity (String requestURI, String nickName, String publishTrustList) throws InvalidParameterException, MalformedURLException {
+		this(new FreenetURI(requestURI), nickName, publishTrustList);
 	}
 	
 

@@ -35,8 +35,8 @@ public class TrustTest extends TestCase {
 		super.setUp();
 		db = Db4o.openFile("trustTest.db4o");
 
-		a = new Identity(uriA, "A", "true", "test");
-		b = new Identity(uriB, "B", "true", "test");
+		a = new Identity(uriA, "A", "true");
+		b = new Identity(uriB, "B", "true");
 		Trust trust = new Trust(a,b,100,"test");
 		db.store(trust);
 		db.store(a);
