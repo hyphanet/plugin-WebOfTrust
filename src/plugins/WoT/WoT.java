@@ -128,19 +128,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	public void terminate() {
-		
-		if(inserter == null) {// Can't figure out why executor.execute() makes it null, but stop screwing the unload process.
-			Logger.error(this, "Inserter's thread reference is null, can't stop it !" );
-		}
-		else {
-			Logger.debug(this, "Calling inserter.stop()");
-			inserter.stop();
-		}
-		
-		Logger.debug(this, "Cleanly closing the database");
+		inserter.stop();
 		db.commit();
 		db.close();
-		
 		fetcher.stop(); // Do this after cleanly closing the database, as it sometimes locks
 	}
 
