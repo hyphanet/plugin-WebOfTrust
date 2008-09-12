@@ -352,4 +352,100 @@ public class WebInterface {
 		contentNode.addChild(box);
 		return pageNode.generate();
 	}
+
+	public String getTrustersPage(String id) throws DuplicateIdentityException, UnknownIdentityException {
+		
+		Identity identity = Identity.getById(db, id);
+		
+		HTMLNode pageNode = getPageNode();
+		HTMLNode contentNode = pm.getContentNode(pageNode);
+		HTMLNode box = pm.getInfobox("Identities that trust '" + identity.getNickName() + "'");
+		HTMLNode boxContent = pm.getContentNode(box);
+		
+		// Display the list of known identities
+		HTMLNode identitiesTable = boxContent.addChild("table", "border", "0");
+		HTMLNode title = identitiesTable.addChild("tr");
+		title.addChild("th", "NickName");
+		title.addChild("th", "Last update");
+		title.addChild("th", "Trust (Comment)");
+		title.addChild("th", "Trusters");
+		title.addChild("th", "Trustees");
+		
+		ObjectSet<Trust> trusters = identity.getReceivedTrusts(db);
+		while(trusters.hasNext()) {
+			
+			Trust trust = trusters.next();
+			HTMLNode row=identitiesTable.addChild("tr");
+			
+			// NickName
+			row.addChild("td", new String[] {"title", "style"}, new String[] {trust.getTruster().getRequestURI().toString(), "cursor: help;"}, trust.getTruster().getNickName());
+			
+			// Last Change
+			if (trust.getTruster().getLastChange().equals(new Date(0))) row.addChild("td", "Fetching...");
+			else row.addChild("td", trust.getTruster().getLastChange().toString());
+			
+			// Trust/Comment
+			row.addChild("td", trust.getValue() + " (" + trust.getComment() + ")");
+			
+			// Trusters
+			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+			trustersCell.addChild(new HTMLNode("a", "href", SELF_URI + "?getTrusters&id="+trust.getTruster().getId(), Long.toString(trust.getTruster().getNbReceivedTrusts(db))));
+			
+			//Trustees
+			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+			trusteesCell.addChild(new HTMLNode("a", "href", SELF_URI + "?getTrustees&id="+trust.getTruster().getId(), Long.toString(trust.getTruster().getNbGivenTrusts(db))));
+
+		}
+		
+		contentNode.addChild(box);
+		return pageNode.generate();
+	}
+
+	public String getTrusteesPage(String id) throws DuplicateIdentityException, UnknownIdentityException {
+		
+		Identity identity = Identity.getById(db, id);
+		
+		HTMLNode pageNode = getPageNode();
+		HTMLNode contentNode = pm.getContentNode(pageNode);
+		HTMLNode box = pm.getInfobox("Identities that '" + identity.getNickName() + "' trusts");
+		HTMLNode boxContent = pm.getContentNode(box);
+		
+		// Display the list of known identities
+		HTMLNode identitiesTable = boxContent.addChild("table", "border", "0");
+		HTMLNode title = identitiesTable.addChild("tr");
+		title.addChild("th", "NickName");
+		title.addChild("th", "Last update");
+		title.addChild("th", "Trust (Comment)");
+		title.addChild("th", "Trusters");
+		title.addChild("th", "Trustees");
+		
+		ObjectSet<Trust> trustees = identity.getGivenTrusts(db);
+		while(trustees.hasNext()) {
+			
+			Trust trust = trustees.next();
+			HTMLNode row=identitiesTable.addChild("tr");
+			
+			// NickName
+			row.addChild("td", new String[] {"title", "style"}, new String[] {trust.getTrustee().getRequestURI().toString(), "cursor: help;"}, trust.getTrustee().getNickName());
+			
+			// Last Change
+			if (trust.getTrustee().getLastChange().equals(new Date(0))) row.addChild("td", "Fetching...");
+			else row.addChild("td", trust.getTrustee().getLastChange().toString());
+			
+			// Trust/Comment
+			row.addChild("td", trust.getValue() + " (" + trust.getComment() + ")");
+			
+			// Trusters
+			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+			trustersCell.addChild(new HTMLNode("a", "href", SELF_URI + "?getTrusters&id="+trust.getTrustee().getId(), Long.toString(trust.getTrustee().getNbReceivedTrusts(db))));
+			
+			//Trustees
+			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+			trusteesCell.addChild(new HTMLNode("a", "href", SELF_URI + "?getTrustees&id="+trust.getTrustee().getId(), Long.toString(trust.getTrustee().getNbGivenTrusts(db))));
+
+		}
+		
+		contentNode.addChild(box);
+		return pageNode.generate();
+	}
 }

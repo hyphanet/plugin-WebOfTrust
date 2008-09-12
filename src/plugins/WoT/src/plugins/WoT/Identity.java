@@ -67,7 +67,7 @@ public class Identity {
 
 	
 	@SuppressWarnings("unchecked")
-	private static Identity getById (ObjectContainer db, String id) throws DuplicateIdentityException, UnknownIdentityException {
+	public static Identity getById (ObjectContainer db, String id) throws DuplicateIdentityException, UnknownIdentityException {
 
 		Query query = db.query();
 		query.constrain(Identity.class);
