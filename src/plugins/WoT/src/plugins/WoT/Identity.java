@@ -147,12 +147,20 @@ public class Identity {
 		return query.execute();
 	}
 	
+	public long getNbReceivedTrusts(ObjectContainer db) {
+		return getReceivedTrusts(db).size();
+	}
+	
 	@SuppressWarnings("unchecked")
 	public ObjectSet<Trust> getGivenTrusts(ObjectContainer db) {
 		Query query = db.query();
 		query.constrain(Trust.class);
 		query.descend("truster").constrain(this);
 		return query.execute();
+	}
+	
+	public long getNbGivenTrusts(ObjectContainer db) {
+		return getGivenTrusts(db).size();
 	}
 
 	public void setTrust(ObjectContainer db, Identity trustee, int value, String comment) throws DuplicateTrustException, InvalidParameterException, DuplicateScoreException {
