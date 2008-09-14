@@ -245,7 +245,7 @@ public class Identity {
 			} catch (NotTrustedException e) {}
 			
 			if(hasNegativeTrust) score.setCapacity(0);
-			else score.setCapacity(capacities[score.getRank()]);
+			else score.setCapacity((score.getRank() >= capacities.length) ? 1 : capacities[score.getRank()]);
 			
 			if(score.getCapacity() != oldCapacity) changedCapacity = true;
 			db.store(score);
