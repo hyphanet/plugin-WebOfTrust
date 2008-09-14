@@ -58,13 +58,13 @@ public class IdentityInserter implements Runnable {
 				OwnIdentity identity = identities.next();
 				if(identity.needsInsert()) {
 					try {
-						Logger.debug(this, "Starting insert of "+identity.getNickName());
+						Logger.debug(this, "Starting insert of "+identity.getNickName() + " (" + identity.getInsertURI().toString() + ")");
 						insert(identity);
 						// We set the date now, so if the identity is modified during the insert, we'll insert it again next time
 						identity.setLastInsert(new Date()); 
 						db.store(identity);
 					} catch (Exception e) {
-						Logger.error(this, "Identity ("+ identity.getInsertURI().toString() +")insert failed: "+e.getMessage(), e);
+						Logger.error(this, "Identity insert failed: "+e.getMessage(), e);
 					}
 				}
 			}
