@@ -89,7 +89,7 @@ public class WebInterface {
 			row.addChild("th", "Last change");
 			row.addChild("th", "Last insert");
 			row.addChild("th", "Publish TrustList ?");
-			row.addChild("th", "Edit");
+			row.addChild("th", "Manage");
 			
 			while(ownIdentities.hasNext()) {
 				OwnIdentity id = ownIdentities.next();
@@ -108,11 +108,13 @@ public class WebInterface {
 				}
 				row.addChild("td", id.doesPublishTrustList() ? "Yes" : "No");
 				
-				HTMLNode editCell = row.addChild("td");
-				HTMLNode editForm = pr.addFormChild(editCell, SELF_URI, "editIdentity");
+				HTMLNode manageCell = row.addChild("td");
+				
+				HTMLNode editForm = pr.addFormChild(manageCell, SELF_URI, "editIdentity");
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "editIdentity" });
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getRequestURI().toString() });
-				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", "Edit" });
+				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", "Details" });
+								
 			}
 		}
 
@@ -329,9 +331,7 @@ public class WebInterface {
 		HTMLNode createForm = pr.addFormChild(boxContent, SELF_URI, "editIdentity2");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "editIdentity2"});
 		
-		createForm.addChild("#", "NickName : ");
-		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "nickName", "20", id.getNickName() });
-		createForm.addChild("br");
+		createForm.addChild("p", "NickName : " + id.getNickName());
 		
 		createForm.addChild("p", new String[] { "style" }, new String[] { "font-size: x-small" }, "Request URI : "+id.getRequestURI().toString());
 		createForm.addChild("p", new String[] { "style" }, new String[] { "font-size: x-small" }, "Insert URI : "+id.getInsertURI().toString());
