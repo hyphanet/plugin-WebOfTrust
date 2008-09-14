@@ -115,6 +115,10 @@ public class WebInterface {
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getRequestURI().toString() });
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", "Details" });
 								
+				HTMLNode deleteForm = pr.addFormChild(manageCell, SELF_URI, "deleteIdentity");
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "deleteIdentity" });
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getId() });
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 			}
 		}
 
@@ -444,6 +448,29 @@ public class WebInterface {
 			trusteesCell.addChild(new HTMLNode("a", "href", SELF_URI + "?getTrustees&id="+trust.getTrustee().getId(), Long.toString(trust.getTrustee().getNbGivenTrusts(db))));
 
 		}
+		
+		contentNode.addChild(box);
+		return pageNode.generate();
+	}
+
+	public String makeDeleteIdentityPage(String id) throws DuplicateIdentityException, UnknownIdentityException {
+		Identity identity = Identity.getById(db, id);
+		
+		HTMLNode pageNode = getPageNode();
+		HTMLNode contentNode = pm.getContentNode(pageNode);
+		HTMLNode box = pm.getInfobox("Confirm identity deletion");
+		HTMLNode boxContent = pm.getContentNode(box);
+		
+		boxContent.addChild(new HTMLNode("p", "You are about to delete identity '" + identity.getNickName() + "', are you sure ?"));
+		
+		if(identity instanceof OwnIdentity)
+			boxContent.addChild(new HTMLNode("p", "You might want to backup its keys for later use..."));
+		
+		HTMLNode confirmForm = pr.addFormChild(boxContent, SELF_URI, "deleteIdentity2");
+		
+		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "deleteIdentity2" });
+		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", identity.getId() });
+		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", "Confirm !" });
 		
 		contentNode.addChild(box);
 		return pageNode.generate();

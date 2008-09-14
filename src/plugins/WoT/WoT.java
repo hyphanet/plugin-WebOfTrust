@@ -191,6 +191,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				restoreIdentity(request.getPartAsString("requestURI", 1024), request.getPartAsString("insertURI", 1024));
 				return web.makeOwnIdentitiesPage();
 			}
+			else if(request.getPartAsString("page",50).equals("deleteIdentity")) {
+				return web.makeDeleteIdentityPage(request.getPartAsString("id", 1024));
+			}			
+			else if(request.getPartAsString("page",50).equals("deleteIdentity2")) {
+				deleteIdentity(request.getPartAsString("id", 1024));
+				return web.makeOwnIdentitiesPage();
+			}			
 			else {
 				return web.makeHomePage();
 			}
@@ -200,6 +207,28 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 	}
 	
+	private void deleteIdentity(String id) throws DuplicateIdentityException, UnknownIdentityException, DuplicateScoreException, DuplicateTrustException {
+		Identity identity = Identity.getById(db, id);
+		
+		// Remove all scores
+		ObjectSet<Score> scores = identity.getScores(db);
+		while (scores.hasNext()) db.delete(scores.next());
+		
+		// Remove all received trusts
+		ObjectSet<Trust> receivedTrusts = identity.getReceivedTrusts(db);
+		while (receivedTrusts.hasNext()) db.delete(receivedTrusts.next());
+		
+		// Remove all given trusts and update trustees' scores
+		ObjectSet<Trust> givenTrusts = identity.getGivenTrusts(db);
+		while (givenTrusts.hasNext()) {
+			Trust givenTrust = givenTrusts.next();
+			db.delete(givenTrust);
+			givenTrust.getTrustee().updateScore(db);
+		}
+		
+		db.delete(identity);
+	}
+
 	private void restoreIdentity(String requestURI, String insertURI) throws InvalidParameterException, MalformedURLException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, DuplicateTrustException {
 		
 		OwnIdentity id;
