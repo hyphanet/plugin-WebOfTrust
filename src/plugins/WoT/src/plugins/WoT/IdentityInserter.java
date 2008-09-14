@@ -64,7 +64,7 @@ public class IdentityInserter implements Runnable {
 						identity.setLastInsert(new Date()); 
 						db.store(identity);
 					} catch (Exception e) {
-						Logger.error(this, "Identity insert failed: "+e.getMessage(), e);
+						Logger.error(this, "Identity ("+ identity.getInsertURI().toString() +")insert failed: "+e.getMessage(), e);
 					}
 				}
 			}
