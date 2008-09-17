@@ -98,9 +98,11 @@ public class IdentityParser {
 						db.store(trustee);
 						identity.setTrust(db, trustee, value, comment);
 						fetcher.fetch(trustee); 
-					}
-											
-				}	
+						
+					}						
+				} else
+					Logger.error(this, "Unknown element in identity " + identity.getId() + ": " + elt_name);
+				
 			} catch (Exception e1) {
 				Logger.error(this, "Parsing error",e1);
 				e1.printStackTrace();
