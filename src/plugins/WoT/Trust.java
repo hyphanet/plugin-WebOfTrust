@@ -94,8 +94,10 @@ public class Trust {
 	 * @throws InvalidParameterException if value isn't in the range
 	 */
 	public void setValue(int value) throws InvalidParameterException {
-		if(value >= -100 && value <= 100) this.value = value;
-		else throw new InvalidParameterException("Invalid trust value ("+value+")");
+		if(value < -100 || value > 100) 
+			throw new InvalidParameterException("Invalid trust value ("+value+")");
+		
+		this.value = value;
 	}
 
 	/**
