@@ -6,6 +6,7 @@
 package plugins.WoT;
 
 import java.util.HashMap;
+import java.util.Iterator;
 
 import com.db4o.ObjectContainer;
 
@@ -39,6 +40,20 @@ public class Config {
 	
 	public String get(String key) {
 		return params.get(key);
+	}
+	
+	/**
+	 * Get all valid configuration keys.
+	 * @return A String array containing a copy of all keys in the database at the point of calling the function. Changes to the array do not change the database.
+	 */
+	public String[] getAllKeys() {
+		/* We use toArray() to create a *copy* of the Set<String>. If we
+		 * returned an iterator of the keySet, modifications on the
+		 * configuration HashMap would be reflected in the iterator. This might
+		 * lead to problems if the configuration is modified while someone is
+		 * using an iterator returned by this function. Further the iterator
+		 * would allow the user to delete keys from the configuration - xor */
+		return (String[])params.keySet().toArray();
 	}
 	
 	/**
