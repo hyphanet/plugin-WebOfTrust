@@ -56,7 +56,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private IdentityFetcher fetcher;
 	private String seedURI = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0";
 	private Identity seed;
-	//private Config config;
+	private Config config;
 
 	public static String SELF_URI = "/plugins/plugins.WoT.WoT";
 
@@ -66,19 +66,17 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 		// Init
 		this.pr = pr;
-		Configuration config = Db4o.newConfiguration();
-		config.objectClass(Identity.class).objectField("id").indexed(true);
-		config.objectClass(OwnIdentity.class).objectField("id").indexed(true);
-		config.objectClass(Trust.class).objectField("truster").indexed(true);
-		config.objectClass(Trust.class).objectField("trustee").indexed(true);
-		config.objectClass(Score.class).objectField("treeOwner").indexed(true);
-		config.objectClass(Score.class).objectField("target").indexed(true);
-		db = Db4o.openFile(config, "WoT.db4o");
+		Configuration cfg = Db4o.newConfiguration();
+		cfg.objectClass(Identity.class).objectField("id").indexed(true);
+		cfg.objectClass(OwnIdentity.class).objectField("id").indexed(true);
+		cfg.objectClass(Trust.class).objectField("truster").indexed(true);
+		cfg.objectClass(Trust.class).objectField("trustee").indexed(true);
+		cfg.objectClass(Score.class).objectField("treeOwner").indexed(true);
+		cfg.objectClass(Score.class).objectField("target").indexed(true);
+		db = Db4o.openFile(cfg, "WoT.db4o");
 		
 		client = pr.getHLSimpleClient();
-		web = new WebInterface(pr, db, client, SELF_URI);
 		
-		/*
 		try {
 			ObjectSet<Config> result = db.queryByExample(Config.class);
 			if(result.size() == 0) {
@@ -95,7 +93,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		catch(Exception e) {
 			Logger.error(this, e.getMessage(), e);
 		}
-		*/
+		
+		web = new WebInterface(pr, db, config, client, SELF_URI);
+		
 		
 		// Create the seed Identity if it doesn't exist
 		try {
@@ -143,6 +143,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			
 			if(request.isParameterSet("knownidentities")) 
 				return web.makeKnownIdentitiesPage();
+			
+			if(request.isParameterSet("configuration"))
+				return web.makeConfigurationPage();
 			
 			if(request.isParameterSet("getTrusters"))
 				return web.getTrustersPage(request.getParam("id"));
