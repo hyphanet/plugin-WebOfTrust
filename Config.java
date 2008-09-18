@@ -27,6 +27,10 @@ public class Config {
 	 * @param db The database where the configuration is stored.
 	 */
 	public Config(ObjectContainer db) {
+		
+		// TODO Refactor this : the database shouldn't try to store its own reference
+		// The ObjectContainer should be passed to set/get/... methodes
+		
 		this.db = db;
 		if(params == null) {
 			params = new HashMap<String, String>();
