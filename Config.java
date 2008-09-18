@@ -7,6 +7,7 @@ package plugins.WoT;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
@@ -33,27 +34,40 @@ public class Config {
 		}
 	}
 	
-	public void set(String key, String value) {
-		params.put(key, value);
-		db.store(params);
+	public synchronized void set(String key, String value) {
+		synchronized(this) {
+			params.put(key, value);
+			db.store(params);
+		}
 	}
 	
-	public String get(String key) {
+	public synchronized String get(String key) {
 		return params.get(key);
+	}
+	
+	public synchronized boolean contains(String key) {
+		return params.containsKey(key);
 	}
 	
 	/**
 	 * Get all valid configuration keys.
 	 * @return A String array containing a copy of all keys in the database at the point of calling the function. Changes to the array do not change the database.
 	 */
-	public String[] getAllKeys() {
-		/* We use toArray() to create a *copy* of the Set<String>. If we
-		 * returned an iterator of the keySet, modifications on the
-		 * configuration HashMap would be reflected in the iterator. This might
-		 * lead to problems if the configuration is modified while someone is
-		 * using an iterator returned by this function. Further the iterator
-		 * would allow the user to delete keys from the configuration - xor */
-		return (String[])params.keySet().toArray();
+	public synchronized String[] getAllKeys() {
+		/* We return a *copy* of the keySet. If we returned an iterator of the
+		 * keySet, modifications on the configuration HashMap would be reflected
+		 * in the iterator. This might lead to problems if the configuration is
+		 * modified while someone is using an iterator returned by this function.
+		 * Further the iterator would allow the user to delete keys from the
+		 * configuration.
+		 */
+		
+		// FIXME: there is a null pointer somewhere in here. i don't have the time for fixing it right now
+		
+		Set<String> keySet = params.keySet();
+		String[]	keys = new String[keySet.size()];
+			
+		return keySet.toArray(keys);
 	}
 	
 	/**
@@ -61,9 +75,9 @@ public class Config {
 	 * @param overwrite If true, overwrite already set values with the default value.
 	 */
 	public void initDefault(boolean overwrite) {
-		
-		if (!params.containsKey("delayBetweenInserts") || overwrite) set("delayBetweenInserts", "30");
-
+		if (!contains("delayBetweenInserts") || overwrite)
+			set("delayBetweenInserts", "30");
+	
 		db.store(this);
 	}
 }
