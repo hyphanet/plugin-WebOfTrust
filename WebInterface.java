@@ -16,6 +16,7 @@ import com.db4o.ext.Db4oIOException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -31,17 +32,20 @@ public class WebInterface {
 	private HighLevelSimpleClient client;
 	private String SELF_URI;
 	private ObjectContainer db;
+	private	Config config;
 
-	public WebInterface(PluginRespirator pr, ObjectContainer db, HighLevelSimpleClient client, String uri) {
+	public WebInterface(PluginRespirator pr, ObjectContainer db, Config cfg, HighLevelSimpleClient client, String uri) {
 		this.pr = pr;
+		this.db = db;
+		this.config = cfg;
 		this.client = client;
 		this.SELF_URI = uri;
-		this.db = db;
 		
 		pm = pr.getPageMaker();
 		pm.addNavigationLink(SELF_URI, "Home", "Home page", false, null);
 		pm.addNavigationLink(SELF_URI + "?ownidentities", "Own Identities", "Manage your own identities", false, null);
 		pm.addNavigationLink(SELF_URI + "?knownidentities", "Known Identities", "Manage others identities", false, null);
+		pm.addNavigationLink(SELF_URI + "?configuration", "Configuration", "Configure the WoT plugin", false, null);
 		pm.addNavigationLink("/plugins/", "Plugins page", "Back to Plugins page", false, null);
 	}
 
@@ -475,4 +479,28 @@ public class WebInterface {
 		contentNode.addChild(box);
 		return pageNode.generate();
 	}
+	
+	// FIXME: Steal everything from freenet.clients.http.ConfigToadlet
+	public String makeConfigurationPage() {
+		HTMLNode list = new HTMLNode("ul");
+
+		for(String key : config.getAllKeys()) {
+			list.addChild(new HTMLNode("li", key + ": " + config.get(key))); 
+		}
+	
+		HTMLNode pageNode = getPageNode();
+		HTMLNode contentNode = pm.getContentNode(pageNode);
+		HTMLNode box = pm.getInfobox("Configuration");
+		HTMLNode boxContent = pm.getContentNode(box);
+		boxContent.addChild(list);
+		contentNode.addChild(box);
+
+		return pageNode.generate();
+	}
+
+	private static final String l10n(String string) {
+		return L10n.getString("ConfigToadlet." + string);
+	}
 }
+
+
