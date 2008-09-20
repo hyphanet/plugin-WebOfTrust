@@ -8,6 +8,8 @@ package plugins.WoT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import plugins.WoT.exceptions.InvalidParameterException;
+
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.ext.DatabaseClosedException;

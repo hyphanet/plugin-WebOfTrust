@@ -3,18 +3,16 @@
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL.
  */
-package plugins.WoT;
+package plugins.WoT.exceptions;
 
 /**
  * @author Julien Cornuwel (batosai@freenetproject.org)
- *
  */
-public class UnknownIdentityException extends Exception {
+public class NotTrustedException extends Exception {
 	
 	private static final long serialVersionUID = -1;
 
-	public UnknownIdentityException(String message) {
+	public NotTrustedException(String message) {
 		super(message);
 	}
-
 }
