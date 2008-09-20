@@ -16,6 +16,14 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import plugins.WoT.exceptions.DuplicateIdentityException;
+import plugins.WoT.exceptions.DuplicateScoreException;
+import plugins.WoT.exceptions.DuplicateTrustException;
+import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WoT.exceptions.NotInTrustTreeException;
+import plugins.WoT.exceptions.NotTrustedException;
+import plugins.WoT.exceptions.UnknownIdentityException;
+
 import com.db4o.Db4o;
 import com.db4o.config.Configuration;
 import com.db4o.ObjectContainer;

@@ -3,16 +3,17 @@
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL.
  */
-package plugins.WoT;
+package plugins.WoT.exceptions;
 
 /**
  * @author Julien Cornuwel (batosai@freenetproject.org)
+ *
  */
-public class DuplicateTrustException extends Exception {
-
+public class DuplicateScoreException extends Exception {
+	
 	private static final long serialVersionUID = -1;
 
-	public DuplicateTrustException(String message) {
+	public DuplicateScoreException(String message) {
 		super(message);
 	}
 }

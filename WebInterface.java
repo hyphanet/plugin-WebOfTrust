@@ -8,6 +8,14 @@ package plugins.WoT;
 import java.net.MalformedURLException;
 import java.util.Date;
 
+import plugins.WoT.exceptions.DuplicateIdentityException;
+import plugins.WoT.exceptions.DuplicateScoreException;
+import plugins.WoT.exceptions.DuplicateTrustException;
+import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WoT.exceptions.NotInTrustTreeException;
+import plugins.WoT.exceptions.NotTrustedException;
+import plugins.WoT.exceptions.UnknownIdentityException;
+
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.ext.DatabaseClosedException;

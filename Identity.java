@@ -12,6 +12,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import plugins.WoT.exceptions.DuplicateIdentityException;
+import plugins.WoT.exceptions.DuplicateScoreException;
+import plugins.WoT.exceptions.DuplicateTrustException;
+import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WoT.exceptions.NotInTrustTreeException;
+import plugins.WoT.exceptions.NotTrustedException;
+import plugins.WoT.exceptions.UnknownIdentityException;
+
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;

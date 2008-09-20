@@ -8,6 +8,12 @@ package plugins.WoT;
 import java.io.File;
 import java.net.MalformedURLException;
 
+import plugins.WoT.exceptions.DuplicateIdentityException;
+import plugins.WoT.exceptions.DuplicateTrustException;
+import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WoT.exceptions.NotTrustedException;
+import plugins.WoT.exceptions.UnknownIdentityException;
+
 import junit.framework.TestCase;
 
 import com.db4o.Db4o;

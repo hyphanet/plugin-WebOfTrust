@@ -8,6 +8,10 @@ package plugins.WoT;
 import java.io.File;
 import java.net.MalformedURLException;
 
+import plugins.WoT.exceptions.DuplicateIdentityException;
+import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WoT.exceptions.UnknownIdentityException;
+
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;

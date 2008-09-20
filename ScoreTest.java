@@ -8,6 +8,11 @@ package plugins.WoT;
 import java.io.File;
 import java.net.MalformedURLException;
 
+import plugins.WoT.exceptions.DuplicateIdentityException;
+import plugins.WoT.exceptions.DuplicateScoreException;
+import plugins.WoT.exceptions.NotInTrustTreeException;
+import plugins.WoT.exceptions.UnknownIdentityException;
+
 import junit.framework.TestCase;
 
 import com.db4o.Db4o;

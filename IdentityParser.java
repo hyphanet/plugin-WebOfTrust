@@ -17,6 +17,10 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import plugins.WoT.exceptions.DuplicateIdentityException;
+import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WoT.exceptions.UnknownIdentityException;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.HighLevelSimpleClient;
