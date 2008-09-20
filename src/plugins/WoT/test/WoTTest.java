@@ -3,11 +3,15 @@
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL.
  */
-package plugins.WoT;
+package plugins.WoT.test;
 
 import java.io.File;
 import java.net.MalformedURLException;
 
+import plugins.WoT.Identity;
+import plugins.WoT.OwnIdentity;
+import plugins.WoT.Score;
+import plugins.WoT.Trust;
 import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.DuplicateTrustException;
 import plugins.WoT.exceptions.InvalidParameterException;
