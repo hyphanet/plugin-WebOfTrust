@@ -2,8 +2,8 @@
 <!-- ant build file for WoT -->
 
 <project name="WoT" default="dist" basedir=".">
-	<property name="freenet-cvs-snapshot.location" location="/home/julien/workspace/Freenet 0.7/lib/freenet-cvs-snapshot.jar"/>
-	<property name="freenet-ext.location" location="/home/julien/workspace/Freenet 0.7/lib/freenet-ext.jar"/>
+	<property name="freenet-cvs-snapshot.location" location="/usr/src/cvs/eclipse-workspace/Freenet 0.7/lib/freenet-cvs-snapshot.jar"/>
+	<property name="freenet-ext.location" location="/usr/src/cvs/eclipse-workspace/Freenet 0.7 (db4o)/lib/freenet-ext.jar"/>
 	<property name="junit.location" value="/usr/share/java/junit.jar"/>
 	<property name="db4o.location" location="/home/julien/db4o-7.2/lib/db4o-7.2.39.10644-java5.jar"/>
 	<property name="source-version" value="1.5"/>
@@ -21,7 +21,7 @@
 	</target>
 	
 	<target name="compile" depends="env" >
-		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on">
+		<javac srcdir="." destdir="${build}" debug="on" optimize="on">
 			<classpath>
 				<pathelement location="${freenet-ext.location}"/>
 				<pathelement location="${freenet-cvs-snapshot.location}"/>
@@ -38,7 +38,7 @@
 		<delete dir="${build-test}"/>
 		<mkdir dir="${build-test}"/>
 
-		<javac srcdir="src/" destdir="${build-test}" debug="on" optimize="on" source="1.5">
+		<javac srcdir="." destdir="${build-test}" debug="on" optimize="on" source="1.5">
 			<classpath>
 				<pathelement path="${build}"/>
 				<pathelement location="${freenet-ext.location}"/>
