@@ -31,7 +31,6 @@ import freenet.support.Logger;
  * An identity as handled by the WoT (a USK)
  * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
- *
  */
 public class Identity {
 	
@@ -55,7 +54,14 @@ public class Identity {
 	private HashMap<String, String> props;
 	private ArrayList<String> contexts;
 
-	
+	/**
+	 * Creates an Identity
+	 * 
+	 * @param requestURI A {@link FreenetURI} to fetch tis Identity 
+	 * @param nickName The nickname of this identity
+	 * @param publishTrustList Whether this identity publishes its trustList or not
+	 * @throws InvalidParameterException if a parameter is invalid
+	 */
 	public Identity (FreenetURI requestURI, String nickName, String publishTrustList) throws InvalidParameterException {
 		
 		setRequestURI(requestURI);
@@ -68,12 +74,29 @@ public class Identity {
 		Logger.debug(this, "New identity : " + getNickName());
 	}
 
+	/**
+	 * Creates an Identity
+	 * 
+	 * @param requestURI A String that will be converted to {@link FreenetURI} before creating the identity
+	 * @param nickName The nickname of this identity
+	 * @param publishTrustList Whether this identity publishes its trustList or not
+	 * @throws InvalidParameterException if a parameter is invalid
+	 * @throws MalformedURLException if the supplied requestURI isn't a valid FreenetURI
+	 */
 	public Identity (String requestURI, String nickName, String publishTrustList) throws InvalidParameterException, MalformedURLException {
 		this(new FreenetURI(requestURI), nickName, publishTrustList);
 	}
 	
 
-	
+	/**
+	 * Loads an identity from the database, querying on its id
+	 * 
+	 * @param db A reference to the database
+	 * @param id The id of the identity to load
+	 * @return The identity matching the supplied id
+	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
+	 * @throws UnknownIdentityException if there is no identity with this id in the database
+	 */
 	@SuppressWarnings("unchecked")
 	public static Identity getById (ObjectContainer db, String id) throws DuplicateIdentityException, UnknownIdentityException {
 
@@ -86,23 +109,62 @@ public class Identity {
 		if(result.size() > 1) throw new DuplicateIdentityException(id);
 		return result.next();
 	}
-	
+
+	/**
+	 * Loads an identity from the database, querying on its requestURI (as String)
+	 * 
+	 * @param db A reference to the database
+	 * @param uri The requestURI of the identity which will be converted to {@link FreenetURI} 
+	 * @return The identity matching the supplied requestURI
+	 * @throws UnknownIdentityException if there is no identity with this id in the database
+	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
+	 * @throws MalformedURLException if the requestURI isn't a valid FreenetURI
+	 */
 	public static Identity getByURI (ObjectContainer db, String uri) throws UnknownIdentityException, DuplicateIdentityException, MalformedURLException {
 		return getByURI(db, new FreenetURI(uri));
 	}
-	
+
+	/**
+	 * Loads an identity from the database, querying on its requestURI (a valid {@link FreenetURI})
+	 * 
+	 * @param db A reference to the database
+	 * @param uri The requestURI of the identity
+	 * @return The identity matching the supplied requestURI
+	 * @throws UnknownIdentityException if there is no identity with this id in the database
+	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
+	 */
 	public static Identity getByURI (ObjectContainer db, FreenetURI uri) throws UnknownIdentityException, DuplicateIdentityException {
 		return getById(db, getIdFromURI(uri));
 	}
 
+	/**
+	 * Counts the number of identities (not OwnIdentities) in the database
+	 * 
+	 * @param db A reference to the database
+	 * @return The number of identities in the database as an integer
+	 */
 	public static int getNbIdentities(ObjectContainer db) {
 		return db.queryByExample(Identity.class).size() - OwnIdentity.getNbOwnIdentities(db);
 	}
 	
+	/**
+	 * Returns all identities that are in the database
+	 * 
+	 * @param db A reference to the database
+	 * @return an {@link ObjectSet} containing all identities present in the database 
+	 */
 	public static ObjectSet<Identity> getAllIdentities(ObjectContainer db) {
 		return db.queryByExample(Identity.class);
 	}
 	
+	/**
+	 * Generates a unique id from a {@link FreenetURI}. 
+	 * It is simply a String representing it's routing key.
+	 * We use this to identify identities and perform requests on the database. 
+	 * 
+	 * @param uri The requestURI of the Identity
+	 * @return A string to uniquely identify an Identity
+	 */
 	public static String getIdFromURI (FreenetURI uri) {
 		int begin = uri.toString().indexOf(',') + 1;
 		int end = uri.toString().indexOf(',', begin);
@@ -110,7 +172,16 @@ public class Identity {
 	}
 
 	
-	
+	/**
+	 * Gets the score of this identity in a trust tree.
+	 * Each {@link OwnIdentity} has its own trust tree.
+	 * 
+	 * @param treeOwner The owner of the trust tree
+	 * @param db A reference to the database
+	 * @return The {@link Score} of this Identity in the required trust tree
+	 * @throws NotInTrustTreeException if this identity is not in the required trust tree 
+	 * @throws DuplicateScoreException if thid identity has more than one Score objects for that trust tree in the database (should never happen)
+	 */
 	@SuppressWarnings("unchecked")
 	public Score getScore(OwnIdentity treeOwner, ObjectContainer db) throws NotInTrustTreeException, DuplicateScoreException {
 		Query query = db.query();
@@ -122,7 +193,13 @@ public class Identity {
 		else if(result.size() > 1) throw new DuplicateScoreException(this.getRequestURI().toString()+" ("+ getNickName() +") has "+result.size()+" scores in "+treeOwner.getNickName()+"'s trust tree"); 
 		else return result.next();
 	}
-	
+
+	/**
+	 * Gets all this Identity's Scores. 
+	 * 
+	 * @param db A reference to the database
+	 * @return An {@link ObjectSet} containing all Scores this Identity has.
+	 */
 	@SuppressWarnings("unchecked")
 	public ObjectSet<Score> getScores(ObjectContainer db) {
 		Query query = db.query();
@@ -131,6 +208,14 @@ public class Identity {
 		return query.execute();
 	}
 		
+	/**
+	 * Gets {@link Trust} this Identity received from a specified truster
+	 * @param truster The identity that gives trust to this Identity
+	 * @param db  A reference to the database
+	 * @return The trust given to this identity by the specified truster
+	 * @throws NotTrustedException if the truster doesn't trust this identity
+	 * @throws DuplicateTrustException if there are more than one Trust object between these identities in the database (should never happen)
+	 */
 	@SuppressWarnings("unchecked")
 	public Trust getReceivedTrust(Identity truster, ObjectContainer db) throws NotTrustedException, DuplicateTrustException {
 		Query query = db.query();
