@@ -54,16 +54,44 @@ public class OwnIdentity extends Identity {
 	private FreenetURI insertURI;
 	private Date lastInsert;
 	
+	/**
+	 * Creates a new OwnIdentity with the given parameters.
+	 * 
+	 * @param insertURI A {@link FreenetURI} used to insert this OwnIdentity in Freenet
+	 * @param requestURI A {@link FreenetURI} used to fetch this OwnIdentity in Freenet
+	 * @param nickName The nickName of this OwnIdentity
+	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
+	 * @throws InvalidParameterException If a given parameter is invalid
+	 */
 	public OwnIdentity (FreenetURI insertURI, FreenetURI requestURI, String nickName, String publishTrustList) throws InvalidParameterException {	
 		super(requestURI, nickName, publishTrustList);
 		setInsertURI(insertURI);
 		setLastInsert(new Date(0));
 	}
 
+	/**
+	 * Creates a new OwnIdentity with the given parameters.
+	 * insertURI and requestURI are converted from String to {@link FreenetURI}
+	 * 
+	 * @param insertURI A String representing the key needed to insert this OwnIdentity in Freenet
+	 * @param requestURIA String representing the key needed to fetch this OwnIdentity from Freenet
+	 * @param nickName The nickName of this OwnIdentity
+	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
+	 * @throws InvalidParameterException If a given parameter is invalid
+	 * @throws MalformedURLException If either requestURI or insertURI is not a valid FreenetURI
+	 */
 	public OwnIdentity (String insertURI, String requestURI, String nickName, String publishTrustList) throws InvalidParameterException, MalformedURLException {
 		this(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 	}
 	
+	/**
+	 * Initializes this OwnIdentity's trust tree.
+	 * Meaning : It creates a Score object for this OwnIdentity in its own trust tree, 
+	 * so it gets a rank and a capacity and can give trust to other Identities.
+	 *  
+	 * @param db A reference to the database 
+	 * @throws DuplicateScoreException if there already is more than one Score for this identity (should never happen)
+	 */
 	public void initTrustTree (ObjectContainer db) throws DuplicateScoreException {
 		try {
 			getScore(this,db);
@@ -73,6 +101,15 @@ public class OwnIdentity extends Identity {
 		}
 	}
 	
+	/**
+	 * Gets an OwnIdentity by its id
+	 * 
+	 * @param db A reference to the database
+	 * @param id The unique identifier to query an OwnIdentity
+	 * @return The requested OwnIdentity
+	 * @throws UnknownIdentityException if there is now OwnIdentity with that id
+	 * @throws DuplicateIdentityException If there is more than one identity with that id (should never happen)
+	 */
 	@SuppressWarnings("unchecked")
 	public static OwnIdentity getById (ObjectContainer db, String id) throws UnknownIdentityException, DuplicateIdentityException {
 		Query query = db.query();
@@ -85,22 +122,68 @@ public class OwnIdentity extends Identity {
 		return result.next();
 	}
 	
+	/**
+	 * Gets an OwnIdentity by its requestURI (as String).
+	 * The given String is converted to {@link FreenetURI} in order to extract a unique id.
+	 * 
+	 * @param db A reference to the database
+	 * @param uri The requestURI (as String) of the desired OwnIdentity
+	 * @return The requested OwnIdentity
+	 * @throws UnknownIdentityException if the OwnIdentity isn't in the database
+	 * @throws DuplicateIdentityException if the OwnIdentity is present more that once in the database (should never happen)
+	 * @throws MalformedURLException if the supplied requestURI is not a valid FreenetURI
+	 */
 	public static OwnIdentity getByURI (ObjectContainer db, String uri) throws UnknownIdentityException, DuplicateIdentityException, MalformedURLException {
 		return getByURI(db, new FreenetURI(uri));
 	}
 
+	/**
+	 * Gets an OwnIdentity by its requestURI (a {@link FreenetURI}).
+	 * The OwnIdentity's unique identifier is extracted from the supplied requestURI.
+	 * 
+	 * @param db A reference to the database
+	 * @param uri The requestURI of the desired OwnIdentity
+	 * @return The requested OwnIdentity
+	 * @throws UnknownIdentityException if the OwnIdentity isn't in the database
+	 * @throws DuplicateIdentityException if the OwnIdentity is present more that once in the database (should never happen)
+	 */
 	public static OwnIdentity getByURI (ObjectContainer db, FreenetURI uri) throws UnknownIdentityException, DuplicateIdentityException {
 		return getById(db, getIdFromURI(uri));
 	}
 	
+	/**
+	 * Counts the number of OwnIdentities in the database
+	 * @param db A reference to the database
+	 * @return the number of OwnIdentities in the database
+	 */
 	public static int getNbOwnIdentities(ObjectContainer db) {
 		return db.queryByExample(OwnIdentity.class).size();
 	}
 	
+	/**
+	 * Gets all OwnIdentities present in the database
+	 * 
+	 * @param db A reference to the database
+	 * @return An {@link ObjectSet} containing all OwnIdentities that exist in the database
+	 */
 	public static ObjectSet<OwnIdentity> getAllOwnIdentities (ObjectContainer db) {
 		return db.queryByExample(OwnIdentity.class);
 	}
 
+	/**
+	 * Exports this identity to XML format, in a supplied OutputStream
+	 * 
+	 * @param db A reference to the database
+	 * @param os The {@link OutputStream} where to put the XML code
+	 * @throws ParserConfigurationException
+	 * @throws TransformerConfigurationException
+	 * @throws TransformerException
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws Db4oIOException
+	 * @throws DatabaseClosedException
+	 * @throws InvalidParameterException
+	 */
 	public void exportToXML(ObjectContainer db, OutputStream os) throws ParserConfigurationException, TransformerConfigurationException, TransformerException, FileNotFoundException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException {
 
 		// Create the output file
@@ -162,14 +245,29 @@ public class OwnIdentity extends Identity {
 		serializer.transform(domSource, resultStream);
 	}
 	
+	/**
+	 * Whether this OwnIdentity needs to be inserted or not.
+	 * We insert OwnIdentities when they have been modified AND at least once a week.
+	 * @return Whether this OwnIdentity needs to be inserted or not
+	 */
 	public boolean needsInsert() {
 		return (getLastChange().after(getLastInsert()) || (new Date().getTime() - getLastInsert().getTime()) > 1000*60*60*24*7); 
 	}
 
+	/**
+	 * @return This OwnIdentity's insertURI
+	 */
 	public FreenetURI getInsertURI() {
 		return insertURI;
 	}
 	
+	/**
+	 * Sets this OwnIdentity's insertURI. 
+	 * The key must be a USK or a SSK, and is stored as a USK anyway.
+	 *  
+	 * @param key this OwnIdentity's insertURI
+	 * @throws InvalidParameterException if the supplied key is neither a USK nor a SSK
+	 */
 	public void setInsertURI(FreenetURI key) throws InvalidParameterException {
 		if(key.getKeyType().equals("SSK")) key = key.setKeyType("USK");
 		if(!key.getKeyType().equals("USK")) throw new InvalidParameterException("Key type not supported");
@@ -182,10 +280,18 @@ public class OwnIdentity extends Identity {
 		setRequestURI(getRequestURI().setSuggestedEdition(edition));
 	}
 
+	/**
+	 * @return Date of last insertion of this OwnIdentity in Freenet
+	 */
 	public Date getLastInsert() {
 		return lastInsert;
 	}
 
+	/**
+	 * Sets the last insertion date of this OwnIdentity in Freenet
+	 * 
+	 * @param lastInsert last insertion date of this OwnIdentity in Freenet
+	 */
 	public void setLastInsert(Date lastInsert) {
 		this.lastInsert = lastInsert;
 	}
