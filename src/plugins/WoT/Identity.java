@@ -198,7 +198,7 @@ public class Identity {
 	 * Gets all this Identity's Scores. 
 	 * 
 	 * @param db A reference to the database
-	 * @return An {@link ObjectSet} containing all Scores this Identity has.
+	 * @return An {@link ObjectSet} containing all {@link Score} this Identity has.
 	 */
 	@SuppressWarnings("unchecked")
 	public ObjectSet<Score> getScores(ObjectContainer db) {
@@ -209,9 +209,10 @@ public class Identity {
 	}
 		
 	/**
-	 * Gets {@link Trust} this Identity received from a specified truster
+	 * Gets {@link Trust} this Identity receives from a specified truster
+	 * 
 	 * @param truster The identity that gives trust to this Identity
-	 * @param db  A reference to the database
+	 * @param db A reference to the database
 	 * @return The trust given to this identity by the specified truster
 	 * @throws NotTrustedException if the truster doesn't trust this identity
 	 * @throws DuplicateTrustException if there are more than one Trust object between these identities in the database (should never happen)
@@ -228,6 +229,15 @@ public class Identity {
 		else return result.next();
 	}
 
+	/**
+	 * Gets {@link Trust} this Identity gives to a specified trustee
+	 * 
+	 * @param trustee The identity that receives trust from this Identity
+	 * @param db A reference to the database
+	 * @return The trust given by this identity to the specified trustee
+	 * @throws NotTrustedException if this identity doesn't trust the trustee
+	 * @throws DuplicateTrustException if there are more than one Trust object between these identities in the database (should never happen)
+	 */
 	@SuppressWarnings("unchecked")
 	public Trust getGivenTrust(Identity trustee, ObjectContainer db) throws NotTrustedException, DuplicateTrustException {
 		Query query = db.query();
@@ -240,6 +250,12 @@ public class Identity {
 		else return result.next();
 	}
 	
+	/**
+	 * Gets all trusts received by this Identity
+	 * 
+	 * @param db A reference to the database
+	 * @return An {@link ObjectSet} containing all {@link Trust} this Identity has received.
+	 */
 	@SuppressWarnings("unchecked")
 	public ObjectSet<Trust> getReceivedTrusts(ObjectContainer db) {
 		Query query = db.query();
@@ -248,10 +264,22 @@ public class Identity {
 		return query.execute();
 	}
 	
+	/**
+	 * Gets the number of Trusts received by this Identity
+	 * 
+	 * @param db A reference to the database
+	 * @return The number of Trusts received by this Identity
+	 */
 	public long getNbReceivedTrusts(ObjectContainer db) {
 		return getReceivedTrusts(db).size();
 	}
 	
+	/**
+	 * Gets all trusts given by this Identity
+	 * 
+	 * @param db A reference to the database
+	 * @return An {@link ObjectSet} containing all {@link Trust} this Identity has given.
+	 */
 	@SuppressWarnings("unchecked")
 	public ObjectSet<Trust> getGivenTrusts(ObjectContainer db) {
 		Query query = db.query();
@@ -260,10 +288,28 @@ public class Identity {
 		return query.execute();
 	}
 	
+	/**
+	 * Gets the number of Trusts given by this Identity
+	 * 
+	 * @param db A reference to the database
+	 * @return The number of Trusts given by this Identity
+	 */
 	public long getNbGivenTrusts(ObjectContainer db) {
 		return getGivenTrusts(db).size();
 	}
 
+	/**
+	 * Gives some {@link Trust} to another Identity.
+	 * It creates or updates an existing Trust object and make the trustee compute its {@link Score}.
+	 * 
+	 * @param db A reference to the database
+	 * @param trustee The Identity that receives the trust
+	 * @param value Numeric value of the trust
+	 * @param comment A comment to explain the given value
+	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
+	 * @throws InvalidParameterException if a given parameter isn't valid, {@see Trust} for details on accepted values.
+	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
+	 */
 	public void setTrust(ObjectContainer db, Identity trustee, int value, String comment) throws DuplicateTrustException, InvalidParameterException, DuplicateScoreException {
 		// Check if we are updating an existing trust value
 		Trust trust;
@@ -288,7 +334,14 @@ public class Identity {
 			trustee.updateScore(db);
 		} 
 	}
-	
+
+	/**
+	 * Updates this Identity's {@link Score} in every trust tree.
+	 * 
+	 * @param db A reference to the database
+	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
+	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
+	 */
 	public void updateScore (ObjectContainer db) throws DuplicateScoreException, DuplicateTrustException {
 		ObjectSet<OwnIdentity> treeOwners = OwnIdentity.getAllOwnIdentities(db);
 		if(treeOwners.size() == 0) Logger.error(this, "Can't update "+ getNickName()+"'s score : there is no own identity yet");
@@ -296,6 +349,15 @@ public class Identity {
 			updateScore (db, treeOwners.next());
 	}
 	
+	/**
+	 * Updates this Identity's {@link Score} in one trust tree.
+	 * Makes this Identity's trustees update their score if its capacity has changed.
+	 * 
+	 * @param db A reference to the database
+	 * @param treeOwner The OwnIdentity that owns the trust tree
+	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
+	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
+	 */
 	public void updateScore (ObjectContainer db, OwnIdentity treeOwner) throws DuplicateScoreException, DuplicateTrustException {
 		
 		if(this == treeOwner) return;
@@ -352,6 +414,14 @@ public class Identity {
 		}
 	}
 	
+	/**
+	 * Computes this Identity's Score value according to the trusts it has received and the capacity of its trusters in the specified trust tree.
+	 * 
+	 * @param db A reference to the database
+	 * @param treeOwner The OwnIdentity that owns the trust tree
+	 * @return The new Score if this Identity
+	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
+	 */
 	public int computeScoreValue(ObjectContainer db, OwnIdentity treeOwner) throws DuplicateScoreException {
 		int value = 0;
 		
@@ -365,6 +435,15 @@ public class Identity {
 		return value;
 	}
 	
+	/**
+	 * Computes this Identity's rank in the trust tree.
+	 * It gets its best ranked truster's rank, plus one. Or -1 if none of its trusters are in the trust tree. 
+	 *  
+	 * @param db A reference to the database
+	 * @param treeOwner The OwnIdentity that owns the trust tree
+	 * @return The new Rank if this Identity
+	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
+	 */
 	public int computeRank(ObjectContainer db, OwnIdentity treeOwner) throws DuplicateScoreException {
 		int rank = -1;
 		
@@ -381,6 +460,13 @@ public class Identity {
 		return rank;
 	}
 	
+	/**
+	 * Sets the requestURI of this Identity.
+	 * The given {@link FreenetURI} is converted to USK and the docName is forced to WoT.
+	 * 
+	 * @param requestURI The FreenetURI used to fetch this identity 
+	 * @throws InvalidParameterException if the given FreenetURI is neither a SSK nor a USK
+	 */
 	public void setRequestURI(FreenetURI requestURI) throws InvalidParameterException {
 		if(requestURI.getKeyType().equals("SSK")) requestURI = requestURI.setKeyType("USK");
 		if(!requestURI.getKeyType().equals("USK")) throw new InvalidParameterException("Key type not supported");
@@ -388,10 +474,23 @@ public class Identity {
 		updated();
 	}
 	
+	/**
+	 * Sets the edition of the last fetched version of this identity.
+	 * That number is published in trustLists to limit the number of editions a newbie has to fetch before he actually gets ans Identity.
+	 * 
+	 * @param edition A long representing the last fetched version of this identity.
+	 * @throws InvalidParameterException
+	 */
 	public void setEdition(long edition) throws InvalidParameterException {
 		setRequestURI(getRequestURI().setSuggestedEdition(edition));
 	}
 
+	/**
+	 * Sets the nickName of this Identity
+	 * 
+	 * @param nickName A String containing this Identity's NickName
+	 * @throws InvalidParameterException if the nickName's length is bigger than 50, or if it empty
+	 */
 	public void setNickName(String nickName) throws InvalidParameterException {
 		String nick = nickName.trim();
 		if(nick.length() == 0) throw new InvalidParameterException("Blank nickName");
@@ -400,15 +499,35 @@ public class Identity {
 		updated();
 	}
 
+	/**
+	 * Sets if this Identity publishes its trustList or not
+	 * 
+	 * @param publishTrustList 
+	 */
 	public void setPublishTrustList(boolean publishTrustList) {
 		this.publishTrustList = publishTrustList;
 		updated();
 	}
 
+	/**
+	 * Sets if this Identity publishes its trustList or not.
+	 * The given string is converted to a boolean.
+	 * 
+	 * @param publishTrustList 
+	 */
 	public void setPublishTrustList(String publishTrustList) {
 		setPublishTrustList(publishTrustList.equals("true"));
 	}
 	
+	/**
+	 * Sets a custom property on this Identity. Custom properties keys have to be unique.
+	 * This can be used by client apps that need to put additionnal informations on their Identities (crypto keys, avatar, whatever...)
+	 * 
+	 * @param key Name of the custom property
+	 * @param value Value of the property
+	 * @param db A reference to the database 
+	 * @throws InvalidParameterException if the key or the value is empty
+	 */
 	public void setProp(String key, String value, ObjectContainer db) throws InvalidParameterException {
 		if(key.trim().length() == 0 || value.trim().length() == 0) throw new InvalidParameterException("Blank key or value in this property");
 		props.put(key.trim(), value.trim());
@@ -416,6 +535,13 @@ public class Identity {
 		updated();
 	}
 	
+	/**
+	 * Removes a custom property from this Identity
+	 * 
+	 * @param key Name of the custom property
+	 * @param db A reference to the database 
+	 * @throws InvalidParameterException if this Identity doesn't have the given property
+	 */
 	public void removeProp(String key, ObjectContainer db) throws InvalidParameterException {
 		if(!props.containsKey(key)) throw new InvalidParameterException("Property '"+key+"' isn't set on this identity");
 		props.remove(key.trim());
@@ -423,11 +549,26 @@ public class Identity {
 		updated();
 	}
 	
+	/**
+	 * Gets all custom properties from this Identity
+	 * 
+	 * @return An Iterator referencing all this Identity's custom properties
+	 */
 	public Iterator<Entry<String, String>> getProps() {
 		Iterator<Entry<String, String>> i = props.entrySet().iterator();
 		return i;
 	}
 	
+	/**
+	 * Adds a context to this identity.
+	 * Contexts are used by clients to identify what identities are relevant for their use.
+	 * Example : A filesharing app sets a 'filesharing' context on its identities,
+	 * so it only has to fetch files lists from relevant Identities.
+	 * 
+	 * @param context Name of the context
+	 * @param db A reference to the database
+	 * @throws InvalidParameterException if the context name is empty
+	 */
 	public void addContext(String context, ObjectContainer db) throws InvalidParameterException {
 		String newContext = context.trim();
 		if(newContext.length() == 0) throw new InvalidParameterException("Blank context");
@@ -436,54 +577,104 @@ public class Identity {
 		updated();
 	}
 	
+	/**
+	 * Removes a context from this Identity.
+	 * If this Identity is no longer used by a client app, 
+	 * the user can tell it and others won't try to fetch it anymore.
+	 * 
+	 * @param context Name of the context
+	 * @param db A reference to the database
+	 * @throws InvalidParameterException if the client tries to remove the last context of this Identity (an identity with no context is useless)
+	 */
 	public void removeContext(String context, ObjectContainer db) throws InvalidParameterException {
 		if(contexts.size() == 1) throw new InvalidParameterException("Only one context left");
 		contexts.remove(context);
 		db.store(contexts);
 		updated();
 	}
-	
+
+	/**
+	 * Gets all this Identity's contexts
+	 * 
+	 * @return An Iterator referencing all this identity's contexts
+	 */
 	public Iterator<String> getContexts() {
 		return contexts.iterator();
 	}
 		
+	/**
+	 * Tell that this Identity has been updated.
+	 */
 	public void updated() {
 		lastChange = new Date();
 	}
 	
+	/**
+	 * Gets this Identity's id
+	 * @return A unique identifier for this Identity
+	 */
 	public String getId() {
 		return id;
 	}
 
+	/**
+	 * @return The requestURI ({@link FreenetURI}) to fetch this Identity 
+	 */
 	public FreenetURI getRequestURI() {
 		return requestURI.setMetaString(new String[] {"identity.xml"} );
 	}
 
+	/**
+	 * @return The date of this Identity's last modification
+	 */
 	public Date getLastChange() {
 		return lastChange;
 	}
 
+	/**
+	 * @return this Identity's nickName
+	 */
 	public String getNickName() {
 		return nickName;
 	}
 
+	/**
+	 * @return Whether this Identity publishes its trustList or not
+	 */
 	public boolean doesPublishTrustList() {
 		return publishTrustList;
 	}
 
+	/**
+	 * @return A String listing all this Identity's contexts
+	 */
 	public String getContextsAsString() {
 		return contexts.toString();
 	}
 	
+	/**
+	 * Gets the value of one of this Identity's contexts
+	 * 
+	 * @param key The name of the requested custom property
+	 * @return The value of the requested custom property
+	 * @throws InvalidParameterException if this Identity doesn't have the required property
+	 */
 	public String getProp(String key) throws InvalidParameterException {
 		if(!props.containsKey(key)) throw new InvalidParameterException("Property '"+key+"' isn't set on this identity");
 		return props.get(key);
 	}
 	
+	/**
+	 * @return A String listing all this Identities custom properties
+	 */
 	public String getPropsAsString() {
 		return props.toString();
 	}
 	
+	/**
+	 * @param context The context we want to know if this Identity has it or not
+	 * @return Whether this Identity has that context or not
+	 */
 	public boolean hasContext(String context) {
 		return contexts.contains(context.trim());
 	}
