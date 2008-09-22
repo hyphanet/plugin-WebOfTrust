@@ -16,7 +16,8 @@ import com.db4o.ext.DatabaseClosedException;
 import com.db4o.ext.Db4oIOException;
 
 /**
- * TrustList of an Identity
+ * A list of all Trusts given by an Identity
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */
@@ -27,8 +28,8 @@ public class Trustlist {
 	/**
 	 * Creates the trustlist of a local Identity
 	 * 
-	 * @param db Connection to db4o
-	 * @param truster Identity that owns that trustList
+	 * @param db A reference to the Database
+	 * @param truster Identity that owns this trustList
 	 * @throws InvalidParameterException 
 	 * @throws DatabaseClosedException 
 	 * @throws Db4oIOException 
@@ -39,6 +40,7 @@ public class Trustlist {
 	
 	/**
 	 * Returns an XML Element containing the trustList
+	 * 
 	 * @param xmlDoc The XML Document
 	 * @return Element containing details of the trustList
 	 */
