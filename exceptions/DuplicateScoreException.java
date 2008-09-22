@@ -6,6 +6,9 @@
 package plugins.WoT.exceptions;
 
 /**
+ * Thrown when there are more than one Score for an Identity
+ * (in the same trust tree) in the database. Should never happen anymore.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */

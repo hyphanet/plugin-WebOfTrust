@@ -6,6 +6,8 @@
 package plugins.WoT;
 
 /**
+ * Necessary to be able to use pluginmanager's versions
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */

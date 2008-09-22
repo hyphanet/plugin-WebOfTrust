@@ -6,6 +6,8 @@
 package plugins.WoT.exceptions;
 
 /**
+ * Thrown when querying an Identity that doesn't exist in the database.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */

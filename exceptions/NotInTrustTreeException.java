@@ -6,6 +6,9 @@
 package plugins.WoT.exceptions;
 
 /**
+ * Thrown when querying the Score of an Identity that is 
+ * not in the trust tree.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */

@@ -6,6 +6,9 @@
 package plugins.WoT.exceptions;
 
 /**
+ * Thrown when there are more than one Trust relationships between 
+ * two identities in the database. Should never happen anymore.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class DuplicateTrustException extends Exception {

@@ -38,6 +38,12 @@ public class Config {
 		}
 	}
 	
+	/**
+	 * Sets a configuration parameter and stores it in the database.
+	 *  
+	 * @param key
+	 * @param value
+	 */
 	public synchronized void set(String key, String value) {
 		synchronized(this) {
 			params.put(key, value);
@@ -45,10 +51,20 @@ public class Config {
 		}
 	}
 	
+	/**
+	 * Gets a configuration parameter.
+	 * 
+	 * @param key
+	 * @return value of the configuration parameter
+	 */
 	public synchronized String get(String key) {
 		return params.get(key);
 	}
 	
+	/**
+	 * @param key name of the configuration parameter
+	 * @return whethet it exists or not
+	 */
 	public synchronized boolean contains(String key) {
 		return params.containsKey(key);
 	}
