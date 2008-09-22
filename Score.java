@@ -16,18 +16,38 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 /**
+ * The Score of an Identity in an OwnIdentity's trust tree.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
- *
  */
 public class Score {
 
-	private OwnIdentity treeOwner;
-	private Identity target;
+	private OwnIdentity treeOwner; 	// OwnIdentity that owns the trust tree
+	private Identity target;		// The Identity that has this Score
+	
+	// The actual score of the Identity. 
+	// Used to decide if the OwnIdentity sees the Identity or not
 	private int score;
+	
+	// How far the Identity is from the tree's root. 
+	// Tells how much point it can add to its trustees score.
 	private int rank;
+	
+	// How much point the target Identity can add to its trustees score.
+	// Depends on its rank AND the trust given by the tree owner.
+	// If the tree owner sets a negative trust on the target identity,
+	// it gets zero capacity, even if it has a positive score.
 	private int capacity;
 	
-
+	/**
+	 * Creates a Score from given parameters.
+	 * 
+	 * @param treeOwner The owner of the trust tree
+	 * @param target The Identity that has the score
+	 * @param score The actual score of the Identity. 
+	 * @param rank How far the Identity is from the tree's root. 
+	 * @param capacity How much point the target Identity can add to its trustees score.
+	 */
 	public Score (OwnIdentity treeOwner, Identity target, int score, int rank, int capacity) {
 		this.treeOwner = treeOwner;
 		this.target = target;
@@ -35,12 +55,30 @@ public class Score {
 		this.rank = rank;
 		this.capacity = capacity;
 	}
-	
+
+	/**
+	 * Counts the number of Score objects in the database.
+	 * 
+	 * @param db A reference to the database
+	 * @return the number of Score objects in the database
+	 */
 	public static int getNb(ObjectContainer db) {
 		ObjectSet<Score> scores = db.queryByExample(Score.class);
 		return scores.size();
 	}
 	
+	/**
+	 * Gets Identities matching a specified score criteria.
+	 * 
+	 * @param owner requestURI of the owner of the trust tree
+	 * @param select Score criteria, can be '+', '0' or '-'
+	 * @param db A reference to the database
+	 * @return an {@link ObjectSet} containing Identities that match the criteria
+	 * @throws InvalidParameterException if the criteria is not recognised
+	 * @throws MalformedURLException if the supplied requestURI of the treeOwner is not a valid {@link FreenetURI}
+	 * @throws UnknownIdentityException if the supplied treeOwner is not in the database
+	 * @throws DuplicateIdentityException if the supplied treeOwner exists more than once in the database (should never happen)
+	 */
 	@SuppressWarnings("unchecked")
 	public static ObjectSet<Score> getIdentitiesByScore (String owner, String select, ObjectContainer db) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
@@ -68,42 +106,72 @@ public class Score {
 		return getTarget().getNickName() + " has " + getScore() + " points in " + getTreeOwner().getNickName() + "'s trust tree (rank : " + getRank() + ", capacity : " + getCapacity() + ")";
 	}
 
+	/**
+	 * @return in which OwnIdentity's trust tree this score is
+	 */
 	public OwnIdentity getTreeOwner() {
 		return treeOwner;
 	}
 
+	/**
+	 * Sets in which OwnIdentity's trust tree this score is.
+	 */
 	public void setTreeOwner(OwnIdentity treeOwner) {
 		this.treeOwner = treeOwner;
 	}
 
+	/**
+	 * @return Identity that has this Score
+	 */
 	public Identity getTarget() {
 		return target;
 	}
 
+	/**
+	 * Sets the Identity that has this Score.
+	 */
 	public void setTarget(Identity target) {
 		this.target = target;
 	}
 
+	/**
+	 * @return the numeric value of this Score
+	 */
 	public int getScore() {
 		return score;
 	}
 
+	/**
+	 * Sets the numeric value of this Score
+	 */
 	public void setScore(int score) {
 		this.score = score;
 	}
 
+	/**
+	 * @return How far the target Identity is from the trust tree's root
+	 */
 	public int getRank() {
 		return rank;
 	}
 
+	/**
+	 * Sets how far the target Identity is from the trust tree's root.
+	 */
 	public void setRank(int rank) {
 		this.rank = rank;
 	}
 
+	/**
+	 * @return how much points the target Identity can add to its trustees score
+	 */
 	public int getCapacity() {
 		return capacity;
 	}
 
+	/**
+	 * Sets how much points the target Identity can add to its trustees score.
+	 */
 	public void setCapacity(int capacity) {
 		this.capacity = capacity;
 	}
