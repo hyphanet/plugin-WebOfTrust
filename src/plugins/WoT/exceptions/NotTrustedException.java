@@ -6,6 +6,9 @@
 package plugins.WoT.exceptions;
 
 /**
+ * Thrown when querying the Trust between two identities
+ * that don't trust each other.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class NotTrustedException extends Exception {

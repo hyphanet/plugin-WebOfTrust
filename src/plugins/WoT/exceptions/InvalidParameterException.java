@@ -6,6 +6,8 @@
 package plugins.WoT.exceptions;
 
 /**
+ * Thrown the user supplied an invalid parameter.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */
