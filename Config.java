@@ -6,10 +6,7 @@
 package plugins.WoT;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Set;
-
-import com.db4o.ObjectContainer;
 
 /**
  * Contains a HashMap<String, String> which maps configuration variable names
@@ -86,7 +83,7 @@ public class Config {
 	 * Add the default configuration values to the database.
 	 * @param overwrite If true, overwrite already set values with the default value.
 	 */
-	public void initDefault(boolean overwrite) {
+	public synchronized void initDefault(boolean overwrite) {
 		if (!contains("delayBetweenInserts") || overwrite)
 			set("delayBetweenInserts", "30");
 	}
