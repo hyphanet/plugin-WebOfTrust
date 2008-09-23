@@ -32,6 +32,8 @@ import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory;
 
 /**
+ * Inserts OwnIdentities to Freenet when they need it.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */
@@ -43,6 +45,13 @@ public class IdentityInserter implements Runnable {
 	
 	boolean isRunning;
 	
+	/**
+	 * Creates an IdentityInserter.
+	 * 
+	 * @param db A reference to the database
+	 * @param client A reference to an {@link HighLevelSimpleClient} to perform inserts
+	 * @param tbf Needed to create buckets from Identities before insert
+	 */
 	public IdentityInserter(ObjectContainer db, HighLevelSimpleClient client, TempBucketFactory tbf) {
 		this.db = db;
 		this.client = client;
@@ -50,6 +59,10 @@ public class IdentityInserter implements Runnable {
 		tBF = tbf;
 	}
 	
+	/**
+	 * Starts the IdentityInserter thread. Every 30 minutes,
+	 * it exports to XML and inserts OwnIdentities that need it.
+	 */
 	public void run() {
 		try{
 			Thread.sleep(30 * 1000); // Let the node start up (30 seconds)
@@ -77,11 +90,28 @@ public class IdentityInserter implements Runnable {
 		}
 	}
 	
+	/**
+	 * Stops the IdentityInserter thread.
+	 */
 	public void stop() {
 		isRunning = false;
 		Logger.debug(this, "Stopping IdentityInserter thread");
 	}
-	
+
+	/**
+	 * Inserts an OwnIdentity.
+	 * 
+	 * @param identity the OwnIdentity to insert
+	 * @throws TransformerConfigurationException
+	 * @throws FileNotFoundException
+	 * @throws ParserConfigurationException
+	 * @throws TransformerException
+	 * @throws IOException
+	 * @throws Db4oIOException
+	 * @throws DatabaseClosedException
+	 * @throws InvalidParameterException
+	 * @throws InsertException
+	 */
 	public void insert(OwnIdentity identity) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException, InsertException {
 
 		Bucket tempB = tBF.makeBucket(1);

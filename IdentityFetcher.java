@@ -24,8 +24,10 @@ import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
 /**
+ * Fetches Identities from Freenet.
+ * Contains an ArrayList of all current requests.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
- *
  */
 public class IdentityFetcher implements ClientCallback {
 
@@ -33,6 +35,12 @@ public class IdentityFetcher implements ClientCallback {
 	private HighLevelSimpleClient client;
 	private ArrayList<ClientGetter> requests;
 	
+	/**
+	 * Creates a new IdentityFetcher.
+	 * 
+	 * @param db A reference to the database
+	 * @param client A reference to a {@link HighLevelSimpleClient}
+	 */
 	public IdentityFetcher(ObjectContainer db, HighLevelSimpleClient client) {
 
 		this.db = db;
@@ -40,11 +48,24 @@ public class IdentityFetcher implements ClientCallback {
 		requests = new ArrayList<ClientGetter>();
 	}
 	
+	/**
+	 * Fetches an Identity from Freenet. 
+	 * Sets nextEdition to false by default if not specified.
+	 * 
+	 * @param identity the Identity to fetch
+	 */
 	public void fetch(Identity identity) {
 		
 		fetch(identity, false);
 	}
 	
+	/**
+	 * Fetches an Identity from Freenet. 
+	 * Sets nextEdition to false by default if not specified.
+	 * 
+	 * @param identity the Identity to fetch
+	 * @param nextEdition whether we want to check current edition or the next one
+	 */
 	public void fetch(Identity identity, boolean nextEdition) {
 		
 		try {
@@ -57,6 +78,12 @@ public class IdentityFetcher implements ClientCallback {
 		}
 	}
 	
+	/**
+	 * Fetches a file from Freenet, by its URI.
+	 * 
+	 * @param uri the {@link FreenetURI} we want to fetch
+	 * @throws FetchException if the node encounters a problem
+	 */
 	public void fetch(FreenetURI uri) throws FetchException {
 
 		FetchContext fetchContext = client.getFetchContext();
@@ -66,6 +93,9 @@ public class IdentityFetcher implements ClientCallback {
 		Logger.debug(this, "Start fetching identity "+uri.toString());
 	}
 
+	/**
+	 * Stops all running requests.
+	 */
 	public void stop() {
 		Iterator<ClientGetter> i = requests.iterator();
 		Logger.debug(this, "Trying to stop "+requests.size()+" requests");
@@ -73,6 +103,10 @@ public class IdentityFetcher implements ClientCallback {
 		Logger.debug(this, "Stopped all current requests");
 	}
 	
+	/**
+	 * Called when the node can't fetch a file OR when there is a newer edition.
+	 * If this is the later, we restart the request.
+	 */
 	public void onFailure(FetchException e, ClientGetter state) {
 		
 		if ((e.mode == FetchException.PERMANENT_REDIRECT) || (e.mode == FetchException.TOO_MANY_PATH_COMPONENTS )) {
@@ -110,6 +144,10 @@ public class IdentityFetcher implements ClientCallback {
 		
 	}
 
+	/**
+	 * Called when a file is successfully fetched. We then create an
+	 * {@link IdentityParser} and give it the file content. 
+	 */
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		
 		Logger.debug(this, "Fetched key (ClientGetter) : " + state.getURI());

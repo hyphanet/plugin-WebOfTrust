@@ -28,6 +28,8 @@ import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
 /**
+ * Parses an identity.xml file and updates Identity's data. 
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */
@@ -39,6 +41,15 @@ public class IdentityParser {
 	SAXParser saxParser;
 	Identity identity;
 	
+	/**
+	 * Creates an IdentityParser and make it ready to parse the file.
+	 * 
+	 * @param db A reference to the database 
+	 * @param client A reference to an {@link HighLevelSimpleClient}
+	 * @param fetcher A reference to the {@link IdentityFetcher} object, in order to request new editions or newly discovered identities
+	 * @throws ParserConfigurationException if the parser encounters a problem
+	 * @throws SAXException if the parser encounters a problem
+	 */
 	public IdentityParser(ObjectContainer db, HighLevelSimpleClient client, IdentityFetcher fetcher) throws ParserConfigurationException, SAXException {
 
 		this.db = db;
@@ -47,6 +58,17 @@ public class IdentityParser {
 		saxParser = SAXParserFactory.newInstance().newSAXParser();
 	}
 	
+	/**
+	 * Parses an identity.xml file, passed from {@link IdentityFetcher} as an {@link InputStream}
+	 * 
+	 * @param is the InputStream to parse
+	 * @param uri the {@link FreenetURI} we just fetched, used to find the corresponding Identity
+	 * @throws InvalidParameterException should never happen
+	 * @throws SAXException if the parser encounters a problem
+	 * @throws IOException don't know if this can even happen
+	 * @throws UnknownIdentityException if the Identity hasn't been created before fetching it (should never happen)
+	 * @throws DuplicateIdentityException if there is more than one Identity is the database with this requestURI (should never happen)
+	 */
 	public void parse (InputStream is, FreenetURI uri) throws InvalidParameterException, SAXException, IOException, UnknownIdentityException, DuplicateIdentityException {
 
 		identity = Identity.getByURI(db,uri);
@@ -59,12 +81,24 @@ public class IdentityParser {
 		Logger.debug(this, "Successfuly parsed identity '" + identity.getNickName() + "'");
 	}
 	
+	/**
+	 * Subclass that actually handles the parsing. Methods are called 
+	 * by SAXParser for each XML element.
+	 * 
+	 * @author Julien Cornuwel batosai@freenetproject.org
+	 *
+	 */
 	public class IdentityHandler extends DefaultHandler {
 		
+		/**
+		 * Default constructor
+		 */
 		public IdentityHandler() {
-			
 		}
-		
+
+		/**
+		 * Called by SAXParser for each XML element.
+		 */
 		public void startElement(String nameSpaceURI, String localName, String rawName, Attributes attrs) throws SAXException {
 			
 			String elt_name;
