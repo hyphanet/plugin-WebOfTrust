@@ -45,10 +45,8 @@ public class Config {
 	 * @param value
 	 */
 	public synchronized void set(String key, String value) {
-		synchronized(this) {
-			params.put(key, value);
-			db.store(params);
-		}
+		params.put(key, value);
+		db.store(params);
 	}
 	
 	/**
@@ -63,7 +61,7 @@ public class Config {
 	
 	/**
 	 * @param key name of the configuration parameter
-	 * @return whethet it exists or not
+	 * @return whether it exists or not
 	 */
 	public synchronized boolean contains(String key) {
 		return params.containsKey(key);
