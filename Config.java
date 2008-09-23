@@ -19,19 +19,14 @@ import com.db4o.ObjectContainer;
  */
 public class Config {
 
-	private ObjectContainer db;
 	private HashMap<String, String> params = null;
 	
 	/**
 	 * 
 	 * @param db The database where the configuration is stored.
 	 */
-	public Config(ObjectContainer db) {
+	public Config() {
 		
-		// TODO Refactor this : the database shouldn't try to store its own reference
-		// The ObjectContainer should be passed to set/get/... methodes
-		
-		this.db = db;
 		if(params == null) {
 			params = new HashMap<String, String>();
 			initDefault(false);
@@ -46,7 +41,6 @@ public class Config {
 	 */
 	public synchronized void set(String key, String value) {
 		params.put(key, value);
-		db.store(params);
 	}
 	
 	/**
@@ -95,7 +89,5 @@ public class Config {
 	public void initDefault(boolean overwrite) {
 		if (!contains("delayBetweenInserts") || overwrite)
 			set("delayBetweenInserts", "30");
-	
-		db.store(this);
 	}
 }
