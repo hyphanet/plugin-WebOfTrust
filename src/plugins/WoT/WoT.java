@@ -89,7 +89,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			ObjectSet<Config> result = db.queryByExample(Config.class);
 			if(result.size() == 0) {
 				Logger.debug(this, "Created new config");
-				config = new Config(db);
+				config = new Config();
 				db.store(config);
 			}
 			else {
