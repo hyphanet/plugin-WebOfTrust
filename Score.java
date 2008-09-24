@@ -22,8 +22,8 @@ import com.db4o.query.Query;
  */
 public class Score {
 
-	private OwnIdentity treeOwner; 	// OwnIdentity that owns the trust tree
-	private Identity target;		// The Identity that has this Score
+	private final OwnIdentity treeOwner; 	// OwnIdentity that owns the trust tree
+	private final Identity target;			// Identity that has this Score
 	
 	// The actual score of the Identity. 
 	// Used to decide if the OwnIdentity sees the Identity or not
@@ -114,24 +114,10 @@ public class Score {
 	}
 
 	/**
-	 * Sets in which OwnIdentity's trust tree this score is.
-	 */
-	public void setTreeOwner(OwnIdentity treeOwner) {
-		this.treeOwner = treeOwner;
-	}
-
-	/**
 	 * @return Identity that has this Score
 	 */
 	public Identity getTarget() {
 		return target;
-	}
-
-	/**
-	 * Sets the Identity that has this Score.
-	 */
-	public void setTarget(Identity target) {
-		this.target = target;
 	}
 
 	/**
