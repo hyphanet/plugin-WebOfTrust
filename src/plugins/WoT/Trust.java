@@ -25,8 +25,8 @@ public class Trust {
 	 * This allows us to load only what's needed in memory instead of everything.
 	 * Maybe db4o can handle this, I don't know ATM.
 	 */
-	private Identity truster;
-	private Identity trustee;
+	private final Identity truster;
+	private final Identity trustee;
 	private int value;
 	private String comment;
 	
@@ -84,24 +84,10 @@ public class Trust {
 	}
 
 	/**
-	 * @param truster Identity that gives this trust
-	 */
-	public void setTruster(Identity truster) {
-		this.truster = truster;
-	}
-
-	/**
 	 * @return trustee The Identity that receives this trust
 	 */
 	public Identity getTrustee() {
 		return trustee;
-	}
-
-	/**
-	 * @param trustee Identity that receives this trust
-	 */
-	public void setTrustee(Identity trustee) {
-		this.trustee = trustee;
 	}
 
 	/**
