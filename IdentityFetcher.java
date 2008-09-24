@@ -124,25 +124,17 @@ public class IdentityFetcher implements ClientCallback {
 		requests.remove(state); 
 	}
 
-	/* TODO: comment this function: who calls it and when? */
-	public void onFailure(InsertException e, BaseClientPutter state) {
-		
-	}
+	// Only called by inserts
+	public void onFailure(InsertException e, BaseClientPutter state) {}
+
+	// Only called by inserts
+	public void onFetchable(BaseClientPutter state) {}
+
+	// Only called by inserts
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
 
 	/* TODO: comment this function: who calls it and when? */
-	public void onFetchable(BaseClientPutter state) {
-		
-	}
-
-	/* TODO: comment this function: who calls it and when? */
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
-		
-	}
-
-	/* TODO: comment this function: who calls it and when? */
-	public void onMajorProgress() {
-		
-	}
+	public void onMajorProgress() {}
 
 	/**
 	 * Called when a file is successfully fetched. We then create an
@@ -162,9 +154,6 @@ public class IdentityFetcher implements ClientCallback {
 		}
 	}
 
-	/* TODO: comment this function: who calls it and when? */
-	public void onSuccess(BaseClientPutter state) {
-		
-		Logger.debug(this, "Fetched key (BaseClientPutter) : " + state.getURI());		
-	}
+	// Only called by inserts
+	public void onSuccess(BaseClientPutter state) {}
 }
