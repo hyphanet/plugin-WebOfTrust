@@ -207,6 +207,22 @@ public class Identity {
 		query.descend("target").constrain(this);
 		return query.execute();
 	}
+
+	/**
+	 * Gets the best score this Identity has in existing trust trees.
+	 * 
+	 * @param db A reference to the database
+	 * @return the best score this Identity has
+	 */
+	public int getBestScore(ObjectContainer db) {
+		int bestScore = 0;
+		ObjectSet<Score> scores = getScores(db);
+		while(scores.hasNext()) {
+			Score score = scores.next();
+			if(score.getScore() > bestScore) bestScore = score.getScore();
+		}
+		return bestScore;
+	}
 		
 	/**
 	 * Gets {@link Trust} this Identity receives from a specified truster

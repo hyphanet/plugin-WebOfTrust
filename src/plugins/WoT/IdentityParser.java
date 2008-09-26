@@ -130,13 +130,14 @@ public class IdentityParser {
 					}
 					catch (UnknownIdentityException e) {
 						
-						// TODO Don't create Identity object before we succesfully fetched it !
-						
-						trustee = new Identity(attrs.getValue("uri"), "Not found yet...", "false");
-						db.store(trustee);
-						identity.setTrust(db, trustee, value, comment);
-						fetcher.fetch(trustee); 
-						
+						// Create trustee only if the truster has a positive score.
+						// This is to avoid Identity spam when announcements will be here.
+						if(identity.getBestScore(db) > 0) {
+							trustee = new Identity(attrs.getValue("uri"), "Not found yet...", "false");
+							db.store(trustee);
+							identity.setTrust(db, trustee, value, comment);
+							fetcher.fetch(trustee); 
+						}
 					}						
 				} else
 					Logger.error(this, "Unknown element in identity " + identity.getId() + ": " + elt_name);
