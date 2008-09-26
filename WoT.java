@@ -23,8 +23,6 @@ import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
-import plugins.WoT.ui.web.HomePage;
-import plugins.WoT.ui.web.WebPage;
 
 import com.db4o.Db4o;
 import com.db4o.config.Configuration;
