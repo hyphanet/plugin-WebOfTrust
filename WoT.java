@@ -23,6 +23,8 @@ import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.ui.web.HomePage;
+import plugins.WoT.ui.web.WebPage;
 
 import com.db4o.Db4o;
 import com.db4o.config.Configuration;
@@ -263,16 +265,18 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			ObjectSet<Trust> receivedTrusts = old.getReceivedTrusts(db);
 			while(receivedTrusts.hasNext()) {
 				Trust receivedTrust = receivedTrusts.next();
-				receivedTrust.setTrustee(id);
-				db.store(receivedTrust);
+				Trust newReceivedTrust = new Trust(receivedTrust.getTruster(), id, receivedTrust.getValue(), receivedTrust.getComment());
+				db.delete(receivedTrust);
+				db.store(newReceivedTrust);
 			}
 
 			// Update all received scores
 			ObjectSet<Score> scores = old.getScores(db);
 			while(scores.hasNext()) {
 				Score score = scores.next();
-				score.setTarget(id);
-				db.store(score);
+				Score newScore = new Score(score.getTreeOwner(), id, score.getScore(), score.getRank(), score.getCapacity());
+				db.delete(score);
+				db.store(newScore);
 			}
 
 			// Store the new identity
