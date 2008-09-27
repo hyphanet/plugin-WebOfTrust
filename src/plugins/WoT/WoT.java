@@ -144,7 +144,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
-
+		
+		// TODO Refactor this, using one class per page, in plugins.WoT.ui.web
 		try {
 			if(request.isParameterSet("ownidentities")) 
 				return web.makeOwnIdentitiesPage();
@@ -171,6 +172,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
 		
+		// TODO Refactor this, using one class per page, in plugins.WoT.ui.web
 		String pass = request.getPartAsString("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword)) {
 			return "Buh! Invalid form password";
