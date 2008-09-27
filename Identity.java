@@ -57,7 +57,7 @@ public class Identity {
 	/**
 	 * Creates an Identity
 	 * 
-	 * @param requestURI A {@link FreenetURI} to fetch tis Identity 
+	 * @param requestURI A {@link FreenetURI} to fetch this Identity 
 	 * @param nickName The nickname of this identity
 	 * @param publishTrustList Whether this identity publishes its trustList or not
 	 * @throws InvalidParameterException if a parameter is invalid
