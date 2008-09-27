@@ -95,7 +95,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			else {
 				Logger.debug(this, "Loaded config");
 				config = result.next();
-				config.initDefault(false); // TODO: Is the default constructor always called by db4o? If yes, this line can be removed.
+				config.initDefault(false);
 			}
 		}
 		catch(Exception e) {
