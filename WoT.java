@@ -373,7 +373,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 	private OwnIdentity createIdentity(String insertURI, String requestURI, String nickName, String publishTrustList, String context) throws InvalidParameterException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 
-		// TODO Add context in the creation form
 		OwnIdentity identity = new OwnIdentity(insertURI, requestURI, nickName, publishTrustList);
 		db.store(identity);
 		identity.initTrustTree(db);		
