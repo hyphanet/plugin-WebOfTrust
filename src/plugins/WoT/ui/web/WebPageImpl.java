@@ -55,21 +55,15 @@ public abstract class WebPageImpl implements WebPage {
 	 */
 	public String toHTML() {
 		
-		//FIXME Must have missed something stupid, the generated page is empty.
-		//Wil have a look at it later.
+		HTMLNode contentNode = pm.getContentNode(pageNode);
 		
 		// We add the ErrorBox if it exists
-		if(errorBox != null) {
-			pageNode.addChild(errorBox);
-			System.out.println("There is an errorBox");
-		}
+		if(errorBox != null) contentNode.addChild(errorBox);
 		
 		// We add every ContentBoxes
 		Iterator<HTMLNode> contentBox = contentBoxes.iterator();
-		while(contentBox.hasNext()) pageNode.addChild(contentBox.next());
-		
-		System.out.println("There are " + contentBoxes.size() + " contentBoxes");
-		
+		while(contentBox.hasNext()) contentNode.addChild(contentBox.next());
+
 		HTMLNode test = pm.getInfobox("infobox-alert", "Test");
 		test.addChild("#", "Test");
 		pageNode.addChild(test);
