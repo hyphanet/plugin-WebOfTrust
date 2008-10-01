@@ -23,6 +23,8 @@ import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.ui.web.HomePage;
+import plugins.WoT.ui.web.WebPage;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -34,6 +36,7 @@ import com.db4o.ext.Db4oIOException;
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertException;
+import freenet.clients.http.PageMaker;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
 import freenet.pluginmanager.FredPlugin;
@@ -45,6 +48,7 @@ import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -57,6 +61,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	private PluginRespirator pr;
 	private HighLevelSimpleClient client;
+	private PageMaker pm = null;
 	
 	private ObjectContainer db;
 	private WebInterface web;
@@ -155,24 +160,26 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
 		
 		// TODO Refactor this, using one class per page, in plugins.WoT.ui.web
+		
+		WebPage page;
+		
 		try {
 			if(request.isParameterSet("ownidentities")) 
 				return web.makeOwnIdentitiesPage();
-			
-			if(request.isParameterSet("knownidentities")) 
+			else if(request.isParameterSet("knownidentities")) 
 				return web.makeKnownIdentitiesPage();
-			
-			if(request.isParameterSet("configuration"))
+			else if(request.isParameterSet("configuration"))
 				return web.makeConfigurationPage();
-			
-			if(request.isParameterSet("getTrusters"))
+			else if(request.isParameterSet("getTrusters"))
 				return web.getTrustersPage(request.getParam("id"));
-			
-			if(request.isParameterSet("getTrustees"))
+			else if(request.isParameterSet("getTrustees"))
 				return web.getTrusteesPage(request.getParam("id"));
-					
-			return web.makeHomePage();
-			
+			else {
+				page = new HomePage(this, request);			
+				page.make();
+				page.addErrorBox("coucou", "test");
+				return page.toHTML();
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			return e.getMessage();
@@ -704,5 +711,21 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 	public void setLanguage(LANGUAGE newLanguage) {
 		// TODO Auto-generated method stub
+	}
+	
+	public PageMaker getPageMaker() {
+		if(pm == null) {
+			pm = pr.getPageMaker();
+			pm.addNavigationLink(SELF_URI, "Home", "Home page", false, null);
+			pm.addNavigationLink(SELF_URI + "?ownidentities", "Own Identities", "Manage your own identities", false, null);
+			pm.addNavigationLink(SELF_URI + "?knownidentities", "Known Identities", "Manage others identities", false, null);
+			pm.addNavigationLink(SELF_URI + "?configuration", "Configuration", "Configure the WoT plugin", false, null);
+			pm.addNavigationLink("/plugins/", "Plugins page", "Back to Plugins page", false, null);
+		}
+		return pm;
+	}
+	
+	public ObjectContainer getDB() {
+		return db;
 	}
 }
