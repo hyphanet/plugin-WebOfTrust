@@ -44,8 +44,6 @@ public abstract class WebPageImpl implements WebPage {
 		
 		this.errorBox = null;
 		this.contentBoxes = new ArrayList<HTMLNode>();
-		
-		makeMenu();
 	}
 	
 	/**
@@ -96,19 +94,4 @@ public abstract class WebPageImpl implements WebPage {
 		box.addChild(content);
 		contentBoxes.add(box);
 	}
-	
-	/**
-	 * Creates the menu of the WebPage
-	 */
-	private void makeMenu() {
-		
-		// FIXME It seems that the PluginRespirator gives the same PageMaker at each request.
-		// That means we keep adding links each time a page is generated :(
-		pm.addNavigationLink(SELF_URI, "Home", "Home page", false, null);
-		pm.addNavigationLink(SELF_URI + "?ownidentities", "Own Identities", "Manage your own identities", false, null);
-		pm.addNavigationLink(SELF_URI + "?knownidentities", "Known Identities", "Manage others identities", false, null);
-		pm.addNavigationLink(SELF_URI + "?configuration", "Configuration", "Configure the WoT plugin", false, null);
-		pm.addNavigationLink("/plugins/", "Plugins page", "Back to Plugins page", false, null);
-	}
-
 }
