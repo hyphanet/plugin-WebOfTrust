@@ -25,9 +25,9 @@ import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 
 import com.db4o.Db4o;
-import com.db4o.config.Configuration;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.config.Configuration;
 import com.db4o.ext.DatabaseClosedException;
 import com.db4o.ext.Db4oIOException;
 
@@ -430,10 +430,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		db.store(id);
 		
 		Logger.debug(this, "Removed property '" + property + "' from identity '" + id.getNickName() + "'");
-	}
-
-	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
-		return null;
 	}
 
 	public String getVersion() {
