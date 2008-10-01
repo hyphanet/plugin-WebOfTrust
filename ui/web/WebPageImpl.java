@@ -5,6 +5,9 @@
  */
 package plugins.WoT.ui.web;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import plugins.WoT.WoT;
 
 import freenet.clients.http.PageMaker;
@@ -14,31 +17,36 @@ import freenet.support.api.HTTPRequest;
 /**
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public abstract class WebPageImpl {
+public abstract class WebPageImpl implements WebPage {
 	
 	protected static String SELF_URI = "/plugins/plugins.WoT.WoT";
 	protected PageMaker pm;
 	protected HTMLNode pageNode;
 	protected WoT wot;
+	protected HTTPRequest request;
+	
+	protected HTMLNode errorBox;
+	protected ArrayList<HTMLNode> contentBoxes;
 	
 	/**
-	 * Creates a new WebPage.
+	 * Creates a new WebPageImpl.
+	 * It is abstract because only a subclass can run the desired make() method to generate the content.
 	 * 
 	 * @param wot a reference to the WoT, used to get references to database, client, whatever is needed.
 	 * @param request the request from the user.
 	 */
 	public WebPageImpl(WoT wot, HTTPRequest request) {
+		
 		this.wot = wot;
-		pm = wot.getPageMaker();
-		pageNode = pm.getPageNode("Web of Trust", null);
+		this.pm = wot.getPageMaker();
+		this.pageNode = pm.getPageNode("Web of Trust", null);
+		this.request = request;
+		
+		this.errorBox = null;
+		this.contentBoxes = new ArrayList<HTMLNode>();
+		
 		makeMenu();
 	}
-	
-	/**
-	 * Abstract method actual WebPages (subclasses) will have to implement.
-	 * That is where they do their job.
-	 */
-	public abstract void make();
 	
 	/**
 	 * Generates the HTML code that will be sent to the browser.
@@ -46,40 +54,62 @@ public abstract class WebPageImpl {
 	 * @return HTML code of the page.
 	 */
 	public String toHTML() {
+		
+		//FIXME Must have missed something stupid, the generated page is empty.
+		//Wil have a look at it later.
+		
+		// We add the ErrorBox if it exists
+		if(errorBox != null) {
+			pageNode.addChild(errorBox);
+			System.out.println("There is an errorBox");
+		}
+		
+		// We add every ContentBoxes
+		Iterator<HTMLNode> contentBox = contentBoxes.iterator();
+		while(contentBox.hasNext()) pageNode.addChild(contentBox.next());
+		
+		System.out.println("There are " + contentBoxes.size() + " contentBoxes");
+		
+		HTMLNode test = pm.getInfobox("infobox-alert", "Test");
+		test.addChild("#", "Test");
+		pageNode.addChild(test);
+		
+		// Generate the HTML output
 		return pageNode.generate();
+	}
+
+	/**
+	 * Adds an ErrorBox to the WebPage.
+	 * 
+	 * @param title The title of the desired ErrorBox
+	 * @param message The error message that will be displayed
+	 */
+	public void addErrorBox(String title, String message) {
+		
+		errorBox = pm.getInfobox("infobox-alert", "Error");
+		errorBox.addChild("#", message);
 	}
 	
 	/**
-	 * Creates a new infoBox in the WebPage and returns its {@link HTMLnode}.
+	 * Adds a new InfoBox to the WebPage.
 	 * 
 	 * @param title The title of the desired InfoBox
-	 * @return InfoBox' contentNode
+	 * @param content The content of the InfoBox
 	 */
-	public HTMLNode getInfoBox(String title) {
+	protected void addContentBox(String title, HTMLNode content) {
 		
 		HTMLNode box = pm.getInfobox(title);
-		
-		HTMLNode contentNode = pm.getContentNode(pageNode);
-		contentNode.addChild(box);
-
-		return pm.getContentNode(box);
-		
-	}
-	
-	/**
-	 * Returns a String containing the HTML code of the WebPage
-	 * 
-	 * @return HTML code of this page
-	 */
-	public String generateHTML() {
-		
-		return pageNode.generate();
+		box.addChild(content);
+		contentBoxes.add(box);
 	}
 	
 	/**
 	 * Creates the menu of the WebPage
 	 */
-	public void makeMenu() {
+	private void makeMenu() {
+		
+		// FIXME It seems that the PluginRespirator gives the same PageMaker at each request.
+		// That means we keep adding links each time a page is generated :(
 		pm.addNavigationLink(SELF_URI, "Home", "Home page", false, null);
 		pm.addNavigationLink(SELF_URI + "?ownidentities", "Own Identities", "Manage your own identities", false, null);
 		pm.addNavigationLink(SELF_URI + "?knownidentities", "Known Identities", "Manage others identities", false, null);
