@@ -5,51 +5,48 @@
  */
 package plugins.WoT.ui.web;
 
-import plugins.WoT.Config;
+import plugins.WoT.WoT;
 
-import com.db4o.ObjectContainer;
-
-import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
-import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class WebPage {
+public abstract class WebPageImpl {
 	
-	private PluginRespirator pr;
-	private PageMaker pm;
-	private HighLevelSimpleClient client;
-	private HTTPRequest request;
-	private ObjectContainer db;
-	private	Config config;
-	public static String SELF_URI = "/plugins/plugins.WoT.WoT";
-	
-	private HTMLNode pageNode;
+	protected static String SELF_URI = "/plugins/plugins.WoT.WoT";
+	protected PageMaker pm;
+	protected HTMLNode pageNode;
+	protected WoT wot;
 	
 	/**
-	 * Generates a WebPage of the plugin's interface.
+	 * Creates a new WebPage.
 	 * 
-	 * @param pr The {@link PluginRespirator} supplied by Freenet
-	 * @param db An {@link ObjectContainer} where plugin's datas are stored
-	 * @param cfg A {@link Config} object containing the plugin's configuration
-	 * @param client A {@link HighLevelSimpleClient} to perform requests to the node, if needed
-	 * @param uri
+	 * @param wot a reference to the WoT, used to get references to database, client, whatever is needed.
+	 * @param request the request from the user.
 	 */
-	public WebPage(PluginRespirator pr, ObjectContainer db, Config cfg, HighLevelSimpleClient client, HTTPRequest request) {
-		
-		this.pr = pr;
-		this.db = db;
-		this.config = cfg;
-		this.client = client;
-		this.request = request;
-		
-		pm = pr.getPageMaker();
+	public WebPageImpl(WoT wot, HTTPRequest request) {
+		this.wot = wot;
+		pm = wot.getPageMaker();
 		pageNode = pm.getPageNode("Web of Trust", null);
 		makeMenu();
+	}
+	
+	/**
+	 * Abstract method actual WebPages (subclasses) will have to implement.
+	 * That is where they do their job.
+	 */
+	public abstract void make();
+	
+	/**
+	 * Generates the HTML code that will be sent to the browser.
+	 * 
+	 * @return HTML code of the page.
+	 */
+	public String toHTML() {
+		return pageNode.generate();
 	}
 	
 	/**
@@ -80,10 +77,9 @@ public class WebPage {
 	}
 	
 	/**
-	 * Created the menu of the WebPage
+	 * Creates the menu of the WebPage
 	 */
 	public void makeMenu() {
-		
 		pm.addNavigationLink(SELF_URI, "Home", "Home page", false, null);
 		pm.addNavigationLink(SELF_URI + "?ownidentities", "Own Identities", "Manage your own identities", false, null);
 		pm.addNavigationLink(SELF_URI + "?knownidentities", "Known Identities", "Manage others identities", false, null);

@@ -9,30 +9,29 @@ import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.Score;
 import plugins.WoT.Trust;
+import plugins.WoT.WoT;
 
 import com.db4o.ObjectContainer;
 
 import freenet.support.HTMLNode;
+import freenet.support.api.HTTPRequest;
 
 /**
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 
-public class HomePage {
-
-	WebPage web;
+public class HomePage extends WebPageImpl {
 	
-	public HomePage(WebPage web) {
-		this.web = web;
+	public HomePage(WoT wot, HTTPRequest request) {
+		super(wot, request);
 	}
 	
-	public void make(ObjectContainer db) {
-		
-		getSummary(db);
+	public void make() {
+		makeSummary();
 	}
 	
-	public void getSummary(ObjectContainer db) {
-		
+	public void makeSummary() {
+		ObjectContainer db = wot.getDB();
 		
 		HTMLNode list = new HTMLNode("ul");
 		list.addChild(new HTMLNode("li", "Own Identities : " + OwnIdentity.getNbOwnIdentities(db)));
@@ -40,7 +39,7 @@ public class HomePage {
 		list.addChild(new HTMLNode("li", "Trust relationships : " + Trust.getNb(db)));
 		list.addChild(new HTMLNode("li", "Scores : " + Score.getNb(db)));
 		
-		web.getInfoBox("Summary").addChild(list);
+		getInfoBox("Summary").addChild(list);
 	}
 
 }
