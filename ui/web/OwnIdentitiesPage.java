@@ -31,8 +31,8 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		super(wot, request);
 	}
 	
-	/**
-	 * Makes the page content.
+	/* (non-Javadoc)
+	 * @see plugins.WoT.ui.web.WebPage#make()
 	 */
 	public void make() {
 		ObjectContainer db = wot.getDB();

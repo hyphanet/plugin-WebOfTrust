@@ -24,6 +24,7 @@ import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.ui.web.HomePage;
+import plugins.WoT.ui.web.KnownIdentitiesPage;
 import plugins.WoT.ui.web.OwnIdentitiesPage;
 import plugins.WoT.ui.web.WebPage;
 
@@ -164,10 +165,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		WebPage page;
 		
 		try {
-			if(request.isParameterSet("ownidentities")) 
-				page = new OwnIdentitiesPage(this, request);
-			else if(request.isParameterSet("knownidentities")) 
-				return web.makeKnownIdentitiesPage();
+			if(request.isParameterSet("ownidentities")) page = new OwnIdentitiesPage(this, request);
+			else if(request.isParameterSet("knownidentities")) page = new KnownIdentitiesPage(this, request);
 			else if(request.isParameterSet("configuration"))
 				return web.makeConfigurationPage();
 			else if(request.isParameterSet("getTrusters"))

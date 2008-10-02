@@ -19,8 +19,7 @@ public interface WebPage {
 	public void addErrorBox(String title, String message);
 	
 	/**
-	 * Actually generates the content of the page.
-	 * Each subclass knows what it has to do.
+	 * Actually generates the page's content.
 	 */
 	public void make();
 	

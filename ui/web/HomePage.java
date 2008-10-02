@@ -32,8 +32,8 @@ public class HomePage extends WebPageImpl {
 		super(wot, request);
 	}
 	
-	/**
-	 * Makes the page content.
+	/* (non-Javadoc)
+	 * @see plugins.WoT.ui.web.WebPage#make()
 	 */
 	public void make() {
 		makeSummary();
