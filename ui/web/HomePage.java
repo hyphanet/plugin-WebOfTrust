@@ -32,6 +32,7 @@ public class HomePage extends WebPageImpl {
 	
 	private void makeSummary() {
 		ObjectContainer db = wot.getDB();
+		HTMLNode box = getContentBox("Summary");
 		
 		HTMLNode list = new HTMLNode("ul");
 		list.addChild(new HTMLNode("li", "Own Identities : " + OwnIdentity.getNbOwnIdentities(db)));
@@ -39,7 +40,7 @@ public class HomePage extends WebPageImpl {
 		list.addChild(new HTMLNode("li", "Trust relationships : " + Trust.getNb(db)));
 		list.addChild(new HTMLNode("li", "Scores : " + Score.getNb(db)));
 		
-		addContentBox("Summary", list);
+		box.addChild(list);
 	}
 
 }

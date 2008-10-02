@@ -86,12 +86,12 @@ public abstract class WebPageImpl implements WebPage {
 	 * Adds a new InfoBox to the WebPage.
 	 * 
 	 * @param title The title of the desired InfoBox
-	 * @param content The content of the InfoBox
+	 * @return the contentNode of the newly created InfoBox
 	 */
-	protected void addContentBox(String title, HTMLNode content) {
+	protected HTMLNode getContentBox(String title) {
 		
 		HTMLNode box = pm.getInfobox(title);
-		box.addChild(content);
 		contentBoxes.add(box);
+		return pm.getContentNode(box);
 	}
 }
