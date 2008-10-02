@@ -22,14 +22,26 @@ import freenet.support.api.HTTPRequest;
 
 public class HomePage extends WebPageImpl {
 	
+	/**
+	 * Creates a new HomePage.
+	 * 
+	 * @param wot a reference to the WoT, used to get resources the page needs. 
+	 * @param request the request sent by the user.
+	 */
 	public HomePage(WoT wot, HTTPRequest request) {
 		super(wot, request);
 	}
 	
+	/**
+	 * Makes the page content.
+	 */
 	public void make() {
 		makeSummary();
 	}
 	
+	/**
+	 * Creates a short summary of what the plugin knows of the WoT.
+	 */
 	private void makeSummary() {
 		ObjectContainer db = wot.getDB();
 		HTMLNode box = getContentBox("Summary");
