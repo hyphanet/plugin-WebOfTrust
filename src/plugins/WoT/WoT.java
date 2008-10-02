@@ -24,6 +24,7 @@ import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.ui.web.HomePage;
+import plugins.WoT.ui.web.OwnIdentitiesPage;
 import plugins.WoT.ui.web.WebPage;
 
 import com.db4o.Db4o;
@@ -48,7 +49,6 @@ import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -165,7 +165,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		try {
 			if(request.isParameterSet("ownidentities")) 
-				return web.makeOwnIdentitiesPage();
+				page = new OwnIdentitiesPage(this, request);
 			else if(request.isParameterSet("knownidentities")) 
 				return web.makeKnownIdentitiesPage();
 			else if(request.isParameterSet("configuration"))
@@ -176,10 +176,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				return web.getTrusteesPage(request.getParam("id"));
 			else {
 				page = new HomePage(this, request);			
-				page.make();
-				page.addErrorBox("coucou", "test");
-				return page.toHTML();
 			}
+			page.make();
+			return page.toHTML();
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 			return e.getMessage();
@@ -234,6 +234,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			e.printStackTrace();
 			return e.getLocalizedMessage();
 		}
+	}
+	
+	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
+		return "Go to hell";
 	}
 	
 	private void deleteIdentity(String id) throws DuplicateIdentityException, UnknownIdentityException, DuplicateScoreException, DuplicateTrustException {
@@ -727,5 +731,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	public ObjectContainer getDB() {
 		return db;
+	}
+	
+	public PluginRespirator getPR() {
+		return pr;
 	}
 }
