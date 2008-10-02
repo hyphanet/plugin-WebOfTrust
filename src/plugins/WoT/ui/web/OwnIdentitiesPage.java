@@ -20,11 +20,20 @@ import freenet.support.api.HTTPRequest;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class OwnIdentitiesPage extends WebPageImpl {
-
+	
+	/**
+	 * Creates a new OwnIdentitiesPage.
+	 * 
+	 * @param wot a reference to the WoT, used to get resources the page needs. 
+	 * @param request the request sent by the user.
+	 */
 	public OwnIdentitiesPage(WoT wot, HTTPRequest request) {
 		super(wot, request);
 	}
 	
+	/**
+	 * Makes the page content.
+	 */
 	public void make() {
 		ObjectContainer db = wot.getDB();
 		PluginRespirator pr = wot.getPR();
@@ -32,6 +41,12 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		makeRestoreOwnIdentityForm(pr);
 	}
 	
+	/**
+	 * Makes the list of known identities.
+	 * 
+	 * @param db a reference to the database.
+	 * @param pr a reference to the {@link PluginRespirator}
+	 */
 	private void makeOwnIdentitiesList(ObjectContainer db, PluginRespirator pr) {
 
 		HTMLNode boxContent = getContentBox("Summary");
@@ -88,6 +103,11 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "create", "Create a new identity !" });
 	}
 
+	/**
+	 * Makes the form used to restore an OwnIdentity from Freenet.
+	 * 
+	 * @param pr a reference to the {@link PluginRespirator}
+	 */
 	private void makeRestoreOwnIdentityForm(PluginRespirator pr) {
 		HTMLNode restoreBoxContent = getContentBox("Restore an identity from Freenet");
 		restoreBoxContent.addChild("p", "Use this if you lost your database for some reason (crash, reinstall...) but still have your identity's keys :");
