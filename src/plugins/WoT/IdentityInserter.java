@@ -39,10 +39,13 @@ import freenet.support.io.TempBucketFactory;
  */
 public class IdentityInserter implements Runnable {
 	
+        /** A reference to the database */
 	ObjectContainer db;
+        /** A reference the HighLevelSimpleClient used to perform inserts */
 	HighLevelSimpleClient client;
+        /** The TempBucketFactory used to create buckets from Identities before insert */
 	final TempBucketFactory tBF;
-	
+	/** Used to tell the InserterThread if it should stop */
 	boolean isRunning;
 	
 	/**

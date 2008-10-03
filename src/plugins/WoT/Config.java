@@ -16,9 +16,13 @@ import java.util.Set;
  */
 public class Config {
 
+        /**
+         * The HashMap that contains all cofiguration parameters
+         */
 	private HashMap<String, String> params = null;
 	
 	/**
+         * Creates a new Config object.
 	 * 
 	 * @param db The database where the configuration is stored.
 	 */
@@ -33,8 +37,8 @@ public class Config {
 	/**
 	 * Sets a configuration parameter and stores it in the database.
 	 *  
-	 * @param key
-	 * @param value
+	 * @param key Name of the config parameter.
+	 * @param value Value of the config parameter.
 	 */
 	public synchronized void set(String key, String value) {
 		params.put(key, value);
@@ -51,6 +55,8 @@ public class Config {
 	}
 	
 	/**
+         * Check wheter a config parameter exists.
+         * 
 	 * @param key name of the configuration parameter
 	 * @return whether it exists or not
 	 */

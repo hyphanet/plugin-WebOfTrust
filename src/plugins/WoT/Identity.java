@@ -28,13 +28,21 @@ import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
 /**
- * An identity as handled by the WoT (a USK)
+ * An identity as handled by the WoT (a USK). 
+ * <p>
+ * It has a nickName and as many custom properties as needed (set by the user).
  * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
+ * @param id A unique identifier used to query an Identity from the database
+ * @param requestURI The requestURI used to fetch this identity from Freenet
+ * @param nickName The nickname of an Identity
+ * @param publishTrustList Whether an identity publishes its trust list or not
+ * @param props A HashMap containing all custom properties o an Identity
+ * @param contexts An ArrayList containing contexts (eg. client apps) an Identity is used for
  */
 public class Identity {
 	
-	// Capacity is the maximum amount of points an identity can give to an other by trusting it.
+	/** Capacity is the maximum amount of points an identity can give to an other by trusting it. */
 	public final static int capacities[] = {
 			100,// Rank 0 : Own identities
 			40,	// Rank 1 : Identities directly trusted by ownIdenties
@@ -44,14 +52,22 @@ public class Identity {
 			1	// Every identity above rank 5 can give 1 point
 	};			// Identities with negative score have zero capacity
 
+        /** 
+         * A unique identifier used to query this Identity from the database.
+         * In fact, it is simply a String representing its routing key.
+         */
 	private String id;
-
+        /** The requestURI used to fetch this identity from Freenet */
 	private FreenetURI requestURI;
-	
+	/** Date of this identity's last modification (last time we fetched it from Freenet) */
 	private Date lastChange;
+        /** The nickname of this Identity */
 	private String nickName;
+        /** Whether this Identity publishes its trust list or not */
 	private boolean publishTrustList;
+        /** A list of this Identity's custom properties */
 	private HashMap<String, String> props;
+        /** A list of contexts (eg. client apps) this Identity is used for */
 	private ArrayList<String> contexts;
 
 	/**
@@ -60,7 +76,7 @@ public class Identity {
 	 * @param requestURI A {@link FreenetURI} to fetch this Identity 
 	 * @param nickName The nickname of this identity
 	 * @param publishTrustList Whether this identity publishes its trustList or not
-	 * @throws InvalidParameterException if a parameter is invalid
+	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 */
 	public Identity (FreenetURI requestURI, String nickName, String publishTrustList) throws InvalidParameterException {
 		
@@ -80,7 +96,7 @@ public class Identity {
 	 * @param requestURI A String that will be converted to {@link FreenetURI} before creating the identity
 	 * @param nickName The nickname of this identity
 	 * @param publishTrustList Whether this identity publishes its trustList or not
-	 * @throws InvalidParameterException if a parameter is invalid
+	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 * @throws MalformedURLException if the supplied requestURI isn't a valid FreenetURI
 	 */
 	public Identity (String requestURI, String nickName, String publishTrustList) throws InvalidParameterException, MalformedURLException {
