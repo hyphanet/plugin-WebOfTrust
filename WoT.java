@@ -87,6 +87,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		cfg.objectClass(Trust.class).objectField("trustee").indexed(true);
 		cfg.objectClass(Score.class).objectField("treeOwner").indexed(true);
 		cfg.objectClass(Score.class).objectField("target").indexed(true);
+		/*
+		 * This will make db4o store any complex objects which are referenced by a Config object.
+		 */
+		cfg.objectClass(Config.class).cascadeOnUpdate(true);
 		db = Db4o.openFile(cfg, "WoT.db4o");
 		
 		client = pr.getHLSimpleClient();
