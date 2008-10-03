@@ -31,8 +31,11 @@ import freenet.support.Logger;
  */
 public class IdentityFetcher implements ClientCallback {
 
+        /** A reference to the database */
 	private ObjectContainer db;
+        /** A refeerence to the HighLevelSimpleClient used to talk with the node */
 	private HighLevelSimpleClient client;
+        /** A list of all current requests */
 	private ArrayList<ClientGetter> requests;
 	
 	/**

@@ -34,7 +34,7 @@ import freenet.support.Logger;
  *
  */
 public class IdentityParser {
-	
+
 	ObjectContainer db;
 	HighLevelSimpleClient client;
 	IdentityFetcher fetcher;

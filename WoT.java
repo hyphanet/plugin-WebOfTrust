@@ -712,12 +712,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public String getString(String key) {
-		// TODO Auto-generated method stub
 		return key;
 	}
 
 	public void setLanguage(LANGUAGE newLanguage) {
-		// TODO Auto-generated method stub
 	}
 	
 	public PageMaker getPageMaker() {
