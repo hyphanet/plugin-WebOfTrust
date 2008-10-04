@@ -17,6 +17,8 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
+ * The page where users can manage their own identities.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class OwnIdentitiesPage extends WebPageImpl {

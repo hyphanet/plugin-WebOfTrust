@@ -17,6 +17,8 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
+ * The HomePage of the plugin.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 
