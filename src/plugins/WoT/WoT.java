@@ -737,4 +737,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public PluginRespirator getPR() {
 		return pr;
 	}
+	
+	public HighLevelSimpleClient getClient() {
+		return client;
+	}
 }
