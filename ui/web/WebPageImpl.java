@@ -15,17 +15,26 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
+ * Basic implementation of the WebPage interface.<p>
+ * It contains common features for every WebPages.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public abstract class WebPageImpl implements WebPage {
 	
+        /** The URI the plugin can be accessed from. */
 	protected static String SELF_URI = "/plugins/plugins.WoT.WoT";
+        /** The node's pagemaker */
 	protected PageMaker pm;
+        /** HTMLNode representing the web page */
 	protected HTMLNode pageNode;
+        /** A reference to the WoT */
 	protected WoT wot;
+        /** The request performed by the user */
 	protected HTTPRequest request;
-	
+	/** The error box displayed at the top of the page */
 	protected HTMLNode errorBox;
+        /** List of all content boxes */
 	protected ArrayList<HTMLNode> contentBoxes;
 	
 	/**

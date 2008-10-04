@@ -23,6 +23,8 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
+ * The page where users can manage others identities.
+ * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class KnownIdentitiesPage extends WebPageImpl {
@@ -48,7 +50,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	}
 	
 	/**
-	 * Makes a form used to add an Identity the user knows the requestURI.
+	 * Makes a form where the user can enter the requestURI of an Identity he knows.
 	 * 
 	 * @param pr a reference to the {@link PluginRespirator}
 	 */
