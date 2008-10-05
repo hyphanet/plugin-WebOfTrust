@@ -27,6 +27,10 @@ import plugins.WoT.ui.web.HomePage;
 import plugins.WoT.ui.web.KnownIdentitiesPage;
 import plugins.WoT.ui.web.OwnIdentitiesPage;
 import plugins.WoT.ui.web.WebPage;
+import plugins.WoT.ui.web.ConfigurationPage;
+import plugins.WoT.ui.web.TrustersPage;
+import plugins.WoT.ui.web.TrusteesPage;
+import plugins.WoT.ui.web.CreateIdentityPage;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -162,21 +166,15 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		fetcher.stop(); // Do this after cleanly closing the database, as it sometimes locks
 	}
 
-	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
-		
-		// TODO Refactor this, using one class per page, in plugins.WoT.ui.web
-		
+	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
 		WebPage page;
 		
 		try {
 			if(request.isParameterSet("ownidentities")) page = new OwnIdentitiesPage(this, request);
 			else if(request.isParameterSet("knownidentities")) page = new KnownIdentitiesPage(this, request);
-			else if(request.isParameterSet("configuration"))
-				return web.makeConfigurationPage();
-			else if(request.isParameterSet("getTrusters"))
-				return web.getTrustersPage(request.getParam("id"));
-			else if(request.isParameterSet("getTrustees"))
-				return web.getTrusteesPage(request.getParam("id"));
+			else if(request.isParameterSet("configuration")) page = new ConfigurationPage(this, request);
+			else if(request.isParameterSet("getTrusters")) page = new TrustersPage(this, request);
+			else if(request.isParameterSet("getTrustees")) page = new TrusteesPage(this, request); 
 			else {
 				page = new HomePage(this, request);			
 			}
@@ -190,27 +188,27 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
+		WebPage page;
 		
-		// TODO Refactor this, using one class per page, in plugins.WoT.ui.web
 		String pass = request.getPartAsString("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword)) {
 			return "Buh! Invalid form password";
 		}
 		
+		// TODO: finish refactoring to "page = new ..."
+		
 		try {
-			if(request.getPartAsString("page",50).equals("createIdentity")) {
-				return web.makeCreateIdentityPage(request);
-			}
+			if(request.getPartAsString("page",50).equals("createIdentity")) page = new CreateIdentityPage(this, request);
 			else if(request.getPartAsString("page",50).equals("createIdentity2")) {
 				createIdentity(request);
-				return web.makeOwnIdentitiesPage();
+				page = new OwnIdentitiesPage(this, request);
 			}
 			else if(request.getPartAsString("page",50).equals("addIdentity")) {
 				addIdentity(request);
-				return web.makeKnownIdentitiesPage();
+				page = new KnownIdentitiesPage(this, request);
 			}
 			else if(request.getPartAsString("page",50).equals("viewTree")) {
-				return web.makeKnownIdentitiesPage(request);
+				page = new KnownIdentitiesPage(this, request);
 			}
 			else if(request.getPartAsString("page",50).equals("setTrust")) {
 				setTrust(request);
@@ -221,18 +219,21 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			}
 			else if(request.getPartAsString("page",50).equals("restoreIdentity")) {
 				restoreIdentity(request.getPartAsString("requestURI", 1024), request.getPartAsString("insertURI", 1024));
-				return web.makeOwnIdentitiesPage();
+				page = new OwnIdentitiesPage(this, request);
 			}
 			else if(request.getPartAsString("page",50).equals("deleteIdentity")) {
 				return web.makeDeleteIdentityPage(request.getPartAsString("id", 1024));
 			}			
 			else if(request.getPartAsString("page",50).equals("deleteIdentity2")) {
 				deleteIdentity(request.getPartAsString("id", 1024));
-				return web.makeOwnIdentitiesPage();
+				page = new OwnIdentitiesPage(this, request);
 			}			
 			else {
-				return web.makeHomePage();
+				page = new HomePage(this, request);
 			}
+			
+			page.make();
+			return page.toHTML();
 		} catch (Exception e) {
 			e.printStackTrace();
 			return e.getLocalizedMessage();
