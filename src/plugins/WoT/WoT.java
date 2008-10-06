@@ -73,7 +73,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private IdentityInserter inserter;
 	private IdentityFetcher fetcher;
 	private String seedURI = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/1";
-	private Identity seed;
+	private Identity seed = null;
 	private Config config;
 
 	public static String SELF_URI = "/plugins/plugins.WoT.WoT";
@@ -82,60 +82,15 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 		Logger.debug(this, "Start");
 
-		// Init
+		this.db = initDB();
 		this.pr = pr;
-		Configuration cfg = Db4o.newConfiguration();
-		cfg.objectClass(Identity.class).objectField("id").indexed(true);
-		cfg.objectClass(OwnIdentity.class).objectField("id").indexed(true);
-		cfg.objectClass(Trust.class).objectField("truster").indexed(true);
-		cfg.objectClass(Trust.class).objectField("trustee").indexed(true);
-		cfg.objectClass(Score.class).objectField("treeOwner").indexed(true);
-		cfg.objectClass(Score.class).objectField("target").indexed(true);
-		/*
-		 * This will make db4o store any complex objects which are referenced by a Config object.
-		 */
-		cfg.objectClass(Config.class).cascadeOnUpdate(true);
-		db = Db4o.openFile(cfg, "WoT.db4o");
-		
 		client = pr.getHLSimpleClient();
-		
-		try {
-			ObjectSet<Config> result = db.queryByExample(Config.class);
-			if(result.size() == 0) {
-				Logger.debug(this, "Created new config");
-				config = new Config();
-				db.store(config);
-			}
-			else {
-				Logger.debug(this, "Loaded config");
-				config = result.next();
-				config.initDefault(false);
-			}
-		}
-		catch(Exception e) {
-			Logger.error(this, e.getMessage(), e);
-		}
-		
+		config = initConfig();
+		seed = getSeedIdentity();
+
+		// Should disappear soon.
 		web = new WebInterface(pr, db, config, client, SELF_URI);
-		
-		
-		// Create the seed Identity if it doesn't exist
-		try {
-			seed = Identity.getByURI(db, seedURI);
-		} catch (UnknownIdentityException e) {
-			try {
-				seed = new Identity(seedURI, "Fetching seed identity...", "true");
-			} catch (Exception e1) {
-				Logger.error(this, "Seed identity creation error", e);
-				return;
-			}
-			db.store(seed);
-			db.commit();
-		} catch (Exception e) {
-			Logger.error(this, "Seed identity loading error", e);
-			return;
-		}
-		
+
 		// Create a default OwnIdentity if none exists. Should speed up plugin usability for newbies
 		if(OwnIdentity.getNbOwnIdentities(db) == 0) {
 			try {
@@ -712,6 +667,68 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public void setLanguage(LANGUAGE newLanguage) {
+	}
+	
+	/**
+	 * Initializes the connection to DB4O.
+	 * 
+	 * @return db4o's connector
+	 */
+	private ObjectContainer initDB() {
+		
+		// Set indexes on fields we query on
+		Configuration cfg = Db4o.newConfiguration();
+		cfg.objectClass(Identity.class).objectField("id").indexed(true);
+		cfg.objectClass(OwnIdentity.class).objectField("id").indexed(true);
+		cfg.objectClass(Trust.class).objectField("truster").indexed(true);
+		cfg.objectClass(Trust.class).objectField("trustee").indexed(true);
+		cfg.objectClass(Score.class).objectField("treeOwner").indexed(true);
+		cfg.objectClass(Score.class).objectField("target").indexed(true);
+		
+		// This will make db4o store any complex objects which are referenced by a Config object.
+		cfg.objectClass(Config.class).cascadeOnUpdate(true);
+		return Db4o.openFile(cfg, "WoT.db4o");
+	}
+	
+	/**
+	 * Loads the config of the plugin, or creates it with default values if it doesn't exist.
+	 * 
+	 * @return config of the plugin
+	 */
+	private Config initConfig() {
+		ObjectSet<Config> result = db.queryByExample(Config.class);
+		if(result.size() == 0) {
+			Logger.debug(this, "Created new config");
+			config = new Config();
+			db.store(config);
+		}
+		else {
+			Logger.debug(this, "Loaded config");
+			config = result.next();
+			config.initDefault(false);
+		}
+		return config;
+	}
+	
+	public Identity getSeedIdentity() {
+		if(seed == null) { // The seed identity hasn't been initialized yet
+			try { // Try to load it from database
+				seed = Identity.getByURI(db, seedURI);
+			} catch (UnknownIdentityException e) { // Create it.
+				try {
+					seed = new Identity(seedURI, "Fetching seed identity...", "true");
+				} catch (Exception e1) { // Should never happen
+					Logger.error(this, "Seed identity creation error", e);
+					return null;
+				}
+				db.store(seed);
+				db.commit();
+			} catch (Exception e) { // Should never happen
+				Logger.error(this, "Seed identity loading error", e);
+				return null;
+			}
+		}
+		return seed;
 	}
 	
 	public PageMaker getPageMaker() {
