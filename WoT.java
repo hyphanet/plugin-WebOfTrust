@@ -172,8 +172,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		if(request.isParameterSet("ownidentities")) page = new OwnIdentitiesPage(this, request);
 		else if(request.isParameterSet("knownidentities")) page = new KnownIdentitiesPage(this, request);
 		else if(request.isParameterSet("configuration")) page = new ConfigurationPage(this, request);
-		else if(request.isParameterSet("getTrusters")) page = new TrustersPage(this, request);
+		// TODO Handle these two in KnownIdentitiesPage
+		else if(request.isParameterSet("getTrusters")) page = new TrustersPage(this, request); 
 		else if(request.isParameterSet("getTrustees")) page = new TrusteesPage(this, request); 
+		
 		else page = new HomePage(this, request);
 		
 		page.make();	
