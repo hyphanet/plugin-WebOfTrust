@@ -169,22 +169,15 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
 		WebPage page;
 		
-		try {
-			if(request.isParameterSet("ownidentities")) page = new OwnIdentitiesPage(this, request);
-			else if(request.isParameterSet("knownidentities")) page = new KnownIdentitiesPage(this, request);
-			else if(request.isParameterSet("configuration")) page = new ConfigurationPage(this, request);
-			else if(request.isParameterSet("getTrusters")) page = new TrustersPage(this, request);
-			else if(request.isParameterSet("getTrustees")) page = new TrusteesPage(this, request); 
-			else {
-				page = new HomePage(this, request);			
-			}
-			page.make();
-			return page.toHTML();
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-			return e.getMessage();
-		}
+		if(request.isParameterSet("ownidentities")) page = new OwnIdentitiesPage(this, request);
+		else if(request.isParameterSet("knownidentities")) page = new KnownIdentitiesPage(this, request);
+		else if(request.isParameterSet("configuration")) page = new ConfigurationPage(this, request);
+		else if(request.isParameterSet("getTrusters")) page = new TrustersPage(this, request);
+		else if(request.isParameterSet("getTrustees")) page = new TrusteesPage(this, request); 
+		else page = new HomePage(this, request);
+		
+		page.make();	
+		return page.toHTML();
 	}
 
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
