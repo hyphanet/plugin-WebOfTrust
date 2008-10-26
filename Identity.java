@@ -25,6 +25,8 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.pluginmanager.PluginRespirator;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
 /**
@@ -259,6 +261,31 @@ public class Identity {
 		if(result.size() == 0) throw new NotTrustedException(truster.getNickName() + " does not trust " + this.getNickName());
 		else if(result.size() > 1) throw new DuplicateTrustException("Trust from " + truster.getNickName() + "to " + this.getNickName() + " exists " + result.size() + " times in the database");
 		else return result.next();
+	}
+	
+	public HTMLNode getReceivedTrustForm (ObjectContainer db, PluginRespirator pr, String SELF_URI, Identity truster) throws DuplicateTrustException {
+
+		String trustValue = "";
+		String trustComment = "";
+		Trust trust;
+		
+		try {
+			trust = getReceivedTrust(truster, db);
+			trustValue = String.valueOf(trust.getValue());
+			trustComment = trust.getComment();
+		}
+		catch (NotTrustedException e) {} 
+			
+		HTMLNode cell = new HTMLNode("td");
+		HTMLNode trustForm = pr.addFormChild(cell, SELF_URI, "setTrust");
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "setTrust" });
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "truster", truster.getRequestURI().toString() });
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "trustee", requestURI.toString() });
+		trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "value", "2", trustValue });
+		trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "comment", "20", trustComment });
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", "Update !" });
+
+		return cell;
 	}
 
 	/**
@@ -661,6 +688,15 @@ public class Identity {
 	 */
 	public Date getLastChange() {
 		return lastChange;
+	}
+	
+	/**
+	 * @return A string representing the date of this Identity's last 
+	 * modification. Or "Fetching..." if it has not been fetched yet.
+	 */
+	public String getReadableLastChange() {
+		if (lastChange.equals(new Date(0))) return "Fetching...";
+		else return lastChange.toString();
 	}
 
 	/**

@@ -5,24 +5,22 @@
  */
 package plugins.WoT.ui.web;
 
-import java.util.Date;
-
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
-import plugins.WoT.Trust;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.DuplicateTrustException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
-import plugins.WoT.exceptions.NotTrustedException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
+import freenet.support.Logger;
 
-/**
+
+	/**
  * The page where users can manage others identities.
  * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
@@ -43,10 +41,39 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * @see plugins.WoT.ui.web.WebPage#make()
 	 */
 	public void make() {
+		OwnIdentity treeOwner = null;
 		ObjectContainer db = wot.getDB();
 		PluginRespirator pr = wot.getPR();
+		
 		makeAddIdentityForm(pr);
-		makeKnownIdentitiesList(request.getPartAsString("ownerURI", 1024), db, pr);
+
+		if(request.isParameterSet("knownidentities")) {
+			int nbOwnIdentities = OwnIdentity.getNbOwnIdentities(db);
+
+			if (nbOwnIdentities == 0)
+				makeNoOwnIdentityWarning();
+			else if (nbOwnIdentities == 1)
+				treeOwner = OwnIdentity.getAllOwnIdentities(db).next();
+			else
+				makeSelectTreeOwnerForm(db, pr);
+		}
+		else if(!request.getPartAsString("ownerId", 1024).equals("")) {
+			try {
+				treeOwner = OwnIdentity.getById(db, request.getPartAsString("ownerId", 1024));
+			} catch (Exception e) {
+				Logger.error(this, "Error while selecting the OwnIdentity", e);
+				addErrorBox("Error while selecting the OwnIdentity", e.getLocalizedMessage());
+			}
+		}
+		
+		if(treeOwner != null) {
+			try {
+				makeKnownIdentitiesList(treeOwner, db, pr);
+			} catch (Exception e) {
+				Logger.error(this, e.getMessage());
+				addErrorBox("Error : " + e.getClass(), e.getMessage());
+			}
+		}
 	}
 	
 	/**
@@ -55,6 +82,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * @param pr a reference to the {@link PluginRespirator}
 	 */
 	private void makeAddIdentityForm(PluginRespirator pr) {
+		
+		// TODO Add trust value and comment fields and make them mandatory
+		// The user should only add an identity he trusts
 		HTMLNode addBoxContent = getContentBox("Add an identity");
 	
 		HTMLNode createForm = pr.addFormChild(addBoxContent, SELF_URI, "addIdentity");
@@ -64,57 +94,34 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", "Add this identity !" });	
 	}
 
-	/**
+	private void makeNoOwnIdentityWarning() {
+		addErrorBox("No own identity found", "You should create an identity first...");
+	}
+	
+	private void makeSelectTreeOwnerForm(ObjectContainer db, PluginRespirator pr) {
+
+		HTMLNode listBoxContent = getContentBox("OwnIdentity selection");
+		HTMLNode selectForm = pr.addFormChild(listBoxContent, SELF_URI, "viewTree");
+		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "viewTree" });
+		HTMLNode selectBox = selectForm.addChild("select", "name", "ownerId");
+
+		ObjectSet<OwnIdentity> ownIdentities = OwnIdentity.getAllOwnIdentities(db);
+		while(ownIdentities.hasNext()) {
+			OwnIdentity ownIdentity = ownIdentities.next();
+			selectBox.addChild("option", "value", ownIdentity.getId(), ownIdentity.getNickName());				
+		}
+		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "select", "View this identity's Web of Trust" });
+	}
+/**
 	 * Makes the list of Identities known by the tree owner.
 	 * 
 	 * @param db a reference to the database 
 	 * @param pr a reference to the {@link PluginRespirator}
 	 * @param treeOwner owner of the trust tree we want to display 
 	 */
-	private void makeKnownIdentitiesList(String owner, ObjectContainer db, PluginRespirator pr) {
-		int nbOwnIdentities = OwnIdentity.getNbOwnIdentities(db);
-		OwnIdentity treeOwner;
+	private void makeKnownIdentitiesList(OwnIdentity treeOwner, ObjectContainer db, PluginRespirator pr) throws DuplicateScoreException, DuplicateTrustException {
 
 		HTMLNode listBoxContent = getContentBox("Known Identities");
-		
-		if (nbOwnIdentities == 0) {
-			listBoxContent.addChild("p", "You should create an identity first...");
-			return;
-		}
-		else if (nbOwnIdentities == 1) {
-			treeOwner = OwnIdentity.getAllOwnIdentities(db).next();
-		}
-		else {
-			// Get the identity the user asked for, or the first one if he didn't
-			if(owner.equals("")) {
-				treeOwner = OwnIdentity.getAllOwnIdentities(db).next();
-			}
-			else {
-				try {
-					treeOwner = OwnIdentity.getByURI(db, owner);
-				} catch (Exception e) {
-					addErrorBox("Error", e.getMessage());
-					return;
-				} 
-			}
-			
-			// Display a form to select the tree owner 
-			HTMLNode selectForm = pr.addFormChild(listBoxContent, SELF_URI, "viewTree");
-			selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "viewTree" });
-			HTMLNode selectBox = selectForm.addChild("select", "name", "ownerURI");
-			
-			ObjectSet<OwnIdentity> ownIdentities = OwnIdentity.getAllOwnIdentities(db);
-			while(ownIdentities.hasNext()) {
-				OwnIdentity ownIdentity = ownIdentities.next();
-				if(ownIdentity == treeOwner) {
-					selectBox.addChild("option", new String [] {"value", "selected"}, new String [] {ownIdentity.getRequestURI().toString(), "selected"}, ownIdentity.getNickName());
-				}
-				else {
-					selectBox.addChild("option", "value", ownIdentity.getRequestURI().toString(), ownIdentity.getNickName());				
-				}
-			}
-			selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "select", "View this identity's Web of Trust" });
-		}
 
 		// Display the list of known identities
 		HTMLNode identitiesTable = listBoxContent.addChild("table", "border", "0");
@@ -139,8 +146,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"}, id.getNickName());
 			
 			// Last Change
-			if (id.getLastChange().equals(new Date(0))) row.addChild("td", "Fetching...");
-			else row.addChild("td", id.getLastChange().toString());
+			row.addChild("td", id.getReadableLastChange());
 			
 			// Publish TrustList
 			row.addChild("td", new String[] { "align" }, new String[] { "center" } , id.doesPublishTrustList() ? "Yes" : "No");
@@ -153,41 +159,16 @@ public class KnownIdentitiesPage extends WebPageImpl {
 				// This only happen with identities added manually by the user
 				// TODO Maybe we should give the opportunity to trust it at creation time
 				row.addChild("td", "null");	
-			} catch (DuplicateScoreException e) {
-				addErrorBox("Error", e.getMessage());
-				return;
 			}
 			
-			// Trust
-			String trustValue = "";
-			String trustComment = "";
+			// Own Trust
+			row.addChild(id.getReceivedTrustForm(db, pr, SELF_URI, id));
 			
-			Trust trust;
-			try {
-				trust = treeOwner.getGivenTrust(id, db);
-				trustValue = String.valueOf(trust.getValue());
-				trustComment = trust.getComment();
-			} 
-			catch (DuplicateTrustException e) {
-				addErrorBox("Error", e.getMessage());
-				return;
-			}
-			catch (NotTrustedException e) {} 
-			
-			HTMLNode cell = row.addChild("td");
-			HTMLNode trustForm = pr.addFormChild(cell, SELF_URI, "setTrust");
-			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "setTrust" });
-			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "truster", treeOwner.getRequestURI().toString() });
-			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "trustee", id.getRequestURI().toString() });
-			trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "value", "2", trustValue });
-			trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "comment", "20", trustComment });
-			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", "Update !" });
-			
-			// Trusters
+			// Nb Trusters
 			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 			trustersCell.addChild(new HTMLNode("a", "href", SELF_URI + "?getTrusters&id="+id.getId(), Long.toString(id.getNbReceivedTrusts(db))));
 			
-			//Trustees
+			// Nb Trustees
 			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 			trusteesCell.addChild(new HTMLNode("a", "href", SELF_URI + "?getTrustees&id="+id.getId(), Long.toString(id.getNbGivenTrusts(db))));
 		}
