@@ -731,6 +731,16 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return seed;
 	}
 	
+	public ObjectSet<OwnIdentity> getAllOwnIdentities() {
+		// FIXME: Implement this, needed by FMS.
+		throw new UnsupportedOperationException();
+	}
+	
+	public ObjectSet<Identity> getAllIdentities() {
+		// FIXME: Implement this, needed by FMS.
+		throw new UnsupportedOperationException();
+	}
+	
 	public PageMaker getPageMaker() {
 		if(pm == null) {
 			pm = pr.getPageMaker();
