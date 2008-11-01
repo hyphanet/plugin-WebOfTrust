@@ -39,6 +39,8 @@ import freenet.support.io.TempBucketFactory;
  */
 public class IdentityInserter implements Runnable {
 	
+	private static final int THREAD_PERIOD = 30 * 60 * 1000;
+	
         /** A reference to the database */
 	ObjectContainer db;
         /** A reference the HighLevelSimpleClient used to perform inserts */
@@ -63,12 +65,12 @@ public class IdentityInserter implements Runnable {
 	}
 	
 	/**
-	 * Starts the IdentityInserter thread. Every 30 minutes,
+	 * Starts the IdentityInserter thread. About every 30 minutes (+/- 50%),
 	 * it exports to XML and inserts OwnIdentities that need it.
 	 */
 	public void run() {
 		try{
-			Thread.sleep(30 * 1000); // Let the node start up (30 seconds)
+			Thread.sleep((long) (3*60*1000 * (0.5f + Math.random()))); // Let the node start up
 		} catch (InterruptedException e){}
 		while(isRunning) {
 			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
@@ -88,7 +90,7 @@ public class IdentityInserter implements Runnable {
 			}
 			db.commit();
 			try{
-				Thread.sleep(30 * 60 * 1000); // 30 minutes
+				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
 			} catch (InterruptedException e){}
 		}
 	}
