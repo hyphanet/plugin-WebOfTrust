@@ -41,11 +41,11 @@ public class IdentityInserter implements Runnable {
 	
 	private static final int THREAD_PERIOD = 30 * 60 * 1000;
 	
-        /** A reference to the database */
+	/** A reference to the database */
 	ObjectContainer db;
-        /** A reference the HighLevelSimpleClient used to perform inserts */
+	/** A reference the HighLevelSimpleClient used to perform inserts */
 	HighLevelSimpleClient client;
-        /** The TempBucketFactory used to create buckets from Identities before insert */
+	/** The TempBucketFactory used to create buckets from Identities before insert */
 	final TempBucketFactory tBF;
 	/** Used to tell the InserterThread if it should stop */
 	boolean isRunning;
