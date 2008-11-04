@@ -18,14 +18,13 @@ public class ConfigurationPage extends WebPageImpl {
 	 */
 	public ConfigurationPage(WoT wot, HTTPRequest request) {
 		super(wot, request);
-		// TODO Auto-generated constructor stub
 	}
 
 	/* (non-Javadoc)
 	 * @see plugins.WoT.ui.web.WebPage#make()
 	 */
 	public void make() {
-		// TODO Auto-generated method stub
+		// TODO Generate the configuration page
 
 	}
 
