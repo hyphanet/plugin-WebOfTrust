@@ -136,7 +136,8 @@ public class IdentityFetcher implements ClientCallback {
 	// Only called by inserts
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
 
-	/* TODO: comment this function: who calls it and when? */
+	/** Called when freenet.async thinks that the request should be serialized to
+	 * disk, if it is a persistent request. */
 	public void onMajorProgress() {}
 
 	/**
