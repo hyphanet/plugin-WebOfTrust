@@ -531,6 +531,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return sfs;
 	}
 	
+	// TODO refactor this in order to make it available not only from FCP
 	private SimpleFieldSet handleGetIdentitiesByScore(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
 		SimpleFieldSet sfs = new SimpleFieldSet(false);
