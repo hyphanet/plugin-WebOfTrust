@@ -72,19 +72,17 @@ public class Score {
 	 * Gets Identities matching a specified score criteria.
 	 * 
 	 * @param db A reference to the database
-	 * @param owner requestURI of the owner of the trust tree
+	 * @param owner requestURI of the owner of the trust tree, null if you want the trusted identities of all owners.
 	 * @param select Score criteria, can be '+', '0' or '-'
 	 * @return an {@link ObjectSet} containing Identities that match the criteria
 	 * @throws InvalidParameterException if the criteria is not recognised
 	 */
 	@SuppressWarnings("unchecked")
-	public static ObjectSet<Score> getIdentitiesByScore (ObjectContainer db, OwnIdentity treeOwner, int select) throws InvalidParameterException {
-		if(treeOwner == null)
-			throw new IllegalArgumentException();
-		
+	public static ObjectSet<Score> getIdentitiesByScore (ObjectContainer db, OwnIdentity treeOwner, int select) throws InvalidParameterException {		
 		Query query = db.query();
 		query.constrain(Score.class);
-		query.descend("treeOwner").constrain(treeOwner);
+		if(treeOwner != null)
+			query.descend("treeOwner").constrain(treeOwner);
 	
 		// TODO: we should decide whether identities with score 0 should be returned if select>0
 		
