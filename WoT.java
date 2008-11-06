@@ -9,7 +9,10 @@ package plugins.WoT;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -531,7 +534,25 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return sfs;
 	}
 	
-	// TODO refactor this in order to make it available not only from FCP
+	// TODO: javadoc
+	public List<Identity> getIdentitiesByScore(OwnIdentity treeOwner, int select, String context) throws InvalidParameterException
+	{
+		ObjectSet<Score> result = Score.getIdentitiesByScore(db, treeOwner, select);
+		// TODO: decide whether the tradeoff of using too much memory for the ArrayList is worth the speedup of not having a linked
+		// list which allocates lots of pieces of memory for its nodes.
+		ArrayList<Identity> identities = new ArrayList<Identity>(result.size()); 
+		boolean getAll = context.equals("all");
+		
+		while(result.hasNext()) {
+			Identity identity = result.next().getTarget();
+			// TODO: Maybe there is a way to do this through SODA
+			if(getAll || identity.hasContext(context))
+				identities.add(identity);
+		}
+		
+		return identities;
+	}
+
 	private SimpleFieldSet handleGetIdentitiesByScore(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
 		SimpleFieldSet sfs = new SimpleFieldSet(false);
@@ -539,12 +560,25 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		if(params.get("TreeOwner") == null || params.get("Select") == null || params.get("Context") == null) throw new InvalidParameterException("Missing mandatory parameter");
 
 		sfs.putAppend("Message", "Identities");
+		
+		OwnIdentity treeOwner = OwnIdentity.getByURI(db, params.get("TreeOwner"));
+		
+		String selectString = params.get("Select").trim();
+		int select = 0; // TODO: decide about the default value
+		
+		if(selectString.equals("+")) select = 1;
+		else if(selectString.equals("-")) select = -1;
+		else if(selectString.equals("0")) select = 0;
+		else throw new InvalidParameterException("Unhandled select value ("+select+")");
+		
+		ObjectSet<Score> result = Score.getIdentitiesByScore(db, treeOwner, select);
+		String context = params.get("Context");
+		boolean getAll = context.equals("all");
 
-		ObjectSet<Score> result = Score.getIdentitiesByScore(params.get("TreeOwner"), params.get("Select").trim(), db);
 		for(int i = 1 ; result.hasNext() ; i++) {
 			Score score = result.next();
-			// Maybe there is a way to do this through SODA
-			if(score.getTarget().hasContext(params.get("Context")) || params.get("Context").equals("all"))
+			// TODO: Maybe there is a way to do this through SODA
+			if(getAll || score.getTarget().hasContext(context))
 				sfs.putAppend("Identity"+i, score.getTarget().getRequestURI().toString());
 		}
 		return sfs;

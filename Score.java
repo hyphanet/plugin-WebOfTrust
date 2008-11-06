@@ -13,6 +13,7 @@ import plugins.WoT.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.query.Constraint;
 import com.db4o.query.Query;
 
 /**
@@ -70,34 +71,29 @@ public class Score {
 	/**
 	 * Gets Identities matching a specified score criteria.
 	 * 
+	 * @param db A reference to the database
 	 * @param owner requestURI of the owner of the trust tree
 	 * @param select Score criteria, can be '+', '0' or '-'
-	 * @param db A reference to the database
 	 * @return an {@link ObjectSet} containing Identities that match the criteria
 	 * @throws InvalidParameterException if the criteria is not recognised
-	 * @throws MalformedURLException if the supplied requestURI of the treeOwner is not a valid {@link FreenetURI}
-	 * @throws UnknownIdentityException if the supplied treeOwner is not in the database
-	 * @throws DuplicateIdentityException if the supplied treeOwner exists more than once in the database (should never happen)
 	 */
 	@SuppressWarnings("unchecked")
-	public static ObjectSet<Score> getIdentitiesByScore (String owner, String select, ObjectContainer db) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		
-		OwnIdentity treeOwner = OwnIdentity.getByURI(db, owner);
+	public static ObjectSet<Score> getIdentitiesByScore (ObjectContainer db, OwnIdentity treeOwner, int select) throws InvalidParameterException {
+		if(treeOwner == null)
+			throw new IllegalArgumentException();
 		
 		Query query = db.query();
 		query.constrain(Score.class);
 		query.descend("treeOwner").constrain(treeOwner);
+	
+		// TODO: we should decide whether identities with score 0 should be returned if select>0
 		
-		if(select.equals("+")) {
+		if(select > 0)
 			query.descend("score").constrain(new Integer(0)).greater();
-		}
-		else if(select.equals("0")) {
-			query.descend("score").constrain(new Integer(0));
-		}
-		else if(select.equals("-")) {
+		else if(select < 0 )
 			query.descend("score").constrain(new Integer(0)).smaller();
-		}
-		else throw new InvalidParameterException("Unhandled select value ("+select+")");
+		else 
+			query.descend("score").constrain(new Integer(0));
 
 		return query.execute();
 	}
