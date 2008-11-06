@@ -78,11 +78,8 @@ public class Config {
 		 */
 		
 		// FIXME: there is a null pointer somewhere in here. i don't have the time for fixing it right now
-		
-		Set<String> keySet = params.keySet();
-		String[]	keys = new String[keySet.size()];
 			
-		return keySet.toArray(keys);
+		return params.keySet().toArray(new String[params.size()]);
 	}
 	
 	/**
