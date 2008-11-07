@@ -128,6 +128,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		db.commit();
 		db.close();
 		fetcher.stop(); // Do this after cleanly closing the database, as it sometimes locks
+		/* FIXME: why does that happen? */
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
