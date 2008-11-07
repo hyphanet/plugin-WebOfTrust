@@ -48,7 +48,8 @@ public class IdentityInserter implements Runnable {
 	/** The TempBucketFactory used to create buckets from Identities before insert */
 	final TempBucketFactory tBF;
 	/** Used to tell the InserterThread if it should stop */
-	boolean isRunning;
+	private boolean isRunning;
+	private Thread mThread;
 	
 	/**
 	 * Creates an IdentityInserter.
@@ -69,10 +70,13 @@ public class IdentityInserter implements Runnable {
 	 * it exports to XML and inserts OwnIdentities that need it.
 	 */
 	public void run() {
+		mThread = Thread.currentThread();
+		
 		try{
 			Thread.sleep((long) (3*60*1000 * (0.5f + Math.random()))); // Let the node start up
 		} catch (InterruptedException e){}
 		while(isRunning) {
+			Logger.debug(this, "IdentityInserter loop running...");
 			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
 			while(identities.hasNext()) {
 				OwnIdentity identity = identities.next();
@@ -90,6 +94,7 @@ public class IdentityInserter implements Runnable {
 				}
 			}
 			db.commit();
+			Logger.debug(this, "IdentityInserter loop finished...");
 			try{
 				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
 			} catch (InterruptedException e){}
@@ -100,8 +105,13 @@ public class IdentityInserter implements Runnable {
 	 * Stops the IdentityInserter thread.
 	 */
 	public void stop() {
+		Logger.debug(this, "Stopping IdentityInserter thread...");
 		isRunning = false;
-		Logger.debug(this, "Stopping IdentityInserter thread");
+		mThread.interrupt();
+		try {
+			mThread.join();
+		} catch(InterruptedException e) { }
+		Logger.debug(this, "Stopped IdentityInserter thread.");
 	}
 
 	/**
