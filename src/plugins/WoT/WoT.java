@@ -67,9 +67,13 @@ import freenet.support.api.HTTPRequest;
  */
 public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginL10n {
 	
+	/* References from the node */
+	
 	private PluginRespirator pr;
 	private HighLevelSimpleClient client;
-	private PageMaker pm = null;
+	private PageMaker pm;
+	
+	/* References from the plugin itself */
 	
 	private ObjectContainer db;
 	private WebInterface web;
@@ -91,6 +95,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		config = initConfig();
 		seed = getSeedIdentity();
 
+		pm = pr.getPageMaker();
+		
 		// Should disappear soon.
 		web = new WebInterface(pr, db, config, client, SELF_URI);
 
@@ -775,14 +781,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	public PageMaker getPageMaker() {
-		if(pm == null) {
-			pm = pr.getPageMaker();
-			pm.addNavigationLink(SELF_URI, "Home", "Home page", false, null);
-			pm.addNavigationLink(SELF_URI + "?ownidentities", "Own Identities", "Manage your own identities", false, null);
-			pm.addNavigationLink(SELF_URI + "?knownidentities", "Known Identities", "Manage others identities", false, null);
-			pm.addNavigationLink(SELF_URI + "?configuration", "Configuration", "Configure the WoT plugin", false, null);
-			pm.addNavigationLink("/plugins/", "Plugins page", "Back to Plugins page", false, null);
-		}
 		return pm;
 	}
 	
