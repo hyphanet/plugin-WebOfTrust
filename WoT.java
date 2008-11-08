@@ -583,11 +583,18 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		String context = params.get("Context");
 		boolean getAll = context.equals("all");
 
-		for(int i = 1 ; result.hasNext() ; i++) {
+		for(int idx = 1 ; result.hasNext() ; idx++) {
 			Score score = result.next();
 			// TODO: Maybe there is a way to do this through SODA
-			if(getAll || score.getTarget().hasContext(context))
-				sfs.putAppend("Identity"+i, score.getTarget().getRequestURI().toString());
+			if(getAll || score.getTarget().hasContext(context)) {
+				Identity id = score.getTarget();
+				/* FIXME: Isn't append slower than replace? Figure this out */
+				sfs.putAppend("Identity"+idx, id.getId());
+				sfs.putAppend("RequestURI"+idx, id.getRequestURI().toString());
+				sfs.putAppend("Nickname"+idx, id.getNickName());
+				
+				/* FIXME: Allow the client to select what data he wants */
+			}
 		}
 		return sfs;
 	}
