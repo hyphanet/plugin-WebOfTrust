@@ -541,7 +541,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return sfs;
 	}
 	
-	// TODO: javadoc
+	/* would only be needed if we connect the client plugins directly via object references which will probably not happen
 	public List<Identity> getIdentitiesByScore(OwnIdentity treeOwner, int select, String context) throws InvalidParameterException
 	{
 		ObjectSet<Score> result = Score.getIdentitiesByScore(db, treeOwner, select);
@@ -559,12 +559,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		return identities;
 	}
+	*/
 
 	private SimpleFieldSet handleGetIdentitiesByScore(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
 		SimpleFieldSet sfs = new SimpleFieldSet(false);
 
-		if(params.get("TreeOwner") == null || params.get("Select") == null || params.get("Context") == null) throw new InvalidParameterException("Missing mandatory parameter");
+		if(params.get("Select") == null || params.get("Context") == null) throw new InvalidParameterException("Missing mandatory parameter");
 
 		sfs.putAppend("Message", "Identities");
 		
@@ -771,14 +772,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			}
 		}
 		return seed;
-	}
-	
-	public ObjectSet<OwnIdentity> getAllOwnIdentities() {
-		throw new UnsupportedOperationException();
-	}
-	
-	public ObjectSet<Identity> getAllIdentities() {
-		throw new UnsupportedOperationException();
 	}
 	
 	public PageMaker getPageMaker() {
