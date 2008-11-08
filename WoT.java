@@ -569,7 +569,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 		sfs.putAppend("Message", "Identities");
 		
-		OwnIdentity treeOwner = OwnIdentity.getByURI(db, params.get("TreeOwner"));
+		OwnIdentity treeOwner = params.get("TreeOwner")!=null ? OwnIdentity.getByURI(db, params.get("TreeOwner")) : null;
 		
 		String selectString = params.get("Select").trim();
 		int select = 0; // TODO: decide about the default value
