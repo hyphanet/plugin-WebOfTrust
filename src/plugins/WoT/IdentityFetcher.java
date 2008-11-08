@@ -21,6 +21,7 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestStarter;
 import freenet.support.Logger;
 
 /**
@@ -92,7 +93,9 @@ public class IdentityFetcher implements ClientCallback {
 		FetchContext fetchContext = client.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
-		requests.add(client.fetch(uri, -1, this, this, fetchContext));
+		ClientGetter g = client.fetch(uri, -1, this, this, fetchContext);
+		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* FIXME: decide which one to use */
+		requests.add(g);
 		Logger.debug(this, "Start fetching identity "+uri.toString());
 	}
 
