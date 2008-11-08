@@ -72,9 +72,13 @@ public class IdentityInserter implements Runnable {
 	public void run() {
 		mThread = Thread.currentThread();
 		
-		try{
+		try {
 			Thread.sleep((long) (3*60*1000 * (0.5f + Math.random()))); // Let the node start up
-		} catch (InterruptedException e){}
+		}
+		catch (InterruptedException e)
+		{
+			mThread.interrupt();
+		}
 		while(isRunning) {
 			Logger.debug(this, "IdentityInserter loop running...");
 			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
@@ -95,9 +99,13 @@ public class IdentityInserter implements Runnable {
 			}
 			db.commit();
 			Logger.debug(this, "IdentityInserter loop finished...");
-			try{
+			try {
 				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
-			} catch (InterruptedException e){}
+			}
+			catch (InterruptedException e)
+			{
+				mThread.interrupt();
+			}
 		}
 	}
 	
