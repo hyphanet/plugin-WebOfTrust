@@ -118,7 +118,11 @@ public class IdentityInserter implements Runnable {
 		mThread.interrupt();
 		try {
 			mThread.join();
-		} catch(InterruptedException e) { }
+		}
+		catch(InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+		}
 		Logger.debug(this, "Stopped IdentityInserter thread.");
 	}
 
