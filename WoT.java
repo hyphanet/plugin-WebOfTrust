@@ -461,7 +461,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 	private SimpleFieldSet handleCreateIdentity(SimpleFieldSet params) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException  {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		OwnIdentity identity;
 		
 		if(params.get("NickName")==null || params.get("PublishTrustList")==null || params.get("Context")==null) throw new InvalidParameterException("Missing mandatory parameter");
@@ -484,7 +484,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 	private SimpleFieldSet handleSetTrust(SimpleFieldSet params) throws NumberFormatException, TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, UnknownIdentityException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		if(params.get("Truster") == null || params.get("Trustee") == null || params.get("Value") == null || params.get("Comment") == null) throw new InvalidParameterException("Missing mandatory parameter");
 		
@@ -496,7 +496,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	private SimpleFieldSet handleAddIdentity(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, FetchException, DuplicateIdentityException {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		if(params.get("RequestURI") == null) throw new InvalidParameterException("Missing mandatory parameter");
 		
@@ -509,7 +509,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	private SimpleFieldSet handleGetIdentity(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, FetchException, UnknownIdentityException, DuplicateScoreException, DuplicateIdentityException, DuplicateTrustException {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		if(params.get("TreeOwner") == null || params.get("Identity") == null) throw new InvalidParameterException("Missing mandatory parameter");
 		
@@ -563,7 +563,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 	private SimpleFieldSet handleGetOwnIdentities(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		sfs.putAppend("Message", "OwnIdentities");
 		
@@ -583,7 +583,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	private SimpleFieldSet handleGetIdentitiesByScore(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		if(params.get("Select") == null || params.get("Context") == null) throw new InvalidParameterException("Missing mandatory parameter");
 
@@ -621,7 +621,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	private SimpleFieldSet handleGetTrusters(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, Db4oIOException, DatabaseClosedException, DuplicateIdentityException {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		if(params.get("Identity") == null || params.get("Context") == null) throw new InvalidParameterException("Missing mandatory parameter");
 
@@ -643,7 +643,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	private SimpleFieldSet handleGetTrustees(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, Db4oIOException, DatabaseClosedException, DuplicateIdentityException {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		if(params.get("Identity") == null || params.get("Context") == null) throw new InvalidParameterException("Missing mandatory parameter");
 
@@ -665,7 +665,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	private SimpleFieldSet handleAddContext(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		if(params.get("Identity") == null || params.get("Context") == null) throw new InvalidParameterException("Missing mandatory parameter");
 
@@ -677,7 +677,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	private SimpleFieldSet handleRemoveContext(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		if(params.get("Identity") == null || params.get("Context") == null) throw new InvalidParameterException("Missing mandatory parameter");
 
@@ -689,7 +689,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	private SimpleFieldSet handleSetProperty(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		if(params.get("Identity") == null || params.get("Property") == null || params.get("Value") == null) throw new InvalidParameterException("Missing mandatory parameter");
 
@@ -701,7 +701,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 	private SimpleFieldSet handleGetProperty(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		if(params.get("Identity") == null || params.get("Property") == null) throw new InvalidParameterException("Missing mandatory parameter");
 
@@ -713,7 +713,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 	private SimpleFieldSet handleRemoveProperty(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 
 		if(params.get("Identity") == null || params.get("Property") == null) throw new InvalidParameterException("Missing mandatory parameter");
 
@@ -725,7 +725,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	private SimpleFieldSet errorMessageFCP (Exception e) {
 		
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putAppend("Message", "Error");
 		sfs.putAppend("Description", (e.getLocalizedMessage() == null) ? "null" : e.getLocalizedMessage());
 		e.printStackTrace();
