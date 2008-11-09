@@ -9,10 +9,7 @@ package plugins.WoT;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -766,7 +763,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				seed = Identity.getByURI(db, seedURI);
 			} catch (UnknownIdentityException e) { // Create it.
 				try {
+					// Create the seed identity
 					seed = new Identity(seedURI, "Fetching seed identity...", "true");
+					// Step down to previous edition as the Fetcher is gonna try to fetch next edition
+					seed.setEdition(seed.getRequestURI().getSuggestedEdition() - 1);
 				} catch (Exception e1) { // Should never happen
 					Logger.error(this, "Seed identity creation error", e);
 					return null;
