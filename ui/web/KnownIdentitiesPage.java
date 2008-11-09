@@ -162,7 +162,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 			
 			// Own Trust
-			row.addChild(id.getReceivedTrustForm(db, pr, SELF_URI, id));
+			row.addChild(id.getReceivedTrustForm(db, pr, SELF_URI, treeOwner));
 			
 			// Nb Trusters
 			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
