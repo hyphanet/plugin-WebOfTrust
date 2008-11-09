@@ -72,6 +72,10 @@ public class IdentityFetcher implements ClientCallback {
 	 */
 	public void fetch(Identity identity, boolean nextEdition) {
 		
+		/* FIXME Keep a track on identities being fetched and don't
+		 * try to download one twice. When done, remove the ugly hack 
+		 * on seed identity creation and start the fetch at that moment. 
+		 */ 
 		try {
 			if(nextEdition && !identity.getLastChange().equals(new Date(0)))
 				fetch(identity.getRequestURI().setSuggestedEdition(identity.getRequestURI().getSuggestedEdition() + 1));
