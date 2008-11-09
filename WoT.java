@@ -96,15 +96,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		// Should disappear soon.
 		web = new WebInterface(pr, db, config, client, SELF_URI);
-
-		// Create a default OwnIdentity if none exists. Should speed up plugin usability for newbies
-		if(OwnIdentity.getNbOwnIdentities(db) == 0) {
-			try {
-				createIdentity("Anonymous", "true", "testing");
-			} catch (Exception e) {
-				Logger.error(this, "Error creating default identity : ", e);
-			}
-		}
 		
 		// Start the inserter thread
 		inserter = new IdentityInserter(db, client, pr.getNode().clientCore.tempBucketFactory);
