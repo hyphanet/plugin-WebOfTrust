@@ -423,6 +423,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			else if(params.get("Message").equals("GetIdentity")) {
 				replysender.send(handleGetIdentity(params), data);
 			}
+			else if(params.get("Message").equals("GetOwnIdentities")) {
+				replysender.send(handleGetOwnIdentities(params), data);
+			}			
 			else if(params.get("Message").equals("GetIdentitiesByScore")) {
 				replysender.send(handleGetIdentitiesByScore(params), data);
 			}			
@@ -558,6 +561,26 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	*/
 
+	private SimpleFieldSet handleGetOwnIdentities(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
+		
+		SimpleFieldSet sfs = new SimpleFieldSet(false);
+
+		sfs.putAppend("Message", "OwnIdentities");
+		
+		ObjectSet<OwnIdentity> result = OwnIdentity.getAllOwnIdentities(db);
+	
+		for(int idx = 1 ; result.hasNext() ; idx++) {
+			OwnIdentity oid = result.next();
+			/* FIXME: Isn't append slower than replace? Figure this out */
+			sfs.putAppend("Identity"+idx, oid.getId());
+			sfs.putAppend("RequestURI"+idx, oid.getRequestURI().toString());
+			sfs.putAppend("InsertURI"+idx, oid.getInsertURI().toString());
+			sfs.putAppend("Nickname"+idx, oid.getNickName());
+			/* FIXME: Allow the client to select what data he wants */
+		}
+		return sfs;
+	}
+	
 	private SimpleFieldSet handleGetIdentitiesByScore(SimpleFieldSet params) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		
 		SimpleFieldSet sfs = new SimpleFieldSet(false);
