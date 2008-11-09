@@ -159,6 +159,7 @@ public class IdentityInserter implements Runnable {
 			// Logging
 			Logger.debug(this, "Started insert of identity '" + identity.getNickName() + "'");
 
+			/* FIXME: use nonblocking insert */
 			// Blocking Insert
 			iURI = client.insert(ib, false, "identity.xml");
 		} finally {
