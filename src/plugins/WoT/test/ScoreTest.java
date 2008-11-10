@@ -42,8 +42,8 @@ public class ScoreTest extends TestCase {
 		super.setUp();
 		db = Db4o.openFile("scoreTest.db4o");
 		
-		a = new OwnIdentity(uriA, uriA, "A", "true");
-		b = new Identity(uriB, "B", "true");
+		a = new OwnIdentity(uriA, uriA, "A", true);
+		b = new Identity(uriB, "B", true);
 		db.store(a);
 		db.store(b);
 		Score score = new Score(a,b,100,1,40);
