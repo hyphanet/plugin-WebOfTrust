@@ -43,8 +43,27 @@ import freenet.support.Logger;
  * @param contexts An ArrayList containing contexts (eg. client apps) an Identity is used for
  */
 public class Identity {
-	/* FIXME: Where do these values come from? They should be tweaked before release. */
-	/** Capacity is the maximum amount of points an identity can give to an other by trusting it. */
+	/** Capacity is the maximum amount of points an identity can give to an other by trusting it. 
+	 * 
+	 * Values choice :
+	 * Advogato Trust metric recommends that values decrease by rounded 2.5 times.
+	 * This makes sense, making the need of 3 N+1 ranked people to overpower
+	 * the trust given by a N ranked identity.
+	 * 
+	 * Number of ranks choice :
+	 * When someone creates a fresh identity, he gets the seed identity at
+	 * rank 1 and freenet developpers at rank 2. That means that
+	 * he will see people that were :
+	 * - given 7 trust by freenet devs (rank 2)
+	 * - given 17 trust by rank 3
+	 * - given 50 trust by rank 4
+	 * - given 100 trust by rank 5 and above.
+	 * This makes the range small enough to avoid a newbie
+	 * to even see spam, and large enough to make him see a reasonnable part
+	 * of the community right out-of-the-box.
+	 * Of course, as soon as he will start to give trust, he will put more
+	 * people at rank 1 and enlarge his WoT.
+	 */
 	public final static int capacities[] = {
 			100,// Rank 0 : Own identities
 			40,	// Rank 1 : Identities directly trusted by ownIdenties
