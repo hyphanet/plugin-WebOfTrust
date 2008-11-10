@@ -455,6 +455,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			}
 		}
 		catch (Exception e) {
+			Logger.error(this, e.toString());
 			replysender.send(errorMessageFCP(e), data);
 		}
 	}
