@@ -361,11 +361,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		// This identity trusts the seed identity
 		identity.setTrust(db, seed, (byte)100, "I trust the WoT plugin");
 		
+		db.commit();
+		
 		inserter.wakeUp();
 		
 		Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickName() + ")");
-
-		db.commit();	
 
 		return identity;
 	}
