@@ -136,7 +136,7 @@ public class IdentityParser {
 						if(identity.getBestScore(db) > 0) {
 							trustee = new Identity(new FreenetURI(attrs.getValue("uri")), null, false);
 							db.store(trustee);
-							db.commit(); /* TODO: this commit() was not here until I added it, is there a reason for that? */
+							db.commit();
 							identity.setTrust(db, trustee, value, comment);
 							fetcher.fetch(trustee); 
 						}
