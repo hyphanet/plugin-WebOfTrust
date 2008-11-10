@@ -83,9 +83,7 @@ public class Score {
 		query.constrain(Score.class);
 		if(treeOwner != null)
 			query.descend("treeOwner").constrain(treeOwner);
-	
-		// TODO: we should decide whether identities with score 0 should be returned if select>0
-		
+			
 		if(select > 0)
 			query.descend("score").constrain(new Integer(0)).greater();
 		else if(select < 0 )
