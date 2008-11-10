@@ -52,7 +52,7 @@ public class WoTTest extends TestCase {
 	
 	public void testInitTrustTree() throws DuplicateScoreException, NotInTrustTreeException, MalformedURLException, InvalidParameterException {
 		
-		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true");
+		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", true);
 		db.store(a);
 		a.initTrustTree(db);
 		
@@ -74,13 +74,13 @@ public class WoTTest extends TestCase {
 	
 	public void testSetTrust() throws DuplicateTrustException, InvalidParameterException, DuplicateScoreException, NotTrustedException, NotInTrustTreeException, MalformedURLException {
 
-		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true");
-		Identity b = new Identity(uriB, "B", "true");
+		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", true);
+		Identity b = new Identity(uriB, "B", true);
 		db.store(a);
 		db.store(b);
 		
 		// With A's trust tree not initialized, B shouldn't get a Score.
-		a.setTrust(db, b, 10, "Foo");
+		a.setTrust(db, b, (byte)10, "Foo");
 
 		assertTrue(Identity.getNbIdentities(db) == 1);
 		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 1);
@@ -89,7 +89,7 @@ public class WoTTest extends TestCase {
 		
 		// Initialize A's trust tree and set the trust relationship
 		a.initTrustTree(db);
-		a.setTrust(db, b, 100, "Foo");
+		a.setTrust(db, b, (byte)100, "Foo");
 		
 		// Check we have the correct number of objects
 		assertTrue(Identity.getNbIdentities(db) == 1);
@@ -114,7 +114,7 @@ public class WoTTest extends TestCase {
 		assertTrue(b.getScore(a, db).getCapacity() == 40);
 		
 		// Change the trust value and comment
-		a.setTrust(db, b, 50, "Bar");
+		a.setTrust(db, b, (byte)50, "Bar");
 		
 		// Check we have the correct number of objects
 		assertTrue(Identity.getNbIdentities(db) == 1);
@@ -144,15 +144,15 @@ public class WoTTest extends TestCase {
 	}
 	
 	public void testRemoveTrust() throws MalformedURLException, InvalidParameterException, DuplicateScoreException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException {
-		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true");
-		Identity b = new Identity(uriB, "B", "true");
-		Identity c = new Identity(uriC, "C", "true");
+		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", true);
+		Identity b = new Identity(uriB, "B", true);
+		Identity c = new Identity(uriC, "C", true);
 		db.store(a);
 		db.store(b);
 		db.store(c);
 		a.initTrustTree(db);
-		a.setTrust(db, b, 100, "Foo");
-		b.setTrust(db, c, 50, "Bar");
+		a.setTrust(db, b, (byte)100, "Foo");
+		b.setTrust(db, c, (byte)50, "Bar");
 		
 		// Check we have the correct number of objects
 		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 1);
@@ -175,7 +175,7 @@ public class WoTTest extends TestCase {
 		assertTrue(c.getScore(a, db).getRank() == 2);
 		assertTrue(c.getScore(a, db).getCapacity() == 16);
 		
-		a.setTrust(db, b, -1, "Bastard");
+		a.setTrust(db, b, (byte)-1, "Bastard");
 		
 		// Check we have the correct number of objects
 		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 1);
@@ -206,17 +206,17 @@ public class WoTTest extends TestCase {
 	}
 	
 	public void testTrustLoop() throws MalformedURLException, InvalidParameterException, DuplicateScoreException, DuplicateTrustException, NotInTrustTreeException {
-		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true");
-		Identity b = new Identity(uriB, "B", "true");
-		Identity c = new Identity(uriC, "C", "true");
+		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", true);
+		Identity b = new Identity(uriB, "B", true);
+		Identity c = new Identity(uriC, "C", true);
 		db.store(a);
 		db.store(b);
 		db.store(c);
 		a.initTrustTree(db);
-		a.setTrust(db, b, 100, "Foo");
-		b.setTrust(db, c, 50, "Bar");
-		c.setTrust(db, a, 100, "Bleh");
-		c.setTrust(db, b, 50, "Oops");
+		a.setTrust(db, b, (byte)100, "Foo");
+		b.setTrust(db, c, (byte)50, "Bar");
+		c.setTrust(db, a, (byte)100, "Bleh");
+		c.setTrust(db, b, (byte)50, "Oops");
 		
 		// Check we have the correct number of objects
 		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 1);
@@ -241,14 +241,14 @@ public class WoTTest extends TestCase {
 	}
 	
 	public void testOwnIndentitiesTrust() throws MalformedURLException, InvalidParameterException, DuplicateScoreException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException {
-		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", "true");
-		OwnIdentity b = new OwnIdentity(uriB, uriB, "B", "true");
+		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", true);
+		OwnIdentity b = new OwnIdentity(uriB, uriB, "B", true);
 		db.store(a);
 		db.store(b);
 		a.initTrustTree(db);
 		b.initTrustTree(db);
-		a.setTrust(db, b, 100, "Foo");
-		b.setTrust(db, a, 100, "Bar");
+		a.setTrust(db, b, (byte)100, "Foo");
+		b.setTrust(db, a, (byte)100, "Bar");
 		
 		// Check we have the correct number of objects
 		assertTrue(OwnIdentity.getNbOwnIdentities(db) == 2);
