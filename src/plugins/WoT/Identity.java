@@ -43,7 +43,7 @@ import freenet.support.Logger;
  * @param contexts An ArrayList containing contexts (eg. client apps) an Identity is used for
  */
 public class Identity {
-	
+	/* FIXME: Where do these values come from? They should be tweaked before release. */
 	/** Capacity is the maximum amount of points an identity can give to an other by trusting it. */
 	public final static int capacities[] = {
 			100,// Rank 0 : Own identities
@@ -58,7 +58,7 @@ public class Identity {
          * A unique identifier used to query this Identity from the database.
          * In fact, it is simply a String representing its routing key.
          */
-	private String id;
+	private final String id;
         /** The requestURI used to fetch this identity from Freenet */
 	private FreenetURI requestURI;
 	/** Date of this identity's last modification (last time we fetched it from Freenet) */
@@ -80,17 +80,17 @@ public class Identity {
 	 * @param publishTrustList Whether this identity publishes its trustList or not
 	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 */
-	public Identity (FreenetURI requestURI, String nickName, String publishTrustList) throws InvalidParameterException {
-		
-		setRequestURI(requestURI);
-		setNickName(nickName);
+	public Identity (FreenetURI newRequestURI, String newNickName, boolean publishTrustList) throws InvalidParameterException {
+		setRequestURI(newRequestURI);
+		id = getIdFromURI(getRequestURI());
+		setNickName(newNickName);
 		setPublishTrustList(publishTrustList);
 		props = new HashMap<String, String>();
 		contexts = new ArrayList<String>();
-		id = getIdFromURI(getRequestURI());
 		
 		Logger.debug(this, "New identity : " + getNickName());
-	}
+	}	
+
 
 	/**
 	 * Creates an Identity
@@ -101,11 +101,10 @@ public class Identity {
 	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 * @throws MalformedURLException if the supplied requestURI isn't a valid FreenetURI
 	 */
-	public Identity (String requestURI, String nickName, String publishTrustList) throws InvalidParameterException, MalformedURLException {
+	public Identity (String requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
 		this(new FreenetURI(requestURI), nickName, publishTrustList);
 	}
 	
-
 	/**
 	 * Loads an identity from the database, querying on its id
 	 * 
@@ -116,15 +115,15 @@ public class Identity {
 	 * @throws UnknownIdentityException if there is no identity with this id in the database
 	 */
 	@SuppressWarnings("unchecked")
-	public static Identity getById (ObjectContainer db, String id) throws DuplicateIdentityException, UnknownIdentityException {
+	public static Identity getById (ObjectContainer db, String id) throws UnknownIdentityException {
 
 		Query query = db.query();
 		query.constrain(Identity.class);
 		query.descend("id").constrain(id);
 		ObjectSet<Identity> result = query.execute();
 		
+		assert(result.size() <= 1);
 		if(result.size() == 0) throw new UnknownIdentityException(id);
-		if(result.size() > 1) throw new DuplicateIdentityException(id);
 		return result.next();
 	}
 
@@ -138,7 +137,7 @@ public class Identity {
 	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
 	 * @throws MalformedURLException if the requestURI isn't a valid FreenetURI
 	 */
-	public static Identity getByURI (ObjectContainer db, String uri) throws UnknownIdentityException, DuplicateIdentityException, MalformedURLException {
+	public static Identity getByURI (ObjectContainer db, String uri) throws UnknownIdentityException, MalformedURLException {
 		return getByURI(db, new FreenetURI(uri));
 	}
 
@@ -151,7 +150,7 @@ public class Identity {
 	 * @throws UnknownIdentityException if there is no identity with this id in the database
 	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
 	 */
-	public static Identity getByURI (ObjectContainer db, FreenetURI uri) throws UnknownIdentityException, DuplicateIdentityException {
+	public static Identity getByURI (ObjectContainer db, FreenetURI uri) throws UnknownIdentityException {
 		return getById(db, getIdFromURI(uri));
 	}
 
@@ -263,6 +262,7 @@ public class Identity {
 		else return result.next();
 	}
 	
+	/* FIXME: move this where it belongs */
 	public HTMLNode getReceivedTrustForm (ObjectContainer db, PluginRespirator pr, String SELF_URI, Identity truster) throws DuplicateTrustException {
 
 		String trustValue = "";
@@ -369,7 +369,7 @@ public class Identity {
 	 * @throws InvalidParameterException if a given parameter isn't valid, {@see Trust} for details on accepted values.
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 */
-	public void setTrust(ObjectContainer db, Identity trustee, int value, String comment) throws DuplicateTrustException, InvalidParameterException, DuplicateScoreException {
+	public void setTrust(ObjectContainer db, Identity trustee, byte value, String comment) throws DuplicateTrustException, InvalidParameterException, DuplicateScoreException {
 		// Check if we are updating an existing trust value
 		Trust trust;
 		try {
@@ -378,17 +378,20 @@ public class Identity {
 			if(!trust.getComment().equals(comment)) {
 				trust.setComment(comment);
 				db.store(trust);
+				db.commit(); /* TODO: this commit was not here until I added it, is there a reason for that? */
 			}
 			
 			if(trust.getValue() != value) {
 				trust.setValue(value);
 				db.store(trust);
+				db.commit(); /* TODO: this commit was not here until I added it, is there a reason for that? */
 				Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
 				trustee.updateScore(db);
 			}
 		} catch (NotTrustedException e) {
 			trust = new Trust(this, trustee, value, comment);
 			db.store(trust);
+			db.commit(); /* TODO: this commit was not here until I added it, is there a reason for that? */
 			Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
 			trustee.updateScore(db);
 		} 
@@ -401,9 +404,9 @@ public class Identity {
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
 	 */
-	public void updateScore (ObjectContainer db) throws DuplicateScoreException, DuplicateTrustException {
+	public synchronized void updateScore (ObjectContainer db) throws DuplicateScoreException, DuplicateTrustException {
 		ObjectSet<OwnIdentity> treeOwners = OwnIdentity.getAllOwnIdentities(db);
-		if(treeOwners.size() == 0) Logger.error(this, "Can't update "+ getNickName()+"'s score : there is no own identity yet");
+		if(treeOwners.size() == 0) Logger.debug(this, "Can't update "+ getNickName()+"'s score : there is no own identity yet");
 		while(treeOwners.hasNext())
 			updateScore (db, treeOwners.next());
 	}
@@ -491,7 +494,7 @@ public class Identity {
 				value += trust.getValue() * trust.getTruster().getScore(treeOwner, db).getCapacity() / 100;
 			} catch (NotInTrustTreeException e) {}
 		}
-		return value;
+		return value; /* FIXME: wouldn't it make sense to divide by 100 here?? */
 	}
 	
 	/**
@@ -526,10 +529,13 @@ public class Identity {
 	 * @param requestURI The FreenetURI used to fetch this identity 
 	 * @throws InvalidParameterException if the given FreenetURI is neither a SSK nor a USK
 	 */
-	public void setRequestURI(FreenetURI requestURI) throws InvalidParameterException {
-		if(requestURI.getKeyType().equals("SSK")) requestURI = requestURI.setKeyType("USK");
-		if(!requestURI.getKeyType().equals("USK")) throw new InvalidParameterException("Key type not supported");
-		this.requestURI = requestURI.setKeyType("USK").setDocName("WoT");
+	protected synchronized void setRequestURI(FreenetURI newRequestURI) throws InvalidParameterException {
+		if(requestURI != null && newRequestURI.getRoutingKey().equals(requestURI.getRoutingKey()))
+			throw new InvalidParameterException("Cannot change the request URI of an existing identity");
+		
+		if(newRequestURI.getKeyType().equals("SSK")) newRequestURI = newRequestURI.setKeyType("USK");
+		if(!newRequestURI.getKeyType().equals("USK")) throw new InvalidParameterException("Key type not supported");
+		requestURI = newRequestURI.setKeyType("USK").setDocName("WoT");
 		updated();
 	}
 	
@@ -540,7 +546,7 @@ public class Identity {
 	 * @param edition A long representing the last fetched version of this identity.
 	 * @throws InvalidParameterException
 	 */
-	public void setEdition(long edition) throws InvalidParameterException {
+	public synchronized void setEdition(long edition) throws InvalidParameterException {
 		setRequestURI(getRequestURI().setSuggestedEdition(edition));
 	}
 
@@ -550,11 +556,15 @@ public class Identity {
 	 * @param nickName A String containing this Identity's NickName
 	 * @throws InvalidParameterException if the nickName's length is bigger than 50, or if it empty
 	 */
-	public void setNickName(String nickName) throws InvalidParameterException {
-		String nick = nickName.trim();
+	public synchronized void setNickName(String newNickname) throws InvalidParameterException {
+		String nick = newNickname.trim();
 		if(nick.length() == 0) throw new InvalidParameterException("Blank nickName");
-		if(nick.length() > 50) throw new InvalidParameterException("NickName is too long (50 chars max)");
-		this.nickName = nick;
+		if(nick.length() > 50) throw new InvalidParameterException("Nickname is too long (50 chars max)");
+		
+		if(nickName != null && !nickName.equals("") && !nickName.equals(newNickname))
+			throw new InvalidParameterException("Changing the nickname of an identity is not allowed.");
+		
+		nickName = nick;
 		updated();
 	}
 
@@ -563,19 +573,9 @@ public class Identity {
 	 * 
 	 * @param publishTrustList 
 	 */
-	public void setPublishTrustList(boolean publishTrustList) {
+	public synchronized void setPublishTrustList(boolean publishTrustList) {
 		this.publishTrustList = publishTrustList;
 		updated();
-	}
-
-	/**
-	 * Sets if this Identity publishes its trustList or not.
-	 * The given string is converted to a boolean.
-	 * 
-	 * @param publishTrustList 
-	 */
-	public void setPublishTrustList(String publishTrustList) {
-		setPublishTrustList(publishTrustList.equals("true"));
 	}
 	
 	/**
@@ -587,7 +587,7 @@ public class Identity {
 	 * @param db A reference to the database 
 	 * @throws InvalidParameterException if the key or the value is empty
 	 */
-	public void setProp(String key, String value, ObjectContainer db) throws InvalidParameterException {
+	public synchronized void setProp(String key, String value, ObjectContainer db) throws InvalidParameterException {
 		if(key.trim().length() == 0 || value.trim().length() == 0) throw new InvalidParameterException("Blank key or value in this property");
 		props.put(key.trim(), value.trim());
 		db.store(props);
@@ -601,7 +601,7 @@ public class Identity {
 	 * @param db A reference to the database 
 	 * @throws InvalidParameterException if this Identity doesn't have the given property
 	 */
-	public void removeProp(String key, ObjectContainer db) throws InvalidParameterException {
+	public synchronized void removeProp(String key, ObjectContainer db) throws InvalidParameterException {
 		if(!props.containsKey(key)) throw new InvalidParameterException("Property '"+key+"' isn't set on this identity");
 		props.remove(key.trim());
 		db.store(props);
@@ -613,7 +613,7 @@ public class Identity {
 	 * 
 	 * @return An Iterator referencing all this Identity's custom properties
 	 */
-	public Iterator<Entry<String, String>> getProps() {
+	public synchronized Iterator<Entry<String, String>> getProps() {
 		Iterator<Entry<String, String>> i = props.entrySet().iterator();
 		return i;
 	}
@@ -632,7 +632,7 @@ public class Identity {
 		String newContext = context.trim();
 		if(newContext.length() == 0) throw new InvalidParameterException("Blank context");
 		if(!contexts.contains(newContext)) contexts.add(newContext);
-		db.store(contexts);
+		db.store(contexts); /* FIXME: shouldn't we store the whole identity with cascading enabled???? */
 		updated();
 	}
 	
@@ -645,10 +645,10 @@ public class Identity {
 	 * @param db A reference to the database
 	 * @throws InvalidParameterException if the client tries to remove the last context of this Identity (an identity with no context is useless)
 	 */
-	public void removeContext(String context, ObjectContainer db) throws InvalidParameterException {
+	public synchronized void removeContext(String context, ObjectContainer db) throws InvalidParameterException {
 		if(contexts.size() == 1) throw new InvalidParameterException("Only one context left");
 		contexts.remove(context);
-		db.store(contexts);
+		db.store(contexts); /* FIXME: shouldn't we store the whole identity with cascading enabled???? */
 		updated();
 	}
 
@@ -657,14 +657,14 @@ public class Identity {
 	 * 
 	 * @return An Iterator referencing all this identity's contexts
 	 */
-	public Iterator<String> getContexts() {
+	public synchronized Iterator<String> getContexts() {
 		return contexts.iterator();
 	}
 		
 	/**
 	 * Tell that this Identity has been updated.
 	 */
-	public void updated() {
+	public synchronized void updated() {
 		lastChange = new Date();
 	}
 	
@@ -679,14 +679,14 @@ public class Identity {
 	/**
 	 * @return The requestURI ({@link FreenetURI}) to fetch this Identity 
 	 */
-	public FreenetURI getRequestURI() {
+	public synchronized FreenetURI getRequestURI() {
 		return requestURI.setMetaString(new String[] {"identity.xml"} );
 	}
 
 	/**
 	 * @return The date of this Identity's last modification
 	 */
-	public Date getLastChange() {
+	public synchronized Date getLastChange() {
 		return lastChange;
 	}
 	
@@ -694,7 +694,7 @@ public class Identity {
 	 * @return A string representing the date of this Identity's last 
 	 * modification. Or "Fetching..." if it has not been fetched yet.
 	 */
-	public String getReadableLastChange() {
+	public synchronized String getReadableLastChange() {
 		if (lastChange.equals(new Date(0))) return "Fetching...";
 		else return lastChange.toString();
 	}
@@ -702,7 +702,7 @@ public class Identity {
 	/**
 	 * @return this Identity's nickName
 	 */
-	public String getNickName() {
+	public synchronized String getNickName() {
 		return nickName;
 	}
 
@@ -716,7 +716,7 @@ public class Identity {
 	/**
 	 * @return A String listing all this Identity's contexts
 	 */
-	public String getContextsAsString() {
+	public synchronized String getContextsAsString() {
 		return contexts.toString();
 	}
 	
@@ -727,7 +727,7 @@ public class Identity {
 	 * @return The value of the requested custom property
 	 * @throws InvalidParameterException if this Identity doesn't have the required property
 	 */
-	public String getProp(String key) throws InvalidParameterException {
+	public synchronized String getProp(String key) throws InvalidParameterException {
 		if(!props.containsKey(key)) throw new InvalidParameterException("Property '"+key+"' isn't set on this identity");
 		return props.get(key);
 	}
@@ -735,7 +735,7 @@ public class Identity {
 	/**
 	 * @return A String listing all this Identities custom properties
 	 */
-	public String getPropsAsString() {
+	public synchronized String getPropsAsString() {
 		return props.toString();
 	}
 	
@@ -743,7 +743,7 @@ public class Identity {
 	 * @param context The context we want to know if this Identity has it or not
 	 * @return Whether this Identity has that context or not
 	 */
-	public boolean hasContext(String context) {
+	public synchronized boolean hasContext(String context) {
 		return contexts.contains(context.trim());
 	}
 }

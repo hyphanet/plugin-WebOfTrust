@@ -96,6 +96,15 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		// Should disappear soon.
 		web = new WebInterface(pr, db, config, client, SELF_URI);
+
+		// Create a default OwnIdentity if none exists. Should speed up plugin usability for newbies
+		if(OwnIdentity.getNbOwnIdentities(db) == 0) {
+			try {
+				createIdentity("Anonymous", true, "freetalk");
+			} catch (Exception e) {
+				Logger.error(this, "Error creating default identity : ", e);
+			}
+		}
 		
 		// Start the inserter thread
 		inserter = new IdentityInserter(db, client, pr.getNode().clientCore.tempBucketFactory);
@@ -222,7 +231,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			Identity old = Identity.getByURI(db, requestURI);
 			
 			// We already have fetched this identity as a stranger's one. We need to update the database.
-			id = new OwnIdentity(insertURI, requestURI, old.getNickName(), old.doesPublishTrustList() ? "true" : "false");
+			id = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), old.getNickName(), old.doesPublishTrustList());
 			
 			Iterator<String> i1 = old.getContexts();
 			while (i1.hasNext()) id.addContext(i1.next(), db);
@@ -269,7 +278,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			Logger.debug(this, "Successfully restored an already known identity from Freenet (" + id.getNickName() + ")");
 			
 		} catch (UnknownIdentityException e) {
-			id = new OwnIdentity(insertURI, requestURI, "Restore in progress...", "false");
+			id = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), "Restore in progress...", false);
 			
 			// Store the new identity
 			db.store(id);
@@ -287,8 +296,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		setTrust(	request.getPartAsString("truster", 1024),
 					request.getPartAsString("trustee", 1024),
-					request.getPartAsString("value", 1024),
-					request.getPartAsString("comment", 1024));
+					request.getPartAsString("value", 4),
+					request.getPartAsString("comment", 256));
 	}
 	
 	private void setTrust(String truster, String trustee, String value, String comment) throws InvalidParameterException, UnknownIdentityException, NumberFormatException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
@@ -296,11 +305,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		OwnIdentity trusterId = OwnIdentity.getByURI(db, truster);
 		Identity trusteeId = Identity.getByURI(db, trustee);
 		
-		setTrust((OwnIdentity)trusterId, trusteeId, Integer.parseInt(value), comment);
-}	
+		setTrust((OwnIdentity)trusterId, trusteeId, Byte.parseByte(value), comment);
+	}
 	
-	private void setTrust(OwnIdentity truster, Identity trustee, int value, String comment) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, InvalidParameterException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
-
+	private void setTrust(OwnIdentity truster, Identity trustee, byte value, String comment) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, InvalidParameterException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 		truster.setTrust(db, trustee, value, comment);
 		truster.updated();
 		db.store(truster);
@@ -319,7 +327,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			throw new InvalidParameterException("We already have this identity");
 		}
 		catch (UnknownIdentityException e) {
-			identity = new Identity(requestURI, "Not found yet...", "false");
+			identity = new Identity(new FreenetURI(requestURI), "Not found yet...", false);
 			db.store(identity);
 			db.commit();
 			Logger.debug(this, "Trying to fetch manually added identity (" + identity.getRequestURI() + ")");
@@ -333,24 +341,25 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return createIdentity(	request.getPartAsString("insertURI",1024),
 								request.getPartAsString("requestURI",1024),
 								request.getPartAsString("nickName", 1024),
-								request.getPartAsString("publishTrustList", 1024),
-								"testing");	
+								request.getPartAsString("publishTrustList", 5).equals(true),
+								"freetalk");	
 	}
 	
-	private OwnIdentity createIdentity(String nickName, String publishTrustList, String context) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
+	private OwnIdentity createIdentity(String nickName, boolean publishTrustList, String context) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 
 		FreenetURI[] keypair = client.generateKeyPair("WoT");
 		return createIdentity(keypair[0].toString(), keypair[1].toString(), nickName, publishTrustList, context);
 	}
 
-	private OwnIdentity createIdentity(String insertURI, String requestURI, String nickName, String publishTrustList, String context) throws InvalidParameterException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
+	private OwnIdentity createIdentity(String insertURI, String requestURI, String nickName, boolean publishTrustList, String context) throws InvalidParameterException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 
-		OwnIdentity identity = new OwnIdentity(insertURI, requestURI, nickName, publishTrustList);
+		OwnIdentity identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
+		identity.addContext(context, db);
 		db.store(identity);
 		identity.initTrustTree(db);		
-		
+
 		// This identity trusts the seed identity
-		identity.setTrust(db, seed, 100, "I trust the WoT plugin");
+		identity.setTrust(db, seed, (byte)100, "I trust the WoT plugin");
 		
 		Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickName() + ")");
 
@@ -458,13 +467,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		if(params.get("NickName")==null || params.get("PublishTrustList")==null || params.get("Context")==null) throw new InvalidParameterException("Missing mandatory parameter");
 		
 		if(params.get("RequestURI")==null || params.get("InsertURI")==null) {
-			identity = createIdentity(params.get("NickName"), params.get("PublishTrustList"), params.get("Context"));
+			identity = createIdentity(params.get("NickName"), params.get("PublishTrustList").equals("true"), params.get("Context"));
 		}
 		else {
 			identity = createIdentity(	params.get("InsertURI"),
 										params.get("RequestURI"),
 										params.get("NickName"), 
-										params.get("PublishTrustList"),
+										params.get("PublishTrustList").equals("true"),
 										params.get("Context"));
 		}
 		sfs.putAppend("Message", "IdentityCreated");
@@ -778,7 +787,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			} catch (UnknownIdentityException e) { // Create it.
 				try {
 					// Create the seed identity
-					seed = new Identity(seedURI, "Fetching seed identity...", "true");
+					seed = new Identity(new FreenetURI(seedURI), "Fetching seed identity...", true);
 					// Step down to previous edition as the Fetcher is gonna try to fetch next edition
 					seed.setEdition(seed.getRequestURI().getSuggestedEdition() - 1);
 				} catch (Exception e1) { // Should never happen

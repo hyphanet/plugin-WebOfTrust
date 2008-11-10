@@ -27,7 +27,7 @@ public class Trust {
 	 */
 	private final Identity truster;
 	private final Identity trustee;
-	private int value;
+	private byte value;
 	private String comment;
 	
 	/**
@@ -39,7 +39,7 @@ public class Trust {
 	 * @param comment A comment to explain the numeric trust value
 	 * @throws InvalidParameterException if the trust value is not between -100 and +100
 	 */
-	public Trust(Identity truster, Identity trustee, int value, String comment) throws InvalidParameterException {
+	public Trust(Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
 		this.truster = truster;
 		this.trustee = trustee;
 		setValue(value);
@@ -93,7 +93,7 @@ public class Trust {
 	/**
 	 * @return value Numeric value of this trust relationship
 	 */
-	public int getValue() {
+	public synchronized byte getValue() {
 		return value;
 	}
 
@@ -101,24 +101,29 @@ public class Trust {
 	 * @param value Numeric value of this trust relationship [-100;+100] 
 	 * @throws InvalidParameterException if value isn't in the range
 	 */
-	public void setValue(int value) throws InvalidParameterException {
-		if(value < -100 || value > 100) 
+	public synchronized void setValue(byte newValue) throws InvalidParameterException {
+		if(newValue < -100 || newValue > 100) 
 			throw new InvalidParameterException("Invalid trust value ("+value+")");
 		
-		this.value = value;
+		value = newValue;
 	}
 
 	/**
 	 * @return comment The comment associated to this Trust relationship
 	 */
-	public String getComment() {
+	public synchronized String getComment() {
 		return comment;
 	}
 
 	/**
 	 * @param comment Comment on this trust relationship
 	 */
-	public void setComment(String comment) {
-		this.comment = comment;
+	public synchronized void setComment(String newComment) throws InvalidParameterException {
+		assert(newComment != null);
+		
+		if(newComment != null && newComment.length() > 256)
+			throw new InvalidParameterException("Comment is too long (maximum is 256 characters).");
+		
+		comment = newComment != null ? newComment : "";
 	}
 }
