@@ -91,6 +91,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "addIdentity" });
 		createForm.addChild("span", new String[] {"title", "style"}, new String[] { "This must be a valid Freenet URI.", "border-bottom: 1px dotted; cursor: help;"} , "Identity URI : ");
 		createForm.addChild("input", new String[] {"type", "name", "size"}, new String[] {"text", "identityURI", "70"});
+		createForm.addChild("br");
+		createForm.addChild("span", "Trust/Comment : ");
+		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "value", "2", "" });
+		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "comment", "20", "" });
+		createForm.addChild("br");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", "Add this identity !" });	
 	}
 
