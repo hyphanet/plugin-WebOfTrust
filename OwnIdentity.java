@@ -63,12 +63,12 @@ public class OwnIdentity extends Identity {
 	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
 	 * @throws InvalidParameterException If a given parameter is invalid
 	 */
-	public OwnIdentity (FreenetURI insertURI, FreenetURI requestURI, String nickName, String publishTrustList) throws InvalidParameterException {	
+	public OwnIdentity (FreenetURI insertURI, FreenetURI requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException {	
 		super(requestURI, nickName, publishTrustList);
 		setInsertURI(insertURI);
 		setLastInsert(new Date(0));
 	}
-
+	
 	/**
 	 * Creates a new OwnIdentity with the given parameters.
 	 * insertURI and requestURI are converted from String to {@link FreenetURI}
@@ -80,7 +80,7 @@ public class OwnIdentity extends Identity {
 	 * @throws InvalidParameterException If a given parameter is invalid
 	 * @throws MalformedURLException If either requestURI or insertURI is not a valid FreenetURI
 	 */
-	public OwnIdentity (String insertURI, String requestURI, String nickName, String publishTrustList) throws InvalidParameterException, MalformedURLException {
+	public OwnIdentity (String insertURI, String requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
 		this(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 	}
 	
@@ -111,14 +111,14 @@ public class OwnIdentity extends Identity {
 	 * @throws DuplicateIdentityException If there is more than one identity with that id (should never happen)
 	 */
 	@SuppressWarnings("unchecked")
-	public static OwnIdentity getById (ObjectContainer db, String id) throws UnknownIdentityException, DuplicateIdentityException {
+	public static OwnIdentity getById (ObjectContainer db, String id) throws UnknownIdentityException {
 		Query query = db.query();
 		query.constrain(OwnIdentity.class);
 		query.descend("id").constrain(id);
 		ObjectSet<OwnIdentity> result = query.execute();
 		
+		assert(result.size() <= 1);
 		if(result.size() == 0) throw new UnknownIdentityException(id.toString());
-		if(result.size() > 1) throw new DuplicateIdentityException(id.toString());
 		return result.next();
 	}
 	
@@ -133,7 +133,7 @@ public class OwnIdentity extends Identity {
 	 * @throws DuplicateIdentityException if the OwnIdentity is present more that once in the database (should never happen)
 	 * @throws MalformedURLException if the supplied requestURI is not a valid FreenetURI
 	 */
-	public static OwnIdentity getByURI (ObjectContainer db, String uri) throws UnknownIdentityException, DuplicateIdentityException, MalformedURLException {
+	public static OwnIdentity getByURI (ObjectContainer db, String uri) throws UnknownIdentityException, MalformedURLException {
 		return getByURI(db, new FreenetURI(uri));
 	}
 
@@ -147,7 +147,7 @@ public class OwnIdentity extends Identity {
 	 * @throws UnknownIdentityException if the OwnIdentity isn't in the database
 	 * @throws DuplicateIdentityException if the OwnIdentity is present more that once in the database (should never happen)
 	 */
-	public static OwnIdentity getByURI (ObjectContainer db, FreenetURI uri) throws UnknownIdentityException, DuplicateIdentityException {
+	public static OwnIdentity getByURI (ObjectContainer db, FreenetURI uri) throws UnknownIdentityException {
 		return getById(db, getIdFromURI(uri));
 	}
 	

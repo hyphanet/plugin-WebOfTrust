@@ -77,6 +77,7 @@ public class IdentityParser {
 		
 		saxParser.parse(is, new IdentityHandler() );
 		db.store(identity);
+		db.commit();
 		
 		Logger.debug(this, "Successfuly parsed identity '" + identity.getNickName() + "'");
 	}
@@ -110,7 +111,7 @@ public class IdentityParser {
 					identity.setNickName(attrs.getValue("value"));
 				}
 				if (elt_name.equals("publishTrustList")) {
-					identity.setPublishTrustList(attrs.getValue("value"));
+					identity.setPublishTrustList(attrs.getValue("value").equals("true"));
 				}
 				else if (elt_name.equals("prop")) {
 					identity.setProp(attrs.getValue("key"), attrs.getValue("value"), db);
@@ -121,7 +122,7 @@ public class IdentityParser {
 				else if (elt_name.equals("trust")) {
 	
 					Identity trustee;
-					int value = Integer.parseInt(attrs.getValue("value"));
+					byte value = Byte.parseByte(attrs.getValue("value"));
 					String comment = attrs.getValue("comment");
 					
 					try{
@@ -133,8 +134,9 @@ public class IdentityParser {
 						// Create trustee only if the truster has a positive score.
 						// This is to avoid Identity spam when announcements will be here.
 						if(identity.getBestScore(db) > 0) {
-							trustee = new Identity(attrs.getValue("uri"), "Not found yet...", "false");
+							trustee = new Identity(new FreenetURI(attrs.getValue("uri")), "Not found yet...", false);
 							db.store(trustee);
+							db.commit(); /* TODO: this commit() was not here until I added it, is there a reason for that? */
 							identity.setTrust(db, trustee, value, comment);
 							fetcher.fetch(trustee); 
 						}

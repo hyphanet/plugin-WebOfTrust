@@ -8,7 +8,11 @@ package plugins.WoT;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
+
+import plugins.WoT.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectContainer;
 
@@ -36,8 +40,11 @@ public class IdentityFetcher implements ClientCallback {
 	private ObjectContainer db;
         /** A reference to the HighLevelSimpleClient used to talk with the node */
 	private HighLevelSimpleClient client;
-        /** A list of all current requests */
-	private ArrayList<ClientGetter> requests;
+
+	/** All current requests */
+	private HashSet<Identity> identities;
+	private HashSet<ClientGetter> requests;
+	
 	
 	/**
 	 * Creates a new IdentityFetcher.
@@ -49,7 +56,8 @@ public class IdentityFetcher implements ClientCallback {
 
 		this.db = db;
 		this.client = client;
-		requests = new ArrayList<ClientGetter>();
+		identities = new HashSet<Identity>(128); /* TODO: profile & tweak */
+		requests = new HashSet<ClientGetter>(128); /* TODO: profile & tweak */
 	}
 	
 	/**
@@ -70,17 +78,18 @@ public class IdentityFetcher implements ClientCallback {
 	 * @param identity the Identity to fetch
 	 * @param nextEdition whether we want to check current edition or the next one
 	 */
-	public void fetch(Identity identity, boolean nextEdition) {
+	public synchronized void fetch(Identity identity, boolean nextEdition) {
 		
-		/* FIXME Keep a track on identities being fetched and don't
-		 * try to download one twice. When done, remove the ugly hack 
-		 * on seed identity creation and start the fetch at that moment. 
-		 */ 
+		if(identities.contains(identity))
+			return;
+
 		try {
 			if(nextEdition && !identity.getLastChange().equals(new Date(0)))
 				fetch(identity.getRequestURI().setSuggestedEdition(identity.getRequestURI().getSuggestedEdition() + 1));
 			else
 				fetch(identity.getRequestURI());
+			
+			identities.add(identity);
 		} catch (FetchException e) {
 			Logger.error(this, "Request restart failed: "+e, e);
 		}
@@ -92,14 +101,14 @@ public class IdentityFetcher implements ClientCallback {
 	 * @param uri the {@link FreenetURI} we want to fetch
 	 * @throws FetchException if the node encounters a problem
 	 */
-	public void fetch(FreenetURI uri) throws FetchException {
+	public synchronized void fetch(FreenetURI uri) throws FetchException {
 		FetchContext fetchContext = client.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		ClientGetter g = client.fetch(uri, -1, this, this, fetchContext);
 		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* FIXME: decide which one to use */
 		requests.add(g);
-		Logger.debug(this, "Start fetching identity "+uri.toString());
+		Logger.debug(this, "Start fetching uri "+uri.toString());
 	}
 
 	/**
@@ -107,9 +116,10 @@ public class IdentityFetcher implements ClientCallback {
 	 */
 	public void stop() {
 		Iterator<ClientGetter> i = requests.iterator();
-		Logger.debug(this, "Trying to stop "+requests.size()+" requests");
-		while (i.hasNext()) i.next().cancel();
-		Logger.debug(this, "Stopped all current requests");
+		int counter = 0;
+		Logger.debug(this, "Trying to stop all requests"); 
+		while (i.hasNext()) { i.next().cancel(); ++counter; }
+		Logger.debug(this, "Stopped " + counter + " current requests");
 	}
 	
 	/**
@@ -130,9 +140,34 @@ public class IdentityFetcher implements ClientCallback {
 		}
 		// Errors we can't/want deal with
 		Logger.error(this, "Fetch failed for "+ state.getURI(), e);
-		requests.remove(state); 
+		requests.remove(state);
+		try {
+			Identity id = Identity.getByURI(db, state.getURI());
+			identities.remove(id);
+		} catch(UnknownIdentityException ex) {}
+		
 	}
 
+	/**
+	 * Called when a file is successfully fetched. We then create an
+	 * {@link IdentityParser} and give it the file content. 
+	 */
+	public void onSuccess(FetchResult result, ClientGetter state) {
+		
+		Logger.debug(this, "Fetched key (ClientGetter) : " + state.getURI());
+
+		try {
+			Logger.debug(this, "Sucessfully fetched identity "+ state.getURI().toString());
+			new IdentityParser(db, client, this).parse(result.asBucket().getInputStream(), state.getURI());	
+			state.restart(state.getURI().setSuggestedEdition(state.getURI().getSuggestedEdition() + 1));
+		} catch (Exception e) {
+			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
+		}
+	}
+
+	// Only called by inserts
+	public void onSuccess(BaseClientPutter state) {}
+	
 	// Only called by inserts
 	public void onFailure(InsertException e, BaseClientPutter state) {}
 
@@ -145,25 +180,4 @@ public class IdentityFetcher implements ClientCallback {
 	/** Called when freenet.async thinks that the request should be serialized to
 	 * disk, if it is a persistent request. */
 	public void onMajorProgress() {}
-
-	/**
-	 * Called when a file is successfully fetched. We then create an
-	 * {@link IdentityParser} and give it the file content. 
-	 */
-	public void onSuccess(FetchResult result, ClientGetter state) {
-		
-		Logger.debug(this, "Fetched key (ClientGetter) : " + state.getURI());
-
-		try {
-			Logger.debug(this, "Sucessfully fetched identity "+ state.getURI().toString());
-			new IdentityParser(db, client, this).parse(result.asBucket().getInputStream(), state.getURI());
-			db.commit();		
-			state.restart(state.getURI().setSuggestedEdition(state.getURI().getSuggestedEdition() + 1));
-		} catch (Exception e) {
-			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
-		}
-	}
-
-	// Only called by inserts
-	public void onSuccess(BaseClientPutter state) {}
 }
