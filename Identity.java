@@ -557,7 +557,7 @@ public class Identity {
 	 * @throws InvalidParameterException if the nickName's length is bigger than 50, or if it empty
 	 */
 	public synchronized void setNickName(String newNickname) throws InvalidParameterException {
-		String nick = newNickname.trim();
+		String nick = newNickname == null ? "" : newNickname.trim();
 		if(nick.length() == 0) throw new InvalidParameterException("Blank nickName");
 		if(nick.length() > 50) throw new InvalidParameterException("Nickname is too long (50 chars max)");
 		

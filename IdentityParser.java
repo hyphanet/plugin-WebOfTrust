@@ -134,7 +134,7 @@ public class IdentityParser {
 						// Create trustee only if the truster has a positive score.
 						// This is to avoid Identity spam when announcements will be here.
 						if(identity.getBestScore(db) > 0) {
-							trustee = new Identity(new FreenetURI(attrs.getValue("uri")), "Not found yet...", false);
+							trustee = new Identity(new FreenetURI(attrs.getValue("uri")), null, false);
 							db.store(trustee);
 							db.commit(); /* TODO: this commit() was not here until I added it, is there a reason for that? */
 							identity.setTrust(db, trustee, value, comment);
