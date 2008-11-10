@@ -142,7 +142,8 @@ public class IdentityInserter implements Runnable {
 	 */
 	public void insert(OwnIdentity identity) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException, InsertException {
 		/* FIXME: Where is the synchronization? */
-		Bucket tempB = tBF.makeBucket(1);
+		/* TODO: after the WoT has become large enough, calculate the average size of identity.xml and either modify the constant or even calculate dynamically */
+		Bucket tempB = tBF.makeBucket(8 * 1024);  
 		OutputStream os = tempB.getOutputStream();
 		FreenetURI iURI;
 		try {
