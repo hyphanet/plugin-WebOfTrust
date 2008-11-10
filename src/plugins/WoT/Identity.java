@@ -648,7 +648,7 @@ public class Identity {
 		String newContext = context.trim();
 		if(newContext.length() == 0) throw new InvalidParameterException("Blank context");
 		if(!contexts.contains(newContext)) contexts.add(newContext);
-		db.store(contexts); /* FIXME: shouldn't we store the whole identity with cascading enabled???? */
+		db.store(contexts);
 		updated();
 	}
 	
@@ -664,7 +664,7 @@ public class Identity {
 	public synchronized void removeContext(String context, ObjectContainer db) throws InvalidParameterException {
 		if(contexts.size() == 1) throw new InvalidParameterException("Only one context left");
 		contexts.remove(context);
-		db.store(contexts); /* FIXME: shouldn't we store the whole identity with cascading enabled???? */
+		db.store(contexts);
 		updated();
 	}
 
