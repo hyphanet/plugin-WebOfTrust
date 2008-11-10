@@ -125,6 +125,11 @@ public class IdentityInserter implements Runnable {
 		}
 		Logger.debug(this, "Stopped IdentityInserter thread.");
 	}
+	
+	public void wakeUp() {
+		if(mThread != null)
+			mThread.interrupt(); /* FIXME: toad: i hope this will not break any of the code which is NOT the sleep() function??? */
+	}
 
 	/**
 	 * Inserts an OwnIdentity.
@@ -140,7 +145,7 @@ public class IdentityInserter implements Runnable {
 	 * @throws InvalidParameterException
 	 * @throws InsertException
 	 */
-	public void insert(OwnIdentity identity) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException, InsertException {
+	private void insert(OwnIdentity identity) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException, InsertException {
 		/* FIXME: Where is the synchronization? */
 		/* TODO: after the WoT has become large enough, calculate the average size of identity.xml and either modify the constant or even calculate dynamically */
 		Bucket tempB = tBF.makeBucket(8 * 1024);  
