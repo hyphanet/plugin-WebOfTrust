@@ -510,7 +510,7 @@ public class Identity {
 				value += trust.getValue() * trust.getTruster().getScore(treeOwner, db).getCapacity() / 100;
 			} catch (NotInTrustTreeException e) {}
 		}
-		return value; /* FIXME: wouldn't it make sense to divide by 100 here?? */
+		return value;
 	}
 	
 	/**
