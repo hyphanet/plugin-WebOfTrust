@@ -397,20 +397,17 @@ public class Identity {
 			if(!trust.getComment().equals(comment)) {
 				trust.setComment(comment);
 				db.store(trust);
-				db.commit(); /* TODO: this commit was not here until I added it, is there a reason for that? */
 			}
 			
 			if(trust.getValue() != value) {
 				trust.setValue(value);
 				db.store(trust);
-				db.commit(); /* TODO: this commit was not here until I added it, is there a reason for that? */
 				Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
 				trustee.updateScore(db);
 			}
 		} catch (NotTrustedException e) {
 			trust = new Trust(this, trustee, value, comment);
 			db.store(trust);
-			db.commit(); /* TODO: this commit was not here until I added it, is there a reason for that? */
 			Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
 			trustee.updateScore(db);
 		} 
