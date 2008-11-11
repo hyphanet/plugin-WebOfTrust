@@ -229,6 +229,15 @@ public class Identity {
 		else if(result.size() > 1) throw new DuplicateScoreException(this.getRequestURI().toString()+" ("+ getNickName() +") has "+result.size()+" scores in "+treeOwner.getNickName()+"'s trust tree"); 
 		else return result.next();
 	}
+	
+
+	/* 
+	 * FIXME:
+	 * I suggest before releasing we should write a getRealScore() function which recalculates the score from all Trust objects which are stored
+	 * in the database. We could then assert(getScore() == getRealScore()) for verifying that the database is consistent and watch for some time
+	 * whether it stays consistent, just to make sure that there are no flaws in the code.
+	 */
+	
 
 	/**
 	 * Gets all this Identity's Scores. 
