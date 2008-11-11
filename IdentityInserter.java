@@ -168,9 +168,7 @@ public class IdentityInserter implements Runnable {
 			/* FIXME: use nonblocking insert */
 			// Blocking Insert
 			iURI = client.insert(ib, false, "identity.xml");
-		} finally {
-			tempB.free();		
-		}
+
 		
 		identity.setEdition(iURI.getSuggestedEdition());
 		identity.setLastInsert(new Date());
@@ -180,5 +178,8 @@ public class IdentityInserter implements Runnable {
 		
 		// Logging
 		Logger.debug(this, "Successful insert of identity '" + identity.getNickName() + "'");
+		} finally {
+			tempB.free();		
+		}
 	}
 }
