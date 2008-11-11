@@ -40,6 +40,7 @@ import com.db4o.ObjectSet;
 import com.db4o.ext.DatabaseClosedException;
 import com.db4o.ext.Db4oIOException;
 import com.db4o.query.Query;
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 
 import freenet.keys.FreenetURI;
 
@@ -236,6 +237,34 @@ public class OwnIdentity extends Identity {
 			rootElement.appendChild(trustList.toXML(xmlDoc));
 		}
 		
+		DOMSource domSource = new DOMSource(xmlDoc);
+		TransformerFactory transformFactory = TransformerFactory.newInstance();
+		Transformer serializer = transformFactory.newTransformer();
+		
+		serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		serializer.setOutputProperty(OutputKeys.INDENT,"yes");
+		serializer.transform(domSource, resultStream);
+	}
+	
+	public void exportIntroductionToXML(OutputStream os) throws ParserConfigurationException, TransformerException {
+		StreamResult resultStream = new StreamResult(os);
+
+		// Create the XML document
+		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
+		DOMImplementation impl = xmlBuilder.getDOMImplementation();
+		Document xmlDoc = impl.createDocument(null, "WoT", null);
+		Element rootElement = xmlDoc.getDocumentElement();
+
+		// Create the content
+		Element introTag = xmlDoc.createElement("IdentityIntroduction");
+
+		Element identityTag = xmlDoc.createElement("Identity");
+		identityTag.setAttribute("value", getRequestURI().toString());
+		introTag.appendChild(identityTag);
+	
+		rootElement.appendChild(introTag);
+
 		DOMSource domSource = new DOMSource(xmlDoc);
 		TransformerFactory transformFactory = TransformerFactory.newInstance();
 		Transformer serializer = transformFactory.newTransformer();
