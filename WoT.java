@@ -80,7 +80,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private Identity seed = null;
 	private Config config;
 
-	public static String SELF_URI = "/plugins/plugins.WoT.WoT";
+	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
+	
+	public static final String WOT_CONTEXT = "WoT";
 
 	public void runPlugin(PluginRespirator pr) {
 
