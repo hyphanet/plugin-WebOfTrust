@@ -177,7 +177,11 @@ public class IdentityInserter implements Runnable {
 			
 			// Logging
 			Logger.debug(this, "Successful insert of identity '" + identity.getNickName() + "'");
-		} finally {
+		}
+		catch(Exception e) {
+			Logger.error(this,"Error during insert of identity '" + identity.getNickName() + "'", e);
+		}
+		finally {
 			tempB.free();		
 		}
 	}
