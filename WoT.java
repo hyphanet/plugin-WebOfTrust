@@ -332,7 +332,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			throw new InvalidParameterException("We already have this identity");
 		}
 		catch (UnknownIdentityException e) {
-			identity = new Identity(new FreenetURI(requestURI), "Not found yet...", false);
+			identity = new Identity(new FreenetURI(requestURI), null, false);
 			db.store(identity);
 			db.commit();
 			Logger.debug(this, "Trying to fetch manually added identity (" + identity.getRequestURI() + ")");
