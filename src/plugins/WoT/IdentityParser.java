@@ -96,6 +96,8 @@ public class IdentityParser {
 		 */
 		public IdentityHandler() {
 		}
+		
+		/* FIXME: How is the root elemenet of the document handled?! The document format is <WoT> ... </Wot>.
 
 		/**
 		 * Called by SAXParser for each XML element.
