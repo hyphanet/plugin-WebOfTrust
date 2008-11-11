@@ -656,9 +656,11 @@ public class Identity {
 	public void addContext(String context, ObjectContainer db) throws InvalidParameterException {
 		String newContext = context.trim();
 		if(newContext.length() == 0) throw new InvalidParameterException("Blank context");
-		if(!contexts.contains(newContext)) contexts.add(newContext);
-		db.store(contexts);
-		updated();
+		if(!contexts.contains(newContext)) {
+			contexts.add(newContext);
+			updated();
+			db.store(contexts);
+		}
 	}
 	
 	/**
