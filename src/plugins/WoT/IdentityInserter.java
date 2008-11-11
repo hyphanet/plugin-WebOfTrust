@@ -168,16 +168,15 @@ public class IdentityInserter implements Runnable {
 			/* FIXME: use nonblocking insert */
 			// Blocking Insert
 			iURI = client.insert(ib, false, "identity.xml");
-
-		
-		identity.setEdition(iURI.getSuggestedEdition());
-		identity.setLastInsert(new Date());
-		
-		db.store(identity);
-		db.commit();
-		
-		// Logging
-		Logger.debug(this, "Successful insert of identity '" + identity.getNickName() + "'");
+			
+			identity.setEdition(iURI.getSuggestedEdition());
+			identity.setLastInsert(new Date());
+			
+			db.store(identity);
+			db.commit();
+			
+			// Logging
+			Logger.debug(this, "Successful insert of identity '" + identity.getNickName() + "'");
 		} finally {
 			tempB.free();		
 		}
