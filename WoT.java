@@ -115,6 +115,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		// Create the fetcher
 		fetcher = new IdentityFetcher(db, client);
 		
+		fetcher.fetch(seed, false);
+		
 		// Try to fetch all known identities
 		ObjectSet<Identity> identities = Identity.getAllIdentities(db);
 		while (identities.hasNext()) {
@@ -793,8 +795,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				try {
 					// Create the seed identity
 					seed = new Identity(new FreenetURI(seedURI), null, true);
-					// Step down to previous edition as the Fetcher is gonna try to fetch next edition
-					seed.setEdition(seed.getRequestURI().getSuggestedEdition() - 1);
+					seed.setEdition(seed.getRequestURI().getSuggestedEdition());
 				} catch (Exception e1) { // Should never happen
 					Logger.error(this, "Seed identity creation error", e);
 					return null;
