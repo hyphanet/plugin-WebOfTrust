@@ -23,6 +23,7 @@ import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.ui.web.HomePage;
 import plugins.WoT.ui.web.KnownIdentitiesPage;
 import plugins.WoT.ui.web.OwnIdentitiesPage;
@@ -761,6 +762,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		cfg.objectClass(Trust.class).objectField("trustee").indexed(true);
 		cfg.objectClass(Score.class).objectField("treeOwner").indexed(true);
 		cfg.objectClass(Score.class).objectField("target").indexed(true);
+		for(String field : IntroductionPuzzle.getIndexedFields())
+			cfg.objectClass(IntroductionPuzzle.class).indexed(true);
+		cfg.objectClass(IntroductionPuzzle.class).cascadeOnUpdate(true); /* FIXME: verify if this does not break anything */
 		
 		// This will make db4o store any complex objects which are referenced by a Config object.
 		cfg.objectClass(Config.class).cascadeOnUpdate(true);

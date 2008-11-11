@@ -132,33 +132,58 @@ public class IntroductionServer implements Runnable {
 		q.descend("mInserter").constrain(identity);
 		ObjectSet<IntroductionPuzzle> puzzles = q.execute();
 		
+		Logger.debug(this, "Identity " + identity.getNickName() + " has " + puzzles.size() + " puzzles stored. Deleting expired ones ...");
+		
+		for(IntroductionPuzzle p : puzzles) {
+			if(p.getValidUntilTime() < System.currentTimeMillis()) {
+				db.delete(p);
+				puzzles.remove(p);
+			}
+		}
+		
+		db.commit();
+		
+		int puzzlesToInsert = PUZZLES_COUNT - puzzles.size();
+		Logger.debug(this, "Trying to insert " + puzzlesToInsert + " puzzles from " + identity.getNickName());
+		while(puzzlesToInsert > 0) {
+			try {
+				insertNewPuzzle(identity);
+			}
+			catch(Exception e) {
+				Logger.error(this, "Error while inserting puzzle", e);
+			}
+			--puzzlesToInsert;
+		}
+		Logger.debug(this, "Finished inserting puzzles from " + identity.getNickName());
 	}
 	
-	private void insertNewPuzzle(OwnIdentity identity) throws IOException, InsertException {
+	private void insertNewPuzzle(OwnIdentity identity) throws IOException, InsertException, TransformerException, ParserConfigurationException {
 		Bucket tempB = mTBF.makeBucket(10 * 1024); /* TODO: set to a reasonable value */
 		OutputStream os = tempB.getOutputStream();
 		
 		try {
 			IntroductionPuzzle p = mPuzzleFactories[(int)(Math.random() * 100) % mPuzzleFactories.length].generatePuzzle();
-			os.write(p.getPuzzle());
-			os.close();
+			p.exportToXML(os);
+			os.close(); os = null;
 			tempB.setReadOnly();
 		
-			ClientMetadata cmd = new ClientMetadata(p.getMimeType());
+			ClientMetadata cmd = new ClientMetadata("text/xml");
 			InsertBlock ib = new InsertBlock(tempB, cmd, p.getURI());
 
-			Logger.debug(this, "Started insert puzzle from '" + identity.getNickName() + "'");
+			Logger.debug(this, "Started insert puzzle from " + identity.getNickName());
 
 			/* FIXME: use nonblocking insert */
-			mClient.insert(ib, true, p.getURI().getMetaString());
+			mClient.insert(ib, false, p.getURI().getMetaString());
 
 			db.store(p);
 			db.commit();
-		} finally {
-			tempB.free();
+			Logger.debug(this, "Successful insert of puzzle from " + identity.getNickName());
 		}
-
-		Logger.debug(this, "Successful insert of puzzle for '" + identity.getNickName() + "'");
+		finally {
+			tempB.free();
+			if(os != null)
+				os.close();
+		}
 	}
 	
 	private void downloadSolutions(OwnIdentity identity) {

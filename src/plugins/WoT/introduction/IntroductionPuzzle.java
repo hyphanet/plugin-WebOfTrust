@@ -5,39 +5,71 @@
  */
 package plugins.WoT.introduction;
 
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 
 import freenet.crypt.SHA1;
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
+import plugins.WoT.Trustlist;
 import plugins.WoT.WoT;
+import plugins.WoT.exceptions.UnknownIdentityException;
 
 public class IntroductionPuzzle {
 	
 	public static final String INTRODUCTION_CONTEXT = "introduction";
 	public static final int MINIMAL_SOLUTION_LENGTH = 5;
 	
+	/* Included in XML: */
+	
 	private final String mMimeType;
+	
+	private final long mValidUntilTime;
 	
 	private final byte[] mData;
 	
-	private final String mSolution;
+	/* Not included in XML, decoded from URI: */
 	
 	private final Identity mInserter;
-	
-	private final long mValidUntilTime;
 	
 	private final Date mDateOfInsertion;
 	
 	private final int mIndex;
+	
+	/* Supplied at creation time or by user: */
+	
+	private final String mSolution;
 	
 	
 	/* FIXME: wire this in */
@@ -53,8 +85,8 @@ public class IntroductionPuzzle {
 	 * @param newType
 	 * @param newData
 	 */
-	public IntroductionPuzzle(Identity newInserter, String newMimeType, String newFilename, byte[] newData, long myValidUntilTime, Date myDateOfInsertion, int myIndex) {
-		assert(	newInserter != null && newMimeType != null && !newMimeType.equals("") && newFilename!=null && !newFilename.equals("") &&
+	public IntroductionPuzzle(Identity newInserter, String newMimeType, byte[] newData, long myValidUntilTime, Date myDateOfInsertion, int myIndex) {
+		assert(	newInserter != null && newMimeType != null && !newMimeType.equals("") &&
 				newData!=null && newData.length!=0 && myValidUntilTime > System.currentTimeMillis() && myDateOfInsertion != null &&
 				myDateOfInsertion.getTime() < System.currentTimeMillis() && myIndex >= 0);
 		mInserter = newInserter;
@@ -161,5 +193,86 @@ public class IntroductionPuzzle {
 			db.delete(p);
 		
 		db.commit();
+	}
+	
+	public void exportToXML(OutputStream os) throws TransformerException, ParserConfigurationException {
+		// Create the output file
+		StreamResult resultStream = new StreamResult(os);
+
+		// Create the XML document
+		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
+		DOMImplementation impl = xmlBuilder.getDOMImplementation();
+		Document xmlDoc = impl.createDocument(null, "WoT", null);
+		Element rootElement = xmlDoc.getDocumentElement();
+
+		// Create the content
+		Element puzzleTag = xmlDoc.createElement("IntroductionPuzzle");
+
+		Element mimeTypeTag = xmlDoc.createElement("MimeType");
+		mimeTypeTag.setAttribute("value", mMimeType);
+		puzzleTag.appendChild(mimeTypeTag);
+		
+		Element validUntilTag = xmlDoc.createElement("ValidUntilTime");
+		validUntilTag.setAttribute("value", Long.toString(mValidUntilTime));
+		puzzleTag.appendChild(validUntilTag);
+		
+		Element dataTag = xmlDoc.createElement("Data");
+		dataTag.setAttribute("value", Base64.encode(mData));
+		puzzleTag.appendChild(dataTag);
+		
+		rootElement.appendChild(puzzleTag);
+
+		DOMSource domSource = new DOMSource(xmlDoc);
+		TransformerFactory transformFactory = TransformerFactory.newInstance();
+		Transformer serializer = transformFactory.newTransformer();
+		
+		serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		serializer.setOutputProperty(OutputKeys.INDENT,"yes");
+		serializer.transform(domSource, resultStream);
+	}
+	
+	public class PuzzleHandler extends DefaultHandler {
+		private final Identity newInserter;
+		private String newMimeType;
+		private byte[] newData;
+		private long newValidUntilTime;
+		private Date newDateOfInsertion;
+		private int newIndex;
+
+		public PuzzleHandler(Identity myInserter, Date myDateOfInsertion, int myIndex) {
+			super();
+			newInserter = myInserter;
+			newDateOfInsertion = myDateOfInsertion;
+			newIndex = myIndex;
+		}
+
+		/**
+		 * Called by SAXParser for each XML element.
+		 */
+		public void startElement(String nameSpaceURI, String localName, String rawName, Attributes attrs) throws SAXException {
+			String elt_name = rawName == null ? localName : rawName;
+
+			try {
+				if (elt_name.equals("MimeType")) {
+					newMimeType = attrs.getValue("value");
+				}
+				else if (elt_name.equals("ValidUntilTime")) {
+					newValidUntilTime = Long.parseLong(attrs.getValue("value"));
+				}
+				else if(elt_name.equals("Data")) {
+					newData = Base64.decode(attrs.getValue("value"));
+				}					
+				else
+					Logger.error(this, "Unknown element in puzzle: " + elt_name);
+				
+			} catch (Exception e1) {
+				Logger.error(this, "Parsing error",e1);
+			}
+		}
+
+		public IntroductionPuzzle getPuzzle() {
+			return new IntroductionPuzzle(newInserter, newMimeType, newData, newValidUntilTime, newDateOfInsertion, newIndex);
+		}
 	}
 }
