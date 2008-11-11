@@ -5,12 +5,21 @@
  */
 package plugins.WoT;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import plugins.WoT.exceptions.DuplicateIdentityException;
 import plugins.WoT.exceptions.DuplicateScoreException;
@@ -207,6 +216,66 @@ public class Identity {
 		return uri.toString().substring(begin, end);
 	}
 
+	/**
+	 * Please commit after calling the function!
+	 * @param db
+	 * @param fetcher
+	 * @param is
+	 * @return
+	 * @throws ParserConfigurationException
+	 * @throws SAXException
+	 * @throws IOException
+	 * @throws InvalidParameterException
+	 */
+	public static Identity importIntroductionFromXML(ObjectContainer db, IdentityFetcher fetcher, InputStream is) throws ParserConfigurationException, SAXException, IOException, InvalidParameterException {
+		IntroductionHandler introHandler = new IntroductionHandler();
+		SAXParserFactory.newInstance().newSAXParser().parse(is, introHandler);
+		
+		Identity id;
+		FreenetURI requestURI = introHandler.getRequestURI();
+		
+		try {
+			id = Identity.getByURI(db, requestURI);
+		}
+		catch (UnknownIdentityException e) {
+			id = new Identity(requestURI, null, false);
+			db.store(id);
+			fetcher.fetch(id);
+		}
+
+		return id;
+	}
+	
+	public static class IntroductionHandler extends DefaultHandler {
+		private FreenetURI requestURI;
+
+		public IntroductionHandler() {
+			super();
+		}
+
+		/**
+		 * Called by SAXParser for each XML element.
+		 */
+		public void startElement(String nameSpaceURI, String localName, String rawName, Attributes attrs) throws SAXException {
+			String elt_name = rawName == null ? localName : rawName;
+
+			try {
+				if (elt_name.equals("Identity")) {
+					requestURI = new FreenetURI(attrs.getValue("value"));
+				}				
+				else
+					Logger.error(this, "Unknown element in identity introduction: " + elt_name);
+				
+			} catch (Exception e1) {
+				Logger.error(this, "Parsing error",e1);
+			}
+		}
+
+		public FreenetURI getRequestURI() {
+			return requestURI;
+		}
+	}
+	
 	
 	/**
 	 * Gets the score of this identity in a trust tree.
