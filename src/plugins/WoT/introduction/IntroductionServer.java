@@ -8,7 +8,9 @@ package plugins.WoT.introduction;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
@@ -21,13 +23,22 @@ import com.db4o.ext.Db4oIOException;
 import com.db4o.query.Query;
 
 import freenet.client.ClientMetadata;
+import freenet.client.FetchContext;
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
+import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory;
+import plugins.WoT.Identity;
+import plugins.WoT.IdentityParser;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.exceptions.InvalidParameterException;
 
@@ -36,7 +47,7 @@ import plugins.WoT.exceptions.InvalidParameterException;
  * 
  * @author xor
  */
-public class IntroductionServer implements Runnable {
+public class IntroductionServer implements Runnable, ClientCallback {
 	
 	private static final long THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
 	private static final short PUZZLES_COUNT = 5; 
@@ -57,6 +68,8 @@ public class IntroductionServer implements Runnable {
 	private final TempBucketFactory mTBF;
 
 	private final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] { new CaptchaFactory1() };
+	
+	private final ArrayList<ClientGetter> mRequests = new ArrayList<ClientGetter>(PUZZLES_COUNT * 5); /* Just assume that there are 5 identities */
 
 	/**
 	 * Creates an IntroductionServer
@@ -84,6 +97,7 @@ public class IntroductionServer implements Runnable {
 		catch (InterruptedException e) {}
 		
 		while(isRunning) {
+			Logger.debug(this, "Introduction server loop running...");
 			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
 			
 			IntroductionPuzzle.deleteOldPuzzles(db);
@@ -92,10 +106,12 @@ public class IntroductionServer implements Runnable {
 				OwnIdentity identity = identities.next();
 				if(identity.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)) {
 					try {
-						managePuzzles(identity);
+						Logger.debug(this, "Managing puzzles of " + identity.getNickName());
 						downloadSolutions(identity);
+						insertNewPuzzles(identity);
+						Logger.debug(this, "Managing puzzles finished.");
 					} catch (Exception e) {
-						Logger.error(this, "Puzzle insert failed: " + e.getMessage(), e);
+						Logger.error(this, "Puzzle management failed for " + identity.getNickName(), e);
 					}
 				}
 			}
@@ -107,12 +123,13 @@ public class IntroductionServer implements Runnable {
 			catch (InterruptedException e)
 			{
 				mThread.interrupt();
+				Logger.debug(this, "Introduction server loop interrupted.");
 			}
+			Logger.debug(this, "Introduction server loop finished.");
 		}
-
 	}
 	
-	public void terminate() {
+	public synchronized void terminate() {
 		Logger.debug(this, "Stopping the introduction server...");
 		isRunning = false;
 		mThread.interrupt();
@@ -125,26 +142,37 @@ public class IntroductionServer implements Runnable {
 		}
 		Logger.debug(this, "Stopped the introduction server.");
 	}
-	
-	private void managePuzzles(OwnIdentity identity) {
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(identity);
-		ObjectSet<IntroductionPuzzle> puzzles = q.execute();
 		
-		Logger.debug(this, "Identity " + identity.getNickName() + " has " + puzzles.size() + " puzzles stored. Deleting expired ones ...");
+	private synchronized void downloadSolutions(OwnIdentity identity) throws FetchException {
+		ObjectSet<IntroductionPuzzle> puzzles = IntroductionPuzzle.getByInserter(db, identity);
+		
+		Logger.debug(this, "Identity " + identity.getNickName() + " has " + puzzles.size() + " puzzles stored. Trying to fetch solutions ...");
+
+		/* TODO: We restart all requests in every iteration. Decide whether this makes sense or not, if not add code to re-use requests for
+		 * puzzles which still exist.
+		 * I think it makes sense to restart them because there are not many puzzles and therefore not many requests. */
+		for(int idx=0; idx < mRequests.size(); ++idx) {
+			mRequests.get(idx).cancel();
+			mRequests.remove(idx);
+		}
 		
 		for(IntroductionPuzzle p : puzzles) {
-			if(p.getValidUntilTime() < System.currentTimeMillis()) {
-				db.delete(p);
-				puzzles.remove(p);
-			}
+			FetchContext fetchContext = mClient.getFetchContext();
+			fetchContext.maxSplitfileBlockRetries = -1; // retry forever
+			fetchContext.maxNonSplitfileRetries = -1; // retry forever
+			ClientGetter g = mClient.fetch(p.getSolutionURI(), -1, this, this, fetchContext);
+			g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* FIXME: decide which one to use */
+			mRequests.add(g);
+			Logger.debug(this, "Trying to fetch captcha solution  " + p.getSolutionURI().toString());
 		}
 		
 		db.commit();
-		
-		int puzzlesToInsert = PUZZLES_COUNT - puzzles.size();
+	}
+	
+	private synchronized void insertNewPuzzles(OwnIdentity identity) {
+		int puzzlesToInsert = PUZZLES_COUNT - IntroductionPuzzle.getByInserter(db, identity).size();
 		Logger.debug(this, "Trying to insert " + puzzlesToInsert + " puzzles from " + identity.getNickName());
+		
 		while(puzzlesToInsert > 0) {
 			try {
 				insertNewPuzzle(identity);
@@ -154,10 +182,11 @@ public class IntroductionServer implements Runnable {
 			}
 			--puzzlesToInsert;
 		}
+		
 		Logger.debug(this, "Finished inserting puzzles from " + identity.getNickName());
 	}
 	
-	private void insertNewPuzzle(OwnIdentity identity) throws IOException, InsertException, TransformerException, ParserConfigurationException {
+	private synchronized void insertNewPuzzle(OwnIdentity identity) throws IOException, InsertException, TransformerException, ParserConfigurationException {
 		Bucket tempB = mTBF.makeBucket(10 * 1024); /* TODO: set to a reasonable value */
 		OutputStream os = tempB.getOutputStream();
 		
@@ -186,7 +215,52 @@ public class IntroductionServer implements Runnable {
 		}
 	}
 	
-	private void downloadSolutions(OwnIdentity identity) {
-		
+	/**
+	 * Called when the node can't fetch a file OR when there is a newer edition.
+	 * In our case, called when there is no solution to a puzzle in the network.
+	 */
+	public synchronized void onFailure(FetchException e, ClientGetter state) {
+		Logger.normal(this, "Downloading puzzle solution " + state.getURI() + " failed: ", e);
+
+		mRequests.remove(state);
 	}
+
+	/**
+	 * Called when a file is successfully fetched. We then add the identity which
+	 * solved the puzzle.
+	 */
+	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
+		Logger.debug(this, "Fetched puzzle solution: " + state.getURI());
+
+		try {
+			IntroductionPuzzle p = IntroductionPuzzle.getBySolutionURI(db, state.getURI());
+			Identity newIdentity = p.importSolutionFromXML(db, result.asBucket().getInputStream());
+			OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
+			
+			puzzleOwner.setTrust(db, newIdentity, (byte)0, null); /* FIXME: is 0 the proper trust for newly imported identities? */
+		
+			state.cancel(); /* FIXME: is this necessary */ 
+			mRequests.remove(state);
+		} catch (Exception e) {
+			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
+		}
+	}
+	
+	/* Not needed functions from the ClientCallback inteface */
+	
+	// Only called by inserts
+	public void onSuccess(BaseClientPutter state) {}
+	
+	// Only called by inserts
+	public void onFailure(InsertException e, BaseClientPutter state) {}
+
+	// Only called by inserts
+	public void onFetchable(BaseClientPutter state) {}
+
+	// Only called by inserts
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
+
+	/** Called when freenet.async thinks that the request should be serialized to
+	 * disk, if it is a persistent request. */
+	public void onMajorProgress() {}
 }
