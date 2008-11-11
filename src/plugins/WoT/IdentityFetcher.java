@@ -42,8 +42,8 @@ public class IdentityFetcher implements ClientCallback {
 	private final HighLevelSimpleClient client;
 
 	/** All current requests */
-	private final HashSet<Identity> identities;
-	private final HashSet<ClientGetter> requests;
+	private final HashSet<Identity> identities = new HashSet<Identity>(128); /* TODO: profile & tweak */
+	private final HashSet<ClientGetter> requests = new HashSet<ClientGetter>(128); /* TODO: profile & tweak */
 	
 	
 	/**
@@ -56,8 +56,6 @@ public class IdentityFetcher implements ClientCallback {
 
 		this.db = db;
 		this.client = client;
-		identities = new HashSet<Identity>(128); /* TODO: profile & tweak */
-		requests = new HashSet<ClientGetter>(128); /* TODO: profile & tweak */
 	}
 	
 	/**
