@@ -5,8 +5,10 @@
  */
 package plugins.WoT.introduction;
 
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
@@ -50,6 +52,8 @@ public class IntroductionPuzzle {
 	
 	public static final String INTRODUCTION_CONTEXT = "introduction";
 	public static final int MINIMAL_SOLUTION_LENGTH = 5;
+	
+	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	
 	/* Included in XML: */
 	
@@ -115,6 +119,31 @@ public class IntroductionPuzzle {
 		mIndex = myIndex;
 	}
 	
+	public static ObjectSet<IntroductionPuzzle> getByInserter(ObjectContainer db, OwnIdentity i) {
+		Query q = db.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").constrain(i);
+		return q.execute();
+	}
+	
+	public static IntroductionPuzzle getBySolutionURI(ObjectContainer db, FreenetURI uri) throws ParseException {
+		String[] tokens = uri.getDocName().split("|");
+		String id = tokens[1];
+		Date date = mDateFormat.parse(tokens[2]);
+		int index = Integer.parseInt(tokens[3]);
+		
+		Query q = db.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").descend("id").constrain(id);
+		q.descend("mDateOfInsertion").constrain(date);
+		q.descend("mIndex").constrain(index);
+		ObjectSet<IntroductionPuzzle> result = q.execute();
+		
+		assert(result.size() == 1);
+		
+		return (result.hasNext() ? result.next() : null);
+	}
+	
 	public String getMimeType() {
 		return mMimeType;
 	}
@@ -128,7 +157,7 @@ public class IntroductionPuzzle {
 		
 		/* FIXME: I did not really understand the javadoc of FreenetURI. Please verify that the following code actually creates an URI
 		 * which looks like the one I specified in the javadoc above this function. Thanks. */
-		String dayOfInsertion = new SimpleDateFormat("yyyy-MM-dd").format(mDateOfInsertion);
+		String dayOfInsertion = mDateFormat.format(mDateOfInsertion);
 		FreenetURI baseURI = ((OwnIdentity)mInserter).getInsertURI().setKeyType("KSK");
 		baseURI = baseURI.setDocName(WoT.WOT_CONTEXT + "/" + INTRODUCTION_CONTEXT);
 		return baseURI.setMetaString(new String[] {dayOfInsertion + "|" + mIndex + ".xml"} );
@@ -189,6 +218,7 @@ public class IntroductionPuzzle {
 		q.descend("mValidUntilTime").constrain(System.currentTimeMillis()).smaller();
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
+		Logger.debug(IntroductionPuzzle.class, "Deleting " + result.size() + " old puzzles.");
 		for(IntroductionPuzzle p : result)
 			db.delete(p);
 		
@@ -230,6 +260,14 @@ public class IntroductionPuzzle {
 		serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 		serializer.setOutputProperty(OutputKeys.INDENT,"yes");
 		serializer.transform(domSource, resultStream);
+	}
+	
+	public static IntroductionPuzzle importFromXML(InputStream is) {
+		return null;
+	}
+	
+	public static Identity importSolutionFromXML(ObjectContainer db, InputStream is) {
+		return null;
 	}
 	
 	public class PuzzleHandler extends DefaultHandler {
