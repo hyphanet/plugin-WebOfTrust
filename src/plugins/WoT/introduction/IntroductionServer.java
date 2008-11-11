@@ -38,7 +38,7 @@ import plugins.WoT.exceptions.InvalidParameterException;
  */
 public class IntroductionServer implements Runnable {
 	
-	private static final long THREAD_PERIOD = 30 * 60 * 1000;
+	private static final long THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
 	private static final short PUZZLES_COUNT = 5; 
 	public static final long PUZZLE_INVALID_AFTER_DAYS = 3;
 
