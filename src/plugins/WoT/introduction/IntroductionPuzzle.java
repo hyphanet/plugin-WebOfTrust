@@ -5,6 +5,7 @@
  */
 package plugins.WoT.introduction;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
@@ -18,6 +19,8 @@ import java.util.Map.Entry;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -43,9 +46,12 @@ import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
 import plugins.WoT.Identity;
+import plugins.WoT.IdentityFetcher;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.Trustlist;
 import plugins.WoT.WoT;
+import plugins.WoT.IdentityParser.IdentityHandler;
+import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 
 public class IntroductionPuzzle {
@@ -175,7 +181,7 @@ public class IntroductionPuzzle {
 	 * Get the URI at which to insert the solution of this puzzle.
 	 */
 	public FreenetURI getSolutionURI(String guessOfSolution) {
-		String dayOfInsertion = new SimpleDateFormat("yyyy-MM-dd").format(mDateOfInsertion);
+		String dayOfInsertion = mDateFormat.format(mDateOfInsertion);
 		return new FreenetURI("KSK", 	INTRODUCTION_CONTEXT + "|" +
 								mInserter.getId() + "|" +
 								dayOfInsertion + "|" +
@@ -262,15 +268,15 @@ public class IntroductionPuzzle {
 		serializer.transform(domSource, resultStream);
 	}
 	
-	public static IntroductionPuzzle importFromXML(InputStream is) {
-		return null;
+	public static void importFromXML(ObjectContainer db, InputStream is, FreenetURI puzzleURI ) throws SAXException, IOException, ParserConfigurationException, UnknownIdentityException, ParseException {
+		PuzzleHandler puzzleHandler = new PuzzleHandler(db, puzzleURI);
+		SAXParserFactory.newInstance().newSAXParser().parse(is, puzzleHandler);
+		
+		db.store(puzzleHandler.getPuzzle());
+		db.commit();
 	}
 	
-	public static Identity importSolutionFromXML(ObjectContainer db, InputStream is) {
-		return null;
-	}
-	
-	public class PuzzleHandler extends DefaultHandler {
+	public static class PuzzleHandler extends DefaultHandler {
 		private final Identity newInserter;
 		private String newMimeType;
 		private byte[] newData;
@@ -278,11 +284,14 @@ public class IntroductionPuzzle {
 		private Date newDateOfInsertion;
 		private int newIndex;
 
-		public PuzzleHandler(Identity myInserter, Date myDateOfInsertion, int myIndex) {
+
+		public PuzzleHandler(ObjectContainer db, FreenetURI puzzleURI) throws UnknownIdentityException, ParseException {
 			super();
-			newInserter = myInserter;
-			newDateOfInsertion = myDateOfInsertion;
-			newIndex = myIndex;
+			newInserter = Identity.getByURI(db, puzzleURI);
+			String filename = puzzleURI.getDocName().replaceAll(".xml", "");
+			String tokens[] = filename.split("|");
+			newDateOfInsertion = mDateFormat.parse(tokens[0]);
+			newIndex = Integer.parseInt(tokens[1]);
 		}
 
 		/**
