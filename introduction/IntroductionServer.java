@@ -41,7 +41,6 @@ public class IntroductionServer implements Runnable {
 	private static final long THREAD_PERIOD = 30 * 60 * 1000;
 	private static final short PUZZLES_COUNT = 5; 
 	public static final long PUZZLE_INVALID_AFTER_DAYS = 3;
-	private static final String INTRODUCTION_CONTEXT = "introduction";
 
 	private Thread mThread;
 	
@@ -91,9 +90,10 @@ public class IntroductionServer implements Runnable {
 			
 			while(identities.hasNext()) {
 				OwnIdentity identity = identities.next();
-				if(identity.hasContext("introduction")) {
+				if(identity.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)) {
 					try {
 						managePuzzles(identity);
+						downloadSolutions(identity);
 					} catch (Exception e) {
 						Logger.error(this, "Puzzle insert failed: " + e.getMessage(), e);
 					}
@@ -135,7 +135,7 @@ public class IntroductionServer implements Runnable {
 	}
 	
 	private void insertNewPuzzle(OwnIdentity identity) throws IOException, InsertException {
-		Bucket tempB = mTBF.makeBucket(10 * 1024);
+		Bucket tempB = mTBF.makeBucket(10 * 1024); /* TODO: set to a reasonable value */
 		OutputStream os = tempB.getOutputStream();
 		
 		try {
@@ -145,13 +145,12 @@ public class IntroductionServer implements Runnable {
 			tempB.setReadOnly();
 		
 			ClientMetadata cmd = new ClientMetadata(p.getMimeType());
-			FreenetURI uri = new FreenetURI("KSK", p.getFilename());
-			InsertBlock ib = new InsertBlock(tempB, cmd, uri);
+			InsertBlock ib = new InsertBlock(tempB, cmd, p.getURI());
 
 			Logger.debug(this, "Started insert puzzle from '" + identity.getNickName() + "'");
 
 			/* FIXME: use nonblocking insert */
-			mClient.insert(ib, true, p.getFilename());
+			mClient.insert(ib, true, p.getURI().getMetaString());
 
 			db.store(p);
 			db.commit();
@@ -160,5 +159,9 @@ public class IntroductionServer implements Runnable {
 		}
 
 		Logger.debug(this, "Successful insert of puzzle for '" + identity.getNickName() + "'");
+	}
+	
+	private void downloadSolutions(OwnIdentity identity) {
+		
 	}
 }
