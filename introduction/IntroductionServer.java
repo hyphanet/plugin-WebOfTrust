@@ -38,6 +38,7 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory;
 import plugins.WoT.Identity;
+import plugins.WoT.IdentityFetcher;
 import plugins.WoT.IdentityParser;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.exceptions.InvalidParameterException;
@@ -66,6 +67,8 @@ public class IntroductionServer implements Runnable, ClientCallback {
 	
 	/** The TempBucketFactory used to create buckets from puzzles before insert */
 	private final TempBucketFactory mTBF;
+	
+	private final IdentityFetcher mIdentityFetcher;
 
 	private final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] { new CaptchaFactory1() };
 	
@@ -82,11 +85,12 @@ public class IntroductionServer implements Runnable, ClientCallback {
 	 * @param tbf
 	 *            Needed to create buckets from Identities before insert
 	 */
-	public IntroductionServer(ObjectContainer myDB, HighLevelSimpleClient myClient, TempBucketFactory myTBF) {
+	public IntroductionServer(ObjectContainer myDB, HighLevelSimpleClient myClient, TempBucketFactory myTBF, IdentityFetcher myFetcher) {
 		isRunning = true;
 		db = myDB;
 		mClient = myClient;
 		mTBF = myTBF;
+		mIdentityFetcher = myFetcher;
 	}
 
 	public void run() {
@@ -233,15 +237,18 @@ public class IntroductionServer implements Runnable, ClientCallback {
 		Logger.debug(this, "Fetched puzzle solution: " + state.getURI());
 
 		try {
+			db.commit();
+			Identity newIdentity = Identity.importIntroductionFromXML(db, mIdentityFetcher, result.asBucket().getInputStream());
 			IntroductionPuzzle p = IntroductionPuzzle.getBySolutionURI(db, state.getURI());
-			Identity newIdentity = p.importSolutionFromXML(db, result.asBucket().getInputStream());
 			OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
-			
 			puzzleOwner.setTrust(db, newIdentity, (byte)0, null); /* FIXME: is 0 the proper trust for newly imported identities? */
+			db.delete(p);
+			db.commit();
 		
 			state.cancel(); /* FIXME: is this necessary */ 
 			mRequests.remove(state);
 		} catch (Exception e) {
+			db.rollback(); /* FIXME: toad: is this safe or might some other thread get active and start a transaction which will be interrupted by this? */ 
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
 		}
 	}
