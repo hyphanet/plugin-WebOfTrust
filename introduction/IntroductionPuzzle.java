@@ -225,20 +225,41 @@ public class IntroductionPuzzle {
 		return mValidUntilTime;
 	}
 	
+	public int getIndex() {
+		return mIndex;
+	}
+	
 	public void store(ObjectContainer db) {
 		db.store(this);
 		db.commit();
 	}
 	
-	public static void deleteOldPuzzles(ObjectContainer db) {
+	public static void deleteExpiredPuzzles(ObjectContainer db) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mValidUntilTime").constrain(System.currentTimeMillis()).smaller();
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
-		Logger.debug(IntroductionPuzzle.class, "Deleting " + result.size() + " old puzzles.");
+		Logger.debug(IntroductionPuzzle.class, "Deleting " + result.size() + " expired puzzles.");
 		for(IntroductionPuzzle p : result)
 			db.delete(p);
+		
+		db.commit();
+	}
+	
+	public static void deleteOldestPuzzles(ObjectContainer db, int puzzlePoolSize) {
+		Query q = db.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mValidUntilTime").orderAscending();
+		ObjectSet<IntroductionPuzzle> result = q.execute();
+		
+		int deleteCount = result.size() - puzzlePoolSize;
+		
+		Logger.debug(IntroductionPuzzle.class, "Deleting " + deleteCount + " old puzzles.");
+		while(deleteCount > 0) {
+			db.delete(result.next());
+			deleteCount--;
+		}
 		
 		db.commit();
 	}
@@ -280,12 +301,14 @@ public class IntroductionPuzzle {
 		serializer.transform(domSource, resultStream);
 	}
 	
-	public static void importFromXML(ObjectContainer db, InputStream is, FreenetURI puzzleURI ) throws SAXException, IOException, ParserConfigurationException, UnknownIdentityException, ParseException {
+	public static IntroductionPuzzle importFromXML(ObjectContainer db, InputStream is, FreenetURI puzzleURI ) throws SAXException, IOException, ParserConfigurationException, UnknownIdentityException, ParseException {
 		PuzzleHandler puzzleHandler = new PuzzleHandler(db, puzzleURI);
 		SAXParserFactory.newInstance().newSAXParser().parse(is, puzzleHandler);
 		
 		db.store(puzzleHandler.getPuzzle());
 		db.commit();
+		
+		return puzzleHandler.getPuzzle();
 	}
 	
 	public static class PuzzleHandler extends DefaultHandler {
