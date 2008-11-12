@@ -250,6 +250,7 @@ public class IntroductionPuzzle {
 	public static void deleteOldestPuzzles(ObjectContainer db, int puzzlePoolSize) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
+		q.descend("mSolution").constrain(null).identity(); /* FIXME: toad said constrain(null) is maybe broken. If this is true: Alternative would be: q.descend("mIdentity").constrain(OwnIdentity.class).not(); */
 		q.descend("mValidUntilTime").orderAscending();
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
