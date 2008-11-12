@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
@@ -51,8 +52,8 @@ import plugins.WoT.exceptions.InvalidParameterException;
 public class IntroductionServer implements Runnable, ClientCallback {
 	
 	private static final long THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
-	private static final short PUZZLES_COUNT = 5; 
-	public static final long PUZZLE_INVALID_AFTER_DAYS = 3;
+	private static final byte PUZZLES_COUNT = 5; 
+	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
 
 	private Thread mThread;
 	
@@ -94,11 +95,15 @@ public class IntroductionServer implements Runnable, ClientCallback {
 	}
 
 	public void run() {
+		Logger.debug(this, "Introduction server thread started.");
 		mThread = Thread.currentThread();
 		try {
 			Thread.sleep((long) (1*60*1000 * (0.5f + Math.random()))); // Let the node start up
 		}
-		catch (InterruptedException e) {}
+		catch (InterruptedException e)
+		{
+			mThread.interrupt();
+		}
 		
 		while(isRunning) {
 			Logger.debug(this, "Introduction server loop running...");
@@ -131,6 +136,9 @@ public class IntroductionServer implements Runnable, ClientCallback {
 			}
 			Logger.debug(this, "Introduction server loop finished.");
 		}
+		
+		cancelRequests();
+		Logger.debug(this, "Introduction server thread finished.");
 	}
 	
 	public synchronized void terminate() {
@@ -145,6 +153,14 @@ public class IntroductionServer implements Runnable, ClientCallback {
 			Thread.currentThread().interrupt();
 		}
 		Logger.debug(this, "Stopped the introduction server.");
+	}
+	
+	private synchronized void cancelRequests() {
+		Iterator<ClientGetter> i = mRequests.iterator();
+		int counter = 0;
+		Logger.debug(this, "Trying to stop all requests"); 
+		while (i.hasNext()) { i.next().cancel(); ++counter; }
+		Logger.debug(this, "Stopped " + counter + " current requests");
 	}
 		
 	private synchronized void downloadSolutions(OwnIdentity identity) throws FetchException {
