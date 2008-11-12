@@ -52,7 +52,7 @@ import plugins.WoT.exceptions.InvalidParameterException;
 public class IntroductionServer implements Runnable, ClientCallback {
 	
 	private static final long THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
-	private static final byte PUZZLES_COUNT = 5; 
+	public static final byte PUZZLE_COUNT = 5; 
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
 
 	private Thread mThread;
@@ -73,7 +73,7 @@ public class IntroductionServer implements Runnable, ClientCallback {
 
 	private final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] { new CaptchaFactory1() };
 	
-	private final ArrayList<ClientGetter> mRequests = new ArrayList<ClientGetter>(PUZZLES_COUNT * 5); /* Just assume that there are 5 identities */
+	private final ArrayList<ClientGetter> mRequests = new ArrayList<ClientGetter>(PUZZLE_COUNT * 5); /* Just assume that there are 5 identities */
 
 	/**
 	 * Creates an IntroductionServer
@@ -109,7 +109,7 @@ public class IntroductionServer implements Runnable, ClientCallback {
 			Logger.debug(this, "Introduction server loop running...");
 			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
 			
-			IntroductionPuzzle.deleteOldPuzzles(db);
+			IntroductionPuzzle.deleteExpiredPuzzles(db);
 			
 			while(identities.hasNext()) {
 				OwnIdentity identity = identities.next();
@@ -190,7 +190,7 @@ public class IntroductionServer implements Runnable, ClientCallback {
 	}
 	
 	private synchronized void insertNewPuzzles(OwnIdentity identity) {
-		int puzzlesToInsert = PUZZLES_COUNT - IntroductionPuzzle.getByInserter(db, identity).size();
+		int puzzlesToInsert = PUZZLE_COUNT - IntroductionPuzzle.getByInserter(db, identity).size();
 		Logger.debug(this, "Trying to insert " + puzzlesToInsert + " puzzles from " + identity.getNickName());
 		
 		while(puzzlesToInsert > 0) {
