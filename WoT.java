@@ -554,7 +554,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	{
 		ObjectSet<Score> result = Score.getIdentitiesByScore(db, treeOwner, select);
 		// TODO: decide whether the tradeoff of using too much memory for the ArrayList is worth the speedup of not having a linked
-		// list which allocates lots of pieces of memory for its nodes.
+		// list which allocates lots of pieces of memory for its nodes. trimToSize() is not an option because the List usually will be
+		// used only temporarily.
 		ArrayList<Identity> identities = new ArrayList<Identity>(result.size()); 
 		boolean getAll = context.equals("all");
 		
