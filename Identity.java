@@ -150,8 +150,8 @@ public class Identity {
 		query.descend("id").constrain(id);
 		ObjectSet<Identity> result = query.execute();
 		
-		assert(result.size() <= 1);
 		if(result.size() == 0) throw new UnknownIdentityException(id);
+		else if(result.size() > 1) throw new DuplicateIdentityException(id);
 		return result.next();
 	}
 
