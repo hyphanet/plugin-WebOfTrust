@@ -144,7 +144,6 @@ public class IntroductionClient implements Runnable, ClientCallback  {
 		int counter = 0;
 		Logger.debug(this, "Trying to stop all requests"); 
 		while (i.hasNext()) { i.next().cancel(); ++counter; }
-		mIdentities.clear();
 		Logger.debug(this, "Stopped " + counter + " current requests");
 	}
 	
