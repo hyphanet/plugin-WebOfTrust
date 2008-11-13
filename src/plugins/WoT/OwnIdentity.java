@@ -118,8 +118,8 @@ public class OwnIdentity extends Identity {
 		query.descend("id").constrain(id);
 		ObjectSet<OwnIdentity> result = query.execute();
 		
-		assert(result.size() <= 1);
 		if(result.size() == 0) throw new UnknownIdentityException(id.toString());
+		if(result.size() > 1) throw new DuplicateIdentityException(id);
 		return result.next();
 	}
 	
