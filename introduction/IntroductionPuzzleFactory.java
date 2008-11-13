@@ -5,12 +5,16 @@
  */
 package plugins.WoT.introduction;
 
+import java.io.IOException;
+
+import plugins.WoT.Identity;
+
 /**
  * @author xor
  *
  */
 public interface IntroductionPuzzleFactory {
 	
-	public IntroductionPuzzle generatePuzzle();
+	public IntroductionPuzzle generatePuzzle(Identity inserter, int index) throws IOException;
 
 }
