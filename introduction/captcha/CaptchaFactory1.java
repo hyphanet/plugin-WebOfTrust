@@ -5,8 +5,16 @@
  */
 package plugins.WoT.introduction.captcha;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+
+import plugins.WoT.Identity;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionPuzzleFactory;
+import plugins.WoT.introduction.captcha.kaptcha.impl.DefaultKaptcha;
 
 /**
  * First implementation of a captcha factory.
@@ -21,8 +29,19 @@ import plugins.WoT.introduction.IntroductionPuzzleFactory;
  */
 public class CaptchaFactory1 implements IntroductionPuzzleFactory {
 
-	public IntroductionPuzzle generatePuzzle() {
-		return null;
+	public IntroductionPuzzle generatePuzzle(Identity inserter, int index) throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1024);
+		try {
+			DefaultKaptcha captcha = new DefaultKaptcha();
+			String text = captcha.createText();
+			BufferedImage img = captcha.createImage(text);
+			 /* TODO: find out the maximum size of the captchas and put it here */
+			
+			ImageIO.write(img, "jpg", out);
+			return new IntroductionPuzzle(inserter, "image/jpeg", out.toByteArray(), text, index);
+		}
+		finally {
+			out.close();
+		}
 	}
-
 }
