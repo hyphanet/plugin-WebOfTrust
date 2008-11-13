@@ -9,10 +9,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
+import plugins.WoT.exceptions.NotInTrustTreeException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -54,6 +56,8 @@ public class IntroductionClient implements Runnable, ClientCallback  {
 	public static final int MAX_PUZZLES_PER_IDENTITY = IntroductionServer.PUZZLE_COUNT;
 
 	private static final int MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD = 10; /* FIXME: tweak before release */
+	
+	private static final int MINIMUM_SCORE_FOR_PUZZLE_DISPLAY = 50; /* FIXME: tweak before release */
 
 	private Thread mThread;
 	
@@ -138,6 +142,30 @@ public class IntroductionClient implements Runnable, ClientCallback  {
 		}
 		Logger.debug(this, "Stopped the introduction client.");
 	}
+	
+	public synchronized List<IntroductionPuzzle> getPuzzles(OwnIdentity id, int count) {
+		Query q = db.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mSolution").constrain(null).identity(); /* FIXME: toad said constrain(null) is maybe broken. If this is true: Alternative would be: q.descend("mIdentity").constrain(OwnIdentity.class).not(); */
+		ObjectSet<IntroductionPuzzle> puzzles = q.execute();
+		ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count);
+		
+		for(IntroductionPuzzle p : puzzles) {
+			try {
+				int score = p.getInserter().getScore(id, db).getScore();
+				if(score > MINIMUM_SCORE_FOR_PUZZLE_DISPLAY) { 
+					result.add(p);
+					if(result.size() == count)
+						break;
+				}
+			}
+			catch(NotInTrustTreeException e) {
+			}
+		}
+		
+		return result;
+	}
+	
 	
 	private synchronized void cancelRequests() {
 		Iterator<ClientGetter> i = mRequests.iterator();
