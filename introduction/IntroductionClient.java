@@ -149,12 +149,14 @@ public class IntroductionClient implements Runnable, ClientCallback  {
 		q.descend("mSolution").constrain(null).identity(); /* FIXME: toad said constrain(null) is maybe broken. If this is true: Alternative would be: q.descend("mIdentity").constrain(OwnIdentity.class).not(); */
 		ObjectSet<IntroductionPuzzle> puzzles = q.execute();
 		ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count);
+		HashSet<Identity> resultHasPuzzleFrom = new HashSet<Identity>(count);
 		
 		for(IntroductionPuzzle p : puzzles) {
 			try {
 				int score = p.getInserter().getScore(id, db).getScore();
-				if(score > MINIMUM_SCORE_FOR_PUZZLE_DISPLAY) { 
+				if(score > MINIMUM_SCORE_FOR_PUZZLE_DISPLAY && !resultHasPuzzleFrom.contains(p.getInserter())) { 
 					result.add(p);
+					resultHasPuzzleFrom.add(p.getInserter());
 					if(result.size() == count)
 						break;
 				}
