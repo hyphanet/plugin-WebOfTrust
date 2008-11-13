@@ -5,23 +5,20 @@
  */
 package plugins.WoT.introduction;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
+
+import plugins.WoT.Identity;
+import plugins.WoT.IdentityFetcher;
+import plugins.WoT.OwnIdentity;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
-import com.db4o.ext.DatabaseClosedException;
-import com.db4o.ext.Db4oIOException;
-import com.db4o.query.Query;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -38,11 +35,6 @@ import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory;
-import plugins.WoT.Identity;
-import plugins.WoT.IdentityFetcher;
-import plugins.WoT.IdentityParser;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.exceptions.InvalidParameterException;
 
 /**
  * This class provides identity announcement for new identities; It uploads puzzles in certain time intervals and checks whether they were solved.
