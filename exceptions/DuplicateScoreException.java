@@ -12,7 +12,7 @@ package plugins.WoT.exceptions;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */
-public class DuplicateScoreException extends Exception {
+public class DuplicateScoreException extends RuntimeException {
 	
 	private static final long serialVersionUID = -1;
 
