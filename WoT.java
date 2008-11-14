@@ -378,6 +378,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 		OwnIdentity identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 		identity.addContext(context, db);
+		identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db); /* fixme: make configureable */
 		db.store(identity);
 		identity.initTrustTree(db);		
 
