@@ -16,6 +16,7 @@ import javax.xml.transform.TransformerException;
 import plugins.WoT.Identity;
 import plugins.WoT.IdentityFetcher;
 import plugins.WoT.OwnIdentity;
+import plugins.WoT.introduction.captcha.CaptchaFactory1;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -203,7 +204,7 @@ public class IntroductionServer implements Runnable, ClientCallback {
 		OutputStream os = tempB.getOutputStream();
 		
 		try {
-			IntroductionPuzzle p = mPuzzleFactories[(int)(Math.random() * 100) % mPuzzleFactories.length].generatePuzzle();
+			IntroductionPuzzle p = mPuzzleFactories[(int)(Math.random() * 100) % mPuzzleFactories.length].generatePuzzle(db, identity);
 			p.exportToXML(os);
 			os.close(); os = null;
 			tempB.setReadOnly();
@@ -250,7 +251,8 @@ public class IntroductionServer implements Runnable, ClientCallback {
 			OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
 			Identity newIdentity = Identity.importIntroductionFromXML(db, mIdentityFetcher, result.asBucket().getInputStream());
 			puzzleOwner.setTrust(db, newIdentity, (byte)0, null); /* FIXME: is 0 the proper trust for newly imported identities? */
-			db.delete(p);
+			p.setSolved();
+			db.store(p);
 			db.commit();
 		
 			state.cancel(); /* FIXME: is this necessary */ 
