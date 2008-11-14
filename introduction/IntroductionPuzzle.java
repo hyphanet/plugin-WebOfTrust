@@ -127,7 +127,7 @@ public class IntroductionPuzzle {
 		mData = newData;
 		mSolution = newSolution;
 		mDateOfInsertion = new Date(newDateOfInsertion.getYear(), newDateOfInsertion.getMonth(), newDateOfInsertion.getDay());
-		mValidUntilTime = mDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000; /* FIXME: get it in UTC */
+		mValidUntilTime = newDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000; /* FIXME: get it in UTC */
 		mIndex = myIndex;
 	}
 	
