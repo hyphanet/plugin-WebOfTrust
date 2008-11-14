@@ -134,8 +134,8 @@ public class IntroductionPuzzle {
 	public static ObjectSet<IntroductionPuzzle> getByInserter(ObjectContainer db, OwnIdentity i) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
-	//	q.descend("mInserter").constrain(i);
-	//	q.descend("iWasSolved").constrain(new Boolean(false));
+		q.descend("mInserter").constrain(i);
+		q.descend("iWasSolved").constrain(new Boolean(false));
 		return q.execute();
 	}
 	
