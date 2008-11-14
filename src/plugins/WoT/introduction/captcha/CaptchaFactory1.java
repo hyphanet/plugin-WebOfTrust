@@ -8,10 +8,13 @@ package plugins.WoT.introduction.captcha;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Date;
 
 import javax.imageio.ImageIO;
 
-import plugins.WoT.Identity;
+import com.db4o.ObjectContainer;
+
+import plugins.WoT.OwnIdentity;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionPuzzleFactory;
 import plugins.WoT.introduction.captcha.kaptcha.impl.DefaultKaptcha;
@@ -29,7 +32,7 @@ import plugins.WoT.introduction.captcha.kaptcha.impl.DefaultKaptcha;
  */
 public class CaptchaFactory1 implements IntroductionPuzzleFactory {
 
-	public IntroductionPuzzle generatePuzzle(Identity inserter, int index) throws IOException {
+	public IntroductionPuzzle generatePuzzle(ObjectContainer db, OwnIdentity inserter) throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1024);
 		try {
 			DefaultKaptcha captcha = new DefaultKaptcha();
@@ -38,7 +41,9 @@ public class CaptchaFactory1 implements IntroductionPuzzleFactory {
 			 /* TODO: find out the maximum size of the captchas and put it here */
 			
 			ImageIO.write(img, "jpg", out);
-			return new IntroductionPuzzle(inserter, "image/jpeg", out.toByteArray(), text, index);
+			
+			Date dateOfInsertion = new Date();
+			return new IntroductionPuzzle(inserter, "image/jpeg", out.toByteArray(), text, dateOfInsertion, IntroductionPuzzle.getFreeIndex(db, inserter, dateOfInsertion));
 		}
 		finally {
 			out.close();

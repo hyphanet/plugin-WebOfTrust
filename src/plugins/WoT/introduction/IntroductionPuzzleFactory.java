@@ -7,7 +7,10 @@ package plugins.WoT.introduction;
 
 import java.io.IOException;
 
+import com.db4o.ObjectContainer;
+
 import plugins.WoT.Identity;
+import plugins.WoT.OwnIdentity;
 
 /**
  * @author xor
@@ -15,6 +18,6 @@ import plugins.WoT.Identity;
  */
 public interface IntroductionPuzzleFactory {
 	
-	public IntroductionPuzzle generatePuzzle(Identity inserter, int index) throws IOException;
+	public IntroductionPuzzle generatePuzzle(ObjectContainer db, OwnIdentity inserter) throws IOException;
 
 }
