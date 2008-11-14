@@ -227,6 +227,7 @@ public class IntroductionServer implements Runnable, ClientCallback {
 		
 					db.store(p);
 					db.commit();
+					Logger.debug(this, "Successful insert of puzzle from " + identity.getNickName() + ": " + p.getRequestURI());
 				}
 				catch(InsertException e) {
 					if(e.errorCodes.getFirstCode() == InsertException.COLLISION)
@@ -238,8 +239,6 @@ public class IntroductionServer implements Runnable, ClientCallback {
 				}
 			}
 			while(retryWithNewIndex);
-
-			Logger.debug(this, "Successful insert of puzzle from " + identity.getNickName() + ": " + p.getRequestURI());
 		}
 		finally {
 			tempB.free();
