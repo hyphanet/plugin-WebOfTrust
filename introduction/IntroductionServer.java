@@ -7,6 +7,7 @@ package plugins.WoT.introduction;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -20,6 +21,7 @@ import plugins.WoT.introduction.captcha.CaptchaFactory1;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.query.Query;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -89,6 +91,7 @@ public class IntroductionServer implements Runnable, ClientCallback {
 
 	public void run() {
 		Logger.debug(this, "Introduction server thread started.");
+		
 		mThread = Thread.currentThread();
 		try {
 			Thread.sleep((long) (1*60*1000 * (0.5f + Math.random()))); // Let the node start up
@@ -219,7 +222,7 @@ public class IntroductionServer implements Runnable, ClientCallback {
 
 			db.store(p);
 			db.commit();
-			Logger.debug(this, "Successful insert of puzzle from " + identity.getNickName());
+			Logger.debug(this, "Successful insert of puzzle from " + identity.getNickName() + ": " + p.getURI());
 		}
 		finally {
 			tempB.free();
