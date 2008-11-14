@@ -46,7 +46,7 @@ import freenet.support.io.TempBucketFactory;
  */
 public class IntroductionServer implements Runnable, ClientCallback {
 	
-	private static final long STARTUP_DELAY = 3 * 60 * 1000;
+	private static final long STARTUP_DELAY = 1 * 60 * 1000;
 	private static final long THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
 	public static final byte PUZZLE_COUNT = 5; 
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
@@ -180,7 +180,7 @@ public class IntroductionServer implements Runnable, ClientCallback {
 			ClientGetter g = mClient.fetch(p.getSolutionURI(), -1, this, this, fetchContext);
 			g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* FIXME: decide which one to use */
 			mRequests.add(g);
-			Logger.debug(this, "Trying to fetch captcha solution  " + p.getSolutionURI().toString());
+			Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
 		}
 		
 		db.commit();
@@ -214,16 +214,16 @@ public class IntroductionServer implements Runnable, ClientCallback {
 			tempB.setReadOnly();
 		
 			ClientMetadata cmd = new ClientMetadata("text/xml");
-			InsertBlock ib = new InsertBlock(tempB, cmd, p.getURI());
+			InsertBlock ib = new InsertBlock(tempB, cmd, p.getInsertURI());
 
 			Logger.debug(this, "Started insert puzzle from " + identity.getNickName());
 
 			/* FIXME: use nonblocking insert */
-			mClient.insert(ib, false, p.getURI().getDocName());
+			mClient.insert(ib, false, p.getInsertURI().getDocName());
 
 			db.store(p);
 			db.commit();
-			Logger.debug(this, "Successful insert of puzzle from " + identity.getNickName() + ": " + p.getURI());
+			Logger.debug(this, "Successful insert of puzzle from " + identity.getNickName() + ": " + p.getRequestURI());
 		}
 		finally {
 			tempB.free();
