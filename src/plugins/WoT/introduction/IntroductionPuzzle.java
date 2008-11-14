@@ -183,8 +183,7 @@ public class IntroductionPuzzle {
 		 * which looks like the one I specified in the javadoc above this function. Thanks. */
 		String dayOfInsertion = mDateFormat.format(mDateOfInsertion);
 		FreenetURI baseURI = ((OwnIdentity)mInserter).getInsertURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WoT.WOT_CONTEXT + "/" + INTRODUCTION_CONTEXT);
-		return baseURI.setMetaString(new String[] {dayOfInsertion + "|" + mIndex + ".xml"} );
+		return baseURI.setDocName(WoT.WOT_CONTEXT + "/" + INTRODUCTION_CONTEXT + "/" + dayOfInsertion + "|" + mIndex + ".xml");
 	}
 	
 	public static FreenetURI generateRequestURI(Identity inserter, Date dateOfInsertion, int index) {
@@ -195,8 +194,7 @@ public class IntroductionPuzzle {
 		 * which looks like the one I specified in the javadoc above this function. Thanks. */
 		String dayOfInsertion = mDateFormat.format(dateOfInsertion);
 		FreenetURI baseURI = inserter.getRequestURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WoT.WOT_CONTEXT + "/" + INTRODUCTION_CONTEXT);
-		return baseURI.setMetaString(new String[] {dayOfInsertion + "|" + index + ".xml"} );
+		return baseURI.setDocName(WoT.WOT_CONTEXT + "/" + INTRODUCTION_CONTEXT + "/" + dayOfInsertion + "|" + index + ".xml");
 	}
 	
 	
