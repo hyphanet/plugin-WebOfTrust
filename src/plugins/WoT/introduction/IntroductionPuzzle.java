@@ -174,7 +174,7 @@ public class IntroductionPuzzle {
 	
 	/**
 	 * Get the URI at which to insert this puzzle.
-	 * SSK@asdfasdf.../WoT/introduction/yyyy-MM-dd|#.xml 
+	 * SSK@asdfasdf...|WoT|introduction|yyyy-MM-dd|#.xml 
 	 */
 	public FreenetURI getURI() throws MalformedURLException {
 		assert(mSolution != null); /* This function should only be needed by the introduction server, not by clients. */
@@ -183,7 +183,7 @@ public class IntroductionPuzzle {
 		 * which looks like the one I specified in the javadoc above this function. Thanks. */
 		String dayOfInsertion = mDateFormat.format(mDateOfInsertion);
 		FreenetURI baseURI = ((OwnIdentity)mInserter).getInsertURI().setKeyType("SSK");
-		return baseURI.setDocName(WoT.WOT_CONTEXT + "/" + INTRODUCTION_CONTEXT + "/" + dayOfInsertion + "|" + mIndex + ".xml");
+		return baseURI.setDocName(WoT.WOT_CONTEXT + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + mIndex + ".xml");
 	}
 	
 	public static FreenetURI generateRequestURI(Identity inserter, Date dateOfInsertion, int index) {
@@ -194,7 +194,7 @@ public class IntroductionPuzzle {
 		 * which looks like the one I specified in the javadoc above this function. Thanks. */
 		String dayOfInsertion = mDateFormat.format(dateOfInsertion);
 		FreenetURI baseURI = inserter.getRequestURI().setKeyType("SSK");
-		return baseURI.setDocName(WoT.WOT_CONTEXT + "/" + INTRODUCTION_CONTEXT + "/" + dayOfInsertion + "|" + index + ".xml");
+		return baseURI.setDocName(WoT.WOT_CONTEXT + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index + ".xml");
 	}
 	
 	
