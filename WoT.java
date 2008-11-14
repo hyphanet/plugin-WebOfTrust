@@ -23,7 +23,9 @@ import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.introduction.IntroductionClient;
 import plugins.WoT.introduction.IntroductionPuzzle;
+import plugins.WoT.introduction.IntroductionServer;
 import plugins.WoT.ui.web.HomePage;
 import plugins.WoT.ui.web.KnownIdentitiesPage;
 import plugins.WoT.ui.web.OwnIdentitiesPage;
@@ -77,6 +79,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private WebInterface web;
 	private IdentityInserter inserter;
 	private IdentityFetcher fetcher;
+	private IntroductionServer introductionServer;
+	private IntroductionClient introductionClient;
+	
 	private String seedURI = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/1";
 	private Identity seed = null;
 	private Config config;
@@ -117,6 +122,12 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		fetcher = new IdentityFetcher(db, client);
 		
 		fetcher.fetch(seed, false);
+		
+		introductionServer = new IntroductionServer(db, client, pr.getNode().clientCore.tempBucketFactory, fetcher);
+		pr.getNode().executor.execute(introductionServer, "WoT introduction server");
+		
+		introductionClient = new IntroductionClient(db, client, pr.getNode().clientCore.tempBucketFactory);
+		pr.getNode().executor.execute(introductionClient, "WoT introduction client");
 		
 		// Try to fetch all known identities
 		ObjectSet<Identity> identities = Identity.getAllIdentities(db);
