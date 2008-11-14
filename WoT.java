@@ -9,6 +9,8 @@ package plugins.WoT;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -101,6 +103,16 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		seed = getSeedIdentity();
 
 		pm = pr.getPageMaker();
+		
+		HashSet<Class> WoTclasses = new HashSet<Class>(Arrays.asList(new Class[]{ Identity.class, OwnIdentity.class, Trust.class, Score.class }));
+		
+		/* FIXME: debug code, remove */
+		Logger.debug(this, "Non-WoT objects in WoT database: ");
+		ObjectSet<Object> dbo = db.queryByExample(Object.class);
+		for(Object o : dbo) {
+			if(!WoTclasses.contains(o.getClass()))
+				Logger.debug(this, o.toString());
+		}
 		
 		// Should disappear soon.
 		web = new WebInterface(pr, db, config, client, SELF_URI);
@@ -783,7 +795,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		cfg.objectClass(Score.class).objectField("treeOwner").indexed(true);
 		cfg.objectClass(Score.class).objectField("target").indexed(true);
 		for(String field : IntroductionPuzzle.getIndexedFields())
-			cfg.objectClass(IntroductionPuzzle.class).indexed(true);
+			cfg.objectClass(IntroductionPuzzle.class).objectField(field).indexed(true);
 		cfg.objectClass(IntroductionPuzzle.class).cascadeOnUpdate(true); /* FIXME: verify if this does not break anything */
 		
 		// This will make db4o store any complex objects which are referenced by a Config object.
