@@ -208,7 +208,11 @@ public class IntroductionServer implements Runnable, ClientCallback {
 		OutputStream os = tempB.getOutputStream();
 		
 		try {
-			IntroductionPuzzle p = mPuzzleFactories[(int)(Math.random() * 100) % mPuzzleFactories.length].generatePuzzle(db, identity);
+			boolean retryWithNewIndex = false;
+			IntroductionPuzzle p = null;
+			do {
+			try {
+			p = mPuzzleFactories[(int)(Math.random() * 100) % mPuzzleFactories.length].generatePuzzle(db, identity);
 			p.exportToXML(os);
 			os.close(); os = null;
 			tempB.setReadOnly();
@@ -218,11 +222,23 @@ public class IntroductionServer implements Runnable, ClientCallback {
 
 			Logger.debug(this, "Started insert puzzle from " + identity.getNickName());
 
-			/* FIXME: use nonblocking insert */
-			mClient.insert(ib, false, p.getInsertURI().getDocName());
+			/* FIXME: use nonblocking insert maybe */
+			mClient.insert(ib, false, null);
 
 			db.store(p);
 			db.commit();
+			}
+			catch(InsertException e) {
+				if(e.errorCodes.getFirstCode() == InsertException.COLLISION)
+					retryWithNewIndex = true;
+				else
+					throw e;
+				
+				Logger.error(this, "Puzzle with index " + p.getIndex() + " already inserted and not found in database! Retrying with next index ...");
+			}
+			}
+			while(retryWithNewIndex);
+
 			Logger.debug(this, "Successful insert of puzzle from " + identity.getNickName() + ": " + p.getRequestURI());
 		}
 		finally {
