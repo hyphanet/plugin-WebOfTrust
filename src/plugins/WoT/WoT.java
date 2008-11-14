@@ -43,6 +43,7 @@ import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
 import com.db4o.ext.DatabaseClosedException;
 import com.db4o.ext.Db4oIOException;
+import com.db4o.query.Query;
 
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
@@ -103,16 +104,19 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		seed = getSeedIdentity();
 
 		pm = pr.getPageMaker();
+
+		/* FIXME: i cannot get this to work, it does not print any objects although there are definitely IntroductionPuzzle objects in my db.
 		
 		HashSet<Class> WoTclasses = new HashSet<Class>(Arrays.asList(new Class[]{ Identity.class, OwnIdentity.class, Trust.class, Score.class }));
-		
-		/* FIXME: debug code, remove */
 		Logger.debug(this, "Non-WoT objects in WoT database: ");
-		ObjectSet<Object> dbo = db.queryByExample(Object.class);
-		for(Object o : dbo) {
-			if(!WoTclasses.contains(o.getClass()))
-				Logger.debug(this, o.toString());
+		Query q = db.query();
+		for(Class c : WoTclasses)
+			q.constrain(c).not();
+		ObjectSet<Object> objects = q.execute();
+		for(Object o : objects) {
+			Logger.debug(this, o.toString());
 		}
+		*/
 		
 		// Should disappear soon.
 		web = new WebInterface(pr, db, config, client, SELF_URI);
@@ -157,6 +161,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	public void terminate() {
 		inserter.stop();
+		introductionServer.terminate();
+		introductionClient.terminate();
 		db.commit();
 		db.close();
 		fetcher.stop(); // Do this after cleanly closing the database, as it sometimes locks
