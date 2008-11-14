@@ -80,6 +80,12 @@ public class IntroductionPuzzle {
 	/* Supplied at creation time or by user: */
 	
 	private final String mSolution;
+
+	/**
+	 * Set to true after it was used for introducing a new identity. We keep used puzzles in the database until they expire for the purpose of
+	 * being able to figure out free index values of new puzzles. Storing a few KiB for some days will not hurt.
+	 */
+	private boolean iWasSolved = false;
 	
 	
 	/* FIXME: wire this in */
@@ -103,7 +109,7 @@ public class IntroductionPuzzle {
 		mMimeType = newMimeType;
 		mData = newData;
 		mSolution = null;
-		mDateOfInsertion = myDateOfInsertion;
+		mDateOfInsertion = new Date(myDateOfInsertion.getYear(), myDateOfInsertion.getMonth(), myDateOfInsertion.getDay());
 		mValidUntilTime = myValidUntilTime;
 		mIndex = myIndex;
 	}
@@ -113,15 +119,15 @@ public class IntroductionPuzzle {
 	 * @param newType
 	 * @param newData
 	 */
-	public IntroductionPuzzle(Identity newInserter, String newMimeType, byte[] newData, String newSolution, int myIndex) {
+	public IntroductionPuzzle(Identity newInserter, String newMimeType, byte[] newData, String newSolution, Date newDateOfInsertion, int myIndex) {
 		assert(	newInserter != null && newMimeType != null && !newMimeType.equals("") && newData!=null && newData.length!=0 &&
 				newSolution!=null && newSolution.length()>=MINIMAL_SOLUTION_LENGTH && myIndex >= 0);
 		mInserter = newInserter;
 		mMimeType = newMimeType;
 		mData = newData;
 		mSolution = newSolution;
-		mDateOfInsertion = new Date(); /* FIXME: get it in UTC */
-		mValidUntilTime = System.currentTimeMillis() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000; /* FIXME: get it in UTC */
+		mDateOfInsertion = new Date(newDateOfInsertion.getYear(), newDateOfInsertion.getMonth(), newDateOfInsertion.getDay());
+		mValidUntilTime = mDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000; /* FIXME: get it in UTC */
 		mIndex = myIndex;
 	}
 	
@@ -129,6 +135,7 @@ public class IntroductionPuzzle {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(i);
+		q.descend("iWasSolved").constrain(new Boolean(false));
 		return q.execute();
 	}
 	
@@ -148,6 +155,17 @@ public class IntroductionPuzzle {
 		assert(result.size() == 1);
 		
 		return (result.hasNext() ? result.next() : null);
+	}
+	
+	public static int getFreeIndex(ObjectContainer db, OwnIdentity id, Date date) {
+		Query q = db.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").descend("id").constrain(id.getId());
+		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDay()));
+		q.descend("mIndex").orderDescending();
+		ObjectSet<IntroductionPuzzle> result = q.execute();
+		
+		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
 	
 	public String getMimeType() {
@@ -211,6 +229,10 @@ public class IntroductionPuzzle {
 	public String getSolution() {
 		assert(mSolution != null); /* Whoever uses this function should not need to call it when there is no solution available */
 		return mSolution;
+	}
+	
+	public void setSolved() {
+		iWasSolved = true;
 	}
 	
 	public Identity getInserter() {
