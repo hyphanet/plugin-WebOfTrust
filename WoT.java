@@ -123,6 +123,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		fetcher.fetch(seed, false);
 		
+		try {
+		ObjectSet<OwnIdentity> oids = db.queryByExample(OwnIdentity.class);
+		for(OwnIdentity oid : oids)
+			oid.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db);
+		}
+		catch(InvalidParameterException e) {}
+		
 		introductionServer = new IntroductionServer(db, client, pr.getNode().clientCore.tempBucketFactory, fetcher);
 		pr.getNode().executor.execute(introductionServer, "WoT introduction server");
 		
