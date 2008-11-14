@@ -46,6 +46,7 @@ import freenet.support.io.TempBucketFactory;
  */
 public class IntroductionServer implements Runnable, ClientCallback {
 	
+	private static final long STARTUP_DELAY = 10 * 60 * 1000;
 	private static final long THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
 	public static final byte PUZZLE_COUNT = 5; 
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
@@ -94,7 +95,7 @@ public class IntroductionServer implements Runnable, ClientCallback {
 		
 		mThread = Thread.currentThread();
 		try {
-			Thread.sleep((long) (1*60*1000 * (0.5f + Math.random()))); // Let the node start up
+			Thread.sleep((long) (STARTUP_DELAY * (0.5f + Math.random()))); // Let the node start up
 		}
 		catch (InterruptedException e)
 		{
