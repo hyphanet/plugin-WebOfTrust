@@ -211,31 +211,31 @@ public class IntroductionServer implements Runnable, ClientCallback {
 			boolean retryWithNewIndex = false;
 			IntroductionPuzzle p = null;
 			do {
-			try {
-			p = mPuzzleFactories[(int)(Math.random() * 100) % mPuzzleFactories.length].generatePuzzle(db, identity);
-			p.exportToXML(os);
-			os.close(); os = null;
-			tempB.setReadOnly();
-		
-			ClientMetadata cmd = new ClientMetadata("text/xml");
-			InsertBlock ib = new InsertBlock(tempB, cmd, p.getInsertURI());
-
-			Logger.debug(this, "Started insert puzzle from " + identity.getNickName());
-
-			/* FIXME: use nonblocking insert maybe */
-			mClient.insert(ib, false, null);
-
-			db.store(p);
-			db.commit();
-			}
-			catch(InsertException e) {
-				if(e.errorCodes.getFirstCode() == InsertException.COLLISION)
-					retryWithNewIndex = true;
-				else
-					throw e;
+				try {
+					p = mPuzzleFactories[(int)(Math.random() * 100) % mPuzzleFactories.length].generatePuzzle(db, identity);
+					p.exportToXML(os);
+					os.close(); os = null;
+					tempB.setReadOnly();
 				
-				Logger.error(this, "Puzzle with index " + p.getIndex() + " already inserted and not found in database! Retrying with next index ...");
-			}
+					ClientMetadata cmd = new ClientMetadata("text/xml");
+					InsertBlock ib = new InsertBlock(tempB, cmd, p.getInsertURI());
+		
+					Logger.debug(this, "Started insert puzzle from " + identity.getNickName());
+		
+					/* FIXME: use nonblocking insert maybe */
+					mClient.insert(ib, false, null);
+		
+					db.store(p);
+					db.commit();
+				}
+				catch(InsertException e) {
+					if(e.errorCodes.getFirstCode() == InsertException.COLLISION)
+						retryWithNewIndex = true;
+					else
+						throw e;
+					
+					Logger.error(this, "Puzzle with index " + p.getIndex() + " already inserted and not found in database! Retrying with next index ...");
+				}
 			}
 			while(retryWithNewIndex);
 
