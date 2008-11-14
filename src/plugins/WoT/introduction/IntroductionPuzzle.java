@@ -134,8 +134,8 @@ public class IntroductionPuzzle {
 	public static ObjectSet<IntroductionPuzzle> getByInserter(ObjectContainer db, OwnIdentity i) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(i);
-		q.descend("iWasSolved").constrain(new Boolean(false));
+	//	q.descend("mInserter").constrain(i);
+	//	q.descend("iWasSolved").constrain(new Boolean(false));
 		return q.execute();
 	}
 	
@@ -183,7 +183,8 @@ public class IntroductionPuzzle {
 		 * which looks like the one I specified in the javadoc above this function. Thanks. */
 		String dayOfInsertion = mDateFormat.format(mDateOfInsertion);
 		FreenetURI baseURI = ((OwnIdentity)mInserter).getInsertURI().setKeyType("SSK");
-		return baseURI.setDocName(WoT.WOT_CONTEXT + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + mIndex + ".xml");
+		baseURI = baseURI.setDocName(WoT.WOT_CONTEXT + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + mIndex + ".xml");
+		return baseURI.setMetaString(null);
 	}
 
 	public FreenetURI getRequestURI() {
@@ -198,7 +199,8 @@ public class IntroductionPuzzle {
 		 * which looks like the one I specified in the javadoc above this function. Thanks. */
 		String dayOfInsertion = mDateFormat.format(dateOfInsertion);
 		FreenetURI baseURI = inserter.getRequestURI().setKeyType("SSK");
-		return baseURI.setDocName(WoT.WOT_CONTEXT + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index + ".xml");
+		baseURI = baseURI.setDocName(WoT.WOT_CONTEXT + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index + ".xml");
+		return baseURI.setMetaString(null);
 	}
 	
 	
