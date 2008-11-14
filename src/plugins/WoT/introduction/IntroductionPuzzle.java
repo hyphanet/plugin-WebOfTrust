@@ -176,7 +176,7 @@ public class IntroductionPuzzle {
 	 * Get the URI at which to insert this puzzle.
 	 * SSK@asdfasdf...|WoT|introduction|yyyy-MM-dd|#.xml 
 	 */
-	public FreenetURI getURI() throws MalformedURLException {
+	public FreenetURI getInsertURI() {
 		assert(mSolution != null); /* This function should only be needed by the introduction server, not by clients. */
 		
 		/* FIXME: I did not really understand the javadoc of FreenetURI. Please verify that the following code actually creates an URI
@@ -185,7 +185,11 @@ public class IntroductionPuzzle {
 		FreenetURI baseURI = ((OwnIdentity)mInserter).getInsertURI().setKeyType("SSK");
 		return baseURI.setDocName(WoT.WOT_CONTEXT + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + mIndex + ".xml");
 	}
-	
+
+	public FreenetURI getRequestURI() {
+		return generateRequestURI(mInserter, mDateOfInsertion, mIndex);
+	}
+
 	public static FreenetURI generateRequestURI(Identity inserter, Date dateOfInsertion, int index) {
 		assert(dateOfInsertion.before(new Date()));
 		assert(index >= 0);
