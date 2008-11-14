@@ -46,7 +46,7 @@ import freenet.support.io.TempBucketFactory;
  */
 public class IntroductionServer implements Runnable, ClientCallback {
 	
-	private static final long STARTUP_DELAY = 10 * 60 * 1000;
+	private static final long STARTUP_DELAY = 3 * 60 * 1000;
 	private static final long THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
 	public static final byte PUZZLE_COUNT = 5; 
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
@@ -219,7 +219,7 @@ public class IntroductionServer implements Runnable, ClientCallback {
 			Logger.debug(this, "Started insert puzzle from " + identity.getNickName());
 
 			/* FIXME: use nonblocking insert */
-			mClient.insert(ib, false, p.getURI().getMetaString());
+			mClient.insert(ib, false, p.getURI().getDocName());
 
 			db.store(p);
 			db.commit();
