@@ -146,8 +146,7 @@ public class IdentityParser {
 					Logger.error(this, "Unknown element in identity " + identity.getId() + ": " + elt_name);
 				
 			} catch (Exception e1) {
-				Logger.error(this, "Parsing error",e1);
-				e1.printStackTrace();
+				Logger.error(this, "Parsing error", e1);
 			}
 		}
 	}
