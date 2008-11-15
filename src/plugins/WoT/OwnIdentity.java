@@ -68,6 +68,7 @@ public class OwnIdentity extends Identity {
 		super(requestURI, nickName, publishTrustList);
 		setInsertURI(insertURI);
 		setLastInsert(new Date(0));
+		setEdition(0);
 	}
 	
 	/**
@@ -297,7 +298,7 @@ public class OwnIdentity extends Identity {
 	 * @param key this OwnIdentity's insertURI
 	 * @throws InvalidParameterException if the supplied key is neither a USK nor a SSK
 	 */
-	public void setInsertURI(FreenetURI key) throws InvalidParameterException {
+	private void setInsertURI(FreenetURI key) throws InvalidParameterException {
 		if(key.getKeyType().equals("SSK")) key = key.setKeyType("USK");
 		if(!key.getKeyType().equals("USK")) throw new InvalidParameterException("Key type not supported");
 
