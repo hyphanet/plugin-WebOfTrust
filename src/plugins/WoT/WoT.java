@@ -839,7 +839,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 					seed = new Identity(new FreenetURI(seedURI), null, true);
 					seed.setEdition(seed.getRequestURI().getSuggestedEdition());
 				} catch (Exception e1) { // Should never happen
-					Logger.error(this, "Seed identity creation error", e);
+					Logger.error(this, "Seed identity creation error", e1);
 					return null;
 				}
 				db.store(seed);
