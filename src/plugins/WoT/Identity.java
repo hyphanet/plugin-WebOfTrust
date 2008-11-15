@@ -624,7 +624,7 @@ public class Identity {
 	 * @throws InvalidParameterException if the given FreenetURI is neither a SSK nor a USK
 	 */
 	protected synchronized void setRequestURI(FreenetURI newRequestURI) throws InvalidParameterException {
-		if(requestURI != null && newRequestURI.getRoutingKey().equals(requestURI.getRoutingKey()))
+		if(requestURI != null && newRequestURI.equalsKeypair(requestURI))
 			throw new InvalidParameterException("Cannot change the request URI of an existing identity");
 		
 		if(newRequestURI.getKeyType().equals("SSK")) newRequestURI = newRequestURI.setKeyType("USK");
