@@ -273,6 +273,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			
 			// We already have fetched this identity as a stranger's one. We need to update the database.
 			id = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), old.getNickName(), old.doesPublishTrustList());
+			id.setEdition(old.getEdition());
 			
 			Iterator<String> i1 = old.getContexts();
 			while (i1.hasNext()) id.addContext(i1.next(), db);
