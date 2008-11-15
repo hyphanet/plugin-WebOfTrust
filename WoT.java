@@ -68,7 +68,7 @@ import freenet.support.api.HTTPRequest;
 /**
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginL10n {
+public class WoT implements FredPlugin, FredPluginHTTP, FredPluginFCP, FredPluginVersioned, FredPluginL10n {
 	
 	/* References from the node */
 	
