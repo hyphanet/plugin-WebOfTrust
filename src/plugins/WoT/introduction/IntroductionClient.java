@@ -214,11 +214,15 @@ public class IntroductionClient implements Runnable, ClientCallback  {
 	}
 	
 	private synchronized void cancelRequests() {
-		Iterator<ClientGetter> i = mRequests.iterator();
-		int counter = 0;
-		Logger.debug(this, "Trying to stop all requests"); 
-		while (i.hasNext()) { i.next().cancel(); ++counter; }
-		Logger.debug(this, "Stopped " + counter + " current requests");
+		Iterator<ClientGetter> r = mRequests.iterator();
+		Iterator<ClientPutter> i = mInserts.iterator();
+		int rcounter = 0;
+		int icounter = 0;
+		Logger.debug(this, "Trying to stop all requests & inserts"); 
+		while (r.hasNext()) { r.next().cancel(); ++rcounter; }
+		while (i.hasNext()) { i.next().cancel(); ++icounter; }
+		Logger.debug(this, "Stopped " + rcounter + " current requests");
+		Logger.debug(this, "Stopped " + icounter + " current inserts");
 	}
 	
 	private synchronized void downloadPuzzles() {
