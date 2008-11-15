@@ -8,22 +8,16 @@ package plugins.WoT.introduction;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -36,23 +30,18 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import plugins.WoT.Identity;
+import plugins.WoT.OwnIdentity;
+import plugins.WoT.WoT;
+import plugins.WoT.exceptions.UnknownIdentityException;
+
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 
-import freenet.crypt.SHA1;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
-
-import plugins.WoT.Identity;
-import plugins.WoT.IdentityFetcher;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.Trustlist;
-import plugins.WoT.WoT;
-import plugins.WoT.IdentityParser.IdentityHandler;
-import plugins.WoT.exceptions.InvalidParameterException;
-import plugins.WoT.exceptions.UnknownIdentityException;
 
 public class IntroductionPuzzle {
 	
@@ -78,8 +67,14 @@ public class IntroductionPuzzle {
 	private final int mIndex;
 	
 	/* Supplied at creation time or by user: */
+
+	/**
+	 * We store the solver of the puzzle so that we can insert the solution even if the node is shutdown directly after solving puzzles.
+	 */
+	private OwnIdentity mSolver = null;
 	
-	private final String mSolution;
+	private String mSolution = null;
+
 
 	/**
 	 * Set to true after it was used for introducing a new identity. We keep used puzzles in the database until they expire for the purpose of
@@ -131,6 +126,12 @@ public class IntroductionPuzzle {
 		mIndex = myIndex;
 	}
 	
+	/**
+	 * Used by the IntroductionServer for downloading solutions.
+	 * @param db
+	 * @param i
+	 * @return
+	 */
 	public static ObjectSet<IntroductionPuzzle> getByInserter(ObjectContainer db, OwnIdentity i) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
@@ -139,6 +140,13 @@ public class IntroductionPuzzle {
 		return q.execute();
 	}
 	
+	 /**
+	  * Used by the IntroductionServer when a solution was downloaded to retrieve the IntroductionPuzzle object.
+	  * @param db
+	  * @param uri
+	  * @return
+	  * @throws ParseException
+	  */
 	public static IntroductionPuzzle getBySolutionURI(ObjectContainer db, FreenetURI uri) throws ParseException {
 		String[] tokens = uri.getDocName().split("|");
 		String id = tokens[1];
@@ -157,6 +165,13 @@ public class IntroductionPuzzle {
 		return (result.hasNext() ? result.next() : null);
 	}
 	
+	/**
+	 * Used by the IntroductionServer for inserting new puzzles.
+	 * @param db
+	 * @param id
+	 * @param date
+	 * @return
+	 */
 	public static int getFreeIndex(ObjectContainer db, OwnIdentity id, Date date) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
@@ -167,11 +182,23 @@ public class IntroductionPuzzle {
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
-	
+
+	/**
+	 * Used by the IntroductionClient for inserting solutions of solved puzzles.
+	 * @param db
+	 * @return
+	 */
+	public static ObjectSet<IntroductionPuzzle> getSolvedPuzzles(ObjectContainer db) {
+		Query q = db.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mSolver").constrain(null).identity().not();
+		return q.execute();
+	}
+
 	public String getMimeType() {
 		return mMimeType;
 	}
-	
+
 	/**
 	 * Get the URI at which to insert this puzzle.
 	 * SSK@asdfasdf...|WoT|introduction|yyyy-MM-dd|#.xml 
@@ -235,8 +262,23 @@ public class IntroductionPuzzle {
 		return mSolution;
 	}
 	
+	
+	/**
+	 * Used by the IntroductionServer to mark a puzzle as solved.
+	 */
 	public void setSolved() {
 		iWasSolved = true;
+	}
+	
+	/**
+	 * Used by the IntroductionClient to mark a puzzle as solved
+	 * @param solver
+	 * @param solution
+	 */
+	public void setSolved(OwnIdentity solver, String solution) {
+		iWasSolved = true;
+		mSolver = solver;
+		mSolution = solution;
 	}
 	
 	public Identity getInserter() {
@@ -273,6 +315,11 @@ public class IntroductionPuzzle {
 		db.commit();
 	}
 	
+	/**
+	 * Used by the introduction client to delete old puzzles and replace them with new ones.
+	 * @param db
+	 * @param puzzlePoolSize
+	 */
 	public static void deleteOldestPuzzles(ObjectContainer db, int puzzlePoolSize) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
