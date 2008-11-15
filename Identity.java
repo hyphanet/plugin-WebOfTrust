@@ -645,20 +645,24 @@ public class Identity {
 	}
 
 	/**
-	 * Sets the nickName of this Identity
+	 * Sets the nickName of this Identity. 
 	 * 
-	 * @param nickName A String containing this Identity's NickName
+	 * @param nickName A String containing this Identity's NickName. Setting it to null means that it was not retrieved yet.
 	 * @throws InvalidParameterException if the nickName's length is bigger than 50, or if it empty
 	 */
 	public synchronized void setNickName(String newNickname) throws InvalidParameterException {
-		String nick = newNickname == null ? "" : newNickname.trim();
-		if(nick.length() == 0) throw new InvalidParameterException("Blank nickName");
-		if(nick.length() > 50) throw new InvalidParameterException("Nickname is too long (50 chars max)");
+		if(newNickname != null)
+			newNickname = newNickname.trim();
 		
-		if(nickName != null && !nickName.equals("") && !nickName.equals(newNickname))
+		if(newNickname != null ) {
+			if(newNickname.length() == 0) throw new InvalidParameterException("Blank nickname");
+			if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long (50 chars max)");
+		}
+		
+		if(nickName != null && !nickName.equals(newNickname))
 			throw new InvalidParameterException("Changing the nickname of an identity is not allowed.");
-		
-		nickName = nick;
+	
+		nickName = newNickname;
 		updated();
 	}
 
