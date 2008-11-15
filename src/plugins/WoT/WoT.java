@@ -160,13 +160,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginFCP, FredPlugi
 	}
 	
 	public void terminate() {
-		inserter.stop();
-		introductionServer.terminate();
-		introductionClient.terminate();
-		db.commit();
-		db.close();
-		fetcher.stop(); // Do this after cleanly closing the database, as it sometimes locks
-		/* FIXME: why does that happen? */
+		if(inserter != null) inserter.stop();
+		if(introductionServer != null) introductionServer.terminate();
+		if(introductionClient != null) introductionClient.terminate();
+		if(fetcher != null) fetcher.stop();
+		if(db != null) {
+			db.commit();
+			db.close();
+		}
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
