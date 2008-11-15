@@ -643,6 +643,10 @@ public class Identity {
 	public synchronized void setEdition(long edition) throws InvalidParameterException {
 		setRequestURI(getRequestURI().setSuggestedEdition(edition));
 	}
+	
+	public synchronized long getEdition() {
+		return getRequestURI().getSuggestedEdition();
+	}
 
 	/**
 	 * Sets the nickName of this Identity. 
