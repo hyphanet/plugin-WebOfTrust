@@ -5,12 +5,17 @@
  */
 package plugins.WoT.introduction;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
@@ -20,17 +25,22 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
+import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertBlock;
+import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory;
 
 /**
@@ -77,6 +87,8 @@ public class IntroductionClient implements Runnable, ClientCallback  {
 	/* FIXME FIXME FIXME: Use LRUQueue instead. ArrayBlockingQueue does not use a Hashset for contains()! */
 	private final ArrayBlockingQueue<Identity> mIdentities = new ArrayBlockingQueue<Identity>(PUZZLE_POOL_SIZE); /* FIXME: figure out whether my assumption that this is just the right size is correct */
 	private final HashSet<ClientGetter> mRequests = new HashSet<ClientGetter>(PUZZLE_REQUEST_COUNT * 2); /* TODO: profile & tweak */
+	
+	private final HashSet<ClientPutter> mInserts = new HashSet<ClientPutter>(PUZZLE_REQUEST_COUNT * 2); 
 
 	/**
 	 * Creates an IntroductionServer
@@ -168,6 +180,38 @@ public class IntroductionClient implements Runnable, ClientCallback  {
 		return result;
 	}
 	
+	public synchronized void insertPuzzleSolution(IntroductionPuzzle p, String solution, OwnIdentity solver) throws IOException, ParserConfigurationException, TransformerException, InsertException {
+		Bucket tempB = mTBF.makeBucket(10 * 1024); /* TODO: set to a reasonable value */
+		OutputStream os = tempB.getOutputStream();
+
+		try {
+			solver.exportIntroductionToXML(os);
+			os.close(); os = null;
+			tempB.setReadOnly();
+
+			ClientMetadata cmd = new ClientMetadata("text/xml");
+			FreenetURI solutionURI = p.getSolutionURI(solution);
+			InsertBlock ib = new InsertBlock(tempB, cmd, solutionURI);
+
+			InsertContext ictx = mClient.getInsertContext(true);
+			
+			/* FIXME: are these parameters correct? */
+			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
+			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
+			mInserts.add(pu);
+			
+			Logger.debug(this, "Started to insert puzzle solution of " + solver.getNickName() + " at " + solutionURI);
+
+			p.setSolved(solver, solution);
+			db.store(p);
+			db.commit();
+		}
+		finally {
+			tempB.free();
+			if(os != null)
+				os.close();
+		}
+	}
 	
 	private synchronized void cancelRequests() {
 		Iterator<ClientGetter> i = mRequests.iterator();
@@ -280,7 +324,12 @@ public class IntroductionClient implements Runnable, ClientCallback  {
 	/* Not needed functions from the ClientCallback inteface */
 	
 	// Only called by inserts
-	public void onSuccess(BaseClientPutter state) {}
+	public void onSuccess(BaseClientPutter state)
+	{
+		Logger.debug(this, "Successful insert of puzzle solution at " + state.getURI());
+		state.cancel(); /* FIXME: is this necessary */
+		mInserts.remove(state);
+	}
 	
 	// Only called by inserts
 	public void onFailure(InsertException e, BaseClientPutter state) {}
