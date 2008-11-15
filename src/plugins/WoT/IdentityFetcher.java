@@ -149,14 +149,20 @@ public class IdentityFetcher implements ClientCallback {
 	 */
 	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
 		
-		Logger.debug(this, "Fetched key (ClientGetter) : " + state.getURI());
-
+		Logger.debug(this, "Fetched identity "+ state.getURI().toString());
+		
 		try {
-			Logger.debug(this, "Sucessfully fetched identity "+ state.getURI().toString());			
 			new IdentityParser(db, client, this).parse(result.asBucket().getInputStream(), state.getURI());	
-			state.restart(state.getURI().setSuggestedEdition(state.getURI().getSuggestedEdition() + 1));
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
+		}
+		
+		try {
+			state.restart(state.getURI().setSuggestedEdition(state.getURI().getSuggestedEdition() + 1));
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error fetching next edition for " + state.getURI());
 		}
 	}
 	
