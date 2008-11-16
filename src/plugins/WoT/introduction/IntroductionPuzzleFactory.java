@@ -9,7 +9,6 @@ import java.io.IOException;
 
 import com.db4o.ObjectContainer;
 
-import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 
 /**
