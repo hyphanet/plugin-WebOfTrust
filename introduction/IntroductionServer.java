@@ -29,10 +29,12 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
+import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
@@ -70,6 +72,9 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	private final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] { new CaptchaFactory1() };
 	
 	private final ArrayList<ClientGetter> mRequests = new ArrayList<ClientGetter>(PUZZLE_COUNT * 5); /* Just assume that there are 5 identities */
+	
+	private final ArrayList<ClientPutter> mInserts = new ArrayList<ClientPutter>(PUZZLE_COUNT * 5); /* Just assume that there are 5 identities */
+	
 
 	/**
 	 * Creates an IntroductionServer
@@ -122,6 +127,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 				}
 			}
 			db.commit();
+			Logger.debug(this, "Introduction server loop finished.");
 			
 			try {
 				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
@@ -131,14 +137,13 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 				mThread.interrupt();
 				Logger.debug(this, "Introduction server loop interrupted.");
 			}
-			Logger.debug(this, "Introduction server loop finished.");
 		}
 		
 		cancelRequests();
 		Logger.debug(this, "Introduction server thread finished.");
 	}
 	
-	public synchronized void terminate() {
+	public void terminate() {
 		Logger.debug(this, "Stopping the introduction server...");
 		isRunning = false;
 		mThread.interrupt();
@@ -153,11 +158,15 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	}
 	
 	private synchronized void cancelRequests() {
-		Iterator<ClientGetter> i = mRequests.iterator();
-		int counter = 0;
-		Logger.debug(this, "Trying to stop all requests"); 
-		while (i.hasNext()) { i.next().cancel(); ++counter; }
-		Logger.debug(this, "Stopped " + counter + " current requests");
+		Iterator<ClientGetter> r = mRequests.iterator();
+		Iterator<ClientPutter> i = mInserts.iterator();
+		int rcounter = 0;
+		int icounter = 0;
+		Logger.debug(this, "Trying to stop all requests & inserts"); 
+		while (r.hasNext()) { r.next().cancel(); ++rcounter; }
+		while (i.hasNext()) { i.next().cancel(); ++icounter; }
+		Logger.debug(this, "Stopped " + rcounter + " current requests");
+		Logger.debug(this, "Stopped " + icounter + " current inserts");
 	}
 		
 	private synchronized void downloadSolutions(OwnIdentity identity) throws FetchException {
@@ -219,15 +228,17 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 				
 					ClientMetadata cmd = new ClientMetadata("text/xml");
 					InsertBlock ib = new InsertBlock(tempB, cmd, p.getInsertURI());
-		
-					Logger.debug(this, "Started insert puzzle from " + identity.getNickName());
-		
-					/* FIXME: use nonblocking insert maybe */
-					mClient.insert(ib, false, null);
+					InsertContext ictx = mClient.getInsertContext(true);
+					
+					/* FIXME: are these parameters correct? */
+					ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
+					pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
+					mInserts.add(pu);
+					tempB = null;
 		
 					db.store(p);
 					db.commit();
-					Logger.debug(this, "Successful insert of puzzle from " + identity.getNickName() + ": " + p.getRequestURI());
+					Logger.debug(this, "Started insert of puzzle from " + identity.getNickName());
 				}
 				catch(InsertException e) {
 					if(e.errorCodes.getFirstCode() == InsertException.COLLISION)
@@ -241,7 +252,8 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 			while(retryWithNewIndex);
 		}
 		finally {
-			tempB.free();
+			if(tempB != null)
+				tempB.free();
 			if(os != null)
 				os.close();
 		}
@@ -266,7 +278,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 
 		try {
 			db.commit();
-			IntroductionPuzzle p = IntroductionPuzzle.getBySolutionURI(db, state.getURI());
+			IntroductionPuzzle p = IntroductionPuzzle.getByURI(db, state.getURI());
 			OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
 			Identity newIdentity = Identity.importIntroductionFromXML(db, mIdentityFetcher, result.asBucket().getInputStream());
 			puzzleOwner.setTrust(db, newIdentity, (byte)0, null); /* FIXME: is 0 the proper trust for newly imported identities? */
@@ -281,14 +293,30 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		}
 	}
 	
+	// Only called by inserts
+	public synchronized void onSuccess(BaseClientPutter state)
+	{
+		try {
+			IntroductionPuzzle p = IntroductionPuzzle.getByURI(db, state.getURI());
+			Logger.debug(this, "Successful insert of puzzle from " + p.getInserter().getNickName() + ": " + p.getRequestURI());
+		} catch(Exception e) { Logger.error(this, "Error", e); }
+		state.cancel(); /* FIXME: is this necessary */
+		mInserts.remove(state);
+	}
+	
+	// Only called by inserts
+	public synchronized void onFailure(InsertException e, BaseClientPutter state) 
+	{
+		try {
+			IntroductionPuzzle p = IntroductionPuzzle.getByURI(db, state.getURI());
+			Logger.debug(this, "Insert of puzzle failed from " + p.getInserter().getNickName() + ": " + p.getRequestURI(), e);
+		} catch(Exception ex) { Logger.error(this, "Error", e); }
+		state.cancel(); /* FIXME: is this necessary */
+		mInserts.remove(state);
+	}
+
 	/* Not needed functions from the ClientCallback inteface */
 	
-	// Only called by inserts
-	public void onSuccess(BaseClientPutter state) {}
-	
-	// Only called by inserts
-	public void onFailure(InsertException e, BaseClientPutter state) {}
-
 	// Only called by inserts
 	public void onFetchable(BaseClientPutter state) {}
 

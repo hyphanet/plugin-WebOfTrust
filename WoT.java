@@ -164,6 +164,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	public void terminate() {
+		Logger.debug(this, "WoT plugin terminating ...");
 		if(inserter != null) inserter.stop();
 		if(introductionServer != null) introductionServer.terminate();
 		if(introductionClient != null) introductionClient.terminate();
@@ -172,6 +173,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			db.commit();
 			db.close();
 		}
+		Logger.debug(this, "WoT plugin terminated.");
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
