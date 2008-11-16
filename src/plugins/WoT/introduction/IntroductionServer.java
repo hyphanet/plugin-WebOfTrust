@@ -74,7 +74,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	
 	private final ArrayList<ClientGetter> mRequests = new ArrayList<ClientGetter>(PUZZLE_COUNT * 5); /* Just assume that there are 5 identities */
 	
-	private final ArrayList<ClientPutter> mInserts = new ArrayList<ClientPutter>(PUZZLE_COUNT * 5); /* Just assume that there are 5 identities */
+	private final ArrayList<BaseClientPutter> mInserts = new ArrayList<BaseClientPutter>(PUZZLE_COUNT * 5); /* Just assume that there are 5 identities */
 	
 
 	/**
@@ -159,16 +159,22 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		Logger.debug(this, "Stopped the introduction server.");
 	}
 	
-	private synchronized void cancelRequests() {
-		Iterator<ClientGetter> r = mRequests.iterator();
-		Iterator<ClientPutter> i = mInserts.iterator();
-		int rcounter = 0;
-		int icounter = 0;
-		Logger.debug(this, "Trying to stop all requests & inserts"); 
-		while (r.hasNext()) { r.next().cancel(); ++rcounter; }
-		while (i.hasNext()) { i.next().cancel(); ++icounter; }
-		Logger.debug(this, "Stopped " + rcounter + " current requests");
-		Logger.debug(this, "Stopped " + icounter + " current inserts");
+	private void cancelRequests() {
+		Logger.debug(this, "Trying to stop all requests & inserts");
+		
+		synchronized(mRequests) {
+			Iterator<ClientGetter> r = mRequests.iterator();
+			int rcounter = 0;
+			while (r.hasNext()) { r.next().cancel(); ++rcounter; }
+			Logger.debug(this, "Stopped " + rcounter + " current requests");
+		}
+
+		synchronized(mInserts) {
+			Iterator<BaseClientPutter> i = mInserts.iterator();
+			int icounter = 0;
+			while (i.hasNext()) { i.next().cancel(); ++icounter; }
+			Logger.debug(this, "Stopped " + icounter + " current inserts");
+		}
 	}
 		
 	private synchronized void downloadSolutions(OwnIdentity identity) throws FetchException {
@@ -179,9 +185,11 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		/* TODO: We restart all requests in every iteration. Decide whether this makes sense or not, if not add code to re-use requests for
 		 * puzzles which still exist.
 		 * I think it makes sense to restart them because there are not many puzzles and therefore not many requests. */
-		for(int idx=0; idx < mRequests.size(); ++idx) {
-			mRequests.get(idx).cancel();
-			mRequests.remove(idx);
+		synchronized(mRequests) {
+			for(int idx=0; idx < mRequests.size(); ++idx) {
+				mRequests.get(idx).cancel();
+				mRequests.remove(idx);
+			}
 		}
 		
 		for(IntroductionPuzzle p : puzzles) {
@@ -190,7 +198,9 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 			fetchContext.maxNonSplitfileRetries = -1; // retry forever
 			ClientGetter g = mClient.fetch(p.getSolutionURI(), -1, this, this, fetchContext);
 			g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* FIXME: decide which one to use */
-			mRequests.add(g);
+			synchronized(mRequests) {
+				mRequests.add(g);
+			}
 			Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
 		}
 		
@@ -235,7 +245,9 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 					/* FIXME: are these parameters correct? */
 					ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
 					pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
-					mInserts.add(pu);
+					synchronized(mInserts) {
+						mInserts.add(pu);
+					}
 					tempB = null;
 		
 					db.store(p);
@@ -261,63 +273,82 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		}
 	}
 	
+	private void removeRequest(ClientGetter g) {
+		Logger.debug(this, "Trying to remove request " + g.getURI());
+		synchronized(mRequests) {
+			g.cancel(); /* FIXME: is this necessary ? */
+			mRequests.remove(g);
+		}
+		Logger.debug(this, "Removed request.");
+	}
+	
+	private void removeInsert(BaseClientPutter p) {
+		Logger.debug(this, "Trying to remove insert " + p.getURI());
+		synchronized(mInserts) {
+			p.cancel(); /* FIXME: is this necessary ? */
+			mInserts.remove(p);
+		}
+		Logger.debug(this, "Removed request.");
+	}
+	
 	/**
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * In our case, called when there is no solution to a puzzle in the network.
 	 */
-	public synchronized void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		Logger.normal(this, "Downloading puzzle solution " + state.getURI() + " failed: ", e);
-
-		mRequests.remove(state);
+		removeRequest(state);
 	}
 
 	/**
 	 * Called when a file is successfully fetched. We then add the identity which
 	 * solved the puzzle.
 	 */
-	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.debug(this, "Fetched puzzle solution: " + state.getURI());
 
 		try {
 			db.commit();
 			IntroductionPuzzle p = IntroductionPuzzle.getByURI(db, state.getURI());
-			OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
-			Identity newIdentity = Identity.importIntroductionFromXML(db, mIdentityFetcher, result.asBucket().getInputStream());
-			puzzleOwner.setTrust(db, newIdentity, (byte)50, "Trust received by solving a captcha"); /* FIXME: We need null trust. Giving trust by solving captchas is a REALLY bad idea */
-			p.setSolved();
-			db.store(p);
-			db.commit();
+			synchronized(p) {
+				OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
+				Identity newIdentity = Identity.importIntroductionFromXML(db, mIdentityFetcher, result.asBucket().getInputStream());
+				puzzleOwner.setTrust(db, newIdentity, (byte)50, "Trust received by solving a captcha"); /* FIXME: We need null trust. Giving trust by solving captchas is a REALLY bad idea */
+				p.setSolved();
+				db.store(p);
+				db.commit();
+				Logger.debug(this, "Imported identity introduction for identity " + newIdentity.getRequestURI());
+			}
 		
-			state.cancel(); /* FIXME: is this necessary */ 
-			mRequests.remove(state);
+			removeRequest(state);
 		} catch (Exception e) { 
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
 		}
 	}
 	
 	// Only called by inserts
-	public synchronized void onSuccess(BaseClientPutter state)
+	public void onSuccess(BaseClientPutter state)
 	{
 		try {
 			IntroductionPuzzle p = IntroductionPuzzle.getByURI(db, state.getURI());
 			Logger.debug(this, "Successful insert of puzzle from " + p.getInserter().getNickName() + ": " + p.getRequestURI());
 		} catch(Exception e) { Logger.error(this, "Error", e); }
-		state.cancel(); /* FIXME: is this necessary */
-		mInserts.remove(state);
+		
+		removeInsert(state);
 	}
 	
 	// Only called by inserts
-	public synchronized void onFailure(InsertException e, BaseClientPutter state) 
+	public void onFailure(InsertException e, BaseClientPutter state) 
 	{
 		try {
 			IntroductionPuzzle p = IntroductionPuzzle.getByURI(db, state.getURI());
 			Logger.debug(this, "Insert of puzzle failed from " + p.getInserter().getNickName() + ": " + p.getRequestURI(), e);
 		} catch(Exception ex) { Logger.error(this, "Error", e); }
-		state.cancel(); /* FIXME: is this necessary */
-		mInserts.remove(state);
+		
+		removeInsert(state);
 	}
 
-	/* Not needed functions from the ClientCallback inteface */
+	/* Not needed functions from the ClientCallback interface */
 	
 	// Only called by inserts
 	public void onFetchable(BaseClientPutter state) {}

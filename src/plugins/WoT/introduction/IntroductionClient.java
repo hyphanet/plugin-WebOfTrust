@@ -88,7 +88,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	private final ArrayBlockingQueue<Identity> mIdentities = new ArrayBlockingQueue<Identity>(PUZZLE_POOL_SIZE); /* FIXME: figure out whether my assumption that this is just the right size is correct */
 	private final HashSet<ClientGetter> mRequests = new HashSet<ClientGetter>(PUZZLE_REQUEST_COUNT * 2); /* TODO: profile & tweak */
 	
-	private final HashSet<ClientPutter> mInserts = new HashSet<ClientPutter>(PUZZLE_REQUEST_COUNT * 2); 
+	private final HashSet<BaseClientPutter> mInserts = new HashSet<BaseClientPutter>(PUZZLE_REQUEST_COUNT * 2); 
 
 	/**
 	 * Creates an IntroductionServer
@@ -201,7 +201,9 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			/* FIXME: are these parameters correct? */
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
 			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
-			mInserts.add(pu);
+			synchronized(mInserts) {
+				mInserts.add(pu);
+			}
 			tempB = null;
 			
 			Logger.debug(this, "Started to insert puzzle solution of " + solver.getNickName() + " at " + solutionURI);
@@ -218,16 +220,22 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		}
 	}
 	
-	private synchronized void cancelRequests() {
-		Iterator<ClientGetter> r = mRequests.iterator();
-		Iterator<ClientPutter> i = mInserts.iterator();
-		int rcounter = 0;
-		int icounter = 0;
-		Logger.debug(this, "Trying to stop all requests & inserts"); 
-		while (r.hasNext()) { r.next().cancel(); ++rcounter; }
-		while (i.hasNext()) { i.next().cancel(); ++icounter; }
-		Logger.debug(this, "Stopped " + rcounter + " current requests");
-		Logger.debug(this, "Stopped " + icounter + " current inserts");
+	private void cancelRequests() {
+		Logger.debug(this, "Trying to stop all requests & inserts");
+		
+		synchronized(mRequests) {
+			Iterator<ClientGetter> r = mRequests.iterator();
+			int rcounter = 0;
+			while (r.hasNext()) { r.next().cancel(); ++rcounter; }
+			Logger.debug(this, "Stopped " + rcounter + " current requests");
+		}
+
+		synchronized(mInserts) {
+			Iterator<BaseClientPutter> i = mInserts.iterator();
+			int icounter = 0;
+			while (i.hasNext()) { i.next().cancel(); ++icounter; }
+			Logger.debug(this, "Stopped " + icounter + " current inserts");
+		}
 	}
 	
 	private synchronized void downloadPuzzles() {
@@ -240,16 +248,18 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		ArrayList<Identity> ids = new ArrayList<Identity>(PUZZLE_POOL_SIZE);
 		
 		int counter = 0;
-		for(Identity i : allIds) {
-			/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
-			if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i)
-					&& i.getBestScore(db) > MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)  {
-				ids.add(i);
-				++counter;
+		synchronized(mIdentities) {
+			for(Identity i : allIds) {
+				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
+				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i)
+						&& i.getBestScore(db) > MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)  {
+					ids.add(i);
+					++counter;
+				}
+	
+				if(counter == PUZZLE_REQUEST_COUNT)
+					break;
 			}
-
-			if(counter == PUZZLE_REQUEST_COUNT)
-				break;
 		}
 		
 		if(counter == 0) {
@@ -282,7 +292,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		
 	}
 		
-	private synchronized void downloadPuzzle(Identity identity, int index) throws FetchException {
+	private void downloadPuzzle(Identity identity, int index) throws FetchException {
 		FreenetURI uri = IntroductionPuzzle.generateRequestURI(identity, new Date(), index);
 		
 		FetchContext fetchContext = mClient.getFetchContext();
@@ -290,38 +300,57 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		ClientGetter g = mClient.fetch(uri, -1, this, this, fetchContext);
 		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* FIXME: decide which one to use */
-		mRequests.add(g);
-		if(!mIdentities.contains(identity)) {
-			mIdentities.poll();
-			try {
-			mIdentities.put(identity);
-			} catch(InterruptedException e) {}
+		synchronized(mRequests) {
+			mRequests.add(g);
+		}
+		synchronized(mIdentities) {
+			if(!mIdentities.contains(identity)) {
+				mIdentities.poll();
+				try {
+				mIdentities.put(identity);
+				} catch(InterruptedException e) {}
+			}
 		}
 		Logger.debug(this, "Trying to fetch puzzle from " + uri.toString());
 	}
 
-
+	private void removeRequest(ClientGetter g) {
+		Logger.debug(this, "Trying to remove request " + g.getURI());
+		synchronized(mRequests) {
+			g.cancel();
+			mRequests.remove(g);
+		}
+		Logger.debug(this, "Removed request.");
+	}
+	
+	private void removeInsert(BaseClientPutter p) {
+		Logger.debug(this, "Trying to remove insert " + p.getURI());
+		synchronized(mInserts) {
+			p.cancel();
+			mInserts.remove(p);
+		}
+		Logger.debug(this, "Removed request.");
+	}
+	
 	/**
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * In our case, called when there is no puzzle available.
 	 */
-	public synchronized void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		Logger.normal(this, "Downloading puzzle " + state.getURI() + " failed.", e);
-
-		mRequests.remove(state);
+		removeRequest(state);
 	}
 
 	/**
 	 * Called when a puzzle is successfully fetched.
 	 */
-	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.debug(this, "Fetched puzzle: " + state.getURI());
 
 		try {
 			IntroductionPuzzle p = IntroductionPuzzle.importFromXML(db, result.asBucket().getInputStream(), state.getURI());
 			IntroductionPuzzle.deleteOldestPuzzles(db, PUZZLE_POOL_SIZE);
-			state.cancel(); /* FIXME: is this necessary */ 
-			mRequests.remove(state);
+			removeRequest(state);
 			if(p.getIndex() < MAX_PUZZLES_PER_IDENTITY) {
 				downloadPuzzle(p.getInserter(), p.getIndex() + 1);
 			}
@@ -331,22 +360,20 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	}
 
 	// Only called by inserts
-	public synchronized void onSuccess(BaseClientPutter state)
+	public void onSuccess(BaseClientPutter state)
 	{
 		Logger.debug(this, "Successful insert of puzzle solution at " + state.getURI());
-		state.cancel(); /* FIXME: is this necessary */
-		mInserts.remove(state);
+		removeInsert(state);
 	}
 	
 	// Only called by inserts
-	public synchronized void onFailure(InsertException e, BaseClientPutter state)
+	public void onFailure(InsertException e, BaseClientPutter state)
 	{
 		Logger.debug(this, "Insert of puzzle solution failed for " + state.getURI(), e);
-		state.cancel(); /* FIXME: is this necessary */
-		mInserts.remove(state);
+		removeInsert(state);
 	}
 	
-	/* Not needed functions from the ClientCallback inteface */
+	/* Not needed functions from the ClientCallback interface */
 
 	// Only called by inserts
 	public void onFetchable(BaseClientPutter state) {}
