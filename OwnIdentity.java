@@ -40,7 +40,6 @@ import com.db4o.ObjectSet;
 import com.db4o.ext.DatabaseClosedException;
 import com.db4o.ext.Db4oIOException;
 import com.db4o.query.Query;
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 
 import freenet.keys.FreenetURI;
 
