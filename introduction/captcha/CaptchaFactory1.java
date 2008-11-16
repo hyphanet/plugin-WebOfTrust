@@ -25,10 +25,8 @@ import plugins.WoT.introduction.captcha.kaptcha.util.Config;
 /**
  * First implementation of a captcha factory.
  * I added a "1" to the class because we should probably have many different captcha generators.
- * I suggest we use this one for the first implementation:
- * http://simplecaptcha.sourceforge.net/
- * 
- * If anyone knows a better library than simplecaptcha please comment.
+ *
+ * Based on http://code.google.com/p/kaptcha/
  * 
  * @author xor
  *
@@ -36,14 +34,12 @@ import plugins.WoT.introduction.captcha.kaptcha.util.Config;
 public class CaptchaFactory1 implements IntroductionPuzzleFactory {
 
 	public IntroductionPuzzle generatePuzzle(ObjectContainer db, OwnIdentity inserter) throws IOException {
-		ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1024);
+		ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1024); /* TODO: find out the maximum size of the captchas and put it here */
 		try {
 			DefaultKaptcha captcha = new DefaultKaptcha();
 			captcha.setConfig(new Config(new Properties()));
 			String text = captcha.createText();
 			BufferedImage img = captcha.createImage(text);
-			 /* TODO: find out the maximum size of the captchas and put it here */
-			
 			ImageIO.write(img, "jpg", out);
 			
 			Date dateOfInsertion = new Date();
