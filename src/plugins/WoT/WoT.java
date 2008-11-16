@@ -13,6 +13,7 @@ import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.UUID;
 import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -183,6 +184,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		else if(request.isParameterSet("getTrusters")) page = new TrustersPage(this, request); 
 		else if(request.isParameterSet("getTrustees")) page = new TrusteesPage(this, request); 
 		else if(request.isParameterSet("puzzle")) { 
+			IntroductionPuzzle p = IntroductionPuzzle.getByID(db, UUID.fromString(request.getParam("id")));
+			if(p != null) {
+				byte[] data = p.getData();
+			}
 			/* FIXME: The current PluginManager implementation allows plugins only to send HTML replies.
 			 * Implement general replying with any mime type and return the jpeg. */
 			return "";
