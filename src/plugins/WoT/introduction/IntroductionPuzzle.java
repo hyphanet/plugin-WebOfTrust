@@ -39,9 +39,9 @@ import plugins.WoT.exceptions.UnknownIdentityException;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Base64;
 import freenet.support.Logger;
 
 public final class IntroductionPuzzle {
@@ -265,6 +265,10 @@ public final class IntroductionPuzzle {
 		return mData;
 	}
 	
+	public String getDataBase64() {
+		return Base64.encode(mData, true);
+	}
+	
 	/**
 	 * Get the solution of the puzzle. Null if the puzzle was received and not locally generated.
 	 */
@@ -380,7 +384,7 @@ public final class IntroductionPuzzle {
 		puzzleTag.appendChild(validUntilTag);
 		
 		Element dataTag = xmlDoc.createElement("Data");
-		dataTag.setAttribute("value", Base64.encode(mData));
+		dataTag.setAttribute("value", Base64.encode(mData, true));
 		puzzleTag.appendChild(dataTag);
 		
 		rootElement.appendChild(puzzleTag);
