@@ -55,7 +55,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 
 	private void makeInfoBox(PluginRespirator pr) {
-		HTMLNode boxContent = getContentBox("Introduce identity");
+		HTMLNode boxContent = getContentBox("Introduce identity '" + mIdentity.getNickName() + "'");
 		boxContent.addChild("p", "Solve about 10 puzzles to get your identity known by other identities. DO NOT continously solve puzzles."); /* FIXME: add more information */
 	}
 	
@@ -67,18 +67,23 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		HTMLNode puzzleTable = solveForm.addChild("table", "border", "0");
 		HTMLNode row = puzzleTable.addChild("tr");
 		
-		int counter = 0;
-
-		for(IntroductionPuzzle p : mPuzzles) {
-			solveForm.addAttribute("id", p.getID().toString());
-			
-			if(counter++ % 8 == 0)
-				row = puzzleTable.addChild("tr");
-			
-			HTMLNode cell = row.addChild("td");
-			cell.addChild("img", new String[] {"src"}, new String[] {SELF_URI + "/puzzle?id=" + p.getID()});
-			cell.addChild("input", new String[] { "type", "name", "size"}, new String[] { "text", "solution" + p.getID(), "10" });
+		if(mPuzzles.size() > 0 ) {
+			int counter = 0;
+			for(IntroductionPuzzle p : mPuzzles) {
+				solveForm.addAttribute("id", p.getID().toString());
+				
+				if(counter++ % 8 == 0)
+					row = puzzleTable.addChild("tr");
+				
+				HTMLNode cell = row.addChild("td");
+				cell.addChild("img", new String[] {"src"}, new String[] {SELF_URI + "/puzzle?id=" + p.getID()});
+				cell.addChild("input", new String[] { "type", "name", "size"}, new String[] { "text", "solution" + p.getID(), "10" });
+			}
+		} else {
+			boxContent.addChild("p", "No puzzles were downloaded yet, sorry. Please give the WoT plugin some time to retrieve puzzles.");
 		}
+		
+		
 	}
 
 }
