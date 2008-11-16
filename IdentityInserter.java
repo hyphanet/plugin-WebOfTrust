@@ -197,9 +197,6 @@ public class IdentityInserter implements Runnable, ClientCallback {
 				mInserts.add(pu);
 			}
 			tempB = null;
-
-			// We set the date now, so if the identity is modified during the insert, we'll insert it again next time
-			identity.setLastInsert(new Date());
 			
 			Logger.debug(this, "Started insert of identity '" + identity.getNickName() + "'");
 		}
@@ -229,6 +226,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		try {
 			OwnIdentity identity = OwnIdentity.getByURI(db, state.getURI());
 			identity.setEdition(state.getURI().getSuggestedEdition());
+			identity.setLastInsert(new Date()); /* FIXME: check whether the identity was modified during the insert and re-insert if it was */
 			 
 			db.store(identity);
 			db.commit();
