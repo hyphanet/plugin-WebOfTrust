@@ -95,6 +95,11 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "deleteIdentity" });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getId() });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
+				
+				HTMLNode introduceForm = pr.addFormChild(manageCell, SELF_URI, "introduceIdentity");
+				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "introduceIdentity" });
+				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getId() });
+				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", "Introduce" });				
 			}
 		}
 	
