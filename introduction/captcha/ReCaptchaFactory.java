@@ -11,7 +11,19 @@ import com.db4o.ObjectContainer;
 
 /**
  * Suggested captcha factory based on http://recaptcha.net/
+ * We would only need to find a decent way of anonymizing the requests using a public anonymization gateway or whatever
+ * of course. Maybe someone has an idea? Public tor proxies?
  * 
+ * Description:
+ *  reCAPTCHA improves the process of digitizing books by sending words that cannot be read by computers to the Web in the form of CAPTCHAs
+ *  for humans to decipher. More specifically, each word that cannot be read correctly by OCR is placed on an image and used as a CAPTCHA. 
+ *  This is possible because most OCR programs alert you when a word cannot be read correctly.
+ *  
+ *  But if a computer can't read such a CAPTCHA, how does the system know the correct answer to the puzzle? Here's how: Each new word that
+ *  cannot be read correctly by OCR is given to a user in conjunction with another word for which the answer is already known. The user is
+ *  then asked to read both words. If they solve the one for which the answer is known, the system assumes their answer is correct for the
+ *  new one. The system then gives the new image to a number of other people to determine, with higher confidence, whether the original answer
+ *  was correct. 
  * 
  * @author xor
  *
