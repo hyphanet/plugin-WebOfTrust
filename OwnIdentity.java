@@ -290,10 +290,6 @@ public class OwnIdentity extends Identity {
 		return insertURI;
 	}
 	
-	public FreenetURI getInsertURIWithFilename() {
-		return getInsertURI().pushMetaString("identity.xml");
-	}
-	
 	/**
 	 * Sets this OwnIdentity's insertURI. 
 	 * The key must be a USK or a SSK, and is stored as a USK anyway.

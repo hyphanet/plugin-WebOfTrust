@@ -200,7 +200,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			
 			/* FIXME: are these parameters correct? */
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
+			//pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 			synchronized(mInserts) {
 				mInserts.add(pu);
 			}
@@ -299,7 +299,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		ClientGetter g = mClient.fetch(uri, -1, this, this, fetchContext);
-		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* FIXME: decide which one to use */
+		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 		synchronized(mRequests) {
 			mRequests.add(g);
 		}
