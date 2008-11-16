@@ -44,7 +44,7 @@ import freenet.support.io.TempBucketFactory;
  * 
  * @author xor
  */
-public class IntroductionServer implements Runnable, ClientCallback {
+public final class IntroductionServer implements Runnable, ClientCallback {
 	
 	private static final long STARTUP_DELAY = 1 * 60 * 1000;
 	private static final long THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
