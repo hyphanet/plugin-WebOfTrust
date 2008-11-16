@@ -20,6 +20,7 @@ import javax.xml.transform.TransformerException;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.exceptions.NotInTrustTreeException;
+import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -50,7 +51,7 @@ import freenet.support.io.TempBucketFactory;
  * @author xor
  *
  */
-public class IntroductionClient implements Runnable, ClientCallback  {
+public final class IntroductionClient implements Runnable, ClientCallback  {
 	
 	private static final long THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release: */ 
 	
@@ -155,9 +156,10 @@ public class IntroductionClient implements Runnable, ClientCallback  {
 		Logger.debug(this, "Stopped the introduction client.");
 	}
 	
-	public synchronized List<IntroductionPuzzle> getPuzzles(OwnIdentity id, int count) {
+	public synchronized List<IntroductionPuzzle> getPuzzles(PuzzleType puzzleType, OwnIdentity id, int count) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
+		q.descend("mType").constrain(puzzleType);
 		q.descend("mSolution").constrain(null).identity(); /* FIXME: toad said constrain(null) is maybe broken. If this is true: Alternative would be: q.descend("mIdentity").constrain(OwnIdentity.class).not(); */
 		ObjectSet<IntroductionPuzzle> puzzles = q.execute();
 		ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count);
