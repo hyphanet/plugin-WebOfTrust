@@ -283,7 +283,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 			IntroductionPuzzle p = IntroductionPuzzle.getByURI(db, state.getURI());
 			OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
 			Identity newIdentity = Identity.importIntroductionFromXML(db, mIdentityFetcher, result.asBucket().getInputStream());
-			puzzleOwner.setTrust(db, newIdentity, (byte)0, null); /* FIXME: is 0 the proper trust for newly imported identities? */
+			puzzleOwner.setTrust(db, newIdentity, (byte)50, "Trust received by solving a captcha"); /* FIXME: We need null trust. Giving trust by solving captchas is a REALLY bad idea */
 			p.setSolved();
 			db.store(p);
 			db.commit();
