@@ -11,8 +11,12 @@ import com.db4o.ObjectContainer;
 
 /**
  * Suggested captcha factory based on http://recaptcha.net/
- * We would only need to find a decent way of anonymizing the requests using a public anonymization gateway or whatever
- * of course. Maybe someone has an idea? Public tor proxies?
+ * We would only need to find a decent way of anonymizing the requests using a public anonymization gateway or whatever of course. Maybe
+ * someone has an idea? Public tor proxies?
+ * 
+ * We could also ask the recaptcha people to run their own seed identity for us which provides insane amounts of captchas per day.
+ * 
+ * First thing we could do: Just implement the ReCaptchaFactory without anonymization and make our seed identity only insert recaptchas.
  * 
  * Description:
  *  reCAPTCHA improves the process of digitizing books by sending words that cannot be read by computers to the Web in the form of CAPTCHAs
