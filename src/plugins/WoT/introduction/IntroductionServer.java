@@ -54,7 +54,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	private Thread mThread;
 	
 	/** Used to tell the introduction server thread if it should stop */
-	private boolean isRunning;
+	private volatile boolean isRunning;
 	
 	/** A reference to the database */
 	private ObjectContainer db;

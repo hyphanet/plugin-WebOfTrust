@@ -48,7 +48,7 @@ public class IdentityInserter implements Runnable {
 	/** The TempBucketFactory used to create buckets from Identities before insert */
 	final TempBucketFactory tBF;
 	/** Used to tell the InserterThread if it should stop */
-	private boolean isRunning;
+	private volatile boolean isRunning;
 	private Thread mThread;
 	
 	/**
