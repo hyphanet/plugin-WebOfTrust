@@ -100,6 +100,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public void runPlugin(PluginRespirator pr) {
 
 		Logger.debug(this, "Start");
+		
+		/* Catpcha generation needs headless mode on linux */
+		System.setProperty("java.awt.headless", "true"); 
 
 		this.db = initDB();
 		this.pr = pr;
