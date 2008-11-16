@@ -53,12 +53,11 @@ import freenet.support.io.TempBucketFactory;
  */
 public final class IntroductionClient implements Runnable, ClientCallback  {
 	
-	private static final long THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release: */ 
+	private static final long STARTUP_DELAY = 1 * 60 * 1000;
+	private static final long THREAD_PERIOD = 10 * 60 * 1000; /* FIXME: tweak before release: */ 
 	
 	public static final byte PUZZLE_DOWNLOAD_BACKWARDS_DAYS = IntroductionServer.PUZZLE_INVALID_AFTER_DAYS - 1;
-
 	public static final int PUZZLE_REQUEST_COUNT = 16;
-	
 	public static final int PUZZLE_POOL_SIZE = 128;
 	
 	/* FIXME: Display a random puzzle of an identity in the UI instead of always the first one! Otherwise we should really have each identity only
