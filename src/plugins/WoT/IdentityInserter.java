@@ -9,13 +9,16 @@ package plugins.WoT;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WoT.introduction.IntroductionPuzzle;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -23,10 +26,18 @@ import com.db4o.ext.DatabaseClosedException;
 import com.db4o.ext.Db4oIOException;
 
 import freenet.client.ClientMetadata;
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
+import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory;
@@ -37,7 +48,7 @@ import freenet.support.io.TempBucketFactory;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */
-public class IdentityInserter implements Runnable {
+public class IdentityInserter implements Runnable, ClientCallback {
 	
 	private static final int THREAD_PERIOD = 30 * 60 * 1000;
 	
@@ -50,6 +61,8 @@ public class IdentityInserter implements Runnable {
 	/** Used to tell the InserterThread if it should stop */
 	private volatile boolean isRunning;
 	private Thread mThread;
+	
+	private final ArrayList<ClientPutter> mInserts = new ArrayList<ClientPutter>(10); /* Just assume that there are 10 identities */
 	
 	/**
 	 * Creates an IdentityInserter.
@@ -71,6 +84,7 @@ public class IdentityInserter implements Runnable {
 	 */
 	public void run() {
 		mThread = Thread.currentThread();
+		Logger.debug(this, "Identity inserter thread started.");
 		
 		try {
 			Thread.sleep((long) (3*60*1000 * (0.5f + Math.random()))); // Let the node start up
@@ -89,9 +103,6 @@ public class IdentityInserter implements Runnable {
 					try {
 						Logger.debug(this, "Starting insert of "+identity.getNickName() + " (" + identity.getInsertURI().toString() + ")");
 						insert(identity);
-						// We set the date now, so if the identity is modified during the insert, we'll insert it again next time
-						identity.setLastInsert(new Date()); 
-						db.store(identity);
 					} catch (Exception e) {
 						Logger.error(this, "Identity insert failed: "+e.getMessage(), e);
 					}
@@ -105,8 +116,20 @@ public class IdentityInserter implements Runnable {
 			catch (InterruptedException e)
 			{
 				mThread.interrupt();
+				Logger.debug(this, "Identity inserter thread interrupted.");
 			}
 		}
+		
+		cancelInserts();
+		Logger.debug(this, "Identity inserter thread finished.");
+	}
+	
+	private synchronized void cancelInserts() {
+		Iterator<ClientPutter> i = mInserts.iterator();
+		int icounter = 0;
+		Logger.debug(this, "Trying to stop all inserts"); 
+		while (i.hasNext()) { i.next().cancel(); ++icounter; }
+		Logger.debug(this, "Stopped " + icounter + " current inserts");
 	}
 	
 	/**
@@ -145,44 +168,98 @@ public class IdentityInserter implements Runnable {
 	 * @throws InvalidParameterException
 	 * @throws InsertException
 	 */
-	private void insert(OwnIdentity identity) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException, InsertException {
+	private synchronized void insert(OwnIdentity identity) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException, InsertException {
 		/* FIXME: Where is the synchronization? */
 		/* TODO: after the WoT has become large enough, calculate the average size of identity.xml and either modify the constant or even calculate dynamically */
 		Bucket tempB = tBF.makeBucket(8 * 1024);  
 		OutputStream os = tempB.getOutputStream();
-		FreenetURI iURI;
+
 		try {
 			// Create XML file to insert
 			identity.exportToXML(db, os);
 		
-			os.close();
+			os.close(); os = null;
 			tempB.setReadOnly();
 		
 			// Prepare the insert
 			ClientMetadata cmd = new ClientMetadata("text/xml");
 			InsertBlock ib = new InsertBlock(tempB,cmd,identity.getInsertURI());
-
-			// Logging
-			Logger.debug(this, "Started insert of identity '" + identity.getNickName() + "'");
-
-			/* FIXME: use nonblocking insert */
-			// Blocking Insert
-			iURI = client.insert(ib, false, "identity.xml");
+			InsertContext ictx = client.getInsertContext(true);
 			
-			identity.setEdition(iURI.getSuggestedEdition());
+			/* FIXME: are these parameters correct? */
+			ClientPutter pu = client.insert(ib, false, "identity.xml", false, ictx, this);
+			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
+			mInserts.add(pu);
+			tempB = null;
+
+			// We set the date now, so if the identity is modified during the insert, we'll insert it again next time
 			identity.setLastInsert(new Date());
 			
-			db.store(identity);
-			db.commit();
-			
-			// Logging
-			Logger.debug(this, "Successful insert of identity '" + identity.getNickName() + "'");
+			Logger.debug(this, "Started insert of identity '" + identity.getNickName() + "'");
 		}
 		catch(Exception e) {
 			Logger.error(this,"Error during insert of identity '" + identity.getNickName() + "'", e);
 		}
 		finally {
-			tempB.free();		
+			if(tempB != null)
+				tempB.free();
+			if(os != null)
+				os.close();
 		}
 	}
+
+	// Only called by inserts
+	public synchronized void onSuccess(BaseClientPutter state)
+	{
+		try {
+			OwnIdentity identity = OwnIdentity.getByURI(db, state.getURI());
+			identity.setEdition(state.getURI().getSuggestedEdition());
+			 
+			db.store(identity);
+			db.commit();
+			Logger.debug(this, "Successful insert of identity '" + identity.getNickName() + "'");
+		} catch(Exception e) { Logger.error(this, "Error", e); }
+		state.cancel(); /* FIXME: is this necessary */
+		mInserts.remove(state);
+	}
+	
+	// Only called by inserts
+	public synchronized void onFailure(InsertException e, BaseClientPutter state) 
+	{
+		try {
+			OwnIdentity identity = OwnIdentity.getByURI(db, state.getURI());
+
+			Logger.error(this, "Error during insert of identity '" + identity.getNickName() + "'", e);
+		} catch(Exception ex) { Logger.error(this, "Error", e); }
+		state.cancel(); /* FIXME: is this necessary */
+		mInserts.remove(state);
+	}
+	
+	/* Not needed functions from the ClientCallback inteface */
+	
+	public void onFailure(FetchException e, ClientGetter state) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void onFetchable(BaseClientPutter state) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void onMajorProgress() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void onSuccess(FetchResult result, ClientGetter state) {
+		// TODO Auto-generated method stub
+		
+	}
 }
+

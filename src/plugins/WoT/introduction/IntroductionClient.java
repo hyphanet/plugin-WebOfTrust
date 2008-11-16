@@ -127,6 +127,8 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			IntroductionPuzzle.deleteExpiredPuzzles(db);
 			downloadPuzzles();
 			
+			Logger.debug(this, "Introduction client loop finished.");
+			
 			try {
 				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
 			}
@@ -135,14 +137,13 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 				mThread.interrupt();
 				Logger.debug(this, "Introduction client loop interrupted.");
 			}
-			Logger.debug(this, "Introduction client loop finished.");
 		}
 		
 		cancelRequests();
 		Logger.debug(this, "Introduction client thread finished.");
 	}
 	
-	public synchronized void terminate() {
+	public void terminate() {
 		Logger.debug(this, "Stopping the introduction client...");
 		isRunning = false;
 		mThread.interrupt();
@@ -201,6 +202,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
 			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
 			mInserts.add(pu);
+			tempB = null;
 			
 			Logger.debug(this, "Started to insert puzzle solution of " + solver.getNickName() + " at " + solutionURI);
 
@@ -209,7 +211,8 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			db.commit();
 		}
 		finally {
-			tempB.free();
+			if(tempB != null)
+				tempB.free();
 			if(os != null)
 				os.close();
 		}
@@ -326,11 +329,9 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
 		}
 	}
-	
-	/* Not needed functions from the ClientCallback inteface */
-	
+
 	// Only called by inserts
-	public void onSuccess(BaseClientPutter state)
+	public synchronized void onSuccess(BaseClientPutter state)
 	{
 		Logger.debug(this, "Successful insert of puzzle solution at " + state.getURI());
 		state.cancel(); /* FIXME: is this necessary */
@@ -338,7 +339,14 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	}
 	
 	// Only called by inserts
-	public void onFailure(InsertException e, BaseClientPutter state) {}
+	public synchronized void onFailure(InsertException e, BaseClientPutter state)
+	{
+		Logger.debug(this, "Insert of puzzle solution failed for " + state.getURI(), e);
+		state.cancel(); /* FIXME: is this necessary */
+		mInserts.remove(state);
+	}
+	
+	/* Not needed functions from the ClientCallback inteface */
 
 	// Only called by inserts
 	public void onFetchable(BaseClientPutter state) {}

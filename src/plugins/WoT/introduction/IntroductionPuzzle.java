@@ -161,7 +161,7 @@ public final class IntroductionPuzzle {
 	  * @return
 	  * @throws ParseException
 	  */
-	public static IntroductionPuzzle getBySolutionURI(ObjectContainer db, FreenetURI uri) throws ParseException {
+	public static IntroductionPuzzle getByURI(ObjectContainer db, FreenetURI uri) throws ParseException {
 		UUID id = UUID.fromString(uri.getDocName().split("|")[3]);
 		
 		Query q = db.query();
