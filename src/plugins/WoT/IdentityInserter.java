@@ -188,12 +188,12 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		
 			// Prepare the insert
 			ClientMetadata cmd = new ClientMetadata("text/xml");
-			InsertBlock ib = new InsertBlock(tempB,cmd,identity.getInsertURIWithFilename());
+			InsertBlock ib = new InsertBlock(tempB,cmd,identity.getInsertURI());
 			InsertContext ictx = client.getInsertContext(true);
 			
 			/* FIXME: are these parameters correct? */
 			ClientPutter pu = client.insert(ib, false, "identity.xml", false, ictx, this);
-			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
+			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);	/* pluginmanager defaults to interactive priority */
 			synchronized(mInserts) {
 				mInserts.add(pu);
 			}

@@ -244,7 +244,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 					
 					/* FIXME: are these parameters correct? */
 					ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-					pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
+					// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 					synchronized(mInserts) {
 						mInserts.add(pu);
 					}
