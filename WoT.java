@@ -205,36 +205,37 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		// TODO: finish refactoring to "page = new ..."
 
 		try {
-			if(request.getPartAsString("page",50).equals("createIdentity")) page = new CreateIdentityPage(this, request);
-			else if(request.getPartAsString("page",50).equals("createIdentity2")) {
+			String pageTitle = request.getPartAsString("page",50);
+			if(pageTitle.equals("createIdentity")) page = new CreateIdentityPage(this, request);
+			else if(pageTitle.equals("createIdentity2")) {
 				createIdentity(request);
 				page = new OwnIdentitiesPage(this, request);
 			}
-			else if(request.getPartAsString("page",50).equals("addIdentity")) {
+			else if(pageTitle.equals("addIdentity")) {
 				addIdentity(request);
 				page = new KnownIdentitiesPage(this, request);
 			}
-			else if(request.getPartAsString("page",50).equals("viewTree")) {
+			else if(pageTitle.equals("viewTree")) {
 				page = new KnownIdentitiesPage(this, request);
 			}
-			else if(request.getPartAsString("page",50).equals("setTrust")) {
+			else if(pageTitle.equals("setTrust")) {
 				setTrust(request);
 				return web.makeKnownIdentitiesPage(request.getPartAsString("truster", 1024));
 			}
-			else if(request.getPartAsString("page",50).equals("editIdentity")) {
+			else if(pageTitle.equals("editIdentity")) {
 				return web.makeEditIdentityPage(request.getPartAsString("id", 1024));
 			}
 			else if(request.getPartAsString("page", 50).equals("introduceIdentity")) {
 				page = new IntroduceIdentityPage(this, request, introductionClient, OwnIdentity.getById(db, request.getPartAsString("id", 128)));
 			}
-			else if(request.getPartAsString("page",50).equals("restoreIdentity")) {
+			else if(pageTitle.equals("restoreIdentity")) {
 				restoreIdentity(request.getPartAsString("requestURI", 1024), request.getPartAsString("insertURI", 1024));
 				page = new OwnIdentitiesPage(this, request);
 			}
-			else if(request.getPartAsString("page",50).equals("deleteIdentity")) {
+			else if(pageTitle.equals("deleteIdentity")) {
 				return web.makeDeleteIdentityPage(request.getPartAsString("id", 1024));
 			}			
-			else if(request.getPartAsString("page",50).equals("deleteIdentity2")) {
+			else if(pageTitle.equals("deleteIdentity2")) {
 				deleteIdentity(request.getPartAsString("id", 1024));
 				page = new OwnIdentitiesPage(this, request);
 			}			
