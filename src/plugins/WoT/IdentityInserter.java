@@ -50,6 +50,7 @@ import freenet.support.io.TempBucketFactory;
  */
 public class IdentityInserter implements Runnable, ClientCallback {
 	
+	private static final int STARTUP_DELAY = 1 * 60 * 1000;
 	private static final int THREAD_PERIOD = 30 * 60 * 1000;
 	
 	/** A reference to the database */
@@ -87,7 +88,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		Logger.debug(this, "Identity inserter thread started.");
 		
 		try {
-			Thread.sleep((long) (3*60*1000 * (0.5f + Math.random()))); // Let the node start up
+			Thread.sleep((long) (STARTUP_DELAY * (0.5f + Math.random()))); // Let the node start up
 		}
 		catch (InterruptedException e)
 		{
@@ -187,7 +188,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		
 			// Prepare the insert
 			ClientMetadata cmd = new ClientMetadata("text/xml");
-			InsertBlock ib = new InsertBlock(tempB,cmd,identity.getInsertURI());
+			InsertBlock ib = new InsertBlock(tempB,cmd,identity.getInsertURIWithFilename());
 			InsertContext ictx = client.getInsertContext(true);
 			
 			/* FIXME: are these parameters correct? */
