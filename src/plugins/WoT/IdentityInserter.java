@@ -94,6 +94,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 			mThread.interrupt();
 		}
 		while(isRunning) {
+			Thread.interrupted();
 			Logger.debug(this, "IdentityInserter loop running...");
 			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
 			while(identities.hasNext()) {
