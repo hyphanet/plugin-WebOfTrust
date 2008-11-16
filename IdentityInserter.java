@@ -180,6 +180,9 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		OutputStream os = tempB.getOutputStream();
 
 		try {
+			if(identity.getEdition() == 0)
+				identity.setEdition(1);
+			
 			// Create XML file to insert
 			identity.exportToXML(db, os);
 		
