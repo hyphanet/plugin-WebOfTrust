@@ -76,7 +76,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 					row = puzzleTable.addChild("tr");
 				
 				HTMLNode cell = row.addChild("td");
-				cell.addChild("img", new String[] {"src"}, new String[] {SELF_URI + "/puzzle?id=" + p.getID()});
+				cell.addChild("img", new String[] {"src"}, new String[] {"data:image/jpeg;base64," + p.getDataBase64()}); /* FIXME: use SELF_URI + "puzzle?id=" instead */
 				cell.addChild("input", new String[] { "type", "name", "size"}, new String[] { "text", "solution" + p.getID(), "10" });
 			}
 		} else {
