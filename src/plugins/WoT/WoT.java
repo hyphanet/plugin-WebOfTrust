@@ -8,6 +8,7 @@ package plugins.WoT;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -29,6 +30,7 @@ import plugins.WoT.introduction.IntroductionClient;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionServer;
 import plugins.WoT.ui.web.HomePage;
+import plugins.WoT.ui.web.IntroduceIdentityPage;
 import plugins.WoT.ui.web.KnownIdentitiesPage;
 import plugins.WoT.ui.web.OwnIdentitiesPage;
 import plugins.WoT.ui.web.WebPage;
@@ -36,6 +38,7 @@ import plugins.WoT.ui.web.ConfigurationPage;
 import plugins.WoT.ui.web.TrustersPage;
 import plugins.WoT.ui.web.TrusteesPage;
 import plugins.WoT.ui.web.CreateIdentityPage;
+import plugins.WoT.ui.web.WebPageImpl;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -179,6 +182,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		// TODO Handle these two in KnownIdentitiesPage
 		else if(request.isParameterSet("getTrusters")) page = new TrustersPage(this, request); 
 		else if(request.isParameterSet("getTrustees")) page = new TrusteesPage(this, request); 
+		else if(request.isParameterSet("puzzle")) { 
+			/* FIXME: The current PluginManager implementation allows plugins only to send HTML replies.
+			 * Implement general replying with any mime type and return the jpeg. */
+			return "";
+		}
 		
 		else page = new HomePage(this, request);
 		
@@ -195,7 +203,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 		
 		// TODO: finish refactoring to "page = new ..."
-		
+
 		try {
 			if(request.getPartAsString("page",50).equals("createIdentity")) page = new CreateIdentityPage(this, request);
 			else if(request.getPartAsString("page",50).equals("createIdentity2")) {
@@ -215,6 +223,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			}
 			else if(request.getPartAsString("page",50).equals("editIdentity")) {
 				return web.makeEditIdentityPage(request.getPartAsString("id", 1024));
+			}
+			else if(request.getPartAsString("page", 50).equals("introduceIdentity")) {
+				page = new IntroduceIdentityPage(this, request, introductionClient, OwnIdentity.getById(db, request.getPartAsString("id", 128)));
 			}
 			else if(request.getPartAsString("page",50).equals("restoreIdentity")) {
 				restoreIdentity(request.getPartAsString("requestURI", 1024), request.getPartAsString("insertURI", 1024));
