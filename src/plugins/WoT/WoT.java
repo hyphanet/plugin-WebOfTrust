@@ -343,7 +343,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			Logger.debug(this, "Successfully restored an already known identity from Freenet (" + id.getNickName() + ")");
 			
 		} catch (UnknownIdentityException e) {
-			id = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), "Restore in progress...", false);
+			id = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), null, false);
 			
 			// Store the new identity
 			db.store(id);
