@@ -49,7 +49,8 @@ import freenet.support.io.TempBucketFactory;
 public final class IntroductionServer implements Runnable, ClientCallback {
 	
 	private static final long STARTUP_DELAY = 1 * 60 * 1000;
-	private static final long THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
+	private static final long THREAD_PERIOD = 10 * 60 * 1000; /* FIXME: tweak before release */
+
 	public static final byte PUZZLE_COUNT = 5; 
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
 
