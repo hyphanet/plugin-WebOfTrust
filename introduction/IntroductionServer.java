@@ -109,6 +109,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		}
 		
 		while(isRunning) {
+			Thread.interrupted();
 			Logger.debug(this, "Introduction server loop running...");
 			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
 			

@@ -121,6 +121,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		}
 		
 		while(isRunning) {
+			Thread.interrupted();
 			Logger.debug(this, "Introduction client loop running...");
 			
 			IntroductionPuzzle.deleteExpiredPuzzles(db);
