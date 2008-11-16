@@ -19,6 +19,7 @@ import javax.xml.transform.TransformerException;
 
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
+import plugins.WoT.WoT;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 
@@ -53,8 +54,8 @@ import freenet.support.io.TempBucketFactory;
  */
 public final class IntroductionClient implements Runnable, ClientCallback  {
 	
-	private static final long STARTUP_DELAY = 1 * 60 * 1000;
-	private static final long THREAD_PERIOD = 10 * 60 * 1000; /* FIXME: tweak before release: */ 
+	private static final int STARTUP_DELAY = 1 * 60 * 1000;
+	private static final int THREAD_PERIOD = 10 * 60 * 1000; /* FIXME: tweak before release: */ 
 	
 	public static final byte PUZZLE_DOWNLOAD_BACKWARDS_DAYS = IntroductionServer.PUZZLE_INVALID_AFTER_DAYS - 1;
 	public static final int PUZZLE_REQUEST_COUNT = 16;
@@ -73,6 +74,8 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	
 	/** Used to tell the introduction server thread if it should stop */
 	private volatile boolean isRunning;
+	
+	private WoT mWoT;
 	
 	/** A reference to the database */
 	private ObjectContainer db;
@@ -101,10 +104,11 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	 * @param tbf
 	 *            Needed to create buckets from Identities before insert
 	 */
-	public IntroductionClient(ObjectContainer myDB, HighLevelSimpleClient myClient, TempBucketFactory myTBF) {
+	public IntroductionClient(WoT myWoT, TempBucketFactory myTBF) {
 		isRunning = true;
-		db = myDB;
-		mClient = myClient;
+		mWoT = myWoT;
+		db = mWoT.getDB();
+		mClient = mWoT.getClient();
 		mTBF = myTBF;
 	}
 
@@ -113,7 +117,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		
 		mThread = Thread.currentThread();
 		try {
-			Thread.sleep((long) (STARTUP_DELAY * (0.5f + Math.random()))); // Let the node start up
+			Thread.sleep(STARTUP_DELAY/2 + mWoT.random.nextInt(STARTUP_DELAY)); // Let the node start up
 		}
 		catch (InterruptedException e)
 		{
@@ -130,7 +134,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			Logger.debug(this, "Introduction client loop finished.");
 			
 			try {
-				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
+				Thread.sleep(THREAD_PERIOD/2 + mWoT.random.nextInt(THREAD_PERIOD));
 			}
 			catch (InterruptedException e)
 			{
@@ -284,7 +288,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		
 		for(Identity i : ids) {
 			try {
-				downloadPuzzle(i, 0);
+				downloadPuzzle(i, mWoT.random.nextInt(IntroductionServer.PUZZLE_COUNT)); /* FIXME: store the puzzle count as an identity property (i.e. identities will publish in identity.xml how many puzzles they upload */
 			} catch (Exception e) {
 				Logger.error(this, "Starting puzzle download failed.", e);
 			}

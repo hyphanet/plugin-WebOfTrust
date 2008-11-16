@@ -17,6 +17,7 @@ import javax.xml.transform.TransformerException;
 import plugins.WoT.Identity;
 import plugins.WoT.IdentityFetcher;
 import plugins.WoT.OwnIdentity;
+import plugins.WoT.WoT;
 import plugins.WoT.introduction.captcha.CaptchaFactory1;
 
 import com.db4o.ObjectContainer;
@@ -48,8 +49,8 @@ import freenet.support.io.TempBucketFactory;
  */
 public final class IntroductionServer implements Runnable, ClientCallback {
 	
-	private static final long STARTUP_DELAY = 1 * 60 * 1000;
-	private static final long THREAD_PERIOD = 10 * 60 * 1000; /* FIXME: tweak before release */
+	private static final int STARTUP_DELAY = 1 * 60 * 1000;
+	private static final int THREAD_PERIOD = 10 * 60 * 1000; /* FIXME: tweak before release */
 
 	public static final byte PUZZLE_COUNT = 10; 
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
@@ -58,6 +59,8 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	
 	/** Used to tell the introduction server thread if it should stop */
 	private volatile boolean isRunning;
+	
+	private WoT mWoT; 
 	
 	/** A reference to the database */
 	private ObjectContainer db;
@@ -88,10 +91,11 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	 * @param tbf
 	 *            Needed to create buckets from Identities before insert
 	 */
-	public IntroductionServer(ObjectContainer myDB, HighLevelSimpleClient myClient, TempBucketFactory myTBF, IdentityFetcher myFetcher) {
+	public IntroductionServer(WoT myWoT, TempBucketFactory myTBF, IdentityFetcher myFetcher) {
 		isRunning = true;
-		db = myDB;
-		mClient = myClient;
+		mWoT = myWoT;
+		db = mWoT.getDB();
+		mClient = mWoT.getClient();
 		mTBF = myTBF;
 		mIdentityFetcher = myFetcher;
 	}
@@ -101,7 +105,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		
 		mThread = Thread.currentThread();
 		try {
-			Thread.sleep((long) (STARTUP_DELAY * (0.5f + Math.random()))); // Let the node start up
+			Thread.sleep(STARTUP_DELAY/2 + mWoT.random.nextInt(STARTUP_DELAY)); // Let the node start up
 		}
 		catch (InterruptedException e)
 		{
@@ -132,7 +136,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 			Logger.debug(this, "Introduction server loop finished.");
 			
 			try {
-				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
+				Thread.sleep(THREAD_PERIOD/2 + mWoT.random.nextInt(THREAD_PERIOD));
 			}
 			catch (InterruptedException e)
 			{
@@ -233,7 +237,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 			IntroductionPuzzle p = null;
 			do {
 				try {
-					p = mPuzzleFactories[(int)(Math.random() * 100) % mPuzzleFactories.length].generatePuzzle(db, identity);
+					p = mPuzzleFactories[mWoT.random.nextInt(mPuzzleFactories.length)].generatePuzzle(db, identity);
 					p.exportToXML(os);
 					os.close(); os = null;
 					tempB.setReadOnly();
