@@ -230,8 +230,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			else if(pageTitle.equals("editIdentity")) {
 				return web.makeEditIdentityPage(request.getPartAsString("id", 1024));
 			}
-			else if(request.getPartAsString("page", 50).equals("introduceIdentity")) {
-				page = new IntroduceIdentityPage(this, request, introductionClient, OwnIdentity.getById(db, request.getPartAsString("id", 128)));
+			else if(pageTitle.equals("introduceIdentity")) {
+				page = new IntroduceIdentityPage(this, request, introductionClient, OwnIdentity.getById(db, request.getPartAsString("identity", 128)));
 			}
 			else if(pageTitle.equals("restoreIdentity")) {
 				restoreIdentity(request.getPartAsString("requestURI", 1024), request.getPartAsString("insertURI", 1024));
