@@ -129,6 +129,17 @@ public final class IntroductionPuzzle {
 		mSolution = newSolution;
 	}
 	
+	public static IntroductionPuzzle getByID(ObjectContainer db, UUID id) {
+		Query q = db.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mID").constrain(id);
+		ObjectSet<IntroductionPuzzle> result = q.execute();
+		
+		assert(result.size() <= 1);
+		
+		return (result.hasNext() ? result.next() : null);
+	}
+	
 	/**
 	 * Used by the IntroductionServer for downloading solutions.
 	 * @param db
@@ -158,7 +169,7 @@ public final class IntroductionPuzzle {
 		q.descend("mID").constrain(id);
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
-		assert(result.size() == 1);
+		assert(result.size() <= 1);
 		
 		return (result.hasNext() ? result.next() : null);
 	}
