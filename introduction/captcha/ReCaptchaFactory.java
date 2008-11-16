@@ -17,6 +17,9 @@ import com.db4o.ObjectContainer;
  * We could also ask the recaptcha people to run their own seed identity for us which provides insane amounts of captchas per day.
  * 
  * First thing we could do: Just implement the ReCaptchaFactory without anonymization and make our seed identity only insert recaptchas.
+ * We would have to change the KSK at which to insert captcha solutions to include the hash of the solution an not the solution itself because
+ * ReCaptcha cannot give away the solution as they only check one of the two words in the captcha. This could be done by extending the 
+ * class IntroductionPuzzle.
  * 
  * Description:
  *  reCAPTCHA improves the process of digitizing books by sending words that cannot be read by computers to the Web in the form of CAPTCHAs
