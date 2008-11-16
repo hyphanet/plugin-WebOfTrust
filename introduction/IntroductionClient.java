@@ -113,7 +113,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		
 		mThread = Thread.currentThread();
 		try {
-			Thread.sleep((long) (1*60*1000 * (0.5f + Math.random()))); // Let the node start up
+			Thread.sleep((long) (STARTUP_DELAY * (0.5f + Math.random()))); // Let the node start up
 		}
 		catch (InterruptedException e)
 		{
