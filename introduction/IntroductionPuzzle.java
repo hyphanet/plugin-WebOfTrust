@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.UUID;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -43,7 +44,9 @@ import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
-public class IntroductionPuzzle {
+public final class IntroductionPuzzle {
+	
+	public static enum PuzzleType { Captcha };
 	
 	public static final String INTRODUCTION_CONTEXT = "introduction";
 	public static final int MINIMAL_SOLUTION_LENGTH = 5;
@@ -51,6 +54,10 @@ public class IntroductionPuzzle {
 	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	
 	/* Included in XML: */
+	
+	private final UUID mID;
+	
+	private final PuzzleType mType;
 	
 	private final String mMimeType;
 	
@@ -88,7 +95,7 @@ public class IntroductionPuzzle {
 	 * Get a list of fields which the database should create an index on.
 	 */
 	public static String[] getIndexedFields() {
-		return new String[] {"mInserter"};
+		return new String[] {"mID", "mInserter"};
 	}
 	
 	/**
@@ -96,11 +103,13 @@ public class IntroductionPuzzle {
 	 * @param newType
 	 * @param newData
 	 */
-	public IntroductionPuzzle(Identity newInserter, String newMimeType, byte[] newData, long myValidUntilTime, Date myDateOfInsertion, int myIndex) {
-		assert(	newInserter != null && newMimeType != null && !newMimeType.equals("") &&
+	public IntroductionPuzzle(Identity newInserter, UUID newID, PuzzleType newType, String newMimeType, byte[] newData, long myValidUntilTime, Date myDateOfInsertion, int myIndex) {
+		assert(	newInserter != null && newID != null && newType != null && newMimeType != null && !newMimeType.equals("") &&
 				newData!=null && newData.length!=0 && myValidUntilTime > System.currentTimeMillis() && myDateOfInsertion != null &&
 				myDateOfInsertion.getTime() < System.currentTimeMillis() && myIndex >= 0);
+		mID = newID;
 		mInserter = newInserter;
+		mType = newType;
 		mMimeType = newMimeType;
 		mData = newData;
 		mSolution = null;
@@ -114,16 +123,10 @@ public class IntroductionPuzzle {
 	 * @param newType
 	 * @param newData
 	 */
-	public IntroductionPuzzle(Identity newInserter, String newMimeType, byte[] newData, String newSolution, Date newDateOfInsertion, int myIndex) {
-		assert(	newInserter != null && newMimeType != null && !newMimeType.equals("") && newData!=null && newData.length!=0 &&
-				newSolution!=null && newSolution.length()>=MINIMAL_SOLUTION_LENGTH && myIndex >= 0);
-		mInserter = newInserter;
-		mMimeType = newMimeType;
-		mData = newData;
+	public IntroductionPuzzle(Identity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution, Date newDateOfInsertion, int myIndex) {
+		this(newInserter, UUID.randomUUID(), newType, newMimeType, newData, newDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000, newDateOfInsertion, myIndex);
+		assert(newSolution!=null && newSolution.length()>=MINIMAL_SOLUTION_LENGTH);
 		mSolution = newSolution;
-		mDateOfInsertion = new Date(newDateOfInsertion.getYear(), newDateOfInsertion.getMonth(), newDateOfInsertion.getDay());
-		mValidUntilTime = newDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000; /* FIXME: get it in UTC */
-		mIndex = myIndex;
 	}
 	
 	/**
@@ -148,16 +151,11 @@ public class IntroductionPuzzle {
 	  * @throws ParseException
 	  */
 	public static IntroductionPuzzle getBySolutionURI(ObjectContainer db, FreenetURI uri) throws ParseException {
-		String[] tokens = uri.getDocName().split("|");
-		String id = tokens[1];
-		Date date = mDateFormat.parse(tokens[2]);
-		int index = Integer.parseInt(tokens[3]);
+		UUID id = UUID.fromString(uri.getDocName().split("|")[3]);
 		
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").descend("id").constrain(id);
-		q.descend("mDateOfInsertion").constrain(date);
-		q.descend("mIndex").constrain(index);
+		q.descend("mID").constrain(id);
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
 		assert(result.size() == 1);
@@ -193,6 +191,10 @@ public class IntroductionPuzzle {
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mSolver").constrain(null).identity().not();
 		return q.execute();
+	}
+	
+	public UUID getID() {
+		return mID;
 	}
 
 	public String getMimeType() {
@@ -242,11 +244,9 @@ public class IntroductionPuzzle {
 	 * Get the URI at which to insert the solution of this puzzle.
 	 */
 	public FreenetURI getSolutionURI(String guessOfSolution) {
-		String dayOfInsertion = mDateFormat.format(mDateOfInsertion);
 		return new FreenetURI("KSK", 	INTRODUCTION_CONTEXT + "|" +
 								mInserter.getId() + "|" +
-								dayOfInsertion + "|" +
-								mIndex + "|" +
+								mID + "|" +
 								guessOfSolution); /* FIXME: hash the solution!! */
 	}
 	
@@ -351,7 +351,15 @@ public class IntroductionPuzzle {
 
 		// Create the content
 		Element puzzleTag = xmlDoc.createElement("IntroductionPuzzle");
+		
+		Element idTag = xmlDoc.createElement("ID");
+		idTag.setAttribute("value", mID.toString());
+		puzzleTag.appendChild(idTag);
 
+		Element typeTag = xmlDoc.createElement("Type");
+		typeTag.setAttribute("value", mType.toString());
+		puzzleTag.appendChild(typeTag);
+		
 		Element mimeTypeTag = xmlDoc.createElement("MimeType");
 		mimeTypeTag.setAttribute("value", mMimeType);
 		puzzleTag.appendChild(mimeTypeTag);
@@ -387,6 +395,8 @@ public class IntroductionPuzzle {
 	
 	public static class PuzzleHandler extends DefaultHandler {
 		private final Identity newInserter;
+		private UUID newID;
+		private PuzzleType newType;
 		private String newMimeType;
 		private byte[] newData;
 		private long newValidUntilTime;
@@ -410,7 +420,13 @@ public class IntroductionPuzzle {
 			String elt_name = rawName == null ? localName : rawName;
 
 			try {
-				if (elt_name.equals("MimeType")) {
+				if (elt_name.equals("ID")) {
+					newID = UUID.fromString(attrs.getValue("value"));
+				}
+				else if (elt_name.equals("Type")) {
+					newType = PuzzleType.valueOf(attrs.getValue("value"));
+				}
+				else if (elt_name.equals("MimeType")) {
 					newMimeType = attrs.getValue("value");
 				}
 				else if (elt_name.equals("ValidUntilTime")) {
@@ -428,7 +444,7 @@ public class IntroductionPuzzle {
 		}
 
 		public IntroductionPuzzle getPuzzle() {
-			return new IntroductionPuzzle(newInserter, newMimeType, newData, newValidUntilTime, newDateOfInsertion, newIndex);
+			return new IntroductionPuzzle(newInserter, newID, newType, newMimeType, newData, newValidUntilTime, newDateOfInsertion, newIndex);
 		}
 	}
 }
