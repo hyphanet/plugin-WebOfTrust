@@ -62,7 +62,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 	private volatile boolean isRunning;
 	private Thread mThread;
 	
-	private final ArrayList<ClientPutter> mInserts = new ArrayList<ClientPutter>(10); /* Just assume that there are 10 identities */
+	private final ArrayList<BaseClientPutter> mInserts = new ArrayList<BaseClientPutter>(10); /* Just assume that there are 10 identities */
 	
 	/**
 	 * Creates an IdentityInserter.
@@ -96,6 +96,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		while(isRunning) {
 			Thread.interrupted();
 			Logger.debug(this, "IdentityInserter loop running...");
+			cancelInserts(); /* FIXME: check whether this does not prevent the cancelled inserts from being restarted in the loop right now */
 			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
 			while(identities.hasNext()) {
 				OwnIdentity identity = identities.next();
@@ -125,12 +126,14 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		Logger.debug(this, "Identity inserter thread finished.");
 	}
 	
-	private synchronized void cancelInserts() {
-		Iterator<ClientPutter> i = mInserts.iterator();
-		int icounter = 0;
-		Logger.debug(this, "Trying to stop all inserts"); 
-		while (i.hasNext()) { i.next().cancel(); ++icounter; }
-		Logger.debug(this, "Stopped " + icounter + " current inserts");
+	private void cancelInserts() {
+		Logger.debug(this, "Trying to stop all inserts");
+		synchronized(mInserts) {
+			Iterator<BaseClientPutter> i = mInserts.iterator();
+			int icounter = 0;
+			while (i.hasNext()) { i.next().cancel(); ++icounter; }
+			Logger.debug(this, "Stopped " + icounter + " current inserts");
+		}
 	}
 	
 	/**
@@ -190,7 +193,9 @@ public class IdentityInserter implements Runnable, ClientCallback {
 			/* FIXME: are these parameters correct? */
 			ClientPutter pu = client.insert(ib, false, "identity.xml", false, ictx, this);
 			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
-			mInserts.add(pu);
+			synchronized(mInserts) {
+				mInserts.add(pu);
+			}
 			tempB = null;
 
 			// We set the date now, so if the identity is modified during the insert, we'll insert it again next time
@@ -208,9 +213,18 @@ public class IdentityInserter implements Runnable, ClientCallback {
 				os.close();
 		}
 	}
-
+	
+	private void removeInsert(BaseClientPutter p) {
+		Logger.debug(this, "Trying to remove insert " + p.getURI());
+		synchronized(mInserts) {
+			p.cancel(); /* FIXME: is this necessary ? */
+			mInserts.remove(p);
+		}
+		Logger.debug(this, "Removed request.");
+	}
+	
 	// Only called by inserts
-	public synchronized void onSuccess(BaseClientPutter state)
+	public void onSuccess(BaseClientPutter state)
 	{
 		try {
 			OwnIdentity identity = OwnIdentity.getByURI(db, state.getURI());
@@ -220,23 +234,21 @@ public class IdentityInserter implements Runnable, ClientCallback {
 			db.commit();
 			Logger.debug(this, "Successful insert of identity '" + identity.getNickName() + "'");
 		} catch(Exception e) { Logger.error(this, "Error", e); }
-		state.cancel(); /* FIXME: is this necessary */
-		mInserts.remove(state);
+		removeInsert(state);
 	}
 	
 	// Only called by inserts
-	public synchronized void onFailure(InsertException e, BaseClientPutter state) 
+	public void onFailure(InsertException e, BaseClientPutter state) 
 	{
 		try {
 			OwnIdentity identity = OwnIdentity.getByURI(db, state.getURI());
 
 			Logger.error(this, "Error during insert of identity '" + identity.getNickName() + "'", e);
 		} catch(Exception ex) { Logger.error(this, "Error", e); }
-		state.cancel(); /* FIXME: is this necessary */
-		mInserts.remove(state);
+		removeInsert(state);
 	}
 	
-	/* Not needed functions from the ClientCallback inteface */
+	/* Not needed functions from the ClientCallback interface */
 	
 	public void onFailure(FetchException e, ClientGetter state) {
 		// TODO Auto-generated method stub
