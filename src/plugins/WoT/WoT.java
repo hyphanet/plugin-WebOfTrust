@@ -13,6 +13,7 @@ import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.UUID;
 import java.util.Map.Entry;
 
@@ -96,6 +97,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
 	
 	public static final String WOT_CONTEXT = "WoT";
+	
+	public Random random;
 
 	public void runPlugin(PluginRespirator pr) {
 
@@ -111,6 +114,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		seed = getSeedIdentity();
 
 		pm = pr.getPageMaker();
+		random = pr.getNode().fastWeakRandom;
 
 		/* FIXME: i cannot get this to work, it does not print any objects although there are definitely IntroductionPuzzle objects in my db.
 		
@@ -153,10 +157,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 		catch(InvalidParameterException e) {}
 		
-		introductionServer = new IntroductionServer(db, client, pr.getNode().clientCore.tempBucketFactory, fetcher);
+		introductionServer = new IntroductionServer(this, pr.getNode().clientCore.tempBucketFactory, fetcher);
 		pr.getNode().executor.execute(introductionServer, "WoT introduction server");
 		
-		introductionClient = new IntroductionClient(db, client, pr.getNode().clientCore.tempBucketFactory);
+		introductionClient = new IntroductionClient(this, pr.getNode().clientCore.tempBucketFactory);
 		pr.getNode().executor.execute(introductionClient, "WoT introduction client");
 		
 		// Try to fetch all known identities
