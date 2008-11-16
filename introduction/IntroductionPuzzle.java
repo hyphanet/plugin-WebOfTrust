@@ -261,7 +261,7 @@ public final class IntroductionPuzzle {
 								guessOfSolution); /* FIXME: hash the solution!! */
 	}
 	
-	public byte[] getPuzzle() {
+	public byte[] getData() {
 		return mData;
 	}
 	
