@@ -6,10 +6,8 @@
 
 package plugins.WoT;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 
 import plugins.WoT.exceptions.UnknownIdentityException;
@@ -87,7 +85,9 @@ public class IdentityFetcher implements ClientCallback {
 			else
 				fetch(identity.getRequestURI());
 			
-			identities.add(identity);
+			synchronized(identities) {
+				identities.add(identity);
+			}
 		} catch (FetchException e) {
 			Logger.error(this, "Request restart failed: "+e, e);
 		}
@@ -106,26 +106,39 @@ public class IdentityFetcher implements ClientCallback {
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		ClientGetter g = client.fetch(uri, -1, this, this, fetchContext);
 		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* FIXME: decide which one to use */
-		requests.add(g);
+		synchronized(requests) {
+			requests.add(g);
+		}
 		Logger.debug(this, "Start fetching uri "+uri.toString());
 	}
 
 	/**
 	 * Stops all running requests.
 	 */
-	public synchronized void stop() {
-		Iterator<ClientGetter> i = requests.iterator();
-		int counter = 0;
-		Logger.debug(this, "Trying to stop all requests"); 
-		while (i.hasNext()) { i.next().cancel(); ++counter; }
-		Logger.debug(this, "Stopped " + counter + " current requests");
+	public void stop() {
+		Logger.debug(this, "Trying to stop all requests");
+		synchronized(requests) {
+			Iterator<ClientGetter> i = requests.iterator();
+			int counter = 0;		 
+			while (i.hasNext()) { i.next().cancel(); ++counter; }
+			Logger.debug(this, "Stopped " + counter + " current requests");
+		}
+	}
+	
+	private void removeRequest(ClientGetter g) {
+		Logger.debug(this, "Trying to remove request " + g.getURI());
+		synchronized(requests) {
+			g.cancel(); /* FIXME: is this necessary ? */
+			requests.remove(g);
+		}
+		Logger.debug(this, "Removed request.");
 	}
 	
 	/**
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * If this is the later, we restart the request.
 	 */
-	public synchronized void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		
 		if ((e.mode == FetchException.PERMANENT_REDIRECT) || (e.mode == FetchException.TOO_MANY_PATH_COMPONENTS )) {
 			// restart the request
@@ -139,7 +152,8 @@ public class IdentityFetcher implements ClientCallback {
 		}
 		// Errors we can't/want deal with
 		Logger.error(this, "Fetch failed for "+ state.getURI(), e);
-		requests.remove(state);
+		
+		removeRequest(state);
 		removeIdentity(state);
 	}
 
@@ -147,7 +161,7 @@ public class IdentityFetcher implements ClientCallback {
 	 * Called when a file is successfully fetched. We then create an
 	 * {@link IdentityParser} and give it the file content. 
 	 */
-	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state) {
 		
 		Logger.debug(this, "Fetched identity "+ state.getURI().toString());
 		
@@ -166,10 +180,12 @@ public class IdentityFetcher implements ClientCallback {
 		}
 	}
 	
-	private synchronized void removeIdentity(ClientGetter state) {
+	private void removeIdentity(ClientGetter state) {
 		try {
 			Identity id = Identity.getByURI(db, state.getURI());
-			identities.remove(id);
+			synchronized(identities) {
+				identities.remove(id);
+			}
 		}
 		catch(UnknownIdentityException ex)
 		{
