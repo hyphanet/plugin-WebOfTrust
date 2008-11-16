@@ -60,7 +60,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 	
 	private void makePuzzleBox(PluginRespirator pr) {
-		HTMLNode boxContent = getContentBox(null);
+		HTMLNode boxContent = getContentBox("Puzzles");
 		HTMLNode solveForm = pr.addFormChild(boxContent, SELF_URI, "introduceIdentity");
 		solveForm.addAttribute("identity", mIdentity.getId());
 		
