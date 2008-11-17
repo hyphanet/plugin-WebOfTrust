@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Random;
 
@@ -55,6 +56,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 
 	public static final byte PUZZLE_COUNT = 10; 
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
+	public static final int PUZZLE_REINSERT_MAX_AGE = 12 * 60 * 60 * 1000;		
 	
 	
 	/* Objects from WoT */
@@ -260,7 +262,8 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		Logger.debug(this, "Trying to insert " + puzzles.size() + " old puzzles from " + identity.getNickName());
 		for(IntroductionPuzzle p : puzzles) {
 			// FIXME: do not always insert when the introductionserver loop runs, only every few hours.
-			insertPuzzle(identity, p);
+			if(p.getDateOfInsertion().after(new Date(System.currentTimeMillis() - PUZZLE_REINSERT_MAX_AGE)))
+				insertPuzzle(identity, p);
 		}
 		Logger.debug(this, "Finished inserting puzzles from " + identity.getNickName());
 	}
