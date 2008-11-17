@@ -123,7 +123,7 @@ public class IdentityFetcher implements ClientCallback {
 		synchronized(requests) {
 			Iterator<ClientGetter> i = requests.iterator();
 			int counter = 0;		 
-			while (i.hasNext()) { i.next().cancel(); ++counter; }
+			while (i.hasNext()) { i.next().cancel(); i.remove(); ++counter; }
 			Logger.debug(this, "Stopped " + counter + " current requests");
 		}
 	}
