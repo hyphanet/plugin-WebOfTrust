@@ -10,10 +10,12 @@ import com.db4o.ObjectSet;
 
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
+import plugins.WoT.Trust;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.DuplicateTrustException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
+import plugins.WoT.exceptions.NotTrustedException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -167,7 +169,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 			
 			// Own Trust
-			row.addChild(id.getReceivedTrustForm(db, pr, SELF_URI, treeOwner));
+			row.addChild(getReceivedTrustForm(db, pr, SELF_URI, treeOwner, id));
 			
 			// Nb Trusters
 			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
@@ -177,8 +179,32 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 			trusteesCell.addChild(new HTMLNode("a", "href", SELF_URI + "?getTrustees&id="+id.getId(), Long.toString(id.getNbGivenTrusts(db))));
 		}
-
-		
 	}
+	
+	public HTMLNode getReceivedTrustForm (ObjectContainer db, PluginRespirator pr, String SELF_URI, OwnIdentity truster, Identity trustee) throws DuplicateTrustException {
 
+		String trustValue = "";
+		String trustComment = "";
+		Trust trust;
+		
+		try {
+			trust = trustee.getReceivedTrust(truster, db);
+			trustValue = String.valueOf(trust.getValue());
+			trustComment = trust.getComment();
+		}
+		catch (NotTrustedException e) {
+			Logger.error(this, "Error", e);
+		} 
+			
+		HTMLNode cell = new HTMLNode("td");
+		HTMLNode trustForm = pr.addFormChild(cell, SELF_URI, "setTrust");
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "setTrust" });
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "truster", truster.getRequestURI().toString() }); /* TODO: use the id as key instead */
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "trustee", trustee.getRequestURI().toString() }); /* TODO: use the id as key instead */
+		trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "value", "2", trustValue });
+		trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "comment", "50", trustComment });
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", "Update" });
+
+		return cell;
+	}
 }
