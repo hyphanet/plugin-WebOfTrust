@@ -241,7 +241,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	
 	private synchronized void insertNewPuzzles(OwnIdentity identity) {
 		int puzzlesToInsert = PUZZLE_COUNT - IntroductionPuzzle.getByInserter(db, identity).size();
-		Logger.debug(this, "Trying to insert " + puzzlesToInsert + " puzzles from " + identity.getNickName());
+		Logger.debug(this, "Trying to insert " + puzzlesToInsert + " new puzzles from " + identity.getNickName());
 		
 		while(puzzlesToInsert > 0) {
 			try {
@@ -258,10 +258,12 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	
 	private synchronized void insertOldPuzzles(OwnIdentity identity) throws IOException, InsertException, TransformerException, ParserConfigurationException {
 		ObjectSet<IntroductionPuzzle> puzzles = IntroductionPuzzle.getByInserter(db, identity);
+		Logger.debug(this, "Trying to insert " + puzzles.size() + " old puzzles from " + identity.getNickName());
 		for(IntroductionPuzzle p : puzzles) {
 			// FIXME: do not always insert when the introductionserver loop runs, only every few hours.
 			insertPuzzle(identity, p);
 		}
+		Logger.debug(this, "Finished inserting puzzles from " + identity.getNickName());
 	}
 	
 	private synchronized void insertNewPuzzle(OwnIdentity identity) throws IOException, InsertException, TransformerException, ParserConfigurationException {
