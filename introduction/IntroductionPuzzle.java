@@ -336,6 +336,9 @@ public final class IntroductionPuzzle {
 	}
 	
 	public void store(ObjectContainer db) {
+		db.store(mID);
+		db.store(mType);
+		db.store(mDateOfInsertion);
 		db.store(this);
 		db.commit();
 	}
@@ -484,5 +487,20 @@ public final class IntroductionPuzzle {
 		public IntroductionPuzzle getPuzzle() {
 			return new IntroductionPuzzle(newInserter, newID, newType, newMimeType, newData, newValidUntilTime, newDateOfInsertion, newIndex);
 		}
+	}
+	
+	public boolean checkConsistency() {
+		boolean result = true;
+		if(mID == null) { Logger.error(this, "mID == null!"); result = false; }
+		if(mType == null) { Logger.error(this, "mType == null!"); result = false; }
+		if(mMimeType == null || !mMimeType.equals("image/jpeg")) { Logger.error(this, "mMimeType == " + mMimeType); result = false; }
+		if(mValidUntilTime < new Date(2008, 11, 10).getTime()) { Logger.error(this, "mValidUntilTime ==" + mValidUntilTime); result = false; }
+		if(mData == null || mData.length<100) { Logger.error(this, "mData == " + mData); result = false; }
+		if(mInserter == null) { Logger.error(this, "mInserter == null"); result = false; }
+		if(mDateOfInsertion == null || mDateOfInsertion.getTime() < new Date(2008, 11, 10).getTime()) { Logger.error(this, "mDateOfInsertion ==" + mDateOfInsertion); result = false; }
+		if(mIndex < 0) { Logger.error(this, "mIndex == " + mIndex); result = false; }
+		if(iWasSolved == true && (mSolver == null || mSolution == null)) { Logger.error(this, "iWasSolved but mSolver == " + mSolver + ", " + "mSolution == " + mSolution); result = false; }
+		
+		return result;
 	}
 }
