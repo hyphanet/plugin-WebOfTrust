@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
 
@@ -186,14 +187,39 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
-		WebPage page;
+		WebPage page = null;
 		
 		if(request.isParameterSet("ownidentities")) page = new OwnIdentitiesPage(this, request);
 		else if(request.isParameterSet("knownidentities")) page = new KnownIdentitiesPage(this, request);
 		else if(request.isParameterSet("configuration")) page = new ConfigurationPage(this, request);
 		// TODO Handle these two in KnownIdentitiesPage
-		else if(request.isParameterSet("getTrusters")) page = new TrustersPage(this, request); 
-		else if(request.isParameterSet("getTrustees")) page = new TrusteesPage(this, request); 
+		else if (request.isParameterSet("getTrusters")) {
+			try {
+				Identity identity = Identity.getById(db, request.getParam("id"));
+				Set<Trust> trusters = new HashSet<Trust>();
+				ObjectSet<Trust> trusts = identity.getReceivedTrusts(db);
+				while (trusts.hasNext()) {
+					Trust trust = trusts.next();
+					trusters.add(trust);
+				}
+				page = new TrustersPage(this, request, identity, trusters);
+			} catch (UnknownIdentityException uie1) {
+				Logger.error(this, "Could not load identity " + request.getParam("id"), uie1);
+			}
+		} else if (request.isParameterSet("getTrustees")) {
+			try {
+				Identity identity = Identity.getById(db, request.getParam("id"));
+				Set<Trust> trusters = new HashSet<Trust>();
+				ObjectSet<Trust> trusts = identity.getGivenTrusts(db);
+				while (trusts.hasNext()) {
+					Trust trust = trusts.next();
+					trusters.add(trust);
+				}
+				page = new TrusteesPage(this, request, identity, trusters);
+			} catch (UnknownIdentityException uie1) {
+				Logger.error(this, "Could not load identity " + request.getParam("id"), uie1);
+			}
+		}
 		else if(request.isParameterSet("puzzle")) { 
 			IntroductionPuzzle p = IntroductionPuzzle.getByID(db, UUID.fromString(request.getParam("id")));
 			if(p != null) {
@@ -204,7 +230,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			return "";
 		}
 		
-		else page = new HomePage(this, request);
+		if (page == null) {
+			page = new HomePage(this, request);
+		}
 		
 		page.make();	
 		return page.toHTML();
