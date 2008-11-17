@@ -150,7 +150,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			row=identitiesTable.addChild("tr");
 			
 			// NickName
-			row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"}, id.getNickName());
+			row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"}).addChild("a", "href", "?showIdentity&id=" + id.getId(), id.getNickName());
 			
 			// Last Change
 			row.addChild("td", id.getReadableLastChange());
@@ -173,11 +173,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			// Nb Trusters
 			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-			trustersCell.addChild(new HTMLNode("a", "href", SELF_URI + "?getTrusters&id="+id.getId(), Long.toString(id.getNbReceivedTrusts(db))));
+			trustersCell.addChild(new HTMLNode("a", "href", SELF_URI + "?showIdentity&id="+id.getId(), Long.toString(id.getNbReceivedTrusts(db))));
 			
 			// Nb Trustees
 			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-			trusteesCell.addChild(new HTMLNode("a", "href", SELF_URI + "?getTrustees&id="+id.getId(), Long.toString(id.getNbGivenTrusts(db))));
+			trusteesCell.addChild(new HTMLNode("a", "href", SELF_URI + "?showIdentity&id="+id.getId(), Long.toString(id.getNbGivenTrusts(db))));
 		}
 	}
 	
