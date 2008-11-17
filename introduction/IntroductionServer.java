@@ -51,7 +51,7 @@ import freenet.support.io.TempBucketFactory;
 public final class IntroductionServer implements Runnable, ClientCallback {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 45 * 60 * 1000; /* FIXME: tweak before release */
+	private static final int THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
 
 	public static final byte PUZZLE_COUNT = 10; 
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
@@ -132,6 +132,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 					try {
 						Logger.debug(this, "Managing puzzles of " + identity.getNickName());
 						downloadSolutions(identity);
+						insertOldPuzzles(identity);
 						insertNewPuzzles(identity);
 						Logger.debug(this, "Managing puzzles finished.");
 					} catch (Exception e) {
@@ -255,16 +256,28 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		Logger.debug(this, "Finished inserting puzzles from " + identity.getNickName());
 	}
 	
+	private synchronized void insertOldPuzzles(OwnIdentity identity) throws IOException, InsertException, TransformerException, ParserConfigurationException {
+		ObjectSet<IntroductionPuzzle> puzzles = IntroductionPuzzle.getByInserter(db, identity);
+		for(IntroductionPuzzle p : puzzles) {
+			// FIXME: do not always insert when the introductionserver loop runs, only every few hours.
+			insertPuzzle(identity, p);
+		}
+	}
+	
 	private synchronized void insertNewPuzzle(OwnIdentity identity) throws IOException, InsertException, TransformerException, ParserConfigurationException {
+		IntroductionPuzzle p = mPuzzleFactories[mRandom.nextInt(mPuzzleFactories.length)].generatePuzzle(db, identity);
+		insertPuzzle(identity, p);
+	}
+	
+	private synchronized void insertPuzzle(OwnIdentity identity, IntroductionPuzzle p) throws IOException, InsertException, TransformerException, ParserConfigurationException {
 		Bucket tempB = mTBF.makeBucket(10 * 1024); /* TODO: set to a reasonable value */
 		OutputStream os = tempB.getOutputStream();
 		
 		try {
 			boolean retryWithNewIndex = false;
-			IntroductionPuzzle p = null;
+
 			do {
 				try {
-					p = mPuzzleFactories[mRandom.nextInt(mPuzzleFactories.length)].generatePuzzle(db, identity);
 					p.exportToXML(os);
 					os.close(); os = null;
 					tempB.setReadOnly();
