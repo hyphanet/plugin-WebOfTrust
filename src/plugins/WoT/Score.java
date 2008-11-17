@@ -94,7 +94,7 @@ public class Score {
 		return query.execute();
 	}
 	
-	public String toString() {
+	public synchronized String toString() {
 		return getTarget().getNickName() + " has " + getScore() + " points in " + getTreeOwner().getNickName() + "'s trust tree (rank : " + getRank() + ", capacity : " + getCapacity() + ")";
 	}
 
@@ -115,42 +115,42 @@ public class Score {
 	/**
 	 * @return the numeric value of this Score
 	 */
-	public int getScore() {
+	public synchronized int getScore() {
 		return score;
 	}
 
 	/**
 	 * Sets the numeric value of this Score
 	 */
-	public void setScore(int score) {
+	public synchronized void setScore(int score) {
 		this.score = score;
 	}
 
 	/**
 	 * @return How far the target Identity is from the trust tree's root
 	 */
-	public int getRank() {
+	public synchronized int getRank() {
 		return rank;
 	}
 
 	/**
 	 * Sets how far the target Identity is from the trust tree's root.
 	 */
-	public void setRank(int rank) {
+	public synchronized void setRank(int rank) {
 		this.rank = rank;
 	}
 
 	/**
 	 * @return how much points the target Identity can add to its trustees score
 	 */
-	public int getCapacity() {
+	public synchronized int getCapacity() {
 		return capacity;
 	}
 
 	/**
 	 * Sets how much points the target Identity can add to its trustees score.
 	 */
-	public void setCapacity(int capacity) {
+	public synchronized void setCapacity(int capacity) {
 		this.capacity = capacity;
 	}
 }
