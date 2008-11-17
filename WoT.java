@@ -205,18 +205,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		else if (request.isParameterSet("showIdentity")) {
 			try {
 				Identity identity = Identity.getById(db, request.getParam("id"));
-				Set<Trust> trusteesTrusts = new HashSet<Trust>();
-				ObjectSet<Trust> trusts = identity.getGivenTrusts(db);
-				while (trusts.hasNext()) {
-					Trust trust = trusts.next();
-					trusteesTrusts.add(trust);
-				}
-				Set<Trust> trustersTrusts = new HashSet<Trust>();
-				trusts = identity.getReceivedTrusts(db);
-				while (trusts.hasNext()) {
-					Trust trust = trusts.next();
-					trustersTrusts.add(trust);
-				}
+				ObjectSet<Trust> trusteesTrusts = identity.getGivenTrusts(db);
+				ObjectSet<Trust> trustersTrusts = identity.getReceivedTrusts(db);
 				page = new IdentityPage(this, request, identity, trustersTrusts, trusteesTrusts);
 			} catch (UnknownIdentityException uie1) {
 				Logger.error(this, "Could not load identity " + request.getParam("id"), uie1);

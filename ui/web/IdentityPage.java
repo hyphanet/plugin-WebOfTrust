@@ -19,7 +19,7 @@
 
 package plugins.WoT.ui.web;
 
-import java.util.Set;
+import java.util.List;
 
 import plugins.WoT.Identity;
 import plugins.WoT.Trust;
@@ -37,10 +37,10 @@ public class IdentityPage extends WebPageImpl {
 	private final Identity identity;
 
 	/** All trusts that trust the identity. */
-	private final Set<Trust> trustersTrusts;
+	private final List<Trust> trustersTrusts;
 
 	/** All trusts that the identity trusts. */
-	private final Set<Trust> trusteesTrusts;
+	private final List<Trust> trusteesTrusts;
 
 	/**
 	 * Creates a new trust-relationship web page.
@@ -56,7 +56,7 @@ public class IdentityPage extends WebPageImpl {
 	 * @param trusteesTrusts
 	 *            The trusts having the given identity as trustee
 	 */
-	public IdentityPage(WoT webOfTrust, HTTPRequest httpRequest, Identity identity, Set<Trust> trustersTrusts, Set<Trust> trusteesTrusts) {
+	public IdentityPage(WoT webOfTrust, HTTPRequest httpRequest, Identity identity, List<Trust> trustersTrusts, List<Trust> trusteesTrusts) {
 		super(webOfTrust, httpRequest);
 		this.identity = identity;
 		this.trustersTrusts = trustersTrusts;
