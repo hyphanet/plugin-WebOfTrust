@@ -135,6 +135,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		/* FIXME: debug code, remove before release */
 		ObjectSet<IntroductionPuzzle> puzzles = db.queryByExample(IntroductionPuzzle.class);
 		for(IntroductionPuzzle p : puzzles) {
+			db.activate(p, 5);
 			if(p.checkConsistency() == false) {
 				db.delete(p);
 				Logger.error(this, "Deleting corrupted puzzle.");
