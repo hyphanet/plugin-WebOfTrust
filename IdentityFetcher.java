@@ -105,6 +105,9 @@ public class IdentityFetcher implements ClientCallback {
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		Logger.debug(this, "Trying to start fetching uri " + uri.toString());
+		/* FIXME: The client getter complains about "not enough metastrings" when restoring an identity using the webinterface even though uri.toString() shows identity.xml at the end of the URI in the previous line */ 
+		if(uri.getAllMetaStrings().length == 0)
+			uri.pushMetaString("identity.xml"); 
 		ClientGetter g = client.fetch(uri, -1, this, this, fetchContext);
 		// g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 		synchronized(requests) {
