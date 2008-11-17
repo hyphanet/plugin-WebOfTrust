@@ -104,12 +104,12 @@ public class IdentityFetcher implements ClientCallback {
 		FetchContext fetchContext = client.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
+		Logger.debug(this, "Trying to start fetching uri " + uri.toString());
 		ClientGetter g = client.fetch(uri, -1, this, this, fetchContext);
 		// g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 		synchronized(requests) {
 			requests.add(g);
 		}
-		Logger.debug(this, "Start fetching uri "+uri.toString());
 	}
 
 	/**
