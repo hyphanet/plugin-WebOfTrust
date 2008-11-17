@@ -109,26 +109,26 @@ public class IdentityParser {
 			else elt_name = rawName;
 
 			try {
-				if (elt_name.equals("nickName")) {
+				if (elt_name.equals("Name")) {
 					identity.setNickName(attrs.getValue("value"));
 				}
-				else if (elt_name.equals("publishTrustList")) {
+				else if (elt_name.equals("PublishTrustList")) {
 					identity.setPublishTrustList(attrs.getValue("value").equals("true"));
 				}
-				else if (elt_name.equals("prop")) {
+				else if (elt_name.equals("Property")) {
 					identity.setProp(attrs.getValue("key"), attrs.getValue("value"), db);
 				}
-				else if(elt_name.equals("context")) {
+				else if(elt_name.equals("Context")) {
 					identity.addContext(attrs.getValue("value"), db);
 				}
-				else if (elt_name.equals("trust")) {
+				else if (elt_name.equals("Trust")) {
 	
 					Identity trustee;
 					byte value = Byte.parseByte(attrs.getValue("value"));
-					String comment = attrs.getValue("comment");
+					String comment = attrs.getValue("Comment");
 					
 					try{
-						trustee = Identity.getByURI(db, attrs.getValue("uri"));
+						trustee = Identity.getByURI(db, attrs.getValue("Identity"));
 						identity.setTrust(db, trustee, value, comment);
 					}
 					catch (UnknownIdentityException e) {
@@ -136,7 +136,7 @@ public class IdentityParser {
 						// Create trustee only if the truster has a positive score.
 						// This is to avoid Identity spam when announcements will be here.
 						if(identity.getBestScore(db) > 0) {
-							trustee = new Identity(new FreenetURI(attrs.getValue("uri")), null, false);
+							trustee = new Identity(new FreenetURI(attrs.getValue("Identity")), null, false);
 							db.store(trustee);
 							identity.setTrust(db, trustee, value, comment);
 							fetcher.fetch(trustee); 

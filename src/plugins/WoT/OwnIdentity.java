@@ -198,15 +198,15 @@ public class OwnIdentity extends Identity {
 		Element rootElement = xmlDoc.getDocumentElement();
 
 		// Create the content
-		Element identity = xmlDoc.createElement("identity");
+		Element identity = xmlDoc.createElement("Identity");
 
 		// NickName
-		Element nickNameTag = xmlDoc.createElement("nickName");
+		Element nickNameTag = xmlDoc.createElement("Name");
 		nickNameTag.setAttribute("value", getNickName());
 		identity.appendChild(nickNameTag);
 
 		// PublishTrustList
-		Element publishTrustListTag = xmlDoc.createElement("publishTrustList");
+		Element publishTrustListTag = xmlDoc.createElement("PublishTrustList");
 		publishTrustListTag.setAttribute("value", doesPublishTrustList() ? "true" : "false");
 		identity.appendChild(publishTrustListTag);
 
@@ -215,7 +215,7 @@ public class OwnIdentity extends Identity {
 		Iterator<Entry<String, String>> props = getProps();
 		while(props.hasNext()){
 			Map.Entry<String,String> prop = props.next();
-			Element propTag = xmlDoc.createElement("prop");
+			Element propTag = xmlDoc.createElement("Property");
 			propTag.setAttribute("key", prop.getKey());
 			propTag.setAttribute("value", prop.getValue());
 			identity.appendChild(propTag);
@@ -225,7 +225,7 @@ public class OwnIdentity extends Identity {
 		Iterator<String> contexts = getContexts();
 		while(contexts.hasNext()) {
 			String context = (String)contexts.next();
-			Element contextTag = xmlDoc.createElement("context");
+			Element contextTag = xmlDoc.createElement("Context");
 			contextTag.setAttribute("value", context);
 			identity.appendChild(contextTag);			
 		}
