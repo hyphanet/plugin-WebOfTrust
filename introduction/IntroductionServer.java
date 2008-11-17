@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Random;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -54,13 +55,16 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 
 	public static final byte PUZZLE_COUNT = 10; 
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
+	
+	
+	/* Objects from WoT */
 
-	private Thread mThread;
+	private WoT mWoT;
 	
-	/** Used to tell the introduction server thread if it should stop */
-	private volatile boolean isRunning;
+	private final IdentityFetcher mIdentityFetcher;
 	
-	private WoT mWoT; 
+	
+	/* Objects from the node */
 	
 	/** A reference to the database */
 	private ObjectContainer db;
@@ -71,33 +75,36 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	/** The TempBucketFactory used to create buckets from puzzles before insert */
 	private final TempBucketFactory mTBF;
 	
-	private final IdentityFetcher mIdentityFetcher;
-
+	/** Random number generator */
+	private final Random mRandom;
+	
+	
+	/* Private objects */
+	
+	private Thread mThread;
+	
+	/** Used to tell the introduction server thread if it should stop */
+	private volatile boolean isRunning;
+	
 	private final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] { new CaptchaFactory1() };
 	
 	private final ArrayList<ClientGetter> mRequests = new ArrayList<ClientGetter>(PUZZLE_COUNT * 5); /* Just assume that there are 5 identities */
-	
 	private final ArrayList<BaseClientPutter> mInserts = new ArrayList<BaseClientPutter>(PUZZLE_COUNT * 5); /* Just assume that there are 5 identities */
 	
 
 	/**
 	 * Creates an IntroductionServer
-	 * 
-	 * @param db
-	 *            A reference to the database
-	 * @param client
-	 *            A reference to an {@link HighLevelSimpleClient} to perform
-	 *            inserts
-	 * @param tbf
-	 *            Needed to create buckets from Identities before insert
 	 */
-	public IntroductionServer(WoT myWoT, TempBucketFactory myTBF, IdentityFetcher myFetcher) {
-		isRunning = true;
+	public IntroductionServer(WoT myWoT, IdentityFetcher myFetcher) {
 		mWoT = myWoT;
+		mIdentityFetcher = myFetcher;
+		
 		db = mWoT.getDB();
 		mClient = mWoT.getClient();
-		mTBF = myTBF;
-		mIdentityFetcher = myFetcher;
+		mTBF = mWoT.getTBF();
+		mRandom = mWoT.getRandom();
+		
+		isRunning = true;
 	}
 
 	public void run() {
@@ -105,7 +112,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		
 		mThread = Thread.currentThread();
 		try {
-			Thread.sleep(STARTUP_DELAY/2 + mWoT.random.nextInt(STARTUP_DELAY)); // Let the node start up
+			Thread.sleep(STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY)); // Let the node start up
 		}
 		catch (InterruptedException e)
 		{
@@ -115,10 +122,10 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		while(isRunning) {
 			Thread.interrupted();
 			Logger.debug(this, "Introduction server loop running...");
-			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
 			
 			IntroductionPuzzle.deleteExpiredPuzzles(db);
-			
+
+			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
 			while(identities.hasNext()) {
 				OwnIdentity identity = identities.next();
 				if(identity.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)) {
@@ -136,7 +143,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 			Logger.debug(this, "Introduction server loop finished.");
 			
 			try {
-				Thread.sleep(THREAD_PERIOD/2 + mWoT.random.nextInt(THREAD_PERIOD));
+				Thread.sleep(THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD));
 			}
 			catch (InterruptedException e)
 			{
@@ -163,6 +170,8 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		Logger.debug(this, "Stopped the introduction server.");
 	}
 	
+	/* Private functions */
+	
 	private void cancelRequests() {
 		Logger.debug(this, "Trying to stop all requests & inserts");
 		
@@ -179,6 +188,24 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 			while (i.hasNext()) { i.next().cancel(); ++icounter; }
 			Logger.debug(this, "Stopped " + icounter + " current inserts");
 		}
+	}
+	
+	private void removeRequest(ClientGetter g) {
+		Logger.debug(this, "Trying to remove request " + g.getURI());
+		synchronized(mRequests) {
+			g.cancel(); /* FIXME: is this necessary ? */
+			mRequests.remove(g);
+		}
+		Logger.debug(this, "Removed request.");
+	}
+	
+	private void removeInsert(BaseClientPutter p) {
+		Logger.debug(this, "Trying to remove insert " + p.getURI());
+		synchronized(mInserts) {
+			p.cancel(); /* FIXME: is this necessary ? */
+			mInserts.remove(p);
+		}
+		Logger.debug(this, "Removed request.");
 	}
 		
 	private synchronized void downloadSolutions(OwnIdentity identity) throws FetchException {
@@ -237,7 +264,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 			IntroductionPuzzle p = null;
 			do {
 				try {
-					p = mPuzzleFactories[mWoT.random.nextInt(mPuzzleFactories.length)].generatePuzzle(db, identity);
+					p = mPuzzleFactories[mRandom.nextInt(mPuzzleFactories.length)].generatePuzzle(db, identity);
 					p.exportToXML(os);
 					os.close(); os = null;
 					tempB.setReadOnly();
@@ -277,24 +304,6 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		}
 	}
 	
-	private void removeRequest(ClientGetter g) {
-		Logger.debug(this, "Trying to remove request " + g.getURI());
-		synchronized(mRequests) {
-			g.cancel(); /* FIXME: is this necessary ? */
-			mRequests.remove(g);
-		}
-		Logger.debug(this, "Removed request.");
-	}
-	
-	private void removeInsert(BaseClientPutter p) {
-		Logger.debug(this, "Trying to remove insert " + p.getURI());
-		synchronized(mInserts) {
-			p.cancel(); /* FIXME: is this necessary ? */
-			mInserts.remove(p);
-		}
-		Logger.debug(this, "Removed request.");
-	}
-	
 	/**
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * In our case, called when there is no solution to a puzzle in the network.
@@ -305,8 +314,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	}
 
 	/**
-	 * Called when a file is successfully fetched. We then add the identity which
-	 * solved the puzzle.
+	 * Called when a puzzle solution is successfully fetched. We then add the identity which solved the puzzle.
 	 */
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.debug(this, "Fetched puzzle solution: " + state.getURI());
@@ -330,7 +338,9 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		}
 	}
 	
-	// Only called by inserts
+	/** 
+	 * Called when a puzzle was successfully inserted.
+	 */
 	public void onSuccess(BaseClientPutter state)
 	{
 		try {
@@ -341,7 +351,9 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		removeInsert(state);
 	}
 	
-	// Only called by inserts
+	/**
+	 * Called when the insertion of a puzzle failed.
+	 */
 	public void onFailure(InsertException e, BaseClientPutter state) 
 	{
 		try {
@@ -354,13 +366,12 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 
 	/* Not needed functions from the ClientCallback interface */
 	
-	// Only called by inserts
+	/** Only called by inserts */
 	public void onFetchable(BaseClientPutter state) {}
 
-	// Only called by inserts
+	/** Only called by inserts */
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
 
-	/** Called when freenet.async thinks that the request should be serialized to
-	 * disk, if it is a persistent request. */
+	/** Called when freenet.async thinks that the request should be serialized to disk, if it is a persistent request. */
 	public void onMajorProgress() {}
 }

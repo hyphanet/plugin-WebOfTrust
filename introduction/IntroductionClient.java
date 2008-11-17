@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -65,20 +66,11 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	 * insert one puzzle per day. But it might be a good idea to allow many puzzles per identity: Our seed identity could be configured to
 	 * insert a very large amount of puzzles and therefore help the WoT while it is small */
 	public static final int MAX_PUZZLES_PER_IDENTITY = IntroductionServer.PUZZLE_COUNT;
+	private static final int MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD = 30; /* FIXME: tweak before release */
+	private static final int MINIMUM_SCORE_FOR_PUZZLE_DISPLAY = 30; /* FIXME: tweak before release */
 
-	private static final int MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD = 10; /* FIXME: tweak before release */
 	
-	private static final int MINIMUM_SCORE_FOR_PUZZLE_DISPLAY = 50; /* FIXME: tweak before release */
-
-	private Thread mThread;
-	
-	/** Used to tell the introduction server thread if it should stop */
-	private volatile boolean isRunning;
-	
-	private WoT mWoT;
-	
-	/** A reference to the database */
-	private ObjectContainer db;
+	/* Objects from the node */
 
 	/** A reference the HighLevelSimpleClient used to perform inserts */
 	private HighLevelSimpleClient mClient;
@@ -86,11 +78,29 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	/** The TempBucketFactory used to create buckets from puzzles before insert */
 	private final TempBucketFactory mTBF;
 	
-	/** All current requests */
+	
+	/* Objects from WoT */
+	
+	private WoT mWoT;
+	
+	/** A reference to the database */
+	private ObjectContainer db;
+	
+	/** Random number generator */
+	private Random mRandom;
+	
+	
+	/* Private objects */
+	
+	private Thread mThread;
+	
+	/** Used to tell the introduction server thread if it should stop */
+	private volatile boolean isRunning;
+	
 	/* FIXME FIXME FIXME: Use LRUQueue instead. ArrayBlockingQueue does not use a Hashset for contains()! */
 	private final ArrayBlockingQueue<Identity> mIdentities = new ArrayBlockingQueue<Identity>(PUZZLE_POOL_SIZE); /* FIXME: figure out whether my assumption that this is just the right size is correct */
-	private final HashSet<ClientGetter> mRequests = new HashSet<ClientGetter>(PUZZLE_REQUEST_COUNT * 2); /* TODO: profile & tweak */
 	
+	private final HashSet<ClientGetter> mRequests = new HashSet<ClientGetter>(PUZZLE_REQUEST_COUNT * 2); /* TODO: profile & tweak */
 	private final HashSet<BaseClientPutter> mInserts = new HashSet<BaseClientPutter>(PUZZLE_REQUEST_COUNT * 2); 
 
 	/**
@@ -104,12 +114,13 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	 * @param tbf
 	 *            Needed to create buckets from Identities before insert
 	 */
-	public IntroductionClient(WoT myWoT, TempBucketFactory myTBF) {
-		isRunning = true;
+	public IntroductionClient(WoT myWoT) {
 		mWoT = myWoT;
 		db = mWoT.getDB();
 		mClient = mWoT.getClient();
-		mTBF = myTBF;
+		mTBF = mWoT.getTBF();
+		mRandom = mWoT.getRandom();
+		isRunning = true;
 	}
 
 	public void run() {
@@ -117,7 +128,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		
 		mThread = Thread.currentThread();
 		try {
-			Thread.sleep(STARTUP_DELAY/2 + mWoT.random.nextInt(STARTUP_DELAY)); // Let the node start up
+			Thread.sleep(STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY)); // Let the node start up
 		}
 		catch (InterruptedException e)
 		{
@@ -128,13 +139,15 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			Thread.interrupted();
 			Logger.debug(this, "Introduction client loop running...");
 			
-			IntroductionPuzzle.deleteExpiredPuzzles(db);
+			synchronized(this) {
+				IntroductionPuzzle.deleteExpiredPuzzles(db);
+			}
 			downloadPuzzles();
 			
 			Logger.debug(this, "Introduction client loop finished.");
 			
 			try {
-				Thread.sleep(THREAD_PERIOD/2 + mWoT.random.nextInt(THREAD_PERIOD));
+				Thread.sleep(THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD));
 			}
 			catch (InterruptedException e)
 			{
@@ -224,6 +237,8 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		}
 	}
 	
+	/* Private functions */
+	
 	private void cancelRequests() {
 		Logger.debug(this, "Trying to stop all requests & inserts");
 		
@@ -240,6 +255,24 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			while (i.hasNext()) { i.next().cancel(); ++icounter; }
 			Logger.debug(this, "Stopped " + icounter + " current inserts");
 		}
+	}
+	
+	private void removeRequest(ClientGetter g) {
+		Logger.debug(this, "Trying to remove request " + g.getURI());
+		synchronized(mRequests) {
+			g.cancel();
+			mRequests.remove(g);
+		}
+		Logger.debug(this, "Removed request.");
+	}
+	
+	private void removeInsert(BaseClientPutter p) {
+		Logger.debug(this, "Trying to remove insert " + p.getURI());
+		synchronized(mInserts) {
+			p.cancel();
+			mInserts.remove(p);
+		}
+		Logger.debug(this, "Removed request.");
 	}
 	
 	private synchronized void downloadPuzzles() {
@@ -288,7 +321,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		
 		for(Identity i : ids) {
 			try {
-				downloadPuzzle(i, mWoT.random.nextInt(IntroductionServer.PUZZLE_COUNT)); /* FIXME: store the puzzle count as an identity property (i.e. identities will publish in identity.xml how many puzzles they upload */
+				downloadPuzzle(i, mRandom.nextInt(IntroductionServer.PUZZLE_COUNT)); /* FIXME: store the puzzle count as an identity property (i.e. identities will publish in identity.xml how many puzzles they upload */
 			} catch (Exception e) {
 				Logger.error(this, "Starting puzzle download failed.", e);
 			}
@@ -318,22 +351,22 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		Logger.debug(this, "Trying to fetch puzzle from " + uri.toString());
 	}
 
-	private void removeRequest(ClientGetter g) {
-		Logger.debug(this, "Trying to remove request " + g.getURI());
-		synchronized(mRequests) {
-			g.cancel();
-			mRequests.remove(g);
+	/**
+	 * Called when a puzzle is successfully fetched.
+	 */
+	public void onSuccess(FetchResult result, ClientGetter state) {
+		Logger.debug(this, "Fetched puzzle: " + state.getURI());
+
+		try {
+			IntroductionPuzzle p = IntroductionPuzzle.importFromXML(db, result.asBucket().getInputStream(), state.getURI());
+			IntroductionPuzzle.deleteOldestPuzzles(db, PUZZLE_POOL_SIZE);
+			removeRequest(state);
+			if(p.getIndex() < MAX_PUZZLES_PER_IDENTITY) {
+				downloadPuzzle(p.getInserter(), p.getIndex() + 1); /* FIXME: Also download a random index here */
+			}
+		} catch (Exception e) { 
+			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
 		}
-		Logger.debug(this, "Removed request.");
-	}
-	
-	private void removeInsert(BaseClientPutter p) {
-		Logger.debug(this, "Trying to remove insert " + p.getURI());
-		synchronized(mInserts) {
-			p.cancel();
-			mInserts.remove(p);
-		}
-		Logger.debug(this, "Removed request.");
 	}
 	
 	/**
@@ -346,31 +379,17 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	}
 
 	/**
-	 * Called when a puzzle is successfully fetched.
+	 * Called when a puzzle solution is successfully inserted.
 	 */
-	public void onSuccess(FetchResult result, ClientGetter state) {
-		Logger.debug(this, "Fetched puzzle: " + state.getURI());
-
-		try {
-			IntroductionPuzzle p = IntroductionPuzzle.importFromXML(db, result.asBucket().getInputStream(), state.getURI());
-			IntroductionPuzzle.deleteOldestPuzzles(db, PUZZLE_POOL_SIZE);
-			removeRequest(state);
-			if(p.getIndex() < MAX_PUZZLES_PER_IDENTITY) {
-				downloadPuzzle(p.getInserter(), p.getIndex() + 1);
-			}
-		} catch (Exception e) { 
-			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
-		}
-	}
-
-	// Only called by inserts
 	public void onSuccess(BaseClientPutter state)
 	{
 		Logger.debug(this, "Successful insert of puzzle solution at " + state.getURI());
 		removeInsert(state);
 	}
 	
-	// Only called by inserts
+	/**
+	 * Calling when inserting a puzzle solution failed.
+	 */
 	public void onFailure(InsertException e, BaseClientPutter state)
 	{
 		Logger.debug(this, "Insert of puzzle solution failed for " + state.getURI(), e);
@@ -379,10 +398,10 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	
 	/* Not needed functions from the ClientCallback interface */
 
-	// Only called by inserts
+	/** Only called by inserts */
 	public void onFetchable(BaseClientPutter state) {}
 
-	// Only called by inserts
+	/** Only called by inserts */
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
 
 	/** Called when freenet.async thinks that the request should be serialized to
