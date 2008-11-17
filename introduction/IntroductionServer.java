@@ -194,7 +194,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	private void removeRequest(ClientGetter g) {
 		Logger.debug(this, "Trying to remove request " + g.getURI());
 		synchronized(mRequests) {
-			g.cancel(); /* FIXME: is this necessary ? */
+			//g.cancel(); /* FIXME: is this necessary ? */
 			mRequests.remove(g);
 		}
 		Logger.debug(this, "Removed request.");
@@ -203,7 +203,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	private void removeInsert(BaseClientPutter p) {
 		Logger.debug(this, "Trying to remove insert " + p.getURI());
 		synchronized(mInserts) {
-			p.cancel(); /* FIXME: is this necessary ? */
+			//p.cancel(); /* FIXME: is this necessary ? */
 			mInserts.remove(p);
 		}
 		Logger.debug(this, "Removed request.");
