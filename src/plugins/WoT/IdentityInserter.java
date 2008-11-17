@@ -51,7 +51,7 @@ import freenet.support.io.TempBucketFactory;
 public class IdentityInserter implements Runnable, ClientCallback {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 30 * 60 * 1000;
+	private static final int THREAD_PERIOD = 45 * 60 * 1000;
 	
 	/** A reference to the database */
 	ObjectContainer db;
