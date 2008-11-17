@@ -45,7 +45,7 @@ public class Trustlist {
 	 * @return Element containing details of the trustList
 	 */
 	public Element toXML(Document xmlDoc) {
-		Element elem = xmlDoc.createElement("TrustList");
+		Element elem = xmlDoc.createElement("Trustlist");
 		
 		while(list.hasNext()) {
 			elem.appendChild(list.next().toXML(xmlDoc));
