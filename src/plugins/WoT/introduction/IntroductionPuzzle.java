@@ -495,10 +495,10 @@ public final class IntroductionPuzzle {
 		if(mID == null) { Logger.error(this, "mID == null!"); result = false; }
 		if(mType == null) { Logger.error(this, "mType == null!"); result = false; }
 		if(mMimeType == null || !mMimeType.equals("image/jpeg")) { Logger.error(this, "mMimeType == " + mMimeType); result = false; }
-		if(new Date(mValidUntilTime).before(new Date(2008-1900, 11, 10))) { Logger.error(this, "mValidUntilTime ==" + new Date(mValidUntilTime)); result = false; }
+		if(new Date(mValidUntilTime).before(new Date(2008-1900, 10, 10))) { Logger.error(this, "mValidUntilTime ==" + new Date(mValidUntilTime)); result = false; }
 		if(mData == null || mData.length<100) { Logger.error(this, "mData == " + mData); result = false; }
 		if(mInserter == null) { Logger.error(this, "mInserter == null"); result = false; }
-		if(mDateOfInsertion == null || mDateOfInsertion.before(new Date(2008-1900, 11, 10))) { Logger.error(this, "mDateOfInsertion ==" + mDateOfInsertion); result = false; }
+		if(mDateOfInsertion == null || mDateOfInsertion.before(new Date(2008-1900, 10, 10))) { Logger.error(this, "mDateOfInsertion ==" + mDateOfInsertion); result = false; }
 		if(mIndex < 0) { Logger.error(this, "mIndex == " + mIndex); result = false; }
 		if(iWasSolved == true && (mSolver == null || mSolution == null)) { Logger.error(this, "iWasSolved but mSolver == " + mSolver + ", " + "mSolution == " + mSolution); result = false; }
 		
