@@ -178,14 +178,14 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		synchronized(mRequests) {
 			Iterator<ClientGetter> r = mRequests.iterator();
 			int rcounter = 0;
-			while (r.hasNext()) { r.next().cancel(); ++rcounter; }
+			while (r.hasNext()) { r.next().cancel(); r.remove(); ++rcounter; }
 			Logger.debug(this, "Stopped " + rcounter + " current requests");
 		}
 
 		synchronized(mInserts) {
 			Iterator<BaseClientPutter> i = mInserts.iterator();
 			int icounter = 0;
-			while (i.hasNext()) { i.next().cancel(); ++icounter; }
+			while (i.hasNext()) { i.next().cancel(); i.remove(); ++icounter; }
 			Logger.debug(this, "Stopped " + icounter + " current inserts");
 		}
 	}
