@@ -69,52 +69,55 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.TempBucketFactory;
 
 /**
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginL10n {
 	
+	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
+	public static final String WOT_CONTEXT = "WoT";
+	private static final String seedURI = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/1";
+	
 	/* References from the node */
 	
 	private PluginRespirator pr;
 	private HighLevelSimpleClient client;
+	private TempBucketFactory tbf;
 	private PageMaker pm;
+	private Random random;
 	
 	/* References from the plugin itself */
 	
+	/* Database & configuration of the plugin */
 	private ObjectContainer db;
-	private WebInterface web;
+	private Config config;
+
+	/* Worker objects which actually run the plugin */
 	private IdentityInserter inserter;
 	private IdentityFetcher fetcher;
 	private IntroductionServer introductionServer;
 	private IntroductionClient introductionClient;
-	
-	private String seedURI = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/1";
 	private Identity seed = null;
-	private Config config;
-
-	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
 	
-	public static final String WOT_CONTEXT = "WoT";
-	
-	public Random random;
+	private WebInterface web;
 
-	public void runPlugin(PluginRespirator pr) {
-
+	public void runPlugin(PluginRespirator myPR) {
 		Logger.debug(this, "Start");
 		
 		/* Catpcha generation needs headless mode on linux */
 		System.setProperty("java.awt.headless", "true"); 
 
-		this.db = initDB();
-		this.pr = pr;
+		pr = myPR;
 		client = pr.getHLSimpleClient();
-		config = initConfig();
-		seed = getSeedIdentity();
-
+		tbf = pr.getNode().clientCore.tempBucketFactory;
 		pm = pr.getPageMaker();
 		random = pr.getNode().fastWeakRandom;
+		
+		db = initDB();
+		config = initConfig();
+		seed = getSeedIdentity();
 
 		/* FIXME: i cannot get this to work, it does not print any objects although there are definitely IntroductionPuzzle objects in my db.
 		
@@ -128,9 +131,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			Logger.debug(this, o.toString());
 		}
 		*/
-		
-		// Should disappear soon.
-		web = new WebInterface(pr, db, config, client, SELF_URI);
 
 		// Create a default OwnIdentity if none exists. Should speed up plugin usability for newbies
 		if(OwnIdentity.getNbOwnIdentities(db) == 0) {
@@ -157,10 +157,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 		catch(InvalidParameterException e) {}
 		
-		introductionServer = new IntroductionServer(this, pr.getNode().clientCore.tempBucketFactory, fetcher);
+		introductionServer = new IntroductionServer(this, fetcher);
 		pr.getNode().executor.execute(introductionServer, "WoT introduction server");
 		
-		introductionClient = new IntroductionClient(this, pr.getNode().clientCore.tempBucketFactory);
+		introductionClient = new IntroductionClient(this);
 		pr.getNode().executor.execute(introductionClient, "WoT introduction client");
 		
 		// Try to fetch all known identities
@@ -168,6 +168,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		while (identities.hasNext()) {
 			fetcher.fetch(identities.next(), true);
 		}
+		
+		web = new WebInterface(pr, db, config, client, SELF_URI);
 	}
 	
 	public void terminate() {
@@ -880,19 +882,27 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return seed;
 	}
 	
-	public PageMaker getPageMaker() {
-		return pm;
-	}
-	
-	public ObjectContainer getDB() {
-		return db;
-	}
-	
 	public PluginRespirator getPR() {
 		return pr;
 	}
 	
 	public HighLevelSimpleClient getClient() {
 		return client;
+	}
+
+	public TempBucketFactory getTBF() {
+		return tbf;
+	}
+	
+	public PageMaker getPageMaker() {
+		return pm;
+	}
+	
+	public Random getRandom() {
+		return random;
+	}
+	
+	public ObjectContainer getDB() {
+		return db;
 	}
 }
