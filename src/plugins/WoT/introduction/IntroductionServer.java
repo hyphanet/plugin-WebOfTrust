@@ -192,12 +192,11 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	}
 	
 	private void removeRequest(ClientGetter g) {
-		Logger.debug(this, "Trying to remove request " + g.getURI());
 		synchronized(mRequests) {
 			//g.cancel(); /* FIXME: is this necessary ? */
 			mRequests.remove(g);
 		}
-		Logger.debug(this, "Removed request.");
+		Logger.debug(this, "Removed request for " + g.getURI());
 	}
 	
 	private void removeInsert(BaseClientPutter p) {
@@ -206,7 +205,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 			//p.cancel(); /* FIXME: is this necessary ? */
 			mInserts.remove(p);
 		}
-		Logger.debug(this, "Removed request.");
+		Logger.debug(this, "Removed insert for " + p.getURI());
 	}
 		
 	private synchronized void downloadSolutions(OwnIdentity identity) throws FetchException {
