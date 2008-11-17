@@ -113,7 +113,7 @@ public final class IntroductionPuzzle {
 		mMimeType = newMimeType;
 		mData = newData;
 		mSolution = null;
-		mDateOfInsertion = new Date(myDateOfInsertion.getYear(), myDateOfInsertion.getMonth(), myDateOfInsertion.getDay());
+		mDateOfInsertion = new Date(myDateOfInsertion.getYear(), myDateOfInsertion.getMonth(), myDateOfInsertion.getDate());
 		mValidUntilTime = myValidUntilTime;
 		mIndex = myIndex;
 		checkConsistency();
@@ -205,7 +205,7 @@ public final class IntroductionPuzzle {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").descend("id").constrain(id.getId());
-		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDay()));
+		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
 		q.descend("mIndex").orderDescending();
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
@@ -495,7 +495,7 @@ public final class IntroductionPuzzle {
 		if(mID == null) { Logger.error(this, "mID == null!"); result = false; }
 		if(mType == null) { Logger.error(this, "mType == null!"); result = false; }
 		if(mMimeType == null || !mMimeType.equals("image/jpeg")) { Logger.error(this, "mMimeType == " + mMimeType); result = false; }
-		if(mValidUntilTime < new Date(2008, 11, 10).getTime()) { Logger.error(this, "mValidUntilTime ==" + new Date(mValidUntilTime)); result = false; }
+		if(mValidUntilTime < new Date(2008-1900, 11, 10).getTime()) { Logger.error(this, "mValidUntilTime ==" + new Date(mValidUntilTime)); result = false; }
 		if(mData == null || mData.length<100) { Logger.error(this, "mData == " + mData); result = false; }
 		if(mInserter == null) { Logger.error(this, "mInserter == null"); result = false; }
 		if(mDateOfInsertion == null || mDateOfInsertion.getTime() < new Date(2008, 11, 10).getTime()) { Logger.error(this, "mDateOfInsertion ==" + mDateOfInsertion); result = false; }
