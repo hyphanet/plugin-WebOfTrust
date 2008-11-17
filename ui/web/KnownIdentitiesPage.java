@@ -193,7 +193,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			trustComment = trust.getComment();
 		}
 		catch (NotTrustedException e) {
-			Logger.error(this, "Error", e);
+			Logger.debug(this, truster.getNickName() + " does not trust " + trustee.getNickName());
 		} 
 			
 		HTMLNode cell = new HTMLNode("td");
