@@ -451,8 +451,8 @@ public final class IntroductionPuzzle {
 			newInserter = Identity.getByURI(db, puzzleURI);
 			String filename = puzzleURI.getDocName().replaceAll(".xml", "");
 			String tokens[] = filename.split("|");
-			newDateOfInsertion = mDateFormat.parse(tokens[0]);
-			newIndex = Integer.parseInt(tokens[1]);
+			newDateOfInsertion = mDateFormat.parse(tokens[2]);
+			newIndex = Integer.parseInt(tokens[3]);
 		}
 
 		/**
