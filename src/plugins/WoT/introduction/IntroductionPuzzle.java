@@ -498,7 +498,7 @@ public final class IntroductionPuzzle {
 		if(mValidUntilTime < new Date(2008-1900, 11, 10).getTime()) { Logger.error(this, "mValidUntilTime ==" + new Date(mValidUntilTime)); result = false; }
 		if(mData == null || mData.length<100) { Logger.error(this, "mData == " + mData); result = false; }
 		if(mInserter == null) { Logger.error(this, "mInserter == null"); result = false; }
-		if(mDateOfInsertion == null || mDateOfInsertion.getTime() < new Date(2008, 11, 10).getTime()) { Logger.error(this, "mDateOfInsertion ==" + mDateOfInsertion); result = false; }
+		if(mDateOfInsertion == null || mDateOfInsertion.getTime() < new Date(2008-1900, 11, 10).getTime()) { Logger.error(this, "mDateOfInsertion ==" + mDateOfInsertion); result = false; }
 		if(mIndex < 0) { Logger.error(this, "mIndex == " + mIndex); result = false; }
 		if(iWasSolved == true && (mSolver == null || mSolution == null)) { Logger.error(this, "iWasSolved but mSolver == " + mSolver + ", " + "mSolution == " + mSolution); result = false; }
 		
