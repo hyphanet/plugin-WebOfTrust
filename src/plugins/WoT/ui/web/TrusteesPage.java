@@ -6,8 +6,10 @@ package plugins.WoT.ui.web;
 import plugins.WoT.WoT;
 import freenet.support.api.HTTPRequest;
 
+/* FIXME: The code should be in WebInterface.java, move it here or implement if its not there */
+
 /**
- * @author p0s
+ * @author xor
  *
  */
 public class TrusteesPage extends WebPageImpl {
