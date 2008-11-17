@@ -225,6 +225,10 @@ public final class IntroductionPuzzle {
 	public UUID getID() {
 		return mID;
 	}
+	
+	public PuzzleType getType() {
+		return mType;
+	}
 
 	public String getMimeType() {
 		return mMimeType;

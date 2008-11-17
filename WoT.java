@@ -131,7 +131,16 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			Logger.debug(this, o.toString());
 		}
 		*/
-
+		
+		/* FIXME: debug code, remove before release */
+		ObjectSet<IntroductionPuzzle> puzzles = db.queryByExample(IntroductionPuzzle.class);
+		for(IntroductionPuzzle p : puzzles) {
+			if(p.getType() == null || p.getID() == null) {
+				db.delete(p);
+				Logger.debug(this, "Deleting puzzle with old format ...");
+			}
+		}
+	
 		// Create a default OwnIdentity if none exists. Should speed up plugin usability for newbies
 		if(OwnIdentity.getNbOwnIdentities(db) == 0) {
 			try {
