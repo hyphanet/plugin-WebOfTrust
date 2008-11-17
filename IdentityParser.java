@@ -112,7 +112,7 @@ public class IdentityParser {
 				if (elt_name.equals("Name")) {
 					identity.setNickName(attrs.getValue("value"));
 				}
-				else if (elt_name.equals("PublishesTrustList")) {
+				else if (elt_name.equals("PublishesTrustlist")) {
 					identity.setPublishTrustList(attrs.getValue("value").equals("true"));
 				}
 				else if (elt_name.equals("Property")) {

@@ -206,7 +206,7 @@ public class OwnIdentity extends Identity {
 		identity.appendChild(nickNameTag);
 
 		// PublishTrustList
-		Element publishTrustListTag = xmlDoc.createElement("PublishesTrustList");
+		Element publishTrustListTag = xmlDoc.createElement("PublishesTrustlist");
 		publishTrustListTag.setAttribute("value", doesPublishTrustList() ? "true" : "false");
 		identity.appendChild(publishTrustListTag);
 
