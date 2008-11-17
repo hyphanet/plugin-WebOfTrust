@@ -131,7 +131,7 @@ public class IdentityFetcher implements ClientCallback {
 	private void removeRequest(ClientGetter g) {
 		Logger.debug(this, "Trying to remove request " + g.getURI());
 		synchronized(requests) {
-			g.cancel(); /* FIXME: is this necessary ? */
+			//g.cancel(); /* FIXME: is this necessary ? */
 			requests.remove(g);
 		}
 		Logger.debug(this, "Removed request.");
