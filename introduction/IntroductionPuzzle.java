@@ -158,7 +158,7 @@ public final class IntroductionPuzzle {
 
 	public static IntroductionPuzzle getByRequestURI(ObjectContainer db, FreenetURI uri) throws ParseException {
 		String filename = uri.getDocName().replaceAll(".xml", "");
-		String[] tokens = filename.split("|");
+		String[] tokens = filename.split("[|]");
 		Date date = mDateFormat.parse(tokens[2]);
 		int index = Integer.parseInt(tokens[3]);
 		
@@ -182,7 +182,7 @@ public final class IntroductionPuzzle {
 	  * @throws ParseException
 	  */
 	public static IntroductionPuzzle getBySolutionURI(ObjectContainer db, FreenetURI uri) throws ParseException {
-		UUID id = UUID.fromString(uri.getDocName().split("|")[3]);
+		UUID id = UUID.fromString(uri.getDocName().split("[|]")[3]);
 		
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
@@ -450,7 +450,7 @@ public final class IntroductionPuzzle {
 			super();
 			newInserter = Identity.getByURI(db, puzzleURI);
 			String filename = puzzleURI.getDocName().replaceAll(".xml", "");
-			String tokens[] = filename.split("|");
+			String tokens[] = filename.split("[|]");
 			newDateOfInsertion = mDateFormat.parse(tokens[2]);
 			newIndex = Integer.parseInt(tokens[3]);
 		}
