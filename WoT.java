@@ -850,6 +850,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		cfg.objectClass(Trust.class).objectField("trustee").indexed(true);
 		cfg.objectClass(Score.class).objectField("treeOwner").indexed(true);
 		cfg.objectClass(Score.class).objectField("target").indexed(true);
+		
+		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).persistStaticFieldValues();
+		
 		for(String field : IntroductionPuzzle.getIndexedFields())
 			cfg.objectClass(IntroductionPuzzle.class).objectField(field).indexed(true);
 		cfg.objectClass(IntroductionPuzzle.class).cascadeOnUpdate(true); /* FIXME: verify if this does not break anything */
