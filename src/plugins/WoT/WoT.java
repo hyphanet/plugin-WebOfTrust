@@ -78,7 +78,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "WoT";
-	private static final String seedURI = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/1";
+	private static final String seedURI = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/4";
 	
 	/* References from the node */
 	
