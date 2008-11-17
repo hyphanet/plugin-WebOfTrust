@@ -116,6 +116,7 @@ public final class IntroductionPuzzle {
 		mDateOfInsertion = new Date(myDateOfInsertion.getYear(), myDateOfInsertion.getMonth(), myDateOfInsertion.getDay());
 		mValidUntilTime = myValidUntilTime;
 		mIndex = myIndex;
+		checkConsistency();
 	}
 	
 	/**
@@ -127,6 +128,7 @@ public final class IntroductionPuzzle {
 		this(newInserter, UUID.randomUUID(), newType, newMimeType, newData, newDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000, newDateOfInsertion, myIndex);
 		assert(newSolution!=null && newSolution.length()>=MINIMAL_SOLUTION_LENGTH);
 		mSolution = newSolution;
+		checkConsistency();
 	}
 	
 	public static IntroductionPuzzle getByID(ObjectContainer db, UUID id) {
@@ -493,7 +495,7 @@ public final class IntroductionPuzzle {
 		if(mID == null) { Logger.error(this, "mID == null!"); result = false; }
 		if(mType == null) { Logger.error(this, "mType == null!"); result = false; }
 		if(mMimeType == null || !mMimeType.equals("image/jpeg")) { Logger.error(this, "mMimeType == " + mMimeType); result = false; }
-		if(mValidUntilTime < new Date(2008, 11, 10).getTime()) { Logger.error(this, "mValidUntilTime ==" + mValidUntilTime); result = false; }
+		if(mValidUntilTime < new Date(2008, 11, 10).getTime()) { Logger.error(this, "mValidUntilTime ==" + new Date(mValidUntilTime)); result = false; }
 		if(mData == null || mData.length<100) { Logger.error(this, "mData == " + mData); result = false; }
 		if(mInserter == null) { Logger.error(this, "mInserter == null"); result = false; }
 		if(mDateOfInsertion == null || mDateOfInsertion.getTime() < new Date(2008, 11, 10).getTime()) { Logger.error(this, "mDateOfInsertion ==" + mDateOfInsertion); result = false; }
