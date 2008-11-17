@@ -64,10 +64,10 @@ public class Trust {
 	 * @return The XML {@link Element} describing this trust relationship
 	 */
 	public synchronized Element toXML(Document xmlDoc) {
-		Element elem = xmlDoc.createElement("trust");
-		elem.setAttribute("uri", trustee.getRequestURI().toString());
+		Element elem = xmlDoc.createElement("Trust");
+		elem.setAttribute("Identity", trustee.getRequestURI().toString());
 		elem.setAttribute("value", String.valueOf(value));
-		elem.setAttribute("comment", comment);
+		elem.setAttribute("Comment", comment);
 		
 		return elem;
 	}
