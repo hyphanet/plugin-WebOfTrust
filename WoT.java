@@ -33,13 +33,12 @@ import plugins.WoT.introduction.IntroductionClient;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionServer;
 import plugins.WoT.ui.web.HomePage;
+import plugins.WoT.ui.web.IdentityPage;
 import plugins.WoT.ui.web.IntroduceIdentityPage;
 import plugins.WoT.ui.web.KnownIdentitiesPage;
 import plugins.WoT.ui.web.OwnIdentitiesPage;
 import plugins.WoT.ui.web.WebPage;
 import plugins.WoT.ui.web.ConfigurationPage;
-import plugins.WoT.ui.web.TrustersPage;
-import plugins.WoT.ui.web.TrusteesPage;
 import plugins.WoT.ui.web.CreateIdentityPage;
 import plugins.WoT.ui.web.WebPageImpl;
 
@@ -193,29 +192,22 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		else if(request.isParameterSet("knownidentities")) page = new KnownIdentitiesPage(this, request);
 		else if(request.isParameterSet("configuration")) page = new ConfigurationPage(this, request);
 		// TODO Handle these two in KnownIdentitiesPage
-		else if (request.isParameterSet("getTrusters")) {
+		else if (request.isParameterSet("showIdentity")) {
 			try {
 				Identity identity = Identity.getById(db, request.getParam("id"));
-				Set<Trust> trusters = new HashSet<Trust>();
-				ObjectSet<Trust> trusts = identity.getReceivedTrusts(db);
-				while (trusts.hasNext()) {
-					Trust trust = trusts.next();
-					trusters.add(trust);
-				}
-				page = new TrustersPage(this, request, identity, trusters);
-			} catch (UnknownIdentityException uie1) {
-				Logger.error(this, "Could not load identity " + request.getParam("id"), uie1);
-			}
-		} else if (request.isParameterSet("getTrustees")) {
-			try {
-				Identity identity = Identity.getById(db, request.getParam("id"));
-				Set<Trust> trusters = new HashSet<Trust>();
+				Set<Trust> trusteesTrusts = new HashSet<Trust>();
 				ObjectSet<Trust> trusts = identity.getGivenTrusts(db);
 				while (trusts.hasNext()) {
 					Trust trust = trusts.next();
-					trusters.add(trust);
+					trusteesTrusts.add(trust);
 				}
-				page = new TrusteesPage(this, request, identity, trusters);
+				Set<Trust> trustersTrusts = new HashSet<Trust>();
+				trusts = identity.getReceivedTrusts(db);
+				while (trusts.hasNext()) {
+					Trust trust = trusts.next();
+					trustersTrusts.add(trust);
+				}
+				page = new IdentityPage(this, request, identity, trustersTrusts, trusteesTrusts);
 			} catch (UnknownIdentityException uie1) {
 				Logger.error(this, "Could not load identity " + request.getParam("id"), uie1);
 			}
