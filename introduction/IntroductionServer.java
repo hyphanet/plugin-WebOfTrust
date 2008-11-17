@@ -321,7 +321,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 
 		try {
 			db.commit();
-			IntroductionPuzzle p = IntroductionPuzzle.getByURI(db, state.getURI());
+			IntroductionPuzzle p = IntroductionPuzzle.getBySolutionURI(db, state.getURI());
 			synchronized(p) {
 				OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
 				Identity newIdentity = Identity.importIntroductionFromXML(db, mIdentityFetcher, result.asBucket().getInputStream());
@@ -344,7 +344,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	public void onSuccess(BaseClientPutter state)
 	{
 		try {
-			IntroductionPuzzle p = IntroductionPuzzle.getByURI(db, state.getURI());
+			IntroductionPuzzle p = IntroductionPuzzle.getByRequestURI(db, state.getURI());
 			Logger.debug(this, "Successful insert of puzzle from " + p.getInserter().getNickName() + ": " + p.getRequestURI());
 		} catch(Exception e) { Logger.error(this, "Error", e); }
 		
@@ -357,7 +357,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	public void onFailure(InsertException e, BaseClientPutter state) 
 	{
 		try {
-			IntroductionPuzzle p = IntroductionPuzzle.getByURI(db, state.getURI());
+			IntroductionPuzzle p = IntroductionPuzzle.getByRequestURI(db, state.getURI());
 			Logger.debug(this, "Insert of puzzle failed from " + p.getInserter().getNickName() + ": " + p.getRequestURI(), e);
 		} catch(Exception ex) { Logger.error(this, "Error", e); }
 		
