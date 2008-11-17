@@ -428,8 +428,7 @@ public final class IntroductionPuzzle {
 		PuzzleHandler puzzleHandler = new PuzzleHandler(db, puzzleURI);
 		SAXParserFactory.newInstance().newSAXParser().parse(is, puzzleHandler);
 		
-		db.store(puzzleHandler.getPuzzle());
-		db.commit();
+		puzzleHandler.getPuzzle().store(db);
 		
 		return puzzleHandler.getPuzzle();
 	}

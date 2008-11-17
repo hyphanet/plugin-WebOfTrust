@@ -226,8 +226,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			Logger.debug(this, "Started to insert puzzle solution of " + solver.getNickName() + " at " + solutionURI);
 
 			p.setSolved(solver, solution);
-			db.store(p);
-			db.commit();
+			p.store(db);
 		}
 		finally {
 			if(tempB != null)

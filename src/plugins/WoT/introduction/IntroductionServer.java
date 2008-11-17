@@ -296,8 +296,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 					}
 					tempB = null;
 		
-					db.store(p);
-					db.commit();
+					p.store(db);
 					Logger.debug(this, "Started insert of puzzle from " + identity.getNickName());
 				}
 				catch(InsertException e) {
@@ -342,8 +341,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 				Identity newIdentity = Identity.importIntroductionFromXML(db, mIdentityFetcher, result.asBucket().getInputStream());
 				puzzleOwner.setTrust(db, newIdentity, (byte)50, "Trust received by solving a captcha"); /* FIXME: We need null trust. Giving trust by solving captchas is a REALLY bad idea */
 				p.setSolved();
-				db.store(p);
-				db.commit();
+				p.store(db);
 				Logger.debug(this, "Imported identity introduction for identity " + newIdentity.getRequestURI());
 			}
 		
