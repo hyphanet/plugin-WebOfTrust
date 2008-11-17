@@ -132,7 +132,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		synchronized(mInserts) {
 			Iterator<BaseClientPutter> i = mInserts.iterator();
 			int icounter = 0;
-			while (i.hasNext()) { i.next().cancel(); ++icounter; }
+			while (i.hasNext()) { i.next().cancel(); i.remove(); ++icounter; }
 			Logger.debug(this, "Stopped " + icounter + " current inserts");
 		}
 	}
