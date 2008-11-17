@@ -82,22 +82,28 @@ public class Identity {
 			1	// Every identity above rank 5 can give 1 point
 	};			// Identities with negative score have zero capacity
 
-        /** 
-         * A unique identifier used to query this Identity from the database.
-         * In fact, it is simply a String representing its routing key.
-         */
+	/**
+	 * A unique identifier used to query this Identity from the database.
+	 * In fact, it is simply a String representing its routing key.
+	 */
 	private final String id;
-        /** The requestURI used to fetch this identity from Freenet */
+	
+	/** The requestURI used to fetch this identity from Freenet */
 	private FreenetURI requestURI;
+	
 	/** Date of this identity's last modification (last time we fetched it from Freenet) */
 	private Date lastChange;
-        /** The nickname of this Identity */
+	
+	/** The nickname of this Identity */
 	private String nickName;
-        /** Whether this Identity publishes its trust list or not */
+	
+	/** Whether this Identity publishes its trust list or not */
 	private boolean publishTrustList;
-        /** A list of this Identity's custom properties */
+	
+	/** A list of this Identity's custom properties */
 	private HashMap<String, String> props;
-        /** A list of contexts (eg. client apps) this Identity is used for */
+	
+	/** A list of contexts (eg. client apps) this Identity is used for */
 	private ArrayList<String> contexts;
 
 	/**
@@ -119,7 +125,6 @@ public class Identity {
 		Logger.debug(this, "New identity : " + getNickName());
 	}	
 
-
 	/**
 	 * Creates an Identity
 	 * 
@@ -131,6 +136,67 @@ public class Identity {
 	 */
 	public Identity (String requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
 		this(new FreenetURI(requestURI), nickName, publishTrustList);
+	}
+	
+	/**
+	 * Create an identity from an identity introduction.
+	 * Please commit() after calling the function!
+	 * @param db
+	 * @param fetcher
+	 * @param is
+	 * @return
+	 * @throws ParserConfigurationException
+	 * @throws SAXException
+	 * @throws IOException
+	 * @throws InvalidParameterException
+	 */
+	public static Identity importIntroductionFromXML(ObjectContainer db, IdentityFetcher fetcher, InputStream is) throws ParserConfigurationException, SAXException, IOException, InvalidParameterException {
+		IntroductionHandler introHandler = new IntroductionHandler();
+		SAXParserFactory.newInstance().newSAXParser().parse(is, introHandler);
+		
+		Identity id;
+		FreenetURI requestURI = introHandler.getRequestURI();
+		
+		try {
+			id = Identity.getByURI(db, requestURI);
+		}
+		catch (UnknownIdentityException e) {
+			id = new Identity(requestURI, null, false);
+			db.store(id);
+			fetcher.fetch(id);
+		}
+
+		return id;
+	}
+	
+	private static class IntroductionHandler extends DefaultHandler {
+		private FreenetURI requestURI;
+
+		public IntroductionHandler() {
+			super();
+		}
+
+		/**
+		 * Called by SAXParser for each XML element.
+		 */
+		public void startElement(String nameSpaceURI, String localName, String rawName, Attributes attrs) throws SAXException {
+			String elt_name = rawName == null ? localName : rawName;
+
+			try {
+				if (elt_name.equals("Identity")) {
+					requestURI = new FreenetURI(attrs.getValue("value"));
+				}				
+				else
+					Logger.error(this, "Unknown element in identity introduction: " + elt_name);
+				
+			} catch (Exception e1) {
+				Logger.error(this, "Parsing error",e1);
+			}
+		}
+
+		public FreenetURI getRequestURI() {
+			return requestURI;
+		}
 	}
 	
 	/**
@@ -215,67 +281,6 @@ public class Identity {
 		int end = uri.toString().indexOf(',', begin);
 		return uri.toString().substring(begin, end);
 	}
-
-	/**
-	 * Please commit after calling the function!
-	 * @param db
-	 * @param fetcher
-	 * @param is
-	 * @return
-	 * @throws ParserConfigurationException
-	 * @throws SAXException
-	 * @throws IOException
-	 * @throws InvalidParameterException
-	 */
-	public static Identity importIntroductionFromXML(ObjectContainer db, IdentityFetcher fetcher, InputStream is) throws ParserConfigurationException, SAXException, IOException, InvalidParameterException {
-		IntroductionHandler introHandler = new IntroductionHandler();
-		SAXParserFactory.newInstance().newSAXParser().parse(is, introHandler);
-		
-		Identity id;
-		FreenetURI requestURI = introHandler.getRequestURI();
-		
-		try {
-			id = Identity.getByURI(db, requestURI);
-		}
-		catch (UnknownIdentityException e) {
-			id = new Identity(requestURI, null, false);
-			db.store(id);
-			fetcher.fetch(id);
-		}
-
-		return id;
-	}
-	
-	public static class IntroductionHandler extends DefaultHandler {
-		private FreenetURI requestURI;
-
-		public IntroductionHandler() {
-			super();
-		}
-
-		/**
-		 * Called by SAXParser for each XML element.
-		 */
-		public void startElement(String nameSpaceURI, String localName, String rawName, Attributes attrs) throws SAXException {
-			String elt_name = rawName == null ? localName : rawName;
-
-			try {
-				if (elt_name.equals("Identity")) {
-					requestURI = new FreenetURI(attrs.getValue("value"));
-				}				
-				else
-					Logger.error(this, "Unknown element in identity introduction: " + elt_name);
-				
-			} catch (Exception e1) {
-				Logger.error(this, "Parsing error",e1);
-			}
-		}
-
-		public FreenetURI getRequestURI() {
-			return requestURI;
-		}
-	}
-	
 	
 	/**
 	 * Gets the score of this identity in a trust tree.
@@ -357,32 +362,6 @@ public class Identity {
 		if(result.size() == 0) throw new NotTrustedException(truster.getNickName() + " does not trust " + this.getNickName());
 		else if(result.size() > 1) throw new DuplicateTrustException("Trust from " + truster.getNickName() + "to " + this.getNickName() + " exists " + result.size() + " times in the database");
 		else return result.next();
-	}
-	
-	/* FIXME: move this where it belongs */
-	public HTMLNode getReceivedTrustForm (ObjectContainer db, PluginRespirator pr, String SELF_URI, Identity truster) throws DuplicateTrustException {
-
-		String trustValue = "";
-		String trustComment = "";
-		Trust trust;
-		
-		try {
-			trust = getReceivedTrust(truster, db);
-			trustValue = String.valueOf(trust.getValue());
-			trustComment = trust.getComment();
-		}
-		catch (NotTrustedException e) {} 
-			
-		HTMLNode cell = new HTMLNode("td");
-		HTMLNode trustForm = pr.addFormChild(cell, SELF_URI, "setTrust");
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "setTrust" });
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "truster", truster.getRequestURI().toString() });
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "trustee", requestURI.toString() });
-		trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "value", "2", trustValue });
-		trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "comment", "20", trustComment });
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", "Update !" });
-
-		return cell;
 	}
 
 	/**
@@ -514,7 +493,7 @@ public class Identity {
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
 	 */
-	public void updateScore (ObjectContainer db, OwnIdentity treeOwner) throws DuplicateScoreException, DuplicateTrustException {
+	public synchronized void updateScore (ObjectContainer db, OwnIdentity treeOwner) throws DuplicateScoreException, DuplicateTrustException {
 		
 		if(this == treeOwner) return;
 		
@@ -730,7 +709,7 @@ public class Identity {
 	 * @param db A reference to the database
 	 * @throws InvalidParameterException if the context name is empty
 	 */
-	public void addContext(String context, ObjectContainer db) throws InvalidParameterException {
+	public synchronized void addContext(String context, ObjectContainer db) throws InvalidParameterException {
 		String newContext = context.trim();
 		if(newContext.length() == 0) throw new InvalidParameterException("Blank context");
 		if(!contexts.contains(newContext)) {
