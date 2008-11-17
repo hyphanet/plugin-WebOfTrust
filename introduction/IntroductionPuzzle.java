@@ -157,14 +157,14 @@ public final class IntroductionPuzzle {
 	}
 
 	public static IntroductionPuzzle getByRequestURI(ObjectContainer db, FreenetURI uri) throws ParseException {
-		String[] tokens = uri.getDocName().split("|");
-		String id = tokens[1];
+		String filename = uri.getDocName().replaceAll(".xml", "");
+		String[] tokens = filename.split("|");
 		Date date = mDateFormat.parse(tokens[2]);
 		int index = Integer.parseInt(tokens[3]);
 		
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").descend("id").constrain(id);
+		q.descend("mInserter").descend("id").constrain(Identity.getIdFromURI(uri));
 		q.descend("mDateOfInsertion").constrain(date);
 		q.descend("mIndex").constrain(index);
 		ObjectSet<IntroductionPuzzle> result = q.execute();
