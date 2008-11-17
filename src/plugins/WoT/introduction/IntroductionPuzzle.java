@@ -153,6 +153,24 @@ public final class IntroductionPuzzle {
 		q.descend("iWasSolved").constrain(new Boolean(false));
 		return q.execute();
 	}
+
+	public static IntroductionPuzzle getByRequestURI(ObjectContainer db, FreenetURI uri) throws ParseException {
+		String[] tokens = uri.getDocName().split("|");
+		String id = tokens[1];
+		Date date = mDateFormat.parse(tokens[2]);
+		int index = Integer.parseInt(tokens[3]);
+		
+		Query q = db.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").descend("id").constrain(id);
+		q.descend("mDateOfInsertion").constrain(date);
+		q.descend("mIndex").constrain(index);
+		ObjectSet<IntroductionPuzzle> result = q.execute();
+		
+		assert(result.size() == 1);
+		
+		return (result.hasNext() ? result.next() : null);
+	}
 	
 	 /**
 	  * Used by the IntroductionServer when a solution was downloaded to retrieve the IntroductionPuzzle object.
@@ -161,7 +179,7 @@ public final class IntroductionPuzzle {
 	  * @return
 	  * @throws ParseException
 	  */
-	public static IntroductionPuzzle getByURI(ObjectContainer db, FreenetURI uri) throws ParseException {
+	public static IntroductionPuzzle getBySolutionURI(ObjectContainer db, FreenetURI uri) throws ParseException {
 		UUID id = UUID.fromString(uri.getDocName().split("|")[3]);
 		
 		Query q = db.query();
@@ -255,10 +273,11 @@ public final class IntroductionPuzzle {
 	 * Get the URI at which to insert the solution of this puzzle.
 	 */
 	public FreenetURI getSolutionURI(String guessOfSolution) {
-		return new FreenetURI("KSK", 	INTRODUCTION_CONTEXT + "|" +
-								mInserter.getId() + "|" +
-								mID + "|" +
-								guessOfSolution); /* FIXME: hash the solution!! */
+		return new FreenetURI("KSK",	WoT.WOT_CONTEXT + "|" +
+										INTRODUCTION_CONTEXT + "|" +
+										mInserter.getId() + "|" +
+										mID + "|" +
+										guessOfSolution); /* FIXME: hash the solution!! */
 	}
 	
 	public byte[] getData() {
