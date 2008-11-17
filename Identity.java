@@ -34,6 +34,7 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Base64;
 import freenet.support.Logger;
 
 /**
@@ -275,9 +276,7 @@ public class Identity {
 	 * @return A string to uniquely identify an Identity
 	 */
 	public static String getIdFromURI (FreenetURI uri) {
-		int begin = uri.toString().indexOf(',') + 1;
-		int end = uri.toString().indexOf(',', begin);
-		return uri.toString().substring(begin, end);
+		return Base64.encode(uri.getRoutingKey());
 	}
 	
 	/**
