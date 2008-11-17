@@ -202,7 +202,6 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	}
 	
 	private void removeInsert(BaseClientPutter p) {
-		Logger.debug(this, "Trying to remove insert " + p.getURI());
 		synchronized(mInserts) {
 			//p.cancel(); /* FIXME: is this necessary ? */
 			mInserts.remove(p);
