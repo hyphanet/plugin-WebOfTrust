@@ -63,7 +63,7 @@ public class Trust {
 	 * @param xmlDoc the XML {@link Document} this trust will be inserted in 
 	 * @return The XML {@link Element} describing this trust relationship
 	 */
-	public Element toXML(Document xmlDoc) {
+	public synchronized Element toXML(Document xmlDoc) {
 		Element elem = xmlDoc.createElement("trust");
 		elem.setAttribute("uri", trustee.getRequestURI().toString());
 		elem.setAttribute("value", String.valueOf(value));
@@ -72,7 +72,7 @@ public class Trust {
 		return elem;
 	}
 	
-	public String toString() {
+	public synchronized String toString() {
 		return getTruster().getNickName() + " trusts " + getTrustee().getNickName() + " (" + getValue() + " : " + getComment() + ")";
 	}
 
