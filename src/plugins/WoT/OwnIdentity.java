@@ -185,7 +185,7 @@ public class OwnIdentity extends Identity {
 	 * @throws DatabaseClosedException
 	 * @throws InvalidParameterException
 	 */
-	public void exportToXML(ObjectContainer db, OutputStream os) throws ParserConfigurationException, TransformerConfigurationException, TransformerException, FileNotFoundException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException {
+	public synchronized void exportToXML(ObjectContainer db, OutputStream os) throws ParserConfigurationException, TransformerConfigurationException, TransformerException, FileNotFoundException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException {
 
 		// Create the output file
 		StreamResult resultStream = new StreamResult(os);
@@ -246,7 +246,7 @@ public class OwnIdentity extends Identity {
 		serializer.transform(domSource, resultStream);
 	}
 	
-	public void exportIntroductionToXML(OutputStream os) throws ParserConfigurationException, TransformerException {
+	public synchronized void exportIntroductionToXML(OutputStream os) throws ParserConfigurationException, TransformerException {
 		StreamResult resultStream = new StreamResult(os);
 
 		// Create the XML document
@@ -279,14 +279,14 @@ public class OwnIdentity extends Identity {
 	 * We insert OwnIdentities when they have been modified AND at least once a week.
 	 * @return Whether this OwnIdentity needs to be inserted or not
 	 */
-	public boolean needsInsert() {
+	public synchronized boolean needsInsert() {
 		return (getLastChange().after(getLastInsert()) || (new Date().getTime() - getLastInsert().getTime()) > 1000*60*60*24*7); 
 	}
 
 	/**
 	 * @return This OwnIdentity's insertURI
 	 */
-	public FreenetURI getInsertURI() {
+	public synchronized FreenetURI getInsertURI() {
 		return insertURI;
 	}
 	
@@ -304,7 +304,7 @@ public class OwnIdentity extends Identity {
 		this.insertURI = key;
 	}
 	
-	public void setEdition(long edition) throws InvalidParameterException {
+	public synchronized void setEdition(long edition) throws InvalidParameterException {
 		setInsertURI(getInsertURI().setSuggestedEdition(edition));
 		setRequestURI(getRequestURI().setSuggestedEdition(edition));
 	}
@@ -312,7 +312,7 @@ public class OwnIdentity extends Identity {
 	/**
 	 * @return Date of last insertion of this OwnIdentity in Freenet
 	 */
-	public Date getLastInsert() {
+	public synchronized Date getLastInsert() {
 		return lastInsert;
 	}
 
@@ -321,7 +321,7 @@ public class OwnIdentity extends Identity {
 	 * 
 	 * @param lastInsert last insertion date of this OwnIdentity in Freenet
 	 */
-	public void setLastInsert(Date lastInsert) {
+	public synchronized void setLastInsert(Date lastInsert) {
 		this.lastInsert = lastInsert;
 	}
 }
