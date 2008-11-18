@@ -182,6 +182,19 @@ public final class IntroductionPuzzle {
 		return (result.hasNext() ? result.next() : null);
 	}
 	
+	public static IntroductionPuzzle getByInserterDateIndex(ObjectContainer db, Identity inserter, Date date, int index) {
+		Query q = db.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").descend("id").constrain(inserter.getId());
+		q.descend("mDateOfInsertion").constrain(date);
+		q.descend("mIndex").constrain(index);
+		ObjectSet<IntroductionPuzzle> result = q.execute();
+		
+		assert(result.size() <= 1);
+		
+		return (result.hasNext() ? result.next() : null);
+	}
+	
 	 /**
 	  * Used by the IntroductionServer when a solution was downloaded to retrieve the IntroductionPuzzle object.
 	  * @param db
@@ -356,6 +369,12 @@ public final class IntroductionPuzzle {
 	}
 	
 	public synchronized void store(ObjectContainer db) {
+		/* TODO: Convert to debug code maybe when we are sure that this does not happen. Duplicate puzzles will be deleted after they
+		 * expire anyway. Further, isn't there a db4o option which ensures that mID is a primary key and therefore no duplicates can exist? */
+		IntroductionPuzzle existing = IntroductionPuzzle.getByID(db, mID);
+		if(existing != null && existing != this)
+			throw new IllegalArgumentException("Puzzle with ID " + mID + " already exists!");
+		
 		db.store(mID);
 		db.store(mType);
 		db.store(mData);
@@ -451,8 +470,6 @@ public final class IntroductionPuzzle {
 		PuzzleHandler puzzleHandler = new PuzzleHandler(db, puzzleURI);
 		SAXParserFactory.newInstance().newSAXParser().parse(is, puzzleHandler);
 		
-		puzzleHandler.getPuzzle().store(db);
-		
 		return puzzleHandler.getPuzzle();
 	}
 	
@@ -502,7 +519,7 @@ public final class IntroductionPuzzle {
 					Logger.error(this, "Unknown element in puzzle: " + elt_name);
 				
 			} catch (Exception e1) {
-				Logger.error(this, "Parsing error",e1);
+				Logger.debug(this, "Parsing error", e1);
 			}
 		}
 
