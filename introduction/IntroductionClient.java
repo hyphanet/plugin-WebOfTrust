@@ -66,7 +66,13 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	/* FIXME: Display a random puzzle of an identity in the UI instead of always the first one! Otherwise we should really have each identity only
 	 * insert one puzzle per day. But it might be a good idea to allow many puzzles per identity: Our seed identity could be configured to
 	 * insert a very large amount of puzzles and therefore help the WoT while it is small */
-	public static final int MAX_PUZZLES_PER_IDENTITY = IntroductionServer.PUZZLE_COUNT;
+	
+	/* How many puzzles do we download from a single identity? */
+	public static final int MAX_PUZZLES_PER_IDENTITY = 3;
+	
+	/* How many puzzles does each identity upload? */
+	public static final int IDENTITY_PUZZLE_UPLOAD_COUNT = IntroductionServer.PUZZLE_COUNT; /* FIXME: store the puzzle count as an identity property (i.e. identities will publish in identity.xml how many puzzles they upload */
+	
 	private static final int MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD = 30; /* FIXME: tweak before release */
 	private static final int MINIMUM_SCORE_FOR_PUZZLE_DISPLAY = 30; /* FIXME: tweak before release */
 
@@ -277,6 +283,8 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		ArrayList<Identity> ids = new ArrayList<Identity>(PUZZLE_POOL_SIZE);
 		
 		int counter = 0;
+		/* Download puzzles from identities from which we have not downloaded for a certain period. This is ensured by
+		 * keeping the last few hunderd identities stored in a FIFO with fixed length, named mIdentities. */
 		synchronized(mIdentities) {
 			for(Identity i : allIds) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
@@ -291,6 +299,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			}
 		}
 		
+		/* If we run out of identities to download from, be less restrictive */
 		if(counter == 0) {
 			ids.clear();  /* We probably have less updated identities today than the size of the LRUQueue, empty it */
 
@@ -313,7 +322,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		
 		for(Identity i : ids) {
 			try {
-				downloadPuzzle(i, mRandom.nextInt(IntroductionServer.PUZZLE_COUNT)); /* FIXME: store the puzzle count as an identity property (i.e. identities will publish in identity.xml how many puzzles they upload */
+				downloadPuzzle(i);
 			} catch (Exception e) {
 				Logger.error(this, "Starting puzzle download failed.", e);
 			}
@@ -368,8 +377,29 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		}
 	}
 		
-	private void downloadPuzzle(Identity identity, int index) throws FetchException {
-		FreenetURI uri = IntroductionPuzzle.generateRequestURI(identity, new Date(), index);
+	/**
+	 * Finds a random index of a puzzle from the inserter which we did not download yet and downloads it.
+	 */
+	private void downloadPuzzle(Identity inserter) throws FetchException {
+		downloadPuzzle(inserter, mRandom.nextInt(IDENTITY_PUZZLE_UPLOAD_COUNT)); 
+	}
+	
+	private void downloadPuzzle(Identity inserter, int index) throws FetchException {
+		assert(index < IDENTITY_PUZZLE_UPLOAD_COUNT);
+		
+		Date date = new Date();
+		FreenetURI uri;
+		
+		int count = 0;
+		while(IntroductionPuzzle.getByInserterDateIndex(db, inserter, date, index) != null && count < IDENTITY_PUZZLE_UPLOAD_COUNT) {
+			index = (index+1) % IDENTITY_PUZZLE_UPLOAD_COUNT;
+			++count;
+		}
+		
+		if(count >= IDENTITY_PUZZLE_UPLOAD_COUNT)	/* We have all puzzles of this identity */
+			return;
+		
+		uri = IntroductionPuzzle.generateRequestURI(inserter, date, index);
 		
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
@@ -380,10 +410,10 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			mRequests.add(g);
 		}
 		synchronized(mIdentities) {
-			if(!mIdentities.contains(identity)) {
-				mIdentities.poll();
+			if(!mIdentities.contains(inserter)) {
+				mIdentities.poll();	/* the oldest identity falls out of the FIFO and therefore puzzle downloads from that one are allowed again */
 				try {
-				mIdentities.put(identity);
+					mIdentities.put(inserter); /* put this identity at the beginning of the FIFO */
 				} catch(InterruptedException e) {}
 			}
 		}
@@ -398,10 +428,14 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 
 		try {
 			IntroductionPuzzle p = IntroductionPuzzle.importFromXML(db, result.asBucket().getInputStream(), state.getURI());
-			IntroductionPuzzle.deleteOldestPuzzles(db, PUZZLE_POOL_SIZE);
+			if(IntroductionPuzzle.getByID(db, p.getID()) == null) {
+				p.store(db);
+				IntroductionPuzzle.deleteOldestPuzzles(db, PUZZLE_POOL_SIZE);
+			}
 			removeRequest(state);
-			if(p.getIndex() < MAX_PUZZLES_PER_IDENTITY) {
-				downloadPuzzle(p.getInserter(), p.getIndex() + 1); /* FIXME: Also download a random index here */
+			/* FIXME: Only download MAX_PUZZLES_PER_IDENTITY per identity */
+			if(p.getIndex() < (IDENTITY_PUZZLE_UPLOAD_COUNT-1)) {
+				downloadPuzzle(p.getInserter(), p.getIndex() + 1); /* TODO: Also download a random index here maybe */
 			}
 		} catch (Exception e) { 
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
