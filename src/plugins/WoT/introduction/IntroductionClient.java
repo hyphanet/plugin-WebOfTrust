@@ -195,6 +195,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		for(IntroductionPuzzle p : puzzles) {
 			try {
 				int score = p.getInserter().getScore(id, db).getScore();
+				/* TODO: Also check whether the database contains any solution of puzzles from the requester for the inserter of this puzzle */ 
 				if(score > MINIMUM_SCORE_FOR_PUZZLE_DISPLAY && !resultHasPuzzleFrom.contains(p.getInserter())) { 
 					result.add(p);
 					resultHasPuzzleFrom.add(p.getInserter());
