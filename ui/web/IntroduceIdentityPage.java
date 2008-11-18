@@ -38,7 +38,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 					IntroductionPuzzle p = IntroductionPuzzle.getByID(db, UUID.fromString(id));
 					if(p != null) {
 						try {
-							myClient.insertPuzzleSolution(p, solution, mIdentity);
+							myClient.solvePuzzle(p, solution, mIdentity);
 						}
 						catch(Exception e) {
 							Logger.error(this, "insertPuzzleSolution() failed");
