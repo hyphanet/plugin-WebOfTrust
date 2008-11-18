@@ -108,6 +108,7 @@ public final class IntroductionPuzzle {
 		assert(	newInserter != null && newID != null && newType != null && newMimeType != null && !newMimeType.equals("") &&
 				newData!=null && newData.length!=0 && myValidUntilTime > System.currentTimeMillis() && myDateOfInsertion != null &&
 				myDateOfInsertion.getTime() < System.currentTimeMillis() && myIndex >= 0);
+		
 		mID = newID;
 		mInserter = newInserter;
 		mType = newType;
@@ -117,7 +118,9 @@ public final class IntroductionPuzzle {
 		mDateOfInsertion = new Date(myDateOfInsertion.getYear(), myDateOfInsertion.getMonth(), myDateOfInsertion.getDate());
 		mValidUntilTime = myValidUntilTime;
 		mIndex = myIndex;
-		checkConsistency();
+		
+		if(checkConsistency() == false)
+			throw new IllegalArgumentException("Corrupted puzzle received.");
 	}
 	
 	/**
@@ -127,9 +130,13 @@ public final class IntroductionPuzzle {
 	 */
 	public IntroductionPuzzle(Identity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution, Date newDateOfInsertion, int myIndex) {
 		this(newInserter, UUID.randomUUID(), newType, newMimeType, newData, newDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000, newDateOfInsertion, myIndex);
+		
 		assert(newSolution!=null && newSolution.length()>=MINIMAL_SOLUTION_LENGTH);
+		
 		mSolution = newSolution;
-		checkConsistency();
+		
+		if(checkConsistency() == false)
+			throw new IllegalArgumentException("Trying to costruct a corrupted puzzle");
 	}
 	
 	public static IntroductionPuzzle getByID(ObjectContainer db, UUID id) {
@@ -202,8 +209,6 @@ public final class IntroductionPuzzle {
 		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
 		q.descend("mIndex").orderDescending();
 		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
-		assert(result.size() <= 1);
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
@@ -507,17 +512,28 @@ public final class IntroductionPuzzle {
 	}
 	
 	/* TODO: Write an unit test which uses this function :) */
+	/* FIXME: check for validity of the jpeg */
+	
 	public boolean checkConsistency() {
 		boolean result = true;
-		if(mID == null) { Logger.error(this, "mID == null!"); result = false; }
-		if(mType == null) { Logger.error(this, "mType == null!"); result = false; }
-		if(mMimeType == null || !mMimeType.equals("image/jpeg")) { Logger.error(this, "mMimeType == " + mMimeType); result = false; }
-		if(new Date(mValidUntilTime).before(new Date(2008-1900, 10, 10))) { Logger.error(this, "mValidUntilTime ==" + new Date(mValidUntilTime)); result = false; }
-		if(mData == null || mData.length<100) { Logger.error(this, "mData == " + mData); result = false; }
-		if(mInserter == null) { Logger.error(this, "mInserter == null"); result = false; }
-		if(mDateOfInsertion == null || mDateOfInsertion.before(new Date(2008-1900, 10, 10))) { Logger.error(this, "mDateOfInsertion ==" + mDateOfInsertion); result = false; }
-		if(mIndex < 0) { Logger.error(this, "mIndex == " + mIndex); result = false; }
-		if(iWasSolved == true && (mSolver == null || mSolution == null)) { Logger.error(this, "iWasSolved but mSolver == " + mSolver + ", " + "mSolution == " + mSolution); result = false; }
+		if(mID == null) 
+			{ Logger.error(this, "mID == null!"); result = false; }
+		if(mType == null)
+			{ Logger.error(this, "mType == null!"); result = false; }
+		if(mMimeType == null || !mMimeType.equals("image/jpeg"))
+			{ Logger.error(this, "mMimeType == " + mMimeType); result = false; }
+		if(new Date(mValidUntilTime).before(new Date(2008-1900, 10, 10)))
+			{ Logger.error(this, "mValidUntilTime ==" + new Date(mValidUntilTime)); result = false; }
+		if(mData == null || mData.length<100)
+			{ Logger.error(this, "mData == " + mData); result = false; }
+		if(mInserter == null)
+			{ Logger.error(this, "mInserter == null"); result = false; }
+		if(mDateOfInsertion == null || mDateOfInsertion.before(new Date(2008-1900, 10, 10)) || mDateOfInsertion.after(new Date()))
+			{ Logger.error(this, "mDateOfInsertion ==" + mDateOfInsertion); result = false; }
+		if(mIndex < 0)
+			{ Logger.error(this, "mIndex == " + mIndex); result = false; }
+		if(iWasSolved == true && (mSolver == null || mSolution == null))
+			{ Logger.error(this, "iWasSolved but mSolver == " + mSolver + ", " + "mSolution == " + mSolution); result = false; }
 		
 		return result;
 	}
