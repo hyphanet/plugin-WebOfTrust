@@ -81,15 +81,16 @@ public class IntroduceIdentityPage extends WebPageImpl {
 					row = puzzleTable.addChild("tr");
 				
 				HTMLNode cell = row.addChild("td");
+				cell.addAttribute("align", "center");
 				cell.addChild("img", new String[] {"src"}, new String[] {"data:image/jpeg;base64," + p.getDataBase64()}); /* FIXME: use SELF_URI + "puzzle?id=" instead */
 				cell.addChild("br");
 				cell.addChild("input", new String[] { "type", "name", "size"}, new String[] { "text", "solution" + p.getID(), "10" });
 			}
+			
+			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Submit", "Submit" });
 		} else {
 			boxContent.addChild("p", "No puzzles were downloaded yet, sorry. Please give the WoT plugin some time to retrieve puzzles.");
 		}
-		
-		
 	}
 
 }
