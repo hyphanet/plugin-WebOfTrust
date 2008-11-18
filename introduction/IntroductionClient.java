@@ -21,6 +21,7 @@ import javax.xml.transform.TransformerException;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
+import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 
@@ -143,6 +144,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 				IntroductionPuzzle.deleteExpiredPuzzles(db);
 			}
 			downloadPuzzles();
+			insertSolutions();
 			
 			Logger.debug(this, "Introduction client loop finished.");
 			
@@ -174,6 +176,13 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		Logger.debug(this, "Stopped the introduction client.");
 	}
 	
+	/**
+	 * Use this function to get a list of puzzles for the user to solve.
+	 * @param puzzleType
+	 * @param id
+	 * @param count
+	 * @return
+	 */
 	public synchronized List<IntroductionPuzzle> getPuzzles(PuzzleType puzzleType, OwnIdentity id, int count) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
@@ -200,39 +209,23 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		return result;
 	}
 	
-	public synchronized void insertPuzzleSolution(IntroductionPuzzle p, String solution, OwnIdentity solver) throws IOException, ParserConfigurationException, TransformerException, InsertException {
-		Bucket tempB = mTBF.makeBucket(10 * 1024); /* TODO: set to a reasonable value */
-		OutputStream os = tempB.getOutputStream();
-
-		try {
-			solver.exportIntroductionToXML(os);
-			os.close(); os = null;
-			tempB.setReadOnly();
-
-			ClientMetadata cmd = new ClientMetadata("text/xml");
-			FreenetURI solutionURI = p.getSolutionURI(solution);
-			InsertBlock ib = new InsertBlock(tempB, cmd, solutionURI);
-
-			InsertContext ictx = mClient.getInsertContext(true);
-			
-			/* FIXME: are these parameters correct? */
-			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			//pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
-			synchronized(mInserts) {
-				mInserts.add(pu);
-			}
-			tempB = null;
-			
-			Logger.debug(this, "Started to insert puzzle solution of " + solver.getNickName() + " at " + solutionURI);
-
+	/**
+	 * Use this function to store the solution of a puzzle and upload it.
+	 * @param p
+	 * @param solution
+	 * @param solver
+	 * @throws InvalidParameterException If the puzzle was already solved.
+	 */
+	public synchronized void solvePuzzle(IntroductionPuzzle p, String solution, OwnIdentity solver) throws InvalidParameterException {
+		synchronized(p) {
 			p.setSolved(solver, solution);
 			p.store(db);
 		}
-		finally {
-			if(tempB != null)
-				tempB.free();
-			if(os != null)
-				os.close();
+		try {
+			insertPuzzleSolution(p);
+		}
+		catch(Exception e) {
+			Logger.error(this, "insertPuzzleSolution() failed.", e);
 		}
 	}
 	
@@ -325,6 +318,53 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			}
 		}
 		
+	}
+	
+	private synchronized void insertSolutions() {
+		ObjectSet<IntroductionPuzzle> puzzles = IntroductionPuzzle.getSolvedPuzzles(db);
+		
+		for(IntroductionPuzzle p : puzzles) {
+			try {
+				/* FIXME: This function is called every time the IntroductionClient thread iterates. Do not always re-insert the solution */
+				insertPuzzleSolution(p);
+			}
+			catch(Exception e) {
+				Logger.error(this, "Inserting solution for " + p + " failed.");
+			}
+		}
+	}
+	
+	private synchronized void insertPuzzleSolution(IntroductionPuzzle p) throws IOException, ParserConfigurationException, TransformerException, InsertException, InvalidParameterException {
+		Bucket tempB = mTBF.makeBucket(10 * 1024); /* TODO: set to a reasonable value */
+		OutputStream os = tempB.getOutputStream();
+
+		try {
+			p.getSolver().exportIntroductionToXML(os);
+			os.close(); os = null;
+			tempB.setReadOnly();
+
+			ClientMetadata cmd = new ClientMetadata("text/xml");
+			FreenetURI solutionURI = p.getSolutionURI(p.getSolution());
+			InsertBlock ib = new InsertBlock(tempB, cmd, solutionURI);
+
+			InsertContext ictx = mClient.getInsertContext(true);
+			
+			/* FIXME: are these parameters correct? */
+			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
+			//pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
+			synchronized(mInserts) {
+				mInserts.add(pu);
+			}
+			tempB = null;
+			
+			Logger.debug(this, "Started to insert puzzle solution of " + p.getSolver().getNickName() + " at " + solutionURI);
+		}
+		finally {
+			if(tempB != null)
+				tempB.free();
+			if(os != null)
+				os.close();
+		}
 	}
 		
 	private void downloadPuzzle(Identity identity, int index) throws FetchException {
