@@ -853,6 +853,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).persistStaticFieldValues();
 		
+		/* FIXME: the default is FALSE. how does WoT activate everything else? */
+		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).cascadeOnActivate(true);
+		
 		for(String field : IntroductionPuzzle.getIndexedFields())
 			cfg.objectClass(IntroductionPuzzle.class).objectField(field).indexed(true);
 		cfg.objectClass(IntroductionPuzzle.class).cascadeOnUpdate(true); /* FIXME: verify if this does not break anything */
