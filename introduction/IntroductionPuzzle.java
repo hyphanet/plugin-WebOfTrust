@@ -183,15 +183,8 @@ public final class IntroductionPuzzle {
 	  */
 	public static IntroductionPuzzle getBySolutionURI(ObjectContainer db, FreenetURI uri) throws ParseException {
 		UUID id = UUID.fromString(uri.getDocName().split("[|]")[3]);
-		
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mID").constrain(id);
-		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
-		assert(result.size() <= 1);
-		
-		return (result.hasNext() ? result.next() : null);
+	
+		return getByID(db, id);
 	}
 	
 	/**
