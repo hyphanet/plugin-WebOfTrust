@@ -291,7 +291,7 @@ public final class IntroductionPuzzle {
 	}
 	
 	public String getDataBase64() {
-		return Base64.encode(mData, true);
+		return Base64.encodeStandard(mData);
 	}
 	
 	/**
@@ -412,7 +412,7 @@ public final class IntroductionPuzzle {
 		puzzleTag.appendChild(validUntilTag);
 		
 		Element dataTag = xmlDoc.createElement("Data");
-		dataTag.setAttribute("value", Base64.encode(mData, true));
+		dataTag.setAttribute("value", Base64.encodeStandard(mData));
 		puzzleTag.appendChild(dataTag);
 		
 		rootElement.appendChild(puzzleTag);
@@ -475,7 +475,7 @@ public final class IntroductionPuzzle {
 					newValidUntilTime = Long.parseLong(attrs.getValue("value"));
 				}
 				else if(elt_name.equals("Data")) {
-					newData = Base64.decode(attrs.getValue("value"));
+					newData = Base64.decodeStandard(attrs.getValue("value"));
 				}					
 				else
 					Logger.error(this, "Unknown element in puzzle: " + elt_name);
