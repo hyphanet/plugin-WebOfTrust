@@ -34,6 +34,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
+import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectContainer;
@@ -169,7 +170,7 @@ public final class IntroductionPuzzle {
 		q.descend("mIndex").constrain(index);
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
-		assert(result.size() == 1);
+		assert(result.size() <= 1);
 		
 		return (result.hasNext() ? result.next() : null);
 	}
@@ -201,6 +202,8 @@ public final class IntroductionPuzzle {
 		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
 		q.descend("mIndex").orderDescending();
 		ObjectSet<IntroductionPuzzle> result = q.execute();
+		
+		assert(result.size() <= 1);
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
@@ -287,28 +290,45 @@ public final class IntroductionPuzzle {
 		return Base64.encodeStandard(mData);
 	}
 	
+	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
+	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
 	/**
 	 * Get the solution of the puzzle. Null if the puzzle was received and not locally generated.
 	 */
-	public String getSolution() {
+	public synchronized String getSolution() {
 		assert(mSolution != null); /* Whoever uses this function should not need to call it when there is no solution available */
 		return mSolution;
 	}
-	
+
+	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
+	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
+	/**
+	 * Get the OwnIdentity which solved this puzzle. Used by the IntroductionClient for inserting solutions.
+	 */
+	public synchronized OwnIdentity getSolver() {
+		assert(mSolver != null);
+		return mSolver;
+	}
 	
 	/**
 	 * Used by the IntroductionServer to mark a puzzle as solved.
 	 */
-	public void setSolved() {
+	public synchronized void setSolved() {
 		iWasSolved = true;
 	}
 	
+	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
+	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
 	/**
 	 * Used by the IntroductionClient to mark a puzzle as solved
 	 * @param solver
 	 * @param solution
+	 * @throws InvalidParameterException If the puzzle was already solved.
 	 */
-	public void setSolved(OwnIdentity solver, String solution) {
+	public synchronized void setSolved(OwnIdentity solver, String solution) throws InvalidParameterException {
+		if(iWasSolved == true)
+			throw new InvalidParameterException("Puzzle is already solved!"); /* TODO: create a special exception for that */
+		
 		iWasSolved = true;
 		mSolver = solver;
 		mSolution = solution;
@@ -330,9 +350,10 @@ public final class IntroductionPuzzle {
 		return mIndex;
 	}
 	
-	public void store(ObjectContainer db) {
+	public synchronized void store(ObjectContainer db) {
 		db.store(mID);
 		db.store(mType);
+		db.store(mData);
 		db.store(mDateOfInsertion);
 		db.store(this);
 		db.commit();
@@ -374,7 +395,9 @@ public final class IntroductionPuzzle {
 		db.commit();
 	}
 	
-	public void exportToXML(OutputStream os) throws TransformerException, ParserConfigurationException {
+	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
+	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
+	public synchronized void exportToXML(OutputStream os) throws TransformerException, ParserConfigurationException {
 		// Create the output file
 		StreamResult resultStream = new StreamResult(os);
 
@@ -483,6 +506,7 @@ public final class IntroductionPuzzle {
 		}
 	}
 	
+	/* TODO: Write an unit test which uses this function :) */
 	public boolean checkConsistency() {
 		boolean result = true;
 		if(mID == null) { Logger.error(this, "mID == null!"); result = false; }
