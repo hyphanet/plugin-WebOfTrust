@@ -28,11 +28,12 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		mClient = myClient;
 		mPuzzles = mClient.getPuzzles(PuzzleType.Captcha, mIdentity, PUZZLE_DISPLAY_COUNT);
 		
-		if(request.isParameterSet("solvePuzzles")) {
+		if(request.getPartAsString("page", 50).equals("solvePuzzles")) {
 			ObjectContainer db = wot.getDB();
-			String ids[] = request.getMultipleParam("id");
-			for(String id : ids) {
-				String solution = request.getParam("solution" + id);
+			int idx = 0;
+			while(request.isPartSet("id" + idx)) {
+				String id = request.getPartAsString("id" + idx, 50);
+				String solution = request.getPartAsString("solution" + id, 10); /* FIXME: replace "10" with the maximal solution length */
 				if(!solution.equals("")) {
 					IntroductionPuzzle p = IntroductionPuzzle.getByID(db, UUID.fromString(id));
 					if(p != null) {
@@ -44,6 +45,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 						}
 					}
 				}
+				++idx;
 			}
 		}
 	}
@@ -64,14 +66,15 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		
 		if(mPuzzles.size() > 0 ) {
 			HTMLNode solveForm = pr.addFormChild(boxContent, SELF_URI, "solvePuzzles");
-			solveForm.addAttribute("identity", mIdentity.getId());
+			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "solvePuzzles" });
+			solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "identity", mIdentity.getId() });
 			
 			HTMLNode puzzleTable = solveForm.addChild("table", "border", "0");
 			HTMLNode row = puzzleTable.addChild("tr");
 			
 			int counter = 0;
 			for(IntroductionPuzzle p : mPuzzles) {
-				solveForm.addAttribute("id", p.getID().toString());
+				solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id" + counter, p.getID().toString() });
 				
 				if(counter++ % 8 == 0)
 					row = puzzleTable.addChild("tr");
