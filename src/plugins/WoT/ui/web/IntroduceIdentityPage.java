@@ -26,7 +26,6 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		super(wot, request);
 		mIdentity = myIdentity; 
 		mClient = myClient;
-		mPuzzles = mClient.getPuzzles(PuzzleType.Captcha, mIdentity, PUZZLE_DISPLAY_COUNT);
 		
 		if(request.getPartAsString("page", 50).equals("solvePuzzles")) {
 			ObjectContainer db = wot.getDB();
@@ -48,6 +47,8 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				++idx;
 			}
 		}
+		
+		mPuzzles = mClient.getPuzzles(PuzzleType.Captcha, mIdentity, PUZZLE_DISPLAY_COUNT);
 	}
 
 	public void make() {
