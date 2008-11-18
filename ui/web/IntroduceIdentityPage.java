@@ -63,7 +63,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		HTMLNode boxContent = getContentBox("Puzzles");
 		
 		if(mPuzzles.size() > 0 ) {
-			HTMLNode solveForm = pr.addFormChild(boxContent, SELF_URI, "introduceIdentity");
+			HTMLNode solveForm = pr.addFormChild(boxContent, SELF_URI, "solvePuzzles");
 			solveForm.addAttribute("identity", mIdentity.getId());
 			
 			HTMLNode puzzleTable = solveForm.addChild("table", "border", "0");
@@ -78,6 +78,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				
 				HTMLNode cell = row.addChild("td");
 				cell.addChild("img", new String[] {"src"}, new String[] {"data:image/jpeg;base64," + p.getDataBase64()}); /* FIXME: use SELF_URI + "puzzle?id=" instead */
+				cell.addChild("br");
 				cell.addChild("input", new String[] { "type", "name", "size"}, new String[] { "text", "solution" + p.getID(), "10" });
 			}
 		} else {
