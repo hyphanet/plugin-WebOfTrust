@@ -160,7 +160,7 @@ public final class IntroductionPuzzle {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(i);
-		q.descend("iWasSolved").constrain(new Boolean(false));
+		q.descend("iWasSolved").constrain(false);
 		return q.execute();
 	}
 
