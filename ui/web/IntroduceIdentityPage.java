@@ -1,7 +1,6 @@
 package plugins.WoT.ui.web;
 
 import java.util.List;
-import java.util.UUID;
 
 import com.db4o.ObjectContainer;
 
@@ -34,7 +33,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				String id = request.getPartAsString("id" + idx, 50);
 				String solution = request.getPartAsString("solution" + id, 10); /* FIXME: replace "10" with the maximal solution length */
 				if(!solution.equals("")) {
-					IntroductionPuzzle p = IntroductionPuzzle.getByID(db, UUID.fromString(id));
+					IntroductionPuzzle p = IntroductionPuzzle.getByID(db, id);
 					if(p != null) {
 						try {
 							myClient.solvePuzzle(p, solution, mIdentity);
