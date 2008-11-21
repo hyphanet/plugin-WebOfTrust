@@ -8,14 +8,9 @@ package plugins.WoT;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
 import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -32,15 +27,14 @@ import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.introduction.IntroductionClient;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionServer;
+import plugins.WoT.ui.web.ConfigurationPage;
+import plugins.WoT.ui.web.CreateIdentityPage;
 import plugins.WoT.ui.web.HomePage;
 import plugins.WoT.ui.web.IdentityPage;
 import plugins.WoT.ui.web.IntroduceIdentityPage;
 import plugins.WoT.ui.web.KnownIdentitiesPage;
 import plugins.WoT.ui.web.OwnIdentitiesPage;
 import plugins.WoT.ui.web.WebPage;
-import plugins.WoT.ui.web.ConfigurationPage;
-import plugins.WoT.ui.web.CreateIdentityPage;
-import plugins.WoT.ui.web.WebPageImpl;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -48,7 +42,6 @@ import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
 import com.db4o.ext.DatabaseClosedException;
 import com.db4o.ext.Db4oIOException;
-import com.db4o.query.Query;
 
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
@@ -213,7 +206,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			}
 		}
 		else if(request.isParameterSet("puzzle")) { 
-			IntroductionPuzzle p = IntroductionPuzzle.getByID(db, UUID.fromString(request.getParam("id")));
+			IntroductionPuzzle p = IntroductionPuzzle.getByID(db, request.getParam("id"));
 			if(p != null) {
 				byte[] data = p.getData();
 			}

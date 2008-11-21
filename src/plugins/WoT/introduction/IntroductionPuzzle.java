@@ -56,7 +56,11 @@ public final class IntroductionPuzzle {
 	
 	/* Included in XML: */
 	
-	private final UUID mID;
+	/**
+	 * The ID of the puzzle is constructed as the concatenation of the  ID of the inserter and a random UUID
+	 * This has to be done to prevent malicious users from inserting puzzles with the IDs of puzzles which someone else has already inserted.
+	 */
+	private final String mID;
 	
 	private final PuzzleType mType;
 	
@@ -104,7 +108,7 @@ public final class IntroductionPuzzle {
 	 * @param newType
 	 * @param newData
 	 */
-	public IntroductionPuzzle(Identity newInserter, UUID newID, PuzzleType newType, String newMimeType, byte[] newData, long myValidUntilTime, Date myDateOfInsertion, int myIndex) {
+	public IntroductionPuzzle(Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, long myValidUntilTime, Date myDateOfInsertion, int myIndex) {
 		assert(	newInserter != null && newID != null && newType != null && newMimeType != null && !newMimeType.equals("") &&
 				newData!=null && newData.length!=0 && myValidUntilTime > System.currentTimeMillis() && myDateOfInsertion != null &&
 				myDateOfInsertion.getTime() < System.currentTimeMillis() && myIndex >= 0);
@@ -129,7 +133,7 @@ public final class IntroductionPuzzle {
 	 * @param newData
 	 */
 	public IntroductionPuzzle(Identity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution, Date newDateOfInsertion, int myIndex) {
-		this(newInserter, UUID.randomUUID(), newType, newMimeType, newData, newDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000, newDateOfInsertion, myIndex);
+		this(newInserter, newInserter.getId() + UUID.randomUUID().toString(), newType, newMimeType, newData, newDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000, newDateOfInsertion, myIndex);
 		
 		assert(newSolution!=null && newSolution.length()>=MINIMAL_SOLUTION_LENGTH);
 		
@@ -139,7 +143,7 @@ public final class IntroductionPuzzle {
 			throw new IllegalArgumentException("Trying to costruct a corrupted puzzle");
 	}
 	
-	public static IntroductionPuzzle getByID(ObjectContainer db, UUID id) {
+	public static IntroductionPuzzle getByID(ObjectContainer db, String id) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mID").constrain(id);
@@ -203,7 +207,7 @@ public final class IntroductionPuzzle {
 	  * @throws ParseException
 	  */
 	public static IntroductionPuzzle getBySolutionURI(ObjectContainer db, FreenetURI uri) throws ParseException {
-		UUID id = UUID.fromString(uri.getDocName().split("[|]")[3]);
+		String id = uri.getDocName().split("[|]")[3];
 	
 		return getByID(db, id);
 	}
@@ -238,7 +242,7 @@ public final class IntroductionPuzzle {
 		return q.execute();
 	}
 	
-	public UUID getID() {
+	public String getID() {
 		return mID;
 	}
 	
@@ -295,8 +299,7 @@ public final class IntroductionPuzzle {
 	public FreenetURI getSolutionURI(String guessOfSolution) {
 		return new FreenetURI("KSK",	WoT.WOT_CONTEXT + "|" +
 										INTRODUCTION_CONTEXT + "|" +
-										mInserter.getId() + "|" +
-										mID + "|" +
+										mID + "|" +	/* Do not include the ID of the inserter in the URI because the puzzle-ID already contains it. */
 										guessOfSolution); /* FIXME: hash the solution!! */
 	}
 	
@@ -436,7 +439,7 @@ public final class IntroductionPuzzle {
 		Element puzzleTag = xmlDoc.createElement("IntroductionPuzzle");
 		
 		Element idTag = xmlDoc.createElement("ID");
-		idTag.setAttribute("value", mID.toString());
+		idTag.setAttribute("value", mID);
 		puzzleTag.appendChild(idTag);
 
 		Element typeTag = xmlDoc.createElement("Type");
@@ -475,7 +478,7 @@ public final class IntroductionPuzzle {
 	
 	public static class PuzzleHandler extends DefaultHandler {
 		private final Identity newInserter;
-		private UUID newID;
+		private String newID;
 		private PuzzleType newType;
 		private String newMimeType;
 		private byte[] newData;
@@ -501,7 +504,7 @@ public final class IntroductionPuzzle {
 
 			try {
 				if (elt_name.equals("ID")) {
-					newID = UUID.fromString(attrs.getValue("value"));
+					newID = attrs.getValue("value");
 				}
 				else if (elt_name.equals("Type")) {
 					newType = PuzzleType.valueOf(attrs.getValue("value"));
@@ -535,6 +538,15 @@ public final class IntroductionPuzzle {
 		boolean result = true;
 		if(mID == null) 
 			{ Logger.error(this, "mID == null!"); result = false; }
+		else { /* Verify the UID */
+			if(mInserter != null) {
+				String inserterID = mInserter.getId();
+				if(mID.startsWith(inserterID) == false) { Logger.error(this, "mID does not start with InserterID: " + mID); result = false; }
+				/* Verification that the rest of the ID is an UUID is not necessary: If a client inserts a puzzle with the ID just being his
+				 * identity ID (or other bogus stuff) he will just shoot himself in the foot by possibly only allowing 1 puzzle of him to
+				 * be available because the databases of the downloaders check whether the ID already exists. */
+			}
+		}
 		if(mType == null)
 			{ Logger.error(this, "mType == null!"); result = false; }
 		if(mMimeType == null || !mMimeType.equals("image/jpeg"))
