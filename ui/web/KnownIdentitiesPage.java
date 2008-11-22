@@ -46,28 +46,25 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		OwnIdentity treeOwner = null;
 		ObjectContainer db = wot.getDB();
 		PluginRespirator pr = wot.getPR();
+		int nbOwnIdentities = 1;
+		String ownerID = request.getPartAsString("ownerID", 128);
 		
-		makeAddIdentityForm(pr);
-
-		if(request.isParameterSet("knownidentities")) {
-			int nbOwnIdentities = OwnIdentity.getNbOwnIdentities(db);
-
-			if (nbOwnIdentities == 0)
-				makeNoOwnIdentityWarning();
-			else if (nbOwnIdentities == 1)
-				treeOwner = OwnIdentity.getAllOwnIdentities(db).next();
-			else
-				makeSelectTreeOwnerForm(db, pr);
-		}
-		else if(!request.getPartAsString("ownerId", 1024).equals("")) {
+		if(!ownerID.equals("")) {
 			try {
-				treeOwner = OwnIdentity.getById(db, request.getPartAsString("ownerId", 1024));
+				treeOwner = OwnIdentity.getById(db, ownerID);
 			} catch (Exception e) {
 				Logger.error(this, "Error while selecting the OwnIdentity", e);
 				addErrorBox("Error while selecting the OwnIdentity", e.getLocalizedMessage());
 			}
+		} else {
+			 nbOwnIdentities = OwnIdentity.getNbOwnIdentities(db);
+
+			 if(nbOwnIdentities == 1)
+				treeOwner = OwnIdentity.getAllOwnIdentities(db).next();
 		}
-		
+			
+		makeAddIdentityForm(pr, treeOwner);
+
 		if(treeOwner != null) {
 			try {
 				makeKnownIdentitiesList(treeOwner, db, pr);
@@ -75,21 +72,27 @@ public class KnownIdentitiesPage extends WebPageImpl {
 				Logger.error(this, e.getMessage());
 				addErrorBox("Error : " + e.getClass(), e.getMessage());
 			}
-		}
+		} else if(nbOwnIdentities > 1)
+			makeSelectTreeOwnerForm(db, pr);
+		else
+			makeNoOwnIdentityWarning();
 	}
 	
 	/**
 	 * Makes a form where the user can enter the requestURI of an Identity he knows.
 	 * 
 	 * @param pr a reference to the {@link PluginRespirator}
+	 * @param treeOwner The owner of the known identity list. Not used for adding the identity but for showing the known identity list properly after adding.
 	 */
-	private void makeAddIdentityForm(PluginRespirator pr) {
+	private void makeAddIdentityForm(PluginRespirator pr, OwnIdentity treeOwner) {
 		
 		// TODO Add trust value and comment fields and make them mandatory
 		// The user should only add an identity he trusts
 		HTMLNode addBoxContent = getContentBox("Add an identity");
 	
 		HTMLNode createForm = pr.addFormChild(addBoxContent, SELF_URI, "addIdentity");
+		if(treeOwner != null)
+			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "ownerID", treeOwner.getId()});
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "addIdentity" });
 		createForm.addChild("span", new String[] {"title", "style"}, new String[] { "This must be a valid Freenet URI.", "border-bottom: 1px dotted; cursor: help;"} , "Identity URI : ");
 		createForm.addChild("input", new String[] {"type", "name", "size"}, new String[] {"text", "identityURI", "70"});
@@ -98,7 +101,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "value", "2", "" });
 		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "comment", "20", "" });
 		createForm.addChild("br");
-		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", "Add this identity !" });	
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", "Add this identity !" });
 	}
 
 	private void makeNoOwnIdentityWarning() {
@@ -110,7 +113,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		HTMLNode listBoxContent = getContentBox("OwnIdentity selection");
 		HTMLNode selectForm = pr.addFormChild(listBoxContent, SELF_URI, "viewTree");
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "viewTree" });
-		HTMLNode selectBox = selectForm.addChild("select", "name", "ownerId");
+		HTMLNode selectBox = selectForm.addChild("select", "name", "ownerID");
 
 		ObjectSet<OwnIdentity> ownIdentities = OwnIdentity.getAllOwnIdentities(db);
 		while(ownIdentities.hasNext()) {
