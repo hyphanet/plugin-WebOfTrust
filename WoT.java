@@ -62,9 +62,12 @@ import freenet.support.io.TempBucketFactory;
  */
 public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginL10n {
 	
+	/* Constants */
+	
 	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "WoT";
 	private static final String seedURI = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/4";
+	
 	
 	/* References from the node */
 	
@@ -73,6 +76,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private TempBucketFactory tbf;
 	private PageMaker pm;
 	private Random random;
+	
 	
 	/* References from the plugin itself */
 	
@@ -85,7 +89,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private IdentityFetcher fetcher;
 	private IntroductionServer introductionServer;
 	private IntroductionClient introductionClient;
-	private Identity seed = null;
+	private Identity seed;
+	
+	/* User interfaces */
 	
 	private WebInterface web;
 	private FCPInterface fcp;
@@ -147,10 +153,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		fetcher.fetch(seed, false);
 		
+		/* FIXME: Debug code, remove before release */
 		try {
-		ObjectSet<OwnIdentity> oids = db.queryByExample(OwnIdentity.class);
-		for(OwnIdentity oid : oids)
-			oid.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db);
+			ObjectSet<OwnIdentity> oids = db.queryByExample(OwnIdentity.class);
+			for(OwnIdentity oid : oids)
+				oid.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db);
 		}
 		catch(InvalidParameterException e) {}
 		
