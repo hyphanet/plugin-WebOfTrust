@@ -21,22 +21,13 @@ import plugins.WoT.exceptions.DuplicateIdentityException;
 import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.DuplicateTrustException;
 import plugins.WoT.exceptions.InvalidParameterException;
-import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.introduction.IntroductionClient;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionServer;
 import plugins.WoT.ui.fcp.FCPInterface;
-import plugins.WoT.ui.web.ConfigurationPage;
-import plugins.WoT.ui.web.CreateIdentityPage;
-import plugins.WoT.ui.web.HomePage;
-import plugins.WoT.ui.web.IdentityPage;
-import plugins.WoT.ui.web.IntroduceIdentityPage;
-import plugins.WoT.ui.web.KnownIdentitiesPage;
-import plugins.WoT.ui.web.OwnIdentitiesPage;
 import plugins.WoT.ui.web.WebInterface;
-import plugins.WoT.ui.web.WebPage;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -179,6 +170,56 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		fcp = new FCPInterface(this);
 	}
 	
+	/**
+	 * Initializes the connection to DB4O.
+	 * 
+	 * @return db4o's connector
+	 */
+	private ObjectContainer initDB() {
+		
+		// Set indexes on fields we query on
+		Configuration cfg = Db4o.newConfiguration();
+		cfg.objectClass(Identity.class).objectField("id").indexed(true);
+		cfg.objectClass(OwnIdentity.class).objectField("id").indexed(true);
+		cfg.objectClass(Trust.class).objectField("truster").indexed(true);
+		cfg.objectClass(Trust.class).objectField("trustee").indexed(true);
+		cfg.objectClass(Score.class).objectField("treeOwner").indexed(true);
+		cfg.objectClass(Score.class).objectField("target").indexed(true);
+		
+		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).persistStaticFieldValues();
+		
+		/* FIXME: the default is FALSE. how does WoT activate everything else? */
+		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).cascadeOnActivate(true);
+		
+		for(String field : IntroductionPuzzle.getIndexedFields())
+			cfg.objectClass(IntroductionPuzzle.class).objectField(field).indexed(true);
+		cfg.objectClass(IntroductionPuzzle.class).cascadeOnUpdate(true); /* FIXME: verify if this does not break anything */
+		
+		// This will make db4o store any complex objects which are referenced by a Config object.
+		cfg.objectClass(Config.class).cascadeOnUpdate(true);
+		return Db4o.openFile(cfg, "WoT.db4o");
+	}
+	
+	/**
+	 * Loads the config of the plugin, or creates it with default values if it doesn't exist.
+	 * 
+	 * @return config of the plugin
+	 */
+	private Config initConfig() {
+		ObjectSet<Config> result = db.queryByExample(Config.class);
+		if(result.size() == 0) {
+			Logger.debug(this, "Created new config");
+			config = new Config();
+			db.store(config);
+		}
+		else {
+			Logger.debug(this, "Loaded config");
+			config = result.next();
+			config.initDefault(false);
+		}
+		return config;
+	}
+	
 	public void terminate() {
 		Logger.debug(this, "WoT plugin terminating ...");
 		if(inserter != null) inserter.stop();
@@ -207,7 +248,23 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
 		fcp.handle(replysender, params, data, accesstype);
 	}
-	
+
+	public Identity addIdentity(String requestURI) throws MalformedURLException, InvalidParameterException, FetchException, DuplicateIdentityException {
+		Identity identity = null;
+		try {
+			identity = Identity.getByURI(db, requestURI);
+			Logger.error(this, "Tried to manually add an identity we already know, ignored.");
+			throw new InvalidParameterException("We already have this identity");
+		}
+		catch (UnknownIdentityException e) {
+			identity = new Identity(new FreenetURI(requestURI), null, false);
+			db.store(identity);
+			db.commit();
+			Logger.debug(this, "Trying to fetch manually added identity (" + identity.getRequestURI() + ")");
+			fetcher.fetch(identity);
+		}
+		return identity;
+	}
 	
 	public void deleteIdentity(String id) throws DuplicateIdentityException, UnknownIdentityException, DuplicateScoreException, DuplicateTrustException {
 		Identity identity = Identity.getById(db, id);
@@ -229,6 +286,32 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 		
 		db.delete(identity);
+	}
+	
+	public OwnIdentity createIdentity(String nickName, boolean publishTrustList, String context) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
+
+		FreenetURI[] keypair = client.generateKeyPair("WoT");
+		return createIdentity(keypair[0].toString(), keypair[1].toString(), nickName, publishTrustList, context);
+	}
+
+	public OwnIdentity createIdentity(String insertURI, String requestURI, String nickName, boolean publishTrustList, String context) throws InvalidParameterException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
+
+		OwnIdentity identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
+		identity.addContext(context, db);
+		identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db); /* fixme: make configureable */
+		db.store(identity);
+		identity.initTrustTree(db);		
+
+		// This identity trusts the seed identity
+		identity.setTrust(db, seed, (byte)100, "I trust the WoT plugin");
+		
+		db.commit();
+		
+		inserter.wakeUp();
+		
+		Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickName() + ")");
+
+		return identity;
 	}
 
 	public void restoreIdentity(String requestURI, String insertURI) throws InvalidParameterException, MalformedURLException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, DuplicateTrustException {
@@ -316,49 +399,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		db.commit();	
 	}
 	
-	public Identity addIdentity(String requestURI) throws MalformedURLException, InvalidParameterException, FetchException, DuplicateIdentityException {
-		Identity identity = null;
-		try {
-			identity = Identity.getByURI(db, requestURI);
-			Logger.error(this, "Tried to manually add an identity we already know, ignored.");
-			throw new InvalidParameterException("We already have this identity");
-		}
-		catch (UnknownIdentityException e) {
-			identity = new Identity(new FreenetURI(requestURI), null, false);
-			db.store(identity);
-			db.commit();
-			Logger.debug(this, "Trying to fetch manually added identity (" + identity.getRequestURI() + ")");
-			fetcher.fetch(identity);
-		}
-		return identity;
-	}
-	
-	public OwnIdentity createIdentity(String nickName, boolean publishTrustList, String context) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
-
-		FreenetURI[] keypair = client.generateKeyPair("WoT");
-		return createIdentity(keypair[0].toString(), keypair[1].toString(), nickName, publishTrustList, context);
-	}
-
-	public OwnIdentity createIdentity(String insertURI, String requestURI, String nickName, boolean publishTrustList, String context) throws InvalidParameterException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
-
-		OwnIdentity identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
-		identity.addContext(context, db);
-		identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db); /* fixme: make configureable */
-		db.store(identity);
-		identity.initTrustTree(db);		
-
-		// This identity trusts the seed identity
-		identity.setTrust(db, seed, (byte)100, "I trust the WoT plugin");
-		
-		db.commit();
-		
-		inserter.wakeUp();
-		
-		Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickName() + ")");
-
-		return identity;
-	}
-	
 	public void addContext(String identity, String context) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		Identity id = OwnIdentity.getByURI(db, identity);
 		id.addContext(context, db);
@@ -426,56 +466,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public void setLanguage(LANGUAGE newLanguage) {
-	}
-	
-	/**
-	 * Initializes the connection to DB4O.
-	 * 
-	 * @return db4o's connector
-	 */
-	private ObjectContainer initDB() {
-		
-		// Set indexes on fields we query on
-		Configuration cfg = Db4o.newConfiguration();
-		cfg.objectClass(Identity.class).objectField("id").indexed(true);
-		cfg.objectClass(OwnIdentity.class).objectField("id").indexed(true);
-		cfg.objectClass(Trust.class).objectField("truster").indexed(true);
-		cfg.objectClass(Trust.class).objectField("trustee").indexed(true);
-		cfg.objectClass(Score.class).objectField("treeOwner").indexed(true);
-		cfg.objectClass(Score.class).objectField("target").indexed(true);
-		
-		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).persistStaticFieldValues();
-		
-		/* FIXME: the default is FALSE. how does WoT activate everything else? */
-		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).cascadeOnActivate(true);
-		
-		for(String field : IntroductionPuzzle.getIndexedFields())
-			cfg.objectClass(IntroductionPuzzle.class).objectField(field).indexed(true);
-		cfg.objectClass(IntroductionPuzzle.class).cascadeOnUpdate(true); /* FIXME: verify if this does not break anything */
-		
-		// This will make db4o store any complex objects which are referenced by a Config object.
-		cfg.objectClass(Config.class).cascadeOnUpdate(true);
-		return Db4o.openFile(cfg, "WoT.db4o");
-	}
-	
-	/**
-	 * Loads the config of the plugin, or creates it with default values if it doesn't exist.
-	 * 
-	 * @return config of the plugin
-	 */
-	private Config initConfig() {
-		ObjectSet<Config> result = db.queryByExample(Config.class);
-		if(result.size() == 0) {
-			Logger.debug(this, "Created new config");
-			config = new Config();
-			db.store(config);
-		}
-		else {
-			Logger.debug(this, "Loaded config");
-			config = result.next();
-			config.initDefault(false);
-		}
-		return config;
 	}
 	
 	public Identity getSeedIdentity() {
