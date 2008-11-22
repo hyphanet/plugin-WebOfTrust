@@ -34,6 +34,7 @@ import plugins.WoT.ui.web.IdentityPage;
 import plugins.WoT.ui.web.IntroduceIdentityPage;
 import plugins.WoT.ui.web.KnownIdentitiesPage;
 import plugins.WoT.ui.web.OwnIdentitiesPage;
+import plugins.WoT.ui.web.WebInterface;
 import plugins.WoT.ui.web.WebPage;
 
 import com.db4o.Db4o;
