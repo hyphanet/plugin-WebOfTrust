@@ -3,7 +3,7 @@
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL.
  */
-package plugins.WoT;
+package plugins.WoT.ui.web;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,6 +14,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import plugins.WoT.Config;
+import plugins.WoT.Identity;
+import plugins.WoT.OwnIdentity;
+import plugins.WoT.Score;
+import plugins.WoT.Trust;
+import plugins.WoT.WoT;
 import plugins.WoT.exceptions.DuplicateIdentityException;
 import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.DuplicateTrustException;
@@ -22,14 +28,6 @@ import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.introduction.IntroductionPuzzle;
-import plugins.WoT.ui.web.ConfigurationPage;
-import plugins.WoT.ui.web.CreateIdentityPage;
-import plugins.WoT.ui.web.HomePage;
-import plugins.WoT.ui.web.IdentityPage;
-import plugins.WoT.ui.web.IntroduceIdentityPage;
-import plugins.WoT.ui.web.KnownIdentitiesPage;
-import plugins.WoT.ui.web.OwnIdentitiesPage;
-import plugins.WoT.ui.web.WebPage;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
