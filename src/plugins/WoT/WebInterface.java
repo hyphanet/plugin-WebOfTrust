@@ -5,8 +5,14 @@
  */
 package plugins.WoT;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Date;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 
 import plugins.WoT.exceptions.DuplicateIdentityException;
 import plugins.WoT.exceptions.DuplicateScoreException;
@@ -15,26 +21,42 @@ import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.introduction.IntroductionPuzzle;
+import plugins.WoT.ui.web.ConfigurationPage;
+import plugins.WoT.ui.web.CreateIdentityPage;
+import plugins.WoT.ui.web.HomePage;
+import plugins.WoT.ui.web.IdentityPage;
+import plugins.WoT.ui.web.IntroduceIdentityPage;
+import plugins.WoT.ui.web.KnownIdentitiesPage;
+import plugins.WoT.ui.web.OwnIdentitiesPage;
+import plugins.WoT.ui.web.WebPage;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.ext.DatabaseClosedException;
 import com.db4o.ext.Db4oIOException;
 
+import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertException;
 import freenet.clients.http.PageMaker;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 /**
  * @author Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor
+ * @author Bombe
  *
  */
 public class WebInterface {
 	
+	private WoT mWoT;
 	private PluginRespirator pr;
 	private PageMaker pm;
 	private HighLevelSimpleClient client;
@@ -42,12 +64,13 @@ public class WebInterface {
 	private ObjectContainer db;
 	private	Config config;
 
-	public WebInterface(PluginRespirator pr, ObjectContainer db, Config cfg, HighLevelSimpleClient client, String uri) {
-		this.pr = pr;
-		this.db = db;
-		this.config = cfg;
-		this.client = client;
-		this.SELF_URI = uri;
+	public WebInterface(WoT myWoT, String uri) {
+		mWoT = myWoT;
+		pr = mWoT.getPR();
+		db = mWoT.getDB();
+		config = mWoT.getConfig();
+		client = mWoT.getClient();
+		SELF_URI = uri;
 		
 		pm = pr.getPageMaker();
 		pm.addNavigationLink(SELF_URI, "Home", "Home page", false, null);
@@ -57,6 +80,102 @@ public class WebInterface {
 		pm.addNavigationLink("/plugins/", "Plugins page", "Back to Plugins page", false, null);
 	}
 
+	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
+		WebPage page = null;
+		
+		if(request.isParameterSet("ownidentities")) page = new OwnIdentitiesPage(mWoT, request);
+		else if(request.isParameterSet("knownidentities")) page = new KnownIdentitiesPage(mWoT, request);
+		else if(request.isParameterSet("configuration")) page = new ConfigurationPage(mWoT, request);
+		// TODO Handle these two in KnownIdentitiesPage
+		else if (request.isParameterSet("showIdentity")) {
+			try {
+				Identity identity = Identity.getById(db, request.getParam("id"));
+				ObjectSet<Trust> trusteesTrusts = identity.getGivenTrusts(db);
+				ObjectSet<Trust> trustersTrusts = identity.getReceivedTrusts(db);
+				page = new IdentityPage(mWoT, request, identity, trustersTrusts, trusteesTrusts);
+			} catch (UnknownIdentityException uie1) {
+				Logger.error(this, "Could not load identity " + request.getParam("id"), uie1);
+			}
+		}
+		else if(request.isParameterSet("puzzle")) { 
+			IntroductionPuzzle p = IntroductionPuzzle.getByID(db, request.getParam("id"));
+			if(p != null) {
+				byte[] data = p.getData();
+			}
+			/* FIXME: The current PluginManager implementation allows plugins only to send HTML replies.
+			 * Implement general replying with any mime type and return the jpeg. */
+			return "";
+		}
+		
+		if (page == null) {
+			page = new HomePage(mWoT, request);
+		}
+		
+		page.make();	
+		return page.toHTML();
+	}
+
+	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
+		WebPage page;
+		
+		String pass = request.getPartAsString("formPassword", 32);
+		if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword)) {
+			return "Buh! Invalid form password";
+		}
+		
+		// TODO: finish refactoring to "page = new ..."
+
+		try {
+			String pageTitle = request.getPartAsString("page",50);
+			if(pageTitle.equals("createIdentity")) page = new CreateIdentityPage(mWoT, request);
+			else if(pageTitle.equals("createIdentity2")) {
+				createIdentity(request);
+				page = new OwnIdentitiesPage(mWoT, request);
+			}
+			else if(pageTitle.equals("addIdentity")) {
+				addIdentity(request);
+				page = new KnownIdentitiesPage(mWoT, request);
+			}
+			else if(pageTitle.equals("viewTree")) {
+				page = new KnownIdentitiesPage(mWoT, request);
+			}
+			else if(pageTitle.equals("setTrust")) {
+				setTrust(request);
+				return makeKnownIdentitiesPage(request.getPartAsString("truster", 1024));
+			}
+			else if(pageTitle.equals("editIdentity")) {
+				return makeEditIdentityPage(request.getPartAsString("id", 1024));
+			}
+			else if(pageTitle.equals("introduceIdentity") || pageTitle.equals("solvePuzzles")) {
+				page = new IntroduceIdentityPage(mWoT, request, mWoT.getIntroductionClient(), OwnIdentity.getById(db, request.getPartAsString("identity", 128)));
+			}
+			else if(pageTitle.equals("restoreIdentity")) {
+				mWoT.restoreIdentity(request.getPartAsString("requestURI", 1024), request.getPartAsString("insertURI", 1024));
+				page = new OwnIdentitiesPage(mWoT, request);
+			}
+			else if(pageTitle.equals("deleteIdentity")) {
+				return makeDeleteIdentityPage(request.getPartAsString("id", 1024));
+			}			
+			else if(pageTitle.equals("deleteIdentity2")) {
+				mWoT.deleteIdentity(request.getPartAsString("id", 1024));
+				page = new OwnIdentitiesPage(mWoT, request);
+			}			
+			else {
+				page = new HomePage(mWoT, request);
+			}
+			
+			page.make();
+			return page.toHTML();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return e.getLocalizedMessage();
+		}
+	}
+	
+	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
+		return "Go to hell";
+	}
+	
 	private HTMLNode getPageNode() {
 		return pm.getPageNode("Web of Trust", null);
 	}
@@ -410,6 +529,28 @@ public class WebInterface {
 		return pageNode.generate();
 	}
 
+	private void setTrust(HTTPRequest request) throws NumberFormatException, TransformerConfigurationException, FileNotFoundException, InvalidParameterException, UnknownIdentityException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
+		
+		mWoT.setTrust(	request.getPartAsString("truster", 1024),
+					request.getPartAsString("trustee", 1024),
+					request.getPartAsString("value", 4),
+					request.getPartAsString("comment", 256));
+	}
+	
+	private void addIdentity(HTTPRequest request) throws MalformedURLException, InvalidParameterException, FetchException, DuplicateIdentityException {
+		mWoT.addIdentity(request.getPartAsString("identityURI", 1024).trim());
+	}
+	
+	private OwnIdentity createIdentity(HTTPRequest request) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
+
+		return mWoT.createIdentity(	request.getPartAsString("insertURI",1024),
+								request.getPartAsString("requestURI",1024),
+								request.getPartAsString("nickName", 1024),
+								request.getPartAsString("publishTrustList", 5).equals("true"),
+								"freetalk");	
+	}
+	
+	
 	private static final String l10n(String string) {
 		return L10n.getString("ConfigToadlet." + string);
 	}

@@ -172,7 +172,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			fetcher.fetch(identities.next(), true);
 		}
 		
-		web = new WebInterface(pr, db, config, client, SELF_URI);
+		web = new WebInterface(this, SELF_URI);
 	}
 	
 	public void terminate() {
@@ -189,102 +189,18 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
-		WebPage page = null;
-		
-		if(request.isParameterSet("ownidentities")) page = new OwnIdentitiesPage(this, request);
-		else if(request.isParameterSet("knownidentities")) page = new KnownIdentitiesPage(this, request);
-		else if(request.isParameterSet("configuration")) page = new ConfigurationPage(this, request);
-		// TODO Handle these two in KnownIdentitiesPage
-		else if (request.isParameterSet("showIdentity")) {
-			try {
-				Identity identity = Identity.getById(db, request.getParam("id"));
-				ObjectSet<Trust> trusteesTrusts = identity.getGivenTrusts(db);
-				ObjectSet<Trust> trustersTrusts = identity.getReceivedTrusts(db);
-				page = new IdentityPage(this, request, identity, trustersTrusts, trusteesTrusts);
-			} catch (UnknownIdentityException uie1) {
-				Logger.error(this, "Could not load identity " + request.getParam("id"), uie1);
-			}
-		}
-		else if(request.isParameterSet("puzzle")) { 
-			IntroductionPuzzle p = IntroductionPuzzle.getByID(db, request.getParam("id"));
-			if(p != null) {
-				byte[] data = p.getData();
-			}
-			/* FIXME: The current PluginManager implementation allows plugins only to send HTML replies.
-			 * Implement general replying with any mime type and return the jpeg. */
-			return "";
-		}
-		
-		if (page == null) {
-			page = new HomePage(this, request);
-		}
-		
-		page.make();	
-		return page.toHTML();
+		return web.handleHTTPGet(request);
 	}
 
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
-		WebPage page;
-		
-		String pass = request.getPartAsString("formPassword", 32);
-		if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword)) {
-			return "Buh! Invalid form password";
-		}
-		
-		// TODO: finish refactoring to "page = new ..."
-
-		try {
-			String pageTitle = request.getPartAsString("page",50);
-			if(pageTitle.equals("createIdentity")) page = new CreateIdentityPage(this, request);
-			else if(pageTitle.equals("createIdentity2")) {
-				createIdentity(request);
-				page = new OwnIdentitiesPage(this, request);
-			}
-			else if(pageTitle.equals("addIdentity")) {
-				addIdentity(request);
-				page = new KnownIdentitiesPage(this, request);
-			}
-			else if(pageTitle.equals("viewTree")) {
-				page = new KnownIdentitiesPage(this, request);
-			}
-			else if(pageTitle.equals("setTrust")) {
-				setTrust(request);
-				return web.makeKnownIdentitiesPage(request.getPartAsString("truster", 1024));
-			}
-			else if(pageTitle.equals("editIdentity")) {
-				return web.makeEditIdentityPage(request.getPartAsString("id", 1024));
-			}
-			else if(pageTitle.equals("introduceIdentity") || pageTitle.equals("solvePuzzles")) {
-				page = new IntroduceIdentityPage(this, request, introductionClient, OwnIdentity.getById(db, request.getPartAsString("identity", 128)));
-			}
-			else if(pageTitle.equals("restoreIdentity")) {
-				restoreIdentity(request.getPartAsString("requestURI", 1024), request.getPartAsString("insertURI", 1024));
-				page = new OwnIdentitiesPage(this, request);
-			}
-			else if(pageTitle.equals("deleteIdentity")) {
-				return web.makeDeleteIdentityPage(request.getPartAsString("id", 1024));
-			}			
-			else if(pageTitle.equals("deleteIdentity2")) {
-				deleteIdentity(request.getPartAsString("id", 1024));
-				page = new OwnIdentitiesPage(this, request);
-			}			
-			else {
-				page = new HomePage(this, request);
-			}
-			
-			page.make();
-			return page.toHTML();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return e.getLocalizedMessage();
-		}
+		return web.handleHTTPPost(request);
 	}
 	
 	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
-		return "Go to hell";
+		return web.handleHTTPPut(request);
 	}
 	
-	private void deleteIdentity(String id) throws DuplicateIdentityException, UnknownIdentityException, DuplicateScoreException, DuplicateTrustException {
+	public void deleteIdentity(String id) throws DuplicateIdentityException, UnknownIdentityException, DuplicateScoreException, DuplicateTrustException {
 		Identity identity = Identity.getById(db, id);
 		
 		// Remove all scores
@@ -306,7 +222,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		db.delete(identity);
 	}
 
-	private void restoreIdentity(String requestURI, String insertURI) throws InvalidParameterException, MalformedURLException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, DuplicateTrustException {
+	public void restoreIdentity(String requestURI, String insertURI) throws InvalidParameterException, MalformedURLException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, DuplicateTrustException {
 		
 		OwnIdentity id;
 		
@@ -376,15 +292,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		db.commit();
 	}
 	
-	private void setTrust(HTTPRequest request) throws NumberFormatException, TransformerConfigurationException, FileNotFoundException, InvalidParameterException, UnknownIdentityException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
-		
-		setTrust(	request.getPartAsString("truster", 1024),
-					request.getPartAsString("trustee", 1024),
-					request.getPartAsString("value", 4),
-					request.getPartAsString("comment", 256));
-	}
-	
-	private void setTrust(String truster, String trustee, String value, String comment) throws InvalidParameterException, UnknownIdentityException, NumberFormatException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
+	public void setTrust(String truster, String trustee, String value, String comment) throws InvalidParameterException, UnknownIdentityException, NumberFormatException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
 
 		OwnIdentity trusterId = OwnIdentity.getByURI(db, truster);
 		Identity trusteeId = Identity.getByURI(db, trustee);
@@ -392,18 +300,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		setTrust((OwnIdentity)trusterId, trusteeId, Byte.parseByte(value), comment);
 	}
 	
-	private void setTrust(OwnIdentity truster, Identity trustee, byte value, String comment) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, InvalidParameterException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
+	public void setTrust(OwnIdentity truster, Identity trustee, byte value, String comment) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, InvalidParameterException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 		truster.setTrust(db, trustee, value, comment);
 		truster.updated();
 		db.store(truster);
 		db.commit();	
 	}
-
-	private void addIdentity(HTTPRequest request) throws MalformedURLException, InvalidParameterException, FetchException, DuplicateIdentityException {
-		addIdentity(request.getPartAsString("identityURI", 1024).trim());
-	}
 	
-	private Identity addIdentity(String requestURI) throws MalformedURLException, InvalidParameterException, FetchException, DuplicateIdentityException {
+	public Identity addIdentity(String requestURI) throws MalformedURLException, InvalidParameterException, FetchException, DuplicateIdentityException {
 		Identity identity = null;
 		try {
 			identity = Identity.getByURI(db, requestURI);
@@ -419,23 +323,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 		return identity;
 	}
-
-	private OwnIdentity createIdentity(HTTPRequest request) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
-
-		return createIdentity(	request.getPartAsString("insertURI",1024),
-								request.getPartAsString("requestURI",1024),
-								request.getPartAsString("nickName", 1024),
-								request.getPartAsString("publishTrustList", 5).equals("true"),
-								"freetalk");	
-	}
 	
-	private OwnIdentity createIdentity(String nickName, boolean publishTrustList, String context) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
+	public OwnIdentity createIdentity(String nickName, boolean publishTrustList, String context) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 
 		FreenetURI[] keypair = client.generateKeyPair("WoT");
 		return createIdentity(keypair[0].toString(), keypair[1].toString(), nickName, publishTrustList, context);
 	}
 
-	private OwnIdentity createIdentity(String insertURI, String requestURI, String nickName, boolean publishTrustList, String context) throws InvalidParameterException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
+	public OwnIdentity createIdentity(String insertURI, String requestURI, String nickName, boolean publishTrustList, String context) throws InvalidParameterException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 
 		OwnIdentity identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 		identity.addContext(context, db);
@@ -455,7 +350,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return identity;
 	}
 	
-	private void addContext(String identity, String context) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
+	public void addContext(String identity, String context) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		Identity id = OwnIdentity.getByURI(db, identity);
 		id.addContext(context, db);
 		db.store(id);
@@ -463,7 +358,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		Logger.debug(this, "Added context '" + context + "' to identity '" + id.getNickName() + "'");
 	}
 	
-	private void removeContext(String identity, String context) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
+	public void removeContext(String identity, String context) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		Identity id = OwnIdentity.getByURI(db, identity);
 		id.removeContext(context, db);
 		db.store(id);
@@ -471,7 +366,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		Logger.debug(this, "Removed context '" + context + "' from identity '" + id.getNickName() + "'");
 	}
 
-	private void setProperty(String identity, String property, String value) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
+	public void setProperty(String identity, String property, String value) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		Identity id = OwnIdentity.getByURI(db, identity);
 		id.setProp(property, value, db);
 		db.store(id);
@@ -479,11 +374,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		Logger.debug(this, "Added property '" + property + "=" + value + "' to identity '" + id.getNickName() + "'");
 	}
 	
-	private String getProperty(String identity, String property) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
+	public String getProperty(String identity, String property) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		return Identity.getByURI(db, identity).getProp(property);
 	}
 	
-	private void removeProperty(String identity, String property) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
+	public void removeProperty(String identity, String property) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		Identity id = OwnIdentity.getByURI(db, identity);
 		id.removeProp(property, db);
 		db.store(id);
@@ -923,5 +818,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	public ObjectContainer getDB() {
 		return db;
+	}
+	
+	public Config getConfig() {
+		return config;
+	}
+
+	public IntroductionClient getIntroductionClient() {
+		return introductionClient;
 	}
 }
