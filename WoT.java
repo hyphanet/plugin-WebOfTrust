@@ -436,7 +436,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public String getVersion() {
-		return "0.3.1 r"+Version.getSvnRevision();
+		return "0.4.0 r"+Version.getSvnRevision();
 	}
 
 	/* would only be needed if we connect the client plugins directly via object references which will probably not happen
