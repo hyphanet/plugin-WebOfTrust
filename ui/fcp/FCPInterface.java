@@ -53,47 +53,48 @@ public final class FCPInterface {
 	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
 		
 		try {
-			if(params.get("Message").equals("CreateIdentity")) {
+			String message = params.get("Message");
+			if(message.equals("CreateIdentity")) {
 				replysender.send(handleCreateIdentity(params), data);
 			}
-			else if(params.get("Message").equals("SetTrust")) {
+			else if(message.equals("SetTrust")) {
 				replysender.send(handleSetTrust(params), data);
 			}
-			else if(params.get("Message").equals("AddIdentity")) {
+			else if(message.equals("AddIdentity")) {
 				replysender.send(handleAddIdentity(params), data);
 			}
-			else if(params.get("Message").equals("GetIdentity")) {
+			else if(message.equals("GetIdentity")) {
 				replysender.send(handleGetIdentity(params), data);
 			}
-			else if(params.get("Message").equals("GetOwnIdentities")) {
+			else if(message.equals("GetOwnIdentities")) {
 				replysender.send(handleGetOwnIdentities(params), data);
 			}			
-			else if(params.get("Message").equals("GetIdentitiesByScore")) {
+			else if(message.equals("GetIdentitiesByScore")) {
 				replysender.send(handleGetIdentitiesByScore(params), data);
 			}			
-			else if(params.get("Message").equals("GetTrusters")) {
+			else if(message.equals("GetTrusters")) {
 				replysender.send(handleGetTrusters(params), data);
 			}	
-			else if(params.get("Message").equals("GetTrustees")) {
+			else if(message.equals("GetTrustees")) {
 				replysender.send(handleGetTrustees(params), data);
 			}
-			else if(params.get("Message").equals("AddContext")) {
+			else if(message.equals("AddContext")) {
 				replysender.send(handleAddContext(params), data);
 			}
-			else if(params.get("Message").equals("RemoveContext")) {
+			else if(message.equals("RemoveContext")) {
 				replysender.send(handleRemoveContext(params), data);
 			}
-			else if(params.get("Message").equals("SetProperty")) {
+			else if(message.equals("SetProperty")) {
 				replysender.send(handleSetProperty(params), data);
 			}
-			else if(params.get("Message").equals("GetProperty")) {
+			else if(message.equals("GetProperty")) {
 				replysender.send(handleGetProperty(params), data);
 			}
-			else if(params.get("Message").equals("RemoveProperty")) {
+			else if(message.equals("RemoveProperty")) {
 				replysender.send(handleRemoveProperty(params), data);
 			}
 			else {
-				throw new Exception("Unknown message (" + params.get("Message") + ")");
+				throw new Exception("Unknown message (" + message + ")");
 			}
 		}
 		catch (Exception e) {
