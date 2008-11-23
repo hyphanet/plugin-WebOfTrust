@@ -20,6 +20,7 @@ import plugins.WoT.Identity;
 import plugins.WoT.IdentityFetcher;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
+import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.introduction.captcha.CaptchaFactory1;
 
 import com.db4o.ObjectContainer;
@@ -340,10 +341,15 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 			synchronized(p) {
 				OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
 				Identity newIdentity = Identity.importIntroductionFromXML(db, mIdentityFetcher, result.asBucket().getInputStream());
-				puzzleOwner.setTrust(db, newIdentity, (byte)50, "Trust received by solving a captcha"); /* FIXME: We need null trust. Giving trust by solving captchas is a REALLY bad idea */
-				p.setSolved();
-				p.store(db);
-				Logger.debug(this, "Imported identity introduction for identity " + newIdentity.getRequestURI());
+				try {
+					puzzleOwner.getGivenTrust(newIdentity, db);
+				}
+				catch(NotTrustedException e) {
+					puzzleOwner.setTrust(db, newIdentity, (byte)0, "Trust received by solving a captcha."); /* FIXME: We need null trust. Giving trust by solving captchas is a REALLY bad idea */
+					p.setSolved();
+					p.store(db);
+					Logger.debug(this, "Imported identity introduction for identity " + newIdentity.getRequestURI());
+				}
 			}
 		
 			removeRequest(state);
