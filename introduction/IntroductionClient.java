@@ -439,7 +439,6 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(i);
 		q.descend("mDateOfInsertion").constrain(maxAge).identity();
-		q.descend("iWasSolved").constrain(false);
 		return q.execute().size();
 	}
 	
