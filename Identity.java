@@ -668,11 +668,11 @@ public class Identity {
 	public synchronized void setProp(String key, String value, ObjectContainer db) throws InvalidParameterException {
 		if(key.trim().length() == 0 || value.trim().length() == 0) throw new InvalidParameterException("Blank key or value in this property");
 		String oldValue = props.get(key.trim());
-		boolean wasUpdated = (oldValue != null && oldValue.equals(value.trim())) == false;
-		props.put(key.trim(), value.trim());
-		db.store(props);
-		if(wasUpdated)
+		if(oldValue == null || oldValue.equals(value.trim()) == false) {
+			props.put(key.trim(), value.trim());
+			db.store(props);
 			updated();
+		}
 	}
 	
 	/**
@@ -714,8 +714,8 @@ public class Identity {
 		if(newContext.length() == 0) throw new InvalidParameterException("Blank context");
 		if(!contexts.contains(newContext)) {
 			contexts.add(newContext);
-			updated();
 			db.store(contexts);
+			updated();
 		}
 	}
 	
@@ -730,9 +730,12 @@ public class Identity {
 	 */
 	public synchronized void removeContext(String context, ObjectContainer db) throws InvalidParameterException {
 		if(contexts.size() == 1) throw new InvalidParameterException("Only one context left");
-		contexts.remove(context);
-		db.store(contexts);
-		updated();
+		context = context.trim();
+		if(contexts.contains(context)) {
+			contexts.remove(context);
+			db.store(contexts);
+			updated();
+		}
 	}
 
 	/**
