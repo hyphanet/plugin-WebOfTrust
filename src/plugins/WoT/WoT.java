@@ -156,8 +156,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		/* FIXME: Debug code, remove before release */
 		try {
 			ObjectSet<OwnIdentity> oids = db.queryByExample(OwnIdentity.class);
-			for(OwnIdentity oid : oids)
+			for(OwnIdentity oid : oids) {
 				oid.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db);
+				oid.setProp("IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT), db);
+			}
 		}
 		catch(InvalidParameterException e) {}
 		
@@ -306,6 +308,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		OwnIdentity identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 		identity.addContext(context, db);
 		identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db); /* fixme: make configureable */
+		identity.setProp("IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT), db);
 		db.store(identity);
 		identity.initTrustTree(db);		
 

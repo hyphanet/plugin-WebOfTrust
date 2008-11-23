@@ -8,11 +8,14 @@ package plugins.WoT.introduction;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.SimpleTimeZone;
+import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -59,7 +62,8 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
 	private static final int THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release: */ 
 	
-	public static final byte PUZZLE_DOWNLOAD_BACKWARDS_DAYS = IntroductionServer.PUZZLE_INVALID_AFTER_DAYS - 1;
+	/* FIXME: Implement backwards-downloading. Currently, we only download puzzles from today. */
+	/* public static final byte PUZZLE_DOWNLOAD_BACKWARDS_DAYS = IntroductionServer.PUZZLE_INVALID_AFTER_DAYS - 1; */
 	public static final int PUZZLE_REQUEST_COUNT = 16;
 	public static final int PUZZLE_POOL_SIZE = 128;
 	
@@ -69,9 +73,6 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	
 	/* How many puzzles do we download from a single identity? */
 	public static final int MAX_PUZZLES_PER_IDENTITY = 3;
-	
-	/* How many puzzles does each identity upload? */
-	public static final int IDENTITY_PUZZLE_UPLOAD_COUNT = IntroductionServer.PUZZLE_COUNT; /* FIXME: store the puzzle count as an identity property (i.e. identities will publish in identity.xml how many puzzles they upload */
 	
 	private static final int MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD = 30; /* FIXME: tweak before release */
 	private static final int MINIMUM_SCORE_FOR_PUZZLE_DISPLAY = 30; /* FIXME: tweak before release */
@@ -108,7 +109,9 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	private final ArrayBlockingQueue<Identity> mIdentities = new ArrayBlockingQueue<Identity>(PUZZLE_POOL_SIZE); /* FIXME: figure out whether my assumption that this is just the right size is correct */
 	
 	private final HashSet<ClientGetter> mRequests = new HashSet<ClientGetter>(PUZZLE_REQUEST_COUNT * 2); /* TODO: profile & tweak */
-	private final HashSet<BaseClientPutter> mInserts = new HashSet<BaseClientPutter>(PUZZLE_REQUEST_COUNT * 2); 
+	private final HashSet<BaseClientPutter> mInserts = new HashSet<BaseClientPutter>(PUZZLE_REQUEST_COUNT * 2);
+	
+	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
 	/**
 	 * Creates an IntroductionServer
@@ -381,22 +384,28 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 	 * Finds a random index of a puzzle from the inserter which we did not download yet and downloads it.
 	 */
 	private void downloadPuzzle(Identity inserter) throws FetchException {
-		downloadPuzzle(inserter, mRandom.nextInt(IDENTITY_PUZZLE_UPLOAD_COUNT)); 
+		downloadPuzzle(inserter, mRandom.nextInt(getIdentityPuzzleUploadCount(inserter))); 
 	}
 	
 	private void downloadPuzzle(Identity inserter, int index) throws FetchException {
-		assert(index < IDENTITY_PUZZLE_UPLOAD_COUNT);
+		int inserterPuzzleCount = getIdentityPuzzleUploadCount(inserter);
+		assert(index < inserterPuzzleCount+1);
+		
+		/* We do that so that onSuccess() can just call this function with the index increased by 1 */
+		index %= inserterPuzzleCount;
 		
 		Date date = new Date();
 		FreenetURI uri;
 		
+		/* Find a free index */
 		int count = 0;
-		while(IntroductionPuzzle.getByInserterDateIndex(db, inserter, date, index) != null && count < IDENTITY_PUZZLE_UPLOAD_COUNT) {
-			index = (index+1) % IDENTITY_PUZZLE_UPLOAD_COUNT;
+		while(IntroductionPuzzle.getByInserterDateIndex(db, inserter, date, index) != null && count < MAX_PUZZLES_PER_IDENTITY) {
+			index = (index+1) % inserterPuzzleCount;
 			++count;
 		}
 		
-		if(count >= IDENTITY_PUZZLE_UPLOAD_COUNT)	/* We have all puzzles of this identity */
+		/* TODO: Maybe also use the above loop which finds a free index for counting the recent puzzles accurately. */ 
+		if(count >= MAX_PUZZLES_PER_IDENTITY || countRecentPuzzles(inserter) >= MAX_PUZZLES_PER_IDENTITY)	/* We have all puzzles of this identity */
 			return;
 		
 		uri = IntroductionPuzzle.generateRequestURI(inserter, date, index);
@@ -419,6 +428,29 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		}
 		Logger.debug(this, "Trying to fetch puzzle from " + uri.toString());
 	}
+	
+	/**
+	 * Count puzzles which are from today. FIXME: Add a integer parameter to specify the age in days.
+	 */
+	@SuppressWarnings("deprecation")
+	public int countRecentPuzzles(Identity i) {
+		Date maxAge = new Date(mCalendar.get(Calendar.YEAR)-1900, mCalendar.get(Calendar.MONTH), mCalendar.get(Calendar.DAY_OF_MONTH));
+		Query q = db.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").constrain(i);
+		q.descend("mDateOfInsertion").constrain(maxAge).identity();
+		q.descend("iWasSolved").constrain(false);
+		return q.execute().size();
+	}
+	
+	public int getIdentityPuzzleUploadCount(Identity i) {
+		try {
+			return Math.max(Integer.parseInt(i.getProp("IntroductionPuzzleCount")), 0);
+		}
+		catch(Exception e) {
+			return IntroductionServer.PUZZLE_COUNT;
+		}
+	}
 
 	/**
 	 * Called when a puzzle is successfully fetched.
@@ -433,10 +465,8 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 				IntroductionPuzzle.deleteOldestPuzzles(db, PUZZLE_POOL_SIZE);
 			}
 			removeRequest(state);
-			/* FIXME: Only download MAX_PUZZLES_PER_IDENTITY per identity */
-			if(p.getIndex() < (IDENTITY_PUZZLE_UPLOAD_COUNT-1)) {
-				downloadPuzzle(p.getInserter(), p.getIndex() + 1); /* TODO: Also download a random index here maybe */
-			}
+
+			downloadPuzzle(p.getInserter(), p.getIndex() + 1); /* TODO: Also download a random index here maybe */
 		} catch (Exception e) { 
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
 		}

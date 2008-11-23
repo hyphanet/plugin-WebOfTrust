@@ -54,7 +54,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
 	private static final int THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
 
-	public static final byte PUZZLE_COUNT = 10; 
+	public static final int PUZZLE_COUNT = 10; 
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
 	public static final int PUZZLE_REINSERT_MAX_AGE = 12 * 60 * 60 * 1000;		
 	
