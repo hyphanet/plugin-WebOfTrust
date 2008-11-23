@@ -35,7 +35,7 @@ import com.db4o.ObjectContainer;
  * @author xor
  *
  */
-public class ReCaptchaFactory implements IntroductionPuzzleFactory {
+public class ReCaptchaFactory extends IntroductionPuzzleFactory {
 	
 	/* FIXME: Ask the recaptcha guys to modify their java library so that it is able to just return a JPEG instead of inlining their HTML */
 	// recaptcha.ReCaptchaFactory mFactory = new recaptcha.ReCaptchaFactory();
@@ -47,7 +47,7 @@ public class ReCaptchaFactory implements IntroductionPuzzleFactory {
 			BufferedImage img = captcha.createImage(text);
 			ImageIO.write(img, "jpg", out);
 			
-			Date dateOfInsertion = new Date();
+			Date dateOfInsertion = getUTCDate();
 			return new IntroductionPuzzle(inserter, PuzzleType.Captcha, "image/jpeg", out.toByteArray(), text, dateOfInsertion, IntroductionPuzzle.getFreeIndex(db, inserter, dateOfInsertion));
 			*/
 			return null;

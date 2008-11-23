@@ -6,6 +6,9 @@
 package plugins.WoT.introduction;
 
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
 
 import com.db4o.ObjectContainer;
 
@@ -15,8 +18,16 @@ import plugins.WoT.OwnIdentity;
  * @author xor
  *
  */
-public interface IntroductionPuzzleFactory {
+public abstract class IntroductionPuzzleFactory {
 	
-	public IntroductionPuzzle generatePuzzle(ObjectContainer db, OwnIdentity inserter) throws IOException;
+	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+	
+	public abstract IntroductionPuzzle generatePuzzle(ObjectContainer db, OwnIdentity inserter) throws IOException;
 
+	/**
+	 * Puzzles have to be constructed with UTC date!
+	 */
+	public Date getUTCDate() {
+		return mCalendar.getTime();
+	}
 }

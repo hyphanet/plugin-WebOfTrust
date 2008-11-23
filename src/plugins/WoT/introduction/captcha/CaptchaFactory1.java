@@ -31,7 +31,7 @@ import plugins.WoT.introduction.captcha.kaptcha.util.Config;
  * @author xor
  *
  */
-public class CaptchaFactory1 implements IntroductionPuzzleFactory {
+public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 
 	public IntroductionPuzzle generatePuzzle(ObjectContainer db, OwnIdentity inserter) throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1024); /* TODO: find out the maximum size of the captchas and put it here */
@@ -42,7 +42,7 @@ public class CaptchaFactory1 implements IntroductionPuzzleFactory {
 			BufferedImage img = captcha.createImage(text);
 			ImageIO.write(img, "jpg", out);
 			
-			Date dateOfInsertion = new Date();
+			Date dateOfInsertion = getUTCDate();
 			return new IntroductionPuzzle(inserter, PuzzleType.Captcha, "image/jpeg", out.toByteArray(), text, dateOfInsertion, IntroductionPuzzle.getFreeIndex(db, inserter, dateOfInsertion));
 		}
 		finally {
