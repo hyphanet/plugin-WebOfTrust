@@ -667,9 +667,12 @@ public class Identity {
 	 */
 	public synchronized void setProp(String key, String value, ObjectContainer db) throws InvalidParameterException {
 		if(key.trim().length() == 0 || value.trim().length() == 0) throw new InvalidParameterException("Blank key or value in this property");
+		String oldValue = props.get(key.trim());
+		boolean wasUpdated = (oldValue != null && oldValue.equals(value.trim())) == false;
 		props.put(key.trim(), value.trim());
 		db.store(props);
-		updated();
+		if(wasUpdated)
+			updated();
 	}
 	
 	/**
