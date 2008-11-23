@@ -10,7 +10,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -53,6 +55,7 @@ public final class IntroductionPuzzle {
 	public static final int MINIMAL_SOLUTION_LENGTH = 5;
 	
 	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	
 	/* Included in XML: */
 	
@@ -160,14 +163,14 @@ public final class IntroductionPuzzle {
 	 * @param i
 	 * @return
 	 */
-	public static ObjectSet<IntroductionPuzzle> getByInserter(ObjectContainer db, OwnIdentity i) {
+	public static ObjectSet<IntroductionPuzzle> getByInserter(ObjectContainer db, Identity i) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(i);
 		q.descend("iWasSolved").constrain(false);
 		return q.execute();
 	}
-
+	
 	public static IntroductionPuzzle getByRequestURI(ObjectContainer db, FreenetURI uri) throws ParseException {
 		String filename = uri.getDocName().replaceAll(".xml", "");
 		String[] tokens = filename.split("[|]");
@@ -274,7 +277,7 @@ public final class IntroductionPuzzle {
 	}
 
 	public static FreenetURI generateRequestURI(Identity inserter, Date dateOfInsertion, int index) {
-		assert(dateOfInsertion.before(new Date()));
+		assert(dateOfInsertion.before(mCalendar.getTime()));
 		assert(index >= 0);
 		
 		/* FIXME: I did not really understand the javadoc of FreenetURI. Please verify that the following code actually creates an URI
@@ -557,7 +560,7 @@ public final class IntroductionPuzzle {
 			{ Logger.error(this, "mData == " + mData); result = false; }
 		if(mInserter == null)
 			{ Logger.error(this, "mInserter == null"); result = false; }
-		if(mDateOfInsertion == null || mDateOfInsertion.before(new Date(2008-1900, 10, 10)) || mDateOfInsertion.after(new Date()))
+		if(mDateOfInsertion == null || mDateOfInsertion.before(new Date(2008-1900, 10, 10)) || mDateOfInsertion.after(mCalendar.getTime()))
 			{ Logger.error(this, "mDateOfInsertion ==" + mDateOfInsertion); result = false; }
 		if(mIndex < 0)
 			{ Logger.error(this, "mIndex == " + mIndex); result = false; }
