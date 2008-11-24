@@ -438,7 +438,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(i);
-		q.descend("mDateOfInsertion").constrain(maxAge).identity();
+		q.descend("mDateOfInsertion").constrain(maxAge);
 		return q.execute().size();
 	}
 	
