@@ -12,6 +12,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -168,6 +169,20 @@ public final class IntroductionPuzzle {
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(i);
 		q.descend("iWasSolved").constrain(false);
+		return q.execute();
+	}
+	
+	/**
+	 * Get puzzles which are from today. FIXME: Add a integer parameter to specify the age in days.
+	 * Used by for checking whether new puzzles have to be inserted / downloaded.
+	 */
+	@SuppressWarnings("deprecation")
+	public static List<IntroductionPuzzle> getRecentByInserter(ObjectContainer db, Identity i) {
+		Date maxAge = new Date(mCalendar.get(Calendar.YEAR)-1900, mCalendar.get(Calendar.MONTH), mCalendar.get(Calendar.DAY_OF_MONTH));
+		Query q = db.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").constrain(i);
+		q.descend("mDateOfInsertion").constrain(maxAge);
 		return q.execute();
 	}
 	

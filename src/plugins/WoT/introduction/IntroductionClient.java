@@ -405,7 +405,7 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		}
 		
 		/* TODO: Maybe also use the above loop which finds a free index for counting the recent puzzles accurately. */ 
-		if(count >= MAX_PUZZLES_PER_IDENTITY || countRecentPuzzles(inserter) >= MAX_PUZZLES_PER_IDENTITY)	/* We have all puzzles of this identity */
+		if(count >= MAX_PUZZLES_PER_IDENTITY || IntroductionPuzzle.getRecentByInserter(db, inserter).size() >= MAX_PUZZLES_PER_IDENTITY)	/* We have all puzzles of this identity */
 			return;
 		
 		uri = IntroductionPuzzle.generateRequestURI(inserter, date, index);
@@ -427,19 +427,6 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 			}
 		}
 		Logger.debug(this, "Trying to fetch puzzle from " + uri.toString());
-	}
-	
-	/**
-	 * Count puzzles which are from today. FIXME: Add a integer parameter to specify the age in days.
-	 */
-	@SuppressWarnings("deprecation")
-	public int countRecentPuzzles(Identity i) {
-		Date maxAge = new Date(mCalendar.get(Calendar.YEAR)-1900, mCalendar.get(Calendar.MONTH), mCalendar.get(Calendar.DAY_OF_MONTH));
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(i);
-		q.descend("mDateOfInsertion").constrain(maxAge);
-		return q.execute().size();
 	}
 	
 	public int getIdentityPuzzleUploadCount(Identity i) {
