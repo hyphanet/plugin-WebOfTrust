@@ -114,8 +114,8 @@ public final class IntroductionPuzzle {
 	 */
 	public IntroductionPuzzle(Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, long myValidUntilTime, Date myDateOfInsertion, int myIndex) {
 		assert(	newInserter != null && newID != null && newType != null && newMimeType != null && !newMimeType.equals("") &&
-				newData!=null && newData.length!=0 && myValidUntilTime > System.currentTimeMillis() && myDateOfInsertion != null &&
-				myDateOfInsertion.getTime() < System.currentTimeMillis() && myIndex >= 0);
+				newData!=null && newData.length!=0 && myValidUntilTime > mCalendar.getTimeInMillis() && myDateOfInsertion != null &&
+				myDateOfInsertion.getTime() < mCalendar.getTimeInMillis()&& myIndex >= 0);
 		
 		mID = newID;
 		mInserter = newInserter;
@@ -182,7 +182,7 @@ public final class IntroductionPuzzle {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(i);
-		q.descend("mDateOfInsertion").constrain(maxAge);
+		q.descend("mDateOfInsertion").constrain(maxAge).smaller().not();
 		return q.execute();
 	}
 	
@@ -407,7 +407,7 @@ public final class IntroductionPuzzle {
 	public static void deleteExpiredPuzzles(ObjectContainer db) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.descend("mValidUntilTime").constrain(System.currentTimeMillis()).smaller();
+		q.descend("mValidUntilTime").constrain(mCalendar.getTimeInMillis()).smaller();
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
 		Logger.debug(IntroductionPuzzle.class, "Deleting " + result.size() + " expired puzzles.");
