@@ -30,7 +30,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 			ObjectContainer db = wot.getDB();
 			int idx = 0;
 			while(request.isPartSet("id" + idx)) {
-				String id = request.getPartAsString("id" + idx, 50);
+				String id = request.getPartAsString("id" + idx, 128);
 				String solution = request.getPartAsString("solution" + id, 10); /* FIXME: replace "10" with the maximal solution length */
 				if(!solution.equals("")) {
 					IntroductionPuzzle p = IntroductionPuzzle.getByID(db, id);
@@ -74,7 +74,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 			
 			int counter = 0;
 			for(IntroductionPuzzle p : mPuzzles) {
-				solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id" + counter, p.getID().toString() });
+				solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id" + counter, p.getID() });
 				
 				if(counter++ % 8 == 0)
 					row = puzzleTable.addChild("tr");
