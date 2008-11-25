@@ -76,7 +76,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 			for(IntroductionPuzzle p : mPuzzles) {
 				solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id" + counter, p.getID() });
 				
-				if(counter++ % 8 == 0)
+				if(counter++ % 4 == 0)
 					row = puzzleTable.addChild("tr");
 				
 				HTMLNode cell = row.addChild("td");
