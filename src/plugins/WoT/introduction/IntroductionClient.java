@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -45,7 +44,6 @@ import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
-import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory;
@@ -280,7 +278,8 @@ public final class IntroductionClient implements Runnable, ClientCallback  {
 		Query q = db.query();
 		q.constrain(Identity.class);
 		q.constrain(OwnIdentity.class).not();
-		q.descend("lastChange").constrain(new Date(System.currentTimeMillis() - 1 * 24 * 60 * 60 * 1000)).greater();
+		/* FIXME: As soon as identities announce that they were online every day, uncomment the following line */
+		/* q.descend("lastChange").constrain(new Date(mCalendar.getTimeInMillis() - 1 * 24 * 60 * 60 * 1000)).greater(); */
 		q.descend("lastChange").orderDescending(); /* This should choose identities in a sufficiently random order */
 		ObjectSet<Identity> allIds = q.execute();
 		ArrayList<Identity> ids = new ArrayList<Identity>(PUZZLE_POOL_SIZE);
