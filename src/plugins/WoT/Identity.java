@@ -466,6 +466,20 @@ public class Identity {
 			trustee.updateScore(db);
 		} 
 	}
+	
+	public void removeTrust(ObjectContainer db, Identity trustee) {
+		// Check if we are updating an existing trust value
+		Trust trust;
+		try {
+			trust = getGivenTrust(trustee, db);
+			
+			db.delete(trust);
+			db.commit();
+			trustee.updateScore(db);
+		} catch (NotTrustedException e) {
+			Logger.debug(this, "Cannot remove trust - there is none - from " + this.getNickName() + " to " + trustee.getNickName());
+		} 
+	}
 
 	/**
 	 * Updates this Identity's {@link Score} in every trust tree.
