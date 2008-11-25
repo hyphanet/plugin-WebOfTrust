@@ -398,12 +398,21 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 		OwnIdentity trusterId = OwnIdentity.getByURI(db, truster);
 		Identity trusteeId = Identity.getByURI(db, trustee);
-		
-		setTrust((OwnIdentity)trusterId, trusteeId, Byte.parseByte(value), comment);
+		if(value.trim().equals(""))
+			removeTrust(trusterId, trusteeId);
+		else
+			setTrust(trusterId, trusteeId, Byte.parseByte(value), comment);
 	}
 	
 	public void setTrust(OwnIdentity truster, Identity trustee, byte value, String comment) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, InvalidParameterException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 		truster.setTrust(db, trustee, value, comment);
+		truster.updated();
+		db.store(truster);
+		db.commit();	
+	}
+	
+	public void removeTrust(OwnIdentity truster, Identity trustee) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, InvalidParameterException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
+		truster.removeTrust(db, trustee);
 		truster.updated();
 		db.store(truster);
 		db.commit();	
