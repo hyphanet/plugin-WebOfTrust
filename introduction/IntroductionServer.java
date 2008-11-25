@@ -7,10 +7,9 @@ package plugins.WoT.introduction;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -25,7 +24,6 @@ import plugins.WoT.introduction.captcha.CaptchaFactory1;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
-import com.db4o.query.Query;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -57,7 +55,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 
 	public static final int PUZZLE_COUNT = 10; 
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
-	public static final int PUZZLE_REINSERT_MAX_AGE = 12 * 60 * 60 * 1000;		
+	/* public static final int PUZZLE_REINSERT_MAX_AGE = 12 * 60 * 60 * 1000; */		
 	
 	
 	/* Objects from WoT */
@@ -258,12 +256,10 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	}
 	
 	private synchronized void insertOldPuzzles(OwnIdentity identity) throws IOException, InsertException, TransformerException, ParserConfigurationException {
-		ObjectSet<IntroductionPuzzle> puzzles = IntroductionPuzzle.getByInserter(db, identity);
+		List<IntroductionPuzzle> puzzles = IntroductionPuzzle.getRecentByInserter(db, identity); /* FIXME: Pass PUZZLE_REINSERT_MAX_AGE */
 		Logger.debug(this, "Trying to insert " + puzzles.size() + " old puzzles from " + identity.getNickName());
 		for(IntroductionPuzzle p : puzzles) {
-			// FIXME: do not always insert when the introductionserver loop runs, only every few hours.
-			if(p.getDateOfInsertion().after(new Date(System.currentTimeMillis() - PUZZLE_REINSERT_MAX_AGE)))
-				insertPuzzle(identity, p);
+			insertPuzzle(identity, p);
 		}
 		Logger.debug(this, "Finished inserting puzzles from " + identity.getNickName());
 	}
