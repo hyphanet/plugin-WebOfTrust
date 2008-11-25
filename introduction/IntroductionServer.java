@@ -241,7 +241,7 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 	}
 	
 	private synchronized void insertNewPuzzles(OwnIdentity identity) {
-		int puzzlesToInsert = PUZZLE_COUNT - IntroductionPuzzle.getByInserter(db, identity).size();
+		int puzzlesToInsert = PUZZLE_COUNT - IntroductionPuzzle.getRecentByInserter(db, identity).size();
 		Logger.debug(this, "Trying to insert " + puzzlesToInsert + " new puzzles from " + identity.getNickName());
 		
 		while(puzzlesToInsert > 0) {
