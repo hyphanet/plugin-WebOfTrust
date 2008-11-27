@@ -189,7 +189,10 @@ public final class IntroductionPuzzle {
 	public static IntroductionPuzzle getByRequestURI(ObjectContainer db, FreenetURI uri) throws ParseException {
 		String filename = uri.getDocName().replaceAll(".xml", "");
 		String[] tokens = filename.split("[|]");
-		Date date = mDateFormat.parse(tokens[2]);
+		Date date;
+		synchronized (mDateFormat) {
+			date = mDateFormat.parse(tokens[2]);
+		}
 		int index = Integer.parseInt(tokens[3]);
 		
 		Query q = db.query();
@@ -281,7 +284,10 @@ public final class IntroductionPuzzle {
 		
 		/* FIXME: I did not really understand the javadoc of FreenetURI. Please verify that the following code actually creates an URI
 		 * which looks like the one I specified in the javadoc above this function. Thanks. */
-		String dayOfInsertion = mDateFormat.format(mDateOfInsertion);
+		String dayOfInsertion;
+		synchronized (mDateFormat) {
+			dayOfInsertion = mDateFormat.format(mDateOfInsertion);
+		}
 		FreenetURI baseURI = ((OwnIdentity)mInserter).getInsertURI().setKeyType("SSK");
 		baseURI = baseURI.setDocName(WoT.WOT_CONTEXT + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + mIndex + ".xml");
 		return baseURI.setMetaString(null);
@@ -297,7 +303,10 @@ public final class IntroductionPuzzle {
 		
 		/* FIXME: I did not really understand the javadoc of FreenetURI. Please verify that the following code actually creates an URI
 		 * which looks like the one I specified in the javadoc above this function. Thanks. */
-		String dayOfInsertion = mDateFormat.format(dateOfInsertion);
+		String dayOfInsertion;
+		synchronized (mDateFormat) {
+			dayOfInsertion = mDateFormat.format(dateOfInsertion);
+		}
 		FreenetURI baseURI = inserter.getRequestURI().setKeyType("SSK");
 		baseURI = baseURI.setDocName(WoT.WOT_CONTEXT + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index + ".xml");
 		return baseURI.setMetaString(null);
@@ -510,7 +519,9 @@ public final class IntroductionPuzzle {
 			newInserter = Identity.getByURI(db, puzzleURI);
 			String filename = puzzleURI.getDocName().replaceAll(".xml", "");
 			String tokens[] = filename.split("[|]");
-			newDateOfInsertion = mDateFormat.parse(tokens[2]);
+			synchronized (mDateFormat) {
+				newDateOfInsertion = mDateFormat.parse(tokens[2]);
+			}
 			newIndex = Integer.parseInt(tokens[3]);
 		}
 
