@@ -228,7 +228,7 @@ public final class IntroductionPuzzle {
 	  * @throws ParseException
 	  */
 	public static IntroductionPuzzle getBySolutionURI(ObjectContainer db, FreenetURI uri) throws ParseException {
-		String id = uri.getDocName().split("[|]")[3];
+		String id = uri.getDocName().split("[|]")[2];
 	
 		return getByID(db, id);
 	}
