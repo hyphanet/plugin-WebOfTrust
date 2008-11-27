@@ -156,6 +156,7 @@ public class Identity {
 		Identity id;
 		FreenetURI requestURI = introHandler.getRequestURI();
 		
+		synchronized(Identity.class) {	/* Prevent creation of duplicate identities. FIXME: Find a better object to lock on. */
 		try {
 			id = Identity.getByURI(db, requestURI);
 		}
@@ -163,6 +164,7 @@ public class Identity {
 			id = new Identity(requestURI, null, false);
 			db.store(id);
 			fetcher.fetch(id);
+		}
 		}
 
 		return id;
