@@ -200,6 +200,12 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			for(Identity duplicate : duplicates) {
 				if(deleted.contains(duplicate.getId()) == false) {
 					Logger.error(duplicate, "Deleted duplicate identity " + duplicate.getRequestURI());
+					for(Trust t : duplicate.getReceivedTrusts(db))
+						db.delete(t);
+					for(Trust t : duplicate.getGivenTrusts(db))
+						db.delete(t);
+					for(Score s : duplicate.getScores(db))
+						db.delete(s);
 					db.delete(duplicate);
 				}
 			}
