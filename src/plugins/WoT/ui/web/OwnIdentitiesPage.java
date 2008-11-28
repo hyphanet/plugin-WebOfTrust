@@ -64,7 +64,8 @@ public class OwnIdentitiesPage extends WebPageImpl {
 			row.addChild("th", "Name");
 			row.addChild("th", "Last change");
 			row.addChild("th", "Last insert");
-			row.addChild("th", "Publish TrustList ?");
+			row.addChild("th", "Publishes Trustlist");
+			row.addChild("th", "Trusters");
 			row.addChild("th", "Manage");
 			
 			while(ownIdentities.hasNext()) {
@@ -83,6 +84,9 @@ public class OwnIdentitiesPage extends WebPageImpl {
 					cell.addChild(new HTMLNode("a", "href", "/"+id.getRequestURI().toString(), id.getLastInsert().toString()));
 				}
 				row.addChild("td", id.doesPublishTrustList() ? "Yes" : "No");
+				
+				HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+				trustersCell.addChild(new HTMLNode("a", "href", SELF_URI + "?showIdentity&id="+id.getId(), Long.toString(id.getNbReceivedTrusts(db))));
 				
 				HTMLNode manageCell = row.addChild("td");
 				
