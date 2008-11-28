@@ -5,6 +5,9 @@
  */
 package plugins.WoT.ui.web;
 
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
+
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
@@ -29,6 +32,8 @@ import freenet.support.Logger;
  */
 public class KnownIdentitiesPage extends WebPageImpl {
 
+	private final static SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	
 	/**
 	 * Creates a new OwnIdentitiesPage.
 	 * 
@@ -137,8 +142,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		HTMLNode identitiesTable = listBoxContent.addChild("table", "border", "0");
 		HTMLNode row=identitiesTable.addChild("tr");
 		row.addChild("th", "NickName");
-		row.addChild("th", "Last update");
-		row.addChild("th", "Publish TrustList ?");
+		row.addChild("th", "Updated");
+		row.addChild("th", "Trustlist");
 		row.addChild("th", "Score (Rank)");
 		row.addChild("th", "Trust/Comment");
 		row.addChild("th", "Trusters");
@@ -155,8 +160,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			// NickName
 			row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"}).addChild("a", "href", "?showIdentity&id=" + id.getId(), id.getNickName());
 			
-			// Last Change
-			row.addChild("td", id.getReadableLastChange());
+			synchronized(mDateFormat) {
+				mDateFormat.setTimeZone(TimeZone.getDefault());
+				/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
+				row.addChild("td", mDateFormat.format(id.getLastChange()));
+			}
 			
 			// Publish TrustList
 			row.addChild("td", new String[] { "align" }, new String[] { "center" } , id.doesPublishTrustList() ? "Yes" : "No");
