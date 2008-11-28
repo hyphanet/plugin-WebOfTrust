@@ -5,7 +5,10 @@
  */
 package plugins.WoT.ui.web;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -22,6 +25,8 @@ import freenet.support.api.HTTPRequest;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class OwnIdentitiesPage extends WebPageImpl {
+	
+	private final static SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	/**
 	 * Creates a new OwnIdentitiesPage.
@@ -71,9 +76,13 @@ public class OwnIdentitiesPage extends WebPageImpl {
 			while(ownIdentities.hasNext()) {
 				OwnIdentity id = ownIdentities.next();
 				row=identitiesTable.addChild("tr");
-				row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"}, id.getNickName());
-				row.addChild("td",id.getLastChange().toString());
-				HTMLNode cell = row.addChild("td");
+				row.addChild("td", new String[] {"title", "style", "align"}, new String[] {id.getRequestURI().toString(), "cursor: help;", "center"}, id.getNickName());
+				synchronized(mDateFormat) {
+					mDateFormat.setTimeZone(TimeZone.getDefault());
+					/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
+					row.addChild("td", mDateFormat.format(id.getLastChange()));
+				}
+				HTMLNode cell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				if(id.getLastInsert() == null) {
 					cell.addChild("p", "Insert in progress...");
 				}
@@ -81,14 +90,18 @@ public class OwnIdentitiesPage extends WebPageImpl {
 					cell.addChild("p", "Never");
 				}
 				else {
-					cell.addChild(new HTMLNode("a", "href", "/"+id.getRequestURI().toString(), id.getLastInsert().toString()));
+					synchronized(mDateFormat) {
+						mDateFormat.setTimeZone(TimeZone.getDefault());
+						/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
+						cell.addChild(new HTMLNode("a", "href", "/"+id.getRequestURI().toString(), mDateFormat.format(id.getLastInsert())));
+					}
 				}
-				row.addChild("td", id.doesPublishTrustList() ? "Yes" : "No");
+				row.addChild("td", new String[] { "align" }, new String[] { "center" }, id.doesPublishTrustList() ? "Yes" : "No");
 				
 				HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				trustersCell.addChild(new HTMLNode("a", "href", SELF_URI + "?showIdentity&id="+id.getId(), Long.toString(id.getNbReceivedTrusts(db))));
 				
-				HTMLNode manageCell = row.addChild("td");
+				HTMLNode manageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				
 				HTMLNode editForm = pr.addFormChild(manageCell, SELF_URI, "editIdentity");
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "editIdentity" });
