@@ -9,9 +9,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.TimeZone;
 import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -104,6 +106,9 @@ public class Identity {
 	
 	/** A list of contexts (eg. client apps) this Identity is used for */
 	private ArrayList<String> contexts;
+	
+	/** UTC calendar */
+	protected static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
 	/**
 	 * Creates an Identity
@@ -157,14 +162,14 @@ public class Identity {
 		FreenetURI requestURI = introHandler.getRequestURI();
 		
 		synchronized(Identity.class) {	/* Prevent creation of duplicate identities. FIXME: Find a better object to lock on. */
-		try {
-			id = Identity.getByURI(db, requestURI);
-		}
-		catch (UnknownIdentityException e) {
-			id = new Identity(requestURI, null, false);
-			db.store(id);
-			fetcher.fetch(id);
-		}
+			try {
+				id = Identity.getByURI(db, requestURI);
+			}
+			catch (UnknownIdentityException e) {
+				id = new Identity(requestURI, null, false);
+				db.store(id);
+				fetcher.fetch(id);
+			}
 		}
 
 		return id;
@@ -767,7 +772,8 @@ public class Identity {
 	 * Tell that this Identity has been updated.
 	 */
 	public synchronized void updated() {
-		lastChange = new Date();
+		
+		lastChange = mCalendar.getTime();
 	}
 	
 	/**
@@ -792,14 +798,16 @@ public class Identity {
 		return lastChange;
 	}
 	
-	/**
+	/* TODO: I think this is not the job of class Identity, remove this.
+
 	 * @return A string representing the date of this Identity's last 
 	 * modification. Or "Fetching..." if it has not been fetched yet.
-	 */
+
 	public synchronized String getReadableLastChange() {
 		if (lastChange.equals(new Date(0))) return "Fetching...";
 		else return lastChange.toString();
 	}
+	*/
 
 	/**
 	 * @return this Identity's nickName

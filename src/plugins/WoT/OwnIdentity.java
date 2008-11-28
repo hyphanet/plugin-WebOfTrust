@@ -315,9 +315,16 @@ public class OwnIdentity extends Identity {
 	public synchronized Date getLastInsert() {
 		return lastInsert;
 	}
+	
+	/**
+	 * Sets the last insertion date of this OwnIdentity to current time in UTC.
+	 */
+	public synchronized void updateLastInsert() {
+		setLastInsert(mCalendar.getTime());
+	}
 
 	/**
-	 * Sets the last insertion date of this OwnIdentity in Freenet
+	 * Sets the last insertion date of this OwnIdentity in Freenet to the specified time which should be in UTC.
 	 * 
 	 * @param lastInsert last insertion date of this OwnIdentity in Freenet
 	 */
