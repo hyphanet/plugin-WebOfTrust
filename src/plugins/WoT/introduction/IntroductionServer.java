@@ -38,9 +38,11 @@ import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.PrioRunnable;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.io.NativeThread;
 import freenet.support.io.TempBucketFactory;
 
 /**
@@ -48,7 +50,7 @@ import freenet.support.io.TempBucketFactory;
  * 
  * @author xor
  */
-public final class IntroductionServer implements Runnable, ClientCallback {
+public final class IntroductionServer implements PrioRunnable, ClientCallback {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
 	private static final int THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
@@ -156,6 +158,10 @@ public final class IntroductionServer implements Runnable, ClientCallback {
 		
 		cancelRequests();
 		Logger.debug(this, "Introduction server thread finished.");
+	}
+	
+	public int getPriority() {
+		return NativeThread.LOW_PRIORITY;
 	}
 	
 	public void terminate() {
