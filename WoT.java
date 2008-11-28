@@ -172,6 +172,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		pr.getNode().executor.execute(introductionClient, "WoT introduction client");
 		
 		deleteDuplicateObjects();
+		deleteOrphanObjects();
 		
 		// Try to fetch all known identities
 		ObjectSet<Identity> identities = Identity.getAllIdentities(db);
@@ -213,6 +214,31 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 		
 		/* FIXME: Also delete duplicate trust, score, etc. */
+	}
+	
+	/**
+	 * Debug function for deleting trusts or scores of which one of the involved partners is missing.
+	 */
+	private void deleteOrphanObjects() {
+		Query q = db.query();
+		q.constrain(Trust.class);
+		q.descend("truster").constrain(null).identity().or(q.descend("trustee").constrain(null).identity());
+		ObjectSet<Trust> orphanTrusts = q.execute();
+		for(Trust o : orphanTrusts) {
+			Logger.error(o, "Deleting orphan trust, truster = " + o.getTruster() + ", trustee = " + o.getTrustee());
+			db.delete(o);
+		}
+		
+		q = db.query();
+		q.constrain(Score.class);
+		q.descend("treeOwner").constrain(null).identity().or(q.descend("target").constrain(null).identity());
+		ObjectSet<Score> orphanScores = q.execute();
+		for(Score s : orphanScores) {
+			Logger.error(s, "Deleting orphan score, treeOwner = " + s.getTreeOwner() + ", target = " + s.getTarget());
+			db.delete(s);
+		}
+		
+		db.commit();
 	}
 	
 	/**
