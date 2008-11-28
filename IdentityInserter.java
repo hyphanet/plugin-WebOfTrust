@@ -229,7 +229,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		try {
 			OwnIdentity identity = OwnIdentity.getByURI(db, state.getURI());
 			identity.setEdition(state.getURI().getSuggestedEdition());
-			identity.setLastInsert(new Date()); /* FIXME: check whether the identity was modified during the insert and re-insert if it was */
+			identity.updateLastInsert(); /* FIXME: check whether the identity was modified during the insert and re-insert if it was */
 			 
 			db.store(identity);
 			db.commit();
