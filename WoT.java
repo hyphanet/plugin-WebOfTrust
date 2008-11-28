@@ -9,6 +9,7 @@ package plugins.WoT;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Map.Entry;
@@ -35,6 +36,7 @@ import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
 import com.db4o.ext.DatabaseClosedException;
 import com.db4o.ext.Db4oIOException;
+import com.db4o.query.Query;
 
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
@@ -169,6 +171,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		introductionClient = new IntroductionClient(this);
 		pr.getNode().executor.execute(introductionClient, "WoT introduction client");
 		
+		deleteDuplicateObjects();
+		
 		// Try to fetch all known identities
 		ObjectSet<Identity> identities = Identity.getAllIdentities(db);
 		while (identities.hasNext()) {
@@ -177,6 +181,32 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		web = new WebInterface(this, SELF_URI);
 		fcp = new FCPInterface(this);
+	}
+	
+	/**
+	 * Debug function for deleting duplicate identities etc. which might have been created due to bugs :)
+	 */
+	private void deleteDuplicateObjects() {
+		ObjectSet<Identity> identities = Identity.getAllIdentities(db);
+		HashSet<String> deleted = new HashSet<String>();
+		
+		for(Identity i : identities) {
+			Query q = db.query();
+			q.constrain(Identity.class);
+			q.constrain(OwnIdentity.class).not();
+			q.descend("id").constrain(i.getId());
+			q.constrain(i).identity().not();
+			ObjectSet<Identity> duplicates = q.execute();
+			for(Identity duplicate : duplicates) {
+				if(deleted.contains(duplicate.getId()) == false) {
+					Logger.error(duplicate, "Deleted duplicate identity " + duplicate.getRequestURI());
+					db.delete(duplicate);
+				}
+			}
+			deleted.add(i.getId());
+		}
+		
+		/* FIXME: Also delete duplicate trust, score, etc. */
 	}
 	
 	/**
