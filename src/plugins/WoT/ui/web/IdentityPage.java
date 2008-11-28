@@ -24,6 +24,7 @@ import java.util.List;
 import plugins.WoT.Identity;
 import plugins.WoT.Trust;
 import plugins.WoT.WoT;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -62,6 +63,12 @@ public class IdentityPage extends WebPageImpl {
 		this.trustersTrusts = trustersTrusts;
 		this.trusteesTrusts = trusteesTrusts;
 	}
+	
+	private void makeURIBox() {
+		HTMLNode boxContent = getContentBox("Reference of identity '" + identity.getNickName() + "'");
+		boxContent.addChild("p", "The following Freenet URI is a reference to this identity. If you want to tell other people about this identity, give the URI to them: ");
+		boxContent.addChild("p", identity.getRequestURI().toString());
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -69,6 +76,8 @@ public class IdentityPage extends WebPageImpl {
 	 * @see WebPage#make()
 	 */
 	public void make() {
+		makeURIBox();
+		
 		HTMLNode trusteeTrustsNode = getContentBox("Identities that “" + identity.getNickName() + "” trusts");
 
 		HTMLNode trustersTable = trusteeTrustsNode.addChild("table");
