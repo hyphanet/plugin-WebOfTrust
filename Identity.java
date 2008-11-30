@@ -223,8 +223,7 @@ public class Identity {
 		ObjectSet<Identity> result = query.execute();
 		
 		if(result.size() == 0) throw new UnknownIdentityException(id);
-		// allow deleting duplicated identity, 
-		// else if(result.size() > 1) throw new DuplicateIdentityException(id);
+		else if(result.size() > 1) throw new DuplicateIdentityException(id);
 		return result.next();
 	}
 
