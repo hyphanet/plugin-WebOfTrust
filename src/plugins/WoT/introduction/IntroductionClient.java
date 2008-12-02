@@ -25,6 +25,7 @@ import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
+import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 
 import com.db4o.ObjectContainer;
@@ -210,10 +211,15 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 				int score = p.getInserter().getScore(id, db).getScore();
 				/* TODO: Also check whether the database contains any solution of puzzles from the requester for the inserter of this puzzle */ 
 				if(score > MINIMUM_SCORE_FOR_PUZZLE_DISPLAY && !resultHasPuzzleFrom.contains(p.getInserter())) { 
+					try {
+						p.getInserter().getGivenTrust(id, db);
+					}
+					catch(NotTrustedException e) {
 					result.add(p);
 					resultHasPuzzleFrom.add(p.getInserter());
 					if(result.size() == count)
 						break;
+					}
 				}
 			}
 			catch(NotInTrustTreeException e) {
