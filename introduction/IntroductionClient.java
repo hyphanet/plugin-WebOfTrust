@@ -215,10 +215,10 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 						p.getInserter().getGivenTrust(id, db);
 					}
 					catch(NotTrustedException e) {
-					result.add(p);
-					resultHasPuzzleFrom.add(p.getInserter());
-					if(result.size() == count)
-						break;
+						result.add(p);
+						resultHasPuzzleFrom.add(p.getInserter());
+						if(result.size() == count)
+							break;
 					}
 				}
 			}
