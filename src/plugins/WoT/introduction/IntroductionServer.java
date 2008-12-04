@@ -280,24 +280,24 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 		OutputStream os = tempB.getOutputStream();
 		
 		try {
-					p.exportToXML(os);
-					os.close(); os = null;
-					tempB.setReadOnly();
-				
-					ClientMetadata cmd = new ClientMetadata("text/xml");
-					InsertBlock ib = new InsertBlock(tempB, cmd, p.getInsertURI());
-					InsertContext ictx = mClient.getInsertContext(true);
-					
-					/* FIXME: are these parameters correct? */
-					ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-					// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
-					synchronized(mInserts) {
-						mInserts.add(pu);
-					}
-					tempB = null;
-		
-					p.store(db);
-					Logger.debug(this, "Started insert of puzzle from " + identity.getNickName());
+			p.exportToXML(os);
+			os.close(); os = null;
+			tempB.setReadOnly();
+
+			ClientMetadata cmd = new ClientMetadata("text/xml");
+			InsertBlock ib = new InsertBlock(tempB, cmd, p.getInsertURI());
+			InsertContext ictx = mClient.getInsertContext(true);
+
+			/* FIXME: are these parameters correct? */
+			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
+			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
+			synchronized(mInserts) {
+				mInserts.add(pu);
+			}
+			tempB = null;
+
+			p.store(db);
+			Logger.debug(this, "Started insert of puzzle from " + identity.getNickName());
 		}
 		finally {
 			if(tempB != null)
