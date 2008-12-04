@@ -280,10 +280,6 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 		OutputStream os = tempB.getOutputStream();
 		
 		try {
-			boolean retryWithNewIndex = false;
-
-			do {
-				try {
 					p.exportToXML(os);
 					os.close(); os = null;
 					tempB.setReadOnly();
@@ -302,17 +298,6 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 		
 					p.store(db);
 					Logger.debug(this, "Started insert of puzzle from " + identity.getNickName());
-				}
-				catch(InsertException e) {
-					if(e.errorCodes.getFirstCode() == InsertException.COLLISION)
-						retryWithNewIndex = true;
-					else
-						throw e;
-					
-					Logger.error(this, "Puzzle with index " + p.getIndex() + " already inserted and not found in database! Retrying with next index ...");
-				}
-			}
-			while(retryWithNewIndex);
 		}
 		finally {
 			if(tempB != null)
