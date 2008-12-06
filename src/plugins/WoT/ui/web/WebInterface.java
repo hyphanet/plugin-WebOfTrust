@@ -545,7 +545,7 @@ public class WebInterface {
 								request.getPartAsString("requestURI",1024),
 								request.getPartAsString("nickName", 1024),
 								request.getPartAsString("publishTrustList", 5).equals("true"),
-								"freetalk");	
+								"Freetalk"); /* FIXME: Make Freetalk do that itself */	
 	}
 	
 	

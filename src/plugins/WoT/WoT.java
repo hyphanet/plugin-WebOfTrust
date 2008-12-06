@@ -140,7 +140,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		// Create a default OwnIdentity if none exists. Should speed up plugin usability for newbies
 		if(OwnIdentity.getNbOwnIdentities(db) == 0) {
 			try {
-				createIdentity("Anonymous", true, "freetalk");
+				createIdentity("Anonymous", true, "Freetalk");
 			} catch (Exception e) {
 				Logger.error(this, "Error creating default identity : ", e);
 			}
@@ -160,6 +160,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			ObjectSet<OwnIdentity> oids = db.queryByExample(OwnIdentity.class);
 			for(OwnIdentity oid : oids) {
 				oid.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db);
+				oid.removeContext("freetalk", db);
+				oid.addContext("Freetalk", db);
 				oid.setProp("IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT), db);
 			}
 		}
