@@ -293,18 +293,18 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 		/* FIXME: As soon as identities announce that they were online every day, uncomment the following line */
 		/* q.descend("lastChange").constrain(new Date(mCalendar.getTimeInMillis() - 1 * 24 * 60 * 60 * 1000)).greater(); */
 		q.descend("lastChange").orderDescending(); /* This should choose identities in a sufficiently random order */
-		ObjectSet<Identity> allIds = q.execute();
-		ArrayList<Identity> ids = new ArrayList<Identity>(PUZZLE_POOL_SIZE);
+		ObjectSet<Identity> allIdentities = q.execute();
+		ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(PUZZLE_POOL_SIZE);
 		
 		int counter = 0;
 		/* Download puzzles from identities from which we have not downloaded for a certain period. This is ensured by
 		 * keeping the last few hunderd identities stored in a FIFO with fixed length, named mIdentities. */
 		synchronized(mIdentities) {
-			for(Identity i : allIds) {
+			for(Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
 				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i)
 						&& i.getBestScore(db) > MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)  {
-					ids.add(i);
+					identitiesToDownloadFrom.add(i);
 					++counter;
 				}
 	
@@ -315,12 +315,12 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 		
 		/* If we run out of identities to download from, be less restrictive */
 		if(counter == 0) {
-			ids.clear();  /* We probably have less updated identities today than the size of the LRUQueue, empty it */
+			identitiesToDownloadFrom.clear();  /* We probably have less updated identities today than the size of the LRUQueue, empty it */
 
-			for(Identity i : allIds) {
+			for(Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
 				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && i.getBestScore(db) > MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)  {
-					ids.add(i);
+					identitiesToDownloadFrom.add(i);
 					++counter;
 				}
 
@@ -334,7 +334,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 		 * This prevents denial of service because people will usually get very new puzzles. */
 		cancelRequests();
 		
-		for(Identity i : ids) {
+		for(Identity i : identitiesToDownloadFrom) {
 			try {
 				downloadPuzzle(i);
 			} catch (Exception e) {
