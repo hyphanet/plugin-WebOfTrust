@@ -82,6 +82,7 @@ public class IdentityParser {
 		Logger.debug(this, "Successfuly parsed identity '" + identity.getNickName() + "'");
 	}
 	
+	/* FIXME: Use the general XML-parsing class XMLTreeGenerator from freetalk.MessageXML */
 	/**
 	 * Subclass that actually handles the parsing. Methods are called 
 	 * by SAXParser for each XML element.

@@ -503,6 +503,7 @@ public final class IntroductionPuzzle {
 		return puzzleHandler.getPuzzle();
 	}
 	
+	/* FIXME: Use the general XML-parsing class XMLTreeGenerator from freetalk.MessageXML */
 	public static class PuzzleHandler extends DefaultHandler {
 		private final Identity newInserter;
 		private String newID;
