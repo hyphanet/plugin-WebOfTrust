@@ -81,6 +81,7 @@ public class Score {
 	public static ObjectSet<Score> getIdentitiesByScore (ObjectContainer db, OwnIdentity treeOwner, int select) throws InvalidParameterException {		
 		Query query = db.query();
 		query.constrain(Score.class);
+		query.descend("target").constrain(OwnIdentity.class).not();
 		if(treeOwner != null)
 			query.descend("treeOwner").constrain(treeOwner);
 			
