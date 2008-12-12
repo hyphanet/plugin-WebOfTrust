@@ -283,6 +283,7 @@ public class Identity {
 	 * @return A string to uniquely identify an Identity
 	 */
 	public static String getIdFromURI (FreenetURI uri) {
+		/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
 		return Base64.encode(uri.getRoutingKey());
 	}
 	
