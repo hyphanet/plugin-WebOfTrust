@@ -104,7 +104,8 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 	private Thread mThread;
 	
 	/** Used to tell the introduction server thread if it should stop */
-	private volatile boolean isRunning;
+	private volatile boolean isRunning = false;
+	private volatile boolean shutdownFinished = false;
 	
 	/* FIXME FIXME FIXME: Use LRUQueue instead. ArrayBlockingQueue does not use a Hashset for contains()! */
 	private final ArrayBlockingQueue<Identity> mIdentities = new ArrayBlockingQueue<Identity>(PUZZLE_POOL_SIZE); /* FIXME: figure out whether my assumption that this is just the right size is correct */
@@ -146,6 +147,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 			mThread.interrupt();
 		}
 		
+		try {
 		while(isRunning) {
 			Thread.interrupted();
 			Logger.debug(this, "Introduction client loop running...");
@@ -167,9 +169,16 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 				Logger.debug(this, "Introduction client loop interrupted.");
 			}
 		}
+		}
 		
+		finally {
 		cancelRequests();
-		Logger.debug(this, "Introduction client thread finished.");
+		synchronized (this) {
+			shutdownFinished = true;
+			Logger.debug(this, "Introduction client thread finished.");
+			notify();
+		}
+		}
 	}
 
 	public int getPriority() {
@@ -180,12 +189,15 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 		Logger.debug(this, "Stopping the introduction client...");
 		isRunning = false;
 		mThread.interrupt();
-		try {
-			mThread.join();
-		}
-		catch(InterruptedException e)
-		{
-			Thread.currentThread().interrupt();
+		synchronized(this) {
+			while(!shutdownFinished) {
+				try {
+					wait();
+				}
+				catch (InterruptedException e) {
+					Thread.interrupted();
+				}
+			}
 		}
 		Logger.debug(this, "Stopped the introduction client.");
 	}

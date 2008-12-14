@@ -10,7 +10,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -18,7 +17,6 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import plugins.WoT.exceptions.InvalidParameterException;
-import plugins.WoT.introduction.IntroductionPuzzle;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -37,7 +35,6 @@ import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
-import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory;
@@ -60,7 +57,8 @@ public class IdentityInserter implements Runnable, ClientCallback {
 	/** The TempBucketFactory used to create buckets from Identities before insert */
 	final TempBucketFactory tBF;
 	/** Used to tell the InserterThread if it should stop */
-	private volatile boolean isRunning;
+	private volatile boolean isRunning = false;
+	private volatile boolean shutdownFinished = false;
 	private Thread mThread;
 	
 	private final ArrayList<BaseClientPutter> mInserts = new ArrayList<BaseClientPutter>(10); /* Just assume that there are 10 identities */
@@ -94,6 +92,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		{
 			mThread.interrupt();
 		}
+		try {
 		while(isRunning) {
 			Thread.interrupted();
 			Logger.debug(this, "IdentityInserter loop running...");
@@ -122,9 +121,16 @@ public class IdentityInserter implements Runnable, ClientCallback {
 				Logger.debug(this, "Identity inserter thread interrupted.");
 			}
 		}
+		}
 		
+		finally {
 		cancelInserts();
-		Logger.debug(this, "Identity inserter thread finished.");
+		synchronized (this) {
+			shutdownFinished = true;
+			Logger.debug(this, "Identity inserter thread finished.");
+			notify();
+		}
+		}
 	}
 	
 	private void cancelInserts() {
@@ -144,12 +150,15 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		Logger.debug(this, "Stopping IdentityInserter thread...");
 		isRunning = false;
 		mThread.interrupt();
-		try {
-			mThread.join();
-		}
-		catch(InterruptedException e)
-		{
-			Thread.currentThread().interrupt();
+		synchronized(this) {
+			while(!shutdownFinished) {
+				try {
+					wait();
+				}
+				catch (InterruptedException e) {
+					Thread.interrupted();
+				}
+			}
 		}
 		Logger.debug(this, "Stopped IdentityInserter thread.");
 	}

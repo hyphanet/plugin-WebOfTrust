@@ -87,7 +87,8 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 	private Thread mThread;
 	
 	/** Used to tell the introduction server thread if it should stop */
-	private volatile boolean isRunning;
+	private volatile boolean isRunning = false;
+	private volatile boolean shutdownFinished = false;
 	
 	private final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] { new CaptchaFactory1() };
 	
@@ -122,6 +123,7 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 			mThread.interrupt();
 		}
 		
+		try {
 		while(isRunning) {
 			Thread.interrupted();
 			Logger.debug(this, "Introduction server loop running...");
@@ -155,9 +157,16 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 				Logger.debug(this, "Introduction server loop interrupted.");
 			}
 		}
+		}
 		
+		finally {
 		cancelRequests();
-		Logger.debug(this, "Introduction server thread finished.");
+		synchronized (this) {
+			shutdownFinished = true;
+			Logger.debug(this, "Introduction server thread finished.");
+			notify();
+		}
+		}
 	}
 	
 	public int getPriority() {
@@ -168,12 +177,15 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 		Logger.debug(this, "Stopping the introduction server...");
 		isRunning = false;
 		mThread.interrupt();
-		try {
-			mThread.join();
-		}
-		catch(InterruptedException e)
-		{
-			Thread.currentThread().interrupt();
+		synchronized(this) {
+			while(!shutdownFinished) {
+				try {
+					wait();
+				}
+				catch (InterruptedException e) {
+					Thread.interrupted();
+				}
+			}
 		}
 		Logger.debug(this, "Stopped the introduction server.");
 	}
