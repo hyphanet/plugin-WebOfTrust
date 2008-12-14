@@ -83,6 +83,7 @@ public class IdentityParser {
 	}
 	
 	/* FIXME: Use the general XML-parsing class XMLTreeGenerator from freetalk.MessageXML */
+	/* FIXME: Replace list of existing contexts, not just add new ones */
 	/**
 	 * Subclass that actually handles the parsing. Methods are called 
 	 * by SAXParser for each XML element.
