@@ -19,6 +19,7 @@
 
 package plugins.WoT.ui.web;
 
+import java.util.Iterator;
 import java.util.List;
 
 import plugins.WoT.Identity;
@@ -69,6 +70,18 @@ public class IdentityPage extends WebPageImpl {
 		boxContent.addChild("p", "The following Freenet URI is a reference to this identity. If you want to tell other people about this identity, give the URI to them: ");
 		boxContent.addChild("p", identity.getRequestURI().toString());
 	}
+	
+	private void makeServicesBox() {
+		HTMLNode boxContent = getContentBox("Services of identity '" + identity.getNickName() + "'");
+		Iterator<String> iter = identity.getContexts();
+		StringBuilder contexts = new StringBuilder(128);
+		while(iter.hasNext()) {
+			contexts.append(iter.next());
+			if(iter.hasNext())
+				contexts.append(", ");
+		}
+		boxContent.addChild("p", contexts.toString());
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -77,6 +90,7 @@ public class IdentityPage extends WebPageImpl {
 	 */
 	public void make() {
 		makeURIBox();
+		makeServicesBox();
 		
 		HTMLNode trusteeTrustsNode = getContentBox("Identities that “" + identity.getNickName() + "” trusts");
 
