@@ -295,14 +295,46 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	public void terminate() {
 		Logger.debug(this, "WoT plugin terminating ...");
-		if(inserter != null) inserter.stop();
-		if(introductionServer != null) introductionServer.terminate();
-		if(introductionClient != null) introductionClient.terminate();
-		if(fetcher != null) fetcher.stop();
-		if(db != null) {
+		
+		/* We use single try/catch blocks so that failure of termination of one service does not prevent termination of the others */
+		try {
+			introductionClient.terminate();
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+		
+		try {
+			introductionServer.terminate();
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+		
+		try {
+			fetcher.stop();
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+		
+		try {
+			inserter.stop();
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+		
+		try {
+			/* FIXME: Figure out whether we can use db4o to tell whether this commit() does something. If it does, then log an error, because then
+			 * probably we forgot a commit() somewhere. */
 			db.commit();
 			db.close();
 		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+
 		Logger.debug(this, "WoT plugin terminated.");
 	}
 
