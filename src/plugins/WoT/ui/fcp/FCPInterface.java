@@ -227,7 +227,7 @@ public final class FCPInterface {
 		String context = params.get("Context");
 		boolean getAll = context.equals("all");
 
-		for(int idx = 1 ; result.hasNext() ; idx++) {
+		for(int idx = 1 ; result.hasNext() ;) {
 			Score score = result.next();
 			// TODO: Maybe there is a way to do this through SODA
 			if(getAll || score.getTarget().hasContext(context)) {
@@ -236,7 +236,7 @@ public final class FCPInterface {
 				sfs.putAppend("Identity"+idx, id.getId());
 				sfs.putAppend("RequestURI"+idx, id.getRequestURI().toString());
 				sfs.putAppend("Nickname"+idx, id.getNickName());
-				
+				++idx;
 				/* FIXME: Allow the client to select what data he wants */
 			}
 		}
