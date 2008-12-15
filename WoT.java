@@ -37,6 +37,7 @@ import com.db4o.config.Configuration;
 import com.db4o.ext.DatabaseClosedException;
 import com.db4o.ext.Db4oIOException;
 import com.db4o.query.Query;
+import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
@@ -50,6 +51,7 @@ import freenet.pluginmanager.FredPluginHTTP;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
+import freenet.pluginmanager.FredPluginWithClassLoader;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
@@ -62,7 +64,8 @@ import freenet.support.io.TempBucketFactory;
 /**
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginL10n {
+public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginL10n,
+	FredPluginWithClassLoader {
 	
 	/* Constants */
 	
@@ -73,6 +76,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	/* References from the node */
 	
+	private ClassLoader mClassLoader;
 	private PluginRespirator pr;
 	private HighLevelSimpleClient client;
 	private TempBucketFactory tbf;
@@ -252,6 +256,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		// Set indexes on fields we query on
 		Configuration cfg = Db4o.newConfiguration();
+		cfg.reflectWith(new JdkReflector(mClassLoader));
+		
 		cfg.objectClass(Identity.class).objectField("id").indexed(true);
 		cfg.objectClass(OwnIdentity.class).objectField("id").indexed(true);
 		cfg.objectClass(Trust.class).objectField("truster").indexed(true);
@@ -580,6 +586,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return key;
 	}
 
+	public void setClassLoader(ClassLoader myClassLoader) {
+		mClassLoader = myClassLoader;
+	}
+	
 	public void setLanguage(LANGUAGE newLanguage) {
 	}
 	
