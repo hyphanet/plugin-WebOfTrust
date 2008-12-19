@@ -52,7 +52,7 @@ public final class IntroductionPuzzle {
 	
 	public static enum PuzzleType { Captcha };
 	
-	public static final String INTRODUCTION_CONTEXT = "introduction";
+	public static final String INTRODUCTION_CONTEXT = "introduction"; /* FIXME: Change to uppercase before release */
 	public static final int MINIMAL_SOLUTION_LENGTH = 5;
 	
 	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
