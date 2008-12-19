@@ -660,10 +660,10 @@ public class Identity {
 		if(newNickname != null) {
 			if(newNickname.length() == 0) throw new InvalidParameterException("Blank nickname");
 			if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long (50 chars max)");
-		}
-		
-		if(!isNicknameValid(newNickname)) {
-			throw new InvalidParameterException("Nickname contains illegal characters.");
+			
+			if(!isNicknameValid(newNickname)) {
+				throw new InvalidParameterException("Nickname contains illegal characters.");
+			}
 		}
 		
 		if(nickName != null && !nickName.equals(newNickname))
