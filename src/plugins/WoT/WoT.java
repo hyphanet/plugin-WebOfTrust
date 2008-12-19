@@ -257,6 +257,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		// Set indexes on fields we query on
 		Configuration cfg = Db4o.newConfiguration();
 		cfg.reflectWith(new JdkReflector(mClassLoader));
+		cfg.activationDepth(5);
 		cfg.exceptionsOnNotStorable(true);
 		
 		cfg.objectClass(Identity.class).objectField("id").indexed(true);
@@ -268,12 +269,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).persistStaticFieldValues();
 		
-		/* FIXME: the default is FALSE. how does WoT activate everything else? */
-		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).cascadeOnActivate(true);
-		
 		for(String field : IntroductionPuzzle.getIndexedFields())
 			cfg.objectClass(IntroductionPuzzle.class).objectField(field).indexed(true);
-		cfg.objectClass(IntroductionPuzzle.class).cascadeOnUpdate(true); /* FIXME: verify if this does not break anything */
 		
 		// This will make db4o store any complex objects which are referenced by a Config object.
 		cfg.objectClass(Config.class).cascadeOnUpdate(true);
