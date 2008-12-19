@@ -140,15 +140,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				Logger.error(this, "Deleting corrupted puzzle.");
 			}
 		}
-	
-		// Create a default OwnIdentity if none exists. Should speed up plugin usability for newbies
-		if(OwnIdentity.getNbOwnIdentities(db) == 0) {
-			try {
-				createIdentity("Anonymous", true, "Freetalk");
-			} catch (Exception e) {
-				Logger.error(this, "Error creating default identity : ", e);
-			}
-		}
 		
 		// Start the inserter thread
 		inserter = new IdentityInserter(db, client, pr.getNode().clientCore.tempBucketFactory);
@@ -158,6 +149,15 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		fetcher = new IdentityFetcher(db, client);
 		
 		fetcher.fetch(seed, false);
+		
+		// Create a default OwnIdentity if none exists. Should speed up plugin usability for newbies
+		if(OwnIdentity.getNbOwnIdentities(db) == 0) {
+			try {
+				createIdentity("Anonymous", true, "Freetalk");
+			} catch (Exception e) {
+				Logger.error(this, "Error creating default identity : ", e);
+			}
+		}
 		
 		/* FIXME: Debug code, remove before release */
 		try {
