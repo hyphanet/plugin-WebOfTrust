@@ -405,10 +405,8 @@ public final class IntroductionPuzzle {
 		if(existing != null && existing != this)
 			throw new IllegalArgumentException("Puzzle with ID " + mID + " already exists!");
 		
-		db.store(mID);
 		db.store(mType);
-		db.store(mData);
-		db.store(mDateOfInsertion);
+		// db.store(mDateOfInsertion); /* Not stored because it is a primitive for db4o */ 
 		db.store(this);
 		db.commit();
 	}
