@@ -38,6 +38,7 @@ import com.db4o.query.Query;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.Logger;
+import freenet.support.StringValidityChecker;
 
 /**
  * An identity as handled by the WoT (a USK). 
@@ -673,11 +674,7 @@ public class Identity {
 	}
 	
 	public synchronized boolean isNicknameValid(String newNickname) {
-		/* FIXME: Add more checks! */
-		if(newNickname.matches("[<> \r\n]"))
-			return false;
-		
-		return true;
+		return StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname);
 	}
 
 	/**
