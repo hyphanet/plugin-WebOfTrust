@@ -656,9 +656,13 @@ public class Identity {
 		if(newNickname != null)
 			newNickname = newNickname.trim();
 		
-		if(newNickname != null ) {
+		if(newNickname != null) {
 			if(newNickname.length() == 0) throw new InvalidParameterException("Blank nickname");
 			if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long (50 chars max)");
+		}
+		
+		if(!isNicknameValid(newNickname)) {
+			throw new InvalidParameterException("Nickname contains illegal characters.");
 		}
 		
 		if(nickName != null && !nickName.equals(newNickname))
@@ -666,6 +670,14 @@ public class Identity {
 	
 		nickName = newNickname;
 		updated();
+	}
+	
+	public synchronized boolean isNicknameValid(String newNickname) {
+		/* FIXME: Add more checks! */
+		if(newNickname.matches("[<> \r\n]"))
+			return false;
+		
+		return true;
 	}
 
 	/**
