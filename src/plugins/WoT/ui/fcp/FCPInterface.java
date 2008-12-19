@@ -235,7 +235,7 @@ public final class FCPInterface {
 				/* FIXME: Isn't append slower than replace? Figure this out */
 				sfs.putAppend("Identity"+idx, id.getId());
 				sfs.putAppend("RequestURI"+idx, id.getRequestURI().toString());
-				sfs.putAppend("Nickname"+idx, id.getNickName());
+				sfs.putAppend("Nickname"+idx, id.getNickName()!=null ? id.getNickName() : "");
 				++idx;
 				/* FIXME: Allow the client to select what data he wants */
 			}
