@@ -662,7 +662,10 @@ public class Identity {
 			if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long (50 chars max)");
 			
 			if(!isNicknameValid(newNickname)) {
-				throw new InvalidParameterException("Nickname contains illegal characters.");
+				/* FIXME: This is a hack which is needed because the nickname of the seed identity contains a space. Remove before release! */
+				newNickname = newNickname.replace(' ', '_');
+				if(!isNicknameValid(newNickname))
+					throw new InvalidParameterException("Nickname contains illegal characters.");
 			}
 		}
 		
