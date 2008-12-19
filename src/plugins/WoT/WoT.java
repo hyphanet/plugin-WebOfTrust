@@ -257,6 +257,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		// Set indexes on fields we query on
 		Configuration cfg = Db4o.newConfiguration();
 		cfg.reflectWith(new JdkReflector(mClassLoader));
+		cfg.exceptionsOnNotStorable(true);
 		
 		cfg.objectClass(Identity.class).objectField("id").indexed(true);
 		cfg.objectClass(OwnIdentity.class).objectField("id").indexed(true);
