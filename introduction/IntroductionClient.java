@@ -372,9 +372,10 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 	
 	private synchronized void insertPuzzleSolution(IntroductionPuzzle p) throws IOException, ParserConfigurationException, TransformerException, InsertException, InvalidParameterException {
 		Bucket tempB = mTBF.makeBucket(10 * 1024); /* TODO: set to a reasonable value */
-		OutputStream os = tempB.getOutputStream();
-
+		OutputStream os = null;
+		
 		try {
+			os = tempB.getOutputStream();
 			p.getSolver().exportIntroductionToXML(os);
 			os.close(); os = null;
 			tempB.setReadOnly();
