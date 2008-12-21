@@ -289,9 +289,10 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 	
 	private synchronized void insertPuzzle(OwnIdentity identity, IntroductionPuzzle p) throws IOException, InsertException, TransformerException, ParserConfigurationException {
 		Bucket tempB = mTBF.makeBucket(10 * 1024); /* TODO: set to a reasonable value */
-		OutputStream os = tempB.getOutputStream();
+		OutputStream os = null;
 		
 		try {
+			os = tempB.getOutputStream();
 			p.exportToXML(os);
 			os.close(); os = null;
 			tempB.setReadOnly();
