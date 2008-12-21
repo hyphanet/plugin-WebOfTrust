@@ -31,6 +31,7 @@ import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import freenet.client.FetchException;
 import freenet.client.InsertException;
+import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -40,7 +41,7 @@ import freenet.support.api.Bucket;
  * @author xor
  *
  */
-public final class FCPInterface {
+public final class FCPInterface implements FredPluginFCP {
 	
 	private final WoT mWoT;
 	private final ObjectContainer db;
