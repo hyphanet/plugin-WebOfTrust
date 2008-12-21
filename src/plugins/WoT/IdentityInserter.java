@@ -186,12 +186,13 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		/* FIXME: Where is the synchronization? */
 		/* TODO: after the WoT has become large enough, calculate the average size of identity.xml and either modify the constant or even calculate dynamically */
 		Bucket tempB = tBF.makeBucket(8 * 1024);  
-		OutputStream os = tempB.getOutputStream();
+		OutputStream os = null;
 
 		try {
 			if(identity.getEdition() == 0)
 				identity.setEdition(1);
 			
+			os = tempB.getOutputStream();
 			// Create XML file to insert
 			identity.exportToXML(db, os);
 		
