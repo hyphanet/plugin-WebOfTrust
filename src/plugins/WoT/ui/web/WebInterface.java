@@ -40,6 +40,7 @@ import freenet.client.InsertException;
 import freenet.clients.http.PageMaker;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.pluginmanager.FredPluginHTTP;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
@@ -52,7 +53,7 @@ import freenet.support.api.HTTPRequest;
  * @author Bombe
  *
  */
-public class WebInterface {
+public class WebInterface implements FredPluginHTTP {
 	
 	private WoT mWoT;
 	private PluginRespirator pr;
