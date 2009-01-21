@@ -5,7 +5,6 @@
  */
 package plugins.WoT.test;
 
-import java.io.File;
 import java.net.MalformedURLException;
 
 import plugins.WoT.Identity;
@@ -14,39 +13,25 @@ import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 
 import com.db4o.Db4o;
-import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
-
-import junit.framework.TestCase;
 
 /**
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class IdentityTest extends TestCase {
+public class IdentityTest extends TestWithDatabase {
 	
 	private String uri = "USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/WoT/0";
 	private Identity identity;
-	private ObjectContainer db;
-	
-	public IdentityTest(String name) {
-		super(name);
-	}
-	
+
+
 	protected void setUp() throws Exception {
 		super.setUp();
-		
-		db = Db4o.openFile("identityTest.db4o");
 		
 		identity = new Identity(uri, "test", true);
 		identity.addContext("bleh", db);
 		
 		db.store(identity);
 		db.commit();
-	}
-
-	protected void tearDown() throws Exception {
-		db.close();
-		new File("identityTest.db4o").delete();
 	}
 	
 	public void testIdentityStored() {
