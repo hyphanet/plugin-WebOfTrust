@@ -58,7 +58,7 @@ public class ScoreTest extends TestWithDatabase {
 		System.gc();
 		System.runFinalization();
 		
-		db = Db4o.openFile("scoreTest.db4o");
+		db = Db4o.openFile(getDatabaseFilename());
 		
 		a = OwnIdentity.getByURI(db, uriA);
 		b = Identity.getByURI(db, uriB);

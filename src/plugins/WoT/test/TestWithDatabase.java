@@ -32,7 +32,7 @@ public abstract class TestWithDatabase extends TestCase {
 	/**
 	 * @return Returns the filename of the database. This is the name of the current test function plus ".db4o".
 	 */
-	private String getDatabaseFilename() {
+	public String getDatabaseFilename() {
 		return getName() + ".db4o";
 	}
 
