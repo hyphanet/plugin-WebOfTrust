@@ -109,7 +109,7 @@ public class IdentityFetcher implements ClientCallback {
 		if(uri.getAllMetaStrings().length == 0)
 			uri.pushMetaString("identity.xml"); 
 		ClientGetter g = client.fetch(uri, -1, this, this, fetchContext);
-		// g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
+		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* PluginManager defaults to interactive priority */
 		synchronized(requests) {
 			requests.add(g);
 		}
