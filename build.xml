@@ -2,10 +2,10 @@
 <!-- ant build file for WoT -->
 
 <project name="WoT" default="dist" basedir=".">
-	<property name="freenet-cvs-snapshot.location" location="../../../lib/freenet-cvs-snapshot.jar"/>
-	<property name="freenet-ext.location" location="../../../lib/freenet-ext.jar"/>
+	<property name="lib" location="../../../lib"/>
+	<property name="freenet-cvs-snapshot.location" location="${lib}/freenet-cvs-snapshot.jar"/>
+	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
 	<property name="junit.location" value="/usr/share/java/junit.jar"/>
-	<property name="db4o.location" location="/home/julien/db4o-7.2/lib/db4o-7.2.39.10644-java5.jar"/>
 	<property name="source-version" value="1.5"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test"/>
@@ -25,10 +25,9 @@
 			<classpath>
 				<pathelement location="${freenet-ext.location}"/>
 				<pathelement location="${freenet-cvs-snapshot.location}"/>
-				<pathelement location="${db4o.location}"/>
 			</classpath>
 			<include name="**/*.java"/>
-			<exclude name="**/*Test.java"/>
+			<exclude name="**/test/*.java"/>
 		</javac>
 	</target>
 	
@@ -43,11 +42,10 @@
 				<pathelement path="${build}"/>
 				<pathelement location="${freenet-ext.location}"/>
 				<pathelement location="${freenet-cvs-snapshot.location}"/>
-				<pathelement location="${db4o.location}"/>
 				<pathelement location="${junit.location}"/>
 			</classpath>
 			<compilerarg value="-Xlint"/>
-			<include name="**/*Test.java"/>
+			<include name="**/test/*.java"/>
 			<exclude name="*.java"/>
 		</javac>
 	</target>
@@ -61,14 +59,13 @@
 				<pathelement location="${junit.location}"/>
 				<pathelement location="${freenet-ext.location}"/>
 				<pathelement location="${freenet-cvs-snapshot.location}"/>
-				<pathelement location="${db4o.location}"/>
 			</classpath>
 
 			<formatter type="plain" usefile="false"/>
 
 			<batchtest fork="yes">
 				<fileset dir="${build-test}">
-					<include name="**/*Test.class"/>
+					<include name="**/test/*Test.class"/>
 				</fileset>
 			</batchtest>
 			<sysproperty key="benchmark" value="${benchmark}" />
