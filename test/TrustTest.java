@@ -56,7 +56,7 @@ public class TrustTest extends TestWithDatabase {
 		System.gc();
 		System.runFinalization();
 		
-		db = Db4o.openFile("trustTest.db4o");
+		db = Db4o.openFile(getDatabaseFilename());
 		
 		a = Identity.getByURI(db, uriA);
 		b = Identity.getByURI(db, uriB);

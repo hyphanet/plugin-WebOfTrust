@@ -23,7 +23,6 @@ public class IdentityTest extends TestWithDatabase {
 	private String uri = "USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/WoT/0";
 	private Identity identity;
 
-
 	protected void setUp() throws Exception {
 		super.setUp();
 		
@@ -80,9 +79,9 @@ public class IdentityTest extends TestWithDatabase {
 		System.gc();
 		System.runFinalization();
 		
-		db = Db4o.openFile("identityTest.db4o");
+		db = Db4o.openFile(getDatabaseFilename());
 		
-		assertEquals(Identity.getNbIdentities(db), 1);
+		assertEquals(1, Identity.getNbIdentities(db));
 		try {
 			Identity.getByURI(db, uri);
 		} catch (UnknownIdentityException e) {
