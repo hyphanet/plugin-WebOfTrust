@@ -20,7 +20,7 @@ import com.db4o.Db4o;
 /**
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class ScoreTest extends TestWithDatabase {
+public class ScoreTest extends DatabaseBasedTest {
 	
 	private String uriA = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0";
 	private String uriB = "USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WoT/0";
