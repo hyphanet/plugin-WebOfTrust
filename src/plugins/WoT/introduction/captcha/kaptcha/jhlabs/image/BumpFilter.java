@@ -33,6 +33,7 @@ public class BumpFilter extends ConvolveFilter {
 		super(embossMatrix);
 	}
 
+	@Override
 	public String toString() {
 		return "Blur/Emboss Edges";
 	}

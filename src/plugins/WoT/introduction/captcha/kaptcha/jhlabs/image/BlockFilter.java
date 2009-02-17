@@ -50,11 +50,13 @@ public class BlockFilter extends TransformFilter {
 	public BlockFilter() {
 	}
 
+	@Override
 	protected void transformInverse(int x, int y, float[] out) {
 		out[0] = (x / blockSize) * blockSize;
 		out[1] = (y / blockSize) * blockSize;
 	}
 
+	@Override
 	public String toString() {
 		return "Stylize/Mosaic...";
 	}

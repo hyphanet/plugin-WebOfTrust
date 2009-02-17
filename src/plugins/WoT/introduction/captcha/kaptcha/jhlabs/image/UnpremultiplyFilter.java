@@ -28,6 +28,7 @@ public class UnpremultiplyFilter extends PointFilter {
 	public UnpremultiplyFilter() {
 	}
 
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		int a = (rgb >> 24) & 0xff;
 		int r = (rgb >> 16) & 0xff;
@@ -49,6 +50,7 @@ public class UnpremultiplyFilter extends PointFilter {
 		return (a << 24) | (r << 16) | (g << 8) | b;
 	}
 
+	@Override
 	public String toString() {
 		return "Alpha/Unpremultiply";
 	}

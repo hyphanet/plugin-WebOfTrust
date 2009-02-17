@@ -110,6 +110,7 @@ public class InterpolateFilter extends AbstractBufferedImageOp {
         return dst;
     }
 
+	@Override
 	public String toString() {
 		return "Effects/Interpolate...";
 	}

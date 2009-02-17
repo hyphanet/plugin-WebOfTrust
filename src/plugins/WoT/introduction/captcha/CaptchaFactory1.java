@@ -33,6 +33,7 @@ import plugins.WoT.introduction.captcha.kaptcha.util.Config;
  */
 public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 
+	@Override
 	public IntroductionPuzzle generatePuzzle(ObjectContainer db, OwnIdentity inserter) throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1024); /* TODO: find out the maximum size of the captchas and put it here */
 		try {

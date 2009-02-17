@@ -79,6 +79,7 @@ public class ChannelMixFilter extends PointFilter {
 		return intoB;
 	}
 
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		int a = rgb & 0xff000000;
 		int r = (rgb >> 16) & 0xff;
@@ -90,6 +91,7 @@ public class ChannelMixFilter extends PointFilter {
 		return a | (nr << 16) | (ng << 8) | nb;
 	}
 
+	@Override
 	public String toString() {
 		return "Colors/Mix Channels...";
 	}

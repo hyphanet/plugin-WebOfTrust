@@ -28,10 +28,12 @@ public class InvertAlphaFilter extends PointFilter {
 		canFilterIndexColorModel = true;
 	}
 
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		return rgb ^ 0xff000000;
 	}
 
+	@Override
 	public String toString() {
 		return "Alpha/Invert";
 	}

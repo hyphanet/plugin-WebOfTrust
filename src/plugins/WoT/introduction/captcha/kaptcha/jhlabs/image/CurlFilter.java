@@ -123,7 +123,8 @@ public class CurlFilter extends TransformFilter {
 		}
 	}
 	
-    public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
+    @Override
+	public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
         int width = src.getWidth();
         int height = src.getHeight();
 		this.width = src.getWidth();
@@ -216,6 +217,7 @@ public class CurlFilter extends TransformFilter {
 		return pixels[ y*width+x ];
 	}
 
+	@Override
 	protected void transformInverse(int x, int y, float[] out) {
 /*Fisheye
 		float mirrorDistance = width*centreX;
@@ -285,6 +287,7 @@ public class CurlFilter extends TransformFilter {
 		out[3] = !offpage && oncurl ? 1 : 0;
 	}
 
+	@Override
 	public String toString() {
 		return "Distort/Curl...";
 	}

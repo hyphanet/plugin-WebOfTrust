@@ -72,6 +72,7 @@ public class Trust {
 		return elem;
 	}
 	
+	@Override
 	public synchronized String toString() {
 		return getTruster().getNickName() + " trusts " + getTrustee().getNickName() + " (" + getValue() + " : " + getComment() + ")";
 	}

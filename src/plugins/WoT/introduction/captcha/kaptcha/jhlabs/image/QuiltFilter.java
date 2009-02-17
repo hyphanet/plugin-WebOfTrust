@@ -124,6 +124,7 @@ public class QuiltFilter extends WholeImageFilter {
 		return colormap;
 	}
 	
+	@Override
 	protected int[] filterPixels( int width, int height, int[] inPixels, Rectangle transformedSpace ) {
 		int[] outPixels = new int[width * height];
 
@@ -182,6 +183,7 @@ public class QuiltFilter extends WholeImageFilter {
 		return outPixels;
 	}
 
+	@Override
 	public String toString() {
 		return "Texture/Chaotic Quilt...";
 	}

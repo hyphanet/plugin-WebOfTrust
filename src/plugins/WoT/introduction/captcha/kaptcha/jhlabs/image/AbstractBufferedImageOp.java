@@ -84,6 +84,7 @@ public abstract class AbstractBufferedImageOp implements BufferedImageOp, Clonea
 			image.setRGB( x, y, width, height, pixels, 0, width );
     }
 
+	@Override
 	public Object clone() {
 		try {
 			return super.clone();

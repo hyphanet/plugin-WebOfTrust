@@ -290,6 +290,7 @@ public class BrushedMetalFilter implements BufferedImageOp {
 			image.setRGB( x, y, width, height, pixels, 0, width );
     }
 
+	@Override
 	public String toString() {
 		return "Texture/Brushed Metal...";
 	}

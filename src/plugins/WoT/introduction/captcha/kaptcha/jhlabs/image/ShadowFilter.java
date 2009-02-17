@@ -180,7 +180,8 @@ public class ShadowFilter extends AbstractBufferedImageOp {
 		return shadowOnly;
 	}
 
-    public Rectangle2D getBounds2D( BufferedImage src ) {
+    @Override
+	public Rectangle2D getBounds2D( BufferedImage src ) {
         Rectangle r = new Rectangle(0, 0, src.getWidth(), src.getHeight());
 		if ( addMargins ) {
 			float xOffset = distance*(float)Math.cos(angle);
@@ -191,7 +192,8 @@ public class ShadowFilter extends AbstractBufferedImageOp {
         return r;
     }
     
-    public Point2D getPoint2D( Point2D srcPt, Point2D dstPt ) {
+    @Override
+	public Point2D getPoint2D( Point2D srcPt, Point2D dstPt ) {
         if ( dstPt == null )
             dstPt = new Point2D.Double();
 
@@ -255,6 +257,7 @@ public class ShadowFilter extends AbstractBufferedImageOp {
         return dst;
 	}
 
+	@Override
 	public String toString() {
 		return "Stylize/Drop Shadow...";
 	}

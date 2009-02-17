@@ -135,7 +135,8 @@ public class TwirlFilter extends TransformFilter {
 		return radius;
 	}
 
-    public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
+    @Override
+	public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
 		icentreX = src.getWidth() * centreX;
 		icentreY = src.getHeight() * centreY;
 		if ( radius == 0 )
@@ -144,6 +145,7 @@ public class TwirlFilter extends TransformFilter {
 		return super.filter( src, dst );
 	}
 	
+	@Override
 	protected void transformInverse(int x, int y, float[] out) {
 		float dx = x-icentreX;
 		float dy = y-icentreY;
@@ -159,6 +161,7 @@ public class TwirlFilter extends TransformFilter {
 		}
 	}
 
+	@Override
 	public String toString() {
 		return "Distort/Twirl...";
 	}

@@ -87,12 +87,14 @@ public class FourColorFilter extends PointFilter {
 		return colorSE;
 	}
 
+	@Override
 	public void setDimensions(int width, int height) {
 		this.width = width;
 		this.height = height;
 		super.setDimensions(width, height);
 	}
 
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		float fx = (float)x / width;
 		float fy = (float)y / height;
@@ -113,6 +115,7 @@ public class FourColorFilter extends PointFilter {
 		return 0xff000000 | (r << 16) | (g << 8) | b;
 	}
 	
+	@Override
 	public String toString() {
 		return "Texture/Four Color Fill...";
 	}

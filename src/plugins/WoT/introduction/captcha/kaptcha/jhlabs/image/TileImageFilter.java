@@ -102,6 +102,7 @@ public class TileImageFilter extends AbstractBufferedImageOp {
         return dst;
     }
 
+	@Override
 	public String toString() {
 		return "Tile";
 	}

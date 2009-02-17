@@ -74,24 +74,28 @@ public class VariableBlurFilter extends AbstractBufferedImageOp {
         return dst;
     }
 
-    public BufferedImage createCompatibleDestImage(BufferedImage src, ColorModel dstCM) {
+    @Override
+	public BufferedImage createCompatibleDestImage(BufferedImage src, ColorModel dstCM) {
         if ( dstCM == null )
             dstCM = src.getColorModel();
         return new BufferedImage(dstCM, dstCM.createCompatibleWritableRaster(src.getWidth(), src.getHeight()), dstCM.isAlphaPremultiplied(), null);
     }
     
-    public Rectangle2D getBounds2D( BufferedImage src ) {
+    @Override
+	public Rectangle2D getBounds2D( BufferedImage src ) {
         return new Rectangle(0, 0, src.getWidth(), src.getHeight());
     }
     
-    public Point2D getPoint2D( Point2D srcPt, Point2D dstPt ) {
+    @Override
+	public Point2D getPoint2D( Point2D srcPt, Point2D dstPt ) {
         if ( dstPt == null )
             dstPt = new Point2D.Double();
         dstPt.setLocation( srcPt.getX(), srcPt.getY() );
         return dstPt;
     }
 
-    public RenderingHints getRenderingHints() {
+    @Override
+	public RenderingHints getRenderingHints() {
         return null;
     }
 
@@ -283,6 +287,7 @@ public class VariableBlurFilter extends AbstractBufferedImageOp {
 		return blurMask;
 	}
 	
+	@Override
 	public String toString() {
 		return "Blur/Variable Blur...";
 	}

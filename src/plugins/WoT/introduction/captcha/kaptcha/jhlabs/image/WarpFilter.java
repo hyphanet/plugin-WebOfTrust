@@ -115,10 +115,12 @@ public class WarpFilter extends WholeImageFilter {
 		return time;
 	}
 
+	@Override
 	protected void transformSpace(Rectangle r) {
 		r.width *= frames;
 	}
 
+	@Override
 	protected int[] filterPixels( int width, int height, int[] inPixels, Rectangle transformedSpace ) {
 		int[] outPixels = new int[width * height];
 		
@@ -157,6 +159,7 @@ public class WarpFilter extends WholeImageFilter {
 		}
 	}
 	
+	@Override
 	public String toString() {
 		return "Distort/Mesh Warp...";
 	}

@@ -111,6 +111,7 @@ public class PerspectiveFilter extends TransformFilter {
 	    I = a11*a22 - a21*a12;
 	}
 
+	@Override
 	protected void transformSpace(Rectangle rect) {
 		rect.x = (int)Math.min( Math.min( x0, x1 ), Math.min( x2, x3 ) );
 		rect.y = (int)Math.min( Math.min( y0, y1 ), Math.min( y2, y3 ) );
@@ -176,11 +177,13 @@ public class PerspectiveFilter extends TransformFilter {
     }
 */
 
+	@Override
 	protected void transformInverse(int x, int y, float[] out) {
 		out[0] = originalSpace.width * (A*x+B*y+C)/(G*x+H*y+I);
 		out[1] = originalSpace.height * (D*x+E*y+F)/(G*x+H*y+I);
 	}
 
+	@Override
 	public String toString() {
 		return "Distort/Perspective...";
 	}

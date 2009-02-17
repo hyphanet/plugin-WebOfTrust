@@ -59,6 +59,7 @@ public class HSBAdjustFilter extends PointFilter {
 		return bFactor;
 	}
 	
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		int a = rgb & 0xff000000;
 		int r = (rgb >> 16) & 0xff;
@@ -82,6 +83,7 @@ public class HSBAdjustFilter extends PointFilter {
 		return a | (rgb & 0xffffff);
 	}
 
+	@Override
 	public String toString() {
 		return "Colors/Adjust HSB...";
 	}

@@ -23,6 +23,7 @@ public class IdentityTest extends DatabaseBasedTest {
 	private String uri = "USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/WoT/0";
 	private Identity identity;
 
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		

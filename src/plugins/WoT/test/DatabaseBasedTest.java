@@ -39,6 +39,7 @@ public class DatabaseBasedTest extends TestCase {
 	/**
 	 * You have to call super.setUp() if you override this method.
 	 */
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		
@@ -53,6 +54,7 @@ public class DatabaseBasedTest extends TestCase {
 	/**
 	 * You have to call super.tearDown() if you override this method. 
 	 */
+	@Override
 	protected void tearDown() throws Exception {
 		super.tearDown();
 		

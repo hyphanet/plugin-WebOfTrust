@@ -44,10 +44,12 @@ public class MaskFilter extends PointFilter {
 		return mask;
 	}
 
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		return rgb & mask;
 	}
 
+	@Override
 	public String toString() {
 		return "Mask";
 	}

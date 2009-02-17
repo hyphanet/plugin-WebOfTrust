@@ -66,6 +66,7 @@ public class OilFilter extends WholeImageFilter {
 		return levels;
 	}
 	
+	@Override
 	protected int[] filterPixels( int width, int height, int[] inPixels, Rectangle transformedSpace ) {
 		int index = 0;
 		int[] rHistogram = new int[levels];
@@ -125,6 +126,7 @@ public class OilFilter extends WholeImageFilter {
 		return outPixels;
 	}
 
+	@Override
 	public String toString() {
 		return "Stylize/Oil...";
 	}

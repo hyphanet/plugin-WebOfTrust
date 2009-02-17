@@ -143,6 +143,7 @@ public class ApplyMaskFilter extends AbstractBufferedImageOp {
         return dst;
     }
 
+	@Override
 	public String toString() {
 		return "Keying/Key...";
 	}

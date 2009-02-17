@@ -27,6 +27,7 @@ public class MinimumFilter extends WholeImageFilter {
 	public MinimumFilter() {
 	}
 	
+	@Override
 	protected int[] filterPixels( int width, int height, int[] inPixels, Rectangle transformedSpace ) {
 		int index = 0;
 		int[] outPixels = new int[width * height];
@@ -53,6 +54,7 @@ public class MinimumFilter extends WholeImageFilter {
 		return outPixels;
 	}
 
+	@Override
 	public String toString() {
 		return "Blur/Minimum";
 	}

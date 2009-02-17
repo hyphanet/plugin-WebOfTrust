@@ -60,6 +60,7 @@ public class LookupFilter extends PointFilter {
 		return colormap;
 	}
 
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 //		int a = rgb & 0xff000000;
 		int r = (rgb >> 16) & 0xff;
@@ -69,6 +70,7 @@ public class LookupFilter extends PointFilter {
 		return colormap.getColor(rgb/255.0f);
 	}
 
+	@Override
 	public String toString() {
 		return "Colors/Lookup...";
 	}

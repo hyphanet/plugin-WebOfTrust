@@ -61,6 +61,7 @@ public class ScaleFilter extends AbstractBufferedImageOp {
         return dst;
     }
 
+	@Override
 	public String toString() {
 		return "Distort/Scale";
 	}

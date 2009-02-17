@@ -134,6 +134,7 @@ public class CurvesFilter extends TransferFilter {
         curves[2] = new Curve();
     }
     
+	@Override
 	protected void initialize() {
 		initialized = true;
 		if ( curves.length == 1 )
@@ -161,6 +162,7 @@ public class CurvesFilter extends TransferFilter {
 		return curves;
 	}
 
+	@Override
 	public String toString() {
 		return "Colors/Curves...";
 	}

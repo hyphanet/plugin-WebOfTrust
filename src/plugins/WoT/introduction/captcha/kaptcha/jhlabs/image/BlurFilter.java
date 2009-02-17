@@ -36,6 +36,7 @@ public class BlurFilter extends ConvolveFilter {
 		super( blurMatrix );
 	}
 
+	@Override
 	public String toString() {
 		return "Blur/Simple Blur";
 	}

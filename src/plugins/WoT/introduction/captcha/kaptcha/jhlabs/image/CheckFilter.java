@@ -153,6 +153,7 @@ public class CheckFilter extends PointFilter {
 		return angle;
 	}
 
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		float nx = (m00*x + m01*y) / xScale;
 		float ny = (m10*x + m11*y) / yScale;
@@ -166,6 +167,7 @@ public class CheckFilter extends PointFilter {
 		return ImageMath.mixColors(f, foreground, background);
 	}
 
+	@Override
 	public String toString() {
 		return "Texture/Checkerboard...";
 	}

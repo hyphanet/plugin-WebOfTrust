@@ -28,6 +28,7 @@ public class GrayscaleFilter extends PointFilter {
 		canFilterIndexColorModel = true;
 	}
 
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		int a = rgb & 0xff000000;
 		int r = (rgb >> 16) & 0xff;
@@ -38,6 +39,7 @@ public class GrayscaleFilter extends PointFilter {
 		return a | (rgb << 16) | (rgb << 8) | rgb;
 	}
 
+	@Override
 	public String toString() {
 		return "Colors/Grayscale";
 	}

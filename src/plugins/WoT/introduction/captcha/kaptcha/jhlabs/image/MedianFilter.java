@@ -67,6 +67,7 @@ public class MedianFilter extends WholeImageFilter {
 		return index;
 	}
 
+	@Override
 	protected int[] filterPixels( int width, int height, int[] inPixels, Rectangle transformedSpace ) {
 		int index = 0;
 		int[] argb = new int[9];
@@ -106,6 +107,7 @@ public class MedianFilter extends WholeImageFilter {
 		return outPixels;
 	}
 
+	@Override
 	public String toString() {
 		return "Blur/Median";
 	}

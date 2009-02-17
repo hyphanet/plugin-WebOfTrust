@@ -48,6 +48,7 @@ public class ErodeFilter extends BinaryFilter {
 		return threshold;
 	}
 	
+	@Override
 	protected int[] filterPixels( int width, int height, int[] inPixels, Rectangle transformedSpace ) {
 		int[] outPixels = new int[width * height];
 
@@ -96,6 +97,7 @@ public class ErodeFilter extends BinaryFilter {
 		return outPixels;
 	}
 
+	@Override
 	public String toString() {
 		return "Binary/Erode...";
 	}

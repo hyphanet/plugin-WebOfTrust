@@ -65,6 +65,7 @@ public class LevelsFilter extends WholeImageFilter {
         return highOutputLevel;
     }
     
+	@Override
 	protected int[] filterPixels( int width, int height, int[] inPixels, Rectangle transformedSpace ) {
 		Histogram histogram = new Histogram(inPixels, width, height, 0, width);
 
@@ -108,6 +109,7 @@ public class LevelsFilter extends WholeImageFilter {
 		return rgb;
 	}
 
+	@Override
 	public String toString() {
 		return "Colors/Levels...";
 	}

@@ -120,6 +120,7 @@ public class ThresholdFilter extends PointFilter {
 		return black;
 	}
 
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		int a = rgb & 0xff000000;
 		int r = (rgb >> 16) & 0xff;
@@ -133,6 +134,7 @@ public class ThresholdFilter extends PointFilter {
 		return rgb;
 	}
 
+	@Override
 	public String toString() {
 		return "Stylize/Threshold...";
 	}
