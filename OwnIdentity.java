@@ -304,6 +304,7 @@ public class OwnIdentity extends Identity {
 		this.insertURI = key;
 	}
 	
+	@Override
 	public synchronized void setEdition(long edition) throws InvalidParameterException {
 		setInsertURI(getInsertURI().setSuggestedEdition(edition));
 		setRequestURI(getRequestURI().setSuggestedEdition(edition));

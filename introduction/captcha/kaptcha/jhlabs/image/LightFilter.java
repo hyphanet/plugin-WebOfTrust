@@ -203,6 +203,7 @@ public class LightFilter extends WholeImageFilter {
 		c.set( ((argb >> 16) & 0xff) * r255, ((argb >> 8) & 0xff) * r255, (argb & 0xff) * r255, ((argb >> 24) & 0xff) * r255 );
 	}
 	
+	@Override
 	protected int[] filterPixels( int width, int height, int[] inPixels, Rectangle transformedSpace ) {
 		int index = 0;
 		int[] outPixels = new int[width * height];
@@ -508,6 +509,7 @@ if ( bumpShape != 0 ) {
 		return 0;
 	}
 	
+	@Override
 	public String toString() {
 		return "Stylize/Light Effects...";
 	}
@@ -703,6 +705,7 @@ if ( bumpShape != 0 ) {
 			cosConeAngle = (float)Math.cos(coneAngle);
 		}
 		
+		@Override
 		public Object clone() {
 			try {
 				Light copy = (Light)super.clone();
@@ -713,6 +716,7 @@ if ( bumpShape != 0 ) {
 			}
 		}
 
+		@Override
 		public String toString() {
 			return "Light";
 		}
@@ -720,6 +724,7 @@ if ( bumpShape != 0 ) {
 	}
 
 	public class AmbientLight extends Light {
+		@Override
 		public String toString() {
 			return "Ambient Light";
 		}
@@ -730,6 +735,7 @@ if ( bumpShape != 0 ) {
 			type = POINT;
 		}
 
+		@Override
 		public String toString() {
 			return "Point Light";
 		}
@@ -740,6 +746,7 @@ if ( bumpShape != 0 ) {
 			type = DISTANT;
 		}
 
+		@Override
 		public String toString() {
 			return "Distant Light";
 		}
@@ -750,6 +757,7 @@ if ( bumpShape != 0 ) {
 			type = SPOT;
 		}
 
+		@Override
 		public String toString() {
 			return "Spotlight";
 		}

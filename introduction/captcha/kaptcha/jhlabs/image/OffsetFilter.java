@@ -60,6 +60,7 @@ public class OffsetFilter extends TransformFilter {
 		return wrap;
 	}
 	
+	@Override
 	protected void transformInverse(int x, int y, float[] out) {
 		if ( wrap ) {
 			out[0] = (x+width-xOffset) % width;
@@ -70,7 +71,8 @@ public class OffsetFilter extends TransformFilter {
 		}
 	}
 
-    public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
+    @Override
+	public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
 		this.width = src.getWidth();
 		this.height = src.getHeight();
 		if ( wrap ) {
@@ -84,6 +86,7 @@ public class OffsetFilter extends TransformFilter {
 		return super.filter( src, dst );
 	}
 
+	@Override
 	public String toString() {
 		return "Distort/Offset...";
 	}

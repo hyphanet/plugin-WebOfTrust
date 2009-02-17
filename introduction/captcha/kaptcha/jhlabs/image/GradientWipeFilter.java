@@ -121,6 +121,7 @@ public class GradientWipeFilter extends AbstractBufferedImageOp {
         return dst;
     }
 
+	@Override
 	public String toString() {
 		return "Transitions/Gradient Wipe...";
 	}

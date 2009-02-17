@@ -28,6 +28,7 @@ public abstract class TransferFilter extends PointFilter {
 		canFilterIndexColorModel = true;
 	}
 
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		int a = rgb & 0xff000000;
 		int r = (rgb >> 16) & 0xff;
@@ -39,6 +40,7 @@ public abstract class TransferFilter extends PointFilter {
 		return a | (r << 16) | (g << 8) | b;
 	}
 
+	@Override
 	public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
 		if (!initialized)
 			initialize();

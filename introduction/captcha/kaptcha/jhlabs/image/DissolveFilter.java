@@ -72,7 +72,8 @@ public class DissolveFilter extends PointFilter {
 		return softness;
 	}
 	
-    public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
+    @Override
+	public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
 		float d = (1-density) * (1+softness);
 		minDensity = d-softness;
 		maxDensity = d;
@@ -80,6 +81,7 @@ public class DissolveFilter extends PointFilter {
 		return super.filter( src, dst );
 	}
 	
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		int a = (rgb >> 24) & 0xff;
 		float v = randomNumbers.nextFloat();
@@ -87,6 +89,7 @@ public class DissolveFilter extends PointFilter {
 		return ((int)(a * f) << 24) | rgb & 0x00ffffff;
 	}
 
+	@Override
 	public String toString() {
 		return "Stylize/Dissolve...";
 	}

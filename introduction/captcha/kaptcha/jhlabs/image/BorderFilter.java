@@ -168,6 +168,7 @@ public class BorderFilter extends AbstractBufferedImageOp {
 		return dst;
 	}
 
+	@Override
 	public String toString() {
 		return "Distort/Border...";
 	}

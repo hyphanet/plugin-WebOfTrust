@@ -128,6 +128,7 @@ public class MirrorFilter extends AbstractBufferedImageOp {
         return dst;
     }
     
+	@Override
 	public String toString() {
 		return "Effects/Mirror...";
 	}

@@ -28,6 +28,7 @@ public class ScoreTest extends DatabaseBasedTest {
 	private Identity b;
 
 
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		

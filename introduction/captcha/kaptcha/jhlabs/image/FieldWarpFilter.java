@@ -110,6 +110,7 @@ public class FieldWarpFilter extends TransformFilter {
 	protected void transform(int x, int y, Point out) {
 	}
 
+	@Override
 	protected void transformInverse(int x, int y, float[] out) {
 		float u = 0, v = 0;
 		float fraction = 0;
@@ -159,7 +160,8 @@ public class FieldWarpFilter extends TransformFilter {
 		out[1] = y + sumY / totalWeight + 0.5f;
 	}
 
-    public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
+    @Override
+	public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
 		this.width = width;
 		this.height = height;
 		if ( inLines != null && outLines != null ) {
@@ -181,6 +183,7 @@ public class FieldWarpFilter extends TransformFilter {
 		return src;
 	}
 
+	@Override
 	public String toString() {
 		return "Distort/Field Warp...";
 	}

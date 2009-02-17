@@ -98,6 +98,7 @@ public class SparkleFilter extends PointFilter {
 		return radius;
 	}
 
+	@Override
 	public void setDimensions(int width, int height) {
 		this.width = width;
 		this.height = height;
@@ -110,6 +111,7 @@ public class SparkleFilter extends PointFilter {
 			rayLengths[i] = radius + randomness / 100.0f * radius * (float)randomNumbers.nextGaussian();
 	}
 	
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		float dx = x-centreX;
 		float dy = y-centreY;
@@ -132,6 +134,7 @@ public class SparkleFilter extends PointFilter {
 		return ImageMath.mixColors(f, rgb, color);
 	}
 
+	@Override
 	public String toString() {
 		return "Stylize/Sparkle...";
 	}

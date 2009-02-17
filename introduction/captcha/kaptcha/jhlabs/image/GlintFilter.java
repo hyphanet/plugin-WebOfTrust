@@ -259,6 +259,7 @@ public class GlintFilter extends AbstractBufferedImageOp {
         return dst;
     }
     
+	@Override
 	public String toString() {
 		return "Effects/Glint...";
 	}

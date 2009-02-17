@@ -32,6 +32,7 @@ public class AverageFilter extends ConvolveFilter {
 		super( theMatrix );
 	}
 
+	@Override
 	public String toString() {
 		return "Blur/Average Blur";
 	}

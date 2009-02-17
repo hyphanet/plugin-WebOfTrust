@@ -104,6 +104,7 @@ public class IdentityParser {
 		/**
 		 * Called by SAXParser for each XML element.
 		 */
+		@Override
 		public void startElement(String nameSpaceURI, String localName, String rawName, Attributes attrs) throws SAXException {
 			
 			String elt_name;

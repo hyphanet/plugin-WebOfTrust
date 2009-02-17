@@ -143,6 +143,7 @@ public class ShineFilter extends AbstractBufferedImageOp {
         return dst;
 	}
 
+	@Override
 	public String toString() {
 		return "Stylize/Shine...";
 	}

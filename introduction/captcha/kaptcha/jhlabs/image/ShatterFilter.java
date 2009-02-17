@@ -227,6 +227,7 @@ y = tile.y + transition * tile.vy;
         return dst;
     }
     
+	@Override
 	public String toString() {
 		return "Transition/Shatter...";
 	}

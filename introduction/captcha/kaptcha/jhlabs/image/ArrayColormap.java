@@ -41,6 +41,7 @@ public class ArrayColormap implements Colormap, Cloneable {
 		this.map = map;
 	}
 
+	@Override
 	public Object clone() {
 		try {
 			ArrayColormap g = (ArrayColormap)super.clone();

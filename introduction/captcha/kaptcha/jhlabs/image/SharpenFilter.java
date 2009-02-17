@@ -33,6 +33,7 @@ public class SharpenFilter extends ConvolveFilter {
 		super(sharpenMatrix);
 	}
 
+	@Override
 	public String toString() {
 		return "Blur/Sharpen";
 	}

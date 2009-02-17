@@ -173,7 +173,8 @@ public class WaterFilter extends TransformFilter {
 		return a <= v && v <= b;
 	}
 	
-    public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
+    @Override
+	public BufferedImage filter( BufferedImage src, BufferedImage dst ) {
 		icentreX = src.getWidth() * centreX;
 		icentreY = src.getHeight() * centreY;
 		if ( radius == 0 )
@@ -182,6 +183,7 @@ public class WaterFilter extends TransformFilter {
 		return super.filter( src, dst );
 	}
 	
+	@Override
 	protected void transformInverse(int x, int y, float[] out) {
 		float dx = x-icentreX;
 		float dy = y-icentreY;
@@ -200,6 +202,7 @@ public class WaterFilter extends TransformFilter {
 		}
 	}
 
+	@Override
 	public String toString() {
 		return "Distort/Water Ripples...";
 	}

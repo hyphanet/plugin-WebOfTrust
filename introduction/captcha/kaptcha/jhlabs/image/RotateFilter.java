@@ -74,6 +74,7 @@ public class RotateFilter extends TransformFilter {
 		return angle;
 	}
 
+	@Override
 	protected void transformSpace(Rectangle rect) {
 		if (resize) {
 			Point out = new Point(0, 0);
@@ -111,11 +112,13 @@ public class RotateFilter extends TransformFilter {
 		out.y = (int)((y * cos) - (x * sin));
 	}
 
+	@Override
 	protected void transformInverse(int x, int y, float[] out) {
 		out[0] = (x * cos) - (y * sin);
 		out[1] = (y * cos) + (x * sin);
 	}
 
+	@Override
 	public String toString() {
 		return "Rotate "+(int)(angle * 180 / Math.PI);
 	}

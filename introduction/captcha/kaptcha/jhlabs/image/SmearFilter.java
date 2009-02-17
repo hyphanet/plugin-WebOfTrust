@@ -127,6 +127,7 @@ public class SmearFilter extends WholeImageFilter {
 		return low+(high-low) * randomGenerator.nextFloat();
 	}
 	
+	@Override
 	protected int[] filterPixels( int width, int height, int[] inPixels, Rectangle transformedSpace ) {
 		int[] outPixels = new int[width * height];
 
@@ -269,6 +270,7 @@ public class SmearFilter extends WholeImageFilter {
 		return outPixels;
 	}
 
+	@Override
 	public String toString() {
 		return "Effects/Smear...";
 	}

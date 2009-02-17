@@ -95,6 +95,7 @@ public class Score {
 		return query.execute();
 	}
 	
+	@Override
 	public synchronized String toString() {
 		return getTarget().getNickName() + " has " + getScore() + " points in " + getTreeOwner().getNickName() + "'s trust tree (rank : " + getRank() + ", capacity : " + getCapacity() + ")";
 	}

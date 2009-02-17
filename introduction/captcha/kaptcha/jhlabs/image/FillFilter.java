@@ -60,6 +60,7 @@ public class FillFilter extends PointFilter {
 		return fillColor;
 	}
 
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		return fillColor;
 	}

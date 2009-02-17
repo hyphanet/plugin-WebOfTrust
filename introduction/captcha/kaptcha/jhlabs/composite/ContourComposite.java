@@ -36,10 +36,12 @@ public final class ContourComposite implements Composite {
 		return new ContourCompositeContext( offset, srcColorModel, dstColorModel );
 	}
 
+	@Override
 	public int hashCode() {
 		return 0;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof ContourComposite))
 			return false;

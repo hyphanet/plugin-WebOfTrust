@@ -174,10 +174,12 @@ public final class MiscComposite implements Composite {
 		return rule;
 	}
 
+	@Override
 	public int hashCode() {
 		return (Float.floatToIntBits(extraAlpha) * 31 + rule);
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof MiscComposite))
 			return false;

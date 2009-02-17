@@ -183,6 +183,7 @@ public class FlipFilter extends AbstractBufferedImageOp {
         return dst;
     }
 
+	@Override
 	public String toString() {
 		switch (operation) {
 		case FLIP_H:

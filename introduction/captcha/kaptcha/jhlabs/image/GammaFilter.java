@@ -83,7 +83,8 @@ public class GammaFilter extends TransferFilter {
 		return rGamma;
 	}
 	
-    protected void initialize() {
+    @Override
+	protected void initialize() {
 		rTable = makeTable(rGamma);
 
 		if (gGamma == rGamma)
@@ -110,6 +111,7 @@ public class GammaFilter extends TransferFilter {
 		return table;
 	}
 
+	@Override
 	public String toString() {
 		return "Colors/Gamma...";
 	}

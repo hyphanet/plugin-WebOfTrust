@@ -37,10 +37,12 @@ public abstract class RGBComposite implements Composite {
 		return extraAlpha;
 	}
 
+	@Override
 	public int hashCode() {
 		return Float.floatToIntBits(extraAlpha);
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof RGBComposite))
 			return false;

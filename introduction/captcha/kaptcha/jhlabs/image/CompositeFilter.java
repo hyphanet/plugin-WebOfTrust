@@ -101,6 +101,7 @@ public class CompositeFilter extends AbstractBufferedImageOp {
 		return dst;
 	}
 
+	@Override
 	public String toString() {
 		return "Composite";
 	}

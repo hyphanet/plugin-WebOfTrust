@@ -45,6 +45,7 @@ public class MapColorsFilter extends PointFilter {
 		this.newColor = newColor;
 	}
 
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		if (rgb == oldColor)
 			return newColor;

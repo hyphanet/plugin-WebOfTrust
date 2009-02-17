@@ -343,6 +343,7 @@ public class GradientFilter extends AbstractBufferedImageOp {
 		return (float)Math.sqrt(a*a+b*b);
 	}
 	
+	@Override
 	public String toString() {
 		return "Other/Gradient Fill...";
 	}

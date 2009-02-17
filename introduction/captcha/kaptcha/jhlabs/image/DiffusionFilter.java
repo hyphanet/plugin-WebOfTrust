@@ -118,6 +118,7 @@ public class DiffusionFilter extends WholeImageFilter {
 		return levels;
 	}
 
+	@Override
 	protected int[] filterPixels( int width, int height, int[] inPixels, Rectangle transformedSpace ) {
 		int[] outPixels = new int[width * height];
 
@@ -194,6 +195,7 @@ public class DiffusionFilter extends WholeImageFilter {
 		return outPixels;
 	}
 
+	@Override
 	public String toString() {
 		return "Colors/Diffusion Dither...";
 	}

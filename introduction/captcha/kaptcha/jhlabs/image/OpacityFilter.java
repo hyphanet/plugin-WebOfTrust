@@ -61,12 +61,14 @@ public class OpacityFilter extends PointFilter {
 		return opacity;
 	}
 	
+	@Override
 	public int filterRGB(int x, int y, int rgb) {
 		if ((rgb & 0xff000000) != 0)
 			return (rgb & 0xffffff) | opacity24;
 		return rgb;
 	}
 
+	@Override
 	public String toString() {
 		return "Colors/Transparency...";
 	}
