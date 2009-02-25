@@ -55,7 +55,10 @@ public class IdentityParser {
 		this.db = db;
 		this.client = client;
 		this.fetcher = fetcher;
-		saxParser = SAXParserFactory.newInstance().newSAXParser();
+
+		SAXParserFactory factory = SAXParserFactory.newInstance();
+		factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		saxParser = factory.newSAXParser();
 	}
 	
 	/**
