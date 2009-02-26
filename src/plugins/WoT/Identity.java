@@ -158,7 +158,7 @@ public class Identity {
 	public static Identity importIntroductionFromXML(ObjectContainer db, IdentityFetcher fetcher, InputStream is) throws ParserConfigurationException, SAXException, IOException, InvalidParameterException {
 		IntroductionHandler introHandler = new IntroductionHandler();
 		SAXParserFactory factory = SAXParserFactory.newInstance();
-		factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 		factory.newSAXParser().parse(is, introHandler);
 		
 		Identity id;
