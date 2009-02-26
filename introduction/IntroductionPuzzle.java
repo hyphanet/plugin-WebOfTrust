@@ -497,7 +497,7 @@ public final class IntroductionPuzzle {
 	public static IntroductionPuzzle importFromXML(ObjectContainer db, InputStream is, FreenetURI puzzleURI ) throws SAXException, IOException, ParserConfigurationException, UnknownIdentityException, ParseException {
 		PuzzleHandler puzzleHandler = new PuzzleHandler(db, puzzleURI);
 		SAXParserFactory factory = SAXParserFactory.newInstance();
-		factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 		factory.newSAXParser().parse(is, puzzleHandler);
 		
 		return puzzleHandler.getPuzzle();
