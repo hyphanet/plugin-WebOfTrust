@@ -581,13 +581,13 @@ public final class IntroductionPuzzle {
 		if(mMimeType == null || !mMimeType.equals("image/jpeg"))
 			{ Logger.error(this, "mMimeType == " + mMimeType); result = false; }
 		if(new Date(mValidUntilTime).before(new Date(2008-1900, 10, 10)))
-			{ Logger.error(this, "mValidUntilTime ==" + new Date(mValidUntilTime)); result = false; }
+			{ Logger.error(this, "mValidUntilTime == " + new Date(mValidUntilTime)); result = false; }
 		if(mData == null || mData.length<100)
 			{ Logger.error(this, "mData == " + mData); result = false; }
 		if(mInserter == null)
 			{ Logger.error(this, "mInserter == null"); result = false; }
 		if(mDateOfInsertion == null || mDateOfInsertion.before(new Date(2008-1900, 10, 10)) || mDateOfInsertion.after(CurrentTimeUTC.get()))
-			{ Logger.error(this, "mDateOfInsertion ==" + mDateOfInsertion); result = false; }
+			{ Logger.error(this, "mDateOfInsertion == " + mDateOfInsertion + "currentTime == " + CurrentTimeUTC.get()); result = false; }
 		if(mIndex < 0)
 			{ Logger.error(this, "mIndex == " + mIndex); result = false; }
 		if(iWasSolved == true && (mSolver == null || mSolution == null))
