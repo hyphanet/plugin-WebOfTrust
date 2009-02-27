@@ -6,15 +6,15 @@
 package plugins.WoT.ui.web;
 
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
+
+import plugins.WoT.OwnIdentity;
+import plugins.WoT.WoT;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.WoT;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;

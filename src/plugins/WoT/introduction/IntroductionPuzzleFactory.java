@@ -20,14 +20,6 @@ import plugins.WoT.OwnIdentity;
  */
 public abstract class IntroductionPuzzleFactory {
 	
-	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-	
 	public abstract IntroductionPuzzle generatePuzzle(ObjectContainer db, OwnIdentity inserter) throws IOException;
 
-	/**
-	 * Puzzles have to be constructed with UTC date!
-	 */
-	public Date getUTCDate() {
-		return mCalendar.getTime();
-	}
 }
