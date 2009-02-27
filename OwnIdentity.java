@@ -321,7 +321,7 @@ public class OwnIdentity extends Identity {
 	 * Sets the last insertion date of this OwnIdentity to current time in UTC.
 	 */
 	public synchronized void updateLastInsert() {
-		setLastInsert(mCalendar.getTime());
+		setLastInsert(CurrentTimeUTC.get());
 	}
 
 	/**

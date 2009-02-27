@@ -13,7 +13,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.UUID;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -34,6 +33,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
@@ -56,7 +56,6 @@ public final class IntroductionPuzzle {
 	public static final int MINIMAL_SOLUTION_LENGTH = 5;
 	
 	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	
 	/* Included in XML: */
 	
@@ -114,8 +113,8 @@ public final class IntroductionPuzzle {
 	 */
 	public IntroductionPuzzle(Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, long myValidUntilTime, Date myDateOfInsertion, int myIndex) {
 		assert(	newInserter != null && newID != null && newType != null && newMimeType != null && !newMimeType.equals("") &&
-				newData!=null && newData.length!=0 && myValidUntilTime > mCalendar.getTimeInMillis() && myDateOfInsertion != null &&
-				myDateOfInsertion.getTime() < mCalendar.getTimeInMillis()&& myIndex >= 0);
+				newData!=null && newData.length!=0 && myValidUntilTime > CurrentTimeUTC.getInMillis() && myDateOfInsertion != null &&
+				myDateOfInsertion.getTime() < CurrentTimeUTC.getInMillis()&& myIndex >= 0);
 		
 		mID = newID;
 		mInserter = newInserter;
@@ -178,7 +177,7 @@ public final class IntroductionPuzzle {
 	 */
 	@SuppressWarnings("deprecation")
 	public static List<IntroductionPuzzle> getRecentByInserter(ObjectContainer db, Identity i) {
-		Date maxAge = new Date(mCalendar.get(Calendar.YEAR)-1900, mCalendar.get(Calendar.MONTH), mCalendar.get(Calendar.DAY_OF_MONTH));
+		Date maxAge = new Date(CurrentTimeUTC.getYear()-1900, CurrentTimeUTC.getMonth(), CurrentTimeUTC.getDayOfMonth());
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(i);
@@ -298,7 +297,7 @@ public final class IntroductionPuzzle {
 	}
 
 	public static FreenetURI generateRequestURI(Identity inserter, Date dateOfInsertion, int index) {
-		assert(dateOfInsertion.before(mCalendar.getTime()));
+		assert(dateOfInsertion.before(CurrentTimeUTC.get()));
 		assert(index >= 0);
 		
 		/* FIXME: I did not really understand the javadoc of FreenetURI. Please verify that the following code actually creates an URI
@@ -414,7 +413,7 @@ public final class IntroductionPuzzle {
 	public static void deleteExpiredPuzzles(ObjectContainer db) {
 		Query q = db.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.descend("mValidUntilTime").constrain(mCalendar.getTimeInMillis()).smaller();
+		q.descend("mValidUntilTime").constrain(CurrentTimeUTC.getInMillis()).smaller();
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
 		Logger.debug(IntroductionPuzzle.class, "Deleting " + result.size() + " expired puzzles.");
@@ -588,7 +587,7 @@ public final class IntroductionPuzzle {
 			{ Logger.error(this, "mData == " + mData); result = false; }
 		if(mInserter == null)
 			{ Logger.error(this, "mInserter == null"); result = false; }
-		if(mDateOfInsertion == null || mDateOfInsertion.before(new Date(2008-1900, 10, 10)) || mDateOfInsertion.after(mCalendar.getTime()))
+		if(mDateOfInsertion == null || mDateOfInsertion.before(new Date(2008-1900, 10, 10)) || mDateOfInsertion.after(CurrentTimeUTC.get()))
 			{ Logger.error(this, "mDateOfInsertion ==" + mDateOfInsertion); result = false; }
 		if(mIndex < 0)
 			{ Logger.error(this, "mIndex == " + mIndex); result = false; }

@@ -9,11 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.TimeZone;
 import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -107,9 +105,7 @@ public class Identity {
 	
 	/** A list of contexts (eg. client apps) this Identity is used for */
 	private ArrayList<String> contexts;
-	
-	/** UTC calendar */
-	protected static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
 
 	/**
 	 * Creates an Identity
@@ -789,7 +785,7 @@ public class Identity {
 	 */
 	public synchronized void updated() {
 		
-		lastChange = mCalendar.getTime();
+		lastChange = CurrentTimeUTC.get();
 	}
 	
 	/**

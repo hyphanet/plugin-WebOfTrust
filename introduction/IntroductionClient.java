@@ -8,18 +8,17 @@ package plugins.WoT.introduction;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
@@ -112,8 +111,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 	
 	private final HashSet<ClientGetter> mRequests = new HashSet<ClientGetter>(PUZZLE_REQUEST_COUNT * 2); /* TODO: profile & tweak */
 	private final HashSet<BaseClientPutter> mInserts = new HashSet<BaseClientPutter>(PUZZLE_REQUEST_COUNT * 2);
-	
-	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
 
 	/**
 	 * Creates an IntroductionServer
@@ -303,7 +301,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 		q.constrain(Identity.class);
 		q.constrain(OwnIdentity.class).not();
 		/* FIXME: As soon as identities announce that they were online every day, uncomment the following line */
-		/* q.descend("lastChange").constrain(new Date(mCalendar.getTimeInMillis() - 1 * 24 * 60 * 60 * 1000)).greater(); */
+		/* q.descend("lastChange").constrain(new Date(CurrentTimeUTC.getInMillis() - 1 * 24 * 60 * 60 * 1000)).greater(); */
 		q.descend("lastChange").orderDescending(); /* This should choose identities in a sufficiently random order */
 		ObjectSet<Identity> allIdentities = q.execute();
 		ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(PUZZLE_POOL_SIZE);

@@ -15,6 +15,7 @@ import javax.imageio.ImageIO;
 
 import com.db4o.ObjectContainer;
 
+import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionPuzzleFactory;
@@ -43,7 +44,7 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 			BufferedImage img = captcha.createImage(text);
 			ImageIO.write(img, "jpg", out);
 			
-			Date dateOfInsertion = getUTCDate();
+			Date dateOfInsertion = CurrentTimeUTC.get();
 			return new IntroductionPuzzle(inserter, PuzzleType.Captcha, "image/jpeg", out.toByteArray(), text, dateOfInsertion, IntroductionPuzzle.getFreeIndex(db, inserter, dateOfInsertion));
 		}
 		finally {
