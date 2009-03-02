@@ -92,7 +92,7 @@ public class IdentityPage extends WebPageImpl {
 		makeURIBox();
 		makeServicesBox();
 		
-		HTMLNode trusteeTrustsNode = getContentBox("Identities that “" + identity.getNickName() + "” trusts");
+		HTMLNode trusteeTrustsNode = getContentBox("Identities that '" + identity.getNickName() + "' trusts");
 
 		HTMLNode trustersTable = trusteeTrustsNode.addChild("table");
 		HTMLNode trustersTableHeader = trustersTable.addChild("tr");
@@ -110,7 +110,7 @@ public class IdentityPage extends WebPageImpl {
 			trustRow.addChild("td", trust.getComment());
 		}
 
-		HTMLNode trusterTrustsNode = getContentBox("Identities that trust “" + identity.getNickName() + "”");
+		HTMLNode trusterTrustsNode = getContentBox("Identities that trust '" + identity.getNickName() + "'");
 
 		HTMLNode trusteesTable = trusterTrustsNode.addChild("table");
 		HTMLNode trusteesTableHeader = trusteesTable.addChild("tr");
