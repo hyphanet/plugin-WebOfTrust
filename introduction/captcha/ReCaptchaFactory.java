@@ -9,6 +9,8 @@ import plugins.WoT.introduction.IntroductionPuzzleFactory;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.io.Closer;
+
 /**
  * Suggested captcha factory based on http://recaptcha.net/
  * We would only need to find a decent way of anonymizing the requests using a public anonymization gateway or whatever of course. Maybe
@@ -54,7 +56,7 @@ public class ReCaptchaFactory extends IntroductionPuzzleFactory {
 			return null;
 		}
 		finally {
-			out.close();
+			Closer.close(out);
 		}
 	}
 }

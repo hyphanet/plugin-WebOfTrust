@@ -37,6 +37,7 @@ import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.io.Closer;
 import freenet.support.io.TempBucketFactory;
 
 /**
@@ -220,8 +221,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 		finally {
 			if(tempB != null)
 				tempB.free();
-			if(os != null)
-				os.close();
+			Closer.close(os);
 		}
 	}
 	

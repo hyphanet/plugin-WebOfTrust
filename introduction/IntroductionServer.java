@@ -42,6 +42,7 @@ import freenet.node.PrioRunnable;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 import freenet.support.io.TempBucketFactory;
 
@@ -315,8 +316,7 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 		finally {
 			if(tempB != null)
 				tempB.free();
-			if(os != null)
-				os.close();
+			Closer.close(os);
 		}
 	}
 	

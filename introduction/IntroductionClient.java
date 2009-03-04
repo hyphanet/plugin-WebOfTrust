@@ -18,7 +18,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
-import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
@@ -47,6 +46,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 import freenet.support.io.TempBucketFactory;
 
@@ -397,8 +397,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 		finally {
 			if(tempB != null)
 				tempB.free();
-			if(os != null)
-				os.close();
+			Closer.close(os);
 		}
 	}
 		
