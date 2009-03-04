@@ -15,6 +15,8 @@ import javax.imageio.ImageIO;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.io.Closer;
+
 import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.introduction.IntroductionPuzzle;
@@ -48,7 +50,7 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 			return new IntroductionPuzzle(inserter, PuzzleType.Captcha, "image/jpeg", out.toByteArray(), text, dateOfInsertion, IntroductionPuzzle.getFreeIndex(db, inserter, dateOfInsertion));
 		}
 		finally {
-			out.close();
+			Closer.close(out);
 		}
 	}
 }
