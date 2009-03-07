@@ -210,8 +210,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		HTMLNode cell = new HTMLNode("td");
 		HTMLNode trustForm = pr.addFormChild(cell, SELF_URI, "setTrust");
 		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "setTrust" });
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "truster", truster.getRequestURI().toString() }); /* TODO: use the id as key instead */
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "trustee", trustee.getRequestURI().toString() }); /* TODO: use the id as key instead */
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "ownerID", truster.getId() });
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "trustee", trustee.getId() });
 		trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "value", "2", trustValue });
 		trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "comment", "50", trustComment });
 		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", "Update" });
