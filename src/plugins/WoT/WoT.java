@@ -495,9 +495,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	public void setTrust(String truster, String trustee, String value, String comment) throws InvalidParameterException, UnknownIdentityException, NumberFormatException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
-
-		OwnIdentity trusterId = OwnIdentity.getByURI(db, truster);
-		Identity trusteeId = Identity.getByURI(db, trustee);
+		OwnIdentity trusterId = OwnIdentity.getById(db, truster);
+		Identity trusteeId = Identity.getById(db, trustee);
+		
 		if(value.trim().equals(""))
 			removeTrust(trusterId, trusteeId);
 		else
