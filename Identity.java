@@ -576,7 +576,7 @@ public class Identity {
 	 * @return The new Score if this Identity
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 */
-	public int computeScoreValue(ObjectContainer db, OwnIdentity treeOwner) throws DuplicateScoreException {
+	protected int computeScoreValue(ObjectContainer db, OwnIdentity treeOwner) throws DuplicateScoreException {
 		int value = 0;
 		
 		ObjectSet<Trust> receivedTrusts = getReceivedTrusts(db);
@@ -598,7 +598,7 @@ public class Identity {
 	 * @return The new Rank if this Identity
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 */
-	public int computeRank(ObjectContainer db, OwnIdentity treeOwner) throws DuplicateScoreException {
+	protected int computeRank(ObjectContainer db, OwnIdentity treeOwner) throws DuplicateScoreException {
 		int rank = -1;
 		
 		ObjectSet<Trust> receivedTrusts = getReceivedTrusts(db);
