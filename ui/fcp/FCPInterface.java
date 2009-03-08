@@ -103,7 +103,7 @@ public final class FCPInterface implements FredPluginFCP {
 		}
 		catch (Exception e) {
 			Logger.error(this, e.toString());
-			replysender.send(errorMessageFCP(e), data);
+			replysender.send(errorMessageFCP(params.get("Message"), e), data);
 		}
 	}
 
@@ -362,10 +362,11 @@ public final class FCPInterface implements FredPluginFCP {
 		return sfs;
 	}
 	
-	private SimpleFieldSet errorMessageFCP (Exception e) {
+	private SimpleFieldSet errorMessageFCP (String originalMessage, Exception e) {
 		
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putAppend("Message", "Error");
+		sfs.putAppend("OriginalMessage", originalMessage);
 		sfs.putAppend("Description", (e.getLocalizedMessage() == null) ? "null" : e.getLocalizedMessage());
 		e.printStackTrace();
 		return sfs;
