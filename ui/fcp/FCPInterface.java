@@ -29,8 +29,11 @@ import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.introduction.IntroductionPuzzle;
+import plugins.WoT.introduction.IntroductionServer;
 import freenet.client.FetchException;
 import freenet.client.InsertException;
+import freenet.node.FSParseException;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.support.Logger;
@@ -104,7 +107,7 @@ public final class FCPInterface implements FredPluginFCP {
 		}
 	}
 
-	private SimpleFieldSet handleCreateIdentity(SimpleFieldSet params) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException  {
+	private SimpleFieldSet handleCreateIdentity(SimpleFieldSet params) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException, FSParseException  {
 		
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		OwnIdentity identity;
@@ -112,15 +115,26 @@ public final class FCPInterface implements FredPluginFCP {
 		if(params.get("NickName")==null || params.get("PublishTrustList")==null || params.get("Context")==null) throw new InvalidParameterException("Missing mandatory parameter");
 		
 		if(params.get("RequestURI")==null || params.get("InsertURI")==null) {
-			identity = mWoT.createIdentity(params.get("NickName"), params.get("PublishTrustList").equals("true"), params.get("Context"));
+			identity = mWoT.createIdentity(params.get("NickName"), params.getBoolean("PublishTrustList"), params.get("Context"));
 		}
 		else {
 			identity = mWoT.createIdentity(	params.get("InsertURI"),
 										params.get("RequestURI"),
 										params.get("NickName"), 
-										params.get("PublishTrustList").equals("true"),
+										params.getBoolean("PublishTrustList"),
 										params.get("Context"));
 		}
+		
+		/* TODO: Publishing introduction puzzles makes no sense if the identity does not publish the trust list. We should warn the user
+		 * if we receive PublishTrustList == false and PublishIntroductionPuzzles == true */
+
+		if(params.getBoolean("PublishTrustList") && 
+				params.get("PublishIntroductionPuzzles") != null && params.getBoolean("PublishIntroductionPuzzles")) {
+			/* TODO: Create a function for those? */
+			identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db);
+			identity.setProp("IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT), db);
+		}
+
 		sfs.putAppend("Message", "IdentityCreated");
 		sfs.putAppend("InsertURI", identity.getInsertURI().toString());
 		sfs.putAppend("RequestURI", identity.getRequestURI().toString());	
