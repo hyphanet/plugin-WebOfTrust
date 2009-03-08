@@ -206,7 +206,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			ObjectSet<Identity> duplicates = q.execute();
 			for(Identity duplicate : duplicates) {
 				if(deleted.contains(duplicate.getId()) == false) {
-					Logger.error(duplicate, "Deleted duplicate identity " + duplicate.getRequestURI());
+					Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
 					for(Trust t : duplicate.getReceivedTrusts(db))
 						db.delete(t);
 					for(Trust t : duplicate.getGivenTrusts(db))
@@ -218,6 +218,31 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			}
 			deleted.add(i.getId());
 		}
+		
+		db.commit();
+		
+		for(OwnIdentity treeOwner : OwnIdentity.getAllOwnIdentities(db)) {
+			HashSet<String> givenTo = new HashSet<String>();
+			
+			for(Trust t : treeOwner.getGivenTrusts(db)) {
+				if(givenTo.contains(t.getTrustee().getId()) == false)
+					givenTo.add(t.getTrustee().getId());
+				else {
+					Identity trustee = t.getTrustee();
+					Logger.error(this, "Deleting duplicate given trust from " + treeOwner.getNickName() + " to " + trustee.getNickName());
+					db.delete(t);
+					
+					try {
+						trustee.updateScore(db, treeOwner);
+					}
+					catch(Exception e) { /* Maybe another duplicate prevents it from working ... */
+						Logger.error(this, "Updating score of " + trustee.getNickName() + " failed.", e);
+					}
+				}
+			}
+		}
+		
+		db.commit();
 		
 		/* FIXME: Also delete duplicate trust, score, etc. */
 	}
