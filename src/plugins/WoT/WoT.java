@@ -519,7 +519,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	public void addContext(String identity, String context) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		Identity id = OwnIdentity.getByURI(db, identity);
+		Identity id = OwnIdentity.getById(db, identity);
 		id.addContext(context, db);
 		db.store(id);
 		
@@ -527,7 +527,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	public void removeContext(String identity, String context) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		Identity id = OwnIdentity.getByURI(db, identity);
+		Identity id = OwnIdentity.getById(db, identity);
 		id.removeContext(context, db);
 		db.store(id);
 		
@@ -535,7 +535,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public void setProperty(String identity, String property, String value) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		Identity id = OwnIdentity.getByURI(db, identity);
+		Identity id = OwnIdentity.getById(db, identity);
 		id.setProp(property, value, db);
 		db.store(id);
 		
@@ -543,11 +543,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	public String getProperty(String identity, String property) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		return Identity.getByURI(db, identity).getProp(property);
+		return Identity.getById(db, identity).getProp(property);
 	}
 	
 	public void removeProperty(String identity, String property) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		Identity id = OwnIdentity.getByURI(db, identity);
+		Identity id = OwnIdentity.getById(db, identity);
 		id.removeProp(property, db);
 		db.store(id);
 		
