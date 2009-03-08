@@ -450,7 +450,7 @@ public class Identity {
 	 * @throws InvalidParameterException if a given parameter isn't valid, {@see Trust} for details on accepted values.
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 */
-	public void setTrust(ObjectContainer db, Identity trustee, byte value, String comment) throws DuplicateTrustException, InvalidParameterException, DuplicateScoreException {
+	public synchronized void setTrust(ObjectContainer db, Identity trustee, byte value, String comment) throws DuplicateTrustException, InvalidParameterException, DuplicateScoreException {
 		// Check if we are updating an existing trust value
 		Trust trust;
 		try {
@@ -475,7 +475,7 @@ public class Identity {
 		} 
 	}
 	
-	public void removeTrust(ObjectContainer db, Identity trustee) {
+	public synchronized void removeTrust(ObjectContainer db, Identity trustee) {
 		// Check if we are updating an existing trust value
 		Trust trust;
 		try {
