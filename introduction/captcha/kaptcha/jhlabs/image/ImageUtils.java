@@ -16,11 +16,20 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.image.*;
-import java.util.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.image.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
+import java.awt.image.ImageProducer;
+import java.awt.image.PixelGrabber;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 
 /**
  * A class containing some static utility methods for dealing with BufferedImages.

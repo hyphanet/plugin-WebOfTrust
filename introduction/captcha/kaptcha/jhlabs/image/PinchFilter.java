@@ -16,9 +16,8 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.image.*;
+import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 
 /**
  * A filter which performs the popular whirl-and-pinch distortion effect.

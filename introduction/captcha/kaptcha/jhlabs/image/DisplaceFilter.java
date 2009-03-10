@@ -16,9 +16,7 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
+import java.awt.image.BufferedImage;
 
 /**
  * A filter which simulates the appearance of looking through glass. A separate grayscale displacement image is provided and

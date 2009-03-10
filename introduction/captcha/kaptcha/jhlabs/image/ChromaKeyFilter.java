@@ -16,9 +16,9 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.util.*;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 
 /**
  * A filter which can be used to produce wipes by transferring the luma of a Destination image into the alpha channel of the source.

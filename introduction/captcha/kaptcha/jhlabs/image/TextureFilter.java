@@ -16,8 +16,8 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.image.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.Function2D;
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.Noise;
 
 public class TextureFilter extends PointFilter {
 

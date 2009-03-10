@@ -16,9 +16,8 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.util.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 
 /**
  * A filter which interpolates betwen two images. You can set the interpolation factor outside the range 0 to 1

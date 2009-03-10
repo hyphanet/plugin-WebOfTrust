@@ -16,10 +16,6 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.io.*;
-
 /**
  * Applies a bit mask to each ARGB pixel of an image. You can use this for, say, masking out the red channel.
  */

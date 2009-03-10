@@ -16,9 +16,9 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.util.*;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 
 /**
  * An experimental filter which can be used for keying against a clean shot. Given a source image, a clean image and a destination image, 

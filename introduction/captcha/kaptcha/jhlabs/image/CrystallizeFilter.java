@@ -16,10 +16,6 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.util.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
-
 /**
  * A filter which applies a crystallizing effect to an image, by producing Voronoi cells filled with colours from the image.
  */

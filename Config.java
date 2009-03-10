@@ -6,7 +6,6 @@
 package plugins.WoT;
 
 import java.util.HashMap;
-import java.util.Set;
 
 /**
  * Contains a HashMap<String, String> which maps configuration variable names

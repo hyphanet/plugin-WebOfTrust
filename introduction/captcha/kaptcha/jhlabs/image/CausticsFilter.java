@@ -16,10 +16,10 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.util.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
+import java.awt.Rectangle;
+import java.util.Random;
+
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.Noise;
 
 /**
  * A filter which simulates underwater caustics. This can be animated to get a bottom-of-the-swimming-pool effect.

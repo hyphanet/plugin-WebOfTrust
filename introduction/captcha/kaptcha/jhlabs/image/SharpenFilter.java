@@ -16,8 +16,6 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.image.*;
-
 /**
  * A filter which performs a simple 3x3 sharpening operation.
  */

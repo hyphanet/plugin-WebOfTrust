@@ -16,8 +16,8 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
+import java.awt.Point;
+import java.awt.Rectangle;
 
 /**
  * A filter which rotates an image. These days this is easier done with Java2D, but this filter remains.

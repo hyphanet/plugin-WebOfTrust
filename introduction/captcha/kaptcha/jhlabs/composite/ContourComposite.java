@@ -16,9 +16,12 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.composite;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.awt.color.*;
+import java.awt.Composite;
+import java.awt.CompositeContext;
+import java.awt.RenderingHints;
+import java.awt.image.ColorModel;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 
 /**
  * A special Composite used for drawing "marching ants". It draws the ants at the 127 contour of the alpha channel of the source.

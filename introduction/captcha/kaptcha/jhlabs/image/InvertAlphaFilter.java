@@ -16,9 +16,6 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-
 /**
  * A Filter to invert the alpha channel of an image. This is really only useful for inverting selections, where we only use the alpha channel.
  */

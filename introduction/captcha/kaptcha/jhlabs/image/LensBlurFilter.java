@@ -16,11 +16,9 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.image.*;
-import java.awt.color.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
+import java.awt.image.BufferedImage;
+
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.FFT;
 
 /**
  * A filter which use FFTs to simulate lens blur on an image.

@@ -16,10 +16,9 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.util.*;
-import java.awt.*;
-import java.awt.image.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
+import java.awt.Rectangle;
+import java.util.Date;
+import java.util.Random;
 
 public class PlasmaFilter extends WholeImageFilter {
 	

@@ -25,7 +25,6 @@ import java.util.List;
 import plugins.WoT.Identity;
 import plugins.WoT.Trust;
 import plugins.WoT.WoT;
-import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 

@@ -5,15 +5,10 @@
  */
 package plugins.WoT;
 
-import java.net.MalformedURLException;
-
-import plugins.WoT.exceptions.DuplicateIdentityException;
 import plugins.WoT.exceptions.InvalidParameterException;
-import plugins.WoT.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
-import com.db4o.query.Constraint;
 import com.db4o.query.Query;
 
 /**

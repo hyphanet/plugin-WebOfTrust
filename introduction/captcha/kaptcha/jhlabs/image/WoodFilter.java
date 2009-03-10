@@ -16,8 +16,7 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.image.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.Noise;
 
 /**
  * A filter which produces a simulated wood texture. This is a bit of a hack, but might be usefult to some people.

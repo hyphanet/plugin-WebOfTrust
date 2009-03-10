@@ -16,9 +16,8 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.BinaryFunction;
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.BlackFunction;
 
 /**
  * The superclass for some of the filters which work on binary images.
