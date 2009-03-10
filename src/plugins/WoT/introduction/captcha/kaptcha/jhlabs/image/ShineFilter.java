@@ -16,10 +16,12 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.image.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.composite.*;
+import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.composite.AddComposite;
 
 public class ShineFilter extends AbstractBufferedImageOp {
 	

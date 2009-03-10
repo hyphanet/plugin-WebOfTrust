@@ -16,10 +16,9 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.geom.*;
-import java.awt.image.*;
-import java.util.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
+import java.awt.geom.Point2D;
+
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.Noise;
 
 /**
  * An experimental filter for rendering lens flares.

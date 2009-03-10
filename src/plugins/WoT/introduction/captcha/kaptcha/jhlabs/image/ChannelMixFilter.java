@@ -16,9 +16,6 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-
 /**
  * A filter which allows the red, green and blue channels of an image to be mixed into each other.
  */

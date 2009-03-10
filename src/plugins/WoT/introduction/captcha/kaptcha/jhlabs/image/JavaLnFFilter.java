@@ -16,9 +16,6 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-
 /**
  * A filter which produces  the stipple effect for Swing icons specified in the Java Look and Feel Guidelines.
  */

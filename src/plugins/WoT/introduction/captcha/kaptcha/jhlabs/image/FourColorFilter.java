@@ -16,10 +16,6 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.util.*;
-
 /**
  * A filter which draws a gradient interpolated between four colors defined at the corners of the image.
  */

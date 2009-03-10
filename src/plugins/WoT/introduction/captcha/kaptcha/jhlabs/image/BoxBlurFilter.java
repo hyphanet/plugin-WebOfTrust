@@ -16,9 +16,7 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.awt.geom.*;
+import java.awt.image.BufferedImage;
 
 /**
  * A filter which performs a box blur on an image. The horizontal and vertical blurs can be specified separately

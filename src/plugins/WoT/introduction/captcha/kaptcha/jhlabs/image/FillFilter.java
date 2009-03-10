@@ -16,9 +16,6 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-
 /**
  * A filter which fills an image with a given color. Normally you would just call Graphics.fillRect but it can sometimes be useful
  * to go via a filter to fit in with an existing API.

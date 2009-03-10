@@ -16,9 +16,9 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
+import java.awt.Rectangle;
+
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.Noise;
 
 /**
  * A filter which distorts an image by rippling it in the X or Y directions.

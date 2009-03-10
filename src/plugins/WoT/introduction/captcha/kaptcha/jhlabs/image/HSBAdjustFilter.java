@@ -16,8 +16,7 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
+import java.awt.Color;
 
 public class HSBAdjustFilter extends PointFilter {
 	

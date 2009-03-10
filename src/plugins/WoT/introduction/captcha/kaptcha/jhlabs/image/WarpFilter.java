@@ -16,9 +16,8 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
+import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 
 /**
  * A filter for warping images using the gridwarp algorithm.

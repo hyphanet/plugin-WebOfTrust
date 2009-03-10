@@ -16,12 +16,17 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.image.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.vecmath.*;
-import java.awt.*;
-import java.io.*;
-import java.util.*;
+import java.awt.Color;
+import java.awt.Image;
+import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
+import java.awt.image.Kernel;
+import java.util.Vector;
+
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.Function2D;
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.ImageFunction2D;
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.vecmath.Color4f;
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.vecmath.Vector3f;
 
 /**
  * A filter which produces lighting and embossing effects.

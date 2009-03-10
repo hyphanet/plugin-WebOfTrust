@@ -16,8 +16,7 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
+import java.awt.Rectangle;
 
 /**
  * This filter tries to apply the Swing "flush 3D" effect to the black lines in an image.

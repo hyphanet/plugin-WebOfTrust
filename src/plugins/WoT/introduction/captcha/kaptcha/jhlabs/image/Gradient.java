@@ -17,8 +17,6 @@ limitations under the License.
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
 import java.awt.Color;
-import java.util.Vector;
-import java.io.*;
 
 /**
  * A Colormap implemented using Catmull-Rom colour splines. The map has a variable number

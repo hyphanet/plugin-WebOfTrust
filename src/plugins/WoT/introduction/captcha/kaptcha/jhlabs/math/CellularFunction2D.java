@@ -16,8 +16,7 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.math;
 
-import java.awt.image.*;
-import java.util.*;
+import java.util.Random;
 
 public class CellularFunction2D implements Function2D {
 

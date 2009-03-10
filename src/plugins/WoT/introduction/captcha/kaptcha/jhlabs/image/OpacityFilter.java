@@ -16,9 +16,6 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-
 /**
  * Sets the opacity (alpha) of every pixel in an image to a constant value.
  */

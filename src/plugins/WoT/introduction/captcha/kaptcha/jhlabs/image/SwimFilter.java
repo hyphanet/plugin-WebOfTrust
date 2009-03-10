@@ -16,9 +16,7 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
+import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.Noise;
 
 /**
  * A filter which distorts an image as if it were underwater.

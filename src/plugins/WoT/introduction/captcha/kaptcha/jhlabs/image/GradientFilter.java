@@ -16,9 +16,8 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.util.*;
+import java.awt.Point;
+import java.awt.image.BufferedImage;
 
 /**
  * A filter which draws a coloured gradient. This is largely superceded by GradientPaint in Java1.2, but does provide a few

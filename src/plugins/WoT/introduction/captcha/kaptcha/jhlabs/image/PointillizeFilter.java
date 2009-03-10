@@ -16,10 +16,6 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.util.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
-
 public class PointillizeFilter extends CellularFilter {
 
 	private float edgeThickness = 0.4f;

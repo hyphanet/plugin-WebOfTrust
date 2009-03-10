@@ -16,9 +16,6 @@ limitations under the License.
 
 package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
 
-import java.awt.*;
-import java.awt.image.*;
-
 /**
  * A warp grid.
  * From "A simplified approach to Image Processing" by Randy Crane
