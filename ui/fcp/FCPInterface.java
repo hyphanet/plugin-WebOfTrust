@@ -136,6 +136,7 @@ public final class FCPInterface implements FredPluginFCP {
 		}
 
 		sfs.putAppend("Message", "IdentityCreated");
+		sfs.putAppend("ID", identity.getId());
 		sfs.putAppend("InsertURI", identity.getInsertURI().toString());
 		sfs.putAppend("RequestURI", identity.getRequestURI().toString());	
 		return sfs;
