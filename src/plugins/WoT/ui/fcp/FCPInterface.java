@@ -35,6 +35,7 @@ import freenet.client.FetchException;
 import freenet.client.InsertException;
 import freenet.node.FSParseException;
 import freenet.pluginmanager.FredPluginFCP;
+import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -103,7 +104,11 @@ public final class FCPInterface implements FredPluginFCP {
 		}
 		catch (Exception e) {
 			Logger.error(this, e.toString());
-			replysender.send(errorMessageFCP(params.get("Message"), e), data);
+			try {
+				replysender.send(errorMessageFCP(params.get("Message"), e), data);
+			} catch (PluginNotFoundException e1) {
+				Logger.normal(this, "Connection to request sender lost", e1);
+			}
 		}
 	}
 
