@@ -397,7 +397,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return web.handleHTTPPut(request);
 	}
 
-	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) throws PluginNotFoundException {
+	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
 		fcp.handle(replysender, params, data, accesstype);
 	}
 
