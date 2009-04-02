@@ -675,8 +675,11 @@ public class Identity {
 		updated();
 	}
 	
+	/* IMPORTANT: This code is duplicated in plugins.Freetalk.WoT.WoTIdentity.validateNickname().
+	 * Please also modify it there if you modify it here */
 	public synchronized boolean isNicknameValid(String newNickname) {
-		return StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname);
+		return newNickname.length() > 0 && newNickname.length() < 50 && 
+				StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname);
 	}
 
 	/**
