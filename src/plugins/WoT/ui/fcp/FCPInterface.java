@@ -55,7 +55,7 @@ public final class FCPInterface implements FredPluginFCP {
 		db = mWoT.getDB();
 	}
 
-	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
+	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) throws PluginNotFoundException {
 		
 		try {
 			String message = params.get("Message");
