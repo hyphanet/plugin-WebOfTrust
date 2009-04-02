@@ -55,6 +55,7 @@ import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.FredPluginWithClassLoader;
 import freenet.pluginmanager.PluginHTTPException;
+import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
@@ -396,7 +397,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return web.handleHTTPPut(request);
 	}
 
-	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
+	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) throws PluginNotFoundException {
 		fcp.handle(replysender, params, data, accesstype);
 	}
 
