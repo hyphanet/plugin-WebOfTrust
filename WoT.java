@@ -42,9 +42,11 @@ import com.db4o.reflect.jdk.JdkReflector;
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertException;
+import freenet.client.async.ClientContext;
 import freenet.clients.http.PageMaker;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
+import freenet.node.RequestClient;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginHTTP;
@@ -96,6 +98,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private IntroductionServer introductionServer;
 	private IntroductionClient introductionClient;
 	private Identity seed;
+	private RequestClient requestClient;
+	private ClientContext clientContext;
 	
 	/* User interfaces */
 	
@@ -117,6 +121,19 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		db = initDB();
 		config = initConfig();
 		seed = getSeedIdentity();
+		requestClient = new RequestClient() {
+
+			public boolean persistent() {
+				return false;
+			}
+
+			public void removeFrom(ObjectContainer container) {
+				throw new UnsupportedOperationException();
+			}
+			
+		};
+		
+		clientContext = pr.getNode().clientCore.clientContext;
 
 		/* FIXME: i cannot get this to work, it does not print any objects although there are definitely IntroductionPuzzle objects in my db.
 		
@@ -146,7 +163,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		pr.getNode().executor.execute(inserter, "WoTinserter");
 		
 		// Create the fetcher
-		fetcher = new IdentityFetcher(db, client);
+		fetcher = new IdentityFetcher(db, pr.getNode().clientCore.clientContext, client, requestClient);
 		
 		fetcher.fetch(seed, false);
 		
@@ -669,5 +686,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 	public IntroductionClient getIntroductionClient() {
 		return introductionClient;
+	}
+
+	public RequestClient getRequestClient() {
+		return requestClient;
+	}
+
+	public ClientContext getClientContext() {
+		return clientContext;
 	}
 }

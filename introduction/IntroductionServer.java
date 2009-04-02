@@ -35,10 +35,12 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -81,6 +83,8 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 	
 	/** Random number generator */
 	private final Random mRandom;
+	private RequestClient requestClient;
+	private ClientContext clientContext;
 	
 	
 	/* Private objects */
@@ -108,6 +112,8 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 		mClient = mWoT.getClient();
 		mTBF = mWoT.getTBF();
 		mRandom = mWoT.getRandom();
+		requestClient = mWoT.getRequestClient();
+		clientContext = mWoT.getClientContext();
 		
 		isRunning = true;
 	}

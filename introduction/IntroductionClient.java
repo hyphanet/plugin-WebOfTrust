@@ -44,6 +44,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
+import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
@@ -96,7 +97,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 	
 	/** Random number generator */
 	private Random mRandom;
-	
+	private RequestClient requestClient;
 	
 	/* Private objects */
 	
@@ -130,6 +131,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 		mClient = mWoT.getClient();
 		mTBF = mWoT.getTBF();
 		mRandom = mWoT.getRandom();
+		requestClient = myWoT.getRequestClient();
 		isRunning = true;
 	}
 
@@ -434,7 +436,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
-		ClientGetter g = mClient.fetch(uri, -1, this, this, fetchContext);
+		ClientGetter g = mClient.fetch(uri, -1, requestClient, this, fetchContext);
 		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 		synchronized(mRequests) {
 			mRequests.add(g);
@@ -462,7 +464,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 	/**
 	 * Called when a puzzle is successfully fetched.
 	 */
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched puzzle: " + state.getURI());
 
 		try {
@@ -483,7 +485,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * In our case, called when there is no puzzle available.
 	 */
-	public void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		Logger.normal(this, "Downloading puzzle " + state.getURI() + " failed.", e);
 		removeRequest(state);
 	}
@@ -491,7 +493,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 	/**
 	 * Called when a puzzle solution is successfully inserted.
 	 */
-	public void onSuccess(BaseClientPutter state)
+	public void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
 		Logger.debug(this, "Successful insert of puzzle solution at " + state.getURI());
 		removeInsert(state);
@@ -500,7 +502,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 	/**
 	 * Calling when inserting a puzzle solution failed.
 	 */
-	public void onFailure(InsertException e, BaseClientPutter state)
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container)
 	{
 		Logger.debug(this, "Insert of puzzle solution failed for " + state.getURI(), e);
 		removeInsert(state);
@@ -509,12 +511,12 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 	/* Not needed functions from the ClientCallback interface */
 
 	/** Only called by inserts */
-	public void onFetchable(BaseClientPutter state) {}
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) {}
 
 	/** Only called by inserts */
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {}
 
 	/** Called when freenet.async thinks that the request should be serialized to
 	 * disk, if it is a persistent request. */
-	public void onMajorProgress() {}
+	public void onMajorProgress(ObjectContainer container) {}
 }

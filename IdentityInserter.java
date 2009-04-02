@@ -234,7 +234,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 	}
 	
 	// Only called by inserts
-	public void onSuccess(BaseClientPutter state)
+	public void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
 		try {
 			OwnIdentity identity = OwnIdentity.getByURI(db, state.getURI());
@@ -249,7 +249,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 	}
 	
 	// Only called by inserts
-	public void onFailure(InsertException e, BaseClientPutter state) 
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
 	{
 		try {
 			OwnIdentity identity = OwnIdentity.getByURI(db, state.getURI());
@@ -261,27 +261,27 @@ public class IdentityInserter implements Runnable, ClientCallback {
 	
 	/* Not needed functions from the ClientCallback interface */
 	
-	public void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void onFetchable(BaseClientPutter state) {
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void onMajorProgress() {
+	public void onMajorProgress(ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}
