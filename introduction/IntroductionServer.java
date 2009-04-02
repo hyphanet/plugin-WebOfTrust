@@ -252,8 +252,8 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 			FetchContext fetchContext = mClient.getFetchContext();
 			fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 			fetchContext.maxNonSplitfileRetries = -1; // retry forever
-			ClientGetter g = mClient.fetch(p.getSolutionURI(), -1, this, this, fetchContext);
-			g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* FIXME: decide which one to use */
+			ClientGetter g = mClient.fetch(p.getSolutionURI(), -1, requestClient, this, fetchContext);
+			g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, clientContext, null); /* FIXME: decide which one to use */
 			synchronized(mRequests) {
 				mRequests.add(g);
 			}
@@ -330,7 +330,7 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * In our case, called when there is no solution to a puzzle in the network.
 	 */
-	public void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		Logger.normal(this, "Downloading puzzle solution " + state.getURI() + " failed: ", e);
 		removeRequest(state);
 	}
@@ -338,7 +338,7 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 	/**
 	 * Called when a puzzle solution is successfully fetched. We then add the identity which solved the puzzle.
 	 */
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched puzzle solution: " + state.getURI());
 
 		try {
@@ -368,7 +368,7 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 	/** 
 	 * Called when a puzzle was successfully inserted.
 	 */
-	public void onSuccess(BaseClientPutter state)
+	public void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
 		try {
 			IntroductionPuzzle p = IntroductionPuzzle.getByRequestURI(db, state.getURI());
@@ -381,7 +381,7 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 	/**
 	 * Called when the insertion of a puzzle failed.
 	 */
-	public void onFailure(InsertException e, BaseClientPutter state) 
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
 	{
 		try {
 			IntroductionPuzzle p = IntroductionPuzzle.getByRequestURI(db, state.getURI());
@@ -394,11 +394,11 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 	/* Not needed functions from the ClientCallback interface */
 	
 	/** Only called by inserts */
-	public void onFetchable(BaseClientPutter state) {}
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) {}
 
 	/** Only called by inserts */
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {}
 
 	/** Called when freenet.async thinks that the request should be serialized to disk, if it is a persistent request. */
-	public void onMajorProgress() {}
+	public void onMajorProgress(ObjectContainer container) {}
 }
