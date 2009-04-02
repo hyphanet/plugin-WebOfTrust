@@ -21,8 +21,10 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 
@@ -38,6 +40,8 @@ public class IdentityFetcher implements ClientCallback {
 	private final ObjectContainer db;
         /** A reference to the HighLevelSimpleClient used to talk with the node */
 	private final HighLevelSimpleClient client;
+	private final RequestClient requestClient;
+	private final ClientContext clientContext;
 
 	/** All current requests */
 	private final HashSet<Identity> identities = new HashSet<Identity>(128); /* TODO: profile & tweak */
@@ -50,10 +54,12 @@ public class IdentityFetcher implements ClientCallback {
 	 * @param db A reference to the database
 	 * @param client A reference to a {@link HighLevelSimpleClient}
 	 */
-	public IdentityFetcher(ObjectContainer db, HighLevelSimpleClient client) {
+	public IdentityFetcher(ObjectContainer db, ClientContext context, HighLevelSimpleClient client, RequestClient rc) {
 
 		this.db = db;
+		this.clientContext = context;
 		this.client = client;
+		this.requestClient = rc;
 	}
 	
 	/**
@@ -108,8 +114,8 @@ public class IdentityFetcher implements ClientCallback {
 		/* FIXME: The client getter complains about "not enough metastrings" when restoring an identity using the webinterface even though uri.toString() shows identity.xml at the end of the URI in the previous line */ 
 		if(uri.getAllMetaStrings().length == 0)
 			uri.pushMetaString("identity.xml"); 
-		ClientGetter g = client.fetch(uri, -1, this, this, fetchContext);
-		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* PluginManager defaults to interactive priority */
+		ClientGetter g = client.fetch(uri, -1, requestClient, this, fetchContext);
+		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, clientContext, null); /* PluginManager defaults to interactive priority */
 		synchronized(requests) {
 			requests.add(g);
 		}
@@ -140,12 +146,12 @@ public class IdentityFetcher implements ClientCallback {
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * If this is the later, we restart the request.
 	 */
-	public void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		
 		if ((e.mode == FetchException.PERMANENT_REDIRECT) || (e.mode == FetchException.TOO_MANY_PATH_COMPONENTS )) {
 			// restart the request
 			try {
-				state.restart(e.newURI);
+				state.restart(e.newURI, null, clientContext);
 				// Done. bye.
 				return;
 			} catch (FetchException e1) {
@@ -163,7 +169,7 @@ public class IdentityFetcher implements ClientCallback {
 	 * Called when a file is successfully fetched. We then create an
 	 * {@link IdentityParser} and give it the file content. 
 	 */
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		
 		Logger.debug(this, "Fetched identity "+ state.getURI().toString());
 		
@@ -175,7 +181,7 @@ public class IdentityFetcher implements ClientCallback {
 		}
 		
 		try {
-			state.restart(state.getURI().setSuggestedEdition(state.getURI().getSuggestedEdition() + 1));
+			state.restart(state.getURI().setSuggestedEdition(state.getURI().getSuggestedEdition() + 1), null, clientContext);
 		}
 		catch(Exception e) {
 			Logger.error(this, "Error fetching next edition for " + state.getURI());
@@ -196,18 +202,18 @@ public class IdentityFetcher implements ClientCallback {
 	}
 
 	// Only called by inserts
-	public void onSuccess(BaseClientPutter state) {}
+	public void onSuccess(BaseClientPutter state, ObjectContainer container) {}
 	
 	// Only called by inserts
-	public void onFailure(InsertException e, BaseClientPutter state) {}
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {}
 
 	// Only called by inserts
-	public void onFetchable(BaseClientPutter state) {}
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) {}
 
 	// Only called by inserts
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {}
 
 	/** Called when freenet.async thinks that the request should be serialized to
 	 * disk, if it is a persistent request. */
-	public void onMajorProgress() {}
+	public void onMajorProgress(ObjectContainer container) {}
 }
