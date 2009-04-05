@@ -166,6 +166,7 @@ public class WebInterface implements FredPluginHTTP {
 			page.make();
 			return page.toHTML();
 		} catch (Exception e) {
+			/* FIXME: Return a HTML page, not just e.getLocalizedMessage! */
 			e.printStackTrace();
 			return e.getLocalizedMessage();
 		}
