@@ -226,7 +226,7 @@ public class WebInterface implements FredPluginHTTP {
 				OwnIdentity id = ownIdentities.next();
 				row=identitiesTable.addChild("tr");
 				row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"}, id.getNickName());
-				row.addChild("td",id.getLastChange().toString());
+				row.addChild("td",id.getLastChangeDate().toString());
 				HTMLNode cell = row.addChild("td");
 				if(id.getLastInsert() == null) {
 					cell.addChild("p", "Insert in progress...");
@@ -335,9 +335,9 @@ public class WebInterface implements FredPluginHTTP {
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "publishTrustList", "true"});
 		createForm.addChild("br");
 		
-		createForm.addChild("p", "Contexts : "+id.getContextsAsString());
+		createForm.addChild("p", "Contexts : " + id.getContexts());
 		
-		createForm.addChild("p", "Properties : "+id.getPropsAsString());
+		createForm.addChild("p", "Properties : " + id.getProperties());
 		
 		// TODO Give the user the ability to edit these parameters...
 		

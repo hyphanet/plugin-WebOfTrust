@@ -72,7 +72,7 @@ public class IdentityPage extends WebPageImpl {
 	
 	private void makeServicesBox() {
 		HTMLNode boxContent = getContentBox("Services of identity '" + identity.getNickName() + "'");
-		Iterator<String> iter = identity.getContexts();
+		Iterator<String> iter = identity.getContexts().iterator();
 		StringBuilder contexts = new StringBuilder(128);
 		while(iter.hasNext()) {
 			contexts.append(iter.next());

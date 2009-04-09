@@ -212,7 +212,7 @@ public class OwnIdentity extends Identity {
 
 		// Properties
 		
-		Iterator<Entry<String, String>> props = getProps();
+		Iterator<Entry<String, String>> props = getProperties().entrySet().iterator();
 		while(props.hasNext()){
 			Map.Entry<String,String> prop = props.next();
 			Element propTag = xmlDoc.createElement("Property");
@@ -222,9 +222,7 @@ public class OwnIdentity extends Identity {
 		}
 
 		// Contexts
-		Iterator<String> contexts = getContexts();
-		while(contexts.hasNext()) {
-			String context = (String)contexts.next();
+		for(String context : getContexts()) {
 			Element contextTag = xmlDoc.createElement("Context");
 			contextTag.setAttribute("value", context);
 			identity.appendChild(contextTag);			
@@ -280,7 +278,7 @@ public class OwnIdentity extends Identity {
 	 * @return Whether this OwnIdentity needs to be inserted or not
 	 */
 	public synchronized boolean needsInsert() {
-		return (getLastChange().after(getLastInsert()) || (new Date().getTime() - getLastInsert().getTime()) > 1000*60*60*24*7); 
+		return (getLastChangeDate().after(getLastInsert()) || (new Date().getTime() - getLastInsert().getTime()) > 1000*60*60*24*7); 
 	}
 
 	/**

@@ -137,8 +137,8 @@ public final class FCPInterface implements FredPluginFCP {
                 && params.getBoolean("PublishIntroductionPuzzles"))
         {
             /* TODO: Create a function for those? */
-            identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db);
-            identity.setProp("IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT), db);
+            identity.addContext(db, IntroductionPuzzle.INTRODUCTION_CONTEXT);
+            identity.setProperty(db, "IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT));
         }
 
         sfs.putAppend("Message", "IdentityCreated");
@@ -226,7 +226,7 @@ public final class FCPInterface implements FredPluginFCP {
             sfs.putAppend("Rank", "null");
         }
 
-        final Iterator<String> contexts = identity.getContexts();
+        final Iterator<String> contexts = identity.getContexts().iterator();
         for (int i = 1; contexts.hasNext(); i++) {
             sfs.putAppend("Context" + i, contexts.next());
         }

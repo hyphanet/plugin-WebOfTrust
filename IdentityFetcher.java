@@ -86,7 +86,7 @@ public class IdentityFetcher implements ClientCallback {
 					 * for it to finish */
 
 		try {
-			if(nextEdition && !identity.getLastChange().equals(new Date(0)))
+			if(nextEdition && !identity.getLastChangeDate().equals(new Date(0)))
 				fetch(identity.getRequestURI().setSuggestedEdition(identity.getRequestURI().getSuggestedEdition() + 1));
 			else
 				fetch(identity.getRequestURI());

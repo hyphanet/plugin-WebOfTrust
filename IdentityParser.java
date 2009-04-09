@@ -116,16 +116,16 @@ public class IdentityParser {
 
 			try {
 				if (elt_name.equals("Name")) {
-					identity.setNickName(attrs.getValue("value"));
+					identity.setNickname(attrs.getValue("value"));
 				}
 				else if (elt_name.equals("PublishesTrustlist")) {
 					identity.setPublishTrustList(attrs.getValue("value").equals("true"));
 				}
 				else if (elt_name.equals("Property")) {
-					identity.setProp(attrs.getValue("key"), attrs.getValue("value"), db);
+					identity.setProperty(db, attrs.getValue("key"), attrs.getValue("value"));
 				}
 				else if(elt_name.equals("Context")) {
-					identity.addContext(attrs.getValue("value"), db);
+					identity.addContext(db, attrs.getValue("value"));
 				}
 				else if (elt_name.equals("Trust")) {
 	
