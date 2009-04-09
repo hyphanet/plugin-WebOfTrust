@@ -50,6 +50,7 @@ import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginHTTP;
 import freenet.pluginmanager.FredPluginL10n;
+import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.FredPluginWithClassLoader;
@@ -67,7 +68,7 @@ import freenet.support.io.TempBucketFactory;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginL10n,
+public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned, FredPluginL10n,
 	FredPluginWithClassLoader {
 	
 	/* Constants */
@@ -595,7 +596,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public String getVersion() {
-		return "0.4.0 r"+Version.getSvnRevision();
+		return Version.getMarketingVersion();
+	}
+	
+	public long getRealVersion() {
+		return Version.getRealVersion();
 	}
 
 	/* would only be needed if we connect the client plugins directly via object references which will probably not happen
