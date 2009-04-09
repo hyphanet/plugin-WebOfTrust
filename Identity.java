@@ -94,8 +94,8 @@ public class Identity {
 	private FreenetURI requestURI;
 	
 	
-	/** Date of the first time we saw this identity in someone's trust list */
-	private final Date mFirstSeenDate;
+	/** Date when this identity was added. */
+	private final Date mAddedDate;
 	
 	/** Date of the first time we successfully fetched the XML of this identity */
 	private final Date mFirstFetchedDate;
@@ -143,7 +143,7 @@ public class Identity {
 	 */
 	public Identity (FreenetURI newRequestURI, String newNickName, boolean publishTrustList) throws InvalidParameterException {
 		setRequestURI(newRequestURI);
-		mFirstSeenDate = CurrentTimeUTC.get();
+		mAddedDate = CurrentTimeUTC.get();
 		mFirstFetchedDate = null;
 		id = getIdFromURI(getRequestURI());
 		setNickname(newNickName);
@@ -852,8 +852,8 @@ public class Identity {
 	/**
 	 * @return The date when this identity was first seen in a trust list of someone.
 	 */
-	public Date getFirstSeenDate() {
-		return (Date)mFirstSeenDate.clone();
+	public Date getAddedDate() {
+		return (Date)mAddedDate.clone();
 	}
 
 	public Date getFirstFetchedDate() {
