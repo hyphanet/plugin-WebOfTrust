@@ -40,6 +40,10 @@ public class TrustTest extends DatabaseBasedTest {
 		db.store(b);
 		db.commit();
 	}
+	
+	/* FIXME: Add some logic to make db4o deactivate everything which is not used before loading the objects from the db!
+	 * Otherwise these tests might not be sufficient. 
+	 * Put this logic into the DatabaseBasedTest base class. */
 
 	public void testTrust() throws InvalidParameterException, NotTrustedException, DuplicateTrustException {
 

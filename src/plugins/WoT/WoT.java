@@ -55,7 +55,6 @@ import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.FredPluginWithClassLoader;
 import freenet.pluginmanager.PluginHTTPException;
-import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
@@ -65,7 +64,9 @@ import freenet.support.api.HTTPRequest;
 import freenet.support.io.TempBucketFactory;
 
 /**
- * @author Julien Cornuwel (batosai@freenetproject.org)
+ * A web of trust plugin based on Freenet.
+ * 
+ * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
 public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginL10n,
 	FredPluginWithClassLoader {
@@ -181,10 +182,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		try {
 			ObjectSet<OwnIdentity> oids = db.queryByExample(OwnIdentity.class);
 			for(OwnIdentity oid : oids) {
-				oid.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db);
+				oid.addContext(db, IntroductionPuzzle.INTRODUCTION_CONTEXT);
 				oid.removeContext("freetalk", db);
-				oid.addContext("Freetalk", db);
-				oid.setProp("IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT), db);
+				oid.addContext(db, "Freetalk");
+				oid.setProperty(db, "IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT));
 			}
 		}
 		catch(InvalidParameterException e) {}
@@ -218,7 +219,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		for(Identity i : identities) {
 			Query q = db.query();
 			q.constrain(Identity.class);
-			q.constrain(OwnIdentity.class).not();
+			//q.constrain(OwnIdentity.class).not();
 			q.descend("id").constrain(i.getId());
 			q.constrain(i).identity().not();
 			ObjectSet<Identity> duplicates = q.execute();
@@ -449,9 +450,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public OwnIdentity createIdentity(String insertURI, String requestURI, String nickName, boolean publishTrustList, String context) throws InvalidParameterException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 
 		OwnIdentity identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
-		identity.addContext(context, db);
-		identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT, db); /* fixme: make configureable */
-		identity.setProp("IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT), db);
+		identity.addContext(db, context);
+		identity.addContext(db, IntroductionPuzzle.INTRODUCTION_CONTEXT); /* FIXME: make configureable */
+		identity.setProperty(db, "IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT));
 		db.store(identity);
 		identity.initTrustTree(db);		
 
@@ -478,14 +479,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			id = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), old.getNickName(), old.doesPublishTrustList());
 			id.setEdition(old.getEdition());
 			
-			Iterator<String> i1 = old.getContexts();
-			while (i1.hasNext()) id.addContext(i1.next(), db);
+			for(String context : old.getContexts())
+				id.addContext(db, context);
 			
-			Iterator<Entry<String, String>> i2 = old.getProps();
-			while (i2.hasNext()) {
-				Entry<String, String> prop = i2.next();
-				id.setProp(prop.getKey(), prop.getValue(), db);
-			}
+			for(Entry<String, String> prop : old.getProperties().entrySet())
+				id.setProperty(db, prop.getKey(), prop.getValue());
 			
 			// Update all received trusts
 			ObjectSet<Trust> receivedTrusts = old.getReceivedTrusts(db);
@@ -563,7 +561,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	public void addContext(String identity, String context) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		Identity id = OwnIdentity.getById(db, identity);
-		id.addContext(context, db);
+		id.addContext(db, context);
 		db.store(id);
 		
 		Logger.debug(this, "Added context '" + context + "' to identity '" + id.getNickName() + "'");
@@ -579,19 +577,19 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 	public void setProperty(String identity, String property, String value) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		Identity id = OwnIdentity.getById(db, identity);
-		id.setProp(property, value, db);
+		id.setProperty(db, property, value);
 		db.store(id);
 		
 		Logger.debug(this, "Added property '" + property + "=" + value + "' to identity '" + id.getNickName() + "'");
 	}
 	
 	public String getProperty(String identity, String property) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		return Identity.getById(db, identity).getProp(property);
+		return Identity.getById(db, identity).getProperty(property);
 	}
 	
 	public void removeProperty(String identity, String property) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
 		Identity id = OwnIdentity.getById(db, identity);
-		id.removeProp(property, db);
+		id.removeProperty(property, db);
 		db.store(id);
 		
 		Logger.debug(this, "Removed property '" + property + "' from identity '" + id.getNickName() + "'");

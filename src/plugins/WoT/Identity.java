@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -40,10 +42,10 @@ import freenet.support.StringValidityChecker;
 
 /**
  * An identity as handled by the WoT (a USK). 
- * <p>
- * It has a nickName and as many custom properties as needed (set by the user).
  * 
- * @author Julien Cornuwel (batosai@freenetproject.org)
+ * It has a nickname and as many custom properties as needed (set by the user).
+ * 
+ * @author Julien Cornuwel (batosai@freenetproject.org), xor (xor@freenetproject.org)
  * @param id A unique identifier used to query an Identity from the database
  * @param requestURI The requestURI used to fetch this identity from Freenet
  * @param nickName The nickname of an Identity
@@ -91,6 +93,13 @@ public class Identity {
 	/** The requestURI used to fetch this identity from Freenet */
 	private FreenetURI requestURI;
 	
+	
+	/** Date of the first time we saw this identity in someone's trust list */
+	private final Date mFirstSeenDate;
+	
+	/** Date of the first time we successfully fetched the XML of this identity */
+	private final Date mFirstFetchedDate;
+	
 	/** Date of this identity's last modification (last time we fetched it from Freenet) */
 	private Date lastChange;
 	
@@ -107,6 +116,23 @@ public class Identity {
 	private ArrayList<String> contexts;
 
 
+	public synchronized void storeAndCommit(ObjectContainer db) {
+		if(db.ext().isStored(this) && !db.ext().isActive(this))
+			throw new RuntimeException("Trying to store an inactive Identity object!");
+		
+		// db.store(id); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+		db.store(requestURI);
+		// db.store(mFirstSeenDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+		// db.store(lastChange); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+		// db.store(nickName); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+		// db.store(publishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+		db.store(props);
+		db.store(contexts);
+		db.store(this);
+		db.commit();
+	}
+
+	
 	/**
 	 * Creates an Identity
 	 * 
@@ -117,11 +143,13 @@ public class Identity {
 	 */
 	public Identity (FreenetURI newRequestURI, String newNickName, boolean publishTrustList) throws InvalidParameterException {
 		setRequestURI(newRequestURI);
+		mFirstSeenDate = CurrentTimeUTC.get();
+		mFirstFetchedDate = null;
 		id = getIdFromURI(getRequestURI());
-		setNickName(newNickName);
+		setNickname(newNickName);
 		setPublishTrustList(publishTrustList);
 		props = new HashMap<String, String>();
-		contexts = new ArrayList<String>();
+		contexts = new ArrayList<String>(4); /* Currently we have: Freetalk, Introduction */
 		
 		Logger.debug(this, "New identity : " + getNickName());
 	}	
@@ -138,6 +166,7 @@ public class Identity {
 	public Identity (String requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
 		this(new FreenetURI(requestURI), nickName, publishTrustList);
 	}
+	
 	
 	/**
 	 * Create an identity from an identity introduction.
@@ -166,7 +195,7 @@ public class Identity {
 			}
 			catch (UnknownIdentityException e) {
 				id = new Identity(requestURI, null, false);
-				db.store(id);
+				id.storeAndCommit(db);
 				fetcher.fetch(id);
 			}
 		}
@@ -282,7 +311,7 @@ public class Identity {
 	 * @param uri The requestURI of the Identity
 	 * @return A string to uniquely identify an Identity
 	 */
-	public static String getIdFromURI (FreenetURI uri) {
+	public final static String getIdFromURI (FreenetURI uri) {
 		/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
 		return Base64.encode(uri.getRoutingKey());
 	}
@@ -341,6 +370,7 @@ public class Identity {
 	public int getBestScore(ObjectContainer db) {
 		int bestScore = 0;
 		ObjectSet<Score> scores = getScores(db);
+		/* TODO: Use a db4o native query for this loop. Maybe use an index, indexes should be sorted so maximum search will be O(1). */
 		while(scores.hasNext()) {
 			Score score = scores.next();
 			if(score.getScore() > bestScore) bestScore = score.getScore();
@@ -616,17 +646,18 @@ public class Identity {
 	
 	/**
 	 * Sets the requestURI of this Identity.
-	 * The given {@link FreenetURI} is converted to USK and the docName is forced to WoT.
+	 * The given {@link FreenetURI} is converted to USK and the document name is forced to WoT.
 	 * 
-	 * @param requestURI The FreenetURI used to fetch this identity 
-	 * @throws InvalidParameterException if the given FreenetURI is neither a SSK nor a USK
+	 * @param newRequestURI The FreenetURI used to fetch this identity 
+	 * @throws IllegalArgumentException If the given FreenetURI is neither a SSK nor a USK.
 	 */
-	protected synchronized void setRequestURI(FreenetURI newRequestURI) throws InvalidParameterException {
-		if(requestURI != null && !newRequestURI.equalsKeypair(requestURI))
-			throw new InvalidParameterException("Cannot change the request URI of an existing identity");
+	protected synchronized void setRequestURI(FreenetURI newRequestURI) {
+		if(!newRequestURI.equalsKeypair(requestURI))
+			throw new IllegalArgumentException("Cannot change the request URI of an existing identity.");
 		
-		if(newRequestURI.getKeyType().equals("SSK")) newRequestURI = newRequestURI.setKeyType("USK");
-		if(!newRequestURI.getKeyType().equals("USK")) throw new InvalidParameterException("Key type not supported");
+		if(!newRequestURI.isUSK() && !newRequestURI.isSSK())
+			throw new IllegalArgumentException("Identity URI keytype not supported: " + newRequestURI);
+		
 		requestURI = newRequestURI.setKeyType("USK").setDocName("WoT");
 		updated();
 	}
@@ -652,7 +683,7 @@ public class Identity {
 	 * @param nickName A String containing this Identity's NickName. Setting it to null means that it was not retrieved yet.
 	 * @throws InvalidParameterException if the nickName's length is bigger than 50, or if it empty
 	 */
-	public synchronized void setNickName(String newNickname) throws InvalidParameterException {
+	public synchronized void setNickname(String newNickname) throws InvalidParameterException {
 		if(newNickname != null)
 			newNickname = newNickname.trim();
 		
@@ -677,7 +708,7 @@ public class Identity {
 	
 	/* IMPORTANT: This code is duplicated in plugins.Freetalk.WoT.WoTIdentity.validateNickname().
 	 * Please also modify it there if you modify it here */
-	public synchronized boolean isNicknameValid(String newNickname) {
+	public boolean isNicknameValid(String newNickname) {
 		return newNickname.length() > 0 && newNickname.length() < 50 && 
 				StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname);
 	}
@@ -694,60 +725,67 @@ public class Identity {
 	
 	/**
 	 * Sets a custom property on this Identity. Custom properties keys have to be unique.
-	 * This can be used by client apps that need to put additionnal informations on their Identities (crypto keys, avatar, whatever...)
-	 * 
-	 * @param key Name of the custom property
-	 * @param value Value of the property
-	 * @param db A reference to the database 
-	 * @throws InvalidParameterException if the key or the value is empty
+	 * This can be used by client applications that need to store additional informations on their Identities (crypto keys, avatar, whatever...).
+	 * The key is always trimmed before storage, the value is stored as passed.
+	 *
+	 * @param db A reference to the database.
+	 * @param key Name of the custom property.
+	 * @param value Value of the custom property.
+	 * @throws InvalidParameterException If the key or the value is empty.
 	 */
-	public synchronized void setProp(String key, String value, ObjectContainer db) throws InvalidParameterException {
-		if(key.trim().length() == 0 || value.trim().length() == 0) throw new InvalidParameterException("Blank key or value in this property");
-		String oldValue = props.get(key.trim());
-		if(oldValue == null || oldValue.equals(value.trim()) == false) {
-			props.put(key.trim(), value.trim());
-			db.store(props);
+	public synchronized void setProperty(ObjectContainer db, String key, String value) throws InvalidParameterException {
+		key = key.trim();
+		
+		if(key.length() == 0 || value.length() == 0)
+			throw new InvalidParameterException("Blank key or value in this property");
+		
+		String oldValue = props.get(key);
+		if(oldValue == null || oldValue.equals(value) == false) {
+			props.put(key, value);
 			updated();
+			db.store(props);
 		}
 	}
 	
 	/**
-	 * Removes a custom property from this Identity
+	 * Removes a custom property from this Identity, does nothing if it does not exist.
 	 * 
-	 * @param key Name of the custom property
-	 * @param db A reference to the database 
-	 * @throws InvalidParameterException if this Identity doesn't have the given property
+	 * @param db A reference to the database.
+	 * @param key Name of the custom property.
 	 */
-	public synchronized void removeProp(String key, ObjectContainer db) throws InvalidParameterException {
-		if(!props.containsKey(key)) throw new InvalidParameterException("Property '"+key+"' isn't set on this identity");
-		props.remove(key.trim());
-		db.store(props);
-		updated();
+	public synchronized void removeProperty(String key, ObjectContainer db) throws InvalidParameterException {
+		key = key.trim();		
+		props.remove(key);
 	}
 	
 	/**
-	 * Gets all custom properties from this Identity
+	 * Gets all custom properties from this Identity.
 	 * 
-	 * @return An Iterator referencing all this Identity's custom properties
+	 * @return A copy of the HashMap<String, String> referencing all this Identity's custom properties.
 	 */
-	public synchronized Iterator<Entry<String, String>> getProps() {
-		Iterator<Entry<String, String>> i = props.entrySet().iterator();
-		return i;
+	@SuppressWarnings("unchecked")
+	public synchronized HashMap<String, String> getProperties() {
+		/* TODO: If this is used often, we might verify that no code corrupts the HashMap and return the original one instead of a copy */
+		return (HashMap<String, String>)props.clone();
 	}
 	
 	/**
-	 * Adds a context to this identity.
+	 * Adds a context to this identity. A context is a string, the identities contexts are a set of strings - no context will be added more than
+	 * once.
 	 * Contexts are used by clients to identify what identities are relevant for their use.
-	 * Example : A filesharing app sets a 'filesharing' context on its identities,
-	 * so it only has to fetch files lists from relevant Identities.
+	 * Example: A file sharing application sets a 'Filesharing' context on its identities, so it only has to fetch files lists from relevant
+	 * identities.
 	 * 
-	 * @param context Name of the context
-	 * @param db A reference to the database
-	 * @throws InvalidParameterException if the context name is empty
+	 * @param db A reference to the database.
+	 * @param context Name of the context.
+	 * @throws InvalidParameterException If the context name is empty
 	 */
-	public synchronized void addContext(String context, ObjectContainer db) throws InvalidParameterException {
-		String newContext = context.trim();
-		if(newContext.length() == 0) throw new InvalidParameterException("Blank context");
+	public synchronized void addContext(ObjectContainer db, String newContext) throws InvalidParameterException {
+		newContext = newContext.trim();
+		
+		if(newContext.length() == 0)
+			throw new InvalidParameterException("A blank context cannot be added to an identity.");
+		
 		if(!contexts.contains(newContext)) {
 			contexts.add(newContext);
 			db.store(contexts);
@@ -756,18 +794,20 @@ public class Identity {
 	}
 	
 	/**
-	 * Removes a context from this Identity.
-	 * If this Identity is no longer used by a client app, 
-	 * the user can tell it and others won't try to fetch it anymore.
+	 * Removes a context from this Identity, does nothing if it does not exist.
+	 * If this Identity is no longer used by a client application, the user can tell it and others won't try to fetch it anymore.
 	 * 
-	 * @param context Name of the context
-	 * @param db A reference to the database
+	 * @param db A reference to the database.
+	 * @param context Name of the context.
 	 * @throws InvalidParameterException if the client tries to remove the last context of this Identity (an identity with no context is useless)
 	 */
 	public synchronized void removeContext(String context, ObjectContainer db) throws InvalidParameterException {
-		if(contexts.size() == 1) throw new InvalidParameterException("Only one context left");
 		context = context.trim();
+		
 		if(contexts.contains(context)) {
+			if(contexts.size() == 1)
+				throw new InvalidParameterException("An identity must have at least one context, the last one cannot be deleted.");
+			
 			contexts.remove(context);
 			db.store(contexts);
 			updated();
@@ -775,19 +815,22 @@ public class Identity {
 	}
 
 	/**
-	 * Gets all this Identity's contexts
+	 * Gets all this Identity's contexts.
 	 * 
-	 * @return An Iterator referencing all this identity's contexts
+	 * @return A copy of the ArrayList<String> of all contexts of this identity.
 	 */
-	public synchronized Iterator<String> getContexts() {
-		return contexts.iterator();
+	@SuppressWarnings("unchecked")
+	public synchronized ArrayList<String> getContexts() {
+		/* TODO: If this is used often - which it probably is, we might verify that no code corrupts the HashMap and return the original one
+		 * instead of a copy */
+		return (ArrayList<String>)contexts.clone();
 	}
 		
 	/**
 	 * Tell that this Identity has been updated.
+	 * Does not store the modified identity object, you have to call db.store(this); db.commit();
 	 */
 	public synchronized void updated() {
-		
 		lastChange = CurrentTimeUTC.get();
 	}
 	
@@ -807,22 +850,22 @@ public class Identity {
 	}
 
 	/**
+	 * @return The date when this identity was first seen in a trust list of someone.
+	 */
+	public Date getFirstSeenDate() {
+		return (Date)mFirstSeenDate.clone();
+	}
+
+	public Date getFirstFetchedDate() {
+		return (Date)mFirstFetchedDate.clone();
+	}
+
+	/**
 	 * @return The date of this Identity's last modification
 	 */
-	public synchronized Date getLastChange() {
-		return lastChange;
+	public synchronized Date getLastChangeDate() {
+		return (Date)lastChange.clone();
 	}
-	
-	/* TODO: I think this is not the job of class Identity, remove this.
-
-	 * @return A string representing the date of this Identity's last 
-	 * modification. Or "Fetching..." if it has not been fetched yet.
-
-	public synchronized String getReadableLastChange() {
-		if (lastChange.equals(new Date(0))) return "Fetching...";
-		else return lastChange.toString();
-	}
-	*/
 
 	/**
 	 * @return this Identity's nickName
@@ -832,43 +875,38 @@ public class Identity {
 	}
 
 	/**
-	 * @return Whether this Identity publishes its trustList or not
+	 * Checks whether this identity publishes a trust list.
+	 * 
+	 * @return Whether this Identity publishes its trustList or not.
 	 */
-	public boolean doesPublishTrustList() {
+	public synchronized boolean doesPublishTrustList() {
 		return publishTrustList;
-	}
-
-	/**
-	 * @return A String listing all this Identity's contexts
-	 */
-	public synchronized String getContextsAsString() {
-		return contexts.toString();
 	}
 	
 	/**
-	 * Gets the value of one of this Identity's contexts
+	 * Gets the value of one of this Identity's properties.
 	 * 
 	 * @param key The name of the requested custom property
 	 * @return The value of the requested custom property
 	 * @throws InvalidParameterException if this Identity doesn't have the required property
 	 */
-	public synchronized String getProp(String key) throws InvalidParameterException {
-		if(!props.containsKey(key)) throw new InvalidParameterException("Property '"+key+"' isn't set on this identity");
+	public synchronized String getProperty(String key) throws InvalidParameterException {
+		key = key.trim();
+		
+		if(!props.containsKey(key))
+			throw new InvalidParameterException("The property '" + key +"' isn't set on this identity.");
+		
 		return props.get(key);
 	}
 	
 	/**
-	 * @return A String listing all this Identities custom properties
-	 */
-	public synchronized String getPropsAsString() {
-		return props.toString();
-	}
-	
-	/**
+	 * Checks whether this identity offers the given contexts.
+	 * 
 	 * @param context The context we want to know if this Identity has it or not
 	 * @return Whether this Identity has that context or not
 	 */
 	public synchronized boolean hasContext(String context) {
 		return contexts.contains(context.trim());
 	}
+
 }

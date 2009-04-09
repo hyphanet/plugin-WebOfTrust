@@ -454,7 +454,7 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 	
 	public int getIdentityPuzzleUploadCount(Identity i) {
 		try {
-			return Math.max(Integer.parseInt(i.getProp("IntroductionPuzzleCount")), 0);
+			return Math.max(Integer.parseInt(i.getProperty("IntroductionPuzzleCount")), 0);
 		}
 		catch(Exception e) {
 			return IntroductionServer.PUZZLE_COUNT;

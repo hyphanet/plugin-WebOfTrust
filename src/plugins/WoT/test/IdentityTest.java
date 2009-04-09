@@ -28,11 +28,13 @@ public class IdentityTest extends DatabaseBasedTest {
 		super.setUp();
 		
 		identity = new Identity(uri, "test", true);
-		identity.addContext("bleh", db);
-		
-		db.store(identity);
-		db.commit();
+		identity.addContext(db, "bleh");
+		identity.storeAndCommit(db);
 	}
+	
+	/* FIXME: Add some logic to make db4o deactivate everything which is not used before loading the objects from the db!
+	 * Otherwise these tests might not be sufficient. 
+	 * Put this logic into the DatabaseBasedTest base class. */
 	
 	public void testIdentityStored() {
 		ObjectSet<Identity> result = db.queryByExample(Identity.class);
@@ -49,7 +51,7 @@ public class IdentityTest extends DatabaseBasedTest {
 
 	public void testContexts() throws InvalidParameterException  {
 		assertFalse(identity.hasContext("foo"));
-		identity.addContext("test", db);
+		identity.addContext(db, "test");
 		assertTrue(identity.hasContext("test"));
 		identity.removeContext("test", db);
 		assertFalse(identity.hasContext("test"));
@@ -57,19 +59,19 @@ public class IdentityTest extends DatabaseBasedTest {
 
 	public void testProperties() {
 		try {
-			identity.setProp("foo", "bar", db);
+			identity.setProperty(db, "foo", "bar");
 		} catch (InvalidParameterException e) {}
 		
 		try {
-			assertTrue(identity.getProp("foo").equals("bar"));
+			assertTrue(identity.getProperty("foo").equals("bar"));
 		} catch (InvalidParameterException e) { fail(); }
 		
 		try {
-			identity.removeProp("foo", db);
+			identity.removeProperty("foo", db);
 		} catch (InvalidParameterException e) {	fail();	}
 		
 		try {
-			identity.getProp("foo");
+			identity.getProperty("foo");
 			fail();
 		} catch (InvalidParameterException e) {}
 	}

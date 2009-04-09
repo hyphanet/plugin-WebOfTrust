@@ -80,7 +80,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				synchronized(mDateFormat) {
 					mDateFormat.setTimeZone(TimeZone.getDefault());
 					/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
-					row.addChild("td", mDateFormat.format(id.getLastChange()));
+					row.addChild("td", mDateFormat.format(id.getLastChangeDate()));
 				}
 				HTMLNode cell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				if(id.getLastInsert() == null) {

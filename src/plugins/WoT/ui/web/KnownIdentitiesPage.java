@@ -163,7 +163,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			synchronized(mDateFormat) {
 				mDateFormat.setTimeZone(TimeZone.getDefault());
 				/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
-				row.addChild("td", mDateFormat.format(id.getLastChange()));
+				row.addChild("td", mDateFormat.format(id.getLastChangeDate()));
 			}
 			
 			// Publish TrustList
