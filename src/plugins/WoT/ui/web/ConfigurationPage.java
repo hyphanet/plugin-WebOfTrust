@@ -3,21 +3,21 @@
  */
 package plugins.WoT.ui.web;
 
-import plugins.WoT.WoT;
 import freenet.support.api.HTTPRequest;
 
 /**
- * @author p0s
+ * @author xor (xor@freenetproject.org)
  *
  */
 public class ConfigurationPage extends WebPageImpl {
 
 	/**
-	 * @param wot a reference to the WoT, used to get resources the page needs. 
-	 * @param request the request sent by the user.
+	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
+	 * @param myRequest The request sent by the user.
 	 */
-	public ConfigurationPage(WoT wot, HTTPRequest request) {
-		super(wot, request);
+	public ConfigurationPage(WebInterface myWebInterface, HTTPRequest myRequest) {
+		super(myWebInterface, myRequest);
+		// TODO Auto-generated constructor stub
 	}
 
 	/* (non-Javadoc)

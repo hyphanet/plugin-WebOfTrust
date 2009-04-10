@@ -9,7 +9,6 @@ import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.Score;
 import plugins.WoT.Trust;
-import plugins.WoT.WoT;
 
 import com.db4o.ObjectContainer;
 
@@ -24,15 +23,17 @@ import freenet.support.api.HTTPRequest;
 
 public class HomePage extends WebPageImpl {
 	
+
 	/**
 	 * Creates a new HomePage.
 	 * 
-	 * @param wot a reference to the WoT, used to get resources the page needs. 
-	 * @param request the request sent by the user.
+	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
+	 * @param myRequest The request sent by the user.
 	 */
-	public HomePage(WoT wot, HTTPRequest request) {
-		super(wot, request);
+	public HomePage(WebInterface myWebInterface, HTTPRequest myRequest) {
+		super(myWebInterface, myRequest);
 	}
+
 	
 	/* (non-Javadoc)
 	 * @see plugins.WoT.ui.web.WebPage#make()
