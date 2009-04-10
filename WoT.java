@@ -77,7 +77,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * below. The purpose of this costant is to allow anyone to create his own custom web of trust which is completely disconnected from the
 	 * "official" web of trust of the Freenet project.
 	 */
-	public static final String WOT_CONTEXT = "WoT";
+	public static final String WOT_NAME = "WoT";
 	
 	/**
 	 * The official seed identity of the WoT plugin: If a newbie wants to download the whole offficial web of trust, he needs at least one trust
