@@ -128,9 +128,9 @@ public final class IntroductionClient implements PrioRunnable, ClientCallback  {
 	public IntroductionClient(WoT myWoT) {
 		mWoT = myWoT;
 		db = mWoT.getDB();
-		mClient = mWoT.getClient();
-		mTBF = mWoT.getTBF();
-		mRandom = mWoT.getRandom();
+		mClient = mWoT.getPluginRespirator().getHLSimpleClient();
+		mTBF = mWoT.getPluginRespirator().getNode().clientCore.tempBucketFactory;
+		mRandom = mWoT.getPluginRespirator().getNode().fastWeakRandom;
 		requestClient = myWoT.getRequestClient();
 		isRunning = true;
 	}

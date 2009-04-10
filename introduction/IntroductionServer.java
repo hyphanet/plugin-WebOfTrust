@@ -109,9 +109,9 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 		mIdentityFetcher = myFetcher;
 		
 		db = mWoT.getDB();
-		mClient = mWoT.getClient();
-		mTBF = mWoT.getTBF();
-		mRandom = mWoT.getRandom();
+		mClient = mWoT.getPluginRespirator().getHLSimpleClient();
+		mTBF = mWoT.getPluginRespirator().getNode().clientCore.tempBucketFactory;
+		mRandom = mWoT.getPluginRespirator().getNode().fastWeakRandom;
 		requestClient = mWoT.getRequestClient();
 		clientContext = mWoT.getClientContext();
 		

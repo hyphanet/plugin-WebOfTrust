@@ -21,8 +21,15 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	protected OwnIdentity mIdentity;
 	protected List<IntroductionPuzzle> mPuzzles;
 
-	public IntroduceIdentityPage(WoT wot, HTTPRequest request, IntroductionClient myClient, OwnIdentity myIdentity) {
-		super(wot, request);
+	/**
+	 *
+	 * 
+	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
+	 * @param myRequest The request sent by the user.
+	 */
+	public IntroduceIdentityPage(WebInterface myWebInterface, HTTPRequest myRequest, IntroductionClient myClient, OwnIdentity myIdentity) {
+		super(myWebInterface, myRequest);
+		
 		mIdentity = myIdentity; 
 		mClient = myClient;
 		
@@ -51,7 +58,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 
 	public void make() {
-		PluginRespirator pr = wot.getPR();
+		PluginRespirator pr = wot.getPluginRespirator();
 		makeInfoBox(pr);
 		makePuzzleBox(pr);
 	}

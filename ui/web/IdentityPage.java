@@ -24,12 +24,11 @@ import java.util.List;
 
 import plugins.WoT.Identity;
 import plugins.WoT.Trust;
-import plugins.WoT.WoT;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
- * @author David &lsquo;Bombe&rsquo; Roden &lt;bombe@freenetproject.org&gt;
+ * @author David &lsquo;Bombe&rsquo; Roden &lt;bombe@freenetproject.org&gt;, xor (xor@freenetproject.org)
  * @version $Id$
  */
 public class IdentityPage extends WebPageImpl {
@@ -46,19 +45,14 @@ public class IdentityPage extends WebPageImpl {
 	/**
 	 * Creates a new trust-relationship web page.
 	 * 
-	 * @param webOfTrust
-	 *            The web of trust
-	 * @param httpRequest
-	 *            The HTTP request
-	 * @param identity
-	 *            The identity
-	 * @param trustersTrusts
-	 *            The trusts having the given identity as truster
-	 * @param trusteesTrusts
-	 *            The trusts having the given identity as trustee
+	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
+	 * @param myRequest The request sent by the user.
+	 * @param identity The identity
+	 * @param trustersTrusts The trusts having the given identity as truster
+	 * @param trusteesTrusts The trusts having the given identity as trustee
 	 */
-	public IdentityPage(WoT webOfTrust, HTTPRequest httpRequest, Identity identity, List<Trust> trustersTrusts, List<Trust> trusteesTrusts) {
-		super(webOfTrust, httpRequest);
+	public IdentityPage(WebInterface myWebInterface, HTTPRequest myRequest, Identity identity, List<Trust> trustersTrusts, List<Trust> trusteesTrusts) {
+		super(myWebInterface, myRequest);
 		this.identity = identity;
 		this.trustersTrusts = trustersTrusts;
 		this.trusteesTrusts = trusteesTrusts;

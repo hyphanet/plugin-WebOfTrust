@@ -25,17 +25,17 @@ import freenet.support.api.HTTPRequest;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class OwnIdentitiesPage extends WebPageImpl {
-	
+
 	private final static SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	/**
 	 * Creates a new OwnIdentitiesPage.
 	 * 
-	 * @param wot a reference to the WoT, used to get resources the page needs. 
-	 * @param request the request sent by the user.
+	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
+	 * @param myRequest The request sent by the user.
 	 */
-	public OwnIdentitiesPage(WoT wot, HTTPRequest request) {
-		super(wot, request);
+	public OwnIdentitiesPage(WebInterface myWebInterface, HTTPRequest myRequest) {
+		super(myWebInterface, myRequest);
 	}
 	
 	/* (non-Javadoc)
@@ -43,7 +43,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	 */
 	public void make() {
 		ObjectContainer db = wot.getDB();
-		PluginRespirator pr = wot.getPR();
+		PluginRespirator pr = wot.getPluginRespirator();
 		makeOwnIdentitiesList(db, pr);
 		makeRestoreOwnIdentityForm(pr);
 	}

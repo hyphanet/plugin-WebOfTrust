@@ -56,42 +56,43 @@ import freenet.support.api.HTTPRequest;
 public class WebInterface implements FredPluginHTTP {
 	
 	private WoT mWoT;
-	private PluginRespirator pr;
-	private PageMaker pm;
-	private HighLevelSimpleClient client;
-	private String SELF_URI;
+	private PluginRespirator mPluginRespirator;
+	private PageMaker mPageMaker;
+	private HighLevelSimpleClient mClient;
+	private String mURI;
+	
 	private ObjectContainer db;
 	private	Config config;
 
 	public WebInterface(WoT myWoT, String uri) {
 		mWoT = myWoT;
-		pr = mWoT.getPR();
+		mPluginRespirator = mWoT.getPluginRespirator();
 		db = mWoT.getDB();
 		config = mWoT.getConfig();
-		client = mWoT.getClient();
-		SELF_URI = uri;
+		mClient = mPluginRespirator.getHLSimpleClient();
+		mURI = uri;
 		
-		pm = pr.getPageMaker();
-		pm.addNavigationLink(SELF_URI, "Home", "Home page", false, null);
-		pm.addNavigationLink(SELF_URI + "?ownidentities", "Own Identities", "Manage your own identities", false, null);
-		pm.addNavigationLink(SELF_URI + "?knownidentities", "Known Identities", "Manage others identities", false, null);
-		pm.addNavigationLink(SELF_URI + "?configuration", "Configuration", "Configure the WoT plugin", false, null);
-		pm.addNavigationLink("/plugins/", "Plugins page", "Back to Plugins page", false, null);
+		mPageMaker = mPluginRespirator.getPageMaker();
+		mPageMaker.addNavigationLink(mURI, "Home", "Home page", false, null);
+		mPageMaker.addNavigationLink(mURI + "?ownidentities", "Own Identities", "Manage your own identities", false, null);
+		mPageMaker.addNavigationLink(mURI + "?knownidentities", "Known Identities", "Manage others identities", false, null);
+		mPageMaker.addNavigationLink(mURI + "?configuration", "Configuration", "Configure the WoT plugin", false, null);
+		mPageMaker.addNavigationLink("/plugins/", "Plugins page", "Back to Plugins page", false, null);
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
 		WebPage page = null;
 		
-		if(request.isParameterSet("ownidentities")) page = new OwnIdentitiesPage(mWoT, request);
-		else if(request.isParameterSet("knownidentities")) page = new KnownIdentitiesPage(mWoT, request);
-		else if(request.isParameterSet("configuration")) page = new ConfigurationPage(mWoT, request);
+		if(request.isParameterSet("ownidentities")) page = new OwnIdentitiesPage(this, request);
+		else if(request.isParameterSet("knownidentities")) page = new KnownIdentitiesPage(this, request);
+		else if(request.isParameterSet("configuration")) page = new ConfigurationPage(this, request);
 		// TODO Handle these two in KnownIdentitiesPage
 		else if (request.isParameterSet("showIdentity")) {
 			try {
 				Identity identity = Identity.getById(db, request.getParam("id"));
 				ObjectSet<Trust> trusteesTrusts = identity.getGivenTrusts(db);
 				ObjectSet<Trust> trustersTrusts = identity.getReceivedTrusts(db);
-				page = new IdentityPage(mWoT, request, identity, trustersTrusts, trusteesTrusts);
+				page = new IdentityPage(this, request, identity, trustersTrusts, trusteesTrusts);
 			} catch (UnknownIdentityException uie1) {
 				Logger.error(this, "Could not load identity " + request.getParam("id"), uie1);
 			}
@@ -107,7 +108,7 @@ public class WebInterface implements FredPluginHTTP {
 		}
 		
 		if (page == null) {
-			page = new HomePage(mWoT, request);
+			page = new HomePage(this, request);
 		}
 		
 		page.make();	
@@ -118,7 +119,7 @@ public class WebInterface implements FredPluginHTTP {
 		WebPage page;
 		
 		String pass = request.getPartAsString("formPassword", 32);
-		if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword)) {
+		if ((pass.length() == 0) || !pass.equals(mPluginRespirator.getNode().clientCore.formPassword)) {
 			return "Buh! Invalid form password";
 		}
 		
@@ -126,41 +127,41 @@ public class WebInterface implements FredPluginHTTP {
 
 		try {
 			String pageTitle = request.getPartAsString("page",50);
-			if(pageTitle.equals("createIdentity")) page = new CreateIdentityPage(mWoT, request);
+			if(pageTitle.equals("createIdentity")) page = new CreateIdentityPage(this, request);
 			else if(pageTitle.equals("createIdentity2")) {
 				createIdentity(request);
-				page = new OwnIdentitiesPage(mWoT, request);
+				page = new OwnIdentitiesPage(this, request);
 			}
 			else if(pageTitle.equals("addIdentity")) {
 				addIdentity(request);
-				page = new KnownIdentitiesPage(mWoT, request);
+				page = new KnownIdentitiesPage(this, request);
 			}
 			else if(pageTitle.equals("viewTree")) {
-				page = new KnownIdentitiesPage(mWoT, request);
+				page = new KnownIdentitiesPage(this, request);
 			}
 			else if(pageTitle.equals("setTrust")) {
 				setTrust(request);
-				page = new KnownIdentitiesPage(mWoT, request);
+				page = new KnownIdentitiesPage(this, request);
 			}
 			else if(pageTitle.equals("editIdentity")) {
 				return makeEditIdentityPage(request.getPartAsString("id", 1024));
 			}
 			else if(pageTitle.equals("introduceIdentity") || pageTitle.equals("solvePuzzles")) {
-				page = new IntroduceIdentityPage(mWoT, request, mWoT.getIntroductionClient(), OwnIdentity.getById(db, request.getPartAsString("identity", 128)));
+				page = new IntroduceIdentityPage(this, request, mWoT.getIntroductionClient(), OwnIdentity.getById(db, request.getPartAsString("identity", 128)));
 			}
 			else if(pageTitle.equals("restoreIdentity")) {
 				mWoT.restoreIdentity(request.getPartAsString("requestURI", 1024), request.getPartAsString("insertURI", 1024));
-				page = new OwnIdentitiesPage(mWoT, request);
+				page = new OwnIdentitiesPage(this, request);
 			}
 			else if(pageTitle.equals("deleteIdentity")) {
 				return makeDeleteIdentityPage(request.getPartAsString("id", 1024));
 			}			
 			else if(pageTitle.equals("deleteIdentity2")) {
 				mWoT.deleteIdentity(request.getPartAsString("id", 1024));
-				page = new OwnIdentitiesPage(mWoT, request);
+				page = new OwnIdentitiesPage(this, request);
 			}			
 			else {
-				page = new HomePage(mWoT, request);
+				page = new HomePage(this, request);
 			}
 			
 			page.make();
@@ -176,8 +177,16 @@ public class WebInterface implements FredPluginHTTP {
 		return "Go to hell";
 	}
 	
+	public PageMaker getPageMaker() {
+		return mPageMaker;
+	}
+	
 	private HTMLNode getPageNode() {
-		return pm.getPageNode("Web of Trust", null);
+		return mPageMaker.getPageNode("Web of Trust", null);
+	}
+	
+	public WoT getWoT() {
+		return mWoT;
 	}
 	
 	public String makeHomePage() {
@@ -190,10 +199,10 @@ public class WebInterface implements FredPluginHTTP {
 		list.addChild(new HTMLNode("li", "Scores : " + Score.getNb(db)));
 		
 		HTMLNode pageNode = getPageNode();
-		HTMLNode contentNode = pm.getContentNode(pageNode);
-		HTMLNode box = pm.getInfobox("Summary");
+		HTMLNode contentNode = mPageMaker.getContentNode(pageNode);
+		HTMLNode box = mPageMaker.getInfobox("Summary");
 		
-		HTMLNode boxContent = pm.getContentNode(box);
+		HTMLNode boxContent = mPageMaker.getContentNode(box);
 		boxContent.addChild(list);
 		
 		contentNode.addChild(box);
@@ -203,9 +212,9 @@ public class WebInterface implements FredPluginHTTP {
 	public String makeOwnIdentitiesPage() {
 
 		HTMLNode pageNode = getPageNode();
-		HTMLNode contentNode = pm.getContentNode(pageNode);
-		HTMLNode box = pm.getInfobox("Own Identities");
-		HTMLNode boxContent = pm.getContentNode(box);
+		HTMLNode contentNode = mPageMaker.getContentNode(pageNode);
+		HTMLNode box = mPageMaker.getInfobox("Own Identities");
+		HTMLNode boxContent = mPageMaker.getContentNode(box);
 
 		
 		ObjectSet<OwnIdentity> ownIdentities = OwnIdentity.getAllOwnIdentities(db);
@@ -241,19 +250,19 @@ public class WebInterface implements FredPluginHTTP {
 				
 				HTMLNode manageCell = row.addChild("td");
 				
-				HTMLNode editForm = pr.addFormChild(manageCell, SELF_URI, "editIdentity");
+				HTMLNode editForm = mPluginRespirator.addFormChild(manageCell, mURI, "editIdentity");
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "editIdentity" });
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getRequestURI().toString() });
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", "Details" });
 								
-				HTMLNode deleteForm = pr.addFormChild(manageCell, SELF_URI, "deleteIdentity");
+				HTMLNode deleteForm = mPluginRespirator.addFormChild(manageCell, mURI, "deleteIdentity");
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "deleteIdentity" });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getId() });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 			}
 		}
 
-		HTMLNode createForm = pr.addFormChild(boxContent, SELF_URI, "createIdentity");
+		HTMLNode createForm = mPluginRespirator.addFormChild(boxContent, mURI, "createIdentity");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "createIdentity" });
 		createForm.addChild("span", new String[] {"title", "style"}, new String[] { "No spaces or special characters.", "border-bottom: 1px dotted; cursor: help;"} , "NickName : ");
 		createForm.addChild("input", new String[] {"type", "name", "size"}, new String[] {"text", "nickName", "30"});
@@ -263,12 +272,12 @@ public class WebInterface implements FredPluginHTTP {
 		
 
 		// Form to restore an existing OwnIdentity from Freenet
-		HTMLNode restoreBox = pm.getInfobox("Restore an identity from Freenet");
-		HTMLNode restoreBoxContent = pm.getContentNode(restoreBox);
+		HTMLNode restoreBox = mPageMaker.getInfobox("Restore an identity from Freenet");
+		HTMLNode restoreBoxContent = mPageMaker.getContentNode(restoreBox);
 		
 		restoreBoxContent.addChild("p", "Use this if you lost your database for some reason (crash, reinstall...) but still have your identity's keys :");
 		
-		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, SELF_URI, "restoreIdentity");
+		HTMLNode restoreForm = mPluginRespirator.addFormChild(restoreBoxContent, mURI, "restoreIdentity");
 		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "restoreIdentity" });
 		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "requestURI", "70", "Request URI" });
 		restoreForm.addChild("br");
@@ -287,13 +296,13 @@ public class WebInterface implements FredPluginHTTP {
 		
 		String nickName = request.getPartAsString("nickName",1024);
 		HTMLNode pageNode = getPageNode();
-		HTMLNode contentNode = pm.getContentNode(pageNode);
-		HTMLNode box = pm.getInfobox("Identity creation");
-		HTMLNode boxContent = pm.getContentNode(box);
+		HTMLNode contentNode = mPageMaker.getContentNode(pageNode);
+		HTMLNode box = mPageMaker.getInfobox("Identity creation");
+		HTMLNode boxContent = mPageMaker.getContentNode(box);
 		
-		FreenetURI[] keypair = client.generateKeyPair("WoT");
+		FreenetURI[] keypair = mClient.generateKeyPair("WoT");
 		
-		HTMLNode createForm = pr.addFormChild(boxContent, SELF_URI, "createIdentity2");
+		HTMLNode createForm = mPluginRespirator.addFormChild(boxContent, mURI, "createIdentity2");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "createIdentity2" });
 		createForm.addChild("#", "Request URI : ");
 		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "requestURI", "70", keypair[1].toString() });
@@ -316,11 +325,11 @@ public class WebInterface implements FredPluginHTTP {
 		OwnIdentity id = OwnIdentity.getByURI(db, requestURI);
 		
 		HTMLNode pageNode = getPageNode();
-		HTMLNode contentNode = pm.getContentNode(pageNode);
-		HTMLNode box = pm.getInfobox("Identity edition");
-		HTMLNode boxContent = pm.getContentNode(box);
+		HTMLNode contentNode = mPageMaker.getContentNode(pageNode);
+		HTMLNode box = mPageMaker.getInfobox("Identity edition");
+		HTMLNode boxContent = mPageMaker.getContentNode(box);
 		
-		HTMLNode createForm = pr.addFormChild(boxContent, SELF_URI, "editIdentity2");
+		HTMLNode createForm = mPluginRespirator.addFormChild(boxContent, mURI, "editIdentity2");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "editIdentity2"});
 		
 		createForm.addChild("p", "NickName : " + id.getNickName());
@@ -349,16 +358,16 @@ public class WebInterface implements FredPluginHTTP {
 		Identity identity = Identity.getById(db, id);
 		
 		HTMLNode pageNode = getPageNode();
-		HTMLNode contentNode = pm.getContentNode(pageNode);
-		HTMLNode box = pm.getInfobox("Confirm identity deletion");
-		HTMLNode boxContent = pm.getContentNode(box);
+		HTMLNode contentNode = mPageMaker.getContentNode(pageNode);
+		HTMLNode box = mPageMaker.getInfobox("Confirm identity deletion");
+		HTMLNode boxContent = mPageMaker.getContentNode(box);
 		
 		boxContent.addChild(new HTMLNode("p", "You are about to delete identity '" + identity.getNickName() + "', are you sure ?"));
 		
 		if(identity instanceof OwnIdentity)
 			boxContent.addChild(new HTMLNode("p", "You might want to backup its keys for later use..."));
 		
-		HTMLNode confirmForm = pr.addFormChild(boxContent, SELF_URI, "deleteIdentity2");
+		HTMLNode confirmForm = mPluginRespirator.addFormChild(boxContent, mURI, "deleteIdentity2");
 		
 		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "deleteIdentity2" });
 		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", identity.getId() });
@@ -377,9 +386,9 @@ public class WebInterface implements FredPluginHTTP {
 		}
 	
 		HTMLNode pageNode = getPageNode();
-		HTMLNode contentNode = pm.getContentNode(pageNode);
-		HTMLNode box = pm.getInfobox("Configuration");
-		HTMLNode boxContent = pm.getContentNode(box);
+		HTMLNode contentNode = mPageMaker.getContentNode(pageNode);
+		HTMLNode box = mPageMaker.getInfobox("Configuration");
+		HTMLNode boxContent = mPageMaker.getContentNode(box);
 		boxContent.addChild(list);
 		contentNode.addChild(box);
 
@@ -412,6 +421,7 @@ public class WebInterface implements FredPluginHTTP {
 	private static final String l10n(String string) {
 		return L10n.getString("ConfigToadlet." + string);
 	}
+
 }
 
 

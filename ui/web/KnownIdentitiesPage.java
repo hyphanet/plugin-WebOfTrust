@@ -8,21 +8,21 @@ package plugins.WoT.ui.web;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.Trust;
-import plugins.WoT.WoT;
 import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.DuplicateTrustException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
+
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
-import freenet.support.api.HTTPRequest;
 import freenet.support.Logger;
+import freenet.support.api.HTTPRequest;
 
 
 	/**
@@ -33,15 +33,15 @@ import freenet.support.Logger;
 public class KnownIdentitiesPage extends WebPageImpl {
 
 	private final static SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	
+
 	/**
 	 * Creates a new OwnIdentitiesPage.
 	 * 
-	 * @param wot a reference to the WoT, used to get resources the page needs. 
-	 * @param request the request sent by the user.
+	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
+	 * @param myRequest The request sent by the user.
 	 */
-	public KnownIdentitiesPage(WoT wot, HTTPRequest request) {
-		super(wot, request);
+	public KnownIdentitiesPage(WebInterface myWebInterface, HTTPRequest myRequest) {
+		super(myWebInterface, myRequest);
 	}
 
 	/* (non-Javadoc)
@@ -50,7 +50,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	public void make() {
 		OwnIdentity treeOwner = null;
 		ObjectContainer db = wot.getDB();
-		PluginRespirator pr = wot.getPR();
+		PluginRespirator pr = wot.getPluginRespirator();
 		int nbOwnIdentities = 1;
 		String ownerID = request.getPartAsString("ownerID", 128);
 		

@@ -41,15 +41,15 @@ public abstract class WebPageImpl implements WebPage {
 	 * Creates a new WebPageImpl.
 	 * It is abstract because only a subclass can run the desired make() method to generate the content.
 	 * 
-	 * @param wot a reference to the WoT, used to get references to database, client, whatever is needed.
-	 * @param request the request from the user.
+	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
+	 * @param myRequest The request sent by the user.
 	 */
-	public WebPageImpl(WoT wot, HTTPRequest request) {
+	public WebPageImpl(WebInterface myWebInterface, HTTPRequest myRequest) {
 		
-		this.wot = wot;
-		this.pm = wot.getPageMaker();
+		this.wot = myWebInterface.getWoT();
+		this.pm = myWebInterface.getPageMaker();
 		this.pageNode = pm.getPageNode("Web of Trust", null);
-		this.request = request;
+		this.request = myRequest;
 		
 		this.errorBox = null;
 		this.contentBoxes = new ArrayList<HTMLNode>();

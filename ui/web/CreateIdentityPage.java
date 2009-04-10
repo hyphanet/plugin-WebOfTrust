@@ -16,26 +16,26 @@ import plugins.WoT.WoT;
 /**
  * The page the user can create an OwnIdentity.
  * 
- * @author Julien Cornuwel (batosai@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org), xor (xor@freenetproject.org)
  */
 public class CreateIdentityPage extends WebPageImpl {
-	
+
 	/**
 	 * Creates a new OwnIdentitiesPage.
 	 * 
-	 * @param wot a reference to the WoT, used to get resources the page needs. 
-	 * @param request the request sent by the user.
+	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
+	 * @param myRequest The request sent by the user.
 	 */
-	public CreateIdentityPage(WoT wot, HTTPRequest request) {
-		super(wot, request);
+	public CreateIdentityPage(WebInterface myWebInterface, HTTPRequest myRequest) {
+		super(myWebInterface, myRequest);
 	}
 	
 	/* (non-Javadoc)
 	 * @see plugins.WoT.ui.web.WebPage#make()
 	 */
 	public void make() {
-		HighLevelSimpleClient client = wot.getClient();
-		PluginRespirator pr = wot.getPR();
+		PluginRespirator pr = wot.getPluginRespirator();
+		HighLevelSimpleClient client = pr.getHLSimpleClient();
 		
 		makeCreateForm(client, pr, request.getPartAsString("nickName",1024));
 	}

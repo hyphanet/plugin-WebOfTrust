@@ -10,7 +10,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashSet;
-import java.util.Random;
 import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -39,10 +38,8 @@ import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.client.FetchException;
-import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertException;
 import freenet.client.async.ClientContext;
-import freenet.clients.http.PageMaker;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
 import freenet.node.RequestClient;
@@ -61,7 +58,6 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
-import freenet.support.io.TempBucketFactory;
 
 /**
  * A web of trust plugin based on Freenet.
@@ -73,19 +69,30 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	/* Constants */
 	
+	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
+	
+	/**
+	 * The "name" of this web of trust. It is included in the document name of identity URIs. For an example, see the SEED_IDENTITY_URI constant
+	 * below. The purpose of this costant is to allow anyone to create his own custom web of trust which is completely disconnected from the
+	 * "official" web of trust of the Freenet project.
+	 */
 	public static final String WOT_CONTEXT = "WoT";
-	private static final String seedURI = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/85";
+	
+	/**
+	 * The official seed identity of the WoT plugin: If a newbie wants to download the whole offficial web of trust, he needs at least one trust
+	 * list from an identity which is well-connected to the web of trust. To prevent newbies from having to add this identity manually, the 
+	 * Freenet development team provides a seed identity. This is an identity which will only assign neutral trust values to identities in it's
+	 * trust list and provide many captchas per day to allow newbies to get on it's trust list.
+	 */
+	private static final String SEED_IDENTITY_URI = 
+		"USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/85";
 	
 	
 	/* References from the node */
 	
-	private ClassLoader mClassLoader;
-	private PluginRespirator pr;
-	private HighLevelSimpleClient client;
-	private TempBucketFactory tbf;
-	private PageMaker pm;
-	private Random random;
+	private ClassLoader mClassLoader; /** The ClassLoader which was used to load the plugin JAR, needed by db4o to work correctly */
+	private PluginRespirator pr; /** The node's interface to connect the plugin with the node, needed for retrieval of all other interfaces */	
 	
 	
 	/* References from the plugin itself */
@@ -115,10 +122,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		System.setProperty("java.awt.headless", "true"); 
 
 		pr = myPR;
-		client = pr.getHLSimpleClient();
-		tbf = pr.getNode().clientCore.tempBucketFactory;
-		pm = pr.getPageMaker();
-		random = pr.getNode().fastWeakRandom;
 		
 		db = initDB();
 		config = initConfig();
@@ -161,11 +164,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 		
 		// Start the inserter thread
-		inserter = new IdentityInserter(db, client, pr.getNode().clientCore.tempBucketFactory);
+		inserter = new IdentityInserter(db, pr.getHLSimpleClient(), pr.getNode().clientCore.tempBucketFactory);
 		pr.getNode().executor.execute(inserter, "WoTinserter");
 		
 		// Create the fetcher
-		fetcher = new IdentityFetcher(db, pr.getNode().clientCore.clientContext, client, requestClient);
+		fetcher = new IdentityFetcher(db, pr.getNode().clientCore.clientContext, pr.getHLSimpleClient(), requestClient);
 		
 		fetcher.fetch(seed, false);
 		
@@ -212,6 +215,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	/**
 	 * Debug function for deleting duplicate identities etc. which might have been created due to bugs :)
 	 */
+	@SuppressWarnings("unchecked")
 	private void deleteDuplicateObjects() {
 		ObjectSet<Identity> identities = Identity.getAllIdentities(db);
 		HashSet<String> deleted = new HashSet<String>();
@@ -269,6 +273,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	/**
 	 * Debug function for deleting trusts or scores of which one of the involved partners is missing.
 	 */
+	@SuppressWarnings("unchecked")
 	private void deleteOrphanObjects() {
 		Query q = db.query();
 		q.constrain(Trust.class);
@@ -292,9 +297,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	/**
-	 * Initializes the connection to DB4O.
+	 * Initializes the plugin's db4o database.
 	 * 
-	 * @return db4o's connector
+	 * @return A db4o <code>ObjectContainer</code>. 
 	 */
 	private ObjectContainer initDB() {
 		
@@ -386,18 +391,30 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		Logger.debug(this, "WoT plugin terminated.");
 	}
 
+	/**
+	 * Inherited event handler from FredPluginHTTP, handled in <code>class WebInterface</code>.
+	 */
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
 		return web.handleHTTPGet(request);
 	}
 
+	/**
+	 * Inherited event handler from FredPluginHTTP, handled in <code>class WebInterface</code>.
+	 */
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
 		return web.handleHTTPPost(request);
 	}
 	
+	/**
+	 * Inherited event handler from FredPluginHTTP, handled in <code>class WebInterface</code>.
+	 */
 	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
 		return web.handleHTTPPut(request);
 	}
 
+	/**
+	 * Inherited event handler from FredPluginFCP, handled in <code>class FCPInterface</code>.
+	 */
 	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
 		fcp.handle(replysender, params, data, accesstype);
 	}
@@ -443,7 +460,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	public OwnIdentity createIdentity(String nickName, boolean publishTrustList, String context) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 
-		FreenetURI[] keypair = client.generateKeyPair("WoT");
+		FreenetURI[] keypair = getPluginRespirator().getHLSimpleClient().generateKeyPair("WoT");
 		return createIdentity(keypair[0].toString(), keypair[1].toString(), nickName, publishTrustList, context);
 	}
 
@@ -603,28 +620,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return Version.getRealVersion();
 	}
 
-	/* would only be needed if we connect the client plugins directly via object references which will probably not happen
-	public List<Identity> getIdentitiesByScore(OwnIdentity treeOwner, int select, String context) throws InvalidParameterException
-	{
-		ObjectSet<Score> result = Score.getIdentitiesByScore(db, treeOwner, select);
-		// TODO: decide whether the tradeoff of using too much memory for the ArrayList is worth the speedup of not having a linked
-		// list which allocates lots of pieces of memory for its nodes. trimToSize() is not an option because the List usually will be
-		// used only temporarily.
-		ArrayList<Identity> identities = new ArrayList<Identity>(result.size()); 
-		boolean getAll = context.equals("all");
-		
-		while(result.hasNext()) {
-			Identity identity = result.next().getTarget();
-			// TODO: Maybe there is a way to do this through SODA
-			if(getAll || identity.hasContext(context))
-				identities.add(identity);
-		}
-		
-		return identities;
-	}
-	*/
-
-
 	public String getString(String key) {
 		return key;
 	}
@@ -639,11 +634,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public Identity getSeedIdentity() {
 		if(seed == null) { // The seed identity hasn't been initialized yet
 			try { // Try to load it from database
-				seed = Identity.getByURI(db, seedURI);
+				seed = Identity.getByURI(db, SEED_IDENTITY_URI);
 			} catch (UnknownIdentityException e) { // Create it.
 				try {
 					// Create the seed identity
-					seed = new Identity(new FreenetURI(seedURI), null, true);
+					seed = new Identity(new FreenetURI(SEED_IDENTITY_URI), null, true);
 					seed.setEdition(seed.getRequestURI().getSuggestedEdition());
 				} catch (Exception e1) { // Should never happen
 					Logger.error(this, "Seed identity creation error", e1);
@@ -659,24 +654,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return seed;
 	}
 	
-	public PluginRespirator getPR() {
+	public PluginRespirator getPluginRespirator() {
 		return pr;
-	}
-	
-	public HighLevelSimpleClient getClient() {
-		return client;
-	}
-
-	public TempBucketFactory getTBF() {
-		return tbf;
-	}
-	
-	public PageMaker getPageMaker() {
-		return pm;
-	}
-	
-	public Random getRandom() {
-		return random;
 	}
 	
 	public ObjectContainer getDB() {
