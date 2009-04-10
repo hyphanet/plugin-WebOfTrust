@@ -287,7 +287,7 @@ public final class IntroductionPuzzle {
 			dayOfInsertion = mDateFormat.format(mDateOfInsertion);
 		}
 		FreenetURI baseURI = ((OwnIdentity)mInserter).getInsertURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WoT.WOT_CONTEXT + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + mIndex + ".xml");
+		baseURI = baseURI.setDocName(WoT.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + mIndex + ".xml");
 		return baseURI.setMetaString(null);
 	}
 
@@ -306,7 +306,7 @@ public final class IntroductionPuzzle {
 			dayOfInsertion = mDateFormat.format(dateOfInsertion);
 		}
 		FreenetURI baseURI = inserter.getRequestURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WoT.WOT_CONTEXT + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index + ".xml");
+		baseURI = baseURI.setDocName(WoT.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index + ".xml");
 		return baseURI.setMetaString(null);
 	}
 	
@@ -322,7 +322,7 @@ public final class IntroductionPuzzle {
 	 * Get the URI at which to insert the solution of this puzzle.
 	 */
 	public FreenetURI getSolutionURI(String guessOfSolution) {
-		return new FreenetURI("KSK",	WoT.WOT_CONTEXT + "|" +
+		return new FreenetURI("KSK",	WoT.WOT_NAME + "|" +
 										INTRODUCTION_CONTEXT + "|" +
 										mID + "|" +	/* Do not include the ID of the inserter in the URI because the puzzle-ID already contains it. */
 										guessOfSolution); /* FIXME: hash the solution!! */
