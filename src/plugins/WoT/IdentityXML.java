@@ -5,6 +5,8 @@ package plugins.WoT;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map.Entry;
 
 import javax.xml.XMLConstants;
@@ -23,8 +25,14 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import plugins.WoT.exceptions.UnknownIdentityException;
+
+import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 /**
  * A class for storing identities as XML text and importing them from XML text.
@@ -36,6 +44,8 @@ public final class IdentityXML {
 	private static final int XML_FORMAT_VERSION = 1;
 	
 	private final WoT mWoT;
+	
+	private final ObjectContainer mDB;
 	
 	/* TODO: Check with a profiler how much memory this takes, do not cache it if it is too much */
 	/** Used for parsing the identity XML when decoding identities*/
@@ -54,6 +64,7 @@ public final class IdentityXML {
 	 */
 	public IdentityXML(WoT myWoT) throws ParserConfigurationException, TransformerConfigurationException, TransformerFactoryConfigurationError {
 		mWoT = myWoT;
+		mDB = mWoT.getDB();
 		
 		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
 		xmlFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
@@ -68,7 +79,7 @@ public final class IdentityXML {
 		mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
 	}
 	
-	public void encode(OwnIdentity myIdentity, OutputStream os) throws TransformerException {
+	public void exportOwnIdentity(OwnIdentity myIdentity, OutputStream os) throws TransformerException {
 		Document xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
 		Element rootElement = xmlDoc.getDocumentElement();
 		
@@ -101,7 +112,7 @@ public final class IdentityXML {
 			/* Create the trust list tag and its trust tags */
 			
 			Element trustListTag = xmlDoc.createElement("TrustList");
-			for(Trust trust : myIdentity.getGivenTrusts(mWoT.getDB())) {
+			for(Trust trust : myIdentity.getGivenTrusts(mDB)) {
 				Element trustTag = xmlDoc.createElement("Trust");
 				trustTag.setAttribute("Identity", trust.getTrustee().getRequestURI().toString());
 				trustTag.setAttribute("Value", Byte.toString(trust.getValue()));
@@ -130,12 +141,128 @@ public final class IdentityXML {
 	 * @throws Exception 
 	 * @throws Exception
 	 */
-	public void decode(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  { 
+	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  { 
 		Document xml = mDocumentBuilder.parse(xmlInputStream);
 		
 		Element identityElement = (Element)xml.getElementsByTagName("Identity").item(0);
 		
 		if(Integer.parseInt(identityElement.getAttribute("Version")) > XML_FORMAT_VERSION)
 			throw new Exception("Version " + identityElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
+		
+		String identityName = identityElement.getAttribute("Name");
+		boolean identityPublishesTrustList = Boolean.parseBoolean(identityElement.getAttribute("PublishesTrustList"));
+		
+		ArrayList<String> identityContexts = new ArrayList<String>(4);
+		NodeList contextList = identityElement.getElementsByTagName("Context");
+		for(int i = 0; i < contextList.getLength(); ++i) {
+			Element contextElement = (Element)contextList.item(i);
+			identityContexts.add(contextElement.getAttribute("Name"));
+		}
+		
+		HashMap<String, String> identityProperties = new HashMap<String, String>(8);
+		NodeList propertyList = identityElement.getElementsByTagName("Property");
+		for(int i = 0; i < propertyList.getLength(); ++i) {
+			Element propertyElement = (Element)propertyList.item(i);
+			identityProperties.put(propertyElement.getAttribute("Name"), propertyElement.getAttribute("Value"));
+		}
+		
+		/* We tried to parse as much as we can without synchronization before we lock everything :) */
+		
+		synchronized(mWoT) {
+			Identity identity;
+			boolean isNewIdentity = false;
+			
+			try {
+				identity = Identity.getByURI(mDB, identityURI);
+				identity.setRequestURI(identityURI);
+				
+				try {
+					identity.setNickname(identityName);
+				}
+				catch(Exception e) {
+					Logger.error(identityURI, "setNickname() failed.", e);
+				}
+			}
+			catch(UnknownIdentityException e) {
+				identity = new Identity(identityURI, identityName, identityPublishesTrustList);
+				isNewIdentity = true;
+			}
+			
+			synchronized(identity) {
+				/* FIXME: How to do this? Notice: The commit() should always be done here until we know how to do the "transactionIsRunning()",
+				 * however we commit() anyway after setting contexts and properties, so it is commented out.
+				 * 
+				if(transactionIsRunning()) {
+					mDB.commit();
+					Logger.error(this, "A transaction is still pending during identity import!");
+				}
+				*/
+
+				try { /* Failure of context importing should not make an identity disappear, therefore we catch exceptions. */
+					identity.setContexts(mDB, identityContexts);
+				}
+				catch(Exception e) {
+					Logger.error(identityURI, "setContexts() failed.", e);
+				}
+
+				try { /* Failure of property importing should not make an identity disappear, therefore we catch exceptions. */
+					identity.setProperties(mDB, identityProperties);
+				}
+				catch(Exception e) {
+					Logger.error(identityURI, "setProperties() failed", e);
+				}
+				
+				/* We store the identity even if it's trust list import fails - identities should not disappear then. */
+				identity.storeAndCommit(mDB);
+				
+				if(identityPublishesTrustList) {
+					/* This try block is for rolling back in catch() if an exception is thrown during trust list import.
+					 * Our policy is: We either import the whole trust list or nothing. We should not bias the trust system by allowing
+					 * the import of partial trust lists. FIXME: Is it possible to ensure in catch() that there was no commit()
+					 * done in one of the functions which was called in the try{} block?  */
+					try {
+						boolean trusteeCreationAllowed = identity.getBestScore(mDB) > 0;
+
+						Element trustListElement = (Element)identityElement.getElementsByTagName("TrustList").item(0);
+						NodeList trustList = trustListElement.getElementsByTagName("Trust");
+						for(int i = 0; i < trustList.getLength(); ++i) {
+							Element trustElement = (Element)trustList.item(i);
+
+							String trusteeURI = trustElement.getAttribute("Identity");
+							byte trustValue = Byte.parseByte(trustElement.getAttribute("Value"));
+							String trustComment = trustElement.getAttribute("Comment");
+
+							Identity trustee = null;
+							try {
+								trustee = Identity.getByURI(mDB, trusteeURI);
+							}
+							catch(UnknownIdentityException e) {
+								if(trusteeCreationAllowed) { /* We only create trustees if the truster has a positive score */
+									trustee = new Identity(trusteeURI, null, false);
+									mDB.store(trustee);
+									mWoT.getIdentityFetcher().fetch(trustee);
+								}
+							}
+
+							if(trustee != null)
+								identity.setTrust(mDB, trustee, trustValue, trustComment);
+						}
+
+						if(!isNewIdentity) { /* Delete trust objects of trustees which were removed from the trust list */
+							for(Trust trust : Trust.getTrustsOlderThan(mDB, identityURI.getEdition())) {
+								identity.removeTrust(mDB, trust);
+							}
+						}
+
+						identity.storeAndCommit(mDB);
+					}
+					
+					catch(Exception e) {
+						mDB.rollback();
+						Logger.error(identityURI, "Importing trust list failed.", e);
+					}
+				}
+			}
+		}
 	}
 }

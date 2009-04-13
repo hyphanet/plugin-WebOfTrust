@@ -5,18 +5,16 @@
  */
 package plugins.WoT;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
 import plugins.WoT.exceptions.InvalidParameterException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.query.Query;
 
 /**
  * A trust relationship between two Identities
  * 
- * @author Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  *
  */
 public class Trust {
@@ -29,6 +27,23 @@ public class Trust {
 	private final Identity trustee;
 	private byte value;
 	private String comment;
+	
+	/**
+	 * The edition number of the trust list in which this trust was published the last time.
+	 * This is used to speed up the import of new trust lists: When importing them, we need to delete removed trust values. We cannot just
+	 * delete all trust values of the truster from the database  and then import the trust list because deleting a trust causes recalculation
+	 * of the score of the trustee. So for trust values which were not really removed from the trust list we would recalculate the score twice:
+	 * One time when the old trust object is deleted and one time when the new trust is imported. Not only that we might recalculate one
+	 * time without any necessity, most of the time even any recalculation would not be needed because the trust value has not changed.
+	 * 
+	 * To prevent this, we do the following: When creating new trusts, we store the edition number of the trust list from which we obtained it.
+	 * When importing a new trust list, for each trust value we query the database whether a trust value to this trustee already exists and 
+	 * update it if it does - we also update the trust list edition member variable. After having imported all trust values we query the 
+	 * database for trust objects from the truster which have an old trust list edition number and delete them - the old edition number
+	 * means that the trust has been removed from the latest trust list.
+	 */
+	@SuppressWarnings("unused")
+	private long mTrusterTrustListEdition;
 	
 	/**
 	 * Creates a Trust from given parameters.
@@ -44,6 +59,16 @@ public class Trust {
 		this.trustee = trustee;
 		setValue(value);
 		setComment(comment);
+		
+		mTrusterTrustListEdition = truster.getEdition(); 
+	}
+	
+	@SuppressWarnings("unchecked")
+	protected static ObjectSet<Trust> getTrustsOlderThan(ObjectContainer db, long edition) {
+		Query q = db.query();
+		q.constrain(Trust.class);
+		q.descend("mTrusterTrustListEdition").constrain(edition).smaller();
+		return q.execute();
 	}
 	
 	/**
@@ -56,22 +81,7 @@ public class Trust {
 		ObjectSet<Trust> trusts = db.queryByExample(Trust.class);
 		return trusts.size();
 	}
-	
-	/**
-	 * Exports this trust relationship to XML format.
-	 * 
-	 * @param xmlDoc the XML {@link Document} this trust will be inserted in 
-	 * @return The XML {@link Element} describing this trust relationship
-	 */
-	public synchronized Element toXML(Document xmlDoc) {
-		Element elem = xmlDoc.createElement("Trust");
-		elem.setAttribute("Identity", trustee.getRequestURI().toString());
-		elem.setAttribute("value", String.valueOf(value));
-		elem.setAttribute("Comment", comment);
-		
-		return elem;
-	}
-	
+
 	@Override
 	public synchronized String toString() {
 		return getTruster().getNickName() + " trusts " + getTrustee().getNickName() + " (" + getValue() + " : " + getComment() + ")";
@@ -104,7 +114,7 @@ public class Trust {
 	 */
 	public synchronized void setValue(byte newValue) throws InvalidParameterException {
 		if(newValue < -100 || newValue > 100) 
-			throw new InvalidParameterException("Invalid trust value ("+value+")");
+			throw new InvalidParameterException("Invalid trust value ("+value+").");
 		
 		value = newValue;
 	}
@@ -127,4 +137,10 @@ public class Trust {
 		
 		comment = newComment != null ? newComment : "";
 	}
+	
+	public synchronized void updated(ObjectContainer db) {
+		mTrusterTrustListEdition = truster.getEdition();
+		db.store(this);
+	}
+
 }
