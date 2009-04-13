@@ -88,11 +88,16 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private static final String SEED_IDENTITY_URI = 
 		"USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/85";
 	
+	private Identity seed;
+	
 	
 	/* References from the node */
 	
-	private ClassLoader mClassLoader; /** The ClassLoader which was used to load the plugin JAR, needed by db4o to work correctly */
-	private PluginRespirator pr; /** The node's interface to connect the plugin with the node, needed for retrieval of all other interfaces */	
+	/** The ClassLoader which was used to load the plugin JAR, needed by db4o to work correctly */
+	private ClassLoader mClassLoader;
+	
+	/** The node's interface to connect the plugin with the node, needed for retrieval of all other interfaces */
+	private PluginRespirator pr;	
 	
 	
 	/* References from the plugin itself */
@@ -100,13 +105,16 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	/* Database & configuration of the plugin */
 	private ObjectContainer db;
 	private Config config;
+	
+	/** Used for exporting identities to XML and importing them from XML. */
+	private IdentityXML mIdentityXML;
 
 	/* Worker objects which actually run the plugin */
+	
 	private IdentityInserter inserter;
 	private IdentityFetcher fetcher;
 	private IntroductionServer introductionServer;
 	private IntroductionClient introductionClient;
-	private Identity seed;
 	private RequestClient requestClient;
 	private ClientContext clientContext;
 	
@@ -118,6 +126,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public void runPlugin(PluginRespirator myPR) {
 		Logger.debug(this, "Start");
 		
+		try { 
 		/* Catpcha generation needs headless mode on linux */
 		System.setProperty("java.awt.headless", "true"); 
 
@@ -163,13 +172,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			}
 		}
 		
+		mIdentityXML = new IdentityXML(this);
+		
 		// Start the inserter thread
-		inserter = new IdentityInserter(db, pr.getHLSimpleClient(), pr.getNode().clientCore.tempBucketFactory);
+		inserter = new IdentityInserter(this);
 		pr.getNode().executor.execute(inserter, "WoTinserter");
 		
 		// Create the fetcher
-		fetcher = new IdentityFetcher(db, pr.getNode().clientCore.clientContext, pr.getHLSimpleClient(), requestClient);
-		
+		fetcher = new IdentityFetcher(this);		
 		fetcher.fetch(seed, false);
 		
 		// Create a default OwnIdentity if none exists. Should speed up plugin usability for newbies
@@ -210,6 +220,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		web = new WebInterface(this, SELF_URI);
 		fcp = new FCPInterface(this);
+		}
+		catch(Exception e) {
+			Logger.error(this, "Initialization of plugin failed", e); 
+		}
 	}
 	
 	/**
@@ -658,12 +672,20 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return pr;
 	}
 	
+	public Config getConfig() {
+		return config;
+	}
+	
 	public ObjectContainer getDB() {
 		return db;
 	}
 	
-	public Config getConfig() {
-		return config;
+	public IdentityFetcher getIdentityFetcher() {
+		return fetcher;
+	}
+	
+	public IdentityXML getIdentityXML() {
+		return mIdentityXML;
 	}
 
 	public IntroductionClient getIntroductionClient() {
@@ -677,4 +699,5 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public ClientContext getClientContext() {
 		return clientContext;
 	}
+
 }

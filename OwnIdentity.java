@@ -5,21 +5,15 @@
  */
 package plugins.WoT;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -37,8 +31,6 @@ import plugins.WoT.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
-import com.db4o.ext.DatabaseClosedException;
-import com.db4o.ext.Db4oIOException;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
@@ -169,79 +161,6 @@ public class OwnIdentity extends Identity {
 	 */
 	public static ObjectSet<OwnIdentity> getAllOwnIdentities (ObjectContainer db) {
 		return db.queryByExample(OwnIdentity.class);
-	}
-
-	/**
-	 * Exports this identity to XML format, in a supplied OutputStream
-	 * 
-	 * @param db A reference to the database
-	 * @param os The {@link OutputStream} where to put the XML code
-	 * @throws ParserConfigurationException
-	 * @throws TransformerConfigurationException
-	 * @throws TransformerException
-	 * @throws FileNotFoundException
-	 * @throws IOException
-	 * @throws Db4oIOException
-	 * @throws DatabaseClosedException
-	 * @throws InvalidParameterException
-	 */
-	public synchronized void exportToXML(ObjectContainer db, OutputStream os) throws ParserConfigurationException, TransformerConfigurationException, TransformerException, FileNotFoundException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException {
-
-		// Create the output file
-		StreamResult resultStream = new StreamResult(os);
-
-		// Create the XML document
-		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
-		DOMImplementation impl = xmlBuilder.getDOMImplementation();
-		Document xmlDoc = impl.createDocument(null, "WoT", null);
-		Element rootElement = xmlDoc.getDocumentElement();
-
-		// Create the content
-		Element identity = xmlDoc.createElement("Identity");
-
-		// NickName
-		Element nickNameTag = xmlDoc.createElement("Name");
-		nickNameTag.setAttribute("value", getNickName());
-		identity.appendChild(nickNameTag);
-
-		// PublishTrustList
-		Element publishTrustListTag = xmlDoc.createElement("PublishesTrustlist");
-		publishTrustListTag.setAttribute("value", doesPublishTrustList() ? "true" : "false");
-		identity.appendChild(publishTrustListTag);
-
-		// Properties
-		
-		Iterator<Entry<String, String>> props = getProperties().entrySet().iterator();
-		while(props.hasNext()){
-			Map.Entry<String,String> prop = props.next();
-			Element propTag = xmlDoc.createElement("Property");
-			propTag.setAttribute("key", prop.getKey());
-			propTag.setAttribute("value", prop.getValue());
-			identity.appendChild(propTag);
-		}
-
-		// Contexts
-		for(String context : getContexts()) {
-			Element contextTag = xmlDoc.createElement("Context");
-			contextTag.setAttribute("value", context);
-			identity.appendChild(contextTag);			
-		}
-
-		rootElement.appendChild(identity);
-		
-		if(doesPublishTrustList()) {
-			Trustlist trustList = new Trustlist(db, this);
-			rootElement.appendChild(trustList.toXML(xmlDoc));
-		}
-		
-		DOMSource domSource = new DOMSource(xmlDoc);
-		TransformerFactory transformFactory = TransformerFactory.newInstance();
-		Transformer serializer = transformFactory.newTransformer();
-		
-		serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-		serializer.setOutputProperty(OutputKeys.INDENT,"yes");
-		serializer.transform(domSource, resultStream);
 	}
 	
 	public synchronized void exportIntroductionToXML(OutputStream os) throws ParserConfigurationException, TransformerException {

@@ -46,10 +46,13 @@ import freenet.support.io.TempBucketFactory;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */
-public class IdentityInserter implements Runnable, ClientCallback {
+/* FIXME: Use class freenet.support.TransferThread */
+public final class IdentityInserter implements Runnable, ClientCallback {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
 	private static final int THREAD_PERIOD = 45 * 60 * 1000;
+	
+	private WoT mWoT;
 	
 	/** A reference to the database */
 	ObjectContainer db;
@@ -71,11 +74,12 @@ public class IdentityInserter implements Runnable, ClientCallback {
 	 * @param client A reference to an {@link HighLevelSimpleClient} to perform inserts
 	 * @param tbf Needed to create buckets from Identities before insert
 	 */
-	public IdentityInserter(ObjectContainer db, HighLevelSimpleClient client, TempBucketFactory tbf) {
-		this.db = db;
-		this.client = client;
+	public IdentityInserter(WoT myWoT) {
+		mWoT = myWoT;
+		db = mWoT.getDB();
+		client = mWoT.getPluginRespirator().getHLSimpleClient();
+		tBF = mWoT.getPluginRespirator().getNode().clientCore.tempBucketFactory;
 		isRunning = true;
-		tBF = tbf;
 	}
 	
 	/**
@@ -194,8 +198,7 @@ public class IdentityInserter implements Runnable, ClientCallback {
 				identity.setEdition(1);
 			
 			os = tempB.getOutputStream();
-			// Create XML file to insert
-			identity.exportToXML(db, os);
+			mWoT.getIdentityXML().exportOwnIdentity(identity, os);
 		
 			os.close(); os = null;
 			tempB.setReadOnly();

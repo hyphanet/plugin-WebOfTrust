@@ -11,6 +11,8 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -35,6 +37,14 @@ import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
+
+
+/* FIXME:
+ * - In general, I (xor) am currently reviewing the whole WoT plugin and this is code in progress.
+ * - All synchronization here has to be checked, most of it is probably wrong
+ * - All commits() have to be checked. Many functions should only store() but not commit(), for example during trust calculation.
+ * - Most of the code for querying the database should maybe be moved to class WoT
+ */
 
 /**
  * An identity as handled by the WoT (a USK). 
@@ -106,10 +116,10 @@ public class Identity {
 	private boolean publishTrustList;
 	
 	/** A list of this Identity's custom properties */
-	private HashMap<String, String> props;
+	private final HashMap<String, String> props;
 	
 	/** A list of contexts (eg. client apps) this Identity is used for */
-	private ArrayList<String> contexts;
+	private final ArrayList<String> contexts;
 
 
 	public synchronized void storeAndCommit(ObjectContainer db) {
@@ -481,6 +491,7 @@ public class Identity {
 		Trust trust;
 		try {
 			trust = getGivenTrust(trustee, db);
+			trust.updated(db);
 			
 			if(!trust.getComment().equals(comment)) {
 				trust.setComment(comment);
@@ -506,13 +517,19 @@ public class Identity {
 		Trust trust;
 		try {
 			trust = getGivenTrust(trustee, db);
-			
-			db.delete(trust);
-			db.commit();
-			trustee.updateScore(db);
+			removeTrust(db, trust);
 		} catch (NotTrustedException e) {
 			Logger.debug(this, "Cannot remove trust - there is none - from " + this.getNickName() + " to " + trustee.getNickName());
 		} 
+	}
+	
+	public synchronized void removeTrust(ObjectContainer db, Trust trust) {
+		if(trust.getTruster() != this)
+			throw new IllegalArgumentException("removeTrust() called with a trust object which does not come from this identity (" + this + ")");
+		
+		Identity trustee = trust.getTrustee();
+		db.delete(trust);
+		trustee.updateScore(db);
 	}
 
 	/**
@@ -735,11 +752,15 @@ public class Identity {
 		if(key.length() == 0 || value.length() == 0)
 			throw new InvalidParameterException("Blank key or value in this property");
 		
+		/* FIXME: Limit the length of key and value */
+		
 		String oldValue = props.get(key);
 		if(oldValue == null || oldValue.equals(value) == false) {
+			/* FIXME: Limit the amount of properties */
 			props.put(key, value);
 			updated();
 			db.store(props);
+			db.commit();
 		}
 	}
 	
@@ -766,6 +787,26 @@ public class Identity {
 	}
 	
 	/**
+	 * Clears the list of properties and sets it to the new list of properties which was passed to the function.
+	 * For invalid properties an error is logged, all valid ones will be added.
+	 */
+	public synchronized void setProperties(ObjectContainer db, HashMap<String, String> newProperties) {
+		/* TODO: If we need heavy optimization, inline the code of setProperty() here, this will save one db.store(properties) per context. 
+		 * Instead of duplicating the logic which checks whether a property is acceptable we might add a private function for doing that then. */
+		
+		props.clear();
+		
+		for(Entry<String, String> property : newProperties.entrySet()) {
+			try {
+				setProperty(db, property.getKey(), property.getValue());
+			}
+			catch(InvalidParameterException e) {
+				Logger.error(this, "setProperties(): setProperty() failed.", e);
+			}
+		}
+	}
+	
+	/**
 	 * Adds a context to this identity. A context is a string, the identities contexts are a set of strings - no context will be added more than
 	 * once.
 	 * Contexts are used by clients to identify what identities are relevant for their use.
@@ -782,10 +823,14 @@ public class Identity {
 		if(newContext.length() == 0)
 			throw new InvalidParameterException("A blank context cannot be added to an identity.");
 		
+		/* FIXME: Limit the length of a context */
+		
 		if(!contexts.contains(newContext)) {
+			/* FIXME: Limit the amount of contexts */
 			contexts.add(newContext);
 			db.store(contexts);
 			updated();
+			db.commit();
 		}
 	}
 	
@@ -795,15 +840,11 @@ public class Identity {
 	 * 
 	 * @param db A reference to the database.
 	 * @param context Name of the context.
-	 * @throws InvalidParameterException if the client tries to remove the last context of this Identity (an identity with no context is useless)
 	 */
 	public synchronized void removeContext(String context, ObjectContainer db) throws InvalidParameterException {
 		context = context.trim();
 		
 		if(contexts.contains(context)) {
-			if(contexts.size() == 1)
-				throw new InvalidParameterException("An identity must have at least one context, the last one cannot be deleted.");
-			
 			contexts.remove(context);
 			db.store(contexts);
 			updated();
@@ -820,6 +861,31 @@ public class Identity {
 		/* TODO: If this is used often - which it probably is, we might verify that no code corrupts the HashMap and return the original one
 		 * instead of a copy */
 		return (ArrayList<String>)contexts.clone();
+	}
+	
+	
+	/**
+	 * Clears the list of contexts and sets it to the new list of contexts which was passed to the function.
+	 * Duplicate contexts are ignored. For invalid contexts an error is logged, all valid ones will be added.
+	 */
+	public synchronized void setContexts(ObjectContainer db, List<String> newContexts) {
+		/* TODO: If we need heavy optimization, inline the code of addContext() here, this will save one db.store(contexts) per context. 
+		 * Instead of duplicating the logic which checks whether a context is acceptable we might add a private function for doing that then. */
+		
+		contexts.clear();
+		
+		for(String context : newContexts) {
+			try {
+				addContext(db, context);
+			}
+			catch(InvalidParameterException e) {
+				Logger.error(this, "setContexts(): addContext() failed.", e);
+			}
+		}
+		
+		contexts.trimToSize();
+		db.store(contexts);
+		db.commit();
 	}
 		
 	/**

@@ -35,6 +35,8 @@ import freenet.support.Logger;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class IdentityFetcher implements ClientCallback {
+	
+	private final WoT mWoT;
 
         /** A reference to the database */
 	private final ObjectContainer db;
@@ -44,6 +46,9 @@ public class IdentityFetcher implements ClientCallback {
 	private final ClientContext clientContext;
 
 	/** All current requests */
+	/* FIXME: We use those HashSets for checking whether we have already have a request for the given identity if someone calls fetch().
+	 * This sucks: We always request ALL identities to allow ULPRs so we must assume that those HashSets will not fit into memory
+	 * if the WoT becomes large. We should instead ask the node whether we already have a request for the given SSK URI. So how to do that??? */
 	private final HashSet<Identity> identities = new HashSet<Identity>(128); /* TODO: profile & tweak */
 	private final HashSet<ClientGetter> requests = new HashSet<ClientGetter>(128); /* TODO: profile & tweak */
 	
@@ -54,12 +59,13 @@ public class IdentityFetcher implements ClientCallback {
 	 * @param db A reference to the database
 	 * @param client A reference to a {@link HighLevelSimpleClient}
 	 */
-	public IdentityFetcher(ObjectContainer db, ClientContext context, HighLevelSimpleClient client, RequestClient rc) {
-
-		this.db = db;
-		this.clientContext = context;
-		this.client = client;
-		this.requestClient = rc;
+	public IdentityFetcher(WoT myWoT) {
+		mWoT = myWoT;
+		
+		db = mWoT.getDB();
+		clientContext = mWoT.getClientContext();
+		client = mWoT.getPluginRespirator().getHLSimpleClient();
+		requestClient = mWoT.getRequestClient();
 	}
 	
 	/**
@@ -174,7 +180,7 @@ public class IdentityFetcher implements ClientCallback {
 		Logger.debug(this, "Fetched identity "+ state.getURI().toString());
 		
 		try {
-			new IdentityParser(db, client, this).parse(result.asBucket().getInputStream(), state.getURI());	
+			mWoT.getIdentityXML().importIdentity(state.getURI(), result.asBucket().getInputStream());
 		}
 		catch (Exception e) {
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);

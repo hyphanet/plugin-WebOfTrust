@@ -33,6 +33,7 @@ import freenet.support.Logger;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */
+@Deprecated
 public class IdentityParser {
 
 	ObjectContainer db;
