@@ -71,7 +71,7 @@ public final class IntroductionPuzzle {
 	 * Get a list of fields which the database should create an index on.
 	 */
 	public static String[] getIndexedFields() {
-		return new String[] {"mID", "mInserter"};
+		return new String[] {"mID", "mInserter", "mDateOfInsertion" }; /* FIXME: Find out whether indexes are sorted, if not, remove the date */
 	}
 	
 	/**
@@ -204,6 +204,10 @@ public final class IntroductionPuzzle {
 										guessOfSolution);
 	}
 	
+	public static String getIDFromSolutionURI(FreenetURI uri) {
+		return uri.getDocName().split("[|]")[2];
+	}
+	
 	public byte[] getData() {
 		return mData;
 	}
@@ -272,6 +276,7 @@ public final class IntroductionPuzzle {
 	/* TODO: Write an unit test which uses this function :) */
 	/* TODO: This code sucks, checkConsistency should throw a descriptive message */
 	/* FIXME: check for validity of the jpeg */
+	@SuppressWarnings("deprecation")
 	public boolean checkConsistency() {
 		boolean result = true;
 		if(mID == null) 
@@ -304,4 +309,5 @@ public final class IntroductionPuzzle {
 		
 		return result;
 	}
+
 }
