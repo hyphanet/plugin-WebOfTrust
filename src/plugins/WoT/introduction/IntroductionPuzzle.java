@@ -8,7 +8,6 @@ package plugins.WoT.introduction;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 import plugins.WoT.CurrentTimeUTC;
@@ -16,20 +15,14 @@ import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.InvalidParameterException;
-
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import com.db4o.query.Query;
-
 import freenet.keys.FreenetURI;
-import freenet.support.Base64;
 import freenet.support.Logger;
 
 public final class IntroductionPuzzle {
 	
 	public static enum PuzzleType { Captcha };
 	
-	public static final String INTRODUCTION_CONTEXT = "introduction"; /* FIXME: Change to uppercase before release */
+	public static final String INTRODUCTION_CONTEXT = "Introduction";
 	public static final int MINIMAL_SOLUTION_LENGTH = 5;
 	
 	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -74,8 +67,6 @@ public final class IntroductionPuzzle {
 	 */
 	private boolean iWasSolved = false;
 	
-	
-	/* FIXME: wire this in */
 	/**
 	 * Get a list of fields which the database should create an index on.
 	 */
@@ -88,7 +79,10 @@ public final class IntroductionPuzzle {
 	 * @param newType
 	 * @param newData
 	 */
-	public IntroductionPuzzle(Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, long myValidUntilTime, Date myDateOfInsertion, int myIndex) {
+	@SuppressWarnings("deprecation")
+	public IntroductionPuzzle(Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData,
+			long myValidUntilTime, Date myDateOfInsertion, int myIndex) {
+
 		assert(	newInserter != null && newID != null && newType != null && newMimeType != null && !newMimeType.equals("") &&
 				newData!=null && newData.length!=0 && myValidUntilTime > CurrentTimeUTC.getInMillis() && myDateOfInsertion != null &&
 				myDateOfInsertion.getTime() < CurrentTimeUTC.getInMillis()&& myIndex >= 0);
@@ -112,8 +106,11 @@ public final class IntroductionPuzzle {
 	 * @param newType
 	 * @param newData
 	 */
-	public IntroductionPuzzle(Identity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution, Date newDateOfInsertion, int myIndex) {
-		this(newInserter, newInserter.getId() + UUID.randomUUID().toString(), newType, newMimeType, newData, newDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000, newDateOfInsertion, myIndex);
+	public IntroductionPuzzle(Identity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
+			Date newDateOfInsertion, int myIndex) {
+		
+		this(newInserter, newInserter.getId() + UUID.randomUUID().toString(), newType, newMimeType, newData,
+				newDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000, newDateOfInsertion, myIndex);
 		
 		assert(newSolution!=null && newSolution.length()>=MINIMAL_SOLUTION_LENGTH);
 		
@@ -121,121 +118,6 @@ public final class IntroductionPuzzle {
 		
 		if(checkConsistency() == false)
 			throw new IllegalArgumentException("Trying to costruct a corrupted puzzle");
-	}
-	
-	public static IntroductionPuzzle getByID(ObjectContainer db, String id) {
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mID").constrain(id);
-		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
-		assert(result.size() <= 1);
-		
-		return (result.hasNext() ? result.next() : null);
-	}
-	
-	/**
-	 * Used by the IntroductionServer for downloading solutions.
-	 * @param db
-	 * @param i
-	 * @return
-	 */
-	public static ObjectSet<IntroductionPuzzle> getByInserter(ObjectContainer db, Identity i) {
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(i);
-		q.descend("iWasSolved").constrain(false);
-		return q.execute();
-	}
-	
-	/**
-	 * Get puzzles which are from today. FIXME: Add a integer parameter to specify the age in days.
-	 * Used by for checking whether new puzzles have to be inserted / downloaded.
-	 */
-	@SuppressWarnings("deprecation")
-	public static List<IntroductionPuzzle> getRecentByInserter(ObjectContainer db, Identity i) {
-		Date maxAge = new Date(CurrentTimeUTC.getYear()-1900, CurrentTimeUTC.getMonth(), CurrentTimeUTC.getDayOfMonth());
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(i);
-		q.descend("mDateOfInsertion").constrain(maxAge).smaller().not();
-		return q.execute();
-	}
-	
-	public static IntroductionPuzzle getByRequestURI(ObjectContainer db, FreenetURI uri) throws ParseException {
-		String[] tokens = uri.getDocName().split("[|]");
-		Date date;
-		synchronized (mDateFormat) {
-			date = mDateFormat.parse(tokens[2]);
-		}
-		int index = Integer.parseInt(tokens[3]);
-		
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").descend("id").constrain(Identity.getIdFromURI(uri));
-		q.descend("mDateOfInsertion").constrain(date);
-		q.descend("mIndex").constrain(index);
-		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
-		assert(result.size() <= 1);
-		
-		return (result.hasNext() ? result.next() : null);
-	}
-	
-	public static IntroductionPuzzle getByInserterDateIndex(ObjectContainer db, Identity inserter, Date date, int index) {
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").descend("id").constrain(inserter.getId());
-		q.descend("mDateOfInsertion").constrain(date);
-		q.descend("mIndex").constrain(index);
-		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
-		assert(result.size() <= 1);
-		
-		return (result.hasNext() ? result.next() : null);
-	}
-	
-	 /**
-	  * Used by the IntroductionServer when a solution was downloaded to retrieve the IntroductionPuzzle object.
-	  * @param db
-	  * @param uri
-	  * @return
-	  * @throws ParseException
-	  */
-	public static IntroductionPuzzle getBySolutionURI(ObjectContainer db, FreenetURI uri) throws ParseException {
-		String id = uri.getDocName().split("[|]")[2];
-	
-		return getByID(db, id);
-	}
-	
-	/**
-	 * Used by the IntroductionServer for inserting new puzzles.
-	 * @param db
-	 * @param id
-	 * @param date
-	 * @return
-	 */
-	public static int getFreeIndex(ObjectContainer db, OwnIdentity id, Date date) {
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").descend("id").constrain(id.getId());
-		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
-		q.descend("mIndex").orderDescending();
-		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
-		return result.size() > 0 ? result.next().getIndex()+1 : 0;
-	}
-
-	/**
-	 * Used by the IntroductionClient for inserting solutions of solved puzzles.
-	 * @param db
-	 * @return
-	 */
-	public static ObjectSet<IntroductionPuzzle> getSolvedPuzzles(ObjectContainer db) {
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mSolver").constrain(null).identity().not();
-		return q.execute();
 	}
 	
 	public String getID() {
@@ -310,20 +192,20 @@ public final class IntroductionPuzzle {
 	
 	/**
 	 * Get the URI at which to insert the solution of this puzzle.
+	 * 
+	 * Format: "KSK@WoT|Introduction|id|guessOfSolution"
+	 * id = the ID of the puzzle (which itself contains the ID of the inserter and the UUID of the puzzle)
+	 * guessOfSolution = the guess of the solution which is passed to the function.
 	 */
 	public FreenetURI getSolutionURI(String guessOfSolution) {
 		return new FreenetURI("KSK",	WoT.WOT_NAME + "|" +
 										INTRODUCTION_CONTEXT + "|" +
-										mID + "|" +	/* Do not include the ID of the inserter in the URI because the puzzle-ID already contains it. */
-										guessOfSolution); /* FIXME: hash the solution!! */
+										mID + "|" +
+										guessOfSolution);
 	}
 	
 	public byte[] getData() {
 		return mData;
-	}
-	
-	public String getDataBase64() {
-		return Base64.encodeStandard(mData);
 	}
 	
 	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
@@ -357,12 +239,13 @@ public final class IntroductionPuzzle {
 	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
 	/**
 	 * Used by the IntroductionClient to mark a puzzle as solved
-	 * @param solver
-	 * @param solution
+	 * 
+	 * @param solver The identity which solved the puzzle correctly.
+	 * @param solution The solution which was passed by the solver.
 	 * @throws InvalidParameterException If the puzzle was already solved.
 	 */
 	public synchronized void setSolved(OwnIdentity solver, String solution) throws InvalidParameterException {
-		if(iWasSolved == true)
+		if(iWasSolved)
 			throw new InvalidParameterException("Puzzle is already solved!"); /* TODO: create a special exception for that */
 		
 		iWasSolved = true;
@@ -386,58 +269,9 @@ public final class IntroductionPuzzle {
 		return mIndex;
 	}
 	
-	public synchronized void store(ObjectContainer db) {
-		/* TODO: Convert to debug code maybe when we are sure that this does not happen. Duplicate puzzles will be deleted after they
-		 * expire anyway. Further, isn't there a db4o option which ensures that mID is a primary key and therefore no duplicates can exist? */
-		IntroductionPuzzle existing = IntroductionPuzzle.getByID(db, mID);
-		if(existing != null && existing != this)
-			throw new IllegalArgumentException("Puzzle with ID " + mID + " already exists!");
-		
-		db.store(mType);
-		// db.store(mDateOfInsertion); /* Not stored because it is a primitive for db4o */ 
-		db.store(this);
-		db.commit();
-	}
-	
-	public static void deleteExpiredPuzzles(ObjectContainer db) {
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mValidUntilTime").constrain(CurrentTimeUTC.getInMillis()).smaller();
-		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
-		Logger.debug(IntroductionPuzzle.class, "Deleting " + result.size() + " expired puzzles.");
-		for(IntroductionPuzzle p : result)
-			db.delete(p);
-		
-		db.commit();
-	}
-	
-	/**
-	 * Used by the introduction client to delete old puzzles and replace them with new ones.
-	 * @param db
-	 * @param puzzlePoolSize
-	 */
-	public static void deleteOldestPuzzles(ObjectContainer db, int puzzlePoolSize) {
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mSolution").constrain(null).identity(); /* FIXME: toad said constrain(null) is maybe broken. If this is true: Alternative would be: q.descend("mIdentity").constrain(OwnIdentity.class).not(); */
-		q.descend("mValidUntilTime").orderAscending();
-		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
-		int deleteCount = result.size() - puzzlePoolSize;
-		
-		Logger.debug(IntroductionPuzzle.class, "Deleting " + deleteCount + " old puzzles.");
-		while(deleteCount > 0) {
-			db.delete(result.next());
-			deleteCount--;
-		}
-		
-		db.commit();
-	}
-	
 	/* TODO: Write an unit test which uses this function :) */
+	/* TODO: This code sucks, checkConsistency should throw a descriptive message */
 	/* FIXME: check for validity of the jpeg */
-	
 	public boolean checkConsistency() {
 		boolean result = true;
 		if(mID == null) 
