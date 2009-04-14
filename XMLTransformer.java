@@ -48,7 +48,7 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public final class IdentityXML {
+public final class XMLTransformer {
 
 	private static final int XML_FORMAT_VERSION = 1;
 	
@@ -72,7 +72,7 @@ public final class IdentityXML {
 	 * Initializes the XML creator & parser and caches those objects in the new IdentityXML object so that they do not have to be initialized
 	 * each time an identity is exported/imported.
 	 */
-	public IdentityXML(WoT myWoT)
+	public XMLTransformer(WoT myWoT)
 		throws ParserConfigurationException, TransformerConfigurationException, TransformerFactoryConfigurationError {
 		
 		mWoT = myWoT;
