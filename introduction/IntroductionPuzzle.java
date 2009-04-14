@@ -5,39 +5,17 @@
  */
 package plugins.WoT.introduction;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import org.w3c.dom.DOMImplementation;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.InvalidParameterException;
-import plugins.WoT.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -185,8 +163,7 @@ public final class IntroductionPuzzle {
 	}
 	
 	public static IntroductionPuzzle getByRequestURI(ObjectContainer db, FreenetURI uri) throws ParseException {
-		String filename = uri.getDocName().replaceAll(".xml", "");
-		String[] tokens = filename.split("[|]");
+		String[] tokens = uri.getDocName().split("[|]");
 		Date date;
 		synchronized (mDateFormat) {
 			date = mDateFormat.parse(tokens[2]);
@@ -275,7 +252,9 @@ public final class IntroductionPuzzle {
 
 	/**
 	 * Get the URI at which to insert this puzzle.
-	 * SSK@asdfasdf...|WoT|introduction|yyyy-MM-dd|#.xml 
+	 * SSK@asdfasdf...|WoT|introduction|yyyy-MM-dd|#
+	 * 
+	 * # = index of the puzzle.
 	 */
 	public FreenetURI getInsertURI() {
 		assert(mSolution != null); /* This function should only be needed by the introduction server, not by clients. */
@@ -287,7 +266,7 @@ public final class IntroductionPuzzle {
 			dayOfInsertion = mDateFormat.format(mDateOfInsertion);
 		}
 		FreenetURI baseURI = ((OwnIdentity)mInserter).getInsertURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WoT.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + mIndex + ".xml");
+		baseURI = baseURI.setDocName(WoT.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + mIndex);
 		return baseURI.setMetaString(null);
 	}
 
@@ -306,11 +285,22 @@ public final class IntroductionPuzzle {
 			dayOfInsertion = mDateFormat.format(dateOfInsertion);
 		}
 		FreenetURI baseURI = inserter.getRequestURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WoT.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index + ".xml");
+		baseURI = baseURI.setDocName(WoT.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index);
 		return baseURI.setMetaString(null);
 	}
-	
-	
+
+	public static Date getDateFromRequestURI(FreenetURI requestURI) throws ParseException {
+		String tokens[] = requestURI.getDocName().split("[|]");
+		synchronized (mDateFormat) {
+			return mDateFormat.parse(tokens[2]);
+		}
+	}
+
+	public static int getIndexFromRequestURI(FreenetURI requestURI) {
+		String tokens[] = requestURI.getDocName().split("[|]");
+		return Integer.parseInt(tokens[3]);
+	}
+
 	/**
 	 * Get the URI at which to look for a solution of this puzzle (if someone solved it)
 	 */
@@ -443,121 +433,6 @@ public final class IntroductionPuzzle {
 		}
 		
 		db.commit();
-	}
-	
-	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
-	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
-	public synchronized void exportToXML(OutputStream os) throws TransformerException, ParserConfigurationException {
-		// Create the output file
-		StreamResult resultStream = new StreamResult(os);
-
-		// Create the XML document
-		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
-		DOMImplementation impl = xmlBuilder.getDOMImplementation();
-		Document xmlDoc = impl.createDocument(null, "WoT", null);
-		Element rootElement = xmlDoc.getDocumentElement();
-
-		// Create the content
-		Element puzzleTag = xmlDoc.createElement("IntroductionPuzzle");
-		
-		Element idTag = xmlDoc.createElement("ID");
-		idTag.setAttribute("value", mID);
-		puzzleTag.appendChild(idTag);
-
-		Element typeTag = xmlDoc.createElement("Type");
-		typeTag.setAttribute("value", mType.toString());
-		puzzleTag.appendChild(typeTag);
-		
-		Element mimeTypeTag = xmlDoc.createElement("MimeType");
-		mimeTypeTag.setAttribute("value", mMimeType);
-		puzzleTag.appendChild(mimeTypeTag);
-		
-		Element validUntilTag = xmlDoc.createElement("ValidUntilTime");
-		validUntilTag.setAttribute("value", Long.toString(mValidUntilTime));
-		puzzleTag.appendChild(validUntilTag);
-		
-		Element dataTag = xmlDoc.createElement("Data");
-		dataTag.setAttribute("value", Base64.encodeStandard(mData));
-		puzzleTag.appendChild(dataTag);
-		
-		rootElement.appendChild(puzzleTag);
-
-		DOMSource domSource = new DOMSource(xmlDoc);
-		TransformerFactory transformFactory = TransformerFactory.newInstance();
-		Transformer serializer = transformFactory.newTransformer();
-		
-		serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-		serializer.setOutputProperty(OutputKeys.INDENT,"yes");
-		serializer.transform(domSource, resultStream);
-	}
-	
-	public static IntroductionPuzzle importFromXML(ObjectContainer db, InputStream is, FreenetURI puzzleURI ) throws SAXException, IOException, ParserConfigurationException, UnknownIdentityException, ParseException {
-		PuzzleHandler puzzleHandler = new PuzzleHandler(db, puzzleURI);
-		SAXParserFactory factory = SAXParserFactory.newInstance();
-		factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-		factory.newSAXParser().parse(is, puzzleHandler);
-		
-		return puzzleHandler.getPuzzle();
-	}
-	
-	/* FIXME: Use the general XML-parsing class XMLTreeGenerator from freetalk.MessageXML */
-	public static class PuzzleHandler extends DefaultHandler {
-		private final Identity newInserter;
-		private String newID;
-		private PuzzleType newType;
-		private String newMimeType;
-		private byte[] newData;
-		private long newValidUntilTime;
-		private Date newDateOfInsertion;
-		private int newIndex;
-
-
-		public PuzzleHandler(ObjectContainer db, FreenetURI puzzleURI) throws UnknownIdentityException, ParseException {
-			super();
-			newInserter = Identity.getByURI(db, puzzleURI);
-			String filename = puzzleURI.getDocName().replaceAll(".xml", "");
-			String tokens[] = filename.split("[|]");
-			synchronized (mDateFormat) {
-				newDateOfInsertion = mDateFormat.parse(tokens[2]);
-			}
-			newIndex = Integer.parseInt(tokens[3]);
-		}
-
-		/**
-		 * Called by SAXParser for each XML element.
-		 */
-		@Override
-		public void startElement(String nameSpaceURI, String localName, String rawName, Attributes attrs) throws SAXException {
-			String elt_name = rawName == null ? localName : rawName;
-
-			try {
-				if (elt_name.equals("ID")) {
-					newID = attrs.getValue("value");
-				}
-				else if (elt_name.equals("Type")) {
-					newType = PuzzleType.valueOf(attrs.getValue("value"));
-				}
-				else if (elt_name.equals("MimeType")) {
-					newMimeType = attrs.getValue("value");
-				}
-				else if (elt_name.equals("ValidUntilTime")) {
-					newValidUntilTime = Long.parseLong(attrs.getValue("value"));
-				}
-				else if(elt_name.equals("Data")) {
-					newData = Base64.decodeStandard(attrs.getValue("value"));
-				}					
-				else
-					Logger.error(this, "Unknown element in puzzle: " + elt_name);
-				
-			} catch (Exception e1) {
-				Logger.debug(this, "Parsing error", e1);
-			}
-		}
-
-		public IntroductionPuzzle getPuzzle() {
-			return new IntroductionPuzzle(newInserter, newID, newType, newMimeType, newData, newValidUntilTime, newDateOfInsertion, newIndex);
-		}
 	}
 	
 	/* TODO: Write an unit test which uses this function :) */
