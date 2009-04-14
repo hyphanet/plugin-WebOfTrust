@@ -3,8 +3,10 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -26,16 +28,23 @@ import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
+import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.introduction.IntroductionPuzzle;
 
-import com.db4o.ObjectContainer;
+import com.db4o.ext.ExtObjectContainer;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Base64;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 
 /**
- * A class for storing identities as XML text and importing them from XML text.
+ * This class handles all XML creation and parsing of the WoT plugin, that is import and export of identities, identity introductions 
+ * and introduction puzzles. The code for handling the XML related to identity introduction is not in a separate class in the WoT.Introduction
+ * package so that we do not need to create multiple instances of the XML parsers / pass the parsers to the other class. 
  * 
  * @author xor (xor@freenetproject.org)
  */
@@ -45,7 +54,7 @@ public final class IdentityXML {
 	
 	private final WoT mWoT;
 	
-	private final ObjectContainer mDB;
+	private final ExtObjectContainer mDB;
 	
 	/* TODO: Check with a profiler how much memory this takes, do not cache it if it is too much */
 	/** Used for parsing the identity XML when decoding identities*/
@@ -60,9 +69,12 @@ public final class IdentityXML {
 	private final Transformer mSerializer;
 	
 	/**
-	 * 
+	 * Initializes the XML creator & parser and caches those objects in the new IdentityXML object so that they do not have to be initialized
+	 * each time an identity is exported/imported.
 	 */
-	public IdentityXML(WoT myWoT) throws ParserConfigurationException, TransformerConfigurationException, TransformerFactoryConfigurationError {
+	public IdentityXML(WoT myWoT)
+		throws ParserConfigurationException, TransformerConfigurationException, TransformerFactoryConfigurationError {
+		
 		mWoT = myWoT;
 		mDB = mWoT.getDB();
 		
@@ -79,50 +91,50 @@ public final class IdentityXML {
 		mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
 	}
 	
-	public void exportOwnIdentity(OwnIdentity myIdentity, OutputStream os) throws TransformerException {
+	public synchronized void exportOwnIdentity(OwnIdentity myIdentity, OutputStream os) throws TransformerException {
 		Document xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
 		Element rootElement = xmlDoc.getDocumentElement();
 		
-		/* Create the identity tag */
+		/* Create the identity Element */
 		
-		Element identityTag = xmlDoc.createElement("Identity");
-		identityTag.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
+		Element identityElement = xmlDoc.createElement("Identity");
+		identityElement.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
 		
 		synchronized(myIdentity) {
-			identityTag.setAttribute("Name", myIdentity.getNickName());
-			identityTag.setAttribute("PublishesTrustList", Boolean.toString(myIdentity.doesPublishTrustList()));
+			identityElement.setAttribute("Name", myIdentity.getNickName());
+			identityElement.setAttribute("PublishesTrustList", Boolean.toString(myIdentity.doesPublishTrustList()));
 			
-			/* Create the context tags */
+			/* Create the context Elements */
 			
 			for(String context : myIdentity.getContexts()) {
-				Element contextTag = xmlDoc.createElement("Context");
-				contextTag.setAttribute("Name", context);
-				identityTag.appendChild(contextTag);
+				Element contextElement = xmlDoc.createElement("Context");
+				contextElement.setAttribute("Name", context);
+				identityElement.appendChild(contextElement);
 			}
 			
-			/* Create the property tags */
+			/* Create the property Elements */
 			
 			for(Entry<String, String> property : myIdentity.getProperties().entrySet()) {
-				Element propertyTag = xmlDoc.createElement("Property");
-				propertyTag.setAttribute("Name", property.getKey());
-				propertyTag.setAttribute("Value", property.getValue());
-				identityTag.appendChild(propertyTag);
+				Element propertyElement = xmlDoc.createElement("Property");
+				propertyElement.setAttribute("Name", property.getKey());
+				propertyElement.setAttribute("Value", property.getValue());
+				identityElement.appendChild(propertyElement);
 			}
 			
-			/* Create the trust list tag and its trust tags */
+			/* Create the trust list Element and its trust Elements */
 			
-			Element trustListTag = xmlDoc.createElement("TrustList");
+			Element trustListElement = xmlDoc.createElement("TrustList");
 			for(Trust trust : myIdentity.getGivenTrusts(mDB)) {
-				Element trustTag = xmlDoc.createElement("Trust");
-				trustTag.setAttribute("Identity", trust.getTrustee().getRequestURI().toString());
-				trustTag.setAttribute("Value", Byte.toString(trust.getValue()));
-				trustTag.setAttribute("Comment", trust.getComment());
-				trustListTag.appendChild(trustTag);
+				Element trustElement = xmlDoc.createElement("Trust");
+				trustElement.setAttribute("Identity", trust.getTrustee().getRequestURI().toString());
+				trustElement.setAttribute("Value", Byte.toString(trust.getValue()));
+				trustElement.setAttribute("Comment", trust.getComment());
+				trustListElement.appendChild(trustElement);
 			}
-			identityTag.appendChild(trustListTag);
+			identityElement.appendChild(trustListElement);
 		}
 		
-		rootElement.appendChild(identityTag);
+		rootElement.appendChild(identityElement);
 
 		DOMSource domSource = new DOMSource(xmlDoc);
 		StreamResult resultStream = new StreamResult(os);
@@ -141,9 +153,8 @@ public final class IdentityXML {
 	 * @throws Exception 
 	 * @throws Exception
 	 */
-	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  { 
+	public synchronized void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  { 
 		Document xml = mDocumentBuilder.parse(xmlInputStream);
-		
 		Element identityElement = (Element)xml.getElementsByTagName("Identity").item(0);
 		
 		if(Integer.parseInt(identityElement.getAttribute("Version")) > XML_FORMAT_VERSION)
@@ -265,4 +276,113 @@ public final class IdentityXML {
 			}
 		}
 	}
+
+	public synchronized void exportIntroduction(OwnIdentity identity, OutputStream os) throws TransformerException {
+		Document xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+		Element rootElement = xmlDoc.getDocumentElement();
+
+		Element introElement = xmlDoc.createElement("IdentityIntroduction");
+		introElement.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
+
+		Element identityElement = xmlDoc.createElement("Identity");
+		identityElement.setAttribute("URI", identity.getRequestURI().toString());
+		introElement.appendChild(identityElement);
+	
+		rootElement.appendChild(introElement);
+
+		DOMSource domSource = new DOMSource(xmlDoc);
+		StreamResult resultStream = new StreamResult(os);
+		mSerializer.transform(domSource, resultStream);
+	}
+
+	/**
+	 * Creates an identity from an identity introduction, stores it in the database and returns the new identity.
+	 * If the identity already exists, the existing identity is returned.
+	 * 
+	 * @throws InvalidParameterException 
+	 * @throws IOException 
+	 * @throws SAXException 
+	 */
+	public synchronized Identity importIntroduction(InputStream xmlInputStream) throws InvalidParameterException, SAXException, IOException {
+		Document xml = mDocumentBuilder.parse(xmlInputStream);
+		Element identityElement = (Element)xml.getElementsByTagName("Identity").item(0);
+		
+		if(Integer.parseInt(identityElement.getAttribute("Version")) > XML_FORMAT_VERSION)
+			throw new InvalidParameterException("Version " + identityElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
+		
+		FreenetURI identityURI = new FreenetURI(identityElement.getAttribute("URI"));
+		
+		Identity identity;
+		
+		synchronized(mWoT) {
+			try {
+				identity = Identity.getByURI(mDB, identityURI);
+				Logger.minor(this, "Imported introduction for an already existing identity: " + identity);
+			}
+			catch (UnknownIdentityException e) {
+				identity = new Identity(identityURI, null, false);
+				identity.storeAndCommit(mDB);
+				mWoT.getIdentityFetcher().fetch(identity);
+			}
+		}
+
+		return identity;
+	}
+
+	public synchronized void exportIntroductionPuzzle(IntroductionPuzzle puzzle, OutputStream os)
+		throws TransformerException, ParserConfigurationException {
+		
+		Document xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+		Element rootElement = xmlDoc.getDocumentElement();
+
+		Element puzzleElement = xmlDoc.createElement("IntroductionPuzzle");
+		puzzleElement.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
+		
+		/* TODO: This lock is actually not neccessary because all values which are taken from the puzzle are final. Decide whether anything
+		 * else which is bad can happen if we do not synchronize. For example how does db4o handle deletion of objects if they are still
+		 * referenced somewhere? */
+		synchronized(puzzle) { 
+			puzzleElement.setAttribute("ID", puzzle.getID());
+			puzzleElement.setAttribute("Type", puzzle.getType().toString());
+			puzzleElement.setAttribute("MimeType", puzzle.getMimeType());
+			puzzleElement.setAttribute("ValidUntilTime", Long.toString(puzzle.getValidUntilTime()));
+			
+			Element dataElement = xmlDoc.createElement("Data");
+			dataElement.setAttribute("Value", Base64.encodeStandard(puzzle.getData()));
+			puzzleElement.appendChild(dataElement);	
+		}
+		
+		rootElement.appendChild(puzzleElement);
+
+		DOMSource domSource = new DOMSource(xmlDoc);
+		StreamResult resultStream = new StreamResult(os);
+		mSerializer.transform(domSource, resultStream);
+	}
+
+	public synchronized IntroductionPuzzle importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
+		throws SAXException, IOException, InvalidParameterException, UnknownIdentityException, IllegalBase64Exception, ParseException {
+		
+		Document xml = mDocumentBuilder.parse(xmlInputStream);
+		Element puzzleElement = (Element)xml.getElementsByTagName("IntroductionPuzzle").item(0);
+		
+		if(Integer.parseInt(puzzleElement.getAttribute("Version")) > XML_FORMAT_VERSION)
+			throw new InvalidParameterException("Version " + puzzleElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);	
+		
+		Identity puzzleInserter = Identity.getByURI(mDB, puzzleURI);
+		String puzzleID = puzzleElement.getAttribute("ID");
+		IntroductionPuzzle.PuzzleType puzzleType = IntroductionPuzzle.PuzzleType.valueOf(puzzleElement.getAttribute("Type"));
+		String puzzleMimeType = puzzleElement.getAttribute("MimeType");
+		long puzzleValidUntilTime = Long.parseLong(puzzleElement.getAttribute("ValidUntilTime"));
+		
+		Element dataElement = (Element)puzzleElement.getElementsByTagName("Data").item(0);
+		byte[] puzzleData =  Base64.decodeStandard(dataElement.getAttribute("Value"));
+		
+		IntroductionPuzzle puzzle = new IntroductionPuzzle(puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, puzzleValidUntilTime,
+				IntroductionPuzzle.getDateFromRequestURI(puzzleURI), IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
+		
+		puzzle.store(mDB);
+		
+		return puzzle;
+	}
+
 }
