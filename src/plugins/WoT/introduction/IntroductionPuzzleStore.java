@@ -4,6 +4,12 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 
+import plugins.WoT.CurrentTimeUTC;
+import plugins.WoT.Identity;
+import plugins.WoT.OwnIdentity;
+import plugins.WoT.WoT;
+import plugins.WoT.exceptions.UnknownIdentityException;
+
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
@@ -11,150 +17,166 @@ import com.db4o.query.Query;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
-import plugins.WoT.CurrentTimeUTC;
-import plugins.WoT.Identity;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.WoT;
-
 
 /**
  * A manager for storing puzzles in the db4o database and retrieving them from it.
  * 
+ * As of SVN revision 26808, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
+ * 
  * @author xor
  */
 public final class IntroductionPuzzleStore {
-
-	private final WoT mWoT;
 	
 	private final ExtObjectContainer mDB;
 	
 	public IntroductionPuzzleStore(WoT myWoT) {
-		mWoT = myWoT;
 		mDB = myWoT.getDB();
+		
+		deleteCorruptedPuzzles();
 	}
 	
-	private void deleteCorruptedPuzzles() {		
-		ObjectSet<IntroductionPuzzle> puzzles = db.queryByExample(IntroductionPuzzle.class);
-		for(IntroductionPuzzle p : puzzles) {
-			db.activate(p, 3); /* FIXME: Is this the correct depth? */
-			if(p.checkConsistency() == false) {
-				db.delete(p);
-				Logger.error(this, "Deleting corrupted puzzle.");
+	private synchronized void deleteCorruptedPuzzles() {		
+		synchronized(mDB.lock()) {
+			ObjectSet<IntroductionPuzzle> puzzles = mDB.queryByExample(IntroductionPuzzle.class);
+			for(IntroductionPuzzle p : puzzles) {
+				mDB.activate(p, 3); /* FIXME: Is this the correct depth? */
+				if(p.checkConsistency() == false) {
+					Logger.error(this, "Deleting corrupted puzzle");
+					mDB.delete(p);
+				}
+			}
+			mDB.commit();
+			/* Our goal is to delete the puzzles so we do not rollback here if an exception occurs, that would restore the deleted puzzles. */
+		}
+	}
+	
+	public synchronized void storeAndCommit(IntroductionPuzzle puzzle) {
+		/* TODO: Convert to assert() maybe when we are sure that this does not happen. Duplicate puzzles will be deleted after they
+		 * expire anyway. Further, isn't there a db4o option which ensures that mID is a primary key and therefore no duplicates can exist? */
+		synchronized(mDB.lock()) {
+			IntroductionPuzzle existingPuzzle = getByID(puzzle.getID());
+			if(existingPuzzle != null && existingPuzzle != puzzle)
+				throw new IllegalArgumentException("Puzzle with ID " + puzzle.getID() + " already exists!");
+	
+			try {
+				mDB.store(puzzle.getType());
+				// mDB.store(puzzle.getDateOfInsertion()); /* Not stored because it is a primitive for db4o */ 
+				mDB.store(puzzle);
+				mDB.commit();
+			}
+			catch(RuntimeException e) {
+				mDB.rollback();
+				throw e;
 			}
 		}
 	}
 	
-	public void storeAndCommit(IntroductionPuzzle puzzle) {
-		/* TODO: Convert to debug code maybe when we are sure that this does not happen. Duplicate puzzles will be deleted after they
-		 * expire anyway. Further, isn't there a db4o option which ensures that mID is a primary key and therefore no duplicates can exist? */
-		IntroductionPuzzle existing = getByID(puzzle.getID());
-		if(existing != null && existing != this)
-			throw new IllegalArgumentException("Puzzle with ID " + mID + " already exists!");
-
-		db.store(mType);
-		// db.store(mDateOfInsertion); /* Not stored because it is a primitive for db4o */ 
-		db.store(this);
-		db.commit();
-	}
-	
-	public IntroductionPuzzle getByID(String id) {
-		synchronized(db.lock()) {
-		Query q = db.query();
+	@SuppressWarnings("unchecked")
+	public synchronized IntroductionPuzzle getByID(String id) {
+		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mID").constrain(id);
 		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
+
+		/* TODO: Decide whether we maybe should throw to get bug reports if this happens ... OTOH puzzles are not so important ;) */
 		assert(result.size() <= 1);
-		
+
 		return (result.hasNext() ? result.next() : null);
-		}
 	}
 	
-	/**
-	 * Used by the IntroductionServer for downloading solutions.
-	 * @param db
-	 * @param i
-	 * @return
-	 */
-	public static ObjectSet<IntroductionPuzzle> getByInserter(ExtObjectContainer db, Identity i) {
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(i);
-		q.descend("iWasSolved").constrain(false);
-		return q.execute();
-	}
-	
-	/**
-	 * Get puzzles which are from today. FIXME: Add a integer parameter to specify the age in days.
-	 * Used by for checking whether new puzzles have to be inserted / downloaded.
-	 */
-	@SuppressWarnings("deprecation")
-	public static List<IntroductionPuzzle> getRecentByInserter(ObjectContainer db, Identity i) {
-		Date maxAge = new Date(CurrentTimeUTC.getYear()-1900, CurrentTimeUTC.getMonth(), CurrentTimeUTC.getDayOfMonth());
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(i);
-		q.descend("mDateOfInsertion").constrain(maxAge).smaller().not();
-		return q.execute();
-	}
-	
-	public static IntroductionPuzzle getByRequestURI(ObjectContainer db, FreenetURI uri) throws ParseException {
-		String[] tokens = uri.getDocName().split("[|]");
-		Date date;
-		synchronized (mDateFormat) {
-			date = mDateFormat.parse(tokens[2]);
-		}
-		int index = Integer.parseInt(tokens[3]);
+	@SuppressWarnings("unchecked")
+	public synchronized IntroductionPuzzle getByURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
+		Date date = IntroductionPuzzle.getDateFromRequestURI(uri);
+		int index = IntroductionPuzzle.getIndexFromRequestURI(uri);
 		
-		Query q = db.query();
+		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").descend("id").constrain(Identity.getIdFromURI(uri));
+		q.descend("mInserter").constrain(Identity.getByURI(mDB, uri));
 		q.descend("mDateOfInsertion").constrain(date);
 		q.descend("mIndex").constrain(index);
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
+		/* TODO: Decide whether we maybe should throw to get bug reports if this happens ... OTOH puzzles are not so important ;) */
 		assert(result.size() <= 1);
 		
 		return (result.hasNext() ? result.next() : null);
 	}
 	
-	public static IntroductionPuzzle getByInserterDateIndex(ObjectContainer db, Identity inserter, Date date, int index) {
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").descend("id").constrain(inserter.getId());
-		q.descend("mDateOfInsertion").constrain(date);
-		q.descend("mIndex").constrain(index);
-		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
-		assert(result.size() <= 1);
-		
-		return (result.hasNext() ? result.next() : null);
-	}
 	
 	 /**
-	  * Used by the IntroductionServer when a solution was downloaded to retrieve the IntroductionPuzzle object.
+	  * Get a puzzle by it's solution URI.
+	  * 
+	  * Used by the IntroductionServer when a solution was downloaded from the given URI to retrieve the IntroductionPuzzle object which
+	  * belongs to the URI.
+	  * 
 	  * @param db
 	  * @param uri
 	  * @return
 	  * @throws ParseException
 	  */
-	public static IntroductionPuzzle getBySolutionURI(ObjectContainer db, FreenetURI uri) throws ParseException {
-		String id = uri.getDocName().split("[|]")[2];
+	public IntroductionPuzzle getBySolutionURI(FreenetURI uri) throws ParseException {
+		return getByID(IntroductionPuzzle.getIDFromSolutionURI(uri));
+	}
 	
-		return getByID(db, id);
+	
+	/**
+	 * Get all not solved puzzles which where inserted by the given identity.
+	 * You have to put a synchronized(this IntroductionPuzzleStore) statement around the call to this function and the processing of the
+	 * List which was returned by it!
+	 * 
+	 * Used by the IntroductionServer for downloading solutions.
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized List<IntroductionPuzzle> getUnsolvedByInserter(OwnIdentity inserter) {
+		Query q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").constrain(inserter);
+		q.descend("iWasSolved").constrain(false);
+		return q.execute();
 	}
 	
 	/**
-	 * Used by the IntroductionServer for inserting new puzzles.
-	 * @param db
-	 * @param id
-	 * @param date
-	 * @return
+	 * Get a list of puzzles which are from today. FIXME: Add a integer parameter to specify the age in days.
+	 * You have to put a synchronized(this IntroductionPuzzleStore) statement around the call to this function and the processing of the
+	 * List which was returned by it!
+	 * 
+	 * Used by for checking whether new puzzles have to be inserted or downloaded.
 	 */
-	public static int getFreeIndex(ObjectContainer db, OwnIdentity id, Date date) {
-		Query q = db.query();
+	@SuppressWarnings({ "deprecation", "unchecked" })
+	public synchronized List<IntroductionPuzzle> getRecentByInserter(Identity inserter) {
+		Date maxAge = new Date(CurrentTimeUTC.getYear()-1900, CurrentTimeUTC.getMonth(), CurrentTimeUTC.getDayOfMonth());
+		
+		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").descend("id").constrain(id.getId());
+		q.descend("mInserter").constrain(inserter);
+		q.descend("mDateOfInsertion").constrain(maxAge).smaller().not();
+		return q.execute();
+	}
+	
+
+//	@SuppressWarnings("unchecked")
+//	public synchronized IntroductionPuzzle getByInserterDateIndex(Identity inserter, Date date, int index) {
+//		Query q = mDB.query();
+//		q.constrain(IntroductionPuzzle.class);
+//		q.descend("mInserter").constrain(inserter);
+//		q.descend("mDateOfInsertion").constrain(date);
+//		q.descend("mIndex").constrain(index);
+//		ObjectSet<IntroductionPuzzle> result = q.execute();
+//		
+//		/* TODO: Decide whether we maybe should throw to get bug reports if this happens ... OTOH puzzles are not so important ;) */
+//		assert(result.size() <= 1);
+//		
+//		return (result.hasNext() ? result.next() : null);
+//	}
+
+	/**
+	 * Used by the IntroductionServer for inserting new puzzles.
+	 */
+	@SuppressWarnings({ "deprecation", "unchecked" })
+	public synchronized int getFreeIndex(OwnIdentity inserter, Date date) {
+		Query q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").descend("id").constrain(inserter.getId());
 		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
 		q.descend("mIndex").orderDescending();
 		ObjectSet<IntroductionPuzzle> result = q.execute();
@@ -163,50 +185,66 @@ public final class IntroductionPuzzleStore {
 	}
 
 	/**
+	 * Get a List of all solved puzzles.
+	 * You have to put a synchronized(this IntroductionPuzzleStore) statement around the call to this function and the processing of the
+	 * List which was returned by it!
+	 * 
 	 * Used by the IntroductionClient for inserting solutions of solved puzzles.
-	 * @param db
-	 * @return
 	 */
-	public static ObjectSet<IntroductionPuzzle> getSolvedPuzzles(ObjectContainer db) {
-		Query q = db.query();
+	@SuppressWarnings("unchecked")
+	public synchronized List<IntroductionPuzzle> getSolvedPuzzles() {
+		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mSolver").constrain(null).identity().not();
 		return q.execute();
 	}
 	
-	public static void deleteExpiredPuzzles(ObjectContainer db) {
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mValidUntilTime").constrain(CurrentTimeUTC.getInMillis()).smaller();
-		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
-		Logger.debug(IntroductionPuzzle.class, "Deleting " + result.size() + " expired puzzles.");
-		for(IntroductionPuzzle p : result)
-			db.delete(p);
-		
-		db.commit();
+	@SuppressWarnings("unchecked")
+	public synchronized void deleteExpiredPuzzles() {
+		synchronized(mDB.lock()) {
+			Query q = mDB.query();
+			q.constrain(IntroductionPuzzle.class);
+			q.descend("mValidUntilTime").constrain(CurrentTimeUTC.getInMillis()).smaller();
+			ObjectSet<IntroductionPuzzle> result = q.execute();
+			
+			for(IntroductionPuzzle p : result)
+				mDB.delete(p);
+			
+			/* TODO: Minor but interesting optimization: result.size() should take about O(N) time before the for() and O(1) after it
+			 * if db4o is smart enough. Verify if it really calculates and stores the size during the iteration. If not, the log line
+			 * should be prefixed with if(loglevel is debug) */
+			Logger.debug(IntroductionPuzzle.class, "Deleted " + result.size() + " expired puzzles.");
+			
+			mDB.commit();
+			/* Our goal is to delete the puzzles so we do not rollback here if an exception occurs, that would restore the deleted puzzles. */
+		}
 	}
 	
 	/**
+	 * Delete the oldest puzzles so that only an amount of <code>puzzlePoolSize</code> is left.
 	 * Used by the introduction client to delete old puzzles and replace them with new ones.
-	 * @param db
-	 * @param puzzlePoolSize
+	 * 
+	 * @param puzzlePoolSize The amount of puzzles which should not be deleted.
 	 */
-	public static void deleteOldestPuzzles(ObjectContainer db, int puzzlePoolSize) {
-		Query q = db.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mSolution").constrain(null).identity(); /* FIXME: toad said constrain(null) is maybe broken. If this is true: Alternative would be: q.descend("mIdentity").constrain(OwnIdentity.class).not(); */
-		q.descend("mValidUntilTime").orderAscending();
-		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
-		int deleteCount = result.size() - puzzlePoolSize;
-		
-		Logger.debug(IntroductionPuzzle.class, "Deleting " + deleteCount + " old puzzles.");
-		while(deleteCount > 0) {
-			db.delete(result.next());
-			deleteCount--;
+	@SuppressWarnings("unchecked")
+	public synchronized void deleteOldestPuzzles(int puzzlePoolSize) {
+		synchronized(mDB.lock()) {
+			Query q = mDB.query();
+			q.constrain(IntroductionPuzzle.class);
+			q.descend("mValidUntilTime").orderAscending();
+			q.descend("mSolution").constrain(null).identity();
+			ObjectSet<IntroductionPuzzle> result = q.execute();
+			
+			int deleteCount = result.size() - puzzlePoolSize;
+			
+			Logger.debug(IntroductionPuzzle.class, "Deleting " + deleteCount + " old puzzles, keeping " + puzzlePoolSize);
+			while(deleteCount > 0) {
+				mDB.delete(result.next());
+				deleteCount--;
+			}
+			
+			mDB.commit();
+			/* Our goal is to delete the puzzles so we do not rollback here if an exception occurs, that would restore the deleted puzzles. */ 
 		}
-		
-		db.commit();
 	}
 }
