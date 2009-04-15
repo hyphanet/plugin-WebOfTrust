@@ -35,7 +35,7 @@ import freenet.support.Logger;
  * 7. The IntroductionClient and IntroductionServer delete expired puzzles (deleteExpiredPuzzles).
  * 8. The IntroductionClient deletes the oldest puzzles to replace them with new ones (deleteOldestPuzzles).
  *
- * As of SVN revision 26834, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
+ * As of SVN revision 26844, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
  *
  * @author xor
  */
@@ -67,10 +67,14 @@ public final class IntroductionPuzzleStore {
 	protected synchronized void storeAndCommit(IntroductionPuzzle puzzle) {
 		/* TODO: Convert to assert() maybe when we are sure that this does not happen. Duplicate puzzles will be deleted after they
 		 * expire anyway. Further, isn't there a db4o option which ensures that mID is a primary key and therefore no duplicates can exist? */
+		synchronized(puzzle) {
 		synchronized(mDB.lock()) {
 			IntroductionPuzzle existingPuzzle = getByID(puzzle.getID());
 			if(existingPuzzle != null && existingPuzzle != puzzle)
 				throw new IllegalArgumentException("Puzzle with ID " + puzzle.getID() + " already exists!");
+			
+			if(mDB.isStored(puzzle) && !mDB.isActive(puzzle))
+				throw new RuntimeException("Trying to store an inactive IntroductionPuzzle object!");
 	
 			try {
 				mDB.store(puzzle.getType());
@@ -82,6 +86,7 @@ public final class IntroductionPuzzleStore {
 				mDB.rollback();
 				throw e;
 			}
+		}
 		}
 	}
 
