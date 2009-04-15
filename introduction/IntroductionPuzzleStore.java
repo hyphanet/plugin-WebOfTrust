@@ -21,7 +21,7 @@ import freenet.support.Logger;
 /**
  * A manager for storing puzzles in the db4o database and retrieving them from it.
  * 
- * As of SVN revision 26808, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
+ * As of SVN revision 26816, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
  * 
  * @author xor
  */
@@ -85,21 +85,12 @@ public final class IntroductionPuzzleStore {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public synchronized IntroductionPuzzle getByURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
+	public IntroductionPuzzle getByURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
+		Identity inserter = Identity.getByURI(mDB, uri);
 		Date date = IntroductionPuzzle.getDateFromRequestURI(uri);
 		int index = IntroductionPuzzle.getIndexFromRequestURI(uri);
 		
-		Query q = mDB.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(Identity.getByURI(mDB, uri));
-		q.descend("mDateOfInsertion").constrain(date);
-		q.descend("mIndex").constrain(index);
-		ObjectSet<IntroductionPuzzle> result = q.execute();
-		
-		/* TODO: Decide whether we maybe should throw to get bug reports if this happens ... OTOH puzzles are not so important ;) */
-		assert(result.size() <= 1);
-		
-		return (result.hasNext() ? result.next() : null);
+		return getByInserterDateIndex(inserter, date, index);
 	}
 	
 	
@@ -136,14 +127,14 @@ public final class IntroductionPuzzleStore {
 	}
 	
 	/**
-	 * Get a list of puzzles which are from today. FIXME: Add a integer parameter to specify the age in days.
+	 * Get a list of puzzles which are from today.
 	 * You have to put a synchronized(this IntroductionPuzzleStore) statement around the call to this function and the processing of the
 	 * List which was returned by it!
 	 * 
 	 * Used by for checking whether new puzzles have to be inserted or downloaded.
 	 */
 	@SuppressWarnings({ "deprecation", "unchecked" })
-	public synchronized List<IntroductionPuzzle> getRecentByInserter(Identity inserter) {
+	public synchronized List<IntroductionPuzzle> getOfTodayByInserter(Identity inserter) {
 		Date maxAge = new Date(CurrentTimeUTC.getYear()-1900, CurrentTimeUTC.getMonth(), CurrentTimeUTC.getDayOfMonth());
 		
 		Query q = mDB.query();
@@ -153,21 +144,20 @@ public final class IntroductionPuzzleStore {
 		return q.execute();
 	}
 	
-
-//	@SuppressWarnings("unchecked")
-//	public synchronized IntroductionPuzzle getByInserterDateIndex(Identity inserter, Date date, int index) {
-//		Query q = mDB.query();
-//		q.constrain(IntroductionPuzzle.class);
-//		q.descend("mInserter").constrain(inserter);
-//		q.descend("mDateOfInsertion").constrain(date);
-//		q.descend("mIndex").constrain(index);
-//		ObjectSet<IntroductionPuzzle> result = q.execute();
-//		
-//		/* TODO: Decide whether we maybe should throw to get bug reports if this happens ... OTOH puzzles are not so important ;) */
-//		assert(result.size() <= 1);
-//		
-//		return (result.hasNext() ? result.next() : null);
-//	}
+	@SuppressWarnings("unchecked")
+	public synchronized IntroductionPuzzle getByInserterDateIndex(Identity inserter, Date date, int index) {
+		Query q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").constrain(inserter);
+		q.descend("mDateOfInsertion").constrain(date);
+		q.descend("mIndex").constrain(index);
+		ObjectSet<IntroductionPuzzle> result = q.execute();
+		
+		/* TODO: Decide whether we maybe should throw to get bug reports if this happens ... OTOH puzzles are not so important ;) */
+		assert(result.size() <= 1);
+		
+		return (result.hasNext() ? result.next() : null);
+	}
 
 	/**
 	 * Used by the IntroductionServer for inserting new puzzles.
