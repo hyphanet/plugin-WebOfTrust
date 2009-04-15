@@ -1,153 +1,122 @@
-/**
- * This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT;
 
-import plugins.WoT.exceptions.InvalidParameterException;
-
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import com.db4o.query.Query;
 
 /**
- * The Score of an Identity in an OwnIdentity's trust tree.
+ * The score of an Identity in an OwnIdentity's trust tree.
+ * A score is the actual rating of how much an identity can be trusted from the point of view of the OwnIdentity which owns the score.
+ * If the Score is negative, the identity is considered malicious, if it is zero or positive, it is trusted. 
  * 
- * @author Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public class Score {
+public final class Score {
 
-	private final OwnIdentity treeOwner; 	// OwnIdentity that owns the trust tree
-	private final Identity target;			// Identity that has this Score
+	/** The OwnIdentity which assigns this score to the target */
+	private final OwnIdentity mTreeOwner;
 	
-	// The actual score of the Identity. 
-	// Used to decide if the OwnIdentity sees the Identity or not
-	private int score;
+	/** The Identity which is rated by this score */
+	private final Identity mTarget;
 	
-	// How far the Identity is from the tree's root. 
-	// Tells how much point it can add to its trustees score.
-	private int rank;
+	/** The actual score of the Identity. Used to decide if the OwnIdentity sees the Identity or not */
+	private int mValue;
 	
-	// How much point the target Identity can add to its trustees score.
-	// Depends on its rank AND the trust given by the tree owner.
-	// If the tree owner sets a negative trust on the target identity,
-	// it gets zero capacity, even if it has a positive score.
-	private int capacity;
+	/** How far the Identity is from the tree's root. Tells how much point it can add to its trustees score. */
+	private int mRank;
+	
+	/** How much point the target Identity can add to its trustees score. Depends on its rank AND the trust given by the tree owner.
+	 * If the tree owner sets a negative trust on the target identity, it gets zero capacity, even if it has a positive score. */
+	private int mCapacity;
 	
 	/**
 	 * Creates a Score from given parameters.
 	 * 
-	 * @param treeOwner The owner of the trust tree
-	 * @param target The Identity that has the score
-	 * @param score The actual score of the Identity. 
-	 * @param rank How far the Identity is from the tree's root. 
-	 * @param capacity How much point the target Identity can add to its trustees score.
+	 * @param myTreeOwner The owner of the trust tree
+	 * @param myTarget The Identity that has the score
+	 * @param myValue The actual score of the Identity. 
+	 * @param myRank How far the Identity is from the tree's root. 
+	 * @param myCapacity How much point the target Identity can add to its trustees score.
 	 */
-	public Score (OwnIdentity treeOwner, Identity target, int score, int rank, int capacity) {
-		this.treeOwner = treeOwner;
-		this.target = target;
-		this.score = score;
-		this.rank = rank;
-		this.capacity = capacity;
-	}
-
-	/**
-	 * Counts the number of Score objects in the database.
-	 * 
-	 * @param db A reference to the database
-	 * @return the number of Score objects in the database
-	 */
-	public static int getNb(ObjectContainer db) {
-		ObjectSet<Score> scores = db.queryByExample(Score.class);
-		return scores.size();
-	}
-	
-	/**
-	 * Gets Identities matching a specified score criteria.
-	 * 
-	 * @param db A reference to the database
-	 * @param owner requestURI of the owner of the trust tree, null if you want the trusted identities of all owners.
-	 * @param select Score criteria, can be '+', '0' or '-'
-	 * @return an {@link ObjectSet} containing Identities that match the criteria
-	 * @throws InvalidParameterException if the criteria is not recognised
-	 */
-	@SuppressWarnings("unchecked")
-	public static ObjectSet<Score> getIdentitiesByScore (ObjectContainer db, OwnIdentity treeOwner, int select) throws InvalidParameterException {		
-		Query query = db.query();
-		query.constrain(Score.class);
-		query.descend("target").constrain(OwnIdentity.class).not();
-		if(treeOwner != null)
-			query.descend("treeOwner").constrain(treeOwner);
+	protected Score(OwnIdentity myTreeOwner, Identity myTarget, int myValue, int myRank, int myCapacity) {
+		if(myTreeOwner == null)
+			throw new NullPointerException();
 			
-		if(select > 0)
-			query.descend("score").constrain(new Integer(0)).greater();
-		else if(select < 0 )
-			query.descend("score").constrain(new Integer(0)).smaller();
-		else 
-			query.descend("score").constrain(new Integer(0));
-
-		return query.execute();
+		if(myTarget == null)
+			throw new NullPointerException();
+			
+		mTreeOwner = myTreeOwner;
+		mTarget = myTarget;
+		setValue(myValue);
+		setRank(myRank);
+		setCapacity(myCapacity);
 	}
 	
 	@Override
 	public synchronized String toString() {
-		return getTarget().getNickName() + " has " + getScore() + " points in " + getTreeOwner().getNickName() + "'s trust tree (rank : " + getRank() + ", capacity : " + getCapacity() + ")";
+		return getTarget().getNickName() + " has " + getScore() + " points in " + getTreeOwner().getNickName() + "'s trust tree" +
+				"(rank : " + getRank() + ", capacity : " + getCapacity() + ")";
 	}
 
 	/**
 	 * @return in which OwnIdentity's trust tree this score is
 	 */
 	public OwnIdentity getTreeOwner() {
-		return treeOwner;
+		return mTreeOwner;
 	}
 
 	/**
 	 * @return Identity that has this Score
 	 */
 	public Identity getTarget() {
-		return target;
+		return mTarget;
 	}
 
 	/**
 	 * @return the numeric value of this Score
 	 */
 	public synchronized int getScore() {
-		return score;
+		return mValue;
 	}
 
 	/**
-	 * Sets the numeric value of this Score
+	 * Sets the numeric value of this Score.
 	 */
-	public synchronized void setScore(int score) {
-		this.score = score;
+	protected synchronized void setValue(int newValue) {
+		mValue = newValue;
 	}
 
 	/**
-	 * @return How far the target Identity is from the trust tree's root
+	 * @return How far the target Identity is from the trust tree's root.
 	 */
 	public synchronized int getRank() {
-		return rank;
+		return mRank;
 	}
 
 	/**
 	 * Sets how far the target Identity is from the trust tree's root.
 	 */
-	public synchronized void setRank(int rank) {
-		this.rank = rank;
+	protected synchronized void setRank(int newRank) {
+		if(newRank < 0)
+			throw new IllegalArgumentException("Negative rank is not allowed");
+		
+		mRank = newRank;
 	}
 
 	/**
 	 * @return how much points the target Identity can add to its trustees score
 	 */
 	public synchronized int getCapacity() {
-		return capacity;
+		return mCapacity;
 	}
 
 	/**
 	 * Sets how much points the target Identity can add to its trustees score.
 	 */
-	public synchronized void setCapacity(int capacity) {
-		this.capacity = capacity;
+	protected synchronized void setCapacity(int newCapacity) {
+		if(newCapacity < 0)
+			throw new IllegalArgumentException("Negative capacities are not allowed.");
+		
+		mCapacity = newCapacity;
 	}
 }
