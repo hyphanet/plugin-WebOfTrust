@@ -9,6 +9,7 @@ import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -20,9 +21,22 @@ import freenet.support.Logger;
 
 /**
  * A manager for storing puzzles in the db4o database and retrieving them from it.
+ * Used by the IntroductionServer and IntroductionClient for managging puzzles, not to be used by the UI directly.
  * 
- * As of SVN revision 26819, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
- * 
+ * The functions here are roughly ordered by the logical order in which they are needed in the plugin, here you can get a good overview:
+ * 1. The IntroductionServer inserts puzzles (getFreeIndex).
+ * 2. The IntroductionServer tries to download solutions of puzzles which it has inserted (getUnsolvedByInserter).
+ * 3. The IntroductionServer checks whether it has to insert new puzzles and the client checks whether it can download new ones from a 
+ * 		given identity (getOfTodayByInserter).
+ * 4. The IntroductionClient finds a slot of today of which we do not have a puzzle from a given identity (getByInserterDateIndex) and 
+ * 		tries to download them.
+ * 5. The IntroductionClient gives solvable puzzles to the user and the UI lets him solve them (getUnsolvedPuzzles).
+ * 6. The InrtoductionClient uploads solutions of solved puzzles (getSolvedPuzzles).
+ * 7. The IntroductionClient and IntroductionServer delete expired puzzles (deleteExpiredPuzzles).
+ * 8. The IntroductionClient deletes the oldest puzzles to replace them with new ones (deleteOldestPuzzles).
+ *
+ * As of SVN revision 26834, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
+ *
  * @author xor
  */
 public final class IntroductionPuzzleStore {
@@ -50,7 +64,7 @@ public final class IntroductionPuzzleStore {
 		}
 	}
 
-	public synchronized void storeAndCommit(IntroductionPuzzle puzzle) {
+	protected synchronized void storeAndCommit(IntroductionPuzzle puzzle) {
 		/* TODO: Convert to assert() maybe when we are sure that this does not happen. Duplicate puzzles will be deleted after they
 		 * expire anyway. Further, isn't there a db4o option which ensures that mID is a primary key and therefore no duplicates can exist? */
 		synchronized(mDB.lock()) {
@@ -72,7 +86,7 @@ public final class IntroductionPuzzleStore {
 	}
 
 	@SuppressWarnings("unchecked")
-	public synchronized IntroductionPuzzle getByID(String id) {
+	protected synchronized IntroductionPuzzle getByID(String id) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mID").constrain(id);
@@ -84,7 +98,7 @@ public final class IntroductionPuzzleStore {
 		return (result.hasNext() ? result.next() : null);
 	}
 
-	public IntroductionPuzzle getByURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
+	protected IntroductionPuzzle getByURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
 		Identity inserter = Identity.getByURI(mDB, uri);
 		Date date = IntroductionPuzzle.getDateFromRequestURI(uri);
 		int index = IntroductionPuzzle.getIndexFromRequestURI(uri);
@@ -104,11 +118,25 @@ public final class IntroductionPuzzleStore {
 	  * @return
 	  * @throws ParseException
 	  */
-	public IntroductionPuzzle getBySolutionURI(FreenetURI uri) throws ParseException {
+	protected IntroductionPuzzle getBySolutionURI(FreenetURI uri) throws ParseException {
 		return getByID(IntroductionPuzzle.getIDFromSolutionURI(uri));
 	}
-	
-	
+
+	/**
+	 * Used by the IntroductionServer for inserting new puzzles.
+	 */
+	@SuppressWarnings({ "deprecation", "unchecked" })
+	protected synchronized int getFreeIndex(OwnIdentity inserter, Date date) {
+		Query q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").descend("id").constrain(inserter.getId());
+		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
+		q.descend("mIndex").orderDescending();
+		ObjectSet<IntroductionPuzzle> result = q.execute();
+		
+		return result.size() > 0 ? result.next().getIndex()+1 : 0;
+	}
+
 	/**
 	 * Get all not solved puzzles which where inserted by the given identity.
 	 * You have to put a synchronized(this IntroductionPuzzleStore) statement around the call to this function and the processing of the
@@ -117,7 +145,7 @@ public final class IntroductionPuzzleStore {
 	 * Used by the IntroductionServer for downloading solutions.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized List<IntroductionPuzzle> getUnsolvedByInserter(OwnIdentity inserter) {
+	protected synchronized List<IntroductionPuzzle> getUnsolvedByInserter(OwnIdentity inserter) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter);
@@ -133,7 +161,7 @@ public final class IntroductionPuzzleStore {
 	 * Used by for checking whether new puzzles have to be inserted for a given OwnIdentity or can be downloaded from a given Identity.
 	 */
 	@SuppressWarnings({ "deprecation", "unchecked" })
-	public synchronized List<IntroductionPuzzle> getOfTodayByInserter(Identity inserter) {
+	protected synchronized List<IntroductionPuzzle> getOfTodayByInserter(Identity inserter) {
 		Date maxAge = new Date(CurrentTimeUTC.getYear()-1900, CurrentTimeUTC.getMonth(), CurrentTimeUTC.getDayOfMonth());
 		
 		Query q = mDB.query();
@@ -150,7 +178,7 @@ public final class IntroductionPuzzleStore {
 	 * need to download that one.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized IntroductionPuzzle getByInserterDateIndex(Identity inserter, Date date, int index) {
+	protected synchronized IntroductionPuzzle getByInserterDateIndex(Identity inserter, Date date, int index) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter);
@@ -165,20 +193,22 @@ public final class IntroductionPuzzleStore {
 	}
 
 	/**
-	 * Used by the IntroductionServer for inserting new puzzles.
+	 * Get a list of puzzles which were downloaded and not solved yet, of a given type.
+	 * You have to put a synchronized(this IntroductionPuzzleStore) statement around the call to this function and the processing of the
+	 * List which was returned by it!
 	 */
-	@SuppressWarnings({ "deprecation", "unchecked" })
-	public synchronized int getFreeIndex(OwnIdentity inserter, Date date) {
+	@SuppressWarnings("unchecked")
+	protected synchronized List<IntroductionPuzzle> getUnsolvedPuzzles(PuzzleType puzzleType) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").descend("id").constrain(inserter.getId());
-		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
-		q.descend("mIndex").orderDescending();
-		ObjectSet<IntroductionPuzzle> result = q.execute();
+		q.descend("mValidUntilTime").orderDescending();
+		q.descend("mSolution").constrain(null).identity();
+		q.descend("mType").constrain(puzzleType);
+		ObjectSet<IntroductionPuzzle> puzzles = q.execute();
 		
-		return result.size() > 0 ? result.next().getIndex()+1 : 0;
+		return puzzles;
 	}
-
+	
 	/**
 	 * Get a List of all solved puzzles.
 	 * You have to put a synchronized(this IntroductionPuzzleStore) statement around the call to this function and the processing of the
@@ -187,7 +217,7 @@ public final class IntroductionPuzzleStore {
 	 * Used by the IntroductionClient for inserting solutions of solved puzzles.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized List<IntroductionPuzzle> getSolvedPuzzles() {
+	protected synchronized List<IntroductionPuzzle> getSolvedPuzzles() {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mSolver").constrain(null).identity().not();
@@ -198,7 +228,7 @@ public final class IntroductionPuzzleStore {
 	 * Delete puzzles which can no longer be solved because they have expired.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized void deleteExpiredPuzzles() {
+	protected synchronized void deleteExpiredPuzzles() {
 		synchronized(mDB.lock()) {
 			Query q = mDB.query();
 			q.constrain(IntroductionPuzzle.class);
@@ -226,7 +256,7 @@ public final class IntroductionPuzzleStore {
 	 * @param puzzlePoolSize The amount of puzzles which should not be deleted.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized void deleteOldestUnsolvedPuzzles(int puzzlePoolSize) {
+	protected synchronized void deleteOldestUnsolvedPuzzles(int puzzlePoolSize) {
 		synchronized(mDB.lock()) {
 			Query q = mDB.query();
 			q.constrain(IntroductionPuzzle.class);
