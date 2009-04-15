@@ -35,15 +35,18 @@ import freenet.support.Logger;
  * 7. The IntroductionClient and IntroductionServer delete expired puzzles (deleteExpiredPuzzles).
  * 8. The IntroductionClient deletes the oldest puzzles to replace them with new ones (deleteOldestPuzzles).
  *
- * As of SVN revision 26844, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
+ * As of SVN revision 26850, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
  *
  * @author xor
  */
 public final class IntroductionPuzzleStore {
 
+	private final WoT mWoT;
+	
 	private final ExtObjectContainer mDB;
 
 	public IntroductionPuzzleStore(WoT myWoT) {
+		mWoT = myWoT;
 		mDB = myWoT.getDB();
 		
 		deleteCorruptedPuzzles();
@@ -104,7 +107,7 @@ public final class IntroductionPuzzleStore {
 	}
 
 	protected IntroductionPuzzle getByURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
-		Identity inserter = Identity.getByURI(mDB, uri);
+		Identity inserter = mWoT.getIdentityByURI(uri);
 		Date date = IntroductionPuzzle.getDateFromRequestURI(uri);
 		int index = IntroductionPuzzle.getIndexFromRequestURI(uri);
 		
@@ -134,7 +137,7 @@ public final class IntroductionPuzzleStore {
 	protected synchronized int getFreeIndex(OwnIdentity inserter, Date date) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").descend("id").constrain(inserter.getId());
+		q.descend("mInserter").constrain(inserter).identity();
 		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
 		q.descend("mIndex").orderDescending();
 		ObjectSet<IntroductionPuzzle> result = q.execute();
@@ -153,7 +156,7 @@ public final class IntroductionPuzzleStore {
 	protected synchronized List<IntroductionPuzzle> getUnsolvedByInserter(OwnIdentity inserter) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(inserter);
+		q.descend("mInserter").constrain(inserter).identity();
 		q.descend("iWasSolved").constrain(false);
 		return q.execute();
 	}
@@ -171,7 +174,7 @@ public final class IntroductionPuzzleStore {
 		
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(inserter);
+		q.descend("mInserter").constrain(inserter).identity();
 		q.descend("mDateOfInsertion").constrain(maxAge).smaller().not();
 		return q.execute();
 	}
@@ -186,7 +189,7 @@ public final class IntroductionPuzzleStore {
 	protected synchronized IntroductionPuzzle getByInserterDateIndex(Identity inserter, Date date, int index) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(inserter);
+		q.descend("mInserter").constrain(inserter).identity();
 		q.descend("mDateOfInsertion").constrain(date);
 		q.descend("mIndex").constrain(index);
 		ObjectSet<IntroductionPuzzle> result = q.execute();
