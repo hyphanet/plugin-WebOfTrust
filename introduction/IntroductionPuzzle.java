@@ -71,7 +71,8 @@ public final class IntroductionPuzzle {
 	 * Get a list of fields which the database should create an index on.
 	 */
 	public static String[] getIndexedFields() {
-		return new String[] {"mID", "mInserter", "mDateOfInsertion" }; /* FIXME: Find out whether indexes are sorted, if not, remove the date */
+		/* FIXME: Find out whether indexes are sorted, if not, remove the date and validUntilTime */
+		return new String[] {"mID", "mInserter", "mDateOfInsertion", "mValidUntilTime", "mSolver"};
 	}
 	
 	/**
