@@ -21,20 +21,20 @@ import freenet.support.Logger;
 /**
  * A manager for storing puzzles in the db4o database and retrieving them from it.
  * 
- * As of SVN revision 26816, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
+ * As of SVN revision 26819, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
  * 
  * @author xor
  */
 public final class IntroductionPuzzleStore {
-	
+
 	private final ExtObjectContainer mDB;
-	
+
 	public IntroductionPuzzleStore(WoT myWoT) {
 		mDB = myWoT.getDB();
 		
 		deleteCorruptedPuzzles();
 	}
-	
+
 	private synchronized void deleteCorruptedPuzzles() {		
 		synchronized(mDB.lock()) {
 			ObjectSet<IntroductionPuzzle> puzzles = mDB.queryByExample(IntroductionPuzzle.class);
@@ -49,7 +49,7 @@ public final class IntroductionPuzzleStore {
 			/* Our goal is to delete the puzzles so we do not rollback here if an exception occurs, that would restore the deleted puzzles. */
 		}
 	}
-	
+
 	public synchronized void storeAndCommit(IntroductionPuzzle puzzle) {
 		/* TODO: Convert to assert() maybe when we are sure that this does not happen. Duplicate puzzles will be deleted after they
 		 * expire anyway. Further, isn't there a db4o option which ensures that mID is a primary key and therefore no duplicates can exist? */
@@ -70,7 +70,7 @@ public final class IntroductionPuzzleStore {
 			}
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public synchronized IntroductionPuzzle getByID(String id) {
 		Query q = mDB.query();
@@ -83,8 +83,7 @@ public final class IntroductionPuzzleStore {
 
 		return (result.hasNext() ? result.next() : null);
 	}
-	
-	@SuppressWarnings("unchecked")
+
 	public IntroductionPuzzle getByURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
 		Identity inserter = Identity.getByURI(mDB, uri);
 		Date date = IntroductionPuzzle.getDateFromRequestURI(uri);
@@ -131,7 +130,7 @@ public final class IntroductionPuzzleStore {
 	 * You have to put a synchronized(this IntroductionPuzzleStore) statement around the call to this function and the processing of the
 	 * List which was returned by it!
 	 * 
-	 * Used by for checking whether new puzzles have to be inserted or downloaded.
+	 * Used by for checking whether new puzzles have to be inserted for a given OwnIdentity or can be downloaded from a given Identity.
 	 */
 	@SuppressWarnings({ "deprecation", "unchecked" })
 	public synchronized List<IntroductionPuzzle> getOfTodayByInserter(Identity inserter) {
@@ -144,6 +143,12 @@ public final class IntroductionPuzzleStore {
 		return q.execute();
 	}
 	
+	/**
+	 * Get a puzzle of a given identity from a given date with a given index.
+	 * 
+	 * Used by the IntroductionClient to check whether we already have a puzzle from the given date and index, if yes then we do not
+	 * need to download that one.
+	 */
 	@SuppressWarnings("unchecked")
 	public synchronized IntroductionPuzzle getByInserterDateIndex(Identity inserter, Date date, int index) {
 		Query q = mDB.query();
@@ -189,6 +194,9 @@ public final class IntroductionPuzzleStore {
 		return q.execute();
 	}
 	
+	/**
+	 * Delete puzzles which can no longer be solved because they have expired.
+	 */
 	@SuppressWarnings("unchecked")
 	public synchronized void deleteExpiredPuzzles() {
 		synchronized(mDB.lock()) {
@@ -212,25 +220,31 @@ public final class IntroductionPuzzleStore {
 	
 	/**
 	 * Delete the oldest puzzles so that only an amount of <code>puzzlePoolSize</code> is left.
+	 * 
 	 * Used by the introduction client to delete old puzzles and replace them with new ones.
 	 * 
 	 * @param puzzlePoolSize The amount of puzzles which should not be deleted.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized void deleteOldestPuzzles(int puzzlePoolSize) {
+	public synchronized void deleteOldestUnsolvedPuzzles(int puzzlePoolSize) {
 		synchronized(mDB.lock()) {
 			Query q = mDB.query();
 			q.constrain(IntroductionPuzzle.class);
 			q.descend("mValidUntilTime").orderAscending();
-			q.descend("mSolution").constrain(null).identity();
 			ObjectSet<IntroductionPuzzle> result = q.execute();
 			
 			int deleteCount = result.size() - puzzlePoolSize;
 			
 			Logger.debug(IntroductionPuzzle.class, "Deleting " + deleteCount + " old puzzles, keeping " + puzzlePoolSize);
-			while(deleteCount > 0) {
-				mDB.delete(result.next());
-				deleteCount--;
+			while(deleteCount > 0 && result.hasNext()) {
+				IntroductionPuzzle puzzle = result.next();
+				/* We DO NOT handle the following check in the query so that db4o can use the index on mValidUntilTime to run the query and
+				 * size() in O(1) instead of O(amount of puzzles in the database).
+				 * Unfortunately toad_ said that it does not really do that even though it is logically possible => TODO: tell it to do so */
+				if(puzzle.getSolution() == null) {
+					mDB.delete(result.next());
+					deleteCount--;
+				}
 			}
 			
 			mDB.commit();
