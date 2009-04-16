@@ -67,7 +67,7 @@ public final class IntroductionPuzzleStore {
 		}
 	}
 
-	protected synchronized void storeAndCommit(IntroductionPuzzle puzzle) {
+	public synchronized void storeAndCommit(IntroductionPuzzle puzzle) {
 		/* TODO: Convert to assert() maybe when we are sure that this does not happen. Duplicate puzzles will be deleted after they
 		 * expire anyway. Further, isn't there a db4o option which ensures that mID is a primary key and therefore no duplicates can exist? */
 		synchronized(puzzle) {
@@ -84,6 +84,7 @@ public final class IntroductionPuzzleStore {
 				// mDB.store(puzzle.getDateOfInsertion()); /* Not stored because it is a primitive for db4o */ 
 				mDB.store(puzzle);
 				mDB.commit();
+				Logger.debug(puzzle, "COMMITED.");
 			}
 			catch(RuntimeException e) {
 				mDB.rollback();
