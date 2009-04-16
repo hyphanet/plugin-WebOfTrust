@@ -30,6 +30,13 @@ public final class Score {
 	private int mCapacity;
 	
 	/**
+	 * Get a list of fields which the database should create an index on.
+	 */
+	protected static String[] getIndexedFields() {
+		return new String[] { "mTreeOwner", "mTarget" };
+	}
+	
+	/**
 	 * Creates a Score from given parameters.
 	 * 
 	 * @param myTreeOwner The owner of the trust tree

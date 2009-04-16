@@ -7,26 +7,24 @@ package plugins.WoT;
 
 import plugins.WoT.exceptions.InvalidParameterException;
 
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import com.db4o.query.Query;
-
 /**
  * A trust relationship between two Identities
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
- *
  */
 public class Trust {
 
-	/* We use a reference to the truster here rather that storing the trustList in the Identity.
-	 * This allows us to load only what's needed in memory instead of everything.
-	 * Maybe db4o can handle this, I don't know ATM.
-	 */
-	private final Identity truster;
-	private final Identity trustee;
-	private byte value;
-	private String comment;
+	/** The identity which gives the trust */
+	private final Identity mTruster;
+	
+	/** The identity which receives the trust */
+	private final Identity mTrustee;
+	
+	/** The value assigned with the trust, from -100 to +100 where negative means distrust */
+	private byte mValue;
+	
+	/** An explanation of why the trust value was assigned */
+	private String mComment;
 	
 	/**
 	 * The edition number of the trust list in which this trust was published the last time.
@@ -45,6 +43,15 @@ public class Trust {
 	@SuppressWarnings("unused")
 	private long mTrusterTrustListEdition;
 	
+	
+	/**
+	 * Get a list of fields which the database should create an index on.
+	 */
+	protected static String[] getIndexedFields() {
+		return new String[] { "mTruster", "mTrustee" };
+	}
+
+
 	/**
 	 * Creates a Trust from given parameters.
 	 * 
@@ -54,32 +61,19 @@ public class Trust {
 	 * @param comment A comment to explain the numeric trust value
 	 * @throws InvalidParameterException if the trust value is not between -100 and +100
 	 */
-	public Trust(Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
-		this.truster = truster;
-		this.trustee = trustee;
+	protected Trust(Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
+		if(truster == null)
+			throw new NullPointerException();
+		
+		if(trustee == null)
+			throw new NullPointerException();
+		
+		mTruster = truster;
+		mTrustee = trustee;
 		setValue(value);
 		setComment(comment);
 		
 		mTrusterTrustListEdition = truster.getEdition(); 
-	}
-	
-	@SuppressWarnings("unchecked")
-	protected static ObjectSet<Trust> getTrustsOlderThan(ObjectContainer db, long edition) {
-		Query q = db.query();
-		q.constrain(Trust.class);
-		q.descend("mTrusterTrustListEdition").constrain(edition).smaller();
-		return q.execute();
-	}
-	
-	/**
-	 * Counts the number of Trust objects stored in the database
-	 * 
-	 * @param db A reference to the database
-	 * @return the number of Trust objects stored in the database
-	 */
-	public static int getNb(ObjectContainer db) {
-		ObjectSet<Trust> trusts = db.queryByExample(Trust.class);
-		return trusts.size();
 	}
 
 	@Override
@@ -91,56 +85,55 @@ public class Trust {
 	 * @return The Identity that gives this trust
 	 */
 	public Identity getTruster() {
-		return truster;
+		return mTruster;
 	}
 
 	/**
 	 * @return trustee The Identity that receives this trust
 	 */
 	public Identity getTrustee() {
-		return trustee;
+		return mTrustee;
 	}
 
 	/**
 	 * @return value Numeric value of this trust relationship
 	 */
 	public synchronized byte getValue() {
-		return value;
+		return mValue;
 	}
 
 	/**
-	 * @param value Numeric value of this trust relationship [-100;+100] 
+	 * @param mValue Numeric value of this trust relationship [-100;+100] 
 	 * @throws InvalidParameterException if value isn't in the range
 	 */
-	public synchronized void setValue(byte newValue) throws InvalidParameterException {
+	protected synchronized void setValue(byte newValue) throws InvalidParameterException {
 		if(newValue < -100 || newValue > 100) 
-			throw new InvalidParameterException("Invalid trust value ("+value+").");
+			throw new InvalidParameterException("Invalid trust value ("+mValue+").");
 		
-		value = newValue;
+		mValue = newValue;
 	}
 
 	/**
-	 * @return comment The comment associated to this Trust relationship
+	 * @return The comment associated to this Trust relationship.
 	 */
 	public synchronized String getComment() {
-		return comment;
+		return mComment;
 	}
 
 	/**
-	 * @param comment Comment on this trust relationship
+	 * @param newComment Comment on this trust relationship.
 	 */
-	public synchronized void setComment(String newComment) throws InvalidParameterException {
+	protected synchronized void setComment(String newComment) throws InvalidParameterException {
 		assert(newComment != null);
 		
 		if(newComment != null && newComment.length() > 256)
 			throw new InvalidParameterException("Comment is too long (maximum is 256 characters).");
 		
-		comment = newComment != null ? newComment : "";
+		mComment = newComment != null ? newComment : "";
 	}
 	
-	public synchronized void updated(ObjectContainer db) {
-		mTrusterTrustListEdition = truster.getEdition();
-		db.store(this);
+	protected synchronized void trusterEditionUpdated() {
+		mTrusterTrustListEdition = mTruster.getEdition();
 	}
 
 }
