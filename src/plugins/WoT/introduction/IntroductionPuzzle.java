@@ -1,8 +1,6 @@
-/*
- * This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.introduction;
 
 import java.text.ParseException;
@@ -110,7 +108,7 @@ public final class IntroductionPuzzle {
 	public IntroductionPuzzle(Identity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
 			Date newDateOfInsertion, int myIndex) {
 		
-		this(newInserter, newInserter.getId() + UUID.randomUUID().toString(), newType, newMimeType, newData,
+		this(newInserter, newInserter.getID() + UUID.randomUUID().toString(), newType, newMimeType, newData,
 				newDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000, newDateOfInsertion, myIndex);
 		
 		assert(newSolution!=null && newSolution.length()>=MINIMAL_SOLUTION_LENGTH);
@@ -284,7 +282,7 @@ public final class IntroductionPuzzle {
 			{ Logger.error(this, "mID == null!"); result = false; }
 		else { /* Verify the UID */
 			if(mInserter != null) {
-				String inserterID = mInserter.getId();
+				String inserterID = mInserter.getID();
 				if(mID.startsWith(inserterID) == false) { Logger.error(this, "mID does not start with InserterID: " + mID); result = false; }
 				/* Verification that the rest of the ID is an UUID is not necessary: If a client inserts a puzzle with the ID just being his
 				 * identity ID (or other bogus stuff) he will just shoot himself in the foot by possibly only allowing 1 puzzle of him to
