@@ -91,7 +91,7 @@ public final class XMLTransformer {
 		mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
 	}
 	
-	public synchronized void exportOwnIdentity(OwnIdentity myIdentity, OutputStream os) throws TransformerException {
+	public synchronized void exportOwnIdentity(OwnIdentity identity, OutputStream os) throws TransformerException {
 		Document xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
 		Element rootElement = xmlDoc.getDocumentElement();
 		
@@ -100,13 +100,14 @@ public final class XMLTransformer {
 		Element identityElement = xmlDoc.createElement("Identity");
 		identityElement.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
 		
-		synchronized(myIdentity) {
-			identityElement.setAttribute("Name", myIdentity.getNickName());
-			identityElement.setAttribute("PublishesTrustList", Boolean.toString(myIdentity.doesPublishTrustList()));
+		synchronized(mWoT) {
+		synchronized(identity) {
+			identityElement.setAttribute("Name", identity.getNickName());
+			identityElement.setAttribute("PublishesTrustList", Boolean.toString(identity.doesPublishTrustList()));
 			
 			/* Create the context Elements */
 			
-			for(String context : myIdentity.getContexts()) {
+			for(String context : identity.getContexts()) {
 				Element contextElement = xmlDoc.createElement("Context");
 				contextElement.setAttribute("Name", context);
 				identityElement.appendChild(contextElement);
@@ -114,7 +115,7 @@ public final class XMLTransformer {
 			
 			/* Create the property Elements */
 			
-			for(Entry<String, String> property : myIdentity.getProperties().entrySet()) {
+			for(Entry<String, String> property : identity.getProperties().entrySet()) {
 				Element propertyElement = xmlDoc.createElement("Property");
 				propertyElement.setAttribute("Name", property.getKey());
 				propertyElement.setAttribute("Value", property.getValue());
@@ -122,9 +123,10 @@ public final class XMLTransformer {
 			}
 			
 			/* Create the trust list Element and its trust Elements */
-			
+
 			Element trustListElement = xmlDoc.createElement("TrustList");
-			for(Trust trust : myIdentity.getGivenTrusts(mDB)) {
+			
+			for(Trust trust : mWoT.getGivenTrusts(identity)) {
 				Element trustElement = xmlDoc.createElement("Trust");
 				trustElement.setAttribute("Identity", trust.getTrustee().getRequestURI().toString());
 				trustElement.setAttribute("Value", Byte.toString(trust.getValue()));
@@ -132,6 +134,7 @@ public final class XMLTransformer {
 				trustListElement.appendChild(trustElement);
 			}
 			identityElement.appendChild(trustListElement);
+		}
 		}
 		
 		rootElement.appendChild(identityElement);
@@ -184,15 +187,7 @@ public final class XMLTransformer {
 			boolean isNewIdentity = false;
 			
 			try {
-				identity = Identity.getByURI(mDB, identityURI);
-				identity.setRequestURI(identityURI);
-				
-				try {
-					identity.setNickname(identityName);
-				}
-				catch(Exception e) {
-					Logger.error(identityURI, "setNickname() failed.", e);
-				}
+				identity = mWoT.getIdentityByURI(identityURI);
 			}
 			catch(UnknownIdentityException e) {
 				identity = new Identity(identityURI, identityName, identityPublishesTrustList);
@@ -200,39 +195,39 @@ public final class XMLTransformer {
 			}
 			
 			synchronized(identity) {
-				/* FIXME: How to do this? Notice: The commit() should always be done here until we know how to do the "transactionIsRunning()",
-				 * however we commit() anyway after setting contexts and properties, so it is commented out.
-				 * 
-				if(transactionIsRunning()) {
-					mDB.commit();
-					Logger.error(this, "A transaction is still pending during identity import!");
+				identity.setEdition(identityURI.getEdition());
+
+				try {
+					identity.setNickname(identityName);
 				}
-				*/
+				catch(Exception e) {
+					/* Nickname changes are not allowed, ignore them... */
+					Logger.error(identityURI, "setNickname() failed.", e);
+				}
 
 				try { /* Failure of context importing should not make an identity disappear, therefore we catch exceptions. */
-					identity.setContexts(mDB, identityContexts);
+					identity.setContexts(identityContexts);
 				}
 				catch(Exception e) {
 					Logger.error(identityURI, "setContexts() failed.", e);
 				}
 
 				try { /* Failure of property importing should not make an identity disappear, therefore we catch exceptions. */
-					identity.setProperties(mDB, identityProperties);
+					identity.setProperties(identityProperties);
 				}
 				catch(Exception e) {
 					Logger.error(identityURI, "setProperties() failed", e);
 				}
 				
 				/* We store the identity even if it's trust list import fails - identities should not disappear then. */
-				identity.storeAndCommit(mDB);
+				mWoT.storeAndCommit(identity);
 				
 				if(identityPublishesTrustList) {
 					/* This try block is for rolling back in catch() if an exception is thrown during trust list import.
 					 * Our policy is: We either import the whole trust list or nothing. We should not bias the trust system by allowing
-					 * the import of partial trust lists. FIXME: Is it possible to ensure in catch() that there was no commit()
-					 * done in one of the functions which was called in the try{} block?  */
+					 * the import of partial trust lists. Especially we should not ignore failing deletions of old trust objects. */
 					try {
-						boolean trusteeCreationAllowed = identity.getBestScore(mDB) > 0;
+						boolean trusteeCreationAllowed = mWoT.getBestScore(identity) > 0;
 
 						Element trustListElement = (Element)identityElement.getElementsByTagName("TrustList").item(0);
 						NodeList trustList = trustListElement.getElementsByTagName("Trust");
@@ -245,7 +240,7 @@ public final class XMLTransformer {
 
 							Identity trustee = null;
 							try {
-								trustee = Identity.getByURI(mDB, trusteeURI);
+								trustee = mWoT.getIdentityByURI(trusteeURI);
 							}
 							catch(UnknownIdentityException e) {
 								if(trusteeCreationAllowed) { /* We only create trustees if the truster has a positive score */
@@ -256,16 +251,16 @@ public final class XMLTransformer {
 							}
 
 							if(trustee != null)
-								identity.setTrust(mDB, trustee, trustValue, trustComment);
+								mWoT.setTrustWithoutCommit(identity, trustee, trustValue, trustComment);
 						}
 
 						if(!isNewIdentity) { /* Delete trust objects of trustees which were removed from the trust list */
-							for(Trust trust : Trust.getTrustsOlderThan(mDB, identityURI.getEdition())) {
-								identity.removeTrust(mDB, trust);
+							for(Trust trust : mWoT.getGivenTrustsOlderThan(identity, identityURI.getEdition())) {
+								mWoT.removeTrustWithoutCommit(trust);
 							}
 						}
 
-						identity.storeAndCommit(mDB);
+						mWoT.storeAndCommit(identity);
 					}
 					
 					catch(Exception e) {
@@ -316,12 +311,12 @@ public final class XMLTransformer {
 		
 		synchronized(mWoT) {
 			try {
-				identity = Identity.getByURI(mDB, identityURI);
+				identity = mWoT.getIdentityByURI(identityURI);
 				Logger.minor(this, "Imported introduction for an already existing identity: " + identity);
 			}
 			catch (UnknownIdentityException e) {
 				identity = new Identity(identityURI, null, false);
-				identity.storeAndCommit(mDB);
+				mWoT.storeAndCommit(identity);
 				mWoT.getIdentityFetcher().fetch(identity);
 			}
 		}
@@ -368,7 +363,7 @@ public final class XMLTransformer {
 		if(Integer.parseInt(puzzleElement.getAttribute("Version")) > XML_FORMAT_VERSION)
 			throw new InvalidParameterException("Version " + puzzleElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);	
 		
-		Identity puzzleInserter = Identity.getByURI(mDB, puzzleURI);
+		Identity puzzleInserter = mWoT.getIdentityByURI(puzzleURI);
 		String puzzleID = puzzleElement.getAttribute("ID");
 		IntroductionPuzzle.PuzzleType puzzleType = IntroductionPuzzle.PuzzleType.valueOf(puzzleElement.getAttribute("Type"));
 		String puzzleMimeType = puzzleElement.getAttribute("MimeType");
@@ -380,7 +375,7 @@ public final class XMLTransformer {
 		IntroductionPuzzle puzzle = new IntroductionPuzzle(puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, puzzleValidUntilTime,
 				IntroductionPuzzle.getDateFromRequestURI(puzzleURI), IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
 		
-		puzzle.store(mDB);
+		mWoT.getIntroductionPuzzleStore().storeAndCommit(puzzle);
 		
 		return puzzle;
 	}
