@@ -1,15 +1,13 @@
-/**
- * This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
-
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -20,10 +18,12 @@ import plugins.WoT.exceptions.DuplicateIdentityException;
 import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.DuplicateTrustException;
 import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.introduction.IntroductionClient;
 import plugins.WoT.introduction.IntroductionPuzzle;
+import plugins.WoT.introduction.IntroductionPuzzleStore;
 import plugins.WoT.introduction.IntroductionServer;
 import plugins.WoT.ui.fcp.FCPInterface;
 import plugins.WoT.ui.web.WebInterface;
@@ -34,6 +34,7 @@ import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
 import com.db4o.ext.DatabaseClosedException;
 import com.db4o.ext.Db4oIOException;
+import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
@@ -69,6 +70,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	/* Constants */
 	
+	public static final int DATABASE_FORMAT_VERSION = 1;
+	
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
 	
@@ -103,11 +106,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	/* References from the plugin itself */
 	
 	/* Database & configuration of the plugin */
-	private ObjectContainer db;
-	private Config config;
+	private ExtObjectContainer mDB;
+	private Config mConfig;
+	private IntroductionPuzzleStore mPuzzleStore;
 	
-	/** Used for exporting identities to XML and importing them from XML. */
-	private IdentityXML mIdentityXML;
+	
+	/** Used for exporting identities, identity introductions and introduction puzzles to XML and importing them from XML. */
+	private XMLTransformer mIdentityXML;
 
 	/* Worker objects which actually run the plugin */
 	
@@ -116,7 +121,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private IntroductionServer introductionServer;
 	private IntroductionClient introductionClient;
 	private RequestClient requestClient;
-	private ClientContext clientContext;
 	
 	/* User interfaces */
 	
@@ -126,14 +130,20 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public void runPlugin(PluginRespirator myPR) {
 		Logger.debug(this, "Start");
 		
-		try { 
 		/* Catpcha generation needs headless mode on linux */
 		System.setProperty("java.awt.headless", "true"); 
 
 		pr = myPR;
+		mDB = initDB();
+		deleteDuplicateObjects();
+		deleteOrphanObjects();
 		
-		db = initDB();
-		config = initConfig();
+		mConfig = Config.loadOrCreate(this);
+		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WoT.DATABASE_FORMAT_VERSION) 
+			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
+		
+		mPuzzleStore = new IntroductionPuzzleStore(this);
+
 		seed = getSeedIdentity();
 		requestClient = new RequestClient() {
 
@@ -146,33 +156,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			}
 			
 		};
-		
-		clientContext = pr.getNode().clientCore.clientContext;
 
-		/* FIXME: i cannot get this to work, it does not print any objects although there are definitely IntroductionPuzzle objects in my db.
-		
-		HashSet<Class> WoTclasses = new HashSet<Class>(Arrays.asList(new Class[]{ Identity.class, OwnIdentity.class, Trust.class, Score.class }));
-		Logger.debug(this, "Non-WoT objects in WoT database: ");
-		Query q = db.query();
-		for(Class c : WoTclasses)
-			q.constrain(c).not();
-		ObjectSet<Object> objects = q.execute();
-		for(Object o : objects) {
-			Logger.debug(this, o.toString());
+		try {
+			mIdentityXML = new XMLTransformer(this);
 		}
-		*/
-		
-		/* FIXME: this should be done regularly in IntroductionClient: Puzzles can become corrupted due to the Inserter being deleted from the database */
-		ObjectSet<IntroductionPuzzle> puzzles = db.queryByExample(IntroductionPuzzle.class);
-		for(IntroductionPuzzle p : puzzles) {
-			db.activate(p, 5); /* FIXME: check what happens if we comment this out. or to say it in another way: does querying activate the objects? */
-			if(p.checkConsistency() == false) {
-				db.delete(p);
-				Logger.error(this, "Deleting corrupted puzzle.");
-			}
-		}
-		
-		mIdentityXML = new IdentityXML(this);
+		catch(Exception e) { throw new RuntimeException(e); }
 		
 		// Start the inserter thread
 		inserter = new IdentityInserter(this);
@@ -182,104 +170,111 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		fetcher = new IdentityFetcher(this);		
 		fetcher.fetch(seed, false);
 		
-		// Create a default OwnIdentity if none exists. Should speed up plugin usability for newbies
-		if(OwnIdentity.getNbOwnIdentities(db) == 0) {
-			try {
-				createIdentity("Anonymous", true, "Freetalk");
-			} catch (Exception e) {
-				Logger.error(this, "Error creating default identity : ", e);
-			}
-		}
-		
-		/* FIXME: Debug code, remove before release */
-		try {
-			ObjectSet<OwnIdentity> oids = db.queryByExample(OwnIdentity.class);
-			for(OwnIdentity oid : oids) {
-				oid.addContext(db, IntroductionPuzzle.INTRODUCTION_CONTEXT);
-				oid.removeContext("freetalk", db);
-				oid.addContext(db, "Freetalk");
-				oid.setProperty(db, "IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT));
-			}
-		}
-		catch(InvalidParameterException e) {}
-		
 		introductionServer = new IntroductionServer(this, fetcher);
-		pr.getNode().executor.execute(introductionServer, "WoT introduction server");
-		
 		introductionClient = new IntroductionClient(this);
-		pr.getNode().executor.execute(introductionClient, "WoT introduction client");
-		
-		deleteDuplicateObjects();
-		deleteOrphanObjects();
-		
+
 		// Try to fetch all known identities
-		ObjectSet<Identity> identities = Identity.getAllIdentities(db);
-		while (identities.hasNext()) {
-			fetcher.fetch(identities.next(), true);
+		synchronized(this) {
+			ObjectSet<Identity> identities = getAllIdentities();
+			while (identities.hasNext()) {
+				fetcher.fetch(identities.next(), true);
+			}
 		}
 		
 		web = new WebInterface(this, SELF_URI);
 		fcp = new FCPInterface(this);
-		}
-		catch(Exception e) {
-			Logger.error(this, "Initialization of plugin failed", e); 
-		}
+	}
+
+	/**
+	 * Initializes the plugin's db4o database.
+	 * 
+	 * @return A db4o <code>ObjectContainer</code>. 
+	 */
+	private ExtObjectContainer initDB() {
+		Configuration cfg = Db4o.newConfiguration();
+		cfg.reflectWith(new JdkReflector(mClassLoader));
+		cfg.activationDepth(1);
+		cfg.exceptionsOnNotStorable(true);
+		
+		for(String field : Identity.getIndexedFields()) cfg.objectClass(Identity.class).objectField(field).indexed(true);
+		for(String field : OwnIdentity.getIndexedFields()) cfg.objectClass(OwnIdentity.class).objectField(field).indexed(true);
+		for(String field : Trust.getIndexedFields()) cfg.objectClass(Trust.class).objectField(field).indexed(true);
+		for(String field : Score.getIndexedFields()) cfg.objectClass(Score.class).objectField(field).indexed(true);
+		
+		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).persistStaticFieldValues(); /* Needed to be able to store enums */
+		for(String field : IntroductionPuzzle.getIndexedFields()) cfg.objectClass(IntroductionPuzzle.class).objectField(field).indexed(true);
+		
+		return Db4o.openFile(cfg, "WebOfTrust-testing.db4o").ext();
 	}
 	
 	/**
 	 * Debug function for deleting duplicate identities etc. which might have been created due to bugs :)
 	 */
 	@SuppressWarnings("unchecked")
-	private void deleteDuplicateObjects() {
-		ObjectSet<Identity> identities = Identity.getAllIdentities(db);
-		HashSet<String> deleted = new HashSet<String>();
-		
-		for(Identity i : identities) {
-			Query q = db.query();
-			q.constrain(Identity.class);
-			//q.constrain(OwnIdentity.class).not();
-			q.descend("id").constrain(i.getId());
-			q.constrain(i).identity().not();
-			ObjectSet<Identity> duplicates = q.execute();
-			for(Identity duplicate : duplicates) {
-				if(deleted.contains(duplicate.getId()) == false) {
-					Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
-					for(Trust t : duplicate.getReceivedTrusts(db))
-						db.delete(t);
-					for(Trust t : duplicate.getGivenTrusts(db))
-						db.delete(t);
-					for(Score s : duplicate.getScores(db))
-						db.delete(s);
-					db.delete(duplicate);
+	private synchronized void deleteDuplicateObjects() {
+		synchronized(mDB) {
+			try {
+				ObjectSet<Identity> identities = getAllIdentities();
+				HashSet<String> deleted = new HashSet<String>();
+				
+				for(Identity identity : identities) {
+					Query q = mDB.query();
+					q.constrain(Identity.class);
+					q.descend("mID").constrain(identity.getId());
+					q.constrain(identity).identity().not();
+					ObjectSet<Identity> duplicates = q.execute();
+					for(Identity duplicate : duplicates) {
+						if(deleted.contains(duplicate.getId()) == false) {
+							Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
+							for(Trust trust : getReceivedTrusts(duplicate))
+								mDB.delete(trust);
+							for(Trust trust : getGivenTrusts(duplicate))
+								mDB.delete(trust);
+							for(Score score : getScores(duplicate))
+								mDB.delete(score);
+							mDB.delete(duplicate);
+						}
+					}
+					deleted.add(identity.getId());
+					mDB.commit();
 				}
 			}
-			deleted.add(i.getId());
-		}
-		
-		db.commit();
-		
-		for(OwnIdentity treeOwner : OwnIdentity.getAllOwnIdentities(db)) {
-			HashSet<String> givenTo = new HashSet<String>();
+			catch(RuntimeException e) {
+				mDB.rollback();
+				Logger.error(this, "Error while deleting duplicate identities", e);
+			}
 			
-			for(Trust t : treeOwner.getGivenTrusts(db)) {
-				if(givenTo.contains(t.getTrustee().getId()) == false)
-					givenTo.add(t.getTrustee().getId());
-				else {
-					Identity trustee = t.getTrustee();
-					Logger.error(this, "Deleting duplicate given trust from " + treeOwner.getNickName() + " to " + trustee.getNickName());
-					db.delete(t);
+			try {
+				for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+					HashSet<String> givenTo = new HashSet<String>();
 					
-					try {
-						trustee.updateScore(db, treeOwner);
+					for(Trust trust : getGivenTrusts(treeOwner)) {
+						if(givenTo.contains(trust.getTrustee().getId()) == false)
+							givenTo.add(trust.getTrustee().getId());
+						else {
+							Identity trustee = trust.getTrustee();
+							Logger.error(this, "Deleting duplicate given trust from " + treeOwner.getNickName() + " to " + trustee.getNickName());
+							mDB.delete(trust);
+							
+							try {
+								updateScore(treeOwner, trustee);
+							}
+							catch(Exception e) { /* Maybe another duplicate prevents it from working ... */
+								Logger.error(this, "Updating score of " + trustee.getNickName() + " failed.", e);
+							}
+						}
 					}
-					catch(Exception e) { /* Maybe another duplicate prevents it from working ... */
-						Logger.error(this, "Updating score of " + trustee.getNickName() + " failed.", e);
-					}
+					mDB.commit();
 				}
+				
+				
 			}
+			catch(RuntimeException e) {
+				mDB.rollback();
+				Logger.error(this, "Error while deleting duplicate trusts", e);
+			}
+
 		}
-		
-		db.commit();
 		
 		/* FIXME: Also delete duplicate trust, score, etc. */
 	}
@@ -288,78 +283,42 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * Debug function for deleting trusts or scores of which one of the involved partners is missing.
 	 */
 	@SuppressWarnings("unchecked")
-	private void deleteOrphanObjects() {
-		Query q = db.query();
-		q.constrain(Trust.class);
-		q.descend("truster").constrain(null).identity().or(q.descend("trustee").constrain(null).identity());
-		ObjectSet<Trust> orphanTrusts = q.execute();
-		for(Trust o : orphanTrusts) {
-			Logger.error(o, "Deleting orphan trust, truster = " + o.getTruster() + ", trustee = " + o.getTrustee());
-			db.delete(o);
+	private synchronized void deleteOrphanObjects() {
+		synchronized(mDB) {
+			try {
+				Query q = mDB.query();
+				q.constrain(Trust.class);
+				q.descend("mTruster").constrain(null).identity().or(q.descend("mTrustee").constrain(null).identity());
+				ObjectSet<Trust> orphanTrusts = q.execute();
+				for(Trust trust : orphanTrusts) {
+					Logger.error(trust, "Deleting orphan trust, truster = " + trust.getTruster() + ", trustee = " + trust.getTrustee());
+					mDB.delete(trust);
+				}
+			}
+			catch(Exception e) {
+				Logger.error(this, "Deleting orphan trusts failed.", e);
+				// mDB.rollback(); /* No need to do so here */ 
+			}
+			
+			try {
+				Query q = mDB.query();
+				q.constrain(Score.class);
+				q.descend("mTreeOwner").constrain(null).identity().or(q.descend("mTarget").constrain(null).identity());
+				ObjectSet<Score> orphanScores = q.execute();
+				for(Score score : orphanScores) {
+					Logger.error(score, "Deleting orphan score, treeOwner = " + score.getTreeOwner() + ", target = " + score.getTarget());
+					mDB.delete(score);
+				}
+				
+				mDB.commit();
+			}
+			catch(Exception e) {
+				Logger.error(this, "Deleting orphan trusts failed.", e);
+				// mDB.rollback(); /* No need to do so here */ 
+			}
 		}
-		
-		q = db.query();
-		q.constrain(Score.class);
-		q.descend("treeOwner").constrain(null).identity().or(q.descend("target").constrain(null).identity());
-		ObjectSet<Score> orphanScores = q.execute();
-		for(Score s : orphanScores) {
-			Logger.error(s, "Deleting orphan score, treeOwner = " + s.getTreeOwner() + ", target = " + s.getTarget());
-			db.delete(s);
-		}
-		
-		db.commit();
 	}
-	
-	/**
-	 * Initializes the plugin's db4o database.
-	 * 
-	 * @return A db4o <code>ObjectContainer</code>. 
-	 */
-	private ObjectContainer initDB() {
-		
-		// Set indexes on fields we query on
-		Configuration cfg = Db4o.newConfiguration();
-		cfg.reflectWith(new JdkReflector(mClassLoader));
-		cfg.activationDepth(5);
-		cfg.exceptionsOnNotStorable(true);
-		
-		cfg.objectClass(Identity.class).objectField("id").indexed(true);
-		cfg.objectClass(OwnIdentity.class).objectField("id").indexed(true);
-		cfg.objectClass(Trust.class).objectField("truster").indexed(true);
-		cfg.objectClass(Trust.class).objectField("trustee").indexed(true);
-		cfg.objectClass(Score.class).objectField("treeOwner").indexed(true);
-		cfg.objectClass(Score.class).objectField("target").indexed(true);
-		
-		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).persistStaticFieldValues();
-		
-		for(String field : IntroductionPuzzle.getIndexedFields())
-			cfg.objectClass(IntroductionPuzzle.class).objectField(field).indexed(true);
-		
-		// This will make db4o store any complex objects which are referenced by a Config object.
-		cfg.objectClass(Config.class).cascadeOnUpdate(true);
-		return Db4o.openFile(cfg, "WoT.db4o");
-	}
-	
-	/**
-	 * Loads the config of the plugin, or creates it with default values if it doesn't exist.
-	 * 
-	 * @return config of the plugin
-	 */
-	private Config initConfig() {
-		ObjectSet<Config> result = db.queryByExample(Config.class);
-		if(result.size() == 0) {
-			Logger.debug(this, "Created new config");
-			config = new Config();
-			db.store(config);
-		}
-		else {
-			Logger.debug(this, "Loaded config");
-			config = result.next();
-			config.initDefault(false);
-		}
-		return config;
-	}
-	
+
 	public void terminate() {
 		Logger.debug(this, "WoT plugin terminating ...");
 		
@@ -379,13 +338,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 		
 		try {
-			fetcher.stop();
-		}
-		catch(Exception e) {
-			Logger.error(this, "Error during termination.", e);
-		}
-		
-		try {
 			inserter.stop();
 		}
 		catch(Exception e) {
@@ -393,10 +345,20 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 		
 		try {
-			/* FIXME: Figure out whether we can use db4o to tell whether this commit() does something. If it does, then log an error, because then
-			 * probably we forgot a commit() somewhere. */
-			db.commit();
-			db.close();
+			fetcher.stop();
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+		
+		
+		try {
+			/* FIXME: Is it possible to ask db4o whether a transaction is pending? If the plugin's synchronization works correctly, NONE should
+			 * be pending here and we should log an error if there are any pending transactions at this point. */
+			synchronized(mDB.lock()) {
+				mDB.rollback();
+				mDB.close();
+			}
 		}
 		catch(Exception e) {
 			Logger.error(this, "Error during termination.", e);
@@ -433,7 +395,490 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		fcp.handle(replysender, params, data, accesstype);
 	}
 
-	public Identity addIdentity(String requestURI) throws MalformedURLException, InvalidParameterException, FetchException, DuplicateIdentityException {
+	/**
+	 * Loads an identity from the database, querying on its ID.
+	 * 
+	 * @param id The ID of the identity to load
+	 * @return The identity matching the supplied ID.
+	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
+	 * @throws UnknownIdentityException if there is no identity with this id in the database
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized Identity getByID(String id) throws UnknownIdentityException {
+		Query query = mDB.query();
+		query.constrain(Identity.class);
+		query.descend("mID").constrain(id);
+		ObjectSet<Identity> result = query.execute();
+		
+		if(result.size() == 0)
+			throw new UnknownIdentityException(id);
+
+		if(result.size() > 1)
+			throw new DuplicateIdentityException(id);
+		
+		return result.next();
+	}
+
+	/**
+	 * Loads an identity from the database, querying on its requestURI (as String)
+	 * 
+	 * @param uri The requestURI of the identity which will be converted to {@link FreenetURI} 
+	 * @return The identity matching the supplied requestURI
+	 * @throws UnknownIdentityException if there is no identity with this id in the database
+	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
+	 * @throws MalformedURLException if the requestURI isn't a valid FreenetURI
+	 */
+	public Identity getByURI(String uri) throws UnknownIdentityException, MalformedURLException {
+		return getIdentityByURI(new FreenetURI(uri));
+	}
+
+	/**
+	 * Loads an identity from the database, querying on its requestURI (a valid {@link FreenetURI})
+	 * 
+	 * @param uri The requestURI of the identity
+	 * @return The identity matching the supplied requestURI
+	 * @throws UnknownIdentityException if there is no identity with this id in the database
+	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
+	 */
+	public Identity getIdentityByURI(FreenetURI uri) throws UnknownIdentityException {
+		return getByID(Identity.getIDFromURI(uri));
+	}
+	
+	/**
+	 * Returns all identities that are in the database.
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 * 
+	 * @return An {@link ObjectSet} containing all identities present in the database 
+	 */
+	public synchronized ObjectSet<Identity> getAllIdentities() {
+		return mDB.queryByExample(Identity.class);
+	}
+	
+	/**
+	 * Returns all own identities that are in the database
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 * 
+	 * @return An {@link ObjectSet} containing all identities present in the database.
+	 */
+	public synchronized ObjectSet<OwnIdentity> getAllOwnIdentities() {
+		return mDB.queryByExample(OwnIdentity.class);
+	}
+	
+	public synchronized void storeAndCommit(Identity identity) {
+		synchronized(identity) {
+		synchronized(mDB.lock()) {
+			if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
+				throw new RuntimeException("Trying to store an inactive Identity object!");
+			
+			/* FIXME: We also need to check whether the member objects are active here!!! */
+			
+			try {
+				if(identity instanceof OwnIdentity) {
+					OwnIdentity ownId = (OwnIdentity)identity;
+					mDB.store(ownId.mInsertURI);
+					mDB.store(ownId.mCreationDate);
+					mDB.store(ownId.mLastInsertDate);
+				}
+				// mDB.store(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+				mDB.store(identity.mURI);
+				// mDB.store(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+				// mDB.store(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+				// mDB.store(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+				// mDB.store(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+				mDB.store(identity.mProperties);
+				mDB.store(identity.mContexts);
+				mDB.store(identity);
+				mDB.commit();
+			}
+			catch(RuntimeException e) {
+				mDB.rollback();
+				throw e;
+			}
+		}
+		}
+	}
+
+	/**
+	 * Gets the score of this identity in a trust tree.
+	 * Each {@link OwnIdentity} has its own trust tree.
+	 * 
+	 * @param treeOwner The owner of the trust tree
+	 * @param db A reference to the database
+	 * @return The {@link Score} of this Identity in the required trust tree
+	 * @throws NotInTrustTreeException if this identity is not in the required trust tree 
+	 * @throws DuplicateScoreException if thid identity has more than one Score objects for that trust tree in the database (should never happen)
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized Score getScore(OwnIdentity treeOwner, Identity target) throws NotInTrustTreeException, DuplicateScoreException {
+		Query query = mDB.query();
+		query.constrain(Score.class);
+		query.descend("mTreeOwner").constrain(treeOwner).identity();
+		query.descend("mTarget").constrain(target).identity();
+		ObjectSet<Score> result = query.execute();
+		
+		if(result.size() == 0)
+			throw new NotInTrustTreeException(target.getRequestURI() + " is not in that trust tree");
+		
+		if(result.size() > 1)
+			throw new DuplicateScoreException(target.getRequestURI() +" ("+ target.getNickName() +") has " + result.size() + 
+					" scores in " + treeOwner.getNickName() +"'s trust tree");
+		
+		return result.next();
+	}
+	
+	/* 
+	 * FIXME:
+	 * I suggest before releasing we should write a getRealScore() function which recalculates the score from all Trust objects which are stored
+	 * in the database. We could then assert(getScore() == getRealScore()) for verifying that the database is consistent and watch for some time
+	 * whether it stays consistent, just to make sure that there are no flaws in the code.
+	 */
+	
+	/**
+	 * Gets a list of all this Identity's Scores.
+	 * You have to synchronize on this WoT around the call to this function and the processing of the returned list! 
+	 * 
+	 * @param db A reference to the database
+	 * @return An {@link ObjectSet} containing all {@link Score} this Identity has.
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<Score> getScores(Identity identity) {
+		Query query = mDB.query();
+		query.constrain(Score.class);
+		query.descend("mTarget").constrain(identity).identity();
+		return query.execute();
+	}
+	
+	/**
+	 * Gets the best score this Identity has in existing trust trees.
+	 * 
+	 * @param db A reference to the database
+	 * @return the best score this Identity has
+	 */
+	public synchronized int getBestScore(Identity identity) {
+		int bestScore = 0;
+		ObjectSet<Score> scores = getScores(identity);
+		/* TODO: Use a db4o native query for this loop. Maybe use an index, indexes should be sorted so maximum search will be O(1)... 
+		 * but I guess indexes cannot be done for the (target, value) pair so we might just cache the best score ourselves...
+		 * OTOH the number of own identies will be small so the maximum search will probably be fast... */
+		while(scores.hasNext()) {
+			Score score = scores.next();
+			bestScore = Math.max(score.getScore(), bestScore);
+		}
+		return bestScore;
+	}
+	
+	/**
+	 * Get all scores in the database.
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 */
+	public synchronized ObjectSet<Score> getAllScores() {
+		return mDB.queryByExample(Score.class);
+	}
+	
+	/**
+	 * Gets Identities matching a specified score criteria.
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 * 
+	 * @param owner requestURI of the owner of the trust tree, null if you want the trusted identities of all owners.
+	 * @param select Score criteria, can be '+', '0' or '-'
+	 * @return an {@link ObjectSet} containing Identities that match the criteria
+	 * @throws InvalidParameterException if the criteria is not recognised
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<Score> getIdentitiesByScore(OwnIdentity treeOwner, int select) {		
+		Query query = mDB.query();
+		query.constrain(Score.class);
+		if(treeOwner != null)
+			query.descend("mTreeOwner").constrain(treeOwner).identity();
+		query.descend("mTarget").constrain(OwnIdentity.class).not();
+			
+		if(select > 0)
+			query.descend("mValue").constrain(0).greater();
+		else if(select < 0 )
+			query.descend("mValue").constrain(0).smaller();
+		else 
+			query.descend("mValue").constrain(0);
+
+		return query.execute();
+	}
+	
+	/**
+	 * Gets {@link Trust} from a specified truster to a specified trustee.
+	 * 
+	 * @param truster The identity that gives trust to this Identity
+	 * @param trustee The identity which receives the trust
+	 * @return The trust given to the trustee by the specified truster
+	 * @throws NotTrustedException if the truster doesn't trust the trustee
+	 * @throws DuplicateTrustException If there are more than one Trust object between these identities in the database (should never happen)
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized Trust getTrust(Identity truster, Identity trustee) throws NotTrustedException, DuplicateTrustException {
+		Query query = mDB.query();
+		query.constrain(Trust.class);
+		query.descend("mTruster").constrain(truster).identity();
+		query.descend("mTrustee").constrain(trustee).identity();
+		ObjectSet<Trust> result = query.execute();
+		
+		if(result.size() == 0)
+			throw new NotTrustedException(truster.getNickName() + " does not trust " + trustee.getNickName());
+		
+		if(result.size() > 1)
+			throw new DuplicateTrustException("Trust from " + truster.getNickName() + "to " + trustee.getNickName() + " exists "
+					+ result.size() + " times in the database");
+		
+		return result.next();
+	}
+
+	/**
+	 * Gets all trusts given by the given truster.
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 * 
+	 * @return An {@link ObjectSet} containing all {@link Trust} the passed Identity has given.
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<Trust> getGivenTrusts(Identity truster) {
+		Query query = mDB.query();
+		query.constrain(Trust.class);
+		query.descend("mTruster").constrain(truster).identity();
+		return query.execute();
+	}
+	
+	/**
+	 * Gets all trusts given by the given truster in a trust list older than the given edition number.
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 */
+	@SuppressWarnings("unchecked")
+	protected synchronized ObjectSet<Trust> getGivenTrustsOlderThan(Identity truster, long edition) {
+		Query q = mDB.query();
+		q.constrain(Trust.class);
+		q.descend("mTruster").constrain(truster).identity();
+		q.descend("mTrusterTrustListEdition").constrain(edition).smaller();
+		return q.execute();
+	}
+
+	/**
+	 * Gets all trusts received by the given trustee.
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 * 
+	 * @return An {@link ObjectSet} containing all {@link Trust} the passed Identity has received.
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<Trust> getReceivedTrusts(Identity trustee) {
+		Query query = mDB.query();
+		query.constrain(Trust.class);
+		query.descend("mTrustee").constrain(trustee).identity();
+		return query.execute();
+	}
+	
+	/**
+	 * Gives some {@link Trust} to another Identity.
+	 * It creates or updates an existing Trust object and make the trustee compute its {@link Score}.
+	 * 
+	 * @param truster The Identity that gives the trust
+	 * @param trustee The Identity that receives the trust
+	 * @param newValue Numeric value of the trust
+	 * @param newComment A comment to explain the given value
+	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
+	 * @throws InvalidParameterException if a given parameter isn't valid, {@see Trust} for details on accepted values.
+	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
+	 */
+	public synchronized void setTrust(Identity truster, Identity trustee, byte newValue, String newComment)
+		throws DuplicateTrustException, InvalidParameterException, DuplicateScoreException {
+		
+		// Check if we are updating an existing trust value
+		Trust trust;
+		synchronized(mDB.lock()) {
+			try {
+				try {
+					trust = getTrust(truster, trustee);
+					trust.trusterEditionUpdated();
+					trust.setComment(newComment);
+					mDB.store(trust);
+					
+					if(trust.getValue() != newValue) {
+						trust.setValue(newValue);
+						mDB.store(trust);
+						Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
+						updateScore(trustee);
+					}
+				} catch (NotTrustedException e) {
+					trust = new Trust(truster, trustee, newValue, newComment);
+					mDB.store(trust);
+					Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
+					updateScore(trustee);
+				} 
+			}
+			catch(RuntimeException e) {
+				mDB.rollback();
+				throw e;
+			}
+		}
+		}
+	}
+	
+	public synchronized void removeTrust(Identity truster, Identity trustee) {
+		synchronized(mDB.lock()) {
+			try {
+				try {
+					Trust trust = getTrust(truster, trustee);
+					mDB.delete(trust);
+					updateScore(trustee);
+				} catch (NotTrustedException e) {
+					Logger.error(this, "Cannot remove trust - there is none - from " + truster.getNickName() + " to " + trustee.getNickName());
+				} 
+			}
+			catch(RuntimeException e) {
+				mDB.rollback();
+				throw e;
+			}
+		}
+	}
+	
+	/**
+	 * Updates this Identity's {@link Score} in every trust tree.
+	 * 
+	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
+	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
+	 */
+	private synchronized void updateScore(Identity trustee) throws DuplicateScoreException, DuplicateTrustException {
+		synchronized(mDB.lock()) {
+			ObjectSet<OwnIdentity> treeOwners = getAllOwnIdentities();
+			if(treeOwners.size() == 0)
+				Logger.debug(this, "Can't update " + trustee.getNickName() + "'s score: there is no own identity yet");
+			
+			while(treeOwners.hasNext())
+				updateScore(treeOwners.next(), trustee);
+			
+			mDB.commit();
+		}
+	}
+	
+	/**
+	 * Updates this Identity's {@link Score} in one trust tree.
+	 * Makes this Identity's trustees update their score if its capacity has changed.
+	 * 
+	 * Does neither lock the database nor commit(), you have to do that when using this function!
+	 * 
+	 * @param db A reference to the database
+	 * @param treeOwner The OwnIdentity that owns the trust tree
+	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
+	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
+	 */
+	private synchronized void updateScore(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException, DuplicateTrustException {
+		if(target == treeOwner)
+			return;
+		
+		boolean changedCapacity = false;
+		
+		Logger.debug(target, "Updating " + target.getNickName() + "'s score in " + treeOwner.getNickName() + "'s trust tree...");
+		
+		Score score;
+		int value = computeScoreValue(treeOwner, target);
+		int rank = computeRank(treeOwner, target);
+		
+		if(rank == -1) { // -1 value means the identity is not in the trust tree
+			try { // If he had a score, we delete it
+				score = getScore(treeOwner, target);
+				mDB.delete(score); // He had a score, we delete it
+				changedCapacity = true;
+				Logger.debug(target, target.getNickName() + " is not in " + treeOwner.getNickName() + "'s trust tree anymore");
+			} catch (NotInTrustTreeException e) {} 
+		}
+		else { // The identity is in the trust tree
+			
+			try { // Get existing score or create one if needed
+				score = getScore(treeOwner, target);
+			} catch (NotInTrustTreeException e) {
+				score = new Score(treeOwner, target, 0, -1, 0);
+			}
+			
+			score.setValue(value);
+			score.setRank(rank + 1);
+			int oldCapacity = score.getCapacity();
+			
+			boolean hasNegativeTrust = false;
+			// Does the treeOwner personally distrust this identity ?
+			try {
+				if(getTrust(treeOwner, target).getValue() < 0) {
+					hasNegativeTrust = true;
+					Logger.debug(target, target.getNickName() + " received negative trust from " + treeOwner.getNickName() + 
+							" and therefore has no capacity in his trust tree.");
+				}
+			} catch (NotTrustedException e) {}
+			
+			if(hasNegativeTrust)
+				score.setCapacity(0);
+			else
+				score.setCapacity((score.getRank() >= Identity.capacities.length) ? 1 : Identity.capacities[score.getRank()]);
+			
+			if(score.getCapacity() != oldCapacity)
+				changedCapacity = true;
+			
+			mDB.store(score);
+			Logger.debug(target, "New score: " + score.toString());
+		}
+		
+		if(changedCapacity) { // We have to update trustees' score
+			ObjectSet<Trust> givenTrusts = getGivenTrusts(target);
+			Logger.debug(target, target.getNickName() + "'s capacity has changed in " + treeOwner.getNickName() +
+					"'s trust tree, updating his (" + givenTrusts.size() + ") trustees");
+			
+			for(Trust givenTrust : givenTrusts)
+				updateScore(treeOwner, givenTrust.getTrustee());
+		}
+	}
+	
+	/**
+	 * Computes the target's Score value according to the trusts it has received and the capacity of its trusters in the specified trust tree.
+	 * 
+	 * @param db A reference to the database
+	 * @param treeOwner The OwnIdentity that owns the trust tree
+	 * @return The new Score if this Identity
+	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
+	 */
+	private synchronized int computeScoreValue(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException {
+		int value = 0;
+		
+		ObjectSet<Trust> receivedTrusts = getReceivedTrusts(target);
+		while(receivedTrusts.hasNext()) {
+			Trust trust = receivedTrusts.next();
+			try {
+				value += trust.getValue() * (getScore(treeOwner, trust.getTruster())).getCapacity() / 100;
+			} catch (NotInTrustTreeException e) {}
+		}
+		return value;
+	}
+	
+	/**
+	 * Computes the target's rank in the trust tree.
+	 * It gets its best ranked truster's rank, plus one. Or -1 if none of its trusters are in the trust tree. 
+	 *  
+	 * @param db A reference to the database
+	 * @param treeOwner The OwnIdentity that owns the trust tree
+	 * @return The new Rank if this Identity
+	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
+	 */
+	protected synchronized int computeRank(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException {
+		int rank = -1;
+		
+		ObjectSet<Trust> receivedTrusts = getReceivedTrusts(target);
+		while(receivedTrusts.hasNext()) {
+			Trust trust = receivedTrusts.next();
+			try {
+				Score score = getScore(treeOwner, trust.getTruster());
+				
+				if(score.getCapacity() != 0) // If the truster has no capacity, he can't give his rank
+					if(rank == -1 || score.getRank() < rank) // If the truster's rank is better than ours or if we have not  
+						rank = score.getRank();
+			} catch (NotInTrustTreeException e) {}
+		}
+		return rank;
+	}
+	
+	
+	public Identity addIdentity(String requestURI)
+		throws MalformedURLException, InvalidParameterException, FetchException, DuplicateIdentityException {
+		
 		Identity identity = null;
 		try {
 			identity = Identity.getByURI(db, requestURI);
@@ -673,10 +1118,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	public Config getConfig() {
-		return config;
+		return mConfig;
 	}
 	
-	public ObjectContainer getDB() {
+	public ExtObjectContainer getDB() {
 		return db;
 	}
 	
@@ -684,8 +1129,12 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return fetcher;
 	}
 	
-	public IdentityXML getIdentityXML() {
+	public XMLTransformer getIdentityXML() {
 		return mIdentityXML;
+	}
+	
+	public IntroductionPuzzleStore getIntroductionPuzzleStore() {
+		return mPuzzleStore;
 	}
 
 	public IntroductionClient getIntroductionClient() {
@@ -694,10 +1143,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 	public RequestClient getRequestClient() {
 		return requestClient;
-	}
-
-	public ClientContext getClientContext() {
-		return clientContext;
 	}
 
 }
