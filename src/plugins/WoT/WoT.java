@@ -220,11 +220,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				for(Identity identity : identities) {
 					Query q = mDB.query();
 					q.constrain(Identity.class);
-					q.descend("mID").constrain(identity.getId());
+					q.descend("mID").constrain(identity.getID());
 					q.constrain(identity).identity().not();
 					ObjectSet<Identity> duplicates = q.execute();
 					for(Identity duplicate : duplicates) {
-						if(deleted.contains(duplicate.getId()) == false) {
+						if(deleted.contains(duplicate.getID()) == false) {
 							Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
 							for(Trust trust : getReceivedTrusts(duplicate))
 								mDB.delete(trust);
@@ -235,7 +235,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 							mDB.delete(duplicate);
 						}
 					}
-					deleted.add(identity.getId());
+					deleted.add(identity.getID());
 					mDB.commit();
 				}
 			}
@@ -249,18 +249,18 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 					HashSet<String> givenTo = new HashSet<String>();
 					
 					for(Trust trust : getGivenTrusts(treeOwner)) {
-						if(givenTo.contains(trust.getTrustee().getId()) == false)
-							givenTo.add(trust.getTrustee().getId());
+						if(givenTo.contains(trust.getTrustee().getID()) == false)
+							givenTo.add(trust.getTrustee().getID());
 						else {
 							Identity trustee = trust.getTrustee();
-							Logger.error(this, "Deleting duplicate given trust from " + treeOwner.getNickName() + " to " + trustee.getNickName());
+							Logger.error(this, "Deleting duplicate given trust from " + treeOwner.getNickname() + " to " + trustee.getNickname());
 							mDB.delete(trust);
 							
 							try {
-								updateScore(treeOwner, trustee);
+								updateScoreWithoutCommit(treeOwner, trustee);
 							}
 							catch(Exception e) { /* Maybe another duplicate prevents it from working ... */
-								Logger.error(this, "Updating score of " + trustee.getNickName() + " failed.", e);
+								Logger.error(this, "Updating score of " + trustee.getNickname() + " failed.", e);
 							}
 						}
 					}
@@ -404,7 +404,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @throws UnknownIdentityException if there is no identity with this id in the database
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized Identity getByID(String id) throws UnknownIdentityException {
+	public synchronized Identity getIdentityByID(String id) throws UnknownIdentityException {
 		Query query = mDB.query();
 		query.constrain(Identity.class);
 		query.descend("mID").constrain(id);
@@ -428,7 +428,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
 	 * @throws MalformedURLException if the requestURI isn't a valid FreenetURI
 	 */
-	public Identity getByURI(String uri) throws UnknownIdentityException, MalformedURLException {
+	public Identity getIdentityByURI(String uri) throws UnknownIdentityException, MalformedURLException {
 		return getIdentityByURI(new FreenetURI(uri));
 	}
 
@@ -441,7 +441,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
 	 */
 	public Identity getIdentityByURI(FreenetURI uri) throws UnknownIdentityException {
-		return getByID(Identity.getIDFromURI(uri));
+		return getIdentityByID(Identity.getIDFromURI(uri));
 	}
 	
 	/**
@@ -476,19 +476,20 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				if(identity instanceof OwnIdentity) {
 					OwnIdentity ownId = (OwnIdentity)identity;
 					mDB.store(ownId.mInsertURI);
-					mDB.store(ownId.mCreationDate);
-					mDB.store(ownId.mLastInsertDate);
+					// mDB.store(ownId.mCreationDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+					// mDB.store(ownId.mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 				}
 				// mDB.store(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-				mDB.store(identity.mURI);
+				mDB.store(identity.mRequestURI);
 				// mDB.store(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-				// mDB.store(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+				// mDB.store(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 				// mDB.store(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 				// mDB.store(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 				mDB.store(identity.mProperties);
 				mDB.store(identity.mContexts);
 				mDB.store(identity);
 				mDB.commit();
+				Logger.debug(identity, "COMMITED.");
 			}
 			catch(RuntimeException e) {
 				mDB.rollback();
@@ -520,8 +521,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			throw new NotInTrustTreeException(target.getRequestURI() + " is not in that trust tree");
 		
 		if(result.size() > 1)
-			throw new DuplicateScoreException(target.getRequestURI() +" ("+ target.getNickName() +") has " + result.size() + 
-					" scores in " + treeOwner.getNickName() +"'s trust tree");
+			throw new DuplicateScoreException(target.getRequestURI() +" ("+ target.getNickname() +") has " + result.size() + 
+					" scores in " + treeOwner.getNickname() +"'s trust tree");
 		
 		return result.next();
 	}
@@ -620,10 +621,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		ObjectSet<Trust> result = query.execute();
 		
 		if(result.size() == 0)
-			throw new NotTrustedException(truster.getNickName() + " does not trust " + trustee.getNickName());
+			throw new NotTrustedException(truster.getNickname() + " does not trust " + trustee.getNickname());
 		
 		if(result.size() > 1)
-			throw new DuplicateTrustException("Trust from " + truster.getNickName() + "to " + trustee.getNickName() + " exists "
+			throw new DuplicateTrustException("Trust from " + truster.getNickname() + "to " + trustee.getNickname() + " exists "
 					+ result.size() + " times in the database");
 		
 		return result.next();
@@ -674,22 +675,23 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * Gives some {@link Trust} to another Identity.
 	 * It creates or updates an existing Trust object and make the trustee compute its {@link Score}.
 	 * 
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(mDB.lock()) {
+	 *     try { ... setTrustWithoutCommit(...); storeAndCommit(truster); }
+	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 * }
+	 * 
 	 * @param truster The Identity that gives the trust
 	 * @param trustee The Identity that receives the trust
 	 * @param newValue Numeric value of the trust
 	 * @param newComment A comment to explain the given value
-	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
 	 * @throws InvalidParameterException if a given parameter isn't valid, {@see Trust} for details on accepted values.
-	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 */
-	public synchronized void setTrust(Identity truster, Identity trustee, byte newValue, String newComment)
-		throws DuplicateTrustException, InvalidParameterException, DuplicateScoreException {
+	protected synchronized void setTrustWithoutCommit(Identity truster, Identity trustee, byte newValue, String newComment)
+		throws InvalidParameterException {
 		
-		// Check if we are updating an existing trust value
 		Trust trust;
-		synchronized(mDB.lock()) {
-			try {
-				try {
+				try { // Check if we are updating an existing trust value
 					trust = getTrust(truster, trustee);
 					trust.trusterEditionUpdated();
 					trust.setComment(newComment);
@@ -699,33 +701,23 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 						trust.setValue(newValue);
 						mDB.store(trust);
 						Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
-						updateScore(trustee);
+						updateScoreWithoutCommit(trustee);
 					}
 				} catch (NotTrustedException e) {
 					trust = new Trust(truster, trustee, newValue, newComment);
 					mDB.store(trust);
 					Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
-					updateScore(trustee);
+					updateScoreWithoutCommit(trustee);
 				} 
-			}
-			catch(RuntimeException e) {
-				mDB.rollback();
-				throw e;
-			}
-		}
-		}
+				
+				truster.updated();
 	}
 	
-	public synchronized void removeTrust(Identity truster, Identity trustee) {
+	public synchronized void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment) throws InvalidParameterException {
 		synchronized(mDB.lock()) {
 			try {
-				try {
-					Trust trust = getTrust(truster, trustee);
-					mDB.delete(trust);
-					updateScore(trustee);
-				} catch (NotTrustedException e) {
-					Logger.error(this, "Cannot remove trust - there is none - from " + truster.getNickName() + " to " + trustee.getNickName());
-				} 
+				setTrustWithoutCommit(truster, trustee, newValue, newComment);
+				storeAndCommit(truster);
 			}
 			catch(RuntimeException e) {
 				mDB.rollback();
@@ -735,42 +727,85 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	/**
+	 * Deletes a trust object
+	 * @param truster
+	 * @param trustee
+	 */
+//	protected synchronized void removeTrust(Identity truster, Identity trustee) {
+//		synchronized(mDB.lock()) {
+//			try {
+//				try {
+//					Trust trust = getTrust(truster, trustee);
+//					mDB.delete(trust);
+//					updateScoreWithoutCommit(trustee);
+//				} catch (NotTrustedException e) {
+//					Logger.error(this, "Cannot remove trust - there is none - from " + truster.getNickName() + " to " + trustee.getNickName());
+//				} 
+//			}
+//			catch(RuntimeException e) {
+//				mDB.rollback();
+//				throw e;
+//			}
+//		}
+//	}
+	
+	/**
+	 * 
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(mDB.lock()) {
+	 *     try { ... setTrustWithoutCommit(...); storeAndCommit(truster); }
+	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 * }
+	 * 
+	 */
+	protected synchronized void removeTrustWithoutCommit(Trust trust) {
+		mDB.delete(trust);
+		updateScoreWithoutCommit(trust.getTrustee());
+	}
+	
+	/**
 	 * Updates this Identity's {@link Score} in every trust tree.
+	 * 
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(mDB.lock()) {
+	 *     try { ... setTrustWithoutCommit(...); storeAndCommit(truster); }
+	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 * }
 	 * 
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
 	 */
-	private synchronized void updateScore(Identity trustee) throws DuplicateScoreException, DuplicateTrustException {
-		synchronized(mDB.lock()) {
+	private synchronized void updateScoreWithoutCommit(Identity trustee) throws DuplicateScoreException, DuplicateTrustException {
 			ObjectSet<OwnIdentity> treeOwners = getAllOwnIdentities();
 			if(treeOwners.size() == 0)
-				Logger.debug(this, "Can't update " + trustee.getNickName() + "'s score: there is no own identity yet");
+				Logger.debug(this, "Can't update " + trustee.getNickname() + "'s score: there is no own identity yet");
 			
 			while(treeOwners.hasNext())
-				updateScore(treeOwners.next(), trustee);
-			
-			mDB.commit();
-		}
+				updateScoreWithoutCommit(treeOwners.next(), trustee);
 	}
 	
 	/**
 	 * Updates this Identity's {@link Score} in one trust tree.
 	 * Makes this Identity's trustees update their score if its capacity has changed.
 	 * 
-	 * Does neither lock the database nor commit(), you have to do that when using this function!
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(mDB.lock()) {
+	 *     try { ... setTrustWithoutCommit(...); storeAndCommit(truster); }
+	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 * }
 	 * 
 	 * @param db A reference to the database
 	 * @param treeOwner The OwnIdentity that owns the trust tree
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
 	 */
-	private synchronized void updateScore(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException, DuplicateTrustException {
+	private synchronized void updateScoreWithoutCommit(OwnIdentity treeOwner, Identity target) {
 		if(target == treeOwner)
 			return;
 		
 		boolean changedCapacity = false;
 		
-		Logger.debug(target, "Updating " + target.getNickName() + "'s score in " + treeOwner.getNickName() + "'s trust tree...");
+		Logger.debug(target, "Updating " + target.getNickname() + "'s score in " + treeOwner.getNickname() + "'s trust tree...");
 		
 		Score score;
 		int value = computeScoreValue(treeOwner, target);
@@ -781,7 +816,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				score = getScore(treeOwner, target);
 				mDB.delete(score); // He had a score, we delete it
 				changedCapacity = true;
-				Logger.debug(target, target.getNickName() + " is not in " + treeOwner.getNickName() + "'s trust tree anymore");
+				Logger.debug(target, target.getNickname() + " is not in " + treeOwner.getNickname() + "'s trust tree anymore");
 			} catch (NotInTrustTreeException e) {} 
 		}
 		else { // The identity is in the trust tree
@@ -801,7 +836,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			try {
 				if(getTrust(treeOwner, target).getValue() < 0) {
 					hasNegativeTrust = true;
-					Logger.debug(target, target.getNickName() + " received negative trust from " + treeOwner.getNickName() + 
+					Logger.debug(target, target.getNickname() + " received negative trust from " + treeOwner.getNickname() + 
 							" and therefore has no capacity in his trust tree.");
 				}
 			} catch (NotTrustedException e) {}
@@ -809,7 +844,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			if(hasNegativeTrust)
 				score.setCapacity(0);
 			else
-				score.setCapacity((score.getRank() >= Identity.capacities.length) ? 1 : Identity.capacities[score.getRank()]);
+				score.setCapacity((score.getRank() >= Score.capacities.length) ? 1 : Score.capacities[score.getRank()]);
 			
 			if(score.getCapacity() != oldCapacity)
 				changedCapacity = true;
@@ -820,11 +855,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		if(changedCapacity) { // We have to update trustees' score
 			ObjectSet<Trust> givenTrusts = getGivenTrusts(target);
-			Logger.debug(target, target.getNickName() + "'s capacity has changed in " + treeOwner.getNickName() +
+			Logger.debug(target, target.getNickname() + "'s capacity has changed in " + treeOwner.getNickname() +
 					"'s trust tree, updating his (" + givenTrusts.size() + ") trustees");
 			
 			for(Trust givenTrust : givenTrusts)
-				updateScore(treeOwner, givenTrust.getTrustee());
+				updateScoreWithoutCommit(treeOwner, givenTrust.getTrustee());
 		}
 	}
 	
@@ -858,7 +893,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @return The new Rank if this Identity
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 */
-	protected synchronized int computeRank(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException {
+	private synchronized int computeRank(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException {
 		int rank = -1;
 		
 		ObjectSet<Trust> receivedTrusts = getReceivedTrusts(target);
@@ -911,7 +946,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		while (givenTrusts.hasNext()) {
 			Trust givenTrust = givenTrusts.next();
 			db.delete(givenTrust);
-			givenTrust.getTrustee().updateScore(db);
+			givenTrust.getTrustee().updateScoreWithoutCommit(db);
 		}
 		
 		db.delete(identity);
@@ -933,13 +968,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		identity.initTrustTree(db);		
 
 		// This identity trusts the seed identity
-		identity.setTrust(db, seed, (byte)100, "I trust the WoT plugin");
+		identity.setTrustWithoutCommit(db, seed, (byte)100, "I trust the WoT plugin");
 		
 		db.commit();
 		
 		inserter.wakeUp();
 		
-		Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickName() + ")");
+		Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickname() + ")");
 
 		return identity;
 	}
@@ -952,7 +987,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			Identity old = Identity.getByURI(db, requestURI);
 			
 			// We already have fetched this identity as a stranger's one. We need to update the database.
-			id = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), old.getNickName(), old.doesPublishTrustList());
+			id = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), old.getNickname(), old.doesPublishTrustList());
 			id.setEdition(old.getEdition());
 			
 			for(String context : old.getContexts())
@@ -987,14 +1022,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			ObjectSet<Trust> givenTrusts = old.getGivenTrusts(db);
 			while(givenTrusts.hasNext()) {
 				Trust givenTrust = givenTrusts.next();
-				id.setTrust(db, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
+				id.setTrustWithoutCommit(db, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 				db.delete(givenTrust);
 			}
 
 			// Remove the old identity
 			db.delete(old);
 			
-			Logger.debug(this, "Successfully restored an already known identity from Freenet (" + id.getNickName() + ")");
+			Logger.debug(this, "Successfully restored an already known identity from Freenet (" + id.getNickname() + ")");
 			
 		} catch (UnknownIdentityException e) {
 			id = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), null, false);
@@ -1021,12 +1056,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			setTrust(trusterId, trusteeId, Byte.parseByte(value), comment);
 	}
 	
-	public void setTrust(OwnIdentity truster, Identity trustee, byte value, String comment) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, InvalidParameterException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
-		truster.setTrust(db, trustee, value, comment);
-		truster.updated();
-		db.store(truster);
-		db.commit();	
-	}
 	
 	public void removeTrust(OwnIdentity truster, Identity trustee) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, InvalidParameterException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 		truster.removeTrust(db, trustee);
@@ -1040,7 +1069,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		id.addContext(db, context);
 		db.store(id);
 		
-		Logger.debug(this, "Added context '" + context + "' to identity '" + id.getNickName() + "'");
+		Logger.debug(this, "Added context '" + context + "' to identity '" + id.getNickname() + "'");
 	}
 	
 	public void removeContext(String identity, String context) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
@@ -1048,7 +1077,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		id.removeContext(context, db);
 		db.store(id);
 		
-		Logger.debug(this, "Removed context '" + context + "' from identity '" + id.getNickName() + "'");
+		Logger.debug(this, "Removed context '" + context + "' from identity '" + id.getNickname() + "'");
 	}
 
 	public void setProperty(String identity, String property, String value) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
@@ -1056,7 +1085,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		id.setProperty(db, property, value);
 		db.store(id);
 		
-		Logger.debug(this, "Added property '" + property + "=" + value + "' to identity '" + id.getNickName() + "'");
+		Logger.debug(this, "Added property '" + property + "=" + value + "' to identity '" + id.getNickname() + "'");
 	}
 	
 	public String getProperty(String identity, String property) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
@@ -1068,7 +1097,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		id.removeProperty(property, db);
 		db.store(id);
 		
-		Logger.debug(this, "Removed property '" + property + "' from identity '" + id.getNickName() + "'");
+		Logger.debug(this, "Removed property '" + property + "' from identity '" + id.getNickname() + "'");
 	}
 
 	public String getVersion() {
