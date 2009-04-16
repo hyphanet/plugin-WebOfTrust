@@ -154,7 +154,7 @@ public final class IntroductionPuzzleStore {
 	 * Used by the IntroductionServer for downloading solutions.
 	 */
 	@SuppressWarnings("unchecked")
-	protected synchronized List<IntroductionPuzzle> getUnsolvedByInserter(OwnIdentity inserter) {
+	protected synchronized ObjectSet<IntroductionPuzzle> getUnsolvedByInserter(OwnIdentity inserter) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
@@ -170,7 +170,7 @@ public final class IntroductionPuzzleStore {
 	 * Used by for checking whether new puzzles have to be inserted for a given OwnIdentity or can be downloaded from a given Identity.
 	 */
 	@SuppressWarnings({ "deprecation", "unchecked" })
-	protected synchronized List<IntroductionPuzzle> getOfTodayByInserter(Identity inserter) {
+	protected synchronized ObjectSet<IntroductionPuzzle> getOfTodayByInserter(Identity inserter) {
 		Date maxAge = new Date(CurrentTimeUTC.getYear()-1900, CurrentTimeUTC.getMonth(), CurrentTimeUTC.getDayOfMonth());
 		
 		Query q = mDB.query();
@@ -207,7 +207,7 @@ public final class IntroductionPuzzleStore {
 	 * List which was returned by it!
 	 */
 	@SuppressWarnings("unchecked")
-	protected synchronized List<IntroductionPuzzle> getUnsolvedPuzzles(PuzzleType puzzleType) {
+	protected synchronized ObjectSet<IntroductionPuzzle> getUnsolvedPuzzles(PuzzleType puzzleType) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mValidUntilTime").orderDescending();
@@ -226,7 +226,7 @@ public final class IntroductionPuzzleStore {
 	 * Used by the IntroductionClient for inserting solutions of solved puzzles.
 	 */
 	@SuppressWarnings("unchecked")
-	protected synchronized List<IntroductionPuzzle> getSolvedPuzzles() {
+	protected synchronized ObjectSet<IntroductionPuzzle> getSolvedPuzzles() {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mSolver").constrain(null).identity().not();
