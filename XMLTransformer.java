@@ -102,7 +102,7 @@ public final class XMLTransformer {
 		
 		synchronized(mWoT) {
 		synchronized(identity) {
-			identityElement.setAttribute("Name", identity.getNickName());
+			identityElement.setAttribute("Name", identity.getNickname());
 			identityElement.setAttribute("PublishesTrustList", Boolean.toString(identity.doesPublishTrustList()));
 			
 			/* Create the context Elements */
