@@ -13,9 +13,9 @@ import javax.imageio.ImageIO;
 
 import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.OwnIdentity;
-import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionPuzzleFactory;
 import plugins.WoT.introduction.IntroductionPuzzleStore;
+import plugins.WoT.introduction.OwnIntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WoT.introduction.captcha.kaptcha.impl.DefaultKaptcha;
 import plugins.WoT.introduction.captcha.kaptcha.util.Config;
@@ -33,7 +33,7 @@ import freenet.support.io.Closer;
 public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 
 	@Override
-	public IntroductionPuzzle generatePuzzle(IntroductionPuzzleStore store, OwnIdentity inserter) throws IOException {
+	public OwnIntroductionPuzzle generatePuzzle(IntroductionPuzzleStore store, OwnIdentity inserter) throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1024); /* TODO: find out the maximum size of the captchas and put it here */
 		try {
 			DefaultKaptcha captcha = new DefaultKaptcha();
@@ -44,7 +44,7 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 			
 			Date dateOfInsertion = CurrentTimeUTC.get();
 			synchronized(store) {
-				IntroductionPuzzle puzzle = new IntroductionPuzzle(inserter, PuzzleType.Captcha, "image/jpeg", out.toByteArray(), text, 
+				OwnIntroductionPuzzle puzzle = new OwnIntroductionPuzzle(inserter, PuzzleType.Captcha, "image/jpeg", out.toByteArray(), text, 
 						dateOfInsertion, store.getFreeIndex(inserter, dateOfInsertion));
 				
 				store.storeAndCommit(puzzle);

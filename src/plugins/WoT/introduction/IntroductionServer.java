@@ -1,15 +1,12 @@
-/*
- * This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.introduction;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.Collection;
 import java.util.Random;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -19,41 +16,38 @@ import plugins.WoT.Identity;
 import plugins.WoT.IdentityFetcher;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
-import plugins.WoT.exceptions.NotTrustedException;
+import plugins.WoT.XMLTransformer;
 import plugins.WoT.introduction.captcha.CaptchaFactory1;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
-import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientCallback;
-import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
-import freenet.node.PrioRunnable;
-import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
+import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
-import freenet.support.io.TempBucketFactory;
 
 /**
- * This class provides identity announcement for new identities; It uploads puzzles in certain time intervals and checks whether they were solved.
+ * This class provides identity announcement for new identities; It uploads puzzles in certain time intervals and checks whether they
+ * were solved.
  * 
- * @author xor
+ * For a summary of how introduction works please read the Javadoc of class IntroductionPuzzleStore.
+ * 
+ * @author xor (xor@freenetproject.org)
  */
-public final class IntroductionServer implements PrioRunnable, ClientCallback {
+public final class IntroductionServer extends TransferThread {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
 	private static final int THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
@@ -67,257 +61,170 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 
 	private WoT mWoT;
 	
-	private final IdentityFetcher mIdentityFetcher;
+	/** The container object which manages storage of the puzzles in the database, also used for synchronization */
+	private IntroductionPuzzleStore mPuzzleStore;
 	
 	
 	/* Objects from the node */
 	
-	/** A reference to the database */
-	private ObjectContainer db;
-
-	/** A reference the HighLevelSimpleClient used to perform inserts */
-	private HighLevelSimpleClient mClient;
-	
-	/** The TempBucketFactory used to create buckets from puzzles before insert */
-	private final TempBucketFactory mTBF;
-	
 	/** Random number generator */
 	private final Random mRandom;
-	private RequestClient requestClient;
-	private ClientContext clientContext;
 	
 	
 	/* Private objects */
 	
-	private Thread mThread;
-	
-	/** Used to tell the introduction server thread if it should stop */
-	private volatile boolean isRunning = false;
-	private volatile boolean shutdownFinished = false;
-	
-	private final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] { new CaptchaFactory1() };
-	
-	private final ArrayList<ClientGetter> mRequests = new ArrayList<ClientGetter>(PUZZLE_COUNT * 5); /* Just assume that there are 5 identities */
-	private final ArrayList<BaseClientPutter> mInserts = new ArrayList<BaseClientPutter>(PUZZLE_COUNT * 5); /* Just assume that there are 5 identities */
-	
+	private static final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] { new CaptchaFactory1() }; 
 
 	/**
 	 * Creates an IntroductionServer
 	 */
 	public IntroductionServer(WoT myWoT, IdentityFetcher myFetcher) {
+		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Introduction Server");
+		
 		mWoT = myWoT;
-		mIdentityFetcher = myFetcher;
-		
-		db = mWoT.getDB();
-		mClient = mWoT.getPluginRespirator().getHLSimpleClient();
-		mTBF = mWoT.getPluginRespirator().getNode().clientCore.tempBucketFactory;
+		mPuzzleStore = mWoT.getIntroductionPuzzleStore();
 		mRandom = mWoT.getPluginRespirator().getNode().fastWeakRandom;
-		requestClient = mWoT.getRequestClient();
-		clientContext = mWoT.getClientContext();
-		
-		isRunning = true;
-	}
-
-	public void run() {
-		Logger.debug(this, "Introduction server thread started.");
-		
-		mThread = Thread.currentThread();
-		try {
-			Thread.sleep(STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY)); // Let the node start up
-		}
-		catch (InterruptedException e)
-		{
-			mThread.interrupt();
-		}
-		
-		try {
-		while(isRunning) {
-			Thread.interrupted();
-			Logger.debug(this, "Introduction server loop running...");
-			
-			IntroductionPuzzle.deleteExpiredPuzzles(db);
-
-			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
-			while(identities.hasNext()) {
-				OwnIdentity identity = identities.next();
-				if(identity.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)) {
-					try {
-						Logger.debug(this, "Managing puzzles of " + identity.getNickName());
-						downloadSolutions(identity);
-						insertOldPuzzles(identity);
-						insertNewPuzzles(identity);
-						Logger.debug(this, "Managing puzzles finished.");
-					} catch (Exception e) {
-						Logger.error(this, "Puzzle management failed for " + identity.getNickName(), e);
-					}
-				}
-			}
-			db.commit();
-			Logger.debug(this, "Introduction server loop finished.");
-			
-			try {
-				Thread.sleep(THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD));
-			}
-			catch (InterruptedException e)
-			{
-				mThread.interrupt();
-				Logger.debug(this, "Introduction server loop interrupted.");
-			}
-		}
-		}
-		
-		finally {
-		cancelRequests();
-		synchronized (this) {
-			shutdownFinished = true;
-			Logger.debug(this, "Introduction server thread finished.");
-			notify();
-		}
-		}
+		start();
 	}
 	
+	@Override
+	protected Collection<ClientGetter> createFetchStorage() {
+		return new ArrayList<ClientGetter>(PUZZLE_COUNT * 5 + 1); /* Just assume that there are 5 identities */
+	}
+
+	@Override
+	protected Collection<BaseClientPutter> createInsertStorage() {
+		return new ArrayList<BaseClientPutter>(PUZZLE_COUNT * 5 + 1); /* Just assume that there are 5 identities */
+	}
+
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
 	
-	public void terminate() {
-		Logger.debug(this, "Stopping the introduction server...");
-		isRunning = false;
-		mThread.interrupt();
-		synchronized(this) {
-			while(!shutdownFinished) {
-				try {
-					wait();
-				}
-				catch (InterruptedException e) {
-					Thread.interrupted();
+	@Override
+	protected long getStartupDelay() {
+		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
+	}
+	
+	@Override
+	protected long getSleepTime() {
+		return THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
+	}
+
+	/**
+	 * Called by the superclass TransferThread after getStartupDelay() milliseconds and then after each getSleepTime() milliseconds.
+	 * Deletes old puzzles, downloads solutions of existing ones and inserts new ones.
+	 */
+	@Override
+	protected void iterate() {
+		mPuzzleStore.deleteExpiredPuzzles();
+
+		synchronized(mWoT) {
+			/* TODO: We might want to not lock all the time during captcha creation... figure out how long this takes ... */
+			
+			for(OwnIdentity identity : mWoT.getAllOwnIdentities()) {
+				if(identity.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)) {
+					try {
+						Logger.debug(this, "Managing puzzles of " + identity.getNickname());
+						downloadSolutions(identity);
+						generateNewPuzzles(identity);
+						insertPuzzles(identity);
+						Logger.debug(this, "Managing puzzles finished.");
+					} catch (Exception e) {
+						Logger.error(this, "Puzzle management failed for " + identity.getNickname(), e);
+					}
 				}
 			}
 		}
-		Logger.debug(this, "Stopped the introduction server.");
 	}
-	
-	/* Private functions */
-	
-	private void cancelRequests() {
-		Logger.debug(this, "Trying to stop all requests & inserts");
-		
-		synchronized(mRequests) {
-			Iterator<ClientGetter> r = mRequests.iterator();
-			int rcounter = 0;
-			while (r.hasNext()) { r.next().cancel(); r.remove(); ++rcounter; }
-			Logger.debug(this, "Stopped " + rcounter + " current requests");
-		}
 
-		synchronized(mInserts) {
-			Iterator<BaseClientPutter> i = mInserts.iterator();
-			int icounter = 0;
-			while (i.hasNext()) { i.next().cancel(); i.remove(); ++icounter; }
-			Logger.debug(this, "Stopped " + icounter + " current inserts");
-		}
-	}
-	
-	private void removeRequest(ClientGetter g) {
-		synchronized(mRequests) {
-			//g.cancel(); /* FIXME: is this necessary ? */
-			mRequests.remove(g);
-		}
-		Logger.debug(this, "Removed request for " + g.getURI());
-	}
-	
-	private void removeInsert(BaseClientPutter p) {
-		synchronized(mInserts) {
-			//p.cancel(); /* FIXME: is this necessary ? */
-			mInserts.remove(p);
-		}
-		Logger.debug(this, "Removed insert for " + p.getURI());
-	}
+	/* Primary worker functions */
 		
-	private synchronized void downloadSolutions(OwnIdentity identity) throws FetchException {
-		ObjectSet<IntroductionPuzzle> puzzles = IntroductionPuzzle.getByInserter(db, identity);
-		
-		Logger.debug(this, "Identity " + identity.getNickName() + " has " + puzzles.size() + " puzzles stored. Trying to fetch solutions ...");
-
+	private synchronized void downloadSolutions(OwnIdentity inserter) throws FetchException {
 		/* TODO: We restart all requests in every iteration. Decide whether this makes sense or not, if not add code to re-use requests for
 		 * puzzles which still exist.
 		 * I think it makes sense to restart them because there are not many puzzles and therefore not many requests. */
-		synchronized(mRequests) {
-			for(int idx=0; idx < mRequests.size(); ++idx) {
-				mRequests.get(idx).cancel();
-				mRequests.remove(idx);
+		abortFetches();
+		
+		synchronized(mPuzzleStore) {
+			ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedByInserter(inserter);
+			Logger.debug(this, "Identity " + inserter.getNickname() + " has " + puzzles.size() + " unsolved puzzles stored. " + 
+					"Trying to fetch solutions ...");
+			
+			for(OwnIntroductionPuzzle p : puzzles) {
+				FetchContext fetchContext = mClient.getFetchContext();
+				/* FIXME: Toad: Are these parameters correct? */
+				fetchContext.maxSplitfileBlockRetries = -1; // retry forever
+				fetchContext.maxNonSplitfileRetries = -1; // retry forever
+				ClientGetter g = mClient.fetch(p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE, mWoT.getRequestClient(),
+						this, fetchContext);
+				g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext, null); 
+				addFetch(g);
+				Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
 			}
 		}
+	}
+	
+	private synchronized void generateNewPuzzles(OwnIdentity identity) throws IOException {
+		int puzzlesToGenerate = PUZZLE_COUNT - mPuzzleStore.getOfTodayByInserter(identity).size();
+		Logger.debug(this, "Trying to generate " + puzzlesToGenerate + " new puzzles from " + identity.getNickname());
 		
-		for(IntroductionPuzzle p : puzzles) {
-			FetchContext fetchContext = mClient.getFetchContext();
-			fetchContext.maxSplitfileBlockRetries = -1; // retry forever
-			fetchContext.maxNonSplitfileRetries = -1; // retry forever
-			ClientGetter g = mClient.fetch(p.getSolutionURI(), -1, requestClient, this, fetchContext);
-			g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, clientContext, null); /* FIXME: decide which one to use */
-			synchronized(mRequests) {
-				mRequests.add(g);
-			}
-			Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
+		while(puzzlesToGenerate > 0) {
+			mPuzzleFactories[mRandom.nextInt(mPuzzleFactories.length)].generatePuzzle(mPuzzleStore, identity);
+			--puzzlesToGenerate;
 		}
 		
-		db.commit();
+		Logger.debug(this, "Finished generating puzzles from " + identity.getNickname());
 	}
 	
-	private synchronized void insertNewPuzzles(OwnIdentity identity) {
-		int puzzlesToInsert = PUZZLE_COUNT - IntroductionPuzzle.getRecentByInserter(db, identity).size();
-		Logger.debug(this, "Trying to insert " + puzzlesToInsert + " new puzzles from " + identity.getNickName());
-		
-		while(puzzlesToInsert > 0) {
-			try {
-				insertNewPuzzle(identity);
+	/**
+	 * Synchronized so that the onSuccess() function does not mark puzzles as inserted while we call insertPuzzle.
+	 */
+	private synchronized void insertPuzzles(OwnIdentity identity) throws IOException, InsertException {
+		synchronized(mPuzzleStore) {
+			ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedOwnPuzzlesByInserter(identity); 
+			Logger.debug(this, "Trying to insert " + puzzles.size() + " puzzles from " + identity.getNickname());
+			for(OwnIntroductionPuzzle p : puzzles) {
+				try {
+					insertPuzzle(p);
+				}
+				catch(Exception e) {
+					Logger.error(this, "Puzzle insert failed.", e);
+				}
 			}
-			catch(Exception e) {
-				Logger.error(this, "Error while inserting puzzle", e);
-			}
-			--puzzlesToInsert;
+			Logger.debug(this, "Finished inserting puzzles from " + identity.getNickname());
 		}
+	}
+	
+	/* "Slave" functions" */
+	
+	/**
+	 * Not synchronized because it's caller is synchronized already.
+	 */
+	private void insertPuzzle(OwnIntroductionPuzzle puzzle)
+		throws IOException, InsertException, TransformerException, ParserConfigurationException  {
 		
-		Logger.debug(this, "Finished inserting puzzles from " + identity.getNickName());
-	}
-	
-	private synchronized void insertOldPuzzles(OwnIdentity identity) throws IOException, InsertException, TransformerException, ParserConfigurationException {
-		List<IntroductionPuzzle> puzzles = IntroductionPuzzle.getRecentByInserter(db, identity); /* FIXME: Pass PUZZLE_REINSERT_MAX_AGE */
-		Logger.debug(this, "Trying to insert " + puzzles.size() + " old puzzles from " + identity.getNickName());
-		for(IntroductionPuzzle p : puzzles) {
-			insertPuzzle(identity, p);
-		}
-		Logger.debug(this, "Finished inserting puzzles from " + identity.getNickName());
-	}
-	
-	private synchronized void insertNewPuzzle(OwnIdentity identity) throws IOException, InsertException, TransformerException, ParserConfigurationException {
-		IntroductionPuzzle p = mPuzzleFactories[mRandom.nextInt(mPuzzleFactories.length)].generatePuzzle(db, identity);
-		insertPuzzle(identity, p);
-	}
-	
-	private synchronized void insertPuzzle(OwnIdentity identity, IntroductionPuzzle p) throws IOException, InsertException, TransformerException, ParserConfigurationException {
-		Bucket tempB = mTBF.makeBucket(10 * 1024); /* TODO: set to a reasonable value */
+		assert(!puzzle.wasInserted());
+		
+		Bucket tempB = mTBF.makeBucket(XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE);
 		OutputStream os = null;
 		
 		try {
 			os = tempB.getOutputStream();
-			p.exportToXML(os);
+			mWoT.getIdentityXML().exportIntroductionPuzzle(puzzle, os); /* Provides synchronization on the puzzle */
 			os.close(); os = null;
 			tempB.setReadOnly();
 
-			ClientMetadata cmd = new ClientMetadata("text/xml");
-			InsertBlock ib = new InsertBlock(tempB, cmd, p.getInsertURI());
+			/* FIXME: Toad: Are these parameters correct? */
+			InsertBlock ib = new InsertBlock(tempB, null, puzzle.getInsertURI());
 			InsertContext ictx = mClient.getInsertContext(true);
 
-			/* FIXME: are these parameters correct? */
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
-			synchronized(mInserts) {
-				mInserts.add(pu);
-			}
+			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext ,null);
+			addInsert(pu);
 			tempB = null;
 
-			p.store(db);
-			Logger.debug(this, "Started insert of puzzle from " + identity.getNickName());
+			Logger.debug(this, "Started insert of puzzle from " + puzzle.getInserter().getNickname());
 		}
 		finally {
 			if(tempB != null)
@@ -326,69 +233,90 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 		}
 	}
 	
-	/**
-	 * Called when the node can't fetch a file OR when there is a newer edition.
-	 * In our case, called when there is no solution to a puzzle in the network.
+	/** 
+	 * Called when a puzzle was successfully inserted.
+	 * 
+	 * Synchronized so that we do not insert it again accidentally, so we can keep the assert(!puzzle.wasInserted()) in insertPuzzle().
 	 */
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-		Logger.normal(this, "Downloading puzzle solution " + state.getURI() + " failed: ", e);
-		removeRequest(state);
+	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container)
+	{
+		try {
+			synchronized(mPuzzleStore) {
+				OwnIntroductionPuzzle puzzle = mPuzzleStore.getOwnPuzzleByURI(state.getURI());
+				puzzle.setInserted();
+				mPuzzleStore.storeAndCommit(puzzle);
+				Logger.debug(this, "Successful insert of puzzle from " + puzzle.getInserter().getNickname() + ": " + puzzle.getRequestURI());
+			}
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error", e);
+		}
+		finally {
+			removeInsert(state);
+		}
+	}
+	
+	/**
+	 * Called when the insertion of a puzzle failed.
+	 * 
+	 * Not synchronized because it does nothing and removeInsert() is synchronized already.
+	 */
+	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
+	{
+		try {
+			OwnIntroductionPuzzle p = mPuzzleStore.getOwnPuzzleByURI(state.getURI());
+			Logger.error(this, "Insert of puzzle failed from " + p.getInserter().getNickname() + ": " + p.getRequestURI(), e);
+		}
+		catch(Exception ex) {
+			Logger.error(this, "Error", e);
+		}
+		finally {
+			removeInsert(state);
+		}
 	}
 
 	/**
 	 * Called when a puzzle solution is successfully fetched. We then add the identity which solved the puzzle.
+	 * 
+	 * Not synchronized because the worst thing which could happen is that we re-download a solution. Any other ideas?
 	 */
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched puzzle solution: " + state.getURI());
 
 		try {
-			db.commit();
-			IntroductionPuzzle p = IntroductionPuzzle.getBySolutionURI(db, state.getURI());
-			synchronized(p) {
-				p.setSolved();
-				p.store(db);
-				OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
-				Identity newIdentity = Identity.importIntroductionFromXML(db, mIdentityFetcher, result.asBucket().getInputStream());
-				Logger.debug(this, "Imported identity introduction for identity " + newIdentity.getRequestURI());
-				try {
-					puzzleOwner.getGivenTrust(newIdentity, db);
-					Logger.debug(this, "Not setting introduction trust, the identity is already trusted.");
-				}
-				catch(NotTrustedException e) {
-					puzzleOwner.setTrust(db, newIdentity, (byte)0, "Trust received by solving a captcha."); /* FIXME: We need null trust. Giving trust by solving captchas is a REALLY bad idea */
+			synchronized(mPuzzleStore) {
+				OwnIntroductionPuzzle p = mPuzzleStore.getOwnPuzzleBySolutionURI(state.getURI());
+				synchronized(p) {
+					OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
+					Identity newIdentity = mWoT.getIdentityXML().importIntroduction(puzzleOwner, result.asBucket().getInputStream());
+					Logger.debug(this, "Imported identity introduction for identity " + newIdentity.getRequestURI() +
+							" to the OwnIdentity " + puzzleOwner);
+					p.setSolved();
+					mPuzzleStore.storeAndCommit(p);
 				}
 			}
-		
-			removeRequest(state);
-		} catch (Exception e) { 
+		}
+		catch (Exception e) { 
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
+		}
+		finally {
+			removeFetch(state);
 		}
 	}
 	
-	/** 
-	 * Called when a puzzle was successfully inserted.
-	 */
-	public void onSuccess(BaseClientPutter state, ObjectContainer container)
-	{
-		try {
-			IntroductionPuzzle p = IntroductionPuzzle.getByRequestURI(db, state.getURI());
-			Logger.debug(this, "Successful insert of puzzle from " + p.getInserter().getNickName() + ": " + p.getRequestURI());
-		} catch(Exception e) { Logger.error(this, "Error", e); }
-		
-		removeInsert(state);
-	}
-	
 	/**
-	 * Called when the insertion of a puzzle failed.
+	 * Called when the node can't fetch a file OR when there is a newer edition.
+	 * In our case, called when there is no solution to a puzzle in the network.
+	 * 
+	 * Not synchronized because it does nothing and removeFetch() is synchronized already.
 	 */
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
-	{
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		try {
-			IntroductionPuzzle p = IntroductionPuzzle.getByRequestURI(db, state.getURI());
-			Logger.debug(this, "Insert of puzzle failed from " + p.getInserter().getNickName() + ": " + p.getRequestURI(), e);
-		} catch(Exception ex) { Logger.error(this, "Error", e); }
-		
-		removeInsert(state);
+			Logger.debug(this, "Downloading puzzle solution " + state.getURI() + " failed: ", e);
+		}
+		finally {
+			removeFetch(state);
+		}
 	}
 
 	/* Not needed functions from the ClientCallback interface */
@@ -401,4 +329,5 @@ public final class IntroductionServer implements PrioRunnable, ClientCallback {
 
 	/** Called when freenet.async thinks that the request should be serialized to disk, if it is a persistent request. */
 	public void onMajorProgress(ObjectContainer container) {}
+
 }

@@ -15,9 +15,11 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.xml.transform.TransformerException;
 
+import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
+import plugins.WoT.XMLTransformer;
 import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
@@ -25,13 +27,10 @@ import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
-import com.db4o.query.Query;
 
-import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -46,8 +45,6 @@ import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
-/* FIXME XXX: The file is only compile fixed (almost) to work with the new DB query methods. The new synchronization is missing!
- * Verify all synchronization, especially add synchronization where lists are used! */
 
 /**
  * This class allows the user to announce new identities:
@@ -55,7 +52,7 @@ import freenet.support.io.NativeThread;
  * 
  * For a summary of how introduction works please read the Javadoc of class IntroductionPuzzleStore.
  * 
- * @author xor
+ * @author xor (xor@freenetproject.org)
  */
 public final class IntroductionClient extends TransferThread  {
 	
@@ -89,18 +86,10 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/* FIXME FIXME FIXME: Use LRUQueue instead. ArrayBlockingQueue does not use a Hashset for contains()! */
 	/* FIXME: figure out whether my assumption that this is just the right size is correct */
-	private final ArrayBlockingQueue<Identity> mIdentities = new ArrayBlockingQueue<Identity>(PUZZLE_POOL_SIZE);
+	private final ArrayBlockingQueue<Identity> mIdentities = new ArrayBlockingQueue<Identity>(PUZZLE_POOL_SIZE + 1);
 
 	/**
-	 * Creates an IntroductionServer
-	 * 
-	 * @param db
-	 *            A reference to the database
-	 * @param client
-	 *            A reference to an {@link HighLevelSimpleClient} to perform
-	 *            inserts
-	 * @param tbf
-	 *            Needed to create buckets from Identities before insert
+	 * Creates an IntroductionClient
 	 */
 	public IntroductionClient(WoT myWoT) {
 		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Introduction Client");
@@ -124,15 +113,15 @@ public final class IntroductionClient extends TransferThread  {
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
-	
-	@Override
-	protected long getSleepTime() {
-		return THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
-	}
 
 	@Override
 	protected long getStartupDelay() {
 		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
+	}
+
+	@Override
+	protected long getSleepTime() {
+		return THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
 	}
 
 	/**
@@ -177,6 +166,7 @@ public final class IntroductionClient extends TransferThread  {
 					}
 				}
 				catch(NotInTrustTreeException e) {
+					Logger.error(this, "WTF?", e);
 				}
 			}
 			
@@ -202,13 +192,7 @@ public final class IntroductionClient extends TransferThread  {
 	}
 
 	private synchronized void downloadPuzzles() {
-		Query q = db.query();
-		q.constrain(Identity.class);
-		q.constrain(OwnIdentity.class).not();
-		/* FIXME: As soon as identities announce that they were online every day, uncomment the following line */
-		/* q.descend("mLastChangedDate").constrain(new Date(CurrentTimeUTC.getInMillis() - 1 * 24 * 60 * 60 * 1000)).greater(); */
-		q.descend("mLastChangedDate").orderDescending(); /* This should choose identities in a sufficiently random order */
-		ObjectSet<Identity> allIdentities = q.execute();
+		ObjectSet<Identity> allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification(); 
 		ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(PUZZLE_POOL_SIZE);
 		
 		int counter = 0;
@@ -260,20 +244,27 @@ public final class IntroductionClient extends TransferThread  {
 	}
 	
 	private synchronized void insertSolutions() {
-		ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getSolvedPuzzles();
-		
-		for(IntroductionPuzzle p : puzzles) {
-			try {
-				/* FIXME: This function is called every time the IntroductionClient thread iterates. Do not always re-insert the solution */
-				insertPuzzleSolution(p);
-			}
-			catch(Exception e) {
-				Logger.error(this, "Inserting solution for " + p + " failed.");
+		abortInserts();
+		synchronized(mPuzzleStore) {
+			ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedSolvedPuzzles();
+			
+			for(IntroductionPuzzle p : puzzles) {
+				try {
+					insertPuzzleSolution(p);
+				}
+				catch(Exception e) {
+					Logger.error(this, "Inserting solution for " + p + " failed.");
+				}
 			}
 		}
 	}
 	
-	private synchronized void insertPuzzleSolution(IntroductionPuzzle puzzle) throws IOException, TransformerException, InsertException {
+	/**
+	 * Not synchronized because its caller is synchronized already.
+	 */
+	private void insertPuzzleSolution(IntroductionPuzzle puzzle) throws IOException, TransformerException, InsertException {
+		assert(!puzzle.wasInserted());
+		
 		Bucket tempB = mTBF.makeBucket(1024); /* TODO: Set to a reasonable value */
 		OutputStream os = null;
 		
@@ -283,15 +274,14 @@ public final class IntroductionClient extends TransferThread  {
 			os.close(); os = null;
 			tempB.setReadOnly();
 
-			ClientMetadata cmd = new ClientMetadata("text/xml");
-			FreenetURI solutionURI = puzzle.getSolutionURI(puzzle.getSolution());
-			InsertBlock ib = new InsertBlock(tempB, cmd, solutionURI);
+			FreenetURI solutionURI = puzzle.getSolutionURI();
+			InsertBlock ib = new InsertBlock(tempB, null, solutionURI);
 
 			InsertContext ictx = mClient.getInsertContext(true);
 			
-			/* FIXME: Are these parameters correct? */
+			/* FIXME: Toad: Are these parameters correct? */
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext, mNode.db);
+			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext, null);
 			addInsert(pu);
 			tempB = null;
 			
@@ -306,11 +296,16 @@ public final class IntroductionClient extends TransferThread  {
 		
 	/**
 	 * Finds a random index of a puzzle from the inserter which we did not download yet and downloads it.
+	 * 
+	 * Not synchronized because its caller is synchronized already.
 	 */
 	private void downloadPuzzle(Identity inserter) throws FetchException {
 		downloadPuzzle(inserter, mRandom.nextInt(getIdentityPuzzleCount(inserter))); 
 	}
 	
+	/**
+	 * Not synchronized because its caller is synchronized already.
+	 */
 	private void downloadPuzzle(Identity inserter, int index) throws FetchException {
 		int inserterPuzzleCount = getIdentityPuzzleCount(inserter);
 		assert(index < inserterPuzzleCount+1);
@@ -318,31 +313,34 @@ public final class IntroductionClient extends TransferThread  {
 		/* We do that so that onSuccess() can just call this function with the index increased by 1 */
 		index %= inserterPuzzleCount;
 		
-		Date date = new Date();
+		Date date = CurrentTimeUTC.get();
 		FreenetURI uri;
 		
-		if(mPuzzleStore.getOfTodayByInserter(inserter).size() >= MAX_PUZZLES_PER_IDENTITY)
-			return;
-		
-		/* Find a free index */
-		int count = 0;
-		while(mPuzzleStore.getByInserterDateIndex(inserter, date, index) != null && count < MAX_PUZZLES_PER_IDENTITY) {
-			index = (index+1) % inserterPuzzleCount;
-			++count;
-		}
-		
-		/* TODO: Maybe also use the above loop which finds a free index for counting the recent puzzles accurately. */ 
-		if(count >= MAX_PUZZLES_PER_IDENTITY) {	/* We have all puzzles of this identity */
-			Logger.error(this, "SHOULD NOT HAPPEN: getOfTodayByInserter() returned less puzzles than getByInerterDayIndex().");
-			return;
+		synchronized(mPuzzleStore) {
+			if(mPuzzleStore.getOfTodayByInserter(inserter).size() >= MAX_PUZZLES_PER_IDENTITY)
+				return;
+			
+			/* Find a free index */
+			int count = 0;
+			while(mPuzzleStore.getByInserterDateIndex(inserter, date, index) != null && count < inserterPuzzleCount) {
+				index = (index+1) % inserterPuzzleCount;
+				++count;
+			}
+			
+			/* TODO: Maybe also use the above loop which finds a free index for counting the recent puzzles accurately. */ 
+			if(count >= MAX_PUZZLES_PER_IDENTITY) {	/* We have all puzzles of this identity */
+				Logger.error(this, "SHOULD NOT HAPPEN: getOfTodayByInserter() returned less puzzles than getByInerterDayIndex().");
+				return;
+			}
 		}
 		
 		uri = IntroductionPuzzle.generateRequestURI(inserter, date, index);
 		
 		FetchContext fetchContext = mClient.getFetchContext();
+		/* FIXME: Toad: Are these parameters correct? */
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
-		ClientGetter g = mClient.fetch(uri, -1, mWoT.getRequestClient(), this, fetchContext);
+		ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mWoT.getRequestClient(), this, fetchContext);
 		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 		addFetch(g);
 		synchronized(mIdentities) {
@@ -353,9 +351,13 @@ public final class IntroductionClient extends TransferThread  {
 				} catch(InterruptedException e) {}
 			}
 		}
+		
 		Logger.debug(this, "Trying to fetch puzzle from " + uri.toString());
 	}
 	
+	/**
+	 * Get the amount of puzzles a given identity inserts.
+	 */
 	public int getIdentityPuzzleCount(Identity i) {
 		try {
 			return Math.max(Integer.parseInt(i.getProperty("IntroductionPuzzleCount")), 0);
@@ -367,6 +369,8 @@ public final class IntroductionClient extends TransferThread  {
 
 	/**
 	 * Called when a puzzle is successfully fetched.
+	 * 
+	 * Not synchronized because the worst thing which can happen is that we donwload it again.
 	 */
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched puzzle: " + state.getURI());
@@ -389,6 +393,8 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * In our case, called when there is no puzzle available.
+	 * 
+	 * Not sychronized because it does nothing and removeFetch() is synchronized already.
 	 */
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		try {
@@ -401,11 +407,21 @@ public final class IntroductionClient extends TransferThread  {
 
 	/**
 	 * Called when a puzzle solution is successfully inserted.
+	 * 
+	 * Synchronized so that we do not insert it again accidentally, so we can keep the assert(!puzzle.wasInserted()) in insertPuzzle().
 	 */
-	public void onSuccess(BaseClientPutter state, ObjectContainer container)
+	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
 		try {
-			Logger.debug(this, "Successful insert of puzzle solution at " + state.getURI());
+			synchronized(mPuzzleStore) {
+				IntroductionPuzzle puzzle = mPuzzleStore.getPuzzleByURI(state.getURI());
+				puzzle.setInserted();
+				mPuzzleStore.storeAndCommit(puzzle);
+				Logger.debug(this, "Successful insert of puzzle solution at " + state.getURI());
+			}
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error", e);
 		}
 		finally {
 			removeInsert(state);
@@ -414,6 +430,8 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/**
 	 * Calling when inserting a puzzle solution failed.
+	 * 
+	 * Not synchronized because the worst thing which can happen is that we donwload it again.
 	 */
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container)
 	{
