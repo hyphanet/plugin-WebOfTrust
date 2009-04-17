@@ -91,6 +91,9 @@ public final class Score {
 	
 	@Override
 	public synchronized String toString() {
+		/* We do not synchronize on target and TreeOwner because nickname changes are not allowed, the only thing which can happen
+		 * is that we get a blank nickname if it has not been received yet, that is not severe though.*/
+		
 		return getTarget().getNickname() + " has " + getScore() + " points in " + getTreeOwner().getNickname() + "'s trust tree" +
 				"(rank : " + getRank() + ", capacity : " + getCapacity() + ")";
 	}
@@ -112,6 +115,7 @@ public final class Score {
 	/**
 	 * @return the numeric value of this Score
 	 */
+	/* XXX: Rename to getValue */
 	public synchronized int getScore() {
 		return mValue;
 	}
