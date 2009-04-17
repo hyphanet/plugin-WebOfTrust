@@ -2,7 +2,6 @@ package plugins.WoT.introduction;
 
 import java.text.ParseException;
 import java.util.Date;
-import java.util.List;
 
 import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.Identity;
@@ -24,7 +23,7 @@ import freenet.support.Logger;
  * Used by the IntroductionServer and IntroductionClient for managging puzzles, not to be used by the UI directly.
  * 
  * The functions here are roughly ordered by the logical order in which they are needed in the plugin, here you can get a good overview:
- * 1. The IntroductionServer inserts puzzles (getFreeIndex).
+ * 1. The IntroductionServer inserts puzzles after asking the IntroductionPuzzleFactories for creating new ones (getFreeIndex).
  * 2. The IntroductionServer tries to download solutions of puzzles which it has inserted (getUnsolvedByInserter).
  * 3. The IntroductionServer checks whether it has to insert new puzzles and the client checks whether it can download new ones from a 
  * 		given identity (getOfTodayByInserter).
@@ -132,10 +131,10 @@ public final class IntroductionPuzzleStore {
 	}
 
 	/**
-	 * Used by the IntroductionServer for inserting new puzzles.
+	 * Used by the IntroductionPuzzleFactories for creating new puzzles.
 	 */
 	@SuppressWarnings({ "deprecation", "unchecked" })
-	protected synchronized int getFreeIndex(OwnIdentity inserter, Date date) {
+	public synchronized int getFreeIndex(OwnIdentity inserter, Date date) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
