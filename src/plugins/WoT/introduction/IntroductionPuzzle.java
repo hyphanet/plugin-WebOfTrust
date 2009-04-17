@@ -7,12 +7,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
 /**

@@ -31,6 +31,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.introduction.IntroductionPuzzle;
 
@@ -51,6 +52,16 @@ import freenet.support.Logger;
 public final class XMLTransformer {
 
 	private static final int XML_FORMAT_VERSION = 1;
+	
+	/**
+	 * Used by the IntroductionServer to limit the size of fetches to prevent DoS.
+	 */
+	public static final int MAX_INTRODUCTION_BYTE_SIZE = 2 * 1024; /* FIXME: Adjust */
+	
+	/**
+	 * Used by the IntroductionClient to limit the size of fetches to prevent DoS. 
+	 */
+	public static final int MAX_INTRODUCTIONPUZZLE_BYTE_SIZE = 32 * 1024; /* FIXME: Adjust */
 	
 	private final WoT mWoT;
 	
@@ -298,7 +309,9 @@ public final class XMLTransformer {
 	 * @throws IOException 
 	 * @throws SAXException 
 	 */
-	public synchronized Identity importIntroduction(InputStream xmlInputStream) throws InvalidParameterException, SAXException, IOException {
+	public synchronized Identity importIntroduction(OwnIdentity puzzleOwner, InputStream xmlInputStream)
+		throws InvalidParameterException, SAXException, IOException {
+		
 		Document xml = mDocumentBuilder.parse(xmlInputStream);
 		Element identityElement = (Element)xml.getElementsByTagName("Identity").item(0);
 		
@@ -307,21 +320,29 @@ public final class XMLTransformer {
 		
 		FreenetURI identityURI = new FreenetURI(identityElement.getAttribute("URI"));
 		
-		Identity identity;
+		Identity newIdentity;
 		
 		synchronized(mWoT) {
 			try {
-				identity = mWoT.getIdentityByURI(identityURI);
-				Logger.minor(this, "Imported introduction for an already existing identity: " + identity);
+				newIdentity = mWoT.getIdentityByURI(identityURI);
+				Logger.minor(this, "Imported introduction for an already existing identity: " + newIdentity);
 			}
 			catch (UnknownIdentityException e) {
-				identity = new Identity(identityURI, null, false);
-				mWoT.storeAndCommit(identity);
-				mWoT.getIdentityFetcher().fetch(identity);
+				newIdentity = new Identity(identityURI, null, false);
+				mWoT.storeAndCommit(newIdentity);
+				try {
+					mWoT.getTrust(puzzleOwner, newIdentity); /* Double check ... */
+					Logger.error(newIdentity, "The identity is already trusted even though it did not exist!");
+				}
+				catch(NotTrustedException ex) {
+					/* FIXME: We need null trust. Giving trust by solving captchas is a REALLY bad idea... */
+					mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");
+					mWoT.getIdentityFetcher().fetch(newIdentity);
+				}
 			}
 		}
 
-		return identity;
+		return newIdentity;
 	}
 
 	public synchronized void exportIntroductionPuzzle(IntroductionPuzzle puzzle, OutputStream os)

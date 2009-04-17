@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import plugins.WoT.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 

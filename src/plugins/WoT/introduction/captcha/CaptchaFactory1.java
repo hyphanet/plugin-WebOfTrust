@@ -11,7 +11,6 @@ import java.util.Properties;
 
 import javax.imageio.ImageIO;
 
-import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.introduction.IntroductionPuzzleFactory;
 import plugins.WoT.introduction.IntroductionPuzzleStore;
@@ -19,6 +18,7 @@ import plugins.WoT.introduction.OwnIntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WoT.introduction.captcha.kaptcha.impl.DefaultKaptcha;
 import plugins.WoT.introduction.captcha.kaptcha.util.Config;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.io.Closer;
 
 /**

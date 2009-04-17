@@ -15,7 +15,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.xml.transform.TransformerException;
 
-import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
@@ -39,6 +38,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestStarter;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
@@ -270,7 +270,7 @@ public final class IntroductionClient extends TransferThread  {
 		
 		try {
 			os = tempB.getOutputStream();
-			mWoT.getIdentityXML().exportIntroduction(puzzle.getSolver(), os);
+			mWoT.getXMLTransformer().exportIntroduction(puzzle.getSolver(), os);
 			os.close(); os = null;
 			tempB.setReadOnly();
 
@@ -376,7 +376,7 @@ public final class IntroductionClient extends TransferThread  {
 		Logger.debug(this, "Fetched puzzle: " + state.getURI());
 
 		try {
-			IntroductionPuzzle puzzle = mWoT.getIdentityXML().importIntroductionPuzzle(state.getURI(), result.asBucket().getInputStream());
+			IntroductionPuzzle puzzle = mWoT.getXMLTransformer().importIntroductionPuzzle(state.getURI(), result.asBucket().getInputStream());
 			/* FIXME: Add logic to call this only once for every few puzzles fetched not for every single one! */
 			mPuzzleStore.deleteOldestUnsolvedPuzzles(PUZZLE_POOL_SIZE);
 			

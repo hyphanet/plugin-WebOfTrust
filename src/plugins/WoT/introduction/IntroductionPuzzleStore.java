@@ -3,7 +3,6 @@ package plugins.WoT.introduction;
 import java.text.ParseException;
 import java.util.Date;
 
-import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
@@ -15,6 +14,7 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
 
