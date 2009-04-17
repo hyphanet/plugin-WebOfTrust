@@ -27,6 +27,6 @@ public abstract class IntroductionPuzzleFactory {
 	 * @return The new puzzle.
 	 * @throws IOException
 	 */
-	public abstract IntroductionPuzzle generatePuzzle(IntroductionPuzzleStore store, OwnIdentity inserter) throws IOException;
+	public abstract OwnIntroductionPuzzle generatePuzzle(IntroductionPuzzleStore store, OwnIdentity inserter) throws IOException;
 
 }

@@ -6,7 +6,6 @@ package plugins.WoT.introduction;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.UUID;
 
 import plugins.WoT.CurrentTimeUTC;
 import plugins.WoT.Identity;
@@ -16,19 +15,23 @@ import plugins.WoT.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
-public final class IntroductionPuzzle {
+/**
+ * An introduction puzzle is a puzzle (for example a CAPTCHA) which can be solved by a new identity to get onto the trust list
+ * of already existing identities. This is the only way to get onto the web of trust if you do not know someone who will add you manually.
+ */
+public class IntroductionPuzzle {
 	
 	public static enum PuzzleType { Captcha };
 	
 	public static final String INTRODUCTION_CONTEXT = "Introduction";
 	public static final int MINIMAL_SOLUTION_LENGTH = 5;
 	
-	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	protected static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	
 	/* Included in XML: */
 	
 	/**
-	 * The ID of the puzzle is constructed as the concatenation of the  ID of the inserter and a random UUID
+	 * The ID of the puzzle is constructed as: random UUID + "@" + ID of the inserter. 
 	 * This has to be done to prevent malicious users from inserting puzzles with the IDs of puzzles which someone else has already inserted.
 	 */
 	private final String mID;
@@ -43,34 +46,44 @@ public final class IntroductionPuzzle {
 	
 	/* Not included in XML, decoded from URI: */
 	
+	/**
+	 * The inserter of the puzzle. If it is an OwnIdentity then this is a locally generated puzzle.
+	 */
 	private final Identity mInserter;
 	
 	private final Date mDateOfInsertion;
 	
 	private final int mIndex;
-	
-	/* Supplied at creation time or by user: */
-
-	/**
-	 * We store the solver of the puzzle so that we can insert the solution even if the node is shutdown directly after solving puzzles.
-	 */
-	private OwnIdentity mSolver = null;
-	
-	private String mSolution = null;
-
 
 	/**
 	 * Set to true after it was used for introducing a new identity. We keep used puzzles in the database until they expire for the purpose of
 	 * being able to figure out free index values of new puzzles. Storing a few KiB for some days will not hurt.
 	 */
-	private boolean iWasSolved = false;
+	protected boolean mWasSolved;
+	
+	/* Supplied at creation time or by user: */
+
+	/**
+	 * The solution of the puzzle.
+	 */
+	protected String mSolution;
+	
+	/**  
+	 * We store the solver of the puzzle so that we can insert the solution even if the node is shutdown directly after solving puzzles.
+	 */
+	protected OwnIdentity mSolver;
+	
+	/**
+	 * Set to true after the solution was inserted (for OwnIntroductionPuzzles after the puzzle was inserted.)
+	 */
+	protected boolean mWasInserted; 
 	
 	/**
 	 * Get a list of fields which the database should create an index on.
 	 */
 	public static String[] getIndexedFields() {
 		/* FIXME: Find out whether indexes are sorted, if not, remove the date and validUntilTime */
-		return new String[] {"mID", "mInserter", "mDateOfInsertion", "mValidUntilTime", "mSolver"};
+		return new String[] {"mID", "mInserter", "mDateOfInsertion", "mValidUntilTime", "mWasSolved", "mWasInserted"};
 	}
 	
 	/**
@@ -90,71 +103,20 @@ public final class IntroductionPuzzle {
 		mInserter = newInserter;
 		mType = newType;
 		mMimeType = newMimeType;
-		mData = newData;
-		mSolution = null;
 		mDateOfInsertion = new Date(myDateOfInsertion.getYear(), myDateOfInsertion.getMonth(), myDateOfInsertion.getDate());
 		mValidUntilTime = myValidUntilTime;
 		mIndex = myIndex;
-		
+		mData = newData;
+		mWasSolved = false; mSolution = null; mSolver = null;
+		mWasInserted = false;
+
 		if(checkConsistency() == false)
 			throw new IllegalArgumentException("Corrupted puzzle received.");
 	}
 	
 	/**
-	 * For construction of a puzzle which is meant to be inserted.
-	 * @param newType
-	 * @param newData
+	 * Used by the IntroductionClient for guessing the request URIs of puzzles to be able to download them.
 	 */
-	public IntroductionPuzzle(Identity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
-			Date newDateOfInsertion, int myIndex) {
-		
-		this(newInserter, newInserter.getID() + UUID.randomUUID().toString(), newType, newMimeType, newData,
-				newDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000, newDateOfInsertion, myIndex);
-		
-		assert(newSolution!=null && newSolution.length()>=MINIMAL_SOLUTION_LENGTH);
-		
-		mSolution = newSolution;
-		
-		if(checkConsistency() == false)
-			throw new IllegalArgumentException("Trying to costruct a corrupted puzzle");
-	}
-	
-	public String getID() {
-		return mID;
-	}
-	
-	public PuzzleType getType() {
-		return mType;
-	}
-
-	public String getMimeType() {
-		return mMimeType;
-	}
-
-	/**
-	 * Get the URI at which to insert this puzzle.
-	 * SSK@asdfasdf...|WoT|introduction|yyyy-MM-dd|#
-	 * 
-	 * # = index of the puzzle.
-	 */
-	public FreenetURI getInsertURI() {
-		assert(mSolution != null); /* This function should only be needed by the introduction server, not by clients. */
-		
-		/* FIXME: I did not really understand the javadoc of FreenetURI. Please verify that the following code actually creates an URI
-		 * which looks like the one I specified in the javadoc above this function. Thanks. */
-		String dayOfInsertion;
-		synchronized (mDateFormat) {
-			dayOfInsertion = mDateFormat.format(mDateOfInsertion);
-		}
-		FreenetURI baseURI = ((OwnIdentity)mInserter).getInsertURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WoT.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + mIndex);
-		return baseURI.setMetaString(null);
-	}
-
-	public FreenetURI getRequestURI() {
-		return generateRequestURI(mInserter, mDateOfInsertion, mIndex);
-	}
-
 	public static FreenetURI generateRequestURI(Identity inserter, Date dateOfInsertion, int index) {
 		assert(dateOfInsertion.before(CurrentTimeUTC.get()));
 		assert(index >= 0);
@@ -169,7 +131,19 @@ public final class IntroductionPuzzle {
 		baseURI = baseURI.setDocName(WoT.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index);
 		return baseURI.setMetaString(null);
 	}
+	
+	/**
+	 * Get the URI where this puzzle was downloaded from.
+	 */
+	public FreenetURI getRequestURI() {
+		return generateRequestURI(mInserter, mDateOfInsertion, mIndex);
+	}
 
+	/**
+	 * Get the date of a puzzle from it's URI.
+	 * 
+	 * Used for being able to query the database for an existing IntroductionPuzzleObject when a new one was downloaded. 
+	 */
 	public static Date getDateFromRequestURI(FreenetURI requestURI) throws ParseException {
 		String tokens[] = requestURI.getDocName().split("[|]");
 		synchronized (mDateFormat) {
@@ -177,83 +151,30 @@ public final class IntroductionPuzzle {
 		}
 	}
 
+	/**
+	 * Get the index of a puzzle from it's URI.
+	 * 
+	 * Used for being able to query the database for an existing IntroductionPuzzleObject when a new one was downloaded. 
+	 */
 	public static int getIndexFromRequestURI(FreenetURI requestURI) {
 		String tokens[] = requestURI.getDocName().split("[|]");
 		return Integer.parseInt(tokens[3]);
 	}
+	
+	public String getID() {
+		return mID;
+	}
+	
+	public PuzzleType getType() {
+		return mType;
+	}
 
-	/**
-	 * Get the URI at which to look for a solution of this puzzle (if someone solved it)
-	 */
-	public FreenetURI getSolutionURI() {
-		return getSolutionURI(mSolution);
-	}
-	
-	/**
-	 * Get the URI at which to insert the solution of this puzzle.
-	 * 
-	 * Format: "KSK@WoT|Introduction|id|guessOfSolution"
-	 * id = the ID of the puzzle (which itself contains the ID of the inserter and the UUID of the puzzle)
-	 * guessOfSolution = the guess of the solution which is passed to the function.
-	 */
-	public FreenetURI getSolutionURI(String guessOfSolution) {
-		return new FreenetURI("KSK",	WoT.WOT_NAME + "|" +
-										INTRODUCTION_CONTEXT + "|" +
-										mID + "|" +
-										guessOfSolution);
-	}
-	
-	public static String getIDFromSolutionURI(FreenetURI uri) {
-		return uri.getDocName().split("[|]")[2];
+	public String getMimeType() {
+		return mMimeType;
 	}
 	
 	public byte[] getData() {
 		return mData;
-	}
-	
-	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
-	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
-	/**
-	 * Get the solution of the puzzle. Null if the puzzle was received and not locally generated.
-	 */
-	public synchronized String getSolution() {
-		assert(mSolution != null); /* Whoever uses this function should not need to call it when there is no solution available */
-		return mSolution;
-	}
-
-	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
-	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
-	/**
-	 * Get the OwnIdentity which solved this puzzle. Used by the IntroductionClient for inserting solutions.
-	 */
-	public synchronized OwnIdentity getSolver() {
-		assert(mSolver != null);
-		return mSolver;
-	}
-	
-	/**
-	 * Used by the IntroductionServer to mark a puzzle as solved.
-	 */
-	public synchronized void setSolved() {
-		iWasSolved = true;
-	}
-	
-	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
-	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
-	/**
-	 * Used by the IntroductionClient to mark a puzzle as solved
-	 * 
-	 * @param solver The identity which solved the puzzle correctly.
-	 * @param solution The solution which was passed by the solver.
-	 * @throws InvalidParameterException If the puzzle was already solved.
-	 */
-	public synchronized void setSolved(OwnIdentity solver, String solution) throws InvalidParameterException {
-		if(iWasSolved)
-			throw new InvalidParameterException("Puzzle is already solved!"); /* TODO: create a special exception for that */
-		
-		iWasSolved = true;
-		mSolver = solver;
-		mSolution = solution;
 	}
 	
 	public Identity getInserter() {
@@ -271,6 +192,67 @@ public final class IntroductionPuzzle {
 	public int getIndex() {
 		return mIndex;
 	}
+
+	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
+	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
+	/**
+	 * Used by the IntroductionClient to mark a puzzle as solved
+	 * 
+	 * @param solver The identity which solved the puzzle correctly.
+	 * @param solution The solution which was passed by the solver.
+	 * @throws InvalidParameterException If the puzzle was already solved.
+	 */
+	public synchronized void setSolved(OwnIdentity solver, String solution) throws InvalidParameterException {
+		if(mWasSolved)
+			throw new InvalidParameterException("Puzzle is already solved!"); /* TODO: create a special exception for that */
+		
+		mWasSolved = true;
+		mSolver = solver;
+		mSolution = solution;
+	}
+	
+	public synchronized boolean wasSolved() {
+		return mWasSolved;
+	}
+
+	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
+	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
+	/**
+	 * Get the OwnIdentity which solved this puzzle. Used by the IntroductionClient for inserting identity introductions.
+	 */
+	public synchronized OwnIdentity getSolver() {
+		assert(mWasSolved);
+		return mSolver;
+	}
+
+	/**
+	 * Get the URI at which to insert the solution of this puzzle if you have solved it / at which the solution is trying to be fetched
+	 * 
+	 * 
+	 * Format: "KSK@WoT|Introduction|id|guessOfSolution"
+	 * id = the ID of the puzzle (which itself contains the UUID of the puzzle and the ID of the inserter.)
+	 * guessOfSolution = the guess of the solution which is passed to the function.
+	 */
+	public synchronized FreenetURI getSolutionURI() {
+		if(mSolution == null)
+			throw new RuntimeException("The puzzle is not solved.");
+		
+		return new FreenetURI("KSK",	WoT.WOT_NAME + "|" +
+										INTRODUCTION_CONTEXT + "|" +
+										mID + "|" +
+										mSolution);
+	}
+	
+	public synchronized boolean wasInserted() {
+		return mWasInserted;
+	}
+	
+	public synchronized void setInserted() {
+		if(mWasInserted)
+			throw new RuntimeException("The puzzle was already inserted.");
+		
+		mWasInserted = true;
+	}
 	
 	/* TODO: Write an unit test which uses this function :) */
 	/* TODO: This code sucks, checkConsistency should throw a descriptive message */
@@ -283,7 +265,7 @@ public final class IntroductionPuzzle {
 		else { /* Verify the UID */
 			if(mInserter != null) {
 				String inserterID = mInserter.getID();
-				if(mID.startsWith(inserterID) == false) { Logger.error(this, "mID does not start with InserterID: " + mID); result = false; }
+				if(mID.endsWith(inserterID) == false) { Logger.error(this, "mID does not start with InserterID: " + mID); result = false; }
 				/* Verification that the rest of the ID is an UUID is not necessary: If a client inserts a puzzle with the ID just being his
 				 * identity ID (or other bogus stuff) he will just shoot himself in the foot by possibly only allowing 1 puzzle of him to
 				 * be available because the databases of the downloaders check whether the ID already exists. */
@@ -303,8 +285,6 @@ public final class IntroductionPuzzle {
 			{ Logger.error(this, "mDateOfInsertion == " + mDateOfInsertion + "currentTime == " + CurrentTimeUTC.get()); result = false; }
 		if(mIndex < 0)
 			{ Logger.error(this, "mIndex == " + mIndex); result = false; }
-		if(iWasSolved == true && (mSolver == null || mSolution == null))
-			{ Logger.error(this, "iWasSolved but mSolver == " + mSolver + ", " + "mSolution == " + mSolution); result = false; }
 		
 		return result;
 	}
