@@ -1,3 +1,6 @@
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
+ * under the GNU General Public License, version 2 (or at your option
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.introduction.captcha;
 
 import java.io.ByteArrayOutputStream;
@@ -6,9 +9,7 @@ import java.io.IOException;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionPuzzleFactory;
-
-import com.db4o.ObjectContainer;
-
+import plugins.WoT.introduction.IntroductionPuzzleStore;
 import freenet.support.io.Closer;
 
 /**
@@ -43,15 +44,21 @@ public class ReCaptchaFactory extends IntroductionPuzzleFactory {
 	// recaptcha.ReCaptchaFactory mFactory = new recaptcha.ReCaptchaFactory();
 	
 	@Override
-	public IntroductionPuzzle generatePuzzle(ObjectContainer db, OwnIdentity inserter) throws IOException {
+	public IntroductionPuzzle generatePuzzle(IntroductionPuzzleStore store, OwnIdentity inserter) throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1024); /* TODO: find out the maximum size of the captchas and put it here */
 		try {
 			/*
 			BufferedImage img = captcha.createImage(text);
 			ImageIO.write(img, "jpg", out);
 			
-			Date dateOfInsertion = getUTCDate();
-			return new IntroductionPuzzle(inserter, PuzzleType.Captcha, "image/jpeg", out.toByteArray(), text, dateOfInsertion, IntroductionPuzzle.getFreeIndex(db, inserter, dateOfInsertion));
+			Date dateOfInsertion = CurrentTimeUTC.get();
+			synchronized(store) {
+				IntroductionPuzzle puzzle = new IntroductionPuzzle(inserter, PuzzleType.Captcha, "image/jpeg", out.toByteArray(), text, 
+						dateOfInsertion, store.getFreeIndex(inserter, dateOfInsertion));
+				
+				store.storeAndCommit(puzzle);
+				return puzzle;
+			}
 			*/
 			return null;
 		}
@@ -59,4 +66,5 @@ public class ReCaptchaFactory extends IntroductionPuzzleFactory {
 			Closer.close(out);
 		}
 	}
+
 }

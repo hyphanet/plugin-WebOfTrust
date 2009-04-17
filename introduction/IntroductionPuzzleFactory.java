@@ -9,14 +9,24 @@ import java.io.IOException;
 
 import plugins.WoT.OwnIdentity;
 
-import com.db4o.ObjectContainer;
-
 /**
+ * A base class for puzzle factories. Puzzle factories are frontends for different (3rd person) puzzle creation libraries which are included
+ * in Freetalk. If you include a new captcha library for example you are supposed to write a PuzzleFactory for it and add it to the
+ * factory list in class IntroductionServer.
+ * 
  * @author xor
- *
  */
 public abstract class IntroductionPuzzleFactory {
 	
-	public abstract IntroductionPuzzle generatePuzzle(ObjectContainer db, OwnIdentity inserter) throws IOException;
+	/**
+	 * Create a new puzzle for CurrenTimeUTC.get() with an index set to a free index of the given inserter - the free index 
+	 * shall be queried from the given IntroductionPuzzleStore - store it in the puzzle store and return it.
+	 * 
+	 * @param store The IntroductionPuzzleStore where the puzzle shall be stored.
+	 * @param inserter The inserter of the puzzle.
+	 * @return The new puzzle.
+	 * @throws IOException
+	 */
+	public abstract IntroductionPuzzle generatePuzzle(IntroductionPuzzleStore store, OwnIdentity inserter) throws IOException;
 
 }
