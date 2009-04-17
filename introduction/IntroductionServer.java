@@ -211,7 +211,7 @@ public final class IntroductionServer extends TransferThread {
 		
 		try {
 			os = tempB.getOutputStream();
-			mWoT.getIdentityXML().exportIntroductionPuzzle(puzzle, os); /* Provides synchronization on the puzzle */
+			mWoT.getXMLTransformer().exportIntroductionPuzzle(puzzle, os); /* Provides synchronization on the puzzle */
 			os.close(); os = null;
 			tempB.setReadOnly();
 
@@ -288,7 +288,7 @@ public final class IntroductionServer extends TransferThread {
 				OwnIntroductionPuzzle p = mPuzzleStore.getOwnPuzzleBySolutionURI(state.getURI());
 				synchronized(p) {
 					OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
-					Identity newIdentity = mWoT.getIdentityXML().importIntroduction(puzzleOwner, result.asBucket().getInputStream());
+					Identity newIdentity = mWoT.getXMLTransformer().importIntroduction(puzzleOwner, result.asBucket().getInputStream());
 					Logger.debug(this, "Imported identity introduction for identity " + newIdentity.getRequestURI() +
 							" to the OwnIdentity " + puzzleOwner);
 					p.setSolved();
