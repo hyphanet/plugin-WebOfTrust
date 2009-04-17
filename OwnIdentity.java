@@ -1,50 +1,36 @@
-/**
- * This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT;
 
-import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.util.Date;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import org.w3c.dom.DOMImplementation;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
-import plugins.WoT.exceptions.DuplicateIdentityException;
-import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.InvalidParameterException;
-import plugins.WoT.exceptions.NotInTrustTreeException;
-import plugins.WoT.exceptions.UnknownIdentityException;
-
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import com.db4o.query.Query;
-
 import freenet.keys.FreenetURI;
+import freenet.support.CurrentTimeUTC;
 
 /**
  * A local Identity (it belongs to the user)
  * 
- * @author Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  *
  */
 public class OwnIdentity extends Identity {
 	
-	private FreenetURI insertURI;
-	private Date lastInsert;
+	protected FreenetURI mInsertURI;
+	
+	protected final Date mCreationDate;
+	
+	protected Date mLastInsertDate;
+	
+	/**
+	 * Get a list of fields which the database should create an index on.
+	 */
+	public static String[] getIndexedFields() {
+		return new String[] { "mID" };
+	}
+	
 	
 	/**
 	 * Creates a new OwnIdentity with the given parameters.
@@ -57,8 +43,9 @@ public class OwnIdentity extends Identity {
 	 */
 	public OwnIdentity (FreenetURI insertURI, FreenetURI requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException {	
 		super(requestURI, nickName, publishTrustList);
+		mCreationDate = CurrentTimeUTC.get();
 		setInsertURI(insertURI);
-		setLastInsert(new Date(0));
+		mLastInsertDate = new Date(0);
 		setEdition(0);
 	}
 	
@@ -73,138 +60,24 @@ public class OwnIdentity extends Identity {
 	 * @throws InvalidParameterException If a given parameter is invalid
 	 * @throws MalformedURLException If either requestURI or insertURI is not a valid FreenetURI
 	 */
-	public OwnIdentity (String insertURI, String requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
+	public OwnIdentity(String insertURI, String requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
 		this(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 	}
 	
 	/**
-	 * Initializes this OwnIdentity's trust tree.
-	 * Meaning : It creates a Score object for this OwnIdentity in its own trust tree, 
-	 * so it gets a rank and a capacity and can give trust to other Identities.
-	 *  
-	 * @param db A reference to the database 
-	 * @throws DuplicateScoreException if there already is more than one Score for this identity (should never happen)
-	 */
-	public void initTrustTree (ObjectContainer db) throws DuplicateScoreException {
-		try {
-			getScore(this,db);
-			return;
-		} catch (NotInTrustTreeException e) {
-			db.store(new Score(this, this, 100, 0, 100));
-		}
-	}
-	
-	/**
-	 * Gets an OwnIdentity by its id
-	 * 
-	 * @param db A reference to the database
-	 * @param id The unique identifier to query an OwnIdentity
-	 * @return The requested OwnIdentity
-	 * @throws UnknownIdentityException if there is now OwnIdentity with that id
-	 * @throws DuplicateIdentityException If there is more than one identity with that id (should never happen)
-	 */
-	@SuppressWarnings("unchecked")
-	public static OwnIdentity getById (ObjectContainer db, String id) throws UnknownIdentityException {
-		Query query = db.query();
-		query.constrain(OwnIdentity.class);
-		query.descend("id").constrain(id);
-		ObjectSet<OwnIdentity> result = query.execute();
-		
-		if(result.size() == 0) throw new UnknownIdentityException(id);
-		if(result.size() > 1) throw new DuplicateIdentityException(id);
-		return result.next();
-	}
-	
-	/**
-	 * Gets an OwnIdentity by its requestURI (as String).
-	 * The given String is converted to {@link FreenetURI} in order to extract a unique id.
-	 * 
-	 * @param db A reference to the database
-	 * @param uri The requestURI (as String) of the desired OwnIdentity
-	 * @return The requested OwnIdentity
-	 * @throws UnknownIdentityException if the OwnIdentity isn't in the database
-	 * @throws DuplicateIdentityException if the OwnIdentity is present more that once in the database (should never happen)
-	 * @throws MalformedURLException if the supplied requestURI is not a valid FreenetURI
-	 */
-	public static OwnIdentity getByURI (ObjectContainer db, String uri) throws UnknownIdentityException, MalformedURLException {
-		return getByURI(db, new FreenetURI(uri));
-	}
-
-	/**
-	 * Gets an OwnIdentity by its requestURI (a {@link FreenetURI}).
-	 * The OwnIdentity's unique identifier is extracted from the supplied requestURI.
-	 * 
-	 * @param db A reference to the database
-	 * @param uri The requestURI of the desired OwnIdentity
-	 * @return The requested OwnIdentity
-	 * @throws UnknownIdentityException if the OwnIdentity isn't in the database
-	 * @throws DuplicateIdentityException if the OwnIdentity is present more that once in the database (should never happen)
-	 */
-	public static OwnIdentity getByURI (ObjectContainer db, FreenetURI uri) throws UnknownIdentityException {
-		return getById(db, getIdFromURI(uri));
-	}
-	
-	/**
-	 * Counts the number of OwnIdentities in the database
-	 * @param db A reference to the database
-	 * @return the number of OwnIdentities in the database
-	 */
-	public static int getNbOwnIdentities(ObjectContainer db) {
-		return db.queryByExample(OwnIdentity.class).size();
-	}
-	
-	/**
-	 * Gets all OwnIdentities present in the database
-	 * 
-	 * @param db A reference to the database
-	 * @return An {@link ObjectSet} containing all OwnIdentities that exist in the database
-	 */
-	public static ObjectSet<OwnIdentity> getAllOwnIdentities (ObjectContainer db) {
-		return db.queryByExample(OwnIdentity.class);
-	}
-	
-	public synchronized void exportIntroductionToXML(OutputStream os) throws ParserConfigurationException, TransformerException {
-		StreamResult resultStream = new StreamResult(os);
-
-		// Create the XML document
-		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
-		DOMImplementation impl = xmlBuilder.getDOMImplementation();
-		Document xmlDoc = impl.createDocument(null, "WoT", null);
-		Element rootElement = xmlDoc.getDocumentElement();
-
-		// Create the content
-		Element introTag = xmlDoc.createElement("IdentityIntroduction");
-
-		Element identityTag = xmlDoc.createElement("Identity");
-		identityTag.setAttribute("value", getRequestURI().toString());
-		introTag.appendChild(identityTag);
-	
-		rootElement.appendChild(introTag);
-
-		DOMSource domSource = new DOMSource(xmlDoc);
-		TransformerFactory transformFactory = TransformerFactory.newInstance();
-		Transformer serializer = transformFactory.newTransformer();
-		
-		serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-		serializer.setOutputProperty(OutputKeys.INDENT,"yes");
-		serializer.transform(domSource, resultStream);
-	}
-	
-	/**
 	 * Whether this OwnIdentity needs to be inserted or not.
-	 * We insert OwnIdentities when they have been modified AND at least once a week.
+	 * We insert OwnIdentities when they have been modified AND at least once every three days.
 	 * @return Whether this OwnIdentity needs to be inserted or not
 	 */
 	public synchronized boolean needsInsert() {
-		return (getLastChangeDate().after(getLastInsert()) || (new Date().getTime() - getLastInsert().getTime()) > 1000*60*60*24*7); 
+		return (getLastChangeDate().after(getLastInsertDate()) || (new Date().getTime() - getLastInsertDate().getTime()) > 1000*60*60*24*3); 
 	}
 
 	/**
 	 * @return This OwnIdentity's insertURI
 	 */
 	public synchronized FreenetURI getInsertURI() {
-		return insertURI;
+		return mInsertURI;
 	}
 	
 	/**
@@ -214,39 +87,43 @@ public class OwnIdentity extends Identity {
 	 * @param key this OwnIdentity's insertURI
 	 * @throws InvalidParameterException if the supplied key is neither a USK nor a SSK
 	 */
-	private void setInsertURI(FreenetURI key) throws InvalidParameterException {
-		if(key.getKeyType().equals("SSK")) key = key.setKeyType("USK");
-		if(!key.getKeyType().equals("USK")) throw new InvalidParameterException("Key type not supported");
-
-		this.insertURI = key;
+	private void setInsertURI(FreenetURI newInsertURI) throws InvalidParameterException {
+		if(!newInsertURI.equalsKeypair(mInsertURI))
+			throw new IllegalArgumentException("Cannot change the insert URI of an existing identity.");
+		
+		if(!newInsertURI.isUSK() && !newInsertURI.isSSK())
+			throw new IllegalArgumentException("Identity URI keytype not supported: " + newInsertURI);
+		
+		mInsertURI = newInsertURI.setKeyType("USK").setDocName("WoT").setMetaString(null);
+		updated();
 	}
 	
 	@Override
-	public synchronized void setEdition(long edition) throws InvalidParameterException {
-		setInsertURI(getInsertURI().setSuggestedEdition(edition));
-		setRequestURI(getRequestURI().setSuggestedEdition(edition));
+	protected synchronized void setEdition(long edition) throws InvalidParameterException {
+		super.setEdition(edition);
+		
+		if(edition > mInsertURI.getEdition()) {
+			mInsertURI = mInsertURI.setSuggestedEdition(edition);
+			updated();
+		}
+	}
+	
+	public Date getCreationDate() {
+		return mCreationDate;
 	}
 
 	/**
-	 * @return Date of last insertion of this OwnIdentity in Freenet
+	 * Get the Date of last insertion of this OwnIdentity, in UTC.
 	 */
-	public synchronized Date getLastInsert() {
-		return lastInsert;
+	public synchronized Date getLastInsertDate() {
+		return mLastInsertDate;
 	}
 	
 	/**
 	 * Sets the last insertion date of this OwnIdentity to current time in UTC.
 	 */
-	public synchronized void updateLastInsert() {
-		setLastInsert(CurrentTimeUTC.get());
+	protected synchronized void updateLastInsertDate() {
+		mLastInsertDate = CurrentTimeUTC.get();
 	}
 
-	/**
-	 * Sets the last insertion date of this OwnIdentity in Freenet to the specified time which should be in UTC.
-	 * 
-	 * @param lastInsert last insertion date of this OwnIdentity in Freenet
-	 */
-	public synchronized void setLastInsert(Date lastInsert) {
-		this.lastInsert = lastInsert;
-	}
 }

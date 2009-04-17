@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map.Entry;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -40,7 +39,6 @@ import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.client.FetchException;
 import freenet.client.InsertException;
-import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
 import freenet.node.RequestClient;
@@ -396,7 +394,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	/**
-	 * Loads an identity from the database, querying on its ID.
+	 * Loads an own or normal identity from the database, querying on its ID.
 	 * 
 	 * @param id The ID of the identity to load
 	 * @return The identity matching the supplied ID.
@@ -418,6 +416,41 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		return result.next();
 	}
+	
+	/**
+	 * Gets an OwnIdentity by its ID.
+	 * 
+	 * @param id The unique identifier to query an OwnIdentity
+	 * @return The requested OwnIdentity
+	 * @throws UnknownIdentityException if there is now OwnIdentity with that id
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized OwnIdentity getOwnIdentityByID(String id) throws UnknownIdentityException {
+		Query query = mDB.query();
+		query.constrain(OwnIdentity.class);
+		query.descend("mID").constrain(id);
+		ObjectSet<OwnIdentity> result = query.execute();
+		
+		if(result.size() == 0)
+			throw new UnknownIdentityException(id);
+		
+		if(result.size() > 1)
+			throw new DuplicateIdentityException(id);
+		
+		return result.next();
+	}
+
+	/**
+	 * Loads an identity from the database, querying on its requestURI (a valid {@link FreenetURI})
+	 * 
+	 * @param uri The requestURI of the identity
+	 * @return The identity matching the supplied requestURI
+	 * @throws UnknownIdentityException if there is no identity with this id in the database
+	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
+	 */
+	public Identity getIdentityByURI(FreenetURI uri) throws UnknownIdentityException {
+		return getIdentityByID(Identity.getIDFromURI(uri));
+	}
 
 	/**
 	 * Loads an identity from the database, querying on its requestURI (as String)
@@ -433,25 +466,60 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	/**
-	 * Loads an identity from the database, querying on its requestURI (a valid {@link FreenetURI})
+	 * Gets an OwnIdentity by its requestURI (a {@link FreenetURI}).
+	 * The OwnIdentity's unique identifier is extracted from the supplied requestURI.
 	 * 
-	 * @param uri The requestURI of the identity
-	 * @return The identity matching the supplied requestURI
-	 * @throws UnknownIdentityException if there is no identity with this id in the database
-	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
+	 * @param uri The requestURI of the desired OwnIdentity
+	 * @return The requested OwnIdentity
+	 * @throws UnknownIdentityException if the OwnIdentity isn't in the database
 	 */
-	public Identity getIdentityByURI(FreenetURI uri) throws UnknownIdentityException {
-		return getIdentityByID(Identity.getIDFromURI(uri));
+	public OwnIdentity getOwnIdentityByURI(FreenetURI uri) throws UnknownIdentityException {
+		return getOwnIdentityByID(OwnIdentity.getIDFromURI(uri));
+	}
+
+	/**
+	 * Gets an OwnIdentity by its requestURI (as String).
+	 * The given String is converted to {@link FreenetURI} in order to extract a unique id.
+	 * 
+	 * @param db A reference to the database
+	 * @param uri The requestURI (as String) of the desired OwnIdentity
+	 * @return The requested OwnIdentity
+	 * @throws UnknownIdentityException if the OwnIdentity isn't in the database
+	 * @throws DuplicateIdentityException if the OwnIdentity is present more that once in the database (should never happen)
+	 * @throws MalformedURLException if the supplied requestURI is not a valid FreenetURI
+	 */
+	public OwnIdentity getOwnIdentityByURI(String uri) throws UnknownIdentityException, MalformedURLException {
+		return getOwnIdentityByURI(new FreenetURI(uri));
 	}
 	
 	/**
-	 * Returns all identities that are in the database.
+	 * Returns all identities that are in the database
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 * 
 	 * @return An {@link ObjectSet} containing all identities present in the database 
 	 */
 	public synchronized ObjectSet<Identity> getAllIdentities() {
 		return mDB.queryByExample(Identity.class);
+	}
+	
+	/**
+	 * Returns all non-own identities that are in the database, sorted descending by their date of modification, i.e. recently
+	 * modified identities will be at the beginning of the list.
+	 * 
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 * 
+	 * Used by the IntroductionClient for fetching puzzles from recently modified identities.
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<Identity> getAllNonOwnIdentitiesSortedByModification () {
+		Query q = mDB.query();
+		q.constrain(Identity.class);
+		q.constrain(OwnIdentity.class).not();
+		/* FIXME: As soon as identities announce that they were online every day, uncomment the following line */
+		/* q.descend("mLastChangedDate").constrain(new Date(CurrentTimeUTC.getInMillis() - 1 * 24 * 60 * 60 * 1000)).greater(); */
+		q.descend("mLastChangedDate").orderDescending();
+		
+		return q.execute();
 	}
 	
 	/**
@@ -507,10 +575,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param db A reference to the database
 	 * @return The {@link Score} of this Identity in the required trust tree
 	 * @throws NotInTrustTreeException if this identity is not in the required trust tree 
-	 * @throws DuplicateScoreException if thid identity has more than one Score objects for that trust tree in the database (should never happen)
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized Score getScore(OwnIdentity treeOwner, Identity target) throws NotInTrustTreeException, DuplicateScoreException {
+	public synchronized Score getScore(OwnIdentity treeOwner, Identity target) throws NotInTrustTreeException {
 		Query query = mDB.query();
 		query.constrain(Score.class);
 		query.descend("mTreeOwner").constrain(treeOwner).identity();
@@ -529,9 +596,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	/* 
 	 * FIXME:
-	 * I suggest before releasing we should write a getRealScore() function which recalculates the score from all Trust objects which are stored
-	 * in the database. We could then assert(getScore() == getRealScore()) for verifying that the database is consistent and watch for some time
-	 * whether it stays consistent, just to make sure that there are no flaws in the code.
+	 * I suggest before releasing we should write a getRealScore() function which recalculates the score from all Trust objects which are
+	 * stored in the database. We could then assert(getScore() == getRealScore()) for verifying that the database is consistent and watch
+	 * for some time whether it stays consistent, just to make sure that there are no flaws in the code.
 	 */
 	
 	/**
@@ -713,7 +780,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				truster.updated();
 	}
 	
-	public synchronized void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment) throws InvalidParameterException {
+	public synchronized void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
+		throws InvalidParameterException {
+		
 		synchronized(mDB.lock()) {
 			try {
 				setTrustWithoutCommit(truster, trustee, newValue, newComment);
@@ -739,7 +808,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 //					mDB.delete(trust);
 //					updateScoreWithoutCommit(trustee);
 //				} catch (NotTrustedException e) {
-//					Logger.error(this, "Cannot remove trust - there is none - from " + truster.getNickName() + " to " + trustee.getNickName());
+//					Logger.error(this, "Cannot remove trust - there is none - from " + truster.getNickName() + " to "
+//						+ trustee.getNickName());
 //				} 
 //			}
 //			catch(RuntimeException e) {
@@ -764,6 +834,33 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	/**
+	 * Initializes this OwnIdentity's trust tree.
+	 * Meaning : It creates a Score object for this OwnIdentity in its own trust tree, 
+	 * so it gets a rank and a capacity and can give trust to other Identities.
+	 *  
+	 * @param db A reference to the database 
+	 * @throws DuplicateScoreException if there already is more than one Score for this identity (should never happen)
+	 */
+	private synchronized void initTrustTree(OwnIdentity identity) throws DuplicateScoreException {
+		synchronized(mDB.lock()) {
+			try {
+				getScore(identity, identity);
+				Logger.error(this, "initTrusTree called even though there is already one for " + identity);
+				return;
+			} catch (NotInTrustTreeException e) {
+				try {
+					mDB.store(new Score(identity, identity, 100, 0, 100));
+					mDB.commit();
+				}
+				catch(RuntimeException ex) {
+					mDB.rollback();
+					throw ex;
+				}
+			}
+		}
+	}
+	
+	/**
 	 * Updates this Identity's {@link Score} in every trust tree.
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
@@ -772,10 +869,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
 	 * }
 	 * 
-	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
-	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
 	 */
-	private synchronized void updateScoreWithoutCommit(Identity trustee) throws DuplicateScoreException, DuplicateTrustException {
+	private synchronized void updateScoreWithoutCommit(Identity trustee) {
 			ObjectSet<OwnIdentity> treeOwners = getAllOwnIdentities();
 			if(treeOwners.size() == 0)
 				Logger.debug(this, "Can't update " + trustee.getNickname() + "'s score: there is no own identity yet");
@@ -796,8 +891,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * 
 	 * @param db A reference to the database
 	 * @param treeOwner The OwnIdentity that owns the trust tree
-	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
-	 * @throws DuplicateTrustException if there already exist more than one {@link Trust} objects between these identities (should never happen)
 	 */
 	private synchronized void updateScoreWithoutCommit(OwnIdentity treeOwner, Identity target) {
 		if(target == treeOwner)
@@ -864,7 +957,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	/**
-	 * Computes the target's Score value according to the trusts it has received and the capacity of its trusters in the specified trust tree.
+	 * Computes the target's Score value according to the trusts it has received and the capacity of its trusters in the specified
+	 * trust tree.
 	 * 
 	 * @param db A reference to the database
 	 * @param treeOwner The OwnIdentity that owns the trust tree
@@ -930,7 +1024,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return identity;
 	}
 	
-	public void deleteIdentity(String id) throws DuplicateIdentityException, UnknownIdentityException, DuplicateScoreException, DuplicateTrustException {
+	public void deleteIdentity(String id) throws DuplicateIdentityException, UnknownIdentityException {
 		Identity identity = Identity.getById(db, id);
 		
 		// Remove all scores
@@ -952,20 +1046,20 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		db.delete(identity);
 	}
 	
-	public OwnIdentity createIdentity(String nickName, boolean publishTrustList, String context) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
+	public OwnIdentity createIdentity(String nickName, boolean publishTrustList, String context) {
 
 		FreenetURI[] keypair = getPluginRespirator().getHLSimpleClient().generateKeyPair("WoT");
 		return createIdentity(keypair[0].toString(), keypair[1].toString(), nickName, publishTrustList, context);
 	}
 
-	public OwnIdentity createIdentity(String insertURI, String requestURI, String nickName, boolean publishTrustList, String context) throws InvalidParameterException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
+	public OwnIdentity createIdentity(String insertURI, String requestURI, String nickName, boolean publishTrustList, String context) {
 
 		OwnIdentity identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 		identity.addContext(db, context);
 		identity.addContext(db, IntroductionPuzzle.INTRODUCTION_CONTEXT); /* FIXME: make configureable */
 		identity.setProperty(db, "IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT));
 		db.store(identity);
-		identity.initTrustTree(db);		
+		initTrustTree(identity);		
 
 		// This identity trusts the seed identity
 		identity.setTrustWithoutCommit(db, seed, (byte)100, "I trust the WoT plugin");
@@ -979,7 +1073,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return identity;
 	}
 
-	public void restoreIdentity(String requestURI, String insertURI) throws InvalidParameterException, MalformedURLException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, DuplicateTrustException {
+	public void restoreIdentity(String requestURI, String insertURI) {
 		
 		OwnIdentity id;
 		
@@ -1016,7 +1110,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 			// Store the new identity
 			db.store(id);
-			id.initTrustTree(db);
+			initTrustTree(id);
 			
 			// Update all given trusts
 			ObjectSet<Trust> givenTrusts = old.getGivenTrusts(db);
@@ -1146,19 +1240,19 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return pr;
 	}
 	
-	public Config getConfig() {
-		return mConfig;
+	public ExtObjectContainer getDB() {
+		return mDB;
 	}
 	
-	public ExtObjectContainer getDB() {
-		return db;
+	public Config getConfig() {
+		return mConfig;
 	}
 	
 	public IdentityFetcher getIdentityFetcher() {
 		return fetcher;
 	}
-	
-	public XMLTransformer getIdentityXML() {
+
+	public XMLTransformer getXMLTransformer() {
 		return mIdentityXML;
 	}
 	
