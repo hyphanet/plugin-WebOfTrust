@@ -24,7 +24,6 @@ import plugins.WoT.exceptions.DuplicateIdentityException;
 import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.DuplicateTrustException;
 import plugins.WoT.exceptions.InvalidParameterException;
-import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.introduction.IntroductionPuzzle;
@@ -82,23 +81,23 @@ public class WebInterface implements FredPluginHTTP {
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
 		WebPage page = null;
-		
+		synchronized(mWoT) { /* FIXME XXX: This is a quick hack to compile fix it without adding synchronization! */
 		if(request.isParameterSet("ownidentities")) page = new OwnIdentitiesPage(this, request);
 		else if(request.isParameterSet("knownidentities")) page = new KnownIdentitiesPage(this, request);
 		else if(request.isParameterSet("configuration")) page = new ConfigurationPage(this, request);
 		// TODO Handle these two in KnownIdentitiesPage
 		else if (request.isParameterSet("showIdentity")) {
 			try {
-				Identity identity = Identity.getById(db, request.getParam("id"));
-				ObjectSet<Trust> trusteesTrusts = identity.getGivenTrusts(db);
-				ObjectSet<Trust> trustersTrusts = identity.getReceivedTrusts(db);
-				page = new IdentityPage(this, request, identity, trustersTrusts, trusteesTrusts);
+				Identity identity = mWoT.getIdentityByID(request.getParam("id"));
+				ObjectSet<Trust> givenTrusts = mWoT.getGivenTrusts(identity);
+				ObjectSet<Trust> receivedTrusts = mWoT.getReceivedTrusts(identity);
+				page = new IdentityPage(this, request, identity, givenTrusts, receivedTrusts);
 			} catch (UnknownIdentityException uie1) {
 				Logger.error(this, "Could not load identity " + request.getParam("id"), uie1);
 			}
 		}
 		else if(request.isParameterSet("puzzle")) { 
-			IntroductionPuzzle p = IntroductionPuzzle.getByID(db, request.getParam("id"));
+			IntroductionPuzzle p = mWoT.getIntroductionPuzzleStore().getByID(request.getParam("id"));
 			if(p != null) {
 				byte[] data = p.getData();
 			}
@@ -113,6 +112,7 @@ public class WebInterface implements FredPluginHTTP {
 		
 		page.make();	
 		return page.toHTML();
+		}
 	}
 
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
@@ -125,6 +125,7 @@ public class WebInterface implements FredPluginHTTP {
 		
 		// TODO: finish refactoring to "page = new ..."
 
+		synchronized(mWoT) { /* FIXME XXX: This is a quick hack to compile fix it without adding synchronization! */
 		try {
 			String pageTitle = request.getPartAsString("page",50);
 			if(pageTitle.equals("createIdentity")) page = new CreateIdentityPage(this, request);
@@ -147,7 +148,7 @@ public class WebInterface implements FredPluginHTTP {
 				return makeEditIdentityPage(request.getPartAsString("id", 1024));
 			}
 			else if(pageTitle.equals("introduceIdentity") || pageTitle.equals("solvePuzzles")) {
-				page = new IntroduceIdentityPage(this, request, mWoT.getIntroductionClient(), OwnIdentity.getById(db, request.getPartAsString("identity", 128)));
+				page = new IntroduceIdentityPage(this, request, mWoT.getIntroductionClient(), mWoT.getOwnIdentityByID(request.getPartAsString("identity", 128)));
 			}
 			else if(pageTitle.equals("restoreIdentity")) {
 				mWoT.restoreIdentity(request.getPartAsString("requestURI", 1024), request.getPartAsString("insertURI", 1024));
@@ -171,6 +172,7 @@ public class WebInterface implements FredPluginHTTP {
 			e.printStackTrace();
 			return e.getLocalizedMessage();
 		}
+		}
 	}
 	
 	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
@@ -193,10 +195,13 @@ public class WebInterface implements FredPluginHTTP {
 		
 		HTMLNode list = new HTMLNode("ul");
 		
-		list.addChild(new HTMLNode("li", "Own Identities : " + OwnIdentity.getNbOwnIdentities(db)));
-		list.addChild(new HTMLNode("li", "Known Identities : " + Identity.getNbIdentities(db)));
-		list.addChild(new HTMLNode("li", "Trust relationships : " + Trust.getNb(db)));
-		list.addChild(new HTMLNode("li", "Scores : " + Score.getNb(db)));
+		list.addChild(new HTMLNode("li", "Own Identities: " + mWoT.getAllOwnIdentities().size()));
+		list.addChild(new HTMLNode("li", "Known Identities: " + mWoT.getAllNonOwnIdentities().size()));
+		list.addChild(new HTMLNode("li", "Trust relationships: " + mWoT.getAllTrusts().size()));
+		list.addChild(new HTMLNode("li", "Own unsolved captchas: " + mWoT.getIntroductionPuzzleStore().getOwnCatpchaAmount(false)));
+		list.addChild(new HTMLNode("li", "Own solved captchas: " + mWoT.getIntroductionPuzzleStore().getOwnCatpchaAmount(true)));
+		list.addChild(new HTMLNode("li", "Other's unsolved captchas: " + mWoT.getIntroductionPuzzleStore().getNonOwnCaptchaAmount(false)));
+		list.addChild(new HTMLNode("li", "Other's solved captchas: " + mWoT.getIntroductionPuzzleStore().getNonOwnCaptchaAmount(true)));
 		
 		HTMLNode pageNode = getPageNode();
 		HTMLNode contentNode = mPageMaker.getContentNode(pageNode);
@@ -217,7 +222,7 @@ public class WebInterface implements FredPluginHTTP {
 		HTMLNode boxContent = mPageMaker.getContentNode(box);
 
 		
-		ObjectSet<OwnIdentity> ownIdentities = OwnIdentity.getAllOwnIdentities(db);
+		ObjectSet<OwnIdentity> ownIdentities = mWoT.getAllOwnIdentities();
 		if(ownIdentities.size() == 0) {
 			boxContent.addChild("p", "You have no own identity yet, you should create one...");
 		}
@@ -234,17 +239,17 @@ public class WebInterface implements FredPluginHTTP {
 			while(ownIdentities.hasNext()) {
 				OwnIdentity id = ownIdentities.next();
 				row=identitiesTable.addChild("tr");
-				row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"}, id.getNickName());
+				row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"}, id.getNickname());
 				row.addChild("td",id.getLastChangeDate().toString());
 				HTMLNode cell = row.addChild("td");
-				if(id.getLastInsert() == null) {
+				if(id.getLastInsertDate() == null) {
 					cell.addChild("p", "Insert in progress...");
 				}
-				else if(id.getLastInsert().equals(new Date(0))) {
+				else if(id.getLastInsertDate().equals(new Date(0))) {
 					cell.addChild("p", "Never");
 				}
 				else {
-					cell.addChild(new HTMLNode("a", "href", "/"+id.getRequestURI().toString(), id.getLastInsert().toString()));
+					cell.addChild(new HTMLNode("a", "href", "/"+id.getRequestURI().toString(), id.getLastInsertDate().toString()));
 				}
 				row.addChild("td", id.doesPublishTrustList() ? "Yes" : "No");
 				
@@ -257,7 +262,7 @@ public class WebInterface implements FredPluginHTTP {
 								
 				HTMLNode deleteForm = mPluginRespirator.addFormChild(manageCell, mURI, "deleteIdentity");
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "deleteIdentity" });
-				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getId() });
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 			}
 		}
@@ -322,7 +327,7 @@ public class WebInterface implements FredPluginHTTP {
 
 	public String makeEditIdentityPage(String requestURI) throws MalformedURLException, InvalidParameterException, UnknownIdentityException, DuplicateIdentityException {
 		
-		OwnIdentity id = OwnIdentity.getByURI(db, requestURI);
+		OwnIdentity id = mWoT.getOwnIdentityByURI(requestURI);
 		
 		HTMLNode pageNode = getPageNode();
 		HTMLNode contentNode = mPageMaker.getContentNode(pageNode);
@@ -332,7 +337,7 @@ public class WebInterface implements FredPluginHTTP {
 		HTMLNode createForm = mPluginRespirator.addFormChild(boxContent, mURI, "editIdentity2");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "editIdentity2"});
 		
-		createForm.addChild("p", "NickName : " + id.getNickName());
+		createForm.addChild("p", "NickName : " + id.getNickname());
 		
 		createForm.addChild("p", new String[] { "style" }, new String[] { "font-size: x-small" }, "Request URI : "+id.getRequestURI().toString());
 		createForm.addChild("p", new String[] { "style" }, new String[] { "font-size: x-small" }, "Insert URI : "+id.getInsertURI().toString());
@@ -355,14 +360,14 @@ public class WebInterface implements FredPluginHTTP {
 	}
 
 	public String makeDeleteIdentityPage(String id) throws DuplicateIdentityException, UnknownIdentityException {
-		Identity identity = Identity.getById(db, id);
+		Identity identity = mWoT.getIdentityByID(id);
 		
 		HTMLNode pageNode = getPageNode();
 		HTMLNode contentNode = mPageMaker.getContentNode(pageNode);
 		HTMLNode box = mPageMaker.getInfobox("Confirm identity deletion");
 		HTMLNode boxContent = mPageMaker.getContentNode(box);
 		
-		boxContent.addChild(new HTMLNode("p", "You are about to delete identity '" + identity.getNickName() + "', are you sure ?"));
+		boxContent.addChild(new HTMLNode("p", "You are about to delete identity '" + identity.getNickname() + "', are you sure ?"));
 		
 		if(identity instanceof OwnIdentity)
 			boxContent.addChild(new HTMLNode("p", "You might want to backup its keys for later use..."));
@@ -370,7 +375,7 @@ public class WebInterface implements FredPluginHTTP {
 		HTMLNode confirmForm = mPluginRespirator.addFormChild(boxContent, mURI, "deleteIdentity2");
 		
 		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "deleteIdentity2" });
-		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", identity.getId() });
+		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", identity.getID() });
 		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", "Confirm !" });
 		
 		contentNode.addChild(box);
@@ -381,9 +386,11 @@ public class WebInterface implements FredPluginHTTP {
 	public String makeConfigurationPage() {
 		HTMLNode list = new HTMLNode("ul");
 
+		/*
 		for(String key : config.getAllKeys()) {
 			list.addChild(new HTMLNode("li", key + ": " + config.get(key))); 
 		}
+		*/
 	
 		HTMLNode pageNode = getPageNode();
 		HTMLNode contentNode = mPageMaker.getContentNode(pageNode);
@@ -410,7 +417,7 @@ public class WebInterface implements FredPluginHTTP {
 	
 	private OwnIdentity createIdentity(HTTPRequest request) throws TransformerConfigurationException, FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
 
-		return mWoT.createIdentity(	request.getPartAsString("insertURI",1024),
+		return mWoT.createOwnIdentity(	request.getPartAsString("insertURI",1024),
 								request.getPartAsString("requestURI",1024),
 								request.getPartAsString("nickName", 1024),
 								request.getPartAsString("publishTrustList", 5).equals("true"),
