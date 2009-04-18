@@ -156,7 +156,7 @@ public final class IntroductionPuzzleStore {
 	 * Get an IntroductionPuzzle or OwnIntroductionPuzzle by it's ID.
 	 */
 	@SuppressWarnings("unchecked")
-	protected synchronized IntroductionPuzzle getByID(String id) {
+	public synchronized IntroductionPuzzle getByID(String id) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mID").constrain(id);
