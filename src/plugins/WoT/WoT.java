@@ -3,15 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashSet;
-import java.util.Map.Entry;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
 
 import plugins.WoT.exceptions.DuplicateIdentityException;
 import plugins.WoT.exceptions.DuplicateScoreException;
@@ -31,14 +24,10 @@ import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
-import com.db4o.ext.DatabaseClosedException;
-import com.db4o.ext.Db4oIOException;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
-import freenet.client.FetchException;
-import freenet.client.InsertException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
 import freenet.node.RequestClient;
@@ -63,8 +52,8 @@ import freenet.support.api.HTTPRequest;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned, FredPluginL10n,
-	FredPluginWithClassLoader {
+public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
+	FredPluginL10n, FredPluginWithClassLoader {
 	
 	/* Constants */
 	
@@ -74,31 +63,29 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
 	
 	/**
-	 * The "name" of this web of trust. It is included in the document name of identity URIs. For an example, see the SEED_IDENTITY_URI constant
-	 * below. The purpose of this costant is to allow anyone to create his own custom web of trust which is completely disconnected from the
-	 * "official" web of trust of the Freenet project.
+	 * The "name" of this web of trust. It is included in the document name of identity URIs. For an example, see the SEED_IDENTITIES
+	 * constant below. The purpose of this costant is to allow anyone to create his own custom web of trust which is completely disconnected
+	 * from the "official" web of trust of the Freenet project.
 	 */
-	public static final String WOT_NAME = "WoT";
+	public static final String WOT_NAME = "WoT-testing";
 	
 	/**
-	 * The official seed identity of the WoT plugin: If a newbie wants to download the whole offficial web of trust, he needs at least one trust
-	 * list from an identity which is well-connected to the web of trust. To prevent newbies from having to add this identity manually, the 
-	 * Freenet development team provides a seed identity. This is an identity which will only assign neutral trust values to identities in it's
-	 * trust list and provide many captchas per day to allow newbies to get on it's trust list.
+	 * The official seed identities of the WoT plugin: If a newbie wants to download the whole offficial web of trust, he needs at least one
+	 * trust list from an identity which is well-connected to the web of trust. To prevent newbies from having to add this identity manually,
+	 * the Freenet development team provides a list of seed identities - each of them is one of the developers.
 	 */
-	private static final String SEED_IDENTITY_URI = 
-		"USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/85";
+	private static final String[] SEED_IDENTITIES = new String[] { 
+		/* FIXME: Add the developers. But first we need to debug :) */
+	};
 	
-	private Identity seed;
-	
-	
+
 	/* References from the node */
 	
 	/** The ClassLoader which was used to load the plugin JAR, needed by db4o to work correctly */
 	private ClassLoader mClassLoader;
 	
 	/** The node's interface to connect the plugin with the node, needed for retrieval of all other interfaces */
-	private PluginRespirator pr;	
+	private PluginRespirator mPR;	
 	
 	
 	/* References from the plugin itself */
@@ -108,79 +95,96 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private Config mConfig;
 	private IntroductionPuzzleStore mPuzzleStore;
 	
-	
 	/** Used for exporting identities, identity introductions and introduction puzzles to XML and importing them from XML. */
 	private XMLTransformer mIdentityXML;
+	private RequestClient mRequestClient;
 
 	/* Worker objects which actually run the plugin */
 	
-	private IdentityInserter inserter;
-	private IdentityFetcher fetcher;
-	private IntroductionServer introductionServer;
-	private IntroductionClient introductionClient;
-	private RequestClient requestClient;
+	/**
+	 * Periodically wakes up and inserts any OwnIdentity which needs to be inserted.
+	 */
+	private IdentityInserter mInserter;
+	
+	/**
+	 * Fetches identities when it is told to do so by the plugin:
+	 * - At startup, all known identities are fetched
+	 * - When a new identity is received from a trust list it is fetched
+	 * - When a new identity is received by the IntrouductionServer it is fetched
+	 * - When an identity is manually added it is also fetched.
+	 * - ...
+	 */
+	private IdentityFetcher mFetcher;
+	
+	/**
+	 * Uploads captchas belonging to our own identities which others can solve to get on the trust list of them. Checks whether someone
+	 * uploaded solutions for them periodically and adds the new identities if a solution is received. 
+	 */
+	private IntroductionServer mIntroductionServer;
+	
+	/**
+	 * Downloads captchas which the user can solve to announce his identities on other people's trust lists, provides the interface for
+	 * the UI to obtain the captchas and enter solutions. Uploads the solutions if the UI enters them.
+	 */
+	private IntroductionClient mIntroductionClient;
+	
 	
 	/* User interfaces */
 	
-	private WebInterface web;
-	private FCPInterface fcp;
+	private WebInterface mWebInterface;
+	private FCPInterface mFCPInterface;
 
 	public void runPlugin(PluginRespirator myPR) {
-		Logger.debug(this, "Start");
-		
-		/* Catpcha generation needs headless mode on linux */
-		System.setProperty("java.awt.headless", "true"); 
+		try {
+			Logger.debug(this, "Start");
+			
+			/* Catpcha generation needs headless mode on linux */
+			System.setProperty("java.awt.headless", "true"); 
+	
+			mPR = myPR;
+			mDB = initDB();
+			deleteDuplicateObjects();
+			deleteOrphanObjects();
+			
+			mConfig = Config.loadOrCreate(this);
+			if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WoT.DATABASE_FORMAT_VERSION)
+				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
+			
+			mPuzzleStore = new IntroductionPuzzleStore(this);
+			
+			mRequestClient = new RequestClient() {
+	
+				public boolean persistent() {
+					return false;
+				}
+	
+				public void removeFrom(ObjectContainer container) {
+					throw new UnsupportedOperationException();
+				}
+				
+			};
+	
+			createSeedIdentities();
+			
+			mInserter = new IdentityInserter(this);
+			mFetcher = new IdentityFetcher(this);		
+			
+			mIntroductionServer = new IntroductionServer(this, mFetcher);
+			mIntroductionClient = new IntroductionClient(this);
 
-		pr = myPR;
-		mDB = initDB();
-		deleteDuplicateObjects();
-		deleteOrphanObjects();
-		
-		mConfig = Config.loadOrCreate(this);
-		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WoT.DATABASE_FORMAT_VERSION) 
-			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
-		
-		mPuzzleStore = new IntroductionPuzzleStore(this);
-
-		seed = getSeedIdentity();
-		requestClient = new RequestClient() {
-
-			public boolean persistent() {
-				return false;
-			}
-
-			public void removeFrom(ObjectContainer container) {
-				throw new UnsupportedOperationException();
+			// Try to fetch all known identities
+			synchronized(this) {
+				for(Identity identity : getAllIdentities())
+					mFetcher.fetch(identity, true);
 			}
 			
-		};
-
-		try {
-			mIdentityXML = new XMLTransformer(this);
+			mWebInterface = new WebInterface(this, SELF_URI);
+			mFCPInterface = new FCPInterface(this);
 		}
-		catch(Exception e) { throw new RuntimeException(e); }
-		
-		// Start the inserter thread
-		inserter = new IdentityInserter(this);
-		pr.getNode().executor.execute(inserter, "WoTinserter");
-		
-		// Create the fetcher
-		fetcher = new IdentityFetcher(this);		
-		fetcher.fetch(seed, false);
-		
-		introductionServer = new IntroductionServer(this, fetcher);
-		introductionClient = new IntroductionClient(this);
-
-		// Try to fetch all known identities
-		synchronized(this) {
-			ObjectSet<Identity> identities = getAllIdentities();
-			while (identities.hasNext()) {
-				fetcher.fetch(identities.next(), true);
-			}
+		finally {
+			/* We call it so the database is properly closed */
+			terminate();
 		}
-		
-		web = new WebInterface(this, SELF_URI);
-		fcp = new FCPInterface(this);
 	}
 
 	/**
@@ -191,7 +195,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private ExtObjectContainer initDB() {
 		Configuration cfg = Db4o.newConfiguration();
 		cfg.reflectWith(new JdkReflector(mClassLoader));
-		cfg.activationDepth(1);
+		cfg.activationDepth(5); /* FIXME: Change to 1 and add explicit activation everywhere */
 		cfg.exceptionsOnNotStorable(true);
 		
 		for(String field : Identity.getIndexedFields()) cfg.objectClass(Identity.class).objectField(field).indexed(true);
@@ -251,7 +255,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 							givenTo.add(trust.getTrustee().getID());
 						else {
 							Identity trustee = trust.getTrustee();
-							Logger.error(this, "Deleting duplicate given trust from " + treeOwner.getNickname() + " to " + trustee.getNickname());
+							Logger.error(this, "Deleting duplicate given trust from " + treeOwner.getNickname() + " to " +
+									trustee.getNickname());
 							mDB.delete(trust);
 							
 							try {
@@ -316,34 +321,63 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			}
 		}
 	}
+	
+	private synchronized void createSeedIdentities() {
+		for(String seedURI : SEED_IDENTITIES) {
+			Identity seed;
+			
+			try { 
+				seed = getIdentityByURI(seedURI);
+				try {
+					seed.setEdition(new FreenetURI(seedURI).getEdition());
+				} catch(Exception e) {
+					/* We already have the latest edition stored */
+				}
+			} catch (UnknownIdentityException uie) {
+				try {
+					seed = new Identity(seedURI, null, true);
+					storeAndCommit(seed);
+				} catch (Exception e) {
+					Logger.error(this, "Seed identity creation error", e);
+				}
+			} catch (Exception e) {
+				Logger.error(this, "Seed identity loading error", e);
+			}
+		}
+	}
+	
 
 	public void terminate() {
 		Logger.debug(this, "WoT plugin terminating ...");
 		
 		/* We use single try/catch blocks so that failure of termination of one service does not prevent termination of the others */
 		try {
-			introductionClient.terminate();
+			if(mIntroductionClient != null)
+				mIntroductionClient.terminate();
 		}
 		catch(Exception e) {
 			Logger.error(this, "Error during termination.", e);
 		}
 		
 		try {
-			introductionServer.terminate();
+			if(mIntroductionServer != null)
+				mIntroductionServer.terminate();
 		}
 		catch(Exception e) {
 			Logger.error(this, "Error during termination.", e);
 		}
 		
 		try {
-			inserter.stop();
+			if(mInserter != null)
+				mInserter.terminate();
 		}
 		catch(Exception e) {
 			Logger.error(this, "Error during termination.", e);
 		}
 		
 		try {
-			fetcher.stop();
+			if(mFetcher != null)
+				mFetcher.stop();
 		}
 		catch(Exception e) {
 			Logger.error(this, "Error during termination.", e);
@@ -351,11 +385,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		
 		try {
-			/* FIXME: Is it possible to ask db4o whether a transaction is pending? If the plugin's synchronization works correctly, NONE should
-			 * be pending here and we should log an error if there are any pending transactions at this point. */
-			synchronized(mDB.lock()) {
-				mDB.rollback();
-				mDB.close();
+			if(mDB != null) {
+				/* FIXME: Is it possible to ask db4o whether a transaction is pending? If the plugin's synchronization works correctly,
+				 * NONE should be pending here and we should log an error if there are any pending transactions at this point. */
+				synchronized(mDB.lock()) {
+					mDB.rollback();
+					mDB.close();
+				}
 			}
 		}
 		catch(Exception e) {
@@ -369,28 +405,28 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * Inherited event handler from FredPluginHTTP, handled in <code>class WebInterface</code>.
 	 */
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
-		return web.handleHTTPGet(request);
+		return mWebInterface.handleHTTPGet(request);
 	}
 
 	/**
 	 * Inherited event handler from FredPluginHTTP, handled in <code>class WebInterface</code>.
 	 */
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
-		return web.handleHTTPPost(request);
+		return mWebInterface.handleHTTPPost(request);
 	}
 	
 	/**
 	 * Inherited event handler from FredPluginHTTP, handled in <code>class WebInterface</code>.
 	 */
 	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
-		return web.handleHTTPPut(request);
+		return mWebInterface.handleHTTPPut(request);
 	}
 
 	/**
 	 * Inherited event handler from FredPluginFCP, handled in <code>class FCPInterface</code>.
 	 */
 	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
-		fcp.handle(replysender, params, data, accesstype);
+		mFCPInterface.handle(replysender, params, data, accesstype);
 	}
 
 	/**
@@ -531,7 +567,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public synchronized ObjectSet<OwnIdentity> getAllOwnIdentities() {
 		return mDB.queryByExample(OwnIdentity.class);
 	}
-	
+
 	public synchronized void storeAndCommit(Identity identity) {
 		synchronized(identity) {
 		synchronized(mDB.lock()) {
@@ -677,7 +713,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param trustee The identity which receives the trust
 	 * @return The trust given to the trustee by the specified truster
 	 * @throws NotTrustedException if the truster doesn't trust the trustee
-	 * @throws DuplicateTrustException If there are more than one Trust object between these identities in the database (should never happen)
 	 */
 	@SuppressWarnings("unchecked")
 	public synchronized Trust getTrust(Identity truster, Identity trustee) throws NotTrustedException, DuplicateTrustException {
@@ -800,24 +835,24 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param truster
 	 * @param trustee
 	 */
-//	protected synchronized void removeTrust(Identity truster, Identity trustee) {
-//		synchronized(mDB.lock()) {
-//			try {
-//				try {
-//					Trust trust = getTrust(truster, trustee);
-//					mDB.delete(trust);
-//					updateScoreWithoutCommit(trustee);
-//				} catch (NotTrustedException e) {
-//					Logger.error(this, "Cannot remove trust - there is none - from " + truster.getNickName() + " to "
-//						+ trustee.getNickName());
-//				} 
-//			}
-//			catch(RuntimeException e) {
-//				mDB.rollback();
-//				throw e;
-//			}
-//		}
-//	}
+	protected synchronized void removeTrust(OwnIdentity truster, Identity trustee) {
+		synchronized(mDB.lock()) {
+			try {
+				try {
+					Trust trust = getTrust(truster, trustee);
+					mDB.delete(trust);
+					updateScoreWithoutCommit(trustee);
+				} catch (NotTrustedException e) {
+					Logger.error(this, "Cannot remove trust - there is none - from " + truster.getNickname() + " to "
+						+ trustee.getNickname());
+				} 
+			}
+			catch(RuntimeException e) {
+				mDB.rollback();
+				throw e;
+			}
+		}
+	}
 	
 	/**
 	 * 
@@ -1004,194 +1039,224 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return rank;
 	}
 	
+	/* Client interface functions */
 	
-	public Identity addIdentity(String requestURI)
-		throws MalformedURLException, InvalidParameterException, FetchException, DuplicateIdentityException {
+	public synchronized Identity addIdentity(String requestURI) throws MalformedURLException, InvalidParameterException {
+		Identity identity;
 		
-		Identity identity = null;
 		try {
-			identity = Identity.getByURI(db, requestURI);
-			Logger.error(this, "Tried to manually add an identity we already know, ignored.");
+			identity = getIdentityByURI(requestURI);
+			Logger.debug(this, "Tried to manually add an identity we already know, ignored.");
 			throw new InvalidParameterException("We already have this identity");
 		}
-		catch (UnknownIdentityException e) {
+		catch(UnknownIdentityException e) {
 			identity = new Identity(new FreenetURI(requestURI), null, false);
-			db.store(identity);
-			db.commit();
+			storeAndCommit(identity);
 			Logger.debug(this, "Trying to fetch manually added identity (" + identity.getRequestURI() + ")");
-			fetcher.fetch(identity);
+			mFetcher.fetch(identity);
 		}
+		
 		return identity;
 	}
 	
-	public void deleteIdentity(String id) throws DuplicateIdentityException, UnknownIdentityException {
-		Identity identity = Identity.getById(db, id);
-		
-		// Remove all scores
-		ObjectSet<Score> scores = identity.getScores(db);
-		while (scores.hasNext()) db.delete(scores.next());
-		
-		// Remove all received trusts
-		ObjectSet<Trust> receivedTrusts = identity.getReceivedTrusts(db);
-		while (receivedTrusts.hasNext()) db.delete(receivedTrusts.next());
-		
-		// Remove all given trusts and update trustees' scores
-		ObjectSet<Trust> givenTrusts = identity.getGivenTrusts(db);
-		while (givenTrusts.hasNext()) {
-			Trust givenTrust = givenTrusts.next();
-			db.delete(givenTrust);
-			givenTrust.getTrustee().updateScoreWithoutCommit(db);
+	public synchronized void deleteIdentity(String id) throws UnknownIdentityException {
+		synchronized(mDB.lock()) {
+			try {
+				Identity identity = getIdentityByID(id);
+				
+				for(Score score : getScores(identity))
+					mDB.delete(score);
+				
+				for(Trust trust : getReceivedTrusts(identity))
+					mDB.delete(trust);
+				
+				for(Trust givenTrust : getGivenTrusts(identity)) {
+					mDB.delete(givenTrust);
+					updateScoreWithoutCommit(givenTrust.getTrustee());
+				}
+				
+				mDB.delete(identity);
+				mDB.commit();
+			}
+			catch(RuntimeException e) {
+				mDB.rollback();
+				throw e;
+			}
 		}
-		
-		db.delete(identity);
 	}
 	
-	public OwnIdentity createIdentity(String nickName, boolean publishTrustList, String context) {
-
+	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
+		throws MalformedURLException, InvalidParameterException {
+		
 		FreenetURI[] keypair = getPluginRespirator().getHLSimpleClient().generateKeyPair("WoT");
-		return createIdentity(keypair[0].toString(), keypair[1].toString(), nickName, publishTrustList, context);
+		return createOwnIdentity(keypair[0].toString(), keypair[1].toString(), nickName, publishTrustList, context);
 	}
 
-	public OwnIdentity createIdentity(String insertURI, String requestURI, String nickName, boolean publishTrustList, String context) {
-
-		OwnIdentity identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
-		identity.addContext(db, context);
-		identity.addContext(db, IntroductionPuzzle.INTRODUCTION_CONTEXT); /* FIXME: make configureable */
-		identity.setProperty(db, "IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT));
-		db.store(identity);
-		initTrustTree(identity);		
-
-		// This identity trusts the seed identity
-		identity.setTrustWithoutCommit(db, seed, (byte)100, "I trust the WoT plugin");
+	public synchronized OwnIdentity createOwnIdentity(String insertURI, String requestURI, String nickName,
+			boolean publishTrustList, String context) throws MalformedURLException, InvalidParameterException {
 		
-		db.commit();
-		
-		inserter.wakeUp();
-		
-		Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickname() + ")");
-
-		return identity;
-	}
-
-	public void restoreIdentity(String requestURI, String insertURI) {
-		
-		OwnIdentity id;
-		
-		try {
-			Identity old = Identity.getByURI(db, requestURI);
+		synchronized(mDB.lock()) {
+			OwnIdentity identity;
 			
-			// We already have fetched this identity as a stranger's one. We need to update the database.
-			id = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), old.getNickname(), old.doesPublishTrustList());
-			id.setEdition(old.getEdition());
-			
-			for(String context : old.getContexts())
-				id.addContext(db, context);
-			
-			for(Entry<String, String> prop : old.getProperties().entrySet())
-				id.setProperty(db, prop.getKey(), prop.getValue());
-			
-			// Update all received trusts
-			ObjectSet<Trust> receivedTrusts = old.getReceivedTrusts(db);
-			while(receivedTrusts.hasNext()) {
-				Trust receivedTrust = receivedTrusts.next();
-				Trust newReceivedTrust = new Trust(receivedTrust.getTruster(), id, receivedTrust.getValue(), receivedTrust.getComment());
-				db.delete(receivedTrust);
-				db.store(newReceivedTrust);
+			try {
+				identity = getOwnIdentityByURI(requestURI);
+				Logger.debug(this, "Tried to create an own identity with an already existing request URI.");
+				throw new InvalidParameterException("The URI you specified is already used by the own identity " +
+						identity.getNickname() + ".");
 			}
-
-			// Update all received scores
-			ObjectSet<Score> scores = old.getScores(db);
-			while(scores.hasNext()) {
-				Score score = scores.next();
-				Score newScore = new Score(score.getTreeOwner(), id, score.getScore(), score.getRank(), score.getCapacity());
-				db.delete(score);
-				db.store(newScore);
+			catch(UnknownIdentityException uie) {
+				identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
+				identity.addContext(context);
+				identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); /* FIXME: make configureable */
+				identity.setProperty("IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT));
+				
+				try {
+					mDB.store(identity);
+					initTrustTree(identity);
+					
+					for(String seedURI : SEED_IDENTITIES) {
+						try {
+							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "I trust the Freenet developers.");
+						} catch(UnknownIdentityException e) {
+							Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known.", e);
+						}
+					}
+					
+					mDB.commit();
+					
+					Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickname() + ")");
+					return identity;
+				}
+				catch(RuntimeException e) {
+					mDB.rollback();
+					throw e;
+				}
 			}
-
-			// Store the new identity
-			db.store(id);
-			initTrustTree(id);
-			
-			// Update all given trusts
-			ObjectSet<Trust> givenTrusts = old.getGivenTrusts(db);
-			while(givenTrusts.hasNext()) {
-				Trust givenTrust = givenTrusts.next();
-				id.setTrustWithoutCommit(db, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
-				db.delete(givenTrust);
-			}
-
-			// Remove the old identity
-			db.delete(old);
-			
-			Logger.debug(this, "Successfully restored an already known identity from Freenet (" + id.getNickname() + ")");
-			
-		} catch (UnknownIdentityException e) {
-			id = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), null, false);
-			
-			// Store the new identity
-			db.store(id);
-			id.initTrustTree(db);
-			
-			// Fetch the identity from freenet
-			fetcher.fetch(id);
-			
-			Logger.debug(this, "Trying to restore a not-yet-known identity from Freenet (" + id.getRequestURI() + ")");
 		}
-		db.commit();
 	}
+
+	public synchronized void restoreIdentity(String requestURI, String insertURI) throws MalformedURLException, InvalidParameterException {
+		OwnIdentity identity;
+		synchronized(mDB.lock()) {
+			try {
+				try {
+					Identity old = getIdentityByURI(requestURI);
+					
+					if(old instanceof OwnIdentity)
+						throw new InvalidParameterException("There is already an own identity with the given URI pair.");
+					
+					// We already have fetched this identity as a stranger's one. We need to update the database.
+					identity = new OwnIdentity(insertURI, requestURI, old.getNickname(), old.doesPublishTrustList());
+					identity.setEdition(old.getEdition());
+				
+					identity.setContexts(old.getContexts());
+					identity.setProperties(old.getProperties());
 	
-	public void setTrust(String truster, String trustee, String value, String comment) throws InvalidParameterException, UnknownIdentityException, NumberFormatException, TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
-		OwnIdentity trusterId = OwnIdentity.getById(db, truster);
-		Identity trusteeId = Identity.getById(db, trustee);
+					// Update all received trusts
+					for(Trust oldReceivedTrust : getReceivedTrusts(old)) {
+						Trust newReceivedTrust = new Trust(oldReceivedTrust.getTruster(), identity,
+								oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
+						
+						mDB.delete(oldReceivedTrust); /* FIXME: Is this allowed by db4o in a for-each loop? */
+						mDB.store(newReceivedTrust);
+					}
+		
+					// Update all received scores
+					for(Score oldScore : getScores(old)) {
+						Score newScore = new Score(oldScore.getTreeOwner(), identity, oldScore.getScore(),
+								oldScore.getRank(), oldScore.getCapacity());
+						
+						mDB.delete(oldScore);
+						mDB.store(newScore);
+					}
+		
+					mDB.store(identity);
+					initTrustTree(identity);
+					
+					// Update all given trusts
+					for(Trust givenTrust : getGivenTrusts(old)) {
+						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
+						/* FIXME: The old code would just delete the old trust value here instead of doing the following... 
+						 * Is the following line correct? */
+						removeTrustWithoutCommit(givenTrust);
+					}
+		
+					// Remove the old identity
+					mDB.delete(old);
+					storeAndCommit(identity);
+					
+					Logger.debug(this, "Successfully restored an already known identity from Freenet (" + identity.getNickname() + ")");
+					
+				} catch (UnknownIdentityException e) {
+					identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), null, false);
+					
+					// Store the new identity
+					mDB.store(identity);
+					initTrustTree(identity);
+					storeAndCommit(identity);
+					
+					Logger.debug(this, "Successfully restored not-yet-known identity from Freenet (" + identity.getRequestURI() + ")");
+				}
+			}
+			catch(RuntimeException e) {
+				mDB.rollback();
+				throw e;
+			}
+			
+			mFetcher.fetch(identity);
+		}
+		
+	}
+
+
+	public synchronized void setTrust(String ownTrusterID, String trusteeID, String value, String comment)
+		throws UnknownIdentityException, NumberFormatException, InvalidParameterException {
+		
+		OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
+		Identity trustee = getIdentityByID(trusteeID);
 		
 		if(value.trim().equals(""))
-			removeTrust(trusterId, trusteeId);
+			removeTrust(truster, trustee);
 		else
-			setTrust(trusterId, trusteeId, Byte.parseByte(value), comment);
-	}
-	
-	
-	public void removeTrust(OwnIdentity truster, Identity trustee) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, InvalidParameterException, DuplicateScoreException, NotTrustedException, DuplicateTrustException {
-		truster.removeTrust(db, trustee);
-		truster.updated();
-		db.store(truster);
-		db.commit();	
-	}
-	
-	public void addContext(String identity, String context) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		Identity id = OwnIdentity.getById(db, identity);
-		id.addContext(db, context);
-		db.store(id);
-		
-		Logger.debug(this, "Added context '" + context + "' to identity '" + id.getNickname() + "'");
-	}
-	
-	public void removeContext(String identity, String context) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		Identity id = OwnIdentity.getById(db, identity);
-		id.removeContext(context, db);
-		db.store(id);
-		
-		Logger.debug(this, "Removed context '" + context + "' from identity '" + id.getNickname() + "'");
+			setTrust(truster, trustee, Byte.parseByte(value), comment);
 	}
 
-	public void setProperty(String identity, String property, String value) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		Identity id = OwnIdentity.getById(db, identity);
-		id.setProperty(db, property, value);
-		db.store(id);
+	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {
+		Identity identity = getOwnIdentityByID(ownIdentityID);
+		identity.addContext(newContext);
+		storeAndCommit(identity);
 		
-		Logger.debug(this, "Added property '" + property + "=" + value + "' to identity '" + id.getNickname() + "'");
+		Logger.debug(this, "Added context '" + newContext + "' to identity '" + identity.getNickname() + "'");
+	}
+
+	public synchronized void removeContext(String ownIdentityID, String context) throws UnknownIdentityException, InvalidParameterException {
+		Identity identity = getOwnIdentityByID(ownIdentityID);
+		identity.removeContext(context);
+		storeAndCommit(identity);
+		
+		Logger.debug(this, "Removed context '" + context + "' from identity '" + identity.getNickname() + "'");
 	}
 	
-	public String getProperty(String identity, String property) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		return Identity.getById(db, identity).getProperty(property);
+	public synchronized String getProperty(String identityID, String property) throws InvalidParameterException, UnknownIdentityException {
+		return getIdentityByID(identityID).getProperty(property);
+	}
+
+	public synchronized void setProperty(String ownIdentityID, String property, String value)
+		throws UnknownIdentityException, InvalidParameterException {
+		
+		Identity identity = getOwnIdentityByID(ownIdentityID);
+		identity.setProperty(property, value);
+		storeAndCommit(identity);
+		
+		Logger.debug(this, "Added property '" + property + "=" + value + "' to identity '" + identity.getNickname() + "'");
 	}
 	
-	public void removeProperty(String identity, String property) throws InvalidParameterException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		Identity id = OwnIdentity.getById(db, identity);
-		id.removeProperty(property, db);
-		db.store(id);
+	public void removeProperty(String ownIdentityID, String property) throws UnknownIdentityException, InvalidParameterException {
+		Identity identity = getOwnIdentityByID(ownIdentityID);
+		identity.removeProperty(property);
+		storeAndCommit(identity);
 		
-		Logger.debug(this, "Removed property '" + property + "' from identity '" + id.getNickname() + "'");
+		Logger.debug(this, "Removed property '" + property + "' from identity '" + identity.getNickname() + "'");
 	}
 
 	public String getVersion() {
@@ -1213,31 +1278,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public void setLanguage(LANGUAGE newLanguage) {
 	}
 	
-	public Identity getSeedIdentity() {
-		if(seed == null) { // The seed identity hasn't been initialized yet
-			try { // Try to load it from database
-				seed = Identity.getByURI(db, SEED_IDENTITY_URI);
-			} catch (UnknownIdentityException e) { // Create it.
-				try {
-					// Create the seed identity
-					seed = new Identity(new FreenetURI(SEED_IDENTITY_URI), null, true);
-					seed.setEdition(seed.getRequestURI().getSuggestedEdition());
-				} catch (Exception e1) { // Should never happen
-					Logger.error(this, "Seed identity creation error", e1);
-					return null;
-				}
-				db.store(seed);
-				db.commit();
-			} catch (Exception e) { // Should never happen
-				Logger.error(this, "Seed identity loading error", e);
-				return null;
-			}
-		}
-		return seed;
-	}
-	
 	public PluginRespirator getPluginRespirator() {
-		return pr;
+		return mPR;
 	}
 	
 	public ExtObjectContainer getDB() {
@@ -1249,7 +1291,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	public IdentityFetcher getIdentityFetcher() {
-		return fetcher;
+		return mFetcher;
 	}
 
 	public XMLTransformer getXMLTransformer() {
@@ -1261,11 +1303,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public IntroductionClient getIntroductionClient() {
-		return introductionClient;
+		return mIntroductionClient;
 	}
 
 	public RequestClient getRequestClient() {
-		return requestClient;
+		return mRequestClient;
 	}
 
 }
