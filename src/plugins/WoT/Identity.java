@@ -145,7 +145,7 @@ public class Identity {
 	 * @throws IllegalArgumentException If the given FreenetURI is neither a SSK nor a USK or if the keypair does not match the old one.
 	 */
 	protected synchronized void setRequestURI(FreenetURI newRequestURI) {
-		if(!newRequestURI.equalsKeypair(mRequestURI))
+		if(mRequestURI != null && !newRequestURI.equalsKeypair(mRequestURI))
 			throw new IllegalArgumentException("Cannot change the request URI of an existing identity.");
 		
 		if(!newRequestURI.isUSK() && !newRequestURI.isSSK())
