@@ -187,6 +187,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 	}
 	
+	public WoT() {
+		
+	}
+	
 	/**
 	 * For use by the unit tests to be able to run WoT without a node.
 	 * @param databaseFilename The filename of the database.
