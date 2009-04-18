@@ -138,8 +138,8 @@ public final class Score {
 	 * Sets how far the target Identity is from the trust tree's root.
 	 */
 	protected synchronized void setRank(int newRank) {
-		if(newRank < 0)
-			throw new IllegalArgumentException("Negative rank is not allowed");
+		if(newRank < -1)
+			throw new IllegalArgumentException("Illegal rank.");
 		
 		mRank = newRank;
 	}
