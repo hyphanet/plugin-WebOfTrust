@@ -1,8 +1,6 @@
-/**
- * This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.test;
 
 import java.net.MalformedURLException;
@@ -15,7 +13,7 @@ import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 
 /**
- * @author Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
 public class ScoreTest extends DatabaseBasedTest {
 	

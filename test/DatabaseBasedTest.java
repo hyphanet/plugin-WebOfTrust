@@ -1,6 +1,6 @@
-/* This code is part of Freenet. It is distributed under the GNU General
- * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
+ * under the GNU General Public License, version 2 (or at your option
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.test;
 
 import java.io.File;
@@ -18,7 +18,7 @@ import plugins.WoT.WoT;
  * 
  * You have to call super.setUp() and super.tearDown() if you override one of those methods.
  * 
- * @author xor
+ * @author xor (xor@freenetproject.org)
  */
 public class DatabaseBasedTest extends TestCase {
 
