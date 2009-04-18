@@ -1,24 +1,21 @@
-/**
- * This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.test;
 
 import java.net.MalformedURLException;
 
 import plugins.WoT.Identity;
 import plugins.WoT.Trust;
-import plugins.WoT.exceptions.DuplicateIdentityException;
+import plugins.WoT.WoT;
 import plugins.WoT.exceptions.DuplicateTrustException;
-import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 
-import com.db4o.Db4o;
+import com.db4o.ext.ExtObjectContainer;
 
 /**
- * @author Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
 public class TrustTest extends DatabaseBasedTest {
 	
@@ -35,41 +32,45 @@ public class TrustTest extends DatabaseBasedTest {
 		a = new Identity(uriA, "A", true);
 		b = new Identity(uriB, "B", true);
 		Trust trust = new Trust(a,b,(byte)100,"test");
+		
+		ExtObjectContainer db = mWoT.getDB();
+		db.store(a, 5);
+		db.store(b, 5);
 		db.store(trust);
-		db.store(a);
-		db.store(b);
 		db.commit();
+		
 	}
 	
 	/* FIXME: Add some logic to make db4o deactivate everything which is not used before loading the objects from the db!
 	 * Otherwise these tests might not be sufficient. 
 	 * Put this logic into the DatabaseBasedTest base class. */
 
-	public void testTrust() throws InvalidParameterException, NotTrustedException, DuplicateTrustException {
+	public void testTrust() throws DuplicateTrustException, NotTrustedException {
 
-		Trust trust = a.getGivenTrust(b, db);
+		Trust trust = mWoT.getTrust(a, b); 
 		assertTrue(trust.getTruster() == a);
 		assertTrue(trust.getTrustee() == b);
 		assertTrue(trust.getValue() == 100);
-		assertTrue(trust.getComment().equals("test"));
+		assertEquals("test", trust.getComment());
 	}
 	
-	public void testTrustPersistence() throws MalformedURLException, UnknownIdentityException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
+	public void testTrustPersistence() throws MalformedURLException, UnknownIdentityException, DuplicateTrustException, NotTrustedException {
 		
-		db.close();
+		mWoT.terminate();
+		mWoT = null;
 		
 		System.gc();
 		System.runFinalization();
 		
-		db = Db4o.openFile(getDatabaseFilename());
+		mWoT = new WoT(getDatabaseFilename());
 		
-		a = Identity.getByURI(db, uriA);
-		b = Identity.getByURI(db, uriB);
-		Trust trust = a.getGivenTrust(b, db);
+		a = mWoT.getIdentityByURI(uriA);
+		b = mWoT.getIdentityByURI(uriB);
+		Trust trust = mWoT.getTrust(a, b);
 		
 		assertTrue(trust.getTruster() == a);
 		assertTrue(trust.getTrustee() == b);
 		assertTrue(trust.getValue() == 100);
-		assertTrue(trust.getComment().equals("test"));
+		assertEquals("test", trust.getComment());
 	}
 }
