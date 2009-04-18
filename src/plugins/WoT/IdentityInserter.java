@@ -1,29 +1,17 @@
-/**
- * This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 
 package plugins.WoT;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-
-import plugins.WoT.exceptions.InvalidParameterException;
+import java.util.Collection;
+import java.util.Random;
 
 import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import com.db4o.ext.DatabaseClosedException;
-import com.db4o.ext.Db4oIOException;
 
-import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -31,41 +19,41 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
+import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
-import freenet.support.io.TempBucketFactory;
+import freenet.support.io.NativeThread;
 
 /**
  * Inserts OwnIdentities to Freenet when they need it.
  * 
- * @author Julien Cornuwel (batosai@freenetproject.org)
- *
+ * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-/* FIXME: Use class freenet.support.TransferThread */
-public final class IdentityInserter implements Runnable, ClientCallback {
+public final class IdentityInserter extends TransferThread {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 45 * 60 * 1000;
+	private static final int THREAD_PERIOD = 45 * 60 * 1000; /* FIXME: Tweak before release */
+	
+	/**
+	 * The minimal time for which an identity must not have changed before we insert it.
+	 */
+	private static final int MIN_DELAY_BEFORE_INSERT = 5 * 60 * 1000;
+	
+	/**
+	 * The maximal delay for which an identity insert can be delayed (relative to the last insert) due to continuous changes.
+	 */
+	private static final int MAX_DELAY_BEFORE_INSERT = 60 * 60 * 1000; /* FIXME: Tweak before release */
+	
 	
 	private WoT mWoT;
-	
-	/** A reference to the database */
-	ObjectContainer db;
-	/** A reference the HighLevelSimpleClient used to perform inserts */
-	HighLevelSimpleClient client;
-	/** The TempBucketFactory used to create buckets from Identities before insert */
-	final TempBucketFactory tBF;
-	/** Used to tell the InserterThread if it should stop */
-	private volatile boolean isRunning = false;
-	private volatile boolean shutdownFinished = false;
-	private Thread mThread;
-	
-	private final ArrayList<BaseClientPutter> mInserts = new ArrayList<BaseClientPutter>(10); /* Just assume that there are 10 identities */
+
+	/** Random number generator */
+	private Random mRandom;
 	
 	/**
 	 * Creates an IdentityInserter.
@@ -75,151 +63,95 @@ public final class IdentityInserter implements Runnable, ClientCallback {
 	 * @param tbf Needed to create buckets from Identities before insert
 	 */
 	public IdentityInserter(WoT myWoT) {
+		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Identity Inserter");
 		mWoT = myWoT;
-		db = mWoT.getDB();
-		client = mWoT.getPluginRespirator().getHLSimpleClient();
-		tBF = mWoT.getPluginRespirator().getNode().clientCore.tempBucketFactory;
-		isRunning = true;
+		mRandom = mWoT.getPluginRespirator().getNode().fastWeakRandom;
+		
+		start();
 	}
 	
-	/**
-	 * Starts the IdentityInserter thread. About every 30 minutes (+/- 50%),
-	 * it exports to XML and inserts OwnIdentities that need it.
-	 */
-	public void run() {
-		mThread = Thread.currentThread();
-		Logger.debug(this, "Identity inserter thread started.");
+	@Override
+	protected Collection<ClientGetter> createFetchStorage() {
+		return null;
+	}
+
+	@Override
+	protected Collection<BaseClientPutter> createInsertStorage() {
+		return new ArrayList<BaseClientPutter>(10); /* 10 identities should be much */
+	}
+
+	@Override
+	public int getPriority() {
+		return NativeThread.LOW_PRIORITY;
+	}
+
+	@Override
+	protected long getStartupDelay() {
+		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
+	}
+	
+	@Override
+	protected long getSleepTime() {
+		return THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
+	}
+
+	@Override
+	protected void iterate() {
+		abortInserts();
 		
-		try {
-			Thread.sleep((long) (STARTUP_DELAY * (0.5f + Math.random()))); // Let the node start up
-		}
-		catch (InterruptedException e)
-		{
-			mThread.interrupt();
-		}
-		try {
-		while(isRunning) {
-			Thread.interrupted();
-			Logger.debug(this, "IdentityInserter loop running...");
-			cancelInserts(); /* FIXME: check whether this does not prevent the cancelled inserts from being restarted in the loop right now */
-			ObjectSet<OwnIdentity> identities = OwnIdentity.getAllOwnIdentities(db);
-			while(identities.hasNext()) {
-				OwnIdentity identity = identities.next();
-				/* FIXME: Where is the synchronization? */
+		synchronized(mWoT) {
+			for(OwnIdentity identity : mWoT.getAllOwnIdentities()) {
 				if(identity.needsInsert()) {
 					try {
-						Logger.debug(this, "Starting insert of "+identity.getNickName() + " (" + identity.getInsertURI().toString() + ")");
-						insert(identity);
+						long minDelayedInsertTime = identity.getLastChangeDate().getTime() + MIN_DELAY_BEFORE_INSERT;
+						long maxDelayedInsertTime = identity.getLastInsertDate().getTime() + MAX_DELAY_BEFORE_INSERT; 
+						
+						if(CurrentTimeUTC.getInMillis() > Math.min(minDelayedInsertTime, maxDelayedInsertTime)) {
+							Logger.debug(this, "Starting insert of " + identity.getNickname() + " (" + identity.getInsertURI() + ")");
+							insert(identity);
+						} else {
+							long lastChangeBefore = (CurrentTimeUTC.getInMillis() - identity.getLastChangeDate().getTime()) / (60*1000);
+							long lastInsertBefore = (CurrentTimeUTC.getInMillis() - identity.getLastInsertDate().getTime()) / (60*1000); 
+							
+							Logger.debug(this, "Delaying insert of " + identity.getNickname() + " (" + identity.getInsertURI() + "), " +
+									"last change: " + lastChangeBefore + "min ago, last insert: " + lastInsertBefore + "min ago");
+						}
 					} catch (Exception e) {
-						Logger.error(this, "Identity insert failed: "+e.getMessage(), e);
+						Logger.error(this, "Identity insert failed: " + e.getMessage(), e);
 					}
 				}
 			}
-			db.commit();
-			Logger.debug(this, "IdentityInserter loop finished...");
-			try {
-				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
-			}
-			catch (InterruptedException e)
-			{
-				mThread.interrupt();
-				Logger.debug(this, "Identity inserter thread interrupted.");
-			}
 		}
-		}
-		
-		finally {
-		cancelInserts();
-		synchronized (this) {
-			shutdownFinished = true;
-			Logger.debug(this, "Identity inserter thread finished.");
-			notify();
-		}
-		}
-	}
-	
-	private void cancelInserts() {
-		Logger.debug(this, "Trying to stop all inserts");
-		synchronized(mInserts) {
-			Iterator<BaseClientPutter> i = mInserts.iterator();
-			int icounter = 0;
-			while (i.hasNext()) { i.next().cancel(); i.remove(); ++icounter; }
-			Logger.debug(this, "Stopped " + icounter + " current inserts");
-		}
-	}
-	
-	/**
-	 * Stops the IdentityInserter thread.
-	 */
-	public void stop() {
-		Logger.debug(this, "Stopping IdentityInserter thread...");
-		isRunning = false;
-		mThread.interrupt();
-		synchronized(this) {
-			while(!shutdownFinished) {
-				try {
-					wait();
-				}
-				catch (InterruptedException e) {
-					Thread.interrupted();
-				}
-			}
-		}
-		Logger.debug(this, "Stopped IdentityInserter thread.");
-	}
-	
-	public void wakeUp() {
-		if(mThread != null)
-			mThread.interrupt(); /* FIXME: toad: i hope this will not break any of the code which is NOT the sleep() function??? */
 	}
 
 	/**
 	 * Inserts an OwnIdentity.
-	 * 
-	 * @param identity the OwnIdentity to insert
-	 * @throws TransformerConfigurationException
-	 * @throws FileNotFoundException
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
-	 * @throws Db4oIOException
-	 * @throws DatabaseClosedException
-	 * @throws InvalidParameterException
-	 * @throws InsertException
+	 * @throws IOException 
 	 */
-	private synchronized void insert(OwnIdentity identity) throws TransformerConfigurationException, FileNotFoundException, ParserConfigurationException, TransformerException, IOException, Db4oIOException, DatabaseClosedException, InvalidParameterException, InsertException {
-		/* FIXME: Where is the synchronization? */
-		/* TODO: after the WoT has become large enough, calculate the average size of identity.xml and either modify the constant or even calculate dynamically */
-		Bucket tempB = tBF.makeBucket(8 * 1024);  
+	private void insert(OwnIdentity identity) throws IOException {
+		Bucket tempB = mTBF.makeBucket(64 * 1024); /* FIXME: Tweak */  
 		OutputStream os = null;
 
 		try {
-			if(identity.getEdition() == 0)
-				identity.setEdition(1);
-			
 			os = tempB.getOutputStream();
-			mWoT.getIdentityXML().exportOwnIdentity(identity, os);
-		
+			mWoT.getXMLTransformer().exportOwnIdentity(identity, os);
 			os.close(); os = null;
 			tempB.setReadOnly();
 		
-			// Prepare the insert
-			ClientMetadata cmd = new ClientMetadata("text/xml");
-			InsertBlock ib = new InsertBlock(tempB,cmd,identity.getInsertURI());
-			InsertContext ictx = client.getInsertContext(true);
+			/* FIXME: Toad: Are these parameters correct? */
+			InsertBlock ib = new InsertBlock(tempB, null, identity.getInsertURI());
+			InsertContext ictx = mClient.getInsertContext(true);
 			
 			/* FIXME: are these parameters correct? */
-			ClientPutter pu = client.insert(ib, false, "identity.xml", false, ictx, this);
-			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);	/* pluginmanager defaults to interactive priority */
-			synchronized(mInserts) {
-				mInserts.add(pu);
-			}
+			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
+			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);	/* PluginManager defaults to interactive priority */
+			addInsert(pu);
 			tempB = null;
 			
-			Logger.debug(this, "Started insert of identity '" + identity.getNickName() + "'");
+			Logger.debug(this, "Started insert of identity '" + identity.getNickname() + "'");
 		}
 		catch(Exception e) {
-			Logger.error(this,"Error during insert of identity '" + identity.getNickName() + "'", e);
+			Logger.error(this, "Error during insert of identity '" + identity.getNickname() + "'", e);
 		}
 		finally {
 			if(tempB != null)
@@ -228,38 +160,39 @@ public final class IdentityInserter implements Runnable, ClientCallback {
 		}
 	}
 	
-	private void removeInsert(BaseClientPutter p) {
-		synchronized(mInserts) {
-			//p.cancel(); /* FIXME: is this necessary ? */
-			mInserts.remove(p);
-		}
-		Logger.debug(this, "Removed insert for " + p.getURI());
-	}
-	
-	// Only called by inserts
 	public void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
 		try {
-			OwnIdentity identity = OwnIdentity.getByURI(db, state.getURI());
-			identity.setEdition(state.getURI().getSuggestedEdition());
-			identity.updateLastInsert(); /* FIXME: check whether the identity was modified during the insert and re-insert if it was */
-			 
-			db.store(identity);
-			db.commit();
-			Logger.debug(this, "Successful insert of identity '" + identity.getNickName() + "'");
-		} catch(Exception e) { Logger.error(this, "Error", e); }
-		removeInsert(state);
+			synchronized(mWoT) {
+				OwnIdentity identity = mWoT.getOwnIdentityByURI(state.getURI());
+				identity.setEdition(state.getURI().getSuggestedEdition());
+				identity.updateLastInsertDate();
+				mWoT.storeAndCommit(identity);
+				Logger.debug(this, "Successful insert of identity '" + identity.getNickname() + "'");
+			}
+		}
+		catch(Exception e)
+		{
+			Logger.error(this, "Error", e);
+		}
+		finally {
+			removeInsert(state);
+		}
 	}
-	
-	// Only called by inserts
+
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
 	{
 		try {
-			OwnIdentity identity = OwnIdentity.getByURI(db, state.getURI());
+			OwnIdentity identity = mWoT.getOwnIdentityByURI(state.getURI());
 
-			Logger.error(this, "Error during insert of identity '" + identity.getNickName() + "'", e);
-		} catch(Exception ex) { Logger.error(this, "Error", e); }
-		removeInsert(state);
+			Logger.error(this, "Error during insert of identity '" + identity.getNickname() + "'", e);
+		}
+		catch(Exception ex) {
+			Logger.error(this, "Error", e);
+		}
+		finally {
+			removeInsert(state);
+		}
 	}
 	
 	/* Not needed functions from the ClientCallback interface */
@@ -288,5 +221,6 @@ public final class IdentityInserter implements Runnable, ClientCallback {
 		// TODO Auto-generated method stub
 		
 	}
+
 }
 
