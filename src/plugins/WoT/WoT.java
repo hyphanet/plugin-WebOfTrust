@@ -57,7 +57,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	/* Constants */
 	
-	public static final int DATABASE_FORMAT_VERSION = 1;
+	public static final int DATABASE_FORMAT_VERSION = -100;
 	
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
