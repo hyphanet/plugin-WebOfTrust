@@ -799,6 +799,19 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	/**
+	 * Gets all trusts.
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 * 
+	 * @return An {@link ObjectSet} containing all {@link Trust} the passed Identity has received.
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<Trust> getAllTrusts() {
+		Query query = mDB.query();
+		query.constrain(Trust.class);
+		return query.execute();
+	}
+	
+	/**
 	 * Gives some {@link Trust} to another Identity.
 	 * It creates or updates an existing Trust object and make the trustee compute its {@link Score}.
 	 * 
