@@ -56,16 +56,15 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		if(!ownerID.equals("")) {
 			try {
-				treeOwner = OwnIdentity.getById(db, ownerID);
+				treeOwner = wot.getOwnIdentityByID(ownerID);
 			} catch (Exception e) {
 				Logger.error(this, "Error while selecting the OwnIdentity", e);
 				addErrorBox("Error while selecting the OwnIdentity", e.getLocalizedMessage());
 			}
 		} else {
-			 nbOwnIdentities = OwnIdentity.getNbOwnIdentities(db);
-
-			 if(nbOwnIdentities == 1)
-				treeOwner = OwnIdentity.getAllOwnIdentities(db).next();
+			ObjectSet<OwnIdentity> allOwnIdentities = wot.getAllOwnIdentities();
+			if(allOwnIdentities.size() == 1)
+				treeOwner = allOwnIdentities.next();
 		}
 			
 		makeAddIdentityForm(pr, treeOwner);
@@ -97,7 +96,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	
 		HTMLNode createForm = pr.addFormChild(addBoxContent, SELF_URI, "addIdentity");
 		if(treeOwner != null)
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "ownerID", treeOwner.getId()});
+			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "ownerID", treeOwner.getID()});
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "addIdentity" });
 		createForm.addChild("span", new String[] {"title", "style"}, new String[] { "This must be a valid Freenet URI.", "border-bottom: 1px dotted; cursor: help;"} , "Identity URI : ");
 		createForm.addChild("input", new String[] {"type", "name", "size"}, new String[] {"text", "identityURI", "70"});
@@ -120,11 +119,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "viewTree" });
 		HTMLNode selectBox = selectForm.addChild("select", "name", "ownerID");
 
-		ObjectSet<OwnIdentity> ownIdentities = OwnIdentity.getAllOwnIdentities(db);
-		while(ownIdentities.hasNext()) {
-			OwnIdentity ownIdentity = ownIdentities.next();
-			selectBox.addChild("option", "value", ownIdentity.getId(), ownIdentity.getNickName());				
-		}
+		for(OwnIdentity ownIdentity : wot.getAllOwnIdentities())
+			selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getNickname());				
+
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "select", "View this identity's Web of Trust" });
 	}
 /**
@@ -149,16 +146,13 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		row.addChild("th", "Trusters");
 		row.addChild("th", "Trustees");
 		
-		ObjectSet<Identity> identities = Identity.getAllIdentities(db);
-		while(identities.hasNext()) {
-			Identity id = identities.next();
-			
+		for(Identity id : wot.getAllIdentities()) {
 			if(id == treeOwner) continue;
 
 			row=identitiesTable.addChild("tr");
 			
 			// NickName
-			row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"}).addChild("a", "href", "?showIdentity&id=" + id.getId(), id.getNickName());
+			row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"}).addChild("a", "href", "?showIdentity&id=" + id.getID(), id.getNickname());
 			
 			synchronized(mDateFormat) {
 				mDateFormat.setTimeZone(TimeZone.getDefault());
@@ -171,7 +165,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			//Score
 			try {
-				row.addChild("td", new String[] { "align" }, new String[] { "center" } , String.valueOf(id.getScore((OwnIdentity)treeOwner, db).getScore())+" ("+id.getScore((OwnIdentity)treeOwner, db).getRank()+")");
+				row.addChild("td", new String[] { "align" }, new String[] { "center" } , String.valueOf(wot.getScore((OwnIdentity)treeOwner, id).getScore())+" ("+wot.getScore((OwnIdentity)treeOwner, id).getRank()+")");
 			}
 			catch (NotInTrustTreeException e) {
 				// This only happen with identities added manually by the user
@@ -184,11 +178,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			// Nb Trusters
 			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-			trustersCell.addChild(new HTMLNode("a", "href", SELF_URI + "?showIdentity&id="+id.getId(), Long.toString(id.getNbReceivedTrusts(db))));
+			trustersCell.addChild(new HTMLNode("a", "href", SELF_URI + "?showIdentity&id="+id.getID(), Long.toString(wot.getReceivedTrusts(id).size())));
 			
 			// Nb Trustees
 			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-			trusteesCell.addChild(new HTMLNode("a", "href", SELF_URI + "?showIdentity&id="+id.getId(), Long.toString(id.getNbGivenTrusts(db))));
+			trusteesCell.addChild(new HTMLNode("a", "href", SELF_URI + "?showIdentity&id="+id.getID(), Long.toString(wot.getGivenTrusts(id).size())));
 		}
 	}
 	
@@ -199,19 +193,19 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		Trust trust;
 		
 		try {
-			trust = trustee.getReceivedTrust(truster, db);
+			trust = wot.getTrust(truster, trustee);
 			trustValue = String.valueOf(trust.getValue());
 			trustComment = trust.getComment();
 		}
 		catch (NotTrustedException e) {
-			Logger.debug(this, truster.getNickName() + " does not trust " + trustee.getNickName());
+			Logger.debug(this, truster.getNickname() + " does not trust " + trustee.getNickname());
 		} 
 			
 		HTMLNode cell = new HTMLNode("td");
 		HTMLNode trustForm = pr.addFormChild(cell, SELF_URI, "setTrust");
 		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "setTrust" });
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "ownerID", truster.getId() });
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "trustee", trustee.getId() });
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "ownerID", truster.getID() });
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "trustee", trustee.getID() });
 		trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "value", "2", trustValue });
 		trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "comment", "50", trustComment });
 		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", "Update" });

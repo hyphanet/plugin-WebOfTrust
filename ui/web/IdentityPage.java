@@ -48,14 +48,14 @@ public class IdentityPage extends WebPageImpl {
 	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 * @param myRequest The request sent by the user.
 	 * @param identity The identity
-	 * @param trustersTrusts The trusts having the given identity as truster
-	 * @param trusteesTrusts The trusts having the given identity as trustee
+	 * @param givenTrusts The trusts having the given identity as truster
+	 * @param receivedTrusts The trusts having the given identity as trustee
 	 */
-	public IdentityPage(WebInterface myWebInterface, HTTPRequest myRequest, Identity identity, List<Trust> trustersTrusts, List<Trust> trusteesTrusts) {
+	public IdentityPage(WebInterface myWebInterface, HTTPRequest myRequest, Identity identity, List<Trust> givenTrusts, List<Trust> receivedTrusts) {
 		super(myWebInterface, myRequest);
 		this.identity = identity;
-		this.trustersTrusts = trustersTrusts;
-		this.trusteesTrusts = trusteesTrusts;
+		this.trustersTrusts = givenTrusts;
+		this.trusteesTrusts = receivedTrusts;
 	}
 	
 	private void makeURIBox() {

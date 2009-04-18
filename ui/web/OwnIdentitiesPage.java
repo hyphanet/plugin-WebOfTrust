@@ -58,7 +58,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 
 		HTMLNode boxContent = getContentBox("Summary");
 		
-		ObjectSet<OwnIdentity> ownIdentities = OwnIdentity.getAllOwnIdentities(db);
+		ObjectSet<OwnIdentity> ownIdentities = wot.getAllOwnIdentities();
 		if(ownIdentities.size() == 0) {
 			boxContent.addChild("p", "You have no own identity yet, you should create one...");
 		}
@@ -76,30 +76,30 @@ public class OwnIdentitiesPage extends WebPageImpl {
 			while(ownIdentities.hasNext()) {
 				OwnIdentity id = ownIdentities.next();
 				row=identitiesTable.addChild("tr");
-				row.addChild("td", new String[] {"title", "style", "align"}, new String[] {id.getRequestURI().toString(), "cursor: help;", "center"}, id.getNickName());
+				row.addChild("td", new String[] {"title", "style", "align"}, new String[] {id.getRequestURI().toString(), "cursor: help;", "center"}, id.getNickname());
 				synchronized(mDateFormat) {
 					mDateFormat.setTimeZone(TimeZone.getDefault());
 					/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
 					row.addChild("td", mDateFormat.format(id.getLastChangeDate()));
 				}
 				HTMLNode cell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-				if(id.getLastInsert() == null) {
+				if(id.getLastInsertDate() == null) {
 					cell.addChild("p", "Insert in progress...");
 				}
-				else if(id.getLastInsert().equals(new Date(0))) {
+				else if(id.getLastInsertDate().equals(new Date(0))) {
 					cell.addChild("p", "Never");
 				}
 				else {
 					synchronized(mDateFormat) {
 						mDateFormat.setTimeZone(TimeZone.getDefault());
 						/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
-						cell.addChild(new HTMLNode("a", "href", "/"+id.getRequestURI().toString(), mDateFormat.format(id.getLastInsert())));
+						cell.addChild(new HTMLNode("a", "href", "/"+id.getRequestURI().toString(), mDateFormat.format(id.getLastInsertDate())));
 					}
 				}
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, id.doesPublishTrustList() ? "Yes" : "No");
 				
 				HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-				trustersCell.addChild(new HTMLNode("a", "href", SELF_URI + "?showIdentity&id="+id.getId(), Long.toString(id.getNbReceivedTrusts(db))));
+				trustersCell.addChild(new HTMLNode("a", "href", SELF_URI + "?showIdentity&id="+id.getID(), Long.toString(wot.getReceivedTrusts(id).size())));
 				
 				HTMLNode manageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				
@@ -110,12 +110,12 @@ public class OwnIdentitiesPage extends WebPageImpl {
 								
 				HTMLNode deleteForm = pr.addFormChild(manageCell, SELF_URI, "deleteIdentity");
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "deleteIdentity" });
-				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getId() });
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 				
 				HTMLNode introduceForm = pr.addFormChild(manageCell, SELF_URI, "introduceIdentity");
 				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "introduceIdentity" });
-				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getId() });
+				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getID() });
 				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", "Introduce" });				
 			}
 		}
