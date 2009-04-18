@@ -330,4 +330,19 @@ public final class IntroductionPuzzleStore {
 		return q.execute();
 	}
 	
+	public int getOwnCatpchaAmount(boolean solved) {
+		Query q = mDB.query();
+		q.constrain(OwnIntroductionPuzzle.class);
+		q.descend("iWasSolved").constrain(solved);
+		return q.execute().size();
+	}
+
+	public synchronized int getNonOwnCaptchaAmount(boolean solved) {
+		Query q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.constrain(OwnIntroductionPuzzle.class).not();
+		q.descend("iWasSolved").constrain(solved);
+		return q.execute().size();
+	}
+	
 }
