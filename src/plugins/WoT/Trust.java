@@ -53,7 +53,7 @@ public class Trust {
 
 
 	/**
-	 * Creates a Trust from given parameters.
+	 * Creates a Trust from given parameters. Only for being used by the WoT package and unit tests, not for user interfaces!
 	 * 
 	 * @param truster Identity that gives the trust
 	 * @param trustee Identity that receives the trust
@@ -61,7 +61,7 @@ public class Trust {
 	 * @param comment A comment to explain the numeric trust value
 	 * @throws InvalidParameterException if the trust value is not between -100 and +100
 	 */
-	protected Trust(Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
+	public Trust(Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
 		if(truster == null)
 			throw new NullPointerException();
 		
