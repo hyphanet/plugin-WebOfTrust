@@ -59,13 +59,13 @@ public class IdentityPage extends WebPageImpl {
 	}
 	
 	private void makeURIBox() {
-		HTMLNode boxContent = getContentBox("Reference of identity '" + identity.getNickName() + "'");
+		HTMLNode boxContent = getContentBox("Reference of identity '" + identity.getNickname() + "'");
 		boxContent.addChild("p", "The following Freenet URI is a reference to this identity. If you want to tell other people about this identity, give the URI to them: ");
 		boxContent.addChild("p", identity.getRequestURI().toString());
 	}
 	
 	private void makeServicesBox() {
-		HTMLNode boxContent = getContentBox("Services of identity '" + identity.getNickName() + "'");
+		HTMLNode boxContent = getContentBox("Services of identity '" + identity.getNickname() + "'");
 		Iterator<String> iter = identity.getContexts().iterator();
 		StringBuilder contexts = new StringBuilder(128);
 		while(iter.hasNext()) {
@@ -84,8 +84,7 @@ public class IdentityPage extends WebPageImpl {
 	public void make() {
 		makeURIBox();
 		makeServicesBox();
-		
-		HTMLNode trusteeTrustsNode = getContentBox("Identities that '" + identity.getNickName() + "' trusts");
+		HTMLNode trusteeTrustsNode = getContentBox("Identities that '" + identity.getNickname() + "' trusts");
 
 		HTMLNode trustersTable = trusteeTrustsNode.addChild("table");
 		HTMLNode trustersTableHeader = trustersTable.addChild("tr");
@@ -97,13 +96,13 @@ public class IdentityPage extends WebPageImpl {
 		for (Trust trust : trusteesTrusts) {
 			HTMLNode trustRow = trustersTable.addChild("tr");
 			Identity trustee = trust.getTrustee();
-			trustRow.addChild("td").addChild("a", "href", "?showIdentity&id=" + trustee.getId(), trustee.getNickName());
-			trustRow.addChild("td", trustee.getId());
+			trustRow.addChild("td").addChild("a", "href", "?showIdentity&id=" + trustee.getID(), trustee.getNickname());
+			trustRow.addChild("td", trustee.getID());
 			trustRow.addChild("td", "align", "right", String.valueOf(trust.getValue()));
 			trustRow.addChild("td", trust.getComment());
 		}
 
-		HTMLNode trusterTrustsNode = getContentBox("Identities that trust '" + identity.getNickName() + "'");
+		HTMLNode trusterTrustsNode = getContentBox("Identities that trust '" + identity.getNickname() + "'");
 
 		HTMLNode trusteesTable = trusterTrustsNode.addChild("table");
 		HTMLNode trusteesTableHeader = trusteesTable.addChild("tr");
@@ -115,8 +114,8 @@ public class IdentityPage extends WebPageImpl {
 		for (Trust trust : trustersTrusts) {
 			HTMLNode trustRow = trusteesTable.addChild("tr");
 			Identity truster = trust.getTruster();
-			trustRow.addChild("td").addChild("a", "href", "?showIdentity&id=" + truster.getId(), truster.getNickName());
-			trustRow.addChild("td", truster.getId());
+			trustRow.addChild("td").addChild("a", "href", "?showIdentity&id=" + truster.getID(), truster.getNickname());
+			trustRow.addChild("td", truster.getID());
 			trustRow.addChild("td", "align", "right", String.valueOf(trust.getValue()));
 			trustRow.addChild("td", trust.getComment());
 		}
