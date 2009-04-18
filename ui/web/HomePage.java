@@ -5,13 +5,6 @@
  */
 package plugins.WoT.ui.web;
 
-import plugins.WoT.Identity;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.Score;
-import plugins.WoT.Trust;
-
-import com.db4o.ObjectContainer;
-
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -22,7 +15,6 @@ import freenet.support.api.HTTPRequest;
  */
 
 public class HomePage extends WebPageImpl {
-	
 
 	/**
 	 * Creates a new HomePage.
@@ -46,14 +38,16 @@ public class HomePage extends WebPageImpl {
 	 * Creates a short summary of what the plugin knows of the WoT.
 	 */
 	private void makeSummary() {
-		ObjectContainer db = wot.getDB();
 		HTMLNode box = getContentBox("Summary");
 		
 		HTMLNode list = new HTMLNode("ul");
-		list.addChild(new HTMLNode("li", "Own Identities : " + OwnIdentity.getNbOwnIdentities(db)));
-		list.addChild(new HTMLNode("li", "Known Identities : " + Identity.getNbIdentities(db)));
-		list.addChild(new HTMLNode("li", "Trust relationships : " + Trust.getNb(db)));
-		list.addChild(new HTMLNode("li", "Scores : " + Score.getNb(db)));
+		list.addChild(new HTMLNode("li", "Own Identities: " + wot.getAllOwnIdentities().size()));
+		list.addChild(new HTMLNode("li", "Known Identities: " + wot.getAllNonOwnIdentities().size()));
+		list.addChild(new HTMLNode("li", "Trust relationships: " + wot.getAllTrusts().size()));
+		list.addChild(new HTMLNode("li", "Own unsolved captchas: " + wot.getIntroductionPuzzleStore().getOwnCatpchaAmount(false)));
+		list.addChild(new HTMLNode("li", "Own solved captchas: " + wot.getIntroductionPuzzleStore().getOwnCatpchaAmount(true)));
+		list.addChild(new HTMLNode("li", "Other's unsolved captchas: " + wot.getIntroductionPuzzleStore().getNonOwnCaptchaAmount(false)));
+		list.addChild(new HTMLNode("li", "Other's solved captchas: " + wot.getIntroductionPuzzleStore().getNonOwnCaptchaAmount(true)));
 		
 		box.addChild(list);
 	}
