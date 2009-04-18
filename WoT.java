@@ -142,7 +142,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			System.setProperty("java.awt.headless", "true"); 
 	
 			mPR = myPR;
-			mDB = initDB();
+			mDB = initDB("WebOfTrust-testing.db4o"); /* FIXME: Change before release */
 			deleteDuplicateObjects();
 			deleteOrphanObjects();
 			
@@ -186,13 +186,25 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			terminate();
 		}
 	}
+	
+	/**
+	 * For use by the unit tests to be able to run WoT without a node.
+	 * @param databaseFilename The filename of the database.
+	 */
+	public WoT(String databaseFilename) {
+		mDB = initDB(databaseFilename);
+		mConfig = Config.loadOrCreate(this);
+		
+		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WoT.DATABASE_FORMAT_VERSION)
+			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
+	}
 
 	/**
 	 * Initializes the plugin's db4o database.
 	 * 
 	 * @return A db4o <code>ObjectContainer</code>. 
 	 */
-	private ExtObjectContainer initDB() {
+	private ExtObjectContainer initDB(String filename) {
 		Configuration cfg = Db4o.newConfiguration();
 		cfg.reflectWith(new JdkReflector(mClassLoader));
 		cfg.activationDepth(5); /* FIXME: Change to 1 and add explicit activation everywhere */
@@ -206,7 +218,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).persistStaticFieldValues(); /* Needed to be able to store enums */
 		for(String field : IntroductionPuzzle.getIndexedFields()) cfg.objectClass(IntroductionPuzzle.class).objectField(field).indexed(true);
 		
-		return Db4o.openFile(cfg, "WebOfTrust-testing.db4o").ext();
+		return Db4o.openFile(cfg, filename).ext();
 	}
 	
 	/**
