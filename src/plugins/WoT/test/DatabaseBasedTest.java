@@ -5,10 +5,8 @@ package plugins.WoT.test;
 
 import java.io.File;
 
-import com.db4o.Db4o;
-import com.db4o.ObjectContainer;
-
 import junit.framework.TestCase;
+import plugins.WoT.WoT;
 
 /**
  * A JUnit <code>TestCase</code> which opens a db4o database in setUp() and closes it in tearDown().
@@ -24,10 +22,7 @@ import junit.framework.TestCase;
  */
 public class DatabaseBasedTest extends TestCase {
 
-	/**
-	 * The database used by this test.
-	 */
-	protected ObjectContainer db;
+	protected WoT mWoT;
 
 	/**
 	 * @return Returns the filename of the database. This is the name of the current test function plus ".db4o".
@@ -46,9 +41,9 @@ public class DatabaseBasedTest extends TestCase {
 		File databaseFile = new File(getDatabaseFilename());
 		if(databaseFile.exists())
 			databaseFile.delete();
-		assertFalse(databaseFile.exists());
+		assertFalse(databaseFile.exists());;
 		
-		db = Db4o.openFile(getDatabaseFilename());
+		mWoT = new WoT(getDatabaseFilename());
 	}
 
 	/**
@@ -58,8 +53,8 @@ public class DatabaseBasedTest extends TestCase {
 	protected void tearDown() throws Exception {
 		super.tearDown();
 		
-		db.close();
-		db = null;
+		mWoT.terminate();
+		
 		new File(getDatabaseFilename()).delete();
 	}
 
