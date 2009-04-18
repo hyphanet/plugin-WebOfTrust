@@ -67,7 +67,7 @@ public final class Score {
 	}
 	
 	/**
-	 * Creates a Score from given parameters.
+	 * Creates a Score from given parameters. Only for being used by the WoT package and unit tests, not for user interfaces!
 	 * 
 	 * @param myTreeOwner The owner of the trust tree
 	 * @param myTarget The Identity that has the score
@@ -75,7 +75,7 @@ public final class Score {
 	 * @param myRank How far the Identity is from the tree's root. 
 	 * @param myCapacity How much point the target Identity can add to its trustees score.
 	 */
-	protected Score(OwnIdentity myTreeOwner, Identity myTarget, int myValue, int myRank, int myCapacity) {
+	public Score(OwnIdentity myTreeOwner, Identity myTarget, int myValue, int myRank, int myCapacity) {
 		if(myTreeOwner == null)
 			throw new NullPointerException();
 			

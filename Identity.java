@@ -93,7 +93,7 @@ public class Identity {
 	}	
 
 	/**
-	 * Creates an Identity.
+	 * Creates an Identity. Only for being used by the WoT package and unit tests, not for user interfaces!
 	 * 
 	 * @param newRequestURI A String that will be converted to {@link FreenetURI} before creating the identity
 	 * @param newNickname The nickname of this identity
@@ -101,7 +101,7 @@ public class Identity {
 	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 * @throws MalformedURLException if the supplied requestURI isn't a valid FreenetURI
 	 */
-	protected Identity(String newRequestURI, String newNickname, boolean doesPublishTrustList)
+	public Identity(String newRequestURI, String newNickname, boolean doesPublishTrustList)
 		throws InvalidParameterException, MalformedURLException {
 		
 		this(new FreenetURI(newRequestURI), newNickname, doesPublishTrustList);
