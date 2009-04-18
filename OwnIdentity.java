@@ -88,7 +88,7 @@ public class OwnIdentity extends Identity {
 	 * @throws InvalidParameterException if the supplied key is neither a USK nor a SSK
 	 */
 	private void setInsertURI(FreenetURI newInsertURI) throws InvalidParameterException {
-		if(!newInsertURI.equalsKeypair(mInsertURI))
+		if(mInsertURI != null && !newInsertURI.equalsKeypair(mInsertURI))
 			throw new IllegalArgumentException("Cannot change the insert URI of an existing identity.");
 		
 		if(!newInsertURI.isUSK() && !newInsertURI.isSSK())
