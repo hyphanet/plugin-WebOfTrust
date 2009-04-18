@@ -65,7 +65,7 @@ public class Identity {
 	 * Get a list of fields which the database should create an index on.
 	 */
 	public static String[] getIndexedFields() {
-		return new String[] { "mID" };
+		return new String[] { "mID", "mLastChangedDate" };
 	}
 	
 	/**
