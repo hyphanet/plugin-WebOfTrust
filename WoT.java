@@ -551,6 +551,19 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	/**
+	 * Returns all non-own identities that are in the database.
+	 * 
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<Identity> getAllNonOwnIdentities() {
+		Query q = mDB.query();
+		q.constrain(Identity.class);
+		q.constrain(OwnIdentity.class).not();
+		return q.execute();
+	}
+	
+	/**
 	 * Returns all non-own identities that are in the database, sorted descending by their date of modification, i.e. recently
 	 * modified identities will be at the beginning of the list.
 	 * 
