@@ -1,16 +1,12 @@
-/* This code is part of Freenet. It is distributed under the GNU General
- * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
+ * under the GNU General Public License, version 2 (or at your option
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.ui.fcp;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Iterator;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
 
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
@@ -34,7 +30,6 @@ import com.db4o.ext.Db4oIOException;
 
 import freenet.client.FetchException;
 import freenet.client.InsertException;
-import freenet.node.FSParseException;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
@@ -43,7 +38,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 /**
- * @author xor
+ * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
 public final class FCPInterface implements FredPluginFCP {
 
@@ -56,9 +51,19 @@ public final class FCPInterface implements FredPluginFCP {
     }
 
     public void handle(final PluginReplySender replysender, final SimpleFieldSet params, final Bucket data, final int accesstype) {
-
+    	SimpleFieldSet sfs = new SimpleFieldSet(true);
+    	sfs.putAppend("Message", "Error");
+    	sfs.putAppend("Description", "The FCP interface is currently being refactored and therefore not useable, sorry.");
+    	 try {
+			replysender.send(sfs, data);
+		} catch (PluginNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+/*
         try {
             final String message = params.get("Message");
+            
             if (message.equals("CreateIdentity")) {
                 replysender.send(handleCreateIdentity(params), data);
             } else if (message.equals("SetTrust")) {
@@ -96,30 +101,23 @@ public final class FCPInterface implements FredPluginFCP {
                 Logger.normal(this, "Connection to request sender lost", e1);
             }
         }
+        */
     }
+    /*
 
-    private SimpleFieldSet handleCreateIdentity(final SimpleFieldSet params)
-    throws TransformerConfigurationException,
-    FileNotFoundException, InvalidParameterException, ParserConfigurationException, TransformerException,
-    IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException,
-    NotTrustedException, DuplicateTrustException, FSParseException
-    {
-
+    private SimpleFieldSet handleCreateIdentity(final SimpleFieldSet params) {
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
         OwnIdentity identity;
 
-        if (params.get("NickName") == null
-                || params.get("PublishTrustList") == null
-                || params.get("Context") == null)
-        {
+        if (params.get("NickName") == null || params.get("PublishTrustList") == null || params.get("Context") == null) {
             throw new InvalidParameterException("Missing mandatory parameter");
         }
+        
 
         if (params.get("RequestURI") == null || params.get("InsertURI") == null) {
-            identity = mWoT.createIdentity(params.get("NickName"), params.getBoolean("PublishTrustList"), params
-                    .get("Context"));
+            identity = mWoT.createOwnIdentity(params.get("NickName"), params.getBoolean("PublishTrustList"), params.get("Context"));
         } else {
-            identity = mWoT.createIdentity(
+            identity = mWoT.createOwnIdentity(
                     params.get("InsertURI"),
                     params.get("RequestURI"),
                     params.get("NickName"),
@@ -127,22 +125,22 @@ public final class FCPInterface implements FredPluginFCP {
                     params.get("Context"));
         }
 
-        /*
-         * TODO: Publishing introduction puzzles makes no sense if the identity does not publish the trust list. We
-         * should warn the user if we receive PublishTrustList == false and PublishIntroductionPuzzles == true
-         */
+
+//         * TODO: Publishing introduction puzzles makes no sense if the identity does not publish the trust list. We
+//         * should warn the user if we receive PublishTrustList == false and PublishIntroductionPuzzles == true
+   
 
         if (params.getBoolean("PublishTrustList")
                 && params.get("PublishIntroductionPuzzles") != null
                 && params.getBoolean("PublishIntroductionPuzzles"))
         {
-            /* TODO: Create a function for those? */
+            // TODO: Create a function for those?
             identity.addContext(db, IntroductionPuzzle.INTRODUCTION_CONTEXT);
             identity.setProperty(db, "IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT));
         }
 
         sfs.putAppend("Message", "IdentityCreated");
-        sfs.putAppend("ID", identity.getId());
+        sfs.putAppend("ID", identity.getID());
         sfs.putAppend("InsertURI", identity.getInsertURI().toString());
         sfs.putAppend("RequestURI", identity.getRequestURI().toString());
         return sfs;
@@ -150,8 +148,8 @@ public final class FCPInterface implements FredPluginFCP {
 
     private SimpleFieldSet handleSetTrust(final SimpleFieldSet params)
     throws NumberFormatException,
-    TransformerConfigurationException, FileNotFoundException, InvalidParameterException,
-    ParserConfigurationException, TransformerException, IOException, InsertException, UnknownIdentityException,
+    FileNotFoundException, InvalidParameterException,
+    IOException, InsertException, UnknownIdentityException,
     Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException,
     NotTrustedException, DuplicateTrustException
     {
@@ -246,12 +244,12 @@ public final class FCPInterface implements FredPluginFCP {
 
         for (int idx = 1; result.hasNext(); idx++) {
             final OwnIdentity oid = result.next();
-            /* FIXME: Isn't append slower than replace? Figure this out */
-            sfs.putAppend("Identity" + idx, oid.getId());
+            // FIXME: Isn't append slower than replace? Figure this out
+            sfs.putAppend("Identity" + idx, oid.getID());
             sfs.putAppend("RequestURI" + idx, oid.getRequestURI().toString());
             sfs.putAppend("InsertURI" + idx, oid.getInsertURI().toString());
-            sfs.putAppend("Nickname" + idx, oid.getNickName());
-            /* FIXME: Allow the client to select what data he wants */
+            sfs.putAppend("Nickname" + idx, oid.getNickname());
+            // FIXME: Allow the client to select what data he wants
         }
         return sfs;
     }
@@ -293,12 +291,12 @@ public final class FCPInterface implements FredPluginFCP {
             // TODO: Maybe there is a way to do this through SODA
             if (getAll || score.getTarget().hasContext(context)) {
                 final Identity id = score.getTarget();
-                /* FIXME: Isn't append slower than replace? Figure this out */
-                sfs.putAppend("Identity" + idx, id.getId());
+                // FIXME: Isn't append slower than replace? Figure this out
+                sfs.putAppend("Identity" + idx, id.getID());
                 sfs.putAppend("RequestURI" + idx, id.getRequestURI().toString());
-                sfs.putAppend("Nickname" + idx, id.getNickName() != null ? id.getNickName() : "");
+                sfs.putAppend("Nickname" + idx, id.getNickname() != null ? id.getNickname() : "");
                 ++idx;
-                /* FIXME: Allow the client to select what data he wants */
+                // FIXME: Allow the client to select what data he wants
             }
         }
         return sfs;
@@ -442,4 +440,5 @@ public final class FCPInterface implements FredPluginFCP {
         e.printStackTrace();
         return sfs;
     }
+    */
 }
