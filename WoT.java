@@ -812,6 +812,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	/**
+	 * ONLY FOR BEING USED BY WOT DIRECTLY AND BY JUNIT!
+	 * 
 	 * Gives some {@link Trust} to another Identity.
 	 * It creates or updates an existing Trust object and make the trustee compute its {@link Score}.
 	 * 
@@ -827,30 +829,30 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param newComment A comment to explain the given value
 	 * @throws InvalidParameterException if a given parameter isn't valid, {@see Trust} for details on accepted values.
 	 */
-	protected synchronized void setTrustWithoutCommit(Identity truster, Identity trustee, byte newValue, String newComment)
+	public synchronized void setTrustWithoutCommit(Identity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
 		Trust trust;
-				try { // Check if we are updating an existing trust value
-					trust = getTrust(truster, trustee);
-					trust.trusterEditionUpdated();
-					trust.setComment(newComment);
-					mDB.store(trust);
-					
-					if(trust.getValue() != newValue) {
-						trust.setValue(newValue);
-						mDB.store(trust);
-						Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
-						updateScoreWithoutCommit(trustee);
-					}
-				} catch (NotTrustedException e) {
-					trust = new Trust(truster, trustee, newValue, newComment);
-					mDB.store(trust);
-					Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
-					updateScoreWithoutCommit(trustee);
-				} 
-				
-				truster.updated();
+		try { // Check if we are updating an existing trust value
+			trust = getTrust(truster, trustee);
+			trust.trusterEditionUpdated();
+			trust.setComment(newComment);
+			mDB.store(trust);
+
+			if(trust.getValue() != newValue) {
+				trust.setValue(newValue);
+				mDB.store(trust);
+				Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
+				updateScoreWithoutCommit(trustee);
+			}
+		} catch (NotTrustedException e) {
+			trust = new Trust(truster, trustee, newValue, newComment);
+			mDB.store(trust);
+			Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
+			updateScoreWithoutCommit(trustee);
+		} 
+
+		truster.updated();
 	}
 	
 	public synchronized void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
