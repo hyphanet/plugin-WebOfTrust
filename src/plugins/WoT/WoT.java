@@ -812,8 +812,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	/**
-	 * ONLY FOR BEING USED BY WOT DIRECTLY AND BY JUNIT!
-	 * 
 	 * Gives some {@link Trust} to another Identity.
 	 * It creates or updates an existing Trust object and make the trustee compute its {@link Score}.
 	 * 
@@ -829,7 +827,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param newComment A comment to explain the given value
 	 * @throws InvalidParameterException if a given parameter isn't valid, {@see Trust} for details on accepted values.
 	 */
-	public synchronized void setTrustWithoutCommit(Identity truster, Identity trustee, byte newValue, String newComment)
+	protected synchronized void setTrustWithoutCommit(Identity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
 		Trust trust;
@@ -855,8 +853,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		truster.updated();
 	}
 	
-	public synchronized void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
+	/**
+	 * Only for being used by WoT internally and by unit tests! 
+	 */
+	public synchronized void setTrust(Identity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
+		
+		/* FIXME: Throw if we are no unit test and the truster is no own identity */
+		assert(truster instanceof OwnIdentity); /* Unit tests may ignore this. */
 		
 		synchronized(mDB.lock()) {
 			try {
