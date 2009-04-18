@@ -1,7 +1,6 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-
 package plugins.WoT;
 
 import java.io.IOException;
@@ -37,7 +36,7 @@ import freenet.support.io.NativeThread;
 public final class IdentityInserter extends TransferThread {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 45 * 60 * 1000; /* FIXME: Tweak before release */
+	private static final int THREAD_PERIOD = 15 * 60 * 1000; /* FIXME: Tweak before release */
 	
 	/**
 	 * The minimal time for which an identity must not have changed before we insert it.
@@ -47,7 +46,7 @@ public final class IdentityInserter extends TransferThread {
 	/**
 	 * The maximal delay for which an identity insert can be delayed (relative to the last insert) due to continuous changes.
 	 */
-	private static final int MAX_DELAY_BEFORE_INSERT = 60 * 60 * 1000; /* FIXME: Tweak before release */
+	private static final int MAX_DELAY_BEFORE_INSERT = 10 * 60 * 1000; /* FIXME: Tweak before release */
 	
 	
 	private WoT mWoT;
