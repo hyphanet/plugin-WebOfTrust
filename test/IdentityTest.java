@@ -8,15 +8,14 @@ package plugins.WoT.test;
 import java.net.MalformedURLException;
 
 import plugins.WoT.Identity;
-import plugins.WoT.exceptions.DuplicateIdentityException;
+import plugins.WoT.WoT;
 import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 
-import com.db4o.Db4o;
 import com.db4o.ObjectSet;
 
 /**
- * @author Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org) Julien Cornuwel (batosai@freenetproject.org)
  */
 public class IdentityTest extends DatabaseBasedTest {
 	
@@ -28,8 +27,8 @@ public class IdentityTest extends DatabaseBasedTest {
 		super.setUp();
 		
 		identity = new Identity(uri, "test", true);
-		identity.addContext(db, "bleh");
-		identity.storeAndCommit(db);
+		identity.addContext("bleh");
+		mWoT.storeAndCommit(identity);
 	}
 	
 	/* FIXME: Add some logic to make db4o deactivate everything which is not used before loading the objects from the db!
@@ -37,58 +36,49 @@ public class IdentityTest extends DatabaseBasedTest {
 	 * Put this logic into the DatabaseBasedTest base class. */
 	
 	public void testIdentityStored() {
-		ObjectSet<Identity> result = db.queryByExample(Identity.class);
-		assertEquals(result.size(), 1);
+		ObjectSet<Identity> result = mWoT.getAllIdentities();
+		assertEquals(1, result.size());
+		
+		assertEquals(identity, result.next());
 	}
 	
-	public void testGetByURI() throws MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
-		assertNotNull(Identity.getByURI(db, uri));
-	}
-	
-	public void testGetNbIdentities() {
-		assertEquals(Identity.getNbIdentities(db), 1);
+	public void testGetByURI() throws MalformedURLException, UnknownIdentityException {
+		assertEquals(identity, mWoT.getIdentityByURI(uri));
 	}
 
-	public void testContexts() throws InvalidParameterException  {
+	public void testContexts() throws InvalidParameterException {
 		assertFalse(identity.hasContext("foo"));
-		identity.addContext(db, "test");
+		identity.addContext("test");
 		assertTrue(identity.hasContext("test"));
-		identity.removeContext("test", db);
+		identity.removeContext("test");
 		assertFalse(identity.hasContext("test"));
+		
+		/* TODO: Obtain the identity from the db between each line ... */
 	}
 
-	public void testProperties() {
-		try {
-			identity.setProperty(db, "foo", "bar");
-		} catch (InvalidParameterException e) {}
-		
-		try {
-			assertTrue(identity.getProperty("foo").equals("bar"));
-		} catch (InvalidParameterException e) { fail(); }
-		
-		try {
-			identity.removeProperty("foo", db);
-		} catch (InvalidParameterException e) {	fail();	}
+	public void testProperties() throws InvalidParameterException {
+		identity.setProperty("foo", "bar");
+		assertEquals("bar", identity.getProperty("foo"));
+		identity.removeProperty("foo");
 		
 		try {
 			identity.getProperty("foo");
 			fail();
-		} catch (InvalidParameterException e) {}
+		} catch (InvalidParameterException e) {
+			
+		}
 	}
 	
-	public void testPersistence() throws MalformedURLException, DuplicateIdentityException {
-		db.close();
+	public void testPersistence() throws MalformedURLException, UnknownIdentityException {
+		mWoT.terminate();
+		mWoT = null;
 		
 		System.gc();
 		System.runFinalization();
 		
-		db = Db4o.openFile(getDatabaseFilename());
+		mWoT = new WoT(getDatabaseFilename());
 		
-		assertEquals(1, Identity.getNbIdentities(db));
-		try {
-			Identity.getByURI(db, uri);
-		} catch (UnknownIdentityException e) {
-			fail();
-		}
+		assertEquals(1, mWoT.getAllIdentities().size());	
+		assertEquals(identity, mWoT.getIdentityByURI(uri));
 	}
 }
