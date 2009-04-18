@@ -77,6 +77,14 @@ public class IdentityTest extends DatabaseBasedTest {
 		mWoT = new WoT(getDatabaseFilename());
 		
 		assertEquals(1, mWoT.getAllIdentities().size());	
-		assertEquals(identity, mWoT.getIdentityByURI(uri));
+		
+		Identity stored = mWoT.getIdentityByURI(uri);
+		assertEquals(identity.getID(), stored.getID());
+		assertEquals(identity.getRequestURI(), stored.getRequestURI());
+		assertEquals(identity.getEdition(), stored.getEdition());
+		assertEquals(identity.getNickname(), stored.getNickname());
+		assertEquals(identity.getAddedDate(), stored.getAddedDate());
+		assertEquals(identity.getLastChangeDate(), stored.getLastChangeDate());
+		/* FIXME: Check contexts & properties */
 	}
 }
