@@ -10,12 +10,9 @@ import java.net.MalformedURLException;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.Score;
-import plugins.WoT.exceptions.DuplicateIdentityException;
-import plugins.WoT.exceptions.DuplicateScoreException;
+import plugins.WoT.WoT;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.UnknownIdentityException;
-
-import com.db4o.Db4o;
 
 /**
  * @author Julien Cornuwel (batosai@freenetproject.org)
@@ -34,20 +31,21 @@ public class ScoreTest extends DatabaseBasedTest {
 		
 		a = new OwnIdentity(uriA, uriA, "A", true);
 		b = new Identity(uriB, "B", true);
-		db.store(a);
-		db.store(b);
+		mWoT.storeAndCommit(a);
+		mWoT.storeAndCommit(b);
+		
 		Score score = new Score(a,b,100,1,40);
-		db.store(score);
-		db.commit();
+		mWoT.getDB().store(score);
+		mWoT.getDB().commit();
 	}
 	
 	/* FIXME: Add some logic to make db4o deactivate everything which is not used before loading the objects from the db!
 	 * Otherwise these tests might not be sufficient. 
 	 * Put this logic into the DatabaseBasedTest base class. */
 
-	public void testScoreCreation() throws NotInTrustTreeException, DuplicateScoreException  {
+	public void testScoreCreation() throws NotInTrustTreeException {
 		
-		Score score = b.getScore(a, db);
+		Score score = mWoT.getScore(a, b);
 		
 		assertTrue(score.getScore() == 100);
 		assertTrue(score.getRank() == 1);
@@ -56,18 +54,19 @@ public class ScoreTest extends DatabaseBasedTest {
 		assertTrue(score.getTarget() == b);
 	}
 	
-	public void testScorePersistence() throws NotInTrustTreeException, DuplicateScoreException, MalformedURLException, UnknownIdentityException, DuplicateIdentityException {
+	public void testScorePersistence() throws MalformedURLException, UnknownIdentityException, NotInTrustTreeException {
 		
-		db.close();
+		mWoT.terminate();
+		mWoT = null;
 		
 		System.gc();
 		System.runFinalization();
 		
-		db = Db4o.openFile(getDatabaseFilename());
+		mWoT = new WoT(getDatabaseFilename());
 		
-		a = OwnIdentity.getByURI(db, uriA);
-		b = Identity.getByURI(db, uriB);
-		Score score = b.getScore(a, db);
+		a = mWoT.getOwnIdentityByURI(uriA);
+		b = mWoT.getIdentityByURI(uriB);
+		Score score = mWoT.getScore(a, b);
 		
 		assertTrue(score.getScore() == 100);
 		assertTrue(score.getRank() == 1);
