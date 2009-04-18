@@ -330,7 +330,7 @@ public final class IntroductionPuzzleStore {
 		return q.execute();
 	}
 	
-	public int getOwnCatpchaAmount(boolean solved) {
+	public synchronized int getOwnCatpchaAmount(boolean solved) {
 		Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("iWasSolved").constrain(solved);
