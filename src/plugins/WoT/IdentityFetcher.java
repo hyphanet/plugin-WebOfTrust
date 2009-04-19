@@ -122,12 +122,10 @@ public class IdentityFetcher implements ClientCallback {
 	 */
 	protected synchronized void stop() {
 		Logger.debug(this, "Trying to stop all requests");
-		synchronized(requests) {
 			Iterator<ClientGetter> i = requests.iterator();
 			int counter = 0;		 
 			while (i.hasNext()) { i.next().cancel(); i.remove(); ++counter; }
 			Logger.debug(this, "Stopped " + counter + " current requests");
-		}
 	}
 	
 	private synchronized void removeRequest(ClientGetter g) {
