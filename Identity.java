@@ -197,14 +197,14 @@ public class Identity {
 	 * @return The date when the identity was fetched successfully for the first time.
 	 */
 	public Date getFirstFetchedDate() {
-		return (Date)mFirstFetchedDate.clone();
+		return mFirstFetchedDate != null ? (Date)mFirstFetchedDate.clone() : null;
 	}
 
 	/**
 	 * @return The date of this Identity's last modification.
 	 */
 	public synchronized Date getLastChangeDate() {
-		return (Date)mLastChangedDate.clone();
+		return mLastChangedDate != null ? (Date)mLastChangedDate.clone() : null;
 	}
 
 	/**

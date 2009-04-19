@@ -89,7 +89,9 @@ public class IdentityFetcher implements ClientCallback {
 			return; 
 
 		try {
-			if(nextEdition && !identity.getLastChangeDate().equals(new Date(0)))
+			Date lastChanged = identity.getLastChangeDate();
+			
+			if(nextEdition && lastChanged != null && lastChanged.after(new Date(0)))
 				fetch(identity.getRequestURI().setSuggestedEdition(identity.getRequestURI().getSuggestedEdition() + 1));
 			else
 				fetch(identity.getRequestURI());
@@ -184,7 +186,7 @@ public class IdentityFetcher implements ClientCallback {
 		}
 		
 		try {
-			state.restart(state.getURI().setSuggestedEdition(state.getURI().getSuggestedEdition() + 1), null, clientContext);
+			state.restart(state.getURI().setSuggestedEdition(state.getURI().getEdition() + 1), null, clientContext);
 		}
 		catch(Exception e) {
 			Logger.error(this, "Error fetching next edition for " + state.getURI());

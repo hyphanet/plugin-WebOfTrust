@@ -212,7 +212,10 @@ public final class XMLTransformer {
 			
 			synchronized(identity) {
 				identity.setEdition(identityURI.getEdition());
-
+				
+				/* We store the identity and especially it's edition right now so that bogus XML files are skipped */
+				mWoT.storeAndCommit(identity);
+				
 				try {
 					identity.setNickname(identityName);
 				}
