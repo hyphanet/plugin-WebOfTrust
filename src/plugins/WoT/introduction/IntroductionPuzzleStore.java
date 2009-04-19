@@ -325,15 +325,15 @@ public final class IntroductionPuzzleStore {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.constrain(OwnIntroductionPuzzle.class).not();
-		q.descend("iWasInserted").constrain(false);
-		q.descend("iWasSolved").constrain(true);
+		q.descend("mWasInserted").constrain(false);
+		q.descend("mWasSolved").constrain(true);
 		return q.execute();
 	}
 	
 	public synchronized int getOwnCatpchaAmount(boolean solved) {
 		Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
-		q.descend("iWasSolved").constrain(solved);
+		q.descend("mWasSolved").constrain(solved);
 		return q.execute().size();
 	}
 
@@ -341,7 +341,7 @@ public final class IntroductionPuzzleStore {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.constrain(OwnIntroductionPuzzle.class).not();
-		q.descend("iWasSolved").constrain(solved);
+		q.descend("mWasSolved").constrain(solved);
 		return q.execute().size();
 	}
 	
