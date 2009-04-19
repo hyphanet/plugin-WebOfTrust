@@ -122,7 +122,7 @@ public final class FCPInterface implements FredPluginFCP {
 	            // TODO: Create a function for those? 
         		try {
 		            identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
-		            identity.setProperty("IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT));
+		            identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.PUZZLE_COUNT));
 		            mWoT.storeAndCommit(identity);
         		}
         		catch(RuntimeException e) {

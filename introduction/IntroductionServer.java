@@ -51,6 +51,9 @@ public final class IntroductionServer extends TransferThread {
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
 	private static final int THREAD_PERIOD = 10 * 60 * 1000; /* FIXME: tweak before release */
 
+	/** The name of the property we use to announce in identities how many puzzles they insert */
+	public static final String PUZZLE_COUNT_PROPERTY = "IntroductionPuzzleCount";
+	public static final int SEED_IDENTITY_PUZZLE_COUNT = 100;
 	public static final int PUZZLE_COUNT = 10; 
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
 	/* public static final int PUZZLE_REINSERT_MAX_AGE = 12 * 60 * 60 * 1000; */		
@@ -72,7 +75,9 @@ public final class IntroductionServer extends TransferThread {
 	
 	/* Private objects */
 	
-	private static final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] { new CaptchaFactory1() }; 
+	private static final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] { new CaptchaFactory1() };
+	
+	 
 
 	/**
 	 * Creates an IntroductionServer
