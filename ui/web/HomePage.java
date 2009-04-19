@@ -1,16 +1,16 @@
-/**
- * This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.ui.web;
 
+import plugins.WoT.introduction.IntroductionPuzzleStore;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
  * The HomePage of the plugin.
  * 
+ * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 
@@ -26,28 +26,27 @@ public class HomePage extends WebPageImpl {
 		super(myWebInterface, myRequest);
 	}
 
-	
-	/* (non-Javadoc)
-	 * @see plugins.WoT.ui.web.WebPage#make()
-	 */
 	public void make() {
 		makeSummary();
 	}
-	
+
 	/**
 	 * Creates a short summary of what the plugin knows of the WoT.
 	 */
 	private void makeSummary() {
-		HTMLNode box = getContentBox("Summary");
+		HTMLNode box = addContentBox("Summary");
 		
 		HTMLNode list = new HTMLNode("ul");
 		list.addChild(new HTMLNode("li", "Own Identities: " + wot.getAllOwnIdentities().size()));
 		list.addChild(new HTMLNode("li", "Known Identities: " + wot.getAllNonOwnIdentities().size()));
 		list.addChild(new HTMLNode("li", "Trust relationships: " + wot.getAllTrusts().size()));
-		list.addChild(new HTMLNode("li", "Own unsolved captchas: " + wot.getIntroductionPuzzleStore().getOwnCatpchaAmount(false)));
-		list.addChild(new HTMLNode("li", "Own solved captchas: " + wot.getIntroductionPuzzleStore().getOwnCatpchaAmount(true)));
-		list.addChild(new HTMLNode("li", "Other's unsolved captchas: " + wot.getIntroductionPuzzleStore().getNonOwnCaptchaAmount(false)));
-		list.addChild(new HTMLNode("li", "Other's solved captchas: " + wot.getIntroductionPuzzleStore().getNonOwnCaptchaAmount(true)));
+		
+		IntroductionPuzzleStore puzzleStore = wot.getIntroductionPuzzleStore();
+		list.addChild(new HTMLNode("li", "Unsolved own captchas: " + puzzleStore.getOwnCatpchaAmount(false)));
+		list.addChild(new HTMLNode("li", "Solved own captchas: " + puzzleStore.getOwnCatpchaAmount(true)));
+		list.addChild(new HTMLNode("li", "Unsolved captchas of others: " + puzzleStore.getNonOwnCaptchaAmount(false)));
+		list.addChild(new HTMLNode("li", "Solved captchas of others: " + puzzleStore.getNonOwnCaptchaAmount(true)));
+		list.addChild(new HTMLNode("li", "Not inserted captchas solutions: " + puzzleStore.getUninsertedSolvedPuzzles().size()));
 		
 		box.addChild(list);
 	}

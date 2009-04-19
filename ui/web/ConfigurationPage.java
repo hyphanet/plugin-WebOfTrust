@@ -1,13 +1,17 @@
-/**
- * 
- */
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
+ * under the GNU General Public License, version 2 (or at your option
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.ui.web;
 
+import java.util.Arrays;
+
+import plugins.WoT.Config;
+
+import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
  * @author xor (xor@freenetproject.org)
- *
  */
 public class ConfigurationPage extends WebPageImpl {
 
@@ -20,12 +24,27 @@ public class ConfigurationPage extends WebPageImpl {
 		// TODO Auto-generated constructor stub
 	}
 
-	/* (non-Javadoc)
-	 * @see plugins.WoT.ui.web.WebPage#make()
-	 */
-	public void make() {
-		// TODO Generate the configuration page
 
+	// FIXME: Maybe use or steal freenet.clients.http.ConfigToadlet
+	public void make() {
+		HTMLNode list1 = new HTMLNode("ul");
+		HTMLNode list2 = new HTMLNode("ul");
+		
+		Config config = wot.getConfig();
+		synchronized(config) {
+			String[] intKeys = config.getAllIntKeys();
+			String[] stringKeys = config.getAllStringKeys();
+			
+			Arrays.sort(intKeys);
+			Arrays.sort(stringKeys);
+
+			for(String key : intKeys) list1.addChild(new HTMLNode("li", key + ": " + config.getInt(key)));
+			for(String key : stringKeys) list1.addChild(new HTMLNode("li", key + ": " + config.getString(key)));
+		}
+
+		HTMLNode box = addContentBox("Configuration");
+		box.addChild(list1);
+		box.addChild(list2);
 	}
 
 }

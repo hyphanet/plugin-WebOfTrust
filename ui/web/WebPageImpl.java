@@ -11,6 +11,7 @@ import java.util.Iterator;
 import plugins.WoT.WoT;
 
 import freenet.clients.http.PageMaker;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -22,20 +23,27 @@ import freenet.support.api.HTTPRequest;
  */
 public abstract class WebPageImpl implements WebPage {
 	
-        /** The URI the plugin can be accessed from. */
-	protected static String SELF_URI = "/plugins/plugins.WoT.WoT";
-        /** The node's pagemaker */
-	protected PageMaker pm;
-        /** HTMLNode representing the web page */
-	protected HTMLNode pageNode;
-        /** A reference to the WoT */
-	protected WoT wot;
-        /** The request performed by the user */
-	protected HTTPRequest request;
+
+	protected final WoT wot;
+	
+	protected final String uri;
+
+	protected final PluginRespirator pr;
+	
+	/** The node's pagemaker */
+	protected final PageMaker pm;
+
+	/** HTMLNode representing the web page */
+	protected final HTMLNode pageNode;
+
+	/** The request performed by the user */
+	protected final HTTPRequest request;
+	
 	/** The error box displayed at the top of the page */
 	protected HTMLNode errorBox;
-        /** List of all content boxes */
-	protected ArrayList<HTMLNode> contentBoxes;
+
+	/** List of all content boxes */
+	protected final ArrayList<HTMLNode> contentBoxes;
 	
 	/**
 	 * Creates a new WebPageImpl.
@@ -45,8 +53,10 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param myRequest The request sent by the user.
 	 */
 	public WebPageImpl(WebInterface myWebInterface, HTTPRequest myRequest) {
+		wot = myWebInterface.getWoT();
+		uri = myWebInterface.getURI();
 		
-		this.wot = myWebInterface.getWoT();
+		pr = wot.getPluginRespirator();
 		this.pm = myWebInterface.getPageMaker();
 		this.pageNode = pm.getPageNode("Web of Trust", null);
 		this.request = myRequest;
@@ -88,7 +98,7 @@ public abstract class WebPageImpl implements WebPage {
 	 */
 	public void addErrorBox(String title, String message) {
 		
-		errorBox = pm.getInfobox("infobox-alert", "Error");
+		errorBox = pm.getInfobox("infobox-alert", title);
 		errorBox.addChild("#", message);
 	}
 	
@@ -98,7 +108,7 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param title The title of the desired InfoBox
 	 * @return the contentNode of the newly created InfoBox
 	 */
-	protected HTMLNode getContentBox(String title) {
+	protected HTMLNode addContentBox(String title) {
 		
 		HTMLNode box = pm.getInfobox(title);
 		contentBoxes.add(box);
