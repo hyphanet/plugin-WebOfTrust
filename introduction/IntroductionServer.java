@@ -32,7 +32,6 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
-import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
@@ -158,7 +157,8 @@ public final class IntroductionServer extends TransferThread {
 				fetchContext.maxNonSplitfileRetries = -1; // retry forever
 				ClientGetter g = mClient.fetch(p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE, mWoT.getRequestClient(),
 						this, fetchContext);
-				g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext, null); 
+				// FIXME: Set to a reasonable value before release, PluginManager default is interactive priority
+				// g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext, null); 
 				addFetch(g);
 				Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
 			}
@@ -220,7 +220,8 @@ public final class IntroductionServer extends TransferThread {
 			InsertContext ictx = mClient.getInsertContext(true);
 
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext ,null);
+			// FIXME: Set to a reasonable value before release, PluginManager default is interactive priority
+			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext ,null);
 			addInsert(pu);
 			tempB = null;
 

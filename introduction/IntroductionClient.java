@@ -37,7 +37,6 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
-import freenet.node.RequestStarter;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TransferThread;
@@ -281,7 +280,8 @@ public final class IntroductionClient extends TransferThread  {
 			
 			/* FIXME: Toad: Are these parameters correct? */
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext, null);
+			// FIXME: Set to a reasonable value before release, PluginManager default is interactive priority
+			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext, null);
 			addInsert(pu);
 			tempB = null;
 			
@@ -341,7 +341,8 @@ public final class IntroductionClient extends TransferThread  {
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mWoT.getRequestClient(), this, fetchContext);
-		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
+		// FIXME: Set to a reasonable value before release, PluginManager default is interactive priority
+		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
 		addFetch(g);
 		synchronized(mIdentities) {
 			if(!mIdentities.contains(inserter)) {
