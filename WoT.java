@@ -966,12 +966,12 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * 
 	 */
 	private synchronized void updateScoreWithoutCommit(Identity trustee) {
-			ObjectSet<OwnIdentity> treeOwners = getAllOwnIdentities();
-			if(treeOwners.size() == 0)
-				Logger.debug(this, "Can't update " + trustee.getNickname() + "'s score: there is no own identity yet");
-			
-			while(treeOwners.hasNext())
-				updateScoreWithoutCommit(treeOwners.next(), trustee);
+		ObjectSet<OwnIdentity> treeOwners = getAllOwnIdentities();
+		if(treeOwners.size() == 0)
+			Logger.debug(this, "Can't update " + trustee.getNickname() + "'s score: there is no own identity yet");
+
+		while(treeOwners.hasNext())
+			updateScoreWithoutCommit(treeOwners.next(), trustee);
 	}
 	
 	/**
