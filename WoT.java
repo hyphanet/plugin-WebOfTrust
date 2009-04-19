@@ -75,6 +75,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * the Freenet development team provides a list of seed identities - each of them is one of the developers.
 	 */
 	private static final String[] SEED_IDENTITIES = new String[] { 
+		"USK@~SHNEj7ZrNo2CApbk~NbvZbyguuB5bQDcmRyqENDLtg,3ewyIME~TJ8Ud29Iyj6ZV2DhQMg4xGtHYj2brM7k4j8,AQACAAE/WoT/0" // xor
 		/* FIXME: Add the developers. But first we need to debug :) */
 	};
 	
@@ -346,6 +347,15 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			
 			try { 
 				seed = getIdentityByURI(seedURI);
+				if(seed instanceof OwnIdentity) {
+					OwnIdentity ownSeed = (OwnIdentity)seed;
+					// FIXME: Does the cast make that necessary? I'm adding it to make sure that we do not lose information when storing
+					mDB.activate(ownSeed, 5);
+					ownSeed.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
+					ownSeed.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY,
+							Integer.toString(IntroductionServer.SEED_IDENTITY_PUZZLE_COUNT));
+					storeAndCommit(ownSeed);
+				}
 				try {
 					seed.setEdition(new FreenetURI(seedURI).getEdition());
 				} catch(Exception e) {
@@ -1163,7 +1173,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 				identity.addContext(context);
 				identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); /* FIXME: make configureable */
-				identity.setProperty("IntroductionPuzzleCount", Integer.toString(IntroductionServer.PUZZLE_COUNT));
+				identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.PUZZLE_COUNT));
 				
 				try {
 					mDB.store(identity);
