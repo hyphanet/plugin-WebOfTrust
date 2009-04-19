@@ -138,6 +138,11 @@ public final class XMLTransformer {
 			Element trustListElement = xmlDoc.createElement("TrustList");
 			
 			for(Trust trust : mWoT.getGivenTrusts(identity)) {
+				/* We should make very sure that we do not reveal the other own identity's */
+				if(trust.getTruster() != identity) 
+					throw new RuntimeException("Error in WoT: It is trying to export trust values of someone else in the trust list " +
+							"of " + identity + ": Trust value from " + trust.getTruster() + "");
+				
 				Element trustElement = xmlDoc.createElement("Trust");
 				trustElement.setAttribute("Identity", trust.getTrustee().getRequestURI().toString());
 				trustElement.setAttribute("Value", Byte.toString(trust.getValue()));
