@@ -321,10 +321,12 @@ public final class XMLTransformer {
 		throws InvalidParameterException, SAXException, IOException {
 		
 		Document xml = mDocumentBuilder.parse(xmlInputStream);
-		Element identityElement = (Element)xml.getElementsByTagName("Identity").item(0);
+		Element introductionElement = (Element)xml.getElementsByTagName("IdentityIntroduction").item(0);
 		
-		if(Integer.parseInt(identityElement.getAttribute("Version")) > XML_FORMAT_VERSION)
-			throw new InvalidParameterException("Version " + identityElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
+		if(Integer.parseInt(introductionElement.getAttribute("Version")) > XML_FORMAT_VERSION)
+			throw new InvalidParameterException("Version " + introductionElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
+		
+		Element identityElement = (Element)introductionElement.getElementsByTagName("Identity").item(0);
 		
 		FreenetURI identityURI = new FreenetURI(identityElement.getAttribute("URI"));
 		
