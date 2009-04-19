@@ -59,7 +59,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		if(request.isPartSet("SetTrust")) {
 			String trusterID = request.getPartAsString("OwnerID", 128);
-			String trusteeID = request.isPartSet("trustee") ? request.getPartAsString("Trustee", 128) : null;
+			String trusteeID = request.isPartSet("Trustee") ? request.getPartAsString("Trustee", 128) : null;
 			String value = request.getPartAsString("Value", 4);
 			String comment = request.getPartAsString("Comment", 256); /* FIXME: store max length as a constant in class identity */
 			
