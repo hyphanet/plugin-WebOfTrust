@@ -49,7 +49,8 @@ public class IdentityPage extends WebPageImpl {
 	 */
 	public IdentityPage(WebInterface myWebInterface, HTTPRequest myRequest) throws UnknownIdentityException {
 		super(myWebInterface, myRequest);
-		identity = wot.getIdentityByID(request.getPartAsString("id", 128)); 
+		
+		identity = wot.getIdentityByID(request.getParam("id")); 
 	}
 
 	/**
