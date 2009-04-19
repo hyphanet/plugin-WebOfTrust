@@ -763,9 +763,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		if(treeOwner != null)
 			query.descend("mTreeOwner").constrain(treeOwner).identity();
 		query.descend("mTarget").constrain(OwnIdentity.class).not();
-			
+	
+		/* We include 0 in the list of identities with positive score because solving captchas gives no points to score */
+		
 		if(select > 0)
-			query.descend("mValue").constrain(0).greater();
+			query.descend("mValue").constrain(0).smaller().not();
 		else if(select < 0 )
 			query.descend("mValue").constrain(0).smaller();
 		else 
