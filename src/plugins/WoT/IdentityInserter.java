@@ -143,7 +143,8 @@ public final class IdentityInserter extends TransferThread {
 			
 			/* FIXME: are these parameters correct? */
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);	/* PluginManager defaults to interactive priority */
+			// FIXME: Set to a reasonable value before release, PluginManager default is interactive priority
+			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
 			addInsert(pu);
 			tempB = null;
 			
