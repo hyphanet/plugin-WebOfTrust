@@ -137,8 +137,10 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Use this function in the UI to get a list of puzzles for the user to solve.
 	 * You have to synchronize on the IntroductionPuzzleStore around the usage of this function and the list it returns!
+	 * 
+	 * Synchronized to prevent deadlocks.
 	 */
-	public List<IntroductionPuzzle> getPuzzles(OwnIdentity user, PuzzleType puzzleType, int count) {
+	public synchronized List<IntroductionPuzzle> getPuzzles(OwnIdentity user, PuzzleType puzzleType, int count) {
 		synchronized(mPuzzleStore) {
 			List<IntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedPuzzles(puzzleType);
 			ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count + 1);
@@ -359,9 +361,9 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Called when a puzzle is successfully fetched.
 	 * 
-	 * Not synchronized because the worst thing which can happen is that we donwload it again.
+	 * Synchronized to prevent deadlocks
 	 */
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched puzzle: " + state.getURI());
 
 		try {
@@ -402,6 +404,7 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Called when a puzzle solution is successfully inserted.
 	 * 
+	 * Synchronized to prevent deadlocks.
 	 * Synchronized so that we do not insert it again accidentally, so we can keep the assert(!puzzle.wasInserted()) in insertPuzzle().
 	 */
 	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container)
