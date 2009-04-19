@@ -81,8 +81,8 @@ public class Identity {
 		mID = getIDFromURI(getRequestURI());
 		
 		mAddedDate = CurrentTimeUTC.get();
-		mFirstFetchedDate = null;
-		mLastChangedDate = null;
+		mFirstFetchedDate = new Date(0);
+		mLastChangedDate = new Date(0);
 		
 		setNickname(newNickname);
 		setPublishTrustList(doesPublishTrustList);
@@ -197,7 +197,8 @@ public class Identity {
 		
 		if(newEdition < 0) {
 			newEdition = 0;
-			mLastChangedDate = null; /* If the edition is 0, the fetcher decides via last changed date whether to fetch current or next */
+			/* If the edition is 0, the fetcher decides via last changed date whether to fetch current or next */
+			mLastChangedDate = new Date(0);
 		}
 		
 		mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
@@ -211,17 +212,19 @@ public class Identity {
 	}
 
 	/**
-	 * @return The date when the identity was fetched successfully for the first time, null if it was not fetched yet.
+	 * @return The date when the identity was fetched successfully for the first time,
+	 * equal to "new Date(0)" if it was never fetched.
 	 */
 	public Date getFirstFetchedDate() {
-		return mFirstFetchedDate != null ? (Date)mFirstFetchedDate.clone() : null;
+		return (Date)mFirstFetchedDate.clone();
 	}
 
 	/**
-	 * @return The date of this Identity's last modification, i.e. the last time it was fetched, null if it was not fetched yet.
+	 * @return The date of this Identity's last modification, i.e. the last time it was fetched,
+	 * equal to "new Date(0)" if it was not fetched yet.
 	 */
 	public synchronized Date getLastChangeDate() {
-		return mLastChangedDate != null ? (Date)mLastChangedDate.clone() : null;
+		return (Date)mLastChangedDate.clone();
 	}
 
 	/**

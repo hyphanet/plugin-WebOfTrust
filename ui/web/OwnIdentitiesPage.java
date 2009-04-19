@@ -4,6 +4,7 @@
 package plugins.WoT.ui.web;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.TimeZone;
 
 import plugins.WoT.OwnIdentity;
@@ -84,7 +85,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				}
 				
 				HTMLNode cell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-				if(id.getLastInsertDate() == null) {
+				if(id.getLastInsertDate().equals(new Date(0))) {
 					cell.addChild("p", "Never");
 				}
 				else {

@@ -49,6 +49,11 @@ public final class IdentityInserter extends TransferThread {
 	 */
 	private static final int MAX_DELAY_BEFORE_INSERT = 10 * 60 * 1000; /* FIXME: Tweak before release */
 	
+	/**
+	 * The amount of time after which we insert a new edition of an identity even though it did not change.
+	 */
+	public static final long MAX_UNCHANGED_TINE_BEFORE_REINSERT = 1000*60*60*24*3;
+	
 	
 	private WoT mWoT;
 
