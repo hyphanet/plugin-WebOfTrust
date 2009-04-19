@@ -57,7 +57,7 @@ import freenet.support.io.NativeThread;
 public final class IntroductionClient extends TransferThread  {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release: */ 
+	private static final int THREAD_PERIOD = 10 * 60 * 1000; /* FIXME: tweak before release: */ 
 	
 	/* FIXME: Implement backwards-downloading. Currently, we only download puzzles from today. */
 	/* public static final byte PUZZLE_DOWNLOAD_BACKWARDS_DAYS = IntroductionServer.PUZZLE_INVALID_AFTER_DAYS - 1; */
@@ -69,8 +69,8 @@ public final class IntroductionClient extends TransferThread  {
 	/** How many puzzles do we download from a single identity? */
 	public static final int MAX_PUZZLES_PER_IDENTITY = 3;
 	
-	private static final int MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD = 30; /* FIXME: tweak before release */
-	private static final int MINIMUM_SCORE_FOR_PUZZLE_DISPLAY = 30; /* FIXME: tweak before release */
+	private static final int MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD = 0; /* FIXME: tweak before release */
+	private static final int MINIMUM_SCORE_FOR_PUZZLE_DISPLAY = 0; /* FIXME: tweak before release */
 	
 	/* Objects from WoT */
 	
