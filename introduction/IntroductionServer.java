@@ -266,12 +266,13 @@ public final class IntroductionServer extends TransferThread {
 	 */
 	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
+		Logger.debug(this, "Successful insert of puzzle: " + state.getURI());
+		
 		try {
 			synchronized(mPuzzleStore) {
 				OwnIntroductionPuzzle puzzle = mPuzzleStore.getOwnPuzzleByRequestURI(state.getURI()); /* Be careful: This locks the WoT! */
 				puzzle.setInserted();
 				mPuzzleStore.storeAndCommit(puzzle);
-				Logger.debug(this, "Successful insert of puzzle from " + puzzle.getInserter().getNickname() + ": " + puzzle.getRequestURI());
 			}
 		}
 		catch(Exception e) {
@@ -285,8 +286,6 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Called when the insertion of a puzzle failed.
 	 * 
-	 * Synchronized because it locks the WoT which is also done by the iterate() function, deadlocks could happen if we did not synchronize
-	 * this one.
 	 */
 	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
 	{
@@ -294,13 +293,9 @@ public final class IntroductionServer extends TransferThread {
 			Logger.debug(this, "Insert cancelled: " + state.getURI());
 			return;
 		}
-		
+
 		try {
-			OwnIntroductionPuzzle p = mPuzzleStore.getOwnPuzzleByRequestURI(state.getURI()); /* Be careful: This locks the WoT! */
-			Logger.error(this, "Insert of puzzle failed from " + p.getInserter().getNickname() + ": " + p.getRequestURI(), e);
-		}
-		catch(Exception ex) {
-			Logger.error(this, "Error", e);
+			Logger.error(this, "Insert of puzzle failed: " + state.getURI(), e);
 		}
 		finally {
 			removeInsert(state);
