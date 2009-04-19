@@ -47,6 +47,12 @@ public class OwnIdentity extends Identity {
 		setInsertURI(insertURI);
 		mLastInsertDate = new Date(0);
 		setEdition(0);
+		
+		if(mRequestURI == null)
+			throw new InvalidParameterException("Own identities must have a request URI.");
+		
+		if(mInsertURI == null)
+			throw new InvalidParameterException("Own identities must have an insert URI.");
 	}
 	
 	/**
