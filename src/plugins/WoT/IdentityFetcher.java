@@ -147,7 +147,11 @@ public class IdentityFetcher implements ClientCallback {
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * If this is the later, we restart the request.
 	 */
-	public synchronized void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public synchronized void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {		
+		if(e.getMode() == FetchException.CANCELLED) {
+			Logger.debug(this, "Fetch cancelled: " + state.getURI());
+			return;
+		}
 		
 		if ((e.mode == FetchException.PERMANENT_REDIRECT) || (e.mode == FetchException.TOO_MANY_PATH_COMPONENTS )) {
 			try {

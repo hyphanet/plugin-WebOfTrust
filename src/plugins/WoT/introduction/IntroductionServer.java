@@ -263,6 +263,11 @@ public final class IntroductionServer extends TransferThread {
 	 */
 	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
 	{
+		if(e.getMode() == InsertException.CANCELLED) {
+			Logger.debug(this, "Insert cancelled: " + state.getURI());
+			return;
+		}
+		
 		try {
 			OwnIntroductionPuzzle p = mPuzzleStore.getOwnPuzzleByURI(state.getURI());
 			Logger.error(this, "Insert of puzzle failed from " + p.getInserter().getNickname() + ": " + p.getRequestURI(), e);
@@ -311,6 +316,11 @@ public final class IntroductionServer extends TransferThread {
 	 * Not synchronized because it does nothing and removeFetch() is synchronized already.
 	 */
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+		if(e.getMode() == FetchException.CANCELLED) {
+			Logger.debug(this, "Fetch cancelled: " + state.getURI());
+			return;
+		}
+		
 		try {
 			Logger.debug(this, "Downloading puzzle solution " + state.getURI() + " failed: ", e);
 		}
