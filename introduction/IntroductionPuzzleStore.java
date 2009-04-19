@@ -321,7 +321,7 @@ public final class IntroductionPuzzleStore {
 	 * Used by the IntroductionClient for inserting solutions of solved puzzles.
 	 */
 	@SuppressWarnings("unchecked")
-	protected synchronized ObjectSet<IntroductionPuzzle> getUninsertedSolvedPuzzles() {
+	public synchronized ObjectSet<IntroductionPuzzle> getUninsertedSolvedPuzzles() {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.constrain(OwnIntroductionPuzzle.class).not();
