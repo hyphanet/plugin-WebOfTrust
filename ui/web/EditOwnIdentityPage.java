@@ -38,7 +38,7 @@ public class EditOwnIdentityPage extends WebPageImpl {
 							request.getPartAsString("PublishPuzzles", 6).equals("true")) {
 						
 						mIdentity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
-						mIdentity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.PUZZLE_COUNT));
+						mIdentity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
 					}
 					else {
 						mIdentity.removeContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
