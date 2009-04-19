@@ -234,19 +234,24 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	private synchronized void upgradeDB() {
-		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) == -100) {
+		int oldVersion = mConfig.getInt(Config.DATABASE_FORMAT_VERSION);
+		
+		if(oldVersion == WoT.DATABASE_FORMAT_VERSION)
+			return;
+			
+		if(oldVersion == -100) {
 			Logger.normal(this, "Found old database (-100), adding last fetched date to all identities ...");
 			for(Identity identity : getAllIdentities()) {
 				identity.mLastFetchedDate = new Date(0);
 				storeAndCommit(identity);
 			}
+			
+			mConfig.set(Config.DATABASE_FORMAT_VERSION, WoT.DATABASE_FORMAT_VERSION);
+			mConfig.storeAndCommit();
 		}
 		else
 			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
-					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
-		
-		mConfig.set(Config.DATABASE_FORMAT_VERSION, WoT.DATABASE_FORMAT_VERSION);
-		mConfig.storeAndCommit();
+				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
 	}
 	
 	/**
