@@ -45,7 +45,7 @@ public class OwnIdentity extends Identity {
 		super(requestURI, nickName, publishTrustList);
 		mCreationDate = CurrentTimeUTC.get();
 		setInsertURI(insertURI);
-		mLastInsertDate = new Date(0);
+		mLastInsertDate = null;
 		setEdition(0);
 		
 		if(mRequestURI == null)
@@ -114,15 +114,24 @@ public class OwnIdentity extends Identity {
 		}
 	}
 	
+	
+	/**
+	 * Only needed for normal identities.
+	 */
+	@Override
+	protected synchronized void decreaseEdition() {
+		return;
+	}
+	
 	public Date getCreationDate() {
-		return mCreationDate;
+		return (Date)mCreationDate.clone();
 	}
 
 	/**
-	 * Get the Date of last insertion of this OwnIdentity, in UTC.
+	 * Get the Date of last insertion of this OwnIdentity, in UTC, null if it was not inserted yet.
 	 */
 	public synchronized Date getLastInsertDate() {
-		return mLastInsertDate;
+		return mLastInsertDate != null ? (Date)mLastInsertDate.clone() : null;
 	}
 	
 	/**
