@@ -45,7 +45,7 @@ public class OwnIdentity extends Identity {
 		super(requestURI, nickName, publishTrustList);
 		mCreationDate = CurrentTimeUTC.get();
 		setInsertURI(insertURI);
-		mLastInsertDate = null;
+		mLastInsertDate = new Date(0);
 		setEdition(0);
 		
 		if(mRequestURI == null)
@@ -76,7 +76,8 @@ public class OwnIdentity extends Identity {
 	 * @return Whether this OwnIdentity needs to be inserted or not
 	 */
 	public synchronized boolean needsInsert() {
-		return (getLastChangeDate().after(getLastInsertDate()) || (new Date().getTime() - getLastInsertDate().getTime()) > 1000*60*60*24*3); 
+		return (getLastChangeDate().after(getLastInsertDate()) ||
+				(new Date().getTime() - getLastInsertDate().getTime()) > IdentityInserter.MAX_UNCHANGED_TINE_BEFORE_REINSERT); 
 	}
 
 	/**
@@ -131,7 +132,7 @@ public class OwnIdentity extends Identity {
 	 * Get the Date of last insertion of this OwnIdentity, in UTC, null if it was not inserted yet.
 	 */
 	public synchronized Date getLastInsertDate() {
-		return mLastInsertDate != null ? (Date)mLastInsertDate.clone() : null;
+		return (Date)mLastInsertDate.clone();
 	}
 	
 	/**
