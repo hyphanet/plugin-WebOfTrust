@@ -187,6 +187,23 @@ public class Identity {
 	}
 	
 	/**
+	 * Decrease the currentEdition by one.
+	 * 
+	 * Called by the WoT when the score of an identity changes from negative or 0 to > 0 to make the IdentityFetcher re-download
+	 * it's current trust list. This is necessary because we do not create the trusted identities of someone if he has a negative score. 
+	 */
+	protected synchronized void decreaseEdition() {
+		long newEdition = getEdition() - 1;
+		
+		if(newEdition < 0) {
+			newEdition = 0;
+			mLastChangedDate = null; /* If the edition is 0, the fetcher decides via last changed date whether to fetch current or next */
+		}
+		
+		mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
+	}
+	
+	/**
 	 * @return The date when this identity was first seen in a trust list of someone.
 	 */
 	public Date getAddedDate() {
@@ -194,14 +211,14 @@ public class Identity {
 	}
 
 	/**
-	 * @return The date when the identity was fetched successfully for the first time.
+	 * @return The date when the identity was fetched successfully for the first time, null if it was not fetched yet.
 	 */
 	public Date getFirstFetchedDate() {
 		return mFirstFetchedDate != null ? (Date)mFirstFetchedDate.clone() : null;
 	}
 
 	/**
-	 * @return The date of this Identity's last modification.
+	 * @return The date of this Identity's last modification, i.e. the last time it was fetched, null if it was not fetched yet.
 	 */
 	public synchronized Date getLastChangeDate() {
 		return mLastChangedDate != null ? (Date)mLastChangedDate.clone() : null;
@@ -446,6 +463,5 @@ public class Identity {
 	public synchronized void updated() {
 		mLastChangedDate = CurrentTimeUTC.get();
 	}
-	
-	
+
 }

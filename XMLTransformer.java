@@ -246,7 +246,7 @@ public final class XMLTransformer {
 					 * Our policy is: We either import the whole trust list or nothing. We should not bias the trust system by allowing
 					 * the import of partial trust lists. Especially we should not ignore failing deletions of old trust objects. */
 					try {
-						boolean trusteeCreationAllowed = mWoT.getBestScore(identity) > 0;
+						boolean trusteeCreationAllowed = mWoT.getBestScore(identity) > 0 || identity instanceof OwnIdentity;
 
 						Element trustListElement = (Element)identityElement.getElementsByTagName("TrustList").item(0);
 						NodeList trustList = trustListElement.getElementsByTagName("Trust");

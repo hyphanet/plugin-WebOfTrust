@@ -694,7 +694,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	/**
-	 * Gets the best score this Identity has in existing trust trees.
+	 * Gets the best score this Identity has in existing trust trees, 0 if it is not in the trust tree.
 	 * 
 	 * @param db A reference to the database
 	 * @return the best score this Identity has
@@ -999,20 +999,34 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		int value = computeScoreValue(treeOwner, target);
 		int rank = computeRank(treeOwner, target);
 		
+		
+		
 		if(rank == -1) { // -1 value means the identity is not in the trust tree
 			try { // If he had a score, we delete it
 				score = getScore(treeOwner, target);
 				mDB.delete(score); // He had a score, we delete it
 				changedCapacity = true;
 				Logger.debug(target, target.getNickname() + " is not in " + treeOwner.getNickname() + "'s trust tree anymore");
-			} catch (NotInTrustTreeException e) {} 
+			} catch (NotInTrustTreeException e) { } 
 		}
 		else { // The identity is in the trust tree
 			
+			/* We must detect if an identity had a null or negative score which has changed to positive:
+			 * If we download the trust list of someone who has no or negative score we do not create the identities in his trust list.
+			 * If the identity now gets a positive score we must re-download his current trust list. */
+			boolean scoreWasNegative = false;
+			
 			try { // Get existing score or create one if needed
 				score = getScore(treeOwner, target);
+				scoreWasNegative = score.getScore() < 0;
 			} catch (NotInTrustTreeException e) {
 				score = new Score(treeOwner, target, 0, -1, 0);
+				scoreWasNegative = true;
+			}
+			
+			if(scoreWasNegative && score.getScore() > 0) {
+				target.decreaseEdition();
+				mFetcher.fetch(target);
 			}
 			
 			score.setValue(value);
@@ -1049,6 +1063,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			for(Trust givenTrust : givenTrusts)
 				updateScoreWithoutCommit(treeOwner, givenTrust.getTrustee());
 		}
+		
 	}
 	
 	/**
@@ -1173,7 +1188,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 				identity.addContext(context);
 				identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); /* FIXME: make configureable */
-				identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.PUZZLE_COUNT));
+				identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
 				
 				try {
 					mDB.store(identity);
@@ -1212,7 +1227,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 					
 					// We already have fetched this identity as a stranger's one. We need to update the database.
 					identity = new OwnIdentity(insertURI, requestURI, old.getNickname(), old.doesPublishTrustList());
-					identity.setEdition(old.getEdition());
+					/* We re-fetch the current edition to make sure all trustees are imported */
+					identity.setEdition(old.getEdition() - 1);
 				
 					identity.setContexts(old.getContexts());
 					identity.setProperties(old.getProperties());
