@@ -34,6 +34,10 @@ public class HomePage extends WebPageImpl {
 	 * Creates a short summary of what the plugin knows of the WoT.
 	 */
 	private void makeSummary() {
+		addErrorBox("WARNING", "WoT is currently in beta stage. The web of trust will be purged when we release a final version " +
+				"so please create backups of your identities' request and insert URIs if you want to use the same keys when the stable " + 
+				"version is released.");
+		
 		HTMLNode box = addContentBox("Summary");
 		
 		HTMLNode list = new HTMLNode("ul");
