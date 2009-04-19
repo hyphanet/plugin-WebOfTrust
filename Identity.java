@@ -45,7 +45,10 @@ public class Identity {
 	/** Date of the first time we successfully fetched the XML of this identity */
 	protected Date mFirstFetchedDate;
 	
-	/** Date of this identity's last modification. */
+	/** Date of the last time we successfully fetched the XML of this identity */
+	protected Date mLastFetchedDate;
+	
+	/** Date of this identity's last modification, for example when it has received new contexts, etc.*/
 	protected Date mLastChangedDate;
 	
 	/** The nickname of this Identity */
@@ -65,7 +68,7 @@ public class Identity {
 	 * Get a list of fields which the database should create an index on.
 	 */
 	public static String[] getIndexedFields() {
-		return new String[] { "mID", "mLastChangedDate" };
+		return new String[] { "mID", "mLastFetchedDate" };
 	}
 	
 	/**
@@ -82,6 +85,7 @@ public class Identity {
 		
 		mAddedDate = CurrentTimeUTC.get();
 		mFirstFetchedDate = new Date(0);
+		mLastFetchedDate = new Date(0);
 		mLastChangedDate = new Date(0);
 		
 		setNickname(newNickname);
@@ -166,15 +170,10 @@ public class Identity {
 	 * Sets the edition of the last fetched version of this identity.
 	 * That number is published in trustLists to limit the number of editions a newbie has to fetch before he actually gets ans Identity.
 	 * 
-	 * The last-fetched-date of this identity is set to the current time by this function.
-	 * 
 	 * @param newEdition A long representing the last fetched version of this identity.
 	 * @throws InvalidParameterException If the new edition is less than the current one.
 	 */
 	protected synchronized void setEdition(long newEdition) throws InvalidParameterException {
-		if(mFirstFetchedDate == null)
-			mFirstFetchedDate = CurrentTimeUTC.get();
-		
 		long currentEdition = mRequestURI.getEdition();
 		
 		if(newEdition < currentEdition)
@@ -185,6 +184,7 @@ public class Identity {
 			updated();
 		}
 	}
+	
 	
 	/**
 	 * Decrease the currentEdition by one.
@@ -197,8 +197,8 @@ public class Identity {
 		
 		if(newEdition < 0) {
 			newEdition = 0;
-			/* If the edition is 0, the fetcher decides via last changed date whether to fetch current or next */
-			mLastChangedDate = new Date(0);
+			/* If the edition is 0, the fetcher decides via last fetched date whether to fetch current or next */
+			mLastFetchedDate = new Date(0);
 		}
 		
 		mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
@@ -218,13 +218,30 @@ public class Identity {
 	public Date getFirstFetchedDate() {
 		return (Date)mFirstFetchedDate.clone();
 	}
+	
+	/**
+	 * @return The date of this Identity's last modification.
+	 */
+	public synchronized Date getLastFetchedDate() {
+		return (Date)mLastFetchedDate.clone();
+	}
 
 	/**
-	 * @return The date of this Identity's last modification, i.e. the last time it was fetched,
-	 * equal to "new Date(0)" if it was not fetched yet.
+	 * @return The date of this Identity's last modification.
 	 */
 	public synchronized Date getLastChangeDate() {
 		return (Date)mLastChangedDate.clone();
+	}
+	
+	/**
+	 * Has to be called when the identity was fetched.
+	 */
+	protected synchronized void onFetched() {
+		if(mFirstFetchedDate.equals(new Date(0)))
+			mFirstFetchedDate = CurrentTimeUTC.get();
+		
+		mLastFetchedDate = CurrentTimeUTC.get();
+		updated();
 	}
 
 	/**

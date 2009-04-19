@@ -4,6 +4,7 @@
 package plugins.WoT;
 
 import java.net.MalformedURLException;
+import java.util.Date;
 import java.util.HashSet;
 
 import plugins.WoT.exceptions.DuplicateIdentityException;
@@ -57,7 +58,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	/* Constants */
 	
-	public static final int DATABASE_FORMAT_VERSION = -100;
+	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";
+	public static final int DATABASE_FORMAT_VERSION = -99;
 	
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
@@ -143,13 +145,15 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			System.setProperty("java.awt.headless", "true"); 
 	
 			mPR = myPR;
-			mDB = initDB("WebOfTrust-testing.db4o"); /* FIXME: Change before release */
-			deleteDuplicateObjects();
-			deleteOrphanObjects();
+			mDB = initDB(DATABASE_FILENAME); /* FIXME: Change before release */
 			
 			mConfig = Config.loadOrCreate(this);
 			if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WoT.DATABASE_FORMAT_VERSION)
 				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
+			
+			upgradeDB();
+			deleteDuplicateObjects();
+			deleteOrphanObjects();
 			
 			mXMLTransformer = new XMLTransformer(this);
 			mPuzzleStore = new IntroductionPuzzleStore(this);
@@ -227,6 +231,22 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		for(String field : IntroductionPuzzle.getIndexedFields()) cfg.objectClass(IntroductionPuzzle.class).objectField(field).indexed(true);
 		
 		return Db4o.openFile(cfg, filename).ext();
+	}
+	
+	private synchronized void upgradeDB() {
+		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) == -100) {
+			Logger.normal(this, "Found old database (-100), adding last fetched date to all identities ...");
+			for(Identity identity : getAllIdentities()) {
+				identity.mLastFetchedDate = new Date(0);
+				storeAndCommit(identity);
+			}
+		}
+		else
+			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
+					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
+		
+		mConfig.set(Config.DATABASE_FORMAT_VERSION, WoT.DATABASE_FORMAT_VERSION);
+		mConfig.storeAndCommit();
 	}
 	
 	/**
@@ -595,7 +615,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		q.constrain(OwnIdentity.class).not();
 		/* FIXME: As soon as identities announce that they were online every day, uncomment the following line */
 		/* q.descend("mLastChangedDate").constrain(new Date(CurrentTimeUTC.getInMillis() - 1 * 24 * 60 * 60 * 1000)).greater(); */
-		q.descend("mLastChangedDate").orderDescending();
+		q.descend("mLastFetchedDate").orderDescending();
 		
 		return q.execute();
 	}
@@ -628,6 +648,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				// mDB.store(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 				mDB.store(identity.mRequestURI);
 				// mDB.store(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+				// mDB.store(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 				// mDB.store(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 				// mDB.store(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 				// mDB.store(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */

@@ -4,6 +4,7 @@
 package plugins.WoT.ui.web;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.TimeZone;
 
 import plugins.WoT.Identity;
@@ -182,7 +183,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		HTMLNode identitiesTable = listBoxContent.addChild("table", "border", "0");
 		HTMLNode row=identitiesTable.addChild("tr");
 		row.addChild("th", "Nickname");
-		row.addChild("th", "Updated");
+		row.addChild("th", "Fetched");
 		row.addChild("th", "Trustlist");
 		row.addChild("th", "Score (Rank)");
 		row.addChild("th", "Trust/Comment");
@@ -198,11 +199,17 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			// NickName
 			row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"}).addChild("a", "href", "?ShowIdentity&id=" + id.getID(), id.getNickname());
 			
+			Date lastFetched = id.getLastFetchedDate();
+
+			if(!lastFetched.equals(new Date(0))) {
 			synchronized(mDateFormat) {
 				mDateFormat.setTimeZone(TimeZone.getDefault());
 				/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
-				row.addChild("td", mDateFormat.format(id.getLastChangeDate()));
+				row.addChild("td", mDateFormat.format(lastFetched));
 			}
+			}
+			else
+				row.addChild("td", "Never");
 			
 			// Publish TrustList
 			row.addChild("td", new String[] { "align" }, new String[] { "center" } , id.doesPublishTrustList() ? "Yes" : "No");
