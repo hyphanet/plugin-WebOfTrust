@@ -172,13 +172,14 @@ public final class IdentityInserter extends TransferThread {
 	
 	public void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
+		Logger.debug(this, "Successful insert of identity: " + state.getURI());
+		
 		try {
 			synchronized(mWoT) {
 				OwnIdentity identity = mWoT.getOwnIdentityByURI(state.getURI());
 				identity.setEdition(state.getURI().getEdition());
 				identity.updateLastInsertDate();
 				mWoT.storeAndCommit(identity);
-				Logger.debug(this, "Successful insert of identity '" + identity.getNickname() + "'");
 			}
 		}
 		catch(Exception e)
@@ -198,12 +199,9 @@ public final class IdentityInserter extends TransferThread {
 		}
 		
 		try {
-			Logger.error(this, "Error during insert of identity ", e);
+			Logger.error(this, "Error during insert of identity: " + state.getURI(), e);
 			/* We do not increase the edition of the identity if there is a collision because the fetcher will fetch the new edition
 			 * and the Inserter will insert it with that edition in the next run. */
-		}
-		catch(Exception ex) {
-			Logger.error(this, "Error", e);
 		}
 		finally {
 			removeInsert(state);

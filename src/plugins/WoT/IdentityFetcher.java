@@ -174,7 +174,7 @@ public class IdentityFetcher implements ClientCallback {
 	 * {@link IdentityParser} and give it the file content. 
 	 */
 	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-		Logger.debug(this, "Fetched identity "+ state.getURI().toString());
+		Logger.debug(this, "Fetched identity: " + state.getURI());
 		
 		try {
 			mWoT.getXMLTransformer().importIdentity(state.getURI(), result.asBucket().getInputStream());
