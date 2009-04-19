@@ -191,29 +191,6 @@ public class WebInterface implements FredPluginHTTP {
 		return mWoT;
 	}
 	
-	public String makeHomePage() {
-		
-		HTMLNode list = new HTMLNode("ul");
-		
-		list.addChild(new HTMLNode("li", "Own Identities: " + mWoT.getAllOwnIdentities().size()));
-		list.addChild(new HTMLNode("li", "Known Identities: " + mWoT.getAllNonOwnIdentities().size()));
-		list.addChild(new HTMLNode("li", "Trust relationships: " + mWoT.getAllTrusts().size()));
-		list.addChild(new HTMLNode("li", "Own unsolved captchas: " + mWoT.getIntroductionPuzzleStore().getOwnCatpchaAmount(false)));
-		list.addChild(new HTMLNode("li", "Own solved captchas: " + mWoT.getIntroductionPuzzleStore().getOwnCatpchaAmount(true)));
-		list.addChild(new HTMLNode("li", "Other's unsolved captchas: " + mWoT.getIntroductionPuzzleStore().getNonOwnCaptchaAmount(false)));
-		list.addChild(new HTMLNode("li", "Other's solved captchas: " + mWoT.getIntroductionPuzzleStore().getNonOwnCaptchaAmount(true)));
-		
-		HTMLNode pageNode = getPageNode();
-		HTMLNode contentNode = mPageMaker.getContentNode(pageNode);
-		HTMLNode box = mPageMaker.getInfobox("Summary");
-		
-		HTMLNode boxContent = mPageMaker.getContentNode(box);
-		boxContent.addChild(list);
-		
-		contentNode.addChild(box);
-		return pageNode.generate();
-	}
-	
 	public String makeOwnIdentitiesPage() {
 
 		HTMLNode pageNode = getPageNode();
