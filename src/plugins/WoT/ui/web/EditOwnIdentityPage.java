@@ -6,6 +6,7 @@ package plugins.WoT.ui.web;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.introduction.IntroductionPuzzle;
+import plugins.WoT.introduction.IntroductionServer;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -37,9 +38,12 @@ public class EditOwnIdentityPage extends WebPageImpl {
 							request.getPartAsString("PublishPuzzles", 6).equals("true")) {
 						
 						mIdentity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
+						mIdentity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.PUZZLE_COUNT));
 					}
-					else
+					else {
 						mIdentity.removeContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
+						mIdentity.removeProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY);
+					}
 					
 					wot.storeAndCommit(mIdentity); 
 				}
