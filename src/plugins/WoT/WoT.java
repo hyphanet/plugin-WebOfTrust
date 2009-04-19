@@ -150,6 +150,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WoT.DATABASE_FORMAT_VERSION)
 				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 			
+			mIdentityXML = new XMLTransformer(this);
 			mPuzzleStore = new IntroductionPuzzleStore(this);
 			
 			mRequestClient = new RequestClient() {
@@ -181,11 +182,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			mWebInterface = new WebInterface(this, SELF_URI);
 			mFCPInterface = new FCPInterface(this);
 		}
-		catch(RuntimeException e) {
+		catch(Exception e) {
 			Logger.error(this, "Error during startup", e);
 			/* We call it so the database is properly closed */
 			terminate();
-			throw e;
 		}
 	}
 	
