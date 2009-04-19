@@ -36,7 +36,7 @@ public class Version {
 	}
 
 	public static String getMarketingVersion() {
-		return "0.4.0 beta1";
+		return "0.4.0 beta " + getSvnRevision();
 	}
 
 	public static long getRealVersion() {
