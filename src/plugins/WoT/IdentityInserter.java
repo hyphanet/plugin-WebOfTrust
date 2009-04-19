@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Random;
 
 import com.db4o.ObjectContainer;
@@ -137,8 +138,12 @@ public final class IdentityInserter extends TransferThread {
 			os.close(); os = null;
 			tempB.setReadOnly();
 		
+			long edition = identity.getEdition();
+			if(identity.getLastInsertDate().after(new Date(0)))
+				++edition;
+			
 			/* FIXME: Toad: Are these parameters correct? */
-			InsertBlock ib = new InsertBlock(tempB, null, identity.getInsertURI());
+			InsertBlock ib = new InsertBlock(tempB, null, identity.getInsertURI().setSuggestedEdition(edition));
 			InsertContext ictx = mClient.getInsertContext(true);
 			
 			/* FIXME: are these parameters correct? */
@@ -165,7 +170,7 @@ public final class IdentityInserter extends TransferThread {
 		try {
 			synchronized(mWoT) {
 				OwnIdentity identity = mWoT.getOwnIdentityByURI(state.getURI());
-				identity.setEdition(state.getURI().getSuggestedEdition());
+				identity.setEdition(state.getURI().getEdition());
 				identity.updateLastInsertDate();
 				mWoT.storeAndCommit(identity);
 				Logger.debug(this, "Successful insert of identity '" + identity.getNickname() + "'");
@@ -183,9 +188,9 @@ public final class IdentityInserter extends TransferThread {
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
 	{
 		try {
-			OwnIdentity identity = mWoT.getOwnIdentityByURI(state.getURI());
-
-			Logger.error(this, "Error during insert of identity '" + identity.getNickname() + "'", e);
+			Logger.error(this, "Error during insert of identity ", e);
+			/* We do not increase the edition of the identity if there is a collision because the fetcher will fetch the new edition
+			 * and the Inserter will insert it with that edition in the next run. */
 		}
 		catch(Exception ex) {
 			Logger.error(this, "Error", e);
