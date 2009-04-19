@@ -35,13 +35,13 @@ import freenet.support.io.NativeThread;
  */
 public final class IdentityInserter extends TransferThread {
 	
-	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 15 * 60 * 1000; /* FIXME: Tweak before release */
+	private static final int STARTUP_DELAY = 1 * 60 * 1000; /* FIXME: Tweak before release */
+	private static final int THREAD_PERIOD = 6 * 60 * 1000; /* FIXME: Tweak before release */
 	
 	/**
 	 * The minimal time for which an identity must not have changed before we insert it.
 	 */
-	private static final int MIN_DELAY_BEFORE_INSERT = 5 * 60 * 1000;
+	private static final int MIN_DELAY_BEFORE_INSERT = 5 * 60 * 1000; /* FIXME: Tweak before release */
 	
 	/**
 	 * The maximal delay for which an identity insert can be delayed (relative to the last insert) due to continuous changes.
