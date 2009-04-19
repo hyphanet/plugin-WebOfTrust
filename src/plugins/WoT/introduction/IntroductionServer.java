@@ -17,6 +17,7 @@ import plugins.WoT.IdentityFetcher;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
 import plugins.WoT.XMLTransformer;
+import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.introduction.captcha.CaptchaFactory1;
 
 import com.db4o.ObjectContainer;
@@ -48,15 +49,14 @@ import freenet.support.io.NativeThread;
  */
 public final class IntroductionServer extends TransferThread {
 	
-	private static final int STARTUP_DELAY = 1 * 60 * 1000;
+	private static final int STARTUP_DELAY = 1 * 60 * 1000; /* FIXME: tweak before release */
 	private static final int THREAD_PERIOD = 10 * 60 * 1000; /* FIXME: tweak before release */
 
 	/** The name of the property we use to announce in identities how many puzzles they insert */
 	public static final String PUZZLE_COUNT_PROPERTY = "IntroductionPuzzleCount";
 	public static final int SEED_IDENTITY_PUZZLE_COUNT = 100;
-	public static final int PUZZLE_COUNT = 10; 
-	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;
-	/* public static final int PUZZLE_REINSERT_MAX_AGE = 12 * 60 * 60 * 1000; */		
+	public static final int DEFAULT_PUZZLE_COUNT = 10; /* FIXME: tweak before release */
+	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;		
 	
 	
 	/* Objects from WoT */
@@ -91,14 +91,23 @@ public final class IntroductionServer extends TransferThread {
 		start();
 	}
 	
+	public static int getIdentityPuzzleCount(Identity i) {
+		try {
+			return Math.max(Integer.parseInt(i.getProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY)), 0);
+		}
+		catch(InvalidParameterException e) {
+			return 0;
+		}
+	}
+	
 	@Override
 	protected Collection<ClientGetter> createFetchStorage() {
-		return new ArrayList<ClientGetter>(PUZZLE_COUNT * 5 + 1); /* Just assume that there are 5 identities */
+		return new ArrayList<ClientGetter>(DEFAULT_PUZZLE_COUNT * 5 + 1); /* Just assume that there are 5 identities */
 	}
 
 	@Override
 	protected Collection<BaseClientPutter> createInsertStorage() {
-		return new ArrayList<BaseClientPutter>(PUZZLE_COUNT * 5 + 1); /* Just assume that there are 5 identities */
+		return new ArrayList<BaseClientPutter>(DEFAULT_PUZZLE_COUNT * 5 + 1); /* Just assume that there are 5 identities */
 	}
 
 	public int getPriority() {
@@ -171,7 +180,7 @@ public final class IntroductionServer extends TransferThread {
 	}
 	
 	private synchronized void generateNewPuzzles(OwnIdentity identity) throws IOException {
-		int puzzlesToGenerate = PUZZLE_COUNT - mPuzzleStore.getOfTodayByInserter(identity).size();
+		int puzzlesToGenerate = getIdentityPuzzleCount(identity) - mPuzzleStore.getOfTodayByInserter(identity).size();
 		Logger.debug(this, "Trying to generate " + puzzlesToGenerate + " new puzzles from " + identity.getNickname());
 		
 		while(puzzlesToGenerate > 0) {

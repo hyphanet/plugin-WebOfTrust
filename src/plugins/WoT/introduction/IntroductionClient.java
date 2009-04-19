@@ -300,14 +300,14 @@ public final class IntroductionClient extends TransferThread  {
 	 * Not synchronized because its caller is synchronized already.
 	 */
 	private void downloadPuzzle(Identity inserter) throws FetchException {
-		downloadPuzzle(inserter, mRandom.nextInt(getIdentityPuzzleCount(inserter))); 
+		downloadPuzzle(inserter, mRandom.nextInt(IntroductionServer.getIdentityPuzzleCount(inserter))); 
 	}
 	
 	/**
 	 * Not synchronized because its caller is synchronized already.
 	 */
 	private void downloadPuzzle(Identity inserter, int index) throws FetchException {
-		int inserterPuzzleCount = getIdentityPuzzleCount(inserter);
+		int inserterPuzzleCount = IntroductionServer.getIdentityPuzzleCount(inserter);
 		assert(index < inserterPuzzleCount+1);
 		
 		/* We do that so that onSuccess() can just call this function with the index increased by 1 */
@@ -354,18 +354,6 @@ public final class IntroductionClient extends TransferThread  {
 		}
 		
 		Logger.debug(this, "Trying to fetch puzzle from " + uri.toString());
-	}
-	
-	/**
-	 * Get the amount of puzzles a given identity inserts.
-	 */
-	public int getIdentityPuzzleCount(Identity i) {
-		try {
-			return Math.max(Integer.parseInt(i.getProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY)), 0);
-		}
-		catch(InvalidParameterException e) {
-			return 0;
-		}
 	}
 
 	/**
