@@ -75,7 +75,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * the Freenet development team provides a list of seed identities - each of them is one of the developers.
 	 */
 	private static final String[] SEED_IDENTITIES = new String[] { 
-		"USK@UoieAmYj55ADeXCfrIa~8PI2gUt4gw9e81-pY4q7yHI,c5Gk~NVS6Y6Q6H0k1erhTVsxJqZIpLG19iUYYRTt9Jg,AQACAAE/WoT/0" // xor
+		"USK@fWK9InP~vG6HnTDm3wiJgvh6ULJQaU5XYTkXXNuKTTk,GnZgrilXSYjD~xrD6l4~5x~Nspz3aFe2eYXWRvaNRHU,AQACAAE/WoT/0"
 		/* FIXME: Add the developers. But first we need to debug :) */
 	};
 	
