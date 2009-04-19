@@ -268,7 +268,7 @@ public final class IntroductionServer extends TransferThread {
 	{
 		try {
 			synchronized(mPuzzleStore) {
-				OwnIntroductionPuzzle puzzle = mPuzzleStore.getOwnPuzzleByURI(state.getURI()); /* Be careful: This locks the WoT! */
+				OwnIntroductionPuzzle puzzle = mPuzzleStore.getOwnPuzzleByRequestURI(state.getURI()); /* Be careful: This locks the WoT! */
 				puzzle.setInserted();
 				mPuzzleStore.storeAndCommit(puzzle);
 				Logger.debug(this, "Successful insert of puzzle from " + puzzle.getInserter().getNickname() + ": " + puzzle.getRequestURI());
@@ -296,7 +296,7 @@ public final class IntroductionServer extends TransferThread {
 		}
 		
 		try {
-			OwnIntroductionPuzzle p = mPuzzleStore.getOwnPuzzleByURI(state.getURI()); /* Be careful: This locks the WoT! */
+			OwnIntroductionPuzzle p = mPuzzleStore.getOwnPuzzleByRequestURI(state.getURI()); /* Be careful: This locks the WoT! */
 			Logger.error(this, "Insert of puzzle failed from " + p.getInserter().getNickname() + ": " + p.getRequestURI(), e);
 		}
 		catch(Exception ex) {

@@ -161,6 +161,14 @@ public class IntroductionPuzzle {
 		return Integer.parseInt(tokens[3]);
 	}
 	
+	/**
+	 * Get the ID of a puzzle from the URI of it's solution. Used for querying the database for the associated puzzle after a solution
+	 * was fetched or inserted successfully.
+	 */
+	public static String getIDFromSolutionURI(FreenetURI uri) {
+		return uri.getDocName().split("[|]")[2];
+	}
+	
 	public String getID() {
 		return mID;
 	}
