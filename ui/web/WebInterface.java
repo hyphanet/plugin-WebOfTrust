@@ -17,7 +17,6 @@ import javax.xml.transform.TransformerException;
 import plugins.WoT.Config;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
-import plugins.WoT.Score;
 import plugins.WoT.Trust;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.DuplicateIdentityException;
@@ -380,12 +379,17 @@ public class WebInterface implements FredPluginHTTP {
 	}
 
 	/* TODO: Move to KnownIdentitiesPage! */
-	private void setTrust(HTTPRequest request) throws NumberFormatException, TransformerConfigurationException, FileNotFoundException, InvalidParameterException, UnknownIdentityException, ParserConfigurationException, TransformerException, IOException, InsertException, Db4oIOException, DatabaseClosedException, DuplicateScoreException, DuplicateIdentityException, NotTrustedException, DuplicateTrustException  {
+	private void setTrust(HTTPRequest request) throws NumberFormatException, UnknownIdentityException, InvalidParameterException {
+		String trusterID = request.getPartAsString("ownerID", 128);
+		String trusteeID = request.getPartAsString("trustee", 128);
+		String value = request.getPartAsString("value", 4);
+		String comment = request.getPartAsString("comment", 256);
 		
-		mWoT.setTrust(	request.getPartAsString("ownerID", 128),
-					request.getPartAsString("trustee", 128),
-					request.getPartAsString("value", 4),
-					request.getPartAsString("comment", 256));
+		if(!value.trim().equals(""))
+			mWoT.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
+		else
+			mWoT.removeTrust(trusterID, trusteeID);
+		
 	}
 	
 	private void addIdentity(HTTPRequest request) throws MalformedURLException, InvalidParameterException, FetchException, DuplicateIdentityException {

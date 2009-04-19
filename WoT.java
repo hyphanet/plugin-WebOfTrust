@@ -1109,11 +1109,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return identity;
 	}
 	
-	public synchronized void deleteIdentity(String id) throws UnknownIdentityException {
+	public synchronized void deleteIdentity(Identity identity) {
 		synchronized(mDB.lock()) {
 			try {
-				Identity identity = getIdentityByID(id);
-				
 				for(Score score : getScores(identity))
 					mDB.delete(score);
 				
@@ -1132,6 +1130,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				mDB.rollback();
 				throw e;
 			}
+		}
+	}
+	
+	public synchronized void deleteIdentity(String id) throws UnknownIdentityException {
+		synchronized(mDB.lock()) {
+			Identity identity = getIdentityByID(id);
+			deleteIdentity(identity);
 		}
 	}
 	
@@ -1258,19 +1263,22 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 	}
 
-
-	public synchronized void setTrust(String ownTrusterID, String trusteeID, String value, String comment)
+	public synchronized void setTrust(String ownTrusterID, String trusteeID, byte value, String comment)
 		throws UnknownIdentityException, NumberFormatException, InvalidParameterException {
 		
 		OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
 		Identity trustee = getIdentityByID(trusteeID);
 		
-		if(value.trim().equals(""))
-			removeTrust(truster, trustee);
-		else
-			setTrust(truster, trustee, Byte.parseByte(value), comment);
+		setTrust(truster, trustee, value, comment);
 	}
+	
+	public synchronized void removeTrust(String ownTrusterID, String trusteeID) throws UnknownIdentityException {
+		OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
+		Identity trustee = getIdentityByID(trusteeID);
 
+		removeTrust(truster, trustee);
+	}
+	
 	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {
 		Identity identity = getOwnIdentityByID(ownIdentityID);
 		identity.addContext(newContext);
