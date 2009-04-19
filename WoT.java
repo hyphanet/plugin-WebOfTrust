@@ -96,7 +96,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	private IntroductionPuzzleStore mPuzzleStore;
 	
 	/** Used for exporting identities, identity introductions and introduction puzzles to XML and importing them from XML. */
-	private XMLTransformer mIdentityXML;
+	private XMLTransformer mXMLTransformer;
 	private RequestClient mRequestClient;
 
 	/* Worker objects which actually run the plugin */
@@ -150,7 +150,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WoT.DATABASE_FORMAT_VERSION)
 				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 			
-			mIdentityXML = new XMLTransformer(this);
+			mXMLTransformer = new XMLTransformer(this);
 			mPuzzleStore = new IntroductionPuzzleStore(this);
 			
 			mRequestClient = new RequestClient() {
@@ -1345,7 +1345,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 
 	public XMLTransformer getXMLTransformer() {
-		return mIdentityXML;
+		return mXMLTransformer;
 	}
 	
 	public IntroductionPuzzleStore getIntroductionPuzzleStore() {
