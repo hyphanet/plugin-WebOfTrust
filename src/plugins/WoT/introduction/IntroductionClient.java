@@ -361,7 +361,7 @@ public final class IntroductionClient extends TransferThread  {
 	 */
 	public int getIdentityPuzzleCount(Identity i) {
 		try {
-			return Math.max(Integer.parseInt(i.getProperty("IntroductionPuzzleCount")), 0);
+			return Math.max(Integer.parseInt(i.getProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY)), 0);
 		}
 		catch(InvalidParameterException e) {
 			return 0;
