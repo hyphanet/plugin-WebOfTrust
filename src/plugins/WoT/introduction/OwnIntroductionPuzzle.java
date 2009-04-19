@@ -33,14 +33,6 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	}
 	
 	/**
-	 * Get the ID of a puzzle from the URI of it's solution. Used for querying the database for the associated puzzle after a solution
-	 * was fetched successfully.
-	 */
-	public static String getIDFromSolutionURI(FreenetURI uri) {
-		return uri.getDocName().split("[|]")[2];
-	}
-	
-	/**
 	 * Get the URI at which to insert this puzzle.
 	 * SSK@asdfasdf...|WoT|introduction|yyyy-MM-dd|#
 	 * 

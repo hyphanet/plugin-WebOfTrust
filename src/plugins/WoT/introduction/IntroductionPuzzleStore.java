@@ -173,7 +173,7 @@ public final class IntroductionPuzzleStore {
 	  * 
 	  * Used by the IntroductionClient to obtain the corresponding puzzle object when an insert succeeded or failed.
 	  */
-	protected IntroductionPuzzle getPuzzleByURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
+	protected IntroductionPuzzle getPuzzleByRequestURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
 		Identity inserter = mWoT.getIdentityByURI(uri);
 		Date date = IntroductionPuzzle.getDateFromRequestURI(uri);
 		int index = IntroductionPuzzle.getIndexFromRequestURI(uri);
@@ -181,12 +181,16 @@ public final class IntroductionPuzzleStore {
 		return (IntroductionPuzzle)getByInserterDateIndex(inserter, date, index);
 	}
 	
+	protected IntroductionPuzzle getPuzzleBySolutionURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
+		return getByID(IntroductionPuzzle.getIDFromSolutionURI(uri));
+	}
+	
 	 /**
 	  * Get an own puzzle by it's request URI.
 	  * 
 	  * Used by the IntroductionServer to obtain the corresponding puzzle object when an insert succeeded or failed.
 	  */
-	protected OwnIntroductionPuzzle getOwnPuzzleByURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
+	protected OwnIntroductionPuzzle getOwnPuzzleByRequestURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
 		OwnIdentity inserter = mWoT.getOwnIdentityByURI(uri);
 		Date date = IntroductionPuzzle.getDateFromRequestURI(uri);
 		int index = IntroductionPuzzle.getIndexFromRequestURI(uri);

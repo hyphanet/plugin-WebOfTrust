@@ -364,9 +364,8 @@ public final class IntroductionClient extends TransferThread  {
 	 * Synchronized to prevent deadlocks
 	 */
 	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-		Logger.debug(this, "Fetched puzzle: " + state.getURI());
-
 		try {
+			Logger.debug(this, "Fetched puzzle: " + state.getURI());
 			IntroductionPuzzle puzzle = mWoT.getXMLTransformer().importIntroductionPuzzle(state.getURI(), result.asBucket().getInputStream());
 			/* FIXME: Add logic to call this only once for every few puzzles fetched not for every single one! */
 			mPuzzleStore.deleteOldestUnsolvedPuzzles(PUZZLE_POOL_SIZE);
@@ -409,12 +408,13 @@ public final class IntroductionClient extends TransferThread  {
 	 */
 	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
+		Logger.debug(this, "Successful insert of puzzle solution at " + state.getURI());
+		
 		try {
 			synchronized(mPuzzleStore) {
-				IntroductionPuzzle puzzle = mPuzzleStore.getPuzzleByURI(state.getURI());
+				IntroductionPuzzle puzzle = mPuzzleStore.getPuzzleByRequestURI(state.getURI());
 				puzzle.setInserted();
 				mPuzzleStore.storeAndCommit(puzzle);
-				Logger.debug(this, "Successful insert of puzzle solution at " + state.getURI());
 			}
 		}
 		catch(Exception e) {
