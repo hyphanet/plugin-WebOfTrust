@@ -38,9 +38,6 @@ public abstract class WebPageImpl implements WebPage {
 
 	/** The request performed by the user */
 	protected final HTTPRequest request;
-	
-	/** The error box displayed at the top of the page */
-	protected HTMLNode errorBox;
 
 	/** List of all content boxes */
 	protected final ArrayList<HTMLNode> contentBoxes;
@@ -61,7 +58,6 @@ public abstract class WebPageImpl implements WebPage {
 		this.pageNode = pm.getPageNode("Web of Trust", null);
 		this.request = myRequest;
 		
-		this.errorBox = null;
 		this.contentBoxes = new ArrayList<HTMLNode>();
 	}
 	
@@ -73,9 +69,6 @@ public abstract class WebPageImpl implements WebPage {
 	public String toHTML() {
 		
 		HTMLNode contentNode = pm.getContentNode(pageNode);
-		
-		// We add the ErrorBox if it exists
-		if(errorBox != null) contentNode.addChild(errorBox);
 		
 		// We add every ContentBoxes
 		Iterator<HTMLNode> contentBox = contentBoxes.iterator();
@@ -94,12 +87,25 @@ public abstract class WebPageImpl implements WebPage {
 	 * Adds an ErrorBox to the WebPage.
 	 * 
 	 * @param title The title of the desired ErrorBox
+
+	 */
+	public HTMLNode addErrorBox(String title) {
+		HTMLNode errorBox = pm.getInfobox("infobox-alert", title);
+		contentBoxes.add(errorBox);
+		return pm.getContentNode(errorBox);
+	}
+	
+	/**
+	 * Adds an ErrorBox to the WebPage.
+	 * 
+	 * @param title The title of the desired ErrorBox
 	 * @param message The error message that will be displayed
 	 */
-	public void addErrorBox(String title, String message) {
-		
-		errorBox = pm.getInfobox("infobox-alert", title);
-		errorBox.addChild("#", message);
+	public HTMLNode addErrorBox(String title, String message) {
+		HTMLNode errorBox = pm.getInfobox("infobox-alert", title);
+		errorBox.addChild("p", message);
+		contentBoxes.add(errorBox);
+		return pm.getContentNode(errorBox);
 	}
 	
 	/**
