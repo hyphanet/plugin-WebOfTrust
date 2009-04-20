@@ -44,9 +44,10 @@ public class WebInterface implements FredPluginHTTP {
 		return mURI;
 	}
 
-	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
+	public String handleHTTPGet(final HTTPRequest request) throws PluginHTTPException {
+		WebPage page = null;
+		
 		try {
-			WebPage page = null;
 			
 			if(request.isParameterSet("OwnIdentities")) page = new OwnIdentitiesPage(this, request);
 			else if (request.isParameterSet("KnownIdentities")) page = new KnownIdentitiesPage(this, request);
@@ -66,17 +67,23 @@ public class WebInterface implements FredPluginHTTP {
 			}
 			else
 				page = new HomePage(this, request);
-	
+			
 			page.make();
 			return page.toHTML();
 		}
 		catch (Exception e) {
-			/* FIXME: Return a HTML page, not just e.getLocalizedMessage! */
-			return e.getMessage();
+			try {
+				page = new ErrorPage(this, request, e);
+				page.make();
+				return page.toHTML();
+			}
+			catch(Exception doubleFault) {
+				return doubleFault.toString();
+			}
 		}
 	}
 
-	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
+	public String handleHTTPPost(final HTTPRequest request) throws PluginHTTPException {
 		WebPage page;
 		
 		String pass = request.getPartAsString("formPassword", 32);
@@ -100,8 +107,14 @@ public class WebInterface implements FredPluginHTTP {
 			page.make();
 			return page.toHTML();
 		} catch (Exception e) {
-			/* FIXME: Return a HTML page, not just e.getLocalizedMessage! */
-			return e.getMessage();
+			try {
+				page = new ErrorPage(this, request, e);
+				page.make();
+				return page.toHTML();
+			}
+			catch(Exception doubleFault) {
+				return doubleFault.toString();
+			}
 		}
 	}
 	
