@@ -61,41 +61,40 @@ public class IdentityPage extends WebPageImpl {
 			makeURIBox();
 			makeServicesBox();
 
-				HTMLNode trusteeTrustsNode = addContentBox("Identities that '" + identity.getNickname() + "' trusts");
-				
-				HTMLNode trustersTable = trusteeTrustsNode.addChild("table");
-				HTMLNode trustersTableHeader = trustersTable.addChild("tr");
-				trustersTableHeader.addChild("th", "Nickname");
-				trustersTableHeader.addChild("th", "Identity");
-				trustersTableHeader.addChild("th", "Value");
-				trustersTableHeader.addChild("th", "Comment");
-				
-				for (Trust trust : wot.getGivenTrusts(identity)) {
-					HTMLNode trustRow = trustersTable.addChild("tr");
-					Identity trustee = trust.getTrustee();
-					trustRow.addChild("td").addChild("a", "href", "?ShowIdentity&id=" + trustee.getID(), trustee.getNickname());
-					trustRow.addChild("td", trustee.getID());
-					trustRow.addChild("td", "align", "right", Byte.toString(trust.getValue()));
-					trustRow.addChild("td", trust.getComment());
-				}
-		
-				HTMLNode trusterTrustsNode = addContentBox("Identities that trust '" + identity.getNickname() + "'");
-		
-				HTMLNode trusteesTable = trusterTrustsNode.addChild("table");
-				HTMLNode trusteesTableHeader = trusteesTable.addChild("tr");
-				trusteesTableHeader.addChild("th", "Nickname");
-				trusteesTableHeader.addChild("th", "Identity");
-				trusteesTableHeader.addChild("th", "Value");
-				trusteesTableHeader.addChild("th", "Comment");
-		
-				for (Trust trust : wot.getReceivedTrusts(identity)) {
-					HTMLNode trustRow = trusteesTable.addChild("tr");
-					Identity truster = trust.getTruster();
-					trustRow.addChild("td").addChild("a", "href", "?ShowIdentity&id=" + truster.getID(), truster.getNickname());
-					trustRow.addChild("td", truster.getID());
-					trustRow.addChild("td", "align", "right", Byte.toString(trust.getValue()));
-					trustRow.addChild("td", trust.getComment());
-				}
+			HTMLNode trusteeTrustsNode = addContentBox("Identities that '" + identity.getNickname() + "' trusts");
+
+			HTMLNode trusteesTable = trusteeTrustsNode.addChild("table");
+			HTMLNode trusteesTableHeader = trusteesTable.addChild("tr");
+			trusteesTableHeader.addChild("th", "Nickname");
+			trusteesTableHeader.addChild("th", "Identity");
+			trusteesTableHeader.addChild("th", "Value");
+			trusteesTableHeader.addChild("th", "Comment");
+
+			for (Trust trust : wot.getGivenTrusts(identity)) {
+				HTMLNode trustRow = trusteesTable.addChild("tr");
+				Identity trustee = trust.getTrustee();
+				trustRow.addChild("td").addChild("a", "href", "?ShowIdentity&id=" + trustee.getID(), trustee.getNickname());
+				trustRow.addChild("td", trustee.getID());
+				trustRow.addChild("td", "align", "right", Byte.toString(trust.getValue()));
+				trustRow.addChild("td", trust.getComment());
+			}
+
+			HTMLNode trusterTrustsNode = addContentBox("Identities that trust '" + identity.getNickname() + "'");
+			HTMLNode trustersTable = trusterTrustsNode.addChild("table");
+			HTMLNode trustersTableHeader = trustersTable.addChild("tr");
+			trustersTableHeader.addChild("th", "Nickname");
+			trustersTableHeader.addChild("th", "Identity");
+			trustersTableHeader.addChild("th", "Value");
+			trustersTableHeader.addChild("th", "Comment");
+
+			for (Trust trust : wot.getReceivedTrusts(identity)) {
+				HTMLNode trustRow = trustersTable.addChild("tr");
+				Identity truster = trust.getTruster();
+				trustRow.addChild("td").addChild("a", "href", "?ShowIdentity&id=" + truster.getID(), truster.getNickname());
+				trustRow.addChild("td", truster.getID());
+				trustRow.addChild("td", "align", "right", Byte.toString(trust.getValue()));
+				trustRow.addChild("td", trust.getComment());
+			}
 		}
 		}
 	}
