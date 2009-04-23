@@ -56,20 +56,30 @@ public class IdentityPage extends WebPageImpl {
 	 * @see WebPage#make()
 	 */
 	public void make() {
-		synchronized(wot) {
 		synchronized(identity) {
+			/* Does not matter much if this information is not synchronous to the trust tables so we put it outside the lock on the WoT
+			 * to reduce the time the whole WoT is locked. */
 			makeURIBox();
 			makeServicesBox();
+		}
+		
+		HTMLNode trusteeTrustsNode = addContentBox("Identities that '" + identity.getNickname() + "' trusts");
+		HTMLNode trusteesTable = trusteeTrustsNode.addChild("table");
+		HTMLNode trusteesTableHeader = trusteesTable.addChild("tr");
+		trusteesTableHeader.addChild("th", "Nickname");
+		trusteesTableHeader.addChild("th", "Identity");
+		trusteesTableHeader.addChild("th", "Value");
+		trusteesTableHeader.addChild("th", "Comment");
 
-			HTMLNode trusteeTrustsNode = addContentBox("Identities that '" + identity.getNickname() + "' trusts");
-
-			HTMLNode trusteesTable = trusteeTrustsNode.addChild("table");
-			HTMLNode trusteesTableHeader = trusteesTable.addChild("tr");
-			trusteesTableHeader.addChild("th", "Nickname");
-			trusteesTableHeader.addChild("th", "Identity");
-			trusteesTableHeader.addChild("th", "Value");
-			trusteesTableHeader.addChild("th", "Comment");
-
+		HTMLNode trusterTrustsNode = addContentBox("Identities that trust '" + identity.getNickname() + "'");
+		HTMLNode trustersTable = trusterTrustsNode.addChild("table");
+		HTMLNode trustersTableHeader = trustersTable.addChild("tr");
+		trustersTableHeader.addChild("th", "Nickname");
+		trustersTableHeader.addChild("th", "Identity");
+		trustersTableHeader.addChild("th", "Value");
+		trustersTableHeader.addChild("th", "Comment");
+		
+		synchronized(wot) {
 			for (Trust trust : wot.getGivenTrusts(identity)) {
 				HTMLNode trustRow = trusteesTable.addChild("tr");
 				Identity trustee = trust.getTrustee();
@@ -79,14 +89,6 @@ public class IdentityPage extends WebPageImpl {
 				trustRow.addChild("td", trust.getComment());
 			}
 
-			HTMLNode trusterTrustsNode = addContentBox("Identities that trust '" + identity.getNickname() + "'");
-			HTMLNode trustersTable = trusterTrustsNode.addChild("table");
-			HTMLNode trustersTableHeader = trustersTable.addChild("tr");
-			trustersTableHeader.addChild("th", "Nickname");
-			trustersTableHeader.addChild("th", "Identity");
-			trustersTableHeader.addChild("th", "Value");
-			trustersTableHeader.addChild("th", "Comment");
-
 			for (Trust trust : wot.getReceivedTrusts(identity)) {
 				HTMLNode trustRow = trustersTable.addChild("tr");
 				Identity truster = trust.getTruster();
@@ -95,7 +97,6 @@ public class IdentityPage extends WebPageImpl {
 				trustRow.addChild("td", "align", "right", Byte.toString(trust.getValue()));
 				trustRow.addChild("td", trust.getComment());
 			}
-		}
 		}
 	}
 	
