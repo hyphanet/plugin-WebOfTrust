@@ -127,12 +127,9 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Called by the superclass TransferThread after getStartupDelay() milliseconds and then after each getSleepTime() milliseconds.
 	 * Deletes old puzzles, downloads solutions of existing ones and inserts new ones.
-	 * 
-	 * Synchronized to prevent deadlocks with the onSuccess() / onFailure() functions because this function and the other ones lock
-	 * on more stuff, i.e. the WoT and the puzzle store.
 	 */
 	@Override
-	protected synchronized void iterate() {
+	protected void iterate() {
 		mPuzzleStore.deleteExpiredPuzzles();
 
 		synchronized(mWoT) {
