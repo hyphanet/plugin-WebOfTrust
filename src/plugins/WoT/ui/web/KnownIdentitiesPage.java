@@ -197,7 +197,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			row=identitiesTable.addChild("tr");
 			
 			// NickName
-			row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"}).addChild("a", "href", "?ShowIdentity&id=" + id.getID(), id.getNickname());
+			row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"})
+				.addChild("a", "href", "?ShowIdentity&id=" + id.getID(), id.getNickname());
 			
 			Date lastFetched = id.getLastFetchedDate();
 
@@ -216,7 +217,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			//Score
 			try {
-				row.addChild("td", new String[] { "align" }, new String[] { "center" } , String.valueOf(wot.getScore((OwnIdentity)treeOwner, id).getScore())+" ("+wot.getScore((OwnIdentity)treeOwner, id).getRank()+")");
+				row.addChild("td", new String[] { "align" }, new String[] { "center" } ,
+						Integer.toString(wot.getScore((OwnIdentity)treeOwner, id).getScore())+" ("+
+						wot.getScore((OwnIdentity)treeOwner, id).getRank()+")");
 			}
 			catch (NotInTrustTreeException e) {
 				// This only happen with identities added manually by the user
@@ -229,11 +232,13 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			// Nb Trusters
 			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-			trustersCell.addChild(new HTMLNode("a", "href", uri + "?ShowIdentity&id="+id.getID(), Long.toString(wot.getReceivedTrusts(id).size())));
+			trustersCell.addChild(new HTMLNode("a", "href", uri + "?ShowIdentity&id="+id.getID(),
+					Long.toString(wot.getReceivedTrusts(id).size())));
 			
 			// Nb Trustees
 			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-			trusteesCell.addChild(new HTMLNode("a", "href", uri + "?ShowIdentity&id="+id.getID(), Long.toString(wot.getGivenTrusts(id).size())));
+			trusteesCell.addChild(new HTMLNode("a", "href", uri + "?ShowIdentity&id="+id.getID(),
+					Long.toString(wot.getGivenTrusts(id).size())));
 		}
 		}
 	}
