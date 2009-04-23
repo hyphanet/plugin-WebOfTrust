@@ -348,7 +348,8 @@ public final class XMLTransformer {
 					Logger.error(newIdentity, "The identity is already trusted even though it did not exist!");
 				}
 				catch(NotTrustedException ex) {
-					/* FIXME: We need null trust. Giving trust by solving captchas is a REALLY bad idea... */
+					/* FIXME: We need null trust. Giving trust by solving captchas is a bad idea because they receive capacity for
+					 * giving trust to others by that. */
 					mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");
 					mWoT.getIdentityFetcher().fetch(newIdentity);
 				}
