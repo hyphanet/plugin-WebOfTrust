@@ -324,15 +324,15 @@ public final class XMLTransformer {
 		Identity newIdentity;
 		
 		synchronized(this) {
-		Document xml = mDocumentBuilder.parse(xmlInputStream);
-		Element introductionElement = (Element)xml.getElementsByTagName("IdentityIntroduction").item(0);
-		
-		if(Integer.parseInt(introductionElement.getAttribute("Version")) > XML_FORMAT_VERSION)
-			throw new InvalidParameterException("Version " + introductionElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
-		
-		Element identityElement = (Element)introductionElement.getElementsByTagName("Identity").item(0);
-		
-		identityURI = new FreenetURI(identityElement.getAttribute("URI"));
+			Document xml = mDocumentBuilder.parse(xmlInputStream);
+			Element introductionElement = (Element)xml.getElementsByTagName("IdentityIntroduction").item(0);
+
+			if(Integer.parseInt(introductionElement.getAttribute("Version")) > XML_FORMAT_VERSION)
+				throw new InvalidParameterException("Version " + introductionElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
+
+			Element identityElement = (Element)introductionElement.getElementsByTagName("Identity").item(0);
+
+			identityURI = new FreenetURI(identityElement.getAttribute("URI"));
 		}
 		
 		synchronized(mWoT) {
