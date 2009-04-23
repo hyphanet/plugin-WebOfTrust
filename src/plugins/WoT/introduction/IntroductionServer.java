@@ -154,9 +154,6 @@ public final class IntroductionServer extends TransferThread {
 	/* Primary worker functions */
 		
 
-	/**
-	 * Not synchronized because its caller is synchronized.
-	 */
 	private void downloadSolutions(OwnIdentity inserter) throws FetchException {
 		/* TODO: We restart all requests in every iteration. Decide whether this makes sense or not, if not add code to re-use requests for
 		 * puzzles which still exist.
@@ -183,10 +180,8 @@ public final class IntroductionServer extends TransferThread {
 		}
 	}
 	
-	/**
-	 * Not synchronized because its caller is synchronized.
-	 */
 	private void generateNewPuzzles(OwnIdentity identity) throws IOException {
+		synchronized(mPuzzleStore) {
 		int puzzlesToGenerate = getIdentityPuzzleCount(identity) - mPuzzleStore.getOfTodayByInserter(identity).size();
 		Logger.debug(this, "Trying to generate " + puzzlesToGenerate + " new puzzles from " + identity.getNickname());
 		
@@ -194,13 +189,11 @@ public final class IntroductionServer extends TransferThread {
 			mPuzzleFactories[mRandom.nextInt(mPuzzleFactories.length)].generatePuzzle(mPuzzleStore, identity);
 			--puzzlesToGenerate;
 		}
+		}
 		
 		Logger.debug(this, "Finished generating puzzles from " + identity.getNickname());
 	}
 	
-	/**
-	 * Not synchronized because its caller is synchronized.
-	 */
 	private void insertPuzzles(OwnIdentity identity) throws IOException, InsertException {
 		synchronized(mPuzzleStore) {
 			ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedOwnPuzzlesByInserter(identity); 
@@ -257,19 +250,18 @@ public final class IntroductionServer extends TransferThread {
 	
 	/** 
 	 * Called when a puzzle was successfully inserted.
-	 * 
-	 * Synchronized because it locks the puzzle store and the WoT which is also done by the iterate() function, deadlocks could 
-	 * happen if we did not synchronize this one.
 	 */
-	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container)
+	public void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
 		Logger.debug(this, "Successful insert of puzzle: " + state.getURI());
 		
 		try {
+			synchronized(mWoT) {
 			synchronized(mPuzzleStore) {
 				OwnIntroductionPuzzle puzzle = mPuzzleStore.getOwnPuzzleByRequestURI(state.getURI()); /* Be careful: This locks the WoT! */
 				puzzle.setInserted();
 				mPuzzleStore.storeAndCommit(puzzle);
+			}
 			}
 		}
 		catch(Exception e) {
@@ -282,9 +274,8 @@ public final class IntroductionServer extends TransferThread {
 	
 	/**
 	 * Called when the insertion of a puzzle failed.
-	 * 
 	 */
-	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
 	{
 		if(e.getMode() == InsertException.CANCELLED) {
 			Logger.debug(this, "Insert cancelled: " + state.getURI());
@@ -301,14 +292,14 @@ public final class IntroductionServer extends TransferThread {
 
 	/**
 	 * Called when a puzzle solution is successfully fetched. We then add the identity which solved the puzzle.
-	 * 
-	 * Synchronized because it locks the puzzle store and the WoT which is also done by the iterate() function, deadlocks could 
-	 * happen if we did not synchronize this one.
 	 */
-	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched puzzle solution: " + state.getURI());
 
 		try {
+			/* importIntroduction() locks the WoT so we need to do that here first to keep the locking order the same everywhere to
+			 * prevent deadlocks. */
+			synchronized(mWoT) {
 			synchronized(mPuzzleStore) {
 				OwnIntroductionPuzzle p = mPuzzleStore.getOwnPuzzleBySolutionURI(state.getURI());
 				synchronized(p) {
@@ -319,6 +310,7 @@ public final class IntroductionServer extends TransferThread {
 					p.setSolved();
 					mPuzzleStore.storeAndCommit(p);
 				}
+			}
 			}
 		}
 		catch (Exception e) { 
@@ -332,8 +324,6 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * In our case, called when there is no solution to a puzzle in the network.
-	 * 
-	 * Not synchronized because it does not lock anything and generally does nothing.
 	 */
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		if(e.getMode() == FetchException.CANCELLED) {
@@ -342,7 +332,10 @@ public final class IntroductionServer extends TransferThread {
 		}
 		
 		try {
-			Logger.debug(this, "Downloading puzzle solution " + state.getURI() + " failed: ", e);
+			if(e.getMode() == FetchException.DATA_NOT_FOUND) {
+				/* This is the normal case: The puzzle was not solved. */
+			} else
+				Logger.error(this, "Downloading puzzle solution " + state.getURI() + " failed: ", e);
 		}
 		finally {
 			removeFetch(state);
