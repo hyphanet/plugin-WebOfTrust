@@ -385,23 +385,32 @@ public final class XMLTransformer {
 		mSerializer.transform(domSource, resultStream);
 	}
 
-	public synchronized IntroductionPuzzle importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
+	public IntroductionPuzzle importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
 		throws SAXException, IOException, InvalidParameterException, UnknownIdentityException, IllegalBase64Exception, ParseException {
 		
+		Identity puzzleInserter;
+		String puzzleID;
+		IntroductionPuzzle.PuzzleType puzzleType;
+		String puzzleMimeType;
+		long puzzleValidUntilTime;
+		byte[] puzzleData;
+		
+		synchronized(this) {
 		Document xml = mDocumentBuilder.parse(xmlInputStream);
 		Element puzzleElement = (Element)xml.getElementsByTagName("IntroductionPuzzle").item(0);
 		
 		if(Integer.parseInt(puzzleElement.getAttribute("Version")) > XML_FORMAT_VERSION)
 			throw new InvalidParameterException("Version " + puzzleElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);	
 		
-		Identity puzzleInserter = mWoT.getIdentityByURI(puzzleURI);
-		String puzzleID = puzzleElement.getAttribute("ID");
-		IntroductionPuzzle.PuzzleType puzzleType = IntroductionPuzzle.PuzzleType.valueOf(puzzleElement.getAttribute("Type"));
-		String puzzleMimeType = puzzleElement.getAttribute("MimeType");
-		long puzzleValidUntilTime = Long.parseLong(puzzleElement.getAttribute("ValidUntilTime"));
+		puzzleInserter = mWoT.getIdentityByURI(puzzleURI);
+		puzzleID = puzzleElement.getAttribute("ID");
+		puzzleType = IntroductionPuzzle.PuzzleType.valueOf(puzzleElement.getAttribute("Type"));
+		puzzleMimeType = puzzleElement.getAttribute("MimeType");
+		puzzleValidUntilTime = Long.parseLong(puzzleElement.getAttribute("ValidUntilTime"));
 		
 		Element dataElement = (Element)puzzleElement.getElementsByTagName("Data").item(0);
-		byte[] puzzleData =  Base64.decodeStandard(dataElement.getAttribute("Value"));
+		puzzleData = Base64.decodeStandard(dataElement.getAttribute("Value"));
+		}
 		
 		IntroductionPuzzle puzzle = new IntroductionPuzzle(puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, puzzleValidUntilTime,
 				IntroductionPuzzle.getDateFromRequestURI(puzzleURI), IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));

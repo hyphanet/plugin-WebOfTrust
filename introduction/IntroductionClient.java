@@ -136,11 +136,16 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/**
 	 * Use this function in the UI to get a list of puzzles for the user to solve.
-	 * You have to synchronize on the IntroductionPuzzleStore around the usage of this function and the list it returns!
 	 * 
-	 * Synchronized to prevent deadlocks.
+	 * FIXME: Is it okay if we do not require users to lock the PuzzleStore while parsing the returned list? Because they would have
+	 * to also lock the WoT first to prevent deadlocks. The worst thing which can happen is that they display a puzzle which has
+	 * been deleted already - it should be save to parse ObjectContainers while the database is being modified, shouldn't it?
 	 */
-	public synchronized List<IntroductionPuzzle> getPuzzles(OwnIdentity user, PuzzleType puzzleType, int count) {
+	public List<IntroductionPuzzle> getPuzzles(OwnIdentity user, PuzzleType puzzleType, int count) {
+		/* Deadlocks could occur without the lock on WoT because the loop calls functions which lock the WoT - if something else started to
+		 * execute (while we have already locked the puzzle store) which locks the WoT and waits for the puzzle store to become available
+		 * until it releases the WoT. */
+		synchronized(mWoT) {
 		synchronized(mPuzzleStore) {
 			List<IntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedPuzzles(puzzleType);
 			ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count + 1);
@@ -173,16 +178,19 @@ public final class IntroductionClient extends TransferThread  {
 			
 			return result;
 		}
+		}
 	}
 	
 	/**
 	 * Use this function to store the solution of a puzzle and upload it.
 	 * @throws InvalidParameterException If the puzzle was already solved.
 	 */
-	public synchronized void solvePuzzle(OwnIdentity solver, IntroductionPuzzle puzzle, String solution) throws InvalidParameterException {
+	public void solvePuzzle(OwnIdentity solver, IntroductionPuzzle puzzle, String solution) throws InvalidParameterException {
+		synchronized(mPuzzleStore) {
 		synchronized(puzzle) {
 			puzzle.setSolved(solver, solution);
 			mPuzzleStore.storeAndCommit(puzzle);
+		}
 		}
 		try {
 			insertPuzzleSolution(puzzle);
@@ -193,38 +201,40 @@ public final class IntroductionClient extends TransferThread  {
 	}
 
 	private synchronized void downloadPuzzles() {
-		ObjectSet<Identity> allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification(); 
+		/* Normally we would lock the whole WoT here because we iterate over a list returned by it. But because it is not a severe
+		 * problem if we download a puzzle of an identity which has been deleted or so we do not do that. */
+		ObjectSet<Identity> allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
 		ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(PUZZLE_POOL_SIZE);
 		
-		int counter = 0;
 		/* Download puzzles from identities from which we have not downloaded for a certain period. This is ensured by
-		 * keeping the last few hunderd identities stored in a FIFO with fixed length, named mIdentities. */
+		 * keeping the last few hundred identities stored in a FIFO with fixed length, named mIdentities. */
+		
+		/* Normally we would have to lock the WoT here first so that no deadlock happens if something else locks the mIdentities and
+		 * waits for the WoT until it unlocks them. BUT nothing else in this class locks mIdentities and then the WoT */
 		synchronized(mIdentities) {
 			for(Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
 				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i)
-						&& mWoT.getBestScore(i) > MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)  {
+						&& mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)  {
 					identitiesToDownloadFrom.add(i);
-					++counter;
 				}
 	
-				if(counter == PUZZLE_REQUEST_COUNT)
+				if(identitiesToDownloadFrom.size() == PUZZLE_REQUEST_COUNT)
 					break;
 			}
 		}
 		
 		/* If we run out of identities to download from, be less restrictive */
-		if(counter == 0) {
-			identitiesToDownloadFrom.clear();  /* We probably have less updated identities today than the size of the LRUQueue, empty it */
+		if(identitiesToDownloadFrom.size() == 0) {
+			mIdentities.clear(); /* We probably have less updated identities today than the size of the LRUQueue, empty it */
 
 			for(Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
 				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && mWoT.getBestScore(i) > MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)  {
 					identitiesToDownloadFrom.add(i);
-					++counter;
 				}
 
-				if(counter == PUZZLE_REQUEST_COUNT)
+				if(identitiesToDownloadFrom.size() == PUZZLE_REQUEST_COUNT)
 					break;
 			}
 		}
@@ -244,7 +254,7 @@ public final class IntroductionClient extends TransferThread  {
 		
 	}
 	
-	private synchronized void insertSolutions() {
+	private void insertSolutions() {
 		abortInserts();
 		synchronized(mPuzzleStore) {
 			ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedSolvedPuzzles();
@@ -346,9 +356,15 @@ public final class IntroductionClient extends TransferThread  {
 		// FIXME: Set to a reasonable value before release, PluginManager default is interactive priority
 		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
 		addFetch(g);
+		
+		/* Attention: Do not lock the WoT here before locking mIdentities because there is another synchronized(mIdentities) in this class
+		 * which locks the WoT inside the mIdentities-lock */
 		synchronized(mIdentities) {
 			if(!mIdentities.contains(inserter)) {
-				mIdentities.poll();	/* the oldest identity falls out of the FIFO and therefore puzzle downloads from that one are allowed again */
+				/* The oldest identity falls out of the FIFO and therefore puzzle downloads from that one are allowed again.
+				 * It is only checked in downloadPuzzles() whether puzzle downloads are allowed because we download up to
+				 * MAX_PUZZLES_PER_IDENTITY puzzles per identity - the onSuccess() starts download of the next one usually. */
+				mIdentities.poll();
 				try {
 					mIdentities.put(inserter); /* put this identity at the beginning of the FIFO */
 				} catch(InterruptedException e) {}
@@ -360,10 +376,8 @@ public final class IntroductionClient extends TransferThread  {
 
 	/**
 	 * Called when a puzzle is successfully fetched.
-	 * 
-	 * Synchronized to prevent deadlocks
 	 */
-	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched puzzle: " + state.getURI());
 		
 		try {
@@ -384,13 +398,16 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * In our case, called when there is no puzzle available.
-	 * 
-	 * Not sychronized because it does nothing and removeFetch() is synchronized already.
 	 */
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		if(e.getMode() == FetchException.CANCELLED) {
 			Logger.debug(this, "Fetch cancelled: " + state.getURI());
 			return;
+		}
+		
+		if(e.getMode() == FetchException.DATA_NOT_FOUND) {
+			/* This is the normal case: There is no puzzle available of today because the inserter is offline and has not inserted any.
+			 * We do nothing here. The identity stays in the FIFO though so we do not try to fetch puzzzle from it again soon. */
 		}
 		
 		try {
@@ -403,19 +420,18 @@ public final class IntroductionClient extends TransferThread  {
 
 	/**
 	 * Called when a puzzle solution is successfully inserted.
-	 * 
-	 * Synchronized to prevent deadlocks.
-	 * Synchronized so that we do not insert it again accidentally, so we can keep the assert(!puzzle.wasInserted()) in insertPuzzle().
 	 */
-	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container)
+	public void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
 		Logger.debug(this, "Successful insert of puzzle solution: " + state.getURI());
 		
 		try {
+			synchronized(mWoT) { /* getPuzzleByRequestURI requires this */
 			synchronized(mPuzzleStore) {
 				IntroductionPuzzle puzzle = mPuzzleStore.getPuzzleByRequestURI(state.getURI());
 				puzzle.setInserted();
 				mPuzzleStore.storeAndCommit(puzzle);
+			}
 			}
 		}
 		catch(Exception e) {
@@ -428,11 +444,11 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/**
 	 * Calling when inserting a puzzle solution failed.
-	 * 
-	 * Not synchronized because the worst thing which can happen is that we donwload it again.
 	 */
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container)
 	{
+		/* No synchronization because the worst thing which can happen is that we insert it again */
+		
 		if(e.getMode() == InsertException.CANCELLED) {
 			Logger.debug(this, "Insert cancelled: " + state.getURI());
 			return;
