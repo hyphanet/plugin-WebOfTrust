@@ -42,9 +42,6 @@ public class IdentityPage extends WebPageImpl {
 	 * 
 	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 * @param myRequest The request sent by the user.
-	 * @param identity The identity
-	 * @param givenTrusts The trusts having the given identity as truster
-	 * @param receivedTrusts The trusts having the given identity as trustee
 	 * @throws UnknownIdentityException 
 	 */
 	public IdentityPage(WebInterface myWebInterface, HTTPRequest myRequest) throws UnknownIdentityException {
@@ -59,11 +56,11 @@ public class IdentityPage extends WebPageImpl {
 	 * @see WebPage#make()
 	 */
 	public void make() {
+		synchronized(wot) {
 		synchronized(identity) {
 			makeURIBox();
 			makeServicesBox();
 
-			synchronized(wot) {
 				HTMLNode trusteeTrustsNode = addContentBox("Identities that '" + identity.getNickname() + "' trusts");
 				
 				HTMLNode trustersTable = trusteeTrustsNode.addChild("table");
@@ -99,7 +96,7 @@ public class IdentityPage extends WebPageImpl {
 					trustRow.addChild("td", "align", "right", Byte.toString(trust.getValue()));
 					trustRow.addChild("td", trust.getComment());
 				}
-			}
+		}
 		}
 	}
 	
