@@ -28,6 +28,7 @@ public class EditOwnIdentityPage extends WebPageImpl {
 	}
 	
 	public void make() {
+		synchronized(wot) {
 		synchronized(mIdentity) {
 			if(request.isPartSet("Edit")) {
 				try {
@@ -86,6 +87,7 @@ public class EditOwnIdentityPage extends WebPageImpl {
 				p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "PublishPuzzles", "true"});
 			
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Edit", "Save changes" });
+		}
 		}
 	}
 
