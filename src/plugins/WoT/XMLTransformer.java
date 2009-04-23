@@ -317,9 +317,13 @@ public final class XMLTransformer {
 	 * @throws IOException 
 	 * @throws SAXException 
 	 */
-	public synchronized Identity importIntroduction(OwnIdentity puzzleOwner, InputStream xmlInputStream)
+	public Identity importIntroduction(OwnIdentity puzzleOwner, InputStream xmlInputStream)
 		throws InvalidParameterException, SAXException, IOException {
 		
+		FreenetURI identityURI;
+		Identity newIdentity;
+		
+		synchronized(this) {
 		Document xml = mDocumentBuilder.parse(xmlInputStream);
 		Element introductionElement = (Element)xml.getElementsByTagName("IdentityIntroduction").item(0);
 		
@@ -328,9 +332,8 @@ public final class XMLTransformer {
 		
 		Element identityElement = (Element)introductionElement.getElementsByTagName("Identity").item(0);
 		
-		FreenetURI identityURI = new FreenetURI(identityElement.getAttribute("URI"));
-		
-		Identity newIdentity;
+		identityURI = new FreenetURI(identityElement.getAttribute("URI"));
+		}
 		
 		synchronized(mWoT) {
 			try {
@@ -396,24 +399,25 @@ public final class XMLTransformer {
 		byte[] puzzleData;
 		
 		synchronized(this) {
-		Document xml = mDocumentBuilder.parse(xmlInputStream);
-		Element puzzleElement = (Element)xml.getElementsByTagName("IntroductionPuzzle").item(0);
-		
-		if(Integer.parseInt(puzzleElement.getAttribute("Version")) > XML_FORMAT_VERSION)
-			throw new InvalidParameterException("Version " + puzzleElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);	
-		
-		puzzleInserter = mWoT.getIdentityByURI(puzzleURI);
-		puzzleID = puzzleElement.getAttribute("ID");
-		puzzleType = IntroductionPuzzle.PuzzleType.valueOf(puzzleElement.getAttribute("Type"));
-		puzzleMimeType = puzzleElement.getAttribute("MimeType");
-		puzzleValidUntilTime = Long.parseLong(puzzleElement.getAttribute("ValidUntilTime"));
-		
-		Element dataElement = (Element)puzzleElement.getElementsByTagName("Data").item(0);
-		puzzleData = Base64.decodeStandard(dataElement.getAttribute("Value"));
+			Document xml = mDocumentBuilder.parse(xmlInputStream);
+			Element puzzleElement = (Element)xml.getElementsByTagName("IntroductionPuzzle").item(0);
+
+			if(Integer.parseInt(puzzleElement.getAttribute("Version")) > XML_FORMAT_VERSION)
+				throw new InvalidParameterException("Version " + puzzleElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);	
+
+			puzzleInserter = mWoT.getIdentityByURI(puzzleURI);
+			puzzleID = puzzleElement.getAttribute("ID");
+			puzzleType = IntroductionPuzzle.PuzzleType.valueOf(puzzleElement.getAttribute("Type"));
+			puzzleMimeType = puzzleElement.getAttribute("MimeType");
+			puzzleValidUntilTime = Long.parseLong(puzzleElement.getAttribute("ValidUntilTime"));
+
+			Element dataElement = (Element)puzzleElement.getElementsByTagName("Data").item(0);
+			puzzleData = Base64.decodeStandard(dataElement.getAttribute("Value"));
 		}
 		
-		IntroductionPuzzle puzzle = new IntroductionPuzzle(puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, puzzleValidUntilTime,
-				IntroductionPuzzle.getDateFromRequestURI(puzzleURI), IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
+		IntroductionPuzzle puzzle = new IntroductionPuzzle(puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData,
+				puzzleValidUntilTime, IntroductionPuzzle.getDateFromRequestURI(puzzleURI),
+				IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
 		
 		mWoT.getIntroductionPuzzleStore().storeAndCommit(puzzle);
 		
