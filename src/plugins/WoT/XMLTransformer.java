@@ -167,10 +167,7 @@ public final class XMLTransformer {
 	 * 
 	 * If the identity does not exist yet, it is created. If it does, the existing one is updated.
 	 * 
-	 * @param myWoT The web of trust where to store the identity and trust list at.
 	 * @param xmlInputStream The input stream containing the XML.
-	 * @throws Exception 
-	 * @throws Exception
 	 */
 	public synchronized void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  { 
 		Document xml = mDocumentBuilder.parse(xmlInputStream);
@@ -392,12 +389,12 @@ public final class XMLTransformer {
 	public IntroductionPuzzle importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
 		throws SAXException, IOException, InvalidParameterException, UnknownIdentityException, IllegalBase64Exception, ParseException {
 		
-		Identity puzzleInserter;
 		String puzzleID;
 		IntroductionPuzzle.PuzzleType puzzleType;
 		String puzzleMimeType;
 		long puzzleValidUntilTime;
 		byte[] puzzleData;
+		
 		
 		synchronized(this) {
 			Document xml = mDocumentBuilder.parse(xmlInputStream);
@@ -406,7 +403,6 @@ public final class XMLTransformer {
 			if(Integer.parseInt(puzzleElement.getAttribute("Version")) > XML_FORMAT_VERSION)
 				throw new InvalidParameterException("Version " + puzzleElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);	
 
-			puzzleInserter = mWoT.getIdentityByURI(puzzleURI);
 			puzzleID = puzzleElement.getAttribute("ID");
 			puzzleType = IntroductionPuzzle.PuzzleType.valueOf(puzzleElement.getAttribute("Type"));
 			puzzleMimeType = puzzleElement.getAttribute("MimeType");
@@ -416,11 +412,15 @@ public final class XMLTransformer {
 			puzzleData = Base64.decodeStandard(dataElement.getAttribute("Value"));
 		}
 		
-		IntroductionPuzzle puzzle = new IntroductionPuzzle(puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData,
-				puzzleValidUntilTime, IntroductionPuzzle.getDateFromRequestURI(puzzleURI),
-				IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
+		IntroductionPuzzle puzzle;
 		
-		mWoT.getIntroductionPuzzleStore().storeAndCommit(puzzle);
+		synchronized(mWoT) {
+			Identity puzzleInserter = mWoT.getIdentityByURI(puzzleURI);
+			puzzle = new IntroductionPuzzle(puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, puzzleValidUntilTime, 
+					IntroductionPuzzle.getDateFromRequestURI(puzzleURI), IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
+		
+			mWoT.getIntroductionPuzzleStore().storeAndCommit(puzzle);
+		}
 		
 		return puzzle;
 	}
