@@ -171,6 +171,9 @@ public final class IntroductionPuzzleStore {
 	 /**
 	  * Get a puzzle by it's request URI.
 	  * 
+	  * If you synchronize on the puzzle store while calling this function you have to synchronize on the WoT before synchronizing
+	  * on the puzzle store because this function locks the WoT. If you did not lock it before dead locks might occur.
+	  * 
 	  * Used by the IntroductionClient to obtain the corresponding puzzle object when an insert succeeded or failed.
 	  */
 	protected IntroductionPuzzle getPuzzleByRequestURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
@@ -187,6 +190,9 @@ public final class IntroductionPuzzleStore {
 	
 	 /**
 	  * Get an own puzzle by it's request URI.
+	  * 
+	  * If you synchronize on the puzzle store while calling this function you have to synchronize on the WoT before synchronizing
+	  * on the puzzle store because this function locks the WoT. If you did not lock it before dead locks might occur.
 	  * 
 	  * Used by the IntroductionServer to obtain the corresponding puzzle object when an insert succeeded or failed.
 	  */
