@@ -723,7 +723,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	/**
 	 * Gets the best score this Identity has in existing trust trees, 0 if it is not in the trust tree.
 	 * 
-	 * @param db A reference to the database
 	 * @return the best score this Identity has
 	 */
 	public synchronized int getBestScore(Identity identity) {
