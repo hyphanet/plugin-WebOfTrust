@@ -381,7 +381,7 @@ public final class FCPInterface implements FredPluginFCP {
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Message", "Error");
         sfs.putOverwrite("OriginalMessage", originalMessage);
-        sfs.putOverwrite("Description", (e.getLocalizedMessage() == null) ? "null" : e.getLocalizedMessage());
+        sfs.putOverwrite("Description", e.toString());
         return sfs;
     }
   
