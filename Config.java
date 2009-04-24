@@ -1,8 +1,6 @@
-/**
- * This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT;
 
 import java.util.HashMap;
@@ -11,6 +9,8 @@ import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 
 import freenet.support.Logger;
+
+/* ATTENTION: This code is a duplicate of plugins.Freetalk.Config. Any changes there should also be done here! */
 
 /**
  * Contains a HashMap<String, String> and HashMap<String, Integer> which maps configuration variable names to their values and stores them
