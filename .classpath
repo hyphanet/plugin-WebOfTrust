@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Freenet 0.7"/>
+	<classpathentry kind="lib" path="/Freenet 0.7/lib/freenet-ext.jar"/>
+	<classpathentry kind="output" path="build"/>
+</classpath>
