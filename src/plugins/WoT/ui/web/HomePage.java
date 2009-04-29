@@ -44,6 +44,7 @@ public class HomePage extends WebPageImpl {
 		list.addChild(new HTMLNode("li", "Own Identities: " + wot.getAllOwnIdentities().size()));
 		list.addChild(new HTMLNode("li", "Known Identities: " + wot.getAllNonOwnIdentities().size()));
 		list.addChild(new HTMLNode("li", "Trust relationships: " + wot.getAllTrusts().size()));
+		list.addChild(new HTMLNode("li", "Score relationships: " + wot.getAllScores().size()));
 		
 		IntroductionPuzzleStore puzzleStore = wot.getIntroductionPuzzleStore();
 		list.addChild(new HTMLNode("li", "Unsolved own captchas: " + puzzleStore.getOwnCatpchaAmount(false)));
