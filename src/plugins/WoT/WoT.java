@@ -1052,14 +1052,16 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				scoreWasNegative = true;
 			}
 			
-			if(scoreWasNegative && score.getScore() > 0) {
-				target.decreaseEdition();
-				Logger.debug(this, "Score changed from negative/null to positive, refetchting " + target.getRequestURI());
-				mFetcher.fetch(target);
-			}
-			
 			score.setValue(value);
 			score.setRank(rank + 1);
+			
+			if(scoreWasNegative && score.getScore() >= 0) {
+				target.decreaseEdition();
+				Logger.debug(this, "Score changed from negative/null to positive, refetching " + target.getRequestURI());
+				if(mFetcher != null) /* For JUnit */
+					mFetcher.fetch(target);
+			}
+			
 			int oldCapacity = score.getCapacity();
 			
 			boolean hasNegativeTrust = false;
