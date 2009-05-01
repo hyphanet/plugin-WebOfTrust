@@ -102,8 +102,12 @@ public final class XMLTransformer {
 		mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
 	}
 	
-	public synchronized void exportOwnIdentity(OwnIdentity identity, OutputStream os) throws TransformerException {
-		Document xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+	public void exportOwnIdentity(OwnIdentity identity, OutputStream os) throws TransformerException {
+		Document xmlDoc;
+		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway 
+			xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+		}
+		
 		Element rootElement = xmlDoc.getDocumentElement();
 		
 		/* Create the identity Element */
@@ -157,7 +161,9 @@ public final class XMLTransformer {
 
 		DOMSource domSource = new DOMSource(xmlDoc);
 		StreamResult resultStream = new StreamResult(os);
+		synchronized(mSerializer) { // TODO: Figure out whether the Serializer is maybe synchronized anyway
 		mSerializer.transform(domSource, resultStream);
+		}
 	}
 	
 	/**
@@ -169,8 +175,11 @@ public final class XMLTransformer {
 	 * 
 	 * @param xmlInputStream The input stream containing the XML.
 	 */
-	public synchronized void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  { 
-		Document xml = mDocumentBuilder.parse(xmlInputStream);
+	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  { 
+		Document xml;
+		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
+		xml = mDocumentBuilder.parse(xmlInputStream);
+		}
 		Element identityElement = (Element)xml.getElementsByTagName("Identity").item(0);
 		
 		if(Integer.parseInt(identityElement.getAttribute("Version")) > XML_FORMAT_VERSION)
@@ -288,8 +297,11 @@ public final class XMLTransformer {
 		}
 	}
 
-	public synchronized void exportIntroduction(OwnIdentity identity, OutputStream os) throws TransformerException {
-		Document xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+	public void exportIntroduction(OwnIdentity identity, OutputStream os) throws TransformerException {
+		Document xmlDoc;
+		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
+		xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+		}
 		Element rootElement = xmlDoc.getDocumentElement();
 
 		Element introElement = xmlDoc.createElement("IdentityIntroduction");
@@ -303,7 +315,9 @@ public final class XMLTransformer {
 
 		DOMSource domSource = new DOMSource(xmlDoc);
 		StreamResult resultStream = new StreamResult(os);
+		synchronized(mSerializer) {  // TODO: Figure out whether the Serializer is maybe synchronized anyway
 		mSerializer.transform(domSource, resultStream);
+		}
 	}
 
 	/**
@@ -320,8 +334,10 @@ public final class XMLTransformer {
 		FreenetURI identityURI;
 		Identity newIdentity;
 		
-		synchronized(this) {
-			Document xml = mDocumentBuilder.parse(xmlInputStream);
+		Document xml;
+		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
+			xml = mDocumentBuilder.parse(xmlInputStream);
+		}
 			Element introductionElement = (Element)xml.getElementsByTagName("IdentityIntroduction").item(0);
 
 			if(Integer.parseInt(introductionElement.getAttribute("Version")) > XML_FORMAT_VERSION)
@@ -330,7 +346,7 @@ public final class XMLTransformer {
 			Element identityElement = (Element)introductionElement.getElementsByTagName("Identity").item(0);
 
 			identityURI = new FreenetURI(identityElement.getAttribute("URI"));
-		}
+		
 		
 		synchronized(mWoT) {
 			try {
@@ -356,10 +372,13 @@ public final class XMLTransformer {
 		return newIdentity;
 	}
 
-	public synchronized void exportIntroductionPuzzle(IntroductionPuzzle puzzle, OutputStream os)
+	public void exportIntroductionPuzzle(IntroductionPuzzle puzzle, OutputStream os)
 		throws TransformerException, ParserConfigurationException {
 		
-		Document xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+		Document xmlDoc;
+		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
+		xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+		}
 		Element rootElement = xmlDoc.getDocumentElement();
 
 		Element puzzleElement = xmlDoc.createElement("IntroductionPuzzle");
@@ -382,7 +401,9 @@ public final class XMLTransformer {
 
 		DOMSource domSource = new DOMSource(xmlDoc);
 		StreamResult resultStream = new StreamResult(os);
+		synchronized(mSerializer) {
 		mSerializer.transform(domSource, resultStream);
+		}
 	}
 
 	public IntroductionPuzzle importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
@@ -395,8 +416,10 @@ public final class XMLTransformer {
 		byte[] puzzleData;
 		
 		
-		synchronized(this) {
-			Document xml = mDocumentBuilder.parse(xmlInputStream);
+		Document xml;
+		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
+			xml = mDocumentBuilder.parse(xmlInputStream);
+		}
 			Element puzzleElement = (Element)xml.getElementsByTagName("IntroductionPuzzle").item(0);
 
 			if(Integer.parseInt(puzzleElement.getAttribute("Version")) > XML_FORMAT_VERSION)
@@ -409,7 +432,7 @@ public final class XMLTransformer {
 
 			Element dataElement = (Element)puzzleElement.getElementsByTagName("Data").item(0);
 			puzzleData = Base64.decodeStandard(dataElement.getAttribute("Value"));
-		}
+		
 		
 		IntroductionPuzzle puzzle;
 		
