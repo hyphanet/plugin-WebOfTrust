@@ -660,33 +660,33 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param identity The identity to store.
 	 */
 	private void storeWithoutCommit(Identity identity) {
-			if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
-				throw new RuntimeException("Trying to store an inactive Identity object!");
-			
-			/* FIXME: We also need to check whether the member objects are active here!!! */
-			
-			try {
-				if(identity instanceof OwnIdentity) {
-					OwnIdentity ownId = (OwnIdentity)identity;
-					mDB.store(ownId.mInsertURI);
-					// mDB.store(ownId.mCreationDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-					// mDB.store(ownId.mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-				}
-				// mDB.store(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-				mDB.store(identity.mRequestURI);
-				// mDB.store(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-				// mDB.store(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-				// mDB.store(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-				// mDB.store(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-				// mDB.store(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-				mDB.store(identity.mProperties);
-				mDB.store(identity.mContexts);
-				mDB.store(identity);
+		if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
+			throw new RuntimeException("Trying to store an inactive Identity object!");
+
+		/* FIXME: We also need to check whether the member objects are active here!!! */
+
+		try {
+			if(identity instanceof OwnIdentity) {
+				OwnIdentity ownId = (OwnIdentity)identity;
+				mDB.store(ownId.mInsertURI);
+				// mDB.store(ownId.mCreationDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+				// mDB.store(ownId.mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			}
-			catch(RuntimeException e) {
-				mDB.rollback();
-				throw e;
-			}
+			// mDB.store(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			mDB.store(identity.mRequestURI);
+			// mDB.store(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// mDB.store(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// mDB.store(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// mDB.store(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// mDB.store(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			mDB.store(identity.mProperties);
+			mDB.store(identity.mContexts);
+			mDB.store(identity);
+		}
+		catch(RuntimeException e) {
+			mDB.rollback();
+			throw e;
+		}
 	}
 
 	/**
