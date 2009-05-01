@@ -162,7 +162,7 @@ public final class XMLTransformer {
 		DOMSource domSource = new DOMSource(xmlDoc);
 		StreamResult resultStream = new StreamResult(os);
 		synchronized(mSerializer) { // TODO: Figure out whether the Serializer is maybe synchronized anyway
-		mSerializer.transform(domSource, resultStream);
+			mSerializer.transform(domSource, resultStream);
 		}
 	}
 	
@@ -176,11 +176,11 @@ public final class XMLTransformer {
 	 * @param xmlInputStream The input stream containing the XML.
 	 */
 	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  { 
-		Document xml;
+		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-		xml = mDocumentBuilder.parse(xmlInputStream);
+			xmlDoc = mDocumentBuilder.parse(xmlInputStream);
 		}
-		Element identityElement = (Element)xml.getElementsByTagName("Identity").item(0);
+		Element identityElement = (Element)xmlDoc.getElementsByTagName("Identity").item(0);
 		
 		if(Integer.parseInt(identityElement.getAttribute("Version")) > XML_FORMAT_VERSION)
 			throw new Exception("Version " + identityElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
@@ -300,7 +300,7 @@ public final class XMLTransformer {
 	public void exportIntroduction(OwnIdentity identity, OutputStream os) throws TransformerException {
 		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-		xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+			xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
 		}
 		Element rootElement = xmlDoc.getDocumentElement();
 
@@ -316,7 +316,7 @@ public final class XMLTransformer {
 		DOMSource domSource = new DOMSource(xmlDoc);
 		StreamResult resultStream = new StreamResult(os);
 		synchronized(mSerializer) {  // TODO: Figure out whether the Serializer is maybe synchronized anyway
-		mSerializer.transform(domSource, resultStream);
+			mSerializer.transform(domSource, resultStream);
 		}
 	}
 
@@ -334,18 +334,19 @@ public final class XMLTransformer {
 		FreenetURI identityURI;
 		Identity newIdentity;
 		
-		Document xml;
+		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-			xml = mDocumentBuilder.parse(xmlInputStream);
+			xmlDoc = mDocumentBuilder.parse(xmlInputStream);
 		}
-			Element introductionElement = (Element)xml.getElementsByTagName("IdentityIntroduction").item(0);
+		
+		Element introductionElement = (Element)xmlDoc.getElementsByTagName("IdentityIntroduction").item(0);
 
-			if(Integer.parseInt(introductionElement.getAttribute("Version")) > XML_FORMAT_VERSION)
-				throw new InvalidParameterException("Version " + introductionElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
+		if(Integer.parseInt(introductionElement.getAttribute("Version")) > XML_FORMAT_VERSION)
+			throw new InvalidParameterException("Version " + introductionElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
 
-			Element identityElement = (Element)introductionElement.getElementsByTagName("Identity").item(0);
+		Element identityElement = (Element)introductionElement.getElementsByTagName("Identity").item(0);
 
-			identityURI = new FreenetURI(identityElement.getAttribute("URI"));
+		identityURI = new FreenetURI(identityElement.getAttribute("URI"));
 		
 		
 		synchronized(mWoT) {
@@ -377,7 +378,7 @@ public final class XMLTransformer {
 		
 		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-		xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+			xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
 		}
 		Element rootElement = xmlDoc.getDocumentElement();
 
@@ -402,7 +403,7 @@ public final class XMLTransformer {
 		DOMSource domSource = new DOMSource(xmlDoc);
 		StreamResult resultStream = new StreamResult(os);
 		synchronized(mSerializer) {
-		mSerializer.transform(domSource, resultStream);
+			mSerializer.transform(domSource, resultStream);
 		}
 	}
 
@@ -416,23 +417,23 @@ public final class XMLTransformer {
 		byte[] puzzleData;
 		
 		
-		Document xml;
+		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-			xml = mDocumentBuilder.parse(xmlInputStream);
+			xmlDoc = mDocumentBuilder.parse(xmlInputStream);
 		}
-			Element puzzleElement = (Element)xml.getElementsByTagName("IntroductionPuzzle").item(0);
+		Element puzzleElement = (Element)xmlDoc.getElementsByTagName("IntroductionPuzzle").item(0);
 
-			if(Integer.parseInt(puzzleElement.getAttribute("Version")) > XML_FORMAT_VERSION)
-				throw new InvalidParameterException("Version " + puzzleElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);	
+		if(Integer.parseInt(puzzleElement.getAttribute("Version")) > XML_FORMAT_VERSION)
+			throw new InvalidParameterException("Version " + puzzleElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);	
 
-			puzzleID = puzzleElement.getAttribute("ID");
-			puzzleType = IntroductionPuzzle.PuzzleType.valueOf(puzzleElement.getAttribute("Type"));
-			puzzleMimeType = puzzleElement.getAttribute("MimeType");
-			puzzleValidUntilTime = Long.parseLong(puzzleElement.getAttribute("ValidUntilTime"));
+		puzzleID = puzzleElement.getAttribute("ID");
+		puzzleType = IntroductionPuzzle.PuzzleType.valueOf(puzzleElement.getAttribute("Type"));
+		puzzleMimeType = puzzleElement.getAttribute("MimeType");
+		puzzleValidUntilTime = Long.parseLong(puzzleElement.getAttribute("ValidUntilTime"));
 
-			Element dataElement = (Element)puzzleElement.getElementsByTagName("Data").item(0);
-			puzzleData = Base64.decodeStandard(dataElement.getAttribute("Value"));
-		
+		Element dataElement = (Element)puzzleElement.getElementsByTagName("Data").item(0);
+		puzzleData = Base64.decodeStandard(dataElement.getAttribute("Value"));
+
 		
 		IntroductionPuzzle puzzle;
 		
