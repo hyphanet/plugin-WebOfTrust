@@ -635,9 +635,32 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		return mDB.queryByExample(OwnIdentity.class);
 	}
 
+	/**
+	 * Locks the WoT, locks the identity, locks the database and stores the identity.
+	 */
 	public synchronized void storeAndCommit(Identity identity) {
 		synchronized(identity) {
 		synchronized(mDB.lock()) {
+			try {
+				storeWithoutCommit(identity);
+				mDB.commit();
+				Logger.debug(identity, "COMMITED.");
+			}
+			catch(RuntimeException e) {
+				mDB.rollback();
+				throw e;
+			}
+		}
+		}
+	}
+	
+	/**
+	 * Locks the identity and stores it in the database without committing.
+	 * You must synchronize on the WoT and then on the database when using this function!
+	 * @param identity The identity to store.
+	 */
+	private void storeWithoutCommit(Identity identity) {
+		synchronized(identity) {
 			if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
 				throw new RuntimeException("Trying to store an inactive Identity object!");
 			
@@ -660,14 +683,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				mDB.store(identity.mProperties);
 				mDB.store(identity.mContexts);
 				mDB.store(identity);
-				mDB.commit();
-				Logger.debug(identity, "COMMITED.");
 			}
 			catch(RuntimeException e) {
 				mDB.rollback();
 				throw e;
 			}
-		}
 		}
 	}
 
@@ -1057,6 +1077,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			
 			if(scoreWasNegative && score.getScore() >= 0) {
 				target.decreaseEdition();
+				storeWithoutCommit(target);
 				Logger.debug(this, "Score changed from negative/null to positive, refetching " + target.getRequestURI());
 				if(mFetcher != null) /* For JUnit */
 					mFetcher.fetch(target);
