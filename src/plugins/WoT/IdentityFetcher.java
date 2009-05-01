@@ -36,7 +36,7 @@ import freenet.support.io.Closer;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public class IdentityFetcher implements ClientCallback {
+public class IdentityFetcher implements ClientCallback { // TODO: Use the new interface when 1210 has been released, not before so the plugin still loasd with 1209
 	
 	private final WoT mWoT;
 
