@@ -4,6 +4,7 @@
 package plugins.WoT.introduction;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -380,9 +381,15 @@ public final class IntroductionClient extends TransferThread  {
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched puzzle: " + state.getURI());
 		
+		Bucket bucket = null;
+		InputStream inputStream = null;
+		
 		try {
-			IntroductionPuzzle puzzle = mWoT.getXMLTransformer().importIntroductionPuzzle(state.getURI(), result.asBucket().getInputStream());
-			/* FIXME: Add logic to call this only once for every few puzzles fetched not for every single one! */
+			bucket = result.asBucket();
+			inputStream = bucket.getInputStream();
+			
+			IntroductionPuzzle puzzle = mWoT.getXMLTransformer().importIntroductionPuzzle(state.getURI(), inputStream);
+			/* TODO: Add logic to call this only once for every few puzzles fetched not for every single one! */
 			mPuzzleStore.deleteOldestUnsolvedPuzzles(PUZZLE_POOL_SIZE);
 			
 			downloadPuzzle(puzzle.getInserter(), puzzle.getIndex() + 1); /* TODO: Also download a random index here maybe */
@@ -391,6 +398,10 @@ public final class IntroductionClient extends TransferThread  {
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
 		}
 		finally {
+			Closer.close(inputStream);
+			// TODO: Wire in when build 1210 is released: Closer.close(bucket);
+			if(bucket != null)
+				bucket.free();
 			removeFetch(state);
 		}
 	}

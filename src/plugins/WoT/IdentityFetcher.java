@@ -6,6 +6,7 @@
 
 package plugins.WoT;
 
+import java.io.InputStream;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -26,6 +27,8 @@ import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
+import freenet.support.io.Closer;
 
 /**
  * Fetches Identities from Freenet.
@@ -176,11 +179,22 @@ public class IdentityFetcher implements ClientCallback {
 	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched identity: " + state.getURI());
 		
+		Bucket bucket = null;
+		InputStream inputStream = null;
+		
 		try {
-			mWoT.getXMLTransformer().importIdentity(state.getURI(), result.asBucket().getInputStream());
+			bucket = result.asBucket();
+			inputStream = bucket.getInputStream();
+			mWoT.getXMLTransformer().importIdentity(state.getURI(), inputStream);
 		}
 		catch (Exception e) {
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
+		}
+		finally {
+			Closer.close(inputStream);
+			// TODO: Wire in when build 1210 is released: Closer.close(bucket);
+			if(bucket != null)
+				bucket.free();
 		}
 		
 		try {

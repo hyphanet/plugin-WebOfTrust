@@ -4,6 +4,7 @@
 package plugins.WoT.introduction;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -295,8 +296,14 @@ public final class IntroductionServer extends TransferThread {
 	 */
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched puzzle solution: " + state.getURI());
+		
+		Bucket bucket = null;
+		InputStream inputStream = null;
 
 		try {
+			bucket = result.asBucket();
+			inputStream = bucket.getInputStream();
+			
 			/* importIntroduction() locks the WoT so we need to do that here first to keep the locking order the same everywhere to
 			 * prevent deadlocks. */
 			synchronized(mWoT) {
@@ -304,7 +311,7 @@ public final class IntroductionServer extends TransferThread {
 				OwnIntroductionPuzzle p = mPuzzleStore.getOwnPuzzleBySolutionURI(state.getURI());
 				synchronized(p) {
 					OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
-					Identity newIdentity = mWoT.getXMLTransformer().importIntroduction(puzzleOwner, result.asBucket().getInputStream());
+					Identity newIdentity = mWoT.getXMLTransformer().importIntroduction(puzzleOwner, inputStream);
 					Logger.debug(this, "Imported identity introduction for identity " + newIdentity.getRequestURI() +
 							" to the OwnIdentity " + puzzleOwner);
 					p.setSolved();
@@ -317,6 +324,10 @@ public final class IntroductionServer extends TransferThread {
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
 		}
 		finally {
+			Closer.close(inputStream);
+			// TODO: Wire in when build 1210 is released: Closer.close(bucket);
+			if(bucket != null)
+				bucket.free();
 			removeFetch(state);
 		}
 	}

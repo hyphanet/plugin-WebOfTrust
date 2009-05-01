@@ -365,9 +365,8 @@ public final class XMLTransformer {
 		Element puzzleElement = xmlDoc.createElement("IntroductionPuzzle");
 		puzzleElement.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
 		
-		/* TODO: This lock is actually not neccessary because all values which are taken from the puzzle are final. Decide whether anything
-		 * else which is bad can happen if we do not synchronize. For example how does db4o handle deletion of objects if they are still
-		 * referenced somewhere? */
+		// This lock is actually not necessary because all values which are taken from the puzzle are final. We leave it here just to make sure that it does
+		// not get lost if it becomes necessary someday.
 		synchronized(puzzle) { 
 			puzzleElement.setAttribute("ID", puzzle.getID());
 			puzzleElement.setAttribute("Type", puzzle.getType().toString());
