@@ -656,11 +656,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	
 	/**
 	 * Locks the identity and stores it in the database without committing.
-	 * You must synchronize on the WoT and then on the database when using this function!
+	 * You must synchronize on the WoT, on the identity and then on the database when using this function!
 	 * @param identity The identity to store.
 	 */
 	private void storeWithoutCommit(Identity identity) {
-		synchronized(identity) {
 			if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
 				throw new RuntimeException("Trying to store an inactive Identity object!");
 			
@@ -688,7 +687,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				mDB.rollback();
 				throw e;
 			}
-		}
 	}
 
 	/**
