@@ -11,8 +11,10 @@ package plugins.WoT;
  */
 public final class ContextOffer {
 	
+	/** The offered context. */
 	private final Context mContext;
 	
+	/** The identity which offers the context. */
 	private final Identity mProvider;
 	
 	/** Get a list of fields which the database should create an index on. */
@@ -31,10 +33,12 @@ public final class ContextOffer {
 		mProvider = myProvider;
 	}
 	
+	/** Get the offered context */
 	public Context getContext() {
 		return mContext;
 	}
 	
+	/** Get the identity which offers this context. */
 	public Identity getProvider() {
 		return mProvider;
 	}
