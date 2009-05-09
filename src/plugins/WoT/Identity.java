@@ -4,10 +4,8 @@
 package plugins.WoT;
 
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map.Entry;
 
 import plugins.WoT.exceptions.InvalidParameterException;
@@ -27,7 +25,6 @@ import freenet.support.StringValidityChecker;
  * @param mRequestURI The requestURI used to fetch this identity from Freenet
  * @param mNickname The nickname of an Identity
  * @param mDoesPublishTrustList Whether an identity publishes its trust list or not
- * @param mContexts An ArrayList containing contexts (eg. client apps) an Identity is used for
  * @param mProperties A HashMap containing all custom properties o an Identity
  */
 public class Identity {
@@ -56,9 +53,6 @@ public class Identity {
 	
 	/** Whether this Identity publishes its trust list or not */
 	protected boolean mDoesPublishTrustList;
-	
-	/** A list of contexts (eg. client apps) this Identity is used for */
-	protected ArrayList<String> mContexts;	
 
 	/** A list of this Identity's custom properties */
 	protected HashMap<String, String> mProperties;
@@ -90,7 +84,6 @@ public class Identity {
 		
 		setNickname(newNickname);
 		setPublishTrustList(doesPublishTrustList);
-		mContexts = new ArrayList<String>(4); /* Currently we have: Introduction, Freetalk */
 		mProperties = new HashMap<String, String>();
 		
 		Logger.debug(this, "New identity: " + getNickname() + ", URI: " + newRequestURI);
@@ -302,93 +295,8 @@ public class Identity {
 		mDoesPublishTrustList = doesPublishTrustList;
 		updated();
 	}
-	
-	/**
-	 * Checks whether this identity offers the given contexts.
-	 * 
-	 * @param context The context we want to know if this Identity has it or not
-	 * @return Whether this Identity has that context or not
-	 */
-	public synchronized boolean hasContext(String context) {
-		return mContexts.contains(context.trim());
-	}
 
-	/**
-	 * Gets all this Identity's contexts.
-	 * 
-	 * @return A copy of the ArrayList<String> of all contexts of this identity.
-	 */
-	@SuppressWarnings("unchecked")
-	public synchronized ArrayList<String> getContexts() {
-		/* TODO: If this is used often - which it probably is, we might verify that no code corrupts the HashMap and return the original one
-		 * instead of a copy */
-		return (ArrayList<String>)mContexts.clone();
-	}
 
-	/**
-	 * Adds a context to this identity. A context is a string, the identities contexts are a set of strings - no context will be added more than
-	 * once.
-	 * Contexts are used by client applications to identify what identities are relevant for their use.
-	 * Currently known contexts:
-	 * - WoT adds the "Introduction" context if an identity publishes catpchas to allow other to get on it's trust list
-	 * - Freetalk, the messaging system for Freenet, adds the "Freetalk" context to identities which use it.
-	 * 
-	 * @param db A reference to the database.
-	 * @param context Name of the context.
-	 * @throws InvalidParameterException If the context name is empty
-	 */
-	public synchronized void addContext(String newContext) throws InvalidParameterException {
-		newContext = newContext.trim();
-		
-		if(newContext.length() == 0)
-			throw new InvalidParameterException("A blank context cannot be added to an identity.");
-		
-		/* FIXME: Limit the length of a context */
-		
-		if(!mContexts.contains(newContext)) {
-			/* FIXME: Limit the amount of contexts */
-			mContexts.add(newContext);
-			updated();
-		}
-	}
-
-	/**
-	 * Clears the list of contexts and sets it to the new list of contexts which was passed to the function.
-	 * Duplicate contexts are ignored. For invalid contexts an error is logged, all valid ones will be added.
-	 * 
-	 * IMPORTANT: This always marks the identity as updated so it should not be used on OwnIdentities because it would result in
-	 * a re-insert even if nothing was changed.
-	 */
-	protected synchronized void setContexts(List<String> newContexts) {
-		mContexts.clear();
-		
-		for(String context : newContexts) {
-			try {
-				addContext(context);
-			}
-			catch(InvalidParameterException e) {
-				Logger.error(this, "setContexts(): addContext() failed.", e);
-			}
-		}
-		
-		mContexts.trimToSize();
-	}
-
-	/**
-	 * Removes a context from this Identity, does nothing if it does not exist.
-	 * If this Identity is no longer used by a client application, the user can tell it and others won't try to fetch it anymore.
-	 * 
-	 * @param db A reference to the database.
-	 * @param context Name of the context.
-	 */
-	public synchronized void removeContext(String context) throws InvalidParameterException {
-		context = context.trim();
-		
-		if(mContexts.contains(context)) {
-			mContexts.remove(context);
-			updated();
-		}
-	}
 
 	/**
 	 * Gets the value of one of this Identity's properties.

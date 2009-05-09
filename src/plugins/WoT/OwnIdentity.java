@@ -16,7 +16,7 @@ import freenet.support.CurrentTimeUTC;
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  *
  */
-public class OwnIdentity extends Identity {
+public final class OwnIdentity extends Identity {
 	
 	protected FreenetURI mInsertURI;
 	

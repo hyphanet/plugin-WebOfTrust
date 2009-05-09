@@ -1,25 +1,27 @@
-/**
- * This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT;
 
 import plugins.WoT.exceptions.InvalidParameterException;
 
 /**
- * A trust relationship between two Identities
+ * A trust relationship between two Identities.
  * 
- * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class Trust {
-
-	/** The identity which gives the trust */
+public final class Trust {
+	
+	/** The context (client-application) in which this trust is given. Trust is completely local to the given context, each context forms it's own web of trust. */
+	private final Context mContext;
+	
+	/** The identity which gives the trust. */
 	private final Identity mTruster;
 	
-	/** The identity which receives the trust */
+	/** The identity which receives the trust. */
 	private final Identity mTrustee;
-	
+
 	/** The value assigned with the trust, from -100 to +100 where negative means distrust */
 	private byte mValue;
 	
@@ -44,24 +46,26 @@ public class Trust {
 	private long mTrusterTrustListEdition;
 	
 	
-	/**
-	 * Get a list of fields which the database should create an index on.
-	 */
+	/** Get a list of fields which the database should create an index on. */
 	protected static String[] getIndexedFields() {
-		return new String[] { "mTruster", "mTrustee" };
+		return new String[] { "mTruster", "mTrustee", "mContext" };
 	}
 
 
 	/**
 	 * Creates a Trust from given parameters. Only for being used by the WoT package and unit tests, not for user interfaces!
 	 * 
+	 * @param context The context to which this trust value belongs. May not be null, use the Context "TrustList" as the 'global' context.
 	 * @param truster Identity that gives the trust
 	 * @param trustee Identity that receives the trust
 	 * @param value Numeric value of the Trust
 	 * @param comment A comment to explain the numeric trust value
 	 * @throws InvalidParameterException if the trust value is not between -100 and +100
 	 */
-	public Trust(Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
+	public Trust(Context context, Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
+		if(context == null)
+			throw new NullPointerException();
+		
 		if(truster == null)
 			throw new NullPointerException();
 		
@@ -70,6 +74,7 @@ public class Trust {
 		
 		mTruster = truster;
 		mTrustee = trustee;
+		mContext = context;
 		setValue(value);
 		setComment(comment);
 		
@@ -80,30 +85,29 @@ public class Trust {
 	public synchronized String toString() {
 		return getTruster().getNickname() + " trusts " + getTrustee().getNickname() + " (" + getValue() + " : " + getComment() + ")";
 	}
+	
+	/** @return The context in which this trust value is given. */
+	public Context getContext() {
+		return mContext;
+	}
 
-	/**
-	 * @return The Identity that gives this trust
-	 */
+	/** @return The Identity that gives this trust. */
 	public Identity getTruster() {
 		return mTruster;
 	}
 
-	/**
-	 * @return trustee The Identity that receives this trust
-	 */
+	/** @return The Identity that receives this trust. */
 	public Identity getTrustee() {
 		return mTrustee;
 	}
 
-	/**
-	 * @return value Numeric value of this trust relationship
-	 */
+	/** @return value Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. */
 	public synchronized byte getValue() {
 		return mValue;
 	}
 
 	/**
-	 * @param mValue Numeric value of this trust relationship [-100;+100] 
+	 * @param mValue Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. 
 	 * @throws InvalidParameterException if value isn't in the range
 	 */
 	protected synchronized void setValue(byte newValue) throws InvalidParameterException {
@@ -113,16 +117,12 @@ public class Trust {
 		mValue = newValue;
 	}
 
-	/**
-	 * @return The comment associated to this Trust relationship.
-	 */
+	/** @return The comment associated to this Trust relationship. */
 	public synchronized String getComment() {
 		return mComment;
 	}
 
-	/**
-	 * @param newComment Comment on this trust relationship.
-	 */
+	/** @param newComment Comment on this trust relationship. */
 	protected synchronized void setComment(String newComment) throws InvalidParameterException {
 		assert(newComment != null);
 		
@@ -132,6 +132,10 @@ public class Trust {
 		mComment = newComment != null ? newComment : "";
 	}
 	
+	/**
+	 * Called by the XMLTransformer when a new trust list of the truster has been imported. Stores the edition number of the trust list in this trust object.
+	 * For an explanation for what this is needed please read the description of {@link mTrusterTrustListEdition}.
+	 */
 	protected synchronized void trusterEditionUpdated() {
 		mTrusterTrustListEdition = mTruster.getEdition();
 	}

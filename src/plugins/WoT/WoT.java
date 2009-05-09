@@ -4,13 +4,16 @@
 package plugins.WoT;
 
 import java.net.MalformedURLException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 
+import plugins.WoT.exceptions.DuplicateContextException;
 import plugins.WoT.exceptions.DuplicateIdentityException;
 import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.DuplicateTrustException;
 import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WoT.exceptions.NoSuchContextException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
@@ -59,7 +62,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	/* Constants */
 	
 	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -99;
+	public static final int DATABASE_FORMAT_VERSION = -98;
 	
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
@@ -224,6 +227,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		for(String field : Identity.getIndexedFields()) cfg.objectClass(Identity.class).objectField(field).indexed(true);
 		for(String field : OwnIdentity.getIndexedFields()) cfg.objectClass(OwnIdentity.class).objectField(field).indexed(true);
+		for(String field : Context.getIndexedFields()) cfg.objectClass(Context.class).objectField(field).indexed(true);
+		for(String field : ContextOffer.getIndexedFields()) cfg.objectClass(ContextOffer.class).objectField(field).indexed(true);
 		for(String field : Trust.getIndexedFields()) cfg.objectClass(Trust.class).objectField(field).indexed(true);
 		for(String field : Score.getIndexedFields()) cfg.objectClass(Score.class).objectField(field).indexed(true);
 		
@@ -239,11 +244,25 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		if(oldVersion == WoT.DATABASE_FORMAT_VERSION)
 			return;
 			
+		try {
 		if(oldVersion == -100) {
 			Logger.normal(this, "Found old database (-100), adding last fetched date to all identities ...");
 			for(Identity identity : getAllIdentities()) {
 				identity.mLastFetchedDate = new Date(0);
-				storeAndCommit(identity);
+				storeWithoutCommit(identity);
+			}
+			
+			mConfig.set(Config.DATABASE_FORMAT_VERSION, WoT.DATABASE_FORMAT_VERSION);
+			mConfig.storeAndCommit();
+		}
+		else if(oldVersion == -99) {
+			Context introductionContext = getOrCreateContextWithoutCommit(IntroductionPuzzle.INTRODUCTION_CONTEXT);
+			Context freetalkContext = getOrCreateContextWithoutCommit("Freetalk");
+			
+			Logger.normal(this, "Found old database (-99), adding Introduction/Freetalk ContextOffers to all identities ...");
+			for(Identity identity: getAllIdentities()) {
+				addContextOfferWithoutCommit(identity, introductionContext);
+				addContextOfferWithoutCommit(identity, freetalkContext);
 			}
 			
 			mConfig.set(Config.DATABASE_FORMAT_VERSION, WoT.DATABASE_FORMAT_VERSION);
@@ -252,8 +271,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		else
 			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
+		}
+		catch(RuntimeException e) {
+			mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+			throw e;
+		}
 	}
-	
+
 	/**
 	 * Debug function for deleting duplicate identities etc. which might have been created due to bugs :)
 	 */
@@ -283,11 +307,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 						}
 					}
 					deleted.add(identity.getID());
-					mDB.commit();
+					mDB.commit(); Logger.debug(this, "COMMITED.");
 				}
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				Logger.error(this, "Error while deleting duplicate identities", e);
 			}
 			
@@ -312,23 +336,23 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 							}
 						}
 					}
-					mDB.commit();
+					mDB.commit(); Logger.debug(this, "COMMITED.");
 				}
 				
 				
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				Logger.error(this, "Error while deleting duplicate trusts", e);
 			}
 
 		}
 		
-		/* FIXME: Also delete duplicate trust, score, etc. */
+		/* FIXME: Also delete duplicate trust, score, context etc. */
 	}
 	
 	/**
-	 * Debug function for deleting trusts or scores of which one of the involved partners is missing.
+	 * Debug function for deleting trusts, scores or context offers of which one of the involved partners is missing.
 	 */
 	@SuppressWarnings("unchecked")
 	private synchronized void deleteOrphanObjects() {
@@ -345,7 +369,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			}
 			catch(Exception e) {
 				Logger.error(this, "Deleting orphan trusts failed.", e);
-				// mDB.rollback(); /* No need to do so here */ 
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 			}
 			
 			try {
@@ -358,15 +382,36 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 					mDB.delete(score);
 				}
 				
-				mDB.commit();
+				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(Exception e) {
 				Logger.error(this, "Deleting orphan trusts failed.", e);
-				// mDB.rollback(); /* No need to do so here */ 
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+			}
+			
+			try {
+				Query q = mDB.query();
+				q.constrain(ContextOffer.class);
+				q.descend("mProvider").constrain(null).identity().or(q.descend("mContext").constrain(null)).identity();
+				ObjectSet<ContextOffer> orphanOffers = q.execute();
+				for(ContextOffer offer : orphanOffers) {
+					Logger.error(offer, "Deleting orphan context offer, provider = " + offer.getProvider() + ", context = " + offer.getContext());
+				}
+				
+				mDB.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(Exception e) {
+				Logger.error(this, "Deleting orphan context offers failed.", e);
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 			}
 		}
 	}
 	
+	/**
+	 * Locks the WoT and creates the seed identities (if they do not exist yet) from the seed identity URIs listed in the {@link SEED_IDENTITIES} constant.
+	 * If a seed identity in the list is an own identity, then the own identity is configured to provide identity introduction and the amount of introduction
+	 * puzzles it publishes per day is increased to {@link IntroductionServer.SEED_IDENTITY_PUZZLE_COUNT}.
+	 */
 	private synchronized void createSeedIdentities() {
 		for(String seedURI : SEED_IDENTITIES) {
 			Identity seed;
@@ -377,25 +422,32 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 					OwnIdentity ownSeed = (OwnIdentity)seed;
 					// FIXME: Does the cast make that necessary? I'm adding it to make sure that we do not lose information when storing
 					mDB.activate(ownSeed, 5);
-					ownSeed.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
+					addContextOfferWithoutCommit(ownSeed, getOrCreateContextWithoutCommit(IntroductionPuzzle.INTRODUCTION_CONTEXT));
 					ownSeed.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY,
 							Integer.toString(IntroductionServer.SEED_IDENTITY_PUZZLE_COUNT));
 					storeAndCommit(ownSeed);
 				}
-				try {
-					seed.setEdition(new FreenetURI(seedURI).getEdition());
-				} catch(Exception e) {
-					/* We already have the latest edition stored */
+				else {
+					try {
+						seed.setEdition(new FreenetURI(seedURI).getEdition());
+						storeAndCommit(seed);
+					} catch(InvalidParameterException e) {
+						/* We already have the latest edition stored */
+					}
 				}
-			} catch (UnknownIdentityException uie) {
+			}
+			catch (UnknownIdentityException uie) {
 				try {
 					seed = new Identity(seedURI, null, true);
 					storeAndCommit(seed);
-				} catch (Exception e) {
+				} catch (RuntimeException e) {
 					Logger.error(this, "Seed identity creation error", e);
+					mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				}
-			} catch (Exception e) {
-				Logger.error(this, "Seed identity loading error", e);
+			}
+			catch (RuntimeException e) {
+				Logger.error(this, "Seed identity creation error", e);
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 			}
 		}
 	}
@@ -412,7 +464,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		catch(Exception e) {
 			Logger.error(this, "Error during termination.", e);
 		}
-		
+
 		try {
 			if(mIntroductionServer != null)
 				mIntroductionServer.terminate();
@@ -443,7 +495,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				/* FIXME: Is it possible to ask db4o whether a transaction is pending? If the plugin's synchronization works correctly,
 				 * NONE should be pending here and we should log an error if there are any pending transactions at this point. */
 				synchronized(mDB.lock()) {
-					mDB.rollback();
+					mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 					mDB.close();
 				}
 			}
@@ -498,13 +550,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		query.descend("mID").constrain(id);
 		ObjectSet<Identity> result = query.execute();
 		
-		if(result.size() == 0)
-			throw new UnknownIdentityException(id);
-
-		if(result.size() > 1)
-			throw new DuplicateIdentityException(id);
-		
-		return result.next();
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new UnknownIdentityException(id);
+			default:
+				throw new DuplicateIdentityException(id, result.size());
+		}	
 	}
 	
 	/**
@@ -521,13 +574,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		query.descend("mID").constrain(id);
 		ObjectSet<OwnIdentity> result = query.execute();
 		
-		if(result.size() == 0)
-			throw new UnknownIdentityException(id);
-		
-		if(result.size() > 1)
-			throw new DuplicateIdentityException(id);
-		
-		return result.next();
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new UnknownIdentityException(id);
+			default:
+				throw new DuplicateIdentityException(id, result.size());
+		}
 	}
 
 	/**
@@ -536,7 +590,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param uri The requestURI of the identity
 	 * @return The identity matching the supplied requestURI
 	 * @throws UnknownIdentityException if there is no identity with this id in the database
-	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
 	 */
 	public Identity getIdentityByURI(FreenetURI uri) throws UnknownIdentityException {
 		return getIdentityByID(Identity.getIDFromURI(uri));
@@ -548,7 +601,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param uri The requestURI of the identity which will be converted to {@link FreenetURI} 
 	 * @return The identity matching the supplied requestURI
 	 * @throws UnknownIdentityException if there is no identity with this id in the database
-	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
 	 * @throws MalformedURLException if the requestURI isn't a valid FreenetURI
 	 */
 	public Identity getIdentityByURI(String uri) throws UnknownIdentityException, MalformedURLException {
@@ -575,7 +627,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param uri The requestURI (as String) of the desired OwnIdentity
 	 * @return The requested OwnIdentity
 	 * @throws UnknownIdentityException if the OwnIdentity isn't in the database
-	 * @throws DuplicateIdentityException if the OwnIdentity is present more that once in the database (should never happen)
 	 * @throws MalformedURLException if the supplied requestURI is not a valid FreenetURI
 	 */
 	public OwnIdentity getOwnIdentityByURI(String uri) throws UnknownIdentityException, MalformedURLException {
@@ -634,6 +685,71 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public synchronized ObjectSet<OwnIdentity> getAllOwnIdentities() {
 		return mDB.queryByExample(OwnIdentity.class);
 	}
+	
+	/**
+	 * Returns all contexts that are in the database.
+	 * 
+	 * An allowed context must not necessarily exist in the database yet if it is not offered by any identity, for a list of allowed Contexts
+	 * please use {@link Config.getString(Config.ALLOWED_CONTEXT_NAMES)}
+	 */
+	public synchronized ObjectSet<Context> getAllContexts() {
+		return mDB.queryByExample(Context.class);
+	}
+	
+	/**
+	 * Gets all contexts which the given identity provides.
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<ContextOffer> getOfferedContexts(Identity identity)  {
+		Query q = mDB.query();
+		q.constrain(ContextOffer.class);
+		q.descend("mProvider").constrain(identity).identity();
+		return q.execute();
+	}
+	
+	/**
+	 * Gets the context which the given name. If it does not exist it is created and stored in the database, without commiting the transaction. 
+	 */
+	protected synchronized Context getOrCreateContextWithoutCommit(String name) {
+		try {
+			return getContext(name);
+		}
+		catch(NoSuchContextException e) {
+			Logger.debug(this, "Context '" + name + "' did not exist, trying to create it...");
+			
+			// We create it before checking whether the name is okay because it will throw if the name contains invalid characters, we should notify about that first.
+			Context context = new Context(name); 
+			
+			String[] allowedContexts = mConfig.getString(Config.ALLOWED_CONTEXT_NAMES).split("[,]");
+			if(Arrays.binarySearch(allowedContexts, name) < 0)
+				throw new IllegalArgumentException("The context name '" + name + "' is not in the configured list of allowed contexts.");
+			
+			storeWithoutCommit(context);
+			return context;
+		}
+	}
+
+	/**
+	 * Get the context with the given name.
+	 * @throws NoSuchContextException If no context with that name exists yet.
+	 */
+	@SuppressWarnings("unchecked")
+	protected synchronized Context getContext(String name) throws NoSuchContextException {
+		Query q = mDB.query();
+		q.constrain(Context.class);
+		q.descend("mName").constrain(name);
+		ObjectSet<Context> result = q.execute();
+		
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new NoSuchContextException(name);
+			default:
+				throw new DuplicateContextException(name, result.size());
+		}
+	
+	}
 
 	/**
 	 * Locks the WoT, locks the identity, locks the database and stores the identity.
@@ -643,20 +759,22 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		synchronized(mDB.lock()) {
 			try {
 				storeWithoutCommit(identity);
-				mDB.commit();
-				Logger.debug(identity, "COMMITED.");
+				mDB.commit(); Logger.debug(identity, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
 		}
 	}
+
 	
 	/**
-	 * Locks the identity and stores it in the database without committing.
-	 * You must synchronize on the WoT, on the identity and then on the database when using this function!
+	 * Stores the given identity in the database without committing the transaction.
+	 * 
+	 * You must synchronize on the WoT, on the identity and then on the database when using this function, it does not provide any synchronization.
+	 * 
 	 * @param identity The identity to store.
 	 */
 	private void storeWithoutCommit(Identity identity) {
@@ -680,15 +798,111 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			// mDB.store(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			// mDB.store(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			mDB.store(identity.mProperties);
-			mDB.store(identity.mContexts);
 			mDB.store(identity);
 		}
 		catch(RuntimeException e) {
-			mDB.rollback();
+			mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 			throw e;
 		}
 	}
+	
+	/**
+	 * Stores the given context in the database without commiting the transaction.
+	 * 
+	 * Does not prevent the creation of duplicate contexts, please use getOrCreateContext() instead of this function when you want to create a context.
+	 * 
+	 * @param context The context to store.
+	 */
+	private void storeWithoutCommit(Context context) {	
+		if(mDB.ext().isStored(context) && !mDB.ext().isActive(context))
+			throw new RuntimeException("Trying to store an inactive Context object!");
 
+		mDB.store(context);
+	}
+	
+	
+	/**
+	 * Locks:
+	 * 1. The WoT.
+	 * 2. The given {@link ContextOffer}
+	 * 3. The provider of that offer
+	 * 4. The database.
+	 * 
+	 * Then stores the given context offer. Does not prevent the creation of duplicate offers, please use {@link addContextOffer} for adding contexts to identities.
+	 * @param offer
+	 */
+	private synchronized void storeWithoutCommit(ContextOffer offer) {
+		if(mDB.ext().isStored(offer) && !mDB.ext().isActive(offer))
+			throw new RuntimeException("Trying to store an inactive ContextOffer object!");
+
+		mDB.store(offer);
+	}
+
+	/**
+	 * Adds a context to the given identity.
+	 * A context is a string, the identities contexts are a set of strings - no context will be added more than once.
+	 * 
+	 * @param context Name of the context.
+	 * @throws InvalidParameterException If the context name is empty
+	 */
+	public synchronized void addContextOfferWithoutCommit(Identity provider, Context context) throws InvalidParameterException {
+		if(!hasContext(provider, context))
+			/* FIXME: Limit the amount of contexts */
+			mContexts.add(newContext);
+			updated();
+		}
+	}
+	
+	/**
+	 * Checks whether this identity offers the given context.
+	 * 
+	 * @param context The context we want to know if this Identity has it or not
+	 * @return Whether this Identity has that context or not
+	 */
+	public synchronized boolean hasContext(String context) {
+		return mContexts.contains(context.trim());
+	}
+
+	/**
+	 * Clears the list of contexts and sets it to the new list of contexts which was passed to the function.
+	 * Duplicate contexts are ignored. For invalid contexts an error is logged, all valid ones will be added.
+	 * 
+	 * IMPORTANT: This always marks the identity as updated so it should not be used on OwnIdentities because it would result in
+	 * a re-insert even if nothing was changed.
+	 */
+	protected synchronized void setContexts(List<String> newContexts) {
+		mContexts.clear();
+		
+		for(String context : newContexts) {
+			try {
+				addContext(context);
+			}
+			catch(InvalidParameterException e) {
+				Logger.error(this, "setContexts(): addContext() failed.", e);
+			}
+		}
+		
+		mContexts.trimToSize();
+	}
+
+	/**
+	 * Removes a context from this Identity, does nothing if it does not exist.
+	 * If this Identity is no longer used by a client application, the user can tell it and others won't try to fetch it anymore.
+	 * 
+	 * @param db A reference to the database.
+	 * @param context Name of the context.
+	 */
+	public synchronized void removeContext(String context) throws InvalidParameterException {
+		context = context.trim();
+		
+		if(mContexts.contains(context)) {
+			mContexts.remove(context);
+			updated();
+		}
+	}
+
+	
+	
 	/**
 	 * Gets the score of this identity in a trust tree.
 	 * Each {@link OwnIdentity} has its own trust tree.
@@ -706,14 +920,16 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		query.descend("mTarget").constrain(target).identity();
 		ObjectSet<Score> result = query.execute();
 		
-		if(result.size() == 0)
-			throw new NotInTrustTreeException(target.getRequestURI() + " is not in that trust tree");
-		
-		if(result.size() > 1)
-			throw new DuplicateScoreException(target.getRequestURI() +" ("+ target.getNickname() +") has " + result.size() + 
-					" scores in " + treeOwner.getNickname() +"'s trust tree");
-		
-		return result.next();
+		switch(result.size()) {
+			case 1:
+				return result.next();
+	
+			case 0:
+				throw new NotInTrustTreeException(treeOwner, target);
+	
+			default:
+				throw new DuplicateScoreException(treeOwner, target, result.size());
+		}
 	}
 	
 	/* 
@@ -809,14 +1025,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		query.descend("mTrustee").constrain(trustee).identity();
 		ObjectSet<Trust> result = query.execute();
 		
-		if(result.size() == 0)
-			throw new NotTrustedException(truster.getNickname() + " does not trust " + trustee.getNickname());
-		
-		if(result.size() > 1)
-			throw new DuplicateTrustException("Trust from " + truster.getNickname() + "to " + trustee.getNickname() + " exists "
-					+ result.size() + " times in the database");
-		
-		return result.next();
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new NotTrustedException(truster, trustee);
+			default:
+				throw new DuplicateTrustException(truster, trustee, result.size());
+		}
 	}
 
 	/**
@@ -930,7 +1146,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				storeAndCommit(truster);
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -941,7 +1157,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param truster
 	 * @param trustee
 	 */
-	protected synchronized void removeTrust(OwnIdentity truster, Identity trustee) {
+	protected synchronized void removeTrustWithoutCommit(OwnIdentity truster, Identity trustee) {
 		synchronized(mDB.lock()) {
 			try {
 				try {
@@ -954,7 +1170,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				} 
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -975,28 +1191,21 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	/**
-	 * Initializes this OwnIdentity's trust tree.
+	 * Initializes this OwnIdentity's trust tree without commiting the transaction.
 	 * Meaning : It creates a Score object for this OwnIdentity in its own trust tree, 
 	 * so it gets a rank and a capacity and can give trust to other Identities.
 	 *  
 	 * @param db A reference to the database 
 	 * @throws DuplicateScoreException if there already is more than one Score for this identity (should never happen)
 	 */
-	private synchronized void initTrustTree(OwnIdentity identity) throws DuplicateScoreException {
+	private synchronized void initTrustTreeWithoutCommit(OwnIdentity identity) throws DuplicateScoreException {
 		synchronized(mDB.lock()) {
 			try {
 				getScore(identity, identity);
 				Logger.error(this, "initTrusTree called even though there is already one for " + identity);
 				return;
 			} catch (NotInTrustTreeException e) {
-				try {
-					mDB.store(new Score(identity, identity, 100, 0, 100));
-					mDB.commit();
-				}
-				catch(RuntimeException ex) {
-					mDB.rollback();
-					throw ex;
-				}
+				mDB.store(new Score(identity, identity, 100, 0, 100));
 			}
 		}
 	}
@@ -1187,22 +1396,28 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public synchronized void deleteIdentity(Identity identity) {
 		synchronized(mDB.lock()) {
 			try {
+				Logger.debug(this, "Deleting identity " + identity + " ...");
+				
+				Logger.debug(this, "Deleting scores...");
 				for(Score score : getScores(identity))
 					mDB.delete(score);
 				
+				Logger.debug(this, "Deleting received trusts...");
 				for(Trust trust : getReceivedTrusts(identity))
 					mDB.delete(trust);
 				
+				Logger.debug(this, "Deleting given trusts...");
 				for(Trust givenTrust : getGivenTrusts(identity)) {
 					mDB.delete(givenTrust);
 					updateScoreWithoutCommit(givenTrust.getTrustee());
 				}
 				
+				Logger.debug(this, "Deleting the identity...");
 				mDB.delete(identity);
-				mDB.commit();
+				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -1252,13 +1467,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 						}
 					}
 					
-					mDB.commit();
+					mDB.commit(); Logger.debug(this, "COMMITED.");
 					
 					Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickname() + ")");
 					return identity;
 				}
 				catch(RuntimeException e) {
-					mDB.rollback();
+					mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 					throw e;
 				}
 			}
@@ -1280,7 +1495,9 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 					/* We re-fetch the current edition to make sure all trustees are imported */
 					identity.setEdition(old.getEdition() - 1);
 				
-					identity.setContexts(old.getContexts());
+					for(ContextOffer offer : getOfferedContexts(old))
+						addContextOfferWithoutCommit(identity, offer.getContext());
+					
 					identity.setProperties(old.getProperties());
 	
 					// Update all received trusts
@@ -1302,7 +1519,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 					}
 		
 					mDB.store(identity);
-					initTrustTree(identity);
+					initTrustTreeWithoutCommit(identity);
 					
 					// Update all given trusts
 					for(Trust givenTrust : getGivenTrusts(old)) {
@@ -1323,14 +1540,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 					
 					// Store the new identity
 					mDB.store(identity);
-					initTrustTree(identity);
+					initTrustTreeWithoutCommit(identity);
 					storeAndCommit(identity);
 					
 					Logger.debug(this, "Successfully restored not-yet-known identity from Freenet (" + identity.getRequestURI() + ")");
 				}
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 			
@@ -1354,6 +1571,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 
 		removeTrust(truster, trustee);
 	}
+	
+	
+
+	
+
 	
 	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {
 		Identity identity = getOwnIdentityByID(ownIdentityID);
