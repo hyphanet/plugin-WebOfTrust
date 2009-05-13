@@ -182,6 +182,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			mFCPInterface = new FCPInterface(this);
 			
 			Logger.debug(this, "Starting fetches of all identities...");
+			/* Not necessary anymore to lock the fetcher first because it does not lock the WoT, yet it makes sense to keep the lock while we bulk-add fetches here */
 			synchronized(mFetcher) {
 			synchronized(this) {
 				for(Identity identity : getAllIdentities())

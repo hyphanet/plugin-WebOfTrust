@@ -11,8 +11,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import plugins.WoT.exceptions.UnknownIdentityException;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
@@ -50,7 +48,7 @@ public class IdentityFetcher implements ClientCallback { // TODO: Use the new in
 	/* FIXME: We use those HashSets for checking whether we have already have a request for the given identity if someone calls fetch().
 	 * This sucks: We always request ALL identities to allow ULPRs so we must assume that those HashSets will not fit into memory
 	 * if the WoT becomes large. We should instead ask the node whether we already have a request for the given SSK URI. So how to do that??? */
-	private final HashSet<Identity> identities = new HashSet<Identity>(128); /* TODO: profile & tweak */
+	private final HashSet<String> identities = new HashSet<String>(128); /* TODO: profile & tweak */
 	private final HashSet<ClientGetter> requests = new HashSet<ClientGetter>(128); /* TODO: profile & tweak */
 	
 	
@@ -88,7 +86,7 @@ public class IdentityFetcher implements ClientCallback { // TODO: Use the new in
 	public synchronized void fetch(Identity identity, boolean nextEdition) {
 		/* TODO: check whether we should increase the edition in the associated ClientGetter and restart the request or rather wait
 		 * for it to finish */
-		if(identities.contains(identity)) 
+		if(identities.contains(identity.getID())) 
 			return; 
 
 		try {
@@ -97,7 +95,7 @@ public class IdentityFetcher implements ClientCallback { // TODO: Use the new in
 			else
 				fetch(identity.getRequestURI());
 			
-			identities.add(identity);
+			identities.add(identity.getID());
 		} catch (FetchException e) {
 			Logger.error(this, "Request restart failed: "+e, e);
 		}
@@ -138,13 +136,7 @@ public class IdentityFetcher implements ClientCallback { // TODO: Use the new in
 	}
 	
 	private synchronized void removeIdentity(ClientGetter state) {
-		try {
-			identities.remove(mWoT.getIdentityByURI(state.getURI()));
-		}
-		catch(UnknownIdentityException ex)
-		{
-			assert(false);
-		}
+		identities.remove(Identity.getIDFromURI(state.getURI()));
 	}
 	
 	/**
@@ -175,7 +167,7 @@ public class IdentityFetcher implements ClientCallback { // TODO: Use the new in
 	/**
 	 * Called when a file is successfully fetched.
 	 */
-	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched identity: " + state.getURI());
 		
 		Bucket bucket = null;
