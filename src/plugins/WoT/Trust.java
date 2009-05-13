@@ -1,23 +1,22 @@
-/**
- * This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT;
 
 import plugins.WoT.exceptions.InvalidParameterException;
 
 /**
- * A trust relationship between two Identities
+ * A trust relationship between two Identities.
  * 
- * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class Trust {
 
-	/** The identity which gives the trust */
+	/** The identity which gives the trust. */
 	private final Identity mTruster;
 	
-	/** The identity which receives the trust */
+	/** The identity which receives the trust. */
 	private final Identity mTrustee;
 	
 	/** The value assigned with the trust, from -100 to +100 where negative means distrust */
@@ -81,29 +80,23 @@ public class Trust {
 		return getTruster().getNickname() + " trusts " + getTrustee().getNickname() + " (" + getValue() + " : " + getComment() + ")";
 	}
 
-	/**
-	 * @return The Identity that gives this trust
-	 */
+	/** @return The Identity that gives this trust. */
 	public Identity getTruster() {
 		return mTruster;
 	}
 
-	/**
-	 * @return trustee The Identity that receives this trust
-	 */
+	/** @return The Identity that receives this trust. */
 	public Identity getTrustee() {
 		return mTrustee;
 	}
 
-	/**
-	 * @return value Numeric value of this trust relationship
-	 */
+	/** @return value Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. */
 	public synchronized byte getValue() {
 		return mValue;
 	}
 
 	/**
-	 * @param mValue Numeric value of this trust relationship [-100;+100] 
+	 * @param mValue Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. 
 	 * @throws InvalidParameterException if value isn't in the range
 	 */
 	protected synchronized void setValue(byte newValue) throws InvalidParameterException {
@@ -113,9 +106,7 @@ public class Trust {
 		mValue = newValue;
 	}
 
-	/**
-	 * @return The comment associated to this Trust relationship.
-	 */
+	/** @return The comment associated to this Trust relationship. */
 	public synchronized String getComment() {
 		return mComment;
 	}
@@ -132,6 +123,10 @@ public class Trust {
 		mComment = newComment != null ? newComment : "";
 	}
 	
+	/**
+	 * Called by the XMLTransformer when a new trust list of the truster has been imported. Stores the edition number of the trust list in this trust object.
+	 * For an explanation for what this is needed please read the description of {@link mTrusterTrustListEdition}.
+	 */
 	protected synchronized void trusterEditionUpdated() {
 		mTrusterTrustListEdition = mTruster.getEdition();
 	}

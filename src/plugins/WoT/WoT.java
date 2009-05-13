@@ -238,12 +238,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		if(oldVersion == WoT.DATABASE_FORMAT_VERSION)
 			return;
-			
+		
+		try {
 		if(oldVersion == -100) {
 			Logger.normal(this, "Found old database (-100), adding last fetched date to all identities ...");
 			for(Identity identity : getAllIdentities()) {
 				identity.mLastFetchedDate = new Date(0);
-				storeAndCommit(identity);
+				storeWithoutCommit(identity);
 			}
 			
 			mConfig.set(Config.DATABASE_FORMAT_VERSION, WoT.DATABASE_FORMAT_VERSION);
@@ -252,6 +253,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		else
 			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
+		}
+		catch(RuntimeException e) {
+			mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+			throw e;
+		}
 	}
 	
 	/**
@@ -279,15 +285,15 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 								mDB.delete(trust);
 							for(Score score : getScores(duplicate))
 								mDB.delete(score);
-							mDB.delete(duplicate);
+							deleteWithoutCommit(duplicate);
 						}
 					}
 					deleted.add(identity.getID());
-					mDB.commit();
+					mDB.commit(); Logger.debug(this, "COMMITED.");
 				}
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				Logger.error(this, "Error while deleting duplicate identities", e);
 			}
 			
@@ -312,13 +318,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 							}
 						}
 					}
-					mDB.commit();
+					mDB.commit(); Logger.debug(this, "COMMITED.");
 				}
 				
 				
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				Logger.error(this, "Error while deleting duplicate trusts", e);
 			}
 
@@ -345,7 +351,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			}
 			catch(Exception e) {
 				Logger.error(this, "Deleting orphan trusts failed.", e);
-				// mDB.rollback(); /* No need to do so here */ 
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!"); 
 			}
 			
 			try {
@@ -358,11 +364,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 					mDB.delete(score);
 				}
 				
-				mDB.commit();
+				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(Exception e) {
 				Logger.error(this, "Deleting orphan trusts failed.", e);
-				// mDB.rollback(); /* No need to do so here */ 
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!"); 
 			}
 		}
 	}
@@ -382,20 +388,26 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 							Integer.toString(IntroductionServer.SEED_IDENTITY_PUZZLE_COUNT));
 					storeAndCommit(ownSeed);
 				}
-				try {
-					seed.setEdition(new FreenetURI(seedURI).getEdition());
-				} catch(Exception e) {
-					/* We already have the latest edition stored */
+				else {
+					try {
+						seed.setEdition(new FreenetURI(seedURI).getEdition());
+						storeAndCommit(seed);
+					} catch(InvalidParameterException e) {
+						/* We already have the latest edition stored */
+					}
 				}
-			} catch (UnknownIdentityException uie) {
+			}
+			catch (UnknownIdentityException uie) {
 				try {
 					seed = new Identity(seedURI, null, true);
 					storeAndCommit(seed);
 				} catch (Exception e) {
 					Logger.error(this, "Seed identity creation error", e);
 				}
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				Logger.error(this, "Seed identity loading error", e);
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 			}
 		}
 	}
@@ -443,7 +455,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				/* FIXME: Is it possible to ask db4o whether a transaction is pending? If the plugin's synchronization works correctly,
 				 * NONE should be pending here and we should log an error if there are any pending transactions at this point. */
 				synchronized(mDB.lock()) {
-					mDB.rollback();
+					mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 					mDB.close();
 				}
 			}
@@ -498,13 +510,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		query.descend("mID").constrain(id);
 		ObjectSet<Identity> result = query.execute();
 		
-		if(result.size() == 0)
-			throw new UnknownIdentityException(id);
-
-		if(result.size() > 1)
-			throw new DuplicateIdentityException(id);
-		
-		return result.next();
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new UnknownIdentityException(id);
+			default:
+				throw new DuplicateIdentityException(id, result.size());
+		}  
 	}
 	
 	/**
@@ -521,13 +534,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		query.descend("mID").constrain(id);
 		ObjectSet<OwnIdentity> result = query.execute();
 		
-		if(result.size() == 0)
-			throw new UnknownIdentityException(id);
-		
-		if(result.size() > 1)
-			throw new DuplicateIdentityException(id);
-		
-		return result.next();
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new UnknownIdentityException(id);
+			default:
+				throw new DuplicateIdentityException(id, result.size());
+		}  
 	}
 
 	/**
@@ -536,7 +550,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param uri The requestURI of the identity
 	 * @return The identity matching the supplied requestURI
 	 * @throws UnknownIdentityException if there is no identity with this id in the database
-	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
 	 */
 	public Identity getIdentityByURI(FreenetURI uri) throws UnknownIdentityException {
 		return getIdentityByID(Identity.getIDFromURI(uri));
@@ -548,7 +561,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param uri The requestURI of the identity which will be converted to {@link FreenetURI} 
 	 * @return The identity matching the supplied requestURI
 	 * @throws UnknownIdentityException if there is no identity with this id in the database
-	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
 	 * @throws MalformedURLException if the requestURI isn't a valid FreenetURI
 	 */
 	public Identity getIdentityByURI(String uri) throws UnknownIdentityException, MalformedURLException {
@@ -575,7 +587,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * @param uri The requestURI (as String) of the desired OwnIdentity
 	 * @return The requested OwnIdentity
 	 * @throws UnknownIdentityException if the OwnIdentity isn't in the database
-	 * @throws DuplicateIdentityException if the OwnIdentity is present more that once in the database (should never happen)
 	 * @throws MalformedURLException if the supplied requestURI is not a valid FreenetURI
 	 */
 	public OwnIdentity getOwnIdentityByURI(String uri) throws UnknownIdentityException, MalformedURLException {
@@ -643,11 +654,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		synchronized(mDB.lock()) {
 			try {
 				storeWithoutCommit(identity);
-				mDB.commit();
-				Logger.debug(identity, "COMMITED.");
+				mDB.commit(); Logger.debug(identity, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -684,7 +694,37 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			mDB.store(identity);
 		}
 		catch(RuntimeException e) {
-			mDB.rollback();
+			mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+			throw e;
+		}
+	}
+	
+	private void deleteWithoutCommit(Identity identity) {
+		if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
+			throw new RuntimeException("Trying to delete an inactive Identity object!");
+		
+		/* FIXME: We also need to check whether the member objects are active here!!! */
+		
+		try {
+			if(identity instanceof OwnIdentity) {
+				OwnIdentity ownId = (OwnIdentity)identity;
+				mDB.delete(ownId.mInsertURI);
+				// mDB.delete(ownId.mCreationDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+				// mDB.delete(ownId.mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			}
+			// mDB.delete(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			mDB.delete(identity.mRequestURI);
+			// mDB.delete(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// mDB.delete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// mDB.delete(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// mDB.delete(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// mDB.delete(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			mDB.delete(identity.mProperties);
+			mDB.delete(identity.mContexts);
+			mDB.delete(identity);
+		}
+		catch(RuntimeException e) {
+			mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 			throw e;
 		}
 	}
@@ -706,14 +746,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		query.descend("mTarget").constrain(target).identity();
 		ObjectSet<Score> result = query.execute();
 		
-		if(result.size() == 0)
-			throw new NotInTrustTreeException(target.getRequestURI() + " is not in that trust tree");
-		
-		if(result.size() > 1)
-			throw new DuplicateScoreException(target.getRequestURI() +" ("+ target.getNickname() +") has " + result.size() + 
-					" scores in " + treeOwner.getNickname() +"'s trust tree");
-		
-		return result.next();
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new NotInTrustTreeException(treeOwner, target);
+			default:
+				throw new DuplicateScoreException(treeOwner, target, result.size());
+		}
 	}
 	
 	/* 
@@ -809,14 +849,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		query.descend("mTrustee").constrain(trustee).identity();
 		ObjectSet<Trust> result = query.execute();
 		
-		if(result.size() == 0)
-			throw new NotTrustedException(truster.getNickname() + " does not trust " + trustee.getNickname());
-		
-		if(result.size() > 1)
-			throw new DuplicateTrustException("Trust from " + truster.getNickname() + "to " + trustee.getNickname() + " exists "
-					+ result.size() + " times in the database");
-		
-		return result.next();
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new NotTrustedException(truster, trustee);
+			default:
+				throw new DuplicateTrustException(truster, trustee, result.size());
+		}
 	}
 
 	/**
@@ -879,7 +919,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
-	 *     try { ... setTrustWithoutCommit(...); storeAndCommit(truster); }
+	 *     try { ... setTrustWithoutCommit(...); mDB.commit(); }
 	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
 	 * }
 	 * 
@@ -913,6 +953,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		} 
 
 		truster.updated();
+		storeWithoutCommit(truster);
 	}
 	
 	/**
@@ -927,22 +968,28 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		synchronized(mDB.lock()) {
 			try {
 				setTrustWithoutCommit(truster, trustee, newValue, newComment);
-				storeAndCommit(truster);
+				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
 	}
 	
 	/**
-	 * Deletes a trust object
+	 * Deletes a trust object.
+	 * 
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(mDB.lock()) {
+	 *     try { ... removeTrustWithoutCommit(...); mDB.commit(); }
+	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 * }
+	 * 
 	 * @param truster
 	 * @param trustee
 	 */
-	protected synchronized void removeTrust(OwnIdentity truster, Identity trustee) {
-		synchronized(mDB.lock()) {
+	protected synchronized void removeTrustWithoutCommit(OwnIdentity truster, Identity trustee) {
 			try {
 				try {
 					Trust trust = getTrust(truster, trustee);
@@ -954,17 +1001,16 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				} 
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
-		}
 	}
 	
 	/**
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
-	 *     try { ... setTrustWithoutCommit(...); storeAndCommit(truster); }
+	 *     try { ... setTrustWithoutCommit(...); mDB.commit(); }
 	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
 	 * }
 	 * 
@@ -975,29 +1021,26 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	}
 	
 	/**
-	 * Initializes this OwnIdentity's trust tree.
+	 * Initializes this OwnIdentity's trust tree without commiting the transaction. 
 	 * Meaning : It creates a Score object for this OwnIdentity in its own trust tree, 
 	 * so it gets a rank and a capacity and can give trust to other Identities.
+	 * 
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(mDB.lock()) {
+	 *     try { ... initTrustTreeWithoutCommit(...); mDB.commit(); }
+	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 * }
 	 *  
 	 * @param db A reference to the database 
 	 * @throws DuplicateScoreException if there already is more than one Score for this identity (should never happen)
 	 */
-	private synchronized void initTrustTree(OwnIdentity identity) throws DuplicateScoreException {
-		synchronized(mDB.lock()) {
-			try {
-				getScore(identity, identity);
-				Logger.error(this, "initTrusTree called even though there is already one for " + identity);
-				return;
-			} catch (NotInTrustTreeException e) {
-				try {
-					mDB.store(new Score(identity, identity, 100, 0, 100));
-					mDB.commit();
-				}
-				catch(RuntimeException ex) {
-					mDB.rollback();
-					throw ex;
-				}
-			}
+	private synchronized void initTrustTreeWithoutCommit(OwnIdentity identity) throws DuplicateScoreException {
+		try {
+			getScore(identity, identity);
+			Logger.error(this, "initTrusTree called even though there is already one for " + identity);
+			return;
+		} catch (NotInTrustTreeException e) {
+			mDB.store(new Score(identity, identity, 100, 0, 100));
 		}
 	}
 	
@@ -1006,7 +1049,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
-	 *     try { ... setTrustWithoutCommit(...); storeAndCommit(truster); }
+	 *     try { ... updateScoreWithoutCommit(...); storeAndCommit(trustee); }
 	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
 	 * }
 	 * 
@@ -1026,7 +1069,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
-	 *     try { ... setTrustWithoutCommit(...); storeAndCommit(truster); }
+	 *     try { ... updateScoreWithoutCommit(...); mDB.commit(); }
 	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
 	 * }
 	 * 
@@ -1187,22 +1230,28 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public synchronized void deleteIdentity(Identity identity) {
 		synchronized(mDB.lock()) {
 			try {
+				Logger.debug(this, "Deleting identity " + identity + " ...");
+
+				Logger.debug(this, "Deleting scores...");
 				for(Score score : getScores(identity))
 					mDB.delete(score);
 				
+				Logger.debug(this, "Deleting received trusts...");
 				for(Trust trust : getReceivedTrusts(identity))
 					mDB.delete(trust);
 				
+				Logger.debug(this, "Deleting given trusts...");
 				for(Trust givenTrust : getGivenTrusts(identity)) {
 					mDB.delete(givenTrust);
 					updateScoreWithoutCommit(givenTrust.getTrustee());
 				}
 				
-				mDB.delete(identity);
-				mDB.commit();
+				Logger.debug(this, "Deleting the identity...");
+				deleteWithoutCommit(identity);
+				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -1241,8 +1290,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
 				
 				try {
-					mDB.store(identity);
-					initTrustTree(identity);
+					storeWithoutCommit(identity);
+					initTrustTreeWithoutCommit(identity);
 					
 					for(String seedURI : SEED_IDENTITIES) {
 						try {
@@ -1252,13 +1301,13 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 						}
 					}
 					
-					mDB.commit();
+					mDB.commit(); Logger.debug(this, "COMMITED.");
 					
 					Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickname() + ")");
 					return identity;
 				}
 				catch(RuntimeException e) {
-					mDB.rollback();
+					mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 					throw e;
 				}
 			}
@@ -1301,8 +1350,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 						mDB.store(newScore);
 					}
 		
-					mDB.store(identity);
-					initTrustTree(identity);
+					storeWithoutCommit(identity);
+					initTrustTreeWithoutCommit(identity);
 					
 					// Update all given trusts
 					for(Trust givenTrust : getGivenTrusts(old)) {
@@ -1313,8 +1362,8 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 					}
 		
 					// Remove the old identity
-					mDB.delete(old);
-					storeAndCommit(identity);
+					deleteWithoutCommit(old);
+					mDB.commit(); Logger.debug(this, "COMMITED.");
 					
 					Logger.debug(this, "Successfully restored an already known identity from Freenet (" + identity.getNickname() + ")");
 					
@@ -1322,15 +1371,15 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 					identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), null, false);
 					
 					// Store the new identity
-					mDB.store(identity);
-					initTrustTree(identity);
-					storeAndCommit(identity);
+					storeWithoutCommit(identity);
+					initTrustTreeWithoutCommit(identity);
+					mDB.commit(); Logger.debug(this, "COMMITED.");
 					
 					Logger.debug(this, "Successfully restored not-yet-known identity from Freenet (" + identity.getRequestURI() + ")");
 				}
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 			
@@ -1352,7 +1401,17 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
 		Identity trustee = getIdentityByID(trusteeID);
 
-		removeTrust(truster, trustee);
+		synchronized(mDB.lock()) {
+			try  {
+				removeTrustWithoutCommit(truster, trustee);
+				mDB.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(RuntimeException e)
+			{
+				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+				throw e;
+			}
+		}
 	}
 	
 	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {
