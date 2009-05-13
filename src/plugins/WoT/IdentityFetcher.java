@@ -173,8 +173,7 @@ public class IdentityFetcher implements ClientCallback { // TODO: Use the new in
 	}
 
 	/**
-	 * Called when a file is successfully fetched. We then create an
-	 * {@link IdentityParser} and give it the file content. 
+	 * Called when a file is successfully fetched.
 	 */
 	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched identity: " + state.getURI());
