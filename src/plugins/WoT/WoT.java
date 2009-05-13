@@ -182,9 +182,11 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			mFCPInterface = new FCPInterface(this);
 			
 			Logger.debug(this, "Starting fetches of all identities...");
+			synchronized(mFetcher) {
 			synchronized(this) {
 				for(Identity identity : getAllIdentities())
 					mFetcher.fetch(identity, true);
+			}
 			}
 			Logger.debug(this, "WoT startup completed.");
 		}
