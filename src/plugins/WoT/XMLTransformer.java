@@ -217,7 +217,13 @@ public final class XMLTransformer {
 			}
 			
 			synchronized(identity) {
-				identity.setEdition(identityURI.getEdition());
+				long newEdition = identityURI.getEdition();
+				if(identity.getEdition() > newEdition) {
+					Logger.debug(identity, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
+					return;
+				}
+				
+				identity.setEdition(newEdition);
 				identity.onFetched();
 				/* We store the identity and especially it's edition right now so that bogus XML files are skipped */
 				mWoT.storeAndCommit(identity);
