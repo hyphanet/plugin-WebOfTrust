@@ -184,7 +184,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			Logger.debug(this, "Starting fetches of all identities...");
 			synchronized(this) {
 				for(Identity identity : getAllIdentities())
-					mFetcher.fetch(identity, true);
+					mFetcher.fetch(identity);
 			}
 			Logger.debug(this, "WoT startup completed.");
 		}
@@ -669,7 +669,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	 * You must synchronize on the WoT, on the identity and then on the database when using this function!
 	 * @param identity The identity to store.
 	 */
-	private void storeWithoutCommit(Identity identity) {
+	protected void storeWithoutCommit(Identity identity) {
 		if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
 			throw new RuntimeException("Trying to store an inactive Identity object!");
 
@@ -1218,7 +1218,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			throw new InvalidParameterException("We already have this identity");
 		}
 		catch(UnknownIdentityException e) {
-			identity = new Identity(new FreenetURI(requestURI), null, false);
+			identity = new Identity(requestURI, null, false);
 			storeAndCommit(identity);
 			Logger.debug(this, "Trying to fetch manually added identity (" + identity.getRequestURI() + ")");
 			mFetcher.fetch(identity);
