@@ -100,10 +100,12 @@ public class IdentityFetcher implements USKRetrieverCallback {
 	private synchronized void fetch(Identity identity, USK usk) throws MalformedURLException {
 		USKRetriever ret = mRequests.get(identity.getID());
 		if(ret != null) {
-			// FIXME XXX: This code sucks! It's purpose is to allow re-downloading of already downloaded identities: We sometimes need to do that, for example
+			// FIXME XXX: This code sucks because it ALWAYS cancels the request, even if we only received a new edition hint!
+			// It's purpose is to allow re-downloading of already downloaded identities: We sometimes need to do that, for example
 			// at first usage of the plugin: The seed identity's trusted identities will not be imported as long as there is no own identity which trusts the seed.
 			// Therefore, when the user creates an own identity, we decrease the edition number so that the seed is re-feteched.
-			// So we rather need functionality in USKManager / USKRetriever for decreasing the edition number than just cancelling the request and re-creating it!
+			//
+			// We should rather add a "mCurrentEditionWasFetched" to identity to store whether the current stored edition was fetched.
 			ret.cancel();
 			mUSKManager.unsubscribeContent(ret.getOriginalUSK(), ret, true);
 			mRequests.remove(identity.getID());
