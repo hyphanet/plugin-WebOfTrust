@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Hashtable;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchResult;
@@ -48,8 +49,7 @@ public class IdentityFetcher implements USKRetrieverCallback {
 	/* FIXME: We use those HashSets for checking whether we have already have a request for the given identity if someone calls fetch().
 	 * This sucks: We always request ALL identities to allow ULPRs so we must assume that those HashSets will not fit into memory
 	 * if the WoT becomes large. We should instead ask the node whether we already have a request for the given SSK URI. So how to do that??? */
-	private final HashSet<String> mIdentities = new HashSet<String>(128); /* TODO: profile & tweak */
-	private final HashSet<USKRetriever> mRequests = new HashSet<USKRetriever>(128); /* TODO: profile & tweak */
+	private final Hashtable<String, USKRetriever> mRequests = new Hashtable<String, USKRetriever>(128); /* TODO: profile & tweak */
 	
 	
 	/**
@@ -83,10 +83,7 @@ public class IdentityFetcher implements USKRetrieverCallback {
 			else
 				usk = USK.create(identity.getRequestURI());
 
-			if(!mIdentities.contains(identity.getID())) {
-				fetch(usk);
-				mIdentities.add(identity.getID());
-			}
+			fetch(identity, usk);
 			
 			mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
 
@@ -96,20 +93,31 @@ public class IdentityFetcher implements USKRetrieverCallback {
 	}
 	
 	/**
-	 * Fetches an file from Freenet, by its URI.
-	 * 
-	 * @param uri the {@link FreenetURI} we want to fetch
+	 * Fetches an identity with the given USK. If there is already a request for a newer USK, the request is cancelled and a fetch for the given older USK is
+	 * started. This has to be done so that trust lists of identities can be re-fetched as soon as their score changes from negative to positive - that is 
+	 * necessary because we do not import identities from trust lists for which the owner has a negative score.
 	 */
-	public synchronized void fetch(USK usk) throws MalformedURLException {
+	private synchronized void fetch(Identity identity, USK usk) throws MalformedURLException {
+		USKRetriever ret = mRequests.get(identity.getID());
+		if(ret != null) {
+			// FIXME XXX: This code sucks! It's purpose is to allow re-downloading of already downloaded identities: We sometimes need to do that, for example
+			// at first usage of the plugin: The seed identity's trusted identities will not be imported as long as there is no own identity which trusts the seed.
+			// Therefore, when the user creates an own identity, we decrease the edition number so that the seed is re-feteched.
+			// So we rather need functionality in USKManager / USKRetriever for decreasing the edition number than just cancelling the request and re-creating it!
+			ret.cancel();
+			mUSKManager.unsubscribeContent(ret.getOriginalUSK(), ret, true);
+			mRequests.remove(identity.getID());
+		}
+		
 		/* TODO: check whether we are downloading the uri already. probably only as debug code to see if it actually happens */
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		Logger.debug(this, "Trying to start fetching uri " + usk); 
 		/* FIXME: Toad: Does this also eat a RequestStarter priority class? You should javadoc which priority class constants to use! */
-		USKRetriever ret = mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
+		ret = mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
 		
-		mRequests.add(ret);
+		mRequests.put(identity.mID, ret);
 	}
 	
 	@Override
@@ -128,14 +136,14 @@ public class IdentityFetcher implements USKRetrieverCallback {
 	protected synchronized void stop() {
 		Logger.debug(this, "Trying to stop all requests");
 		
-		USKRetriever[] retrievers = mRequests.toArray(new USKRetriever[mRequests.size()]);		
+		USKRetriever[] retrievers = mRequests.entrySet().toArray(new USKRetriever[mRequests.size()]);		
 		int counter = 0;		 
 		for(USKRetriever r : retrievers) {
+			r.cancel();
 			mUSKManager.unsubscribeContent(r.getOriginalUSK(), r, true);
-			r.cancel(); ++counter;
+			 ++counter;
 		}
 		mRequests.clear();
-		mIdentities.clear();
 		
 		Logger.debug(this, "Stopped " + counter + " current requests");
 	}
