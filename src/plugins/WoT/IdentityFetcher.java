@@ -7,23 +7,22 @@
 package plugins.WoT;
 
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
-
-import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
-import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.InsertException;
-import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
+import freenet.client.async.USKManager;
+import freenet.client.async.USKRetriever;
+import freenet.client.async.USKRetrieverCallback;
 import freenet.keys.FreenetURI;
+import freenet.keys.USK;
 import freenet.node.RequestClient;
+import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
@@ -34,89 +33,93 @@ import freenet.support.io.Closer;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public class IdentityFetcher implements ClientCallback { // TODO: Use the new interface when 1210 has been released, not before so the plugin still loasd with 1209
+public class IdentityFetcher implements USKRetrieverCallback { // TODO: Use the new interface when 1210 has been released, not before so the plugin still loasd with 1209
 	
 	private final WoT mWoT;
+	
+	private final USKManager mUSKManager;
 
 	/** A reference to the HighLevelSimpleClient used to talk with the node */
-	private final HighLevelSimpleClient client;
-	
-	private final RequestClient requestClient;
-	private final ClientContext clientContext;
+	private final HighLevelSimpleClient mClient;
+	private final ClientContext mClientContext;
+	private final RequestClient mRequestClient;
 
 	/** All current requests */
 	/* FIXME: We use those HashSets for checking whether we have already have a request for the given identity if someone calls fetch().
 	 * This sucks: We always request ALL identities to allow ULPRs so we must assume that those HashSets will not fit into memory
 	 * if the WoT becomes large. We should instead ask the node whether we already have a request for the given SSK URI. So how to do that??? */
-	private final HashSet<String> identities = new HashSet<String>(128); /* TODO: profile & tweak */
-	private final HashSet<ClientGetter> requests = new HashSet<ClientGetter>(128); /* TODO: profile & tweak */
+	private final HashSet<String> mIdentities = new HashSet<String>(128); /* TODO: profile & tweak */
+	private final HashSet<USKRetriever> mRequests = new HashSet<USKRetriever>(128); /* TODO: profile & tweak */
 	
 	
 	/**
 	 * Creates a new IdentityFetcher.
 	 * 
 	 * @param db A reference to the database
-	 * @param client A reference to a {@link HighLevelSimpleClient}
+	 * @param mClient A reference to a {@link HighLevelSimpleClient}
 	 */
 	protected IdentityFetcher(WoT myWoT) {
 		mWoT = myWoT;
 		
-		clientContext = mWoT.getPluginRespirator().getNode().clientCore.clientContext;
-		client = mWoT.getPluginRespirator().getHLSimpleClient();
-		requestClient = mWoT.getRequestClient();
+		mUSKManager = mWoT.getPluginRespirator().getNode().clientCore.uskManager;
+		mClient = mWoT.getPluginRespirator().getHLSimpleClient();
+		mClientContext = mWoT.getPluginRespirator().getNode().clientCore.clientContext;
+		mRequestClient = mWoT.getRequestClient();
 	}
-	
-	/**
-	 * Fetches an Identity from Freenet. 
-	 * Sets nextEdition to false by default if not specified.
-	 * 
-	 * @param identity the Identity to fetch
-	 */
-	public void fetch(Identity identity) {
-		fetch(identity, false);
-	}
-	
-	/**
-	 * Fetches an Identity from Freenet. 
-	 * Sets nextEdition to false by default if not specified.
-	 * 
-	 * @param identity the Identity to fetch
-	 * @param nextEdition whether we want to check current edition or the next one
-	 */
-	public synchronized void fetch(Identity identity, boolean nextEdition) {
-		/* TODO: check whether we should increase the edition in the associated ClientGetter and restart the request or rather wait
-		 * for it to finish */
-		if(identities.contains(identity.getID())) 
-			return; 
 
+	/**
+	 * Fetches an identity from Freenet, using the current edition number and edition hint stored in the identity.
+	 * If the identity is already being fetched, passes the current edition hint stored in the identity to the USKManager.
+	 * 
+	 * @param identity the Identity to fetch
+	 * @param nextEdition If set to true, tries to fetch the next edition of the identity.
+	 */
+	public synchronized void fetch(Identity identity) {
 		try {
-			if(nextEdition && !identity.getFirstFetchedDate().equals(new Date(0)))
-				fetch(identity.getRequestURI().setSuggestedEdition(identity.getRequestURI().getSuggestedEdition() + 1));
-			else
-				fetch(identity.getRequestURI());
+			USK usk;
 			
-			identities.add(identity.getID());
-		} catch (FetchException e) {
+			if(!identity.getFirstFetchedDate().equals(new Date(0))) // We already have the current edition, fetch the next ...
+				usk = USK.create(identity.getRequestURI().setSuggestedEdition(identity.getEdition() + 1));
+			else
+				usk = USK.create(identity.getRequestURI());
+
+			if(!mIdentities.contains(identity.getID())) {
+				fetch(usk);
+				mIdentities.add(identity.getID());
+			}
+			
+			mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
+
+		} catch (MalformedURLException e) {
 			Logger.error(this, "Request restart failed: "+e, e);
 		}
 	}
 	
 	/**
-	 * Fetches a file from Freenet, by its URI.
+	 * Fetches an file from Freenet, by its URI.
 	 * 
 	 * @param uri the {@link FreenetURI} we want to fetch
-	 * @throws FetchException if the node encounters a problem
 	 */
-	public synchronized void fetch(FreenetURI uri) throws FetchException {
+	public synchronized void fetch(USK usk) throws MalformedURLException {
 		/* TODO: check whether we are downloading the uri already. probably only as debug code to see if it actually happens */
-		FetchContext fetchContext = client.getFetchContext();
+		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
-		Logger.debug(this, "Trying to start fetching uri " + uri.toString()); 
-		ClientGetter g = client.fetch(uri, -1, requestClient, this, fetchContext);
-		// FIXME: Set to a reasonable value before release, PluginManager default is interactive priority
-		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, clientContext, null);
-		requests.add(g);
+		Logger.debug(this, "Trying to start fetching uri " + usk); 
+		/* FIXME: Toad: Does this also eat a RequestStarter priority class? You should javadoc which priority class constants to use! */
+		USKRetriever ret = mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
+		
+		mRequests.add(ret);
+	}
+	
+	@Override
+	public short getPollingPriorityNormal() {
+		return RequestStarter.UPDATE_PRIORITY_CLASS;  /* FIXME: Is this correct? */
+	}
+
+	@Override
+	public short getPollingPriorityProgress() {
+		return RequestStarter.UPDATE_PRIORITY_CLASS; /* FIXME: Is this correct? */
 	}
 
 	/**
@@ -124,51 +127,25 @@ public class IdentityFetcher implements ClientCallback { // TODO: Use the new in
 	 */
 	protected synchronized void stop() {
 		Logger.debug(this, "Trying to stop all requests");
-		Iterator<ClientGetter> i = requests.iterator();
-		int counter = 0;		 
-		while (i.hasNext()) { i.next().cancel(); i.remove(); ++counter; }
-		Logger.debug(this, "Stopped " + counter + " current requests");
-	}
-	
-	private synchronized void removeRequest(ClientGetter g) {
-		requests.remove(g);
-		Logger.debug(this, "Removed request for " + g.getURI());
-	}
-	
-	private synchronized void removeIdentity(ClientGetter state) {
-		identities.remove(Identity.getIDFromURI(state.getURI()));
-	}
-	
-	/**
-	 * Called when the node can't fetch a file OR when there is a newer edition.
-	 * If this is the later, we restart the request.
-	 */
-	public synchronized void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {		
-		if(e.getMode() == FetchException.CANCELLED) {
-			Logger.debug(this, "Fetch cancelled: " + state.getURI());
-			return;
-		}
 		
-		if ((e.mode == FetchException.PERMANENT_REDIRECT) || (e.mode == FetchException.TOO_MANY_PATH_COMPONENTS )) {
-			try {
-				state.restart(e.newURI, null, clientContext);
-			} catch (FetchException e1) {
-				Logger.error(this, "Request restart failed: "+e1, e1);
-			}
-		} else {
-			// Errors we can't/want deal with
-			Logger.error(this, "Fetch failed for "+ state.getURI(), e);
-			
-			removeRequest(state);
-			removeIdentity(state);
+		USKRetriever[] retrievers = mRequests.toArray(new USKRetriever[mRequests.size()]);		
+		int counter = 0;		 
+		for(USKRetriever r : retrievers) {
+			mUSKManager.unsubscribeContent(r.getOriginalUSK(), r, true);
+			r.cancel(); ++counter;
 		}
+		mRequests.clear();
+		mIdentities.clear();
+		
+		Logger.debug(this, "Stopped " + counter + " current requests");
 	}
 
 	/**
-	 * Called when a file is successfully fetched.
+	 * Called when an identity is successfully fetched.
 	 */
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-		Logger.debug(this, "Fetched identity: " + state.getURI());
+	@Override
+	public void onFound(USK origUSK, long edition, FetchResult result) {
+		Logger.debug(this, "Fetched identity: " + origUSK);
 		
 		Bucket bucket = null;
 		InputStream inputStream = null;
@@ -176,39 +153,15 @@ public class IdentityFetcher implements ClientCallback { // TODO: Use the new in
 		try {
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
-			mWoT.getXMLTransformer().importIdentity(state.getURI(), inputStream);
+			mWoT.getXMLTransformer().importIdentity(origUSK.getURI(), inputStream);
 		}
 		catch (Exception e) {
-			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
+			Logger.error(this, "Parsing failed for "+ origUSK, e);
 		}
 		finally {
 			Closer.close(inputStream);
-			// TODO: Wire in when build 1210 is released: Closer.close(bucket);
-			if(bucket != null)
-				bucket.free();
-		}
-		
-		try {
-			state.restart(state.getURI().setSuggestedEdition(state.getURI().getEdition() + 1), null, clientContext);
-		}
-		catch(Exception e) {
-			Logger.error(this, "Error fetching next edition for " + state.getURI());
+			Closer.close(bucket);
 		}
 	}
 
-
-	// Only called by inserts
-	public void onSuccess(BaseClientPutter state, ObjectContainer container) {}
-	
-	// Only called by inserts
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {}
-
-	// Only called by inserts
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {}
-
-	// Only called by inserts
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {}
-
-	/* Called when freenet.async thinks that the request should be serialized to disk, if it is a persistent request. */
-	public void onMajorProgress(ObjectContainer container) {}
 }
