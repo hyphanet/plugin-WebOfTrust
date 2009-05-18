@@ -40,7 +40,7 @@ public class CreateIdentityPage extends WebPageImpl {
 						"introduction puzzles, otherwise nobody will see the identity!");
 				
 			} catch (Exception e) {
-				addErrorBox("Identity creation failed", e.getMessage());
+				addErrorBox("Identity creation failed", e);
 			}	
 		}
 		else

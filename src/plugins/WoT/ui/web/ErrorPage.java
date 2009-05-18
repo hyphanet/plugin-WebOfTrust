@@ -3,7 +3,6 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.ui.web;
 
-import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
@@ -21,19 +20,7 @@ public class ErrorPage extends WebPageImpl {
 	}
 
 	public void make() {
-		HTMLNode errorBox = addErrorBox("Internal error, please report this");
-		
-		String message = mError.getLocalizedMessage();
-		if(message == null || message.equals(""))
-			message = mError.getMessage();
-		
-		HTMLNode p = errorBox.addChild("p", message);
-		
-		p = errorBox.addChild("p", "Stack trace:");
-		for(StackTraceElement element : mError.getStackTrace()) {
-			p.addChild("br"); p.addChild("#", element.toString());
-		}
-
+		addErrorBox("Internal error, please report this", mError);
 	}
 
 }

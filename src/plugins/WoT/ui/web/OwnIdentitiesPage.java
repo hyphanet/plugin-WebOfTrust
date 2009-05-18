@@ -44,7 +44,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				"from Freenet, your changes will be overwritten by the old settings which are downloaded from Freenet.");
 			}
 			catch(Exception e) {
-				addErrorBox("Restoring the identity failed", e.getMessage());
+				addErrorBox("Restoring the identity failed", e);
 			}
 		}
 		synchronized(wot) {

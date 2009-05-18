@@ -49,7 +49,7 @@ public class EditOwnIdentityPage extends WebPageImpl {
 					wot.storeAndCommit(mIdentity); 
 				}
 				catch(Exception e) {
-					addErrorBox("Saving the changes failed", e.getMessage());
+					addErrorBox("Saving the changes failed", e);
 				}	
 			}
 

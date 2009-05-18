@@ -53,7 +53,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 				successBox.addChild("#", "The identity was added and is now being downloaded.");
 			}
 			catch(Exception e) {
-				addErrorBox("Adding the identity failed", e.getMessage());
+				addErrorBox("Adding the identity failed", e);
 			}
 		}
 		
@@ -72,7 +72,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 				else
 					wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
 			} catch(Exception e) {
-				addErrorBox("Setting trust failed", e.getMessage());
+				addErrorBox("Setting trust failed", e);
 			}
 		}
 
@@ -87,7 +87,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 				treeOwner = wot.getOwnIdentityByID(ownerID);
 			} catch (Exception e) {
 				Logger.error(this, "Error while selecting the OwnIdentity", e);
-				addErrorBox("Error while selecting the OwnIdentity", e.getMessage());
+				addErrorBox("Error while selecting the OwnIdentity", e);
 			}
 		} else {
 			synchronized(wot) {
@@ -104,8 +104,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			try {
 				makeKnownIdentitiesList(treeOwner, db, pr);
 			} catch (Exception e) {
-				Logger.error(this, e.getMessage());
-				addErrorBox("Error: " + e.getClass(), e.getMessage());
+				Logger.error(this, "Error", e);
+				addErrorBox("Error", e);
 			}
 		} else if(nbOwnIdentities > 1)
 			makeSelectTreeOwnerForm(db, pr);

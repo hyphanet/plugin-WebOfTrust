@@ -101,6 +101,24 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param title The title of the desired ErrorBox
 	 * @param message The error message that will be displayed
 	 */
+	public HTMLNode addErrorBox(String title, Exception error) {
+		HTMLNode errorBox = pm.getInfobox("infobox-alert", title);
+		
+		String message = error.getLocalizedMessage();
+		if(message == null || message.equals(""))
+			message = error.getMessage();
+		
+		HTMLNode p = errorBox.addChild("p", message);
+		
+		p = errorBox.addChild("p", "Stack trace:");
+		for(StackTraceElement element : error.getStackTrace()) {
+			p.addChild("br"); p.addChild("#", element.toString());
+		}
+		
+		contentBoxes.add(errorBox);
+		return pm.getContentNode(errorBox);
+	}
+	
 	public HTMLNode addErrorBox(String title, String message) {
 		HTMLNode errorBox = pm.getInfobox("infobox-alert", title);
 		errorBox.addChild("p", message);
