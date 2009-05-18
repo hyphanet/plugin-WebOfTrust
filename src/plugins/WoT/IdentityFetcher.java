@@ -33,7 +33,7 @@ import freenet.support.io.Closer;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public class IdentityFetcher implements USKRetrieverCallback { // TODO: Use the new interface when 1210 has been released, not before so the plugin still loasd with 1209
+public class IdentityFetcher implements USKRetrieverCallback {
 	
 	private final WoT mWoT;
 	
