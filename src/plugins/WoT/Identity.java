@@ -39,6 +39,10 @@ public class Identity {
 	 * in the database (the values of this identity, trust values, etc.) */
 	protected FreenetURI mRequestURI;
 	
+	/** When obtaining identities through other people's trust lists instead of identity introduction, we store the edition number they have specified
+	 * and pass it as a hint to the USKManager. */
+	protected long mLatestEditionHint;
+	
 	/** Date when this identity was added. */
 	protected final Date mAddedDate;
 	
@@ -72,7 +76,7 @@ public class Identity {
 	}
 	
 	/**
-	 * Creates an Identity.
+	 * Creates an Identity. Only for being used by the WoT package and unit tests, not for user interfaces!
 	 * 
 	 * @param newRequestURI A {@link FreenetURI} to fetch this Identity 
 	 * @param newNickname The nickname of this identity
@@ -80,7 +84,9 @@ public class Identity {
 	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 */
 	protected Identity(FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException {
-		setRequestURI(newRequestURI);
+		// We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
+		setRequestURI(newRequestURI.setSuggestedEdition(0));
+		setNewEditionHint(newRequestURI.getEdition());
 		mID = getIDFromURI(getRequestURI());
 		
 		mAddedDate = CurrentTimeUTC.get();
@@ -163,7 +169,7 @@ public class Identity {
 	 * Get the edition number of the request URI of this identity.
 	 */
 	public synchronized long getEdition() {
-		return getRequestURI().getSuggestedEdition();
+		return getRequestURI().getEdition();
 	}
 
 	/**
@@ -181,10 +187,22 @@ public class Identity {
 		
 		if(newEdition > currentEdition) {
 			mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
+			setNewEditionHint(newEdition);
 			updated();
 		}
 	}
 	
+	public synchronized long getLatestEditionHint() {
+		return mLatestEditionHint;
+	}
+	
+	protected synchronized void setNewEditionHint(long newLatestEditionHint) {
+		if(newLatestEditionHint < mLatestEditionHint)
+			Logger.minor(this, "Trying to set an older edition hint!");
+		
+		if(newLatestEditionHint > mLatestEditionHint)
+			mLatestEditionHint = newLatestEditionHint;
+	}
 	
 	/**
 	 * Decrease the currentEdition by one.
@@ -202,6 +220,7 @@ public class Identity {
 		}
 		
 		mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
+		// TODO: I decided that we should not decrease the edition hint here. Think about that again.
 	}
 	
 	/**
