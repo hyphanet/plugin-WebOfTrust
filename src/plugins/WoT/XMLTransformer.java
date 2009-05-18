@@ -223,7 +223,7 @@ public final class XMLTransformer {
 					return;
 				}
 				
-				identity.setEdition(newEdition);
+				identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
 				identity.onFetched();
 				/* We store the identity and especially it's edition right now so that bogus XML files are skipped */
 				mWoT.storeAndCommit(identity);
@@ -265,19 +265,21 @@ public final class XMLTransformer {
 						for(int i = 0; i < trustList.getLength(); ++i) {
 							Element trustElement = (Element)trustList.item(i);
 
-							String trusteeURI = trustElement.getAttribute("Identity");
+							FreenetURI trusteeURI = new FreenetURI(trustElement.getAttribute("Identity"));
 							byte trustValue = Byte.parseByte(trustElement.getAttribute("Value"));
 							String trustComment = trustElement.getAttribute("Comment");
 
 							Identity trustee = null;
 							try {
 								trustee = mWoT.getIdentityByURI(trusteeURI);
+								trustee.setNewEditionHint(trusteeURI.getEdition()); /* FIXME: We need to revert this upon rollback!! */
+								mWoT.storeWithoutCommit(trustee);
 							}
 							catch(UnknownIdentityException e) {
 								if(trusteeCreationAllowed) { /* We only create trustees if the truster has a positive score */
 									trustee = new Identity(trusteeURI, null, false);
-									mDB.store(trustee);
-									mWoT.getIdentityFetcher().fetch(trustee);
+									mWoT.storeWithoutCommit(trustee);
+									mWoT.getIdentityFetcher().fetch(trustee); /* FIXME: We need to revert this upon rollback!! */
 								}
 							}
 
@@ -356,13 +358,19 @@ public final class XMLTransformer {
 		
 		
 		synchronized(mWoT) {
+			if(!puzzleOwner.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT))
+				throw new IllegalArgumentException("Trying to import an identity identroduction for an own identity which does not allow introduction.");
+			
 			try {
 				newIdentity = mWoT.getIdentityByURI(identityURI);
 				Logger.minor(this, "Imported introduction for an already existing identity: " + newIdentity);
 			}
 			catch (UnknownIdentityException e) {
 				newIdentity = new Identity(identityURI, null, false);
+				newIdentity.setEdition(identityURI.getEdition()); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
 				mWoT.storeAndCommit(newIdentity);
+				mWoT.getIdentityFetcher().fetch(newIdentity);
+				
 				try {
 					mWoT.getTrust(puzzleOwner, newIdentity); /* Double check ... */
 					Logger.error(newIdentity, "The identity is already trusted even though it did not exist!");
@@ -370,8 +378,7 @@ public final class XMLTransformer {
 				catch(NotTrustedException ex) {
 					/* FIXME: We need null trust. Giving trust by solving captchas is a bad idea because they receive capacity for
 					 * giving trust to others by that. */
-					mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");
-					mWoT.getIdentityFetcher().fetch(newIdentity);
+					mWoT.setTrust(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");	
 				}
 			}
 		}
