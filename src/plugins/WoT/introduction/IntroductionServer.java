@@ -325,9 +325,7 @@ public final class IntroductionServer extends TransferThread {
 		}
 		finally {
 			Closer.close(inputStream);
-			// TODO: Wire in when build 1210 is released: Closer.close(bucket);
-			if(bucket != null)
-				bucket.free();
+			Closer.close(bucket);
 			removeFetch(state);
 		}
 	}
