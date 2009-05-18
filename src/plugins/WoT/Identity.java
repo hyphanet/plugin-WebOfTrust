@@ -86,7 +86,12 @@ public class Identity {
 	protected Identity(FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException {
 		// We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
 		setRequestURI(newRequestURI.setSuggestedEdition(0));
-		setNewEditionHint(newRequestURI.getEdition());
+		try {
+			mLatestEditionHint = newRequestURI.getEdition();
+		}
+		catch(IllegalStateException e) {
+			mLatestEditionHint = 0;
+		}
 		mID = getIDFromURI(getRequestURI());
 		
 		mAddedDate = CurrentTimeUTC.get();
