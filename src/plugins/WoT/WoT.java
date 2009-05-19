@@ -1117,7 +1117,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 			score.setRank(rank + 1);
 			
 			if(scoreWasNegative && score.getScore() >= 0) {
-				target.decreaseEdition();
+				target.markForRefetch();
 				storeWithoutCommit(target);
 				Logger.debug(this, "Score changed from negative/null to positive, refetching " + target.getRequestURI());
 				if(mFetcher != null) /* For JUnit */

@@ -36,8 +36,12 @@ public class Identity {
 	protected final String mID;
 	
 	/** The USK requestURI used to fetch this identity from Freenet. It's edition number is the one of the data which we have currently stored
-	 * in the database (the values of this identity, trust values, etc.) */
+	 * in the database (the values of this identity, trust values, etc.) if mCurrentEditionWasFetched is true, otherwise it is the next
+	 * edition number which should be downloaded. */
 	protected FreenetURI mRequestURI;
+	
+	/** True if the current edition stored in this identity's request URI was fetched, false if it yet has to be downloaded. */
+	protected boolean mCurrentEditionWasFetched;
 	
 	/** When obtaining identities through other people's trust lists instead of identity introduction, we store the edition number they have specified
 	 * and pass it as a hint to the USKManager. */
@@ -92,6 +96,8 @@ public class Identity {
 		catch(IllegalStateException e) {
 			mLatestEditionHint = 0;
 		}
+		mCurrentEditionWasFetched = false;
+		
 		mID = getIDFromURI(getRequestURI());
 		
 		mAddedDate = CurrentTimeUTC.get();
@@ -176,6 +182,10 @@ public class Identity {
 	public synchronized long getEdition() {
 		return getRequestURI().getEdition();
 	}
+	
+	public synchronized boolean currentEditionWasFetched() {
+		return mCurrentEditionWasFetched;
+	}
 
 	/**
 	 * Sets the edition of the last fetched version of this identity.
@@ -192,6 +202,7 @@ public class Identity {
 		
 		if(newEdition > currentEdition) {
 			mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
+			mCurrentEditionWasFetched = false;
 			setNewEditionHint(newEdition);
 			updated();
 		}
@@ -210,22 +221,25 @@ public class Identity {
 	}
 	
 	/**
-	 * Decrease the currentEdition by one.
-	 * 
-	 * Called by the WoT when the score of an identity changes from negative or 0 to > 0 to make the IdentityFetcher re-download
-	 * it's current trust list. This is necessary because we do not create the trusted identities of someone if he has a negative score. 
+	 * Decrease the current edition by one. Used by {@link markForRefetch}.
 	 */
-	protected synchronized void decreaseEdition() {
-		long newEdition = getEdition() - 1;
-		
-		if(newEdition < 0) {
-			newEdition = 0;
-			/* If the edition is 0, the fetcher decides via last fetched date whether to fetch current or next */
-			mLastFetchedDate = new Date(0);
-		}
-		
-		mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
+	private synchronized void decreaseEdition() {
+		mRequestURI = mRequestURI.setSuggestedEdition(Math.max(getEdition() - 1, 0));
 		// TODO: I decided that we should not decrease the edition hint here. Think about that again.
+	}
+	
+	/**
+	 * Marks the current edition of this identity as not fetched if it was fetched already.
+	 * If it was not fetched, decreases the edition of the identity by one.
+	 * 
+	 * Called by the {@link WoT} when the {@link Score} of an identity changes from negative or 0 to > 0 to make the {@link IdentityFetcher} re-download it's
+	 * current trust list. This is necessary because we do not create the trusted identities of someone if he has a negative score. 
+	 */
+	protected synchronized void markForRefetch() {
+		if(mCurrentEditionWasFetched)
+			mCurrentEditionWasFetched = false;
+		else
+			decreaseEdition();
 	}
 	
 	/**
@@ -258,9 +272,11 @@ public class Identity {
 	}
 	
 	/**
-	 * Has to be called when the identity was fetched.
+	 * Has to be called when the identity was fetched. Must not be called before setEdition!
 	 */
 	protected synchronized void onFetched() {
+		mCurrentEditionWasFetched = true;
+		
 		if(mFirstFetchedDate.equals(new Date(0)))
 			mFirstFetchedDate = CurrentTimeUTC.get();
 		

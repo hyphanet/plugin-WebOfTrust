@@ -109,6 +109,8 @@ public class OwnIdentity extends Identity {
 	protected synchronized void setEdition(long edition) throws InvalidParameterException {
 		super.setEdition(edition);
 		
+		mCurrentEditionWasFetched = true;
+		
 		if(edition > mInsertURI.getEdition()) {
 			mInsertURI = mInsertURI.setSuggestedEdition(edition);
 			updated();
@@ -120,7 +122,7 @@ public class OwnIdentity extends Identity {
 	 * Only needed for normal identities.
 	 */
 	@Override
-	protected synchronized void decreaseEdition() {
+	protected synchronized void markForRefetch() {
 		return;
 	}
 	

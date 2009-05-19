@@ -71,21 +71,40 @@ public class IdentityFetcher implements USKRetrieverCallback {
 	 * Fetches an identity from Freenet, using the current edition number and edition hint stored in the identity.
 	 * If the identity is already being fetched, passes the current edition hint stored in the identity to the USKManager.
 	 * 
+	 * If there is already a request for a newer USK, the request is cancelled and a fetch for the given older USK is started.
+	 * This has to be done so that trust lists of identities can be re-fetched as soon as their score changes from negative to positive - that is necessary
+	 * because we do not import identities from trust lists for which the owner has a negative score.
+	 * 
 	 * @param identity the Identity to fetch
-	 * @param nextEdition If set to true, tries to fetch the next edition of the identity.
 	 */
 	public synchronized void fetch(Identity identity) {
 		try {
 			USK usk;
 			
-			if(!identity.getFirstFetchedDate().equals(new Date(0))) // We already have the current edition, fetch the next ...
+			synchronized(identity) {
+			USKRetriever retriever = mRequests.get(identity.getID());
+				
+			if(identity.currentEditionWasFetched())
 				usk = USK.create(identity.getRequestURI().setSuggestedEdition(identity.getEdition() + 1));
-			else
+			else {
 				usk = USK.create(identity.getRequestURI());
+				
+				if(retriever != null) {
+					// The identity has a new "mandatory" edition number stored which we must fetch, so we restart the request because the edition number might
+					// be lower than the last one which the USKRetriever has fetched.
+					Logger.minor(this, "The current edition of the given identity is marked as not fetched, re-creating the USKRetriever for " + usk);
+					retriever.cancel();
+					mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
+					mRequests.remove(identity.getID());
+					retriever = null;
+				}
+			}
 
-			fetch(identity, usk);
+			if(retriever == null)
+				mRequests.put(identity.getID(), fetch(usk));
 			
 			mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
+			}
 
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Request restart failed: "+e, e);
@@ -97,29 +116,13 @@ public class IdentityFetcher implements USKRetrieverCallback {
 	 * started. This has to be done so that trust lists of identities can be re-fetched as soon as their score changes from negative to positive - that is 
 	 * necessary because we do not import identities from trust lists for which the owner has a negative score.
 	 */
-	private synchronized void fetch(Identity identity, USK usk) throws MalformedURLException {
-		USKRetriever ret = mRequests.get(identity.getID());
-		if(ret != null) {
-			// FIXME XXX: This code sucks because it ALWAYS cancels the request, even if we only received a new edition hint!
-			// It's purpose is to allow re-downloading of already downloaded identities: We sometimes need to do that, for example
-			// at first usage of the plugin: The seed identity's trusted identities will not be imported as long as there is no own identity which trusts the seed.
-			// Therefore, when the user creates an own identity, we decrease the edition number so that the seed is re-feteched.
-			//
-			// We should rather add a "mCurrentEditionWasFetched" to identity to store whether the current stored edition was fetched.
-			ret.cancel();
-			mUSKManager.unsubscribeContent(ret.getOriginalUSK(), ret, true);
-			mRequests.remove(identity.getID());
-		}
-		
-		/* TODO: check whether we are downloading the uri already. probably only as debug code to see if it actually happens */
+	private synchronized USKRetriever fetch(USK usk) throws MalformedURLException {
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		Logger.debug(this, "Trying to start fetching uri " + usk); 
 		/* FIXME: Toad: Does this also eat a RequestStarter priority class? You should javadoc which priority class constants to use! */
-		ret = mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
-		
-		mRequests.put(identity.mID, ret);
+		return mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
 	}
 	
 	@Override
