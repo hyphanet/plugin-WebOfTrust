@@ -112,9 +112,7 @@ public class IdentityFetcher implements USKRetrieverCallback {
 	}
 	
 	/**
-	 * Fetches an identity with the given USK. If there is already a request for a newer USK, the request is cancelled and a fetch for the given older USK is
-	 * started. This has to be done so that trust lists of identities can be re-fetched as soon as their score changes from negative to positive - that is 
-	 * necessary because we do not import identities from trust lists for which the owner has a negative score.
+	 * Fetches the given USK and returns the new USKRetriever. Does not check whether there is already a fetch for that USK.
 	 */
 	private synchronized USKRetriever fetch(USK usk) throws MalformedURLException {
 		FetchContext fetchContext = mClient.getFetchContext();
