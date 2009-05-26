@@ -8,19 +8,15 @@ package plugins.WoT;
 
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.util.Date;
-import java.util.HashSet;
 import java.util.Hashtable;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
-import freenet.client.async.ClientGetter;
 import freenet.client.async.USKManager;
 import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
-import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
