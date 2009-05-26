@@ -221,6 +221,8 @@ public final class XMLTransformer {
 				if(identity.getEdition() > newEdition) {
 					Logger.debug(identity, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
 					return;
+				} else if(identity.getEdition() == newEdition && identity.currentEditionWasFetched()) {
+					Logger.debug(identity, "Fetched current edition which is marked as fetched already, not importing.");
 				}
 				
 				identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
@@ -258,7 +260,7 @@ public final class XMLTransformer {
 					 * Our policy is: We either import the whole trust list or nothing. We should not bias the trust system by allowing
 					 * the import of partial trust lists. Especially we should not ignore failing deletions of old trust objects. */
 					try {
-						boolean trusteeCreationAllowed = mWoT.getBestScore(identity) > 0 || identity instanceof OwnIdentity;
+						boolean positiveScore = mWoT.getBestScore(identity) > 0 || identity instanceof OwnIdentity;
 
 						Element trustListElement = (Element)identityElement.getElementsByTagName("TrustList").item(0);
 						NodeList trustList = trustListElement.getElementsByTagName("Trust");
@@ -272,11 +274,14 @@ public final class XMLTransformer {
 							Identity trustee = null;
 							try {
 								trustee = mWoT.getIdentityByURI(trusteeURI);
-								trustee.setNewEditionHint(trusteeURI.getEdition()); /* FIXME: We need to revert this upon rollback!! */
+								boolean editionHintUpdated = trustee.setNewEditionHint(trusteeURI.getEdition());
 								mWoT.storeWithoutCommit(trustee);
+								
+								if(editionHintUpdated && positiveScore)
+									mWoT.getIdentityFetcher().editionHintUpdated(trustee); /* FIXME: We need to revert this upon rollback!! */
 							}
 							catch(UnknownIdentityException e) {
-								if(trusteeCreationAllowed) { /* We only create trustees if the truster has a positive score */
+								if(positiveScore) { /* We only create trustees if the truster has a positive score */
 									trustee = new Identity(trusteeURI, null, false);
 									mWoT.storeWithoutCommit(trustee);
 									mWoT.getIdentityFetcher().fetch(trustee); /* FIXME: We need to revert this upon rollback!! */

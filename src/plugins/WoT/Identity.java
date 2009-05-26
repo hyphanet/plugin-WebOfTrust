@@ -212,12 +212,22 @@ public class Identity {
 		return mLatestEditionHint;
 	}
 	
-	protected synchronized void setNewEditionHint(long newLatestEditionHint) {
-		if(newLatestEditionHint < mLatestEditionHint)
-			Logger.minor(this, "Trying to set an older edition hint!");
-		
-		if(newLatestEditionHint > mLatestEditionHint)
+	/**
+	 * Set the "edition hint" of the identity to the given new one.
+	 * The "edition hint" is an edition number of which other identities have told us that it is the latest edition.
+	 * We only consider it as a hint because they might lie about the edition number, i.e. specify one which is way too high so that the identity won't be
+	 * fetched anymore.
+	 * 
+	 * @return True, if the given hint was newer than the already stored one. You have to tell the {@link IdentityFetcher} about that then.
+	 */
+	protected synchronized boolean setNewEditionHint(long newLatestEditionHint) {
+		if(newLatestEditionHint > mLatestEditionHint) {
 			mLatestEditionHint = newLatestEditionHint;
+			Logger.debug(this, "Received a new edition hint.");
+			return true;
+		}
+		
+		return false;
 	}
 	
 	/**

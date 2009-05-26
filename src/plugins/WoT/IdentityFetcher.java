@@ -112,6 +112,14 @@ public class IdentityFetcher implements USKRetrieverCallback {
 	}
 	
 	/**
+	 * Has to be called when the edition hint of the given identity was updated. Tells the USKManager about the new hint.
+	 */
+	public synchronized void editionHintUpdated(Identity identity) {
+		// TODO: Reconsider this
+		fetch(identity);
+	}
+	
+	/**
 	 * Fetches the given USK and returns the new USKRetriever. Does not check whether there is already a fetch for that USK.
 	 */
 	private synchronized USKRetriever fetch(USK usk) throws MalformedURLException {
