@@ -22,7 +22,13 @@ public class Version {
 	 * 
 	 * I have set this to 4000 to allow encoding marketing versions into real versions.
 	 * Long provides plenty of leeway! Toad. */
-	public static long version = 4000;
+	public static final long version = 4000;
+	
+	/** Published as an identity property if you own a seed identity. */
+	public static final long mandatoryVersion = 4000;
+	
+	/** Published as an identity property if you own a seed identity. */
+	public static final long latestVersion = version;
 
 	
 	static String getSvnRevision() {

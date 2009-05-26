@@ -6,6 +6,8 @@ package plugins.WoT;
 import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Map.Entry;
 
 import plugins.WoT.exceptions.DuplicateIdentityException;
 import plugins.WoT.exceptions.DuplicateScoreException;
@@ -80,6 +82,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		"USK@fWK9InP~vG6HnTDm3wiJgvh6ULJQaU5XYTkXXNuKTTk,GnZgrilXSYjD~xrD6l4~5x~Nspz3aFe2eYXWRvaNRHU,AQACAAE/WoT/0" // xor
 		/* FIXME: Add the developers. But first we need to debug :) */
 	};
+	
+	private static final String SEED_IDENTITY_MANDATORY_VERSION_PROPERTY = "MandatoryVersion";
+	private static final String SEED_IDENTITY_LATEST_VERSION_PROPERTY = "LatestVersion";
+	
 	
 
 	/* References from the node */
@@ -386,6 +392,10 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 					ownSeed.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
 					ownSeed.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY,
 							Integer.toString(IntroductionServer.SEED_IDENTITY_PUZZLE_COUNT));
+					
+					ownSeed.setProperty(WOT_NAME + "." + SEED_IDENTITY_MANDATORY_VERSION_PROPERTY, Long.toString(Version.mandatoryVersion));
+					ownSeed.setProperty(WOT_NAME + "." + SEED_IDENTITY_LATEST_VERSION_PROPERTY, Long.toString(Version.latestVersion));
+					
 					storeAndCommit(ownSeed);
 				}
 				else {
@@ -410,6 +420,46 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 			}
 		}
+	}
+	
+	/**
+	 * @param clientApp Can be "WoT" or "Freetalk".
+	 * @param onlyGetMandatory Set to true if not the latest version shall be returned but the latest mandatory version.
+	 * @return The recommended version of the given client-app which is reported by the majority (> 50%) of the seed identities.
+	 */
+	public synchronized long getLatestReportedVersion(String clientApp, boolean onlyGetMandatory) {
+		Hashtable<Long, Integer> votesForVersions = new Hashtable<Long, Integer>(SEED_IDENTITIES.length);
+		
+		for(String seedURI : SEED_IDENTITIES) {
+			Identity seed;
+			
+			try { 
+				seed = getIdentityByURI(seedURI);
+				if(!(seed instanceof OwnIdentity)) {
+					
+					try {
+						 long newVersion = Long.parseLong(seed.getProperty(clientApp + "." + (onlyGetMandatory ? SEED_IDENTITY_MANDATORY_VERSION_PROPERTY :
+							 												SEED_IDENTITY_LATEST_VERSION_PROPERTY)));
+						 
+						 Integer oldVoteCount = votesForVersions.get(newVersion);
+						 votesForVersions.put(newVersion, oldVoteCount == null ? 1 : oldVoteCount + 1);
+					}
+					catch(InvalidParameterException e) {
+						/* Seed does not specify a version */
+					}
+				}
+			}
+			catch (Exception e) {
+				Logger.debug(this, "SHOULD NOT HAPPEN!", e);
+			}
+		}
+		
+		for(Entry<Long, Integer> entry: votesForVersions.entrySet()) {
+			if(entry.getValue() > (SEED_IDENTITIES.length/2))
+				return entry.getKey();
+		}
+		
+		return onlyGetMandatory ? Version.mandatoryVersion : Version.latestVersion;
 	}
 	
 
