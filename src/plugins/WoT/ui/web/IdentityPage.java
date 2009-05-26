@@ -18,11 +18,15 @@
  */
 package plugins.WoT.ui.web;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Iterator;
+import java.util.TimeZone;
 
 import plugins.WoT.Identity;
 import plugins.WoT.Trust;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -32,6 +36,8 @@ import freenet.support.api.HTTPRequest;
  * @version $Id$
  */
 public class IdentityPage extends WebPageImpl {
+	
+	private final static SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	/** The identity to show trust relationships of. */
 	private final Identity identity;
@@ -61,6 +67,7 @@ public class IdentityPage extends WebPageImpl {
 			 * to reduce the time the whole WoT is locked. */
 			makeURIBox();
 			makeServicesBox();
+			makeStatisticsBox();
 		}
 		
 		HTMLNode trusteeTrustsNode = addContentBox("Identities that '" + identity.getNickname() + "' trusts");
@@ -117,5 +124,53 @@ public class IdentityPage extends WebPageImpl {
 		}
 		boxContent.addChild("p", contexts.toString());
 	}
+	
+	private String formatTimeDelta(long delta) {
+		long days = delta / (1000 * 60 * 60 * 24);
+		long hours = (delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60);
+		long minutes = ((delta % (1000 * 60 * 60 * 24)) % (1000 * 60 * 60)) / (1000 * 60);
+		
+		if(days > 0)
+			return days + "d " + hours + "h " + minutes + "m ago";
+		else if(hours > 0)
+			return hours + "h " + minutes + "m ago";
+		else
+			return minutes + "m ago";
+	}
+	
+	private void makeStatisticsBox() {
+		HTMLNode box = addContentBox("Statistics about identity '" + identity.getNickname() + "'");
+		
+		long currentTime = CurrentTimeUTC.getInMillis();
+		
+		Date addedDate = identity.getAddedDate();
+		String addedString;
+		synchronized(mDateFormat) {
+			mDateFormat.setTimeZone(TimeZone.getDefault());
+			addedString = mDateFormat.format(addedDate) + " (" + formatTimeDelta(currentTime - addedDate.getTime()) + ")";
+		}
 
+		Date firstFetched = identity.getFirstFetchedDate();
+		Date lastFetched = identity.getLastFetchedDate();
+		String firstFetchedString;
+		String lastFetchedString;
+		if(!firstFetched.equals(new Date(0))) {
+			synchronized(mDateFormat) {
+				mDateFormat.setTimeZone(TimeZone.getDefault());
+				/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
+				firstFetchedString = mDateFormat.format(firstFetched) + " (" + formatTimeDelta(currentTime - firstFetched.getTime()) + ")";
+				lastFetchedString = mDateFormat.format(lastFetched) + " (" + formatTimeDelta(currentTime - lastFetched.getTime()) + ")";
+			}
+		}
+		else {
+			firstFetchedString = "never";
+			lastFetchedString = "never";
+		}
+		
+		box.addChild("p", "Added: " + addedString); 
+		box.addChild("p", "First fetched: " + firstFetchedString);
+		box.addChild("p", "Last fetched: " + lastFetchedString);
+	}
+
+	
 }
