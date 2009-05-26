@@ -4,6 +4,7 @@
 package plugins.WoT.ui.web;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -20,6 +21,7 @@ import com.db4o.ObjectSet;
 
 import freenet.keys.FreenetURI;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -32,8 +34,6 @@ import freenet.support.api.HTTPRequest;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class KnownIdentitiesPage extends WebPageImpl {
-
-	private final static SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	/**
 	 * Creates a new KnownIdentitiesPage
@@ -168,7 +168,20 @@ public class KnownIdentitiesPage extends WebPageImpl {
 
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "select", "View this identity's Web of Trust" });
 	}
-/**
+	
+	private String formatTimeDelta(long delta) {
+		long days = delta / (1000 * 60 * 60 * 24);
+		long hours = (delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60);
+		
+		if(days > 3)
+			return days + "d ago";
+		else if(days > 0)
+			return days + "d " + hours + "h ago";
+		else
+			return hours + "h ago";
+	}
+	
+	/**
 	 * Makes the list of Identities known by the tree owner.
 	 * 
 	 * @param db a reference to the database 
@@ -183,6 +196,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		HTMLNode identitiesTable = listBoxContent.addChild("table", "border", "0");
 		HTMLNode row=identitiesTable.addChild("tr");
 		row.addChild("th", "Nickname");
+		row.addChild("th", "Added");
 		row.addChild("th", "Fetched");
 		row.addChild("th", "Trustlist");
 		row.addChild("th", "Score (Rank)");
@@ -191,24 +205,30 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		row.addChild("th", "Trustees");
 		
 		synchronized(wot) {
+		long currentTime = CurrentTimeUTC.getInMillis();
+			
 		for(Identity id : wot.getAllIdentities()) {
 			if(id == treeOwner) continue;
 
 			row=identitiesTable.addChild("tr");
 			
 			// NickName
-			row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"})
-				.addChild("a", "href", "?ShowIdentity&id=" + id.getID(), id.getNickname());
+			HTMLNode nameLink = row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"})
+				.addChild("a", "href", "?ShowIdentity&id=" + id.getID());
 			
+			String nickName = id.getNickname();
+			if(nickName != null)
+				nameLink.addChild("#", nickName);
+			else
+				nameLink.addChild("span", "class", "alert-error").addChild("#", "Not downloaded yet");
+			
+			// Added date
+			row.addChild("td", formatTimeDelta(currentTime - id.getAddedDate().getTime()));
+			
+			// Last fetched date
 			Date lastFetched = id.getLastFetchedDate();
-
-			if(!lastFetched.equals(new Date(0))) {
-			synchronized(mDateFormat) {
-				mDateFormat.setTimeZone(TimeZone.getDefault());
-				/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
-				row.addChild("td", mDateFormat.format(lastFetched));
-			}
-			}
+			if(!lastFetched.equals(new Date(0)))
+				row.addChild("td", formatTimeDelta(currentTime - lastFetched.getTime()));
 			else
 				row.addChild("td", "Never");
 			
