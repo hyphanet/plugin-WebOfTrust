@@ -172,13 +172,16 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	private String formatTimeDelta(long delta) {
 		long days = delta / (1000 * 60 * 60 * 24);
 		long hours = (delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60);
+		long minutes = ((delta % (1000 * 60 * 60 * 24)) % (1000 * 60 * 60)) / (1000 * 60);
 		
 		if(days > 3)
 			return days + "d ago";
 		else if(days > 0)
 			return days + "d " + hours + "h ago";
-		else
+		else if(hours > 0)
 			return hours + "h ago";
+		else
+			return minutes + "m ago"; 
 	}
 	
 	/**
