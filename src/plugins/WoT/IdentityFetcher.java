@@ -127,12 +127,10 @@ public class IdentityFetcher implements USKRetrieverCallback {
 		return mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
 	}
 	
-	@Override
 	public short getPollingPriorityNormal() {
 		return RequestStarter.UPDATE_PRIORITY_CLASS;  /* FIXME: Is this correct? */
 	}
 
-	@Override
 	public short getPollingPriorityProgress() {
 		return RequestStarter.UPDATE_PRIORITY_CLASS; /* FIXME: Is this correct? */
 	}
@@ -158,7 +156,6 @@ public class IdentityFetcher implements USKRetrieverCallback {
 	/**
 	 * Called when an identity is successfully fetched.
 	 */
-	@Override
 	public void onFound(USK origUSK, long edition, FetchResult result) {
 		Logger.debug(this, "Fetched identity: " + origUSK);
 		

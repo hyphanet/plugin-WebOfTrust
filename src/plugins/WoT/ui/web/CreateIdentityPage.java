@@ -4,6 +4,7 @@
 package plugins.WoT.ui.web;
 
 import plugins.WoT.OwnIdentity;
+import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -22,8 +23,8 @@ public class CreateIdentityPage extends WebPageImpl {
 	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 * @param myRequest The request sent by the user.
 	 */
-	public CreateIdentityPage(WebInterface myWebInterface, HTTPRequest myRequest) {
-		super(myWebInterface, myRequest);
+	public CreateIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) {
+		super(toadlet, myRequest, context);
 	}
 
 	public void make() {

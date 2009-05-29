@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.ui.web;
 
+import freenet.clients.http.ToadletContext;
 import freenet.support.api.HTTPRequest;
 
 /**
@@ -14,8 +15,8 @@ public class ErrorPage extends WebPageImpl {
 	
 	private final Exception mError;
 
-	public ErrorPage(WebInterface myWebInterface, HTTPRequest myRequest, Exception myError) {
-		super(myWebInterface, myRequest);
+	public ErrorPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, Exception myError) {
+		super(toadlet, myRequest, context);
 		mError = myError;
 	}
 

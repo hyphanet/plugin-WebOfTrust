@@ -4,5 +4,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/fred"/>
 	<classpathentry kind="lib" path="/fred/lib/freenet-ext.jar"/>
+	<classpathentry kind="lib" path="/usr/share/java/junit.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>

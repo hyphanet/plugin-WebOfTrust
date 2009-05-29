@@ -5,6 +5,7 @@ package plugins.WoT.ui.web;
 
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -19,8 +20,8 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 	
 	private final OwnIdentity mIdentity;
 
-	public DeleteOwnIdentityPage(WebInterface myWebInterface, HTTPRequest myRequest) throws UnknownIdentityException {
-		super(myWebInterface, myRequest);
+	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException {
+		super(toadlet, myRequest, context);
 		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
 	}
 

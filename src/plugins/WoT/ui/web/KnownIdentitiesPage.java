@@ -19,6 +19,7 @@ import plugins.WoT.exceptions.NotTrustedException;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
+import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
@@ -35,14 +36,17 @@ import freenet.support.api.HTTPRequest;
  */
 public class KnownIdentitiesPage extends WebPageImpl {
 
+	private final String identitiesPageURI;
+	
 	/**
 	 * Creates a new KnownIdentitiesPage
 	 * 
 	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 * @param myRequest The request sent by the user.
 	 */
-	public KnownIdentitiesPage(WebInterface myWebInterface, HTTPRequest myRequest) {
-		super(myWebInterface, myRequest);
+	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) {
+		super(toadlet, myRequest, context);
+		identitiesPageURI = toadlet.webInterface.getURI() + "/ShowIdentity";
 	}
 
 	public void make() {
@@ -217,7 +221,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			// NickName
 			HTMLNode nameLink = row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"})
-				.addChild("a", "href", "?ShowIdentity&id=" + id.getID());
+				.addChild("a", "href", identitiesPageURI+"?id=" + id.getID());
 			
 			String nickName = id.getNickname();
 			if(nickName != null)
@@ -255,12 +259,12 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			// Nb Trusters
 			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-			trustersCell.addChild(new HTMLNode("a", "href", uri + "?ShowIdentity&id="+id.getID(),
+			trustersCell.addChild(new HTMLNode("a", "href", identitiesPageURI + "?&id="+id.getID(),
 					Long.toString(wot.getReceivedTrusts(id).size())));
 			
 			// Nb Trustees
 			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-			trusteesCell.addChild(new HTMLNode("a", "href", uri + "?ShowIdentity&id="+id.getID(),
+			trusteesCell.addChild(new HTMLNode("a", "href", identitiesPageURI + "?&id="+id.getID(),
 					Long.toString(wot.getGivenTrusts(id).size())));
 		}
 		}

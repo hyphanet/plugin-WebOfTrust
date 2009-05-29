@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import plugins.WoT.Identity;
 import plugins.WoT.Trust;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import freenet.clients.http.ToadletContext;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -50,8 +51,8 @@ public class IdentityPage extends WebPageImpl {
 	 * @param myRequest The request sent by the user.
 	 * @throws UnknownIdentityException 
 	 */
-	public IdentityPage(WebInterface myWebInterface, HTTPRequest myRequest) throws UnknownIdentityException {
-		super(myWebInterface, myRequest);
+	public IdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException {
+		super(toadlet, myRequest, context);
 		
 		identity = wot.getIdentityByID(request.getParam("id")); 
 	}

@@ -7,6 +7,7 @@ import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.introduction.IntroductionClient;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
+import freenet.clients.http.ToadletContext;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;
@@ -27,8 +28,8 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	 * @param myRequest The request sent by the user.
 	 * @throws UnknownIdentityException 
 	 */
-	public IntroduceIdentityPage(WebInterface myWebInterface, HTTPRequest myRequest) throws UnknownIdentityException {
-		super(myWebInterface, myRequest);
+	public IntroduceIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException {
+		super(toadlet, myRequest, context);
 		
 		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
 		mClient = wot.getIntroductionClient();

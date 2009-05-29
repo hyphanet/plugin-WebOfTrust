@@ -6,6 +6,7 @@ package plugins.WoT.ui.web;
 import plugins.WoT.Version;
 import plugins.WoT.WoT;
 import plugins.WoT.introduction.IntroductionPuzzleStore;
+import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -24,8 +25,8 @@ public class HomePage extends WebPageImpl {
 	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 * @param myRequest The request sent by the user.
 	 */
-	public HomePage(WebInterface myWebInterface, HTTPRequest myRequest) {
-		super(myWebInterface, myRequest);
+	public HomePage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) {
+		super(toadlet, myRequest, context);
 	}
 
 	public void make() {

@@ -10,7 +10,10 @@ import java.util.Iterator;
 
 import plugins.WoT.WoT;
 
+import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
+import freenet.clients.http.PageNode;
+import freenet.clients.http.ToadletContext;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -35,6 +38,7 @@ public abstract class WebPageImpl implements WebPage {
 
 	/** HTMLNode representing the web page */
 	protected final HTMLNode pageNode;
+	protected final HTMLNode contentNode;
 
 	/** The request performed by the user */
 	protected final HTTPRequest request;
@@ -49,13 +53,16 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 * @param myRequest The request sent by the user.
 	 */
-	public WebPageImpl(WebInterface myWebInterface, HTTPRequest myRequest) {
+	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx) {
+		WebInterface myWebInterface = toadlet.webInterface;
 		wot = myWebInterface.getWoT();
-		uri = myWebInterface.getURI();
+		uri = toadlet.getURI();
 		
 		pr = wot.getPluginRespirator();
 		this.pm = myWebInterface.getPageMaker();
-		this.pageNode = pm.getPageNode("Web of Trust", null);
+		PageNode page = pm.getPageNode("Web of Trust", ctx);
+		this.pageNode = page.outer;
+		this.contentNode = page.content;
 		this.request = myRequest;
 		
 		this.contentBoxes = new ArrayList<HTMLNode>();
@@ -68,16 +75,12 @@ public abstract class WebPageImpl implements WebPage {
 	 */
 	public String toHTML() {
 		
-		HTMLNode contentNode = pm.getContentNode(pageNode);
-		
 		// We add every ContentBoxes
 		Iterator<HTMLNode> contentBox = contentBoxes.iterator();
 		while(contentBox.hasNext()) contentNode.addChild(contentBox.next());
 
 		/* FIXME: This code does seem to get executed but the test box is invisible. Why? */
-		HTMLNode test = pm.getInfobox("infobox-alert", "Test");
-		test.addChild("#", "Test");
-		pageNode.addChild(test);
+		pm.getInfobox("infobox-alert", "Test", contentNode).addChild("#", "Test");
 		
 		// Generate the HTML output
 		return pageNode.generate();
@@ -90,9 +93,9 @@ public abstract class WebPageImpl implements WebPage {
 
 	 */
 	public HTMLNode addErrorBox(String title) {
-		HTMLNode errorBox = pm.getInfobox("infobox-alert", title);
-		contentBoxes.add(errorBox);
-		return pm.getContentNode(errorBox);
+		InfoboxNode infobox = pm.getInfobox("infobox-alert", title);
+		contentBoxes.add(infobox.outer);
+		return infobox.content;
 	}
 	
 	/**
@@ -102,7 +105,10 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param message The error message that will be displayed
 	 */
 	public HTMLNode addErrorBox(String title, Exception error) {
-		HTMLNode errorBox = pm.getInfobox("infobox-alert", title);
+		InfoboxNode infobox = pm.getInfobox("infobox-alert", title);
+		HTMLNode errorBox = infobox.outer;
+		HTMLNode errorInner = infobox.content;
+		// FIXME use errorInner not errorBox to add stack trace
 		
 		String message = error.getLocalizedMessage();
 		if(message == null || message.equals(""))
@@ -116,14 +122,15 @@ public abstract class WebPageImpl implements WebPage {
 		}
 		
 		contentBoxes.add(errorBox);
-		return pm.getContentNode(errorBox);
+		return errorInner;
 	}
 	
 	public HTMLNode addErrorBox(String title, String message) {
-		HTMLNode errorBox = pm.getInfobox("infobox-alert", title);
+		InfoboxNode infobox = pm.getInfobox("infobox-alert", title);
+		HTMLNode errorBox = infobox.outer;
 		errorBox.addChild("p", message);
 		contentBoxes.add(errorBox);
-		return pm.getContentNode(errorBox);
+		return infobox.content;
 	}
 	
 	/**
@@ -133,9 +140,9 @@ public abstract class WebPageImpl implements WebPage {
 	 * @return the contentNode of the newly created InfoBox
 	 */
 	protected HTMLNode addContentBox(String title) {
-		
-		HTMLNode box = pm.getInfobox(title);
-		contentBoxes.add(box);
-		return pm.getContentNode(box);
+
+		InfoboxNode infobox = pm.getInfobox(title);
+		contentBoxes.add(infobox.outer);
+		return infobox.content;
 	}
 }

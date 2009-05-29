@@ -11,6 +11,7 @@ import plugins.WoT.OwnIdentity;
 
 import com.db4o.ObjectSet;
 
+import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -24,15 +25,23 @@ public class OwnIdentitiesPage extends WebPageImpl {
 
 	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
+	private final String createIdentityURI;
+	private final String editIdentityURI;
+	private final String deleteIdentityURI;
+	private final String introduceIdentityURI;
+	
 	/**
 	 * Creates a new OwnIdentitiesPage.
 	 * 
 	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 * @param myRequest The request sent by the user.
 	 */
-	public OwnIdentitiesPage(WebInterface myWebInterface, HTTPRequest myRequest) {
-		super(myWebInterface, myRequest);
-		
+	public OwnIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) {
+		super(toadlet, myRequest, context);
+		createIdentityURI = toadlet.webInterface.getURI()+"/CreateIdentity";
+		editIdentityURI = toadlet.webInterface.getURI()+"/EditOwnIdentity";
+		deleteIdentityURI = toadlet.webInterface.getURI()+"/DeleteOwnIdentity";
+		introduceIdentityURI = toadlet.webInterface.getURI()+"/IntroduceIdentity";
 	}
 
 	public void make() {
@@ -103,24 +112,24 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				
 				HTMLNode manageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				
-				HTMLNode editForm = pr.addFormChild(manageCell, uri, "EditIdentity");
+				HTMLNode editForm = pr.addFormChild(manageCell, editIdentityURI, "EditIdentity");
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EditIdentity" });
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", "Edit" });
 								
-				HTMLNode deleteForm = pr.addFormChild(manageCell, uri, "DeleteIdentity");
+				HTMLNode deleteForm = pr.addFormChild(manageCell, deleteIdentityURI, "DeleteIdentity");
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "DeleteIdentity" });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 				
-				HTMLNode introduceForm = pr.addFormChild(manageCell, uri, "IntroduceIdentity");
+				HTMLNode introduceForm = pr.addFormChild(manageCell, introduceIdentityURI, "IntroduceIdentity");
 				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "IntroduceIdentity" });
 				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", "Introduce" });				
 			}
 		}
 	
-		HTMLNode createForm = pr.addFormChild(boxContent, uri, "CreateIdentity");
+		HTMLNode createForm = pr.addFormChild(boxContent, createIdentityURI, "CreateIdentity");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "CreateIdentity" });
 		createForm.addChild("span", new String[] { "title", "style" }, 
 				new String[] { "No spaces or special characters.", "border-bottom: 1px dotted; cursor: help;"} , "Nickname : ");

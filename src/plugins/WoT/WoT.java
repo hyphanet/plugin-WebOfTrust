@@ -55,7 +55,7 @@ import freenet.support.api.HTTPRequest;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
+public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
 	FredPluginL10n, FredPluginWithClassLoader {
 	
 	/* Constants */
@@ -64,7 +64,7 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 	public static final int DATABASE_FORMAT_VERSION = -99;
 	
 	/** The relative path of the plugin on Freenet's web interface */
-	public static final String SELF_URI = "/plugins/plugins.WoT.WoT";
+	public static final String SELF_URI = "/WoT";
 	
 	/**
 	 * The "name" of this web of trust. It is included in the document name of identity URIs. For an example, see the SEED_IDENTITIES
@@ -468,6 +468,14 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		
 		/* We use single try/catch blocks so that failure of termination of one service does not prevent termination of the others */
 		try {
+			if(mWebInterface != null)
+				this.mWebInterface.unload();
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+		
+		try {
 			if(mIntroductionClient != null)
 				mIntroductionClient.terminate();
 		}
@@ -515,27 +523,6 @@ public class WoT implements FredPlugin, FredPluginHTTP, FredPluginThreadless, Fr
 		}
 
 		Logger.debug(this, "WoT plugin terminated.");
-	}
-
-	/**
-	 * Inherited event handler from FredPluginHTTP, handled in <code>class WebInterface</code>.
-	 */
-	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {	
-		return mWebInterface.handleHTTPGet(request);
-	}
-
-	/**
-	 * Inherited event handler from FredPluginHTTP, handled in <code>class WebInterface</code>.
-	 */
-	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
-		return mWebInterface.handleHTTPPost(request);
-	}
-	
-	/**
-	 * Inherited event handler from FredPluginHTTP, handled in <code>class WebInterface</code>.
-	 */
-	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
-		return mWebInterface.handleHTTPPut(request);
 	}
 
 	/**

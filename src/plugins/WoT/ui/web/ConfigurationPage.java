@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 import plugins.WoT.Config;
 
+import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -19,8 +20,8 @@ public class ConfigurationPage extends WebPageImpl {
 	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 * @param myRequest The request sent by the user.
 	 */
-	public ConfigurationPage(WebInterface myWebInterface, HTTPRequest myRequest) {
-		super(myWebInterface, myRequest);
+	public ConfigurationPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) {
+		super(toadlet, myRequest, context);
 		// TODO Auto-generated constructor stub
 	}
 
