@@ -239,6 +239,7 @@ public class WebInterface {
 				introduceIdentityToadlet,
 				identityToadlet
 		}) container.unregister(t);
+		mPageMaker.removeNavigationCategory("Web of Trust");
 	}
 
 }
