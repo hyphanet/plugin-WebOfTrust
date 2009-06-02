@@ -745,12 +745,12 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		try {
 			if(identity instanceof OwnIdentity) {
 				OwnIdentity ownId = (OwnIdentity)identity;
-				mDB.delete(ownId.mInsertURI);
+				ownId.mInsertURI.removeFrom(mDB);
 				// mDB.delete(ownId.mCreationDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 				// mDB.delete(ownId.mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			}
 			// mDB.delete(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			mDB.delete(identity.mRequestURI);
+			identity.mRequestURI.removeFrom(mDB);
 			// mDB.delete(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			// mDB.delete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			// mDB.delete(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
