@@ -337,7 +337,7 @@ public final class XMLTransformer {
 	 * Creates an identity from an identity introduction, stores it in the database and returns the new identity.
 	 * If the identity already exists, the existing identity is returned.
 	 * 
-	 * @throws InvalidParameterException 
+	 * @throws InvalidParameterException If the XML format is unknown or if the puzzle owner does not allow introduction anymore.
 	 * @throws IOException 
 	 * @throws SAXException 
 	 */
@@ -364,7 +364,7 @@ public final class XMLTransformer {
 		
 		synchronized(mWoT) {
 			if(!puzzleOwner.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT))
-				throw new IllegalArgumentException("Trying to import an identity identroduction for an own identity which does not allow introduction.");
+				throw new InvalidParameterException("Trying to import an identity identroduction for an own identity which does not allow introduction.");
 			
 			try {
 				newIdentity = mWoT.getIdentityByURI(identityURI);
