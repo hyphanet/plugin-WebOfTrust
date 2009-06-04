@@ -124,9 +124,8 @@ public abstract class WebPageImpl implements WebPage {
 	
 	public HTMLNode addErrorBox(String title, String message) {
 		InfoboxNode infobox = pm.getInfobox("infobox-alert", title);
-		HTMLNode errorBox = infobox.outer;
-		errorBox.addChild("p", message);
-		contentBoxes.add(errorBox);
+		infobox.content.addChild("div", message);
+		contentBoxes.add(infobox.outer);
 		return infobox.content;
 	}
 	
