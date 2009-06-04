@@ -96,7 +96,7 @@ public class ScratchFilter extends AbstractBufferedImageOp {
         int width = src.getWidth();
         int height = src.getHeight();
         int numScratches = (int)(density * width * height / 100);
-ArrayList lines = new ArrayList();
+ArrayList<Line2D.Float> lines = new ArrayList<Line2D.Float>();
 {
         float l = length * width;
         Random random = new Random( seed );
@@ -128,7 +128,7 @@ if ( false ) {
             for ( int x = 0; x < width; x++ ) {
                 float sx = x, sy = y;
                 for ( int i = 0; i < numScratches; i++ ) {
-                    Line2D.Float l = (Line2D.Float)lines.get( i );
+                    Line2D.Float l = lines.get( i );
                     float dot = (l.x2-l.x1)*(sx-l.x1) + (l.y2-l.y1)*(sy-l.y1);
                     if ( dot > 0 )
                         inPixels[index] |= (1 << i );
