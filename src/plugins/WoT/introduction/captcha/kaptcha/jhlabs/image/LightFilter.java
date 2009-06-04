@@ -68,7 +68,7 @@ public class LightFilter extends WholeImageFilter {
 	private int bumpShape;
 	private float viewDistance = 10000.0f;
 	Material material;
-	private Vector lights;
+	private Vector<Light> lights;
 	private int colorSource = COLORS_FROM_IMAGE;
 	private int bumpSource = BUMPS_FROM_IMAGE;
 	private Function2D bumpFunction;
@@ -86,7 +86,7 @@ public class LightFilter extends WholeImageFilter {
 	private Vector3f tmpv, tmpv2;
 
 	public LightFilter() {
-		lights = new Vector();
+		lights = new Vector<Light>();
 		addLight(new DistantLight());
 		bumpHeight = 1.0f;
 		bumpSoftness = 5.0f;
@@ -197,8 +197,8 @@ public class LightFilter extends WholeImageFilter {
 	public void removeLight(Light light) {
 		lights.removeElement(light);
 	}
+	public Vector<Light> getLights() {
 	
-	public Vector getLights() {
 		return lights;
 	}
 	
