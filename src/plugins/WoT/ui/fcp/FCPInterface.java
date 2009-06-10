@@ -179,6 +179,9 @@ public final class FCPInterface implements FredPluginFCP {
     		final OwnIdentity treeOwner = mWoT.getOwnIdentityByID(treeOwnerID);
     		final Identity identity = mWoT.getIdentityByID(identityID);
 
+    		sfs.putOverwrite("Nickname", identity.getNickname());
+    		sfs.putOverwrite("RequestURI", identity.getRequestURI().toString());
+
     		try {
     			final Trust trust = mWoT.getTrust(treeOwner, identity);
     			sfs.putOverwrite("Trust", Byte.toString(trust.getValue()));
