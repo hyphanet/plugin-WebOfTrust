@@ -165,6 +165,7 @@ public final class FCPInterface implements FredPluginFCP {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "IdentityAdded");
     	sfs.putOverwrite("ID", identity.getID());
+    	sfs.putOverwrite("Nickname", identity.getNickname());
     	return sfs;
     }
 
