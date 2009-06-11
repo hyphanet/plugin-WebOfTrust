@@ -287,6 +287,8 @@ public final class FCPInterface implements FredPluginFCP {
 
 				if(getAll || trust.getTruster().hasContext(params.get("Context"))) {
 					sfs.putOverwrite("Identity" + i, trust.getTruster().getID());
+					sfs.putOverwrite("Nickname" + i, trust.getTruster().getNickname());
+					sfs.putOverwrite("RequestURI" + i, trust.getTruster().getRequestURI().toString());
 					sfs.putOverwrite("Value" + i, Byte.toString(trust.getValue()));
 					sfs.putOverwrite("Comment" + i, trust.getComment());
 					// TODO: Allow the client to select what data he wants
@@ -315,6 +317,8 @@ public final class FCPInterface implements FredPluginFCP {
 
 				if(getAll || trust.getTruster().hasContext(params.get("Context"))) {
 					sfs.putOverwrite("Identity" + i, trust.getTruster().getID());
+					sfs.putOverwrite("Nickname" + i, trust.getTruster().getNickname());
+					sfs.putOverwrite("RequestURI" + i, trust.getTruster().getRequestURI().toString());
 					sfs.putOverwrite("Value" + i, Byte.toString(trust.getValue()));
 					sfs.putOverwrite("Comment" + i, trust.getComment());
 					// TODO: Allow the client to select what data he wants
