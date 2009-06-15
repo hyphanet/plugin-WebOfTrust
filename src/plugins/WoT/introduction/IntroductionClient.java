@@ -35,7 +35,6 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
@@ -81,7 +80,6 @@ public final class IntroductionClient extends TransferThread  {
 	/* Objects from WoT */
 	
 	private WoT mWoT;
-	private ClientContext mClientContext;
 	
 	/** The container object which manages storage of the puzzles in the database, also used for synchronization */
 	private IntroductionPuzzleStore mPuzzleStore;
@@ -102,7 +100,6 @@ public final class IntroductionClient extends TransferThread  {
 		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Introduction Client");
 		
 		mWoT = myWoT;
-		mClientContext = mWoT.getPluginRespirator().getNode().clientCore.clientContext;
 		mPuzzleStore = mWoT.getIntroductionPuzzleStore();
 		mRandom = mWoT.getPluginRespirator().getNode().fastWeakRandom;
 		start();

@@ -22,6 +22,7 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestStarter;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TransferThread;
@@ -36,18 +37,18 @@ import freenet.support.io.NativeThread;
  */
 public final class IdentityInserter extends TransferThread {
 	
-	private static final int STARTUP_DELAY = 1 * 60 * 1000; /* FIXME: Tweak before release */
-	private static final int THREAD_PERIOD = 6 * 60 * 1000; /* FIXME: Tweak before release */
+	private static final int STARTUP_DELAY = 1 * 60 * 1000;
+	private static final int THREAD_PERIOD = 10 * 60 * 1000;
 	
 	/**
 	 * The minimal time for which an identity must not have changed before we insert it.
 	 */
-	private static final int MIN_DELAY_BEFORE_INSERT = 5 * 60 * 1000; /* FIXME: Tweak before release */
+	private static final int MIN_DELAY_BEFORE_INSERT = 15 * 60 * 1000;
 	
 	/**
 	 * The maximal delay for which an identity insert can be delayed (relative to the last insert) due to continuous changes.
 	 */
-	private static final int MAX_DELAY_BEFORE_INSERT = 10 * 60 * 1000; /* FIXME: Tweak before release */
+	private static final int MAX_DELAY_BEFORE_INSERT = 30 * 60 * 1000;
 	
 	/**
 	 * The amount of time after which we insert a new edition of an identity even though it did not change.
@@ -147,14 +148,11 @@ public final class IdentityInserter extends TransferThread {
 			if(identity.getLastInsertDate().after(new Date(0)))
 				++edition;
 			
-			/* FIXME: Toad: Are these parameters correct? */
 			InsertBlock ib = new InsertBlock(tempB, null, identity.getInsertURI().setSuggestedEdition(edition));
 			InsertContext ictx = mClient.getInsertContext(true);
 			
-			/* FIXME: are these parameters correct? */
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			// FIXME: Set to a reasonable value before release, PluginManager default is interactive priority
-			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
+			pu.setPriorityClass(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, mClientContext, null);
 			addInsert(pu);
 			tempB = null;
 			
@@ -164,8 +162,7 @@ public final class IdentityInserter extends TransferThread {
 			Logger.error(this, "Error during insert of identity '" + identity.getNickname() + "'", e);
 		}
 		finally {
-			if(tempB != null)
-				tempB.free();
+			Closer.close(tempB);
 			Closer.close(os);
 		}
 	}
@@ -210,30 +207,15 @@ public final class IdentityInserter extends TransferThread {
 	
 	/* Not needed functions from the ClientCallback interface */
 	
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) { }
 
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
+	
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
 
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void onMajorProgress(ObjectContainer container) { }
 
-	public void onMajorProgress(ObjectContainer container) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) { }
 
 }
 
