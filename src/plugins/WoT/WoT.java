@@ -36,19 +36,16 @@ import freenet.l10n.L10n.LANGUAGE;
 import freenet.node.RequestClient;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginFCP;
-import freenet.pluginmanager.FredPluginHTTP;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.FredPluginWithClassLoader;
-import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import freenet.support.api.HTTPRequest;
 
 /**
  * A web of trust plugin based on Freenet.
@@ -336,7 +333,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 
 		}
 		
-		/* FIXME: Also delete duplicate trust, score, etc. */
+		/* TODO: Also delete duplicate trust, score, etc. */
 	}
 	
 	/**
@@ -387,7 +384,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				seed = getIdentityByURI(seedURI);
 				if(seed instanceof OwnIdentity) {
 					OwnIdentity ownSeed = (OwnIdentity)seed;
-					// FIXME: Does the cast make that necessary? I'm adding it to make sure that we do not lose information when storing
+					// TODO: Does the cast make that necessary? I'm adding it to make sure that we do not lose information when storing
 					mDB.activate(ownSeed, 5);
 					ownSeed.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
 					ownSeed.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY,
@@ -510,8 +507,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		
 		try {
 			if(mDB != null) {
-				/* FIXME: Is it possible to ask db4o whether a transaction is pending? If the plugin's synchronization works correctly,
-				 * NONE should be pending here and we should log an error if there are any pending transactions at this point. */
+				/* TODO: At 2009-06-15, it does not seem possible to ask db4o for whether a transaction is pending.
+				 * If it becomes possible some day, we should check that here, and log an error if there is an uncommitted transaction. 
+				 * - All transactions should be committed after obtaining the lock() on the database. */
 				synchronized(mDB.lock()) {
 					mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 					mDB.close();
@@ -666,7 +664,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		Query q = mDB.query();
 		q.constrain(Identity.class);
 		q.constrain(OwnIdentity.class).not();
-		/* FIXME: As soon as identities announce that they were online every day, uncomment the following line */
+		/* TODO: As soon as identities announce that they were online every day, uncomment the following line */
 		/* q.descend("mLastChangedDate").constrain(new Date(CurrentTimeUTC.getInMillis() - 1 * 24 * 60 * 60 * 1000)).greater(); */
 		q.descend("mLastFetchedDate").orderDescending();
 		
