@@ -77,7 +77,7 @@ public final class IntroductionPuzzleStore {
 			ObjectSet<IntroductionPuzzle> result = q.execute();
 			
 			for(IntroductionPuzzle p : result)
-				mDB.delete(p);
+				mDB.delete(p); /* FIXME: Delete it's member objects! */
 			
 			/* TODO: Minor but interesting optimization: result.size() should take about O(N) time before the for() and O(1) after it
 			 * if db4o is smart enough. Verify if it really calculates and stores the size during the iteration. If not, the log line

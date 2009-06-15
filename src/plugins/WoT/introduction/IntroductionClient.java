@@ -58,17 +58,17 @@ import freenet.support.io.NativeThread;
 public final class IntroductionClient extends TransferThread  {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 10 * 60 * 1000; /* FIXME: tweak before release: */ 
+	private static final int THREAD_PERIOD = 60 * 60 * 1000; 
 	
 	/* TODO: Maybe implement backward-downloading of puzzles, currently we only download puzzles of today.
 	/* public static final byte PUZZLE_DOWNLOAD_BACKWARDS_DAYS = IntroductionServer.PUZZLE_INVALID_AFTER_DAYS - 1; */
-	public static final int PUZZLE_REQUEST_COUNT = 16;
+	public static final int PUZZLE_REQUEST_COUNT = 10;
 	
 	/** How many unsolved puzzles do we try to accumulate? */
-	public static final int PUZZLE_POOL_SIZE = 128;
+	public static final int PUZZLE_POOL_SIZE = 40;
 	
 	/** How many puzzles do we download from a single identity? */
-	public static final int MAX_PUZZLES_PER_IDENTITY = 3;
+	public static final int MAX_PUZZLES_PER_IDENTITY = 2;
 	
 	/**
 	 * The minimal score (inclusive) which an identity must have in the trust-tree of any OwnIdentity for downloading/displaying it's puzzles.

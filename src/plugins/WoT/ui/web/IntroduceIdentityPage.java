@@ -65,7 +65,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 
 	private void makeInfoBox(PluginRespirator pr) {
 		HTMLNode boxContent = addContentBox("Introduce identity '" + mIdentity.getNickname() + "'");
-		boxContent.addChild("p", "Solve about 10 puzzles to get your identity known by other identities. DO NOT continously solve puzzles."); /* FIXME: add more information */
+		boxContent.addChild("p", "Solve about 10 puzzles to get your identity known by other identities. DO NOT continously solve puzzles."); /* TODO: add more information */
 	}
 	
 	private void makePuzzleBox(PluginRespirator pr) {
