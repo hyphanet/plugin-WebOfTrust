@@ -35,9 +35,11 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestStarter;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TransferThread;
@@ -48,7 +50,7 @@ import freenet.support.io.NativeThread;
 
 /**
  * This class allows the user to announce new identities:
- * It downloads puzzles from known identites and uploads solutions of the puzzles.+
+ * It downloads puzzles from known identites and uploads solutions of the puzzles.
  * 
  * For a summary of how introduction works please read the Javadoc of class IntroductionPuzzleStore.
  * 
@@ -59,7 +61,7 @@ public final class IntroductionClient extends TransferThread  {
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
 	private static final int THREAD_PERIOD = 10 * 60 * 1000; /* FIXME: tweak before release: */ 
 	
-	/* FIXME: Implement backwards-downloading. Currently, we only download puzzles from today. */
+	/* TODO: Maybe implement backward-downloading of puzzles, currently we only download puzzles of today.
 	/* public static final byte PUZZLE_DOWNLOAD_BACKWARDS_DAYS = IntroductionServer.PUZZLE_INVALID_AFTER_DAYS - 1; */
 	public static final int PUZZLE_REQUEST_COUNT = 16;
 	
@@ -69,12 +71,17 @@ public final class IntroductionClient extends TransferThread  {
 	/** How many puzzles do we download from a single identity? */
 	public static final int MAX_PUZZLES_PER_IDENTITY = 3;
 	
-	private static final int MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD = 0; /* FIXME: tweak before release */
-	private static final int MINIMUM_SCORE_FOR_PUZZLE_DISPLAY = 0; /* FIXME: tweak before release */
+	/**
+	 * The minimal score (inclusive) which an identity must have in the trust-tree of any OwnIdentity for downloading/displaying it's puzzles.
+	 * Not 0 because getBestScore() returns 0 if an identity is not in the trust tree of any OwnIdentity. This is the case for the seed identities
+	 * if no own identity was created yet.
+	 * */
+	public static final int MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD = 1;
 	
 	/* Objects from WoT */
 	
 	private WoT mWoT;
+	private ClientContext mClientContext;
 	
 	/** The container object which manages storage of the puzzles in the database, also used for synchronization */
 	private IntroductionPuzzleStore mPuzzleStore;
@@ -95,6 +102,7 @@ public final class IntroductionClient extends TransferThread  {
 		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Introduction Client");
 		
 		mWoT = myWoT;
+		mClientContext = mWoT.getPluginRespirator().getNode().clientCore.clientContext;
 		mPuzzleStore = mWoT.getIntroductionPuzzleStore();
 		mRandom = mWoT.getPluginRespirator().getNode().fastWeakRandom;
 		start();
@@ -158,7 +166,7 @@ public final class IntroductionClient extends TransferThread  {
 					if(!resultHasPuzzleFrom.contains(puzzle.getInserter())) { 
 						int score = mWoT.getScore(user, puzzle.getInserter()).getScore();
 						
-						if(score > MINIMUM_SCORE_FOR_PUZZLE_DISPLAY) {
+						if(score >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD) {
 							try {
 								mWoT.getTrust(puzzle.getInserter(), user);
 								/* We are already on this identity's trust list so there is no use in solving another puzzle from it */
@@ -225,13 +233,13 @@ public final class IntroductionClient extends TransferThread  {
 			}
 		}
 		
-		/* If we run out of identities to download from, be less restrictive */
+		/* If we run out of identities to download from, flush the list of identities of which we have downloaded puzzles from */
 		if(identitiesToDownloadFrom.size() == 0) {
 			mIdentities.clear(); /* We probably have less updated identities today than the size of the LRUQueue, empty it */
 
 			for(Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
-				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && mWoT.getBestScore(i) > MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)  {
+				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)  {
 					identitiesToDownloadFrom.add(i);
 				}
 
@@ -350,12 +358,10 @@ public final class IntroductionClient extends TransferThread  {
 		uri = IntroductionPuzzle.generateRequestURI(inserter, date, index);
 		
 		FetchContext fetchContext = mClient.getFetchContext();
-		/* FIXME: Toad: Are these parameters correct? */
-		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
-		fetchContext.maxNonSplitfileRetries = -1; // retry forever
+		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
+		fetchContext.maxNonSplitfileRetries = 2;
 		ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mWoT.getRequestClient(), this, fetchContext);
-		// FIXME: Set to a reasonable value before release, PluginManager default is interactive priority
-		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS);
+		g.setPriorityClass(RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, mClientContext, null);
 		addFetch(g);
 		
 		/* Attention: Do not lock the WoT here before locking mIdentities because there is another synchronized(mIdentities) in this class
