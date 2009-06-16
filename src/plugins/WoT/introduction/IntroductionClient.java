@@ -40,6 +40,7 @@ import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestStarter;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
@@ -89,9 +90,11 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/* Private objects */
 	
-	/* FIXME FIXME FIXME: Use LRUQueue instead. ArrayBlockingQueue does not use a Hashset for contains()! */
-	/* FIXME: figure out whether my assumption that this is just the right size is correct */
-	private final ArrayBlockingQueue<Identity> mIdentities = new ArrayBlockingQueue<Identity>(PUZZLE_POOL_SIZE + 1);
+	/**
+	 * List of identities of which we have downloaded puzzles from recently. It is maintained so that puzzles are always downloaded from multiple different
+	 * identities instead of the always the same ones. 
+	 */
+	private final LRUQueue<String> mIdentities = new LRUQueue<String>(); // A suitable default size might be PUZZLE_POOL_SIZE + 1
 
 	/**
 	 * Creates an IntroductionClient
@@ -220,7 +223,7 @@ public final class IntroductionClient extends TransferThread  {
 		synchronized(mIdentities) {
 			for(Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
-				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i)
+				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i.getID())
 						&& mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)  {
 					identitiesToDownloadFrom.add(i);
 				}
@@ -296,19 +299,16 @@ public final class IntroductionClient extends TransferThread  {
 
 			InsertContext ictx = mClient.getInsertContext(true);
 			
-			/* FIXME: Toad: Are these parameters correct? */
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			// FIXME: Set to a reasonable value before release, PluginManager default is interactive priority
-			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext, null);
+			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
 			addInsert(pu);
 			tempB = null;
 			
 			Logger.debug(this, "Started to insert puzzle solution of " + puzzle.getSolver().getNickname() + " at " + solutionURI);
 		}
 		finally {
-			if(tempB != null)
-				tempB.free();
 			Closer.close(os);
+			Closer.close(tempB);
 		}
 	}
 		
@@ -364,15 +364,14 @@ public final class IntroductionClient extends TransferThread  {
 		/* Attention: Do not lock the WoT here before locking mIdentities because there is another synchronized(mIdentities) in this class
 		 * which locks the WoT inside the mIdentities-lock */
 		synchronized(mIdentities) {
-			if(!mIdentities.contains(inserter)) {
+			if(!mIdentities.contains(inserter.getID())) {
 				/* The oldest identity falls out of the FIFO and therefore puzzle downloads from that one are allowed again.
 				 * It is only checked in downloadPuzzles() whether puzzle downloads are allowed because we download up to
 				 * MAX_PUZZLES_PER_IDENTITY puzzles per identity - the onSuccess() starts download of the next one usually. */
-				mIdentities.poll();
-				try {
-					mIdentities.put(inserter); /* put this identity at the beginning of the FIFO */
-				} catch(InterruptedException e) {}
+				mIdentities.pop();
 			}
+			
+			mIdentities.push(inserter.getID()); /* put this identity at the beginning of the FIFO */
 		}
 		
 		Logger.debug(this, "Trying to fetch puzzle from " + uri.toString());
