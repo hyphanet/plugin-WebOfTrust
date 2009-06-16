@@ -16,7 +16,7 @@ import freenet.support.api.HTTPRequest;
 
 public class IntroduceIdentityPage extends WebPageImpl {
 	
-	protected static int PUZZLE_DISPLAY_COUNT = 512; /* FIXME: set to a reasonable value before release */
+	protected static int PUZZLE_DISPLAY_COUNT = 16;
 	
 	protected final IntroductionClient mClient;
 	protected final OwnIdentity mIdentity;
@@ -79,22 +79,17 @@ public class IntroduceIdentityPage extends WebPageImpl {
 			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "SolvePuzzles" });
 			solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id", mIdentity.getID() });
 			
-			HTMLNode puzzleTable = solveForm.addChild("table", "border", "0");
-			HTMLNode row = puzzleTable.addChild("tr");
-			
 			int counter = 0;
 			for(IntroductionPuzzle p : puzzles) {
-				solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id" + counter, p.getID() });
-				
-				if(counter++ % 4 == 0)
-					row = puzzleTable.addChild("tr");
-				
-				HTMLNode cell = row.addChild("td");
-				cell.addAttribute("align", "center");
+				// Display as much puzzles per row as fitting in the browser-window via "inline-block" style. Nice, eh?
+				HTMLNode cell = solveForm.addChild("div", new String[] { "align" , "style"}, new String[] { "center" , "display: inline-block"});
 				/* FIXME: use SELF_URI + "puzzle?id=" instead */
+				cell.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id" + counter, p.getID() });
 				cell.addChild("img", new String[] {"src"}, new String[] {"data:image/jpeg;base64," + Base64.encodeStandard(p.getData())}); 
 				cell.addChild("br");
 				cell.addChild("input", new String[] { "type", "name", "size"}, new String[] { "text", "Solution" + p.getID(), "10" });
+				
+				++counter;
 			}
 			
 			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Solve", "Submit" });
