@@ -34,6 +34,7 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
@@ -50,13 +51,13 @@ import freenet.support.io.NativeThread;
  */
 public final class IntroductionServer extends TransferThread {
 	
-	private static final int STARTUP_DELAY = 1 * 60 * 1000; /* FIXME: tweak before release */
-	private static final int THREAD_PERIOD = 10 * 60 * 1000; /* FIXME: tweak before release */
+	private static final int STARTUP_DELAY = 5 * 60 * 1000;
+	private static final int THREAD_PERIOD = 60 * 60 * 1000;
 
 	/** The name of the property we use to announce in identities how many puzzles they insert */
 	public static final String PUZZLE_COUNT_PROPERTY = "IntroductionPuzzleCount";
 	public static final int SEED_IDENTITY_PUZZLE_COUNT = 100;
-	public static final int DEFAULT_PUZZLE_COUNT = 10; /* FIXME: tweak before release */
+	public static final int DEFAULT_PUZZLE_COUNT = 10;
 	public static final byte PUZZLE_INVALID_AFTER_DAYS = 3;		
 	
 	
@@ -167,16 +168,21 @@ public final class IntroductionServer extends TransferThread {
 					"Trying to fetch solutions ...");
 			
 			for(OwnIntroductionPuzzle p : puzzles) {
+				try {
 				FetchContext fetchContext = mClient.getFetchContext();
-				/* FIXME: Toad: Are these parameters correct? */
-				fetchContext.maxSplitfileBlockRetries = -1; // retry forever
-				fetchContext.maxNonSplitfileRetries = -1; // retry forever
+				// -1 means retry forever. Does make sense here: After 2 retries the fetches go into the cooldown queue, ULPRs are used. So if someone inserts
+				// the puzzle solution during that, we might get to know it.
+				fetchContext.maxSplitfileBlockRetries = -1;
+				fetchContext.maxNonSplitfileRetries = -1;
 				ClientGetter g = mClient.fetch(p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE, mWoT.getRequestClient(),
 						this, fetchContext);
-				// FIXME: Set to a reasonable value before release, PluginManager default is interactive priority
-				// g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext, null); 
+				g.setPriorityClass(RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, mClientContext, null); 
 				addFetch(g);
 				Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
+				}
+				catch(RuntimeException e) {
+					Logger.error(this, "Error while trying to fetch captcha solution at " + p.getSolutionURI());
+				}
 			}
 		}
 	}
@@ -227,25 +233,22 @@ public final class IntroductionServer extends TransferThread {
 		try {
 			os = tempB.getOutputStream();
 			mWoT.getXMLTransformer().exportIntroductionPuzzle(puzzle, os); /* Provides synchronization on the puzzle */
-			os.close(); os = null;
+			Closer.close(os); os = null;
 			tempB.setReadOnly();
 
-			/* FIXME: Toad: Are these parameters correct? */
 			InsertBlock ib = new InsertBlock(tempB, null, puzzle.getInsertURI());
 			InsertContext ictx = mClient.getInsertContext(true);
 
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			// FIXME: Set to a reasonable value before release, PluginManager default is interactive priority
-			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mWoT.getPluginRespirator().getNode().clientCore.clientContext ,null);
+			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
 			addInsert(pu);
 			tempB = null;
 
 			Logger.debug(this, "Started insert of puzzle from " + puzzle.getInserter().getNickname());
 		}
 		finally {
-			if(tempB != null)
-				tempB.free();
 			Closer.close(os);
+			Closer.close(tempB);
 		}
 	}
 	
