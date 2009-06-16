@@ -1338,7 +1338,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					
 					mDB.commit(); Logger.debug(this, "COMMITED.");
 					
-					mIntroductionClient.nextIteration(); // This will make it fetch more introduction puzzles.
+					if(mIntroductionClient != null)
+						mIntroductionClient.nextIteration(); // This will make it fetch more introduction puzzles.
 					
 					Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickname() + ")");
 					return identity;
