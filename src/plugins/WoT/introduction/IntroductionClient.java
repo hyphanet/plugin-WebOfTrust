@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.xml.transform.TransformerException;
 
@@ -58,8 +57,8 @@ import freenet.support.io.NativeThread;
  */
 public final class IntroductionClient extends TransferThread  {
 	
-	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 60 * 60 * 1000; 
+	private static final int STARTUP_DELAY = 3 * 60 * 1000;
+	private static final int THREAD_PERIOD = 1 * 60 * 60 * 1000; 
 	
 	/* TODO: Maybe implement backward-downloading of puzzles, currently we only download puzzles of today.
 	/* public static final byte PUZZLE_DOWNLOAD_BACKWARDS_DAYS = IntroductionServer.PUZZLE_INVALID_AFTER_DAYS - 1; */
