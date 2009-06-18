@@ -165,6 +165,7 @@ public final class FCPInterface implements FredPluginFCP {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "IdentityAdded");
     	sfs.putOverwrite("ID", identity.getID());
+    	sfs.putOverwrite("Nickname", identity.getNickname());
     	return sfs;
     }
 
@@ -178,6 +179,9 @@ public final class FCPInterface implements FredPluginFCP {
     	synchronized(mWoT) {
     		final OwnIdentity treeOwner = mWoT.getOwnIdentityByID(treeOwnerID);
     		final Identity identity = mWoT.getIdentityByID(identityID);
+
+    		sfs.putOverwrite("Nickname", identity.getNickname());
+    		sfs.putOverwrite("RequestURI", identity.getRequestURI().toString());
 
     		try {
     			final Trust trust = mWoT.getTrust(treeOwner, identity);
@@ -283,6 +287,8 @@ public final class FCPInterface implements FredPluginFCP {
 
 				if(getAll || trust.getTruster().hasContext(params.get("Context"))) {
 					sfs.putOverwrite("Identity" + i, trust.getTruster().getID());
+					sfs.putOverwrite("Nickname" + i, trust.getTruster().getNickname());
+					sfs.putOverwrite("RequestURI" + i, trust.getTruster().getRequestURI().toString());
 					sfs.putOverwrite("Value" + i, Byte.toString(trust.getValue()));
 					sfs.putOverwrite("Comment" + i, trust.getComment());
 					// TODO: Allow the client to select what data he wants
@@ -311,6 +317,8 @@ public final class FCPInterface implements FredPluginFCP {
 
 				if(getAll || trust.getTruster().hasContext(params.get("Context"))) {
 					sfs.putOverwrite("Identity" + i, trust.getTruster().getID());
+					sfs.putOverwrite("Nickname" + i, trust.getTruster().getNickname());
+					sfs.putOverwrite("RequestURI" + i, trust.getTruster().getRequestURI().toString());
 					sfs.putOverwrite("Value" + i, Byte.toString(trust.getValue()));
 					sfs.putOverwrite("Comment" + i, trust.getComment());
 					// TODO: Allow the client to select what data he wants
