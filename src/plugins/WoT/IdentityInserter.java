@@ -162,8 +162,8 @@ public final class IdentityInserter extends TransferThread {
 			Logger.error(this, "Error during insert of identity '" + identity.getNickname() + "'", e);
 		}
 		finally {
-			Closer.close(tempB);
 			Closer.close(os);
+			Closer.close(tempB);
 		}
 	}
 	
