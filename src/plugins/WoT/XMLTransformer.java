@@ -54,14 +54,16 @@ public final class XMLTransformer {
 	private static final int XML_FORMAT_VERSION = 1;
 	
 	/**
-	 * Used by the IntroductionServer to limit the size of fetches to prevent DoS.
+	 * Used by the IntroductionServer to limit the size of fetches to prevent DoS..
+	 * The typical size of an identity introduction can be observed at {@link XMLTransformerTest}.
 	 */
-	public static final int MAX_INTRODUCTION_BYTE_SIZE = 2 * 1024; /* FIXME: Adjust */
+	public static final int MAX_INTRODUCTION_BYTE_SIZE = 1 * 1024;
 	
 	/**
 	 * Used by the IntroductionClient to limit the size of fetches to prevent DoS. 
+	 * The typical size of an introduction puzzle can be observed at {@link XMLTransformerTest}.
 	 */
-	public static final int MAX_INTRODUCTIONPUZZLE_BYTE_SIZE = 32 * 1024; /* FIXME: Adjust */
+	public static final int MAX_INTRODUCTIONPUZZLE_BYTE_SIZE = 16 * 1024;
 	
 	private final WoT mWoT;
 	
