@@ -376,7 +376,9 @@ public final class XMLTransformer {
 				newIdentity = new Identity(identityURI, null, false);
 				newIdentity.setEdition(identityURI.getEdition()); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
 				mWoT.storeAndCommit(newIdentity);
-				mWoT.getIdentityFetcher().fetch(newIdentity);
+				
+				if(mWoT.getIdentityFetcher() != null)
+					mWoT.getIdentityFetcher().fetch(newIdentity);
 				
 				try {
 					mWoT.getTrust(puzzleOwner, newIdentity); /* Double check ... */
