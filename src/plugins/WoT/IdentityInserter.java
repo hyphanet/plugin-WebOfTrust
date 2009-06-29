@@ -191,13 +191,14 @@ public final class IdentityInserter extends TransferThread {
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
 	{
 		try {
-		if(e.getMode() == InsertException.CANCELLED) {
-			Logger.debug(this, "Insert cancelled: " + state.getURI());
-		}
-		else
-			Logger.error(this, "Error during insert of identity: " + state.getURI(), e);
-			/* We do not increase the edition of the identity if there is a collision because the fetcher will fetch the new edition
-			 * and the Inserter will insert it with that edition in the next run. */
+			if(e.getMode() == InsertException.CANCELLED) {
+				Logger.debug(this, "Insert cancelled: " + state.getURI());
+			}
+			else {
+				Logger.error(this, "Error during insert of identity: " + state.getURI(), e);
+				/* We do not increase the edition of the identity if there is a collision because the fetcher will fetch the new edition
+				 * and the Inserter will insert it with that edition in the next run. */
+			}
 		}
 		finally {
 			removeInsert(state);

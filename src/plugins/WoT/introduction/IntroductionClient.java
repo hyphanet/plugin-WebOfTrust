@@ -411,16 +411,16 @@ public final class IntroductionClient extends TransferThread  {
 	 */
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		try {
-		if(e.getMode() == FetchException.CANCELLED) {
-			Logger.debug(this, "Fetch cancelled: " + state.getURI());
-		}
-		else if(e.getMode() == FetchException.DATA_NOT_FOUND) {
-			/* This is the normal case: There is no puzzle available of today because the inserter is offline and has not inserted any.
-			 * We do nothing here. The identity stays in the FIFO though so we do not try to fetch puzzzle from it again soon. */
-		}
-		else {
-			Logger.debug(this, "Downloading puzzle failed: " + state.getURI(), e);
-		}
+			if(e.getMode() == FetchException.CANCELLED) {
+				Logger.debug(this, "Fetch cancelled: " + state.getURI());
+			}
+			else if(e.getMode() == FetchException.DATA_NOT_FOUND) {
+				/* This is the normal case: There is no puzzle available of today because the inserter is offline and has not inserted any.
+				 * We do nothing here. The identity stays in the FIFO though so we do not try to fetch puzzzle from it again soon. */
+			}
+			else {
+				Logger.debug(this, "Downloading puzzle failed: " + state.getURI(), e);
+			}
 		}
 		finally {
 			removeFetch(state);
@@ -459,10 +459,10 @@ public final class IntroductionClient extends TransferThread  {
 		/* No synchronization because the worst thing which can happen is that we insert it again */
 		
 		try {
-		if(e.getMode() == InsertException.CANCELLED)
-			Logger.debug(this, "Insert cancelled: " + state.getURI());
-		else
-			Logger.minor(this, "Insert of puzzle solution failed: " + state.getURI(), e);
+			if(e.getMode() == InsertException.CANCELLED)
+				Logger.debug(this, "Insert cancelled: " + state.getURI());
+			else
+				Logger.minor(this, "Insert of puzzle solution failed: " + state.getURI(), e);
 		}
 		finally {
 			removeInsert(state);
