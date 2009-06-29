@@ -281,12 +281,10 @@ public final class IntroductionServer extends TransferThread {
 	 */
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
 	{
-		if(e.getMode() == InsertException.CANCELLED) {
-			Logger.debug(this, "Insert cancelled: " + state.getURI());
-			return;
-		}
-
 		try {
+		if(e.getMode() == InsertException.CANCELLED)
+			Logger.debug(this, "Insert cancelled: " + state.getURI());
+		else
 			Logger.error(this, "Insert of puzzle failed: " + state.getURI(), e);
 		}
 		finally {
@@ -338,13 +336,10 @@ public final class IntroductionServer extends TransferThread {
 	 * In our case, called when there is no solution to a puzzle in the network.
 	 */
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-		if(e.getMode() == FetchException.CANCELLED) {
-			Logger.debug(this, "Fetch cancelled: " + state.getURI());
-			return;
-		}
-		
 		try {
-			if(e.getMode() == FetchException.DATA_NOT_FOUND) {
+		if(e.getMode() == FetchException.CANCELLED)
+			Logger.debug(this, "Fetch cancelled: " + state.getURI());
+		else if(e.getMode() == FetchException.DATA_NOT_FOUND) {
 				/* This is the normal case: The puzzle was not solved. */
 			} else
 				Logger.error(this, "Downloading puzzle solution " + state.getURI() + " failed: ", e);
