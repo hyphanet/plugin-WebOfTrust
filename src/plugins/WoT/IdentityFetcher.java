@@ -42,7 +42,7 @@ public class IdentityFetcher implements USKRetrieverCallback {
 	private final RequestClient mRequestClient;
 
 	/** All current requests */
-	/* FIXME: We use those HashSets for checking whether we have already have a request for the given identity if someone calls fetch().
+	/* TODO: We use those HashSets for checking whether we have already have a request for the given identity if someone calls fetch().
 	 * This sucks: We always request ALL identities to allow ULPRs so we must assume that those HashSets will not fit into memory
 	 * if the WoT becomes large. We should instead ask the node whether we already have a request for the given SSK URI. So how to do that??? */
 	private final Hashtable<String, USKRetriever> mRequests = new Hashtable<String, USKRetriever>(128); /* TODO: profile & tweak */

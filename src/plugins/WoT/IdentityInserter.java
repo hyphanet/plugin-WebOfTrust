@@ -135,7 +135,7 @@ public final class IdentityInserter extends TransferThread {
 	 * @throws IOException 
 	 */
 	private void insert(OwnIdentity identity) throws IOException {
-		Bucket tempB = mTBF.makeBucket(64 * 1024); /* FIXME: Tweak */  
+		Bucket tempB = mTBF.makeBucket(64 * 1024); /* TODO: Tweak */  
 		OutputStream os = null;
 
 		try {

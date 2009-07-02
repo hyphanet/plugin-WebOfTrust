@@ -105,7 +105,7 @@ public abstract class WebPageImpl implements WebPage {
 		InfoboxNode infobox = pm.getInfobox("infobox-alert", title);
 		HTMLNode errorBox = infobox.outer;
 		HTMLNode errorInner = infobox.content;
-		// FIXME use errorInner not errorBox to add stack trace
+		// TODO use errorInner not errorBox to add stack trace
 		
 		String message = error.getLocalizedMessage();
 		if(message == null || message.equals(""))

@@ -222,7 +222,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	private ExtObjectContainer initDB(String filename) {
 		Configuration cfg = Db4o.newConfiguration();
 		cfg.reflectWith(new JdkReflector(mClassLoader));
-		cfg.activationDepth(5); /* FIXME: Change to 1 and add explicit activation everywhere */
+		cfg.activationDepth(5); /* TODO: Change to 1 and add explicit activation everywhere */
 		cfg.exceptionsOnNotStorable(true);
 		
 		for(String field : Identity.getIndexedFields()) cfg.objectClass(Identity.class).objectField(field).indexed(true);

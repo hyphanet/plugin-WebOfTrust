@@ -47,12 +47,6 @@ public class WoTTest extends DatabaseBasedTest {
 		assertTrue(score.getCapacity() == 100);
 		assertTrue(score.getTreeOwner() == a);
 		assertTrue(score.getTarget() == a);
-		
-		// Empty the database
-		/* FIXME: This is not needed because DatabaseBasedTest does that in setUp(), right? 
-		ObjectSet<Object> all = db.queryByExample(new Object());
-		while(all.hasNext()) db.delete(all.next());
-		*/
 	}
 	
 	public void testSetTrust1() throws InvalidParameterException, MalformedURLException {
@@ -133,12 +127,6 @@ public class WoTTest extends DatabaseBasedTest {
 		assertTrue(scoreB.getScore() == 50);
 		assertTrue(scoreB.getRank() == 1);
 		assertTrue(scoreB.getCapacity() == 40);
-		
-		// Empty the database
-		/* FIXME: This is not needed because DatabaseBasedTest does that in setUp(), right? 
-		ObjectSet<Object> all = db.queryByExample(new Object());
-		while(all.hasNext()) db.delete(all.next());
-		*/
 	}
 	
 	public void testRemoveTrust() throws MalformedURLException, InvalidParameterException, UnknownIdentityException,
@@ -205,12 +193,6 @@ public class WoTTest extends DatabaseBasedTest {
 			fail();
 		}
 		catch (NotInTrustTreeException e) {}
-		
-		// Empty the database
-		/* FIXME: This is not needed because DatabaseBasedTest does that in setUp(), right? 
-		ObjectSet<Object> all = db.queryByExample(new Object());
-		while(all.hasNext()) db.delete(all.next());
-		*/
 	}
 	
 	public void testTrustLoop() throws MalformedURLException, InvalidParameterException, NotInTrustTreeException {
