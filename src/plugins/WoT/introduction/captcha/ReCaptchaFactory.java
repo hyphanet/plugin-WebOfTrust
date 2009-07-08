@@ -40,7 +40,7 @@ import freenet.support.io.Closer;
  */
 public class ReCaptchaFactory extends IntroductionPuzzleFactory {
 	
-	/* FIXME: Ask the recaptcha guys to modify their java library so that it is able to just return a JPEG instead of inlining their HTML */
+	/* TODO: Ask the recaptcha guys to modify their java library so that it is able to just return a JPEG instead of inlining their HTML */
 	// recaptcha.ReCaptchaFactory mFactory = new recaptcha.ReCaptchaFactory();
 	
 	@Override

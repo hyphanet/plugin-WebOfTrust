@@ -123,16 +123,15 @@ public class IdentityFetcher implements USKRetrieverCallback {
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		Logger.debug(this, "Trying to start fetching uri " + usk); 
-		/* FIXME: Toad: Does this also eat a RequestStarter priority class? You should javadoc which priority class constants to use! */
 		return mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
 	}
 	
 	public short getPollingPriorityNormal() {
-		return RequestStarter.UPDATE_PRIORITY_CLASS;  /* FIXME: Is this correct? */
+		return RequestStarter.UPDATE_PRIORITY_CLASS;
 	}
 
 	public short getPollingPriorityProgress() {
-		return RequestStarter.UPDATE_PRIORITY_CLASS; /* FIXME: Is this correct? */
+		return RequestStarter.UPDATE_PRIORITY_CLASS;
 	}
 
 	/**

@@ -57,7 +57,7 @@ public final class IntroductionPuzzleStore {
 				mDB.activate(p, 3); /* FIXME: Is this the correct depth? */
 				if(p.checkConsistency() == false) {
 					Logger.error(this, "Deleting corrupted puzzle");
-					mDB.delete(p);
+					deleteWithoutCommit(p);
 				}
 			}
 			mDB.commit();
@@ -77,7 +77,7 @@ public final class IntroductionPuzzleStore {
 			ObjectSet<IntroductionPuzzle> result = q.execute();
 			
 			for(IntroductionPuzzle p : result)
-				mDB.delete(p); /* FIXME: Delete it's member objects! */
+				deleteWithoutCommit(p);
 			
 			/* TODO: Minor but interesting optimization: result.size() should take about O(N) time before the for() and O(1) after it
 			 * if db4o is smart enough. Verify if it really calculates and stores the size during the iteration. If not, the log line
@@ -114,13 +114,24 @@ public final class IntroductionPuzzleStore {
 				 * size() in O(1) instead of O(amount of puzzles in the database).
 				 * Unfortunately toad_ said that it does not really do that even though it is logically possible => TODO: tell it to do so */
 				if(puzzle.wasSolved() == false) {
-					mDB.delete(puzzle);
+					deleteWithoutCommit(puzzle);
 					deleteCount--;
 				}
 			}
 			
 			mDB.commit();
 			/* Our goal is to delete the puzzles so we do not rollback here if an exception occurs, that would restore the deleted puzzles. */ 
+		}
+	}
+	
+	private synchronized void deleteWithoutCommit(IntroductionPuzzle puzzle) {
+		try {
+			mDB.delete(puzzle.getType());
+			mDB.delete(puzzle);
+		}
+		catch(RuntimeException e) {
+			mDB.rollback(); Logger.debug(puzzle, "ROLLED BACK: " + e);
+			throw e;
 		}
 	}
 
@@ -138,6 +149,8 @@ public final class IntroductionPuzzleStore {
 				throw new RuntimeException("Trying to store an inactive IntroductionPuzzle object!");
 	
 			try {
+				// IMPORTANT: When adding new .store() calls here, also add .delete() in deleteWithoutCommit()
+				
 				mDB.store(puzzle.getType());
 				// mDB.store(puzzle.getDateOfInsertion()); /* Not stored because it is a primitive for db4o */ 
 				mDB.store(puzzle);
@@ -145,7 +158,7 @@ public final class IntroductionPuzzleStore {
 				Logger.debug(puzzle, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.debug(puzzle, "ROLLED BACK: " + e);
 				throw e;
 			}
 		}
