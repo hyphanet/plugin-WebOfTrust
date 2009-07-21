@@ -138,6 +138,7 @@ public final class IntroductionClient extends TransferThread  {
 	@Override
 	protected void iterate() {
 		mPuzzleStore.deleteExpiredPuzzles();
+		mPuzzleStore.deleteOldestUnsolvedPuzzles(PUZZLE_POOL_SIZE);
 		downloadPuzzles();
 		insertSolutions();
 	}
@@ -390,9 +391,6 @@ public final class IntroductionClient extends TransferThread  {
 			inputStream = bucket.getInputStream();
 			
 			IntroductionPuzzle puzzle = mWoT.getXMLTransformer().importIntroductionPuzzle(state.getURI(), inputStream);
-			/* TODO: Add logic to call this only once for every few puzzles fetched not for every single one! */
-			mPuzzleStore.deleteOldestUnsolvedPuzzles(PUZZLE_POOL_SIZE);
-			
 			downloadPuzzle(puzzle.getInserter(), puzzle.getIndex() + 1); /* TODO: Also download a random index here maybe */
 		}
 		catch (Exception e) { 
