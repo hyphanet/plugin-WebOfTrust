@@ -83,7 +83,8 @@ public class IntroduceIdentityPage extends WebPageImpl {
 			for(IntroductionPuzzle p : puzzles) {
 				// Display as much puzzles per row as fitting in the browser-window via "inline-block" style. Nice, eh?
 				HTMLNode cell = solveForm.addChild("div", new String[] { "align" , "style"}, new String[] { "center" , "display: inline-block"});
-				/* FIXME: use SELF_URI + "puzzle?id=" instead */
+				/* FIXME: use SELF_URI + "puzzle?id=" instead 
+				 * That page should then use wot.getIntroductionPuzzleStore().getByID(id); for obtaining the puzzle */
 				cell.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id" + counter, p.getID() });
 				cell.addChild("img", new String[] {"src"}, new String[] {"data:image/jpeg;base64," + Base64.encodeStandard(p.getData())}); 
 				cell.addChild("br");
