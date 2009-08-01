@@ -58,6 +58,8 @@ public final class FCPInterface implements FredPluginFCP {
                 replysender.send(handleGetIdentitiesByScore(params), data);
             } else if (message.equals("GetTrusters")) {
                 replysender.send(handleGetTrusters(params), data);
+            } else if (message.equals("GetTrustersCount")) {
+            	replysender.send(handleGetTrustersCount(params), data);
             } else if (message.equals("GetTrustees")) {
                 replysender.send(handleGetTrustees(params), data);
             } else if (message.equals("AddContext")) {
@@ -295,6 +297,22 @@ public final class FCPInterface implements FredPluginFCP {
 					++i;
 				}
 			}
+        }
+        
+        return sfs;
+    }
+    
+    private SimpleFieldSet handleGetTrustersCount(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
+    	final String identityID = getMandatoryParameter(params, "Identity");
+    	//final String context = getMandatoryParameter(params, "Context"); // TODO: Implement as soon as we have per-context trust
+    	
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "TrustersCount");
+  
+        //final boolean getAll = context.equals("");
+        
+        synchronized(mWoT) {
+			sfs.put("Value", mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID)).size());
         }
         
         return sfs;
