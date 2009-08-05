@@ -5,6 +5,7 @@ package plugins.WoT.ui.fcp;
 
 import java.net.MalformedURLException;
 import java.util.Iterator;
+import java.util.List;
 
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
@@ -17,6 +18,7 @@ import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionServer;
+import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 
 import com.db4o.ObjectSet;
 
@@ -24,6 +26,7 @@ import freenet.node.FSParseException;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
+import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -72,6 +75,8 @@ public final class FCPInterface implements FredPluginFCP {
                 replysender.send(handleGetProperty(params), data);
             } else if (message.equals("RemoveProperty")) {
                 replysender.send(handleRemoveProperty(params), data);
+            } else if (message.equals("GetIntroductionPuzzles")) {
+            	replysender.send(handleGetIntroductionPuzzles(params), data);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
@@ -401,6 +406,28 @@ public final class FCPInterface implements FredPluginFCP {
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Message", "PropertyRemoved");
         return sfs;
+    }
+    
+    private SimpleFieldSet handleGetIntroductionPuzzles(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
+    	final String identityID = getMandatoryParameter(params, "Identity");
+    	final String type = getMandatoryParameter(params, "Type");
+    	final int amount = Integer.valueOf(getMandatoryParameter(params, "Amount"));
+    	
+    	List<IntroductionPuzzle> puzzles = mWoT.getIntroductionClient().getPuzzles(mWoT.getOwnIdentityByID(identityID), PuzzleType.valueOf(type), amount);
+    	
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+    	
+    	int index = 1;
+    	
+    	for(IntroductionPuzzle puzzle : puzzles) {
+    		sfs.putOverwrite("PuzzleData" + index, Base64.encodeStandard(puzzle.getData()));
+    		sfs.putOverwrite("PuzzleID" + index, puzzle.getID());
+    		sfs.putOverwrite("PuzzleMimeType" + index, puzzle.getMimeType());
+    		
+    		++index;
+    	}
+    	
+    	return sfs;
     }
 
     private SimpleFieldSet errorMessageFCP(final String originalMessage, final Exception e) {
