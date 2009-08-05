@@ -16,6 +16,7 @@ import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.exceptions.UnknownPuzzleException;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionServer;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
@@ -77,6 +78,8 @@ public final class FCPInterface implements FredPluginFCP {
                 replysender.send(handleRemoveProperty(params), data);
             } else if (message.equals("GetIntroductionPuzzles")) {
             	replysender.send(handleGetIntroductionPuzzles(params), data);
+            } else if (message.equals("GetIntroductionPuzzle")) {
+            	replysender.send(handleGetIntroductionPuzzle(params), data);
             } else if (message.equals("SolveIntroductionPuzzle")) {
             	replysender.send(handleSolveIntroductionPuzzle(params), data);
             } else {
@@ -424,17 +427,27 @@ public final class FCPInterface implements FredPluginFCP {
     	sfs.putOverwrite("Message", "IntroductionPuzzles");
     	
     	for(IntroductionPuzzle puzzle : puzzles) {
-    		sfs.putOverwrite("Puzzle" + index, puzzle.getID());
-    		sfs.putOverwrite("PuzzleData" + index, Base64.encodeStandard(puzzle.getData()));
-    		sfs.putOverwrite("PuzzleMimeType" + index, puzzle.getMimeType());
-    		
+    		sfs.putOverwrite("Puzzle" + index, puzzle.getID());    		
     		++index;
     	}
     	
     	return sfs;
     }
     
-    private SimpleFieldSet handleSolveIntroductionPuzzle(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
+    private SimpleFieldSet handleGetIntroductionPuzzle(final SimpleFieldSet params) throws InvalidParameterException, UnknownPuzzleException {
+    	final String puzzleID = getMandatoryParameter(params, "Puzzle");
+    	
+    	IntroductionPuzzle puzzle = mWoT.getIntroductionPuzzleStore().getByID(puzzleID);
+    	    	
+    	final SimpleFieldSet result = new SimpleFieldSet(true);
+    	result.putOverwrite("Message", "IntroductionPuzzle");
+    	result.putOverwrite("Type", puzzle.getType().toString());
+    	result.putOverwrite("MimeType", puzzle.getMimeType());
+    	result.putOverwrite("Data", Base64.encodeStandard(puzzle.getData()));
+    	return result;
+    }
+    
+    private SimpleFieldSet handleSolveIntroductionPuzzle(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException, UnknownPuzzleException {
     	final String identityID = getMandatoryParameter(params, "Identity");
     	final String puzzleID = getMandatoryParameter(params, "Puzzle");
     	final String solution = getMandatoryParameter(params, "Solution");
