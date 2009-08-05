@@ -77,6 +77,8 @@ public final class FCPInterface implements FredPluginFCP {
                 replysender.send(handleRemoveProperty(params), data);
             } else if (message.equals("GetIntroductionPuzzles")) {
             	replysender.send(handleGetIntroductionPuzzles(params), data);
+            } else if (message.equals("SolveIntroductionPuzzle")) {
+            	replysender.send(handleSolveIntroductionPuzzle(params), data);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
@@ -419,14 +421,28 @@ public final class FCPInterface implements FredPluginFCP {
     	
     	int index = 1;
     	
+    	sfs.putOverwrite("Message", "IntroductionPuzzles");
+    	
     	for(IntroductionPuzzle puzzle : puzzles) {
+    		sfs.putOverwrite("Puzzle" + index, puzzle.getID());
     		sfs.putOverwrite("PuzzleData" + index, Base64.encodeStandard(puzzle.getData()));
-    		sfs.putOverwrite("PuzzleID" + index, puzzle.getID());
     		sfs.putOverwrite("PuzzleMimeType" + index, puzzle.getMimeType());
     		
     		++index;
     	}
     	
+    	return sfs;
+    }
+    
+    private SimpleFieldSet handleSolveIntroductionPuzzle(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
+    	final String identityID = getMandatoryParameter(params, "Identity");
+    	final String puzzleID = getMandatoryParameter(params, "Puzzle");
+    	final String solution = getMandatoryParameter(params, "Solution");
+    	
+    	mWoT.getIntroductionClient().solvePuzzle(mWoT.getOwnIdentityByID(identityID), mWoT.getIntroductionPuzzleStore().getByID(puzzleID), solution);
+    	
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+    	sfs.putOverwrite("Message", "PuzzleSolved");
     	return sfs;
     }
 
