@@ -4,6 +4,7 @@ import java.util.List;
 
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.exceptions.UnknownPuzzleException;
 import plugins.WoT.introduction.IntroductionClient;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
@@ -41,8 +42,10 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				String id = request.getPartAsString("id" + idx, 128);
 				String solution = request.getPartAsString("Solution" + id, 10); /* FIXME: replace "10" with the maximal solution length */
 				if(!solution.equals("")) {
-					IntroductionPuzzle p = wot.getIntroductionPuzzleStore().getByID(id);
-					if(p != null) {
+					IntroductionPuzzle p;
+					try {
+						p = wot.getIntroductionPuzzleStore().getByID(id);
+
 						try {
 							mClient.solvePuzzle(mIdentity, p, solution);
 						}
@@ -50,6 +53,8 @@ public class IntroduceIdentityPage extends WebPageImpl {
 							/* The identity or the puzzle might have been deleted here */
 							Logger.error(this, "insertPuzzleSolution() failed");
 						}
+					} catch (UnknownPuzzleException e1) {
+
 					}
 				}
 				++idx;

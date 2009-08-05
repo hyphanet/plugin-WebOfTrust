@@ -7,6 +7,7 @@ import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.exceptions.UnknownPuzzleException;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 
 import com.db4o.ObjectSet;
@@ -141,9 +142,12 @@ public final class IntroductionPuzzleStore {
 		 * expire anyway. Further, isn't there a db4o option which ensures that mID is a primary key and therefore no duplicates can exist? */
 		synchronized(puzzle) {
 		synchronized(mDB.lock()) {
-			IntroductionPuzzle existingPuzzle = getByID(puzzle.getID());
-			if(existingPuzzle != null && existingPuzzle != puzzle)
-				throw new IllegalArgumentException("Puzzle with ID " + puzzle.getID() + " already exists!");
+			try {
+				IntroductionPuzzle existingPuzzle = getByID(puzzle.getID());
+				if(existingPuzzle != puzzle)
+					throw new IllegalArgumentException("Puzzle with ID " + puzzle.getID() + " already exists!");
+			}
+			catch(UnknownPuzzleException e) { }
 			
 			if(mDB.isStored(puzzle) && !mDB.isActive(puzzle))
 				throw new RuntimeException("Trying to store an inactive IntroductionPuzzle object!");
@@ -167,9 +171,10 @@ public final class IntroductionPuzzleStore {
 
 	/**
 	 * Get an IntroductionPuzzle or OwnIntroductionPuzzle by it's ID.
+	 * @throws UnknownPuzzleException If there is no puzzle with the given id.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized IntroductionPuzzle getByID(String id) {
+	public synchronized IntroductionPuzzle getByID(String id) throws UnknownPuzzleException {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mID").constrain(id);
@@ -178,7 +183,10 @@ public final class IntroductionPuzzleStore {
 		/* TODO: Decide whether we maybe should throw to get bug reports if this happens ... OTOH puzzles are not so important ;) */
 		assert(result.size() <= 1);
 
-		return (result.hasNext() ? result.next() : null);
+		if(result.hasNext())
+			return result.next();
+		else
+			throw new UnknownPuzzleException(id);
 	}
 
 	 /**
@@ -197,7 +205,7 @@ public final class IntroductionPuzzleStore {
 		return (IntroductionPuzzle)getByInserterDateIndex(inserter, date, index);
 	}
 	
-	protected IntroductionPuzzle getPuzzleBySolutionURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
+	protected IntroductionPuzzle getPuzzleBySolutionURI(FreenetURI uri) throws ParseException, UnknownIdentityException, UnknownPuzzleException {
 		return getByID(IntroductionPuzzle.getIDFromSolutionURI(uri));
 	}
 	
@@ -228,8 +236,9 @@ public final class IntroductionPuzzleStore {
 	  * @param uri
 	  * @return
 	  * @throws ParseException
+	  * @throws UnknownPuzzleException 
 	  */
-	protected OwnIntroductionPuzzle getOwnPuzzleBySolutionURI(FreenetURI uri) throws ParseException {
+	protected OwnIntroductionPuzzle getOwnPuzzleBySolutionURI(FreenetURI uri) throws ParseException, UnknownPuzzleException {
 		return (OwnIntroductionPuzzle)getByID(OwnIntroductionPuzzle.getIDFromSolutionURI(uri));
 	}
 
