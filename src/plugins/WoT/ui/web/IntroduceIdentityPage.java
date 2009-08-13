@@ -51,7 +51,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 						}
 						catch(Exception e) {
 							/* The identity or the puzzle might have been deleted here */
-							Logger.error(this, "insertPuzzleSolution() failed");
+							Logger.error(this, "insertPuzzleSolution() failed", e);
 						}
 					} catch (UnknownPuzzleException e1) {
 
