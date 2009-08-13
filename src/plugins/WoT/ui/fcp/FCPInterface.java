@@ -82,6 +82,8 @@ public final class FCPInterface implements FredPluginFCP {
             	replysender.send(handleGetIntroductionPuzzle(params), data);
             } else if (message.equals("SolveIntroductionPuzzle")) {
             	replysender.send(handleSolveIntroductionPuzzle(params), data);
+            } else if (message.equals("Ping")) {
+            	replysender.send(handlePing(), data);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
@@ -456,6 +458,12 @@ public final class FCPInterface implements FredPluginFCP {
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "PuzzleSolved");
+    	return sfs;
+    }
+    
+    private SimpleFieldSet handlePing() {
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+    	sfs.putOverwrite("Message", "Pong");
     	return sfs;
     }
 
