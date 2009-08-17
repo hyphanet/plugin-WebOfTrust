@@ -104,6 +104,9 @@ public final class IntroductionClient extends TransferThread  {
 		mWoT = myWoT;
 		mPuzzleStore = mWoT.getIntroductionPuzzleStore();
 		mRandom = mWoT.getPluginRespirator().getNode().fastWeakRandom;
+		
+		// FIXME: You should avoid calling methods in constructors that might lead to the object 
+		// being registered and then called back to before the fields have been written.
 		start();
 	}
 	
