@@ -91,6 +91,9 @@ public final class Score {
 	
 	@Override
 	public synchronized String toString() {
+		// This function locks very much stuff and is synchronized. The lock on Score objects should always be taken last by our locking policy right now,
+		// otherwise this function might be dangerous to be used for example with logging. Therefore TODO: Ensure that locks on Score are really taken last.
+		
 		/* We do not synchronize on target and TreeOwner because nickname changes are not allowed, the only thing which can happen
 		 * is that we get a blank nickname if it has not been received yet, that is not severe though.*/
 		
