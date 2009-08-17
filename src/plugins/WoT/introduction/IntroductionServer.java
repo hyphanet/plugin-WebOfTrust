@@ -336,7 +336,6 @@ public final class IntroductionServer extends TransferThread {
 	
 	/**
 	 * Called when the node can't fetch a file OR when there is a newer edition.
-	 * In our case, called when there is no solution to a puzzle in the network.
 	 */
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		try {
