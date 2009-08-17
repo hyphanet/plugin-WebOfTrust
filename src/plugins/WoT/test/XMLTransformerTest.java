@@ -75,7 +75,7 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 		
 		FreenetURI identityURI = new FreenetURI("USK@HH~V2XmCbZp~738qtE67jUg1M5L5flVvQfc2bYpE1o4,c8H39jkp08cao-EJVTV~rISHlcMnlTlpNFICzL4gmZ4,AQACAAE/WoT/0");
 		
-		ByteArrayInputStream is = new ByteArrayInputStream(introductionXML.getBytes());
+		ByteArrayInputStream is = new ByteArrayInputStream(introductionXML.getBytes("UTF-8"));
 		
 		try {
 			mOwnIdentity.removeContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); mWoT.storeAndCommit(mOwnIdentity);
@@ -92,7 +92,7 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 			}
 		}
 		
-		is = new ByteArrayInputStream(introductionXML.getBytes());
+		is = new ByteArrayInputStream(introductionXML.getBytes("UTF-8"));
 		
 		mOwnIdentity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); mWoT.storeAndCommit(mOwnIdentity);
 		
