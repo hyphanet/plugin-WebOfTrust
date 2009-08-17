@@ -128,7 +128,7 @@ public final class FCPInterface implements FredPluginFCP {
             		identityContext);
         }
    
-        if (params.get("PublishIntroductionPuzzles") != null && params.getBoolean("PublishIntroductionPuzzles"))
+        if (params.getBoolean("PublishIntroductionPuzzles", false))
         {
         	if(!identityPublishesTrustList)
         		throw new InvalidParameterException("An identity cannot publish introduction puzzles if it does not publish its trust list.");
