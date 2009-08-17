@@ -343,10 +343,9 @@ public final class IntroductionServer extends TransferThread {
 			if(e.getMode() == FetchException.CANCELLED) {
 				Logger.debug(this, "Fetch cancelled: " + state.getURI());
 			}
-			else if(e.getMode() == FetchException.DATA_NOT_FOUND) {
-				/* This is the normal case: The puzzle was not solved. */
-			} else {
-				Logger.error(this, "Downloading puzzle solution " + state.getURI() + " failed: ", e);
+			else {
+				// We use retries = -1 so this should never happen unless a client inserts bogus data to the puzzle slot.
+				Logger.error(this, "SHOULD NOT HAPPEN: Downloading puzzle solution " + state.getURI() + " failed: ", e);
 			}
 		}
 		finally {
