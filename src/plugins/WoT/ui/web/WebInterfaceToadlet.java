@@ -33,13 +33,7 @@ public abstract class WebInterfaceToadlet extends Toadlet {
 		return webInterface.getURI() + "/" + pageTitle;
 	}
 
-	@Override
-	public String supportedMethods() {
-		return "GET, POST";
-	}
-	
-	@Override
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) 
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) 
 			throws ToadletContextClosedException, IOException, RedirectException {
 		String ret;
 		try {
@@ -59,9 +53,8 @@ public abstract class WebInterfaceToadlet extends Toadlet {
 		}
 		writeHTMLReply(ctx, 200, "OK", ret);
 	}
-	
-	@Override
-	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
 		String pass = request.getPartAsString("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
