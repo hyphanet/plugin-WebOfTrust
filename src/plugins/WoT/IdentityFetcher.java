@@ -89,7 +89,7 @@ public class IdentityFetcher implements USKRetrieverCallback {
 						// The identity has a new "mandatory" edition number stored which we must fetch, so we restart the request because the edition number might
 						// be lower than the last one which the USKRetriever has fetched.
 						Logger.minor(this, "The current edition of the given identity is marked as not fetched, re-creating the USKRetriever for " + usk);
-						retriever.cancel();
+						retriever.cancel(null, mClientContext);
 						mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
 						mRequests.remove(identity.getID());
 						retriever = null;
@@ -143,7 +143,7 @@ public class IdentityFetcher implements USKRetrieverCallback {
 		USKRetriever[] retrievers = mRequests.entrySet().toArray(new USKRetriever[mRequests.size()]);		
 		int counter = 0;		 
 		for(USKRetriever r : retrievers) {
-			r.cancel();
+			r.cancel(null, mClientContext);
 			mUSKManager.unsubscribeContent(r.getOriginalUSK(), r, true);
 			 ++counter;
 		}
