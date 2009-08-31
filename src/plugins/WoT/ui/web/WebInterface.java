@@ -15,7 +15,7 @@ import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.api.HTTPRequest;
@@ -354,7 +354,7 @@ public class WebInterface {
 	
 
 	private static final String l10n(String string) {
-		return L10n.getString("ConfigToadlet." + string);
+		return NodeL10n.getBase().getString("ConfigToadlet." + string);
 	}
 	
 	public void unload() {
