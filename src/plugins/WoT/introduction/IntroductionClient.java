@@ -361,7 +361,7 @@ public final class IntroductionClient extends TransferThread  {
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
 		ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mWoT.getRequestClient(), this, fetchContext);
-		g.setPriorityClass(RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, mClientContext, null);
+		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
 		addFetch(g);
 		
 		/* Attention: Do not lock the WoT here before locking mIdentities because there is another synchronized(mIdentities) in this class
