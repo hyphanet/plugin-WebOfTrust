@@ -41,7 +41,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 			while(request.isPartSet("id" + idx)) {
 				String id = request.getPartAsString("id" + idx, 128);
 				String solution = request.getPartAsString("Solution" + id, 10); /* FIXME: replace "10" with the maximal solution length */
-				if(!solution.equals("")) {
+				if(!solution.trim().equals("")) {
 					IntroductionPuzzle p;
 					try {
 						p = wot.getIntroductionPuzzleStore().getByID(id);
