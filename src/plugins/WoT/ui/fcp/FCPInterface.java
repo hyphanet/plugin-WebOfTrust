@@ -88,7 +88,7 @@ public final class FCPInterface implements FredPluginFCP {
                 throw new Exception("Unknown message (" + message + ")");
             }
         } catch (final Exception e) {
-            Logger.error(this, e.toString());
+            Logger.error(this, "FCP error", e);
             try {
                 replysender.send(errorMessageFCP(params.get("Message"), e), data);
             } catch (final PluginNotFoundException e1) {
