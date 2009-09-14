@@ -60,6 +60,11 @@ public final class IntroductionClient extends TransferThread  {
 	private static final int STARTUP_DELAY = 3 * 60 * 1000;
 	private static final int THREAD_PERIOD = 1 * 60 * 60 * 1000; 
 	
+	/**
+	 * A call to getPuzzles() wakes up the puzzle downloader thread to download new puzzles. This constant specifies the minimal delay between two wake-ups.
+	 */
+	private static final int MINIMAL_SLEEP_TIME = 10 * 60 * 1000;
+	
 	/* TODO: Maybe implement backward-downloading of puzzles, currently we only download puzzles of today.
 	/* public static final byte PUZZLE_DOWNLOAD_BACKWARDS_DAYS = IntroductionServer.PUZZLE_INVALID_AFTER_DAYS - 1; */
 	public static final int PUZZLE_REQUEST_COUNT = 10;
@@ -88,6 +93,8 @@ public final class IntroductionClient extends TransferThread  {
 	private Random mRandom;
 	
 	/* Private objects */
+	
+	private long mLastIterationTime = 0;
 	
 	/**
 	 * List of identities of which we have downloaded puzzles from recently. It is maintained so that puzzles are always downloaded from multiple different
@@ -139,9 +146,21 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Called by the superclass TransferThread after getStartupDelay() milliseconds and then after each getSleepTime() milliseconds.
 	 * Deletes old puzzles, fetches new ones and inserts solutions of the user. 
+	 * 
+	 * Further, getPuzzles() also causes the execution of iterate() by calling nextIteration().
 	 */
 	@Override
 	protected void iterate() {
+		
+		synchronized(this) {
+			long time = CurrentTimeUTC.getInMillis();
+			
+			if((time - mLastIterationTime) <= MINIMAL_SLEEP_TIME)
+				return;
+			
+			mLastIterationTime = time;
+		}
+		
 		mPuzzleStore.deleteExpiredPuzzles();
 		mPuzzleStore.deleteOldestUnsolvedPuzzles(PUZZLE_POOL_SIZE);
 		downloadPuzzles();
@@ -156,15 +175,16 @@ public final class IntroductionClient extends TransferThread  {
 	 * been deleted already - it should be save to parse ObjectContainers while the database is being modified, shouldn't it?
 	 */
 	public List<IntroductionPuzzle> getPuzzles(OwnIdentity user, PuzzleType puzzleType, int count) {
+		ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count + 1);
+		HashSet<Identity> resultHasPuzzleFrom = new HashSet<Identity>(count * 2); /* Have some room so we do not hit the load factor */
+		
 		/* Deadlocks could occur without the lock on WoT because the loop calls functions which lock the WoT - if something else started to
 		 * execute (while we have already locked the puzzle store) which locks the WoT and waits for the puzzle store to become available
 		 * until it releases the WoT. */
 		synchronized(mWoT) {
 		synchronized(mPuzzleStore) {
 			List<IntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedPuzzles(puzzleType);
-			ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count + 1);
-			HashSet<Identity> resultHasPuzzleFrom = new HashSet<Identity>(count * 2); /* Have some room so we do not hit the load factor */ 
-			
+			 
 			for(IntroductionPuzzle puzzle : puzzles) {
 				try {
 					/* TODO: Maybe also check whether the user has already solved puzzles of the identity which inserted this one */ 
@@ -189,10 +209,12 @@ public final class IntroductionClient extends TransferThread  {
 					Logger.error(this, "WTF?", e);
 				}
 			}
-			
-			return result;
 		}
 		}
+		
+		nextIteration();
+		
+		return result;
 	}
 	
 	/**
