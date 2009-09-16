@@ -25,6 +25,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 
 	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
+	private final String showIdentityURI;
 	private final String createIdentityURI;
 	private final String editIdentityURI;
 	private final String deleteIdentityURI;
@@ -38,10 +39,14 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	 */
 	public OwnIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) {
 		super(toadlet, myRequest, context);
-		createIdentityURI = toadlet.webInterface.getURI()+"/CreateIdentity";
-		editIdentityURI = toadlet.webInterface.getURI()+"/EditOwnIdentity";
-		deleteIdentityURI = toadlet.webInterface.getURI()+"/DeleteOwnIdentity";
-		introduceIdentityURI = toadlet.webInterface.getURI()+"/IntroduceIdentity";
+		
+		String baseURI = toadlet.webInterface.getURI();
+		
+		showIdentityURI = baseURI+"/ShowIdentity";
+		createIdentityURI = baseURI+"/CreateIdentity";
+		editIdentityURI = baseURI+"/EditOwnIdentity";
+		deleteIdentityURI = baseURI+"/DeleteOwnIdentity";
+		introduceIdentityURI = baseURI+"/IntroduceIdentity";
 	}
 
 	public void make() {
@@ -107,7 +112,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, id.doesPublishTrustList() ? "Yes" : "No");
 				
 				HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-				trustersCell.addChild(new HTMLNode("a", "href", uri + "?ShowIdentity&id="+id.getID(),
+				trustersCell.addChild(new HTMLNode("a", "href", showIdentityURI + "?id=" + id.getID(),
 						Long.toString(wot.getReceivedTrusts(id).size())));
 				
 				HTMLNode manageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
