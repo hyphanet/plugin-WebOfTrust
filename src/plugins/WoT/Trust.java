@@ -101,7 +101,7 @@ public class Trust {
 	 */
 	protected synchronized void setValue(byte newValue) throws InvalidParameterException {
 		if(newValue < -100 || newValue > 100) 
-			throw new InvalidParameterException("Invalid trust value ("+mValue+").");
+			throw new InvalidParameterException("Invalid trust value ("+ newValue +").");
 		
 		mValue = newValue;
 	}
