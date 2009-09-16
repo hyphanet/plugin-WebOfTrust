@@ -341,10 +341,8 @@ public final class IntroductionClient extends TransferThread  {
 		
 	/**
 	 * Finds a random index of a puzzle from the inserter which we did not download yet and downloads it.
-	 * 
-	 * Not synchronized because its caller is synchronized already.
 	 */
-	private void downloadPuzzle(Identity inserter) throws FetchException {
+	private synchronized void downloadPuzzle(Identity inserter) throws FetchException {
 		downloadPuzzle(inserter, mRandom.nextInt(IntroductionServer.getIdentityPuzzleCount(inserter))); 
 	}
 	
@@ -379,15 +377,6 @@ public final class IntroductionClient extends TransferThread  {
 			}
 		}
 		
-		uri = IntroductionPuzzle.generateRequestURI(inserter, date, index);
-		
-		FetchContext fetchContext = mClient.getFetchContext();
-		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
-		fetchContext.maxNonSplitfileRetries = 2;
-		ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mWoT.getRequestClient(), this, fetchContext);
-		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
-		addFetch(g);
-		
 		/* Attention: Do not lock the WoT here before locking mIdentities because there is another synchronized(mIdentities) in this class
 		 * which locks the WoT inside the mIdentities-lock */
 		synchronized(mIdentities) {
@@ -409,6 +398,19 @@ public final class IntroductionClient extends TransferThread  {
 			mIdentities.push(inserter.getID()); // put this identity at the beginning of the LRUQueue
 		}
 		
+		uri = IntroductionPuzzle.generateRequestURI(inserter, date, index);		
+		FetchContext fetchContext = mClient.getFetchContext();
+		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
+		fetchContext.maxNonSplitfileRetries = 2;
+		ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mWoT.getRequestClient(), this, fetchContext);
+		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
+		addFetch(g);
+		
+		// Not necessary because it's not a HashSet but a fixed-length queue so the identity will get removed sometime anyway.
+		//catch(RuntimeException e) {
+		//	mIdentities.removeKey(identity);
+		//}
+		
 		Logger.debug(this, "Trying to fetch puzzle from " + uri.toString());
 	}
 
@@ -426,7 +428,7 @@ public final class IntroductionClient extends TransferThread  {
 			inputStream = bucket.getInputStream();
 			
 			IntroductionPuzzle puzzle = mWoT.getXMLTransformer().importIntroductionPuzzle(state.getURI(), inputStream);
-			downloadPuzzle(puzzle.getInserter(), puzzle.getIndex() + 1); /* TODO: Also download a random index here maybe */
+			downloadPuzzle(puzzle.getInserter());
 		}
 		catch (Exception e) { 
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
