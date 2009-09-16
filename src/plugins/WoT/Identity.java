@@ -534,4 +534,8 @@ public class Identity {
 		mLastChangedDate = CurrentTimeUTC.get();
 	}
 
+	public String toString() {
+		return mNickname + "(" + mID + ")";
+	}
+	
 }

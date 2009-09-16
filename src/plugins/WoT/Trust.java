@@ -77,7 +77,7 @@ public class Trust {
 
 	@Override
 	public synchronized String toString() {
-		return getTruster().getNickname() + " trusts " + getTrustee().getNickname() + " (" + getValue() + " : " + getComment() + ")";
+		return getTruster().getNickname() + " trusts " + getTrustee().getNickname() + " with value " + getValue() + " (comment: " + getComment() + ")";
 	}
 
 	/** @return The Identity that gives this trust. */
