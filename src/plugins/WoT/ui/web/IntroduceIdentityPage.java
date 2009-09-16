@@ -10,7 +10,6 @@ import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 import freenet.clients.http.ToadletContext;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -18,6 +17,8 @@ import freenet.support.api.HTTPRequest;
 public class IntroduceIdentityPage extends WebPageImpl {
 	
 	protected static int PUZZLE_DISPLAY_COUNT = 16;
+	
+	protected final String mPuzzleURI;
 	
 	protected final IntroductionClient mClient;
 	protected final OwnIdentity mIdentity;
@@ -31,6 +32,8 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	 */
 	public IntroduceIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException {
 		super(toadlet, myRequest, context);
+		
+		mPuzzleURI = toadlet.webInterface.getURI() + "/GetPuzzle";
 		
 		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
 		mClient = wot.getIntroductionClient();
@@ -88,10 +91,8 @@ public class IntroduceIdentityPage extends WebPageImpl {
 			for(IntroductionPuzzle p : puzzles) {
 				// Display as much puzzles per row as fitting in the browser-window via "inline-block" style. Nice, eh?
 				HTMLNode cell = solveForm.addChild("div", new String[] { "align" , "style"}, new String[] { "center" , "display: inline-block"});
-				/* FIXME: use SELF_URI + "puzzle?id=" instead 
-				 * That page should then use wot.getIntroductionPuzzleStore().getByID(id); for obtaining the puzzle */
 				cell.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id" + counter, p.getID() });
-				cell.addChild("img", new String[] {"src"}, new String[] {"data:image/jpeg;base64," + Base64.encodeStandard(p.getData())}); 
+				cell.addChild("img", "src", mPuzzleURI + "?PuzzleID=" + p.getID() ); 
 				cell.addChild("br");
 				cell.addChild("input", new String[] { "type", "name", "size"}, new String[] { "text", "Solution" + p.getID(), "10" });
 				

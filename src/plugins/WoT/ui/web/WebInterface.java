@@ -8,6 +8,7 @@ import java.net.URI;
 
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.introduction.IntroductionPuzzle;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.RedirectException;
@@ -15,10 +16,16 @@ import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
+import freenet.clients.http.filter.ContentFilter;
+import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.Logger;
+import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
 
 /**
  * The web interface of the WoT plugin.
@@ -32,11 +39,20 @@ public class WebInterface {
 	private final WoT mWoT;
 	private final PluginRespirator mPluginRespirator;
 	private final PageMaker mPageMaker;
+	
 	// Visible
 	private final WebInterfaceToadlet homeToadlet;
 	private final WebInterfaceToadlet ownIdentitiesToadlet;
 	private final WebInterfaceToadlet knownIdentitiesToadlet;
 	private final WebInterfaceToadlet configurationToadlet;
+	
+	// Invisible
+	private final WebInterfaceToadlet createIdentityToadlet;
+	private final WebInterfaceToadlet deleteOwnIdentityToadlet;
+	private final WebInterfaceToadlet editOwnIdentityToadlet;
+	private final WebInterfaceToadlet introduceIdentityToadlet;
+	private final WebInterfaceToadlet identityToadlet;
+	private final WebInterfaceToadlet getPuzzleToadlet;
 	
 	private final String mURI;
 
@@ -147,13 +163,6 @@ public class WebInterface {
 		}
 		
 	}
-
-	// Invisible
-	private final WebInterfaceToadlet createIdentityToadlet;
-	private final WebInterfaceToadlet deleteOwnIdentityToadlet;
-	private final WebInterfaceToadlet editOwnIdentityToadlet;
-	private final WebInterfaceToadlet introduceIdentityToadlet;
-	private final WebInterfaceToadlet identityToadlet;
 
 	public class CreateIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
 
@@ -315,6 +324,54 @@ public class WebInterface {
 		
 	}
 	
+	
+	public class GetPuzzleWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected GetPuzzleWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+			// ATTENTION: The same code is used in Freetalk's WebInterface.java. Please synchronize any changes which happen there.
+			
+			Bucket dataBucket = null;
+			FilterOutput output = null;
+			
+			try {
+				final IntroductionPuzzle puzzle = mWoT.getIntroductionPuzzleStore().getByID(req.getParam("PuzzleID"));
+				
+				final String mimeType = puzzle.getMimeType();
+				
+				// TODO: Store the list of allowed mime types in a constant. Also consider that we might have introduction puzzles with "Type=Audio" in the future.
+				if(!mimeType.equalsIgnoreCase("image/jpeg") &&
+				  	!mimeType.equalsIgnoreCase("image/gif") && 
+				  	!mimeType.equalsIgnoreCase("image/png")) {
+					
+					throw new Exception("Mime type '" + mimeType + "' not allowed for introduction puzzles.");
+				}
+				
+				dataBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, puzzle.getData());
+				output = ContentFilter.filter(dataBucket, core.tempBucketFactory, puzzle.getMimeType(), uri, null);
+				writeReply(ctx, 200, output.type, "OK", output.data);
+			}
+			catch(Exception e) {
+				sendErrorPage(ctx, 404, "Introduction puzzle not available", e.getMessage());
+				Logger.error(this, "GetPuzzle failed", e);
+			}
+			finally {
+				if(output != null)
+					Closer.close(output.data);
+				Closer.close(dataBucket);
+			}
+		}
+		
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
+			// Not expected to make it here...
+			return new HomePage(this, req, context);
+		}
+	}
+	
 	public WebInterface(WoT myWoT, String uri) {
 		mWoT = myWoT;
 		mURI = uri;
@@ -338,6 +395,7 @@ public class WebInterface {
 		container.register(editOwnIdentityToadlet = new EditOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "EditOwnIdentity"), null, mURI + "/EditOwnIdentity", true, false);
 		container.register(introduceIdentityToadlet = new IntroduceIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "IntroduceIdentity"), null, mURI + "/IntroduceIdentity", true, false);
 		container.register(identityToadlet = new IdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "ShowIdentity"), null, mURI + "/ShowIdentity", true, false);
+		container.register(getPuzzleToadlet = new GetPuzzleWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "GetPuzzle"), null, mURI + "/GetPuzzle", true, false);
 	}
 	
 	public String getURI() {
@@ -368,7 +426,8 @@ public class WebInterface {
 				deleteOwnIdentityToadlet,
 				editOwnIdentityToadlet,
 				introduceIdentityToadlet,
-				identityToadlet
+				identityToadlet,
+				getPuzzleToadlet
 		}) container.unregister(t);
 		mPageMaker.removeNavigationCategory("Web of Trust");
 	}
