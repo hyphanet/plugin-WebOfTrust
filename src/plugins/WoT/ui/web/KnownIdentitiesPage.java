@@ -10,6 +10,7 @@ import plugins.WoT.OwnIdentity;
 import plugins.WoT.Trust;
 import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.DuplicateTrustException;
+import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 
@@ -72,6 +73,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 					wot.removeTrust(trusterID, trusteeID);
 				else
 					wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
+			} catch(InvalidParameterException e) {
+				addErrorBox("Setting trust failed", e.getMessage());
 			} catch(Exception e) {
 				addErrorBox("Setting trust failed", e);
 			}
