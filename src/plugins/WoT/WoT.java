@@ -1307,6 +1307,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		return createOwnIdentity(keypair[0].toString(), keypair[1].toString(), nickName, publishTrustList, context);
 	}
 
+	/**
+	 * @param context A context with which you want to use the identity. Null if you want to add it later.
+	 */
 	public synchronized OwnIdentity createOwnIdentity(String insertURI, String requestURI, String nickName,
 			boolean publishTrustList, String context) throws MalformedURLException, InvalidParameterException {
 		
@@ -1321,7 +1324,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			}
 			catch(UnknownIdentityException uie) {
 				identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
-				identity.addContext(context);
+				if(context != null)
+					identity.addContext(context);
 				identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); /* FIXME: make configureable */
 				identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
 				

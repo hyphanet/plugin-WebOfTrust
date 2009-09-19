@@ -3,7 +3,6 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.ui.web;
 
-import plugins.WoT.OwnIdentity;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
 import freenet.support.HTMLNode;
@@ -30,10 +29,9 @@ public class CreateIdentityPage extends WebPageImpl {
 	public void make() {
 		if(request.isPartSet("CreateIdentity")) {
 			try {
-				OwnIdentity newIdentity =
-					wot.createOwnIdentity(request.getPartAsString("InsertURI",1024), request.getPartAsString("RequestURI",1024),
+				wot.createOwnIdentity(request.getPartAsString("InsertURI",1024), request.getPartAsString("RequestURI",1024),
 										request.getPartAsString("Nickname", 1024), request.getPartAsString("PublishTrustList", 5).equals("true"),
-										"Freetalk"); /* FIXME: Freetalk should do that itself! */
+										null);
 				
 				/* FIXME: inline the own identities page. first we need to modify our base class to be able to do so, see freetalk */
 				
