@@ -197,10 +197,12 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			}
 			Logger.debug(this, "WoT startup completed.");
 		}
-		catch(Exception e) {
+		catch(RuntimeException e){
 			Logger.error(this, "Error during startup", e);
 			/* We call it so the database is properly closed */
 			terminate();
+			
+			throw e;
 		}
 	}
 	

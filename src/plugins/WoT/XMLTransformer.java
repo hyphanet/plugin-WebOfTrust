@@ -18,10 +18,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
@@ -86,12 +84,12 @@ public final class XMLTransformer {
 	 * Initializes the XML creator & parser and caches those objects in the new IdentityXML object so that they do not have to be initialized
 	 * each time an identity is exported/imported.
 	 */
-	public XMLTransformer(WoT myWoT)
-		throws ParserConfigurationException, TransformerConfigurationException, TransformerFactoryConfigurationError {
+	public XMLTransformer(WoT myWoT) {
 		
 		mWoT = myWoT;
 		mDB = mWoT.getDB();
 		
+		try {
 		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
 		xmlFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
 		// DOM parser uses .setAttribute() to pass to underlying Xerces
@@ -103,6 +101,10 @@ public final class XMLTransformer {
 		mSerializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 		mSerializer.setOutputProperty(OutputKeys.INDENT, "yes"); /* FIXME: Set to no before release. */
 		mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
+		}
+		catch(Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	public void exportOwnIdentity(OwnIdentity identity, OutputStream os) throws TransformerException {
