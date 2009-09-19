@@ -994,11 +994,12 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	
 	/**
 	 * Only for being used by WoT internally and by unit tests! 
+	 * 
+	 * @param truster Must be an own identity unless the function is being used in an unit test!
 	 */
-	public synchronized void setTrust(Identity truster, Identity trustee, byte newValue, String newComment)
+	synchronized void setTrust(Identity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
-		/* FIXME: Throw if we are no unit test and the truster is no own identity */
 		assert(truster instanceof OwnIdentity); /* Unit tests may ignore this. */
 		
 		synchronized(mDB.lock()) {
