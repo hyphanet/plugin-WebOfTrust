@@ -52,7 +52,7 @@ import freenet.support.api.Bucket;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
+public final class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
 	FredPluginL10n, FredPluginWithClassLoader {
 	
 	/* Constants */
