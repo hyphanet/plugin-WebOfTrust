@@ -1453,13 +1453,13 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					
 					Logger.debug(this, "Successfully restored not-yet-known identity from Freenet (" + identity.getRequestURI() + ")");
 				}
+				
+				mFetcher.fetch(identity);
 			}
 			catch(RuntimeException e) {
 				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
-			
-			mFetcher.fetch(identity);
 		}
 		
 	}
