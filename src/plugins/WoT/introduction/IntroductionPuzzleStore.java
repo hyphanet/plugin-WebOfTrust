@@ -125,6 +125,36 @@ public final class IntroductionPuzzleStore {
 		}
 	}
 	
+	/**
+	 * Called by the WoT before an identity is deleted.
+	 * Deletes all puzzles it has published or solved. Does not commit the transaction.
+	 * 
+	 * You have to lock this IntroductionPuzzleStore and the database before calling this function.
+	 *  
+	 * @param identity The identity which is being deleted. It must still be stored in the database.
+	 */
+	@SuppressWarnings("unchecked")
+	public void onIdentityDeletion(Identity identity) {
+		Query q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").constrain(identity).identity();
+		ObjectSet<IntroductionPuzzle> puzzles = q.execute();
+		
+		for(IntroductionPuzzle puzzle : puzzles)
+			deleteWithoutCommit(puzzle);
+		
+		if(identity instanceof OwnIdentity) {
+			q = mDB.query();
+			q.constrain(IntroductionPuzzle.class);
+			q.descend("mWasSolved").constrain(true);
+			q.descend("mSolver").constrain((OwnIdentity)identity);
+			puzzles = q.execute();
+			
+			for(IntroductionPuzzle puzzle : puzzles)
+				deleteWithoutCommit(puzzle);
+		}
+	}
+	
 	private synchronized void deleteWithoutCommit(IntroductionPuzzle puzzle) {
 		try {
 			mDB.delete(puzzle.getType());

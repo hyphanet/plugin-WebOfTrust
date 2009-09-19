@@ -810,14 +810,27 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * Gets a list of all this Identity's Scores.
 	 * You have to synchronize on this WoT around the call to this function and the processing of the returned list! 
 	 * 
-	 * @param db A reference to the database
 	 * @return An {@link ObjectSet} containing all {@link Score} this Identity has.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized ObjectSet<Score> getScores(Identity identity) {
+	public ObjectSet<Score> getScores(Identity identity) {
 		Query query = mDB.query();
 		query.constrain(Score.class);
 		query.descend("mTarget").constrain(identity).identity();
+		return query.execute();
+	}
+	
+	/**
+	 * Get a list of all scores which the passed own identity has assigned to other identities.
+	 * 
+	 * You have to synchronize on this WoT around the call to this function and the processing of the returned list! 
+	 * @return An {@link ObjectSet} containing all {@link Score} this Identity has given.
+	 */
+	@SuppressWarnings("unchecked")
+	public ObjectSet<Score> getGivenScores(OwnIdentity treeOwner) {
+		Query query = mDB.query();
+		query.constrain(Score.class);
+		query.descend("mTreeOwner").constrain(treeOwner).identity();
 		return query.execute();
 	}
 	
@@ -1272,13 +1285,21 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 	
 	public synchronized void deleteIdentity(Identity identity) {
+		synchronized(mPuzzleStore) {
 		synchronized(mDB.lock()) {
 			try {
 				Logger.debug(this, "Deleting identity " + identity + " ...");
 
-				Logger.debug(this, "Deleting scores...");
+				Logger.debug(this, "Deleting received scores...");
 				for(Score score : getScores(identity))
 					mDB.delete(score);
+				
+				if(identity instanceof OwnIdentity) {
+					Logger.debug(this, "Deleting given scores...");
+					
+					for(Score score : getGivenScores((OwnIdentity)identity))
+						mDB.delete(score);
+				}
 				
 				Logger.debug(this, "Deleting received trusts...");
 				for(Trust trust : getReceivedTrusts(identity))
@@ -1290,6 +1311,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					updateScoreWithoutCommit(givenTrust.getTrustee());
 				}
 				
+				Logger.debug(this, "Deleting associated introduction puzzles ...");
+				mPuzzleStore.onIdentityDeletion(identity);
+				
 				Logger.debug(this, "Deleting the identity...");
 				deleteWithoutCommit(identity);
 				mDB.commit(); Logger.debug(this, "COMMITED.");
@@ -1298,6 +1322,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
+		}
 		}
 	}
 	
