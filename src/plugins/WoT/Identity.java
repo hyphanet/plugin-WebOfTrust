@@ -31,6 +31,12 @@ import freenet.support.StringValidityChecker;
  * @param mProperties A HashMap containing all custom properties o an Identity
  */
 public class Identity {
+	
+	public static final int MAX_CONTEXT_NAME_LENGTH = 32;
+	public static final int MAX_CONTEXT_AMOUNT = 32;
+	public static final int MAX_PROPERTY_NAME_LENGTH = 256;
+	public static final int MAX_PROPERTY_VALUE_LENGTH = 10 * 1024;
+	public static final int MAX_PROPERTY_AMOUNT = 64;
 
 	/** A unique identifier used to query this Identity from the database. In fact, it is simply a String representing its routing key. */
 	protected final String mID;
@@ -390,13 +396,18 @@ public class Identity {
 	public synchronized void addContext(String newContext) throws InvalidParameterException {
 		newContext = newContext.trim();
 		
-		if(newContext.length() == 0)
+		final int length = newContext.length();
+		
+		if(length == 0)
 			throw new InvalidParameterException("A blank context cannot be added to an identity.");
 		
-		/* FIXME: Limit the length of a context */
+		if(length > MAX_CONTEXT_NAME_LENGTH)
+			throw new InvalidParameterException("Context names must not be longer than " + MAX_CONTEXT_NAME_LENGTH + " characters.");
 		
 		if(!mContexts.contains(newContext)) {
-			/* FIXME: Limit the amount of contexts */
+			if(mContexts.size() >= MAX_CONTEXT_AMOUNT)
+				throw new InvalidParameterException("An identity may not have more than " + MAX_CONTEXT_AMOUNT + " contexts.");
+			
 			mContexts.add(newContext);
 			updated();
 		}
@@ -480,14 +491,28 @@ public class Identity {
 	public synchronized void setProperty(String key, String value) throws InvalidParameterException {
 		key = key.trim();
 		
-		if(key.length() == 0 || value.length() == 0)
-			throw new InvalidParameterException("Blank key or value in this property");
+		final int keyLength = key.length();
 		
-		/* FIXME: Limit the length of key and value */
+		if(keyLength == 0)
+			throw new InvalidParameterException("Property names must not be empty.");
+		
+		if(keyLength > MAX_PROPERTY_NAME_LENGTH)
+			throw new InvalidParameterException("Property names must not be longer than " + MAX_PROPERTY_NAME_LENGTH + " characters.");
+		
+		final int valueLength = value.length();
+		
+		if(valueLength == 0)
+			throw new InvalidParameterException("Property values must not be empty.");
+		
+		if(valueLength > MAX_PROPERTY_VALUE_LENGTH)
+			throw new InvalidParameterException("Property values must not be longer than " + MAX_PROPERTY_VALUE_LENGTH + " characters");
+		
 		
 		String oldValue = mProperties.get(key);
+		if(oldValue == null && mProperties.size() >= MAX_PROPERTY_AMOUNT)
+			throw new InvalidParameterException("An identity may not have more than " + MAX_PROPERTY_AMOUNT + " properties.");
+		
 		if(oldValue == null || oldValue.equals(value) == false) {
-			/* FIXME: Limit the amount of properties */
 			mProperties.put(key, value);
 			updated();
 		}
