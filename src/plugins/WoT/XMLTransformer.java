@@ -90,17 +90,17 @@ public final class XMLTransformer {
 		mDB = mWoT.getDB();
 		
 		try {
-		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
-		xmlFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-		// DOM parser uses .setAttribute() to pass to underlying Xerces
-		xmlFactory.setAttribute("http://apache.org/xml/features/disallow-doctype-decl", true);
-		mDocumentBuilder = xmlFactory.newDocumentBuilder(); 
-		mDOM = mDocumentBuilder.getDOMImplementation();
-		
-		mSerializer = TransformerFactory.newInstance().newTransformer();
-		mSerializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-		mSerializer.setOutputProperty(OutputKeys.INDENT, "yes"); /* FIXME: Set to no before release. */
-		mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
+			DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
+			xmlFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+			// DOM parser uses .setAttribute() to pass to underlying Xerces
+			xmlFactory.setAttribute("http://apache.org/xml/features/disallow-doctype-decl", true);
+			mDocumentBuilder = xmlFactory.newDocumentBuilder(); 
+			mDOM = mDocumentBuilder.getDOMImplementation();
+
+			mSerializer = TransformerFactory.newInstance().newTransformer();
+			mSerializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+			mSerializer.setOutputProperty(OutputKeys.INDENT, "yes"); /* FIXME: Set to no before release. */
+			mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
 		}
 		catch(Exception e) {
 			throw new RuntimeException(e);
