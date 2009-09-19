@@ -206,11 +206,16 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		}
 	}
 	
-	public WoT() {
+	/**
+	 * Constructor which does not generate an IdentityFetcher, IdentityInster, IntroductionPuzzleStore, user interface, etc.
+	 * For being used in unit tests.
+	 */
+	WoT() {
 		
 	}
 	
 	/**
+	 *  Constructor which does not generate an IdentityFetcher, IdentityInster, IntroductionPuzzleStore, user interface, etc.
 	 * For use by the unit tests to be able to run WoT without a node.
 	 * @param databaseFilename The filename of the database.
 	 */
