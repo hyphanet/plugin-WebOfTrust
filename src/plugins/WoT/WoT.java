@@ -177,10 +177,15 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			createSeedIdentities();
 			
 			mInserter = new IdentityInserter(this);
+			mInserter.start();
+			
 			mFetcher = new IdentityFetcher(this);		
 			
 			mIntroductionServer = new IntroductionServer(this, mFetcher);
+			mIntroductionServer.start();
+			
 			mIntroductionClient = new IntroductionClient(this);
+			mIntroductionClient.start();
 
 			mWebInterface = new WebInterface(this, SELF_URI);
 			mFCPInterface = new FCPInterface(this);
