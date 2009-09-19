@@ -89,9 +89,7 @@ public class IdentityFetcher implements USKRetrieverCallback {
 						// The identity has a new "mandatory" edition number stored which we must fetch, so we restart the request because the edition number might
 						// be lower than the last one which the USKRetriever has fetched.
 						Logger.minor(this, "The current edition of the given identity is marked as not fetched, re-creating the USKRetriever for " + usk);
-						retriever.cancel(null, mClientContext);
-						mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
-						mRequests.remove(identity.getID());
+						abortFetch(retriever);
 						retriever = null;
 					}
 				}
@@ -104,6 +102,26 @@ public class IdentityFetcher implements USKRetrieverCallback {
 
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Request restart failed: "+e, e);
+		}
+	}
+	
+	protected void abortFetch(USKRetriever retriever) {
+		retriever.cancel(null, mClientContext);
+		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
+		mRequests.remove(retriever);	
+	}
+	
+	public synchronized void abortFetch(Identity identity) {
+		synchronized(identity) {
+			USKRetriever retriever = mRequests.get(identity.getID());
+
+			if(retriever == null) {
+				Logger.error(this, "Aborting fetch failed (no fetch found) for identity" + identity);
+				return;
+			}
+			
+			Logger.debug(this, "Aborting fetch for identity " + identity);
+			abortFetch(retriever);
 		}
 	}
 	

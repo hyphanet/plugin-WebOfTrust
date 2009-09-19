@@ -192,8 +192,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			
 			Logger.debug(this, "Starting fetches of all identities...");
 			synchronized(this) {
-				for(Identity identity : getAllIdentities())
-					mFetcher.fetch(identity);
+				for(Identity identity : getAllIdentities()) {
+					if(shouldFetchIdentity(identity))
+						mFetcher.fetch(identity);
+				}
 			}
 			Logger.debug(this, "WoT startup completed.");
 		}
@@ -865,6 +867,17 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 	
 	/**
+	 * Checks whether the given identity should be downloaded. 
+	 * @return Returns true if the identity has a score >= 0 or if it is an own identity.
+	 */
+	public boolean shouldFetchIdentity(Identity identity) {
+		if(identity instanceof OwnIdentity)
+			return true;
+		
+		return getBestScore(identity) >= 0;
+	}
+	
+	/**
 	 * Gets Identities matching a specified score criteria.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 * 
@@ -1164,26 +1177,23 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			/* We must detect if an identity had a null or negative score which has changed to positive:
 			 * If we download the trust list of someone who has no or negative score we do not create the identities in his trust list.
 			 * If the identity now gets a positive score we must re-download his current trust list. */
-			boolean scoreWasNegative = false;
-			
+			boolean scoreSignChanged;
+		
 			try { // Get existing score or create one if needed
 				score = getScore(treeOwner, target);
-				scoreWasNegative = score.getScore() < 0;
+				scoreSignChanged = Integer.signum(score.getScore()) != Integer.signum(value);
 			} catch (NotInTrustTreeException e) {
 				score = new Score(treeOwner, target, 0, -1, 0);
-				scoreWasNegative = true;
+				scoreSignChanged = true;
 			}
+			
+			boolean oldShouldFetch = true;
+			
+			if(scoreSignChanged) // No need to figure out whether the identity should have been fetched in the past if the score sign did not change
+				oldShouldFetch = shouldFetchIdentity(target);
 			
 			score.setValue(value);
 			score.setRank(rank + 1);
-			
-			if(scoreWasNegative && score.getScore() >= 0) {
-				target.markForRefetch();
-				storeWithoutCommit(target);
-				Logger.debug(this, "Score changed from negative/null to positive, refetching " + target.getRequestURI());
-				if(mFetcher != null) /* For JUnit */
-					mFetcher.fetch(target);
-			}
 			
 			int oldCapacity = score.getCapacity();
 			
@@ -1206,6 +1216,29 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				changedCapacity = true;
 			
 			mDB.store(score);
+			
+			// FIXME: Those two commands to the identity fetcher should be undone if the transaction is rolled back.
+			
+			if(scoreSignChanged) {
+				if(!oldShouldFetch && shouldFetchIdentity(target)) { 
+					Logger.debug(this, "Best score changed from negative/null to positive, refetching " + target);
+					
+					target.markForRefetch();
+					storeWithoutCommit(target);
+					
+					if(mFetcher != null)
+						mFetcher.fetch(target);
+				}
+				
+				if(oldShouldFetch && !shouldFetchIdentity(target)) {
+					Logger.debug(this, "Best score changed from positive/null to negative, aborting fetch of " + target);
+					
+					if(mFetcher != null)
+						mFetcher.abortFetch(target);
+				}
+			}
+			
+			
 			Logger.debug(target, "New score: " + score.toString());
 		}
 		
@@ -1282,6 +1315,12 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			identity = new Identity(requestURI, null, false);
 			storeAndCommit(identity);
 			Logger.debug(this, "Trying to fetch manually added identity (" + identity.getRequestURI() + ")");
+			
+			if(!shouldFetchIdentity(identity)) {
+				assert(false);
+				Logger.error(this, "shouldFetchIdentity() returned false for manually added identity!");
+			}
+			
 			mFetcher.fetch(identity);
 		}
 		
