@@ -52,7 +52,7 @@ import freenet.support.api.Bucket;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
+public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
 	FredPluginL10n, FredPluginWithClassLoader {
 	
 	/* Constants */
@@ -207,10 +207,9 @@ public final class WoT implements FredPlugin, FredPluginThreadless, FredPluginFC
 	}
 	
 	/**
-	 * Constructor which does not generate an IdentityFetcher, IdentityInster, IntroductionPuzzleStore, user interface, etc.
-	 * For being used in unit tests.
+	 * Constructor for being used by the node and unit tests. Does not do anything.
 	 */
-	WoT() {
+	public WoT() {
 		
 	}
 	
