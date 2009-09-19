@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map.Entry;
 
 import javax.xml.XMLConstants;
@@ -263,6 +264,14 @@ public final class XMLTransformer {
 					 * the import of partial trust lists. Especially we should not ignore failing deletions of old trust objects. */
 					try {
 						boolean positiveScore = mWoT.getBestScore(identity) > 0 || identity instanceof OwnIdentity;
+						
+						HashSet<String> newIdentitiesToFetch = null;
+						HashSet<String>	identitiesWithUpdatedEditionHint = null;
+						
+						if(positiveScore) {
+							newIdentitiesToFetch = new HashSet<String>();
+							identitiesWithUpdatedEditionHint = new HashSet<String>();
+						}
 
 						Element trustListElement = (Element)identityElement.getElementsByTagName("TrustList").item(0);
 						NodeList trustList = trustListElement.getElementsByTagName("Trust");
@@ -276,17 +285,18 @@ public final class XMLTransformer {
 							Identity trustee = null;
 							try {
 								trustee = mWoT.getIdentityByURI(trusteeURI);
-								boolean editionHintUpdated = trustee.setNewEditionHint(trusteeURI.getEdition());
-								mWoT.storeWithoutCommit(trustee);
-								
-								if(editionHintUpdated && positiveScore)
-									mWoT.getIdentityFetcher().editionHintUpdated(trustee); /* FIXME: We need to revert this upon rollback!! */
+								if(positiveScore) {
+									if(trustee.setNewEditionHint(trusteeURI.getEdition())); {
+										identitiesWithUpdatedEditionHint.add(trustee.getID());
+										mWoT.storeWithoutCommit(trustee);
+									}
+								}
 							}
 							catch(UnknownIdentityException e) {
 								if(positiveScore) { /* We only create trustees if the truster has a positive score */
 									trustee = new Identity(trusteeURI, null, false);
 									mWoT.storeWithoutCommit(trustee);
-									mWoT.getIdentityFetcher().fetch(trustee); /* FIXME: We need to revert this upon rollback!! */
+									newIdentitiesToFetch.add(trustee.getID());
 								}
 							}
 
@@ -301,6 +311,17 @@ public final class XMLTransformer {
 						}
 
 						mWoT.storeAndCommit(identity);
+						
+						IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
+						if(positiveScore && identityFetcher != null) {
+							for(String id : identitiesWithUpdatedEditionHint) {
+								identityFetcher.editionHintUpdated(mWoT.getIdentityByID(id));
+							}
+							
+							for(String id : newIdentitiesToFetch) {
+								identityFetcher.fetch(mWoT.getIdentityByID(id));
+							}
+						}
 					}
 					
 					catch(Exception e) {
