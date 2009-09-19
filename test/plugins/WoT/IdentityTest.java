@@ -27,11 +27,10 @@ public class IdentityTest extends DatabaseBasedTest {
 		identity = new Identity(uri, "test", true);
 		identity.addContext("bleh");
 		mWoT.storeAndCommit(identity);
+		
+		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
+		flushCaches();
 	}
-	
-	/* FIXME: Add some logic to make db4o deactivate everything which is not used before loading the objects from the db!
-	 * Otherwise these tests might not be sufficient. 
-	 * Put this logic into the DatabaseBasedTest base class. */
 	
 	public void testIdentityStored() {
 		ObjectSet<Identity> result = mWoT.getAllIdentities();
@@ -71,8 +70,7 @@ public class IdentityTest extends DatabaseBasedTest {
 		mWoT.terminate();
 		mWoT = null;
 		
-		System.gc();
-		System.runFinalization();
+		flushCaches();
 		
 		mWoT = new WoT(getDatabaseFilename());
 		

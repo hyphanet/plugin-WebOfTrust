@@ -5,11 +5,6 @@ package plugins.WoT;
 
 import java.net.MalformedURLException;
 
-import plugins.WoT.Identity;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.Score;
-import plugins.WoT.Trust;
-import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.DuplicateTrustException;
 import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
@@ -27,18 +22,17 @@ public class WoTTest extends DatabaseBasedTest {
 	private String uriB = "USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WoT/0";
 	private String uriC = "USK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/WoT/0";
 
-	/* FIXME: Add some logic to make db4o deactivate everything which is not used before loading the objects from the db!
-	 * Otherwise these tests might not be sufficient. 
-	 * Put this logic into the DatabaseBasedTest base class. */
 	
 	public void testInitTrustTree() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
 		mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test"); /* This also initializes the trust tree */
 		
+		flushCaches();
 		assertTrue(mWoT.getAllNonOwnIdentities().size() == 0);
 		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
 		assertTrue(mWoT.getAllTrusts().size() == 0);
 		assertTrue(mWoT.getAllScores().size() == 1);
 		
+		flushCaches();
 		OwnIdentity a = mWoT.getOwnIdentityByURI(uriA);
 
 		Score score = mWoT.getScore(a,a);
@@ -58,7 +52,8 @@ public class WoTTest extends DatabaseBasedTest {
 		
 		// With A's trust tree not initialized, B shouldn't get a Score.
 		mWoT.setTrust(a, b, (byte)10, "Foo");
-
+		
+		flushCaches();
 		assertTrue(mWoT.getAllNonOwnIdentities().size() == 1);
 		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
 		assertTrue(mWoT.getAllTrusts().size() == 1);
@@ -71,29 +66,32 @@ public class WoTTest extends DatabaseBasedTest {
 		Identity b = new Identity(uriB, "B", true);
 		mWoT.getDB().store(b, 5);
 		
-
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		
 		// Check we have the correct number of objects
+		flushCaches();
 		assertTrue(mWoT.getAllNonOwnIdentities().size() == 1);
 		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
 		assertTrue(mWoT.getAllTrusts().size() == 1);
 		assertTrue(mWoT.getAllScores().size() == 2);
 		
 		// Check the Trust object
+		flushCaches();
 		Trust t = mWoT.getTrust(a, b);
 		assertTrue(t.getTruster() == a);
 		assertTrue(t.getTrustee() == b);
 		assertTrue(t.getValue() == 100);
 		assertTrue(t.getComment().equals("Foo"));
-
+		
 		// Check a's Score object
+		flushCaches();
 		Score scoreA = mWoT.getScore(a, a);
 		assertTrue(scoreA.getScore() == 100);
 		assertTrue(scoreA.getRank() == 0);
 		assertTrue(scoreA.getCapacity() == 100);
 		
 		// Check B's Score object
+		flushCaches();
 		Score scoreB = mWoT.getScore(a, b);
 		assertTrue(scoreB.getScore() == 100);
 		assertTrue(scoreB.getRank() == 1);
@@ -103,26 +101,29 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrust(a, b, (byte)50, "Bar");
 		
 		// Check we have the correct number of objects
+		flushCaches();
 		assertTrue(mWoT.getAllNonOwnIdentities().size() == 1);
 		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
 		assertTrue(mWoT.getAllTrusts().size() == 1);
 		assertTrue(mWoT.getAllScores().size() == 2);
 		
 		// Check the Trust object
-		
+		flushCaches();
 		t = mWoT.getTrust(a, b);
 		assertTrue(t.getTruster() == a);
 		assertTrue(t.getTrustee() == b);
 		assertTrue(t.getValue() == 50);
 		assertTrue(t.getComment().equals("Bar"));
-
+		
 		// Check a's Score object
+		flushCaches();
 		scoreA = mWoT.getScore(a, a);
 		assertTrue(scoreA.getScore() == 100);
 		assertTrue(scoreA.getRank() == 0);
 		assertTrue(scoreA.getCapacity() == 100);
 
 		// Check B's Score object
+		flushCaches();
 		scoreB = mWoT.getScore(a, b);
 		assertTrue(scoreB.getScore() == 50);
 		assertTrue(scoreB.getRank() == 1);
@@ -144,24 +145,28 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrust(b, c, (byte)50, "Bar");
 		
 		// Check we have the correct number of objects
+		flushCaches();
 		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
 		assertTrue(mWoT.getAllNonOwnIdentities().size() == 2);
 		assertTrue(mWoT.getAllTrusts().size() == 2);
 		assertTrue(mWoT.getAllScores().size() == 3);
 		
 		// Check a's Score object
+		flushCaches();
 		Score scoreA = mWoT.getScore(a, a);
 		assertTrue(scoreA.getScore() == 100);
 		assertTrue(scoreA.getRank() == 0);
 		assertTrue(scoreA.getCapacity() == 100);
 		
 		// Check B's Score object
+		flushCaches();
 		Score scoreB = mWoT.getScore(a, b);
 		assertTrue(scoreB.getScore() == 100);
 		assertTrue(scoreB.getRank() == 1);
 		assertTrue(scoreB.getCapacity() == 40);
 		
 		// Check C's Score object
+		flushCaches();
 		Score scoreC = mWoT.getScore(a, c);
 		assertTrue(scoreC.getScore() == 20);
 		assertTrue(scoreC.getRank() == 2);
@@ -170,18 +175,21 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrust(a, b, (byte)-1, "Bastard");
 		
 		// Check we have the correct number of objects
+		flushCaches();
 		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
 		assertTrue(mWoT.getAllNonOwnIdentities().size() == 2);
 		assertTrue(mWoT.getAllTrusts().size() == 2);
 		assertTrue(mWoT.getAllScores().size() == 2);
 		
 		// Check a's Score object
+		flushCaches();
 		scoreA = mWoT.getScore(a, a);
 		assertTrue(scoreA.getScore() == 100);
 		assertTrue(scoreA.getRank() == 0);
 		assertTrue(scoreA.getCapacity() == 100);
 		
 		// Check B's Score object
+		flushCaches();
 		scoreB = mWoT.getScore(a, b);
 		assertTrue(scoreB.getScore() == -1);
 		assertTrue(scoreB.getRank() == 1);
@@ -210,24 +218,28 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrust(c, b, (byte)50, "Oops");
 		
 		// Check we have the correct number of objects
+		flushCaches();
 		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
 		assertTrue(mWoT.getAllNonOwnIdentities().size() == 2);
 		assertTrue(mWoT.getAllTrusts().size() == 4);
 		assertTrue(mWoT.getAllScores().size() == 3);
 
 		// Check a's Score object
+		flushCaches();
 		Score scoreA = mWoT.getScore(a, a);
 		assertTrue(scoreA.getScore() == 100);
 		assertTrue(scoreA.getRank() == 0);
 		assertTrue(scoreA.getCapacity() == 100);
 		
 		// Check B's Score object
+		flushCaches();
 		Score scoreB = mWoT.getScore(a, b);
 		assertTrue(scoreB.getScore() == 108);
 		assertTrue(scoreB.getRank() == 1);
 		assertTrue(scoreB.getCapacity() == 40);
 		
 		// Check C's Score object
+		flushCaches();
 		Score scoreC = mWoT.getScore(a, c);
 		assertTrue(scoreC.getScore() == 20);
 		assertTrue(scoreC.getRank() == 2);
@@ -242,30 +254,35 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrust(b, a, (byte)100, "Bar");
 		
 		// Check we have the correct number of objects
+		flushCaches();
 		assertTrue(mWoT.getAllOwnIdentities().size() == 2);
 		assertTrue(mWoT.getAllNonOwnIdentities().size() == 0);
 		assertTrue(mWoT.getAllTrusts().size() == 2);
 		assertTrue(mWoT.getAllScores().size() == 4);
 		
 		// Check a's own Score object
+		flushCaches();
 		Score scoreA = mWoT.getScore(a, a);
 		assertTrue(scoreA.getScore() == 100);
 		assertTrue(scoreA.getRank() == 0);
 		assertTrue(scoreA.getCapacity() == 100);
 		
 		// Check a's Score object
+		flushCaches();
 		Score scoreAfromB = mWoT.getScore(b, a);
 		assertTrue(scoreAfromB.getScore() == 100);
 		assertTrue(scoreAfromB.getRank() == 1);
 		assertTrue(scoreAfromB.getCapacity() == 40);
 				
 		// Check B's own Score object
+		flushCaches();
 		Score scoreB = mWoT.getScore(a, a);
 		assertTrue(scoreB.getScore() == 100);
 		assertTrue(scoreB.getRank() == 0);
 		assertTrue(scoreB.getCapacity() == 100);
 
 		// Check B's Score object
+		flushCaches();
 		Score scoreBfromA = mWoT.getScore(b, a);
 		assertTrue(scoreBfromA.getScore() == 100);
 		assertTrue(scoreBfromA.getRank() == 1);

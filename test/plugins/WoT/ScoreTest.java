@@ -35,11 +35,10 @@ public class ScoreTest extends DatabaseBasedTest {
 		Score score = new Score(a,b,100,1,40);
 		mWoT.getDB().store(score);
 		mWoT.getDB().commit();
+		
+		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
+		flushCaches();
 	}
-	
-	/* FIXME: Add some logic to make db4o deactivate everything which is not used before loading the objects from the db!
-	 * Otherwise these tests might not be sufficient. 
-	 * Put this logic into the DatabaseBasedTest base class. */
 
 	public void testScoreCreation() throws NotInTrustTreeException {
 		
@@ -57,8 +56,7 @@ public class ScoreTest extends DatabaseBasedTest {
 		mWoT.terminate();
 		mWoT = null;
 		
-		System.gc();
-		System.runFinalization();
+		flushCaches();
 		
 		mWoT = new WoT(getDatabaseFilename());
 		

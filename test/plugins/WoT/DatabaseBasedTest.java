@@ -64,6 +64,15 @@ public class DatabaseBasedTest extends TestCase {
 	public void testSelf() {
 		
 	}
+	
+	protected void flushCaches() {
+		System.gc();
+		System.runFinalization();
+		if(mWoT != null)
+			mWoT.getDB().purge();
+		System.gc();
+		System.runFinalization();
+	}
 
 }
 
