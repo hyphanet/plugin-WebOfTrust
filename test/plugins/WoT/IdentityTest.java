@@ -26,6 +26,7 @@ public class IdentityTest extends DatabaseBasedTest {
 		
 		identity = new Identity(uri, "test", true);
 		identity.addContext("bleh");
+		identity.setProperty("testproperty","foo1a");
 		mWoT.storeAndCommit(identity);
 		
 		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
@@ -83,6 +84,7 @@ public class IdentityTest extends DatabaseBasedTest {
 		assertEquals(identity.getNickname(), stored.getNickname());
 		assertEquals(identity.getAddedDate(), stored.getAddedDate());
 		assertEquals(identity.getLastChangeDate(), stored.getLastChangeDate());
-		/* FIXME: Check contexts & properties */
+		assertEquals(identity.getContexts(), stored.getContexts());
+		assertEquals(identity.getProperties(), stored.getProperties());
 	}
 }
