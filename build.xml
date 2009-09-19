@@ -42,14 +42,13 @@
 				<pathelement location="${freenet-cvs-snapshot.location}"/>
 			</classpath>
 			<include name="**/*.java"/>
-			<exclude name="**/*Test.java"/>
 		</javac>
 	</target>
 
 	<!-- ================================================== -->
 
 	<target name="unit-build" depends="compile" if="junit.present" unless="skip_tests">
-		<javac srcdir="src/" destdir="${build-test}" debug="on" optimize="on" source="1.5">
+		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on" source="1.5">
 			<classpath>
 				<pathelement path="${build}"/>
 				<pathelement location="${freenet-ext.location}"/>
@@ -57,7 +56,7 @@
 				<pathelement location="${junit.location}"/>
 			</classpath>
 			<compilerarg value="-Xlint"/>
-			<include name="**/*Test.java"/>
+			<include name="**/*.java"/>
 		</javac>
 	</target>
 
@@ -75,7 +74,7 @@
 
 			<batchtest fork="yes">
 				<fileset dir="${build-test}">
-					<include name="**/*Test.class"/>
+					<include name="**/*.class"/>
 				</fileset>
 			</batchtest>
 			<sysproperty key="benchmark" value="${benchmark}" />

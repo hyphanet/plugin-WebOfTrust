@@ -1,58 +1,60 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT.test;
+package plugins.WoT;
 
 import java.net.MalformedURLException;
 
 import plugins.WoT.Identity;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.Score;
+import plugins.WoT.Trust;
 import plugins.WoT.WoT;
-import plugins.WoT.exceptions.NotInTrustTreeException;
+import plugins.WoT.exceptions.DuplicateTrustException;
+import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
+
+import com.db4o.ext.ExtObjectContainer;
 
 /**
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public class ScoreTest extends DatabaseBasedTest {
+public class TrustTest extends DatabaseBasedTest {
 	
 	private String uriA = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0";
 	private String uriB = "USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WoT/0";
-	private OwnIdentity a;
+	private Identity a;
 	private Identity b;
 
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		
-		a = new OwnIdentity(uriA, uriA, "A", true);
+
+		a = new Identity(uriA, "A", true);
 		b = new Identity(uriB, "B", true);
-		mWoT.storeAndCommit(a);
-		mWoT.storeAndCommit(b);
+		Trust trust = new Trust(a,b,(byte)100,"test");
 		
-		Score score = new Score(a,b,100,1,40);
-		mWoT.getDB().store(score);
-		mWoT.getDB().commit();
+		ExtObjectContainer db = mWoT.getDB();
+		db.store(a, 5);
+		db.store(b, 5);
+		db.store(trust);
+		db.commit();
+		
 	}
 	
 	/* FIXME: Add some logic to make db4o deactivate everything which is not used before loading the objects from the db!
 	 * Otherwise these tests might not be sufficient. 
 	 * Put this logic into the DatabaseBasedTest base class. */
 
-	public void testScoreCreation() throws NotInTrustTreeException {
-		
-		Score score = mWoT.getScore(a, b);
-		
-		assertTrue(score.getScore() == 100);
-		assertTrue(score.getRank() == 1);
-		assertTrue(score.getCapacity() == 40);
-		assertTrue(score.getTreeOwner() == a);
-		assertTrue(score.getTarget() == b);
+	public void testTrust() throws DuplicateTrustException, NotTrustedException {
+
+		Trust trust = mWoT.getTrust(a, b); 
+		assertTrue(trust.getTruster() == a);
+		assertTrue(trust.getTrustee() == b);
+		assertTrue(trust.getValue() == 100);
+		assertEquals("test", trust.getComment());
 	}
 	
-	public void testScorePersistence() throws MalformedURLException, UnknownIdentityException, NotInTrustTreeException {
+	public void testTrustPersistence() throws MalformedURLException, UnknownIdentityException, DuplicateTrustException, NotTrustedException {
 		
 		mWoT.terminate();
 		mWoT = null;
@@ -62,14 +64,13 @@ public class ScoreTest extends DatabaseBasedTest {
 		
 		mWoT = new WoT(getDatabaseFilename());
 		
-		a = mWoT.getOwnIdentityByURI(uriA);
+		a = mWoT.getIdentityByURI(uriA);
 		b = mWoT.getIdentityByURI(uriB);
-		Score score = mWoT.getScore(a, b);
+		Trust trust = mWoT.getTrust(a, b);
 		
-		assertTrue(score.getScore() == 100);
-		assertTrue(score.getRank() == 1);
-		assertTrue(score.getCapacity() == 40);
-		assertTrue(score.getTreeOwner() == a);
-		assertTrue(score.getTarget() == b);
+		assertTrue(trust.getTruster() == a);
+		assertTrue(trust.getTrustee() == b);
+		assertTrue(trust.getValue() == 100);
+		assertEquals("test", trust.getComment());
 	}
 }
