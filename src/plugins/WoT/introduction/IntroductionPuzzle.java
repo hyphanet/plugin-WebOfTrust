@@ -264,7 +264,6 @@ public class IntroductionPuzzle {
 	
 	/* TODO: Write an unit test which uses this function :) */
 	/* TODO: This code sucks, checkConsistency should throw a descriptive message */
-	/* FIXME: check for validity of the jpeg */
 	@SuppressWarnings("deprecation")
 	public boolean checkConsistency() {
 		boolean result = true;
