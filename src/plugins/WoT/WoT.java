@@ -57,8 +57,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	
 	/* Constants */
 	
-	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -99;
+	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";  /* FIXME: Change before release */
+	public static final int DATABASE_FORMAT_VERSION = -99;  /* FIXME: Change before release */
 	
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/WoT";
@@ -149,7 +149,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			System.setProperty("java.awt.headless", "true"); 
 	
 			mPR = myPR;
-			mDB = initDB(DATABASE_FILENAME); /* FIXME: Change before release */
+			mDB = initDB(DATABASE_FILENAME);
 			
 			mConfig = Config.loadOrCreate(this);
 			if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WoT.DATABASE_FORMAT_VERSION)
