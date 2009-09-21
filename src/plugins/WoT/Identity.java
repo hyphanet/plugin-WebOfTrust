@@ -229,7 +229,7 @@ public class Identity {
 	protected synchronized boolean setNewEditionHint(long newLatestEditionHint) {
 		if(newLatestEditionHint > mLatestEditionHint) {
 			mLatestEditionHint = newLatestEditionHint;
-			Logger.debug(this, "Received a new edition hint.");
+			Logger.debug(this, "Received a new edition hint of " + newLatestEditionHint + " (current: " + mLatestEditionHint + ") for "+ this);
 			return true;
 		}
 		
