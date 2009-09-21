@@ -410,34 +410,35 @@ public final class XMLTransformer {
 			}
 			catch (UnknownIdentityException e) {
 				synchronized(mDB.lock()) {
-				try{
-				newIdentity = new Identity(identityURI, null, false);
-				newIdentity.setEdition(identityURI.getEdition()); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
-				mWoT.storeWithoutCommit(newIdentity);
-				
-				try {
-					mWoT.getTrust(puzzleOwner, newIdentity); /* Double check ... */
-					Logger.error(newIdentity, "The identity is already trusted even though it did not exist!");
+					try{
+						newIdentity = new Identity(identityURI, null, false);
+						// The identity constructor only takes the edition number as a hint, so we must store it explicitly.
+						newIdentity.setEdition(identityURI.getEdition());
+						mWoT.storeWithoutCommit(newIdentity);
+
+						try {
+							mWoT.getTrust(puzzleOwner, newIdentity); /* Double check ... */
+							Logger.error(newIdentity, "The identity is already trusted even though it did not exist!");
+						}
+						catch(NotTrustedException ex) {
+							// 0 trust will not allow the import of other new identities for the new identity because the trust list import code will only create
+							// new identities if the score of an identity is > 0, not if it is equal to 0.
+							mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");	
+						}
+
+						final IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
+						if(identityFetcher != null)
+							identityFetcher.storeStartFetchCommandWithoutCommit(newIdentity.getID());
+
+						mDB.commit(); Logger.debug(this, "COMMITED.");
+
+					}
+					catch(RuntimeException error) {
+						mDB.rollback();
+						throw error;
+					}
 				}
-				catch(NotTrustedException ex) {
-					// 0 trust will not allow the import of new identities because importIdentity() will only create new identities if the score of an identity
-					// is > 0, not if it is equal to 0.
-					mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");	
-				}
-				
-				final IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
-				if(identityFetcher != null)
-					identityFetcher.storeStartFetchCommandWithoutCommit(newIdentity.getID());
-				
-				mDB.commit(); Logger.debug(this, "COMMITED.");
-				
-				}
-				catch(RuntimeException error) {
-					mDB.rollback();
-					throw error;
-				}
-				}
-				
+
 			}
 		}
 
