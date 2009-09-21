@@ -172,9 +172,11 @@ public final class IdentityInserter extends TransferThread {
 		try {
 			synchronized(mWoT) {
 				OwnIdentity identity = mWoT.getOwnIdentityByURI(state.getURI());
+				synchronized(identity) {
 				identity.setEdition(state.getURI().getEdition());
 				identity.updateLastInsertDate();
 				mWoT.storeAndCommit(identity);
+				}
 			}
 		}
 		catch(Exception e)
