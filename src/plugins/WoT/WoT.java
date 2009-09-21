@@ -755,44 +755,43 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 */
 	private void deleteWithoutCommit(Identity identity) {
 		try {
-		
-		Logger.debug(this, "Deleting identity " + identity + " ...");
+			Logger.debug(this, "Deleting identity " + identity + " ...");
 
-		Logger.debug(this, "Deleting received scores...");
-		for(Score score : getScores(identity))
-			mDB.delete(score);
-		
-		if(identity instanceof OwnIdentity) {
-			Logger.debug(this, "Deleting given scores...");
-			
-			for(Score score : getGivenScores((OwnIdentity)identity))
+			Logger.debug(this, "Deleting received scores...");
+			for(Score score : getScores(identity))
 				mDB.delete(score);
-		}
-		
-		Logger.debug(this, "Deleting received trusts...");
-		for(Trust trust : getReceivedTrusts(identity))
-			mDB.delete(trust);
-		
-		Logger.debug(this, "Deleting given trusts...");
-		for(Trust givenTrust : getGivenTrusts(identity)) {
-			mDB.delete(givenTrust);
-			updateScoreWithoutCommit(givenTrust.getTrustee());
-		}
-		
-		Logger.debug(this, "Deleting associated introduction puzzles ...");
-		mPuzzleStore.onIdentityDeletion(identity);
-		
-		Logger.debug(this, "Deleting the identity...");
-		
-		if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
-			throw new RuntimeException("Trying to delete an inactive Identity object!");
-		
-		if(mFetcher != null)
-			mFetcher.storeAbortFetchCommandWithoutCommit(identity);
-		
-		/* FIXME: We also need to check whether the member objects are active here!!! */
-		
-		
+
+			if(identity instanceof OwnIdentity) {
+				Logger.debug(this, "Deleting given scores...");
+
+				for(Score score : getGivenScores((OwnIdentity)identity))
+					mDB.delete(score);
+			}
+
+			Logger.debug(this, "Deleting received trusts...");
+			for(Trust trust : getReceivedTrusts(identity))
+				mDB.delete(trust);
+
+			Logger.debug(this, "Deleting given trusts...");
+			for(Trust givenTrust : getGivenTrusts(identity)) {
+				mDB.delete(givenTrust);
+				updateScoreWithoutCommit(givenTrust.getTrustee());
+			}
+
+			Logger.debug(this, "Deleting associated introduction puzzles ...");
+			mPuzzleStore.onIdentityDeletion(identity);
+
+			Logger.debug(this, "Deleting the identity...");
+
+			if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
+				throw new RuntimeException("Trying to delete an inactive Identity object!");
+
+			if(mFetcher != null)
+				mFetcher.storeAbortFetchCommandWithoutCommit(identity);
+
+			/* FIXME: We also need to check whether the member objects are active here!!! */
+
+
 			if(identity instanceof OwnIdentity) {
 				OwnIdentity ownId = (OwnIdentity)identity;
 				ownId.mInsertURI.removeFrom(mDB);
