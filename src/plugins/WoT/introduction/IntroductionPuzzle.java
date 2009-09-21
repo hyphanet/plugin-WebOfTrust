@@ -121,8 +121,6 @@ public class IntroductionPuzzle {
 		assert(dateOfInsertion.before(CurrentTimeUTC.get()));
 		assert(index >= 0);
 		
-		/* FIXME: I did not really understand the javadoc of FreenetURI. Please verify that the following code actually creates an URI
-		 * which looks like the one I specified in the javadoc above this function. Thanks. */
 		String dayOfInsertion;
 		synchronized (mDateFormat) {
 			dayOfInsertion = mDateFormat.format(dateOfInsertion);
