@@ -63,7 +63,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			String trusterID = request.getPartAsString("OwnerID", 128);
 			String trusteeID = request.isPartSet("Trustee") ? request.getPartAsString("Trustee", 128) : null;
 			String value = request.getPartAsString("Value", 4);
-			String comment = request.getPartAsString("Comment", 256); /* FIXME: store max length as a constant in class identity */
+			// TODO: getPartAsString() will return an empty String if the length is exceeded, it should rather return a too long string so that setTrust throws
+			// an exception. It's not a severe problem though since we limit the length of the text input field anyway.
+			String comment = request.getPartAsString("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);
 			
 			try {
 				if(trusteeID == null) /* For AddIdentity */
@@ -290,8 +292,15 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "SetTrust" });
 		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", truster.getID() });
 		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Trustee", trustee.getID() });
-		trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Value", "2", trustValue });
-		trustForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Comment", "50", trustComment });
+		
+		// Trust value input field
+		trustForm.addChild("input", new String[] { "type", "name", "size", "value", "maxlength" }, 
+				new String[] { "text", "Value", "4", "4", trustValue });
+		
+		// Trust comment input field
+		trustForm.addChild("input", new String[] { "type", "name", "size", "value", "maxlength" }, 
+				new String[] { "text", "Comment", "50", Integer.toString(Trust.MAX_TRUST_COMMENT_LENGTH), trustComment });
+		
 		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SetTrust", "Update" });
 
 		return cell;

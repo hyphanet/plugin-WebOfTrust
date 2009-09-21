@@ -12,6 +12,8 @@ import plugins.WoT.exceptions.InvalidParameterException;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class Trust {
+	
+	public static final int MAX_TRUST_COMMENT_LENGTH = 256;
 
 	/** The identity which gives the trust. */
 	private final Identity mTruster;
@@ -117,8 +119,8 @@ public class Trust {
 	protected synchronized void setComment(String newComment) throws InvalidParameterException {
 		assert(newComment != null);
 		
-		if(newComment != null && newComment.length() > 256)
-			throw new InvalidParameterException("Comment is too long (maximum is 256 characters).");
+		if(newComment != null && newComment.length() > MAX_TRUST_COMMENT_LENGTH)
+			throw new InvalidParameterException("Comment is too long (maximum is " + MAX_TRUST_COMMENT_LENGTH + " characters).");
 		
 		mComment = newComment != null ? newComment : "";
 	}
