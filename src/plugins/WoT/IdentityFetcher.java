@@ -332,32 +332,31 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 	 * @param identity the Identity to fetch
 	 */
 	protected synchronized void fetch(Identity identity) throws Exception {
-			synchronized(identity) {
-				USKRetriever retriever = mRequests.get(identity.getID());
-				
-				USK usk;
-				
-				if(identity.currentEditionWasFetched())
-					usk = USK.create(identity.getRequestURI().setSuggestedEdition(identity.getEdition() + 1));
-				else {
-					usk = USK.create(identity.getRequestURI());
+		synchronized(identity) {
+			USKRetriever retriever = mRequests.get(identity.getID());
 
-					if(retriever != null) {
-						// The identity has a new "mandatory" edition number stored which we must fetch, so we restart the request because the edition number might
-						// be lower than the last one which the USKRetriever has fetched.
-						Logger.minor(this, "The current edition of the given identity is marked as not fetched, re-creating the USKRetriever for " + usk);
-						abortFetch(retriever);
-						retriever = null;
-					}
+			USK usk;
+
+			if(identity.currentEditionWasFetched())
+				usk = USK.create(identity.getRequestURI().setSuggestedEdition(identity.getEdition() + 1));
+			else {
+				usk = USK.create(identity.getRequestURI());
+
+				if(retriever != null) {
+					// The identity has a new "mandatory" edition number stored which we must fetch, so we restart the request because the edition number might
+					// be lower than the last one which the USKRetriever has fetched.
+					Logger.minor(this, "The current edition of the given identity is marked as not fetched, re-creating the USKRetriever for " + usk);
+					abortFetch(retriever);
+					retriever = null;
 				}
-
-				if(retriever == null)
-					mRequests.put(identity.getID(), fetch(usk));
-
-				mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
-				
 			}
 
+			if(retriever == null)
+				mRequests.put(identity.getID(), fetch(usk));
+
+			mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
+
+		}
 	}
 	
 	/**
@@ -365,7 +364,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 	 * @throws Exception 
 	 */
 	private synchronized void editionHintUpdated(String identityID) throws Exception {
-
 		try {
 			Identity identity = mWoT.getIdentityByID(identityID);
 
