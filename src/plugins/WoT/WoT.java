@@ -294,59 +294,59 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	@SuppressWarnings("unchecked")
 	private synchronized void deleteDuplicateObjects() {
 
-			try {
-				ObjectSet<Identity> identities = getAllIdentities();
-				HashSet<String> deleted = new HashSet<String>();
-				
-				Logger.debug(this, "Searching for duplicate identities ...");
-				
-				for(Identity identity : identities) {
-					Query q = mDB.query();
-					q.constrain(Identity.class);
-					q.descend("mID").constrain(identity.getID());
-					q.constrain(identity).identity().not();
-					ObjectSet<Identity> duplicates = q.execute();
-					for(Identity duplicate : duplicates) {
-						if(deleted.contains(duplicate.getID()) == false) {
-							Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
-							deleteIdentity(duplicate);
-						}
+		try {
+			ObjectSet<Identity> identities = getAllIdentities();
+			HashSet<String> deleted = new HashSet<String>();
+
+			Logger.debug(this, "Searching for duplicate identities ...");
+
+			for(Identity identity : identities) {
+				Query q = mDB.query();
+				q.constrain(Identity.class);
+				q.descend("mID").constrain(identity.getID());
+				q.constrain(identity).identity().not();
+				ObjectSet<Identity> duplicates = q.execute();
+				for(Identity duplicate : duplicates) {
+					if(deleted.contains(duplicate.getID()) == false) {
+						Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
+						deleteIdentity(duplicate);
 					}
-					deleted.add(identity.getID());
 				}
-				
-				Logger.debug(this, "Finished searching for duplicate identities.");
+				deleted.add(identity.getID());
 			}
-			catch(RuntimeException e) {
-				Logger.error(this, "Error while deleting duplicate identities", e);
-			}
-			
-			Logger.debug(this, "Searching for duplicate Trust objects ...");
-			
-				for(OwnIdentity treeOwner : getAllOwnIdentities()) {
-					HashSet<String> givenTo = new HashSet<String>();
-					
-					for(Trust trust : getGivenTrusts(treeOwner)) {
-						if(givenTo.contains(trust.getTrustee().getID()) == false)
-							givenTo.add(trust.getTrustee().getID());
-						else {
-							synchronized(mDB.lock()) {
-							try {
+
+			Logger.debug(this, "Finished searching for duplicate identities.");
+		}
+		catch(RuntimeException e) {
+			Logger.error(this, "Error while deleting duplicate identities", e);
+		}
+
+		Logger.debug(this, "Searching for duplicate Trust objects ...");
+
+		for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+			HashSet<String> givenTo = new HashSet<String>();
+
+			for(Trust trust : getGivenTrusts(treeOwner)) {
+				if(givenTo.contains(trust.getTrustee().getID()) == false)
+					givenTo.add(trust.getTrustee().getID());
+				else {
+					synchronized(mDB.lock()) {
+						try {
 							Logger.error(this, "Deleting duplicate given trust:" + trust);
 							removeTrustWithoutCommit(trust);
 							mDB.commit(); Logger.debug(this, "COMMITED.");
-							}
-							catch(RuntimeException e) {
-								mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
-							}
-							}
-
+						}
+						catch(RuntimeException e) {
+							mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
 						}
 					}
-					
+
 				}
-				
-				Logger.debug(this, "Finished searching for duplicate trust objects.");
+			}
+
+		}
+
+		Logger.debug(this, "Finished searching for duplicate trust objects.");
 		
 		/* TODO: Also delete duplicate score */
 	}
