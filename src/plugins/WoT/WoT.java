@@ -749,7 +749,41 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		}
 	}
 	
+	/**
+	 * You have to lock the WoT and the IntroductionPuzzleStore before calling this function.
+	 * @param identity
+	 */
 	private void deleteWithoutCommit(Identity identity) {
+		try {
+		
+		Logger.debug(this, "Deleting identity " + identity + " ...");
+
+		Logger.debug(this, "Deleting received scores...");
+		for(Score score : getScores(identity))
+			mDB.delete(score);
+		
+		if(identity instanceof OwnIdentity) {
+			Logger.debug(this, "Deleting given scores...");
+			
+			for(Score score : getGivenScores((OwnIdentity)identity))
+				mDB.delete(score);
+		}
+		
+		Logger.debug(this, "Deleting received trusts...");
+		for(Trust trust : getReceivedTrusts(identity))
+			mDB.delete(trust);
+		
+		Logger.debug(this, "Deleting given trusts...");
+		for(Trust givenTrust : getGivenTrusts(identity)) {
+			mDB.delete(givenTrust);
+			updateScoreWithoutCommit(givenTrust.getTrustee());
+		}
+		
+		Logger.debug(this, "Deleting associated introduction puzzles ...");
+		mPuzzleStore.onIdentityDeletion(identity);
+		
+		Logger.debug(this, "Deleting the identity...");
+		
 		if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
 			throw new RuntimeException("Trying to delete an inactive Identity object!");
 		
@@ -758,7 +792,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		
 		/* FIXME: We also need to check whether the member objects are active here!!! */
 		
-		try {
+		
 			if(identity instanceof OwnIdentity) {
 				OwnIdentity ownId = (OwnIdentity)identity;
 				ownId.mInsertURI.removeFrom(mDB);
@@ -1352,33 +1386,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		synchronized(mPuzzleStore) {
 		synchronized(mDB.lock()) {
 			try {
-				Logger.debug(this, "Deleting identity " + identity + " ...");
-
-				Logger.debug(this, "Deleting received scores...");
-				for(Score score : getScores(identity))
-					mDB.delete(score);
-				
-				if(identity instanceof OwnIdentity) {
-					Logger.debug(this, "Deleting given scores...");
-					
-					for(Score score : getGivenScores((OwnIdentity)identity))
-						mDB.delete(score);
-				}
-				
-				Logger.debug(this, "Deleting received trusts...");
-				for(Trust trust : getReceivedTrusts(identity))
-					mDB.delete(trust);
-				
-				Logger.debug(this, "Deleting given trusts...");
-				for(Trust givenTrust : getGivenTrusts(identity)) {
-					mDB.delete(givenTrust);
-					updateScoreWithoutCommit(givenTrust.getTrustee());
-				}
-				
-				Logger.debug(this, "Deleting associated introduction puzzles ...");
-				mPuzzleStore.onIdentityDeletion(identity);
-				
-				Logger.debug(this, "Deleting the identity...");
 				deleteWithoutCommit(identity);
 				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
@@ -1456,6 +1463,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 
 	public synchronized void restoreIdentity(String requestURI, String insertURI) throws MalformedURLException, InvalidParameterException {
 		OwnIdentity identity;
+		synchronized(mPuzzleStore) {
 		synchronized(mDB.lock()) {
 			try {
 				try {
@@ -1477,7 +1485,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						Trust newReceivedTrust = new Trust(oldReceivedTrust.getTruster(), identity,
 								oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
 						
-						mDB.delete(oldReceivedTrust);
 						mDB.store(newReceivedTrust);
 					}
 		
@@ -1486,7 +1493,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						Score newScore = new Score(oldScore.getTreeOwner(), identity, oldScore.getScore(),
 								oldScore.getRank(), oldScore.getCapacity());
 						
-						mDB.delete(oldScore);
 						mDB.store(newScore);
 					}
 		
@@ -1496,14 +1502,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					// Update all given trusts
 					for(Trust givenTrust : getGivenTrusts(old)) {
 						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
-						/* FIXME: The old code would just delete the old trust value here instead of doing the following... 
-						 * Is the following line correct? */
-						removeTrustWithoutCommit(givenTrust);
 					}
 		
-					// Remove the old identity
+					// Remove the old identity and all objects associated with it.
 					deleteWithoutCommit(old);
-
 					
 					Logger.debug(this, "Successfully restored an already known identity from Freenet (" + identity.getNickname() + ")");
 					
@@ -1525,7 +1527,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				throw e;
 			}
 		}
-		
+		}
 	}
 
 	public synchronized void setTrust(String ownTrusterID, String trusteeID, byte value, String comment)
