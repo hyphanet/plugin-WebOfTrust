@@ -1477,7 +1477,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						Trust newReceivedTrust = new Trust(oldReceivedTrust.getTruster(), identity,
 								oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
 						
-						mDB.delete(oldReceivedTrust); /* FIXME: Is this allowed by db4o in a for-each loop? */
+						mDB.delete(oldReceivedTrust);
 						mDB.store(newReceivedTrust);
 					}
 		
