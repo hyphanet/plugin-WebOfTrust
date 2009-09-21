@@ -209,7 +209,8 @@ public class Identity {
 		if(newEdition > currentEdition) {
 			mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
 			mCurrentEditionWasFetched = false;
-			setNewEditionHint(newEdition);
+			if(newEdition > mLatestEditionHint) // Do not call setNewEditionHint() to prevent confusing logging.
+				mLatestEditionHint = newEdition;
 			updated();
 		}
 	}
