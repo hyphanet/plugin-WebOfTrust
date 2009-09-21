@@ -1500,6 +1500,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					
 					// Update all given trusts
 					for(Trust givenTrust : getGivenTrusts(old)) {
+						// TODO: Deleting the trust object right here would save us 1 score recalculation per trust value:
+						// deleteWithoutCommit() calls updateScoreWithoutCommit() per trust value, setTrustWithoutCommit() also does that
+						// However, the current approach of letting deleteWithoutCommit() do all the deletions is more clean. Therefore,
+						// we should introduce the db.delete(givenTrust) only after having a unit test for restoreIdentity().
 						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 					}
 		
