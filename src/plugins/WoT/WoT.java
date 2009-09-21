@@ -293,10 +293,12 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 */
 	@SuppressWarnings("unchecked")
 	private synchronized void deleteDuplicateObjects() {
-		synchronized(mDB) {
+
 			try {
 				ObjectSet<Identity> identities = getAllIdentities();
 				HashSet<String> deleted = new HashSet<String>();
+				
+				Logger.debug(this, "Searching for duplicate identities ...");
 				
 				for(Identity identity : identities) {
 					Query q = mDB.query();
@@ -307,25 +309,20 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					for(Identity duplicate : duplicates) {
 						if(deleted.contains(duplicate.getID()) == false) {
 							Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
-							for(Trust trust : getReceivedTrusts(duplicate))
-								mDB.delete(trust);
-							for(Trust trust : getGivenTrusts(duplicate))
-								mDB.delete(trust);
-							for(Score score : getScores(duplicate))
-								mDB.delete(score);
-							deleteWithoutCommit(duplicate);
+							deleteIdentity(duplicate);
 						}
 					}
 					deleted.add(identity.getID());
-					mDB.commit(); Logger.debug(this, "COMMITED.");
 				}
+				
+				Logger.debug(this, "Finished searching for duplicate identities.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				Logger.error(this, "Error while deleting duplicate identities", e);
 			}
 			
-			try {
+			Logger.debug(this, "Searching for duplicate Trust objects ...");
+			
 				for(OwnIdentity treeOwner : getAllOwnIdentities()) {
 					HashSet<String> givenTo = new HashSet<String>();
 					
@@ -333,32 +330,25 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						if(givenTo.contains(trust.getTrustee().getID()) == false)
 							givenTo.add(trust.getTrustee().getID());
 						else {
-							Identity trustee = trust.getTrustee();
-							Logger.error(this, "Deleting duplicate given trust from " + treeOwner.getNickname() + " to " +
-									trustee.getNickname());
-							mDB.delete(trust);
-							
+							synchronized(mDB.lock()) {
 							try {
-								updateScoreWithoutCommit(treeOwner, trustee);
+							Logger.error(this, "Deleting duplicate given trust:" + trust);
+							removeTrustWithoutCommit(trust);
+							mDB.commit(); Logger.debug(this, "COMMITED.");
 							}
-							catch(Exception e) { /* Maybe another duplicate prevents it from working ... */
-								Logger.error(this, "Updating score of " + trustee.getNickname() + " failed.", e);
+							catch(RuntimeException e) {
+								mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
 							}
+							}
+
 						}
 					}
-					mDB.commit(); Logger.debug(this, "COMMITED.");
+					
 				}
 				
-				
-			}
-			catch(RuntimeException e) {
-				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
-				Logger.error(this, "Error while deleting duplicate trusts", e);
-			}
-
-		}
+				Logger.debug(this, "Finished searching for duplicate trust objects.");
 		
-		/* TODO: Also delete duplicate trust, score, etc. */
+		/* TODO: Also delete duplicate score */
 	}
 	
 	/**
