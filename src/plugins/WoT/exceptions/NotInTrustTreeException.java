@@ -15,6 +15,10 @@ import plugins.WoT.Identity;
 public class NotInTrustTreeException extends Exception {
 	
 	private static final long serialVersionUID = -1;
+	
+	public NotInTrustTreeException(Identity target) {
+		super("There is no trust tree which contains " + target);
+	}
 
 	public NotInTrustTreeException(Identity treeOwner, Identity target) {
 		super(target + " is not in the trust treee of " + treeOwner);

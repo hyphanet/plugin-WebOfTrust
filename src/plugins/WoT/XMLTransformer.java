@@ -30,6 +30,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.introduction.IntroductionPuzzle;
@@ -210,6 +211,7 @@ public final class XMLTransformer {
 		/* We tried to parse as much as we can without synchronization before we lock everything :) */
 		
 		synchronized(mWoT) {
+		synchronized(mWoT.getIdentityFetcher()) {
 			Identity identity;
 			boolean isNewIdentity = false;
 			
@@ -228,6 +230,7 @@ public final class XMLTransformer {
 					return;
 				} else if(identity.getEdition() == newEdition && identity.currentEditionWasFetched()) {
 					Logger.debug(identity, "Fetched current edition which is marked as fetched already, not importing.");
+					return;
 				}
 				
 				identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
@@ -264,14 +267,24 @@ public final class XMLTransformer {
 					/* This try block is for rolling back in catch() if an exception is thrown during trust list import.
 					 * Our policy is: We either import the whole trust list or nothing. We should not bias the trust system by allowing
 					 * the import of partial trust lists. Especially we should not ignore failing deletions of old trust objects. */
+					synchronized(mDB.lock()) {
 					try {
-						boolean positiveScore = mWoT.getBestScore(identity) > 0 || identity instanceof OwnIdentity;
+						// We import the trust list of an identity if it's score is equal to 0, but we only create new identities or import edition hints
+						// if the score is greater than 0. Solving a captcha therefore only allows you to create one single identity.
+						boolean positiveScore = false;
 						
-						HashSet<String> newIdentitiesToFetch = null;
+						try {
+							positiveScore = mWoT.getBestScore(identity) > 0;
+						}
+						catch(NotInTrustTreeException e) { }
+						
+						// Importing own identities is always allowed
+						if(!positiveScore)
+							positiveScore = identity instanceof OwnIdentity;
+						
 						HashSet<String>	identitiesWithUpdatedEditionHint = null;
 						
 						if(positiveScore) {
-							newIdentitiesToFetch = new HashSet<String>();
 							identitiesWithUpdatedEditionHint = new HashSet<String>();
 						}
 
@@ -288,7 +301,7 @@ public final class XMLTransformer {
 							try {
 								trustee = mWoT.getIdentityByURI(trusteeURI);
 								if(positiveScore) {
-									if(trustee.setNewEditionHint(trusteeURI.getEdition())); {
+									if(trustee.setNewEditionHint(trusteeURI.getEdition())) {
 										identitiesWithUpdatedEditionHint.add(trustee.getID());
 										mWoT.storeWithoutCommit(trustee);
 									}
@@ -298,7 +311,6 @@ public final class XMLTransformer {
 								if(positiveScore) { /* We only create trustees if the truster has a positive score */
 									trustee = new Identity(trusteeURI, null, false);
 									mWoT.storeWithoutCommit(trustee);
-									newIdentitiesToFetch.add(trustee.getID());
 								}
 							}
 
@@ -312,26 +324,27 @@ public final class XMLTransformer {
 							}
 						}
 
-						mWoT.storeAndCommit(identity);
+						mWoT.storeWithoutCommit(identity);
 						
 						IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
 						if(positiveScore && identityFetcher != null) {
-							for(String id : identitiesWithUpdatedEditionHint) {
-								identityFetcher.editionHintUpdated(mWoT.getIdentityByID(id));
-							}
+							for(String id : identitiesWithUpdatedEditionHint)
+								identityFetcher.storeUpdateEditionHintCommandWithoutCommit(id);
 							
-							for(String id : newIdentitiesToFetch) {
-								identityFetcher.fetch(mWoT.getIdentityByID(id));
-							}
+							// We do not have to store fetch commands for new identities here, setTrustWithoutCommit does it.
 						}
+						
+						mDB.commit(); Logger.debug(this, "COMMITED.");
 					}
 					
 					catch(Exception e) {
-						mDB.rollback();
-						Logger.error(identityURI, "Importing trust list failed.", e);
+						mDB.rollback(); Logger.debug(this, "ROLLED BACK!", e);
+						throw e;
+					}
 					}
 				}
 			}
+		}
 		}
 	}
 
@@ -396,22 +409,35 @@ public final class XMLTransformer {
 				Logger.minor(this, "Imported introduction for an already existing identity: " + newIdentity);
 			}
 			catch (UnknownIdentityException e) {
+				synchronized(mDB.lock()) {
+				try{
 				newIdentity = new Identity(identityURI, null, false);
 				newIdentity.setEdition(identityURI.getEdition()); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
-				mWoT.storeAndCommit(newIdentity);
-				
-				if(mWoT.getIdentityFetcher() != null)
-					mWoT.getIdentityFetcher().fetch(newIdentity);
+				mWoT.storeWithoutCommit(newIdentity);
 				
 				try {
 					mWoT.getTrust(puzzleOwner, newIdentity); /* Double check ... */
 					Logger.error(newIdentity, "The identity is already trusted even though it did not exist!");
 				}
 				catch(NotTrustedException ex) {
-					/* FIXME: We need null trust. Giving trust by solving captchas is a bad idea because they receive capacity for
-					 * giving trust to others by that. */
-					mWoT.setTrust(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");	
+					// 0 trust will not allow the import of new identities because importIdentity() will only create new identities if the score of an identity
+					// is > 0, not if it is equal to 0.
+					mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");	
 				}
+				
+				final IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
+				if(identityFetcher != null)
+					identityFetcher.storeStartFetchCommandWithoutCommit(newIdentity.getID());
+				
+				mDB.commit(); Logger.debug(this, "COMMITED.");
+				
+				}
+				catch(RuntimeException error) {
+					mDB.rollback();
+					throw error;
+				}
+				}
+				
 			}
 		}
 

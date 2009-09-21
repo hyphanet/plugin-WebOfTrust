@@ -246,9 +246,12 @@ public final class IntroductionClient extends TransferThread  {
 		synchronized(mIdentities) {
 			for(Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
-				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i.getID())
-						&& mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)  {
-					identitiesToDownloadFrom.add(i);
+				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i.getID()))  {
+					try {
+						if(mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)
+							identitiesToDownloadFrom.add(i);
+					}
+					catch(NotInTrustTreeException e) { }
 				}
 	
 				if(identitiesToDownloadFrom.size() == PUZZLE_REQUEST_COUNT)
@@ -262,8 +265,12 @@ public final class IntroductionClient extends TransferThread  {
 
 			for(Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
-				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)  {
-					identitiesToDownloadFrom.add(i);
+				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT))  {
+					try {
+						if(mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)
+							identitiesToDownloadFrom.add(i);
+					}
+					catch(NotInTrustTreeException e) { }
 				}
 
 				if(identitiesToDownloadFrom.size() == PUZZLE_REQUEST_COUNT)

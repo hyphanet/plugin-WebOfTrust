@@ -192,10 +192,18 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			
 			Logger.debug(this, "Starting fetches of all identities...");
 			synchronized(this) {
+			synchronized(mFetcher) {
 				for(Identity identity : getAllIdentities()) {
-					if(shouldFetchIdentity(identity))
-						mFetcher.fetch(identity);
+					if(shouldFetchIdentity(identity)) {
+						try {
+							mFetcher.fetch(identity.getID());
+						}
+						catch(Exception e) {
+							Logger.error(this, "Fetching identity failed!", e);
+						}
+					}
 				}
+			}
 			}
 			Logger.debug(this, "WoT startup completed.");
 		}
@@ -243,6 +251,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		for(String field : OwnIdentity.getIndexedFields()) cfg.objectClass(OwnIdentity.class).objectField(field).indexed(true);
 		for(String field : Trust.getIndexedFields()) cfg.objectClass(Trust.class).objectField(field).indexed(true);
 		for(String field : Score.getIndexedFields()) cfg.objectClass(Score.class).objectField(field).indexed(true);
+		
+		for(String field : IdentityFetcher.IdentityFetcherCommand.getIndexedFields())
+			cfg.objectClass(IdentityFetcher.IdentityFetcherCommand.class).objectField(field).indexed(true);
 		
 		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).persistStaticFieldValues(); /* Needed to be able to store enums */
 		for(String field : IntroductionPuzzle.getIndexedFields()) cfg.objectClass(IntroductionPuzzle.class).objectField(field).indexed(true);
@@ -752,6 +763,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
 			throw new RuntimeException("Trying to delete an inactive Identity object!");
 		
+		if(mFetcher != null)
+			mFetcher.storeAbortFetchCommandWithoutCommit(identity);
+		
 		/* FIXME: We also need to check whether the member objects are active here!!! */
 		
 		try {
@@ -845,16 +859,17 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * 
 	 * @return the best score this Identity has
 	 */
-	public synchronized int getBestScore(Identity identity) {
+	public synchronized int getBestScore(Identity identity) throws NotInTrustTreeException {
 		int bestScore = 0;
 		ObjectSet<Score> scores = getScores(identity);
-		/* TODO: Use a db4o native query for this loop. Maybe use an index, indexes should be sorted so maximum search will be O(1)... 
-		 * but I guess indexes cannot be done for the (target, value) pair so we might just cache the best score ourselves...
-		 * OTOH the number of own identies will be small so the maximum search will probably be fast... */
-		while(scores.hasNext()) {
-			Score score = scores.next();
+		
+		if(scores.size() == 0)
+			throw new NotInTrustTreeException(identity);
+		
+		// TODO: Cache the best score of an identity as a member variable.
+		for(Score score : scores) 
 			bestScore = Math.max(score.getScore(), bestScore);
-		}
+		
 		return bestScore;
 	}
 	
@@ -868,13 +883,18 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	
 	/**
 	 * Checks whether the given identity should be downloaded. 
-	 * @return Returns true if the identity has a score >= 0 or if it is an own identity.
+	 * @return Returns true if the identity has any score >= 0 or if it is an own identity.
 	 */
 	public boolean shouldFetchIdentity(Identity identity) {
 		if(identity instanceof OwnIdentity)
 			return true;
 		
-		return getBestScore(identity) >= 0;
+		try {
+			return getBestScore(identity) >= 0;
+		}
+		catch(NotInTrustTreeException e) {
+			return false;
+		}
 	}
 	
 	/**
@@ -1217,7 +1237,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			
 			mDB.store(score);
 			
-			// FIXME: Those two commands to the identity fetcher should be undone if the transaction is rolled back.
 			
 			if(scoreSignChanged) {
 				if(!oldShouldFetch && shouldFetchIdentity(target)) { 
@@ -1226,15 +1245,16 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					target.markForRefetch();
 					storeWithoutCommit(target);
 					
-					if(mFetcher != null)
-						mFetcher.fetch(target);
+					if(mFetcher != null) {
+						mFetcher.storeStartFetchCommandWithoutCommit(target);
+					}
 				}
 				
 				if(oldShouldFetch && !shouldFetchIdentity(target)) {
 					Logger.debug(this, "Best score changed from positive/null to negative, aborting fetch of " + target);
 					
 					if(mFetcher != null)
-						mFetcher.abortFetch(target);
+						mFetcher.storeAbortFetchCommandWithoutCommit(target);
 				}
 			}
 			
@@ -1312,16 +1332,27 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			throw new InvalidParameterException("We already have this identity");
 		}
 		catch(UnknownIdentityException e) {
+			// TODO: The identity won't be fetched because it has not received a trust value yet.
+			// IMHO we should not support adding identities without giving them a trust value.
+			
+			//try {
 			identity = new Identity(requestURI, null, false);
 			storeAndCommit(identity);
-			Logger.debug(this, "Trying to fetch manually added identity (" + identity.getRequestURI() + ")");
+			//storeWithoutCommit(identity);
+			Logger.debug(this, "Created identity " + identity);
 			
-			if(!shouldFetchIdentity(identity)) {
-				assert(false);
-				Logger.error(this, "shouldFetchIdentity() returned false for manually added identity!");
-			}
+			//if(!shouldFetchIdentity(identity)) {
+			//	assert(false);
+			//	Logger.error(this, "shouldFetchIdentity() returned false for manually added identity!");
+			//}
 			
-			mFetcher.fetch(identity);
+			//mFetcher.storeStartFetchCommandWithoutCommit(identity);
+			//mDB.commit(); Logger.debug(this, "COMMITED.");
+			//}
+			//catch(RuntimeException error) {
+			//	mDB.rollback(); Logger.error(this, "ROLLED BACK: addIdentity() failed", e);
+			//	throw error;
+			//}
 		}
 		
 		return identity;
@@ -1482,7 +1513,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		
 					// Remove the old identity
 					deleteWithoutCommit(old);
-					mDB.commit(); Logger.debug(this, "COMMITED.");
+
 					
 					Logger.debug(this, "Successfully restored an already known identity from Freenet (" + identity.getNickname() + ")");
 					
@@ -1492,12 +1523,12 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					// Store the new identity
 					storeWithoutCommit(identity);
 					initTrustTreeWithoutCommit(identity);
-					mDB.commit(); Logger.debug(this, "COMMITED.");
 					
 					Logger.debug(this, "Successfully restored not-yet-known identity from Freenet (" + identity.getRequestURI() + ")");
 				}
 				
-				mFetcher.fetch(identity);
+				mFetcher.storeStartFetchCommandWithoutCommit(identity);
+				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
 				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
