@@ -294,11 +294,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Trustee", trustee.getID() });
 		
 		// Trust value input field
-		trustForm.addChild("input", new String[] { "type", "name", "size", "value", "maxlength" }, 
+		trustForm.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, 
 				new String[] { "text", "Value", "4", "4", trustValue });
 		
 		// Trust comment input field
-		trustForm.addChild("input", new String[] { "type", "name", "size", "value", "maxlength" }, 
+		trustForm.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, 
 				new String[] { "text", "Comment", "50", Integer.toString(Trust.MAX_TRUST_COMMENT_LENGTH), trustComment });
 		
 		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SetTrust", "Update" });
