@@ -81,9 +81,10 @@ public final class Trust {
 		mTruster = truster;
 		mTrustee = trustee;
 		setValue(value);
+		mComment = "";	// Simplify setComment
 		setComment(comment);
 		
-		mLastChangedDate = CurrentTimeUTC.get();
+		// mLastChangedDate = CurrentTimeUTC.get();	// Done by setValue / setComment.
 		mTrusterTrustListEdition = truster.getEdition(); 
 	}
 
