@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Random;
 import java.util.Map.Entry;
 
 import plugins.WoT.exceptions.DuplicateIdentityException;
@@ -43,6 +44,7 @@ import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.FredPluginWithClassLoader;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -58,7 +60,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	/* Constants */
 	
 	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";  /* FIXME: Change before release */
-	public static final int DATABASE_FORMAT_VERSION = -99;  /* FIXME: Change before release */
+	public static final int DATABASE_FORMAT_VERSION = -98;  /* FIXME: Change before release */
 	
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/WoT";
@@ -273,6 +275,20 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			for(Identity identity : getAllIdentities()) {
 				identity.mLastFetchedDate = new Date(0);
 				storeWithoutCommit(identity);
+			}
+			
+			mConfig.set(Config.DATABASE_FORMAT_VERSION, WoT.DATABASE_FORMAT_VERSION);
+			mConfig.storeAndCommit();
+		} else if(oldVersion == -99) {
+			Logger.normal(this, "Found old database (-99), adding last changed date to all trust values ...");
+			
+			final long now = CurrentTimeUTC.getInMillis();
+			final int randomizationRange = 10 * 24 * 60 * 60 * 1000;
+			final Random random = mPR.getNode().fastWeakRandom;
+			
+			for(Trust trust : getAllTrusts()) {
+				trust.setDateOfLastChange(new Date(now + random.nextInt(randomizationRange)));
+				mDB.store(trust);
 			}
 			
 			mConfig.set(Config.DATABASE_FORMAT_VERSION, WoT.DATABASE_FORMAT_VERSION);

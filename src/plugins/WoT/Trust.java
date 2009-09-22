@@ -3,6 +3,10 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT;
 
+import java.util.Date;
+
+import freenet.support.CurrentTimeUTC;
+
 import plugins.WoT.exceptions.InvalidParameterException;
 
 /**
@@ -11,7 +15,7 @@ import plugins.WoT.exceptions.InvalidParameterException;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class Trust {
+public final class Trust {
 	
 	public static final int MAX_TRUST_COMMENT_LENGTH = 256;
 
@@ -26,6 +30,11 @@ public class Trust {
 	
 	/** An explanation of why the trust value was assigned */
 	private String mComment;
+	
+	/**
+	 * The date when this trust value was assigned.
+	 */
+	private Date mLastChangedDate;
 	
 	/**
 	 * The edition number of the trust list in which this trust was published the last time.
@@ -74,6 +83,7 @@ public class Trust {
 		setValue(value);
 		setComment(comment);
 		
+		mLastChangedDate = CurrentTimeUTC.get();
 		mTrusterTrustListEdition = truster.getEdition(); 
 	}
 
@@ -105,7 +115,10 @@ public class Trust {
 		if(newValue < -100 || newValue > 100) 
 			throw new InvalidParameterException("Invalid trust value ("+ newValue +"). Trust values must be in range of -100 to +100.");
 		
-		mValue = newValue;
+		if(mValue != newValue) {
+			mValue = newValue;
+			mLastChangedDate = CurrentTimeUTC.get();
+		}
 	}
 
 	/** @return The comment associated to this Trust relationship. */
@@ -122,7 +135,23 @@ public class Trust {
 		if(newComment != null && newComment.length() > MAX_TRUST_COMMENT_LENGTH)
 			throw new InvalidParameterException("Comment is too long (maximum is " + MAX_TRUST_COMMENT_LENGTH + " characters).");
 		
-		mComment = newComment != null ? newComment : "";
+		newComment = newComment != null ? newComment : ""; 
+		
+		if(!mComment.equals(newComment)) {
+			mComment = newComment;
+			mLastChangedDate = CurrentTimeUTC.get();
+		}
+	}
+	
+	public synchronized Date getDateOfLastChange() {
+		return mLastChangedDate;
+	}
+	
+	/**
+	 * Only for being used in upgradeDatabase(). FIXME: Remove before release.
+	 */
+	public synchronized void setDateOfLastChange(Date date) {
+		mLastChangedDate = date;
 	}
 	
 	/**
