@@ -214,7 +214,7 @@ public final class FCPInterface implements FredPluginFCP {
     		}
 
     		final Iterator<String> contexts = identity.getContexts().iterator();
-    		for(int i = 1; contexts.hasNext(); ++i) {
+    		for(int i = 0; contexts.hasNext(); ++i) {
     			sfs.putOverwrite("Context" + i, contexts.next());
     		}
     	}
@@ -229,7 +229,7 @@ public final class FCPInterface implements FredPluginFCP {
 		synchronized(mWoT) {
 			final ObjectSet<OwnIdentity> result = mWoT.getAllOwnIdentities();
 	
-			for(int i = 1; result.hasNext(); ) {
+			for(int i = 0; result.hasNext(); ) {
 				final OwnIdentity oid = result.next();
 
 				sfs.putOverwrite("Identity" + i, oid.getID());
@@ -267,7 +267,7 @@ public final class FCPInterface implements FredPluginFCP {
 			final ObjectSet<Score> result = mWoT.getIdentitiesByScore(treeOwner, select);
 			final boolean getAll = context.equals("");
 	
-			for(int i = 1; result.hasNext(); ) {
+			for(int i = 0; result.hasNext(); ) {
 				final Score score = result.next();
 
 				if(getAll || score.getTarget().hasContext(context)) {
@@ -296,7 +296,7 @@ public final class FCPInterface implements FredPluginFCP {
         synchronized(mWoT) {
         	final ObjectSet<Trust> receivedTrusts = mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID));
 
-			for(int i = 1; receivedTrusts.hasNext(); ) {
+			for(int i = 0; receivedTrusts.hasNext(); ) {
 				final Trust trust = receivedTrusts.next();
 
 				if(getAll || trust.getTruster().hasContext(params.get("Context"))) {
@@ -342,7 +342,7 @@ public final class FCPInterface implements FredPluginFCP {
         synchronized(mWoT) {
         	final ObjectSet<Trust> givenTrusts = mWoT.getGivenTrusts(mWoT.getIdentityByID(identityID));
 
-        	for(int i = 1; givenTrusts.hasNext(); ) {
+        	for(int i = 0; givenTrusts.hasNext(); ) {
         		final Trust trust = givenTrusts.next();
 
 				if(getAll || trust.getTruster().hasContext(params.get("Context"))) {
@@ -422,11 +422,10 @@ public final class FCPInterface implements FredPluginFCP {
     	
     	List<IntroductionPuzzle> puzzles = mWoT.getIntroductionClient().getPuzzles(mWoT.getOwnIdentityByID(identityID), PuzzleType.valueOf(type), amount);
     	
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-    	
-    	int index = 1;
-    	
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);  	
     	sfs.putOverwrite("Message", "IntroductionPuzzles");
+    	
+    	int index = 0;
     	
     	for(IntroductionPuzzle puzzle : puzzles) {
     		sfs.putOverwrite("Puzzle" + index, puzzle.getID());    		
