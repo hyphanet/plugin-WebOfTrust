@@ -236,6 +236,7 @@ public final class XMLTransformer {
 				}
 				
 				identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
+				boolean didPublishTrustListPreviously = identity.doesPublishTrustList();
 				identity.setPublishTrustList(identityPublishesTrustList);
 				identity.onFetched();
 				/* We store the identity and especially it's edition right now so that bogus XML files are skipped */
@@ -266,12 +267,12 @@ public final class XMLTransformer {
 				/* We store the identity even if it's trust list import fails - identities should not disappear then. */
 				mWoT.storeAndCommit(identity);
 				
-				if(identityPublishesTrustList) {
 					/* This try block is for rolling back in catch() if an exception is thrown during trust list import.
 					 * Our policy is: We either import the whole trust list or nothing. We should not bias the trust system by allowing
 					 * the import of partial trust lists. Especially we should not ignore failing deletions of old trust objects. */
 					synchronized(mDB.lock()) {
 					try {
+						if(identityPublishesTrustList) {
 						// We import the trust list of an identity if it's score is equal to 0, but we only create new identities or import edition hints
 						// if the score is greater than 0. Solving a captcha therefore only allows you to create one single identity.
 						boolean positiveScore = false;
@@ -320,7 +321,7 @@ public final class XMLTransformer {
 							if(trustee != null)
 								mWoT.setTrustWithoutCommit(identity, trustee, trustValue, trustComment);
 						}
-
+						
 						if(!isNewIdentity) { /* Delete trust objects of trustees which were removed from the trust list */
 							for(Trust trust : mWoT.getGivenTrustsOlderThan(identity, identityURI.getEdition())) {
 								mWoT.removeTrustWithoutCommit(trust);
@@ -337,6 +338,12 @@ public final class XMLTransformer {
 							// We do not have to store fetch commands for new identities here, setTrustWithoutCommit does it.
 						}
 						
+						} else if(!identityPublishesTrustList && !isNewIdentity && didPublishTrustListPreviously) {
+							// If it does not publish a trust list anymore, we delete all trust values it has given.
+							for(Trust trust : mWoT.getGivenTrusts(identity))
+								mWoT.removeTrustWithoutCommit(trust);
+						}
+						
 						mDB.commit(); Logger.debug(this, "COMMITED.");
 					}
 					
@@ -345,7 +352,6 @@ public final class XMLTransformer {
 						throw e;
 					}
 					}
-				}
 			}
 		}
 		}
