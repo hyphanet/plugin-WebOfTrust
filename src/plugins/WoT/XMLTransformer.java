@@ -234,6 +234,7 @@ public final class XMLTransformer {
 				}
 				
 				identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
+				identity.setPublishTrustList(identityPublishesTrustList);
 				identity.onFetched();
 				/* We store the identity and especially it's edition right now so that bogus XML files are skipped */
 				mWoT.storeAndCommit(identity);
