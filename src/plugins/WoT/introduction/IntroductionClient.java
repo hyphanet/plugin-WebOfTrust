@@ -202,7 +202,7 @@ public final class IntroductionClient extends TransferThread  {
 					}
 				}
 				catch(NotInTrustTreeException e) {
-					Logger.error(this, "WTF?", e);
+					// We do not ask the users to solve puzzles from identities who he does not trust.
 				}
 			}
 		}
