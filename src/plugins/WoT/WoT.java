@@ -1349,9 +1349,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	private synchronized int computeRank(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException {
 		int rank = -1;
 		
-		ObjectSet<Trust> receivedTrusts = getReceivedTrusts(target);
-		while(receivedTrusts.hasNext()) {
-			Trust trust = receivedTrusts.next();
+		for(Trust trust : getReceivedTrusts(target)) {
 			try {
 				Score score = getScore(treeOwner, trust.getTruster());
 				
