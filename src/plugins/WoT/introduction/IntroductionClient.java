@@ -165,10 +165,6 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/**
 	 * Use this function in the UI to get a list of puzzles for the user to solve.
-	 * 
-	 * FIXME: Is it okay if we do not require users to lock the PuzzleStore while parsing the returned list? Because they would have
-	 * to also lock the WoT first to prevent deadlocks. The worst thing which can happen is that they display a puzzle which has
-	 * been deleted already - it should be save to parse ObjectContainers while the database is being modified, shouldn't it?
 	 */
 	public List<IntroductionPuzzle> getPuzzles(OwnIdentity user, PuzzleType puzzleType, int count) {
 		ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count + 1);
