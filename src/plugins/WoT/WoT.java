@@ -302,7 +302,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			
 			for(Identity identity : getAllIdentities()) {
 				updateScoreWithoutCommit(identity);
-				identity.markForRefetch(); // Re-fetch the identity so that the "publishes trustlist" flag is imported, the old WoT forgot that...
+				if(!(identity instanceof OwnIdentity))
+					identity.markForRefetch(); // Re-fetch the identity so that the "publishes trustlist" flag is imported, the old WoT forgot that...
 			}
 			
 			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
