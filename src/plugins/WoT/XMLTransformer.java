@@ -145,6 +145,7 @@ public final class XMLTransformer {
 			
 			/* Create the trust list Element and its trust Elements */
 
+			if(identity.doesPublishTrustList()) {
 			Element trustListElement = xmlDoc.createElement("TrustList");
 			
 			for(Trust trust : mWoT.getGivenTrusts(identity)) {
@@ -160,6 +161,7 @@ public final class XMLTransformer {
 				trustListElement.appendChild(trustElement);
 			}
 			identityElement.appendChild(trustListElement);
+			}
 		}
 		}
 		
