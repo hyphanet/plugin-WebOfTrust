@@ -1324,9 +1324,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	private synchronized int computeScoreValue(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException {
 		int value = 0;
 		
-		ObjectSet<Trust> receivedTrusts = getReceivedTrusts(target);
-		while(receivedTrusts.hasNext()) {
-			Trust trust = receivedTrusts.next();
+		for(Trust trust : getReceivedTrusts(target)) {
 			try {
 				value += trust.getValue() * (getScore(treeOwner, trust.getTruster())).getCapacity() / 100;
 			} catch (NotInTrustTreeException e) {}
