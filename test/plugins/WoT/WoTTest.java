@@ -234,7 +234,7 @@ public class WoTTest extends DatabaseBasedTest {
 		// Check B's Score object
 		flushCaches();
 		Score scoreB = mWoT.getScore(a, b);
-		assertTrue(scoreB.getScore() == 108);
+		assertTrue(scoreB.getScore() == 100); // 100 and not 108 because own trust values override calculated scores.
 		assertTrue(scoreB.getRank() == 1);
 		assertTrue(scoreB.getCapacity() == 40);
 		
