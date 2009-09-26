@@ -60,7 +60,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	/* Constants */
 	
 	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";  /* FIXME: Change before release */
-	public static final int DATABASE_FORMAT_VERSION = -98;  /* FIXME: Change before release */
+	public static final int DATABASE_FORMAT_VERSION = -97;  /* FIXME: Change before release */
 	
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/WoT";
@@ -264,22 +264,24 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 	
 	private synchronized void upgradeDB() {
-		int oldVersion = mConfig.getInt(Config.DATABASE_FORMAT_VERSION);
+		int databaseVersion = mConfig.getInt(Config.DATABASE_FORMAT_VERSION);
 		
-		if(oldVersion == WoT.DATABASE_FORMAT_VERSION)
+		if(databaseVersion == WoT.DATABASE_FORMAT_VERSION)
 			return;
 		
 		try {
-		if(oldVersion == -100) {
+		if(databaseVersion == -100) {
 			Logger.normal(this, "Found old database (-100), adding last fetched date to all identities ...");
 			for(Identity identity : getAllIdentities()) {
 				identity.mLastFetchedDate = new Date(0);
 				storeWithoutCommit(identity);
 			}
 			
-			mConfig.set(Config.DATABASE_FORMAT_VERSION, WoT.DATABASE_FORMAT_VERSION);
+			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
 			mConfig.storeAndCommit();
-		} else if(oldVersion == -99) {
+		}
+		
+		if(databaseVersion == -99) {
 			Logger.normal(this, "Found old database (-99), adding last changed date to all trust values ...");
 			
 			final long now = CurrentTimeUTC.getInMillis();
@@ -291,10 +293,24 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.store(trust);
 			}
 			
-			mConfig.set(Config.DATABASE_FORMAT_VERSION, WoT.DATABASE_FORMAT_VERSION);
+			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
+			mConfig.storeAndCommit();
+		} 
+		
+		if(databaseVersion == -98) {
+			Logger.normal(this, "Found old database (-98), recalculating all scores & marking all identities for re-fetch ...");
+			
+			for(Identity identity : getAllIdentities()) {
+				updateScoreWithoutCommit(identity);
+				identity.markForRefetch(); // Re-fetch the identity so that the "publishes trustlist" flag is imported, the old WoT forgot that...
+			}
+			
+			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
 			mConfig.storeAndCommit();
 		}
-		else
+		
+		
+		if(databaseVersion != WoT.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
 		}
