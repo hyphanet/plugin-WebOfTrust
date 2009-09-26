@@ -165,6 +165,9 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/**
 	 * Use this function in the UI to get a list of puzzles for the user to solve.
+	 * 
+	 * The locking policy when using this function is that we do not lock anything while parsing the returned list - it's not a problem if a single 
+	 * puzzle gets deleted while the user is solving it.
 	 */
 	public List<IntroductionPuzzle> getPuzzles(OwnIdentity user, PuzzleType puzzleType, int count) {
 		ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count + 1);
