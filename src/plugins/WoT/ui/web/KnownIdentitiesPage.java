@@ -207,7 +207,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		row.addChild("th", "Nickname");
 		row.addChild("th", "Added");
 		row.addChild("th", "Fetched");
-		row.addChild("th", "Trustlist");
+		row.addChild("th", "Publishes Trustlist");
 		row.addChild("th", "Score (Rank)");
 		row.addChild("th", "Trust/Comment");
 		row.addChild("th", "Trusters");
