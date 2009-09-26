@@ -338,7 +338,7 @@ public final class XMLTransformer {
 								// We do not have to store fetch commands for new identities here, setTrustWithoutCommit does it.
 							}
 
-						} else if(!identityPublishesTrustList && !isNewIdentity && didPublishTrustListPreviously) {
+						} else if(!identityPublishesTrustList && !isNewIdentity && didPublishTrustListPreviously && !(identity instanceof OwnIdentity)) {
 							// If it does not publish a trust list anymore, we delete all trust values it has given.
 							for(Trust trust : mWoT.getGivenTrusts(identity))
 								mWoT.removeTrustWithoutCommit(trust);
