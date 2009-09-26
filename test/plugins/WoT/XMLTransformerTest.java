@@ -45,6 +45,8 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 
 	public void testExportOwnIdentity() {
 		//fail("Not yet implemented"); // TODO
+		
+		// TODO: Test that we do not export the trust list if trust list export is disabled.
 	}
 
 	public void testImportIdentity() {
