@@ -352,7 +352,7 @@ public class WebInterface {
 				}
 				
 				dataBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, puzzle.getData());
-				output = ContentFilter.filter(dataBucket, core.tempBucketFactory, puzzle.getMimeType(), uri, null);
+				output = ContentFilter.filter(dataBucket, core.tempBucketFactory, puzzle.getMimeType(), uri, null, null);
 				writeReply(ctx, 200, output.type, "OK", output.data);
 			}
 			catch(Exception e) {
