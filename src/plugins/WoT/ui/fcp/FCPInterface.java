@@ -344,11 +344,12 @@ public final class FCPInterface implements FredPluginFCP {
 
         	for(int i = 0; givenTrusts.hasNext(); ) {
         		final Trust trust = givenTrusts.next();
+        		final Identity trustee = trust.getTrustee();
 
-				if(getAll || trust.getTruster().hasContext(params.get("Context"))) {
-					sfs.putOverwrite("Identity" + i, trust.getTruster().getID());
-					sfs.putOverwrite("Nickname" + i, trust.getTruster().getNickname());
-					sfs.putOverwrite("RequestURI" + i, trust.getTruster().getRequestURI().toString());
+				if(getAll || trustee.hasContext(params.get("Context"))) {
+					sfs.putOverwrite("Identity" + i, trustee.getID());
+					sfs.putOverwrite("Nickname" + i, trustee.getNickname());
+					sfs.putOverwrite("RequestURI" + i, trustee.toString());
 					sfs.putOverwrite("Value" + i, Byte.toString(trust.getValue()));
 					sfs.putOverwrite("Comment" + i, trust.getComment());
 					// TODO: Allow the client to select what data he wants
