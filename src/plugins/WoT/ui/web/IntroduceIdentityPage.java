@@ -43,7 +43,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 			int idx = 0;
 			while(request.isPartSet("id" + idx)) {
 				String id = request.getPartAsString("id" + idx, 128);
-				String solution = request.getPartAsString("Solution" + id, 10); /* FIXME: replace "10" with the maximal solution length */
+				String solution = request.getPartAsString("Solution" + id, IntroductionPuzzle.MAXIMAL_SOLUTION_LENGTH);
 				if(!solution.trim().equals("")) {
 					IntroductionPuzzle p;
 					try {
@@ -94,7 +94,9 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				cell.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id" + counter, p.getID() });
 				cell.addChild("img", "src", mPuzzleURI + "?PuzzleID=" + p.getID() ); 
 				cell.addChild("br");
-				cell.addChild("input", new String[] { "type", "name", "size"}, new String[] { "text", "Solution" + p.getID(), "10" });
+				cell.addChild("input", new String[] { "type", "name", "size", "maxlength"},
+						new String[] { "text", "Solution" + p.getID(), Integer.toString(IntroductionPuzzle.MINIMAL_SOLUTION_LENGTH+1),
+																		Integer.toString(IntroductionPuzzle.MAXIMAL_SOLUTION_LENGTH)});
 				
 				++counter;
 			}

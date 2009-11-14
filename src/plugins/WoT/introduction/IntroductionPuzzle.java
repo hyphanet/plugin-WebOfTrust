@@ -25,6 +25,7 @@ public class IntroductionPuzzle {
 	
 	public static final String INTRODUCTION_CONTEXT = "Introduction";
 	public static final int MINIMAL_SOLUTION_LENGTH = 5;
+	public static final int MAXIMAL_SOLUTION_LENGTH = 10;
 	
 	protected static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	
