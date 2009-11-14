@@ -22,6 +22,7 @@ import plugins.WoT.XMLTransformer;
 import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
+import plugins.WoT.exceptions.UnknownPuzzleException;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 
 import com.db4o.ObjectContainer;
@@ -367,9 +368,14 @@ public final class IntroductionClient extends TransferThread  {
 			
 			/* Find a free index */
 			int count = 0;
-			while(mPuzzleStore.getByInserterDateIndex(inserter, date, index) != null && count < inserterPuzzleCount) {
-				index = (index+1) % inserterPuzzleCount;
-				++count;
+			while(count < inserterPuzzleCount) {
+				try {
+					mPuzzleStore.getByInserterDateIndex(inserter, date, index);
+					index = (index+1) % inserterPuzzleCount;
+					++count;
+				} catch(UnknownPuzzleException e) {
+					break; // We found a free slot!
+				}
 			}
 			
 			/* TODO: Maybe also use the above loop which finds a free index for counting the recent puzzles accurately. */ 

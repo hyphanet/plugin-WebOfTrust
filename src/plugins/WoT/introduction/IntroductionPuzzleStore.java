@@ -6,6 +6,7 @@ import java.util.Date;
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.WoT;
+import plugins.WoT.exceptions.DuplicatePuzzleException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.exceptions.UnknownPuzzleException;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
@@ -221,13 +222,14 @@ public final class IntroductionPuzzleStore {
 		q.descend("mID").constrain(id);
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 
-		/* TODO: Decide whether we maybe should throw to get bug reports if this happens ... OTOH puzzles are not so important ;) */
-		assert(result.size() <= 1);
-
-		if(result.hasNext())
-			return result.next();
-		else
-			throw new UnknownPuzzleException(id);
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new UnknownPuzzleException(id);
+			default:
+				throw new DuplicatePuzzleException(id);
+		}
 	}
 	
 	protected IntroductionPuzzle getPuzzleBySolutionURI(FreenetURI uri) throws ParseException, UnknownIdentityException, UnknownPuzzleException {
@@ -242,7 +244,7 @@ public final class IntroductionPuzzleStore {
 	  * 
 	  * Used by the IntroductionServer to obtain the corresponding puzzle object when an insert succeeded or failed.
 	  */
-	protected OwnIntroductionPuzzle getOwnPuzzleByRequestURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
+	protected OwnIntroductionPuzzle getOwnPuzzleByRequestURI(FreenetURI uri) throws ParseException, UnknownIdentityException, UnknownPuzzleException {
 		OwnIdentity inserter = mWoT.getOwnIdentityByURI(uri);
 		Date date = IntroductionPuzzle.getDateFromRequestURI(uri);
 		int index = IntroductionPuzzle.getIndexFromRequestURI(uri);
@@ -315,7 +317,7 @@ public final class IntroductionPuzzleStore {
 	}
 	
 	/**
-	 * Get a list of puzzles which are from today.
+	 * Get a list of puzzles or own puzzles which are from today.
 	 * You have to put a synchronized(this IntroductionPuzzleStore) statement around the call to this function and the processing of the
 	 * List which was returned by it!
 	 * 
@@ -340,7 +342,7 @@ public final class IntroductionPuzzleStore {
 	 * need to download that one.
 	 */
 	@SuppressWarnings({ "unchecked", "deprecation" })
-	protected synchronized IntroductionPuzzle getByInserterDateIndex(Identity inserter, Date date, int index) {
+	protected synchronized IntroductionPuzzle getByInserterDateIndex(Identity inserter, Date date, int index) throws UnknownPuzzleException {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
@@ -348,17 +350,21 @@ public final class IntroductionPuzzleStore {
 		q.descend("mIndex").constrain(index);
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
-		/* TODO: Decide whether we maybe should throw to get bug reports if this happens ... OTOH puzzles are not so important ;) */
-		assert(result.size() <= 1);
-		
-		return (result.hasNext() ? result.next() : null);
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new UnknownPuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
+			default:
+				throw new DuplicatePuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
+		}
 	}
 	
 	/**
 	 * Get a puzzle of a given OwnIdentity from a given date with a given index.
 	 */
 	@SuppressWarnings({ "unchecked", "deprecation" })
-	protected synchronized OwnIntroductionPuzzle getOwnPuzzleByInserterDateIndex(OwnIdentity inserter, Date date, int index) {
+	protected synchronized OwnIntroductionPuzzle getOwnPuzzleByInserterDateIndex(OwnIdentity inserter, Date date, int index) throws UnknownPuzzleException {
 		Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
@@ -366,10 +372,14 @@ public final class IntroductionPuzzleStore {
 		q.descend("mIndex").constrain(index);
 		ObjectSet<OwnIntroductionPuzzle> result = q.execute();
 		
-		/* TODO: Decide whether we maybe should throw to get bug reports if this happens ... OTOH puzzles are not so important ;) */
-		assert(result.size() <= 1);
-		
-		return (result.hasNext() ? result.next() : null);
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new UnknownPuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
+			default:
+				throw new DuplicatePuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
+		}
 	}
 
 	/**
