@@ -339,12 +339,13 @@ public final class IntroductionPuzzleStore {
 	 */
 	@SuppressWarnings({ "deprecation", "unchecked" })
 	protected synchronized ObjectSet<IntroductionPuzzle> getOfTodayByInserter(Identity inserter) {
-		Date maxAge = new Date(CurrentTimeUTC.getYear()-1900, CurrentTimeUTC.getMonth()-1, CurrentTimeUTC.getDayOfMonth());
+		Date now = CurrentTimeUTC.get();
+		Date today = new Date(now.getYear(), now.getMonth(), now.getDay());
 		
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
-		q.descend("mDateOfInsertion").constrain(maxAge).smaller().not();
+		q.descend("mDateOfInsertion").constrain(today);
 		return q.execute();
 	}
 	
