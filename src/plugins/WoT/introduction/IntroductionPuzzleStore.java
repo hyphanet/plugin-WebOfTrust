@@ -309,6 +309,7 @@ public final class IntroductionPuzzleStore {
 	public synchronized ObjectSet<OwnIntroductionPuzzle> getUninsertedOwnPuzzlesByInserter(OwnIdentity identity) {
 		Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
+		q.descend("mInserter").constrain(identity).identity();
 		q.descend("mWasInserted").constrain(false);
 		return q.execute();
 	}
@@ -338,7 +339,7 @@ public final class IntroductionPuzzleStore {
 	 */
 	@SuppressWarnings({ "deprecation", "unchecked" })
 	protected synchronized ObjectSet<IntroductionPuzzle> getOfTodayByInserter(Identity inserter) {
-		Date maxAge = new Date(CurrentTimeUTC.getYear()-1900, CurrentTimeUTC.getMonth(), CurrentTimeUTC.getDayOfMonth());
+		Date maxAge = new Date(CurrentTimeUTC.getYear()-1900, CurrentTimeUTC.getMonth()-1, CurrentTimeUTC.getDayOfMonth());
 		
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
@@ -353,12 +354,12 @@ public final class IntroductionPuzzleStore {
 	 * Used by the IntroductionClient to check whether we already have a puzzle from the given date and index, if yes then we do not
 	 * need to download that one.
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "deprecation" })
 	protected synchronized IntroductionPuzzle getByInserterDateIndex(Identity inserter, Date date, int index) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
-		q.descend("mDateOfInsertion").constrain(date);
+		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDay()));
 		q.descend("mIndex").constrain(index);
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
