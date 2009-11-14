@@ -520,8 +520,8 @@ public final class XMLTransformer {
 		
 		synchronized(mWoT) {
 			Identity puzzleInserter = mWoT.getIdentityByURI(puzzleURI);
-			puzzle = new IntroductionPuzzle(puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, puzzleValidUntilTime, 
-					IntroductionPuzzle.getDateFromRequestURI(puzzleURI), IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
+			puzzle = new IntroductionPuzzle(puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, 
+					IntroductionPuzzle.getDateFromRequestURI(puzzleURI), puzzleValidUntilTime, IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
 		
 			mWoT.getIntroductionPuzzleStore().storeAndCommit(puzzle);
 		}
