@@ -55,14 +55,18 @@ public final class IntroductionPuzzleStore {
 		synchronized(mDB.lock()) {
 			ObjectSet<IntroductionPuzzle> puzzles = mDB.queryByExample(IntroductionPuzzle.class);
 			for(IntroductionPuzzle p : puzzles) {
-				mDB.activate(p, 3); /* FIXME: Is this the correct depth? */
-				if(p.checkConsistency() == false) {
-					Logger.error(this, "Deleting corrupted puzzle");
-					deleteWithoutCommit(p);
+				try {
+					mDB.activate(p, 3);
+					if(p.checkConsistency() == false) {
+						Logger.error(this, "Deleting corrupted puzzle");
+						deleteWithoutCommit(p);
+						mDB.commit(); Logger.debug(this, "COMMITED.");
+					}
+				} catch(RuntimeException e) {
+					mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
 				}
 			}
-			mDB.commit();
-			/* Our goal is to delete the puzzles so we do not rollback here if an exception occurs, that would restore the deleted puzzles. */
+			
 		}
 	}
 	
@@ -77,21 +81,27 @@ public final class IntroductionPuzzleStore {
 			q.descend("mValidUntilTime").constrain(CurrentTimeUTC.getInMillis()).smaller();
 			ObjectSet<IntroductionPuzzle> result = q.execute();
 			
-			for(IntroductionPuzzle p : result)
-				deleteWithoutCommit(p);
+			int deleted = 0;
+			
+			for(IntroductionPuzzle p : result) {
+				try {
+					deleteWithoutCommit(p);
+					mDB.commit(); Logger.debug(this, "COMMITED.");
+					++deleted;					
+				} catch(RuntimeException e) {
+					mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				}
+			}
 			
 			/* TODO: Minor but interesting optimization: result.size() should take about O(N) time before the for() and O(1) after it
 			 * if db4o is smart enough. Verify if it really calculates and stores the size during the iteration. If not, the log line
 			 * should be prefixed with if(loglevel is debug) */
-			Logger.debug(IntroductionPuzzle.class, "Deleted " + result.size() + " expired puzzles.");
-			
-			mDB.commit();
-			/* Our goal is to delete the puzzles so we do not rollback here if an exception occurs, that would restore the deleted puzzles. */
+			Logger.debug(IntroductionPuzzle.class, "Deleted " + deleted + " of " + result.size() + " expired puzzles.");
 		}
 	}
 	
 	/**
-	 * Delete the oldest puzzles so that only an amount of <code>puzzlePoolSize</code> is left.
+	 * Delete the oldest unsolved puzzles so that only an amount of <code>puzzlePoolSize</code> of unsolved puzzles is left.
 	 * 
 	 * Used by the introduction client to delete old puzzles and replace them with new ones.
 	 * 
@@ -104,24 +114,25 @@ public final class IntroductionPuzzleStore {
 			q.constrain(IntroductionPuzzle.class);
 			q.constrain(OwnIntroductionPuzzle.class).not();
 			q.descend("mValidUntilTime").orderAscending();
+			q.descend("mWasSolved").constrain(false);
 			ObjectSet<IntroductionPuzzle> result = q.execute();
 			
-			int deleteCount = result.size() - puzzlePoolSize;
+			int deleteCount = Math.max(result.size() - puzzlePoolSize, 0);
 			
-			Logger.debug(IntroductionPuzzle.class, "Deleting " + deleteCount + " old puzzles, keeping " + puzzlePoolSize);
+			Logger.debug(this, "Deleting " + deleteCount + " old puzzles, keeping " + puzzlePoolSize);
+			
 			while(deleteCount > 0 && result.hasNext()) {
 				IntroductionPuzzle puzzle = result.next();
-				/* We DO NOT handle the following check in the query so that db4o can use the index on mValidUntilTime to run the query and
-				 * size() in O(1) instead of O(amount of puzzles in the database).
-				 * Unfortunately toad_ said that it does not really do that even though it is logically possible => TODO: tell it to do so */
-				if(puzzle.wasSolved() == false) {
+
+				try {
 					deleteWithoutCommit(puzzle);
+					mDB.commit(); Logger.debug(this, "COMMITED.");
 					deleteCount--;
 				}
+				catch(RuntimeException e) {
+					mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);	
+				}
 			}
-			
-			mDB.commit();
-			/* Our goal is to delete the puzzles so we do not rollback here if an exception occurs, that would restore the deleted puzzles. */ 
 		}
 	}
 	
@@ -161,7 +172,7 @@ public final class IntroductionPuzzleStore {
 			mDB.delete(puzzle);
 		}
 		catch(RuntimeException e) {
-			mDB.rollback(); Logger.debug(puzzle, "ROLLED BACK: " + e);
+			mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
 			throw e;
 		}
 	}
@@ -189,10 +200,10 @@ public final class IntroductionPuzzleStore {
 				// mDB.store(puzzle.getDateOfInsertion()); /* Not stored because it is a primitive for db4o */ 
 				mDB.store(puzzle);
 				mDB.commit();
-				Logger.debug(puzzle, "COMMITED.");
+				Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); Logger.debug(puzzle, "ROLLED BACK: " + e);
+				mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
 				throw e;
 			}
 		}
@@ -295,7 +306,7 @@ public final class IntroductionPuzzleStore {
 	 * Used by the IntroductionServer for inserting puzzles.
 	 */
 	@SuppressWarnings("unchecked")
-	public ObjectSet<OwnIntroductionPuzzle> getUninsertedOwnPuzzlesByInserter(OwnIdentity identity) {
+	public synchronized ObjectSet<OwnIntroductionPuzzle> getUninsertedOwnPuzzlesByInserter(OwnIdentity identity) {
 		Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("mWasInserted").constrain(false);
@@ -387,8 +398,8 @@ public final class IntroductionPuzzleStore {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.constrain(OwnIntroductionPuzzle.class).not();
-		q.descend("mWasInserted").constrain(false);
 		q.descend("mWasSolved").constrain(true);
+		q.descend("mWasInserted").constrain(false);
 		return q.execute();
 	}
 	
