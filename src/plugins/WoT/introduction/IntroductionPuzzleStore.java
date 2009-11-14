@@ -243,7 +243,7 @@ public final class IntroductionPuzzleStore {
 		Date date = IntroductionPuzzle.getDateFromRequestURI(uri);
 		int index = IntroductionPuzzle.getIndexFromRequestURI(uri);
 		
-		return (IntroductionPuzzle)getByInserterDateIndex(inserter, date, index);
+		return getByInserterDateIndex(inserter, date, index);
 	}
 	
 	protected IntroductionPuzzle getPuzzleBySolutionURI(FreenetURI uri) throws ParseException, UnknownIdentityException, UnknownPuzzleException {
@@ -263,7 +263,7 @@ public final class IntroductionPuzzleStore {
 		Date date = IntroductionPuzzle.getDateFromRequestURI(uri);
 		int index = IntroductionPuzzle.getIndexFromRequestURI(uri);
 		
-		return (OwnIntroductionPuzzle)getByInserterDateIndex(inserter, date, index);
+		return getOwnPuzzleByInserterDateIndex(inserter, date, index);
 	}
 	
 	
@@ -359,10 +359,29 @@ public final class IntroductionPuzzleStore {
 	protected synchronized IntroductionPuzzle getByInserterDateIndex(Identity inserter, Date date, int index) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
+		q.constrain(OwnIntroductionPuzzle.class).not();
 		q.descend("mInserter").constrain(inserter).identity();
 		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDay()));
 		q.descend("mIndex").constrain(index);
 		ObjectSet<IntroductionPuzzle> result = q.execute();
+		
+		/* TODO: Decide whether we maybe should throw to get bug reports if this happens ... OTOH puzzles are not so important ;) */
+		assert(result.size() <= 1);
+		
+		return (result.hasNext() ? result.next() : null);
+	}
+	
+	/**
+	 * Get a puzzle of a given OwnIdentity from a given date with a given index.
+	 */
+	@SuppressWarnings({ "unchecked", "deprecation" })
+	protected synchronized OwnIntroductionPuzzle getOwnPuzzleByInserterDateIndex(OwnIdentity inserter, Date date, int index) {
+		Query q = mDB.query();
+		q.constrain(OwnIntroductionPuzzle.class);
+		q.descend("mInserter").constrain(inserter).identity();
+		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDay()));
+		q.descend("mIndex").constrain(index);
+		ObjectSet<OwnIntroductionPuzzle> result = q.execute();
 		
 		/* TODO: Decide whether we maybe should throw to get bug reports if this happens ... OTOH puzzles are not so important ;) */
 		assert(result.size() <= 1);
