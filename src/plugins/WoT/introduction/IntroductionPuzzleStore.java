@@ -86,6 +86,7 @@ public final class IntroductionPuzzleStore {
 			
 			for(IntroductionPuzzle p : result) {
 				try {
+					Logger.debug(this, "Deleting expired puzzle, was valid until " + new Date(p.getValidUntilTime()));
 					deleteWithoutCommit(p);
 					mDB.commit(); Logger.debug(this, "COMMITED.");
 					++deleted;					
@@ -326,7 +327,7 @@ public final class IntroductionPuzzleStore {
 	@SuppressWarnings({ "deprecation", "unchecked" })
 	protected synchronized ObjectSet<IntroductionPuzzle> getOfTodayByInserter(Identity inserter) {
 		Date now = CurrentTimeUTC.get();
-		Date today = new Date(now.getYear(), now.getMonth(), now.getDay());
+		Date today = new Date(now.getYear(), now.getMonth(), now.getDate());
 		
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
@@ -346,7 +347,7 @@ public final class IntroductionPuzzleStore {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
-		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDay()));
+		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
 		q.descend("mIndex").constrain(index);
 		ObjectSet<IntroductionPuzzle> result = q.execute();
 		
@@ -368,7 +369,7 @@ public final class IntroductionPuzzleStore {
 		Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
-		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDay()));
+		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
 		q.descend("mIndex").constrain(index);
 		ObjectSet<OwnIntroductionPuzzle> result = q.execute();
 		

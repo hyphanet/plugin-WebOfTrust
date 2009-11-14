@@ -59,6 +59,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	
 	/* Constants */
 	
+	public static final boolean FAST_DEBUG_MODE = false;
+	
 	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";  /* FIXME: Change before release */
 	public static final int DATABASE_FORMAT_VERSION = -97;  /* FIXME: Change before release */
 	

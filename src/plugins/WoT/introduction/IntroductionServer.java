@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Random;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -51,7 +52,7 @@ import freenet.support.io.NativeThread;
  */
 public final class IntroductionServer extends TransferThread {
 	
-	private static final int STARTUP_DELAY = 5 * 60 * 1000;
+	private static final int STARTUP_DELAY = WoT.FAST_DEBUG_MODE ? (10 * 1000) : (5 * 60 * 1000);
 	private static final int THREAD_PERIOD = 60 * 60 * 1000;
 
 	/** The name of the property we use to announce in identities how many puzzles they insert */
@@ -192,7 +193,8 @@ public final class IntroductionServer extends TransferThread {
 		Logger.debug(this, "Trying to generate " + puzzlesToGenerate + " new puzzles from " + identity.getNickname());
 		
 		while(puzzlesToGenerate > 0) {
-			mPuzzleFactories[mRandom.nextInt(mPuzzleFactories.length)].generatePuzzle(mPuzzleStore, identity);
+			OwnIntroductionPuzzle p = mPuzzleFactories[mRandom.nextInt(mPuzzleFactories.length)].generatePuzzle(mPuzzleStore, identity);
+			Logger.debug(this, "Generated puzzle of " + p.getDateOfInsertion() + "; valid until " + new Date(p.getValidUntilTime()));
 			--puzzlesToGenerate;
 		}
 		}

@@ -17,7 +17,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 			Date newDateOfInsertion, int myIndex) {
 		
 		super(newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newDateOfInsertion, 
-				 new Date(newDateOfInsertion.getYear(), newDateOfInsertion.getMonth(), newDateOfInsertion.getDay()).getTime() 
+				 new Date(newDateOfInsertion.getYear(), newDateOfInsertion.getMonth(), newDateOfInsertion.getDate()).getTime() 
 				 + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000, myIndex);
 		
 		if(newSolution.length() < MINIMAL_SOLUTION_LENGTH)
