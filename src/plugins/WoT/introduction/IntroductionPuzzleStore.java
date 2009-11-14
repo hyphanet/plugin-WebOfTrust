@@ -229,22 +229,6 @@ public final class IntroductionPuzzleStore {
 		else
 			throw new UnknownPuzzleException(id);
 	}
-
-	 /**
-	  * Get a puzzle by it's request URI.
-	  * 
-	  * If you synchronize on the puzzle store while calling this function you have to synchronize on the WoT before synchronizing
-	  * on the puzzle store because this function locks the WoT. If you did not lock it before dead locks might occur.
-	  * 
-	  * Used by the IntroductionClient to obtain the corresponding puzzle object when an insert succeeded or failed.
-	  */
-	protected IntroductionPuzzle getPuzzleByRequestURI(FreenetURI uri) throws ParseException, UnknownIdentityException {
-		Identity inserter = mWoT.getIdentityByURI(uri);
-		Date date = IntroductionPuzzle.getDateFromRequestURI(uri);
-		int index = IntroductionPuzzle.getIndexFromRequestURI(uri);
-		
-		return getByInserterDateIndex(inserter, date, index);
-	}
 	
 	protected IntroductionPuzzle getPuzzleBySolutionURI(FreenetURI uri) throws ParseException, UnknownIdentityException, UnknownPuzzleException {
 		return getByID(IntroductionPuzzle.getIDFromSolutionURI(uri));
@@ -350,7 +334,7 @@ public final class IntroductionPuzzleStore {
 	}
 	
 	/**
-	 * Get a puzzle of a given identity from a given date with a given index.
+	 * Get a puzzle or own puzzle of a given identity from a given date with a given index.
 	 * 
 	 * Used by the IntroductionClient to check whether we already have a puzzle from the given date and index, if yes then we do not
 	 * need to download that one.
@@ -359,7 +343,6 @@ public final class IntroductionPuzzleStore {
 	protected synchronized IntroductionPuzzle getByInserterDateIndex(Identity inserter, Date date, int index) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
-		q.constrain(OwnIntroductionPuzzle.class).not();
 		q.descend("mInserter").constrain(inserter).identity();
 		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDay()));
 		q.descend("mIndex").constrain(index);
