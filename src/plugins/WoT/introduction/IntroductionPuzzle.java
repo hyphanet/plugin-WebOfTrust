@@ -97,11 +97,10 @@ public class IntroductionPuzzle {
 	 * @param newData
 	 */
 	@SuppressWarnings("deprecation")
-	public IntroductionPuzzle(Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData,
-			long myValidUntilTime, Date myDateOfInsertion, int myIndex) {
+	public IntroductionPuzzle(Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, Date myDateOfInsertion, int myIndex) {
 
 		assert(	newInserter != null && newID != null && newType != null && newMimeType != null && !newMimeType.equals("") &&
-				newData!=null && newData.length!=0 && myValidUntilTime > CurrentTimeUTC.getInMillis() && myDateOfInsertion != null &&
+				newData!=null && newData.length!=0 && myDateOfInsertion != null &&
 				myDateOfInsertion.getTime() < CurrentTimeUTC.getInMillis()&& myIndex >= 0);
 		
 		mID = newID;
@@ -109,7 +108,7 @@ public class IntroductionPuzzle {
 		mType = newType;
 		mMimeType = newMimeType;
 		mDateOfInsertion = new Date(myDateOfInsertion.getYear(), myDateOfInsertion.getMonth(), myDateOfInsertion.getDate());
-		mValidUntilTime = myValidUntilTime;
+		mValidUntilTime = mDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000;
 		mIndex = myIndex;
 		mData = newData;
 		mWasSolved = false; mSolution = null; mSolver = null;

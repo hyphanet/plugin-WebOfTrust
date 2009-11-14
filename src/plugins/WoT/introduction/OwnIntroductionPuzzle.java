@@ -17,9 +17,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	public OwnIntroductionPuzzle(OwnIdentity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
 			Date newDateOfInsertion, int myIndex) {
 		
-		super(newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData,
-				newDateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000,
-				newDateOfInsertion, myIndex);
+		super(newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newDateOfInsertion, myIndex);
 		
 		if(newSolution.length() < MINIMAL_SOLUTION_LENGTH)
 			throw new IllegalArgumentException("Solution is too short (" + newSolution.length() + "), minimal length is " + 
