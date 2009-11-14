@@ -311,17 +311,21 @@ public final class IntroductionServer extends TransferThread {
 				OwnIntroductionPuzzle p = mPuzzleStore.getOwnPuzzleBySolutionURI(state.getURI());
 				synchronized(p) {
 					OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
+					try {
 					Identity newIdentity = mWoT.getXMLTransformer().importIntroduction(puzzleOwner, inputStream);
 					Logger.debug(this, "Imported identity introduction for identity " + newIdentity.getRequestURI() +
 							" to the OwnIdentity " + puzzleOwner);
-					p.setSolved();
+					} catch(Exception e) { 
+						Logger.error(this, "Importing introduciton failed, marking puzzle as solved: " + state.getURI(), e);
+					}
+					p.setSolved(); // Mark it as solved even if parsing failed to prevent DoS.
 					mPuzzleStore.storeAndCommit(p);
 				}
 			}
 			}
 		}
 		catch (Exception e) { 
-			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
+			Logger.error(this, "Importing introduction failed for " + state.getURI(), e);
 		}
 		finally {
 			Closer.close(inputStream);
