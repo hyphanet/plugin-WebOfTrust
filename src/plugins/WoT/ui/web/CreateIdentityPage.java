@@ -33,7 +33,7 @@ public class CreateIdentityPage extends WebPageImpl {
 										request.getPartAsString("Nickname", 1024), request.getPartAsString("PublishTrustList", 5).equals("true"),
 										null);
 				
-				/* FIXME: inline the own identities page. first we need to modify our base class to be able to do so, see freetalk */
+				/* TODO: inline the own identities page. first we need to modify our base class to be able to do so, see freetalk */
 				
 				addContentBox("Your identity was created.").addChild("#", "Please go to the own identities page and solve " +
 						"introduction puzzles, otherwise nobody will see the identity!");

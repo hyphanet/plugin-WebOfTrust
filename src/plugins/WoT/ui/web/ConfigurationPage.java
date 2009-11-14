@@ -26,7 +26,7 @@ public class ConfigurationPage extends WebPageImpl {
 	}
 
 
-	// FIXME: Maybe use or steal freenet.clients.http.ConfigToadlet
+	// TODO: Maybe use or steal freenet.clients.http.ConfigToadlet
 	public void make() {
 		HTMLNode list1 = new HTMLNode("ul");
 		HTMLNode list2 = new HTMLNode("ul");

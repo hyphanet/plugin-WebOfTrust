@@ -29,7 +29,7 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 		if(request.isPartSet("confirm")) {
 			wot.deleteIdentity(mIdentity);
 			
-			/* FIXME: Show the OwnIdentities page instead! Use the trick which Freetalk does for inlining pages */
+			/* TODO: Show the OwnIdentities page instead! Use the trick which Freetalk does for inlining pages */
 			HTMLNode box = addContentBox("Success");
 			box.addChild("#", "The identity was deleted.");
 		}
