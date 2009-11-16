@@ -24,6 +24,8 @@ import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
+import java.util.Collection;
+import java.util.TreeMap;
 
 
 /**
@@ -189,6 +191,40 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		else
 			return minutes + "m ago"; 
 	}
+
+	/**
+	 * Get a xHTML color (#abcdef) corresponding to a trust level.
+	 * Red : -100 or below
+	 * Green : 100 or above
+	 * Yellow : 0
+	 * And all the intermediate colors between.
+	 *
+	 * @param trustLevel Level of trust
+	 * @return Color (format #abcdef)
+	 */
+	public static String getTrustColor(int trustLevel) {
+		final int r;
+		final int g;
+
+		if(trustLevel < 0) {
+			r = 0xff;
+			g = Math.max(0xff + (int)((trustLevel)*2.55f), 0x00);
+		} else {
+			g = 0xff;
+			r = Math.max(0xff - (int)((trustLevel)*2.55f), 0x00);
+		}
+
+		String sR = Integer.toHexString(r);
+		if(sR.length() == 1) {
+			sR = "0" + sR;
+		}
+		String sG = Integer.toHexString(g);
+		if(sG.length() == 1) {
+			sG = "0" + sG;
+		}
+
+		return "#" + sR + sG + "00";
+	}
 	
 	/**
 	 * Makes the list of Identities known by the tree owner.
@@ -198,6 +234,41 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * @param treeOwner owner of the trust tree we want to display 
 	 */
 	private void makeKnownIdentitiesList(OwnIdentity treeOwner, ObjectContainer db, PluginRespirator pr) throws DuplicateScoreException, DuplicateTrustException {
+
+		String nickFilter = request.isPartSet("nickfilter") ? request.getPartAsString("nickfilter", 100).trim() : "";
+		String sortBy = request.isPartSet("sortby") ? request.getPartAsString("sortby", 100).trim() : "nickname";
+		String sortType = request.isPartSet("sorttype") ? request.getPartAsString("sorttype", 100).trim() : "asc";
+
+		HTMLNode filters = addContentBox("Filters and sorting");
+		HTMLNode filtersForm = pr.addFormChild(filters, uri, "Filters").addChild("p");
+		filtersForm.addChild("#", "Show only nicks containing : ");
+		filtersForm.addChild("input", new String[]{"type", "size", "name", "value"}, new String[]{"text", "15", "nickfilter", nickFilter});
+		filtersForm.addChild("#", " Sort identities by : ");
+		HTMLNode option = filtersForm.addChild("select", new String[]{"name", "id"}, new String[]{"sortby", "sortby"});
+		TreeMap<String, String> options = new TreeMap<String, String>();
+		options.put("nickname", "Nickname");
+		options.put("score", "Score");
+		options.put("localtrust", "Local trust");
+		for(String e : options.keySet()) {
+			HTMLNode newOption = option.addChild("option", "value", e, options.get(e));
+			if(e.equals(sortBy)) {
+				newOption.addAttribute("selected", "selected");
+			}
+		}
+
+		option = filtersForm.addChild("select", new String[]{"name", "id"}, new String[]{"sorttype", "sorttype"});
+		options = new TreeMap<String, String>();
+		options.put("asc", "Ascending");
+		options.put("desc", "Descending");
+		for(String e : options.keySet()) {
+			HTMLNode newOption = option.addChild("option", "value", e, options.get(e));
+			if(e.equals(sortType)) {
+				newOption.addAttribute("selected", "selected");
+			}
+		}
+
+		filtersForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", "Submit"});
+
 
 		HTMLNode listBoxContent = addContentBox("Known Identities");
 
@@ -215,9 +286,80 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		synchronized(wot) {
 		long currentTime = CurrentTimeUTC.getInMillis();
-			
-		for(Identity id : wot.getAllIdentities()) {
+
+		Collection<Identity> ids = null;
+
+		if(sortBy.equals("nickname")) {
+			TreeMap<String, Identity> identities = new TreeMap<String, Identity>();
+			for(Identity id : wot.getAllIdentities()) {
+				String nick = id.getNickname();
+				if(nick == null) {
+					nick = id.getID();
+				} else {
+					nick = nick.toLowerCase() + id.getID();
+				}
+				identities.put(nick, id);
+			}
+		
+			ids = identities.values();
+		} else if(sortBy.equals("score")) {
+			TreeMap<Long, Identity> identities = new TreeMap<Long, Identity>();
+			for(Identity id : wot.getAllIdentities()) {
+				Long score = null;
+				try {
+					score = new Long(wot.getScore((OwnIdentity) treeOwner, id).getScore());
+					// We want to avoid conflicts, it has to be unique and the value doesn't matter!
+					score *= 10000000;
+				} catch (NotInTrustTreeException ex) {
+					// Trust is null
+					score = Long.MIN_VALUE;
+				}
+				while(identities.containsKey(score)) {
+					score++;
+				}
+
+				identities.put(score, id);
+			}
+
+			ids = identities.values();
+		} else if(sortBy.equals("localtrust")) {
+			TreeMap<Long, Identity> identities = new TreeMap<Long, Identity>();
+			for(Identity id : wot.getAllIdentities()) {
+				Long localScore = null;
+				try {
+					localScore = new Long(wot.getTrust((OwnIdentity) treeOwner, id).getValue());
+				} catch (NotTrustedException ex) {
+					localScore = Long.MIN_VALUE;
+				} catch (DuplicateTrustException ex) {
+					localScore = Long.MIN_VALUE;
+				}
+				localScore *= 10000000;
+				while(identities.containsKey(localScore)) {
+					localScore++;
+				}
+
+				identities.put(localScore, id);
+			}
+
+			ids = identities.values();
+		}
+
+		Identity[] identitiesArray = ids.toArray(new Identity[0]);
+		if(sortType.equals("desc")) {
+			Identity[] reverse = new Identity[identitiesArray.length];
+			for(int i = 0; i < reverse.length; ++i) {
+				reverse[reverse.length - i - 1] = identitiesArray[i];
+			}
+			identitiesArray = reverse;
+		}
+
+		for(Identity id : identitiesArray) {
 			if(id == treeOwner) continue;
+
+			if(!nickFilter.equals("")) {
+				if(id.getNickname() == null) continue;
+				if(!id.getNickname().toLowerCase().contains(nickFilter.toLowerCase())) continue;
+			}
 
 			row=identitiesTable.addChild("tr");
 			
@@ -227,7 +369,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			String nickName = id.getNickname();
 			if(nickName != null)
-				nameLink.addChild("#", nickName);
+				nameLink.addChild("#", nickName + "@" + id.getID().substring(0, 5) + "...");
 			else
 				nameLink.addChild("span", "class", "alert-error").addChild("#", "Not downloaded yet");
 			
@@ -246,8 +388,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			//Score
 			try {
-				row.addChild("td", new String[] { "align" }, new String[] { "center" } ,
-						Integer.toString(wot.getScore((OwnIdentity)treeOwner, id).getScore())+" ("+
+				final int score = wot.getScore((OwnIdentity)treeOwner, id).getScore();
+				row.addChild("td", new String[] { "align", "style" }, new String[] { "center", "background-color:" + this.getTrustColor(score) + ";" } ,
+						Integer.toString(score) +" ("+
 						wot.getScore((OwnIdentity)treeOwner, id).getRank()+")");
 			}
 			catch (NotInTrustTreeException e) {
@@ -288,6 +431,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		} 
 			
 		HTMLNode cell = new HTMLNode("td");
+		if(!trustValue.isEmpty()) {
+			cell.addAttribute("style", "background-color:" + this.getTrustColor(Integer.parseInt(trustValue)) + ";");
+		}
+
 		HTMLNode trustForm = pr.addFormChild(cell, uri, "SetTrust");
 		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "SetTrust" });
 		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", truster.getID() });

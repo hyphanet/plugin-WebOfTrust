@@ -30,6 +30,7 @@ import freenet.clients.http.ToadletContext;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
+import plugins.WoT.ui.web.KnownIdentitiesPage;
 
 /**
  * @author xor (xor@freenetproject.org)
@@ -93,7 +94,7 @@ public class IdentityPage extends WebPageImpl {
 				Identity trustee = trust.getTrustee();
 				trustRow.addChild("td").addChild("a", "href", "?ShowIdentity&id=" + trustee.getID(), trustee.getNickname());
 				trustRow.addChild("td", trustee.getID());
-				trustRow.addChild("td", "align", "right", Byte.toString(trust.getValue()));
+				trustRow.addChild("td", new String[]{"align", "style"}, new String[]{"right", "background-color:" + KnownIdentitiesPage.getTrustColor(trust.getValue()) + ";"}, Byte.toString(trust.getValue()));
 				trustRow.addChild("td", trust.getComment());
 			}
 
@@ -102,7 +103,7 @@ public class IdentityPage extends WebPageImpl {
 				Identity truster = trust.getTruster();
 				trustRow.addChild("td").addChild("a", "href", "?ShowIdentity&id=" + truster.getID(), truster.getNickname());
 				trustRow.addChild("td", truster.getID());
-				trustRow.addChild("td", "align", "right", Byte.toString(trust.getValue()));
+				trustRow.addChild("td", new String[]{"align", "style"}, new String[]{"right", "background-color:" + KnownIdentitiesPage.getTrustColor(trust.getValue()) + ";"}, Byte.toString(trust.getValue()));
 				trustRow.addChild("td", trust.getComment());
 			}
 		}
