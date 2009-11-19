@@ -112,6 +112,16 @@ public final class Config {
 		mStringParams.put(key, value);
 	}
 	
+    /**
+     * Sets a boolean configuration parameter. You have to call storeAndCommit to write it to disk.
+     * 
+     * @param key Name of the config parameter.
+     * @param value Value of the config parameter.
+     */
+    public synchronized void set(String key, boolean value) {
+        mStringParams.put(key, Boolean.toString(value));
+    }
+	
 	/**
 	 * Sets an Integer configuration parameter and stores it in the database. You have to call storeAndCommit to write it to disk.
 	 * 
@@ -135,6 +145,13 @@ public final class Config {
 	public synchronized int getInt(String key) {
 		return mIntParams.get(key);
 	}
+
+    /**
+     * Gets a boolean configuration parameter.
+     */
+    public synchronized boolean getBoolean(String key) {
+        return Boolean.valueOf( mStringParams.get(key) );
+    }
 
 	/**
 	 * Check wheter a String config parameter exists.
@@ -189,7 +206,7 @@ public final class Config {
 
 		// FIXME: there is a null pointer somewhere in here. i don't have the
 		// time for fixing it right now
-		return mIntParams.keySet().toArray(new String[mStringParams.size()]);
+		return mIntParams.keySet().toArray(new String[mIntParams.size()]);
 	}
 
 	/**
