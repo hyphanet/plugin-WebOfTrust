@@ -314,6 +314,14 @@ public final class IntroductionServer extends TransferThread {
 				synchronized(p) {
 					OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
 					try {
+						// Make double sure that nothing goes wrong, especially considering the fact that multiple own identities can share one database
+						// and there might be bugs in the future which result in one seeing the puzzles of the other.
+						if(p.wasInserted() == false)
+							throw new Exception("Puzzle was not inserted yet!");
+						
+						if(p.wasSolved())
+							throw new Exception("Puzzle was solved already!");
+							
 					Identity newIdentity = mWoT.getXMLTransformer().importIntroduction(puzzleOwner, inputStream);
 					Logger.debug(this, "Imported identity introduction for identity " + newIdentity.getRequestURI() +
 							" to the OwnIdentity " + puzzleOwner);
