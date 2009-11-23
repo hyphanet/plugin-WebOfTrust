@@ -1433,10 +1433,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 	
 	public synchronized void deleteIdentity(String id) throws UnknownIdentityException {
-		synchronized(mDB.lock()) {
 			Identity identity = getIdentityByID(id);
 			deleteIdentity(identity);
-		}
 	}
 	
 	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
