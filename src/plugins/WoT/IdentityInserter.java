@@ -5,6 +5,7 @@ package plugins.WoT;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -173,7 +174,17 @@ public final class IdentityInserter extends TransferThread {
 			synchronized(mWoT) {
 				OwnIdentity identity = mWoT.getOwnIdentityByURI(state.getURI());
 				synchronized(identity) {
-					identity.setEdition(state.getURI().getEdition());
+					try {
+						identity.setEdition(state.getURI().getEdition());
+					} catch(InvalidParameterException e) {
+						// This sometimes happens. The reason is probably that the IdentityFetcher fetches it before onSuccess() is called and setEdition()
+						// won't accept lower edition numbers.
+						// We must catch it because insert) only increments the edition number if getLastInsertDate().after(new Date(0)) - which can
+						// only be the case if we ALWAYS call updateLastInsertDate().
+						// TODO: Check whether this can be prevented.
+						Logger.error(this, "setEdition() failed with URI/edition " + state.getURI() + "; current stored edition: " + identity.getEdition());
+						
+					}
 					identity.updateLastInsertDate();
 					mWoT.storeAndCommit(identity);
 				}
