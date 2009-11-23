@@ -1419,6 +1419,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	
 	public synchronized void deleteIdentity(Identity identity) {
 		synchronized(mPuzzleStore) {
+		synchronized(identity) {
 		synchronized(mDB.lock()) {
 			try {
 				deleteWithoutCommit(identity);
@@ -1428,6 +1429,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
+		}
 		}
 		}
 	}
