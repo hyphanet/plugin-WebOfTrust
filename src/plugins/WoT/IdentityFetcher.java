@@ -23,6 +23,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.USKManager;
 import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
+import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
@@ -449,7 +450,9 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 	 * Called when an identity is successfully fetched.
 	 */
 	public void onFound(USK origUSK, long edition, FetchResult result) {
-		Logger.debug(this, "Fetched identity: " + origUSK);
+		FreenetURI realURI = origUSK.getURI().setSuggestedEdition(edition);
+		
+		Logger.debug(this, "Fetched identity: " + realURI);
 		
 		Bucket bucket = null;
 		InputStream inputStream = null;
@@ -457,10 +460,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 		try {
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
-			mWoT.getXMLTransformer().importIdentity(origUSK.getURI(), inputStream);
+			mWoT.getXMLTransformer().importIdentity(realURI, inputStream);
 		}
 		catch (Exception e) {
-			Logger.error(this, "Parsing failed for "+ origUSK, e);
+			Logger.error(this, "Parsing failed for " + realURI, e);
 		}
 		finally {
 			Closer.close(inputStream);
