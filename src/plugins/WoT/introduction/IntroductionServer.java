@@ -134,6 +134,11 @@ public final class IntroductionServer extends TransferThread {
 	protected void iterate() {
 		mPuzzleStore.deleteExpiredPuzzles();
 
+		/* TODO: We restart all requests in every iteration. Decide whether this makes sense or not, if not add code to re-use requests for
+		 * puzzles which still exist.
+		 * I think it makes sense to restart them because there are not many puzzles and therefore not many requests. */
+		abortFetches();
+		
 		synchronized(mWoT) {
 			/* TODO: We might want to not lock all the time during captcha creation... figure out how long this takes ... */
 			
@@ -156,12 +161,7 @@ public final class IntroductionServer extends TransferThread {
 	/* Primary worker functions */
 		
 
-	private void downloadSolutions(OwnIdentity inserter) throws FetchException {
-		/* TODO: We restart all requests in every iteration. Decide whether this makes sense or not, if not add code to re-use requests for
-		 * puzzles which still exist.
-		 * I think it makes sense to restart them because there are not many puzzles and therefore not many requests. */
-		abortFetches();
-		
+	private void downloadSolutions(OwnIdentity inserter) throws FetchException {		
 		synchronized(mPuzzleStore) {
 			ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedByInserter(inserter);
 			Logger.debug(this, "Identity " + inserter.getNickname() + " has " + puzzles.size() + " unsolved puzzles stored. " + 
