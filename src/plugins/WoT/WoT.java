@@ -33,9 +33,12 @@ import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.keys.FreenetURI;
+import freenet.l10n.BaseL10n;
+import freenet.l10n.PluginL10n;
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.node.RequestClient;
 import freenet.pluginmanager.FredPlugin;
+import freenet.pluginmanager.FredPluginBaseL10n;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginRealVersioned;
@@ -55,7 +58,7 @@ import freenet.support.api.Bucket;
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
 public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
-	FredPluginL10n, FredPluginWithClassLoader {
+	FredPluginL10n, FredPluginBaseL10n, FredPluginWithClassLoader {
 	
 	/* Constants */
 	
@@ -98,6 +101,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	/** The node's interface to connect the plugin with the node, needed for retrieval of all other interfaces */
 	private PluginRespirator mPR;	
 	
+	private static PluginL10n l10n;
 	
 	/* References from the plugin itself */
 	
@@ -1643,7 +1647,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 
 	public String getString(String key) {
-		return key;
+	    return WoT.getBaseL10n().getString(key);
 	}
 
 	public void setClassLoader(ClassLoader myClassLoader) {
@@ -1651,6 +1655,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 	
 	public void setLanguage(LANGUAGE newLanguage) {
+        WoT.l10n = new PluginL10n(this, newLanguage);
+        Logger.debug(this, "Set LANGUAGE to: " + newLanguage.isoCode);
 	}
 	
 	public PluginRespirator getPluginRespirator() {
@@ -1685,4 +1691,47 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		return mRequestClient;
 	}
 
+    /**
+     * This is where our L10n files are stored.
+     * @return Path of our L10n files.
+     */
+    public String getL10nFilesBasePath() {
+        return "plugins/WoT/l10n/";
+    }
+
+    /**
+     * This is the mask of our L10n files : lang_en.l10n, lang_de.10n, ...
+     * @return Mask of the L10n files.
+     */
+    public String getL10nFilesMask() {
+        return "lang_${lang}.l10n";
+    }
+
+    /**
+     * Override L10n files are stored on the disk, their names should be explicit
+     * we put here the plugin name, and the "override" indication. Plugin L10n
+     * override is not implemented in the node yet.
+     * @return Mask of the override L10n files.
+     */
+    public String getL10nOverrideFilesMask() {
+        return "WoT_lang_${lang}.override.l10n";
+    }
+
+    /**
+     * Get the ClassLoader of this plugin. This is necessary when getting
+     * resources inside the plugin's Jar, for example L10n files.
+     * @return
+     */
+    public ClassLoader getPluginClassLoader() {
+        return WoT.class.getClassLoader();
+    }
+
+    /**
+     * BaseL10n object can be accessed statically to get L10n data from anywhere.
+     *
+     * @return L10n object.
+     */
+    public static BaseL10n getBaseL10n() {
+        return WoT.l10n.getBase();
+    }
 }
