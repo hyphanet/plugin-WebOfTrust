@@ -3,11 +3,14 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.ui.web;
 
+import java.util.Collection;
 import java.util.Date;
+import java.util.TreeMap;
 
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
 import plugins.WoT.Trust;
+import plugins.WoT.WoT;
 import plugins.WoT.exceptions.DuplicateScoreException;
 import plugins.WoT.exceptions.DuplicateTrustException;
 import plugins.WoT.exceptions.InvalidParameterException;
@@ -24,8 +27,6 @@ import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
-import java.util.Collection;
-import java.util.TreeMap;
 
 
 /**
@@ -53,11 +54,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		if(request.isPartSet("AddIdentity")) {
 			try {
 				wot.addIdentity(request.getPartAsString("IdentityURI", 1024));
-				HTMLNode successBox = addContentBox("Success");
-				successBox.addChild("#", "The identity was added and is now being downloaded.");
+				HTMLNode successBox = addContentBox(WoT.getBaseL10n().getString("KnownIdentitiesPage.AddIdentity.Success.Header"));
+				successBox.addChild("#", WoT.getBaseL10n().getString("KnownIdentitiesPage.AddIdentity.Success.Text"));
 			}
 			catch(Exception e) {
-				addErrorBox("Adding the identity failed", e);
+				addErrorBox(WoT.getBaseL10n().getString("KnownIdentitiesPage.AddIdentity.Failed"), e);
 			}
 		}
 		
@@ -78,9 +79,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 				else
 					wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
 			} catch(InvalidParameterException e) {
-				addErrorBox("Setting trust failed", e.getMessage());
+				addErrorBox(WoT.getBaseL10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e.getMessage());
 			} catch(Exception e) {
-				addErrorBox("Setting trust failed", e);
+				addErrorBox(WoT.getBaseL10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e);
 			}
 		}
 
@@ -95,7 +96,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 				treeOwner = wot.getOwnIdentityByID(ownerID);
 			} catch (Exception e) {
 				Logger.error(this, "Error while selecting the OwnIdentity", e);
-				addErrorBox("Error while selecting the OwnIdentity", e);
+				addErrorBox(WoT.getBaseL10n().getString("KnownIdentitiesPage.SelectOwnIdentity.Failed"), e);
 			}
 		} else {
 			synchronized(wot) {
@@ -131,14 +132,17 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		// TODO Add trust value and comment fields and make them mandatory
 		// The user should only add an identity he trusts
-		HTMLNode addBoxContent = addContentBox("Add an identity");
+		HTMLNode addBoxContent = addContentBox(WoT.getBaseL10n().getString("KnownIdentitiesPage.AddIdentity.Header"));
 	
 		HTMLNode createForm = _pr.addFormChild(addBoxContent, uri, "AddIdentity");
 		if(treeOwner != null)
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "AddIdentity" });
 		createForm.addChild("span", new String[] {"title", "style"}, 
-				new String[] { "This must be a valid Freenet URI.", "border-bottom: 1px dotted; cursor: help;"} , "Identity URI: ");
+				new String[] { 
+		            WoT.getBaseL10n().getString("KnownIdentitiesPage.AddIdentity.IdentityURI.Tooltip"), 
+		            "border-bottom: 1px dotted; cursor: help;"} , 
+		            WoT.getBaseL10n().getString("KnownIdentitiesPage.AddIdentity.IdentityURI") + ": ");
 		
 		createForm.addChild("input", new String[] {"type", "name", "size"}, new String[] {"text", "IdentityURI", "70"});
 		createForm.addChild("br");
@@ -146,25 +150,25 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		if(treeOwner != null) {
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrust", "true"});
 			
-			createForm.addChild("span", "Trust: ")
+			createForm.addChild("span", WoT.getBaseL10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ")
 				.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Value", "4", "" });
 			
-			createForm.addChild("span", "Comment:")
+			createForm.addChild("span", " " + WoT.getBaseL10n().getString("KnownIdentitiesPage.AddIdentity.Comment") + ": ")
 				.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Comment", "20", "" });
 			
 			createForm.addChild("br");
 		}
 		
-		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "AddIdentity", "Add" });
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "AddIdentity", WoT.getBaseL10n().getString("KnownIdentitiesPage.AddIdentity.AddButton") });
 	}
 
 	private void makeNoOwnIdentityWarning() {
-		addErrorBox("No own identity found", "You should create an identity first.");
+		addErrorBox(WoT.getBaseL10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Header"), WoT.getBaseL10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Text"));
 	}
 	
 	private void makeSelectTreeOwnerForm(ObjectContainer db, PluginRespirator _pr) {
 
-		HTMLNode listBoxContent = addContentBox("Select the trust tree owner");
+		HTMLNode listBoxContent = addContentBox(WoT.getBaseL10n().getString("KnownIdentitiesPage.SelectTreeOwner.Header"));
 		HTMLNode selectForm = _pr.addFormChild(listBoxContent, uri, "ViewTree");
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "ViewTree" });
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnerID");
@@ -174,7 +178,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 				selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getNickname());
 		}
 
-		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "select", "View this identity's Web of Trust" });
+		selectForm.addChild(
+		        "input", 
+		        new String[] { "type", "name", "value" }, 
+		        new String[] { "submit", "select", WoT.getBaseL10n().getString("KnownIdentitiesPage.SelectTreeOwner.ViewOwnersTreeButton") });
 	}
 	
 	private String formatTimeDelta(long delta) {
@@ -182,14 +189,19 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		long hours = (delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60);
 		long minutes = ((delta % (1000 * 60 * 60 * 24)) % (1000 * 60 * 60)) / (1000 * 60);
 		
+		final String daysMnemonic = WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentitiesTable.daysMnemonic");
+		final String hoursMnemonic = WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentitiesTable.hoursMnemonic");
+		final String minutesMnemonic = WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentitiesTable.minutesMnemonic");
+		final String ago = WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentitiesTable.ago");
+		
 		if(days > 3)
-			return days + "d ago";
+			return days + daysMnemonic + " " + ago;
 		else if(days > 0)
-			return days + "d " + hours + "h ago";
+			return days + daysMnemonic + " " + hours + hoursMnemonic + " " + ago;
 		else if(hours > 0)
-			return hours + "h ago";
+			return hours + hoursMnemonic + " " + ago;
 		else
-			return minutes + "m ago"; 
+			return minutes + minutesMnemonic + " " + ago; 
 	}
 
 	/**
@@ -239,16 +251,16 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		String sortBy = request.isPartSet("sortby") ? request.getPartAsString("sortby", 100).trim() : "nickname";
 		String sortType = request.isPartSet("sorttype") ? request.getPartAsString("sorttype", 100).trim() : "asc";
 
-		HTMLNode filters = addContentBox("Filters and sorting");
+		HTMLNode filters = addContentBox(WoT.getBaseL10n().getString("KnownIdentitiesPage.FiltersAndSorting.Header"));
 		HTMLNode filtersForm = _pr.addFormChild(filters, uri, "Filters").addChild("p");
-		filtersForm.addChild("#", "Show only nicks containing : ");
+		filtersForm.addChild("#", WoT.getBaseL10n().getString("KnownIdentitiesPage.FiltersAndSorting.ShowOnlyNicksContaining") + " : ");
 		filtersForm.addChild("input", new String[]{"type", "size", "name", "value"}, new String[]{"text", "15", "nickfilter", nickFilter});
-		filtersForm.addChild("#", " Sort identities by : ");
+		filtersForm.addChild("#", " " + WoT.getBaseL10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy") + " : ");
 		HTMLNode option = filtersForm.addChild("select", new String[]{"name", "id"}, new String[]{"sortby", "sortby"});
 		TreeMap<String, String> options = new TreeMap<String, String>();
-		options.put("nickname", "Nickname");
-		options.put("score", "Score");
-		options.put("localtrust", "Local trust");
+		options.put("nickname", WoT.getBaseL10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Nickname"));
+		options.put("score", WoT.getBaseL10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Score"));
+		options.put("localtrust", WoT.getBaseL10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.LocalTrust"));
 		for(String e : options.keySet()) {
 			HTMLNode newOption = option.addChild("option", "value", e, options.get(e));
 			if(e.equals(sortBy)) {
@@ -258,8 +270,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 
 		option = filtersForm.addChild("select", new String[]{"name", "id"}, new String[]{"sorttype", "sorttype"});
 		options = new TreeMap<String, String>();
-		options.put("asc", "Ascending");
-		options.put("desc", "Descending");
+		options.put("asc", WoT.getBaseL10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Ascending"));
+		options.put("desc", WoT.getBaseL10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Descending"));
 		for(String e : options.keySet()) {
 			HTMLNode newOption = option.addChild("option", "value", e, options.get(e));
 			if(e.equals(sortType)) {
@@ -267,22 +279,22 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 
-		filtersForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", "Submit"});
+		filtersForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", WoT.getBaseL10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.SubmitButton")});
 
 
-		HTMLNode listBoxContent = addContentBox("Known Identities");
+		HTMLNode listBoxContent = addContentBox(WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.Header"));
 
 		// Display the list of known identities
 		HTMLNode identitiesTable = listBoxContent.addChild("table", "border", "0");
 		HTMLNode row=identitiesTable.addChild("tr");
-		row.addChild("th", "Nickname");
-		row.addChild("th", "Added");
-		row.addChild("th", "Fetched");
-		row.addChild("th", "Publishes Trustlist");
-		row.addChild("th", "Score (Rank)");
-		row.addChild("th", "Trust/Comment");
-		row.addChild("th", "Trusters");
-		row.addChild("th", "Trustees");
+		row.addChild("th", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Nickname"));
+		row.addChild("th", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Added"));
+		row.addChild("th", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Fetched"));
+		row.addChild("th", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.PublishesTrustlist"));
+		row.addChild("th", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.ScoreAndRank"));
+		row.addChild("th", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.TrustAndComment"));
+		row.addChild("th", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Trusters"));
+		row.addChild("th", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Trustees"));
 		
 		synchronized(wot) {
 		long currentTime = CurrentTimeUTC.getInMillis();
@@ -371,7 +383,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			if(nickName != null)
 				nameLink.addChild("#", nickName + "@" + id.getID().substring(0, 5) + "...");
 			else
-				nameLink.addChild("span", "class", "alert-error").addChild("#", "Not downloaded yet");
+				nameLink.addChild("span", "class", "alert-error").addChild("#", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.Table.NicknameNotDownloadedYet"));
 			
 			// Added date
 			row.addChild("td", formatTimeDelta(currentTime - id.getAddedDate().getTime()));
@@ -381,10 +393,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			if(!lastFetched.equals(new Date(0)))
 				row.addChild("td", formatTimeDelta(currentTime - lastFetched.getTime()));
 			else
-				row.addChild("td", "Never");
+				row.addChild("td", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.Table.Never"));
 			
 			// Publish TrustList
-			row.addChild("td", new String[] { "align" }, new String[] { "center" } , id.doesPublishTrustList() ? "Yes" : "No");
+			row.addChild("td", new String[] { "align" }, new String[] { "center" } , id.doesPublishTrustList() ? WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.Table.Yes") : WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.Table.No"));
 			
 			//Score
 			try {
@@ -448,7 +460,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		trustForm.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, 
 				new String[] { "text", "Comment", "50", Integer.toString(Trust.MAX_TRUST_COMMENT_LENGTH), trustComment });
 		
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SetTrust", "Update" });
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SetTrust", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton") });
 
 		return cell;
 	}
