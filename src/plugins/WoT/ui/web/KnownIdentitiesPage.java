@@ -86,7 +86,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 
 		OwnIdentity treeOwner = null;
 		ObjectContainer db = wot.getDB();
-		PluginRespirator pr = wot.getPluginRespirator();
+		PluginRespirator _pr = wot.getPluginRespirator();
 		int nbOwnIdentities = 1;
 		String ownerID = request.getPartAsString("OwnerID", 128);
 		
@@ -106,17 +106,17 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 			
-		makeAddIdentityForm(pr, treeOwner);
+		makeAddIdentityForm(_pr, treeOwner);
 
 		if(treeOwner != null) {
 			try {
-				makeKnownIdentitiesList(treeOwner, db, pr);
+				makeKnownIdentitiesList(treeOwner, db, _pr);
 			} catch (Exception e) {
 				Logger.error(this, "Error", e);
 				addErrorBox("Error", e);
 			}
 		} else if(nbOwnIdentities > 1)
-			makeSelectTreeOwnerForm(db, pr);
+			makeSelectTreeOwnerForm(db, _pr);
 		else
 			makeNoOwnIdentityWarning();
 	}
@@ -124,16 +124,16 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	/**
 	 * Makes a form where the user can enter the requestURI of an Identity he knows.
 	 * 
-	 * @param pr a reference to the {@link PluginRespirator}
+	 * @param _pr a reference to the {@link PluginRespirator}
 	 * @param treeOwner The owner of the known identity list. Not used for adding the identity but for showing the known identity list properly after adding.
 	 */
-	private void makeAddIdentityForm(PluginRespirator pr, OwnIdentity treeOwner) {
+	private void makeAddIdentityForm(PluginRespirator _pr, OwnIdentity treeOwner) {
 		
 		// TODO Add trust value and comment fields and make them mandatory
 		// The user should only add an identity he trusts
 		HTMLNode addBoxContent = addContentBox("Add an identity");
 	
-		HTMLNode createForm = pr.addFormChild(addBoxContent, uri, "AddIdentity");
+		HTMLNode createForm = _pr.addFormChild(addBoxContent, uri, "AddIdentity");
 		if(treeOwner != null)
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "AddIdentity" });
@@ -162,10 +162,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		addErrorBox("No own identity found", "You should create an identity first.");
 	}
 	
-	private void makeSelectTreeOwnerForm(ObjectContainer db, PluginRespirator pr) {
+	private void makeSelectTreeOwnerForm(ObjectContainer db, PluginRespirator _pr) {
 
 		HTMLNode listBoxContent = addContentBox("Select the trust tree owner");
-		HTMLNode selectForm = pr.addFormChild(listBoxContent, uri, "ViewTree");
+		HTMLNode selectForm = _pr.addFormChild(listBoxContent, uri, "ViewTree");
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "ViewTree" });
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnerID");
 
@@ -230,17 +230,17 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * Makes the list of Identities known by the tree owner.
 	 * 
 	 * @param db a reference to the database 
-	 * @param pr a reference to the {@link PluginRespirator}
+	 * @param _pr a reference to the {@link PluginRespirator}
 	 * @param treeOwner owner of the trust tree we want to display 
 	 */
-	private void makeKnownIdentitiesList(OwnIdentity treeOwner, ObjectContainer db, PluginRespirator pr) throws DuplicateScoreException, DuplicateTrustException {
+	private void makeKnownIdentitiesList(OwnIdentity treeOwner, ObjectContainer db, PluginRespirator _pr) throws DuplicateScoreException, DuplicateTrustException {
 
 		String nickFilter = request.isPartSet("nickfilter") ? request.getPartAsString("nickfilter", 100).trim() : "";
 		String sortBy = request.isPartSet("sortby") ? request.getPartAsString("sortby", 100).trim() : "nickname";
 		String sortType = request.isPartSet("sorttype") ? request.getPartAsString("sorttype", 100).trim() : "asc";
 
 		HTMLNode filters = addContentBox("Filters and sorting");
-		HTMLNode filtersForm = pr.addFormChild(filters, uri, "Filters").addChild("p");
+		HTMLNode filtersForm = _pr.addFormChild(filters, uri, "Filters").addChild("p");
 		filtersForm.addChild("#", "Show only nicks containing : ");
 		filtersForm.addChild("input", new String[]{"type", "size", "name", "value"}, new String[]{"text", "15", "nickfilter", nickFilter});
 		filtersForm.addChild("#", " Sort identities by : ");
@@ -389,7 +389,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			//Score
 			try {
 				final int score = wot.getScore((OwnIdentity)treeOwner, id).getScore();
-				row.addChild("td", new String[] { "align", "style" }, new String[] { "center", "background-color:" + this.getTrustColor(score) + ";" } ,
+				row.addChild("td", new String[] { "align", "style" }, new String[] { "center", "background-color:" + KnownIdentitiesPage.getTrustColor(score) + ";" } ,
 						Integer.toString(score) +" ("+
 						wot.getScore((OwnIdentity)treeOwner, id).getRank()+")");
 			}
@@ -432,7 +432,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 		HTMLNode cell = new HTMLNode("td");
 		if(!trustValue.isEmpty()) {
-			cell.addAttribute("style", "background-color:" + this.getTrustColor(Integer.parseInt(trustValue)) + ";");
+			cell.addAttribute("style", "background-color:" + KnownIdentitiesPage.getTrustColor(Integer.parseInt(trustValue)) + ";");
 		}
 
 		HTMLNode trustForm = pr.addFormChild(cell, uri, "SetTrust");
