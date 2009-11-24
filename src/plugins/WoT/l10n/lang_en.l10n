@@ -1,1 +1,11 @@
+WebInterface.WotMenuName=Web of Trust
+WebInterface.WotMenuName.Tooltip=Web of Trust, the collaborative spam filter underlying the Freetalk chat system
+WebInterface.WotMenuItem.Home=Home
+WebInterface.WotMenuItem.Home.Tooltip=Home page
+WebInterface.WotMenuItem.OwnIdentities=Own Identities
+WebInterface.WotMenuItem.OwnIdentities.Tooltip=Manage your own identities
+WebInterface.WotMenuItem.KnownIdentities=Known Identities
+WebInterface.WotMenuItem.KnownIdentities.Tooltip=Manage others identities
+WebInterface.WotMenuItem.Configuration=Configuration
+WebInterface.WotMenuItem.Configuration.Tooltip=Configure the WoT plugin
 End

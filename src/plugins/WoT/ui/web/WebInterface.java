@@ -18,7 +18,6 @@ import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
-import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
@@ -33,6 +32,7 @@ import freenet.support.io.Closer;
  * @author xor (xor@freenetproject.org)
  * @author Bombe
  * @author Julien Cornuwel (batosai@freenetproject.org)
+ * @author bback
  */
 public class WebInterface {
 	
@@ -379,23 +379,35 @@ public class WebInterface {
 		mPluginRespirator = mWoT.getPluginRespirator();
 		ToadletContainer container = mPluginRespirator.getToadletContainer();
 		mPageMaker = mPluginRespirator.getPageMaker();
-		mPageMaker.addNavigationCategory(mURI+"/", "Web of Trust", "Web of Trust, the collaborative spam filter underlying the Freetalk chat system", mWoT);
+		mPageMaker.addNavigationCategory(mURI+"/", "WebInterface.WotMenuName", "WebInterface.WotMenuName.Tooltip", mWoT);
 		
 		// Visible pages
 		
-		container.register(homeToadlet = new HomeWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, ""), "Web of Trust", mURI+"/", true, "Home", "Home page", false, null);
-		container.register(ownIdentitiesToadlet = new OwnIdentitiesWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "OwnIdentities"), "Web of Trust", mURI + "/OwnIdentities", true, "Own Identities", "Manage your own identities", false, null);
-		container.register(knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "KnownIdentities"), "Web of Trust", mURI + "/KnownIdentities", true, "Known Identities", "Manage others identities", false, null);
-		container.register(configurationToadlet = new ConfigWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "Configuration"), "Web of Trust", mURI + "/Configuration", true, "Configuration", "Configure the WoT plugin", false, null);
+		homeToadlet = new HomeWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "");
+		ownIdentitiesToadlet = new OwnIdentitiesWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "OwnIdentities");
+		knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "KnownIdentities");
+		configurationToadlet = new ConfigWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "Configuration");
+		
+		container.register(homeToadlet, "WebInterface.WotMenuName", mURI+"/", true, "WebInterface.WotMenuItem.Home", "WebInterface.WotMenuItem.Home.Tooltip", false, null);
+		container.register(ownIdentitiesToadlet, "WebInterface.WotMenuName", mURI + "/OwnIdentities", true, "WebInterface.WotMenuItem.OwnIdentities", "WebInterface.WotMenuItem.OwnIdentities.Tooltip", false, null);
+		container.register(knownIdentitiesToadlet, "WebInterface.WotMenuName", mURI + "/KnownIdentities", true, "WebInterface.WotMenuItem.KnownIdentities", "WebInterface.WotMenuItem.KnownIdentities.Tooltip", false, null);
+		container.register(configurationToadlet, "WebInterface.WotMenuName", mURI + "/Configuration", true, "WebInterface.WotMenuItem.Configuration", "WebInterface.WotMenuItem.Configuration.Tooltip", false, null);
 		
 		// Invisible pages
 		
-		container.register(createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "CreateIdentity"), null, mURI + "/CreateIdentity", true, false);
-		container.register(deleteOwnIdentityToadlet = new DeleteOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "DeleteOwnIdentity"), null, mURI + "/DeleteOwnIdentity", true, false);
-		container.register(editOwnIdentityToadlet = new EditOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "EditOwnIdentity"), null, mURI + "/EditOwnIdentity", true, false);
-		container.register(introduceIdentityToadlet = new IntroduceIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "IntroduceIdentity"), null, mURI + "/IntroduceIdentity", true, false);
-		container.register(identityToadlet = new IdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "ShowIdentity"), null, mURI + "/ShowIdentity", true, false);
-		container.register(getPuzzleToadlet = new GetPuzzleWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "GetPuzzle"), null, mURI + "/GetPuzzle", true, false);
+		createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "CreateIdentity");
+		deleteOwnIdentityToadlet = new DeleteOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "DeleteOwnIdentity");
+		editOwnIdentityToadlet = new EditOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "EditOwnIdentity");
+		introduceIdentityToadlet = new IntroduceIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "IntroduceIdentity");
+		identityToadlet = new IdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "ShowIdentity");
+		getPuzzleToadlet = new GetPuzzleWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "GetPuzzle");
+		
+		container.register(createIdentityToadlet, null, mURI + "/CreateIdentity", true, false);
+		container.register(deleteOwnIdentityToadlet, null, mURI + "/DeleteOwnIdentity", true, false);
+		container.register(editOwnIdentityToadlet, null, mURI + "/EditOwnIdentity", true, false);
+		container.register(introduceIdentityToadlet, null, mURI + "/IntroduceIdentity", true, false);
+		container.register(identityToadlet, null, mURI + "/ShowIdentity", true, false);
+		container.register(getPuzzleToadlet, null, mURI + "/GetPuzzle", true, false);
 	}
 	
 	public String getURI() {
@@ -408,11 +420,6 @@ public class WebInterface {
 	
 	public WoT getWoT() {
 		return mWoT;
-	}
-	
-
-	private static final String l10n(String string) {
-		return NodeL10n.getBase().getString("ConfigToadlet." + string);
 	}
 	
 	public void unload() {
@@ -431,7 +438,5 @@ public class WebInterface {
 		}) container.unregister(t);
 		mPageMaker.removeNavigationCategory("Web of Trust");
 	}
-
 }
-
 
