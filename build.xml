@@ -43,6 +43,11 @@
 			</classpath>
 			<include name="**/*.java"/>
 		</javac>
+		<copy todir="${build}">
+			<fileset dir="src/">
+				<include name="**/*.l10n" />
+			</fileset>
+		</copy>
 	</target>
 
 	<!-- ================================================== -->
