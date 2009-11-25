@@ -434,7 +434,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 	protected synchronized void stop() {
 		Logger.debug(this, "Trying to stop all requests");
 		
-		USKRetriever[] retrievers = mRequests.entrySet().toArray(new USKRetriever[mRequests.size()]);		
+		USKRetriever[] retrievers = mRequests.values().toArray(new USKRetriever[mRequests.size()]);		
 		int counter = 0;		 
 		for(USKRetriever r : retrievers) {
 			r.cancel(null, mClientContext);
