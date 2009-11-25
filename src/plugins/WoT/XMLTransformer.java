@@ -419,41 +419,43 @@ public final class XMLTransformer {
 			if(!puzzleOwner.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT))
 				throw new InvalidParameterException("Trying to import an identity identroduction for an own identity which does not allow introduction.");
 			
-			try {
-				newIdentity = mWoT.getIdentityByURI(identityURI);
-				Logger.minor(this, "Imported introduction for an already existing identity: " + newIdentity);
-			}
-			catch (UnknownIdentityException e) {
-				synchronized(mDB.lock()) {
-					try{
+			synchronized(mDB.lock()) {
+				try {
+					try {
+						newIdentity = mWoT.getIdentityByURI(identityURI);
+						Logger.minor(this, "Imported introduction for an already existing identity: " + newIdentity);
+					}
+					catch (UnknownIdentityException e) {
 						newIdentity = new Identity(identityURI, null, false);
-						// The identity constructor only takes the edition number as a hint, so we must store it explicitly.
-						newIdentity.setEdition(identityURI.getEdition());
+						// We do NOT call setEdition(): An attacker might solve puzzles pretending to be someone else and publish bogus edition numbers for
+						// that identity by that. The identity constructor only takes the edition number as edition hint, this is the proper behavior.
+						// TODO: As soon as we have code for signing XML with an identity SSK we could sign the introduction XML and therefore prevent that
+						// attack.
+						//newIdentity.setEdition(identityURI.getEdition());
 						mWoT.storeWithoutCommit(newIdentity);
-
-						try {
-							mWoT.getTrust(puzzleOwner, newIdentity); /* Double check ... */
-							Logger.error(newIdentity, "The identity is already trusted even though it did not exist!");
-						}
-						catch(NotTrustedException ex) {
-							// 0 trust will not allow the import of other new identities for the new identity because the trust list import code will only create
-							// new identities if the score of an identity is > 0, not if it is equal to 0.
-							mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");	
-						}
-
-						final IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
-						if(identityFetcher != null)
-							identityFetcher.storeStartFetchCommandWithoutCommit(newIdentity.getID());
-
-						mDB.commit(); Logger.debug(this, "COMMITED.");
-
+						Logger.minor(this, "Imported introduction for an unknown identity: " + newIdentity);
 					}
-					catch(RuntimeException error) {
-						mDB.rollback();
-						throw error;
+
+					try {
+						mWoT.getTrust(puzzleOwner, newIdentity); /* Double check ... */
+						Logger.minor(this, "The identity is already trusted.");
 					}
+					catch(NotTrustedException ex) {
+						// 0 trust will not allow the import of other new identities for the new identity because the trust list import code will only create
+						// new identities if the score of an identity is > 0, not if it is equal to 0.
+						mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");	
+					}
+
+					final IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
+					if(identityFetcher != null)
+						identityFetcher.storeStartFetchCommandWithoutCommit(newIdentity.getID());
+
+					mDB.commit(); Logger.debug(this, "COMMITED.");
 				}
-
+				catch(RuntimeException error) {
+					mDB.rollback(); Logger.debug(this, "ROLLED BACK!", error);
+					throw error;
+				}
 			}
 		}
 
