@@ -12,8 +12,6 @@ package plugins.WoT;
  *
  */
 public class Version {
-	/** SVN revision number. Only set if the plugin is compiled properly e.g. by emu. */
-	private static final String svnRevision = "@custom@";
 
 	/** Version number of the plugin for getRealVersion(). Increment this on making
 	 * a major change, a significant bugfix etc. These numbers are used in auto-update 
@@ -30,19 +28,8 @@ public class Version {
 	/** Published as an identity property if you own a seed identity. */
 	public static final long latestVersion = version;
 
-	
-	static String getSvnRevision() {
-		return svnRevision;
-	}
-	
-	public static void main(String[] args) {
-		System.out.println("=====");
-		System.out.println(svnRevision);
-		System.out.println("=====");		
-	}
-
 	public static String getMarketingVersion() {
-		return "0.4.0 beta " + getSvnRevision();
+		return "0.4.0 beta";
 	}
 
 	public static long getRealVersion() {
