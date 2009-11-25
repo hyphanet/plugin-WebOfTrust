@@ -23,5 +23,4 @@ public class ErrorPage extends WebPageImpl {
 	public void make() {
 		addErrorBox("Internal error, please report this", mError);
 	}
-
 }

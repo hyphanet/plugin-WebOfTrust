@@ -16,7 +16,6 @@ import freenet.support.api.HTTPRequest;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-
 public class HomePage extends WebPageImpl {
 
 	/**
@@ -39,36 +38,31 @@ public class HomePage extends WebPageImpl {
 	private void makeSummary() {
 		long latestMandatoryVersion = wot.getLatestReportedVersion(WoT.WOT_NAME, true);
 		if(latestMandatoryVersion > Version.version) {
-			addErrorBox("IMPORTANT: New mandatory version", "According to the seed identities there is a new required version of the WoT plugin available. "
-															+ "You must upgrade WoT by pressing the reload button on your node's plugins page.");
+			addErrorBox(WoT.getBaseL10n().getString("HomePage.NewMandatoryVersionAvailable.Header"), WoT.getBaseL10n().getString("HomePage.NewMandatoryVersionAvailable.Text"));
 		} else {
 			long latestVersion = wot.getLatestReportedVersion(WoT.WOT_NAME, false);
 			if(latestVersion > Version.version) {
-				addErrorBox("New version", "According to the seed identities there is a new version of the WoT plugin available. "
-										+ "You might want to upgrade it by pressing the reload button on your node's plugins page.");
+				addErrorBox(WoT.getBaseL10n().getString("HomePage.NewVersionAvailable.Header"), WoT.getBaseL10n().getString("HomePage.NewVersionAvailable.Text"));
 			}
 		}
 
-		addErrorBox("WARNING", "WoT is currently in beta stage. The web of trust will be purged when we release a final version " +
-				"so please create backups of your identities' request and insert URIs if you want to use the same keys when the stable " + 
-				"version is released.");
+		addErrorBox(WoT.getBaseL10n().getString("HomePage.BetaWarning.Header"), WoT.getBaseL10n().getString("HomePage.BetaWarning.Text"));
 		
-		HTMLNode box = addContentBox("Summary");
+		HTMLNode box = addContentBox(WoT.getBaseL10n().getString("HomePage.SummaryBox.Header"));
 		
 		HTMLNode list = new HTMLNode("ul");
-		list.addChild(new HTMLNode("li", "Own Identities: " + wot.getAllOwnIdentities().size()));
-		list.addChild(new HTMLNode("li", "Known Identities: " + wot.getAllNonOwnIdentities().size()));
-		list.addChild(new HTMLNode("li", "Trust relationships: " + wot.getAllTrusts().size()));
-		list.addChild(new HTMLNode("li", "Score relationships: " + wot.getAllScores().size()));
+		list.addChild(new HTMLNode("li", WoT.getBaseL10n().getString("HomePage.SummaryBox.OwnIdentities") + ": " + wot.getAllOwnIdentities().size()));
+		list.addChild(new HTMLNode("li", WoT.getBaseL10n().getString("HomePage.SummaryBox.KnownIdentities") + ": " + wot.getAllNonOwnIdentities().size()));
+		list.addChild(new HTMLNode("li", WoT.getBaseL10n().getString("HomePage.SummaryBox.TrustRelationships") + ": " + wot.getAllTrusts().size()));
+		list.addChild(new HTMLNode("li", WoT.getBaseL10n().getString("HomePage.SummaryBox.ScoreRelationships") + ": " + wot.getAllScores().size()));
 		
 		IntroductionPuzzleStore puzzleStore = wot.getIntroductionPuzzleStore();
-		list.addChild(new HTMLNode("li", "Unsolved own captchas: " + puzzleStore.getOwnCatpchaAmount(false)));
-		list.addChild(new HTMLNode("li", "Solved own captchas: " + puzzleStore.getOwnCatpchaAmount(true)));
-		list.addChild(new HTMLNode("li", "Unsolved captchas of others: " + puzzleStore.getNonOwnCaptchaAmount(false)));
-		list.addChild(new HTMLNode("li", "Solved captchas of others: " + puzzleStore.getNonOwnCaptchaAmount(true)));
-		list.addChild(new HTMLNode("li", "Not inserted captchas solutions: " + puzzleStore.getUninsertedSolvedPuzzles().size()));
+		list.addChild(new HTMLNode("li", WoT.getBaseL10n().getString("HomePage.SummaryBox.UnsolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(false)));
+		list.addChild(new HTMLNode("li", WoT.getBaseL10n().getString("HomePage.SummaryBox.SolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(true)));
+		list.addChild(new HTMLNode("li", WoT.getBaseL10n().getString("HomePage.SummaryBox.UnsolvedCaptchasOfOthers") + ": " + puzzleStore.getNonOwnCaptchaAmount(false)));
+		list.addChild(new HTMLNode("li", WoT.getBaseL10n().getString("HomePage.SummaryBox.SolvedCaptchasOfOthers") + ": " + puzzleStore.getNonOwnCaptchaAmount(true)));
+		list.addChild(new HTMLNode("li", WoT.getBaseL10n().getString("HomePage.SummaryBox.NotInsertedCaptchasSolutions") + ": " + puzzleStore.getUninsertedSolvedPuzzles().size()));
 		
 		box.addChild(list);
 	}
-
 }

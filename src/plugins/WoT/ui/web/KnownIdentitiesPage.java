@@ -189,10 +189,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		long hours = (delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60);
 		long minutes = ((delta % (1000 * 60 * 60 * 24)) % (1000 * 60 * 60)) / (1000 * 60);
 		
-		final String daysMnemonic = WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentitiesTable.daysMnemonic");
-		final String hoursMnemonic = WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentitiesTable.hoursMnemonic");
-		final String minutesMnemonic = WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentitiesTable.minutesMnemonic");
-		final String ago = WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentitiesTable.ago");
+		final String daysMnemonic = WoT.getBaseL10n().getString("Common.daysMnemonic");
+		final String hoursMnemonic = WoT.getBaseL10n().getString("Common.hoursMnemonic");
+		final String minutesMnemonic = WoT.getBaseL10n().getString("Common.minutesMnemonic");
+		final String ago = WoT.getBaseL10n().getString("Common.ago");
 		
 		if(days > 3)
 			return days + daysMnemonic + " " + ago;
@@ -393,10 +393,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			if(!lastFetched.equals(new Date(0)))
 				row.addChild("td", formatTimeDelta(currentTime - lastFetched.getTime()));
 			else
-				row.addChild("td", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.Table.Never"));
+				row.addChild("td", WoT.getBaseL10n().getString("Common.Never"));
 			
 			// Publish TrustList
-			row.addChild("td", new String[] { "align" }, new String[] { "center" } , id.doesPublishTrustList() ? WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.Table.Yes") : WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.Table.No"));
+			row.addChild("td", new String[] { "align" }, new String[] { "center" } , id.doesPublishTrustList() ? WoT.getBaseL10n().getString("Common.Yes") : WoT.getBaseL10n().getString("Common.No"));
 			
 			//Score
 			try {

@@ -100,7 +100,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				
 				HTMLNode cell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				if(id.getLastInsertDate().equals(new Date(0))) {
-					cell.addChild("p", WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.LastInsertNever"));
+					cell.addChild("p", WoT.getBaseL10n().getString("Common.Never"));
 				}
 				else {
 					synchronized(mDateFormat) {
@@ -111,8 +111,8 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				}
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, 
 				        id.doesPublishTrustList() 
-				                ? WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.Yes") 
-				                : WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.No"));
+				                ? WoT.getBaseL10n().getString("Common.Yes") 
+				                : WoT.getBaseL10n().getString("Common.No"));
 				
 				HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				trustersCell.addChild(new HTMLNode("a", "href", showIdentityURI + "?id=" + id.getID(),

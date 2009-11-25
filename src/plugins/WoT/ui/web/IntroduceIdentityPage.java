@@ -1,8 +1,12 @@
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
+ * under the GNU General Public License, version 2 (or at your option
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.ui.web;
 
 import java.util.List;
 
 import plugins.WoT.OwnIdentity;
+import plugins.WoT.WoT;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.exceptions.UnknownPuzzleException;
 import plugins.WoT.introduction.IntroductionClient;
@@ -57,7 +61,6 @@ public class IntroduceIdentityPage extends WebPageImpl {
 							Logger.error(this, "insertPuzzleSolution() failed", e);
 						}
 					} catch (UnknownPuzzleException e1) {
-
 					}
 				}
 				++idx;
@@ -66,24 +69,24 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 
 	public void make() {
-		PluginRespirator pr = wot.getPluginRespirator();
-		makeInfoBox(pr);
-		makePuzzleBox(pr);
+		PluginRespirator _pr = wot.getPluginRespirator();
+		makeInfoBox(_pr);
+		makePuzzleBox(_pr);
 	}
 
-	private void makeInfoBox(PluginRespirator pr) {
-		HTMLNode boxContent = addContentBox("Introduce identity '" + mIdentity.getNickname() + "'");
-		boxContent.addChild("p", "Solve about 10 puzzles to get your identity known by other identities. DO NOT continously solve puzzles."); /* TODO: add more information */
+	private void makeInfoBox(PluginRespirator _pr) {
+		HTMLNode boxContent = addContentBox(WoT.getBaseL10n().getString("IntroduceIdentityPage.InfoBox.Header", "nickname", mIdentity.getNickname()));
+		boxContent.addChild("p", WoT.getBaseL10n().getString("IntroduceIdentityPage.InfoBox.Text")); /* TODO: add more information */
 	}
 	
-	private void makePuzzleBox(PluginRespirator pr) {
-		HTMLNode boxContent = addContentBox("Puzzles");
+	private void makePuzzleBox(PluginRespirator _pr) {
+		HTMLNode boxContent = addContentBox(WoT.getBaseL10n().getString("IntroduceIdentityPage.PuzzleBox.Header"));
 		
 		// synchronized(mClient) { /* The client returns an ArrayList, not the ObjectContainer, so this should be safe */
 		List<IntroductionPuzzle> puzzles = mClient.getPuzzles(mIdentity, PuzzleType.Captcha, PUZZLE_DISPLAY_COUNT);
 		
 		if(puzzles.size() > 0 ) {
-			HTMLNode solveForm = pr.addFormChild(boxContent, uri, "solvePuzzles");
+			HTMLNode solveForm = _pr.addFormChild(boxContent, uri, "solvePuzzles");
 			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "SolvePuzzles" });
 			solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id", mIdentity.getID() });
 			
@@ -101,11 +104,10 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				++counter;
 			}
 			
-			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Solve", "Submit" });
+			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Solve", WoT.getBaseL10n().getString("IntroduceIdentityPage.PuzzleBox.SubmitButton") });
 		} else {
-			boxContent.addChild("p", "No puzzles were downloaded yet, sorry. Please give the WoT plugin some time to retrieve puzzles.");
+			boxContent.addChild("p", WoT.getBaseL10n().getString("IntroduceIdentityPage.PuzzleBox.NoPuzzlesDownloaded"));
 		}
 		//}
 	}
-
 }

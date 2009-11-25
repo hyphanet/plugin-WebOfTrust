@@ -25,12 +25,12 @@ import java.util.TimeZone;
 
 import plugins.WoT.Identity;
 import plugins.WoT.Trust;
+import plugins.WoT.WoT;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import freenet.clients.http.ToadletContext;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
-import plugins.WoT.ui.web.KnownIdentitiesPage;
 
 /**
  * @author xor (xor@freenetproject.org)
@@ -71,22 +71,22 @@ public class IdentityPage extends WebPageImpl {
 			makeServicesBox();
 			makeStatisticsBox();
 		}
-		
-		HTMLNode trusteeTrustsNode = addContentBox("Identities that '" + identity.getNickname() + "' trusts");
+
+		HTMLNode trusteeTrustsNode = addContentBox(WoT.getBaseL10n().getString("IdentityPage.TrusteeTrustsBox.Header", "nickname", identity.getNickname()));
 		HTMLNode trusteesTable = trusteeTrustsNode.addChild("table");
 		HTMLNode trusteesTableHeader = trusteesTable.addChild("tr");
-		trusteesTableHeader.addChild("th", "Nickname");
-		trusteesTableHeader.addChild("th", "Identity");
-		trusteesTableHeader.addChild("th", "Value");
-		trusteesTableHeader.addChild("th", "Comment");
+		trusteesTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Nickname"));
+		trusteesTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Identity"));
+		trusteesTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Value"));
+		trusteesTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Comment"));
 
-		HTMLNode trusterTrustsNode = addContentBox("Identities that trust '" + identity.getNickname() + "'");
+		HTMLNode trusterTrustsNode = addContentBox(WoT.getBaseL10n().getString("IdentityPage.TrusterTrustsBox.Header", "nickname", identity.getNickname()));
 		HTMLNode trustersTable = trusterTrustsNode.addChild("table");
 		HTMLNode trustersTableHeader = trustersTable.addChild("tr");
-		trustersTableHeader.addChild("th", "Nickname");
-		trustersTableHeader.addChild("th", "Identity");
-		trustersTableHeader.addChild("th", "Value");
-		trustersTableHeader.addChild("th", "Comment");
+		trustersTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Nickname"));
+		trustersTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Identity"));
+		trustersTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Value"));
+		trustersTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Comment"));
 		
 		synchronized(wot) {
 			for (Trust trust : wot.getGivenTrusts(identity)) {
@@ -110,13 +110,13 @@ public class IdentityPage extends WebPageImpl {
 	}
 	
 	private void makeURIBox() {
-		HTMLNode boxContent = addContentBox("Reference of identity '" + identity.getNickname() + "'");
-		boxContent.addChild("p", "The following Freenet URI is a reference to this identity. If you want to tell other people about this identity, give the URI to them: ");
+        HTMLNode boxContent = addContentBox(WoT.getBaseL10n().getString("IdentityPage.IdentityUriBox.Header", "nickname", identity.getNickname()));
+		boxContent.addChild("p", WoT.getBaseL10n().getString("IdentityPage.IdentityUriBox.Text"));
 		boxContent.addChild("p", identity.getRequestURI().toString());
 	}
 	
 	private void makeServicesBox() {
-		HTMLNode boxContent = addContentBox("Services of identity '" + identity.getNickname() + "'");
+		HTMLNode boxContent = addContentBox(WoT.getBaseL10n().getString("IdentityPage.ServicesBox.Header", "nickname", identity.getNickname()));
 		Iterator<String> iter = identity.getContexts().iterator();
 		StringBuilder contexts = new StringBuilder(128);
 		while(iter.hasNext()) {
@@ -132,16 +132,21 @@ public class IdentityPage extends WebPageImpl {
 		long hours = (delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60);
 		long minutes = ((delta % (1000 * 60 * 60 * 24)) % (1000 * 60 * 60)) / (1000 * 60);
 		
+        final String daysMnemonic = WoT.getBaseL10n().getString("Common.daysMnemonic");
+        final String hoursMnemonic = WoT.getBaseL10n().getString("Common.hoursMnemonic");
+        final String minutesMnemonic = WoT.getBaseL10n().getString("Common.minutesMnemonic");
+        final String ago = WoT.getBaseL10n().getString("Common.ago");
+		
 		if(days > 0)
-			return days + "d " + hours + "h " + minutes + "m ago";
+			return days + daysMnemonic + " " + hours + hoursMnemonic + " " + minutes + minutesMnemonic + " " + ago;
 		else if(hours > 0)
-			return hours + "h " + minutes + "m ago";
+			return hours + hoursMnemonic + " " + minutes + minutesMnemonic + " " + ago;
 		else
-			return minutes + "m ago";
+			return minutes + minutesMnemonic + " " + ago;
 	}
 	
 	private void makeStatisticsBox() {
-		HTMLNode box = addContentBox("Statistics about identity '" + identity.getNickname() + "'");
+		HTMLNode box = addContentBox(WoT.getBaseL10n().getString("IdentityPage.StatisticsBox.Header", "nickname", identity.getNickname()));
 		
 		long currentTime = CurrentTimeUTC.getInMillis();
 		
@@ -165,14 +170,11 @@ public class IdentityPage extends WebPageImpl {
 			}
 		}
 		else {
-			firstFetchedString = "never";
-			lastFetchedString = "never";
+			firstFetchedString = lastFetchedString = WoT.getBaseL10n().getString("Common.Never");
 		}
 		
-		box.addChild("p", "Added: " + addedString); 
-		box.addChild("p", "First fetched: " + firstFetchedString);
-		box.addChild("p", "Last fetched: " + lastFetchedString);
+		box.addChild("p", WoT.getBaseL10n().getString("IdentityPage.StatisticsBox.Added") + ": " + addedString); 
+		box.addChild("p", WoT.getBaseL10n().getString("IdentityPage.StatisticsBox.FirstFetched") + ": " + firstFetchedString);
+		box.addChild("p", WoT.getBaseL10n().getString("IdentityPage.StatisticsBox.LastFetched") + ": " + lastFetchedString);
 	}
-
-	
 }
