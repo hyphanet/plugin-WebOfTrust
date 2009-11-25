@@ -53,6 +53,12 @@ public final class XMLTransformer {
 
 	private static final int XML_FORMAT_VERSION = 1;
 	
+	// FIXME: For absolute beauty we can reset this to 1 before final release because our XML files start with "<WoT-testing>" for testing and will start with
+	// "<WoT>" for the final, so old puzzles won't be parsed even if we reset the format version to 1.
+	// The reason for the format version being 2 is bug fixes in the IntroductionServer, I want the IntroductionClient to only display puzzles of identities
+	// which have the fixed IntroductionServer running.
+	private static final int INTRODUCTION_XML_FORMAT_VERSION = 2; 
+	
 	/**
 	 * Used by the IntroductionServer to limit the size of fetches to prevent DoS..
 	 * The typical size of an identity introduction can be observed at {@link XMLTransformerTest}.
@@ -464,7 +470,7 @@ public final class XMLTransformer {
 		Element rootElement = xmlDoc.getDocumentElement();
 
 		Element puzzleElement = xmlDoc.createElement("IntroductionPuzzle");
-		puzzleElement.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
+		puzzleElement.setAttribute("Version", Integer.toString(INTRODUCTION_XML_FORMAT_VERSION)); /* Version of the XML format */
 		
 		// This lock is actually not necessary because all values which are taken from the puzzle are final. We leave it here just to make sure that it does
 		// not get lost if it becomes necessary someday.
@@ -504,8 +510,8 @@ public final class XMLTransformer {
 		}
 		Element puzzleElement = (Element)xmlDoc.getElementsByTagName("IntroductionPuzzle").item(0);
 
-		if(Integer.parseInt(puzzleElement.getAttribute("Version")) > XML_FORMAT_VERSION)
-			throw new InvalidParameterException("Version " + puzzleElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);	
+		if(Integer.parseInt(puzzleElement.getAttribute("Version")) > INTRODUCTION_XML_FORMAT_VERSION)
+			throw new InvalidParameterException("Version " + puzzleElement.getAttribute("Version") + " > " + INTRODUCTION_XML_FORMAT_VERSION);	
 
 		puzzleID = puzzleElement.getAttribute("ID");
 		puzzleType = IntroductionPuzzle.PuzzleType.valueOf(puzzleElement.getAttribute("Type"));
