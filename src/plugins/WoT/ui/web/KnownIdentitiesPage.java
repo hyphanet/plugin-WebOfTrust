@@ -443,7 +443,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		} 
 			
 		HTMLNode cell = new HTMLNode("td");
-		if(!trustValue.isEmpty()) {
+		if(trustValue.length()>0) {
 			cell.addAttribute("style", "background-color:" + KnownIdentitiesPage.getTrustColor(Integer.parseInt(trustValue)) + ";");
 		}
 
