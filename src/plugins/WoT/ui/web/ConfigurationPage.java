@@ -6,7 +6,7 @@ package plugins.WoT.ui.web;
 import java.util.Arrays;
 
 import plugins.WoT.Config;
-
+import plugins.WoT.WoT;
 import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -43,9 +43,8 @@ public class ConfigurationPage extends WebPageImpl {
 			for(String key : stringKeys) list1.addChild(new HTMLNode("li", key + ": " + config.getString(key)));
 		}
 
-		HTMLNode box = addContentBox("Configuration");
+		HTMLNode box = addContentBox(WoT.getBaseL10n().getString("ConfigurationPage.ConfigurationBox.Header"));
 		box.addChild(list1);
 		box.addChild(list2);
 	}
-
 }

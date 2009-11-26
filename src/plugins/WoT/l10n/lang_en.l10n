@@ -5,6 +5,7 @@ Common.ago=ago
 Common.Never=Never
 Common.Yes=Yes
 Common.No=No
+ConfigurationPage.ConfigurationBox.Header=Configuration
 CreateIdentityPage.IdentityCreated.Header=Your identity was created.
 CreateIdentityPage.IdentityCreated.Text=Please go to the own identities page and solve introduction puzzles, otherwise nobody will see the identity!
 CreateIdentityPage.IdentityCreateFailed=Identity creation failed
