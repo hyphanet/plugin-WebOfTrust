@@ -4,6 +4,7 @@
 package plugins.WoT.ui.web;
 
 import plugins.WoT.OwnIdentity;
+import plugins.WoT.WoT;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionServer;
@@ -47,30 +48,33 @@ public class EditOwnIdentityPage extends WebPageImpl {
 						mIdentity.removeProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY);
 					}
 					
-					wot.storeAndCommit(mIdentity); 
+					wot.storeAndCommit(mIdentity);
+					
+		            HTMLNode aBox = addContentBox(WoT.getBaseL10n().getString("EditOwnIdentityPage.SettingsSaved.Header"));
+		            aBox.addChild("p", WoT.getBaseL10n().getString("EditOwnIdentityPage.SettingsSaved.Text"));
 				}
 				catch(Exception e) {
-					addErrorBox("Saving the changes failed", e);
+					addErrorBox(WoT.getBaseL10n().getString("EditOwnIdentityPage.SettingsSaveFailed"), e);
 				}	
 			}
 
-			HTMLNode box = addContentBox("Edit identity '" + mIdentity.getNickname() + "'");
+			HTMLNode box = addContentBox(WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.Header", "nickname", mIdentity.getNickname()));
 			
 			HTMLNode createForm = pr.addFormChild(box, uri, "EditIdentity");
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", mIdentity.getID()});
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EditIdentity"});
 			
 			createForm.addChild("p", new String[] { "style" }, new String[] { "font-size: x-small" },
-					"Request URI: " + mIdentity.getRequestURI().toString());
+					WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.RequestUri") + ": " + mIdentity.getRequestURI().toString());
 			
 			createForm.addChild("p", new String[] { "style" }, new String[] { "font-size: x-small" },
-					"Insert URI (KEEP THIS SECRET!): " + mIdentity.getInsertURI().toString());
+					WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.InsertUri") + ": " + mIdentity.getInsertURI().toString());
 			
 			// TODO Give the user the ability to edit these.
-			createForm.addChild("p", "Contexts: " + mIdentity.getContexts());
-			createForm.addChild("p", "Properties: " + mIdentity.getProperties());
+			createForm.addChild("p", WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.Contexts") + ": " + mIdentity.getContexts());
+			createForm.addChild("p", WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.Properties") + ": " + mIdentity.getProperties());
 			
-			HTMLNode p = createForm.addChild("p", "Publish trust list: ");
+			HTMLNode p = createForm.addChild("p", WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.PublishTrustList") + ": ");
 			if(mIdentity.doesPublishTrustList()) {
 				p.addChild("input", new String[] { "type", "name", "value", "checked" },
 						new String[] { "checkbox", "PublishTrustList", "true", "checked"});
@@ -79,7 +83,7 @@ public class EditOwnIdentityPage extends WebPageImpl {
 				p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "PublishTrustList", "true"});
 			
 			
-			p = createForm.addChild("p", "Publish introduction puzzles: ");
+			p = createForm.addChild("p", WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.PublishIntroductionPuzzles") + ": ");
 			if(mIdentity.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)) {
 				p.addChild("input", new String[] { "type", "name", "value", "checked" },
 						new String[] { "checkbox", "PublishPuzzles", "true", "checked"});
@@ -87,9 +91,8 @@ public class EditOwnIdentityPage extends WebPageImpl {
 			else
 				p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "PublishPuzzles", "true"});
 			
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Edit", "Save changes" });
+			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Edit", WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.SaveButton") });
 		}
 		}
 	}
-
 }
