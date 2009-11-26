@@ -4,6 +4,7 @@
 package plugins.WoT.ui.web;
 
 import plugins.WoT.OwnIdentity;
+import plugins.WoT.WoT;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
@@ -30,24 +31,23 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 			wot.deleteIdentity(mIdentity);
 			
 			/* TODO: Show the OwnIdentities page instead! Use the trick which Freetalk does for inlining pages */
-			HTMLNode box = addContentBox("Success");
-			box.addChild("#", "The identity was deleted.");
+			HTMLNode box = addContentBox(WoT.getBaseL10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Header"));
+			box.addChild("#", WoT.getBaseL10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text"));
 		}
 		else
 			makeConfirmation();
 	}
 	
 	private void makeConfirmation() {
-		HTMLNode box = addContentBox("Confirm identity deletion");
+		HTMLNode box = addContentBox(WoT.getBaseL10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Header"));
 
-		box.addChild(new HTMLNode("p", "You are about to delete identity '" + mIdentity.getNickname() + "', are you sure ?"));
-		box.addChild(new HTMLNode("p", "You might want to backup its keys for later use!"));
+		box.addChild(new HTMLNode("p", WoT.getBaseL10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text1", "nickname", mIdentity.getNickname())));
+		box.addChild(new HTMLNode("p", WoT.getBaseL10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text2")));
 
 		HTMLNode confirmForm = pr.addFormChild(box, uri, "DeleteIdentity");
 
 		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "DeleteIdentity" });
 		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", mIdentity.getID()});
-		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", "I am sure, delete it." });
+		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", WoT.getBaseL10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.ConfirmButton") });
 	}
-
 }
