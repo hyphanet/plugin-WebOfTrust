@@ -254,6 +254,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		HTMLNode filters = addContentBox(WoT.getBaseL10n().getString("KnownIdentitiesPage.FiltersAndSorting.Header"));
 		HTMLNode filtersForm = _pr.addFormChild(filters, uri, "Filters").addChild("p");
 		filtersForm.addChild("#", WoT.getBaseL10n().getString("KnownIdentitiesPage.FiltersAndSorting.ShowOnlyNicksContaining") + " : ");
+		filtersForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
 		filtersForm.addChild("input", new String[]{"type", "size", "name", "value"}, new String[]{"text", "15", "nickfilter", nickFilter});
 		filtersForm.addChild("#", " " + WoT.getBaseL10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy") + " : ");
 		HTMLNode option = filtersForm.addChild("select", new String[]{"name", "id"}, new String[]{"sortby", "sortby"});
