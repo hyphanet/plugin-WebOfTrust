@@ -1,10 +1,10 @@
-Common.daysMnemonic=d
-Common.hoursMnemonic=h
-Common.minutesMnemonic=m
-Common.ago=ago
 Common.Never=Never
 Common.Yes=Yes
 Common.No=No
+CommonWebUtils.daysAgo=${days}d ago
+CommonWebUtils.daysHoursAgo=${days}d ${hours}h ago
+CommonWebUtils.hoursAgo=${hours}h ago
+CommonWebUtils.minutesAgo=${minutes}m ago
 ConfigurationPage.ConfigurationBox.Header=Configuration
 CreateIdentityPage.IdentityCreated.Header=Your identity was created.
 CreateIdentityPage.IdentityCreated.Text=Please go to the own identities page and solve introduction puzzles, otherwise nobody will see the identity!

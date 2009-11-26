@@ -127,24 +127,6 @@ public class IdentityPage extends WebPageImpl {
 		boxContent.addChild("p", contexts.toString());
 	}
 	
-	private String formatTimeDelta(long delta) {
-		long days = delta / (1000 * 60 * 60 * 24);
-		long hours = (delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60);
-		long minutes = ((delta % (1000 * 60 * 60 * 24)) % (1000 * 60 * 60)) / (1000 * 60);
-		
-        final String daysMnemonic = WoT.getBaseL10n().getString("Common.daysMnemonic");
-        final String hoursMnemonic = WoT.getBaseL10n().getString("Common.hoursMnemonic");
-        final String minutesMnemonic = WoT.getBaseL10n().getString("Common.minutesMnemonic");
-        final String ago = WoT.getBaseL10n().getString("Common.ago");
-		
-		if(days > 0)
-			return days + daysMnemonic + " " + hours + hoursMnemonic + " " + minutes + minutesMnemonic + " " + ago;
-		else if(hours > 0)
-			return hours + hoursMnemonic + " " + minutes + minutesMnemonic + " " + ago;
-		else
-			return minutes + minutesMnemonic + " " + ago;
-	}
-	
 	private void makeStatisticsBox() {
 		HTMLNode box = addContentBox(WoT.getBaseL10n().getString("IdentityPage.StatisticsBox.Header", "nickname", identity.getNickname()));
 		
@@ -154,7 +136,7 @@ public class IdentityPage extends WebPageImpl {
 		String addedString;
 		synchronized(mDateFormat) {
 			mDateFormat.setTimeZone(TimeZone.getDefault());
-			addedString = mDateFormat.format(addedDate) + " (" + formatTimeDelta(currentTime - addedDate.getTime()) + ")";
+			addedString = mDateFormat.format(addedDate) + " (" + CommonWebUtils.formatTimeDelta(currentTime - addedDate.getTime()) + ")";
 		}
 
 		Date firstFetched = identity.getFirstFetchedDate();
@@ -165,8 +147,8 @@ public class IdentityPage extends WebPageImpl {
 			synchronized(mDateFormat) {
 				mDateFormat.setTimeZone(TimeZone.getDefault());
 				/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
-				firstFetchedString = mDateFormat.format(firstFetched) + " (" + formatTimeDelta(currentTime - firstFetched.getTime()) + ")";
-				lastFetchedString = mDateFormat.format(lastFetched) + " (" + formatTimeDelta(currentTime - lastFetched.getTime()) + ")";
+				firstFetchedString = mDateFormat.format(firstFetched) + " (" + CommonWebUtils.formatTimeDelta(currentTime - firstFetched.getTime()) + ")";
+				lastFetchedString = mDateFormat.format(lastFetched) + " (" + CommonWebUtils.formatTimeDelta(currentTime - lastFetched.getTime()) + ")";
 			}
 		}
 		else {

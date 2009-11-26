@@ -184,26 +184,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		        new String[] { "submit", "select", WoT.getBaseL10n().getString("KnownIdentitiesPage.SelectTreeOwner.ViewOwnersTreeButton") });
 	}
 	
-	private String formatTimeDelta(long delta) {
-		long days = delta / (1000 * 60 * 60 * 24);
-		long hours = (delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60);
-		long minutes = ((delta % (1000 * 60 * 60 * 24)) % (1000 * 60 * 60)) / (1000 * 60);
-		
-		final String daysMnemonic = WoT.getBaseL10n().getString("Common.daysMnemonic");
-		final String hoursMnemonic = WoT.getBaseL10n().getString("Common.hoursMnemonic");
-		final String minutesMnemonic = WoT.getBaseL10n().getString("Common.minutesMnemonic");
-		final String ago = WoT.getBaseL10n().getString("Common.ago");
-		
-		if(days > 3)
-			return days + daysMnemonic + " " + ago;
-		else if(days > 0)
-			return days + daysMnemonic + " " + hours + hoursMnemonic + " " + ago;
-		else if(hours > 0)
-			return hours + hoursMnemonic + " " + ago;
-		else
-			return minutes + minutesMnemonic + " " + ago; 
-	}
-
 	/**
 	 * Get a xHTML color (#abcdef) corresponding to a trust level.
 	 * Red : -100 or below
@@ -387,12 +367,12 @@ public class KnownIdentitiesPage extends WebPageImpl {
 				nameLink.addChild("span", "class", "alert-error").addChild("#", WoT.getBaseL10n().getString("KnownIdentitiesPage.KnownIdentities.Table.NicknameNotDownloadedYet"));
 			
 			// Added date
-			row.addChild("td", formatTimeDelta(currentTime - id.getAddedDate().getTime()));
+			row.addChild("td", CommonWebUtils.formatTimeDelta(currentTime - id.getAddedDate().getTime()));
 			
 			// Last fetched date
 			Date lastFetched = id.getLastFetchedDate();
 			if(!lastFetched.equals(new Date(0)))
-				row.addChild("td", formatTimeDelta(currentTime - lastFetched.getTime()));
+				row.addChild("td", CommonWebUtils.formatTimeDelta(currentTime - lastFetched.getTime()));
 			else
 				row.addChild("td", WoT.getBaseL10n().getString("Common.Never"));
 			
