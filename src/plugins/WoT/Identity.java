@@ -311,15 +311,19 @@ public class Identity {
 	/* IMPORTANT: This code is duplicated in plugins.Freetalk.WoT.WoTIdentity.validateNickname().
 	 * Please also modify it there if you modify it here */
 	public boolean isNicknameValid(String newNickname) {
-		return newNickname.length() > 0 && newNickname.length() < 50 && 
-				StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname);
+		return newNickname.length() > 0 && newNickname.length() < 50
+		&& StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
+		&& StringValidityChecker.containsNoInvalidCharacters(newNickname)
+		&& StringValidityChecker.containsNoLinebreaks(newNickname)
+		&& StringValidityChecker.containsNoControlCharacters(newNickname)
+		&& StringValidityChecker.containsNoInvalidFormatting(newNickname);
 	}
 
 	/**
 	 * Sets the nickName of this Identity. 
 	 * 
 	 * @param mNickname A String containing this Identity's NickName. Setting it to null means that it was not retrieved yet.
-	 * @throws InvalidParameterException if the nickName's length is bigger than 50, or if it empty
+	 * @throws InvalidParameterException If the nickname contains invalid characters, is empty or longer than 50 characters.
 	 */
 	public synchronized void setNickname(String newNickname) throws InvalidParameterException {
 		if(newNickname != null)
@@ -391,7 +395,7 @@ public class Identity {
 	 * - Freetalk, the messaging system for Freenet, adds the "Freetalk" context to identities which use it.
 	 * 
 	 * @param db A reference to the database.
-	 * @param context Name of the context.
+	 * @param context Name of the context. Must be latin letters and numbers only.
 	 * @throws InvalidParameterException If the context name is empty
 	 */
 	public synchronized void addContext(String newContext) throws InvalidParameterException {
@@ -404,6 +408,9 @@ public class Identity {
 		
 		if(length > MAX_CONTEXT_NAME_LENGTH)
 			throw new InvalidParameterException("Context names must not be longer than " + MAX_CONTEXT_NAME_LENGTH + " characters.");
+		
+		if(!StringValidityChecker.isLatinLettersAndNumbersOnly(newContext))
+			throw new InvalidParameterException("Context names must be latin letters and numbers only");
 		
 		if(!mContexts.contains(newContext)) {
 			if(mContexts.size() >= MAX_CONTEXT_AMOUNT)
@@ -485,7 +492,7 @@ public class Identity {
 	 * The key is always trimmed before storage, the value is stored as passed.
 	 *
 	 * @param db A reference to the database.
-	 * @param key Name of the custom property.
+	 * @param key Name of the custom property. Must be latin letters, numbers and periods only. Periods may only appear if surrounded by other characters.
 	 * @param value Value of the custom property.
 	 * @throws InvalidParameterException If the key or the value is empty.
 	 */
@@ -499,6 +506,15 @@ public class Identity {
 		
 		if(keyLength > MAX_PROPERTY_NAME_LENGTH)
 			throw new InvalidParameterException("Property names must not be longer than " + MAX_PROPERTY_NAME_LENGTH + " characters.");
+		
+		String[] keyTokens = key.split("[.]");
+		for(String token : keyTokens) {
+			if(token.length() == 0)
+				throw new InvalidParameterException("Property names which contain periods must have at least one character before and after each period.");
+				
+			if(StringValidityChecker.isLatinLettersAndNumbersOnly(token) == false)
+				throw new InvalidParameterException("Property names must contain only latin letters, numbers and periods.");
+		}
 		
 		final int valueLength = value.length();
 		
