@@ -511,9 +511,17 @@ public class Identity {
 		for(String token : keyTokens) {
 			if(token.length() == 0)
 				throw new InvalidParameterException("Property names which contain periods must have at least one character before and after each period.");
+			
+			// FIXME: Use StringValidityChecker.isLatinLettersAndNumbersOnly() after WoT.WOT_NAME is not "WoT-testing" anymore.
+			// Reason is: createSeedIdentities does 
+			// ownSeed.setProperty(WOT_NAME + "." + SEED_IDENTITY_MANDATORY_VERSION_PROPERTY, Long.toString(Version.mandatoryVersion));
+			for(char c : token.toCharArray()) {
+				if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c >= '0' && c <= '9' || c == '-')
+					continue;
+				else
+					throw new InvalidParameterException("Property names must contain only latin letters, numbers, periods and dashes.");
+			}
 				
-			if(StringValidityChecker.isLatinLettersAndNumbersOnly(token) == false)
-				throw new InvalidParameterException("Property names must contain only latin letters, numbers and periods.");
 		}
 		
 		final int valueLength = value.length();
