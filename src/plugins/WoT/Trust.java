@@ -5,9 +5,9 @@ package plugins.WoT;
 
 import java.util.Date;
 
-import freenet.support.CurrentTimeUTC;
-
 import plugins.WoT.exceptions.InvalidParameterException;
+import freenet.support.CurrentTimeUTC;
+import freenet.support.StringValidityChecker;
 
 /**
  * A trust relationship between two Identities.
@@ -133,10 +133,16 @@ public final class Trust {
 	protected synchronized void setComment(String newComment) throws InvalidParameterException {
 		assert(newComment != null);
 		
-		if(newComment != null && newComment.length() > MAX_TRUST_COMMENT_LENGTH)
+		newComment = newComment != null ? newComment.trim() : "";
+		
+		if(newComment.length() > MAX_TRUST_COMMENT_LENGTH)
 			throw new InvalidParameterException("Comment is too long (maximum is " + MAX_TRUST_COMMENT_LENGTH + " characters).");
 		
-		newComment = newComment != null ? newComment : ""; 
+		if(!StringValidityChecker.containsNoInvalidCharacters(newComment)
+			|| !StringValidityChecker.containsNoLinebreaks(newComment)
+			|| !StringValidityChecker.containsNoControlCharacters(newComment)
+			|| !StringValidityChecker.containsNoInvalidFormatting(newComment))
+			throw new InvalidParameterException("Comment contains illegal characters.");
 		
 		if(!mComment.equals(newComment)) {
 			mComment = newComment;
