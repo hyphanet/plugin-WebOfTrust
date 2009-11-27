@@ -436,7 +436,7 @@ public class WebInterface {
 				identityToadlet,
 				getPuzzleToadlet
 		}) container.unregister(t);
-		mPageMaker.removeNavigationCategory("Web of Trust");
+		mPageMaker.removeNavigationCategory("WebInterface.WotMenuName");
 	}
 }
 
