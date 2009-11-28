@@ -36,7 +36,7 @@
 		<!-- Create the build directory structure used by compile -->
 
 		<!-- FIXME: remove the debug and replace with optimize -->
-		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on" source="${source-version}">
+		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on" source="${source-version}" encoding="UTF-8">
 			<classpath>
 				<pathelement location="${freenet-ext.location}"/>
 				<pathelement location="${freenet-cvs-snapshot.location}"/>
