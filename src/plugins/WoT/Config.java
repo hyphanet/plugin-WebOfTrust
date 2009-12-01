@@ -23,7 +23,6 @@ public final class Config {
 
 	/* Names of the config parameters */
 	
-	public static final String ALLOWED_CONTEXT_NAMES = "AllowedContextNames";
 	public static final String DATABASE_FORMAT_VERSION = "DatabaseFormatVersion";
 	
 
@@ -218,8 +217,5 @@ public final class Config {
 		/* Do not overwrite, it shall only be overwritten when the database has been converted to a new format */
 		if(!containsInt(DATABASE_FORMAT_VERSION))
 			set(DATABASE_FORMAT_VERSION, WoT.DATABASE_FORMAT_VERSION);
-		
-		if(!containsString(ALLOWED_CONTEXT_NAMES))
-			set(ALLOWED_CONTEXT_NAMES, Context.DEFAULT_ALLOWED_CONTEXT_NAMES);
 	}
 }
