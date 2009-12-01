@@ -692,6 +692,68 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		return mDB.queryByExample(Identity.class);
 	}
 	
+	public static enum SortOrder {
+		ByNicknameAscending,
+		ByNicknameDescending,
+		ByScoreAscending,
+		ByScoreDescending,
+		ByLocalTrustAscending,
+		ByLocalTrustDescending
+	}
+	
+	/**
+	 * Get a filtered and sorted list of identities.
+	 * You have to synchronize on this WoT when calling the function and processing the returned list.
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<Identity> getAllIdentitiesFilteredAndSorted(OwnIdentity treeOwner, String nickFilter, SortOrder sortInstruction) {
+		Query q = mDB.query();
+		
+		switch(sortInstruction) {
+			case ByNicknameAscending:
+				q.constrain(Identity.class);
+				q.descend("mNickname").orderAscending();
+				break;
+			case ByNicknameDescending:
+				q.constrain(Identity.class);
+				q.descend("mNickname").orderDescending();
+				break;
+			case ByScoreAscending:
+				q.constrain(Score.class);
+				q.descend("mTreeOwner").constrain(treeOwner);
+				q.descend("mValue").orderAscending();
+				q = q.descend("mTarget"); 
+				break;
+			case ByScoreDescending:
+				// FIXME: This excludes identities which have no score
+				q.constrain(Score.class);
+				q.descend("mTreeOwner").constrain(treeOwner);
+				q.descend("mValue").orderDescending();
+				q = q.descend("mTarget");
+				break;
+			case ByLocalTrustAscending:
+				q.constrain(Trust.class);
+				q.descend("mTruster").constrain(treeOwner);
+				q.descend("mValue").orderAscending();
+				q = q.descend("mTrustee");
+				break;
+			case ByLocalTrustDescending:
+				// FIXME: This excludes untrusted identities.
+				q.constrain(Trust.class);
+				q.descend("mTruster").constrain(treeOwner);
+				q.descend("mValue").orderDescending();
+				q = q.descend("mTrustee");
+				break;
+		}
+		
+		if(nickFilter != null) {
+			nickFilter = nickFilter.trim();
+			if(!nickFilter.equals("")) q.descend("mNickname").constrain(nickFilter).like();
+		}
+		
+		return q.execute();
+	}
+	
 	/**
 	 * Returns all non-own identities that are in the database.
 	 * 
