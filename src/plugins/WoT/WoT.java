@@ -759,10 +759,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * @param identity The identity to store.
 	 */
 	protected void storeWithoutCommit(Identity identity) {
-		if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
-			throw new RuntimeException("Trying to store an inactive Identity object!");
-
-		/* FIXME: We also need to check whether the member objects are active here!!! */
+		
+		DBUtil.checkedActivate(mDB, identity, 4);
 
 		try {
 			if(identity instanceof OwnIdentity) {
@@ -795,7 +793,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	private void deleteWithoutCommit(Identity identity) {
 		try {
 			Logger.debug(this, "Deleting identity " + identity + " ...");
-
+			
 			Logger.debug(this, "Deleting received scores...");
 			for(Score score : getScores(identity))
 				mDB.delete(score);
@@ -822,14 +820,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 
 			Logger.debug(this, "Deleting the identity...");
 
-			if(mDB.ext().isStored(identity) && !mDB.ext().isActive(identity))
-				throw new RuntimeException("Trying to delete an inactive Identity object!");
+			DBUtil.checkedActivate(mDB, identity, 4);
 
 			if(mFetcher != null)
 				mFetcher.storeAbortFetchCommandWithoutCommit(identity);
-
-			/* FIXME: We also need to check whether the member objects are active here!!! */
-
 
 			if(identity instanceof OwnIdentity) {
 				OwnIdentity ownId = (OwnIdentity)identity;
