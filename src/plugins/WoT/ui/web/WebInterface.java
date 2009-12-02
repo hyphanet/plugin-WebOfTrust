@@ -63,7 +63,7 @@ public class WebInterface {
 	 * @return current BaseL10n data
 	 */
 	public BaseL10n l10n() {
-	    return l10n();
+	    return mWoT.getBaseL10n();
 	}
 
 	public class HomeWebInterfaceToadlet extends WebInterfaceToadlet {
