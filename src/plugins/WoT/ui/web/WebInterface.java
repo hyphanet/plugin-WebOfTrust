@@ -18,6 +18,7 @@ import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
+import freenet.l10n.BaseL10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
@@ -55,6 +56,15 @@ public class WebInterface {
 	private final WebInterfaceToadlet getPuzzleToadlet;
 	
 	private final String mURI;
+	
+	/**
+	 * Forward access to current l10n data.
+	 * 
+	 * @return current BaseL10n data
+	 */
+	public BaseL10n l10n() {
+	    return l10n();
+	}
 
 	public class HomeWebInterfaceToadlet extends WebInterfaceToadlet {
 
@@ -64,7 +74,7 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new HomePage(this, req, context);
+			return new HomePage(this, req, context, l10n());
 		}
 
 		@Override
@@ -80,7 +90,6 @@ public class WebInterface {
 				IOException, RedirectException {
 			super.handleMethodPOST(uri, request, ctx);
 		}
-		
 	}
 	
 	public class OwnIdentitiesWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -105,9 +114,8 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new OwnIdentitiesPage(this, req, context);
+			return new OwnIdentitiesPage(this, req, context, l10n());
 		}
-		
 	}
 	
 	public class KnownIdentitiesWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -132,9 +140,8 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new KnownIdentitiesPage(this, req, context);
+			return new KnownIdentitiesPage(this, req, context, l10n());
 		}
-		
 	}
 	
 	public class ConfigWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -159,9 +166,8 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new ConfigurationPage(this, req, context);
+			return new ConfigurationPage(this, req, context, l10n());
 		}
-		
 	}
 
 	public class CreateIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -186,14 +192,13 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new CreateIdentityPage(this, req, context);
+			return new CreateIdentityPage(this, req, context, l10n());
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
 			return ownIdentitiesToadlet;
 		}
-		
 	}
 
 	public class DeleteOwnIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -218,14 +223,13 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new DeleteOwnIdentityPage(this, req, context);
+			return new DeleteOwnIdentityPage(this, req, context, l10n());
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
 			return ownIdentitiesToadlet;
 		}
-		
 	}
 
 	public class EditOwnIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -250,14 +254,13 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new EditOwnIdentityPage(this, req, context);
+			return new EditOwnIdentityPage(this, req, context, l10n());
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
 			return ownIdentitiesToadlet;
 		}
-		
 	}
 
 	public class IntroduceIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -282,14 +285,13 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new IntroduceIdentityPage(this, req, context);
+			return new IntroduceIdentityPage(this, req, context, l10n());
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
 			return ownIdentitiesToadlet;
 		}
-		
 	}
 	
 	public class IdentityWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -314,14 +316,13 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new IdentityPage(this, req, context);
+			return new IdentityPage(this, req, context, l10n());
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
 			return knownIdentitiesToadlet;
 		}
-		
 	}
 	
 	
@@ -368,7 +369,7 @@ public class WebInterface {
 		
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			// Not expected to make it here...
-			return new HomePage(this, req, context);
+			return new HomePage(this, req, context, l10n());
 		}
 	}
 	
@@ -439,4 +440,3 @@ public class WebInterface {
 		mPageMaker.removeNavigationCategory("WebInterface.WotMenuName");
 	}
 }
-

@@ -8,11 +8,11 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import plugins.WoT.OwnIdentity;
-import plugins.WoT.WoT;
 
 import com.db4o.ObjectSet;
 
 import freenet.clients.http.ToadletContext;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -38,8 +38,8 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 * @param myRequest The request sent by the user.
 	 */
-	public OwnIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) {
-		super(toadlet, myRequest, context);
+	public OwnIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) {
+		super(toadlet, myRequest, context, _baseL10n);
 		
 		String baseURI = toadlet.webInterface.getURI();
 		
@@ -54,11 +54,11 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		if(request.isPartSet("RestoreIdentity")) {
 			try {
 				wot.restoreIdentity(request.getPartAsString("RequestURI", 1024), request.getPartAsString("InsertURI", 1024));
-				HTMLNode restoreBox = addContentBox(WoT.getBaseL10n().getString("OwnIdentitiesPage.RestoreIdentityInProgress.Header"));
-				restoreBox.addChild("p", WoT.getBaseL10n().getString("OwnIdentitiesPage.RestoreIdentityInProgress.Text"));
+				HTMLNode restoreBox = addContentBox(l10n().getString("OwnIdentitiesPage.RestoreIdentityInProgress.Header"));
+				restoreBox.addChild("p", l10n().getString("OwnIdentitiesPage.RestoreIdentityInProgress.Text"));
 			}
 			catch(Exception e) {
-				addErrorBox(WoT.getBaseL10n().getString("OwnIdentitiesPage.RestoreIdentityFailed"), e);
+				addErrorBox(l10n().getString("OwnIdentitiesPage.RestoreIdentityFailed"), e);
 			}
 		}
 		synchronized(wot) {
@@ -69,21 +69,21 @@ public class OwnIdentitiesPage extends WebPageImpl {
 
 	private void makeOwnIdentitiesList() {
 
-		HTMLNode boxContent = addContentBox(WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.Header"));
+		HTMLNode boxContent = addContentBox(l10n().getString("OwnIdentitiesPage.OwnIdentities.Header"));
 		
 		ObjectSet<OwnIdentity> ownIdentities = wot.getAllOwnIdentities();
 		if(ownIdentities.size() == 0) {
-			boxContent.addChild("p", WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.NoOwnIdentity"));
+			boxContent.addChild("p", l10n().getString("OwnIdentitiesPage.OwnIdentities.NoOwnIdentity"));
 		}
 		else {
 			HTMLNode identitiesTable = boxContent.addChild("table", "border", "0");
 			HTMLNode row = identitiesTable.addChild("tr");
-			row.addChild("th", WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Name"));
-			row.addChild("th", WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.LastChange"));
-			row.addChild("th", WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.LastInsert"));
-			row.addChild("th", WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.PublishesTrustlist"));
-			row.addChild("th", WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Trusters"));
-			row.addChild("th", WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Manage"));
+			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Name"));
+			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.LastChange"));
+			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.LastInsert"));
+			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.PublishesTrustlist"));
+			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Trusters"));
+			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Manage"));
 			
 			while(ownIdentities.hasNext()) {
 				OwnIdentity id = ownIdentities.next();
@@ -100,7 +100,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				
 				HTMLNode cell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				if(id.getLastInsertDate().equals(new Date(0))) {
-					cell.addChild("p", WoT.getBaseL10n().getString("Common.Never"));
+					cell.addChild("p", l10n().getString("Common.Never"));
 				}
 				else {
 					synchronized(mDateFormat) {
@@ -111,8 +111,8 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				}
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, 
 				        id.doesPublishTrustList() 
-				                ? WoT.getBaseL10n().getString("Common.Yes") 
-				                : WoT.getBaseL10n().getString("Common.No"));
+				                ? l10n().getString("Common.Yes") 
+				                : l10n().getString("Common.No"));
 				
 				HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				trustersCell.addChild(new HTMLNode("a", "href", showIdentityURI + "?id=" + id.getID(),
@@ -123,42 +123,42 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				HTMLNode editForm = pr.addFormChild(manageCell, editIdentityURI, "EditIdentity");
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EditIdentity" });
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
-				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.EditButton") });
+				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.EditButton") });
 								
 				HTMLNode deleteForm = pr.addFormChild(manageCell, deleteIdentityURI, "DeleteIdentity");
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "DeleteIdentity" });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
-				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.DeleteButton") });
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.DeleteButton") });
 				
 				HTMLNode introduceForm = pr.addFormChild(manageCell, introduceIdentityURI, "IntroduceIdentity");
 				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "IntroduceIdentity" });
 				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
-				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.IntroduceButton") });				
+				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.IntroduceButton") });				
 			}
 		}
 	
 		HTMLNode createForm = pr.addFormChild(boxContent, createIdentityURI, "CreateIdentity");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "CreateIdentity" });
 		createForm.addChild("span", new String[] { "title", "style" }, 
-				new String[] { WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.Nickname.Tooltip"), "border-bottom: 1px dotted; cursor: help;"}, 
-		        WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.Nickname") + " : ");
+				new String[] { l10n().getString("OwnIdentitiesPage.OwnIdentities.Nickname.Tooltip"), "border-bottom: 1px dotted; cursor: help;"}, 
+		        l10n().getString("OwnIdentitiesPage.OwnIdentities.Nickname") + " : ");
 		createForm.addChild("input", new String[] { "type", "name", "size" }, new String[] {"text", "Nickname", "30"});
-		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "create", WoT.getBaseL10n().getString("OwnIdentitiesPage.OwnIdentities.CreateButton") });
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "create", l10n().getString("OwnIdentitiesPage.OwnIdentities.CreateButton") });
 	}
 
 	/**
 	 * Makes the form used to restore an OwnIdentity from Freenet.
 	 */
 	private void makeRestoreOwnIdentityForm() {
-		HTMLNode restoreBoxContent = addContentBox(WoT.getBaseL10n().getString("OwnIdentitiesPage.RestoreIdentity.Header"));
-		restoreBoxContent.addChild("p", WoT.getBaseL10n().getString("OwnIdentitiesPage.RestoreIdentity.Text"));
+		HTMLNode restoreBoxContent = addContentBox(l10n().getString("OwnIdentitiesPage.RestoreIdentity.Header"));
+		restoreBoxContent.addChild("p", l10n().getString("OwnIdentitiesPage.RestoreIdentity.Text"));
 		
 		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, uri, "RestoreIdentity");
 		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "RestoreIdentity" });
-		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "RequestURI", "70", WoT.getBaseL10n().getString("OwnIdentitiesPage.RestoreIdentity.RequestURI") });
+		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "RequestURI", "70", l10n().getString("OwnIdentitiesPage.RestoreIdentity.RequestURI") });
 		restoreForm.addChild("br");
-		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "InsertURI", "70", WoT.getBaseL10n().getString("OwnIdentitiesPage.RestoreIdentity.InsertURI") });
+		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "InsertURI", "70", l10n().getString("OwnIdentitiesPage.RestoreIdentity.InsertURI") });
 		restoreForm.addChild("br");
-		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "RestoreIdentity", WoT.getBaseL10n().getString("OwnIdentitiesPage.RestoreIdentity.RestoreButton") });
+		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "RestoreIdentity", l10n().getString("OwnIdentitiesPage.RestoreIdentity.RestoreButton") });
 	}
 }

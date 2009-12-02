@@ -6,8 +6,8 @@ package plugins.WoT.ui.web;
 import java.util.Arrays;
 
 import plugins.WoT.Config;
-import plugins.WoT.WoT;
 import freenet.clients.http.ToadletContext;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -17,14 +17,13 @@ import freenet.support.api.HTTPRequest;
 public class ConfigurationPage extends WebPageImpl {
 
 	/**
-	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 * @param myRequest The request sent by the user.
+	 * @param baseL10n l10n handle
+	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs.
 	 */
-	public ConfigurationPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) {
-		super(toadlet, myRequest, context);
-		// TODO Auto-generated constructor stub
+	public ConfigurationPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) {
+		super(toadlet, myRequest, context, _baseL10n);
 	}
-
 
 	// TODO: Maybe use or steal freenet.clients.http.ConfigToadlet
 	public void make() {
@@ -43,7 +42,7 @@ public class ConfigurationPage extends WebPageImpl {
 			for(String key : stringKeys) list1.addChild(new HTMLNode("li", key + ": " + config.getString(key)));
 		}
 
-		HTMLNode box = addContentBox(WoT.getBaseL10n().getString("ConfigurationPage.ConfigurationBox.Header"));
+		HTMLNode box = addContentBox(l10n().getString("ConfigurationPage.ConfigurationBox.Header"));
 		box.addChild(list1);
 		box.addChild(list2);
 	}

@@ -25,9 +25,9 @@ import java.util.TimeZone;
 
 import plugins.WoT.Identity;
 import plugins.WoT.Trust;
-import plugins.WoT.WoT;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import freenet.clients.http.ToadletContext;
+import freenet.l10n.BaseL10n;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -52,8 +52,8 @@ public class IdentityPage extends WebPageImpl {
 	 * @param myRequest The request sent by the user.
 	 * @throws UnknownIdentityException 
 	 */
-	public IdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException {
-		super(toadlet, myRequest, context);
+	public IdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws UnknownIdentityException {
+		super(toadlet, myRequest, context, _baseL10n);
 		
 		identity = wot.getIdentityByID(request.getParam("id")); 
 	}
@@ -72,21 +72,21 @@ public class IdentityPage extends WebPageImpl {
 			makeStatisticsBox();
 		}
 
-		HTMLNode trusteeTrustsNode = addContentBox(WoT.getBaseL10n().getString("IdentityPage.TrusteeTrustsBox.Header", "nickname", identity.getNickname()));
+		HTMLNode trusteeTrustsNode = addContentBox(l10n().getString("IdentityPage.TrusteeTrustsBox.Header", "nickname", identity.getNickname()));
 		HTMLNode trusteesTable = trusteeTrustsNode.addChild("table");
 		HTMLNode trusteesTableHeader = trusteesTable.addChild("tr");
-		trusteesTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Nickname"));
-		trusteesTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Identity"));
-		trusteesTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Value"));
-		trusteesTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Comment"));
+		trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Nickname"));
+		trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Identity"));
+		trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Value"));
+		trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Comment"));
 
-		HTMLNode trusterTrustsNode = addContentBox(WoT.getBaseL10n().getString("IdentityPage.TrusterTrustsBox.Header", "nickname", identity.getNickname()));
+		HTMLNode trusterTrustsNode = addContentBox(l10n().getString("IdentityPage.TrusterTrustsBox.Header", "nickname", identity.getNickname()));
 		HTMLNode trustersTable = trusterTrustsNode.addChild("table");
 		HTMLNode trustersTableHeader = trustersTable.addChild("tr");
-		trustersTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Nickname"));
-		trustersTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Identity"));
-		trustersTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Value"));
-		trustersTableHeader.addChild("th", WoT.getBaseL10n().getString("IdentityPage.TableHeader.Comment"));
+		trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Nickname"));
+		trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Identity"));
+		trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Value"));
+		trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Comment"));
 		
 		synchronized(wot) {
 			for (Trust trust : wot.getGivenTrusts(identity)) {
@@ -110,13 +110,13 @@ public class IdentityPage extends WebPageImpl {
 	}
 	
 	private void makeURIBox() {
-        HTMLNode boxContent = addContentBox(WoT.getBaseL10n().getString("IdentityPage.IdentityUriBox.Header", "nickname", identity.getNickname()));
-		boxContent.addChild("p", WoT.getBaseL10n().getString("IdentityPage.IdentityUriBox.Text"));
+        HTMLNode boxContent = addContentBox(l10n().getString("IdentityPage.IdentityUriBox.Header", "nickname", identity.getNickname()));
+		boxContent.addChild("p", l10n().getString("IdentityPage.IdentityUriBox.Text"));
 		boxContent.addChild("p", identity.getRequestURI().toString());
 	}
 	
 	private void makeServicesBox() {
-		HTMLNode boxContent = addContentBox(WoT.getBaseL10n().getString("IdentityPage.ServicesBox.Header", "nickname", identity.getNickname()));
+		HTMLNode boxContent = addContentBox(l10n().getString("IdentityPage.ServicesBox.Header", "nickname", identity.getNickname()));
 		Iterator<String> iter = identity.getContexts().iterator();
 		StringBuilder contexts = new StringBuilder(128);
 		while(iter.hasNext()) {
@@ -128,7 +128,7 @@ public class IdentityPage extends WebPageImpl {
 	}
 	
 	private void makeStatisticsBox() {
-		HTMLNode box = addContentBox(WoT.getBaseL10n().getString("IdentityPage.StatisticsBox.Header", "nickname", identity.getNickname()));
+		HTMLNode box = addContentBox(l10n().getString("IdentityPage.StatisticsBox.Header", "nickname", identity.getNickname()));
 		
 		long currentTime = CurrentTimeUTC.getInMillis();
 		
@@ -136,7 +136,7 @@ public class IdentityPage extends WebPageImpl {
 		String addedString;
 		synchronized(mDateFormat) {
 			mDateFormat.setTimeZone(TimeZone.getDefault());
-			addedString = mDateFormat.format(addedDate) + " (" + CommonWebUtils.formatTimeDelta(currentTime - addedDate.getTime()) + ")";
+			addedString = mDateFormat.format(addedDate) + " (" + CommonWebUtils.formatTimeDelta(currentTime - addedDate.getTime(), l10n()) + ")";
 		}
 
 		Date firstFetched = identity.getFirstFetchedDate();
@@ -147,16 +147,16 @@ public class IdentityPage extends WebPageImpl {
 			synchronized(mDateFormat) {
 				mDateFormat.setTimeZone(TimeZone.getDefault());
 				/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
-				firstFetchedString = mDateFormat.format(firstFetched) + " (" + CommonWebUtils.formatTimeDelta(currentTime - firstFetched.getTime()) + ")";
-				lastFetchedString = mDateFormat.format(lastFetched) + " (" + CommonWebUtils.formatTimeDelta(currentTime - lastFetched.getTime()) + ")";
+				firstFetchedString = mDateFormat.format(firstFetched) + " (" + CommonWebUtils.formatTimeDelta(currentTime - firstFetched.getTime(), l10n()) + ")";
+				lastFetchedString = mDateFormat.format(lastFetched) + " (" + CommonWebUtils.formatTimeDelta(currentTime - lastFetched.getTime(), l10n()) + ")";
 			}
 		}
 		else {
-			firstFetchedString = lastFetchedString = WoT.getBaseL10n().getString("Common.Never");
+			firstFetchedString = lastFetchedString = l10n().getString("Common.Never");
 		}
 		
-		box.addChild("p", WoT.getBaseL10n().getString("IdentityPage.StatisticsBox.Added") + ": " + addedString); 
-		box.addChild("p", WoT.getBaseL10n().getString("IdentityPage.StatisticsBox.FirstFetched") + ": " + firstFetchedString);
-		box.addChild("p", WoT.getBaseL10n().getString("IdentityPage.StatisticsBox.LastFetched") + ": " + lastFetchedString);
+		box.addChild("p", l10n().getString("IdentityPage.StatisticsBox.Added") + ": " + addedString); 
+		box.addChild("p", l10n().getString("IdentityPage.StatisticsBox.FirstFetched") + ": " + firstFetchedString);
+		box.addChild("p", l10n().getString("IdentityPage.StatisticsBox.LastFetched") + ": " + lastFetchedString);
 	}
 }

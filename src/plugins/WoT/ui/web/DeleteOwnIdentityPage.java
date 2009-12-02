@@ -4,9 +4,9 @@
 package plugins.WoT.ui.web;
 
 import plugins.WoT.OwnIdentity;
-import plugins.WoT.WoT;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import freenet.clients.http.ToadletContext;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -21,8 +21,8 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 	
 	private final OwnIdentity mIdentity;
 
-	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException {
-		super(toadlet, myRequest, context);
+	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws UnknownIdentityException {
+		super(toadlet, myRequest, context, _baseL10n);
 		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
 	}
 
@@ -31,23 +31,23 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 			wot.deleteIdentity(mIdentity);
 			
 			/* TODO: Show the OwnIdentities page instead! Use the trick which Freetalk does for inlining pages */
-			HTMLNode box = addContentBox(WoT.getBaseL10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Header"));
-			box.addChild("#", WoT.getBaseL10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text"));
+			HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Header"));
+			box.addChild("#", l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text"));
 		}
 		else
 			makeConfirmation();
 	}
 	
 	private void makeConfirmation() {
-		HTMLNode box = addContentBox(WoT.getBaseL10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Header"));
+		HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Header"));
 
-		box.addChild(new HTMLNode("p", WoT.getBaseL10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text1", "nickname", mIdentity.getNickname())));
-		box.addChild(new HTMLNode("p", WoT.getBaseL10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text2")));
+		box.addChild(new HTMLNode("p", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text1", "nickname", mIdentity.getNickname())));
+		box.addChild(new HTMLNode("p", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text2")));
 
 		HTMLNode confirmForm = pr.addFormChild(box, uri, "DeleteIdentity");
 
 		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "DeleteIdentity" });
 		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", mIdentity.getID()});
-		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", WoT.getBaseL10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.ConfirmButton") });
+		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.ConfirmButton") });
 	}
 }

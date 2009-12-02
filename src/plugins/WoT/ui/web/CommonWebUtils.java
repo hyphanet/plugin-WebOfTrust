@@ -3,7 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.ui.web;
 
-import plugins.WoT.WoT;
+import freenet.l10n.BaseL10n;
 
 
 /**
@@ -19,18 +19,18 @@ public class CommonWebUtils {
      * @param delta the time delta
      * @return String containing the localized formatted delta value 
      */
-    public static String formatTimeDelta(long delta) {
+    public static String formatTimeDelta(long delta, BaseL10n l10n) {
         long days = delta / (1000L * 60L * 60L * 24L);
         long hours = (delta % (1000L * 60L * 60L * 24L)) / (1000L * 60L * 60L);
         long minutes = ((delta % (1000L * 60L * 60L * 24L)) % (1000L * 60L * 60L)) / (1000L * 60L);
         
         if(days > 3 || (days > 0 && hours == 0))
-            return WoT.getBaseL10n().getString("CommonWebUtils.daysAgo", "days", Long.toString(days));
+            return l10n.getString("CommonWebUtils.daysAgo", "days", Long.toString(days));
         else if(days > 0)
-            return WoT.getBaseL10n().getString("CommonWebUtils.daysHoursAgo", new String[] {"days", "hours"}, new String[] {Long.toString(days), Long.toString(hours)});
+            return l10n.getString("CommonWebUtils.daysHoursAgo", new String[] {"days", "hours"}, new String[] {Long.toString(days), Long.toString(hours)});
         else if(hours > 0)
-            return WoT.getBaseL10n().getString("CommonWebUtils.hoursAgo", "hours", Long.toString(hours));
+            return l10n.getString("CommonWebUtils.hoursAgo", "hours", Long.toString(hours));
         else
-            return WoT.getBaseL10n().getString("CommonWebUtils.minutesAgo", "minutes", Long.toString(minutes));
+            return l10n.getString("CommonWebUtils.minutesAgo", "minutes", Long.toString(minutes));
     }
 }

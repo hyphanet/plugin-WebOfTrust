@@ -1703,7 +1703,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 
 	public String getString(String key) {
-	    return WoT.getBaseL10n().getString(key);
+	    return getBaseL10n().getString(key);
 	}
 
 	public void setClassLoader(ClassLoader myClassLoader) {
@@ -1783,11 +1783,11 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
     }
 
     /**
-     * BaseL10n object can be accessed statically to get L10n data from anywhere.
+     * Access to the current L10n data.
      *
      * @return L10n object.
      */
-    public static BaseL10n getBaseL10n() {
+    public BaseL10n getBaseL10n() {
         return WoT.l10n.getBase();
     }
 }

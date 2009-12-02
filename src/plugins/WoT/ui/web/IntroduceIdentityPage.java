@@ -6,13 +6,13 @@ package plugins.WoT.ui.web;
 import java.util.List;
 
 import plugins.WoT.OwnIdentity;
-import plugins.WoT.WoT;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.exceptions.UnknownPuzzleException;
 import plugins.WoT.introduction.IntroductionClient;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 import freenet.clients.http.ToadletContext;
+import freenet.l10n.BaseL10n;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -34,8 +34,8 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	 * @param myRequest The request sent by the user.
 	 * @throws UnknownIdentityException 
 	 */
-	public IntroduceIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException {
-		super(toadlet, myRequest, context);
+	public IntroduceIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws UnknownIdentityException {
+		super(toadlet, myRequest, context, _baseL10n);
 		
 		mPuzzleURI = toadlet.webInterface.getURI() + "/GetPuzzle";
 		
@@ -75,12 +75,12 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 
 	private void makeInfoBox(PluginRespirator _pr) {
-		HTMLNode boxContent = addContentBox(WoT.getBaseL10n().getString("IntroduceIdentityPage.InfoBox.Header", "nickname", mIdentity.getNickname()));
-		boxContent.addChild("p", WoT.getBaseL10n().getString("IntroduceIdentityPage.InfoBox.Text")); /* TODO: add more information */
+		HTMLNode boxContent = addContentBox(l10n().getString("IntroduceIdentityPage.InfoBox.Header", "nickname", mIdentity.getNickname()));
+		boxContent.addChild("p", l10n().getString("IntroduceIdentityPage.InfoBox.Text")); /* TODO: add more information */
 	}
 	
 	private void makePuzzleBox(PluginRespirator _pr) {
-		HTMLNode boxContent = addContentBox(WoT.getBaseL10n().getString("IntroduceIdentityPage.PuzzleBox.Header"));
+		HTMLNode boxContent = addContentBox(l10n().getString("IntroduceIdentityPage.PuzzleBox.Header"));
 		
 		// synchronized(mClient) { /* The client returns an ArrayList, not the ObjectContainer, so this should be safe */
 		List<IntroductionPuzzle> puzzles = mClient.getPuzzles(mIdentity, PuzzleType.Captcha, PUZZLE_DISPLAY_COUNT);
@@ -104,9 +104,9 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				++counter;
 			}
 			
-			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Solve", WoT.getBaseL10n().getString("IntroduceIdentityPage.PuzzleBox.SubmitButton") });
+			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Solve", l10n().getString("IntroduceIdentityPage.PuzzleBox.SubmitButton") });
 		} else {
-			boxContent.addChild("p", WoT.getBaseL10n().getString("IntroduceIdentityPage.PuzzleBox.NoPuzzlesDownloaded"));
+			boxContent.addChild("p", l10n().getString("IntroduceIdentityPage.PuzzleBox.NoPuzzlesDownloaded"));
 		}
 		//}
 	}

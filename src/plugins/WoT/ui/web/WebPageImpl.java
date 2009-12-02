@@ -9,11 +9,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import plugins.WoT.WoT;
-
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.PageNode;
 import freenet.clients.http.ToadletContext;
+import freenet.l10n.BaseL10n;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -46,17 +46,20 @@ public abstract class WebPageImpl implements WebPage {
 	/** List of all content boxes */
 	protected final ArrayList<HTMLNode> contentBoxes;
 	
+	protected final BaseL10n baseL10n;
+	
 	/**
 	 * Creates a new WebPageImpl.
 	 * It is abstract because only a subclass can run the desired make() method to generate the content.
-	 * 
-	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 * @param myRequest The request sent by the user.
+	 * @param _baseL10n TODO
+	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 */
-	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx) {
+	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx, BaseL10n _baseL10n) {
 		WebInterface myWebInterface = toadlet.webInterface;
 		wot = myWebInterface.getWoT();
 		uri = toadlet.getURI();
+		baseL10n = _baseL10n;
 		
 		pr = wot.getPluginRespirator();
 		this.pm = myWebInterface.getPageMaker();
@@ -140,5 +143,9 @@ public abstract class WebPageImpl implements WebPage {
 		InfoboxNode infobox = pm.getInfobox(title);
 		contentBoxes.add(infobox.outer);
 		return infobox.content;
+	}
+	
+	protected BaseL10n l10n() {
+	    return baseL10n;
 	}
 }

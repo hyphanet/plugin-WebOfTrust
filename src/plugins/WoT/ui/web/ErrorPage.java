@@ -4,6 +4,7 @@
 package plugins.WoT.ui.web;
 
 import freenet.clients.http.ToadletContext;
+import freenet.l10n.BaseL10n;
 import freenet.support.api.HTTPRequest;
 
 /**
@@ -15,8 +16,8 @@ public class ErrorPage extends WebPageImpl {
 	
 	private final Exception mError;
 
-	public ErrorPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, Exception myError) {
-		super(toadlet, myRequest, context);
+	public ErrorPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, Exception myError, BaseL10n _baseL10n) {
+		super(toadlet, myRequest, context, _baseL10n);
 		mError = myError;
 	}
 

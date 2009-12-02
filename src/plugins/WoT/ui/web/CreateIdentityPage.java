@@ -3,9 +3,9 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.ui.web;
 
-import plugins.WoT.WoT;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -23,8 +23,8 @@ public class CreateIdentityPage extends WebPageImpl {
 	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
 	 * @param myRequest The request sent by the user.
 	 */
-	public CreateIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) {
-		super(toadlet, myRequest, context);
+	public CreateIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) {
+		super(toadlet, myRequest, context, _baseL10n);
 	}
 
 	public void make() {
@@ -36,11 +36,11 @@ public class CreateIdentityPage extends WebPageImpl {
 				
 				/* TODO: inline the own identities page. first we need to modify our base class to be able to do so, see freetalk */
 				
-				addContentBox(WoT.getBaseL10n().getString("CreateIdentityPage.IdentityCreated.Header"))
-				    .addChild("#", WoT.getBaseL10n().getString("CreateIdentityPage.IdentityCreated.Text"));
+				addContentBox(l10n().getString("CreateIdentityPage.IdentityCreated.Header"))
+				    .addChild("#", l10n().getString("CreateIdentityPage.IdentityCreated.Text"));
 				
 			} catch (Exception e) {
-				addErrorBox(WoT.getBaseL10n().getString("CreateIdentityPage.IdentityCreateFailed"), e);
+				addErrorBox(l10n().getString("CreateIdentityPage.IdentityCreateFailed"), e);
 			}	
 		}
 		else
@@ -55,21 +55,21 @@ public class CreateIdentityPage extends WebPageImpl {
 	 * @param nickName the nickName supplied by the user
 	 */
 	private void makeCreateForm(String nickName) {
-		HTMLNode boxContent = addContentBox(WoT.getBaseL10n().getString("CreateIdentityPage.CreateIdentityBox.Header"));
+		HTMLNode boxContent = addContentBox(l10n().getString("CreateIdentityPage.CreateIdentityBox.Header"));
 		FreenetURI[] keypair = wot.getPluginRespirator().getHLSimpleClient().generateKeyPair("WoT");
 		
 		HTMLNode createForm = pr.addFormChild(boxContent, uri, "CreateIdentity");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "CreateIdentity" });
-		createForm.addChild("#", WoT.getBaseL10n().getString("CreateIdentityPage.CreateIdentityBox.RequestUri") + " : ");
+		createForm.addChild("#", l10n().getString("CreateIdentityPage.CreateIdentityBox.RequestUri") + " : ");
 		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "RequestURI", "70", keypair[1].toString() });
 		createForm.addChild("br");
-		createForm.addChild("#", WoT.getBaseL10n().getString("CreateIdentityPage.CreateIdentityBox.InsertUri") + " : ");
+		createForm.addChild("#", l10n().getString("CreateIdentityPage.CreateIdentityBox.InsertUri") + " : ");
 		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "InsertURI", "70", keypair[0].toString() });
 		createForm.addChild("br");
-		createForm.addChild("#", WoT.getBaseL10n().getString("CreateIdentityPage.CreateIdentityBox.PublishTrustList") + " ");
+		createForm.addChild("#", l10n().getString("CreateIdentityPage.CreateIdentityBox.PublishTrustList") + " ");
 		createForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "PublishTrustList", "true", "checked"});
 		createForm.addChild("br");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Nickname", nickName });
-		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "CreateIdentity", WoT.getBaseL10n().getString("CreateIdentityPage.CreateIdentityBox.CreateButton") });
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "CreateIdentity", l10n().getString("CreateIdentityPage.CreateIdentityBox.CreateButton") });
 	}
 }

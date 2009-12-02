@@ -42,7 +42,7 @@ public abstract class WebInterfaceToadlet extends Toadlet {
 			ret = page.toHTML();
 		} catch (UnknownIdentityException e) {
 			try {
-				WebPage page = new ErrorPage(this, req, ctx, e);
+				WebPage page = new ErrorPage(this, req, ctx, e, webInterface.l10n());
 				page.make();
 				ret = page.toHTML();
 			}
@@ -70,7 +70,7 @@ public abstract class WebInterfaceToadlet extends Toadlet {
 			ret = page.toHTML();
 		} catch (UnknownIdentityException e) {
 			try {
-				WebPage page = new ErrorPage(this, request, ctx, e);
+				WebPage page = new ErrorPage(this, request, ctx, e, webInterface.l10n());
 				page.make();
 				ret = page.toHTML();
 			}
@@ -85,5 +85,4 @@ public abstract class WebInterfaceToadlet extends Toadlet {
 	public String getURI() {
 		return webInterface.getURI() + "/" + pageTitle;
 	}
-
 }

@@ -4,11 +4,11 @@
 package plugins.WoT.ui.web;
 
 import plugins.WoT.OwnIdentity;
-import plugins.WoT.WoT;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import plugins.WoT.introduction.IntroductionServer;
 import freenet.clients.http.ToadletContext;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -23,8 +23,8 @@ public class EditOwnIdentityPage extends WebPageImpl {
 	
 	private final OwnIdentity mIdentity;
 
-	public EditOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException {
-		super(toadlet, myRequest, context);
+	public EditOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws UnknownIdentityException {
+		super(toadlet, myRequest, context, _baseL10n);
 		
 		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
 	}
@@ -50,31 +50,31 @@ public class EditOwnIdentityPage extends WebPageImpl {
 					
 					wot.storeAndCommit(mIdentity);
 					
-		            HTMLNode aBox = addContentBox(WoT.getBaseL10n().getString("EditOwnIdentityPage.SettingsSaved.Header"));
-		            aBox.addChild("p", WoT.getBaseL10n().getString("EditOwnIdentityPage.SettingsSaved.Text"));
+		            HTMLNode aBox = addContentBox(l10n().getString("EditOwnIdentityPage.SettingsSaved.Header"));
+		            aBox.addChild("p", l10n().getString("EditOwnIdentityPage.SettingsSaved.Text"));
 				}
 				catch(Exception e) {
-					addErrorBox(WoT.getBaseL10n().getString("EditOwnIdentityPage.SettingsSaveFailed"), e);
+					addErrorBox(l10n().getString("EditOwnIdentityPage.SettingsSaveFailed"), e);
 				}	
 			}
 
-			HTMLNode box = addContentBox(WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.Header", "nickname", mIdentity.getNickname()));
+			HTMLNode box = addContentBox(l10n().getString("EditOwnIdentityPage.EditIdentityBox.Header", "nickname", mIdentity.getNickname()));
 			
 			HTMLNode createForm = pr.addFormChild(box, uri, "EditIdentity");
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", mIdentity.getID()});
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EditIdentity"});
 			
 			createForm.addChild("p", new String[] { "style" }, new String[] { "font-size: x-small" },
-					WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.RequestUri") + ": " + mIdentity.getRequestURI().toString());
+					l10n().getString("EditOwnIdentityPage.EditIdentityBox.RequestUri") + ": " + mIdentity.getRequestURI().toString());
 			
 			createForm.addChild("p", new String[] { "style" }, new String[] { "font-size: x-small" },
-					WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.InsertUri") + ": " + mIdentity.getInsertURI().toString());
+					l10n().getString("EditOwnIdentityPage.EditIdentityBox.InsertUri") + ": " + mIdentity.getInsertURI().toString());
 			
 			// TODO Give the user the ability to edit these.
-			createForm.addChild("p", WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.Contexts") + ": " + mIdentity.getContexts());
-			createForm.addChild("p", WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.Properties") + ": " + mIdentity.getProperties());
+			createForm.addChild("p", l10n().getString("EditOwnIdentityPage.EditIdentityBox.Contexts") + ": " + mIdentity.getContexts());
+			createForm.addChild("p", l10n().getString("EditOwnIdentityPage.EditIdentityBox.Properties") + ": " + mIdentity.getProperties());
 			
-			HTMLNode p = createForm.addChild("p", WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.PublishTrustList") + ": ");
+			HTMLNode p = createForm.addChild("p", l10n().getString("EditOwnIdentityPage.EditIdentityBox.PublishTrustList") + ": ");
 			if(mIdentity.doesPublishTrustList()) {
 				p.addChild("input", new String[] { "type", "name", "value", "checked" },
 						new String[] { "checkbox", "PublishTrustList", "true", "checked"});
@@ -83,7 +83,7 @@ public class EditOwnIdentityPage extends WebPageImpl {
 				p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "PublishTrustList", "true"});
 			
 			
-			p = createForm.addChild("p", WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.PublishIntroductionPuzzles") + ": ");
+			p = createForm.addChild("p", l10n().getString("EditOwnIdentityPage.EditIdentityBox.PublishIntroductionPuzzles") + ": ");
 			if(mIdentity.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)) {
 				p.addChild("input", new String[] { "type", "name", "value", "checked" },
 						new String[] { "checkbox", "PublishPuzzles", "true", "checked"});
@@ -91,7 +91,7 @@ public class EditOwnIdentityPage extends WebPageImpl {
 			else
 				p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "PublishPuzzles", "true"});
 			
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Edit", WoT.getBaseL10n().getString("EditOwnIdentityPage.EditIdentityBox.SaveButton") });
+			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Edit", l10n().getString("EditOwnIdentityPage.EditIdentityBox.SaveButton") });
 		}
 		}
 	}
