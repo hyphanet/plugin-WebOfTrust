@@ -254,6 +254,11 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		cfg.reflectWith(new JdkReflector(mClassLoader));
 		cfg.activationDepth(5); /* TODO: Change to 1 and add explicit activation everywhere */
 		cfg.exceptionsOnNotStorable(true);
+
+        // TURN OFF SHUTDOWN HOOK.
+        // The shutdown hook does auto-commit. We do NOT want auto-commit: if a
+        // transaction hasn't commit()ed, it's not safe to commit it.
+        cfg.automaticShutDown(false);
 		
 		for(String field : Identity.getIndexedFields()) cfg.objectClass(Identity.class).objectField(field).indexed(true);
 		for(String field : OwnIdentity.getIndexedFields()) cfg.objectClass(OwnIdentity.class).objectField(field).indexed(true);
