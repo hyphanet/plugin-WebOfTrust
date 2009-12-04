@@ -300,11 +300,12 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			String nickName = id.getNickname();
 			
-			if(nickName.length() > 7)
-				nickName = nickName.substring(0, 8) + "...";
-			
-			if(nickName != null)
+			if(nickName != null) {
+				if(nickName.length() > 7)
+					nickName = nickName.substring(0, 8) + "...";
+				
 				nameLink.addChild("#", nickName + "@" + id.getID().substring(0, 5) + "...");
+			}
 			else
 				nameLink.addChild("span", "class", "alert-error").addChild("#", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.NicknameNotDownloadedYet"));
 			
