@@ -1577,13 +1577,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					
 					edition = Math.max(old.getEdition(), edition);
 					
-					
 					// We already have fetched this identity as a stranger's one. We need to update the database.
 					identity = new OwnIdentity(insertFreenetURI, requestFreenetURI, old.getNickname(), old.doesPublishTrustList());
 					/* We re-fetch the current edition to make sure all trustees are imported */
 					identity.restoreEdition(edition);
-					identity.updateLastInsertDate(); // Do not attempt to insert it.
-					// TODO: Instead of deciding by date whether the current edition was inserted, we should probably decide via a boolean.
 				
 					identity.setContexts(old.getContexts());
 					identity.setProperties(old.getProperties());
@@ -1635,6 +1632,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					
 					Logger.debug(this, "Successfully restored not-yet-known identity from Freenet (" + identity.getRequestURI() + ")");
 				}
+				
+				identity.updateLastInsertDate(); // Do not attempt to insert it.
+				// TODO: Instead of deciding by date whether the current edition was inserted, we should probably decide via a boolean.
 				
 				mFetcher.storeStartFetchCommandWithoutCommit(identity);
 				mDB.commit(); Logger.debug(this, "COMMITED.");
