@@ -77,6 +77,9 @@ public class OwnIdentity extends Identity {
 	 * @return Whether this OwnIdentity needs to be inserted or not
 	 */
 	public synchronized boolean needsInsert() {
+		if(!mCurrentEditionWasFetched)
+			return false;
+		
 		return (getLastChangeDate().after(getLastInsertDate()) ||
 				(new Date().getTime() - getLastInsertDate().getTime()) > IdentityInserter.MAX_UNCHANGED_TINE_BEFORE_REINSERT); 
 	}
