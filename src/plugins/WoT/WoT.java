@@ -84,7 +84,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 */
 	private static final String[] SEED_IDENTITIES = new String[] { 
 		"USK@fWK9InP~vG6HnTDm3wiJgvh6ULJQaU5XYTkXXNuKTTk,GnZgrilXSYjD~xrD6l4~5x~Nspz3aFe2eYXWRvaNRHU,AQACAAE/WoT/261", // xor
-		"USK@Ng~ixtLAfKBd4oaW6Ln7Fy~Z9Wm8HSoqIKvy4zzt3Sc,Cytpvs9neFQM0Ju4Yb2BCEC7VEZfeX8VAOpQgvOAY80,AQACAAE/WoT/65" // toad
+		"USK@Ng~ixtLAfKBd4oaW6Ln7Fy~Z9Wm8HSoqIKvy4zzt3Sc,Cytpvs9neFQM0Ju4Yb2BCEC7VEZfeX8VAOpQgvOAY80,AQACAAE/WoT/65", // toad
+		"USK@ZO6itT2Fi844HLt6N0v7xOKFm96M4Jdp2XHwkBcpeWw,D24PpfV3BGfZUB8Nnl8h5rr2jUJpKBLIwiMqGjVnQ1w,AQACAAE/WoT/1" // Artefact2 aka. Lysergesaurediethylamid
 		// TODO: Add more developers
 	};
 	
