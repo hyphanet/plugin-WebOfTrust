@@ -46,7 +46,8 @@ public class OwnIdentity extends Identity {
 		mCreationDate = CurrentTimeUTC.get();
 		setInsertURI(insertURI);
 		mLastInsertDate = new Date(0);
-		setEdition(0);
+		// The following is not neccessary, setInsertURI() does it.
+		// setEdition(0);
 		
 		if(mRequestURI == null)
 			throw new InvalidParameterException("Own identities must have a request URI.");
@@ -90,6 +91,8 @@ public class OwnIdentity extends Identity {
 	/**
 	 * Sets this OwnIdentity's insertURI. 
 	 * The key must be a USK or a SSK, and is stored as a USK anyway.
+	 * 
+	 * The edition number is set to the same edition number as the request URI of this own identity.
 	 *  
 	 * @param key this OwnIdentity's insertURI
 	 * @throws InvalidParameterException if the supplied key is neither a USK nor a SSK
@@ -101,7 +104,7 @@ public class OwnIdentity extends Identity {
 		if(!newInsertURI.isUSK() && !newInsertURI.isSSK())
 			throw new IllegalArgumentException("Identity URI keytype not supported: " + newInsertURI);
 		
-		mInsertURI = newInsertURI.setKeyType("USK").setDocName("WoT").setMetaString(null);
+		mInsertURI = newInsertURI.setKeyType("USK").setDocName("WoT").setMetaString(null).setSuggestedEdition(getEdition());
 		updated();
 	}
 	
@@ -124,6 +127,14 @@ public class OwnIdentity extends Identity {
 	@Override
 	protected synchronized void markForRefetch() {
 		return;
+	}
+	
+	/**
+	 * Sets the edition to the given edition and marks it for re-fetching. Used for restoring own identities.
+	 */
+	protected synchronized void restoreEdition(long edition) throws InvalidParameterException {
+		setEdition(edition);
+		mCurrentEditionWasFetched = false;
 	}
 	
 	public Date getCreationDate() {

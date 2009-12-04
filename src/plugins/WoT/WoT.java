@@ -1561,16 +1561,29 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		synchronized(mPuzzleStore) {
 		synchronized(mDB.lock()) {
 			try {
+				FreenetURI requestFreenetURI = new FreenetURI(requestURI);
+				FreenetURI insertFreenetURI = new FreenetURI(insertURI);
+				
+				if(requestFreenetURI.isSSKForUSK()) requestFreenetURI = requestFreenetURI.uskForSSK();
+				if(insertFreenetURI.isSSKForUSK()) insertFreenetURI = insertFreenetURI.uskForSSK();
+				
+				long edition = Math.max(requestFreenetURI.getEdition(), insertFreenetURI.getEdition());
+				
 				try {
 					Identity old = getIdentityByURI(requestURI);
 					
 					if(old instanceof OwnIdentity)
 						throw new InvalidParameterException("There is already an own identity with the given URI pair.");
 					
+					edition = Math.max(old.getEdition(), edition);
+					
+					
 					// We already have fetched this identity as a stranger's one. We need to update the database.
-					identity = new OwnIdentity(insertURI, requestURI, old.getNickname(), old.doesPublishTrustList());
+					identity = new OwnIdentity(insertFreenetURI, requestFreenetURI, old.getNickname(), old.doesPublishTrustList());
 					/* We re-fetch the current edition to make sure all trustees are imported */
-					identity.setEdition(old.getEdition() - 1);
+					identity.restoreEdition(edition);
+					identity.updateLastInsertDate(); // Do not attempt to insert it.
+					// TODO: Instead of deciding by date whether the current edition was inserted, we should probably decide via a boolean.
 				
 					identity.setContexts(old.getContexts());
 					identity.setProperties(old.getProperties());
@@ -1611,6 +1624,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					
 				} catch (UnknownIdentityException e) {
 					identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), null, false);
+					identity.restoreEdition(edition);
+					identity.updateLastInsertDate();
+					
+					// TODO: Instead of deciding by date whether the current edition was inserted, we should probably decide via a boolean.
 					
 					// Store the new identity
 					storeWithoutCommit(identity);
