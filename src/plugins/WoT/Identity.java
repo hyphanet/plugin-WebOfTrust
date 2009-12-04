@@ -178,7 +178,7 @@ public class Identity {
 		if(!newRequestURI.isUSK() && !newRequestURI.isSSK())
 			throw new IllegalArgumentException("Identity URI keytype not supported: " + newRequestURI);
 		
-		mRequestURI = newRequestURI.setKeyType("USK").setDocName("WoT").setMetaString(null);
+		mRequestURI = newRequestURI.setKeyType("USK").setDocName("WoT").setMetaString(null); // FIXME: Change to WoT.WOT_NAME when we leave the beta stage
 		updated();
 	}
 

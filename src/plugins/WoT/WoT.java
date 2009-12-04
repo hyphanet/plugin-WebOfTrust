@@ -64,8 +64,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	
 	public static final boolean FAST_DEBUG_MODE = false;
 	
-	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";  /* FIXME: Change before release */
-	public static final int DATABASE_FORMAT_VERSION = -97;  /* FIXME: Change before release */
+	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";  /* FIXME: Change when we leave the beta stage */
+	public static final int DATABASE_FORMAT_VERSION = -97;  /* FIXME: Change when we leave the beta stage */
 	
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/WoT";
@@ -75,7 +75,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * constant below. The purpose of this costant is to allow anyone to create his own custom web of trust which is completely disconnected
 	 * from the "official" web of trust of the Freenet project.
 	 */
-	public static final String WOT_NAME = "WoT-testing";
+	public static final String WOT_NAME = "WoT-testing"; // FIXME: Change to "WebOfTrust" when we leave the beta stage
 	
 	/**
 	 * The official seed identities of the WoT plugin: If a newbie wants to download the whole offficial web of trust, he needs at least one
@@ -85,7 +85,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	private static final String[] SEED_IDENTITIES = new String[] { 
 		"USK@fWK9InP~vG6HnTDm3wiJgvh6ULJQaU5XYTkXXNuKTTk,GnZgrilXSYjD~xrD6l4~5x~Nspz3aFe2eYXWRvaNRHU,AQACAAE/WoT/261", // xor
 		"USK@Ng~ixtLAfKBd4oaW6Ln7Fy~Z9Wm8HSoqIKvy4zzt3Sc,Cytpvs9neFQM0Ju4Yb2BCEC7VEZfeX8VAOpQgvOAY80,AQACAAE/WoT/65" // toad
-		/* FIXME: Add the developers. But first we need to debug :) */
+		// TODO: Add more developers
 	};
 	
 	private static final String SEED_IDENTITY_MANDATORY_VERSION_PROPERTY = "MandatoryVersion";

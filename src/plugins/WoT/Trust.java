@@ -155,7 +155,7 @@ public final class Trust {
 	}
 	
 	/**
-	 * Only for being used in upgradeDatabase(). FIXME: Remove before release.
+	 * Only for being used in upgradeDatabase(). FIXME: Remove when we leave the beta stage
 	 */
 	public synchronized void setDateOfLastChange(Date date) {
 		mLastChangedDate = date;
