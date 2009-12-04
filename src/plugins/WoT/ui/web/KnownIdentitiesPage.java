@@ -301,8 +301,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			String nickName = id.getNickname();
 			
 			if(nickName != null) {
-				if(nickName.length() > 7)
-					nickName = nickName.substring(0, 8) + "...";
+				if(nickName.length() > 10)
+					nickName = nickName.substring(0, 10) + "...";
 				
 				nameLink.addChild("#", nickName + "@" + id.getID().substring(0, 5) + "...");
 			}
