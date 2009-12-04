@@ -43,12 +43,13 @@ public class OwnIdentity extends Identity {
 	 */
 	public OwnIdentity (FreenetURI insertURI, FreenetURI requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException {	
 		super(requestURI, nickName, publishTrustList);
-		mCreationDate = CurrentTimeUTC.get();
-		setInsertURI(insertURI);
-		mLastInsertDate = new Date(0);
-		// The following is not neccessary, setInsertURI() does it.
+		// This is already done by super()
 		// setEdition(0);
 		
+		mCreationDate = CurrentTimeUTC.get();
+		setInsertURI(insertURI); // Also sets the edition to the edition of the request URI
+		mLastInsertDate = new Date(0);
+
 		// Must be set to true to prevent the identity fetcher from trying to fetch the current edition and to make the identity inserter actually
 		// insert the identity. It won't insert it if the current edition is not marked as fetched to prevent inserts when restoring an own identity.
 		mCurrentEditionWasFetched = true;
