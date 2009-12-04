@@ -49,6 +49,10 @@ public class OwnIdentity extends Identity {
 		// The following is not neccessary, setInsertURI() does it.
 		// setEdition(0);
 		
+		// Must be set to true to prevent the identity fetcher from trying to fetch the current edition and to make the identity inserter actually
+		// insert the identity. It won't insert it if the current edition is not marked as fetched to prevent inserts when restoring an own identity.
+		mCurrentEditionWasFetched = true;
+		
 		if(mRequestURI == null)
 			throw new InvalidParameterException("Own identities must have a request URI.");
 		
