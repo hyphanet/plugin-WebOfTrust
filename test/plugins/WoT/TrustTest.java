@@ -9,6 +9,7 @@ import plugins.WoT.Identity;
 import plugins.WoT.Trust;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.DuplicateTrustException;
+import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 
@@ -41,6 +42,38 @@ public class TrustTest extends DatabaseBasedTest {
 		
 		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
 		flushCaches();
+	}
+	
+	public void testConstructor() throws InvalidParameterException {		
+		try {
+			new Trust(a, null, (byte)100, "test");
+			fail("Constructor allows trustee to be null");
+		}
+		catch(NullPointerException e) { }
+		
+		try {
+			new Trust(null, a, (byte)100, "test");
+			fail("Constructor allows truster to be null");
+		}
+		catch(NullPointerException e) {}
+		
+		try {
+			new Trust(a, b, (byte)-101, "test");
+			fail("Constructor allows values less than -100");
+		}
+		catch(InvalidParameterException e) {}
+		
+		try {
+			new Trust(a, b, (byte)101, "test");
+			fail("Constructor allows values higher than 100");
+		}
+		catch(InvalidParameterException e) {}
+		
+		try { 
+			new Trust(a, a, (byte)100, "test");
+			fail("Constructor allows self-referential trust values");
+		}
+		catch(InvalidParameterException e) { }
 	}
 
 	public void testTrust() throws DuplicateTrustException, NotTrustedException {

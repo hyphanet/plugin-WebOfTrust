@@ -78,6 +78,9 @@ public final class Trust {
 		if(trustee == null)
 			throw new NullPointerException();
 		
+		if(truster == trustee)
+			throw new InvalidParameterException("Trust values cannot be self-referential!");
+		
 		mTruster = truster;
 		mTrustee = trustee;
 		setValue(value);

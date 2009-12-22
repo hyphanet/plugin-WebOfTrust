@@ -65,7 +65,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	public static final boolean FAST_DEBUG_MODE = false;
 	
 	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";  /* FIXME: Change when we leave the beta stage */
-	public static final int DATABASE_FORMAT_VERSION = -97;  /* FIXME: Change when we leave the beta stage */
+	public static final int DATABASE_FORMAT_VERSION = -96;  /* FIXME: Change when we leave the beta stage */
 	
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/WoT";
@@ -318,6 +318,23 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					identity.markForRefetch(); // Re-fetch the identity so that the "publishes trustlist" flag is imported, the old WoT forgot that...
 			}
 			
+			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
+			mConfig.storeAndCommit();
+		}
+		
+		if(databaseVersion == -97) {
+			Logger.normal(this, "Found old database (-97), checking for self-referential trust values ...");
+			
+			for(Identity id : getAllIdentities()) {
+				try {
+					Trust trust = getTrust(id, id);
+					Logger.debug(this, "Deleting a self-referencing trust value for " + id);
+					removeTrustWithoutCommit(trust);
+					id.updated();
+				}
+				catch(NotTrustedException e) { }
+			}
+		
 			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
 			mConfig.storeAndCommit();
 		}
