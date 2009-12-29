@@ -484,6 +484,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			catch (UnknownIdentityException uie) {
 				try {
 					seed = new Identity(seedURI, null, true);
+					// We have to explicitely set the edition number because the constructor only considers the given edition as a hint.
+					seed.setEdition(new FreenetURI(seedURI).getEdition());
 					storeAndCommit(seed);
 				} catch (Exception e) {
 					Logger.error(this, "Seed identity creation error", e);
