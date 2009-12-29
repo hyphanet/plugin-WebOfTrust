@@ -37,7 +37,7 @@ public class EditOwnIdentityPage extends WebPageImpl {
 					mIdentity.setPublishTrustList(request.isPartSet("PublishTrustList") && 
 						request.getPartAsString("PublishTrustList", 6).equals("true"));
 
-					if(request.isPartSet("PublishPuzzles") && 
+					if(mIdentity.doesPublishTrustList() && request.isPartSet("PublishPuzzles") && 
 							request.getPartAsString("PublishPuzzles", 6).equals("true")) {
 						
 						mIdentity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);

@@ -1550,8 +1550,11 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 				if(context != null)
 					identity.addContext(context);
-				identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); /* FIXME: make configureable */
-				identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
+				
+				if(publishTrustList) {
+					identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); /* FIXME: make configureable */
+					identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
+				}
 				
 				try {
 					storeWithoutCommit(identity);
