@@ -122,6 +122,7 @@ OwnIdentitiesPage.RestoreIdentity.RestoreButton=Restore
 OwnIdentitiesPage.RestoreIdentityInProgress.Header=Restoring is in progress
 OwnIdentitiesPage.RestoreIdentityInProgress.Text=Please don't use that identity (set trust, edit parameters, etc.) until it has been restored from Freenet, your changes will be overwritten by the old settings which are downloaded from Freenet.
 OwnIdentitiesPage.RestoreIdentityFailed=Restoring the identity failed
+Trust.InvalidValue=Invalid trust value. Trust values must be in range of -100 to +100.
 WebInterface.WotMenuName=Web of Trust
 WebInterface.WotMenuName.Tooltip=Web of Trust, the collaborative spam filter underlying the Freetalk chat system
 WebInterface.WotMenuItem.Home=Home

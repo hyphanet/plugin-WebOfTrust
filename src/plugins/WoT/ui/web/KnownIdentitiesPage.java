@@ -71,7 +71,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		if(request.isPartSet("SetTrust")) {
 			String trusterID = request.getPartAsString("OwnerID", 128);
 			String trusteeID = request.isPartSet("Trustee") ? request.getPartAsString("Trustee", 128) : null;
-			String value = request.getPartAsString("Value", 4);
+			String value = request.getPartAsString("Value", 4).trim();
 			// TODO: getPartAsString() will return an empty String if the length is exceeded, it should rather return a too long string so that setTrust throws
 			// an exception. It's not a severe problem though since we limit the length of the text input field anyway.
 			String comment = request.getPartAsString("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);
@@ -80,10 +80,12 @@ public class KnownIdentitiesPage extends WebPageImpl {
 				if(trusteeID == null) /* For AddIdentity */
 					trusteeID = Identity.getIDFromURI(new FreenetURI(request.getPartAsString("IdentityURI", 1024)));
 				
-				if(value.trim().equals(""))
+				if(value.equals(""))
 					wot.removeTrust(trusterID, trusteeID);
 				else
 					wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
+			} catch(NumberFormatException e) {
+				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), l10n().getString("Trust.InvalidValue"));
 			} catch(InvalidParameterException e) {
 				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e.getMessage());
 			} catch(Exception e) {

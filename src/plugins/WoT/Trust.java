@@ -116,6 +116,7 @@ public final class Trust {
 	 * @throws InvalidParameterException if value isn't in the range
 	 */
 	protected synchronized void setValue(byte newValue) throws InvalidParameterException {
+		// TODO: Use l10n Trust.InvalidValue
 		if(newValue < -100 || newValue > 100) 
 			throw new InvalidParameterException("Invalid trust value ("+ newValue +"). Trust values must be in range of -100 to +100.");
 		
