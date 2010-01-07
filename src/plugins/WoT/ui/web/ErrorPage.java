@@ -5,6 +5,7 @@ package plugins.WoT.ui.web;
 
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
+import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 /**
@@ -19,6 +20,7 @@ public class ErrorPage extends WebPageImpl {
 	public ErrorPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, Exception myError, BaseL10n _baseL10n) {
 		super(toadlet, myRequest, context, _baseL10n);
 		mError = myError;
+		Logger.error(this, "Internval error, please report this", mError);
 	}
 
 	public void make() {
