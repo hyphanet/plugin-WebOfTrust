@@ -1045,7 +1045,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 * 
 	 * @param owner requestURI of the owner of the trust tree, null if you want the trusted identities of all owners.
-	 * @param select Score criteria, can be '+', '0' or '-'
+	 * @param select Score criteria, can be '1', '0' or '-1'. 1 returns all identities with score >= 0. 0 with score equal to 0. -1 with score < 0.
 	 * @return an {@link ObjectSet} containing Identities that match the criteria
 	 * @throws InvalidParameterException if the criteria is not recognised
 	 */
