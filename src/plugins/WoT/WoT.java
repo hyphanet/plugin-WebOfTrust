@@ -95,9 +95,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 
 	/* References from the node */
 	
-	/** The ClassLoader which was used to load the plugin JAR, needed by db4o to work correctly */
-	private ClassLoader mClassLoader;
-	
 	/** The node's interface to connect the plugin with the node, needed for retrieval of all other interfaces */
 	private PluginRespirator mPR;	
 	
@@ -251,7 +248,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 */
 	private ExtObjectContainer initDB(String filename) {
 		Configuration cfg = Db4o.newConfiguration();
-		cfg.reflectWith(new JdkReflector(mClassLoader));
+		cfg.reflectWith(new JdkReflector(getPluginClassLoader()));
 		cfg.activationDepth(5); /* TODO: Change to 1 and add explicit activation everywhere */
 		cfg.exceptionsOnNotStorable(true);
 
@@ -1043,10 +1040,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * Gets Identities matching a specified score criteria.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 * 
-	 * @param owner requestURI of the owner of the trust tree, null if you want the trusted identities of all owners.
-	 * @param select Score criteria, can be '1', '0' or '-1'. 1 returns all identities with score >= 0. 0 with score equal to 0. -1 with score < 0.
-	 * @return an {@link ObjectSet} containing Identities that match the criteria
-	 * @throws InvalidParameterException if the criteria is not recognised
+	 * @param owner The owner of the trust tree, null if you want the trusted identities of all owners.
+	 * @param select Score criteria, can be > zero, zero or negative. Greater than zero returns all identities with score >= 0, zero with score equal to 0
+	 * 		and negative with score < 0. Zero is included in the positive range by convention because solving an introduction puzzle gives you a trust value of 0.
+	 * @return an {@link ObjectSet<Score>} containing Scores of the identities that match the criteria
 	 */
 	@SuppressWarnings("unchecked")
 	public synchronized ObjectSet<Score> getIdentitiesByScore(OwnIdentity treeOwner, int select) {		
@@ -1132,6 +1129,37 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		Query query = mDB.query();
 		query.constrain(Trust.class);
 		query.descend("mTrustee").constrain(trustee).identity();
+		return query.execute();
+	}
+	
+	/**
+	 * Gets received trust values of an identity matching a specified trust value criteria.
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 * 
+	 * @param trustee The identity which has received the trust values.
+	 * @param select Trust value criteria, can be > zero, zero or negative. Greater than zero returns all trust values >= 0, zero returns trust values equal to 0.
+	 * 		Negative returns trust values < 0. Zero is included in the positive range by convention because solving an introduction puzzle gives you a value of 0.
+	 * @return an {@link ObjectSet<Trust>} containing received trust values that match the criteria.
+	 * @throws NullPointerException If trustee is null.
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<Trust> getReceivedTrusts(Identity trustee, int select) {		
+		if(trustee == null)
+			throw new NullPointerException("No trustee specified");
+		
+		Query query = mDB.query();
+		query.constrain(Trust.class);
+		query.descend("mTrustee").constrain(trustee).identity();
+	
+		/* We include 0 in the list of identities with positive trust because solving captchas gives 0 trust */
+		
+		if(select > 0)
+			query.descend("mValue").constrain(0).smaller().not();
+		else if(select < 0 )
+			query.descend("mValue").constrain(0).smaller();
+		else 
+			query.descend("mValue").constrain(0);
+
 		return query.execute();
 	}
 	
@@ -1751,10 +1779,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 
 	public String getString(String key) {
 	    return getBaseL10n().getString(key);
-	}
-
-	public void setClassLoader(ClassLoader myClassLoader) {
-		mClassLoader = myClassLoader;
 	}
 	
 	public void setLanguage(LANGUAGE newLanguage) {

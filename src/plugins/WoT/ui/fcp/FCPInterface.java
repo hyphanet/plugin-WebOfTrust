@@ -317,16 +317,31 @@ public final class FCPInterface implements FredPluginFCP {
     private SimpleFieldSet handleGetTrustersCount(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
     	final String identityID = getMandatoryParameter(params, "Identity");
     	//final String context = getMandatoryParameter(params, "Context"); // TODO: Implement as soon as we have per-context trust
+
+        String selection = params.get("Selection");
+        final int result;
+        
+        if(selection != null) {
+        	selection = selection.trim();
+    		final int select;
+    		
+    		if (selection.equals("+")) select = 1;
+    		else if (selection.equals("-")) select = -1;
+    		else if (selection.equals("0")) select = 0;
+    		else throw new InvalidParameterException("Unhandled selection value (" + selection + ")");
+        	
+    		synchronized(mWoT) {
+        		result = mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID), select).size();
+        	}
+        } else {
+        	synchronized(mWoT) {
+        		result = mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID)).size();
+        	}
+        }
     	
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Message", "TrustersCount");
-  
-        //final boolean getAll = context.equals("");
-        
-        synchronized(mWoT) {
-			sfs.put("Value", mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID)).size());
-        }
-        
+        sfs.put("Value", result);
         return sfs;
     }
 
