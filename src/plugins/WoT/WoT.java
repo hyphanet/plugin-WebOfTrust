@@ -44,7 +44,6 @@ import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
-import freenet.pluginmanager.FredPluginWithClassLoader;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
@@ -58,7 +57,7 @@ import freenet.support.api.Bucket;
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
 public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
-	FredPluginL10n, FredPluginBaseL10n, FredPluginWithClassLoader {
+	FredPluginL10n, FredPluginBaseL10n {
 	
 	/* Constants */
 	
