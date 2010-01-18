@@ -380,7 +380,8 @@ public class WebInterface {
 		mPluginRespirator = mWoT.getPluginRespirator();
 		ToadletContainer container = mPluginRespirator.getToadletContainer();
 		mPageMaker = mPluginRespirator.getPageMaker();
-		mPageMaker.addNavigationCategory(mURI+"/", "WebInterface.WotMenuName", "WebInterface.WotMenuName.Tooltip", mWoT);
+		
+		mPageMaker.addNavigationCategory(mURI+"/", "WebInterface.WotMenuName", "WebInterface.WotMenuName.Tooltip", mWoT, mPluginRespirator.getNode().pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk") ? 2 : 1);
 		
 		// Visible pages
 		
