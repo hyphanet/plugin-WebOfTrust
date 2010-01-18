@@ -32,7 +32,12 @@ public final class Trust {
 	private String mComment;
 	
 	/**
-	 * The date when this trust value was assigned.
+	 * The date when this trust relationship was seen for the first time. This stays constant if the trust value changes.
+	 */
+	private Date mCreationDate; // FIXME: Add "final" as soon as we remove the code for upgrading legacy databases.
+	
+	/**
+	 * The date when the value of this trust relationship changed for the last time.
 	 */
 	private Date mLastChangedDate;
 	
@@ -86,6 +91,8 @@ public final class Trust {
 		setValue(value);
 		mComment = "";	// Simplify setComment
 		setComment(comment);
+		
+		mCreationDate = CurrentTimeUTC.get();
 		
 		// mLastChangedDate = CurrentTimeUTC.get();	// Done by setValue / setComment.
 		mTrusterTrustListEdition = truster.getEdition(); 
@@ -154,6 +161,10 @@ public final class Trust {
 		}
 	}
 	
+	public synchronized Date getDateOfCreation() {
+		return mCreationDate;
+	}
+	
 	public synchronized Date getDateOfLastChange() {
 		return mLastChangedDate;
 	}
@@ -161,9 +172,17 @@ public final class Trust {
 	/**
 	 * Only for being used in upgradeDatabase(). FIXME: Remove when we leave the beta stage
 	 */
-	public synchronized void setDateOfLastChange(Date date) {
+	protected synchronized void setDateOfCreation(Date date) {
+		mCreationDate = date;
+	}
+	
+	/**
+	 * Only for being used in upgradeDatabase(). FIXME: Remove when we leave the beta stage
+	 */
+	protected synchronized void setDateOfLastChange(Date date) {
 		mLastChangedDate = date;
 	}
+
 	
 	/**
 	 * Called by the XMLTransformer when a new trust list of the truster has been imported. Stores the edition number of the trust list in this trust object.

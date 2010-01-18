@@ -3,6 +3,10 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT;
 
+import java.util.Date;
+
+import freenet.support.CurrentTimeUTC;
+
 
 /**
  * The score of an Identity in an OwnIdentity's trust tree.
@@ -59,6 +63,17 @@ public final class Score {
 	 * If the tree owner sets a negative trust on the target identity, it gets zero capacity, even if it has a positive score. */
 	private int mCapacity;
 	
+	
+	/**
+	 * The date when this score was created. Stays constant if the value of this score changes.
+	 */
+	private Date mCreationDate; // FIXME: Add "final" as soon as we remove the code for upgrading legacy databases.
+	
+	/**
+	 * The date when the value, rank or capacity was last changed.
+	 */
+	private Date mLastChangedDate;
+	
 	/**
 	 * Get a list of fields which the database should create an index on.
 	 */
@@ -87,6 +102,9 @@ public final class Score {
 		setValue(myValue);
 		setRank(myRank);
 		setCapacity(myCapacity);
+		
+		mCreationDate = CurrentTimeUTC.get();
+		// mLastChangedDate = CurrentTimeUTC.get(); <= setValue() etc do this already.
 	}
 	
 	@Override
@@ -127,7 +145,11 @@ public final class Score {
 	 * Sets the numeric value of this Score.
 	 */
 	protected synchronized void setValue(int newValue) {
+		if(mValue == newValue)
+			return;
+		
 		mValue = newValue;
+		mLastChangedDate = CurrentTimeUTC.get();
 	}
 
 	/**
@@ -144,7 +166,11 @@ public final class Score {
 		if(newRank < -1)
 			throw new IllegalArgumentException("Illegal rank.");
 		
+		if(newRank == mRank)
+			return;
+		
 		mRank = newRank;
+		mLastChangedDate = CurrentTimeUTC.get();
 	}
 
 	/**
@@ -161,6 +187,34 @@ public final class Score {
 		if(newCapacity < 0)
 			throw new IllegalArgumentException("Negative capacities are not allowed.");
 		
+		if(newCapacity == mCapacity)
+			return;
+		
 		mCapacity = newCapacity;
+		mLastChangedDate = CurrentTimeUTC.get();
+	}
+	
+	/**
+	 * Gets the {@link Date} when this score object was created. The date of creation does never change for an existing score object, so if the value, rank
+	 * or capacity of a score changes then its date of creation stays constant.
+	 */
+	public synchronized Date getDateOfCreation() {
+		return mCreationDate;
+	}
+	
+	/**
+	 * Gets the {@link Date} when the value, capacity or rank of this score was last changed.
+	 */
+	public synchronized Date getDateOfLastChange() {
+		return mLastChangedDate;
+	}
+	
+
+	/**
+	 * Only for being used in upgradeDatabase(). FIXME: Remove when we leave the beta stage
+	 */
+	protected synchronized void initializeDates(Date date) {
+		mCreationDate = date;
+		mLastChangedDate = date;
 	}
 }
