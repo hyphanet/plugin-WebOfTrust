@@ -47,9 +47,9 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testSetTrust1() throws InvalidParameterException, MalformedURLException {
 		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", true);
 		Identity b = new Identity(uriB, "B", true);
-		/* We store them manually so that the WoT does not initialize the trust tree */
-		mWoT.getDB().store(a, 5);
-		mWoT.getDB().store(b, 5);
+		/* We store A manually instead of using createOwnIdentity() so that the WoT does not initialize it's trust tree (it does not have a score for itself). */
+		mWoT.storeAndCommit(a);
+		mWoT.storeAndCommit(b);
 		
 		// With A's trust tree not initialized, B shouldn't get a Score.
 		mWoT.setTrust(a, b, (byte)10, "Foo");
@@ -65,7 +65,7 @@ public class WoTTest extends DatabaseBasedTest {
 
 		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test"); /* Initializes it's trust tree */
 		Identity b = new Identity(uriB, "B", true);
-		mWoT.getDB().store(b, 5);
+		mWoT.storeAndCommit(b);
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		
@@ -137,10 +137,8 @@ public class WoTTest extends DatabaseBasedTest {
 		ExtObjectContainer db = mWoT.getDB();
 		
 		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test");
-		Identity b = new Identity(uriB, "B", true); /* Do not init the trust tree */
-		Identity c = new Identity(uriC, "C", true); /* Do not init the trust tree */
-		db.store(b);
-		db.store(c);
+		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
+		Identity c = new Identity(uriC, "C", true); mWoT.storeAndCommit(c);
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		mWoT.setTrustWithoutCommit(b, c, (byte)50, "Bar"); // There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
@@ -209,10 +207,8 @@ public class WoTTest extends DatabaseBasedTest {
 		ExtObjectContainer db = mWoT.getDB();
 		
 		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test");
-		Identity b = new Identity(uriB, "B", true); /* Do not init the trust tree */
-		Identity c = new Identity(uriC, "C", true); /* Do not init the trust tree */
-		db.store(b);
-		db.store(c);
+		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
+		Identity c = new Identity(uriC, "C", true); mWoT.storeAndCommit(c);
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		mWoT.setTrustWithoutCommit(b, c, (byte)50, "Bar"); // There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
