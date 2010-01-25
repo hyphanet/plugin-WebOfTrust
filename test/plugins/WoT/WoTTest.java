@@ -18,9 +18,11 @@ import com.db4o.ext.ExtObjectContainer;
  */
 public class WoTTest extends DatabaseBasedTest {
 
-	private String uriA = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0";
-	private String uriB = "USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WoT/0";
-	private String uriC = "USK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/WoT/0";
+	private final String uriO = "USK@8VTguDZehMlShIb7Q~F1wYpOnDK7pSZVwrGArACP~04,MK0wfPtNud~nWyp~oy0Kr1~kFuYfJ9~LlxNribWD4Us,AQACAAE/WoT/0";
+	private final String uriS = "USK@hAOgofNsQEbT~aRqGuXwt8vI7tOeQVCrcIHrD9PvS6g,fG7LHRJhczCAApOwgaXNJO41L8wRIZj9oN37LSLZZY8,AQACAAE/WoT/0";
+	private final String uriA = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0";
+	private final String uriB = "USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WoT/0";
+	private final String uriC = "USK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/WoT/0";
 
 	public void testInitTrustTree() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
 		mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test"); /* This also initializes the trust tree */
@@ -288,5 +290,71 @@ public class WoTTest extends DatabaseBasedTest {
 		assertTrue(scoreBfromA.getScore() == 100);
 		assertTrue(scoreBfromA.getRank() == 1);
 		assertTrue(scoreBfromA.getCapacity() == 40);
+	}
+	
+	/**
+	 * Test whether the same scores are calculated if trust lists are fetched in different order.
+	 */
+	public void testStability() throws Exception {
+		ExtObjectContainer db = mWoT.getDB();
+			
+		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
+		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
+		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); // A / B are downloaded in different orders.
+		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
+		Identity c = new Identity(uriC, "C", true); mWoT.storeAndCommit(c);
+		
+		// You get all the identities from the seed identity.
+		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
+		mWoT.setTrustWithoutCommit(s, a, (byte)0, "Introduction puzzle solved");
+		mWoT.setTrustWithoutCommit(s, b, (byte)0, "Introduction puzzle solved");
+		mWoT.setTrustWithoutCommit(s, c, (byte)0, "Introduction puzzle solved");
+		db.commit();
+
+		// First you download A. A distrusts B and trusts C
+		mWoT.setTrustWithoutCommit(a, b, (byte)-100, "Distrust");
+		mWoT.setTrustWithoutCommit(a, c, (byte)100, "Trust");
+		db.commit();
+		
+		// Then you download B who distrusts A and C
+		mWoT.setTrustWithoutCommit(b, a, (byte)-100, "Distrust");
+		mWoT.setTrustWithoutCommit(b, c, (byte)-100, "Trust");
+		db.commit();
+		
+		final int scoreA = mWoT.getScore(o, a).getScore();
+		final int scoreB = mWoT.getScore(o, b).getScore();
+		final int scoreC = mWoT.getScore(o, c).getScore();
+		
+		// Now we want a fresh WoT.
+		tearDown();
+		setUp();
+		db = mWoT.getDB();
+		
+		o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test");
+		s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s);		
+		a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a);
+		b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
+		c = new Identity(uriC, "C", true); mWoT.storeAndCommit(c);
+		
+		// You get all the identities from the seed identity.
+		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
+		mWoT.setTrustWithoutCommit(s, a, (byte)0, "Introduction puzzle solved");
+		mWoT.setTrustWithoutCommit(s, b, (byte)0, "Introduction puzzle solved");
+		mWoT.setTrustWithoutCommit(s, c, (byte)0, "Introduction puzzle solved");
+		db.commit();
+		
+		// Alternative download order: First B...
+		mWoT.setTrustWithoutCommit(b, a, (byte)-100, "Distrust");
+		mWoT.setTrustWithoutCommit(b, c, (byte)-100, "Trust");
+		db.commit();
+		
+		// .. then A
+		mWoT.setTrustWithoutCommit(a, b, (byte)-100, "Distrust");
+		mWoT.setTrustWithoutCommit(a, c, (byte)100, "Trust");
+		db.commit();
+		
+		assertEquals(scoreA, mWoT.getScore(o, a).getScore());
+		assertEquals(scoreB, mWoT.getScore(o, b).getScore());
+		assertEquals(scoreC, mWoT.getScore(o, c).getScore());
 	}
 }
