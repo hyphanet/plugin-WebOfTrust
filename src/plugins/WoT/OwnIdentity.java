@@ -66,7 +66,7 @@ public class OwnIdentity extends Identity {
 	 * insertURI and requestURI are converted from String to {@link FreenetURI}
 	 * 
 	 * @param insertURI A String representing the key needed to insert this OwnIdentity in Freenet
-	 * @param requestURIA String representing the key needed to fetch this OwnIdentity from Freenet
+	 * @param requestURI A String representing the key needed to fetch this OwnIdentity from Freenet
 	 * @param nickName The nickName of this OwnIdentity
 	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
 	 * @throws InvalidParameterException If a given parameter is invalid
@@ -102,7 +102,7 @@ public class OwnIdentity extends Identity {
 	 * 
 	 * The edition number is set to the same edition number as the request URI of this own identity.
 	 *  
-	 * @param key this OwnIdentity's insertURI
+	 * @param newInsertURI This OwnIdentity's insertURI
 	 * @throws InvalidParameterException if the supplied key is neither a USK nor a SSK
 	 */
 	private void setInsertURI(FreenetURI newInsertURI) throws InvalidParameterException {

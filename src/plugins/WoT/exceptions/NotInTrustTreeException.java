@@ -4,6 +4,7 @@
 package plugins.WoT.exceptions;
 
 import plugins.WoT.Identity;
+import plugins.WoT.Score;
 
 /**
  * Thrown when querying the {@link Score} of a target {@link Identity} in the trust tree of a tree owner {@link Identity} shows that there is no {@link Score} for

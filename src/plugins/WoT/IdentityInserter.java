@@ -65,9 +65,7 @@ public final class IdentityInserter extends TransferThread {
 	/**
 	 * Creates an IdentityInserter.
 	 * 
-	 * @param db A reference to the database
-	 * @param client A reference to an {@link HighLevelSimpleClient} to perform inserts
-	 * @param tbf Needed to create buckets from Identities before insert
+	 * @param myWoT reference to an {@link WoT} to perform inserts
 	 */
 	public IdentityInserter(WoT myWoT) {
 		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Identity Inserter");

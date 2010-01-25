@@ -20,7 +20,7 @@ public class CreateIdentityPage extends WebPageImpl {
 	/**
 	 * Creates a new OwnIdentitiesPage.
 	 * 
-	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
+	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
 	 */
 	public CreateIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) {
@@ -50,8 +50,6 @@ public class CreateIdentityPage extends WebPageImpl {
 	/**
 	 * Creates a form with pre-filled keypair to create an new OwnIdentity.
 	 * 
-	 * @param client a reference to a HighLevelSimpleClient
-	 * @param pr a reference to the PluginRespirator
 	 * @param nickName the nickName supplied by the user
 	 */
 	private void makeCreateForm(String nickName) {

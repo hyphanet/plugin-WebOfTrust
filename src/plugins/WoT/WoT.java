@@ -716,7 +716,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * Gets an OwnIdentity by its requestURI (as String).
 	 * The given String is converted to {@link FreenetURI} in order to extract a unique id.
 	 * 
-	 * @param db A reference to the database
 	 * @param uri The requestURI (as String) of the desired OwnIdentity
 	 * @return The requested OwnIdentity
 	 * @throws UnknownIdentityException if the OwnIdentity isn't in the database
@@ -959,7 +958,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * Each {@link OwnIdentity} has its own trust tree.
 	 * 
 	 * @param treeOwner The owner of the trust tree
-	 * @param db A reference to the database
 	 * @return The {@link Score} of this Identity in the required trust tree
 	 * @throws NotInTrustTreeException if this identity is not in the required trust tree 
 	 */
@@ -1063,10 +1061,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * Gets Identities matching a specified score criteria.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 * 
-	 * @param owner The owner of the trust tree, null if you want the trusted identities of all owners.
+	 * @param treeOwner The owner of the trust tree, null if you want the trusted identities of all owners.
 	 * @param select Score criteria, can be > zero, zero or negative. Greater than zero returns all identities with score >= 0, zero with score equal to 0
 	 * 		and negative with score < 0. Zero is included in the positive range by convention because solving an introduction puzzle gives you a trust value of 0.
-	 * @return an {@link ObjectSet<Score>} containing Scores of the identities that match the criteria
+	 * @return an {@link ObjectSet} containing Scores of the identities that match the criteria
 	 */
 	@SuppressWarnings("unchecked")
 	public synchronized ObjectSet<Score> getIdentitiesByScore(OwnIdentity treeOwner, int select) {		
@@ -1162,7 +1160,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * @param trustee The identity which has received the trust values.
 	 * @param select Trust value criteria, can be > zero, zero or negative. Greater than zero returns all trust values >= 0, zero returns trust values equal to 0.
 	 * 		Negative returns trust values < 0. Zero is included in the positive range by convention because solving an introduction puzzle gives you a value of 0.
-	 * @return an {@link ObjectSet<Trust>} containing received trust values that match the criteria.
+	 * @return an {@link ObjectSet} containing received trust values that match the criteria.
 	 * @throws NullPointerException If trustee is null.
 	 */
 	@SuppressWarnings("unchecked")
@@ -1213,7 +1211,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * @param trustee The Identity that receives the trust
 	 * @param newValue Numeric value of the trust
 	 * @param newComment A comment to explain the given value
-	 * @throws InvalidParameterException if a given parameter isn't valid, {@see Trust} for details on accepted values.
+	 * @throws InvalidParameterException if a given parameter isn't valid, see {@link Trust} for details on accepted values.
 	 */
 	protected synchronized void setTrustWithoutCommit(Identity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
@@ -1318,7 +1316,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
 	 * }
 	 *  
-	 * @param db A reference to the database 
 	 * @throws DuplicateScoreException if there already is more than one Score for this identity (should never happen)
 	 */
 	private synchronized void initTrustTreeWithoutCommit(OwnIdentity identity) throws DuplicateScoreException {
@@ -1360,7 +1357,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
 	 * }
 	 * 
-	 * @param db A reference to the database
 	 * @param treeOwner The OwnIdentity that owns the trust tree
 	 */
 	private synchronized void updateScoreWithoutCommit(OwnIdentity treeOwner, Identity target) {
@@ -1467,7 +1463,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * Computes the target's Score value according to the trusts it has received and the capacity of its trusters in the specified
 	 * trust tree.
 	 * 
-	 * @param db A reference to the database
 	 * @param treeOwner The OwnIdentity that owns the trust tree
 	 * @return The new Score if this Identity
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
@@ -1492,7 +1487,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * Computes the target's rank in the trust tree.
 	 * It gets its best ranked truster's rank, plus one. Or -1 if none of its trusters are in the trust tree. 
 	 *  
-	 * @param db A reference to the database
 	 * @param treeOwner The OwnIdentity that owns the trust tree
 	 * @return The new Rank if this Identity
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
@@ -1867,7 +1861,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
     /**
      * Get the ClassLoader of this plugin. This is necessary when getting
      * resources inside the plugin's Jar, for example L10n files.
-     * @return
+     * @return ClassLoader object
      */
     public ClassLoader getPluginClassLoader() {
         return WoT.class.getClassLoader();

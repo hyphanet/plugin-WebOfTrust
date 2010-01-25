@@ -53,7 +53,7 @@ public abstract class WebPageImpl implements WebPage {
 	 * It is abstract because only a subclass can run the desired make() method to generate the content.
 	 * @param myRequest The request sent by the user.
 	 * @param _baseL10n TODO
-	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
+	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs. 
 	 */
 	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx, BaseL10n _baseL10n) {
 		WebInterface myWebInterface = toadlet.webInterface;
@@ -102,7 +102,7 @@ public abstract class WebPageImpl implements WebPage {
 	 * Adds an ErrorBox to the WebPage.
 	 * 
 	 * @param title The title of the desired ErrorBox
-	 * @param message The error message that will be displayed
+	 * @param error The error message that will be displayed
 	 */
 	public HTMLNode addErrorBox(String title, Exception error) {
 		InfoboxNode infobox = pm.getInfobox("infobox-alert", title);

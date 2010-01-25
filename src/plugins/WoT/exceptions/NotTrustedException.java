@@ -4,6 +4,7 @@
 package plugins.WoT.exceptions;
 
 import plugins.WoT.Identity;
+import plugins.WoT.Trust;
 
 /**
  * Thrown when querying the Trust from an truster to a trustee shows that the truster does not have a {@link Trust} towards the trustee.

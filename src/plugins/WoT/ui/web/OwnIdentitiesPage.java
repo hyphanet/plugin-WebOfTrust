@@ -35,7 +35,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	/**
 	 * Creates a new OwnIdentitiesPage.
 	 * 
-	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs. 
+	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
 	 */
 	public OwnIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) {

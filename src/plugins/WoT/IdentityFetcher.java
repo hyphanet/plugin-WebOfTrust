@@ -64,8 +64,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 	/**
 	 * Creates a new IdentityFetcher.
 	 * 
-	 * @param db A reference to the database
-	 * @param mClient A reference to a {@link HighLevelSimpleClient}
+	 * @param myWoT A reference to a {@link WoT}
 	 */
 	protected IdentityFetcher(WoT myWoT) {
 		mWoT = myWoT;
@@ -321,7 +320,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 	}
 
 	/**
-	 * DO ONLY USE THIS METHOD AT STARTUP OF WOT. Use {@link storeStartFetchCommandWithoutCommit} everywhere else.
+	 * DO ONLY USE THIS METHOD AT STARTUP OF WOT. Use {@link #storeStartFetchCommandWithoutCommit(String)} everywhere else.
 	 * 
 	 * Fetches an identity from Freenet, using the current edition number and edition hint stored in the identity.
 	 * If the identity is already being fetched, passes the current edition hint stored in the identity to the USKManager.

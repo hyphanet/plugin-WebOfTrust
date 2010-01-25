@@ -255,14 +255,14 @@ public final class IntroductionPuzzleStore {
 	
 	
 	 /**
-	  * Get a puzzle by it's solution URI.
+	  * Get a puzzle by its solution URI.
 	  * 
 	  * Used by the IntroductionServer when a solution was downloaded from the given URI to retrieve the IntroductionPuzzle object which
 	  * belongs to the URI.
 	  * 
 	  * @param db
 	  * @param uri
-	  * @return
+	  * @return The puzzle
 	  * @throws ParseException
 	  * @throws UnknownPuzzleException 
 	  */

@@ -119,7 +119,7 @@ public final class Trust {
 	}
 
 	/**
-	 * @param mValue Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. 
+	 * @param newValue Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. 
 	 * @throws InvalidParameterException if value isn't in the range
 	 */
 	protected synchronized void setValue(byte newValue) throws InvalidParameterException {
@@ -186,7 +186,7 @@ public final class Trust {
 	
 	/**
 	 * Called by the XMLTransformer when a new trust list of the truster has been imported. Stores the edition number of the trust list in this trust object.
-	 * For an explanation for what this is needed please read the description of {@link mTrusterTrustListEdition}.
+	 * For an explanation for what this is needed please read the description of {@link #mTrusterTrustListEdition}.
 	 */
 	protected synchronized void trusterEditionUpdated() {
 		mTrusterTrustListEdition = mTruster.getEdition();

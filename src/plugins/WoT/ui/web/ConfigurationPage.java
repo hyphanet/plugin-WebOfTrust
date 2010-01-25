@@ -18,8 +18,8 @@ public class ConfigurationPage extends WebPageImpl {
 
 	/**
 	 * @param myRequest The request sent by the user.
-	 * @param baseL10n l10n handle
-	 * @param myWebInterface A reference to the WebInterface which created the page, used to get resources the page needs.
+	 * @param _baseL10n l10n handle
+	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 */
 	public ConfigurationPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) {
 		super(toadlet, myRequest, context, _baseL10n);

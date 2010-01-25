@@ -238,7 +238,7 @@ public class Identity {
 	}
 	
 	/**
-	 * Decrease the current edition by one. Used by {@link markForRefetch}.
+	 * Decrease the current edition by one. Used by {@link #markForRefetch()}.
 	 */
 	private synchronized void decreaseEdition() {
 		mRequestURI = mRequestURI.setSuggestedEdition(Math.max(getEdition() - 1, 0));
@@ -322,7 +322,7 @@ public class Identity {
 	/**
 	 * Sets the nickName of this Identity. 
 	 * 
-	 * @param mNickname A String containing this Identity's NickName. Setting it to null means that it was not retrieved yet.
+	 * @param newNickname A String containing this Identity's NickName. Setting it to null means that it was not retrieved yet.
 	 * @throws InvalidParameterException If the nickname contains invalid characters, is empty or longer than 50 characters.
 	 */
 	public synchronized void setNickname(String newNickname) throws InvalidParameterException {
@@ -394,8 +394,7 @@ public class Identity {
 	 * - WoT adds the "Introduction" context if an identity publishes catpchas to allow other to get on it's trust list
 	 * - Freetalk, the messaging system for Freenet, adds the "Freetalk" context to identities which use it.
 	 * 
-	 * @param db A reference to the database.
-	 * @param context Name of the context. Must be latin letters and numbers only.
+	 * @param newContext Name of the context. Must be latin letters and numbers only.
 	 * @throws InvalidParameterException If the context name is empty
 	 */
 	public synchronized void addContext(String newContext) throws InvalidParameterException {
@@ -447,7 +446,6 @@ public class Identity {
 	 * Removes a context from this Identity, does nothing if it does not exist.
 	 * If this Identity is no longer used by a client application, the user can tell it and others won't try to fetch it anymore.
 	 * 
-	 * @param db A reference to the database.
 	 * @param context Name of the context.
 	 */
 	public synchronized void removeContext(String context) throws InvalidParameterException {
@@ -491,7 +489,6 @@ public class Identity {
 	 * This can be used by client applications that need to store additional informations on their Identities (crypto keys, avatar, whatever...).
 	 * The key is always trimmed before storage, the value is stored as passed.
 	 *
-	 * @param db A reference to the database.
 	 * @param key Name of the custom property. Must be latin letters, numbers and periods only. Periods may only appear if surrounded by other characters.
 	 * @param value Value of the custom property.
 	 * @throws InvalidParameterException If the key or the value is empty.
@@ -566,7 +563,6 @@ public class Identity {
 	/**
 	 * Removes a custom property from this Identity, does nothing if it does not exist.
 	 * 
-	 * @param db A reference to the database.
 	 * @param key Name of the custom property.
 	 */
 	public synchronized void removeProperty(String key) throws InvalidParameterException {
