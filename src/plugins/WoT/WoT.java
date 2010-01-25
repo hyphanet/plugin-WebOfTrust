@@ -1244,7 +1244,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	/**
 	 * Only for being used by WoT internally and by unit tests!
 	 */
-	private synchronized void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
+	synchronized void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
 		synchronized(mDB.lock()) {
