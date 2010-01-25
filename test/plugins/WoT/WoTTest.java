@@ -141,7 +141,8 @@ public class WoTTest extends DatabaseBasedTest {
 		db.store(c);
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
-		mWoT.setTrust(b, c, (byte)50, "Bar");
+		mWoT.setTrustWithoutCommit(b, c, (byte)50, "Bar"); // There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
+		db.commit();
 		
 		// Check we have the correct number of objects
 		flushCaches();
@@ -212,9 +213,10 @@ public class WoTTest extends DatabaseBasedTest {
 		db.store(c);
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
-		mWoT.setTrust(b, c, (byte)50, "Bar");
-		mWoT.setTrust(c, a, (byte)100, "Bleh");
-		mWoT.setTrust(c, b, (byte)50, "Oops");
+		mWoT.setTrustWithoutCommit(b, c, (byte)50, "Bar"); // There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
+		mWoT.setTrustWithoutCommit(c, a, (byte)100, "Bleh");
+		mWoT.setTrustWithoutCommit(c, b, (byte)50, "Oops");
+		db.commit();
 		
 		// Check we have the correct number of objects
 		flushCaches();

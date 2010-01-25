@@ -93,11 +93,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	private static final String SEED_IDENTITY_MANDATORY_VERSION_PROPERTY = "MandatoryVersion";
 	private static final String SEED_IDENTITY_LATEST_VERSION_PROPERTY = "LatestVersion";
 	
-	/**
-	 * Some assert() statements won't work in unit tests. We use this variable to fix them.
-	 * USE THIS VARIABLE WITH EXTREME CARE! Making something change its behavior when it is being tested is very dangerous!
-	 */
-	private boolean mIsTestSuite = false;
 
 	/* References from the node */
 	
@@ -158,8 +153,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			
 			/* Catpcha generation needs headless mode on linux */
 			System.setProperty("java.awt.headless", "true"); 
-			
-			mIsTestSuite = false;
 	
 			mPR = myPR;
 			mDB = initDB(DATABASE_FILENAME);
@@ -233,7 +226,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * Constructor for being used by the node and unit tests. Does not do anything.
 	 */
 	public WoT() {
-		mIsTestSuite = true;
+
 	}
 	
 	/**
@@ -242,8 +235,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * @param databaseFilename The filename of the database.
 	 */
 	public WoT(String databaseFilename) {
-		mIsTestSuite = true;
-		
 		mDB = initDB(databaseFilename);
 		mConfig = Config.loadOrCreate(this);
 		
@@ -1255,10 +1246,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * 
 	 * @param truster Must be an own identity unless the function is being used in an unit test!
 	 */
-	synchronized void setTrust(Identity truster, Identity trustee, byte newValue, String newComment)
+	synchronized void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
-		
-		assert(mIsTestSuite || truster instanceof OwnIdentity); /* Unit tests may ignore this. */
 		
 		synchronized(mDB.lock()) {
 			try {
