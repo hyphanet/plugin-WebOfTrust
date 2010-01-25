@@ -68,6 +68,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/WoT";
+
+	/** Package-private method to allow unit tests to bypass some assert()s */
+	static boolean IS_TEST_SUITE = false;
 	
 	/**
 	 * The "name" of this web of trust. It is included in the document name of identity URIs. For an example, see the SEED_IDENTITIES
@@ -1248,7 +1251,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	synchronized void setTrust(Identity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
-		assert(truster instanceof OwnIdentity); /* Unit tests may ignore this. */
+		assert(IS_TEST_SUITE || truster instanceof OwnIdentity); /* Unit tests may ignore this. */
 		
 		synchronized(mDB.lock()) {
 			try {
