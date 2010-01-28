@@ -334,9 +334,9 @@ public class WoTTest extends DatabaseBasedTest {
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
-		mWoT.setTrustWithoutCommit(s, a, (byte)0, "Introduction puzzle solved");
-		mWoT.setTrustWithoutCommit(s, b, (byte)0, "Introduction puzzle solved");
-		mWoT.setTrustWithoutCommit(s, c, (byte)0, "Introduction puzzle solved");
+		mWoT.setTrustWithoutCommit(s, a, (byte)50, "Medium trust"); // Do not use 0, trust values from identities with 0 score are ignored.
+		mWoT.setTrustWithoutCommit(s, b, (byte)50, "Medium trust");
+		mWoT.setTrustWithoutCommit(s, c, (byte)50, "medium trust");
 		db.commit();
 		
 		// Alternative download order: First B...
