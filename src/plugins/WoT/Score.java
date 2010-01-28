@@ -217,4 +217,44 @@ public final class Score {
 		mCreationDate = date;
 		mLastChangedDate = date;
 	}
+	
+	/**
+	 * Test if two scores are equal.
+	 * Scores are considered equal if:
+	 * - They are from the same tree owner to the same target
+	 * - They have the same value
+	 * - They have the same rank
+	 * - They have the same capacity
+	 * 
+	 * The creation date and last changed date are NOT compared.
+	 */
+	public boolean equals(Object obj) {
+		if(!(obj instanceof Score))
+			return false;
+		
+		Score other = (Score)obj;
+		
+		if(other == this)
+			return true;
+
+		if(getScore() != other.getScore())
+			return false;
+		
+		if(getRank() != other.getRank())
+			return false;
+		
+		if(getCapacity() != other.getCapacity())
+			return false;
+		
+		// Compare the involved identities after the numerical values because getting them might involve activating objects from the database.
+		
+		if(getTreeOwner() != other.getTreeOwner())
+			return false;
+		
+		if(getTarget() != other.getTarget())
+			return false;
+		
+		return true;
+	}
+
 }

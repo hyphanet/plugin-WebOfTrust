@@ -319,9 +319,9 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(b, c, (byte)-100, "Trust");
 		db.commit();
 		
-		final int scoreA = mWoT.getScore(o, a).getScore();
-		final int scoreB = mWoT.getScore(o, b).getScore();
-		final int scoreC = mWoT.getScore(o, c).getScore();
+		final Score oldScoreA = mWoT.getScore(o, a);
+		final Score oldScoreB = mWoT.getScore(o, b);
+		final Score oldScoreC = mWoT.getScore(o, c);
 		
 		// Now we want a fresh WoT.
 		tearDown();
@@ -353,8 +353,18 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(a, c, (byte)100, "Trust");
 		db.commit();
 		
-		assertEquals(scoreA, mWoT.getScore(o, a).getScore());
-		assertEquals(scoreB, mWoT.getScore(o, b).getScore());
-		assertEquals(scoreC, mWoT.getScore(o, c).getScore());
+		final Score newScoreA = mWoT.getScore(o, a);
+		final Score newScoreB = mWoT.getScore(o, b);
+		final Score newScoreC = mWoT.getScore(o, c);
+		
+		// Test whether the test has correctly flushed the database
+		assertNotSame(newScoreA, oldScoreA);
+		assertNotSame(newScoreB, oldScoreB);
+		assertNotSame(newScoreC, oldScoreC);
+		
+		// Score overrides equals() so this tests whether value, rank and capacity are correct.
+		assertEquals(newScoreA, newScoreA);
+		assertEquals(newScoreB, newScoreB);
+		assertEquals(newScoreC, newScoreC);
 	}
 }
