@@ -1403,14 +1403,17 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			
 			int oldCapacity = score.getCapacity();
 			
-			// Calculate the capacity - the weight of the trust values this identity gives.
-			// If the score of this identity is negative then it receives 0 capacity: Evil identities must not be allowed to change the score of others.
-			// We also assign 0 capacity if the score is equal to 0: 
-			// An identity which has only received trust values by solving introduction puzzles will have a score of 0.
-			// Those identities should not be allowed to have any influence on the web of trust to prevent attackers from creating identities only for
-			// the purpose of marking others as good/bad. Of course this can always be done but with this policy they will at least have to publish some
-			// content on Freetalk or whatever to gain a positive score.
-			if(score.getScore() <= 0)
+			boolean hasNegativeTrust = false;
+			// Does the treeOwner personally distrust this identity ?
+			try {
+				if(getTrust(treeOwner, target).getValue() < 0) {
+					hasNegativeTrust = true;
+					Logger.debug(target, target.getNickname() + " received negative trust from " + treeOwner.getNickname() + 
+							" and therefore has no capacity in his trust tree.");
+				}
+			} catch (NotTrustedException e) {}
+			
+			if(hasNegativeTrust)
 				score.setCapacity(0);
 			else
 				score.setCapacity((score.getRank() >= Score.capacities.length) ? 1 : Score.capacities[score.getRank()]);
