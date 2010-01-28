@@ -1399,7 +1399,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				oldShouldFetch = shouldFetchIdentity(target);
 			
 			score.setValue(value);
-			score.setRank(rank + 1);
+			score.setRank(rank);
 			
 			int oldCapacity = score.getCapacity();
 			
@@ -1503,7 +1503,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						rank = score.getRank();
 			} catch (NotInTrustTreeException e) {}
 		}
-		return rank;
+		return (rank == -1) ? -1 : (rank+1);
 	}
 	
 	/* Client interface functions */
