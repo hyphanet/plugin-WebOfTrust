@@ -302,9 +302,11 @@ public class WoTTest extends DatabaseBasedTest {
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
-		mWoT.setTrustWithoutCommit(s, a, (byte)50, "Medium trust"); // Do not use 0, trust values from identities with 0 score are ignored.
-		mWoT.setTrustWithoutCommit(s, b, (byte)50, "Medium trust");
-		mWoT.setTrustWithoutCommit(s, c, (byte)50, "medium trust");
+		// A trust of 4 gives them a minimal score of 1. Their score must be minimal so they can influence each other's score (by assigning trust values)
+		// enough to be negative. We don't use 0 so we catch special problems with conditions based on positive/negative decision.
+		mWoT.setTrustWithoutCommit(s, a, (byte)4, "Minimal trust");
+		mWoT.setTrustWithoutCommit(s, b, (byte)4, "Minimal trust");
+		mWoT.setTrustWithoutCommit(s, c, (byte)4, "Minimal trust");
 		db.commit();
 
 		// First you download A. A distrusts B and trusts C
@@ -334,9 +336,11 @@ public class WoTTest extends DatabaseBasedTest {
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
-		mWoT.setTrustWithoutCommit(s, a, (byte)50, "Medium trust"); // Do not use 0, trust values from identities with 0 score are ignored.
-		mWoT.setTrustWithoutCommit(s, b, (byte)50, "Medium trust");
-		mWoT.setTrustWithoutCommit(s, c, (byte)50, "medium trust");
+		// A trust of 4 gives them a minimal score of 1. Their score must be minimal so they can influence each other's score (by assigning trust values)
+		// enough to be negative. We don't use 0 so we catch special problems with conditions based on positive/negative decision.
+		mWoT.setTrustWithoutCommit(s, a, (byte)4, "Minimal trust");
+		mWoT.setTrustWithoutCommit(s, b, (byte)4, "Minimal trust");
+		mWoT.setTrustWithoutCommit(s, c, (byte)4, "Minimal trust");
 		db.commit();
 		
 		// Alternative download order: First B...
