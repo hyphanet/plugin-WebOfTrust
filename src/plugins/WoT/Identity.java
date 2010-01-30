@@ -5,9 +5,11 @@ package plugins.WoT;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import plugins.WoT.exceptions.InvalidParameterException;
@@ -582,6 +584,60 @@ public class Identity {
 
 	public String toString() {
 		return mNickname + "(" + mID + ")";
+	}
+
+	/**
+	 * Compares whether two identities are equal.
+	 * This checks <b>all</b> properties of the identities <b>excluding</b> the {@link Date} properties.
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean equals(Object obj) {
+		if(obj == this)
+			return true;
+		
+		if(!(obj instanceof Identity))
+			return false;
+	
+		Identity other = (Identity)obj;
+		
+		if(!getID().equals(other.getID()))
+			return false;
+		
+		if(!getRequestURI().equals(other.getRequestURI()))
+			return false;
+		
+		if(currentEditionWasFetched() != other.currentEditionWasFetched())
+			return false;
+		
+		if(getLatestEditionHint() != other.getLatestEditionHint())
+			return false;
+		
+		if(!getNickname().equals(other.getNickname()))
+			return false;
+		
+		if(doesPublishTrustList() != other.doesPublishTrustList())
+			return false;
+		
+		
+		String[] myContexts = (String[])getContexts().toArray(new String[1]);
+		String[] otherContexts = (String[])other.getContexts().toArray(new String[1]);
+		
+		Arrays.sort(myContexts);
+		Arrays.sort(otherContexts);
+		
+		if(!Arrays.deepEquals(myContexts, otherContexts))
+			return false;
+		
+		Map.Entry[] myProperties = (Map.Entry<String,String>[])getProperties().entrySet().toArray(new Map.Entry[1]);
+		Map.Entry[] otherProperties = (Map.Entry<String,String>[])other.getProperties().entrySet().toArray(new Map.Entry[1]);
+		
+		Arrays.sort(myProperties);
+		Arrays.sort(otherProperties);
+		
+		if(!Arrays.deepEquals(myProperties, otherProperties))
+			return false;
+		
+		return true;
 	}
 	
 }

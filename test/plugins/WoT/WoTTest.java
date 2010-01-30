@@ -363,8 +363,8 @@ public class WoTTest extends DatabaseBasedTest {
 		assertNotSame(newScoreC, oldScoreC);
 		
 		// Score overrides equals() so this tests whether value, rank and capacity are correct.
-		assertEquals(newScoreA, newScoreA);
-		assertEquals(newScoreB, newScoreB);
-		assertEquals(newScoreC, newScoreC);
+		assertEquals(oldScoreA, newScoreA);
+		assertEquals(oldScoreB, newScoreB);
+		assertEquals(oldScoreC, newScoreC);
 	}
 }

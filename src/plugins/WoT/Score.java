@@ -248,10 +248,10 @@ public final class Score {
 		
 		// Compare the involved identities after the numerical values because getting them might involve activating objects from the database.
 		
-		if(getTreeOwner() != other.getTreeOwner())
+		if(!getTreeOwner().equals(other.getTreeOwner()))
 			return false;
 		
-		if(getTarget() != other.getTarget())
+		if(!getTarget().equals(other.getTarget()))
 			return false;
 		
 		return true;
