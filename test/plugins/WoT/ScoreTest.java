@@ -48,7 +48,11 @@ public class ScoreTest extends DatabaseBasedTest {
 		assertTrue(score.getTarget() == b);
 	}
 	
+	// TODO: Move to WoTTest
 	public void testScorePersistence() throws MalformedURLException, UnknownIdentityException, NotInTrustTreeException {
+		a = mWoT.getOwnIdentityByURI(uriA);
+		b = mWoT.getOwnIdentityByURI(uriB);
+		final Score originalScore = mWoT.getScore(a, b);
 		
 		mWoT.terminate();
 		mWoT = null;
@@ -56,20 +60,17 @@ public class ScoreTest extends DatabaseBasedTest {
 		flushCaches();
 		
 		mWoT = new WoT(getDatabaseFilename());
-		
 		a = mWoT.getOwnIdentityByURI(uriA);
 		b = mWoT.getOwnIdentityByURI(uriB);
-		Score score = mWoT.getScore(a, b);
+		final Score score = mWoT.getScore(a, b);
 		
-		assertTrue(score.getScore() == 100);
-		assertTrue(score.getRank() == 1);
-		assertTrue(score.getCapacity() == 40);
-		assertTrue(score.getTreeOwner() == a);
-		assertTrue(score.getTarget() == b);
+		assertSame(score, mWoT.getScore(a, b));
+		assertNotSame(score, originalScore);
+		assertEquals(originalScore, score);
 	}
 	
 	public void testEquals() {
-		Score score = new Score(a, b, 100, 3, 2);
+		final Score score = new Score(a, b, 100, 3, 2);
 		
 		do {
 			try {
@@ -77,13 +78,13 @@ public class ScoreTest extends DatabaseBasedTest {
 			} catch (InterruptedException e) { }
 		} while(score.getDateOfCreation().equals(CurrentTimeUTC.get()));
 		
-		Score equalScore = new Score(score.getTreeOwner(), score.getTarget(), score.getScore(), score.getRank(), score.getCapacity());
+		final Score equalScore = new Score(score.getTreeOwner().clone(), score.getTarget().clone(), score.getScore(), score.getRank(), score.getCapacity());
 		
 		assertEquals(score, score);
 		assertEquals(score, equalScore);
 		
 		
-		Object[] inequalObjects = new Object[] {
+		final Object[] inequalObjects = new Object[] {
 			new Object(),
 			new Score((OwnIdentity)score.getTarget(), score.getTreeOwner(), score.getScore(), score.getRank(), score.getCapacity()),
 			new Score(score.getTreeOwner(), score.getTreeOwner(), score.getScore(), score.getRank(), score.getCapacity()),
@@ -95,6 +96,5 @@ public class ScoreTest extends DatabaseBasedTest {
 		
 		for(Object other : inequalObjects)
 			assertFalse(score.equals(other));
-		
 	}
 }

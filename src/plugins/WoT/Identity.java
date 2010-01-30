@@ -32,7 +32,7 @@ import freenet.support.StringValidityChecker;
  * @param mContexts An ArrayList containing contexts (eg. client apps) an Identity is used for
  * @param mProperties A HashMap containing all custom properties o an Identity
  */
-public class Identity {
+public class Identity implements Cloneable {
 	
 	public static final int MAX_CONTEXT_NAME_LENGTH = 32;
 	public static final int MAX_CONTEXT_AMOUNT = 32;
@@ -638,6 +638,25 @@ public class Identity {
 			return false;
 		
 		return true;
+	}
+	
+	/**
+	 * Clones this identity. Does <b>not</b> clone the {@link Date} attributes, they are initialized to the current time!
+	 */
+	public Identity clone() {
+		try {
+			Identity clone = new Identity(getRequestURI(), getNickname(), doesPublishTrustList());
+			
+			clone.mCurrentEditionWasFetched = currentEditionWasFetched();
+			clone.setNewEditionHint(getLatestEditionHint()); 
+			clone.setContexts(getContexts());
+			clone.setProperties(getProperties());
+			
+			return clone;
+			
+		} catch (InvalidParameterException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 }
