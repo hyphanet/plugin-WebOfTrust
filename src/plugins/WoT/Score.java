@@ -220,13 +220,8 @@ public final class Score {
 	
 	/**
 	 * Test if two scores are equal.
-	 * Scores are considered equal if:
-	 * - They are from the same tree owner to the same target
-	 * - They have the same value
-	 * - They have the same rank
-	 * - They have the same capacity
-	 * 
-	 * The creation date and last changed date are NOT compared.
+	 * - <b>All</b> attributes are compared <b>except</b> the dates.<br />
+	 * - <b>The involved identities are compared in terms of equals()</b>, the objects do not have to be the same.
 	 */
 	public boolean equals(Object obj) {
 		if(obj == this)
