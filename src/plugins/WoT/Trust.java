@@ -55,7 +55,6 @@ public final class Trust {
 	 * database for trust objects from the truster which have an old trust list edition number and delete them - the old edition number
 	 * means that the trust has been removed from the latest trust list.
 	 */
-	@SuppressWarnings("unused")
 	private long mTrusterTrustListEdition;
 	
 	
@@ -191,5 +190,43 @@ public final class Trust {
 	protected synchronized void trusterEditionUpdated() {
 		mTrusterTrustListEdition = mTruster.getEdition();
 	}
+	
+	protected synchronized long getTrusterEdition() {
+		return mTrusterTrustListEdition;
+	}
 
+	/**
+	 * Test if two trust objects are equal.<br />
+	 * - <b>All</b> attributes are compared <b>except</b> the dates.<br />
+	 * - <b>The involved identities are compared in terms of equals()</b>, the objects do not have to be the same.
+	 */
+	public boolean equals(final Object obj) {
+		if(obj == this)
+			return true;
+		
+		if(!(obj instanceof Trust))
+			return false;
+		
+		final Trust other = (Trust)obj;
+		
+		if(getValue() != other.getValue())
+			return false;
+		
+		if(getTrusterEdition() != other.getTrusterEdition())
+			return false;
+		
+		if(!getComment().equals(other.getComment()))
+			return false;
+		
+		// Compare the involved identities after the numerical values because getting them might involve activating objects from the database.
+		
+		if(!getTruster().equals(other.getTruster()))
+			return false;
+		
+		if(!getTrustee().equals(other.getTrustee()))
+			return false;
+		
+		return true;
+	}
+	
 }
