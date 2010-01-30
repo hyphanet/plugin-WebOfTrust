@@ -1886,4 +1886,98 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
     public BaseL10n getBaseL10n() {
         return WoT.l10n.getBase();
     }
+
+	
+    /**
+     * Tests whether two WoT are equal.
+     * This is a complex operation in terms of execution time and memory usage and only intended for being used in unit tests.
+     */
+	public boolean equals(Object obj) {
+		if(obj == this)
+			return true;
+		
+		if(!(obj instanceof WoT))
+			return false;
+		
+		WoT other = (WoT)obj;
+		
+		{ // Compare own identities
+			final ObjectSet<OwnIdentity> allIdentities = getAllOwnIdentities();
+			
+			if(allIdentities.size() != other.getAllOwnIdentities().size())
+				return false;
+			
+			for(OwnIdentity identity : allIdentities) {
+				try {
+					if(!identity.equals(other.getOwnIdentityByID(identity.getID())))
+						return false;
+				} catch(UnknownIdentityException e) {
+					return false;
+				}
+			}
+		}
+
+		{ // Compare identities
+			final ObjectSet<Identity> allIdentities = getAllIdentities();
+			
+			if(allIdentities.size() != other.getAllIdentities().size())
+				return false;
+			
+			for(Identity identity : allIdentities) {
+				try {
+					if(!identity.equals(other.getIdentityByID(identity.getID())))
+						return false;
+				} catch(UnknownIdentityException e) {
+					return false;
+				}
+			}
+		}
+		
+		
+		{ // Compare trusts
+			final ObjectSet<Trust> allTrusts = getAllTrusts();
+			
+			if(allTrusts.size() != other.getAllTrusts().size())
+				return false;
+			
+			for(Trust trust : allTrusts) {
+				try {
+					Identity otherTruster = other.getIdentityByID(trust.getTruster().getID());
+					Identity otherTrustee = other.getIdentityByID(trust.getTrustee().getID());
+					
+					if(!trust.equals(other.getTrust(otherTruster, otherTrustee)))
+						return false;
+				} catch(UnknownIdentityException e) {
+					return false;
+				} catch(NotTrustedException e) {
+					return false;
+				}
+			}
+		}
+		
+		{ // Compare scores
+			final ObjectSet<Score> allScores = getAllScores();
+			
+			if(allScores.size() != other.getAllScores().size())
+				return false;
+			
+			for(Score score : allScores) {
+				try {
+					OwnIdentity otherTreeOwner = other.getOwnIdentityByID(score.getTreeOwner().getID());
+					Identity otherTarget = other.getIdentityByID(score.getTarget().getID());
+					
+					if(!score.equals(other.getScore(otherTreeOwner, otherTarget)))
+						return false;
+				} catch(UnknownIdentityException e) {
+					return false;
+				} catch(NotInTrustTreeException e) {
+					return false;
+				}
+			}
+		}
+		
+		return true;
+	}
+    
+    
 }
