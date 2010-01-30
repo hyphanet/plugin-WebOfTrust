@@ -229,14 +229,14 @@ public final class Score {
 	 * The creation date and last changed date are NOT compared.
 	 */
 	public boolean equals(Object obj) {
+		if(obj == this)
+			return true;
+
 		if(!(obj instanceof Score))
 			return false;
 		
 		Score other = (Score)obj;
-		
-		if(other == this)
-			return true;
-
+	
 		if(getScore() != other.getScore())
 			return false;
 		
