@@ -48,10 +48,10 @@ public final class Score {
 	};			// Identities with negative score have zero capacity
 	
 	/** The OwnIdentity which assigns this score to the target */
-	private final OwnIdentity mTreeOwner;
+	private final OwnIdentity mTreeOwner; // FIXME: Rename before release to be coherent with the member variable in class Trust
 	
 	/** The Identity which is rated by this score */
-	private final Identity mTarget;
+	private final Identity mTarget; // FIXME: Rename before release to be coherent with the member variable in class Trust
 	
 	/** The actual score of the Identity. Used to decide if the OwnIdentity sees the Identity or not */
 	private int mValue;
