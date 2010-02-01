@@ -367,4 +367,90 @@ public class WoTTest extends DatabaseBasedTest {
 		assertEquals(oldScoreB, newScoreB);
 		assertEquals(oldScoreC, newScoreC);
 	}
+
+
+	/**
+	 * Test whether removing trusts works properly.
+	 */
+	public void testRemoveTrust2() throws Exception {
+		//same setup routine as testStability
+		ExtObjectContainer db = mWoT.getDB();
+			
+		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
+		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
+		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); 
+		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
+		Identity c = new Identity(uriC, "C", true); mWoT.storeAndCommit(c);
+		
+		// You get all the identities from the seed identity.
+		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
+		// A trust of 4 gives them a minimal score of 1. Their score must be minimal so they can influence each other's score (by assigning trust values)
+		// enough to be negative. We don't use 0 so we catch special problems with conditions based on positive/negative decision.
+		mWoT.setTrustWithoutCommit(s, a, (byte)4, "Minimal trust");
+		mWoT.setTrustWithoutCommit(s, b, (byte)4, "Minimal trust");
+		mWoT.setTrustWithoutCommit(s, c, (byte)4, "Minimal trust");
+		db.commit();
+
+		// First you download A. A distrusts B and trusts C
+		mWoT.setTrustWithoutCommit(a, b, (byte)-100, "Distrust");
+		mWoT.setTrustWithoutCommit(a, c, (byte)100, "Trust");
+		db.commit();
+		
+		// Then you download B who distrusts A and C
+		mWoT.setTrustWithoutCommit(b, a, (byte)-100, "Distrust");
+		mWoT.setTrustWithoutCommit(b, c, (byte)-100, "Trust");
+		db.commit();
+		flushCaches();
+
+		mWoT.setTrust(o, s, (byte)-1, "Removed trust for seed identity.");
+		flushCaches();
+
+		try {
+			mWoT.getScore(o, a);
+			fail();
+		}
+		catch (NotInTrustTreeException e) {}
+		try {
+			mWoT.getScore(o, b);
+			fail();
+		}
+		catch (NotInTrustTreeException e) {}
+		try {
+			mWoT.getScore(o, c);
+			fail();
+		}
+		catch (NotInTrustTreeException e) {}
+	}
+
+	/**
+	 * Test whether spammer resistance works properly.
+	 */
+	public void testMalicious() throws Exception {
+		//same setup routine as testStability
+		ExtObjectContainer db = mWoT.getDB();
+			
+		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
+		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
+		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); 
+		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
+		Identity m = new Identity(uriC, "M", true); mWoT.storeAndCommit(m); //malicious identity
+		
+		// You get all the identities from the seed identity.
+		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
+
+		mWoT.setTrustWithoutCommit(s, a, (byte)4, "Minimal trust");
+		mWoT.setTrustWithoutCommit(s, b, (byte)4, "Minimal trust");
+		mWoT.setTrustWithoutCommit(m, a, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m, b, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(s, m, (byte)-100, "M is malicious.");
+		db.commit();
+
+		flushCaches();
+
+		Score scoreA = mWoT.getScore(o, a);
+		Score scoreB = mWoT.getScore(o, b);
+
+		assertTrue("A score: " + scoreA.getScore(), scoreA.getScore() > 0);
+		assertTrue("B score: " + scoreB.getScore(), scoreB.getScore() > 0);
+	}
 }
