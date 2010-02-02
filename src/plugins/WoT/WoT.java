@@ -1027,12 +1027,13 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 	
 	/**
-	 * Gets the best score this Identity has in existing trust trees, 0 if it is not in the trust tree.
+	 * Gets the best score this Identity has in existing trust trees.
 	 * 
 	 * @return the best score this Identity has
+	 * @throws NotInTrustTreeException If the identity has no score in any trusttree.
 	 */
 	public synchronized int getBestScore(Identity identity) throws NotInTrustTreeException {
-		int bestScore = 0;
+		int bestScore = Integer.MIN_VALUE;
 		ObjectSet<Score> scores = getScores(identity);
 		
 		if(scores.size() == 0)
