@@ -1139,6 +1139,36 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 	
 	/**
+	 * Gets given trust values of an identity matching a specified trust value criteria.
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 * 
+	 * @param truster The identity which given the trust values.
+	 * @param select Trust value criteria, can be > zero, zero or negative. Greater than zero returns all trust values >= 0, zero returns trust values equal to 0.
+	 * 		Negative returns trust values < 0. Zero is included in the positive range by convention because solving an introduction puzzle gives you a value of 0.
+	 * @return an {@link ObjectSet} containing received trust values that match the criteria.
+	 * @throws NullPointerException If truster is null.
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<Trust> getGivenTrusts(Identity truster, int select) {		
+		if(truster == null)
+			throw new NullPointerException("No truster specified");
+		
+		Query query = mDB.query();
+		query.constrain(Trust.class);
+		query.descend("mTruster").constrain(truster).identity();
+	
+		/* We include 0 in the list of identities with positive trust because solving captchas gives 0 trust */
+		
+		if(select > 0)
+			query.descend("mValue").constrain(0).smaller().not();
+		else if(select < 0 )
+			query.descend("mValue").constrain(0).smaller();
+		else 
+			query.descend("mValue").constrain(0);
+
+		return query.execute();
+	}
+	/**
 	 * Gets all trusts given by the given truster in a trust list older than the given edition number.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 */
