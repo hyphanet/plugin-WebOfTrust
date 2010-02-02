@@ -372,7 +372,6 @@ public class WoTTest extends DatabaseBasedTest {
 	/**
 	 * Test whether removing trusts works properly.
 	 */
-	/* FIXME: re-enable
 	public void testRemoveTrust2() throws Exception {
 		//same setup routine as testStability
 		ExtObjectContainer db = mWoT.getDB();
@@ -422,12 +421,10 @@ public class WoTTest extends DatabaseBasedTest {
 		}
 		catch (NotInTrustTreeException e) {}
 	}
-	*/
 
 	/**
 	 * Test whether spammer resistance works properly.
 	 */
-	/* FIXME: re-enable
 	public void testMalicious() throws Exception {
 		//same setup routine as testStability
 		ExtObjectContainer db = mWoT.getDB();
@@ -456,5 +453,5 @@ public class WoTTest extends DatabaseBasedTest {
 		assertTrue("A score: " + scoreA.getScore(), scoreA.getScore() > 0);
 		assertTrue("B score: " + scoreB.getScore(), scoreB.getScore() > 0);
 	}
-	*/
+
 }
