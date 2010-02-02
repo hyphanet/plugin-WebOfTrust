@@ -5,12 +5,12 @@ package plugins.WoT;
 
 import java.net.MalformedURLException;
 
-import plugins.WoT.Identity;
-import plugins.WoT.WoT;
 import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
+
+import freenet.support.CurrentTimeUTC;
 
 /**
  * @author xor (xor@freenetproject.org) Julien Cornuwel (batosai@freenetproject.org)
@@ -18,6 +18,7 @@ import com.db4o.ObjectSet;
 public class IdentityTest extends DatabaseBasedTest {
 	
 	private String uri = "USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/WoT/0";
+	private String uriB = "USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WoT/0";
 	private Identity identity;
 
 	@Override
@@ -78,13 +79,48 @@ public class IdentityTest extends DatabaseBasedTest {
 		assertEquals(1, mWoT.getAllIdentities().size());	
 		
 		Identity stored = mWoT.getIdentityByURI(uri);
-		assertEquals(identity.getID(), stored.getID());
-		assertEquals(identity.getRequestURI(), stored.getRequestURI());
-		assertEquals(identity.getEdition(), stored.getEdition());
-		assertEquals(identity.getNickname(), stored.getNickname());
+		assertNotSame(identity, stored);
+		assertEquals(identity, stored);
 		assertEquals(identity.getAddedDate(), stored.getAddedDate());
 		assertEquals(identity.getLastChangeDate(), stored.getLastChangeDate());
-		assertEquals(identity.getContexts(), stored.getContexts());
-		assertEquals(identity.getProperties(), stored.getProperties());
 	}
+	
+//	public void testEquals() {
+//		do {
+//			try {
+//				Thread.sleep(1);
+//			} catch (InterruptedException e) { }
+//		} while(identity.getAddedDate().equals(CurrentTimeUTC.get()));
+//		
+//		assertEquals(identity, identity);
+//		assertEquals(identity, identity.clone());
+//		
+//		
+//	
+//		
+//		Object[] inequalObjects = new Object[] {
+//			new Object(),
+//			new Identity(uriB, identity.getNickname(), identity.doesPublishTrustList());
+//		};
+//		
+//		for(Object other : inequalObjects)
+//			assertFalse(score.equals(other));
+//	}
+//	
+//	public void testClone() {
+//		do {
+//			try {
+//				Thread.sleep(1);
+//			} catch (InterruptedException e) { }
+//		} while(identity.getAddedDate().equals(CurrentTimeUTC.get()));
+//		
+//		Identity clone = identity.clone();
+//		assertNotSame(clone, identity);
+//		assertEquals(identity.getEdition(), clone.getEdition());
+//		assertEquals(identity.getID(), clone.getID());
+//		assertEquals(identity.getLatestEditionHint(), clone.getLatestEditionHint());
+//		assertNotSame(identity.getNickname(), clone.getNickname());
+//		assertEquals(identity.getNickname(), clone.getNickname());
+//		assertEquals(identity.getProperties())
+//	}
 }
