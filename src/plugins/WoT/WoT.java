@@ -7,6 +7,8 @@ import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Random;
 import java.util.Map.Entry;
 
@@ -482,6 +484,210 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.rollback(); Logger.debug(this, "ROLLED BACK!"); 
 			}
 		}
+	}
+	
+	/** Capacity is the maximum amount of points an identity can give to an other by trusting it. 
+	 * 
+	 * Values choice :
+	 * Advogato Trust metric recommends that values decrease by rounded 2.5 times.
+	 * This makes sense, making the need of 3 N+1 ranked people to overpower
+	 * the trust given by a N ranked identity.
+	 * 
+	 * Number of ranks choice :
+	 * When someone creates a fresh identity, he gets the seed identity at
+	 * rank 1 and freenet developpers at rank 2. That means that
+	 * he will see people that were :
+	 * - given 7 trust by freenet devs (rank 2)
+	 * - given 17 trust by rank 3
+	 * - given 50 trust by rank 4
+	 * - given 100 trust by rank 5 and above.
+	 * This makes the range small enough to avoid a newbie
+	 * to even see spam, and large enough to make him see a reasonnable part
+	 * of the community right out-of-the-box.
+	 * Of course, as soon as he will start to give trust, he will put more
+	 * people at rank 1 and enlarge his WoT.
+	 */
+	protected static final int capacities[] = {
+			100,// Rank 0 : Own identities
+			40,	// Rank 1 : Identities directly trusted by ownIdenties
+			16, // Rank 2 : Identities trusted by rank 1 identities
+			6,	// So on...
+			2,
+			1	// Every identity above rank 5 can give 1 point
+	};			// Identities with negative score have zero capacity
+	
+	/**
+	 * Computes the capacity of an identity. The capacity is a weight function in percent which is used to decide how much
+	 * trust points an identity can add to the score of identities which it has assigned trust values to.
+	 * The higher the rank of an identity, the less is it's capacity.
+	 *  
+	 * @param rank The rank of the identity. The rank is the distance in trust steps from the OwnIdentity which views the web of trust,
+	 * 				- its rank is 0, the rank of its trustees is 1 and so on.
+	 */
+	protected int computeCapacity(int rank) {
+		return (rank < capacities.length) ? capacities[rank] : 1;
+	}
+	
+	/**
+	 * Reference-implementation of score computation. This means:<br />
+	 * - It is not used by the real WoT code because its slow<br />
+	 * - It is used by unit tests (and WoT) to check whether the real implementation works<br />
+	 * - It is the function which you should read if you want to understand how WoT works.<br />
+	 * 
+	 * Computes all rank and score values and checks whether the database is correct. If wrong values are found, they are correct.<br />
+	 * 
+	 * There was a bug in the score computation for a long time which resulted in wrong computation when trust values very removed under certain conditions.<br />
+	 * 
+	 * Further, rank values are shortest paths and the path-finding algorithm is not executed from the source
+	 * to the target upon score computation: It uses the rank of the neighbor nodes to find a shortest path.
+	 * Therefore, the algorithm is very vulnerable to bugs since one wrong value will stay in the database
+	 * and affect many others. So it is useful to have this function.
+	 * 
+	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
+	 */
+	protected synchronized boolean computeAllScores() {
+		boolean returnValue = true;
+		final ObjectSet<Identity> allIdentities = getAllIdentities();
+		
+		// Scores are a rating of an identity from the view of an OwnIdentity so we compute them per OwnIdentity.
+		for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+			// At the end of the loop body, this table will be filled with the ranks of all identities which are visible for treeOwner.
+			// An identity is visible if there is a trust chain from the owner to it.
+			// The rank is the distance in trust steps from the treeOwner.			
+			// So the treeOwner is rank 0, the trustees of the treeOwner are rank 1 and so on.
+			final Hashtable<Identity, Integer> rankValues = new Hashtable<Identity, Integer>(allIdentities.size() * 2);
+			
+			// Compute the rank values
+			{
+				// For each identity which is added to rankValues, all its trustees are added to unprocessedTrusters.
+				// The inner loop then pulls out one unprocessed identity and computes the rank of its trustees, which is its rank plus 1. 
+				final LinkedList<Identity> unprocessedTrusters = new LinkedList<Identity>();
+				
+				rankValues.put(treeOwner, 0);
+				unprocessedTrusters.addLast(treeOwner);
+				 
+				while(!unprocessedTrusters.isEmpty()) {
+					final Identity truster = unprocessedTrusters.removeFirst();
+					
+					boolean trusterIsDistrusted; // Cannot be final due to java restrictions. 
+					try {
+						trusterIsDistrusted = getTrust(treeOwner, truster).getValue() < 0;
+					} catch(NotTrustedException e) {
+						trusterIsDistrusted = false;
+					}
+					
+					// The truster cannot give his rank to his trustees because the treeOwner personally distrusts him.
+					if(trusterIsDistrusted)
+						continue;
+	
+					final int trusteeRank = rankValues.get(truster) + 1;
+					
+					for(Trust trust : getGivenTrusts(truster)) {
+						final Identity trustee = trust.getTrustee();
+						final Integer oldTrusteeRank = rankValues.get(trustee);
+						
+						if(oldTrusteeRank == null) { // The trustee was not processed yet
+							rankValues.put(trustee, trusteeRank);
+							unprocessedTrusters.addLast(trustee);
+						} else if(trusteeRank < oldTrusteeRank) { // We found a shorter path
+							rankValues.put(trustee, trusteeRank);
+						}
+					}
+				}
+			}
+			
+			// Rank values of all visible identities are computed now.
+			// Next step is to compute the scores of all identities
+			
+			for(Identity target : allIdentities) {
+				// The score of an identity is the sum of all weighted trust values it has received.
+				// Each trust value is weighted with the capacity of the truster - the capacity decays with increasing rank.
+				Integer targetScore;
+				Integer targetRank = rankValues.get(target);
+				
+				if(targetRank == null) {
+					targetScore = null;
+				} else {
+					// The treeOwner trusts himself.
+					if(targetRank == 0) {
+						targetScore = 100;
+					}
+					// If the treeOwner has assigned a trust value to the target, it always overrides the "remote" score.
+					else if(targetRank == 1) {
+						try {
+							targetScore = (int)getTrust(treeOwner, target).getValue();
+						}
+						catch(NotTrustedException e) {
+							throw new RuntimeException(e);
+						}
+					}
+					else {
+						targetScore = 0;
+						for(Trust receivedTrust : getReceivedTrusts(target)) {
+							final Identity truster = receivedTrust.getTruster();
+							final Integer trusterRank = rankValues.get(truster);
+							
+							boolean trusterIsDistrusted; // Cannot be final due to java restrictions. 
+							try {
+								trusterIsDistrusted = getTrust(treeOwner, truster).getValue() < 0;
+							} catch(NotTrustedException e) {
+								trusterIsDistrusted = false;
+							}
+							
+							// The capacity is a weight function for trust values which are given from an identity:
+							// The higher the rank, the less the capacity.  
+							final int capacity;
+						
+							if(trusterRank == null || trusterIsDistrusted)
+								capacity = 0;
+							else
+								capacity = computeCapacity(trusterRank);
+							
+							targetScore += (receivedTrust.getValue() * capacity) / 100;
+						}
+					}
+				}
+				
+				Score expectedScore = targetScore != null ? new Score(treeOwner, target, targetScore, targetRank, computeCapacity(targetRank)) : null;
+				
+				// Now we have the rank and the score of the target computed and can check whether the database-stored score object is correct.
+				try {
+					Score storedScore = getScore(treeOwner, target);
+					// FIXME: We also need to tell the identity fetcher to start/stop fetching the identity if the score sign changed.
+					if(targetScore == null) {
+						returnValue = false;
+						Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + targetScore);
+						synchronized(mDB.lock()) {
+							mDB.delete(storedScore);
+							mDB.commit(); Logger.debug(this, "COMMITED.");
+						}
+					} else {
+						if(!expectedScore.equals(targetScore)) {
+							returnValue = false;
+							Logger.error(this, "Correcting wrong score: Should have been " + targetScore + " but was " + storedScore);
+							storedScore.setRank(targetRank);
+							storedScore.setCapacity(computeCapacity(targetRank));
+							storedScore.setValue(targetScore);
+							synchronized(mDB.lock()) {
+								mDB.store(storedScore);
+								mDB.commit(); Logger.debug(this, "COMMITED.");
+							}
+						}
+					}
+				} catch(NotInTrustTreeException e) {
+					if(targetScore != null) {
+						returnValue = false;
+						Logger.error(this, "Correcting wrong score: No score was stored for the identity but it should be " + expectedScore);
+						synchronized(mDB.lock()) {
+							mDB.store(expectedScore);
+							mDB.commit(); Logger.debug(this, "COMMITED.");
+						}
+					}
+				}
+			}
+		}
+		
+		return returnValue;
 	}
 	
 	private synchronized void createSeedIdentities() {
@@ -1458,7 +1664,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			if(hasNegativeTrust)
 				score.setCapacity(0);
 			else
-				score.setCapacity((score.getRank() >= Score.capacities.length) ? 1 : Score.capacities[score.getRank()]);
+				score.setCapacity(computeCapacity(score.getRank()));
 			
 			if(score.getCapacity() != oldCapacity)
 				changedCapacity = true;
