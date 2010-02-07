@@ -589,8 +589,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						if(oldTrusteeRank == null) { // The trustee was not processed yet
 							rankValues.put(trustee, trusteeRank);
 							unprocessedTrusters.addLast(trustee);
-						} else if(trusteeRank < oldTrusteeRank) { // We found a shorter path
-							rankValues.put(trustee, trusteeRank);
+						} else {
+							//breadth first search will process all rank one identies are processed
+							//before any rank two identities, etc
+							assert trusteeRank >= oldTrusteeRank;
 						}
 					}
 				}
@@ -616,12 +618,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					else if(targetRank == 1) {
 						try {
 							targetScore = (int)getTrust(treeOwner, target).getValue();
-						}
-						catch(NotTrustedException e) {
+						} catch(NotTrustedException e) {
 							throw new RuntimeException(e);
 						}
-					}
-					else {
+					} else {
 						targetScore = 0;
 						for(Trust receivedTrust : getReceivedTrusts(target)) {
 							final Identity truster = receivedTrust.getTruster();
