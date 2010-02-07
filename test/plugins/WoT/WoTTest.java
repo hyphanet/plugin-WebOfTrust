@@ -444,14 +444,73 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(m, b, (byte)-100, "Maliciously set");
 		mWoT.setTrustWithoutCommit(s, m, (byte)-100, "M is malicious.");
 		db.commit();
+		flushCaches();
+
+		boolean wasCorrect = mWoT.computeAllScores();
+		flushCaches();
+		boolean isConsistent = mWoT.computeAllScores();
+
+		int scoreA = mWoT.getScore(o, a).getScore();
+		int scoreB = mWoT.getScore(o, b).getScore();
+		assertTrue("A score: " + scoreA + " wasCorrect: " + wasCorrect + " isConsistent: " + isConsistent, scoreA > 0);
+		assertTrue("B score: " + scoreB + " wasCorrect: " + wasCorrect + " isConsistent: " + isConsistent, scoreB > 0);
+		assertTrue("Consistency check.", isConsistent);
+		assertTrue("Correctness check.", wasCorrect);
+	}
+
+	/**
+	 * Test whether the algorithm is stable.
+	 */
+	public void testStability2() throws Exception {
+		ExtObjectContainer db = mWoT.getDB();
+			
+		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
+		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
+		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); 
+		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
+		Identity c = new Identity(uriC, "C", true); mWoT.storeAndCommit(c);
+		
+		// You get all the identities from the seed identity.
+		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
+
+		mWoT.setTrustWithoutCommit(s, a, (byte)4, "Minimal trust");
+		mWoT.setTrustWithoutCommit(a, b, (byte)100, "trust");
+		mWoT.setTrustWithoutCommit(b, c, (byte)100, "trust");
+		mWoT.setTrustWithoutCommit(c, a, (byte)-100, "distrust");
+		db.commit();
 
 		flushCaches();
 
-		Score scoreA = mWoT.getScore(o, a);
-		Score scoreB = mWoT.getScore(o, b);
+		int oldScoreA = mWoT.getScore(o, a).getScore();
+		int oldScoreB = mWoT.getScore(o, b).getScore();
+		int oldScoreC = mWoT.getScore(o, c).getScore();
 
-		assertTrue("A score: " + scoreA.getScore(), scoreA.getScore() > 0);
-		assertTrue("B score: " + scoreB.getScore(), scoreB.getScore() > 0);
+		//assertTrue("a score: " + oldScoreA + " c score: " + oldScoreC, false);
+
+		//force some recomputation
+		
+		mWoT.setTrustWithoutCommit(s, a, (byte)0, "Minimal trust");
+		mWoT.setTrustWithoutCommit(a, b, (byte)0, "trust");
+		mWoT.setTrustWithoutCommit(b, c, (byte)0, "trust");
+		mWoT.setTrustWithoutCommit(c, a, (byte)0, "distrust");
+		db.commit();
+		flushCaches();
+
+		mWoT.setTrustWithoutCommit(s, a, (byte)4, "Minimal trust");
+		mWoT.setTrustWithoutCommit(c, a, (byte)-100, "distrust");
+		mWoT.setTrustWithoutCommit(b, c, (byte)100, "trust");
+		mWoT.setTrustWithoutCommit(a, b, (byte)100, "trust");
+		db.commit();
+		flushCaches();
+
+		int newScoreA = mWoT.getScore(o, a).getScore();
+		int newScoreB = mWoT.getScore(o, b).getScore();
+		int newScoreC = mWoT.getScore(o, c).getScore();
+
+		assertTrue(oldScoreA == newScoreA);
+		assertTrue(oldScoreB == newScoreB);
+		assertTrue(oldScoreC == newScoreC);
+
 	}
 
 }
