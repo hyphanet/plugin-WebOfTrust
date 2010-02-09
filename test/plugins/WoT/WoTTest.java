@@ -23,6 +23,9 @@ public class WoTTest extends DatabaseBasedTest {
 	private final String uriA = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0";
 	private final String uriB = "USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WoT/0";
 	private final String uriC = "USK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/WoT/0";
+	private final String uriM1 = "USK@XoOIYo6blZDb6qb2iaBKJVMSehnvxVnxkgFCtbT4yw4,92NJVhKYBK3B4oJkcSmDaau53vbzPMKxws9dC~fagFU,AQACAAE/WoT/0";
+	private final String uriM2 = "USK@rhiNEDWcDXNvkT7R3K1zkr2FgMjW~6DudrAbuYbaY-w,Xl4nOxOzRyzHpEQwu--nb3PaLFSK2Ym9c~Un0rIdne4,AQACAAE/WoT/0";
+	private final String uriM3 = "USK@9c57T1yNOi7aeK-6lorACBcOH4cC-vgZ6Ky~-f9mcUI,anOcB7Z05g55oViCa3LcClrXNcQcmR3SBooN4qssuPs,AQACAAE/WoT/0";
 
 	public void testInitTrustTree() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
 		mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test"); /* This also initializes the trust tree */
@@ -433,16 +436,27 @@ public class WoTTest extends DatabaseBasedTest {
 		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
 		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); 
 		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
-		Identity m = new Identity(uriC, "M", true); mWoT.storeAndCommit(m); //malicious identity
+		
+		Identity m1 = new Identity(uriM1, "M1", true); mWoT.storeAndCommit(m1); //malicious identity
+		Identity m2 = new Identity(uriM2, "M2", true); mWoT.storeAndCommit(m2); //malicious identity
+		Identity m3 = new Identity(uriM3, "M3", true); mWoT.storeAndCommit(m3); //malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
 
-		mWoT.setTrustWithoutCommit(s, a, (byte)4, "Minimal trust");
-		mWoT.setTrustWithoutCommit(s, b, (byte)4, "Minimal trust");
-		mWoT.setTrustWithoutCommit(m, a, (byte)-100, "Maliciously set");
-		mWoT.setTrustWithoutCommit(m, b, (byte)-100, "Maliciously set");
-		mWoT.setTrustWithoutCommit(s, m, (byte)-100, "M is malicious.");
+		mWoT.setTrustWithoutCommit(s, a, (byte)100, "Trusted");
+		mWoT.setTrustWithoutCommit(s, b, (byte)100, "Trusted");
+		mWoT.setTrustWithoutCommit(s, m1, (byte)-100, "M1 is malicious.");
+		mWoT.setTrustWithoutCommit(s, m2, (byte)-100, "M2 is malicious.");
+		mWoT.setTrustWithoutCommit(s, m3, (byte)-100, "M3 is malicious.");
+
+		mWoT.setTrustWithoutCommit(m1, a, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m1, b, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m2, a, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m2, b, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m3, a, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m3, b, (byte)-100, "Maliciously set");
+
 		db.commit();
 		flushCaches();
 
