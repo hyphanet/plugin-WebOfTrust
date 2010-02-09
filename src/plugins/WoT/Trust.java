@@ -15,7 +15,7 @@ import freenet.support.StringValidityChecker;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Trust {
+public final class Trust implements Cloneable {
 	
 	public static final int MAX_TRUST_COMMENT_LENGTH = 256;
 
@@ -229,4 +229,13 @@ public final class Trust {
 		return true;
 	}
 	
+	public Trust clone() {
+		try {
+			Trust clone = new Trust(getTruster(), getTrustee(), getValue(), getComment());
+			clone.mTrusterTrustListEdition = this.mTrusterTrustListEdition;
+			return clone;
+		} catch (InvalidParameterException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }

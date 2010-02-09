@@ -15,7 +15,7 @@ import freenet.support.CurrentTimeUTC;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Score {
+public final class Score implements Cloneable {
 	
 	/** The OwnIdentity which assigns this score to the target */
 	private final OwnIdentity mTreeOwner; // FIXME: Rename before release to be coherent with the member variable in class Trust
@@ -222,4 +222,7 @@ public final class Score {
 		return true;
 	}
 
+	public Score clone() {
+		return new Score(getTreeOwner(), getTarget(), getScore(), getRank(), getCapacity());
+	}
 }
