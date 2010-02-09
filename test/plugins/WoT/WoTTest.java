@@ -31,20 +31,20 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test"); /* This also initializes the trust tree */
 		
 		flushCaches();
-		assertTrue(mWoT.getAllNonOwnIdentities().size() == 0);
-		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
-		assertTrue(mWoT.getAllTrusts().size() == 0);
-		assertTrue(mWoT.getAllScores().size() == 1);
+		assertEquals(0, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(1, mWoT.getAllOwnIdentities().size());
+		assertEquals(0, mWoT.getAllTrusts().size());
+		assertEquals(1, mWoT.getAllScores().size());
 		
 		flushCaches();
 		OwnIdentity a = mWoT.getOwnIdentityByURI(uriA);
 
 		Score score = mWoT.getScore(a,a);
-		assertTrue(score.getScore() == 100);
-		assertTrue(score.getRank() == 0);
-		assertTrue(score.getCapacity() == 100);
-		assertTrue(score.getTreeOwner() == a);
-		assertTrue(score.getTarget() == a);
+		assertEquals(100, score.getScore());
+		assertEquals(0, score.getRank());
+		assertEquals(100, score.getCapacity());
+		assertSame(a, score.getTreeOwner());
+		assertSame(a, score.getTarget());
 	}
 	
 	public void testSetTrust1() throws InvalidParameterException, MalformedURLException {
@@ -58,10 +58,10 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrust(a, b, (byte)10, "Foo");
 		
 		flushCaches();
-		assertTrue(mWoT.getAllNonOwnIdentities().size() == 1);
-		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
-		assertTrue(mWoT.getAllTrusts().size() == 1);
-		assertTrue(mWoT.getAllScores().size() == 0);
+		assertEquals(1, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(1, mWoT.getAllOwnIdentities().size());
+		assertEquals(1, mWoT.getAllTrusts().size());
+		assertEquals(0, mWoT.getAllScores().size());
 	}
 	
 	public void testSetTrust2() throws MalformedURLException, InvalidParameterException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException {
@@ -74,64 +74,64 @@ public class WoTTest extends DatabaseBasedTest {
 		
 		// Check we have the correct number of objects
 		flushCaches();
-		assertTrue(mWoT.getAllNonOwnIdentities().size() == 1);
-		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
-		assertTrue(mWoT.getAllTrusts().size() == 1);
-		assertTrue(mWoT.getAllScores().size() == 2);
+		assertEquals(1, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(1, mWoT.getAllOwnIdentities().size());
+		assertEquals(1, mWoT.getAllTrusts().size());
+		assertEquals(2, mWoT.getAllScores().size());
 		
 		// Check the Trust object
 		flushCaches();
 		Trust t = mWoT.getTrust(a, b);
-		assertTrue(t.getTruster() == a);
-		assertTrue(t.getTrustee() == b);
-		assertTrue(t.getValue() == 100);
-		assertTrue(t.getComment().equals("Foo"));
+		assertSame(a, t.getTruster());
+		assertSame(b, t.getTrustee());
+		assertEquals(100, t.getValue());
+		assertEquals("Foo", t.getComment());
 		
 		// Check a's Score object
 		flushCaches();
 		Score scoreA = mWoT.getScore(a, a);
-		assertTrue(scoreA.getScore() == 100);
-		assertTrue(scoreA.getRank() == 0);
-		assertTrue(scoreA.getCapacity() == 100);
+		assertEquals(100, scoreA.getScore());
+		assertEquals(0, scoreA.getRank());
+		assertEquals(100, scoreA.getCapacity());
 		
 		// Check B's Score object
 		flushCaches();
 		Score scoreB = mWoT.getScore(a, b);
-		assertTrue(scoreB.getScore() == 100);
-		assertTrue(scoreB.getRank() == 1);
-		assertTrue(scoreB.getCapacity() == 40);
+		assertEquals(100, scoreB.getScore());
+		assertEquals(1, scoreB.getRank());
+		assertEquals(40, scoreB.getCapacity());
 		
 		// Change the trust value and comment
 		mWoT.setTrust(a, b, (byte)50, "Bar");
 		
 		// Check we have the correct number of objects
 		flushCaches();
-		assertTrue(mWoT.getAllNonOwnIdentities().size() == 1);
-		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
-		assertTrue(mWoT.getAllTrusts().size() == 1);
-		assertTrue(mWoT.getAllScores().size() == 2);
+		assertEquals(1, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(1, mWoT.getAllOwnIdentities().size());
+		assertEquals(1, mWoT.getAllTrusts().size());
+		assertEquals(2, mWoT.getAllScores().size());
 		
 		// Check the Trust object
 		flushCaches();
 		t = mWoT.getTrust(a, b);
-		assertTrue(t.getTruster() == a);
-		assertTrue(t.getTrustee() == b);
-		assertTrue(t.getValue() == 50);
-		assertTrue(t.getComment().equals("Bar"));
+		assertSame(a, t.getTruster());
+		assertSame(b, t.getTrustee());
+		assertEquals(50, t.getValue());
+		assertEquals("Bar", t.getComment());
 		
 		// Check a's Score object
 		flushCaches();
 		scoreA = mWoT.getScore(a, a);
-		assertTrue(scoreA.getScore() == 100);
-		assertTrue(scoreA.getRank() == 0);
-		assertTrue(scoreA.getCapacity() == 100);
+		assertEquals(100, scoreA.getScore());
+		assertEquals(0, scoreA.getRank());
+		assertEquals(100, scoreA.getCapacity());
 
 		// Check B's Score object
 		flushCaches();
 		scoreB = mWoT.getScore(a, b);
-		assertTrue(scoreB.getScore() == 50);
-		assertTrue(scoreB.getRank() == 1);
-		assertTrue(scoreB.getCapacity() == 40);
+		assertEquals(50, scoreB.getScore());
+		assertEquals(1, scoreB.getRank());
+		assertEquals(40, scoreB.getCapacity());
 	}
 	
 	public void testRemoveTrust() throws MalformedURLException, InvalidParameterException, UnknownIdentityException,
@@ -149,54 +149,54 @@ public class WoTTest extends DatabaseBasedTest {
 		
 		// Check we have the correct number of objects
 		flushCaches();
-		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
-		assertTrue(mWoT.getAllNonOwnIdentities().size() == 2);
-		assertTrue(mWoT.getAllTrusts().size() == 2);
-		assertTrue(mWoT.getAllScores().size() == 3);
+		assertEquals(1, mWoT.getAllOwnIdentities().size());
+		assertEquals(2, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(2, mWoT.getAllTrusts().size());
+		assertEquals(3, mWoT.getAllScores().size());
 		
 		// Check a's Score object
 		flushCaches();
 		Score scoreA = mWoT.getScore(a, a);
-		assertTrue(scoreA.getScore() == 100);
-		assertTrue(scoreA.getRank() == 0);
-		assertTrue(scoreA.getCapacity() == 100);
+		assertEquals(100, scoreA.getScore());
+		assertEquals(0, scoreA.getRank());
+		assertEquals(100, scoreA.getCapacity());
 		
 		// Check B's Score object
 		flushCaches();
 		Score scoreB = mWoT.getScore(a, b);
-		assertTrue(scoreB.getScore() == 100);
-		assertTrue(scoreB.getRank() == 1);
-		assertTrue(scoreB.getCapacity() == 40);
+		assertEquals(100, scoreB.getScore());
+		assertEquals(1, scoreB.getRank());
+		assertEquals(40, scoreB.getCapacity());
 		
 		// Check C's Score object
 		flushCaches();
 		Score scoreC = mWoT.getScore(a, c);
-		assertTrue(scoreC.getScore() == 20);
-		assertTrue(scoreC.getRank() == 2);
-		assertTrue(scoreC.getCapacity() == 16);
+		assertEquals(20, scoreC.getScore());
+		assertEquals(2, scoreC.getRank());
+		assertEquals(16, scoreC.getCapacity());
 		
 		mWoT.setTrust(a, b, (byte)-1, "Bastard");
 		
 		// Check we have the correct number of objects
 		flushCaches();
-		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
-		assertTrue(mWoT.getAllNonOwnIdentities().size() == 2);
-		assertTrue(mWoT.getAllTrusts().size() == 2);
-		assertTrue(mWoT.getAllScores().size() == 2);
+		assertEquals(1, mWoT.getAllOwnIdentities().size());
+		assertEquals(2, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(2, mWoT.getAllTrusts().size());
+		assertEquals(2, mWoT.getAllScores().size());
 		
 		// Check a's Score object
 		flushCaches();
 		scoreA = mWoT.getScore(a, a);
-		assertTrue(scoreA.getScore() == 100);
-		assertTrue(scoreA.getRank() == 0);
-		assertTrue(scoreA.getCapacity() == 100);
+		assertEquals(100, scoreA.getScore());
+		assertEquals(0, scoreA.getRank());
+		assertEquals(100, scoreA.getCapacity());
 		
 		// Check B's Score object
 		flushCaches();
 		scoreB = mWoT.getScore(a, b);
-		assertTrue(scoreB.getScore() == -1);
-		assertTrue(scoreB.getRank() == 1);
-		assertTrue(scoreB.getCapacity() == 0);
+		assertEquals(-1, scoreB.getScore());
+		assertEquals(1, scoreB.getRank());
+		assertEquals(0, scoreB.getCapacity());
 		
 		// C should not have a score anymore
 		try {
@@ -221,31 +221,31 @@ public class WoTTest extends DatabaseBasedTest {
 		
 		// Check we have the correct number of objects
 		flushCaches();
-		assertTrue(mWoT.getAllOwnIdentities().size() == 1);
-		assertTrue(mWoT.getAllNonOwnIdentities().size() == 2);
-		assertTrue(mWoT.getAllTrusts().size() == 4);
-		assertTrue(mWoT.getAllScores().size() == 3);
+		assertEquals(1, mWoT.getAllOwnIdentities().size());
+		assertEquals(2, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(4, mWoT.getAllTrusts().size());
+		assertEquals(3, mWoT.getAllScores().size());
 
 		// Check a's Score object
 		flushCaches();
 		Score scoreA = mWoT.getScore(a, a);
-		assertTrue(scoreA.getScore() == 100);
-		assertTrue(scoreA.getRank() == 0);
-		assertTrue(scoreA.getCapacity() == 100);
+		assertEquals(100, scoreA.getScore());
+		assertEquals(0, scoreA.getRank());
+		assertEquals(100, scoreA.getCapacity());
 		
 		// Check B's Score object
 		flushCaches();
 		Score scoreB = mWoT.getScore(a, b);
-		assertTrue(scoreB.getScore() == 100); // 100 and not 108 because own trust values override calculated scores.
-		assertTrue(scoreB.getRank() == 1);
-		assertTrue(scoreB.getCapacity() == 40);
+		assertEquals(100, scoreB.getScore()); // 100 and not 108 because own trust values override calculated scores.
+		assertEquals(1, scoreB.getRank());
+		assertEquals(40, scoreB.getCapacity());
 		
 		// Check C's Score object
 		flushCaches();
 		Score scoreC = mWoT.getScore(a, c);
-		assertTrue(scoreC.getScore() == 20);
-		assertTrue(scoreC.getRank() == 2);
-		assertTrue(scoreC.getCapacity() == 16);
+		assertEquals(20, scoreC.getScore());
+		assertEquals(2, scoreC.getRank());
+		assertEquals(16, scoreC.getCapacity());
 	}
 	
 	public void testOwnIndentitiesTrust() throws MalformedURLException, InvalidParameterException, NotInTrustTreeException {
@@ -257,38 +257,38 @@ public class WoTTest extends DatabaseBasedTest {
 		
 		// Check we have the correct number of objects
 		flushCaches();
-		assertTrue(mWoT.getAllOwnIdentities().size() == 2);
-		assertTrue(mWoT.getAllNonOwnIdentities().size() == 0);
-		assertTrue(mWoT.getAllTrusts().size() == 2);
-		assertTrue(mWoT.getAllScores().size() == 4);
+		assertEquals(2, mWoT.getAllOwnIdentities().size());
+		assertEquals(0, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(2, mWoT.getAllTrusts().size());
+		assertEquals(4, mWoT.getAllScores().size());
 		
 		// Check a's own Score object
 		flushCaches();
 		Score scoreA = mWoT.getScore(a, a);
-		assertTrue(scoreA.getScore() == 100);
-		assertTrue(scoreA.getRank() == 0);
-		assertTrue(scoreA.getCapacity() == 100);
+		assertEquals(100, scoreA.getScore());
+		assertEquals(0, scoreA.getRank());
+		assertEquals(100, scoreA.getCapacity());
 		
 		// Check a's Score object
 		flushCaches();
 		Score scoreAfromB = mWoT.getScore(b, a);
-		assertTrue(scoreAfromB.getScore() == 100);
-		assertTrue(scoreAfromB.getRank() == 1);
-		assertTrue(scoreAfromB.getCapacity() == 40);
+		assertEquals(100, scoreAfromB.getScore());
+		assertEquals(1, scoreAfromB.getRank());
+		assertEquals(40, scoreAfromB.getCapacity());
 				
 		// Check B's own Score object
 		flushCaches();
 		Score scoreB = mWoT.getScore(a, a);
-		assertTrue(scoreB.getScore() == 100);
-		assertTrue(scoreB.getRank() == 0);
-		assertTrue(scoreB.getCapacity() == 100);
+		assertEquals(100, scoreB.getScore());
+		assertEquals(0, scoreB.getRank());
+		assertEquals(100, scoreB.getCapacity());
 
 		// Check B's Score object
 		flushCaches();
 		Score scoreBfromA = mWoT.getScore(b, a);
-		assertTrue(scoreBfromA.getScore() == 100);
-		assertTrue(scoreBfromA.getRank() == 1);
-		assertTrue(scoreBfromA.getCapacity() == 40);
+		assertEquals(100, scoreBfromA.getScore());
+		assertEquals(1, scoreBfromA.getRank());
+		assertEquals(40, scoreBfromA.getCapacity());
 	}
 	
 	/**
