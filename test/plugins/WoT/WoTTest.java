@@ -495,9 +495,9 @@ public class WoTTest extends DatabaseBasedTest {
 
 		flushCaches();
 
-		int oldScoreA = mWoT.getScore(o, a).getScore();
-		int oldScoreB = mWoT.getScore(o, b).getScore();
-		int oldScoreC = mWoT.getScore(o, c).getScore();
+		final Score oldScoreA = mWoT.getScore(o, a).clone();
+		final Score oldScoreB = mWoT.getScore(o, b).clone();
+		final Score oldScoreC = mWoT.getScore(o, c).clone();
 
 		//assertTrue("a score: " + oldScoreA + " c score: " + oldScoreC, false);
 
@@ -517,13 +517,13 @@ public class WoTTest extends DatabaseBasedTest {
 		db.commit();
 		flushCaches();
 
-		int newScoreA = mWoT.getScore(o, a).getScore();
-		int newScoreB = mWoT.getScore(o, b).getScore();
-		int newScoreC = mWoT.getScore(o, c).getScore();
+		final Score newScoreA = mWoT.getScore(o, a);
+		final Score newScoreB = mWoT.getScore(o, b);
+		final Score newScoreC = mWoT.getScore(o, c);
 
-		assertTrue(oldScoreA == newScoreA);
-		assertTrue(oldScoreB == newScoreB);
-		assertTrue(oldScoreC == newScoreC);
+		assertEquals(oldScoreA, newScoreA);
+		assertEquals(oldScoreB, newScoreB);
+		assertEquals(oldScoreC, newScoreC);
 
 	}
 
