@@ -282,9 +282,11 @@ public final class XMLTransformer {
 							// We import the trust list of an identity if it's score is equal to 0, but we only create new identities or import edition hints
 							// if the score is greater than 0. Solving a captcha therefore only allows you to create one single identity.
 							boolean positiveScore = false;
-
+							boolean hasCapacity = false;
+							
 							try {
 								positiveScore = mWoT.getBestScore(identity) > 0;
+								hasCapacity = mWoT.getBestCapacity(identity) > 0;
 							}
 							catch(NotInTrustTreeException e) { }
 
@@ -318,7 +320,7 @@ public final class XMLTransformer {
 									}
 								}
 								catch(UnknownIdentityException e) {
-									if(positiveScore) { /* We only create trustees if the truster has a positive score */
+									if(hasCapacity) { /* We only create trustees if the truster has capacity to rate them. */
 										trustee = new Identity(trusteeURI, null, false);
 										mWoT.storeWithoutCommit(trustee);
 									}

@@ -8,7 +8,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Random;
 import java.util.Map.Entry;
 
@@ -66,7 +65,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	public static final boolean FAST_DEBUG_MODE = false;
 	
 	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";  /* FIXME: Change when we leave the beta stage */
-	public static final int DATABASE_FORMAT_VERSION = -94;  /* FIXME: Change when we leave the beta stage */
+	public static final int DATABASE_FORMAT_VERSION = -93;  /* FIXME: Change when we leave the beta stage */
 	
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/WoT";
@@ -142,6 +141,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * the UI to obtain the captchas and enter solutions. Uploads the solutions if the UI enters them.
 	 */
 	private IntroductionClient mIntroductionClient;
+	
+	/* Actual data of the WoT */
+	
+	private boolean mFullScoreComputationNeeded = false;
 	
 	
 	/* User interfaces */
@@ -311,8 +314,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		if(databaseVersion == -98) {
 			Logger.normal(this, "Found old database (-98), recalculating all scores & marking all identities for re-fetch ...");
 			
+			computeAllScores();
+			
 			for(Identity identity : getAllIdentities()) {
-				updateScoreWithoutCommit(identity);
 				if(!(identity instanceof OwnIdentity))
 					identity.markForRefetch(); // Re-fetch the identity so that the "publishes trustlist" flag is imported, the old WoT forgot that...
 			}
@@ -339,7 +343,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		}
 		
 		if(databaseVersion == -96) {
-			Logger.normal(this, "Found old database (-96), adding dates and re-calculating all scores ...");
+			Logger.normal(this, "Found old database (-96), adding dates ...");
 			
 			for(Trust trust : getAllTrusts()) {
 				trust.setDateOfCreation(trust.getDateOfLastChange());
@@ -353,24 +357,20 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.store(score);
 			}
 			
-			for(Identity identity : getAllIdentities()) {
-				updateScoreWithoutCommit(identity);
-			}
-			
 			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
 			mConfig.storeAndCommit();
 		}
 		
-		if(databaseVersion == -95) {
-			Logger.normal(this, "Found old database (-95), re-calculating all scores ...");
+		
+		if(databaseVersion == -95 || databaseVersion == -94) {
+			Logger.normal(this, "Found old database (" + databaseVersion + "), re-calculating all scores ...");
 			
-			for(Identity identity : getAllIdentities()) {
-				updateScoreWithoutCommit(identity);
-			}
+			computeAllScores();
 			
-			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
+			mConfig.set(Config.DATABASE_FORMAT_VERSION, databaseVersion = -93);
 			mConfig.storeAndCommit();
 		}
+		
 		
 		
 		if(databaseVersion != WoT.DATABASE_FORMAT_VERSION)
@@ -517,14 +517,47 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	};			// Identities with negative score have zero capacity
 	
 	/**
-	 * Computes the capacity of an identity. The capacity is a weight function in percent which is used to decide how much
+	 * Computes the capacity of a truster. The capacity is a weight function in percent which is used to decide how much
 	 * trust points an identity can add to the score of identities which it has assigned trust values to.
 	 * The higher the rank of an identity, the less is it's capacity.
+	 * 
+	 * If the truster is personally distrusted by the tree owner then the capacity will be 0.<br/><br/>
+	 * 
+	 * If the truster has not received any trust values > 0 then its capacity will also be 0.<br/>
+	 * This is to prevent identities which have not received any positive trust from influencing the rating of others.<br/>
+	 * 0 is counted as negative because this prevents identities which have only received trust through identity introduction from rating others.
+	 * 
 	 *  
+	 * @param treeOwner The {@link OwnIdentity} in whose trust tree the capacity shall be computed
+	 * @param truster The {@link Identity} of which the capacity shall be computed. 
 	 * @param rank The rank of the identity. The rank is the distance in trust steps from the OwnIdentity which views the web of trust,
-	 * 				- its rank is 0, the rank of its trustees is 1 and so on.
+	 * 				- its rank is 0, the rank of its trustees is 1 and so on. Must be -1 if the truster has no rank in the tree owners view.
 	 */
-	protected int computeCapacity(int rank) {
+	protected int computeCapacity(OwnIdentity treeOwner, Identity truster, int rank) {
+		if(rank == -1)
+			return 0;
+		
+		if(treeOwner == truster)
+			return 100;
+		 
+		try {
+			if(getTrust(treeOwner, truster).getValue() < 0)
+				return 0;
+		} catch(NotTrustedException e) { }
+		
+		boolean hasAtLeastOneStrictlyPositiveTruster = false;
+		
+		for(Trust receivedTrust : getReceivedTrusts(truster, 1)) {
+			// TODO: Optimization: Do this completely in a database query. The getReceivedTrusts() which we currently use counts 0 as positive.
+			if(receivedTrust.getValue() > 0) {
+				hasAtLeastOneStrictlyPositiveTruster = true;
+				break;
+			}
+		}
+		
+		if(!hasAtLeastOneStrictlyPositiveTruster)
+			return 0;
+		
 		return (rank < capacities.length) ? capacities[rank] : 1;
 	}
 	
@@ -621,34 +654,26 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						} catch(NotTrustedException e) {
 							throw new RuntimeException(e);
 						}
-					} else {
+					}
+					else {
 						targetScore = 0;
 						for(Trust receivedTrust : getReceivedTrusts(target)) {
 							final Identity truster = receivedTrust.getTruster();
 							final Integer trusterRank = rankValues.get(truster);
 							
-							boolean trusterIsDistrusted; // Cannot be final due to java restrictions. 
-							try {
-								trusterIsDistrusted = getTrust(treeOwner, truster).getValue() < 0;
-							} catch(NotTrustedException e) {
-								trusterIsDistrusted = false;
-							}
-							
 							// The capacity is a weight function for trust values which are given from an identity:
 							// The higher the rank, the less the capacity.  
-							final int capacity;
-						
-							if(trusterRank == null || trusterIsDistrusted)
-								capacity = 0;
-							else
-								capacity = computeCapacity(trusterRank);
+							final int capacity = computeCapacity(treeOwner, truster, trusterRank != null ? trusterRank : -1);
 							
 							targetScore += (receivedTrust.getValue() * capacity) / 100;
 						}
 					}
 				}
 				
-				Score expectedScore = targetScore != null ? new Score(treeOwner, target, targetScore, targetRank, computeCapacity(targetRank)) : null;
+				Score expectedScore = targetScore != null ? new Score(treeOwner, target, targetScore, targetRank, computeCapacity(treeOwner, target, targetRank)) : null;
+				
+				boolean needToCheckFetchStatus = false;
+				boolean oldShouldFetch = false;
 				
 				// Now we have the rank and the score of the target computed and can check whether the database-stored score object is correct.
 				try {
@@ -657,16 +682,25 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					if(targetScore == null) {
 						returnValue = false;
 						Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + targetScore);
+						
+						needToCheckFetchStatus = true;
+						oldShouldFetch = shouldFetchIdentity(target);
+						
 						synchronized(mDB.lock()) {
 							mDB.delete(storedScore);
 							mDB.commit(); Logger.debug(this, "COMMITED.");
 						}
+						
 					} else {
-						if(!expectedScore.equals(targetScore)) {
+						if(!expectedScore.equals(storedScore)) {
 							returnValue = false;
 							Logger.error(this, "Correcting wrong score: Should have been " + targetScore + " but was " + storedScore);
+							
+							needToCheckFetchStatus = true;
+							oldShouldFetch = shouldFetchIdentity(target);
+							
 							storedScore.setRank(targetRank);
-							storedScore.setCapacity(computeCapacity(targetRank));
+							storedScore.setCapacity(computeCapacity(treeOwner, target, targetRank));
 							storedScore.setValue(targetScore);
 							synchronized(mDB.lock()) {
 								mDB.store(storedScore);
@@ -678,10 +712,35 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					if(targetScore != null) {
 						returnValue = false;
 						Logger.error(this, "Correcting wrong score: No score was stored for the identity but it should be " + expectedScore);
+						
+						needToCheckFetchStatus = true;
+						oldShouldFetch = shouldFetchIdentity(target);
+						
 						synchronized(mDB.lock()) {
 							mDB.store(expectedScore);
 							mDB.commit(); Logger.debug(this, "COMMITED.");
 						}
+					}
+				}
+				
+				if(needToCheckFetchStatus) {
+					// If the sign of the identities score changed, then we need to start fetching it or abort fetching it.
+					if(!oldShouldFetch && shouldFetchIdentity(target)) { 
+						Logger.debug(this, "Best capacity changed from 0 to positive, refetching " + target);
+
+						target.markForRefetch();
+						storeWithoutCommit(target);
+
+						if(mFetcher != null) {
+							mFetcher.storeStartFetchCommandWithoutCommit(target);
+						}
+					}
+
+					if(oldShouldFetch && !shouldFetchIdentity(target)) {
+						Logger.debug(this, "Best capacity changed from positive to 0, aborting fetch of " + target);
+
+						if(mFetcher != null)
+							mFetcher.storeAbortFetchCommandWithoutCommit(target);
 					}
 				}
 			}
@@ -1135,8 +1194,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			Logger.debug(this, "Deleting given trusts...");
 			for(Trust givenTrust : getGivenTrusts(identity)) {
 				mDB.delete(givenTrust);
-				updateScoreWithoutCommit(givenTrust.getTrustee());
+				// We call computeAllScores anyway so we do not use removeTrustWithoutCommit()
 			}
+			
+			computeAllScores();
 
 			Logger.debug(this, "Deleting associated introduction puzzles ...");
 			mPuzzleStore.onIdentityDeletion(identity);
@@ -1253,6 +1314,24 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 	
 	/**
+	 * Gets the best capacity this identity has in any trust tree.
+	 * @throws NotInTrustTreeException If the identity is not in any trust tree. Can be interpreted as capacity 0.
+	 */
+	public int getBestCapacity(Identity identity) throws NotInTrustTreeException {
+		int bestCapacity = 0;
+		ObjectSet<Score> scores = getScores(identity);
+		
+		if(scores.size() == 0)
+			throw new NotInTrustTreeException(identity);
+		
+		// TODO: Cache the best score of an identity as a member variable.
+		for(Score score : scores) 
+			bestCapacity  = Math.max(score.getCapacity(), bestCapacity);
+		
+		return bestCapacity;
+	}
+	
+	/**
 	 * Get all scores in the database.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 */
@@ -1262,18 +1341,29 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	
 	/**
 	 * Checks whether the given identity should be downloaded. 
-	 * @return Returns true if the identity has any score >= 0 or if it is an own identity.
+	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity.
 	 */
 	public boolean shouldFetchIdentity(Identity identity) {
 		if(identity instanceof OwnIdentity)
 			return true;
 		
-		try {
-			return getBestScore(identity) >= 0;
-		}
-		catch(NotInTrustTreeException e) {
+		int bestScore = Integer.MIN_VALUE;
+		int bestCapacity = 0;
+		ObjectSet<Score> scores = getScores(identity);
+			
+		if(scores.size() == 0)
 			return false;
+			
+		// TODO: Cache the best score of an identity as a member variable.
+		for(Score score : scores) { 
+			bestCapacity  = Math.max(score.getCapacity(), bestCapacity);
+			bestScore  = Math.max(score.getScore(), bestScore);
+			
+			if(bestCapacity > 0 || bestScore >= 0)
+				return true;
 		}
+			
+		return false;
 	}
 	
 	/**
@@ -1468,6 +1558,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		Trust trust;
 		try { // Check if we are updating an existing trust value
 			trust = getTrust(truster, trustee);
+			Trust oldTrust = trust.clone();
 			trust.trusterEditionUpdated();
 			trust.setComment(newComment);
 			mDB.store(trust);
@@ -1476,13 +1567,13 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				trust.setValue(newValue);
 				mDB.store(trust);
 				Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
-				updateScoreWithoutCommit(trustee);
+				updateScoresWithoutCommit(oldTrust, trust);
 			}
 		} catch (NotTrustedException e) {
 			trust = new Trust(truster, trustee, newValue, newComment);
 			mDB.store(trust);
 			Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
-			updateScoreWithoutCommit(trustee);
+			updateScoresWithoutCommit(null, trust);
 		} 
 
 		truster.updated();
@@ -1522,9 +1613,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	protected synchronized void removeTrustWithoutCommit(OwnIdentity truster, Identity trustee) {
 			try {
 				try {
-					Trust trust = getTrust(truster, trustee);
-					mDB.delete(trust);
-					updateScoreWithoutCommit(trustee);
+					removeTrustWithoutCommit(getTrust(truster, trustee));
 				} catch (NotTrustedException e) {
 					Logger.error(this, "Cannot remove trust - there is none - from " + truster.getNickname() + " to "
 						+ trustee.getNickname());
@@ -1547,7 +1636,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 */
 	protected synchronized void removeTrustWithoutCommit(Trust trust) {
 		mDB.delete(trust);
-		updateScoreWithoutCommit(trust.getTrustee());
+		updateScoresWithoutCommit(trust, null);
 	}
 	
 	/**
@@ -1583,129 +1672,14 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * }
 	 * 
 	 */
-	private synchronized void updateScoreWithoutCommit(Identity trustee) {
-		ObjectSet<OwnIdentity> treeOwners = getAllOwnIdentities();
-		if(treeOwners.size() == 0)
-			Logger.debug(this, "Can't update " + trustee.getNickname() + "'s score: there is no own identity yet");
-
-		while(treeOwners.hasNext())
-			updateScoreWithoutCommit(treeOwners.next(), trustee);
-	}
-	
-	/**
-	 * Updates this Identity's {@link Score} in one trust tree.
-	 * Makes this Identity's trustees update their score if its capacity has changed.
-	 * 
-	 * This function does neither lock the database nor commit the transaction. You have to surround it with
-	 * synchronized(mDB.lock()) {
-	 *     try { ... updateScoreWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
-	 * }
-	 * 
-	 * @param treeOwner The OwnIdentity that owns the trust tree
-	 */
-	private synchronized void updateScoreWithoutCommit(OwnIdentity treeOwner, Identity target) {
-		if(target == treeOwner)
-			return;
-		
-		boolean changedCapacity = false;
-		
-		Logger.debug(target, "Updating " + target.getNickname() + "'s score in " + treeOwner.getNickname() + "'s trust tree...");
-		
-		Score score;
-		int value = computeScoreValue(treeOwner, target);
-		int rank = computeRank(treeOwner, target);
-		
-		
-		
-		if(rank == -1) { // -1 value means the identity is not in the trust tree
-			try { // If he had a score, we delete it
-				score = getScore(treeOwner, target);
-				mDB.delete(score); // He had a score, we delete it
-				changedCapacity = true;
-				Logger.debug(target, target.getNickname() + " is not in " + treeOwner.getNickname() + "'s trust tree anymore");
-			} catch (NotInTrustTreeException e) { } 
-		}
-		else { // The identity is in the trust tree
-			
-			/* We must detect if an identity had a null or negative score which has changed to positive:
-			 * If we download the trust list of someone who has no or negative score we do not create the identities in his trust list.
-			 * If the identity now gets a positive score we must re-download his current trust list. */
-			boolean scoreSignChanged;
-		
-			try { // Get existing score or create one if needed
-				score = getScore(treeOwner, target);
-				scoreSignChanged = Integer.signum(score.getScore()) != Integer.signum(value);
-			} catch (NotInTrustTreeException e) {
-				score = new Score(treeOwner, target, 0, -1, 0);
-				scoreSignChanged = true;
-			}
-			
-			boolean oldShouldFetch = true;
-			
-			if(scoreSignChanged) // No need to figure out whether the identity should have been fetched in the past if the score sign did not change
-				oldShouldFetch = shouldFetchIdentity(target);
-			
-			score.setValue(value);
-			score.setRank(rank);
-			
-			int oldCapacity = score.getCapacity();
-			
-			boolean hasNegativeTrust = false;
-			// Does the treeOwner personally distrust this identity ?
-			try {
-				if(getTrust(treeOwner, target).getValue() < 0) {
-					hasNegativeTrust = true;
-					Logger.debug(target, target.getNickname() + " received negative trust from " + treeOwner.getNickname() + 
-							" and therefore has no capacity in his trust tree.");
-				}
-			} catch (NotTrustedException e) {}
-			
-			if(hasNegativeTrust)
-				score.setCapacity(0);
-			else
-				score.setCapacity(computeCapacity(score.getRank()));
-			
-			if(score.getCapacity() != oldCapacity)
-				changedCapacity = true;
-			
-			mDB.store(score);
-			
-			
-			if(scoreSignChanged) {
-				if(!oldShouldFetch && shouldFetchIdentity(target)) { 
-					Logger.debug(this, "Best score changed from negative/null to positive, refetching " + target);
-					
-					target.markForRefetch();
-					storeWithoutCommit(target);
-					
-					if(mFetcher != null) {
-						mFetcher.storeStartFetchCommandWithoutCommit(target);
-					}
-				}
-				
-				if(oldShouldFetch && !shouldFetchIdentity(target)) {
-					Logger.debug(this, "Best score changed from positive/null to negative, aborting fetch of " + target);
-					
-					if(mFetcher != null)
-						mFetcher.storeAbortFetchCommandWithoutCommit(target);
-				}
-			}
-			
-			
-			Logger.debug(target, "New score: " + score.toString());
-		}
-		
-		if(changedCapacity) { // We have to update trustees' score
-			ObjectSet<Trust> givenTrusts = getGivenTrusts(target);
-			Logger.debug(target, target.getNickname() + "'s capacity has changed in " + treeOwner.getNickname() +
-					"'s trust tree, updating his (" + givenTrusts.size() + ") trustees");
-			
-			for(Trust givenTrust : givenTrusts)
-				updateScoreWithoutCommit(treeOwner, givenTrust.getTrustee());
-		}
-		
-	}
+//	private synchronized void updateScoreWithoutCommit(Identity trustee) {
+//		ObjectSet<OwnIdentity> treeOwners = getAllOwnIdentities();
+//		if(treeOwners.size() == 0)
+//			Logger.debug(this, "Can't update " + trustee.getNickname() + "'s score: there is no own identity yet");
+//
+//		while(treeOwners.hasNext())
+//			updateScoreWithoutCommit(treeOwners.next(), trustee);
+//	}
 	
 	/**
 	 * Computes the target's Score value according to the trusts it has received and the capacity of its trusters in the specified
@@ -1716,6 +1690,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 */
 	private synchronized int computeScoreValue(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException {
+		if(target == treeOwner)
+			return 100;
+		
 		int value = 0;
 		
 		try {
@@ -1740,6 +1717,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 */
 	private synchronized int computeRank(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException {
+		if(target == treeOwner)
+			return 0;
+		
 		int rank = -1;
 		
 		for(Trust trust : getReceivedTrusts(target)) {
@@ -1753,6 +1733,226 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		}
 		return (rank == -1) ? -1 : (rank+1);
 	}
+	
+	/**
+	 * Updates all trust trees which are affected by the given modified score.
+	 * For understanding how score calculation works you should first read {@link computeAllScores
+	 * 
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(mDB.lock()) {
+	 *     try { ... updateScoreWithoutCommit(...); mDB.commit(); }
+	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 * }
+	 * 
+	 * @param treeOwner The OwnIdentity that owns the trust tree
+	 */
+	private synchronized void updateScoresWithoutCommit(final Trust oldTrust, final Trust newTrust) {
+		final boolean trustWasCreated = (oldTrust == null);
+		final boolean trustWasDeleted = (newTrust == null);
+		final boolean trustWasModified = !trustWasCreated && !trustWasDeleted;
+		
+		if(trustWasCreated && trustWasDeleted)
+			throw new NullPointerException("No old/new trust specified.");
+		
+		if(trustWasModified && oldTrust.getTruster() != newTrust.getTruster())
+			throw new IllegalArgumentException("oldTrust has different truster, oldTrust:" + oldTrust + "; newTrust: " + newTrust);
+		
+		if(trustWasModified && oldTrust.getTrustee() != newTrust.getTrustee())
+			throw new IllegalArgumentException("oldTrust has different trustee, oldTrust:" + oldTrust + "; newTrust: " + newTrust);
+
+		if(trustWasCreated || trustWasModified) {
+			for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+				try {
+					// Throws to abort the update of the trustee's score: If the truster has no rank or capacity in the tree owner's view then we don't need to update the trustee's score.
+					getScore(treeOwner, newTrust.getTruster()).getCapacity();
+				} catch(NotInTrustTreeException e) {
+					continue;
+				}
+				
+				final LinkedList<Trust> unprocessedEdges = new LinkedList<Trust>();
+				unprocessedEdges.add(newTrust);
+
+				while(!unprocessedEdges.isEmpty()) {
+					final Trust trust = unprocessedEdges.removeFirst();
+					final Identity trustee = trust.getTrustee();
+					
+					if(trustee == treeOwner)
+						continue;
+
+					Score trusteeScore;
+
+					try {
+						trusteeScore = getScore(treeOwner, trustee);
+					} catch(NotInTrustTreeException e) {
+						trusteeScore = new Score(treeOwner, trustee, 0, -1, 0);
+					}
+
+					final Score oldScore = trusteeScore.clone();
+
+					final int newScoreValue = computeScoreValue(treeOwner, trustee);
+
+					final boolean scoreSignChanged = Integer.signum(oldScore.getScore()) != Integer.signum(newScoreValue);
+					boolean oldShouldFetch = true; // The "was it initialized?" detection of the java compiler sucks.
+					
+					if(scoreSignChanged) // No need to figure out whether the identity should have been fetched in the past if the score sign did not change
+						oldShouldFetch = shouldFetchIdentity(trustee);
+					
+					trusteeScore.setValue(newScoreValue);
+					trusteeScore.setRank(computeRank(treeOwner, trustee));
+					trusteeScore.setCapacity(computeCapacity(treeOwner, trustee, trusteeScore.getRank()));
+					
+					if(trusteeScore.getCapacity() == 0 && oldScore.getCapacity() > 0) {
+						mFullScoreComputationNeeded = true;
+						break;
+					}
+					else
+						mDB.store(trusteeScore);
+					
+					// If the sign of the identities score changed, then we need to start fetching it or abort fetching it.
+					if(scoreSignChanged) {
+						if(!oldShouldFetch && shouldFetchIdentity(trustee)) { 
+							Logger.debug(this, "Capacity changed from 0 to positive, refetching " + trustee);
+
+							trustee.markForRefetch();
+							storeWithoutCommit(trustee);
+
+							if(mFetcher != null) {
+								mFetcher.storeStartFetchCommandWithoutCommit(trustee);
+							}
+						}
+
+						if(oldShouldFetch && !shouldFetchIdentity(trustee)) {
+							Logger.debug(this, "Best capacity changed from positive to 0, aborting fetch of " + trustee);
+
+							if(mFetcher != null)
+								mFetcher.storeAbortFetchCommandWithoutCommit(trustee);
+						}
+					}
+					
+					if(oldScore.getRank() != trusteeScore.getRank() || oldScore.getCapacity() != trusteeScore.getCapacity()) {
+						// We need to update the trustees of trustee
+						for(Trust givenTrust : getGivenTrusts(trustee)) {
+							unprocessedEdges.add(givenTrust);
+						}
+					}
+				}
+				
+				if(mFullScoreComputationNeeded)
+					break;
+			}
+		}
+		
+		if(trustWasDeleted || mFullScoreComputationNeeded) {
+			// FIXME before 0.4.0 final : Only call this once per imported trust list. This will be done by having a beginTrustListImport() / commitTrustListImport(). 
+			// FIXME before 0.4.0 final: Write a computeAllScores() which does not keep all objects in memory.
+			// TODO: This uses very much CPU and memory. Find a better solution! 
+			computeAllScores();
+		}
+		
+		
+//		
+//		if(target == treeOwner)
+//			return;
+//		
+//		boolean changedCapacity = false;
+//		
+//		Logger.debug(target, "Updating " + target.getNickname() + "'s score in " + treeOwner.getNickname() + "'s trust tree...");
+//		
+//		Score score;
+//		int value = computeScoreValue(treeOwner, target);
+//		int rank = computeRank(treeOwner, target);
+//		
+//		
+//		
+//		if(rank == -1) { // -1 value means the identity is not in the trust tree
+//			try { // If he had a score, we delete it
+//				score = getScore(treeOwner, target);
+//				mDB.delete(score); // He had a score, we delete it
+//				changedCapacity = true;
+//				Logger.debug(target, target.getNickname() + " is not in " + treeOwner.getNickname() + "'s trust tree anymore");
+//			} catch (NotInTrustTreeException e) { } 
+//		}
+//		else { // The identity is in the trust tree
+//			
+//			/* We must detect if an identity had a null or negative score which has changed to positive:
+//			 * If we download the trust list of someone who has no or negative score we do not create the identities in his trust list.
+//			 * If the identity now gets a positive score we must re-download his current trust list. */
+//			boolean scoreSignChanged;
+//		
+//			try { // Get existing score or create one if needed
+//				score = getScore(treeOwner, target);
+//				scoreSignChanged = Integer.signum(score.getScore()) != Integer.signum(value);
+//			} catch (NotInTrustTreeException e) {
+//				score = new Score(treeOwner, target, 0, -1, 0);
+//				scoreSignChanged = true;
+//			}
+//			
+//			boolean oldShouldFetch = true;
+//			
+//			if(scoreSignChanged) // No need to figure out whether the identity should have been fetched in the past if the score sign did not change
+//				oldShouldFetch = shouldFetchIdentity(target);
+//			
+//			score.setValue(value);
+//			score.setRank(rank);
+//			
+//			int oldCapacity = score.getCapacity();
+//			
+//			boolean hasNegativeTrust = false;
+//			// Does the treeOwner personally distrust this identity ?
+//			try {
+//				if(getTrust(treeOwner, target).getValue() < 0) {
+//					hasNegativeTrust = true;
+//					Logger.debug(target, target.getNickname() + " received negative trust from " + treeOwner.getNickname() + 
+//							" and therefore has no capacity in his trust tree.");
+//				}
+//			} catch (NotTrustedException e) {}
+//			
+//			if(hasNegativeTrust)
+//				score.setCapacity(0);
+//			else
+//				score.setCapacity(computeCapacity(score.getRank()));
+//			
+//			if(score.getCapacity() != oldCapacity)
+//				changedCapacity = true;
+//			
+//			mDB.store(score);
+//			
+//			
+//			if(scoreSignChanged) {
+//				if(!oldShouldFetch && shouldFetchIdentity(target)) { 
+//					Logger.debug(this, "Best score changed from negative/null to positive, refetching " + target);
+//					
+//					target.markForRefetch();
+//					storeWithoutCommit(target);
+//					
+//					if(mFetcher != null) {
+//						mFetcher.storeStartFetchCommandWithoutCommit(target);
+//					}
+//				}
+//				
+//				if(oldShouldFetch && !shouldFetchIdentity(target)) {
+//					Logger.debug(this, "Best score changed from positive/null to negative, aborting fetch of " + target);
+//					
+//					if(mFetcher != null)
+//						mFetcher.storeAbortFetchCommandWithoutCommit(target);
+//				}
+//			}
+//			
+//			
+//			Logger.debug(target, "New score: " + score.toString());
+//		}
+//		
+//		if(changedCapacity) { // We have to update trustees' score
+//			ObjectSet<Trust> givenTrusts = getGivenTrusts(target);
+//			Logger.debug(target, target.getNickname() + "'s capacity has changed in " + treeOwner.getNickname() +
+//					"'s trust tree, updating his (" + givenTrusts.size() + ") trustees");
+//			
+//			for(Trust givenTrust : givenTrusts)
+//				updateScoreWithoutCommit(treeOwner, givenTrust.getTrustee());
+//		}
+		
+	}
+
 	
 	/* Client interface functions */
 	
