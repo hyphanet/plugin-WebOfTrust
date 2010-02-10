@@ -527,4 +527,55 @@ public class WoTTest extends DatabaseBasedTest {
 
 	}
 
+	/**
+	 * Test whether spammer resistance works properly.
+	 * Like testMalicious except the malicious nodes trust each other.
+	 */
+	public void testMalicious2() throws Exception {
+		//same setup routine as testStability
+		ExtObjectContainer db = mWoT.getDB();
+			
+		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
+		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
+		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); 
+		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
+		
+		Identity m1 = new Identity(uriM1, "M1", true); mWoT.storeAndCommit(m1); //malicious identity
+		Identity m2 = new Identity(uriM2, "M2", true); mWoT.storeAndCommit(m2); //malicious identity
+		Identity m3 = new Identity(uriM3, "M3", true); mWoT.storeAndCommit(m3); //malicious identity
+		
+		// You get all the identities from the seed identity.
+		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
+
+		mWoT.setTrustWithoutCommit(s, a, (byte)100, "Trusted");
+		mWoT.setTrustWithoutCommit(s, b, (byte)100, "Trusted");
+		mWoT.setTrustWithoutCommit(s, m1, (byte)-100, "M1 is malicious.");
+		mWoT.setTrustWithoutCommit(s, m2, (byte)-100, "M2 is malicious.");
+		mWoT.setTrustWithoutCommit(s, m3, (byte)-100, "M3 is malicious.");
+
+		mWoT.setTrustWithoutCommit(m1, a, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m1, b, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m2, a, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m2, b, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m3, a, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m3, b, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m1, m2, (byte)100, "Collusion");
+		mWoT.setTrustWithoutCommit(m2, m3, (byte)100, "Collusion");
+		mWoT.setTrustWithoutCommit(m3, m1, (byte)100, "Collusion");
+
+		db.commit();
+		flushCaches();
+
+		boolean wasCorrect = mWoT.computeAllScores();
+		flushCaches();
+		boolean isConsistent = mWoT.computeAllScores();
+
+		int scoreA = mWoT.getScore(o, a).getScore();
+		int scoreB = mWoT.getScore(o, b).getScore();
+		assertTrue("A score: " + scoreA + " wasCorrect: " + wasCorrect + " isConsistent: " + isConsistent, scoreA > 0);
+		assertTrue("B score: " + scoreB + " wasCorrect: " + wasCorrect + " isConsistent: " + isConsistent, scoreB > 0);
+		assertTrue("Consistency check.", isConsistent);
+		assertTrue("Correctness check.", wasCorrect);
+	}
+
 }
