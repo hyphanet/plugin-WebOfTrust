@@ -566,16 +566,10 @@ public class WoTTest extends DatabaseBasedTest {
 		db.commit();
 		flushCaches();
 
-		boolean wasCorrect = mWoT.computeAllScores();
-		flushCaches();
-		boolean isConsistent = mWoT.computeAllScores();
-
 		int scoreA = mWoT.getScore(o, a).getScore();
 		int scoreB = mWoT.getScore(o, b).getScore();
-		assertTrue("A score: " + scoreA + " wasCorrect: " + wasCorrect + " isConsistent: " + isConsistent, scoreA > 0);
-		assertTrue("B score: " + scoreB + " wasCorrect: " + wasCorrect + " isConsistent: " + isConsistent, scoreB > 0);
-		assertTrue("Consistency check.", isConsistent);
-		assertTrue("Correctness check.", wasCorrect);
+		assertTrue("A score: " + scoreA, scoreA > 0);
+		assertTrue("B score: " + scoreB, scoreB > 0);
 	}
 
 }
