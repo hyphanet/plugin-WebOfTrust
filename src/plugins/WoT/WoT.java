@@ -520,44 +520,34 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * Computes the capacity of a truster. The capacity is a weight function in percent which is used to decide how much
 	 * trust points an identity can add to the score of identities which it has assigned trust values to.
 	 * The higher the rank of an identity, the less is it's capacity.
+	 *
+	 * If the rank of the identity is Integer.MAX_VALUE (infinite, this means it has only received negative or 0 trust values from identities with rank >= 0 and less
+	 * than infinite) or -1 (this means that it has only received trust values from identities with infinite rank) then its capacity is 0.
 	 * 
-	 * If the truster is personally distrusted by the tree owner then the capacity will be 0.<br/><br/>
+	 * If the tree owner has assigned a trust value to the target the capacity will be computed only from that trust value:
+	 * The decision of the tree owner should always overpower the view of remote identities.
 	 * 
-	 * If the truster has not received any trust values > 0 then its capacity will also be 0.<br/>
-	 * This is to prevent identities which have not received any positive trust from influencing the rating of others.<br/>
-	 * 0 is counted as negative because this prevents identities which have only received trust through identity introduction from rating others.
-	 * 
+	 * Notice that 0 is included in infinite rank to prevent identities which have only solved introduction puzzles from having a capacity.  
 	 *  
 	 * @param treeOwner The {@link OwnIdentity} in whose trust tree the capacity shall be computed
-	 * @param truster The {@link Identity} of which the capacity shall be computed. 
+	 * @param target The {@link Identity} of which the capacity shall be computed. 
 	 * @param rank The rank of the identity. The rank is the distance in trust steps from the OwnIdentity which views the web of trust,
 	 * 				- its rank is 0, the rank of its trustees is 1 and so on. Must be -1 if the truster has no rank in the tree owners view.
 	 */
-	protected int computeCapacity(OwnIdentity treeOwner, Identity truster, int rank) {
-		if(rank == -1)
-			return 0;
-		
-		if(treeOwner == truster)
+	protected int computeCapacity(OwnIdentity treeOwner, Identity target, int rank) {
+		if(treeOwner == target)
 			return 100;
 		 
 		try {
-			if(getTrust(treeOwner, truster).getValue() < 0)
+			if(getTrust(treeOwner, target).getValue() <= 0) { // Security check, if rank computation breaks this will hit.
+				assert(rank == Integer.MAX_VALUE);
 				return 0;
+			}
 		} catch(NotTrustedException e) { }
 		
-		boolean hasAtLeastOneStrictlyPositiveTruster = false;
-		
-		for(Trust receivedTrust : getReceivedTrusts(truster, 1)) {
-			// TODO: Optimization: Do this completely in a database query. The getReceivedTrusts() which we currently use counts 0 as positive.
-			if(receivedTrust.getValue() > 0) {
-				hasAtLeastOneStrictlyPositiveTruster = true;
-				break;
-			}
-		}
-		
-		if(!hasAtLeastOneStrictlyPositiveTruster)
+		if(rank == -1 || rank == Integer.MAX_VALUE)
 			return 0;
-		
+		 
 		return (rank < capacities.length) ? capacities[rank] : 1;
 	}
 	
@@ -579,6 +569,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
 	 */
 	protected synchronized boolean computeAllScores() {
+		if(!mFullScoreComputationNeeded)
+			Logger.error(this, "computeAllScores() called even though mFullScoreComputationNeeded was not set!");
+		
 		boolean returnValue = true;
 		final ObjectSet<Identity> allIdentities = getAllIdentities();
 		
@@ -593,7 +586,24 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			// Compute the rank values
 			{
 				// For each identity which is added to rankValues, all its trustees are added to unprocessedTrusters.
-				// The inner loop then pulls out one unprocessed identity and computes the rank of its trustees, which is its rank plus 1. 
+				// The inner loop then pulls out one unprocessed identity and computes the rank of its trustees:
+				// All trustees which have received positive (> 0) trust will get his rank + 1
+				// Trustees with negative trust or 0 trust will get a rank of Integer.MAX_VALUE.
+				// Trusters with rank Integer.MAX_VALUE cannot inherit their rank to their trustees so the trustees will get no rank at all.
+				// Identities with no rank are considered to be not in the trust tree of the own identity and their score will be null / none.
+				//
+				// Further, if the treeOwner has assigned a trust value to an identity, the rank decision is done by only considering this trust value:
+				// The decision of the own identity shall not be overpowered by the view of the remote identities.
+				//
+				// The purpose of differentiation between Integer.MAX_VALUE and -1 is:
+				// Score objects of identities with rank Integer.MAX_VALUE are kept in the database because WoT will usually "hear" about those identities by seeing
+				// them in the trust lists of trusted identities (with 0 or negative trust values). So it must store the trust values to those identities and
+				// have a way of telling the user "this identity is not trusted" by keeping a score object of them.
+				// Score objects of identities with rank -1 are deleted because they are the trustees of distrusted identities and we will not get to the point where
+				// we hear about those identities because the only way of hearing about them is importing a trust list of a identity with Integer.MAX_VALUE rank
+				// - and we never import their trust lists. 
+				// We include trust values of 0 in the set of rank Integer.MAX_VALUE (instead of only NEGATIVE trust) so that identities which only have solved
+				// introduction puzzles cannot inherit their rank to their trustees.
 				final LinkedList<Identity> unprocessedTrusters = new LinkedList<Identity>();
 				
 				rankValues.put(treeOwner, 0);
@@ -601,31 +611,44 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				 
 				while(!unprocessedTrusters.isEmpty()) {
 					final Identity truster = unprocessedTrusters.removeFirst();
+	
+					final int trusterRank = rankValues.get(truster);
 					
-					boolean trusterIsDistrusted; // Cannot be final due to java restrictions. 
-					try {
-						trusterIsDistrusted = getTrust(treeOwner, truster).getValue() < 0;
-					} catch(NotTrustedException e) {
-						trusterIsDistrusted = false;
+					// The truster cannot give his infinite rank to his trustees, they receive no rank at all.
+					if(trusterRank == Integer.MAX_VALUE) {
+						// TODO: The execution should not reach this point anyway because we do not put trustees into the pipeline if they have infinite rank.
+						// Verify this... and add error logging if it should not come here.
+						continue;
 					}
 					
-					// The truster cannot give his rank to his trustees because the treeOwner personally distrusts him.
-					if(trusterIsDistrusted)
-						continue;
-	
-					final int trusteeRank = rankValues.get(truster) + 1;
+					final int trusteeRank = trusterRank + 1;
 					
 					for(Trust trust : getGivenTrusts(truster)) {
 						final Identity trustee = trust.getTrustee();
 						final Integer oldTrusteeRank = rankValues.get(trustee);
 						
+						
 						if(oldTrusteeRank == null) { // The trustee was not processed yet
-							rankValues.put(trustee, trusteeRank);
-							unprocessedTrusters.addLast(trustee);
+							if(trust.getValue() > 0) {
+								rankValues.put(trustee, trusteeRank);
+								unprocessedTrusters.addLast(trustee);
+							}
+							else
+								rankValues.put(trustee, Integer.MAX_VALUE);
 						} else {
-							//breadth first search will process all rank one identies are processed
-							//before any rank two identities, etc
-							assert trusteeRank >= oldTrusteeRank;
+							// Breadth first search will process all rank one identities are processed before any rank two identities, etc.
+							assert(oldTrusteeRank == Integer.MAX_VALUE || trusteeRank >= oldTrusteeRank);
+							
+							if(oldTrusteeRank == Integer.MAX_VALUE) {
+								// If we found a rank less than infinite we can overwrite the old rank with this one, but only if the infinite rank was not
+								// given by the tree owner.
+								try {
+									getTrust(treeOwner, trustee);
+								} catch(NotTrustedException e) {
+									rankValues.put(trustee, trusteeRank);
+									unprocessedTrusters.addLast(trustee);
+								}
+							}
 						}
 					}
 				}
@@ -647,25 +670,23 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					if(targetRank == 0) {
 						targetScore = 100;
 					}
-					// If the treeOwner has assigned a trust value to the target, it always overrides the "remote" score.
-					else if(targetRank == 1) {
+					else {
+						// If the treeOwner has assigned a trust value to the target, it always overrides the "remote" score.
 						try {
 							targetScore = (int)getTrust(treeOwner, target).getValue();
 						} catch(NotTrustedException e) {
-							throw new RuntimeException(e);
-						}
-					}
-					else {
-						targetScore = 0;
-						for(Trust receivedTrust : getReceivedTrusts(target)) {
-							final Identity truster = receivedTrust.getTruster();
-							final Integer trusterRank = rankValues.get(truster);
-							
-							// The capacity is a weight function for trust values which are given from an identity:
-							// The higher the rank, the less the capacity.  
-							final int capacity = computeCapacity(treeOwner, truster, trusterRank != null ? trusterRank : -1);
-							
-							targetScore += (receivedTrust.getValue() * capacity) / 100;
+							targetScore = 0;
+							for(Trust receivedTrust : getReceivedTrusts(target)) {
+								final Identity truster = receivedTrust.getTruster();
+								final Integer trusterRank = rankValues.get(truster);
+								
+								// The capacity is a weight function for trust values which are given from an identity:
+								// The higher the rank, the less the capacity.
+								// If the rank is Integer.MAX_VALUE (infinite) or -1 (no rank at all) the capacity will be 0.
+								final int capacity = computeCapacity(treeOwner, truster, trusterRank != null ? trusterRank : -1);
+								
+								targetScore += (receivedTrust.getValue() * capacity) / 100;
+							}
 						}
 					}
 				}
@@ -678,7 +699,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				// Now we have the rank and the score of the target computed and can check whether the database-stored score object is correct.
 				try {
 					Score storedScore = getScore(treeOwner, target);
-					// FIXME: We also need to tell the identity fetcher to start/stop fetching the identity if the score sign changed.
 					if(targetScore == null) {
 						returnValue = false;
 						Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + targetScore);
@@ -745,6 +765,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				}
 			}
 		}
+		
+		mFullScoreComputationNeeded = false;
 		
 		return returnValue;
 	}
@@ -1710,8 +1732,23 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	
 	/**
 	 * Computes the target's rank in the trust tree.
-	 * It gets its best ranked truster's rank, plus one. Or -1 if none of its trusters are in the trust tree. 
-	 *  
+	 * It gets its best ranked non-zero-capacity truster's rank, plus one.
+	 * If it has only received negative trust values from identities which have a non-zero-capacity it gets a rank of Integer.MAX_VALUE (infinite).
+	 * If it has only received trust values from identities with rank of Integer.MAX_VALUE it gets a rank of -1.
+	 * 
+	 * If the tree owner has assigned a trust value to the identity, the rank computation is only done from that value because the score decisions of the
+	 * tree owner are always absolute (if you distrust someone, the remote identities should not be allowed to overpower your decision).
+	 * 
+	 * The purpose of differentiation between Integer.MAX_VALUE and -1 is:
+	 * Score objects of identities with rank Integer.MAX_VALUE are kept in the database because WoT will usually "hear" about those identities by seeing them
+	 * in the trust lists of trusted identities (with negative trust values). So it must store the trust values to those identities and have a way of telling the
+	 * user "this identity is not trusted" by keeping a score object of them.
+	 * Score objects of identities with rank -1 are deleted because they are the trustees of distrusted identities and we will not get to the point where we
+	 * hear about those identities because the only way of hearing about them is downloading a trust list of a identity with Integer.MAX_VALUE rank - and
+	 * we never download their trust lists. 
+	 * 
+	 * Notice that 0 is included in infinite rank to prevent identities which have only solved introduction puzzles from having a capacity.
+	 * 
 	 * @param treeOwner The OwnIdentity that owns the trust tree
 	 * @return The new Rank if this Identity
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
@@ -1722,16 +1759,40 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		
 		int rank = -1;
 		
+		try {
+			Trust treeOwnerTrust = getTrust(treeOwner, target);
+			
+			if(treeOwnerTrust.getValue() > 0)
+				return 1;
+			else
+				return Integer.MAX_VALUE;
+		} catch(NotTrustedException e) { }
+		
 		for(Trust trust : getReceivedTrusts(target)) {
 			try {
 				Score score = getScore(treeOwner, trust.getTruster());
-				
-				if(score.getCapacity() != 0) // If the truster has no capacity, he can't give his rank
-					if(rank == -1 || score.getRank() < rank) // If the truster's rank is better than ours or if we have not  
-						rank = score.getRank();
+
+				if(score.getCapacity() != 0) { // If the truster has no capacity, he can't give his rank
+					// A truster only gives his rank to a trustee if he has assigned a strictly positive trust value
+					if(trust.getValue() > 0 ) {
+						// We give the rank to the trustee if it is better than its current rank or he has no rank yet. 
+						if(rank == -1 || score.getRank() < rank)  
+							rank = score.getRank();						
+					} else {
+						// If the trustee has no rank yet we give him an infinite rank. because he is distrusted by the truster.
+						if(rank == -1)
+							rank = Integer.MAX_VALUE;
+					}
+				}
 			} catch (NotInTrustTreeException e) {}
 		}
-		return (rank == -1) ? -1 : (rank+1);
+		
+		if(rank == -1)
+			return -1;
+		else if(rank == Integer.MAX_VALUE)
+			return Integer.MAX_VALUE;
+		else
+			return rank+1;
 	}
 	
 	/**
@@ -1764,7 +1825,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			for(OwnIdentity treeOwner : getAllOwnIdentities()) {
 				try {
 					// Throws to abort the update of the trustee's score: If the truster has no rank or capacity in the tree owner's view then we don't need to update the trustee's score.
-					getScore(treeOwner, newTrust.getTruster()).getCapacity();
+					if(getScore(treeOwner, newTrust.getTruster()).getCapacity() == 0)
+						continue;
 				} catch(NotInTrustTreeException e) {
 					continue;
 				}

@@ -195,7 +195,7 @@ public class WoTTest extends DatabaseBasedTest {
 		flushCaches();
 		scoreB = mWoT.getScore(a, b);
 		assertEquals(-1, scoreB.getScore());
-		assertEquals(1, scoreB.getRank());
+		assertEquals(Integer.MAX_VALUE, scoreB.getRank());
 		assertEquals(0, scoreB.getCapacity());
 		
 		// C should not have a score anymore
