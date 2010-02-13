@@ -65,7 +65,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	public static final boolean FAST_DEBUG_MODE = false;
 	
 	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";  /* FIXME: Change when we leave the beta stage */
-	public static final int DATABASE_FORMAT_VERSION = -93;  /* FIXME: Change when we leave the beta stage */
+	public static final int DATABASE_FORMAT_VERSION = -92;  /* FIXME: Change when we leave the beta stage */
 	
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/WoT";
@@ -364,12 +364,12 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		}
 		
 		
-		if(databaseVersion == -95 || databaseVersion == -94) {
+		if(databaseVersion == -95 || databaseVersion == -94 || databaseVersion == -93) {
 			Logger.normal(this, "Found old database (" + databaseVersion + "), re-calculating all scores ...");
 			
 			computeAllScoresWithoutCommit();
 			
-			mConfig.set(Config.DATABASE_FORMAT_VERSION, databaseVersion = -93);
+			mConfig.set(Config.DATABASE_FORMAT_VERSION, databaseVersion = -92);
 			mConfig.storeAndCommit();
 		}
 		
