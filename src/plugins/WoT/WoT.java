@@ -1919,8 +1919,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						if(mFetcher != null)
 							mFetcher.storeStartFetchCommandWithoutCommit(trustee);
 					}
-
-					if(oldShouldFetch && !shouldFetchIdentity(trustee)) {
+					else if(oldShouldFetch && !shouldFetchIdentity(trustee)) {
 						Logger.debug(this, "Fetch status changed from true to false, aborting fetch of " + trustee);
 
 						if(mFetcher != null)
