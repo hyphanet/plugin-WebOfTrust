@@ -1838,6 +1838,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			computeAllScoresWithoutCommit();
 			assert(!mFullScoreComputationNeeded);
 		}
+		
+		mTrustListImportInProgress = false;
 	}
 	
 	/**
