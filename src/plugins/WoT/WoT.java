@@ -749,8 +749,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 							mFetcher.storeStartFetchCommandWithoutCommit(target);
 						}
 					}
-
-					if(oldShouldFetch && !shouldFetchIdentity(target)) {
+					else if(oldShouldFetch && !shouldFetchIdentity(target)) {
 						Logger.debug(this, "Best capacity changed from positive to 0, aborting fetch of " + target);
 
 						if(mFetcher != null) {
