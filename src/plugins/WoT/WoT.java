@@ -203,6 +203,15 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			mWebInterface = new WebInterface(this, SELF_URI);
 			mFCPInterface = new FCPInterface(this);
 			
+			// TODO: Don't do this as soon as we are sure that score computation works.
+			Logger.normal(this, "Veriying all stored scores ...");
+			synchronized(this) {
+			synchronized(mDB.lock()) {
+				computeAllScoresWithoutCommit();
+				mDB.commit();
+			}
+			}
+			
 			Logger.debug(this, "Starting fetches of all identities...");
 			synchronized(this) {
 			synchronized(mFetcher) {
