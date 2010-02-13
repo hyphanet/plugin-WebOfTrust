@@ -1897,16 +1897,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					}
 
 					final Score oldScore = trusteeScore.clone();
-
-					final int newScoreValue = computeScoreValue(treeOwner, trustee);
-
-					final boolean scoreSignChanged = Integer.signum(oldScore.getScore()) != Integer.signum(newScoreValue);
-					boolean oldShouldFetch = true; // The "was it initialized?" detection of the java compiler sucks.
+					boolean oldShouldFetch = shouldFetchIdentity(trustee);
 					
-					if(scoreSignChanged) // No need to figure out whether the identity should have been fetched in the past if the score sign did not change
-						oldShouldFetch = shouldFetchIdentity(trustee);
-					
-					trusteeScore.setValue(newScoreValue);
+					trusteeScore.setValue(computeScoreValue(treeOwner, trustee));
 					trusteeScore.setRank(computeRank(treeOwner, trustee));
 					trusteeScore.setCapacity(computeCapacity(treeOwner, trustee, trusteeScore.getRank()));
 					
@@ -1917,25 +1910,21 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					else
 						mDB.store(trusteeScore);
 					
-					// If the sign of the identities score changed, then we need to start fetching it or abort fetching it.
-					if(scoreSignChanged) {
-						if(!oldShouldFetch && shouldFetchIdentity(trustee)) { 
-							Logger.debug(this, "Capacity changed from 0 to positive, refetching " + trustee);
+					if(!oldShouldFetch && shouldFetchIdentity(trustee)) { 
+						Logger.debug(this, "Fetch status changed from false to true, refetching " + trustee);
 
-							trustee.markForRefetch();
-							storeWithoutCommit(trustee);
+						trustee.markForRefetch();
+						storeWithoutCommit(trustee);
 
-							if(mFetcher != null) {
-								mFetcher.storeStartFetchCommandWithoutCommit(trustee);
-							}
-						}
+						if(mFetcher != null)
+							mFetcher.storeStartFetchCommandWithoutCommit(trustee);
+					}
 
-						if(oldShouldFetch && !shouldFetchIdentity(trustee)) {
-							Logger.debug(this, "Best capacity changed from positive to 0, aborting fetch of " + trustee);
+					if(oldShouldFetch && !shouldFetchIdentity(trustee)) {
+						Logger.debug(this, "Fetch status changed from true to false, aborting fetch of " + trustee);
 
-							if(mFetcher != null)
-								mFetcher.storeAbortFetchCommandWithoutCommit(trustee);
-						}
+						if(mFetcher != null)
+							mFetcher.storeAbortFetchCommandWithoutCommit(trustee);
 					}
 					
 					if(oldScore.getRank() != trusteeScore.getRank() || oldScore.getCapacity() != trusteeScore.getCapacity()) {
