@@ -460,9 +460,9 @@ public class WoTTest extends DatabaseBasedTest {
 		db.commit();
 		flushCaches();
 
-		boolean wasCorrect = mWoT.computeAllScores();
+		boolean wasCorrect = mWoT.computeAllScoresWithoutCommit();
 		flushCaches();
-		boolean isConsistent = mWoT.computeAllScores();
+		boolean isConsistent = mWoT.computeAllScoresWithoutCommit();
 
 		int scoreA = mWoT.getScore(o, a).getScore();
 		int scoreB = mWoT.getScore(o, b).getScore();

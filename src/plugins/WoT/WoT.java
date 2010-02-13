@@ -146,6 +146,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	
 	private boolean mFullScoreComputationNeeded = false;
 	
+	private boolean mTrustListImportInProgress = false;
+	
 	
 	/* User interfaces */
 	
@@ -314,7 +316,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		if(databaseVersion == -98) {
 			Logger.normal(this, "Found old database (-98), recalculating all scores & marking all identities for re-fetch ...");
 			
-			computeAllScores();
+			computeAllScoresWithoutCommit();
 			
 			for(Identity identity : getAllIdentities()) {
 				if(!(identity instanceof OwnIdentity))
@@ -365,7 +367,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		if(databaseVersion == -95 || databaseVersion == -94) {
 			Logger.normal(this, "Found old database (" + databaseVersion + "), re-calculating all scores ...");
 			
-			computeAllScores();
+			computeAllScoresWithoutCommit();
 			
 			mConfig.set(Config.DATABASE_FORMAT_VERSION, databaseVersion = -93);
 			mConfig.storeAndCommit();
@@ -568,7 +570,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * 
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
 	 */
-	protected synchronized boolean computeAllScores() {
+	protected synchronized boolean computeAllScoresWithoutCommit() {
 		if(!mFullScoreComputationNeeded)
 			Logger.error(this, "computeAllScores() called even though mFullScoreComputationNeeded was not set!");
 		
@@ -706,10 +708,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
 						
-						synchronized(mDB.lock()) {
-							mDB.delete(storedScore);
-							mDB.commit(); Logger.debug(this, "COMMITED.");
-						}
+						mDB.delete(storedScore);
 						
 					} else {
 						if(!expectedScore.equals(storedScore)) {
@@ -722,10 +721,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 							storedScore.setRank(targetRank);
 							storedScore.setCapacity(computeCapacity(treeOwner, target, targetRank));
 							storedScore.setValue(targetScore);
-							synchronized(mDB.lock()) {
-								mDB.store(storedScore);
-								mDB.commit(); Logger.debug(this, "COMMITED.");
-							}
+
+							mDB.store(storedScore);
 						}
 					}
 				} catch(NotInTrustTreeException e) {
@@ -736,10 +733,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
 						
-						synchronized(mDB.lock()) {
-							mDB.store(expectedScore);
-							mDB.commit(); Logger.debug(this, "COMMITED.");
-						}
+						mDB.store(expectedScore);
 					}
 				}
 				
@@ -759,8 +753,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					if(oldShouldFetch && !shouldFetchIdentity(target)) {
 						Logger.debug(this, "Best capacity changed from positive to 0, aborting fetch of " + target);
 
-						if(mFetcher != null)
+						if(mFetcher != null) {
 							mFetcher.storeAbortFetchCommandWithoutCommit(target);
+						}
 					}
 				}
 			}
@@ -1219,7 +1214,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				// We call computeAllScores anyway so we do not use removeTrustWithoutCommit()
 			}
 			
-			computeAllScores();
+			computeAllScoresWithoutCommit();
 
 			Logger.debug(this, "Deleting associated introduction puzzles ...");
 			mPuzzleStore.onIdentityDeletion(identity);
@@ -1796,6 +1791,56 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 	
 	/**
+	 * Begins the import of a trust list. This sets a flag on this WoT which signals that the import of a trust list is in progress.
+	 * This speeds up setTrust/removeTrust as the score calculation is only performed when endTrustListImport is called.
+	 * 
+	 * You MUST synchronize on this WoT around beginTrustListImport, abortTrustListImport and finishTrustListImport!
+	 * You MUST create a database transaction by synchronizing on db.lock().
+	 */
+	protected void beginTrustListImport() {
+		if(mTrustListImportInProgress) {
+			abortTrustListImport(new RuntimeException("There was already a trust list import in progress!"));
+			mFullScoreComputationNeeded = true;
+			computeAllScoresWithoutCommit();
+			assert(mFullScoreComputationNeeded == false);
+		}
+		
+		mTrustListImportInProgress = true;
+		assert(!mFullScoreComputationNeeded);
+	}
+	
+	/**
+	 * See {@link beginTrustListImport} for an explanation of the purpose of this function.
+	 * 
+	 * Aborts the import of a trust list and rolls back the current transaction.
+	 */
+	protected void abortTrustListImport(Exception e) {
+		assert(mTrustListImportInProgress);
+		mTrustListImportInProgress = false;
+		mFullScoreComputationNeeded = false;
+		mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+	}
+	
+	/**
+	 * See {@link beginTrustListImport} for an explanation of the purpose of this function.
+	 * 
+	 * Finishes the import of the current trust list and clears the "trust list 
+	 * 
+	 * Does NOT commit the transaction, you must do this.
+	 */
+	protected void finishTrustListImport() {
+		if(!mTrustListImportInProgress) {
+			Logger.error(this, "There was no trust list import in progress!");
+			return;
+		}
+		
+		if(mFullScoreComputationNeeded) {
+			computeAllScoresWithoutCommit();
+			assert(!mFullScoreComputationNeeded);
+		}
+	}
+	
+	/**
 	 * Updates all trust trees which are affected by the given modified score.
 	 * For understanding how score calculation works you should first read {@link computeAllScores
 	 * 
@@ -1821,7 +1866,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		if(trustWasModified && oldTrust.getTrustee() != newTrust.getTrustee())
 			throw new IllegalArgumentException("oldTrust has different trustee, oldTrust:" + oldTrust + "; newTrust: " + newTrust);
 
-		if(trustWasCreated || trustWasModified) {
+		if(!mFullScoreComputationNeeded && (trustWasCreated || trustWasModified)) {
 			for(OwnIdentity treeOwner : getAllOwnIdentities()) {
 				try {
 					// Throws to abort the update of the trustee's score: If the truster has no rank or capacity in the tree owner's view then we don't need to update the trustee's score.
@@ -1904,11 +1949,14 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			}
 		}
 		
-		if(trustWasDeleted || mFullScoreComputationNeeded) {
-			// FIXME before 0.4.0 final : Only call this once per imported trust list. This will be done by having a beginTrustListImport() / commitTrustListImport(). 
+		if(trustWasDeleted) { 
+			mFullScoreComputationNeeded = true;
+		}
+		
+		if(mFullScoreComputationNeeded && !mTrustListImportInProgress) {
 			// FIXME before 0.4.0 final: Write a computeAllScores() which does not keep all objects in memory.
-			// TODO: This uses very much CPU and memory. Find a better solution! 
-			computeAllScores();
+			// TODO: This uses very much CPU and memory. Find a better solution!
+			computeAllScoresWithoutCommit();
 		}
 		
 		
