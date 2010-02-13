@@ -703,7 +703,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					Score storedScore = getScore(treeOwner, target);
 					if(targetScore == null) {
 						returnValue = false;
-						Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + targetScore);
+						if(!mFullScoreComputationNeeded)
+							Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + targetScore);
 						
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
@@ -713,7 +714,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					} else {
 						if(!expectedScore.equals(storedScore)) {
 							returnValue = false;
-							Logger.error(this, "Correcting wrong score: Should have been " + targetScore + " but was " + storedScore);
+							if(!mFullScoreComputationNeeded)
+								Logger.error(this, "Correcting wrong score: Should have been " + targetScore + " but was " + storedScore);
 							
 							needToCheckFetchStatus = true;
 							oldShouldFetch = shouldFetchIdentity(target);
@@ -728,7 +730,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				} catch(NotInTrustTreeException e) {
 					if(targetScore != null) {
 						returnValue = false;
-						Logger.error(this, "Correcting wrong score: No score was stored for the identity but it should be " + expectedScore);
+						if(!mFullScoreComputationNeeded)
+							Logger.error(this, "Correcting wrong score: No score was stored for the identity but it should be " + expectedScore);
 						
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
