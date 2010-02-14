@@ -713,7 +713,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					if(targetScore == null) {
 						returnValue = false;
 						if(!mFullScoreComputationNeeded)
-							Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + targetScore);
+							Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + storedScore);
 						
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
