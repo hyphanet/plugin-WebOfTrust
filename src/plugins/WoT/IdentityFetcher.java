@@ -9,6 +9,7 @@ package plugins.WoT;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
+import java.util.Iterator;
 
 import plugins.WoT.exceptions.UnknownIdentityException;
 
@@ -393,7 +394,14 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 	private synchronized void abortFetch(USKRetriever retriever) {
 		retriever.cancel(null, mClientContext);
 		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
-		mRequests.remove(retriever);	
+		
+		Iterator<USKRetriever> it = mRequests.values().iterator();
+		while (it.hasNext()) {
+			if (retriever.equals(it.next())) {
+				it.remove();
+				break;
+			}
+		}
 	}
 	
 	private synchronized void abortFetch(String identityID) {
