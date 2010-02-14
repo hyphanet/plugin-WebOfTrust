@@ -628,13 +628,7 @@ public class Identity implements Cloneable {
 		if(!Arrays.deepEquals(myContexts, otherContexts))
 			return false;
 		
-		Map.Entry[] myProperties = (Map.Entry<String,String>[])getProperties().entrySet().toArray(new Map.Entry[1]);
-		Map.Entry[] otherProperties = (Map.Entry<String,String>[])other.getProperties().entrySet().toArray(new Map.Entry[1]);
-		
-		Arrays.sort(myProperties);
-		Arrays.sort(otherProperties);
-		
-		if(!Arrays.deepEquals(myProperties, otherProperties))
+		if(!getProperties().equals(other.getProperties()))
 			return false;
 		
 		return true;
