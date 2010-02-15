@@ -3,11 +3,17 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WoT.ui.web;
 
+import java.awt.image.RenderedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 
+import javax.imageio.ImageIO;
+
+import plugins.WoT.Identity;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WoT.identicon.Identicon;
 import plugins.WoT.introduction.IntroductionPuzzle;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
@@ -54,7 +60,8 @@ public class WebInterface {
 	private final WebInterfaceToadlet introduceIdentityToadlet;
 	private final WebInterfaceToadlet identityToadlet;
 	private final WebInterfaceToadlet getPuzzleToadlet;
-	
+	private final WebInterfaceToadlet getIdenticonToadlet;
+
 	private final String mURI;
 	
 	/**
@@ -372,7 +379,46 @@ public class WebInterface {
 			return new HomePage(this, req, context, l10n());
 		}
 	}
-	
+
+	public class GetIdenticonWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		public GetIdenticonWebInterfaceToadlet(HighLevelSimpleClient highLevelSimpleClient, WebInterface webInterface, NodeClientCore nodeClientCore, String pageTitle) {
+			super(highLevelSimpleClient, webInterface, nodeClientCore, pageTitle);
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		@SuppressWarnings("synthetic-access")
+		public void handleMethodGET(URI uri, HTTPRequest httpRequest, ToadletContext toadletContext) throws ToadletContextClosedException, IOException {
+			String identityId = httpRequest.getParam("identity");
+			ByteArrayOutputStream imageOutputStream = null;
+			try {
+				Identity identity = mWoT.getIdentityByID(identityId);
+				byte[] routingKey = identity.getRequestURI().getRoutingKey();
+				RenderedImage identiconImage = new Identicon(routingKey).render(128, 128);
+				imageOutputStream = new ByteArrayOutputStream();
+				ImageIO.write(identiconImage, "png", imageOutputStream);
+				Bucket imageBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, imageOutputStream.toByteArray());
+				writeReply(toadletContext, 200, "image/png", "OK", imageBucket);
+			} catch (UnknownIdentityException uie1) {
+				writeReply(toadletContext, 404, "text/plain", "Not found", "Not found.");
+			} finally {
+				Closer.close(imageOutputStream);
+			}
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
+			return null;
+		}
+
+	}
+
 	public WebInterface(WoT myWoT, String uri) {
 		mWoT = myWoT;
 		mURI = uri;
@@ -403,13 +449,15 @@ public class WebInterface {
 		introduceIdentityToadlet = new IntroduceIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "IntroduceIdentity");
 		identityToadlet = new IdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "ShowIdentity");
 		getPuzzleToadlet = new GetPuzzleWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "GetPuzzle");
-		
+		getIdenticonToadlet = new GetIdenticonWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "GetIdenticon");
+
 		container.register(createIdentityToadlet, null, mURI + "/CreateIdentity", true, false);
 		container.register(deleteOwnIdentityToadlet, null, mURI + "/DeleteOwnIdentity", true, false);
 		container.register(editOwnIdentityToadlet, null, mURI + "/EditOwnIdentity", true, false);
 		container.register(introduceIdentityToadlet, null, mURI + "/IntroduceIdentity", true, false);
 		container.register(identityToadlet, null, mURI + "/ShowIdentity", true, false);
 		container.register(getPuzzleToadlet, null, mURI + "/GetPuzzle", true, false);
+		container.register(getIdenticonToadlet, null, mURI + "/GetIdenticon", true, false);
 	}
 	
 	public String getURI() {
@@ -436,7 +484,8 @@ public class WebInterface {
 				editOwnIdentityToadlet,
 				introduceIdentityToadlet,
 				identityToadlet,
-				getPuzzleToadlet
+				getPuzzleToadlet,
+				getIdenticonToadlet
 		}) container.unregister(t);
 		mPageMaker.removeNavigationCategory("WebInterface.WotMenuName");
 	}
