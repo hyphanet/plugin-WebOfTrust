@@ -63,7 +63,6 @@ public class Identicon {
 	 * @return The rendered image
 	 */
 	public RenderedImage render(int width, int height) {
-		long startTime = System.nanoTime();
 		BufferedImage backgroundImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		BufferedImage foregroundImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D backgroundGraphics = (Graphics2D) backgroundImage.getGraphics();
@@ -121,8 +120,6 @@ public class Identicon {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		long endTime = System.nanoTime();
-		System.out.println((endTime - startTime) / 1000000 + " ms.");
 		return backgroundImage;
 	}
 
