@@ -596,8 +596,8 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(a, b, (byte)20, "minimal trust (eg web interface)");
 		mWoT.setTrustWithoutCommit(b, a, (byte)20, "minimal trust (eg web interface)");
 
-		mWoT.setTrustWithoutCommit(a, m1, (byte)0, "captcha");
-		mWoT.setTrustWithoutCommit(a, m2, (byte)0, "captcha");
+		mWoT.setTrustWithoutCommit(a, m1, (byte) -100, "evil");
+		mWoT.setTrustWithoutCommit(a, m2, (byte) -100, "evil");
 
 		mWoT.setTrustWithoutCommit(m1, m2, (byte)100, "Collusion");
 		mWoT.setTrustWithoutCommit(m2, m1, (byte)100, "Collusion");
@@ -610,6 +610,10 @@ public class WoTTest extends DatabaseBasedTest {
 		db.commit();
 		flushCaches();
 
+		int scoreM1 = mWoT.getScore(o, m1).getScore();
+		int scoreM2 = mWoT.getScore(o, m2).getScore();
+		assertTrue("M1 score: " + scoreM1, scoreM1 < 0);
+		assertTrue("M2 score: " + scoreM2, scoreM2 < 0);
 		int scoreA = mWoT.getScore(o, a).getScore();
 		int scoreB = mWoT.getScore(o, b).getScore();
 		assertTrue("A score: " + scoreA, scoreA > 0);
