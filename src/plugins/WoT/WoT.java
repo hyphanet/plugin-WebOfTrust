@@ -656,8 +656,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 								try {
 									getTrust(treeOwner, trustee);
 								} catch(NotTrustedException e) {
+									if(trust.getValue() > 0) {
 									rankValues.put(trustee, trusteeRank);
 									unprocessedTrusters.addLast(trustee);
+									}
 								}
 							}
 						}
