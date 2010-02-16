@@ -116,7 +116,6 @@ public class Identicon {
 				GradientHighlight.render(foregroundImage);
 				backgroundImage.getGraphics().drawImage(foregroundImage, 0, 0, null);
 			}
-			System.out.println(bitStream.available());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
