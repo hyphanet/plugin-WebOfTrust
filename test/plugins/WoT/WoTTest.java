@@ -596,8 +596,8 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(a, b, (byte)20, "minimal trust (eg web interface)");
 		mWoT.setTrustWithoutCommit(b, a, (byte)20, "minimal trust (eg web interface)");
 
-		mWoT.setTrustWithoutCommit(a, m1, (byte) -100, "evil");
-		mWoT.setTrustWithoutCommit(a, m2, (byte) -100, "evil");
+		mWoT.setTrustWithoutCommit(a, m1, (byte) 0, "captcha");
+		mWoT.setTrustWithoutCommit(a, m2, (byte) 0, "captcha");
 
 		mWoT.setTrustWithoutCommit(m1, m2, (byte)100, "Collusion");
 		mWoT.setTrustWithoutCommit(m2, m1, (byte)100, "Collusion");
