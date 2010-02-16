@@ -565,6 +565,8 @@ public class WoTTest extends DatabaseBasedTest {
 
 		db.commit();
 		flushCaches();
+		mWoT.computeAllScoresWithoutCommit();
+		db.commit();
 
 		int scoreA = mWoT.getScore(o, a).getScore();
 		int scoreB = mWoT.getScore(o, b).getScore();
@@ -572,4 +574,49 @@ public class WoTTest extends DatabaseBasedTest {
 		assertTrue("B score: " + scoreB, scoreB > 0);
 	}
 
+	/** Another test of resistance to malicious identities.
+	  */
+	public void testMalicious3() throws Exception {
+		ExtObjectContainer db = mWoT.getDB();
+			
+		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
+		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
+		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); 
+		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
+		Identity m1 = new Identity(uriM1, "M1", true); mWoT.storeAndCommit(m1); //known malicious identity
+		Identity m2 = new Identity(uriM2, "M2", true); mWoT.storeAndCommit(m2); //known malicious identity
+		
+		// You get all the identities from the seed identity.
+		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
+
+		mWoT.setTrustWithoutCommit(s, a, (byte)100, "Trusted");
+		mWoT.setTrustWithoutCommit(s, m1, (byte)-100, "M1 is malicious.");
+		mWoT.setTrustWithoutCommit(s, m2, (byte)-100, "M2 is malicious.");
+
+		mWoT.setTrustWithoutCommit(a, b, (byte)20, "minimal trust (eg web interface)");
+		mWoT.setTrustWithoutCommit(b, a, (byte)20, "minimal trust (eg web interface)");
+
+		mWoT.setTrustWithoutCommit(a, m1, (byte) 0, "captcha");
+		mWoT.setTrustWithoutCommit(a, m2, (byte) 0, "captcha");
+
+		mWoT.setTrustWithoutCommit(m1, m2, (byte)100, "Collusion");
+		mWoT.setTrustWithoutCommit(m2, m1, (byte)100, "Collusion");
+
+		mWoT.setTrustWithoutCommit(m1, b, (byte)-100, "Maliciously set");
+		mWoT.setTrustWithoutCommit(m2, b, (byte)-100, "Maliciously set");
+
+		db.commit();
+		mWoT.computeAllScoresWithoutCommit();
+		db.commit();
+		flushCaches();
+
+		int scoreM1 = mWoT.getScore(o, m1).getScore();
+		int scoreM2 = mWoT.getScore(o, m2).getScore();
+		assertTrue("M1 score: " + scoreM1, scoreM1 < 0);
+		assertTrue("M2 score: " + scoreM2, scoreM2 < 0);
+		int scoreA = mWoT.getScore(o, a).getScore();
+		int scoreB = mWoT.getScore(o, b).getScore();
+		assertTrue("A score: " + scoreA, scoreA > 0);
+		assertTrue("B score: " + scoreB, scoreB > 0);
+	}
 }
