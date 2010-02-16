@@ -194,15 +194,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			
 			mFetcher = new IdentityFetcher(this);		
 			
-			mIntroductionServer = new IntroductionServer(this, mFetcher);
-			mIntroductionServer.start();
-			
-			mIntroductionClient = new IntroductionClient(this);
-			mIntroductionClient.start();
-
-			mWebInterface = new WebInterface(this, SELF_URI);
-			mFCPInterface = new FCPInterface(this);
-			
 			// TODO: Don't do this as soon as we are sure that score computation works.
 			Logger.normal(this, "Veriying all stored scores ...");
 			synchronized(this) {
@@ -228,6 +219,16 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				}
 			}
 			}
+			
+			mIntroductionServer = new IntroductionServer(this, mFetcher);
+			mIntroductionServer.start();
+			
+			mIntroductionClient = new IntroductionClient(this);
+			mIntroductionClient.start();
+
+			mWebInterface = new WebInterface(this, SELF_URI);
+			mFCPInterface = new FCPInterface(this);
+			
 			Logger.debug(this, "WoT startup completed.");
 		}
 		catch(RuntimeException e){
