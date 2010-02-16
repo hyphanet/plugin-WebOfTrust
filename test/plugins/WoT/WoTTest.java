@@ -574,18 +574,17 @@ public class WoTTest extends DatabaseBasedTest {
 		assertTrue("B score: " + scoreB, scoreB > 0);
 	}
 
+	/** Another test of resistance to malicious identities.
+	  */
 	public void testMalicious3() throws Exception {
-		//same setup routine as testStability
 		ExtObjectContainer db = mWoT.getDB();
 			
 		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
 		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
 		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); 
 		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
-		
 		Identity m1 = new Identity(uriM1, "M1", true); mWoT.storeAndCommit(m1); //known malicious identity
 		Identity m2 = new Identity(uriM2, "M2", true); mWoT.storeAndCommit(m2); //known malicious identity
-		Identity m3 = new Identity(uriM3, "M3", true); mWoT.storeAndCommit(m3); //unknown malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -594,26 +593,17 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(s, m1, (byte)-100, "M1 is malicious.");
 		mWoT.setTrustWithoutCommit(s, m2, (byte)-100, "M2 is malicious.");
 
-		mWoT.setTrustWithoutCommit(a, b, (byte)10, "minimal trust (eg web interface)");
-		mWoT.setTrustWithoutCommit(b, a, (byte)10, "minimal trust (eg web interface)");
+		mWoT.setTrustWithoutCommit(a, b, (byte)20, "minimal trust (eg web interface)");
+		mWoT.setTrustWithoutCommit(b, a, (byte)20, "minimal trust (eg web interface)");
 
 		mWoT.setTrustWithoutCommit(a, m1, (byte)0, "captcha");
 		mWoT.setTrustWithoutCommit(a, m2, (byte)0, "captcha");
-		mWoT.setTrustWithoutCommit(a, m3, (byte)0, "captcha");
 
 		mWoT.setTrustWithoutCommit(m1, m2, (byte)100, "Collusion");
-		mWoT.setTrustWithoutCommit(m1, m3, (byte)100, "Collusion");
-		mWoT.setTrustWithoutCommit(m2, m3, (byte)100, "Collusion");
 		mWoT.setTrustWithoutCommit(m2, m1, (byte)100, "Collusion");
-		mWoT.setTrustWithoutCommit(m3, m1, (byte)100, "Collusion");
-		mWoT.setTrustWithoutCommit(m3, m2, (byte)100, "Collusion");
 
-		mWoT.setTrustWithoutCommit(m1, a, (byte)-100, "Maliciously set");
 		mWoT.setTrustWithoutCommit(m1, b, (byte)-100, "Maliciously set");
-		mWoT.setTrustWithoutCommit(m2, a, (byte)-100, "Maliciously set");
 		mWoT.setTrustWithoutCommit(m2, b, (byte)-100, "Maliciously set");
-		//mWoT.setTrustWithoutCommit(m3, a, (byte)-100, "Maliciously set");
-		//mWoT.setTrustWithoutCommit(m3, b, (byte)-100, "Maliciously set");
 
 		db.commit();
 		mWoT.computeAllScoresWithoutCommit();
