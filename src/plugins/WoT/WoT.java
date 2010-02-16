@@ -623,11 +623,11 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				while(!unprocessedTrusters.isEmpty()) {
 					final Identity truster = unprocessedTrusters.removeFirst();
 	
-					final int trusterRank = rankValues.get(truster);
+					final Integer trusterRank = rankValues.get(truster);
 					
-					// The truster cannot give his infinite rank to his trustees, they receive no rank at all.
-					if(trusterRank == Integer.MAX_VALUE) {
-						// TODO: The execution should not reach this point anyway because we do not put trustees into the pipeline if they have infinite rank.
+					// The truster cannot give his rank to his trustees because he has none (or infinite), they receive no rank at all.
+					if(trusterRank == null || trusterRank == Integer.MAX_VALUE) {
+						// TODO: The execution should not reach this point anyway because we do not put trustees into the pipeline if they have null or infinite rank.
 						// Verify this... and add error logging if it should not come here.
 						continue;
 					}
