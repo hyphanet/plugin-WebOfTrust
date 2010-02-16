@@ -207,6 +207,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			Logger.normal(this, "Veriying all stored scores ...");
 			synchronized(this) {
 			synchronized(mDB.lock()) {
+				mFullScoreComputationNeeded = true;
 				computeAllScoresWithoutCommit();
 				mDB.commit();
 			}
