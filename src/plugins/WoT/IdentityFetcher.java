@@ -395,17 +395,11 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 		retriever.cancel(null, mClientContext);
 		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
 		
-		Iterator<USKRetriever> it = mRequests.values().iterator();
-		while (it.hasNext()) {
-			if (retriever.equals(it.next())) {
-				it.remove();
-				break;
-			}
-		}
+		mRequests.remove(Identity.getIDFromURI(retriever.getURI()));
 	}
 	
 	private synchronized void abortFetch(String identityID) {
-		USKRetriever retriever = mRequests.get(identityID);
+		USKRetriever retriever = mRequests.remove(identityID);
 
 		if(retriever == null) {
 			Logger.error(this, "Aborting fetch failed (no fetch found) for identity " + identityID);
@@ -413,7 +407,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 		}
 			
 		Logger.debug(this, "Aborting fetch for identity " + identityID);
-		abortFetch(retriever);
+		retriever.cancel(null, mClientContext);
+		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
 	}
 	
 	/**
