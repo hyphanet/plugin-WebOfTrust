@@ -1918,7 +1918,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					trusteeScore.setRank(computeRank(treeOwner, trustee));
 					trusteeScore.setCapacity(computeCapacity(treeOwner, trustee, trusteeScore.getRank()));
 					
-					if(trusteeScore.getCapacity() == 0 && oldScore.getCapacity() > 0) {
+					if((trusteeScore.getCapacity() == 0 && oldScore.getCapacity() > 0)
+							|| (trusteeScore.getRank() == Integer.MAX_VALUE && oldScore.getRank() < Integer.MAX_VALUE)) {
 						mFullScoreComputationNeeded = true;
 						break;
 					}
