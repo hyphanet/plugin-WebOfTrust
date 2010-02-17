@@ -1893,6 +1893,16 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					continue;
 				}
 				
+				// We cannot iteratively REMOVE an inherited rank from the trustees because we don't know whether there is a circle in the trust values
+				// which would make the current identity get its old rank back via the circle: computeRank searches the trusters of an identity for the best
+				// rank, if we remove the rank from an identity, all its trustees will have a better rank and if one of them trusts the original identity
+				// then this function would run into an infinite loop. Decreasing or incrementing an existing rank is possible with this function because
+				// the rank received from the trustees will always be higher (that is exactly 1 more) than this identities rank.
+				if(trustWasModified && oldTrust.getValue() > 0 && newTrust.getValue() <= 0) {
+					mFullScoreComputationNeeded = true;
+					break;
+				}
+				
 				final LinkedList<Trust> unprocessedEdges = new LinkedList<Trust>();
 				unprocessedEdges.add(newTrust);
 
@@ -1917,14 +1927,22 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					trusteeScore.setValue(computeScoreValue(treeOwner, trustee));
 					trusteeScore.setRank(computeRank(treeOwner, trustee));
 					trusteeScore.setCapacity(computeCapacity(treeOwner, trustee, trusteeScore.getRank()));
-					
-					if((trusteeScore.getCapacity() == 0 && oldScore.getCapacity() > 0)
-							|| (trusteeScore.getRank() == Integer.MAX_VALUE && oldScore.getRank() < Integer.MAX_VALUE)) {
+
+					// Normally we couldn't detect the following two cases due to circular trust values. However, if an own identity assigns a trust value,
+					// the rank and capacity are always computed based on the trust value of the own identity so we must also check this here:
+
+					if((oldScore.getRank() >= 0 && oldScore.getRank() < Integer.MAX_VALUE) // It had an inheritable rank
+							&& (trusteeScore.getRank() == -1 || trusteeScore.getRank() == Integer.MAX_VALUE)) { // It has no inheritable rank anymore
 						mFullScoreComputationNeeded = true;
 						break;
 					}
-					else
-						mDB.store(trusteeScore);
+					
+					if(oldScore.getCapacity() > 0 && trusteeScore.getCapacity() == 0) {
+						mFullScoreComputationNeeded = true;
+						break;
+					}
+					
+					mDB.store(trusteeScore);
 					
 					if(!oldShouldFetch && shouldFetchIdentity(trustee)) { 
 						Logger.debug(this, "Fetch status changed from false to true, refetching " + trustee);
