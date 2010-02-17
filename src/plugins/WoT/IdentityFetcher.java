@@ -347,7 +347,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 					// The identity has a new "mandatory" edition number stored which we must fetch, so we restart the request because the edition number might
 					// be lower than the last one which the USKRetriever has fetched.
 					Logger.minor(this, "The current edition of the given identity is marked as not fetched, re-creating the USKRetriever for " + usk);
-					abortFetch(retriever);
+					abortFetch(identity.getID());
 					retriever = null;
 				}
 			}
@@ -389,13 +389,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 		} catch (UnknownIdentityException e) {
 			Logger.normal(this, "Updating edition hint failed, the identity was deleted already.", e);
 		}
-	}
-	
-	private synchronized void abortFetch(USKRetriever retriever) {
-		retriever.cancel(null, mClientContext);
-		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
-		
-		mRequests.remove(Identity.getIDFromURI(retriever.getURI()));
 	}
 	
 	private synchronized void abortFetch(String identityID) {
