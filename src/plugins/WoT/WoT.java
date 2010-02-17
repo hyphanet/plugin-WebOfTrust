@@ -1958,6 +1958,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			mFullScoreComputationNeeded = true;
 		}
 		
+		// If we're in debug mode we always run computeAllScores to find errors in this function.
+		assert(mFullScoreComputationNeeded || (!mFullScoreComputationNeeded && computeAllScoresWithoutCommit()));
+		
 		if(mFullScoreComputationNeeded && !mTrustListImportInProgress) {
 			// FIXME before 0.4.0 final: Write a computeAllScores() which does not keep all objects in memory.
 			// TODO: This uses very much CPU and memory. Find a better solution!
