@@ -48,7 +48,7 @@ public class DBUtil {
 	}
 	
 	public static void rollbackAndThrow(ExtObjectContainer db, Object loggingObject, RuntimeException error) {
-		db.rollback(); Logger.error(loggingObject, "ROLLED BACK!", error);
+		db.rollback(); db.purge(); Logger.error(loggingObject, "ROLLED BACK!", error);
 		throw error;
 	}
 }

@@ -64,7 +64,7 @@ public final class IntroductionPuzzleStore {
 						mDB.commit(); Logger.debug(this, "COMMITED.");
 					}
 				} catch(RuntimeException e) {
-					mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+					mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
 				}
 			}
 			
@@ -91,7 +91,7 @@ public final class IntroductionPuzzleStore {
 					mDB.commit(); Logger.debug(this, "COMMITED.");
 					++deleted;					
 				} catch(RuntimeException e) {
-					mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+					mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
 				}
 			}
 			
@@ -132,7 +132,7 @@ public final class IntroductionPuzzleStore {
 					deleteCount--;
 				}
 				catch(RuntimeException e) {
-					mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);	
+					mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);	
 				}
 			}
 		}
@@ -174,7 +174,7 @@ public final class IntroductionPuzzleStore {
 			mDB.delete(puzzle);
 		}
 		catch(RuntimeException e) {
-			mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+			mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
 			throw e;
 		}
 	}
@@ -205,7 +205,7 @@ public final class IntroductionPuzzleStore {
 				Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
 				throw e;
 			}
 		}
