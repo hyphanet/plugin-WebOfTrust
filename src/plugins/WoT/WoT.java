@@ -377,6 +377,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		if(databaseVersion == -95 || databaseVersion == -94 || databaseVersion == -93) {
 			Logger.normal(this, "Found old database (" + databaseVersion + "), re-calculating all scores ...");
 			
+			mFullScoreComputationNeeded = true;
 			computeAllScoresWithoutCommit();
 			
 			mConfig.set(Config.DATABASE_FORMAT_VERSION, databaseVersion = -92);
