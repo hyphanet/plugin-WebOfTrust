@@ -95,7 +95,7 @@ public final class Config {
 				mDB.commit();
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
 				throw e;
 			}
 		}

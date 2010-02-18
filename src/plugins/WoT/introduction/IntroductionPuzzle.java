@@ -100,9 +100,17 @@ public class IntroductionPuzzle {
 	public IntroductionPuzzle(Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData,
 			Date myDateOfInsertion, long myValidUntilTime, int myIndex) {
 
-		assert(	newInserter != null && newID != null && newType != null && newMimeType != null && !newMimeType.equals("") &&
-				newData!=null && newData.length!=0 && myValidUntilTime > CurrentTimeUTC.getInMillis() && myDateOfInsertion != null &&
-				myDateOfInsertion.getTime() < CurrentTimeUTC.getInMillis()&& myIndex >= 0);
+		assert(newInserter != null);
+		assert(newID != null);
+		assert(newType != null);
+		assert(newMimeType != null);
+		assert(!newMimeType.equals(""));
+		assert(newData!=null);
+		assert(newData.length!=0);
+		assert(myValidUntilTime > CurrentTimeUTC.getInMillis());
+		assert(myDateOfInsertion != null);
+		assert(myDateOfInsertion.getTime() <= CurrentTimeUTC.getInMillis());
+		assert(myIndex >= 0);
 		
 		mID = newID;
 		mInserter = newInserter;

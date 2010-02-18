@@ -191,7 +191,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
 				throw e;
 			}
 		}
@@ -302,7 +302,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 				
 				mDB.commit(); Logger.debug(this, "COMMITED.");
 			} catch(RuntimeException e) {
-				mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
 			}
 		}
 		}
@@ -347,7 +347,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 					// The identity has a new "mandatory" edition number stored which we must fetch, so we restart the request because the edition number might
 					// be lower than the last one which the USKRetriever has fetched.
 					Logger.minor(this, "The current edition of the given identity is marked as not fetched, re-creating the USKRetriever for " + usk);
-					abortFetch(retriever);
+					abortFetch(identity.getID());
 					retriever = null;
 				}
 			}
@@ -391,21 +391,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 		}
 	}
 	
-	private synchronized void abortFetch(USKRetriever retriever) {
-		retriever.cancel(null, mClientContext);
-		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
-		
-		Iterator<USKRetriever> it = mRequests.values().iterator();
-		while (it.hasNext()) {
-			if (retriever.equals(it.next())) {
-				it.remove();
-				break;
-			}
-		}
-	}
-	
 	private synchronized void abortFetch(String identityID) {
-		USKRetriever retriever = mRequests.get(identityID);
+		USKRetriever retriever = mRequests.remove(identityID);
 
 		if(retriever == null) {
 			Logger.error(this, "Aborting fetch failed (no fetch found) for identity " + identityID);
@@ -413,7 +400,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 		}
 			
 		Logger.debug(this, "Aborting fetch for identity " + identityID);
-		abortFetch(retriever);
+		retriever.cancel(null, mClientContext);
+		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
 	}
 	
 	/**

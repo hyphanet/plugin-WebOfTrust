@@ -8,6 +8,7 @@ import java.util.TreeMap;
 
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
+import plugins.WoT.Score;
 import plugins.WoT.Trust;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.DuplicateScoreException;
@@ -326,15 +327,18 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			//Score
 			try {
-				final int score = wot.getScore((OwnIdentity)treeOwner, id).getScore();
-				row.addChild("td", new String[] { "align", "style" }, new String[] { "center", "background-color:" + KnownIdentitiesPage.getTrustColor(score) + ";" } ,
-						Integer.toString(score) +" ("+
-						wot.getScore((OwnIdentity)treeOwner, id).getRank()+")");
+				final Score score = wot.getScore((OwnIdentity)treeOwner, id);
+				final int scoreValue = score.getScore();
+				final int rank = score.getRank();
+				
+				row.addChild("td", new String[] { "align", "style" }, new String[] { "center", "background-color:" + KnownIdentitiesPage.getTrustColor(scoreValue) + ";" } ,
+						Integer.toString(scoreValue) +" ("+
+						(rank != Integer.MAX_VALUE ?  rank : l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.InfiniteRank"))
+						+")");
 			}
 			catch (NotInTrustTreeException e) {
 				// This only happen with identities added manually by the user
-				// TODO Maybe we should give the opportunity to trust it at creation time
-				row.addChild("td", "null");	
+				row.addChild("td", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.NoScore"));	
 			}
 			
 			// Own Trust

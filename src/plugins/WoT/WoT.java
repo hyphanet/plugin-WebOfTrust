@@ -194,15 +194,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			
 			mFetcher = new IdentityFetcher(this);		
 			
-			mIntroductionServer = new IntroductionServer(this, mFetcher);
-			mIntroductionServer.start();
-			
-			mIntroductionClient = new IntroductionClient(this);
-			mIntroductionClient.start();
-
-			mWebInterface = new WebInterface(this, SELF_URI);
-			mFCPInterface = new FCPInterface(this);
-			
 			// TODO: Don't do this as soon as we are sure that score computation works.
 			Logger.normal(this, "Veriying all stored scores ...");
 			synchronized(this) {
@@ -227,6 +218,16 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				}
 			}
 			}
+			
+			mIntroductionServer = new IntroductionServer(this, mFetcher);
+			mIntroductionServer.start();
+			
+			mIntroductionClient = new IntroductionClient(this);
+			mIntroductionClient.start();
+
+			mWebInterface = new WebInterface(this, SELF_URI);
+			mFCPInterface = new FCPInterface(this);
+			
 			Logger.debug(this, "WoT startup completed.");
 		}
 		catch(RuntimeException e){
@@ -376,6 +377,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		if(databaseVersion == -95 || databaseVersion == -94 || databaseVersion == -93) {
 			Logger.normal(this, "Found old database (" + databaseVersion + "), re-calculating all scores ...");
 			
+			mFullScoreComputationNeeded = true;
 			computeAllScoresWithoutCommit();
 			
 			mConfig.set(Config.DATABASE_FORMAT_VERSION, databaseVersion = -92);
@@ -389,7 +391,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
 		}
 		catch(RuntimeException e) {
-			mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+			mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
 			throw e;
 		}
 	}
@@ -443,7 +445,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 							mDB.commit(); Logger.debug(this, "COMMITED.");
 						}
 						catch(RuntimeException e) {
-							mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+							mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
 						}
 					}
 
@@ -475,7 +477,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			}
 			catch(Exception e) {
 				Logger.error(this, "Deleting orphan trusts failed.", e);
-				mDB.rollback(); Logger.debug(this, "ROLLED BACK!"); 
+				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!"); 
 			}
 			
 			try {
@@ -492,7 +494,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			}
 			catch(Exception e) {
 				Logger.error(this, "Deleting orphan trusts failed.", e);
-				mDB.rollback(); Logger.debug(this, "ROLLED BACK!"); 
+				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!"); 
 			}
 		}
 	}
@@ -580,9 +582,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
 	 */
 	protected synchronized boolean computeAllScoresWithoutCommit() {
-		if(!mFullScoreComputationNeeded)
-			Logger.error(this, "computeAllScores() called even though mFullScoreComputationNeeded was not set!");
-		
 		boolean returnValue = true;
 		final ObjectSet<Identity> allIdentities = getAllIdentities();
 		
@@ -617,8 +616,20 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				// introduction puzzles cannot inherit their rank to their trustees.
 				final LinkedList<Identity> unprocessedTrusters = new LinkedList<Identity>();
 				
-				rankValues.put(treeOwner, 0);
-				unprocessedTrusters.addLast(treeOwner);
+				// The own identity is the root of the trust tree, it should assign itself a rank of 0 , a capacity of 100 and a symbolic score of Integer.MAX_VALUE
+				
+				try {
+					Score selfScore = getScore(treeOwner, treeOwner);
+					
+					if(selfScore.getRank() >= 0) { // It can only give it's rank if it has a valid one
+						rankValues.put(treeOwner, selfScore.getRank());
+						unprocessedTrusters.addLast(treeOwner);
+					} else {
+						// rankValues.put(treeOwner, null); // No need to store null in a Hashtable
+					}
+				} catch(NotInTrustTreeException e) {
+					// This only happens in unit tests.
+				}
 				 
 				while(!unprocessedTrusters.isEmpty()) {
 					final Identity truster = unprocessedTrusters.removeFirst();
@@ -627,8 +638,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					
 					// The truster cannot give his rank to his trustees because he has none (or infinite), they receive no rank at all.
 					if(trusterRank == null || trusterRank == Integer.MAX_VALUE) {
-						// TODO: The execution should not reach this point anyway because we do not put trustees into the pipeline if they have null or infinite rank.
-						// Verify this... and add error logging if it should not come here.
+						// (Normally this does not happen because we do not enqueue the identities if they have no rank but we check for security)
 						continue;
 					}
 					
@@ -674,14 +684,14 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				// The score of an identity is the sum of all weighted trust values it has received.
 				// Each trust value is weighted with the capacity of the truster - the capacity decays with increasing rank.
 				Integer targetScore;
-				Integer targetRank = rankValues.get(target);
+				final Integer targetRank = rankValues.get(target);
 				
 				if(targetRank == null) {
 					targetScore = null;
 				} else {
 					// The treeOwner trusts himself.
 					if(targetRank == 0) {
-						targetScore = 100;
+						targetScore = Integer.MAX_VALUE;
 					}
 					else {
 						// If the treeOwner has assigned a trust value to the target, it always overrides the "remote" score.
@@ -712,7 +722,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				// Now we have the rank and the score of the target computed and can check whether the database-stored score object is correct.
 				try {
 					Score storedScore = getScore(treeOwner, target);
-					if(targetScore == null) {
+					if(expectedScore == null) {
 						returnValue = false;
 						if(!mFullScoreComputationNeeded)
 							Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + storedScore);
@@ -726,20 +736,20 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						if(!expectedScore.equals(storedScore)) {
 							returnValue = false;
 							if(!mFullScoreComputationNeeded)
-								Logger.error(this, "Correcting wrong score: Should have been " + targetScore + " but was " + storedScore);
+								Logger.error(this, "Correcting wrong score: Should have been " + expectedScore + " but was " + storedScore);
 							
 							needToCheckFetchStatus = true;
 							oldShouldFetch = shouldFetchIdentity(target);
 							
-							storedScore.setRank(targetRank);
-							storedScore.setCapacity(computeCapacity(treeOwner, target, targetRank));
-							storedScore.setValue(targetScore);
+							storedScore.setRank(expectedScore.getRank());
+							storedScore.setCapacity(computeCapacity(expectedScore.getTreeOwner(), expectedScore.getTarget(), expectedScore.getRank()));
+							storedScore.setValue(expectedScore.getScore());
 
 							mDB.store(storedScore);
 						}
 					}
 				} catch(NotInTrustTreeException e) {
-					if(targetScore != null) {
+					if(expectedScore != null) {
 						returnValue = false;
 						if(!mFullScoreComputationNeeded)
 							Logger.error(this, "Correcting wrong score: No score was stored for the identity but it should be " + expectedScore);
@@ -819,7 +829,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			}
 			catch (Exception e) {
 				Logger.error(this, "Seed identity loading error", e);
-				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
 			}
 		}
 	}
@@ -916,7 +926,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				 * If it becomes possible some day, we should check that here, and log an error if there is an uncommitted transaction. 
 				 * - All transactions should be committed after obtaining the lock() on the database. */
 				synchronized(mDB.lock()) {
-					mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+					mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
 					mDB.close();
 				}
 			}
@@ -1158,7 +1168,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.commit(); Logger.debug(identity, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -1193,7 +1203,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			mDB.store(identity);
 		}
 		catch(RuntimeException e) {
-			mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+			mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
 			throw e;
 		}
 	}
@@ -1257,7 +1267,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			mDB.delete(identity);
 		}
 		catch(RuntimeException e) {
-			mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+			mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
 			throw e;
 		}
 	}
@@ -1573,7 +1583,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
 	 *     try { ... setTrustWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 *     catch(RuntimeException e) { mDB.rollback(); mDB.purge(); throw e; }
 	 * }
 	 * 
 	 * @param truster The Identity that gives the trust
@@ -1622,7 +1632,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -1634,7 +1644,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
 	 *     try { ... removeTrustWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 *     catch(RuntimeException e) { mDB.rollback(); mDB.purge(); throw e; }
 	 * }
 	 * 
 	 * @param truster
@@ -1650,7 +1660,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				} 
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 	}
@@ -1660,7 +1670,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
 	 *     try { ... setTrustWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 *     catch(RuntimeException e) { mDB.rollback(); mDB.purge(); throw e; }
 	 * }
 	 * 
 	 */
@@ -1671,13 +1681,14 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	
 	/**
 	 * Initializes this OwnIdentity's trust tree without commiting the transaction. 
-	 * Meaning : It creates a Score object for this OwnIdentity in its own trust tree, 
-	 * so it gets a rank and a capacity and can give trust to other Identities.
+	 * Meaning : It creates a Score object for this OwnIdentity in its own trust so it can give trust to other Identities. 
+	 * 
+	 * The score will have a rank of 0, a capacity of 100 (= 100 percent) and a score value of Integer.MAX_VALUE.
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
 	 *     try { ... initTrustTreeWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 *     catch(RuntimeException e) { mDB.rollback(); mDB.purge(); throw e; }
 	 * }
 	 *  
 	 * @throws DuplicateScoreException if there already is more than one Score for this identity (should never happen)
@@ -1688,7 +1699,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			Logger.error(this, "initTrusTree called even though there is already one for " + identity);
 			return;
 		} catch (NotInTrustTreeException e) {
-			mDB.store(new Score(identity, identity, 100, 0, 100));
+			mDB.store(new Score(identity, identity, Integer.MAX_VALUE, 0, 100));
 		}
 	}
 	
@@ -1698,7 +1709,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
 	 *     try { ... updateScoreWithoutCommit(...); storeAndCommit(trustee); }
-	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 *     catch(RuntimeException e) { mDB.rollback(); mDB.purge(); throw e; }
 	 * }
 	 * 
 	 */
@@ -1721,7 +1732,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 */
 	private synchronized int computeScoreValue(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException {
 		if(target == treeOwner)
-			return 100;
+			return Integer.MAX_VALUE;
 		
 		int value = 0;
 		
@@ -1732,7 +1743,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		
 		for(Trust trust : getReceivedTrusts(target)) {
 			try {
-				value += trust.getValue() * (getScore(treeOwner, trust.getTruster())).getCapacity() / 100;
+				final Score trusterScore = getScore(treeOwner, trust.getTruster());
+				value += ( trust.getValue() * trusterScore.getCapacity() ) / 100;
 			} catch (NotInTrustTreeException e) {}
 		}
 		return value;
@@ -1820,6 +1832,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		
 		mTrustListImportInProgress = true;
 		assert(!mFullScoreComputationNeeded);
+		assert(computeAllScoresWithoutCommit()); // The database is intact before the import
 	}
 	
 	/**
@@ -1831,7 +1844,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		assert(mTrustListImportInProgress);
 		mTrustListImportInProgress = false;
 		mFullScoreComputationNeeded = false;
-		mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+		mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
+		assert(computeAllScoresWithoutCommit()); // Test rollback.
 	}
 	
 	/**
@@ -1849,7 +1863,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		
 		if(mFullScoreComputationNeeded) {
 			computeAllScoresWithoutCommit();
-			assert(!mFullScoreComputationNeeded);
+			assert(!mFullScoreComputationNeeded); // It properly clears the flag
+			assert(computeAllScoresWithoutCommit()); // computeAllScoresWithoutCommit() is stable
 		}
 		
 		mTrustListImportInProgress = false;
@@ -1862,7 +1877,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
 	 *     try { ... updateScoreWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { mDB.rollback(); throw e; }
+	 *     catch(RuntimeException e) { mDB.rollback(); mDB.purge(); throw e; }
 	 * }
 	 * 
 	 * @param treeOwner The OwnIdentity that owns the trust tree
@@ -1891,6 +1906,16 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					continue;
 				}
 				
+				// We cannot iteratively REMOVE an inherited rank from the trustees because we don't know whether there is a circle in the trust values
+				// which would make the current identity get its old rank back via the circle: computeRank searches the trusters of an identity for the best
+				// rank, if we remove the rank from an identity, all its trustees will have a better rank and if one of them trusts the original identity
+				// then this function would run into an infinite loop. Decreasing or incrementing an existing rank is possible with this function because
+				// the rank received from the trustees will always be higher (that is exactly 1 more) than this identities rank.
+				if(trustWasModified && oldTrust.getValue() > 0 && newTrust.getValue() <= 0) {
+					mFullScoreComputationNeeded = true;
+					break;
+				}
+				
 				final LinkedList<Trust> unprocessedEdges = new LinkedList<Trust>();
 				unprocessedEdges.add(newTrust);
 
@@ -1915,12 +1940,25 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					trusteeScore.setValue(computeScoreValue(treeOwner, trustee));
 					trusteeScore.setRank(computeRank(treeOwner, trustee));
 					trusteeScore.setCapacity(computeCapacity(treeOwner, trustee, trusteeScore.getRank()));
-					
-					if(trusteeScore.getCapacity() == 0 && oldScore.getCapacity() > 0) {
+
+					// Normally we couldn't detect the following two cases due to circular trust values. However, if an own identity assigns a trust value,
+					// the rank and capacity are always computed based on the trust value of the own identity so we must also check this here:
+
+					if((oldScore.getRank() >= 0 && oldScore.getRank() < Integer.MAX_VALUE) // It had an inheritable rank
+							&& (trusteeScore.getRank() == -1 || trusteeScore.getRank() == Integer.MAX_VALUE)) { // It has no inheritable rank anymore
 						mFullScoreComputationNeeded = true;
 						break;
 					}
-					else
+					
+					if(oldScore.getCapacity() > 0 && trusteeScore.getCapacity() == 0) {
+						mFullScoreComputationNeeded = true;
+						break;
+					}
+					
+					// Identities should not get into the queue if they have no rank, see the large if() about 20 lines below
+					assert(trusteeScore.getRank() >= 0); 
+					
+					if(trusteeScore.getRank() >= 0)
 						mDB.store(trusteeScore);
 					
 					if(!oldShouldFetch && shouldFetchIdentity(trustee)) { 
@@ -1939,10 +1977,16 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 							mFetcher.storeAbortFetchCommandWithoutCommit(trustee);
 					}
 					
+					// If the rank or capacity changed then the trustees might be affected because the could have inherited theirs
 					if(oldScore.getRank() != trusteeScore.getRank() || oldScore.getCapacity() != trusteeScore.getCapacity()) {
-						// We need to update the trustees of trustee
-						for(Trust givenTrust : getGivenTrusts(trustee)) {
-							unprocessedEdges.add(givenTrust);
+						// If this identity has no capacity or no rank then it cannot affect its trustees:
+						// (- If it had none and it has none now then there is none which can be inherited, this is obvious)
+						// - If it had one before and it was removed, this algorithm will have aborted already because a full computation is needed
+						if(trusteeScore.getCapacity() > 0 || (trusteeScore.getRank() >= 0 && trusteeScore.getRank() < Integer.MAX_VALUE)) {
+							// We need to update the trustees of trustee
+							for(Trust givenTrust : getGivenTrusts(trustee)) {
+								unprocessedEdges.add(givenTrust);
+							}
 						}
 					}
 				}
@@ -1956,10 +2000,14 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			mFullScoreComputationNeeded = true;
 		}
 		
+		// If we're in debug mode we always run computeAllScores to find errors in this function.
+		assert(mFullScoreComputationNeeded || (!mFullScoreComputationNeeded && computeAllScoresWithoutCommit()));
+		
 		if(mFullScoreComputationNeeded && !mTrustListImportInProgress) {
 			// FIXME before 0.4.0 final: Write a computeAllScores() which does not keep all objects in memory.
 			// TODO: This uses very much CPU and memory. Find a better solution!
 			computeAllScoresWithoutCommit();
+			assert(computeAllScoresWithoutCommit()); // It is stable
 		}
 		
 		
@@ -2096,7 +2144,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			//mDB.commit(); Logger.debug(this, "COMMITED.");
 			//}
 			//catch(RuntimeException error) {
-			//	mDB.rollback(); Logger.error(this, "ROLLED BACK: addIdentity() failed", e);
+			//	mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK: addIdentity() failed", e);
 			//	throw error;
 			//}
 		}
@@ -2113,7 +2161,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -2166,7 +2214,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						try {
 							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "I trust the Freenet developers.");
 						} catch(UnknownIdentityException e) {
-							Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known.", e);
+							// Don't use logger.error() because this will assert(false) which breaks unit tests.
+							Logger.logStatic(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e, Logger.ERROR);
 						}
 					}
 					
@@ -2179,7 +2228,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					return identity;
 				}
 				catch(RuntimeException e) {
-					mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+					mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
 					throw e;
 				}
 			}
@@ -2273,7 +2322,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -2300,7 +2349,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			}
 			catch(RuntimeException e)
 			{
-				mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
