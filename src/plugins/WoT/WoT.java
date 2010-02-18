@@ -198,7 +198,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			Logger.normal(this, "Veriying all stored scores ...");
 			synchronized(this) {
 			synchronized(mDB.lock()) {
-				mFullScoreComputationNeeded = true;
 				computeAllScoresWithoutCommit();
 				mDB.commit();
 			}
@@ -582,9 +581,6 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
 	 */
 	protected synchronized boolean computeAllScoresWithoutCommit() {
-		if(!mFullScoreComputationNeeded)
-			Logger.error(this, "computeAllScores() called even though mFullScoreComputationNeeded was not set!");
-		
 		boolean returnValue = true;
 		final ObjectSet<Identity> allIdentities = getAllIdentities();
 		
@@ -619,8 +615,20 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				// introduction puzzles cannot inherit their rank to their trustees.
 				final LinkedList<Identity> unprocessedTrusters = new LinkedList<Identity>();
 				
-				rankValues.put(treeOwner, 0);
-				unprocessedTrusters.addLast(treeOwner);
+				// The own identity is the root of the trust tree, it should assign itself a rank of 0 , a capacity of 100 and a symbolic score of Integer.MAX_VALUE
+				
+				try {
+					Score selfScore = getScore(treeOwner, treeOwner);
+					
+					if(selfScore.getRank() >= 0) { // It can only give it's rank if it has a valid one
+						rankValues.put(treeOwner, selfScore.getRank());
+						unprocessedTrusters.addLast(treeOwner);
+					} else {
+						// rankValues.put(treeOwner, null); // No need to store null in a Hashtable
+					}
+				} catch(NotInTrustTreeException e) {
+					// This only happens in unit tests.
+				}
 				 
 				while(!unprocessedTrusters.isEmpty()) {
 					final Identity truster = unprocessedTrusters.removeFirst();
@@ -629,8 +637,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					
 					// The truster cannot give his rank to his trustees because he has none (or infinite), they receive no rank at all.
 					if(trusterRank == null || trusterRank == Integer.MAX_VALUE) {
-						// TODO: The execution should not reach this point anyway because we do not put trustees into the pipeline if they have null or infinite rank.
-						// Verify this... and add error logging if it should not come here.
+						// (Normally this does not happen because we do not enqueue the identities if they have no rank but we check for security)
 						continue;
 					}
 					
@@ -683,7 +690,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				} else {
 					// The treeOwner trusts himself.
 					if(targetRank == 0) {
-						targetScore = 100;
+						targetScore = Integer.MAX_VALUE;
 					}
 					else {
 						// If the treeOwner has assigned a trust value to the target, it always overrides the "remote" score.
@@ -1673,8 +1680,9 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	
 	/**
 	 * Initializes this OwnIdentity's trust tree without commiting the transaction. 
-	 * Meaning : It creates a Score object for this OwnIdentity in its own trust tree, 
-	 * so it gets a rank and a capacity and can give trust to other Identities.
+	 * Meaning : It creates a Score object for this OwnIdentity in its own trust so it can give trust to other Identities. 
+	 * 
+	 * The score will have a rank of 0, a capacity of 100 (= 100 percent) and a score value of Integer.MAX_VALUE.
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
@@ -1690,7 +1698,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			Logger.error(this, "initTrusTree called even though there is already one for " + identity);
 			return;
 		} catch (NotInTrustTreeException e) {
-			mDB.store(new Score(identity, identity, 100, 0, 100));
+			mDB.store(new Score(identity, identity, Integer.MAX_VALUE, 0, 100));
 		}
 	}
 	
@@ -2195,7 +2203,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						try {
 							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "I trust the Freenet developers.");
 						} catch(UnknownIdentityException e) {
-							Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known.", e);
+							// Don't use logger.error() because this will assert(false) which breaks unit tests.
+							Logger.logStatic(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e, Logger.ERROR);
 						}
 					}
 					

@@ -40,7 +40,7 @@ public class WoTTest extends DatabaseBasedTest {
 		OwnIdentity a = mWoT.getOwnIdentityByURI(uriA);
 
 		Score score = mWoT.getScore(a,a);
-		assertEquals(100, score.getScore());
+		assertEquals(Integer.MAX_VALUE, score.getScore());
 		assertEquals(0, score.getRank());
 		assertEquals(100, score.getCapacity());
 		assertSame(a, score.getTreeOwner());
@@ -90,7 +90,7 @@ public class WoTTest extends DatabaseBasedTest {
 		// Check a's Score object
 		flushCaches();
 		Score scoreA = mWoT.getScore(a, a);
-		assertEquals(100, scoreA.getScore());
+		assertEquals(Integer.MAX_VALUE, scoreA.getScore());
 		assertEquals(0, scoreA.getRank());
 		assertEquals(100, scoreA.getCapacity());
 		
@@ -122,7 +122,7 @@ public class WoTTest extends DatabaseBasedTest {
 		// Check a's Score object
 		flushCaches();
 		scoreA = mWoT.getScore(a, a);
-		assertEquals(100, scoreA.getScore());
+		assertEquals(Integer.MAX_VALUE, scoreA.getScore());
 		assertEquals(0, scoreA.getRank());
 		assertEquals(100, scoreA.getCapacity());
 
@@ -157,7 +157,7 @@ public class WoTTest extends DatabaseBasedTest {
 		// Check a's Score object
 		flushCaches();
 		Score scoreA = mWoT.getScore(a, a);
-		assertEquals(100, scoreA.getScore());
+		assertEquals(Integer.MAX_VALUE, scoreA.getScore());
 		assertEquals(0, scoreA.getRank());
 		assertEquals(100, scoreA.getCapacity());
 		
@@ -187,7 +187,7 @@ public class WoTTest extends DatabaseBasedTest {
 		// Check a's Score object
 		flushCaches();
 		scoreA = mWoT.getScore(a, a);
-		assertEquals(100, scoreA.getScore());
+		assertEquals(Integer.MAX_VALUE, scoreA.getScore());
 		assertEquals(0, scoreA.getRank());
 		assertEquals(100, scoreA.getCapacity());
 		
@@ -229,7 +229,7 @@ public class WoTTest extends DatabaseBasedTest {
 		// Check a's Score object
 		flushCaches();
 		Score scoreA = mWoT.getScore(a, a);
-		assertEquals(100, scoreA.getScore());
+		assertEquals(Integer.MAX_VALUE, scoreA.getScore());
 		assertEquals(0, scoreA.getRank());
 		assertEquals(100, scoreA.getCapacity());
 		
@@ -253,7 +253,7 @@ public class WoTTest extends DatabaseBasedTest {
 		OwnIdentity b = mWoT.createOwnIdentity(uriB, uriB, "B", true, "Test");
 
 		mWoT.setTrust(a, b, (byte)100, "Foo");
-		mWoT.setTrust(b, a, (byte)100, "Bar");
+		mWoT.setTrust(b, a, (byte)80, "Bar");
 		
 		// Check we have the correct number of objects
 		flushCaches();
@@ -265,27 +265,27 @@ public class WoTTest extends DatabaseBasedTest {
 		// Check a's own Score object
 		flushCaches();
 		Score scoreA = mWoT.getScore(a, a);
-		assertEquals(100, scoreA.getScore());
+		assertEquals(Integer.MAX_VALUE, scoreA.getScore());
 		assertEquals(0, scoreA.getRank());
 		assertEquals(100, scoreA.getCapacity());
 		
 		// Check a's Score object
 		flushCaches();
 		Score scoreAfromB = mWoT.getScore(b, a);
-		assertEquals(100, scoreAfromB.getScore());
+		assertEquals(80, scoreAfromB.getScore());
 		assertEquals(1, scoreAfromB.getRank());
 		assertEquals(40, scoreAfromB.getCapacity());
 				
 		// Check B's own Score object
 		flushCaches();
-		Score scoreB = mWoT.getScore(a, a);
-		assertEquals(100, scoreB.getScore());
+		Score scoreB = mWoT.getScore(b, b);
+		assertEquals(Integer.MAX_VALUE, scoreB.getScore());
 		assertEquals(0, scoreB.getRank());
 		assertEquals(100, scoreB.getCapacity());
 
 		// Check B's Score object
 		flushCaches();
-		Score scoreBfromA = mWoT.getScore(b, a);
+		Score scoreBfromA = mWoT.getScore(a, b);
 		assertEquals(100, scoreBfromA.getScore());
 		assertEquals(1, scoreBfromA.getRank());
 		assertEquals(40, scoreBfromA.getCapacity());
