@@ -735,7 +735,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						if(!expectedScore.equals(storedScore)) {
 							returnValue = false;
 							if(!mFullScoreComputationNeeded)
-								Logger.error(this, "Correcting wrong score: Should have been " + targetScore + " but was " + storedScore);
+								Logger.error(this, "Correcting wrong score: Should have been " + expectedScore + " but was " + storedScore);
 							
 							needToCheckFetchStatus = true;
 							oldShouldFetch = shouldFetchIdentity(target);
