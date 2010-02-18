@@ -1731,7 +1731,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 */
 	private synchronized int computeScoreValue(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException {
 		if(target == treeOwner)
-			return 100;
+			return Integer.MAX_VALUE;
 		
 		int value = 0;
 		
