@@ -1965,10 +1965,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					if(oldScore.getRank() != trusteeScore.getRank() || oldScore.getCapacity() != trusteeScore.getCapacity()) {
 						// If this identity has no capacity or no rank then it cannot affect its trustees.
 						if(trusteeScore.getCapacity() > 0 || (trusteeScore.getRank() >= 0 && trusteeScore.getRank() <= Integer.MAX_VALUE)) {
-						// We need to update the trustees of trustee
-						for(Trust givenTrust : getGivenTrusts(trustee)) {
-							unprocessedEdges.add(givenTrust);
-						}
+							// We need to update the trustees of trustee
+							for(Trust givenTrust : getGivenTrusts(trustee)) {
+								unprocessedEdges.add(givenTrust);
+							}
 						}
 					}
 				}
