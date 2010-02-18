@@ -109,7 +109,7 @@ public class IntroductionPuzzle {
 		assert(newData.length!=0);
 		assert(myValidUntilTime > CurrentTimeUTC.getInMillis());
 		assert(myDateOfInsertion != null);
-		assert(myDateOfInsertion.getTime() < CurrentTimeUTC.getInMillis());
+		assert(myDateOfInsertion.getTime() <= CurrentTimeUTC.getInMillis());
 		assert(myIndex >= 0);
 		
 		mID = newID;
