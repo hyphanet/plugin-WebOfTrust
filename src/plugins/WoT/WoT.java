@@ -1742,7 +1742,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		
 		for(Trust trust : getReceivedTrusts(target)) {
 			try {
-				value += trust.getValue() * (getScore(treeOwner, trust.getTruster())).getCapacity() / 100;
+				final Score trusterScore = getScore(treeOwner, trust.getTruster());
+				value += ( trust.getValue() * trusterScore.getCapacity() ) / 100;
 			} catch (NotInTrustTreeException e) {}
 		}
 		return value;
