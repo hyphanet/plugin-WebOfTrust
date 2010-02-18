@@ -1942,7 +1942,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						break;
 					}
 					
-					mDB.store(trusteeScore);
+					if(trusteeScore.getRank() >= 0)
+						mDB.store(trusteeScore);
 					
 					if(!oldShouldFetch && shouldFetchIdentity(trustee)) { 
 						Logger.debug(this, "Fetch status changed from false to true, refetching " + trustee);
@@ -1960,10 +1961,14 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 							mFetcher.storeAbortFetchCommandWithoutCommit(trustee);
 					}
 					
+					// If the rank or capacity changed then the trustees might be affected because the could have inherited theirs
 					if(oldScore.getRank() != trusteeScore.getRank() || oldScore.getCapacity() != trusteeScore.getCapacity()) {
+						// If this identity has no capacity or no rank then it cannot affect its trustees.
+						if(trusteeScore.getCapacity() > 0 || (trusteeScore.getRank() >= 0 && trusteeScore.getRank() <= Integer.MAX_VALUE)) {
 						// We need to update the trustees of trustee
 						for(Trust givenTrust : getGivenTrusts(trustee)) {
 							unprocessedEdges.add(givenTrust);
+						}
 						}
 					}
 				}
