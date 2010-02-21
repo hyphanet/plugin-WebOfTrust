@@ -11,8 +11,12 @@
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
 	<property name="dist" location="dist/"/>
+	<property name="src" location="src/"/>
 	<property name="javadoc" location="javadoc/"/>
 	<property name="junit.location" value="/usr/share/java/junit.jar"/>
+	<property name="version.src" value="plugins/WoT/Version.java" />
+	<property name="version.build" value="plugins/WoT/Version.class" />
+
 	<available file="src/plugins/WoT/Version.java" property="version.present"/>
 	<available file="${junit.location}" property="junit.present"/>
 
@@ -20,6 +24,23 @@
 		<pathelement location="${freenet-ext.location}"/>
 		<pathelement location="${freenet-cvs-snapshot.location}"/>
 	</path>
+
+	<exec executable="git"
+		failifexecutionfails="false"
+		errorProperty="git.errror"
+		outputproperty="git.describe"
+		resultproperty="git.result">
+		<arg value="describe" />
+		<arg value="--always" />
+		<arg value="--abbrev=4" />
+	</exec>
+
+	<condition property="git.revision" value="${git.describe}" else="@unknown@">
+		<and>
+			<equals arg1="${git.result}" arg2="0" />
+			<isset property="git.describe" />
+		</and>
+	</condition>
 
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
@@ -40,7 +61,23 @@
 	<target name="compile" depends="mkdir,setver" >
 		<!-- Create the time stamp -->
 		<tstamp/>
-		<!-- Create the build directory structure used by compile -->
+
+		<!-- Create the Version file with patched revision number in ${build} -->
+		<copy file="${src}/${version.src}" tofile="${build}/${version.src}" overwrite="true" />
+		<delete file="${build}/${version.build}" quiet="true" />
+		<replace file="${build}/${version.src}">
+			<replacefilter token="@custom@" value="${git.revision}"/>
+		</replace>
+		<echo message="Updated build version to ${git.revision} in ${build}/${version.src}"/>
+
+		<!-- Force compile of Version.java in case compile of ${src} didn't trigger it -->
+		<javac srcdir="${build}" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
+			<classpath>
+				<pathelement location="${freenet-ext.location}"/>
+				<pathelement location="${freenet-cvs-snapshot.location}"/>
+			</classpath>
+			<include name="${version.src}"/>
+		</javac>
 
 		<!-- FIXME: remove the debug and replace with optimize -->
 		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}" encoding="UTF-8">
@@ -48,6 +85,7 @@
 				<path refid="lib.path"/>
 			</classpath>
 			<include name="**/*.java"/>
+			<exclude name="${version.src}"/>
 		</javac>
 		<copy todir="${build}">
 			<fileset dir="src/">
