@@ -50,15 +50,8 @@
 		<echo message="Using ${freenet-ext.location} as freenet-ext.jar"/>
 	</target>
 
-	<target name="setver" if="version.present">
-		<!-- Update the Version file -->
-		<replace file="src/plugins/WoT/Version.java">
-			<replacefilter token="@custom@" value="${svn.revision}"/>
-		</replace>
-	</target>
-
 	<!-- ================================================== -->
-	<target name="compile" depends="mkdir,setver" >
+	<target name="compile" depends="mkdir" >
 		<!-- Create the time stamp -->
 		<tstamp/>
 
