@@ -2345,7 +2345,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 
 	public String getVersion() {
-		return Version.getMarketingVersion();
+		return Version.longVersionString;
 	}
 	
 	public long getRealVersion() {

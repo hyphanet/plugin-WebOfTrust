@@ -30,9 +30,7 @@ public class Version {
 	/** Published as an identity property if you own a seed identity. */
 	public static final long latestVersion = version;
 
-	public static String getMarketingVersion() {
-		return "0.4.0 "+gitRevision;
-	}
+	public static final String longVersionString = "0.4.0 "+gitRevision;
 
 	public static long getRealVersion() {
 		return version;
