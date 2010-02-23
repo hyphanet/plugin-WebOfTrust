@@ -447,7 +447,13 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 		FreenetURI realURI = origUSK.getURI().setSuggestedEdition(edition);
 		
 		Logger.debug(this, "Fetched identity: " + realURI);
-		
+
+		if (result.size() == 0) {
+			Logger.error(this, "Identity has 0 byte data, ignoring: "+realURI.toString(false, false) +
+					"\nIf this happens very often it is a severe bug or an attac.");
+			return;
+		}
+
 		Bucket bucket = null;
 		InputStream inputStream = null;
 		
