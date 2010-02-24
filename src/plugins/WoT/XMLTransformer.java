@@ -456,7 +456,7 @@ public final class XMLTransformer {
 					mDB.commit(); Logger.debug(this, "COMMITED.");
 				}
 				catch(RuntimeException error) {
-					mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!", error);
+					System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!", error);
 					throw error;
 				}
 			}
