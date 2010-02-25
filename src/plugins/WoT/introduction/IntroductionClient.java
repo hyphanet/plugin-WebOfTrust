@@ -22,6 +22,7 @@ import plugins.WoT.XMLTransformer;
 import plugins.WoT.exceptions.InvalidParameterException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
+import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.exceptions.UnknownPuzzleException;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 
@@ -85,13 +86,13 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/* Objects from WoT */
 	
-	private WoT mWoT;
+	private final WoT mWoT;
 	
 	/** The container object which manages storage of the puzzles in the database, also used for synchronization */
-	private IntroductionPuzzleStore mPuzzleStore;
+	private final IntroductionPuzzleStore mPuzzleStore;
 	
 	/** Random number generator */
-	private Random mRandom;
+	private final Random mRandom;
 	
 	/* Private objects */
 	
@@ -103,7 +104,7 @@ public final class IntroductionClient extends TransferThread  {
 	 */
 	private final LRUQueue<String> mIdentities = new LRUQueue<String>(); // A suitable default size might be PUZZLE_POOL_SIZE + 1
 	
-	public static final int IDENTITIES_LRU_QUEUE_SIZE_LIMIT = 128;
+	public static final int IDENTITIES_LRU_QUEUE_SIZE_LIMIT = 512;
 
 	/**
 	 * Creates an IntroductionClient
@@ -170,22 +171,22 @@ public final class IntroductionClient extends TransferThread  {
 	 * The locking policy when using this function is that we do not lock anything while parsing the returned list - it's not a problem if a single 
 	 * puzzle gets deleted while the user is solving it.
 	 */
-	public List<IntroductionPuzzle> getPuzzles(OwnIdentity user, PuzzleType puzzleType, int count) {
-		ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count + 1);
-		HashSet<Identity> resultHasPuzzleFrom = new HashSet<Identity>(count * 2); /* Have some room so we do not hit the load factor */
+	public List<IntroductionPuzzle> getPuzzles(final OwnIdentity user, final PuzzleType puzzleType, final int count) {
+		final ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count + 1);
+		final HashSet<Identity> resultHasPuzzleFrom = new HashSet<Identity>(count * 2); /* Have some room so we do not hit the load factor */
 		
 		/* Deadlocks could occur without the lock on WoT because the loop calls functions which lock the WoT - if something else started to
 		 * execute (while we have already locked the puzzle store) which locks the WoT and waits for the puzzle store to become available
 		 * until it releases the WoT. */
 		synchronized(mWoT) {
 		synchronized(mPuzzleStore) {
-			List<IntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedPuzzles(puzzleType);
+			final ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedPuzzles(puzzleType);
 			 
-			for(IntroductionPuzzle puzzle : puzzles) {
+			for(final IntroductionPuzzle puzzle : puzzles) {
 				try {
 					/* TODO: Maybe also check whether the user has already solved puzzles of the identity which inserted this one */ 
 					if(!resultHasPuzzleFrom.contains(puzzle.getInserter())) { 
-						int score = mWoT.getScore(user, puzzle.getInserter()).getScore();
+						final int score = mWoT.getScore(user, puzzle.getInserter()).getScore();
 						
 						if(score >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD) {
 							try {
@@ -215,13 +216,27 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/**
 	 * Use this function to store the solution of a puzzle and upload it.
+	 * No synchronization is needed when using this function.
 	 * @throws InvalidParameterException If the puzzle was already solved.
+	 * @throws RuntimeException If the identity or the puzzle was deleted already.
 	 */
-	public void solvePuzzle(OwnIdentity solver, IntroductionPuzzle puzzle, String solution) throws InvalidParameterException {
+	public void solvePuzzle(OwnIdentity solver, IntroductionPuzzle puzzle, final String solution) throws InvalidParameterException {
+		synchronized(mWoT) {
+			try {
+				solver = mWoT.getOwnIdentityByID(solver.getID());
+			} catch(UnknownIdentityException e) {
+				throw new RuntimeException("Your own identity was deleted already.");
+			}
 		synchronized(mPuzzleStore) {
+			try {
+				puzzle = mPuzzleStore.getByID(puzzle.getID());
+			} catch (UnknownPuzzleException e) {
+				throw new RuntimeException("The solved puzzle was deleted already.");
+			}
 		synchronized(puzzle) {
 			puzzle.setSolved(solver, solution);
 			mPuzzleStore.storeAndCommit(puzzle);
+		}
 		}
 		}
 		try {
@@ -235,8 +250,8 @@ public final class IntroductionClient extends TransferThread  {
 	private synchronized void downloadPuzzles() {
 		/* Normally we would lock the whole WoT here because we iterate over a list returned by it. But because it is not a severe
 		 * problem if we download a puzzle of an identity which has been deleted or so we do not do that. */
-		ObjectSet<Identity> allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
-		ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(PUZZLE_POOL_SIZE);
+		final ObjectSet<Identity> allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
+		final ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(PUZZLE_REQUEST_COUNT + 1);
 		
 		/* Download puzzles from identities from which we have not downloaded for a certain period. This is ensured by
 		 * keeping the last few hundred identities stored in a FIFO with fixed length, named mIdentities. */
@@ -244,7 +259,7 @@ public final class IntroductionClient extends TransferThread  {
 		/* Normally we would have to lock the WoT here first so that no deadlock happens if something else locks the mIdentities and
 		 * waits for the WoT until it unlocks them. BUT nothing else in this class locks mIdentities and then the WoT */
 		synchronized(mIdentities) {
-			for(Identity i : allIdentities) {
+			for(final Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
 				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i.getID()))  {
 					try {
@@ -263,7 +278,7 @@ public final class IntroductionClient extends TransferThread  {
 		if(identitiesToDownloadFrom.size() == 0) {
 			mIdentities.clear(); /* We probably have less updated identities today than the size of the LRUQueue, empty it */
 
-			for(Identity i : allIdentities) {
+			for(final Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
 				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT))  {
 					try {
@@ -296,9 +311,9 @@ public final class IntroductionClient extends TransferThread  {
 	private void insertSolutions() {
 		abortInserts();
 		synchronized(mPuzzleStore) {
-			ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedSolvedPuzzles();
+			final ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedSolvedPuzzles();
 			
-			for(IntroductionPuzzle p : puzzles) {
+			for(final IntroductionPuzzle p : puzzles) {
 				try {
 					insertPuzzleSolution(p);
 				}
@@ -312,7 +327,7 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Not synchronized because its caller is synchronized already.
 	 */
-	private void insertPuzzleSolution(IntroductionPuzzle puzzle) throws IOException, TransformerException, InsertException {
+	private void insertPuzzleSolution(final IntroductionPuzzle puzzle) throws IOException, TransformerException, InsertException {
 		assert(!puzzle.wasInserted());
 		
 		Bucket tempB = mTBF.makeBucket(1024); /* TODO: Set to a reasonable value */
@@ -324,12 +339,12 @@ public final class IntroductionClient extends TransferThread  {
 			os.close(); os = null;
 			tempB.setReadOnly();
 
-			FreenetURI solutionURI = puzzle.getSolutionURI();
-			InsertBlock ib = new InsertBlock(tempB, null, solutionURI);
+			final FreenetURI solutionURI = puzzle.getSolutionURI();
+			final InsertBlock ib = new InsertBlock(tempB, null, solutionURI);
 
-			InsertContext ictx = mClient.getInsertContext(true);
+			final InsertContext ictx = mClient.getInsertContext(true);
 			
-			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
+			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
 			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
 			addInsert(pu);
 			tempB = null;
@@ -345,22 +360,21 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Finds a random index of a puzzle from the inserter which we did not download yet and downloads it.
 	 */
-	private synchronized void downloadPuzzle(Identity inserter) throws FetchException {
+	private synchronized void downloadPuzzle(final Identity inserter) throws FetchException {
 		downloadPuzzle(inserter, mRandom.nextInt(IntroductionServer.getIdentityPuzzleCount(inserter))); 
 	}
 	
 	/**
 	 * Not synchronized because its caller is synchronized already.
 	 */
-	private void downloadPuzzle(Identity inserter, int index) throws FetchException {
-		int inserterPuzzleCount = IntroductionServer.getIdentityPuzzleCount(inserter);
+	private void downloadPuzzle(final Identity inserter, int index) throws FetchException {
+		final int inserterPuzzleCount = IntroductionServer.getIdentityPuzzleCount(inserter);
 		assert(index < inserterPuzzleCount+1);
 		
 		/* We do that so that onSuccess() can just call this function with the index increased by 1 */
 		index %= inserterPuzzleCount;
 		
-		Date date = CurrentTimeUTC.get();
-		FreenetURI uri;
+		final Date currentDate = CurrentTimeUTC.get();
 		
 		synchronized(mPuzzleStore) {
 			if(mPuzzleStore.getOfTodayByInserter(inserter).size() >= MAX_PUZZLES_PER_IDENTITY)
@@ -370,7 +384,7 @@ public final class IntroductionClient extends TransferThread  {
 			int count = 0;
 			while(count < inserterPuzzleCount) {
 				try {
-					mPuzzleStore.getByInserterDateIndex(inserter, date, index);
+					mPuzzleStore.getByInserterDateIndex(inserter, currentDate, index);
 					index = (index+1) % inserterPuzzleCount;
 					++count;
 				} catch(UnknownPuzzleException e) {
@@ -406,11 +420,11 @@ public final class IntroductionClient extends TransferThread  {
 			mIdentities.push(inserter.getID()); // put this identity at the beginning of the LRUQueue
 		}
 		
-		uri = IntroductionPuzzle.generateRequestURI(inserter, date, index);		
-		FetchContext fetchContext = mClient.getFetchContext();
+		final FreenetURI uri = IntroductionPuzzle.generateRequestURI(inserter, currentDate, index);		
+		final FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
-		ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mWoT.getRequestClient(), this, fetchContext);
+		final ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mWoT.getRequestClient(), this, fetchContext);
 		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
 		addFetch(g);
 		
@@ -425,7 +439,7 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Called when a puzzle is successfully fetched.
 	 */
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(final FetchResult result, final ClientGetter state, final ObjectContainer container) {
 		Logger.debug(this, "Fetched puzzle: " + state.getURI());
 		
 		Bucket bucket = null;
@@ -435,7 +449,7 @@ public final class IntroductionClient extends TransferThread  {
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
 			
-			IntroductionPuzzle puzzle = mWoT.getXMLTransformer().importIntroductionPuzzle(state.getURI(), inputStream);
+			final IntroductionPuzzle puzzle = mWoT.getXMLTransformer().importIntroductionPuzzle(state.getURI(), inputStream);
 			downloadPuzzle(puzzle.getInserter());
 		}
 		catch (Exception e) { 
@@ -452,7 +466,7 @@ public final class IntroductionClient extends TransferThread  {
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * In our case, called when there is no puzzle available.
 	 */
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public void onFailure(final FetchException e, final ClientGetter state, final ObjectContainer container) {
 		try {
 			if(e.getMode() == FetchException.CANCELLED) {
 				Logger.debug(this, "Fetch cancelled: " + state.getURI());
@@ -473,14 +487,14 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Called when a puzzle solution is successfully inserted.
 	 */
-	public void onSuccess(BaseClientPutter state, ObjectContainer container)
+	public void onSuccess(final BaseClientPutter state, final ObjectContainer container)
 	{
 		Logger.debug(this, "Successful insert of puzzle solution: " + state.getURI());
 		
 		try {
 			synchronized(mWoT) { /* getPuzzleByRequestURI requires this */
 			synchronized(mPuzzleStore) {
-				IntroductionPuzzle puzzle = mPuzzleStore.getPuzzleBySolutionURI(state.getURI());
+				final IntroductionPuzzle puzzle = mPuzzleStore.getPuzzleBySolutionURI(state.getURI());
 				puzzle.setInserted();
 				mPuzzleStore.storeAndCommit(puzzle);
 			}
@@ -497,7 +511,7 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Calling when inserting a puzzle solution failed.
 	 */
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container)
+	public void onFailure(final InsertException e, final BaseClientPutter state, final ObjectContainer container)
 	{
 		/* No synchronization because the worst thing which can happen is that we insert it again */
 		
