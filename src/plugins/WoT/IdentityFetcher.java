@@ -9,7 +9,6 @@ package plugins.WoT;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
-import java.util.Iterator;
 
 import plugins.WoT.exceptions.UnknownIdentityException;
 
