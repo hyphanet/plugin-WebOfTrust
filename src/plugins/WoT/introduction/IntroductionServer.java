@@ -175,8 +175,7 @@ public final class IntroductionServer extends TransferThread {
 				fetchContext.maxSplitfileBlockRetries = -1;
 				fetchContext.maxNonSplitfileRetries = -1;
 				final ClientGetter g = mClient.fetch(p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE, mWoT.getRequestClient(),
-						this, fetchContext);
-				g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null); 
+						this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS); 
 				addFetch(g);
 				Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
 				}
