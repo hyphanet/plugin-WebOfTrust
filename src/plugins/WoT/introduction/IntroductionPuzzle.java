@@ -131,7 +131,7 @@ public class IntroductionPuzzle {
 	 * Used by the IntroductionClient for guessing the request URIs of puzzles to be able to download them.
 	 */
 	public static FreenetURI generateRequestURI(Identity inserter, Date dateOfInsertion, int index) {
-		assert(dateOfInsertion.before(CurrentTimeUTC.get()));
+		assert(!dateOfInsertion.after(CurrentTimeUTC.get()));
 		assert(index >= 0);
 		
 		String dayOfInsertion;
