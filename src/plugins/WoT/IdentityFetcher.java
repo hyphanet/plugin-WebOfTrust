@@ -9,7 +9,6 @@ package plugins.WoT;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
-import java.util.Iterator;
 
 import plugins.WoT.exceptions.UnknownIdentityException;
 
@@ -191,7 +190,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
+				System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
 				throw e;
 			}
 		}
@@ -302,7 +301,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 				
 				mDB.commit(); Logger.debug(this, "COMMITED.");
 			} catch(RuntimeException e) {
-				mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
+				System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
 			}
 		}
 		}

@@ -391,7 +391,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
 		}
 		catch(RuntimeException e) {
-			mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
+			System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 			throw e;
 		}
 	}
@@ -445,7 +445,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 							mDB.commit(); Logger.debug(this, "COMMITED.");
 						}
 						catch(RuntimeException e) {
-							mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
+							System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
 						}
 					}
 
@@ -477,7 +477,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			}
 			catch(Exception e) {
 				Logger.error(this, "Deleting orphan trusts failed.", e);
-				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!"); 
+				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!"); 
 			}
 			
 			try {
@@ -494,7 +494,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			}
 			catch(Exception e) {
 				Logger.error(this, "Deleting orphan trusts failed.", e);
-				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!"); 
+				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!"); 
 			}
 		}
 	}
@@ -829,7 +829,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			}
 			catch (Exception e) {
 				Logger.error(this, "Seed identity loading error", e);
-				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
+				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 			}
 		}
 	}
@@ -926,7 +926,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				 * If it becomes possible some day, we should check that here, and log an error if there is an uncommitted transaction. 
 				 * - All transactions should be committed after obtaining the lock() on the database. */
 				synchronized(mDB.lock()) {
-					mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
+					System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 					mDB.close();
 				}
 			}
@@ -1168,7 +1168,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.commit(); Logger.debug(identity, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
+				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -1203,7 +1203,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			mDB.store(identity);
 		}
 		catch(RuntimeException e) {
-			mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
+			System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 			throw e;
 		}
 	}
@@ -1267,7 +1267,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			mDB.delete(identity);
 		}
 		catch(RuntimeException e) {
-			mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
+			System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 			throw e;
 		}
 	}
@@ -1583,7 +1583,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
 	 *     try { ... setTrustWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { mDB.rollback(); mDB.purge(); throw e; }
+	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
 	 * }
 	 * 
 	 * @param truster The Identity that gives the trust
@@ -1632,7 +1632,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
+				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -1644,7 +1644,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
 	 *     try { ... removeTrustWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { mDB.rollback(); mDB.purge(); throw e; }
+	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
 	 * }
 	 * 
 	 * @param truster
@@ -1660,7 +1660,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				} 
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
+				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 	}
@@ -1670,7 +1670,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
 	 *     try { ... setTrustWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { mDB.rollback(); mDB.purge(); throw e; }
+	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
 	 * }
 	 * 
 	 */
@@ -1688,7 +1688,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
 	 *     try { ... initTrustTreeWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { mDB.rollback(); mDB.purge(); throw e; }
+	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
 	 * }
 	 *  
 	 * @throws DuplicateScoreException if there already is more than one Score for this identity (should never happen)
@@ -1709,7 +1709,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
 	 *     try { ... updateScoreWithoutCommit(...); storeAndCommit(trustee); }
-	 *     catch(RuntimeException e) { mDB.rollback(); mDB.purge(); throw e; }
+	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
 	 * }
 	 * 
 	 */
@@ -1844,7 +1844,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		assert(mTrustListImportInProgress);
 		mTrustListImportInProgress = false;
 		mFullScoreComputationNeeded = false;
-		mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK!", e);
+		System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
 		assert(computeAllScoresWithoutCommit()); // Test rollback.
 	}
 	
@@ -1877,7 +1877,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(mDB.lock()) {
 	 *     try { ... updateScoreWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { mDB.rollback(); mDB.purge(); throw e; }
+	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
 	 * }
 	 * 
 	 * @param treeOwner The OwnIdentity that owns the trust tree
@@ -2144,7 +2144,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			//mDB.commit(); Logger.debug(this, "COMMITED.");
 			//}
 			//catch(RuntimeException error) {
-			//	mDB.rollback(); mDB.purge(); Logger.error(this, "ROLLED BACK: addIdentity() failed", e);
+			//	System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK: addIdentity() failed", e);
 			//	throw error;
 			//}
 		}
@@ -2161,7 +2161,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
+				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -2228,7 +2228,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					return identity;
 				}
 				catch(RuntimeException e) {
-					mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
+					System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 					throw e;
 				}
 			}
@@ -2322,7 +2322,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				mDB.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
+				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
@@ -2349,7 +2349,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			}
 			catch(RuntimeException e)
 			{
-				mDB.rollback(); mDB.purge(); Logger.debug(this, "ROLLED BACK!");
+				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 				throw e;
 			}
 		}
