@@ -163,4 +163,42 @@ public class OwnIdentity extends Identity {
 		mLastInsertDate = CurrentTimeUTC.get();
 	}
 
+
+	/**
+	 * Checks whether two OwnIdentity objects are equal.
+	 * This checks <b>all</b> properties of the identities <b>excluding</b> the {@link Date} properties.
+	 */
+	public boolean equals(Object obj) {
+		if(!super.equals(obj))
+			return false;
+		
+		if(!(obj instanceof OwnIdentity))
+			return false;
+		
+		OwnIdentity other = (OwnIdentity)obj;
+		
+		if(!getInsertURI().equals(other.getInsertURI()))
+			return false;
+		
+		return true;
+	}
+	
+	/**
+	 * Clones this OwnIdentity. Does <b>not</b> clone the {@link Date} attributes, they are initialized to the current time!
+	 */
+	public OwnIdentity clone() {
+		try {
+			OwnIdentity clone = new OwnIdentity(getInsertURI(), getRequestURI(), getNickname(), doesPublishTrustList());
+			
+			clone.mCurrentEditionWasFetched = currentEditionWasFetched();
+			clone.setNewEditionHint(getLatestEditionHint()); 
+			clone.setContexts(getContexts());
+			clone.setProperties(getProperties());
+			
+			return clone;
+		} catch(InvalidParameterException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 }

@@ -7,9 +7,6 @@ import com.db4o.ext.ExtObjectContainer;
 
 import freenet.support.Logger;
 
-/**
- * ATTENTION: This code is a duplicate of plugins.Freetalk.DBUtil. Please keep the both versions synchronized.
- */
 public class DBUtil {
 
 	/**
@@ -47,8 +44,4 @@ public class DBUtil {
 			Logger.error(object, "Trying to delete a inexistent object!");
 	}
 	
-	public static void rollbackAndThrow(ExtObjectContainer db, Object loggingObject, RuntimeException error) {
-		db.rollback(); Logger.error(loggingObject, "ROLLED BACK!", error);
-		throw error;
-	}
 }

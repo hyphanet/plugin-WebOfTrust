@@ -66,6 +66,8 @@ public final class FCPInterface implements FredPluginFCP {
             	replysender.send(handleGetTrustersCount(params), data);
             } else if (message.equals("GetTrustees")) {
                 replysender.send(handleGetTrustees(params), data);
+            } else if (message.equals("GetTrusteesCount")) {
+            	replysender.send(handleGetTrusteesCount(params), data);
             } else if (message.equals("AddContext")) {
                 replysender.send(handleAddContext(params), data);
             } else if (message.equals("RemoveContext")) {
@@ -375,7 +377,38 @@ public final class FCPInterface implements FredPluginFCP {
         
         return sfs;
     }
+    
+    private SimpleFieldSet handleGetTrusteesCount(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
+    	final String identityID = getMandatoryParameter(params, "Identity");
+    	//final String context = getMandatoryParameter(params, "Context"); // TODO: Implement as soon as we have per-context trust
 
+        String selection = params.get("Selection");
+        final int result;
+        
+        if(selection != null) {
+        	selection = selection.trim();
+    		final int select;
+    		
+    		if (selection.equals("+")) select = 1;
+    		else if (selection.equals("-")) select = -1;
+    		else if (selection.equals("0")) select = 0;
+    		else throw new InvalidParameterException("Unhandled selection value (" + selection + ")");
+        	
+    		synchronized(mWoT) {
+        		result = mWoT.getGivenTrusts(mWoT.getIdentityByID(identityID), select).size();
+        	}
+        } else {
+        	synchronized(mWoT) {
+        		result = mWoT.getGivenTrusts(mWoT.getIdentityByID(identityID)).size();
+        	}
+        }
+    	
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "TrusteesCount");
+        sfs.put("Value", result);
+        return sfs;
+    }
+    
     private SimpleFieldSet handleAddContext(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
     	final String identityID = getMandatoryParameter(params, "Identity");
     	final String context = getMandatoryParameter(params, "Context");

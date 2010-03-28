@@ -64,10 +64,10 @@ public final class IntroductionServer extends TransferThread {
 	
 	/* Objects from WoT */
 
-	private WoT mWoT;
+	private final WoT mWoT;
 	
 	/** The container object which manages storage of the puzzles in the database, also used for synchronization */
-	private IntroductionPuzzleStore mPuzzleStore;
+	private final IntroductionPuzzleStore mPuzzleStore;
 	
 	
 	/* Objects from the node */
@@ -85,7 +85,7 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Creates an IntroductionServer
 	 */
-	public IntroductionServer(WoT myWoT, IdentityFetcher myFetcher) {
+	public IntroductionServer(final WoT myWoT, final IdentityFetcher myFetcher) {
 		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Introduction Server");
 		
 		mWoT = myWoT;
@@ -93,7 +93,7 @@ public final class IntroductionServer extends TransferThread {
 		mRandom = mWoT.getPluginRespirator().getNode().fastWeakRandom;
 	}
 	
-	public static int getIdentityPuzzleCount(Identity i) {
+	public static int getIdentityPuzzleCount(final Identity i) {
 		try {
 			return Math.max(Integer.parseInt(i.getProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY)), 0);
 		}
@@ -142,7 +142,7 @@ public final class IntroductionServer extends TransferThread {
 		synchronized(mWoT) {
 			/* TODO: We might want to not lock all the time during captcha creation... figure out how long this takes ... */
 			
-			for(OwnIdentity identity : mWoT.getAllOwnIdentities()) {
+			for(final OwnIdentity identity : mWoT.getAllOwnIdentities()) {
 				if(identity.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)) {
 					try {
 						Logger.debug(this, "Managing puzzles of " + identity.getNickname());
@@ -161,22 +161,21 @@ public final class IntroductionServer extends TransferThread {
 	/* Primary worker functions */
 		
 
-	private void downloadSolutions(OwnIdentity inserter) throws FetchException {		
+	private void downloadSolutions(final OwnIdentity inserter) throws FetchException {		
 		synchronized(mPuzzleStore) {
-			ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedByInserter(inserter);
+			final ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedByInserter(inserter);
 			Logger.debug(this, "Identity " + inserter.getNickname() + " has " + puzzles.size() + " unsolved puzzles stored. " + 
 					"Trying to fetch solutions ...");
 			
-			for(OwnIntroductionPuzzle p : puzzles) {
+			for(final OwnIntroductionPuzzle p : puzzles) {
 				try {
-				FetchContext fetchContext = mClient.getFetchContext();
+				final FetchContext fetchContext = mClient.getFetchContext();
 				// -1 means retry forever. Does make sense here: After 2 retries the fetches go into the cooldown queue, ULPRs are used. So if someone inserts
 				// the puzzle solution during that, we might get to know it.
 				fetchContext.maxSplitfileBlockRetries = -1;
 				fetchContext.maxNonSplitfileRetries = -1;
-				ClientGetter g = mClient.fetch(p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE, mWoT.getRequestClient(),
-						this, fetchContext);
-				g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null); 
+				final ClientGetter g = mClient.fetch(p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE, mWoT.getRequestClient(),
+						this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS); 
 				addFetch(g);
 				Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
 				}
@@ -187,14 +186,18 @@ public final class IntroductionServer extends TransferThread {
 		}
 	}
 	
-	private void generateNewPuzzles(OwnIdentity identity) throws IOException {
+	private void generateNewPuzzles(final OwnIdentity identity) throws IOException {
 		synchronized(mPuzzleStore) {
 		int puzzlesToGenerate = getIdentityPuzzleCount(identity) - mPuzzleStore.getOfTodayByInserter(identity).size();
 		Logger.debug(this, "Trying to generate " + puzzlesToGenerate + " new puzzles from " + identity.getNickname());
 		
 		while(puzzlesToGenerate > 0) {
-			OwnIntroductionPuzzle p = mPuzzleFactories[mRandom.nextInt(mPuzzleFactories.length)].generatePuzzle(mPuzzleStore, identity);
+			try {
+			final OwnIntroductionPuzzle p = mPuzzleFactories[mRandom.nextInt(mPuzzleFactories.length)].generatePuzzle(mPuzzleStore, identity);
 			Logger.debug(this, "Generated puzzle of " + p.getDateOfInsertion() + "; valid until " + new Date(p.getValidUntilTime()));
+			} catch(Exception e) {
+				Logger.error(this, "Puzzle generation failed.", e);
+			}
 			--puzzlesToGenerate;
 		}
 		}
@@ -202,11 +205,11 @@ public final class IntroductionServer extends TransferThread {
 		Logger.debug(this, "Finished generating puzzles from " + identity.getNickname());
 	}
 	
-	private void insertPuzzles(OwnIdentity identity) throws IOException, InsertException {
+	private void insertPuzzles(final OwnIdentity identity) throws IOException, InsertException {
 		synchronized(mPuzzleStore) {
-			ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedOwnPuzzlesByInserter(identity); 
+			final ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedOwnPuzzlesByInserter(identity); 
 			Logger.debug(this, "Trying to insert " + puzzles.size() + " puzzles from " + identity.getNickname());
-			for(OwnIntroductionPuzzle p : puzzles) {
+			for(final OwnIntroductionPuzzle p : puzzles) {
 				try {
 					insertPuzzle(p);
 				}
@@ -223,7 +226,7 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Not synchronized because it's caller is synchronized already.
 	 */
-	private void insertPuzzle(OwnIntroductionPuzzle puzzle)
+	private void insertPuzzle(final OwnIntroductionPuzzle puzzle)
 		throws IOException, InsertException, TransformerException, ParserConfigurationException  {
 		
 		assert(!puzzle.wasInserted());
@@ -237,10 +240,10 @@ public final class IntroductionServer extends TransferThread {
 			Closer.close(os); os = null;
 			tempB.setReadOnly();
 
-			InsertBlock ib = new InsertBlock(tempB, null, puzzle.getInsertURI());
-			InsertContext ictx = mClient.getInsertContext(true);
+			final InsertBlock ib = new InsertBlock(tempB, null, puzzle.getInsertURI());
+			final InsertContext ictx = mClient.getInsertContext(true);
 
-			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
+			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
 			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
 			addInsert(pu);
 			tempB = null;
@@ -256,14 +259,14 @@ public final class IntroductionServer extends TransferThread {
 	/** 
 	 * Called when a puzzle was successfully inserted.
 	 */
-	public void onSuccess(BaseClientPutter state, ObjectContainer container)
+	public void onSuccess(final BaseClientPutter state, final ObjectContainer container)
 	{
 		Logger.debug(this, "Successful insert of puzzle: " + state.getURI());
 		
 		try {
 			synchronized(mWoT) {
 			synchronized(mPuzzleStore) {
-				OwnIntroductionPuzzle puzzle = mPuzzleStore.getOwnPuzzleByRequestURI(state.getURI()); /* Be careful: This locks the WoT! */
+				final OwnIntroductionPuzzle puzzle = mPuzzleStore.getOwnPuzzleByRequestURI(state.getURI()); /* Be careful: This locks the WoT! */
 				puzzle.setInserted();
 				mPuzzleStore.storeAndCommit(puzzle);
 			}
@@ -280,7 +283,7 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Called when the insertion of a puzzle failed.
 	 */
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
+	public void onFailure(final InsertException e, final BaseClientPutter state, final ObjectContainer container) 
 	{
 		try {
 			if(e.getMode() == InsertException.CANCELLED)
@@ -296,7 +299,7 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Called when a puzzle solution is successfully fetched. We then add the identity which solved the puzzle.
 	 */
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public void onSuccess(final FetchResult result, final ClientGetter state, final ObjectContainer container) {
 		Logger.debug(this, "Fetched puzzle solution: " + state.getURI());
 		
 		Bucket bucket = null;
@@ -310,9 +313,9 @@ public final class IntroductionServer extends TransferThread {
 			 * prevent deadlocks. */
 			synchronized(mWoT) {
 			synchronized(mPuzzleStore) {
-				OwnIntroductionPuzzle p = mPuzzleStore.getOwnPuzzleBySolutionURI(state.getURI());
+				final  OwnIntroductionPuzzle p = mPuzzleStore.getOwnPuzzleBySolutionURI(state.getURI());
 				synchronized(p) {
-					OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
+					final OwnIdentity puzzleOwner = (OwnIdentity)p.getInserter();
 					try {
 						// Make double sure that nothing goes wrong, especially considering the fact that multiple own identities can share one database
 						// and there might be bugs in the future which result in one seeing the puzzles of the other.
@@ -322,7 +325,7 @@ public final class IntroductionServer extends TransferThread {
 						if(p.wasSolved())
 							throw new Exception("Puzzle was solved already!");
 							
-					Identity newIdentity = mWoT.getXMLTransformer().importIntroduction(puzzleOwner, inputStream);
+						final Identity newIdentity = mWoT.getXMLTransformer().importIntroduction(puzzleOwner, inputStream);
 					Logger.debug(this, "Imported identity introduction for identity " + newIdentity.getRequestURI() +
 							" to the OwnIdentity " + puzzleOwner);
 					} catch(Exception e) { 
@@ -347,7 +350,7 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 */
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public void onFailure(final FetchException e, final ClientGetter state, final ObjectContainer container) {
 		try {
 			if(e.getMode() == FetchException.CANCELLED) {
 				Logger.debug(this, "Fetch cancelled: " + state.getURI());
