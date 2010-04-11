@@ -100,8 +100,7 @@ public class Identity implements Cloneable {
 		setRequestURI(newRequestURI.setSuggestedEdition(0));
 		try {
 			mLatestEditionHint = newRequestURI.getEdition();
-		}
-		catch(IllegalStateException e) {
+		} catch (IllegalStateException e) {
 			mLatestEditionHint = 0;
 		}
 		mCurrentEditionWasFetched = false;
@@ -174,11 +173,13 @@ public class Identity implements Cloneable {
 	 * @throws IllegalArgumentException If the given FreenetURI is neither a SSK nor a USK or if the keypair does not match the old one.
 	 */
 	protected synchronized void setRequestURI(FreenetURI newRequestURI) {
-		if(mRequestURI != null && !newRequestURI.equalsKeypair(mRequestURI))
+		if (mRequestURI != null && !newRequestURI.equalsKeypair(mRequestURI)) {
 			throw new IllegalArgumentException("Cannot change the request URI of an existing identity.");
+		}
 		
-		if(!newRequestURI.isUSK() && !newRequestURI.isSSK())
+		if (!newRequestURI.isUSK() && !newRequestURI.isSSK()) {
 			throw new IllegalArgumentException("Identity URI keytype not supported: " + newRequestURI);
+		}
 		
 		mRequestURI = newRequestURI.setKeyType("USK").setDocName("WoT").setMetaString(null); // FIXME: Change to WoT.WOT_NAME when we leave the beta stage
 		updated();
@@ -205,14 +206,17 @@ public class Identity implements Cloneable {
 	protected synchronized void setEdition(long newEdition) throws InvalidParameterException {
 		long currentEdition = mRequestURI.getEdition();
 		
-		if(newEdition < currentEdition)
+		if (newEdition < currentEdition) {
 			throw new InvalidParameterException("The edition of an identity cannot be lowered.");
+		}
 		
-		if(newEdition > currentEdition) {
+		if (newEdition > currentEdition) {
 			mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
 			mCurrentEditionWasFetched = false;
-			if(newEdition > mLatestEditionHint) // Do not call setNewEditionHint() to prevent confusing logging.
+			if (newEdition > mLatestEditionHint) {
+				// Do not call setNewEditionHint() to prevent confusing logging.
 				mLatestEditionHint = newEdition;
+			}
 			updated();
 		}
 	}
@@ -230,7 +234,7 @@ public class Identity implements Cloneable {
 	 * @return True, if the given hint was newer than the already stored one. You have to tell the {@link IdentityFetcher} about that then.
 	 */
 	protected synchronized boolean setNewEditionHint(long newLatestEditionHint) {
-		if(newLatestEditionHint > mLatestEditionHint) {
+		if (newLatestEditionHint > mLatestEditionHint) {
 			mLatestEditionHint = newLatestEditionHint;
 			Logger.debug(this, "Received a new edition hint of " + newLatestEditionHint + " (current: " + mLatestEditionHint + ") for "+ this);
 			return true;
@@ -255,10 +259,11 @@ public class Identity implements Cloneable {
 	 * current trust list. This is necessary because we do not create the trusted identities of someone if he has a negative score. 
 	 */
 	protected synchronized void markForRefetch() {
-		if(mCurrentEditionWasFetched)
+		if (mCurrentEditionWasFetched) {
 			mCurrentEditionWasFetched = false;
-		else
+		} else {
 			decreaseEdition();
+		}
 	}
 	
 	/**
@@ -296,8 +301,9 @@ public class Identity implements Cloneable {
 	protected synchronized void onFetched() {
 		mCurrentEditionWasFetched = true;
 		
-		if(mFirstFetchedDate.equals(new Date(0)))
+		if (mFirstFetchedDate.equals(new Date(0))) {
 			mFirstFetchedDate = CurrentTimeUTC.get();
+		}
 		
 		mLastFetchedDate = CurrentTimeUTC.get();
 		updated();
@@ -314,11 +320,11 @@ public class Identity implements Cloneable {
 	 * Please also modify it there if you modify it here */
 	public boolean isNicknameValid(String newNickname) {
 		return newNickname.length() > 0 && newNickname.length() < 50
-		&& StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
-		&& StringValidityChecker.containsNoInvalidCharacters(newNickname)
-		&& StringValidityChecker.containsNoLinebreaks(newNickname)
-		&& StringValidityChecker.containsNoControlCharacters(newNickname)
-		&& StringValidityChecker.containsNoInvalidFormatting(newNickname);
+			&& StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
+			&& StringValidityChecker.containsNoInvalidCharacters(newNickname)
+			&& StringValidityChecker.containsNoLinebreaks(newNickname)
+			&& StringValidityChecker.containsNoControlCharacters(newNickname)
+			&& StringValidityChecker.containsNoInvalidFormatting(newNickname);
 	}
 
 	/**
@@ -328,19 +334,22 @@ public class Identity implements Cloneable {
 	 * @throws InvalidParameterException If the nickname contains invalid characters, is empty or longer than 50 characters.
 	 */
 	public synchronized void setNickname(String newNickname) throws InvalidParameterException {
-		if(newNickname != null)
+		if (newNickname != null) {
 			newNickname = newNickname.trim();
+		}
 		
-		if(newNickname != null) {
+		if (newNickname != null) {
 			if(newNickname.length() == 0) throw new InvalidParameterException("Blank nickname");
 			if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long (50 chars max)");
 			
-			if(!isNicknameValid(newNickname))
+			if(!isNicknameValid(newNickname)) {
 				throw new InvalidParameterException("Nickname contains illegal characters.");
+			}
 		}
 		
-		if(mNickname != null && !mNickname.equals(newNickname))
+		if (mNickname != null && !mNickname.equals(newNickname)) {
 			throw new InvalidParameterException("Changing the nickname of an identity is not allowed.");
+		}
 	
 		mNickname = newNickname;
 		updated();
@@ -359,8 +368,9 @@ public class Identity implements Cloneable {
 	 * Sets if this Identity publishes its trust list or not. 
 	 */
 	public synchronized void setPublishTrustList(boolean doesPublishTrustList) {
-		if(mDoesPublishTrustList == doesPublishTrustList)
+		if (mDoesPublishTrustList == doesPublishTrustList) {
 			return;
+		}
 		
 		mDoesPublishTrustList = doesPublishTrustList;
 		updated();
@@ -404,18 +414,22 @@ public class Identity implements Cloneable {
 		
 		final int length = newContext.length();
 		
-		if(length == 0)
+		if (length == 0) {
 			throw new InvalidParameterException("A blank context cannot be added to an identity.");
+		}
 		
-		if(length > MAX_CONTEXT_NAME_LENGTH)
+		if (length > MAX_CONTEXT_NAME_LENGTH) {
 			throw new InvalidParameterException("Context names must not be longer than " + MAX_CONTEXT_NAME_LENGTH + " characters.");
+		}
 		
-		if(!StringValidityChecker.isLatinLettersAndNumbersOnly(newContext))
+		if (!StringValidityChecker.isLatinLettersAndNumbersOnly(newContext)) {
 			throw new InvalidParameterException("Context names must be latin letters and numbers only");
+		}
 		
-		if(!mContexts.contains(newContext)) {
-			if(mContexts.size() >= MAX_CONTEXT_AMOUNT)
+		if (!mContexts.contains(newContext)) {
+			if (mContexts.size() >= MAX_CONTEXT_AMOUNT) {
 				throw new InvalidParameterException("An identity may not have more than " + MAX_CONTEXT_AMOUNT + " contexts.");
+			}
 			
 			mContexts.add(newContext);
 			updated();
@@ -432,11 +446,10 @@ public class Identity implements Cloneable {
 	protected synchronized void setContexts(List<String> newContexts) {
 		mContexts.clear();
 		
-		for(String context : newContexts) {
+		for (String context : newContexts) {
 			try {
 				addContext(context);
-			}
-			catch(InvalidParameterException e) {
+			} catch (InvalidParameterException e) {
 				Logger.error(this, "setContexts(): addContext() failed.", e);
 			}
 		}
@@ -453,7 +466,7 @@ public class Identity implements Cloneable {
 	public synchronized void removeContext(String context) throws InvalidParameterException {
 		context = context.trim();
 		
-		if(mContexts.contains(context)) {
+		if (mContexts.contains(context)) {
 			mContexts.remove(context);
 			updated();
 		}
@@ -469,8 +482,9 @@ public class Identity implements Cloneable {
 	public synchronized String getProperty(String key) throws InvalidParameterException {
 		key = key.trim();
 		
-		if(!mProperties.containsKey(key))
+		if (!mProperties.containsKey(key)) {
 			throw new InvalidParameterException("The property '" + key +"' isn't set on this identity.");
+		}
 		
 		return mProperties.get(key);
 	}
@@ -500,43 +514,50 @@ public class Identity implements Cloneable {
 		
 		final int keyLength = key.length();
 		
-		if(keyLength == 0)
+		if (keyLength == 0) {
 			throw new InvalidParameterException("Property names must not be empty.");
+		}
 		
-		if(keyLength > MAX_PROPERTY_NAME_LENGTH)
+		if (keyLength > MAX_PROPERTY_NAME_LENGTH) {
 			throw new InvalidParameterException("Property names must not be longer than " + MAX_PROPERTY_NAME_LENGTH + " characters.");
+		}
 		
 		String[] keyTokens = key.split("[.]");
-		for(String token : keyTokens) {
-			if(token.length() == 0)
+		for (String token : keyTokens) {
+			if (token.length() == 0) {
 				throw new InvalidParameterException("Property names which contain periods must have at least one character before and after each period.");
+			}
 			
 			// FIXME: Use StringValidityChecker.isLatinLettersAndNumbersOnly() after WoT.WOT_NAME is not "WoT-testing" anymore.
 			// Reason is: createSeedIdentities does 
 			// ownSeed.setProperty(WOT_NAME + "." + SEED_IDENTITY_MANDATORY_VERSION_PROPERTY, Long.toString(Version.mandatoryVersion));
-			for(char c : token.toCharArray()) {
-				if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c >= '0' && c <= '9' || c == '-')
+			for (char c : token.toCharArray()) {
+				if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c >= '0' && c <= '9' || c == '-') {
 					continue;
-				else
+				} else {
 					throw new InvalidParameterException("Property names must contain only latin letters, numbers, periods and dashes.");
+				}
 			}
 				
 		}
 		
 		final int valueLength = value.length();
 		
-		if(valueLength == 0)
+		if (valueLength == 0) {
 			throw new InvalidParameterException("Property values must not be empty.");
+		}
 		
-		if(valueLength > MAX_PROPERTY_VALUE_LENGTH)
+		if (valueLength > MAX_PROPERTY_VALUE_LENGTH) {
 			throw new InvalidParameterException("Property values must not be longer than " + MAX_PROPERTY_VALUE_LENGTH + " characters");
+		}
 		
 		
 		String oldValue = mProperties.get(key);
-		if(oldValue == null && mProperties.size() >= MAX_PROPERTY_AMOUNT)
+		if (oldValue == null && mProperties.size() >= MAX_PROPERTY_AMOUNT) {
 			throw new InvalidParameterException("An identity may not have more than " + MAX_PROPERTY_AMOUNT + " properties.");
+		}
 		
-		if(oldValue == null || oldValue.equals(value) == false) {
+		if (oldValue == null || oldValue.equals(value) == false) {
 			mProperties.put(key, value);
 			updated();
 		}
@@ -552,11 +573,10 @@ public class Identity implements Cloneable {
 	protected synchronized void setProperties(HashMap<String, String> newProperties) {
 		mProperties = new HashMap<String, String>();
 		
-		for(Entry<String, String> property : newProperties.entrySet()) {
+		for (Entry<String, String> property : newProperties.entrySet()) {
 			try {
 				setProperty(property.getKey(), property.getValue());
-			}
-			catch(InvalidParameterException e) {
+			} catch (InvalidParameterException e) {
 				Logger.error(this, "setProperties(): setProperty() failed.", e);
 			}
 		}
@@ -569,8 +589,9 @@ public class Identity implements Cloneable {
 	 */
 	public synchronized void removeProperty(String key) throws InvalidParameterException {
 		key = key.trim();		
-		if(mProperties.remove(key) != null)
+		if (mProperties.remove(key) != null) {
 			updated();
+		}
 	}
 		
 	/**
@@ -592,31 +613,39 @@ public class Identity implements Cloneable {
 	 */
 	@SuppressWarnings("unchecked")
 	public boolean equals(Object obj) {
-		if(obj == this)
+		if (obj == this) {
 			return true;
+		}
 		
-		if(!(obj instanceof Identity))
+		if (!(obj instanceof Identity)) {
 			return false;
+		}
 	
 		Identity other = (Identity)obj;
 		
-		if(!getID().equals(other.getID()))
+		if (!getID().equals(other.getID())) {
 			return false;
+		}
 		
-		if(!getRequestURI().equals(other.getRequestURI()))
+		if (!getRequestURI().equals(other.getRequestURI())) {
 			return false;
+		}
 		
-		if(currentEditionWasFetched() != other.currentEditionWasFetched())
+		if (currentEditionWasFetched() != other.currentEditionWasFetched()) {
 			return false;
+		}
 		
-		if(getLatestEditionHint() != other.getLatestEditionHint())
+		if (getLatestEditionHint() != other.getLatestEditionHint()) {
 			return false;
+		}
 		
-		if(!getNickname().equals(other.getNickname()))
+		if (!getNickname().equals(other.getNickname())) {
 			return false;
+		}
 		
-		if(doesPublishTrustList() != other.doesPublishTrustList())
+		if (doesPublishTrustList() != other.doesPublishTrustList()) {
 			return false;
+		}
 		
 		
 		String[] myContexts = (String[])getContexts().toArray(new String[1]);
@@ -625,11 +654,13 @@ public class Identity implements Cloneable {
 		Arrays.sort(myContexts);
 		Arrays.sort(otherContexts);
 		
-		if(!Arrays.deepEquals(myContexts, otherContexts))
+		if (!Arrays.deepEquals(myContexts, otherContexts)) {
 			return false;
+		}
 		
-		if(!getProperties().equals(other.getProperties()))
+		if (!getProperties().equals(other.getProperties())) {
 			return false;
+		}
 		
 		return true;
 	}
