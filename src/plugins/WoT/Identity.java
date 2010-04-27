@@ -112,7 +112,13 @@ public class Identity implements Cloneable {
 		mLastFetchedDate = new Date(0);
 		mLastChangedDate = new Date(0);
 		
-		setNickname(newNickname);
+		if(newNickname == null) {
+			mNickname = null;
+		}
+		else {
+			setNickname(newNickname);
+		}
+		
 		setPublishTrustList(doesPublishTrustList);
 		mContexts = new ArrayList<String>(4); /* Currently we have: Introduction, Freetalk */
 		mProperties = new HashMap<String, String>();
@@ -334,17 +340,22 @@ public class Identity implements Cloneable {
 	 * @throws InvalidParameterException If the nickname contains invalid characters, is empty or longer than 50 characters.
 	 */
 	public synchronized void setNickname(String newNickname) throws InvalidParameterException {
-		if (newNickname != null) {
-			newNickname = newNickname.trim();
+		if (newNickname == null) {
+			throw new NullPointerException("Nickname is null");
+		}
+	
+		newNickname = newNickname.trim();
+		
+		if(newNickname.length() == 0) {
+			throw new InvalidParameterException("Blank nickname");
 		}
 		
-		if (newNickname != null) {
-			if(newNickname.length() == 0) throw new InvalidParameterException("Blank nickname");
-			if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long (50 chars max)");
+		if(newNickname.length() > 50) {
+			throw new InvalidParameterException("Nickname is too long (50 chars max)");
+		}
 			
-			if(!isNicknameValid(newNickname)) {
-				throw new InvalidParameterException("Nickname contains illegal characters.");
-			}
+		if(!isNicknameValid(newNickname)) {
+			throw new InvalidParameterException("Nickname contains illegal characters.");
 		}
 		
 		if (mNickname != null && !mNickname.equals(newNickname)) {
