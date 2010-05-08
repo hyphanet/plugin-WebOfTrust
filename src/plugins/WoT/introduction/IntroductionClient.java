@@ -344,8 +344,7 @@ public final class IntroductionClient extends TransferThread  {
 
 			final InsertContext ictx = mClient.getInsertContext(true);
 			
-			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
+			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.UPDATE_PRIORITY_CLASS);
 			addInsert(pu);
 			tempB = null;
 			

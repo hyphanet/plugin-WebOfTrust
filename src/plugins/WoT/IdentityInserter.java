@@ -15,7 +15,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -148,8 +147,7 @@ public final class IdentityInserter extends TransferThread {
 			InsertBlock ib = new InsertBlock(tempB, null, identity.getInsertURI().setSuggestedEdition(edition));
 			InsertContext ictx = mClient.getInsertContext(true);
 			
-			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			pu.setPriorityClass(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, mClientContext, null);
+			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 			addInsert(pu);
 			tempB = null;
 			
