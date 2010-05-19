@@ -40,7 +40,7 @@ import freenet.support.io.Closer;
  */
 public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 	
-	private static final long PROCESS_COMMANDS_DELAY = 5 * 1000;
+	private static final long PROCESS_COMMANDS_DELAY = 60 * 1000;
 	
 	private final WoT mWoT;
 	
