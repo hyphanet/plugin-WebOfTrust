@@ -325,7 +325,7 @@ public class Identity implements Cloneable {
 	/* IMPORTANT: This code is duplicated in plugins.Freetalk.WoT.WoTIdentity.validateNickname().
 	 * Please also modify it there if you modify it here */
 	public boolean isNicknameValid(String newNickname) {
-		return newNickname.length() > 0 && newNickname.length() < 50
+		return newNickname.length() > 0 && newNickname.length() <= 30
 			&& StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
 			&& StringValidityChecker.containsNoInvalidCharacters(newNickname)
 			&& StringValidityChecker.containsNoLinebreaks(newNickname)
@@ -337,7 +337,7 @@ public class Identity implements Cloneable {
 	 * Sets the nickName of this Identity. 
 	 * 
 	 * @param newNickname A String containing this Identity's NickName. Setting it to null means that it was not retrieved yet.
-	 * @throws InvalidParameterException If the nickname contains invalid characters, is empty or longer than 50 characters.
+	 * @throws InvalidParameterException If the nickname contains invalid characters, is empty or longer than 30 characters.
 	 */
 	public synchronized void setNickname(String newNickname) throws InvalidParameterException {
 		if (newNickname == null) {
@@ -350,8 +350,8 @@ public class Identity implements Cloneable {
 			throw new InvalidParameterException("Blank nickname");
 		}
 		
-		if(newNickname.length() > 50) {
-			throw new InvalidParameterException("Nickname is too long (50 chars max)");
+		if(newNickname.length() > 30) {
+			throw new InvalidParameterException("Nickname is too long (30 chars max)");
 		}
 			
 		if(!isNicknameValid(newNickname)) {
