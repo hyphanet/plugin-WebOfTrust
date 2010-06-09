@@ -22,8 +22,7 @@ import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
-import freenet.clients.http.filter.ContentFilter;
-import freenet.clients.http.filter.ContentFilter.FilterOutput;
+import freenet.client.filter.ContentFilter;
 import freenet.l10n.BaseL10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.PluginRespirator;
@@ -344,7 +343,7 @@ public class WebInterface {
 			// ATTENTION: The same code is used in Freetalk's WebInterface.java. Please synchronize any changes which happen there.
 			
 			Bucket dataBucket = null;
-			FilterOutput output = null;
+			Bucket filterOutput = core.tempBucketFactory.makeBucket(-1);
 			
 			try {
 				final IntroductionPuzzle puzzle = mWoT.getIntroductionPuzzleStore().getByID(req.getParam("PuzzleID"));
@@ -360,16 +359,16 @@ public class WebInterface {
 				}
 				
 				dataBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, puzzle.getData());
-				output = ContentFilter.filter(dataBucket, core.tempBucketFactory, puzzle.getMimeType(), uri, null, null, null);
-				writeReply(ctx, 200, output.type, "OK", output.data);
+				ContentFilter.filter(dataBucket.getInputStream(), filterOutput.getOutputStream(), puzzle.getMimeType(), uri, null, null, null);
+				writeReply(ctx, 200, puzzle.getMimeType(), "OK", filterOutput);
 			}
 			catch(Exception e) {
 				sendErrorPage(ctx, 404, "Introduction puzzle not available", e.getMessage());
 				Logger.error(this, "GetPuzzle failed", e);
 			}
 			finally {
-				if(output != null)
-					Closer.close(output.data);
+				if(filterOutput != null)
+					Closer.close(filterOutput);
 				Closer.close(dataBucket);
 			}
 		}
