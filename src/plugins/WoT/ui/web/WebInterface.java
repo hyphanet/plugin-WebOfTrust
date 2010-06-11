@@ -378,7 +378,7 @@ public class WebInterface {
 					Closer.close(filterOutput);
 				Closer.close(dataBucket);
 				Closer.close(filterInput);
-				Closer.close(filterInput);
+				Closer.close(filterOutput);
 			}
 		}
 		
