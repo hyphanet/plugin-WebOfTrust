@@ -6,6 +6,8 @@ package plugins.WoT.ui.web;
 import java.awt.image.RenderedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 
 import javax.imageio.ImageIO;
@@ -343,8 +345,9 @@ public class WebInterface {
 			// ATTENTION: The same code is used in Freetalk's WebInterface.java. Please synchronize any changes which happen there.
 			
 			Bucket dataBucket = null;
-			Bucket filterOutput = core.tempBucketFactory.makeBucket(-1);
-			
+			Bucket output = core.tempBucketFactory.makeBucket(-1);
+			InputStream filterInput = null;
+			OutputStream filterOutput = null;
 			try {
 				final IntroductionPuzzle puzzle = mWoT.getIntroductionPuzzleStore().getByID(req.getParam("PuzzleID"));
 				
@@ -359,8 +362,12 @@ public class WebInterface {
 				}
 				
 				dataBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, puzzle.getData());
-				ContentFilter.filter(dataBucket.getInputStream(), filterOutput.getOutputStream(), puzzle.getMimeType(), uri, null, null, null);
-				writeReply(ctx, 200, puzzle.getMimeType(), "OK", filterOutput);
+				filterInput = dataBucket.getInputStream();
+				filterOutput = output.getOutputStream();
+				ContentFilter.filter(filterInput, filterOutput, puzzle.getMimeType(), uri, null, null, null);
+				filterInput.close();
+				filterOutput.close();
+				writeReply(ctx, 200, puzzle.getMimeType(), "OK", output);
 			}
 			catch(Exception e) {
 				sendErrorPage(ctx, 404, "Introduction puzzle not available", e.getMessage());
@@ -370,6 +377,8 @@ public class WebInterface {
 				if(filterOutput != null)
 					Closer.close(filterOutput);
 				Closer.close(dataBucket);
+				Closer.close(filterInput);
+				Closer.close(filterInput);
 			}
 		}
 		
