@@ -2214,8 +2214,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 						try {
 							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "I trust the Freenet developers.");
 						} catch(UnknownIdentityException e) {
-							// Don't use logger.error() because this will assert(false) which breaks unit tests.
-							Logger.logStatic(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e, Logger.ERROR);
+							Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e);
 						}
 					}
 					
