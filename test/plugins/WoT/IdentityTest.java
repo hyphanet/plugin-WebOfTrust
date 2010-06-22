@@ -69,6 +69,14 @@ public class IdentityTest extends DatabaseBasedTest {
 	}
 	
 	public void testPersistence() throws MalformedURLException, UnknownIdentityException {
+		flushCaches();
+		
+		assertEquals(1, mWoT.getAllIdentities().size());
+		
+		Identity stored = mWoT.getIdentityByURI(uri);
+		assertSame(identity, stored);
+		
+		stored = null;
 		mWoT.terminate();
 		mWoT = null;
 		
@@ -78,7 +86,7 @@ public class IdentityTest extends DatabaseBasedTest {
 		
 		assertEquals(1, mWoT.getAllIdentities().size());	
 		
-		Identity stored = mWoT.getIdentityByURI(uri);
+		stored = mWoT.getIdentityByURI(uri);
 		assertNotSame(identity, stored);
 		assertEquals(identity, stored);
 		assertEquals(identity.getAddedDate(), stored.getAddedDate());
