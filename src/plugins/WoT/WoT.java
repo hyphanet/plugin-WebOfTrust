@@ -1085,7 +1085,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				q = q.descend("mTarget"); 
 				break;
 			case ByScoreDescending:
-				// FIXME: This excludes identities which have no score
+				// TODO: This excludes identities which have no score
 				q.constrain(Score.class);
 				q.descend("mTreeOwner").constrain(treeOwner);
 				q.descend("mValue").orderDescending();
@@ -1098,7 +1098,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				q = q.descend("mTrustee");
 				break;
 			case ByLocalTrustDescending:
-				// FIXME: This excludes untrusted identities.
+				// TODO: This excludes untrusted identities.
 				q.constrain(Trust.class);
 				q.descend("mTruster").constrain(treeOwner);
 				q.descend("mValue").orderDescending();
@@ -1297,14 +1297,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				throw new DuplicateScoreException(treeOwner, target, result.size());
 		}
 	}
-	
-	/* 
-	 * FIXME:
-	 * I suggest before releasing we should write a getRealScore() function which recalculates the score from all Trust objects which are
-	 * stored in the database. We could then assert(getScore() == getRealScore()) for verifying that the database is consistent and watch
-	 * for some time whether it stays consistent, just to make sure that there are no flaws in the code.
-	 */
-	
+
 	/**
 	 * Gets a list of all this Identity's Scores.
 	 * You have to synchronize on this WoT around the call to this function and the processing of the returned list! 
@@ -2202,7 +2195,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					identity.addContext(context);
 				
 				if(publishTrustList) {
-					identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); /* FIXME: make configureable */
+					identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); /* TODO: make configureable */
 					identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
 				}
 				

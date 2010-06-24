@@ -106,7 +106,7 @@ public final class XMLTransformer {
 
 			mSerializer = TransformerFactory.newInstance().newTransformer();
 			mSerializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-			mSerializer.setOutputProperty(OutputKeys.INDENT, "yes"); /* FIXME: Set to no when we leave the beta stage */
+			mSerializer.setOutputProperty(OutputKeys.INDENT, "no");
 			mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
 		}
 		catch(Exception e) {
