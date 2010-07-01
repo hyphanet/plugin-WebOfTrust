@@ -302,7 +302,7 @@ public final class IntroductionClient extends TransferThread  {
 			try {
 				downloadPuzzle(i);
 			} catch (Exception e) {
-				Logger.error(this, "Starting puzzle download failed.", e);
+				Logger.error(this, "Starting puzzle download failed for " + i, e);
 			}
 		}
 		
