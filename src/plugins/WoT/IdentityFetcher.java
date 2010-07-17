@@ -260,7 +260,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	}
 	
 	private void scheduleCommandProcessing() {
-		mTicker.queueTimedJob(this, "FT IdentityFetcher", PROCESS_COMMANDS_DELAY, true, true);
+		mTicker.queueTimedJob(this, "WoT IdentityFetcher", PROCESS_COMMANDS_DELAY, false, true);
 	}
 	
 	public int getPriority() {
