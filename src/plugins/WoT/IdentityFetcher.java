@@ -25,12 +25,14 @@ import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
+import freenet.support.io.NativeThread;
 
 /**
  * Fetches Identities from Freenet.
@@ -38,7 +40,7 @@ import freenet.support.io.Closer;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
+public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable {
 	
 	private static final long PROCESS_COMMANDS_DELAY = 60 * 1000;
 	
@@ -259,6 +261,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, Runnable {
 	
 	private void scheduleCommandProcessing() {
 		mTicker.queueTimedJob(this, "FT IdentityFetcher", PROCESS_COMMANDS_DELAY, true, true);
+	}
+	
+	public int getPriority() {
+		return NativeThread.LOW_PRIORITY;
 	}
 	
 	public void run() {
