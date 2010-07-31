@@ -13,13 +13,14 @@ import plugins.WoT.Score;
 import plugins.WoT.Trust;
 import plugins.WoT.WoT;
 import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WoT.exceptions.NoSuchContextException;
 import plugins.WoT.exceptions.NotInTrustTreeException;
 import plugins.WoT.exceptions.NotTrustedException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.exceptions.UnknownPuzzleException;
 import plugins.WoT.introduction.IntroductionPuzzle;
-import plugins.WoT.introduction.IntroductionServer;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WoT.introduction.IntroductionServer;
 
 import com.db4o.ObjectSet;
 
@@ -90,7 +91,16 @@ public final class FCPInterface implements FredPluginFCP {
                 throw new Exception("Unknown message (" + message + ")");
             }
         } catch (final Exception e) {
-            Logger.error(this, "FCP error", e);
+        	// TODO: This might miss some stuff which are errors. Find a better way of detecting which exceptions are okay.
+        	boolean dontLog = e instanceof NoSuchContextException ||
+        						e instanceof NotInTrustTreeException ||
+        						e instanceof NotTrustedException ||
+        						e instanceof UnknownIdentityException ||
+        						e instanceof UnknownPuzzleException;
+        	
+        	if(!dontLog)
+        		Logger.error(this, "FCP error", e);
+        	
             try {
                 replysender.send(errorMessageFCP(params.get("Message"), e), data);
             } catch (final PluginNotFoundException e1) {
