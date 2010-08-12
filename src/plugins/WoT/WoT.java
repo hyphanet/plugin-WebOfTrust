@@ -471,6 +471,12 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				q.descend("mTruster").constrain(null).identity().or(q.descend("mTrustee").constrain(null).identity());
 				ObjectSet<Trust> orphanTrusts = q.execute();
 				for(Trust trust : orphanTrusts) {
+					if(trust.getTruster() != null && trust.getTrustee() != null) {
+						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+						Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + trust);
+						continue;
+					}
+					
 					Logger.error(trust, "Deleting orphan trust, truster = " + trust.getTruster() + ", trustee = " + trust.getTrustee());
 					mDB.delete(trust);
 				}
@@ -486,6 +492,12 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				q.descend("mTreeOwner").constrain(null).identity().or(q.descend("mTarget").constrain(null).identity());
 				ObjectSet<Score> orphanScores = q.execute();
 				for(Score score : orphanScores) {
+					if(score.getTreeOwner() != null && score.getTarget() != null) {
+						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+						Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + score);
+						continue;
+					}
+					
 					Logger.error(score, "Deleting orphan score, treeOwner = " + score.getTreeOwner() + ", target = " + score.getTarget());
 					mDB.delete(score);
 				}
