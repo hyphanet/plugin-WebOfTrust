@@ -145,7 +145,7 @@
 				<include name="**/*.java"/>
 			</fileset>
 			<link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
-			<link href="http://freenet.github.com/fred-staging/api"/>
+			<link href="http://freenetproject.org/javadocs/"/>
 		</javadoc>
 	</target>
 
