@@ -594,6 +594,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
 	 */
 	protected synchronized boolean computeAllScoresWithoutCommit() {
+		Logger.debug(this, "Doing a full computation of all Scores...");
+		
 		boolean returnValue = true;
 		final ObjectSet<Identity> allIdentities = getAllIdentities();
 		
@@ -797,6 +799,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		}
 		
 		mFullScoreComputationNeeded = false;
+		
+		Logger.debug(this, "Full score computation finished.");
 		
 		return returnValue;
 	}
