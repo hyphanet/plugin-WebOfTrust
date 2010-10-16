@@ -9,7 +9,7 @@ import java.util.Date;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
@@ -139,7 +139,7 @@ public class IntroductionPuzzle {
 			dayOfInsertion = mDateFormat.format(dateOfInsertion);
 		}
 		FreenetURI baseURI = inserter.getRequestURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WoT.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index);
+		baseURI = baseURI.setDocName(WebOfTrust.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index);
 		return baseURI.setMetaString(null);
 	}
 	
@@ -256,7 +256,7 @@ public class IntroductionPuzzle {
 		if(mSolution == null)
 			throw new RuntimeException("The puzzle is not solved.");
 		
-		return new FreenetURI("KSK",	WoT.WOT_NAME + "|" +
+		return new FreenetURI("KSK",	WebOfTrust.WOT_NAME + "|" +
 										INTRODUCTION_CONTEXT + "|" +
 										mID + "|" +
 										mSolution);

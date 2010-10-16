@@ -56,7 +56,7 @@ public final class IdentityInserter extends TransferThread {
 	public static final long MAX_UNCHANGED_TINE_BEFORE_REINSERT = 1000*60*60*24*3;
 	
 	
-	private WoT mWoT;
+	private WebOfTrust mWoT;
 
 	/** Random number generator */
 	private Random mRandom;
@@ -64,9 +64,9 @@ public final class IdentityInserter extends TransferThread {
 	/**
 	 * Creates an IdentityInserter.
 	 * 
-	 * @param myWoT reference to an {@link WoT} to perform inserts
+	 * @param myWoT reference to an {@link WebOfTrust} to perform inserts
 	 */
-	public IdentityInserter(WoT myWoT) {
+	public IdentityInserter(WebOfTrust myWoT) {
 		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Identity Inserter");
 		mWoT = myWoT;
 		mRandom = mWoT.getPluginRespirator().getNode().fastWeakRandom;

@@ -44,7 +44,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	
 	private static final long PROCESS_COMMANDS_DELAY = 60 * 1000;
 	
-	private final WoT mWoT;
+	private final WebOfTrust mWoT;
 	
 	private final ExtObjectContainer mDB;
 	
@@ -66,9 +66,9 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	/**
 	 * Creates a new IdentityFetcher.
 	 * 
-	 * @param myWoT A reference to a {@link WoT}
+	 * @param myWoT A reference to a {@link WebOfTrust}
 	 */
-	protected IdentityFetcher(WoT myWoT) {
+	protected IdentityFetcher(WebOfTrust myWoT) {
 		mWoT = myWoT;
 		
 		mDB = mWoT.getDB();

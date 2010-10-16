@@ -10,7 +10,7 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
-import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.DuplicateScoreException;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -287,7 +287,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Trustees"));
 		
 		
-		WoT.SortOrder sortInstruction = WoT.SortOrder.valueOf("By" + sortBy + sortType);
+		WebOfTrust.SortOrder sortInstruction = WebOfTrust.SortOrder.valueOf("By" + sortBy + sortType);
 		
 		long currentTime = CurrentTimeUTC.getInMillis();
 

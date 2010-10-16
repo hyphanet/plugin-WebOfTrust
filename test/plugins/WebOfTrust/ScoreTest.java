@@ -59,7 +59,7 @@ public class ScoreTest extends DatabaseBasedTest {
 		
 		flushCaches();
 		
-		mWoT = new WoT(getDatabaseFilename());
+		mWoT = new WebOfTrust(getDatabaseFilename());
 		a = mWoT.getOwnIdentityByURI(uriA);
 		b = mWoT.getOwnIdentityByURI(uriB);
 		final Score score = mWoT.getScore(a, b);

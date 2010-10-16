@@ -71,7 +71,7 @@ public final class XMLTransformer {
 	 */
 	public static final int MAX_INTRODUCTIONPUZZLE_BYTE_SIZE = 16 * 1024;
 	
-	private final WoT mWoT;
+	private final WebOfTrust mWoT;
 	
 	private final ExtObjectContainer mDB;
 	
@@ -91,7 +91,7 @@ public final class XMLTransformer {
 	 * Initializes the XML creator & parser and caches those objects in the new IdentityXML object so that they do not have to be initialized
 	 * each time an identity is exported/imported.
 	 */
-	public XMLTransformer(WoT myWoT) {
+	public XMLTransformer(WebOfTrust myWoT) {
 		
 		mWoT = myWoT;
 		mDB = mWoT.getDB();
@@ -117,7 +117,7 @@ public final class XMLTransformer {
 	public void exportOwnIdentity(OwnIdentity identity, OutputStream os) throws TransformerException {
 		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway 
-			xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
 		}
 		
 		Element rootElement = xmlDoc.getDocumentElement();
@@ -369,7 +369,7 @@ public final class XMLTransformer {
 	public void exportIntroduction(OwnIdentity identity, OutputStream os) throws TransformerException {
 		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-			xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
 		}
 		Element rootElement = xmlDoc.getDocumentElement();
 
@@ -470,7 +470,7 @@ public final class XMLTransformer {
 		
 		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-			xmlDoc = mDOM.createDocument(null, WoT.WOT_NAME, null);
+			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
 		}
 		Element rootElement = xmlDoc.getDocumentElement();
 

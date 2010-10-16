@@ -4,7 +4,7 @@
 package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.Version;
-import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
@@ -37,11 +37,11 @@ public class HomePage extends WebPageImpl {
 	 * Creates a short summary of what the plugin knows of the WoT.
 	 */
 	private void makeSummary() {
-		long latestMandatoryVersion = wot.getLatestReportedVersion(WoT.WOT_NAME, true);
+		long latestMandatoryVersion = wot.getLatestReportedVersion(WebOfTrust.WOT_NAME, true);
 		if(latestMandatoryVersion > Version.version) {
 			addErrorBox(l10n().getString("HomePage.NewMandatoryVersionAvailable.Header"), l10n().getString("HomePage.NewMandatoryVersionAvailable.Text"));
 		} else {
-			long latestVersion = wot.getLatestReportedVersion(WoT.WOT_NAME, false);
+			long latestVersion = wot.getLatestReportedVersion(WebOfTrust.WOT_NAME, false);
 			if(latestVersion > Version.version) {
 				addErrorBox(l10n().getString("HomePage.NewVersionAvailable.Header"), l10n().getString("HomePage.NewVersionAvailable.Text"));
 			}

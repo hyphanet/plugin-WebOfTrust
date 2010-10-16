@@ -6,7 +6,7 @@ package plugins.WebOfTrust;
 import java.io.File;
 
 import junit.framework.TestCase;
-import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.WebOfTrust;
 
 /**
  * A JUnit <code>TestCase</code> which opens a db4o database in setUp() and closes it in tearDown().
@@ -22,7 +22,7 @@ import plugins.WebOfTrust.WoT;
  */
 public class DatabaseBasedTest extends TestCase {
 
-	protected WoT mWoT;
+	protected WebOfTrust mWoT;
 
 	/**
 	 * @return Returns the filename of the database. This is the name of the current test function plus ".db4o".
@@ -43,7 +43,7 @@ public class DatabaseBasedTest extends TestCase {
 			databaseFile.delete();
 		assertFalse(databaseFile.exists());;
 		
-		mWoT = new WoT(getDatabaseFilename());
+		mWoT = new WebOfTrust(getDatabaseFilename());
 	}
 
 	/**

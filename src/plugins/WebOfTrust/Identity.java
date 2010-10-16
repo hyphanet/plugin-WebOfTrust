@@ -261,7 +261,7 @@ public class Identity implements Cloneable {
 	 * Marks the current edition of this identity as not fetched if it was fetched already.
 	 * If it was not fetched, decreases the edition of the identity by one.
 	 * 
-	 * Called by the {@link WoT} when the {@link Score} of an identity changes from negative or 0 to > 0 to make the {@link IdentityFetcher} re-download it's
+	 * Called by the {@link WebOfTrust} when the {@link Score} of an identity changes from negative or 0 to > 0 to make the {@link IdentityFetcher} re-download it's
 	 * current trust list. This is necessary because we do not create the trusted identities of someone if he has a negative score. 
 	 */
 	protected synchronized void markForRefetch() {

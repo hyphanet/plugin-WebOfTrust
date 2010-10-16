@@ -7,7 +7,7 @@ import java.net.MalformedURLException;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Trust;
-import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
@@ -93,7 +93,7 @@ public class TrustTest extends DatabaseBasedTest {
 		System.gc();
 		System.runFinalization();
 		
-		mWoT = new WoT(getDatabaseFilename());
+		mWoT = new WebOfTrust(getDatabaseFilename());
 		
 		a = mWoT.getIdentityByURI(uriA);
 		b = mWoT.getIdentityByURI(uriB);

@@ -57,7 +57,7 @@ import freenet.support.api.Bucket;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
+public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
 	FredPluginL10n, FredPluginBaseL10n {
 	
 	/* Constants */
@@ -165,7 +165,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 			mDB = initDB(DATABASE_FILENAME);
 			
 			mConfig = Config.loadOrCreate(this);
-			if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WoT.DATABASE_FORMAT_VERSION)
+			if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WebOfTrust.DATABASE_FORMAT_VERSION)
 				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 			
 			upgradeDB();
@@ -242,7 +242,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	/**
 	 * Constructor for being used by the node and unit tests. Does not do anything.
 	 */
-	public WoT() {
+	public WebOfTrust() {
 
 	}
 	
@@ -251,11 +251,11 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	 * For use by the unit tests to be able to run WoT without a node.
 	 * @param databaseFilename The filename of the database.
 	 */
-	public WoT(String databaseFilename) {
+	public WebOfTrust(String databaseFilename) {
 		mDB = initDB(databaseFilename);
 		mConfig = Config.loadOrCreate(this);
 		
-		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WoT.DATABASE_FORMAT_VERSION)
+		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 	}
 
@@ -292,7 +292,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	private synchronized void upgradeDB() {
 		int databaseVersion = mConfig.getInt(Config.DATABASE_FORMAT_VERSION);
 		
-		if(databaseVersion == WoT.DATABASE_FORMAT_VERSION)
+		if(databaseVersion == WebOfTrust.DATABASE_FORMAT_VERSION)
 			return;
 		
 		try {
@@ -386,7 +386,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		
 		
 		
-		if(databaseVersion != WoT.DATABASE_FORMAT_VERSION)
+		if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
 		}
@@ -2414,7 +2414,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	}
 	
 	public void setLanguage(LANGUAGE newLanguage) {
-        WoT.l10n = new PluginL10n(this, newLanguage);
+        WebOfTrust.l10n = new PluginL10n(this, newLanguage);
         Logger.debug(this, "Set LANGUAGE to: " + newLanguage.isoCode);
 	}
 	
@@ -2482,7 +2482,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
      * @return ClassLoader object
      */
     public ClassLoader getPluginClassLoader() {
-        return WoT.class.getClassLoader();
+        return WebOfTrust.class.getClassLoader();
     }
 
     /**
@@ -2491,7 +2491,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
      * @return L10n object.
      */
     public BaseL10n getBaseL10n() {
-        return WoT.l10n.getBase();
+        return WebOfTrust.l10n.getBase();
     }
 
 	
@@ -2503,10 +2503,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 		if(obj == this)
 			return true;
 		
-		if(!(obj instanceof WoT))
+		if(!(obj instanceof WebOfTrust))
 			return false;
 		
-		WoT other = (WoT)obj;
+		WebOfTrust other = (WebOfTrust)obj;
 		
 		{ // Compare own identities
 			final ObjectSet<OwnIdentity> allIdentities = getAllOwnIdentities();

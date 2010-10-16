@@ -17,7 +17,7 @@ import javax.xml.transform.TransformerException;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
@@ -59,7 +59,7 @@ import freenet.support.io.NativeThread;
  */
 public final class IntroductionClient extends TransferThread  {
 	
-	private static final int STARTUP_DELAY = WoT.FAST_DEBUG_MODE ? (30 * 1000) : (3 * 60 * 1000);
+	private static final int STARTUP_DELAY = WebOfTrust.FAST_DEBUG_MODE ? (30 * 1000) : (3 * 60 * 1000);
 	private static final int THREAD_PERIOD = 1 * 60 * 60 * 1000; 
 	
 	/**
@@ -86,7 +86,7 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/* Objects from WoT */
 	
-	private final WoT mWoT;
+	private final WebOfTrust mWoT;
 	
 	/** The container object which manages storage of the puzzles in the database, also used for synchronization */
 	private final IntroductionPuzzleStore mPuzzleStore;
@@ -109,7 +109,7 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Creates an IntroductionClient
 	 */
-	public IntroductionClient(WoT myWoT) {
+	public IntroductionClient(WebOfTrust myWoT) {
 		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Introduction Client");
 		
 		mWoT = myWoT;

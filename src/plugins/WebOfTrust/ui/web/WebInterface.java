@@ -13,7 +13,7 @@ import java.net.URI;
 import javax.imageio.ImageIO;
 
 import plugins.WebOfTrust.Identity;
-import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.identicon.Identicon;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
@@ -44,7 +44,7 @@ import freenet.support.io.Closer;
  */
 public class WebInterface {
 	
-	private final WoT mWoT;
+	private final WebOfTrust mWoT;
 	private final PluginRespirator mPluginRespirator;
 	private final PageMaker mPageMaker;
 	
@@ -427,7 +427,7 @@ public class WebInterface {
 
 	}
 
-	public WebInterface(WoT myWoT, String uri) {
+	public WebInterface(WebOfTrust myWoT, String uri) {
 		mWoT = myWoT;
 		mURI = uri;
 		
@@ -476,7 +476,7 @@ public class WebInterface {
 		return mPageMaker;
 	}
 	
-	public WoT getWoT() {
+	public WebOfTrust getWoT() {
 		return mWoT;
 	}
 	

@@ -8,7 +8,7 @@ package plugins.WebOfTrust.ui.web;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.WebOfTrust;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.PageNode;
@@ -27,7 +27,7 @@ import freenet.support.api.HTTPRequest;
 public abstract class WebPageImpl implements WebPage {
 	
 
-	protected final WoT wot;
+	protected final WebOfTrust wot;
 	
 	protected final String uri;
 

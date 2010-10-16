@@ -82,7 +82,7 @@ public class IdentityTest extends DatabaseBasedTest {
 		
 		flushCaches();
 		
-		mWoT = new WoT(getDatabaseFilename());
+		mWoT = new WebOfTrust(getDatabaseFilename());
 		
 		assertEquals(1, mWoT.getAllIdentities().size());	
 		

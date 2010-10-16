@@ -5,7 +5,7 @@ import java.util.Date;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.DuplicatePuzzleException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
@@ -41,11 +41,11 @@ import freenet.support.Logger;
  */
 public final class IntroductionPuzzleStore {
 
-	private final WoT mWoT;
+	private final WebOfTrust mWoT;
 	
 	private final ExtObjectContainer mDB;
 
-	public IntroductionPuzzleStore(final WoT myWoT) {
+	public IntroductionPuzzleStore(final WebOfTrust myWoT) {
 		mWoT = myWoT;
 		mDB = myWoT.getDB();
 		

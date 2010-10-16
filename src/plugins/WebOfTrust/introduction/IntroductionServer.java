@@ -17,7 +17,7 @@ import javax.xml.transform.TransformerException;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.introduction.captcha.CaptchaFactory1;
@@ -52,7 +52,7 @@ import freenet.support.io.NativeThread;
  */
 public final class IntroductionServer extends TransferThread {
 	
-	private static final int STARTUP_DELAY = WoT.FAST_DEBUG_MODE ? (10 * 1000) : (5 * 60 * 1000);
+	private static final int STARTUP_DELAY = WebOfTrust.FAST_DEBUG_MODE ? (10 * 1000) : (5 * 60 * 1000);
 	private static final int THREAD_PERIOD = 60 * 60 * 1000;
 
 	/** The name of the property we use to announce in identities how many puzzles they insert */
@@ -64,7 +64,7 @@ public final class IntroductionServer extends TransferThread {
 	
 	/* Objects from WoT */
 
-	private final WoT mWoT;
+	private final WebOfTrust mWoT;
 	
 	/** The container object which manages storage of the puzzles in the database, also used for synchronization */
 	private final IntroductionPuzzleStore mPuzzleStore;
@@ -85,7 +85,7 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Creates an IntroductionServer
 	 */
-	public IntroductionServer(final WoT myWoT, final IdentityFetcher myFetcher) {
+	public IntroductionServer(final WebOfTrust myWoT, final IdentityFetcher myFetcher) {
 		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Introduction Server");
 		
 		mWoT = myWoT;

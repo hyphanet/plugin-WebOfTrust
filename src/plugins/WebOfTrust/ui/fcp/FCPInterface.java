@@ -11,7 +11,7 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
-import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NoSuchContextException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
@@ -38,9 +38,9 @@ import freenet.support.api.Bucket;
  */
 public final class FCPInterface implements FredPluginFCP {
 
-    private final WoT mWoT;
+    private final WebOfTrust mWoT;
 
-    public FCPInterface(final WoT myWoT) {
+    public FCPInterface(final WebOfTrust myWoT) {
         mWoT = myWoT;
     }
 

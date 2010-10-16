@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.UUID;
 
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.WebOfTrust;
 import freenet.keys.FreenetURI;
 
 public class OwnIntroductionPuzzle extends IntroductionPuzzle {
@@ -45,7 +45,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 			dayOfInsertion = mDateFormat.format(getDateOfInsertion());
 		}
 		FreenetURI baseURI = ((OwnIdentity)getInserter()).getInsertURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WoT.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + getIndex());
+		baseURI = baseURI.setDocName(WebOfTrust.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + getIndex());
 		return baseURI.setMetaString(null);
 	}
 	

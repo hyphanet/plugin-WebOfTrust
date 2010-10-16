@@ -33,14 +33,14 @@ public final class Config {
 	
 	private final HashMap<String, Integer> mIntParams;
 	
-	private transient WoT mWoT;
+	private transient WebOfTrust mWoT;
 	
 	private transient ExtObjectContainer mDB;
 
 	/**
 	 * Creates a new Config object and stores the default values in it.
 	 */
-	protected Config(WoT myWoT) {
+	protected Config(WebOfTrust myWoT) {
 		mWoT = myWoT;
 		mDB = mWoT.getDB();
 		mStringParams = new HashMap<String, String>();
@@ -48,7 +48,7 @@ public final class Config {
 		setDefaultValues(false);
 	}
 	
-	protected void initializeTransient(WoT myWoT) {
+	protected void initializeTransient(WebOfTrust myWoT) {
 		mWoT = myWoT;
 		mDB = myWoT.getDB();
 	}
@@ -57,7 +57,7 @@ public final class Config {
 	 * Loads an existing Config object from the database and adds any missing default values to it, creates and stores a new one if none exists.
 	 * @return The config object.
 	 */
-	public static Config loadOrCreate(WoT myWoT) {
+	public static Config loadOrCreate(WebOfTrust myWoT) {
 		ExtObjectContainer db = myWoT.getDB();
 		synchronized(db.lock()) {
 			Config config;
@@ -216,6 +216,6 @@ public final class Config {
 	public synchronized void setDefaultValues(boolean overwrite) {
 		/* Do not overwrite, it shall only be overwritten when the database has been converted to a new format */
 		if(!containsInt(DATABASE_FORMAT_VERSION))
-			set(DATABASE_FORMAT_VERSION, WoT.DATABASE_FORMAT_VERSION);
+			set(DATABASE_FORMAT_VERSION, WebOfTrust.DATABASE_FORMAT_VERSION);
 	}
 }
