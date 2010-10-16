@@ -53,11 +53,7 @@ public final class XMLTransformer {
 
 	private static final int XML_FORMAT_VERSION = 1;
 	
-	// FIXME: For absolute beauty we can reset this to 1 before final release because our XML files start with "<WoT-testing>" for testing and will start with
-	// "<WoT>" for the final, so old puzzles won't be parsed even if we reset the format version to 1.
-	// The reason for the format version being 2 is bug fixes in the IntroductionServer, I want the IntroductionClient to only display puzzles of identities
-	// which have the fixed IntroductionServer running.
-	private static final int INTRODUCTION_XML_FORMAT_VERSION = 2; 
+	private static final int INTRODUCTION_XML_FORMAT_VERSION = 1; 
 	
 	/**
 	 * Used by the IntroductionServer to limit the size of fetches to prevent DoS..
