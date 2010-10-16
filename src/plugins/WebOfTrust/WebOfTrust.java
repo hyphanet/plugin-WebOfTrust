@@ -64,11 +64,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	public static final boolean FAST_DEBUG_MODE = false;
 	
-	public static final String DATABASE_FILENAME =  "WebOfTrust-testing.db4o";  /* FIXME: Change when we leave the beta stage */
-	public static final int DATABASE_FORMAT_VERSION = -92;  /* FIXME: Change when we leave the beta stage */
-	
 	/** The relative path of the plugin on Freenet's web interface */
-	public static final String SELF_URI = "/WoT";
+	public static final String SELF_URI = "/WebOfTrust";
 
 	/** Package-private method to allow unit tests to bypass some assert()s */
 	
@@ -77,7 +74,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * constant below. The purpose of this costant is to allow anyone to create his own custom web of trust which is completely disconnected
 	 * from the "official" web of trust of the Freenet project.
 	 */
-	public static final String WOT_NAME = "WebOfTrustFinalTesting"; // FIXME: Change to "WebOfTrust" when we leave the beta stage
+	public static final String WOT_NAME = "WebOfTrustFinalTesting"; // FIXME: Change to "WebOfTrust" when deploying 0.4 final.
+	
+	public static final String DATABASE_FILENAME =  WOT_NAME + ".db4o"; 
+	public static final int DATABASE_FORMAT_VERSION = -50;  // FIXME: Change to 1 when deploying 0.4 final. 
 	
 	/**
 	 * The official seed identities of the WoT plugin: If a newbie wants to download the whole offficial web of trust, he needs at least one
@@ -85,10 +85,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * the Freenet development team provides a list of seed identities - each of them is one of the developers.
 	 */
 	private static final String[] SEED_IDENTITIES = new String[] { 
-		"USK@fWK9InP~vG6HnTDm3wiJgvh6ULJQaU5XYTkXXNuKTTk,GnZgrilXSYjD~xrD6l4~5x~Nspz3aFe2eYXWRvaNRHU,AQACAAE/WoT/261", // xor
-		"USK@Ng~ixtLAfKBd4oaW6Ln7Fy~Z9Wm8HSoqIKvy4zzt3Sc,Cytpvs9neFQM0Ju4Yb2BCEC7VEZfeX8VAOpQgvOAY80,AQACAAE/WoT/65", // toad
-		"USK@ZO6itT2Fi844HLt6N0v7xOKFm96M4Jdp2XHwkBcpeWw,D24PpfV3BGfZUB8Nnl8h5rr2jUJpKBLIwiMqGjVnQ1w,AQACAAE/WoT/1" // Artefact2 aka. Lysergesaurediethylamid
-		// TODO: Add more developers
+		// FIXME: Add seeds when deploying 0.4 final.
 	};
 	
 	private static final String SEED_IDENTITY_MANDATORY_VERSION_PROPERTY = "MandatoryVersion";
