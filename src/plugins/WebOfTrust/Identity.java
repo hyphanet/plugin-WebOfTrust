@@ -187,7 +187,7 @@ public class Identity implements Cloneable {
 			throw new IllegalArgumentException("Identity URI keytype not supported: " + newRequestURI);
 		}
 		
-		mRequestURI = newRequestURI.setKeyType("USK").setDocName("WoT").setMetaString(null); // FIXME: Change to WoT.WOT_NAME when we leave the beta stage
+		mRequestURI = newRequestURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setMetaString(null);
 		updated();
 	}
 
@@ -539,17 +539,8 @@ public class Identity implements Cloneable {
 				throw new InvalidParameterException("Property names which contain periods must have at least one character before and after each period.");
 			}
 			
-			// FIXME: Use StringValidityChecker.isLatinLettersAndNumbersOnly() after WoT.WOT_NAME is not "WoT-testing" anymore.
-			// Reason is: createSeedIdentities does 
-			// ownSeed.setProperty(WOT_NAME + "." + SEED_IDENTITY_MANDATORY_VERSION_PROPERTY, Long.toString(Version.mandatoryVersion));
-			for (char c : token.toCharArray()) {
-				if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c >= '0' && c <= '9' || c == '-') {
-					continue;
-				} else {
-					throw new InvalidParameterException("Property names must contain only latin letters, numbers, periods and dashes.");
-				}
-			}
-				
+			if(!StringValidityChecker.isLatinLettersAndNumbersOnly(token))
+				throw new InvalidParameterException("Property names must contain only latin letters, numbers and periods.");
 		}
 		
 		final int valueLength = value.length();
