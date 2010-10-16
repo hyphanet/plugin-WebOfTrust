@@ -37,16 +37,7 @@ public class HomePage extends WebPageImpl {
 	 * Creates a short summary of what the plugin knows of the WoT.
 	 */
 	private void makeSummary() {
-		long latestMandatoryVersion = wot.getLatestReportedVersion(WebOfTrust.WOT_NAME, true);
-		if(latestMandatoryVersion > Version.version) {
-			addErrorBox(l10n().getString("HomePage.NewMandatoryVersionAvailable.Header"), l10n().getString("HomePage.NewMandatoryVersionAvailable.Text"));
-		} else {
-			long latestVersion = wot.getLatestReportedVersion(WebOfTrust.WOT_NAME, false);
-			if(latestVersion > Version.version) {
-				addErrorBox(l10n().getString("HomePage.NewVersionAvailable.Header"), l10n().getString("HomePage.NewVersionAvailable.Text"));
-			}
-		}
-
+		// FIXME: Remove the beta warning from here (and elsewhere?) when deploying 0.4 final
 		addErrorBox(l10n().getString("HomePage.BetaWarning.Header"), l10n().getString("HomePage.BetaWarning.Text"));
 		
 		HTMLNode box = addContentBox(l10n().getString("HomePage.SummaryBox.Header"));

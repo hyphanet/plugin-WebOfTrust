@@ -87,10 +87,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private static final String[] SEED_IDENTITIES = new String[] { 
 		// FIXME: Add seeds when deploying 0.4 final.
 	};
-	
-	private static final String SEED_IDENTITY_MANDATORY_VERSION_PROPERTY = "MandatoryVersion";
-	private static final String SEED_IDENTITY_LATEST_VERSION_PROPERTY = "LatestVersion";
-	
 
 	/* References from the node */
 	
@@ -816,9 +812,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					ownSeed.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY,
 							Integer.toString(IntroductionServer.SEED_IDENTITY_PUZZLE_COUNT));
 					
-					ownSeed.setProperty(WOT_NAME + "." + SEED_IDENTITY_MANDATORY_VERSION_PROPERTY, Long.toString(Version.mandatoryVersion));
-					ownSeed.setProperty(WOT_NAME + "." + SEED_IDENTITY_LATEST_VERSION_PROPERTY, Long.toString(Version.latestVersion));
-					
 					storeAndCommit(ownSeed);
 				}
 				else {
@@ -846,47 +839,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 		}
 	}
-	
-	/**
-	 * @param clientApp Can be "WoT" or "Freetalk".
-	 * @param onlyGetMandatory Set to true if not the latest version shall be returned but the latest mandatory version.
-	 * @return The recommended version of the given client-app which is reported by the majority (> 50%) of the seed identities.
-	 */
-	public synchronized long getLatestReportedVersion(String clientApp, boolean onlyGetMandatory) {
-		Hashtable<Long, Integer> votesForVersions = new Hashtable<Long, Integer>(SEED_IDENTITIES.length);
-		
-		for(String seedURI : SEED_IDENTITIES) {
-			Identity seed;
-			
-			try { 
-				seed = getIdentityByURI(seedURI);
-				if(!(seed instanceof OwnIdentity)) {
-					
-					try {
-						 long newVersion = Long.parseLong(seed.getProperty(clientApp + "." + (onlyGetMandatory ? SEED_IDENTITY_MANDATORY_VERSION_PROPERTY :
-							 												SEED_IDENTITY_LATEST_VERSION_PROPERTY)));
-						 
-						 Integer oldVoteCount = votesForVersions.get(newVersion);
-						 votesForVersions.put(newVersion, oldVoteCount == null ? 1 : oldVoteCount + 1);
-					}
-					catch(InvalidParameterException e) {
-						/* Seed does not specify a version */
-					}
-				}
-			}
-			catch (Exception e) {
-				Logger.debug(this, "SHOULD NOT HAPPEN!", e);
-			}
-		}
-		
-		for(Entry<Long, Integer> entry: votesForVersions.entrySet()) {
-			if(entry.getValue() > (SEED_IDENTITIES.length/2))
-				return entry.getKey();
-		}
-		
-		return onlyGetMandatory ? Version.mandatoryVersion : Version.latestVersion;
-	}
-	
 
 	public void terminate() {
 		Logger.debug(this, "WoT plugin terminating ...");
