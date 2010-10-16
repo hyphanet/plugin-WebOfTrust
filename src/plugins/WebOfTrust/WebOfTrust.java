@@ -4,12 +4,9 @@
 package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
-import java.util.Random;
-import java.util.Map.Entry;
 
 import plugins.WebOfTrust.exceptions.DuplicateIdentityException;
 import plugins.WebOfTrust.exceptions.DuplicateScoreException;
@@ -35,8 +32,8 @@ import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10n;
-import freenet.l10n.PluginL10n;
 import freenet.l10n.BaseL10n.LANGUAGE;
+import freenet.l10n.PluginL10n;
 import freenet.node.RequestClient;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginBaseL10n;
@@ -47,7 +44,6 @@ import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -289,99 +285,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			return;
 		
 		try {
-		if(databaseVersion == -100) {
-			Logger.normal(this, "Found old database (-100), adding last fetched date to all identities ...");
-			for(Identity identity : getAllIdentities()) {
-				identity.mLastFetchedDate = new Date(0);
-				storeWithoutCommit(identity);
-			}
-			
-			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
-			mConfig.storeAndCommit();
-		}
+			//if(databaseVersion == 1) {
+			//
+			//}
 		
-		if(databaseVersion == -99) {
-			Logger.normal(this, "Found old database (-99), adding last changed date to all trust values ...");
-			
-			final long now = CurrentTimeUTC.getInMillis();
-			final int randomizationRange = 10 * 24 * 60 * 60 * 1000;
-			final Random random = mPR.getNode().fastWeakRandom;
-			
-			for(Trust trust : getAllTrusts()) {
-				trust.setDateOfLastChange(new Date(now + random.nextInt(randomizationRange)));
-				mDB.store(trust);
-			}
-			
-			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
-			mConfig.storeAndCommit();
-		} 
-		
-		if(databaseVersion == -98) {
-			Logger.normal(this, "Found old database (-98), recalculating all scores & marking all identities for re-fetch ...");
-			
-			computeAllScoresWithoutCommit();
-			
-			for(Identity identity : getAllIdentities()) {
-				if(!(identity instanceof OwnIdentity))
-					identity.markForRefetch(); // Re-fetch the identity so that the "publishes trustlist" flag is imported, the old WoT forgot that...
-			}
-			
-			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
-			mConfig.storeAndCommit();
-		}
-		
-		if(databaseVersion == -97) {
-			Logger.normal(this, "Found old database (-97), checking for self-referential trust values ...");
-			
-			for(Identity id : getAllIdentities()) {
-				try {
-					Trust trust = getTrust(id, id);
-					Logger.debug(this, "Deleting a self-referencing trust value for " + id);
-					removeTrustWithoutCommit(trust);
-					id.updated();
-				}
-				catch(NotTrustedException e) { }
-			}
-		
-			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
-			mConfig.storeAndCommit();
-		}
-		
-		if(databaseVersion == -96) {
-			Logger.normal(this, "Found old database (-96), adding dates ...");
-			
-			for(Trust trust : getAllTrusts()) {
-				trust.setDateOfCreation(trust.getDateOfLastChange());
-				mDB.store(trust);
-			}
-			
-			Date now = CurrentTimeUTC.get();
-			
-			for(Score score : getAllScores()) {
-				score.initializeDates(now);
-				mDB.store(score);
-			}
-			
-			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++databaseVersion);
-			mConfig.storeAndCommit();
-		}
-		
-		
-		if(databaseVersion == -95 || databaseVersion == -94 || databaseVersion == -93) {
-			Logger.normal(this, "Found old database (" + databaseVersion + "), re-calculating all scores ...");
-			
-			mFullScoreComputationNeeded = true;
-			computeAllScoresWithoutCommit();
-			
-			mConfig.set(Config.DATABASE_FORMAT_VERSION, databaseVersion = -92);
-			mConfig.storeAndCommit();
-		}
-		
-		
-		
-		if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
-			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
-				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
+	
+			if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
+				throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
+					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
 		}
 		catch(RuntimeException e) {
 			System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
