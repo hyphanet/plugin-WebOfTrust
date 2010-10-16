@@ -1,11 +1,11 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT.ui.web;
+package plugins.WebOfTrust.ui.web;
 
 import java.util.Arrays;
 
-import plugins.WoT.Config;
+import plugins.WebOfTrust.Config;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;

@@ -1,4 +1,4 @@
-package plugins.WoT.introduction.captcha.kaptcha.impl;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.impl;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -10,8 +10,8 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.util.Random;
 
-import plugins.WoT.introduction.captcha.kaptcha.NoiseProducer;
-import plugins.WoT.introduction.captcha.kaptcha.util.Configurable;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.NoiseProducer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.util.Configurable;
 
 /**
  * The default implementation of {@link NoiseProducer}, adds a noise on an

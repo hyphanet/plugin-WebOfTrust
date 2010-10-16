@@ -1,10 +1,10 @@
-package plugins.WoT.introduction.captcha.kaptcha.impl;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.impl;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
-import plugins.WoT.introduction.captcha.kaptcha.GimpyEngine;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.GimpyEngine;
 
 /**
  * {@link FishEyeGimpy} adds fish eye effect with vertical and horizontal lines.

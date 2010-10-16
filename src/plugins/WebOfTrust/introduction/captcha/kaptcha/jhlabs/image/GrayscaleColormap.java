@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.image;
 
 /**
  * A grayscale colormap. Black is 0, white is 1.

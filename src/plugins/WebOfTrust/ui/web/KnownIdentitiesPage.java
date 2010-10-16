@@ -1,21 +1,21 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT.ui.web;
+package plugins.WebOfTrust.ui.web;
 
 import java.util.Date;
 import java.util.TreeMap;
 
-import plugins.WoT.Identity;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.Score;
-import plugins.WoT.Trust;
-import plugins.WoT.WoT;
-import plugins.WoT.exceptions.DuplicateScoreException;
-import plugins.WoT.exceptions.DuplicateTrustException;
-import plugins.WoT.exceptions.InvalidParameterException;
-import plugins.WoT.exceptions.NotInTrustTreeException;
-import plugins.WoT.exceptions.NotTrustedException;
+import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.Score;
+import plugins.WebOfTrust.Trust;
+import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.exceptions.DuplicateScoreException;
+import plugins.WebOfTrust.exceptions.DuplicateTrustException;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;

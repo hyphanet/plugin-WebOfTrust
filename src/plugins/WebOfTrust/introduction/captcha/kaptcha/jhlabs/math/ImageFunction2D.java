@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugins.WoT.introduction.captcha.kaptcha.jhlabs.math;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.math;
 
 import java.awt.*;
 import java.awt.image.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.image.*;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.image.*;
 
 public class ImageFunction2D implements Function2D {
 

@@ -3,7 +3,7 @@
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL.
  */
-package plugins.WoT;
+package plugins.WebOfTrust;
 
 /**
  * Necessary to be able to use pluginmanager's versions

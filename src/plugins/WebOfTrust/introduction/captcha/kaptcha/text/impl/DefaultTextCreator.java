@@ -1,9 +1,9 @@
-package plugins.WoT.introduction.captcha.kaptcha.text.impl;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.text.impl;
 
 import java.util.Random;
 
-import plugins.WoT.introduction.captcha.kaptcha.text.TextProducer;
-import plugins.WoT.introduction.captcha.kaptcha.util.Configurable;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.text.TextProducer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.util.Configurable;
 
 /**
  * {@link DefaultTextCreator} creates random text from an array of characters

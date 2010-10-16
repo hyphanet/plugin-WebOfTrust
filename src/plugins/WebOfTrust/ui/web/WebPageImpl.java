@@ -3,12 +3,12 @@
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL.
  */
-package plugins.WoT.ui.web;
+package plugins.WebOfTrust.ui.web;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import plugins.WoT.WoT;
+import plugins.WebOfTrust.WoT;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.PageNode;

@@ -1,10 +1,10 @@
-package plugins.WoT.introduction;
+package plugins.WebOfTrust.introduction;
 
 import java.util.Date;
 import java.util.UUID;
 
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.WoT;
+import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.WoT;
 import freenet.keys.FreenetURI;
 
 public class OwnIntroductionPuzzle extends IntroductionPuzzle {

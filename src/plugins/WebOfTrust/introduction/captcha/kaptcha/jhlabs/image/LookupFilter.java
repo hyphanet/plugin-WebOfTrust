@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.image;
 
 /**
  * A filter which uses the brightness of each pixel to lookup a color from a colormap. 

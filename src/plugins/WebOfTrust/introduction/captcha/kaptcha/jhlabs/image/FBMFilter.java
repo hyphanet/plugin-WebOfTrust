@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.image;
 
 import java.awt.image.*;
 import java.util.*;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.*;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.math.*;
 
 /**
  * A filter which produces textures from fractal Brownian motion.

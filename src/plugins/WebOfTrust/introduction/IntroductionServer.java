@@ -1,7 +1,7 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT.introduction;
+package plugins.WebOfTrust.introduction;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,13 +14,13 @@ import java.util.Random;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
-import plugins.WoT.Identity;
-import plugins.WoT.IdentityFetcher;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.WoT;
-import plugins.WoT.XMLTransformer;
-import plugins.WoT.exceptions.InvalidParameterException;
-import plugins.WoT.introduction.captcha.CaptchaFactory1;
+import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.IdentityFetcher;
+import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.XMLTransformer;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.introduction.captcha.CaptchaFactory1;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;

@@ -4,13 +4,13 @@
  * any later version). See http://www.gnu.org/ for details of the GPL.
  */
 
-package plugins.WoT;
+package plugins.WebOfTrust;
 
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
 
-import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;

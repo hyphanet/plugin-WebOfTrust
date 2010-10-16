@@ -1,4 +1,4 @@
-package plugins.WoT.introduction.captcha.kaptcha.util;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.util;
 
 /**
  * {@link ConfigException} is used to indicate an error in configuration

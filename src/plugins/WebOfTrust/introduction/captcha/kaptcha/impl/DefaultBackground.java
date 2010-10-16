@@ -1,4 +1,4 @@
-package plugins.WoT.introduction.captcha.kaptcha.impl;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.impl;
 
 import java.awt.Color;
 import java.awt.GradientPaint;
@@ -7,8 +7,8 @@ import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
-import plugins.WoT.introduction.captcha.kaptcha.BackgroundProducer;
-import plugins.WoT.introduction.captcha.kaptcha.util.Configurable;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.BackgroundProducer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.util.Configurable;
 
 /**
  * Default implementation of {@link BackgroundProducer}, adds a gradient

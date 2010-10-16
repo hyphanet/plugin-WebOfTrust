@@ -1,16 +1,16 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT.introduction;
+package plugins.WebOfTrust.introduction;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import plugins.WoT.Identity;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.WoT;
-import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;

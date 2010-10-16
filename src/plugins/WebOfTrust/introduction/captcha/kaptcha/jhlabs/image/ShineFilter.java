@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.image;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.composite.AddComposite;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.composite.AddComposite;
 
 public class ShineFilter extends AbstractBufferedImageOp {
 	

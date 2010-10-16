@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package plugins.WoT.identicon;
+package plugins.WebOfTrust.identicon;
 
 import java.io.FilterInputStream;
 import java.io.IOException;

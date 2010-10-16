@@ -1,7 +1,7 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT;
+package plugins.WebOfTrust;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,12 +14,12 @@ import org.xml.sax.SAXException;
 
 import freenet.keys.FreenetURI;
 
-import plugins.WoT.Identity;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.XMLTransformer;
-import plugins.WoT.exceptions.InvalidParameterException;
-import plugins.WoT.exceptions.UnknownIdentityException;
-import plugins.WoT.introduction.IntroductionPuzzle;
+import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.XMLTransformer;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 
 /**
  * A unit test for class {@link XMLTransformer}.

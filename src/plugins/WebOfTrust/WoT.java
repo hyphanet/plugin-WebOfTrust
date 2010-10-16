@@ -1,7 +1,7 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT;
+package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
 import java.util.Date;
@@ -11,19 +11,19 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.Map.Entry;
 
-import plugins.WoT.exceptions.DuplicateIdentityException;
-import plugins.WoT.exceptions.DuplicateScoreException;
-import plugins.WoT.exceptions.DuplicateTrustException;
-import plugins.WoT.exceptions.InvalidParameterException;
-import plugins.WoT.exceptions.NotInTrustTreeException;
-import plugins.WoT.exceptions.NotTrustedException;
-import plugins.WoT.exceptions.UnknownIdentityException;
-import plugins.WoT.introduction.IntroductionClient;
-import plugins.WoT.introduction.IntroductionPuzzle;
-import plugins.WoT.introduction.IntroductionPuzzleStore;
-import plugins.WoT.introduction.IntroductionServer;
-import plugins.WoT.ui.fcp.FCPInterface;
-import plugins.WoT.ui.web.WebInterface;
+import plugins.WebOfTrust.exceptions.DuplicateIdentityException;
+import plugins.WebOfTrust.exceptions.DuplicateScoreException;
+import plugins.WebOfTrust.exceptions.DuplicateTrustException;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.introduction.IntroductionClient;
+import plugins.WebOfTrust.introduction.IntroductionPuzzle;
+import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
+import plugins.WebOfTrust.introduction.IntroductionServer;
+import plugins.WebOfTrust.ui.fcp.FCPInterface;
+import plugins.WebOfTrust.ui.web.WebInterface;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;

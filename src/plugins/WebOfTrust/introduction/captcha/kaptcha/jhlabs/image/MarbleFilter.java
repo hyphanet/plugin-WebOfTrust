@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.image;
 
 import java.awt.image.BufferedImage;
 
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.Noise;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.math.Noise;
 
 /**
  * This filter applies a marbling effect to an image, displacing pixels by random amounts.

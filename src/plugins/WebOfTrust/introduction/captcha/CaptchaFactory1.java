@@ -1,7 +1,7 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT.introduction.captcha;
+package plugins.WebOfTrust.introduction.captcha;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -11,13 +11,13 @@ import java.util.Properties;
 
 import javax.imageio.ImageIO;
 
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.introduction.IntroductionPuzzleFactory;
-import plugins.WoT.introduction.IntroductionPuzzleStore;
-import plugins.WoT.introduction.OwnIntroductionPuzzle;
-import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
-import plugins.WoT.introduction.captcha.kaptcha.impl.DefaultKaptcha;
-import plugins.WoT.introduction.captcha.kaptcha.util.Config;
+import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.introduction.IntroductionPuzzleFactory;
+import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
+import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
+import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.impl.DefaultKaptcha;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.util.Config;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.io.Closer;
 

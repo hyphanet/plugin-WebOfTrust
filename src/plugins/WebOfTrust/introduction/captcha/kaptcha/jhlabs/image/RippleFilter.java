@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.image;
 
 import java.awt.Rectangle;
 
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.Noise;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.math.Noise;
 
 /**
  * A filter which distorts an image by rippling it in the X or Y directions.

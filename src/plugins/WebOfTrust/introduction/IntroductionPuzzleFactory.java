@@ -3,11 +3,11 @@
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL.
  */
-package plugins.WoT.introduction;
+package plugins.WebOfTrust.introduction;
 
 import java.io.IOException;
 
-import plugins.WoT.OwnIdentity;
+import plugins.WebOfTrust.OwnIdentity;
 
 /**
  * A base class for puzzle factories. Puzzle factories are frontends for different (3rd person) puzzle creation libraries which are included

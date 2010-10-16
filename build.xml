@@ -14,10 +14,10 @@
 	<property name="src" location="src/"/>
 	<property name="javadoc" location="javadoc/"/>
 	<property name="junit.location" value="/usr/share/java/junit.jar"/>
-	<property name="version.src" value="plugins/WoT/Version.java" />
-	<property name="version.build" value="plugins/WoT/Version.class" />
+	<property name="version.src" value="plugins/WebOfTrust/Version.java" />
+	<property name="version.build" value="plugins/WebOfTrust/Version.class" />
 
-	<available file="src/plugins/WoT/Version.java" property="version.present"/>
+	<available file="src/plugins/WebOfTrust/Version.java" property="version.present"/>
 	<available file="${junit.location}" property="junit.present"/>
 
 	<path id="lib.path">
@@ -126,9 +126,9 @@
 	<!-- ================================================== -->
 	<target name="dist" depends="clean,compile,junit"
 		description="generate the distribution" >
-		<jar jarfile="${dist}/WoT.jar" duplicate="fail">
+		<jar jarfile="${dist}/WebOfTrust.jar" duplicate="fail">
 			<manifest>
-				<attribute name="Plugin-Main-Class" value="plugins.WoT.WoT"/>
+				<attribute name="Plugin-Main-Class" value="plugins.WebOfTrust.WoT"/>
 			</manifest>
 			<fileset dir="src/" casesensitive="no">
 				<include name="*.txt"/>
@@ -154,6 +154,6 @@
 		<delete dir="${build}"/>
 		<delete dir="${build-test}"/>
 		<delete dir="${dist}"/>
-		<delete file="${debug-node-wot-plugin.location}"/>
+		<delete file="${debug-node-WebOfTrust-plugin.location}"/>
 	</target>
 </project>

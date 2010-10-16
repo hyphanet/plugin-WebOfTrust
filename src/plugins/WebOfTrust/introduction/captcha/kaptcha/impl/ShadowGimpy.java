@@ -1,15 +1,15 @@
-package plugins.WoT.introduction.captcha.kaptcha.impl;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.impl;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.Random;
 
-import plugins.WoT.introduction.captcha.kaptcha.GimpyEngine;
-import plugins.WoT.introduction.captcha.kaptcha.NoiseProducer;
-import plugins.WoT.introduction.captcha.kaptcha.util.Configurable;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.image.RippleFilter;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.image.ShadowFilter;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.image.TransformFilter;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.GimpyEngine;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.NoiseProducer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.util.Configurable;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.image.RippleFilter;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.image.ShadowFilter;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.image.TransformFilter;
 
 /**
  * {@link ShadowGimpy} adds shadow to the text on the image and two noises.

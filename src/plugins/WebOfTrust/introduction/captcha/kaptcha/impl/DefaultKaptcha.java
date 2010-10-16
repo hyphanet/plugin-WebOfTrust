@@ -1,4 +1,4 @@
-package plugins.WoT.introduction.captcha.kaptcha.impl;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.impl;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -6,12 +6,12 @@ import java.awt.Graphics2D;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 
-import plugins.WoT.introduction.captcha.kaptcha.BackgroundProducer;
-import plugins.WoT.introduction.captcha.kaptcha.GimpyEngine;
-import plugins.WoT.introduction.captcha.kaptcha.Producer;
-import plugins.WoT.introduction.captcha.kaptcha.text.TextProducer;
-import plugins.WoT.introduction.captcha.kaptcha.text.WordRenderer;
-import plugins.WoT.introduction.captcha.kaptcha.util.Configurable;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.BackgroundProducer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.GimpyEngine;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.Producer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.text.TextProducer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.text.WordRenderer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.util.Configurable;
 
 /**
  * Default {@link Producer} implementation which draws a captcha image using

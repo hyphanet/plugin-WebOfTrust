@@ -1,22 +1,22 @@
-package plugins.WoT.introduction.captcha.kaptcha.util;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.util;
 
 import java.awt.Color;
 import java.awt.Font;
 import java.util.Properties;
 
-import plugins.WoT.introduction.captcha.kaptcha.BackgroundProducer;
-import plugins.WoT.introduction.captcha.kaptcha.Constants;
-import plugins.WoT.introduction.captcha.kaptcha.GimpyEngine;
-import plugins.WoT.introduction.captcha.kaptcha.NoiseProducer;
-import plugins.WoT.introduction.captcha.kaptcha.Producer;
-import plugins.WoT.introduction.captcha.kaptcha.impl.DefaultBackground;
-import plugins.WoT.introduction.captcha.kaptcha.impl.DefaultKaptcha;
-import plugins.WoT.introduction.captcha.kaptcha.impl.DefaultNoise;
-import plugins.WoT.introduction.captcha.kaptcha.impl.WaterRipple;
-import plugins.WoT.introduction.captcha.kaptcha.text.TextProducer;
-import plugins.WoT.introduction.captcha.kaptcha.text.WordRenderer;
-import plugins.WoT.introduction.captcha.kaptcha.text.impl.DefaultTextCreator;
-import plugins.WoT.introduction.captcha.kaptcha.text.impl.DefaultWordRenderer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.BackgroundProducer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.Constants;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.GimpyEngine;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.NoiseProducer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.Producer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.impl.DefaultBackground;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.impl.DefaultKaptcha;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.impl.DefaultNoise;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.impl.WaterRipple;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.text.TextProducer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.text.WordRenderer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.text.impl.DefaultTextCreator;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.text.impl.DefaultWordRenderer;
 
 /**
  * {@link Config} retrieves configuration values from properties file and

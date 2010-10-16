@@ -1,9 +1,9 @@
-package plugins.WoT.ui.web;
+package plugins.WebOfTrust.ui.web;
 
 import java.io.IOException;
 import java.net.URI;
 
-import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.RedirectException;

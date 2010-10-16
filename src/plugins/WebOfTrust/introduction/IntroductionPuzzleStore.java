@@ -1,15 +1,15 @@
-package plugins.WoT.introduction;
+package plugins.WebOfTrust.introduction;
 
 import java.text.ParseException;
 import java.util.Date;
 
-import plugins.WoT.Identity;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.WoT;
-import plugins.WoT.exceptions.DuplicatePuzzleException;
-import plugins.WoT.exceptions.UnknownIdentityException;
-import plugins.WoT.exceptions.UnknownPuzzleException;
-import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.exceptions.DuplicatePuzzleException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
+import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;

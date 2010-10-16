@@ -1,16 +1,16 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT.ui.web;
+package plugins.WebOfTrust.ui.web;
 
 import java.util.List;
 
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.exceptions.UnknownIdentityException;
-import plugins.WoT.exceptions.UnknownPuzzleException;
-import plugins.WoT.introduction.IntroductionClient;
-import plugins.WoT.introduction.IntroductionPuzzle;
-import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
+import plugins.WebOfTrust.introduction.IntroductionClient;
+import plugins.WebOfTrust.introduction.IntroductionPuzzle;
+import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.pluginmanager.PluginRespirator;

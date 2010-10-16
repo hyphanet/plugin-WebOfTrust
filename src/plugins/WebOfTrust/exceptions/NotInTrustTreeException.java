@@ -1,10 +1,10 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT.exceptions;
+package plugins.WebOfTrust.exceptions;
 
-import plugins.WoT.Identity;
-import plugins.WoT.Score;
+import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Score;
 
 /**
  * Thrown when querying the {@link Score} of a target {@link Identity} in the trust tree of a tree owner {@link Identity} shows that there is no {@link Score} for

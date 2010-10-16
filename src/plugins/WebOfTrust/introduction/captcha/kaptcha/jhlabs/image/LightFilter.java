@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugins.WoT.introduction.captcha.kaptcha.jhlabs.image;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.image;
 
 import java.awt.Color;
 import java.awt.Image;
@@ -23,10 +23,10 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Kernel;
 import java.util.Vector;
 
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.Function2D;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.math.ImageFunction2D;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.vecmath.Color4f;
-import plugins.WoT.introduction.captcha.kaptcha.jhlabs.vecmath.Vector3f;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.math.Function2D;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.math.ImageFunction2D;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.vecmath.Color4f;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.vecmath.Vector3f;
 
 /**
  * A filter which produces lighting and embossing effects.

@@ -16,16 +16,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-package plugins.WoT.ui.web;
+package plugins.WebOfTrust.ui.web;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.TimeZone;
 
-import plugins.WoT.Identity;
-import plugins.WoT.Trust;
-import plugins.WoT.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Trust;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.support.CurrentTimeUTC;

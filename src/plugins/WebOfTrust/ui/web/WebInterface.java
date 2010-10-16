@@ -1,7 +1,7 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT.ui.web;
+package plugins.WebOfTrust.ui.web;
 
 import java.awt.image.RenderedImage;
 import java.io.ByteArrayOutputStream;
@@ -12,11 +12,11 @@ import java.net.URI;
 
 import javax.imageio.ImageIO;
 
-import plugins.WoT.Identity;
-import plugins.WoT.WoT;
-import plugins.WoT.exceptions.UnknownIdentityException;
-import plugins.WoT.identicon.Identicon;
-import plugins.WoT.introduction.IntroductionPuzzle;
+import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.WoT;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.identicon.Identicon;
+import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.RedirectException;

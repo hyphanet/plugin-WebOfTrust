@@ -1,11 +1,11 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT;
+package plugins.WebOfTrust;
 
 import java.util.Date;
 
-import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.StringValidityChecker;
 

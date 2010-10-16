@@ -1,4 +1,4 @@
-package plugins.WoT.introduction.captcha.kaptcha.text;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.text;
 
 import java.awt.image.BufferedImage;
 

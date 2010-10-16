@@ -1,4 +1,4 @@
-package plugins.WoT.introduction.captcha.kaptcha.text.impl;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.text.impl;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -9,8 +9,8 @@ import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.util.Random;
 
-import plugins.WoT.introduction.captcha.kaptcha.text.WordRenderer;
-import plugins.WoT.introduction.captcha.kaptcha.util.Configurable;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.text.WordRenderer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.util.Configurable;
 
 /**
  * The default implementation of {@link WordRenderer}, creates an image with a

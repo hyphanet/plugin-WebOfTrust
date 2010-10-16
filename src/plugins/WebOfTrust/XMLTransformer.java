@@ -1,7 +1,7 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WoT;
+package plugins.WebOfTrust;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,11 +29,11 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import plugins.WoT.exceptions.InvalidParameterException;
-import plugins.WoT.exceptions.NotInTrustTreeException;
-import plugins.WoT.exceptions.NotTrustedException;
-import plugins.WoT.exceptions.UnknownIdentityException;
-import plugins.WoT.introduction.IntroductionPuzzle;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 
 import com.db4o.ext.ExtObjectContainer;
 

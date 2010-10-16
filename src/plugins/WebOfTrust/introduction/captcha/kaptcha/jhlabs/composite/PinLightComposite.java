@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugins.WoT.introduction.captcha.kaptcha.jhlabs.composite;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.jhlabs.composite;
 
 import java.awt.*;
 import java.awt.image.*;

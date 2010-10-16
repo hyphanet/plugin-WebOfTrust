@@ -1,8 +1,8 @@
-package plugins.WoT.introduction.captcha.kaptcha.text.impl;
+package plugins.WebOfTrust.introduction.captcha.kaptcha.text.impl;
 
 import java.util.Random;
 
-import plugins.WoT.introduction.captcha.kaptcha.text.TextProducer;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.text.TextProducer;
 
 /**
  * {@link FiveLetterFirstNameTextCreator} creates random text of 5-letter first
