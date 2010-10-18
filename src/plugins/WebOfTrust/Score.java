@@ -37,7 +37,7 @@ public final class Score implements Cloneable {
 	/**
 	 * The date when this score was created. Stays constant if the value of this score changes.
 	 */
-	private Date mCreationDate; // FIXME: Add "final" as soon as we remove the code for upgrading legacy databases.
+	private final Date mCreationDate; // FIXME: Use the field of class Persistent as soon as it is wired in
 	
 	/**
 	 * The date when the value, rank or capacity was last changed.
@@ -179,14 +179,6 @@ public final class Score implements Cloneable {
 		return mLastChangedDate;
 	}
 	
-
-	/**
-	 * Only for being used in upgradeDatabase(). FIXME: Remove when we leave the beta stage
-	 */
-	protected synchronized void initializeDates(Date date) {
-		mCreationDate = date;
-		mLastChangedDate = date;
-	}
 	
 	/**
 	 * Test if two scores are equal.
