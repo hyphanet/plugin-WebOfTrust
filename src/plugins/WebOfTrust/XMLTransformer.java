@@ -8,8 +8,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Map.Entry;
 
 import javax.xml.XMLConstants;
@@ -29,6 +29,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
@@ -186,68 +187,99 @@ public final class XMLTransformer {
 	 * @param xmlInputStream The input stream containing the XML.
 	 */
 	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  {
-		// FIXME: We should catch any exceptions which happen during parsing and throw them again AFTER the edition number of the identity
-		// has been stored in the database. We should also have a flag in Identity which specifies whether the latest edition was parsed
-		// successfully or not. This will allow us to re-fetch identities with failed parsing if we deploy a new WoT version.
-		
-		Document xmlDoc;
-		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-			xmlDoc = mDocumentBuilder.parse(xmlInputStream);
+		final class TrustListEntry {
+			final FreenetURI mTrusteeURI;
+			final byte mTrustValue;
+			final String mTrustComment;
+			
+			public TrustListEntry(FreenetURI myTrusteeURI, byte myTrustValue, String myTrustComment) {
+				mTrusteeURI = myTrusteeURI;
+				mTrustValue = myTrustValue;
+				mTrustComment = myTrustComment;
+			}
 		}
+		
+		Exception parseError = null;
+		
+		String identityName = null;
+		Boolean identityPublishesTrustList = null;
+		ArrayList<String> identityContexts = null;
+		Hashtable<String, String> identityProperties = null;
+		ArrayList<TrustListEntry> identityTrustList = null;
+		
+		// We first parse the XML without synchronization, then do the synchronized import into the WebOfTrust
+		try {			
+			Document xmlDoc;
+			synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
+				xmlDoc = mDocumentBuilder.parse(xmlInputStream);
+			}
+	
+			final Element identityElement = (Element)xmlDoc.getElementsByTagName("Identity").item(0);
+			
+			if(Integer.parseInt(identityElement.getAttribute("Version")) > XML_FORMAT_VERSION)
+				throw new Exception("Version " + identityElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
+			
+			identityName = identityElement.getAttribute("Name");
+			identityPublishesTrustList = Boolean.parseBoolean(identityElement.getAttribute("PublishesTrustList"));
+			 
+			final NodeList contextList = identityElement.getElementsByTagName("Context");
+			identityContexts = new ArrayList<String>(contextList.getLength() + 1);
+			for(int i = 0; i < contextList.getLength(); ++i) {
+				Element contextElement = (Element)contextList.item(i);
+				identityContexts.add(contextElement.getAttribute("Name"));
+			}
+			
+			final NodeList propertyList = identityElement.getElementsByTagName("Property");
+			identityProperties = new Hashtable<String, String>(propertyList.getLength() * 2);
+			for(int i = 0; i < propertyList.getLength(); ++i) {
+				Element propertyElement = (Element)propertyList.item(i);
+				identityProperties.put(propertyElement.getAttribute("Name"), propertyElement.getAttribute("Value"));
+			}
+			
+			final Element trustListElement = (Element)identityElement.getElementsByTagName("TrustList").item(0);
+			final NodeList trustList = trustListElement.getElementsByTagName("Trust");
+			identityTrustList = new ArrayList<TrustListEntry>(trustList.getLength() + 1);
+			for(int i = 0; i < trustList.getLength(); ++i) {
+				Element trustElement = (Element)trustList.item(i);
 
-		Element identityElement = (Element)xmlDoc.getElementsByTagName("Identity").item(0);
-		
-		if(Integer.parseInt(identityElement.getAttribute("Version")) > XML_FORMAT_VERSION)
-			throw new Exception("Version " + identityElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
-		
-		String identityName = identityElement.getAttribute("Name");
-		boolean identityPublishesTrustList = Boolean.parseBoolean(identityElement.getAttribute("PublishesTrustList"));
-		
-		ArrayList<String> identityContexts = new ArrayList<String>(4);
-		NodeList contextList = identityElement.getElementsByTagName("Context");
-		for(int i = 0; i < contextList.getLength(); ++i) {
-			Element contextElement = (Element)contextList.item(i);
-			identityContexts.add(contextElement.getAttribute("Name"));
+				identityTrustList.add(new TrustListEntry(
+							new FreenetURI(trustElement.getAttribute("Identity")),
+							Byte.parseByte(trustElement.getAttribute("Value")),
+							trustElement.getAttribute("Comment")
+						));
+			}
+		} catch(Exception e) {
+			parseError = e;
 		}
 		
-		HashMap<String, String> identityProperties = new HashMap<String, String>(8);
-		NodeList propertyList = identityElement.getElementsByTagName("Property");
-		for(int i = 0; i < propertyList.getLength(); ++i) {
-			Element propertyElement = (Element)propertyList.item(i);
-			identityProperties.put(propertyElement.getAttribute("Name"), propertyElement.getAttribute("Value"));
-		}
-		
-		/* We tried to parse as much as we can without synchronization before we lock everything :) */
-		
+		try { // Catch import problems so we can mark the edition as parsing failed
 		synchronized(mWoT) {
 		synchronized(mWoT.getIdentityFetcher()) {
-			Identity identity;
-			boolean isNewIdentity = false;
-			
-			try {
-				identity = mWoT.getIdentityByURI(identityURI);
-			}
-			catch(UnknownIdentityException e) {
-				identity = new Identity(identityURI, identityName, identityPublishesTrustList);
-				isNewIdentity = true;
-			}
+			final Identity identity = mWoT.getIdentityByURI(identityURI);
 			
 			synchronized(identity) {
 				long newEdition = identityURI.getEdition();
 				if(identity.getEdition() > newEdition) {
 					Logger.debug(identity, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
 					return;
-				} else if(identity.getEdition() == newEdition && identity.currentEditionWasFetched()) {
-					Logger.debug(identity, "Fetched current edition which is marked as fetched already, not importing.");
-					return;
+				} else if(identity.getEdition() == newEdition) {
+					if(identity.getCurrentEditionFetchState() == FetchState.Fetched) {
+						Logger.debug(identity, "Fetched current edition which is marked as fetched already, not importing: " + identityURI);
+						return;
+					} else if(identity.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
+						Logger.normal(identity, "Re-fetched current-edition which was marked as parsing failed: " + identityURI);
+					}
 				}
 				
+				if(parseError != null)
+					throw parseError;
+				
+				
+				synchronized(mDB.lock()) {
+				try { // Transaction rollback block
 				identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
 				boolean didPublishTrustListPreviously = identity.doesPublishTrustList();
 				identity.setPublishTrustList(identityPublishesTrustList);
-				identity.onFetched();
-				/* We store the identity and especially it's edition right now so that bogus XML files are skipped */
-				mWoT.storeAndCommit(identity);
 				
 				try {
 					identity.setNickname(identityName);
@@ -271,14 +303,7 @@ public final class XMLTransformer {
 					Logger.error(identityURI, "setProperties() failed", e);
 				}
 				
-				/* We store the identity even if it's trust list import fails - identities should not disappear then. */
-				mWoT.storeAndCommit(identity);
-				
-				/* This try block is for rolling back in catch() if an exception is thrown during trust list import.
-				 * Our policy is: We either import the whole trust list or nothing. We should not bias the trust system by allowing
-				 * the import of partial trust lists. Especially we should not ignore failing deletions of old trust objects. */
-				synchronized(mDB.lock()) {
-					try {
+					
 						mWoT.beginTrustListImport(); // We delete the old list if !identityPublishesTrustList and it did publish one earlier => we always call this. 
 						
 						if(identityPublishesTrustList) {
@@ -303,14 +328,10 @@ public final class XMLTransformer {
 								identitiesWithUpdatedEditionHint = new HashSet<String>();
 							}
 
-							Element trustListElement = (Element)identityElement.getElementsByTagName("TrustList").item(0);
-							NodeList trustList = trustListElement.getElementsByTagName("Trust");
-							for(int i = 0; i < trustList.getLength(); ++i) {
-								Element trustElement = (Element)trustList.item(i);
-
-								FreenetURI trusteeURI = new FreenetURI(trustElement.getAttribute("Identity"));
-								byte trustValue = Byte.parseByte(trustElement.getAttribute("Value"));
-								String trustComment = trustElement.getAttribute("Comment");
+							for(final TrustListEntry trustListEntry : identityTrustList) {
+								final FreenetURI trusteeURI = trustListEntry.mTrusteeURI;
+								final byte trustValue = trustListEntry.mTrustValue;
+								final String trustComment = trustListEntry.mTrustComment;
 
 								Identity trustee = null;
 								try {
@@ -333,10 +354,8 @@ public final class XMLTransformer {
 									mWoT.setTrustWithoutCommit(identity, trustee, trustValue, trustComment);
 							}
 
-							if(!isNewIdentity) { /* Delete trust objects of trustees which were removed from the trust list */
-								for(Trust trust : mWoT.getGivenTrustsOlderThan(identity, identityURI.getEdition())) {
-									mWoT.removeTrustWithoutCommit(trust);
-								}
+							for(Trust trust : mWoT.getGivenTrustsOlderThan(identity, identityURI.getEdition())) {
+								mWoT.removeTrustWithoutCommit(trust);
 							}
 
 							mWoT.storeWithoutCommit(identity);
@@ -348,22 +367,54 @@ public final class XMLTransformer {
 
 								// We do not have to store fetch commands for new identities here, setTrustWithoutCommit does it.
 							}
-						} else if(!identityPublishesTrustList && !isNewIdentity && didPublishTrustListPreviously && !(identity instanceof OwnIdentity)) {
+						} else if(!identityPublishesTrustList && didPublishTrustListPreviously && !(identity instanceof OwnIdentity)) {
 							// If it does not publish a trust list anymore, we delete all trust values it has given.
 							for(Trust trust : mWoT.getGivenTrusts(identity))
 								mWoT.removeTrustWithoutCommit(trust);
 						}
 
 						mWoT.finishTrustListImport();
+						identity.onFetched(); // Marks the identity as parsed successfully
+						mWoT.storeWithoutCommit(identity);
 						mDB.commit(); Logger.debug(this, "COMMITED.");
 					}
 					catch(Exception e) {
-						mWoT.abortTrustListImport(e);
+						mWoT.abortTrustListImport(e); // Does the rollback
 						throw e;
 					}
 				}
 			}
 		}
+		}
+		}
+		catch(Exception e) {
+			synchronized(mWoT) {
+			synchronized(mWoT.getIdentityFetcher()) {
+				boolean marked = false;
+				
+				try {
+					final Identity identity = mWoT.getIdentityByURI(identityURI);
+					synchronized(identity) {
+						final long newEdition = identityURI.getEdition();
+						if(identity.getEdition() <= newEdition) {
+							Logger.normal(this, "Marking edition as parsing failed: " + identityURI);
+							marked = true;
+							identity.setEdition(newEdition);
+							identity.onParsingFailed();
+						} else {
+							Logger.normal(this, "Not marking edition as parsing failed, we have already fetched a new one (" + 
+									identity.getEdition() + "):" + identityURI);
+						}
+						mWoT.storeAndCommit(identity);
+					}
+				}
+				catch(UnknownIdentityException uie) {
+					Logger.error(this, "Fetched an unknown identity: " + identityURI);
+				}
+				
+			}
+			}
+			throw e;
 		}
 	}
 

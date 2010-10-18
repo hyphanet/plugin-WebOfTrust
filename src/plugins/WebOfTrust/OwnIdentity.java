@@ -50,9 +50,10 @@ public class OwnIdentity extends Identity {
 		setInsertURI(insertURI); // Also sets the edition to the edition of the request URI
 		mLastInsertDate = new Date(0);
 
-		// Must be set to true to prevent the identity fetcher from trying to fetch the current edition and to make the identity inserter actually
-		// insert the identity. It won't insert it if the current edition is not marked as fetched to prevent inserts when restoring an own identity.
-		mCurrentEditionWasFetched = true;
+		// Must be set to "fetched" to prevent the identity fetcher from trying to fetch the current edition and to make the identity inserter
+		// actually insert the identity. It won't insert it if the current edition is not marked as fetched to prevent inserts when restoring an
+		// own identity.
+		mCurrentEditionFetchState = FetchState.Fetched;
 		
 		if(mRequestURI == null)
 			throw new InvalidParameterException("Own identities must have a request URI.");
@@ -82,7 +83,7 @@ public class OwnIdentity extends Identity {
 	 * @return Whether this OwnIdentity needs to be inserted or not
 	 */
 	public synchronized boolean needsInsert() {
-		if(!mCurrentEditionWasFetched)
+		if(mCurrentEditionFetchState != FetchState.Fetched)
 			return false;
 		
 		return (getLastChangeDate().after(getLastInsertDate()) ||
@@ -120,7 +121,7 @@ public class OwnIdentity extends Identity {
 	protected synchronized void setEdition(long edition) throws InvalidParameterException {
 		super.setEdition(edition);
 		
-		mCurrentEditionWasFetched = true;
+		mCurrentEditionFetchState = FetchState.Fetched;
 		
 		if(edition > mInsertURI.getEdition()) {
 			mInsertURI = mInsertURI.setSuggestedEdition(edition);
@@ -142,7 +143,7 @@ public class OwnIdentity extends Identity {
 	 */
 	protected synchronized void restoreEdition(long edition) throws InvalidParameterException {
 		setEdition(edition);
-		mCurrentEditionWasFetched = false;
+		mCurrentEditionFetchState = FetchState.NotFetched;
 	}
 	
 	public Date getCreationDate() {
@@ -190,7 +191,7 @@ public class OwnIdentity extends Identity {
 		try {
 			OwnIdentity clone = new OwnIdentity(getInsertURI(), getRequestURI(), getNickname(), doesPublishTrustList());
 			
-			clone.mCurrentEditionWasFetched = currentEditionWasFetched();
+			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
 			clone.setNewEditionHint(getLatestEditionHint()); 
 			clone.setContexts(getContexts());
 			clone.setProperties(getProperties());

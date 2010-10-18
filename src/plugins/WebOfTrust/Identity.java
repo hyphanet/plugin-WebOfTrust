@@ -7,9 +7,8 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -30,7 +29,7 @@ import freenet.support.StringValidityChecker;
  * @param mNickname The nickname of an Identity
  * @param mDoesPublishTrustList Whether an identity publishes its trust list or not
  * @param mContexts An ArrayList containing contexts (eg. client apps) an Identity is used for
- * @param mProperties A HashMap containing all custom properties o an Identity
+ * @param mProperties A Hashtable containing all custom properties o an Identity
  */
 public class Identity implements Cloneable {
 	
@@ -48,8 +47,13 @@ public class Identity implements Cloneable {
 	 * edition number which should be downloaded. */
 	protected FreenetURI mRequestURI;
 	
-	/** True if the current edition stored in this identity's request URI was fetched, false if it yet has to be downloaded. */
-	protected boolean mCurrentEditionWasFetched;
+	public static enum FetchState {
+		NotFetched,
+		ParsingFailed,
+		Fetched
+	};
+	
+	protected FetchState mCurrentEditionFetchState;
 	
 	/** When obtaining identities through other people's trust lists instead of identity introduction, we store the edition number they have specified
 	 * and pass it as a hint to the USKManager. */
@@ -77,7 +81,7 @@ public class Identity implements Cloneable {
 	protected ArrayList<String> mContexts;	
 
 	/** A list of this Identity's custom properties */
-	protected HashMap<String, String> mProperties;
+	protected Hashtable<String, String> mProperties;
 	
 	
 	/**
@@ -103,7 +107,7 @@ public class Identity implements Cloneable {
 		} catch (IllegalStateException e) {
 			mLatestEditionHint = 0;
 		}
-		mCurrentEditionWasFetched = false;
+		mCurrentEditionFetchState = FetchState.NotFetched;
 		
 		mID = getIDFromURI(getRequestURI());
 		
@@ -121,7 +125,7 @@ public class Identity implements Cloneable {
 		
 		setPublishTrustList(doesPublishTrustList);
 		mContexts = new ArrayList<String>(4); /* Currently we have: Introduction, Freetalk */
-		mProperties = new HashMap<String, String>();
+		mProperties = new Hashtable<String, String>();
 		
 		Logger.debug(this, "New identity: " + getNickname() + ", URI: " + newRequestURI);
 	}	
@@ -198,8 +202,8 @@ public class Identity implements Cloneable {
 		return getRequestURI().getEdition();
 	}
 	
-	public synchronized boolean currentEditionWasFetched() {
-		return mCurrentEditionWasFetched;
+	public synchronized FetchState getCurrentEditionFetchState() {
+		return mCurrentEditionFetchState;
 	}
 
 	/**
@@ -218,7 +222,7 @@ public class Identity implements Cloneable {
 		
 		if (newEdition > currentEdition) {
 			mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
-			mCurrentEditionWasFetched = false;
+			mCurrentEditionFetchState = FetchState.NotFetched;
 			if (newEdition > mLatestEditionHint) {
 				// Do not call setNewEditionHint() to prevent confusing logging.
 				mLatestEditionHint = newEdition;
@@ -265,8 +269,8 @@ public class Identity implements Cloneable {
 	 * current trust list. This is necessary because we do not create the trusted identities of someone if he has a negative score. 
 	 */
 	protected synchronized void markForRefetch() {
-		if (mCurrentEditionWasFetched) {
-			mCurrentEditionWasFetched = false;
+		if (mCurrentEditionFetchState == FetchState.Fetched) {
+			mCurrentEditionFetchState = FetchState.NotFetched;
 		} else {
 			decreaseEdition();
 		}
@@ -302,10 +306,24 @@ public class Identity implements Cloneable {
 	}
 	
 	/**
-	 * Has to be called when the identity was fetched. Must not be called before setEdition!
+	 * Has to be called when the identity was fetched and parsed successfully. Must not be called before setEdition!
 	 */
 	protected synchronized void onFetched() {
-		mCurrentEditionWasFetched = true;
+		mCurrentEditionFetchState = FetchState.Fetched;
+		
+		if (mFirstFetchedDate.equals(new Date(0))) {
+			mFirstFetchedDate = CurrentTimeUTC.get();
+		}
+		
+		mLastFetchedDate = CurrentTimeUTC.get();
+		updated();
+	}
+	
+	/**
+	 * Has to be called when the identity was fetched and parsing failed. Must not be called before setEdition!
+	 */
+	protected synchronized void onParsingFailed() {
+		mCurrentEditionFetchState = FetchState.ParsingFailed;
 		
 		if (mFirstFetchedDate.equals(new Date(0))) {
 			mFirstFetchedDate = CurrentTimeUTC.get();
@@ -404,7 +422,7 @@ public class Identity implements Cloneable {
 	 */
 	@SuppressWarnings("unchecked")
 	public synchronized ArrayList<String> getContexts() {
-		/* TODO: If this is used often - which it probably is, we might verify that no code corrupts the HashMap and return the original one
+		/* TODO: If this is used often - which it probably is, we might verify that no code corrupts the Hashtable and return the original one
 		 * instead of a copy */
 		return (ArrayList<String>)mContexts.clone();
 	}
@@ -503,12 +521,12 @@ public class Identity implements Cloneable {
 	/**
 	 * Gets all custom properties from this Identity.
 	 * 
-	 * @return A copy of the HashMap<String, String> referencing all this Identity's custom properties.
+	 * @return A copy of the Hashtable<String, String> referencing all this Identity's custom properties.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized HashMap<String, String> getProperties() {
-		/* TODO: If this is used often, we might verify that no code corrupts the HashMap and return the original one instead of a copy */
-		return (HashMap<String, String>)mProperties.clone();
+	public synchronized Hashtable<String, String> getProperties() {
+		/* TODO: If this is used often, we might verify that no code corrupts the Hashtable and return the original one instead of a copy */
+		return (Hashtable<String, String>)mProperties.clone();
 	}
 	
 	/**
@@ -572,8 +590,8 @@ public class Identity implements Cloneable {
 	 * IMPORTANT: This always marks the identity as updated so it should not be used on OwnIdentities because it would result in
 	 * a re-insert even if nothing was changed.
 	 */
-	protected synchronized void setProperties(HashMap<String, String> newProperties) {
-		mProperties = new HashMap<String, String>();
+	protected synchronized void setProperties(Hashtable<String, String> newProperties) {
+		mProperties = new Hashtable<String, String>();
 		
 		for (Entry<String, String> property : newProperties.entrySet()) {
 			try {
@@ -633,7 +651,7 @@ public class Identity implements Cloneable {
 			return false;
 		}
 		
-		if (currentEditionWasFetched() != other.currentEditionWasFetched()) {
+		if (getCurrentEditionFetchState() != other.getCurrentEditionFetchState()) {
 			return false;
 		}
 		
@@ -674,7 +692,7 @@ public class Identity implements Cloneable {
 		try {
 			Identity clone = new Identity(getRequestURI(), getNickname(), doesPublishTrustList());
 			
-			clone.mCurrentEditionWasFetched = currentEditionWasFetched();
+			clone.mCurrentEditionFetchState = mCurrentEditionFetchState;
 			clone.setNewEditionHint(getLatestEditionHint()); 
 			clone.setContexts(getContexts());
 			clone.setProperties(getProperties());

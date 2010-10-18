@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
 
+import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
@@ -343,7 +344,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 
 			USK usk;
 
-			if(identity.currentEditionWasFetched())
+			if(identity.getCurrentEditionFetchState() != FetchState.NotFetched) // Do not refetch if parsing failed!
 				usk = USK.create(identity.getRequestURI().setSuggestedEdition(identity.getEdition() + 1));
 			else {
 				usk = USK.create(identity.getRequestURI());
@@ -379,7 +380,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 
 				USK usk;
 
-				if(identity.currentEditionWasFetched())
+				if(identity.getCurrentEditionFetchState() != FetchState.NotFetched) // Do not refetch if parsing failed!
 					usk = USK.create(identity.getRequestURI().setSuggestedEdition(identity.getEdition() + 1));
 				else
 					usk = USK.create(identity.getRequestURI());
