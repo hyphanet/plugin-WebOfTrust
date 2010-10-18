@@ -151,9 +151,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			System.setProperty("java.awt.headless", "true"); 
 	
 			mPR = myPR;
-			mDB = initDB(DATABASE_FILENAME);
+			mDB = openDatabase(DATABASE_FILENAME);
 			
-			mConfig = Config.loadOrCreate(this);
+			mConfig = getOrCreateConfig();
 			if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WebOfTrust.DATABASE_FORMAT_VERSION)
 				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 			
@@ -240,8 +240,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @param databaseFilename The filename of the database.
 	 */
 	public WebOfTrust(String databaseFilename) {
-		mDB = initDB(databaseFilename);
-		mConfig = Config.loadOrCreate(this);
+		mDB = openDatabase(databaseFilename);
+		mConfig = getOrCreateConfig();
 		
 		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
@@ -252,7 +252,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * @return A db4o <code>ObjectContainer</code>. 
 	 */
-	private ExtObjectContainer initDB(String filename) {
+	private ExtObjectContainer openDatabase(String filename) {
 		Logger.debug(this, "Using db4o " + Db4o.version());
 		
 		Configuration cfg = Db4o.newConfiguration();
@@ -428,6 +428,35 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 		}
 	}
+	
+	
+	/**
+	 * Loads an existing Config object from the database and adds any missing default values to it, creates and stores a new one if none exists.
+	 * @return The config object.
+	 */
+	private synchronized Config getOrCreateConfig() {
+		final Query query = mDB.query();
+		query.constrain(Config.class);
+		final ObjectSet<Config> result = new Persistent.InitializingObjectSet<Config>(this, query);
+
+		switch(result.size()) {
+			case 1: {
+				final Config config = result.next();
+				config.setDefaultValues(false);
+				config.storeAndCommit();
+				return config;
+			}
+			case 0: {
+				final Config config = new Config(this);
+				config.initializeTransient(this);
+				config.storeAndCommit();
+				return config;
+			}
+			default:
+				throw new RuntimeException("Multiple config objects found: " + result.size());
+		}
+	}
+	
 	
 	/** Capacity is the maximum amount of points an identity can give to an other by trusting it. 
 	 * 
@@ -2196,7 +2225,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		return mPR;
 	}
 	
-	public ExtObjectContainer getDB() {
+	public ExtObjectContainer getDatabase() {
 		return mDB;
 	}
 	

@@ -5,11 +5,6 @@ package plugins.WebOfTrust;
 
 import java.util.Hashtable;
 
-import com.db4o.ObjectSet;
-import com.db4o.ext.ExtObjectContainer;
-
-import freenet.support.Logger;
-
 /* ATTENTION: This code is a duplicate of plugins.Freetalk.Config. Any changes there should also be done here! */
 
 /**
@@ -19,68 +14,29 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Config {
+public final class Config extends Persistent {
 
 	/* Names of the config parameters */
 	
 	public static final String DATABASE_FORMAT_VERSION = "DatabaseFormatVersion";
 
 	/**
-	 * The HashMap that contains all cofiguration parameters
+	 * The HashMap that contains all configuration parameters
 	 */
 	private final Hashtable<String, String> mStringParams;
 	
 	private final Hashtable<String, Integer> mIntParams;
-	
-	private transient WebOfTrust mWoT;
-	
-	private transient ExtObjectContainer mDB;
 
 	/**
 	 * Creates a new Config object and stores the default values in it.
 	 */
-	protected Config(WebOfTrust myWoT) {
-		mWoT = myWoT;
-		mDB = mWoT.getDB();
+	protected Config(WebOfTrust myWebOfTrust) {
 		mStringParams = new Hashtable<String, String>();
 		mIntParams = new Hashtable<String, Integer>();
+		initializeTransient(myWebOfTrust);
 		setDefaultValues(false);
 	}
-	
-	protected void initializeTransient(WebOfTrust myWoT) {
-		mWoT = myWoT;
-		mDB = myWoT.getDB();
-	}
-	
-	/**
-	 * Loads an existing Config object from the database and adds any missing default values to it, creates and stores a new one if none exists.
-	 * @return The config object.
-	 */
-	public static Config loadOrCreate(WebOfTrust myWoT) {
-		ExtObjectContainer db = myWoT.getDB();
-		synchronized(db.lock()) {
-			Config config;
-			ObjectSet<Config> result = db.queryByExample(Config.class);
-			
-			if(result.size() == 0) {
-				Logger.debug(myWoT, "Creating new Config...");
-				config = new Config(myWoT);
-				config.storeAndCommit();
-			}
-			else {
-				if(result.size() > 1) /* Do not throw, we do not want to prevent WoT from starting up. */
-					Logger.error(myWoT, "Multiple config objects stored!");
-				
-				Logger.debug(myWoT, "Loaded config.");
-				config = result.next();
-				config.initializeTransient(myWoT);
-				config.setDefaultValues(false);
-			}
-			
-			return config;
-		}
-	}
-	
+
 	/**
 	 * Stores the config object in the database. Please call this after any modifications to the config, it is not done automatically
 	 * because the user interface will usually change many values at once.
@@ -88,14 +44,15 @@ public final class Config {
 	public synchronized void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			try {
-				mDB.store(mStringParams, 3);
-				mDB.store(mIntParams, 3);
-				mDB.store(this);
-				mDB.commit();
+				checkedActivate(3);
+				
+				checkedStore(mStringParams);
+				checkedStore(mIntParams);
+				
+				checkedStore(this);
 			}
 			catch(RuntimeException e) {
-				System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
 	}
@@ -107,6 +64,7 @@ public final class Config {
 	 * @param value Value of the config parameter.
 	 */
 	public synchronized void set(String key, String value) {
+		checkedActivate(3);
 		mStringParams.put(key, value);
 	}
 	
@@ -117,6 +75,7 @@ public final class Config {
      * @param value Value of the config parameter.
      */
     public synchronized void set(String key, boolean value) {
+    	checkedActivate(3);
         mStringParams.put(key, Boolean.toString(value));
     }
 	
@@ -127,6 +86,7 @@ public final class Config {
 	 * @param value Value of the config parameter.
 	 */
 	public synchronized void set(String key, int value) {
+		checkedActivate(3);
 		mIntParams.put(key, value);
 	}
 
@@ -134,6 +94,7 @@ public final class Config {
 	 * Gets a String configuration parameter.
 	 */
 	public synchronized String getString(String key) {
+		checkedActivate(3);
 		return mStringParams.get(key);
 	}
 	
@@ -141,6 +102,7 @@ public final class Config {
 	 * Gets an Integer configuration parameter.
 	 */
 	public synchronized int getInt(String key) {
+		checkedActivate(3);
 		return mIntParams.get(key);
 	}
 
@@ -148,6 +110,7 @@ public final class Config {
      * Gets a boolean configuration parameter.
      */
     public synchronized boolean getBoolean(String key) {
+    	checkedActivate(3);
         return Boolean.valueOf( mStringParams.get(key) );
     }
 
@@ -155,6 +118,7 @@ public final class Config {
 	 * Check wheter a String config parameter exists.
 	 */
 	public synchronized boolean containsString(String key) {
+		checkedActivate(3);
 		return mStringParams.containsKey(key);
 	}
 	
@@ -162,6 +126,7 @@ public final class Config {
 	 * Check wheter an Integer config parameter exists.
 	 */
 	public synchronized boolean containsInt(String key) {
+		checkedActivate(3);
 		return mIntParams.containsKey(key);
 	}
 
@@ -173,6 +138,7 @@ public final class Config {
 	 *         change the database.
 	 */
 	public synchronized String[] getAllStringKeys() {
+		checkedActivate(3);
 		/* We return a copy of the keySet. If we returned an iterator of the
 		 * keySet, modifications on the configuration HashMap would be reflected
 		 * in the iterator. This might lead to problems if the configuration is
@@ -194,6 +160,7 @@ public final class Config {
 	 *         change the database.
 	 */
 	public synchronized String[] getAllIntKeys() {
+		checkedActivate(3);
 		/* We return a copy of the keySet. If we returned an iterator of the
 		 * keySet, modifications on the configuration HashMap would be reflected
 		 * in the iterator. This might lead to problems if the configuration is
