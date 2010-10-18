@@ -260,14 +260,14 @@ public final class XMLTransformer {
 			synchronized(identity) {
 				long newEdition = identityURI.getEdition();
 				if(identity.getEdition() > newEdition) {
-					Logger.debug(identity, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
+					Logger.debug(this, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
 					return;
 				} else if(identity.getEdition() == newEdition) {
 					if(identity.getCurrentEditionFetchState() == FetchState.Fetched) {
-						Logger.debug(identity, "Fetched current edition which is marked as fetched already, not importing: " + identityURI);
+						Logger.debug(this, "Fetched current edition which is marked as fetched already, not importing: " + identityURI);
 						return;
 					} else if(identity.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
-						Logger.normal(identity, "Re-fetched current-edition which was marked as parsing failed: " + identityURI);
+						Logger.normal(this, "Re-fetched current-edition which was marked as parsing failed: " + identityURI);
 					}
 				}
 				
@@ -286,21 +286,21 @@ public final class XMLTransformer {
 					}
 					catch(Exception e) {
 						/* Nickname changes are not allowed, ignore them... */
-						Logger.error(identityURI, "setNickname() failed.", e);
+						Logger.error(this, "setNickname() failed.", e);
 					}
 	
 					try { /* Failure of context importing should not make an identity disappear, therefore we catch exceptions. */
 						identity.setContexts(identityContexts);
 					}
 					catch(Exception e) {
-						Logger.error(identityURI, "setContexts() failed.", e);
+						Logger.error(this, "setContexts() failed.", e);
 					}
 	
 					try { /* Failure of property importing should not make an identity disappear, therefore we catch exceptions. */
 						identity.setProperties(identityProperties);
 					}
 					catch(Exception e) {
-						Logger.error(identityURI, "setProperties() failed", e);
+						Logger.error(this, "setProperties() failed", e);
 					}
 				
 					
@@ -396,7 +396,6 @@ public final class XMLTransformer {
 						final long newEdition = identityURI.getEdition();
 						if(identity.getEdition() <= newEdition) {
 							Logger.normal(this, "Marking edition as parsing failed: " + identityURI);
-							marked = true;
 							identity.setEdition(newEdition);
 							identity.onParsingFailed();
 						} else {
