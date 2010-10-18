@@ -185,11 +185,16 @@ public final class XMLTransformer {
 	 * 
 	 * @param xmlInputStream The input stream containing the XML.
 	 */
-	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  { 
+	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  {
+		// FIXME: We should catch any exceptions which happen during parsing and throw them again AFTER the edition number of the identity
+		// has been stored in the database. We should also have a flag in Identity which specifies whether the latest edition was parsed
+		// successfully or not. This will allow us to re-fetch identities with failed parsing if we deploy a new WoT version.
+		
 		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
 			xmlDoc = mDocumentBuilder.parse(xmlInputStream);
 		}
+
 		Element identityElement = (Element)xmlDoc.getElementsByTagName("Identity").item(0);
 		
 		if(Integer.parseInt(identityElement.getAttribute("Version")) > XML_FORMAT_VERSION)
