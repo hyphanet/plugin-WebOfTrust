@@ -237,18 +237,18 @@ public final class XMLTransformer {
 			}
 			
 			if(identityPublishesTrustList) {
-			final Element trustListElement = (Element)identityElement.getElementsByTagName("TrustList").item(0);
-			final NodeList trustList = trustListElement.getElementsByTagName("Trust");
-			identityTrustList = new ArrayList<TrustListEntry>(trustList.getLength() + 1);
-			for(int i = 0; i < trustList.getLength(); ++i) {
-				Element trustElement = (Element)trustList.item(i);
-
-				identityTrustList.add(new TrustListEntry(
-							new FreenetURI(trustElement.getAttribute("Identity")),
-							Byte.parseByte(trustElement.getAttribute("Value")),
-							trustElement.getAttribute("Comment")
-						));
-			}
+				final Element trustListElement = (Element)identityElement.getElementsByTagName("TrustList").item(0);
+				final NodeList trustList = trustListElement.getElementsByTagName("Trust");
+				identityTrustList = new ArrayList<TrustListEntry>(trustList.getLength() + 1);
+				for(int i = 0; i < trustList.getLength(); ++i) {
+					Element trustElement = (Element)trustList.item(i);
+	
+					identityTrustList.add(new TrustListEntry(
+								new FreenetURI(trustElement.getAttribute("Identity")),
+								Byte.parseByte(trustElement.getAttribute("Value")),
+								trustElement.getAttribute("Comment")
+							));
+				}
 			}
 		} catch(Exception e) {
 			parseError = e;
