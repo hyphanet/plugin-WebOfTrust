@@ -2226,7 +2226,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
      * @return Path of our L10n files.
      */
     public String getL10nFilesBasePath() {
-        return "plugins/WoT/l10n/";
+        return "plugins/WebOfTrust/l10n/";
     }
 
     /**
