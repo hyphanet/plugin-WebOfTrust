@@ -44,8 +44,8 @@ public class ScoreTest extends DatabaseBasedTest {
 		assertTrue(score.getScore() == 100);
 		assertTrue(score.getRank() == 1);
 		assertTrue(score.getCapacity() == 40);
-		assertTrue(score.getTreeOwner() == a);
-		assertTrue(score.getTarget() == b);
+		assertTrue(score.getTruster() == a);
+		assertTrue(score.getTrustee() == b);
 	}
 	
 	// TODO: Move to WoTTest
@@ -78,7 +78,7 @@ public class ScoreTest extends DatabaseBasedTest {
 			} catch (InterruptedException e) { }
 		} while(score.getDateOfCreation().equals(CurrentTimeUTC.get()));
 		
-		final Score equalScore = new Score(score.getTreeOwner().clone(), score.getTarget().clone(), score.getScore(), score.getRank(), score.getCapacity());
+		final Score equalScore = new Score(score.getTruster().clone(), score.getTrustee().clone(), score.getScore(), score.getRank(), score.getCapacity());
 		
 		assertEquals(score, score);
 		assertEquals(score, equalScore);
@@ -86,12 +86,12 @@ public class ScoreTest extends DatabaseBasedTest {
 		
 		final Object[] inequalObjects = new Object[] {
 			new Object(),
-			new Score((OwnIdentity)score.getTarget(), score.getTreeOwner(), score.getScore(), score.getRank(), score.getCapacity()),
-			new Score(score.getTreeOwner(), score.getTreeOwner(), score.getScore(), score.getRank(), score.getCapacity()),
-			new Score((OwnIdentity)score.getTarget(), score.getTarget(), score.getScore(), score.getRank(), score.getCapacity()),
-			new Score(score.getTreeOwner(), score.getTarget(), score.getScore()+1, score.getRank(), score.getCapacity()),
-			new Score(score.getTreeOwner(), score.getTarget(), score.getScore(), score.getRank()+1, score.getCapacity()),
-			new Score(score.getTreeOwner(), score.getTarget(), score.getScore(), score.getRank(), score.getCapacity()+1),
+			new Score((OwnIdentity)score.getTrustee(), score.getTruster(), score.getScore(), score.getRank(), score.getCapacity()),
+			new Score(score.getTruster(), score.getTruster(), score.getScore(), score.getRank(), score.getCapacity()),
+			new Score((OwnIdentity)score.getTrustee(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()),
+			new Score(score.getTruster(), score.getTrustee(), score.getScore()+1, score.getRank(), score.getCapacity()),
+			new Score(score.getTruster(), score.getTrustee(), score.getScore(), score.getRank()+1, score.getCapacity()),
+			new Score(score.getTruster(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()+1),
 		};
 		
 		for(Object other : inequalObjects)

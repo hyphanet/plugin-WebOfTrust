@@ -43,8 +43,8 @@ public class WoTTest extends DatabaseBasedTest {
 		assertEquals(Integer.MAX_VALUE, score.getScore());
 		assertEquals(0, score.getRank());
 		assertEquals(100, score.getCapacity());
-		assertSame(a, score.getTreeOwner());
-		assertSame(a, score.getTarget());
+		assertSame(a, score.getTruster());
+		assertSame(a, score.getTrustee());
 	}
 	
 	public void testSetTrust1() throws InvalidParameterException, MalformedURLException {

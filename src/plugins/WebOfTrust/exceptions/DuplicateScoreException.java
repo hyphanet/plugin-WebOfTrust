@@ -16,7 +16,7 @@ public class DuplicateScoreException extends RuntimeException {
 	
 	private static final long serialVersionUID = -1;
 
-	public DuplicateScoreException(Identity treeOwner, Identity target, int amount) {
-		super("Duplicate score from " + treeOwner + " to " + target + "; "+ amount + " copies exist.");
+	public DuplicateScoreException(Identity truster, Identity trustee, int amount) {
+		super("Duplicate score from " + truster + " to " + trustee + "; "+ amount + " copies exist.");
 	}
 }

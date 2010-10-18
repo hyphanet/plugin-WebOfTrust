@@ -196,28 +196,28 @@ public final class FCPInterface implements FredPluginFCP {
     }
 
     private SimpleFieldSet handleGetIdentity(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
-    	final String treeOwnerID = getMandatoryParameter(params, "TreeOwner"); 
+    	final String trusterID = getMandatoryParameter(params, "Truster"); 
     	final String identityID = getMandatoryParameter(params, "Identity");
 
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Identity");
     	
     	synchronized(mWoT) {
-    		final OwnIdentity treeOwner = mWoT.getOwnIdentityByID(treeOwnerID);
+    		final OwnIdentity truster = mWoT.getOwnIdentityByID(trusterID);
     		final Identity identity = mWoT.getIdentityByID(identityID);
 
     		sfs.putOverwrite("Nickname", identity.getNickname());
     		sfs.putOverwrite("RequestURI", identity.getRequestURI().toString());
 
     		try {
-    			final Trust trust = mWoT.getTrust(treeOwner, identity);
+    			final Trust trust = mWoT.getTrust(truster, identity);
     			sfs.putOverwrite("Trust", Byte.toString(trust.getValue()));
     		} catch (final NotTrustedException e1) {
     			sfs.putOverwrite("Trust", "null");
     		}
 
     		try {
-    			final Score score = mWoT.getScore(treeOwner, identity);
+    			final Score score = mWoT.getScore(truster, identity);
     			sfs.putOverwrite("Score", Integer.toString(score.getScore()));
     			sfs.putOverwrite("Rank", Integer.toString(score.getRank()));
     		} catch (final NotInTrustTreeException e) {
@@ -259,7 +259,7 @@ public final class FCPInterface implements FredPluginFCP {
     }
 
     private SimpleFieldSet handleGetIdentitiesByScore(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
-    	final String treeOwnerID = params.get("TreeOwner");
+    	final String trusterID = params.get("Truster");
         final String selection = getMandatoryParameter(params, "Selection");
         final String context = getMandatoryParameter(params, "Context");
 
@@ -275,15 +275,15 @@ public final class FCPInterface implements FredPluginFCP {
 		sfs.putOverwrite("Message", "Identities");
 		
 		synchronized(mWoT) {
-			final OwnIdentity treeOwner = treeOwnerID != null ? mWoT.getOwnIdentityByID(treeOwnerID) : null;
-			final ObjectSet<Score> result = mWoT.getIdentitiesByScore(treeOwner, select);
+			final OwnIdentity truster = trusterID != null ? mWoT.getOwnIdentityByID(trusterID) : null;
+			final ObjectSet<Score> result = mWoT.getIdentitiesByScore(truster, select);
 			final boolean getAll = context.equals("");
 	
 			for(int i = 0; result.hasNext(); ) {
 				final Score score = result.next();
 
-				if(getAll || score.getTarget().hasContext(context)) {
-					final Identity identity = score.getTarget();
+				if(getAll || score.getTrustee().hasContext(context)) {
+					final Identity identity = score.getTrustee();
 					sfs.putOverwrite("Identity" + i, identity.getID());
 					sfs.putOverwrite("RequestURI" + i, identity.getRequestURI().toString());
 					sfs.putOverwrite("Nickname" + i, identity.getNickname() != null ? identity.getNickname() : "");

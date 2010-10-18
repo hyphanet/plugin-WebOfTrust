@@ -7,22 +7,22 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Score;
 
 /**
- * Thrown when querying the {@link Score} of a target {@link Identity} in the trust tree of a tree owner {@link Identity} shows that there is no {@link Score} for
- * the target in the tree owner's trust tree.  
+ * Thrown when querying the {@link Score} of a trusted {@link Identity} in the trust tree of a truster
+ * {@link Identity} shows that there is no {@link Score} for the target in the tree owner's trust tree.  
  * 
+ * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
- *
  */
 public class NotInTrustTreeException extends Exception {
 	
 	private static final long serialVersionUID = -1;
 	
-	public NotInTrustTreeException(Identity target) {
-		super("There is no trust tree which contains " + target);
+	public NotInTrustTreeException(Identity trustee) {
+		super("There is no trust tree which contains " + trustee);
 	}
 
-	public NotInTrustTreeException(Identity treeOwner, Identity target) {
-		super(target + " is not in the trust treee of " + treeOwner);
+	public NotInTrustTreeException(Identity truster, Identity trustee) {
+		super(trustee + " is not in the trust treee of " + truster);
 	}
 
 }

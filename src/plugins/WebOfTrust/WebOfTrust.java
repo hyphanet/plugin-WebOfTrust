@@ -335,10 +335,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 		Logger.debug(this, "Searching for duplicate Trust objects ...");
 
-		for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+		for(OwnIdentity truster : getAllOwnIdentities()) {
 			HashSet<String> givenTo = new HashSet<String>();
 
-			for(Trust trust : getGivenTrusts(treeOwner)) {
+			for(Trust trust : getGivenTrusts(truster)) {
 				if(givenTo.contains(trust.getTrustee().getID()) == false)
 					givenTo.add(trust.getTrustee().getID());
 				else {
@@ -393,16 +393,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			try {
 				Query q = mDB.query();
 				q.constrain(Score.class);
-				q.descend("mTreeOwner").constrain(null).identity().or(q.descend("mTarget").constrain(null).identity());
+				q.descend("mTruster").constrain(null).identity().or(q.descend("mTrustee").constrain(null).identity());
 				ObjectSet<Score> orphanScores = q.execute();
 				for(Score score : orphanScores) {
-					if(score.getTreeOwner() != null && score.getTarget() != null) {
+					if(score.getTruster() != null && score.getTrustee() != null) {
 						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
 						Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + score);
 						continue;
 					}
 					
-					Logger.error(score, "Deleting orphan score, treeOwner = " + score.getTreeOwner() + ", target = " + score.getTarget());
+					Logger.error(score, "Deleting orphan score, truster = " + score.getTruster() + ", trustee = " + score.getTrustee());
 					mDB.delete(score);
 				}
 				
@@ -453,22 +453,22 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * If the rank of the identity is Integer.MAX_VALUE (infinite, this means it has only received negative or 0 trust values from identities with rank >= 0 and less
 	 * than infinite) or -1 (this means that it has only received trust values from identities with infinite rank) then its capacity is 0.
 	 * 
-	 * If the tree owner has assigned a trust value to the target the capacity will be computed only from that trust value:
-	 * The decision of the tree owner should always overpower the view of remote identities.
+	 * If the truster has assigned a trust value to the trustee the capacity will be computed only from that trust value:
+	 * The decision of the truster should always overpower the view of remote identities.
 	 * 
 	 * Notice that 0 is included in infinite rank to prevent identities which have only solved introduction puzzles from having a capacity.  
 	 *  
-	 * @param treeOwner The {@link OwnIdentity} in whose trust tree the capacity shall be computed
-	 * @param target The {@link Identity} of which the capacity shall be computed. 
+	 * @param truster The {@link OwnIdentity} in whose trust tree the capacity shall be computed
+	 * @param trustee The {@link Identity} of which the capacity shall be computed. 
 	 * @param rank The rank of the identity. The rank is the distance in trust steps from the OwnIdentity which views the web of trust,
 	 * 				- its rank is 0, the rank of its trustees is 1 and so on. Must be -1 if the truster has no rank in the tree owners view.
 	 */
-	protected int computeCapacity(OwnIdentity treeOwner, Identity target, int rank) {
-		if(treeOwner == target)
+	protected int computeCapacity(OwnIdentity truster, Identity trustee, int rank) {
+		if(truster == trustee)
 			return 100;
 		 
 		try {
-			if(getTrust(treeOwner, target).getValue() <= 0) { // Security check, if rank computation breaks this will hit.
+			if(getTrust(truster, trustee).getValue() <= 0) { // Security check, if rank computation breaks this will hit.
 				assert(rank == Integer.MAX_VALUE);
 				return 0;
 			}
@@ -660,7 +660,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 							oldShouldFetch = shouldFetchIdentity(target);
 							
 							storedScore.setRank(expectedScore.getRank());
-							storedScore.setCapacity(computeCapacity(expectedScore.getTreeOwner(), expectedScore.getTarget(), expectedScore.getRank()));
+							storedScore.setCapacity(computeCapacity(expectedScore.getTruster(), expectedScore.getTrustee(), expectedScore.getRank()));
 							storedScore.setValue(expectedScore.getScore());
 
 							mDB.store(storedScore);
@@ -942,7 +942,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * You have to synchronize on this WoT when calling the function and processing the returned list.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized ObjectSet<Identity> getAllIdentitiesFilteredAndSorted(OwnIdentity treeOwner, String nickFilter, SortOrder sortInstruction) {
+	public synchronized ObjectSet<Identity> getAllIdentitiesFilteredAndSorted(OwnIdentity truster, String nickFilter, SortOrder sortInstruction) {
 		Query q = mDB.query();
 		
 		switch(sortInstruction) {
@@ -956,27 +956,27 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				break;
 			case ByScoreAscending:
 				q.constrain(Score.class);
-				q.descend("mTreeOwner").constrain(treeOwner);
+				q.descend("mTruster").constrain(truster);
 				q.descend("mValue").orderAscending();
-				q = q.descend("mTarget"); 
+				q = q.descend("mTrustee"); 
 				break;
 			case ByScoreDescending:
 				// TODO: This excludes identities which have no score
 				q.constrain(Score.class);
-				q.descend("mTreeOwner").constrain(treeOwner);
+				q.descend("mTruster").constrain(truster);
 				q.descend("mValue").orderDescending();
-				q = q.descend("mTarget");
+				q = q.descend("mTrustee");
 				break;
 			case ByLocalTrustAscending:
 				q.constrain(Trust.class);
-				q.descend("mTruster").constrain(treeOwner);
+				q.descend("mTruster").constrain(truster);
 				q.descend("mValue").orderAscending();
 				q = q.descend("mTrustee");
 				break;
 			case ByLocalTrustDescending:
 				// TODO: This excludes untrusted identities.
 				q.constrain(Trust.class);
-				q.descend("mTruster").constrain(treeOwner);
+				q.descend("mTruster").constrain(truster);
 				q.descend("mValue").orderDescending();
 				q = q.descend("mTrustee");
 				break;
@@ -1152,25 +1152,25 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Gets the score of this identity in a trust tree.
 	 * Each {@link OwnIdentity} has its own trust tree.
 	 * 
-	 * @param treeOwner The owner of the trust tree
+	 * @param truster The owner of the trust tree
 	 * @return The {@link Score} of this Identity in the required trust tree
 	 * @throws NotInTrustTreeException if this identity is not in the required trust tree 
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized Score getScore(OwnIdentity treeOwner, Identity target) throws NotInTrustTreeException {
+	public synchronized Score getScore(OwnIdentity truster, Identity trustee) throws NotInTrustTreeException {
 		Query query = mDB.query();
 		query.constrain(Score.class);
-		query.descend("mTreeOwner").constrain(treeOwner).identity();
-		query.descend("mTarget").constrain(target).identity();
+		query.descend("mTruster").constrain(truster).identity();
+		query.descend("mTrustee").constrain(trustee).identity();
 		ObjectSet<Score> result = query.execute();
 		
 		switch(result.size()) {
 			case 1:
 				return result.next();
 			case 0:
-				throw new NotInTrustTreeException(treeOwner, target);
+				throw new NotInTrustTreeException(truster, trustee);
 			default:
-				throw new DuplicateScoreException(treeOwner, target, result.size());
+				throw new DuplicateScoreException(truster, trustee, result.size());
 		}
 	}
 
@@ -1184,7 +1184,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public ObjectSet<Score> getScores(Identity identity) {
 		Query query = mDB.query();
 		query.constrain(Score.class);
-		query.descend("mTarget").constrain(identity).identity();
+		query.descend("mTrustee").constrain(identity).identity();
 		return query.execute();
 	}
 	
@@ -1195,10 +1195,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @return An {@link ObjectSet} containing all {@link Score} this Identity has given.
 	 */
 	@SuppressWarnings("unchecked")
-	public ObjectSet<Score> getGivenScores(OwnIdentity treeOwner) {
+	public ObjectSet<Score> getGivenScores(OwnIdentity truster) {
 		Query query = mDB.query();
 		query.constrain(Score.class);
-		query.descend("mTreeOwner").constrain(treeOwner).identity();
+		query.descend("mTruster").constrain(truster).identity();
 		return query.execute();
 	}
 	
@@ -1279,18 +1279,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Gets Identities matching a specified score criteria.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 * 
-	 * @param treeOwner The owner of the trust tree, null if you want the trusted identities of all owners.
+	 * @param truster The owner of the trust tree, null if you want the trusted identities of all owners.
 	 * @param select Score criteria, can be > zero, zero or negative. Greater than zero returns all identities with score >= 0, zero with score equal to 0
 	 * 		and negative with score < 0. Zero is included in the positive range by convention because solving an introduction puzzle gives you a trust value of 0.
 	 * @return an {@link ObjectSet} containing Scores of the identities that match the criteria
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized ObjectSet<Score> getIdentitiesByScore(OwnIdentity treeOwner, int select) {		
+	public synchronized ObjectSet<Score> getIdentitiesByScore(OwnIdentity truster, int select) {		
 		Query query = mDB.query();
 		query.constrain(Score.class);
-		if(treeOwner != null)
-			query.descend("mTreeOwner").constrain(treeOwner).identity();
-		query.descend("mTarget").constrain(OwnIdentity.class).not();
+		if(truster != null)
+			query.descend("mTruster").constrain(truster).identity();
+		query.descend("mTrustee").constrain(OwnIdentity.class).not();
 	
 		/* We include 0 in the list of identities with positive score because solving captchas gives no points to score */
 		
@@ -1592,27 +1592,28 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 //	}
 	
 	/**
-	 * Computes the target's Score value according to the trusts it has received and the capacity of its trusters in the specified
+	 * Computes the trustee's Score value according to the trusts it has received and the capacity of its trusters in the specified
 	 * trust tree.
 	 * 
-	 * @param treeOwner The OwnIdentity that owns the trust tree
-	 * @return The new Score if this Identity
+	 * @param truster The OwnIdentity that owns the trust tree
+	 * @param trustee The identity for which the score shall be computed.
+	 * @return The new Score of the identity. Integer.MAX_VALUE if the trustee is equal to the truster.
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 */
-	private synchronized int computeScoreValue(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException {
-		if(target == treeOwner)
+	private synchronized int computeScoreValue(OwnIdentity truster, Identity trustee) throws DuplicateScoreException {
+		if(trustee == truster)
 			return Integer.MAX_VALUE;
 		
 		int value = 0;
 		
 		try {
-			return getTrust(treeOwner, target).getValue();
+			return getTrust(truster, trustee).getValue();
 		}
 		catch(NotTrustedException e) { }
 		
-		for(Trust trust : getReceivedTrusts(target)) {
+		for(Trust trust : getReceivedTrusts(trustee)) {
 			try {
-				final Score trusterScore = getScore(treeOwner, trust.getTruster());
+				final Score trusterScore = getScore(truster, trust.getTruster());
 				value += ( trust.getValue() * trusterScore.getCapacity() ) / 100;
 			} catch (NotInTrustTreeException e) {}
 		}
@@ -1620,7 +1621,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	/**
-	 * Computes the target's rank in the trust tree.
+	 * Computes the trustees's rank in the trust tree of the truster.
 	 * It gets its best ranked non-zero-capacity truster's rank, plus one.
 	 * If it has only received negative trust values from identities which have a non-zero-capacity it gets a rank of Integer.MAX_VALUE (infinite).
 	 * If it has only received trust values from identities with rank of Integer.MAX_VALUE it gets a rank of -1.
@@ -1638,18 +1639,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * Notice that 0 is included in infinite rank to prevent identities which have only solved introduction puzzles from having a capacity.
 	 * 
-	 * @param treeOwner The OwnIdentity that owns the trust tree
+	 * @param truster The OwnIdentity that owns the trust tree
 	 * @return The new Rank if this Identity
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 */
-	private synchronized int computeRank(OwnIdentity treeOwner, Identity target) throws DuplicateScoreException {
-		if(target == treeOwner)
+	private synchronized int computeRank(OwnIdentity truster, Identity trustee) throws DuplicateScoreException {
+		if(trustee == truster)
 			return 0;
 		
 		int rank = -1;
 		
 		try {
-			Trust treeOwnerTrust = getTrust(treeOwner, target);
+			Trust treeOwnerTrust = getTrust(truster, trustee);
 			
 			if(treeOwnerTrust.getValue() > 0)
 				return 1;
@@ -1657,9 +1658,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				return Integer.MAX_VALUE;
 		} catch(NotTrustedException e) { }
 		
-		for(Trust trust : getReceivedTrusts(target)) {
+		for(Trust trust : getReceivedTrusts(trustee)) {
 			try {
-				Score score = getScore(treeOwner, trust.getTruster());
+				Score score = getScore(truster, trust.getTruster());
 
 				if(score.getCapacity() != 0) { // If the truster has no capacity, he can't give his rank
 					// A truster only gives his rank to a trustee if he has assigned a strictly positive trust value
@@ -1749,7 +1750,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
 	 * }
 	 * 
-	 * @param treeOwner The OwnIdentity that owns the trust tree
 	 */
 	private synchronized void updateScoresWithoutCommit(final Trust oldTrust, final Trust newTrust) {
 		final boolean trustWasCreated = (oldTrust == null);
@@ -2142,7 +2142,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 					// Update all received scores
 					for(Score oldScore : getScores(old)) {
-						Score newScore = new Score(oldScore.getTreeOwner(), identity, oldScore.getScore(),
+						Score newScore = new Score(oldScore.getTruster(), identity, oldScore.getScore(),
 								oldScore.getRank(), oldScore.getCapacity());
 						
 						mDB.store(newScore);
@@ -2430,10 +2430,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			for(Score score : allScores) {
 				try {
-					OwnIdentity otherTreeOwner = other.getOwnIdentityByID(score.getTreeOwner().getID());
-					Identity otherTarget = other.getIdentityByID(score.getTarget().getID());
+					OwnIdentity otherTruster = other.getOwnIdentityByID(score.getTruster().getID());
+					Identity otherTrustee = other.getIdentityByID(score.getTrustee().getID());
 					
-					if(!score.equals(other.getScore(otherTreeOwner, otherTarget)))
+					if(!score.equals(other.getScore(otherTruster, otherTrustee)))
 						return false;
 				} catch(UnknownIdentityException e) {
 					return false;
