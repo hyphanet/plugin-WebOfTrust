@@ -150,13 +150,16 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		private static final long serialVersionUID = 1L;
 	}
 	
-	@SuppressWarnings("unchecked")
-	private IdentityFetcherCommand getCommand(Class commandType, Identity identity) throws NoSuchCommandException {
+	private IdentityFetcherCommand getCommand(Class<? extends IdentityFetcherCommand> commandType, Identity identity)
+		throws NoSuchCommandException {
+		
 		return getCommand(commandType, identity.getID());
 	}
 	
 	@SuppressWarnings("unchecked")
-	private IdentityFetcherCommand getCommand(Class commandType, String identityID) throws NoSuchCommandException {
+	private IdentityFetcherCommand getCommand(Class<? extends IdentityFetcherCommand> commandType, String identityID)
+		throws NoSuchCommandException {
+		
 		Query q = mDB.query();
 		q.constrain(commandType);
 		q.descend("mIdentityID").constrain(identityID);
@@ -170,7 +173,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	}
 	
 	@SuppressWarnings("unchecked")
-	private ObjectSet<IdentityFetcherCommand> getCommands(Class commandType) {
+	private ObjectSet<IdentityFetcherCommand> getCommands(Class<? extends IdentityFetcherCommand> commandType) {
 		Query q = mDB.query();
 		q.constrain(commandType);
 		return q.execute();
