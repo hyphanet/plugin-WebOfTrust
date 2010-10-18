@@ -1889,8 +1889,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		// assert(mFullScoreComputationNeeded || (!mFullScoreComputationNeeded && computeAllScoresWithoutCommit()));
 		
 		if(mFullScoreComputationNeeded && !mTrustListImportInProgress) {
-			// FIXME before 0.4.0 final: Write a computeAllScores() which does not keep all objects in memory.
-			// TODO: This uses very much CPU and memory. Find a better solution!
+			// TODO: Optimization: This uses very much CPU and memory. Write a partial computation function...
+			// TODO: Optimization: While we do not have a partial computation function, we could at least optimize computeAllScores to NOT
+			// keep all objects in memory etc.
 			computeAllScoresWithoutCommit();
 			assert(computeAllScoresWithoutCommit()); // It is stable
 		}
