@@ -277,121 +277,119 @@ public final class XMLTransformer {
 				
 				synchronized(mDB.lock()) {
 				try { // Transaction rollback block
-				identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
-				boolean didPublishTrustListPreviously = identity.doesPublishTrustList();
-				identity.setPublishTrustList(identityPublishesTrustList);
-				
-				try {
-					identity.setNickname(identityName);
-				}
-				catch(Exception e) {
-					/* Nickname changes are not allowed, ignore them... */
-					Logger.error(identityURI, "setNickname() failed.", e);
-				}
-
-				try { /* Failure of context importing should not make an identity disappear, therefore we catch exceptions. */
-					identity.setContexts(identityContexts);
-				}
-				catch(Exception e) {
-					Logger.error(identityURI, "setContexts() failed.", e);
-				}
-
-				try { /* Failure of property importing should not make an identity disappear, therefore we catch exceptions. */
-					identity.setProperties(identityProperties);
-				}
-				catch(Exception e) {
-					Logger.error(identityURI, "setProperties() failed", e);
-				}
+					identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
+					boolean didPublishTrustListPreviously = identity.doesPublishTrustList();
+					identity.setPublishTrustList(identityPublishesTrustList);
+					
+					try {
+						identity.setNickname(identityName);
+					}
+					catch(Exception e) {
+						/* Nickname changes are not allowed, ignore them... */
+						Logger.error(identityURI, "setNickname() failed.", e);
+					}
+	
+					try { /* Failure of context importing should not make an identity disappear, therefore we catch exceptions. */
+						identity.setContexts(identityContexts);
+					}
+					catch(Exception e) {
+						Logger.error(identityURI, "setContexts() failed.", e);
+					}
+	
+					try { /* Failure of property importing should not make an identity disappear, therefore we catch exceptions. */
+						identity.setProperties(identityProperties);
+					}
+					catch(Exception e) {
+						Logger.error(identityURI, "setProperties() failed", e);
+					}
 				
 					
-						mWoT.beginTrustListImport(); // We delete the old list if !identityPublishesTrustList and it did publish one earlier => we always call this. 
+					mWoT.beginTrustListImport(); // We delete the old list if !identityPublishesTrustList and it did publish one earlier => we always call this. 
+					
+					if(identityPublishesTrustList) {
+						// We import the trust list of an identity if it's score is equal to 0, but we only create new identities or import edition hints
+						// if the score is greater than 0. Solving a captcha therefore only allows you to create one single identity.
+						boolean positiveScore = false;
+						boolean hasCapacity = false;
 						
-						if(identityPublishesTrustList) {
-							// We import the trust list of an identity if it's score is equal to 0, but we only create new identities or import edition hints
-							// if the score is greater than 0. Solving a captcha therefore only allows you to create one single identity.
-							boolean positiveScore = false;
-							boolean hasCapacity = false;
-							
+						try {
+							positiveScore = mWoT.getBestScore(identity) > 0;
+							hasCapacity = mWoT.getBestCapacity(identity) > 0;
+						}
+						catch(NotInTrustTreeException e) { }
+
+						// Importing own identities is always allowed
+						if(!positiveScore)
+							positiveScore = identity instanceof OwnIdentity;
+
+						HashSet<String>	identitiesWithUpdatedEditionHint = null;
+
+						if(positiveScore) {
+							identitiesWithUpdatedEditionHint = new HashSet<String>();
+						}
+
+						for(final TrustListEntry trustListEntry : identityTrustList) {
+							final FreenetURI trusteeURI = trustListEntry.mTrusteeURI;
+							final byte trustValue = trustListEntry.mTrustValue;
+							final String trustComment = trustListEntry.mTrustComment;
+
+							Identity trustee = null;
 							try {
-								positiveScore = mWoT.getBestScore(identity) > 0;
-								hasCapacity = mWoT.getBestCapacity(identity) > 0;
-							}
-							catch(NotInTrustTreeException e) { }
-
-							// Importing own identities is always allowed
-							if(!positiveScore)
-								positiveScore = identity instanceof OwnIdentity;
-
-							HashSet<String>	identitiesWithUpdatedEditionHint = null;
-
-							if(positiveScore) {
-								identitiesWithUpdatedEditionHint = new HashSet<String>();
-							}
-
-							for(final TrustListEntry trustListEntry : identityTrustList) {
-								final FreenetURI trusteeURI = trustListEntry.mTrusteeURI;
-								final byte trustValue = trustListEntry.mTrustValue;
-								final String trustComment = trustListEntry.mTrustComment;
-
-								Identity trustee = null;
-								try {
-									trustee = mWoT.getIdentityByURI(trusteeURI);
-									if(positiveScore) {
-										if(trustee.setNewEditionHint(trusteeURI.getEdition())) {
-											identitiesWithUpdatedEditionHint.add(trustee.getID());
-											mWoT.storeWithoutCommit(trustee);
-										}
-									}
-								}
-								catch(UnknownIdentityException e) {
-									if(hasCapacity) { /* We only create trustees if the truster has capacity to rate them. */
-										trustee = new Identity(trusteeURI, null, false);
+								trustee = mWoT.getIdentityByURI(trusteeURI);
+								if(positiveScore) {
+									if(trustee.setNewEditionHint(trusteeURI.getEdition())) {
+										identitiesWithUpdatedEditionHint.add(trustee.getID());
 										mWoT.storeWithoutCommit(trustee);
 									}
 								}
-
-								if(trustee != null)
-									mWoT.setTrustWithoutCommit(identity, trustee, trustValue, trustComment);
+							}
+							catch(UnknownIdentityException e) {
+								if(hasCapacity) { /* We only create trustees if the truster has capacity to rate them. */
+									trustee = new Identity(trusteeURI, null, false);
+									mWoT.storeWithoutCommit(trustee);
+								}
 							}
 
-							for(Trust trust : mWoT.getGivenTrustsOlderThan(identity, identityURI.getEdition())) {
-								mWoT.removeTrustWithoutCommit(trust);
-							}
-
-							mWoT.storeWithoutCommit(identity);
-
-							IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
-							if(positiveScore && identityFetcher != null) {
-								for(String id : identitiesWithUpdatedEditionHint)
-									identityFetcher.storeUpdateEditionHintCommandWithoutCommit(id);
-
-								// We do not have to store fetch commands for new identities here, setTrustWithoutCommit does it.
-							}
-						} else if(!identityPublishesTrustList && didPublishTrustListPreviously && !(identity instanceof OwnIdentity)) {
-							// If it does not publish a trust list anymore, we delete all trust values it has given.
-							for(Trust trust : mWoT.getGivenTrusts(identity))
-								mWoT.removeTrustWithoutCommit(trust);
+							if(trustee != null)
+								mWoT.setTrustWithoutCommit(identity, trustee, trustValue, trustComment);
 						}
 
-						mWoT.finishTrustListImport();
-						identity.onFetched(); // Marks the identity as parsed successfully
+						for(Trust trust : mWoT.getGivenTrustsOlderThan(identity, identityURI.getEdition())) {
+							mWoT.removeTrustWithoutCommit(trust);
+						}
+
 						mWoT.storeWithoutCommit(identity);
-						mDB.commit(); Logger.debug(this, "COMMITED.");
+
+						IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
+						if(positiveScore && identityFetcher != null) {
+							for(String id : identitiesWithUpdatedEditionHint)
+								identityFetcher.storeUpdateEditionHintCommandWithoutCommit(id);
+
+							// We do not have to store fetch commands for new identities here, setTrustWithoutCommit does it.
+						}
+					} else if(!identityPublishesTrustList && didPublishTrustListPreviously && !(identity instanceof OwnIdentity)) {
+						// If it does not publish a trust list anymore, we delete all trust values it has given.
+						for(Trust trust : mWoT.getGivenTrusts(identity))
+							mWoT.removeTrustWithoutCommit(trust);
 					}
-					catch(Exception e) {
-						mWoT.abortTrustListImport(e); // Does the rollback
-						throw e;
-					}
+
+					mWoT.finishTrustListImport();
+					identity.onFetched(); // Marks the identity as parsed successfully
+					mWoT.storeWithoutCommit(identity);
+					mDB.commit(); Logger.debug(this, "COMMITED.");
 				}
-			}
-		}
-		}
-		}
+				catch(Exception e) {
+					mWoT.abortTrustListImport(e); // Does the rollback
+					throw e;
+				} // try
+				} // synchronized(db.lock())
+			} // synchronized(identity)
+		} // synchronized(mWoT)
+		} // synchronized(mWoT.getIdentityFetcher())
+		} // try
 		catch(Exception e) {
 			synchronized(mWoT) {
 			synchronized(mWoT.getIdentityFetcher()) {
-				boolean marked = false;
-				
 				try {
 					final Identity identity = mWoT.getIdentityByURI(identityURI);
 					synchronized(identity) {
@@ -410,8 +408,7 @@ public final class XMLTransformer {
 				}
 				catch(UnknownIdentityException uie) {
 					Logger.error(this, "Fetched an unknown identity: " + identityURI);
-				}
-				
+				}	
 			}
 			}
 			throw e;
