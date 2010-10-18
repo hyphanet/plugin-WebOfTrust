@@ -158,8 +158,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 			
 			upgradeDB();
-			deleteDuplicateObjects();
-			deleteOrphanObjects();
+			verifyDatabaseIntegrity();
 			
 			mXMLTransformer = new XMLTransformer(this);
 			mPuzzleStore = new IntroductionPuzzleStore(this);
@@ -254,15 +253,25 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @return A db4o <code>ObjectContainer</code>. 
 	 */
 	private ExtObjectContainer initDB(String filename) {
+		Logger.debug(this, "Using db4o " + Db4o.version());
+		
 		Configuration cfg = Db4o.newConfiguration();
+		
+		// Required config options:
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader()));
 		cfg.activationDepth(5); /* TODO: Change to 1 and add explicit activation everywhere */
 		cfg.exceptionsOnNotStorable(true);
-
-        // TURN OFF SHUTDOWN HOOK.
-        // The shutdown hook does auto-commit. We do NOT want auto-commit: if a
-        // transaction hasn't commit()ed, it's not safe to commit it.
+        // The shutdown hook does auto-commit. We do NOT want auto-commit: if a transaction hasn't commit()ed, it's not safe to commit it.
         cfg.automaticShutDown(false);
+        
+        // Performance config options:
+        cfg.callbacks(false); // We don't use callbacks yet. TODO: Investigate whether we might want to use them
+        cfg.classActivationDepthConfigurable(false);
+        
+        // TODO: We should check whether db4o inherits the indexed attribute to child classes, for example for this one:
+        // Unforunately, db4o does not provide any way to query the indexed() property of fields, you can only set it
+        // We might figure out whether inheritance works by writing a benchmark.
+
 		
 		for(String field : Identity.getIndexedFields()) cfg.objectClass(Identity.class).objectField(field).indexed(true);
 		for(String field : OwnIdentity.getIndexedFields()) cfg.objectClass(OwnIdentity.class).objectField(field).indexed(true);
@@ -298,6 +307,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
 			throw e;
 		}
+	}
+	
+	private synchronized void verifyDatabaseIntegrity() {
+		deleteDuplicateObjects();
+		deleteOrphanObjects();
 	}
 	
 	/**
