@@ -3,7 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
-import java.util.HashMap;
+import java.util.Hashtable;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -25,14 +25,12 @@ public final class Config {
 	
 	public static final String DATABASE_FORMAT_VERSION = "DatabaseFormatVersion";
 
-	// FIXME: HashMaps allow null keys/values but we do not check for them. Add checks to the setters
-
 	/**
 	 * The HashMap that contains all cofiguration parameters
 	 */
-	private final HashMap<String, String> mStringParams;
+	private final Hashtable<String, String> mStringParams;
 	
-	private final HashMap<String, Integer> mIntParams;
+	private final Hashtable<String, Integer> mIntParams;
 	
 	private transient WebOfTrust mWoT;
 	
@@ -44,8 +42,8 @@ public final class Config {
 	protected Config(WebOfTrust myWoT) {
 		mWoT = myWoT;
 		mDB = mWoT.getDB();
-		mStringParams = new HashMap<String, String>();
-		mIntParams = new HashMap<String, Integer>();
+		mStringParams = new Hashtable<String, String>();
+		mIntParams = new Hashtable<String, Integer>();
 		setDefaultValues(false);
 	}
 	
