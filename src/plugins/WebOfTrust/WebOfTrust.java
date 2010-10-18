@@ -1750,6 +1750,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			assert(!mFullScoreComputationNeeded); // It properly clears the flag
 			assert(computeAllScoresWithoutCommit()); // computeAllScoresWithoutCommit() is stable
 		}
+		else
+			assert(computeAllScoresWithoutCommit()); // Verify whether updateScoresWithoutCommit worked.
 		
 		mTrustListImportInProgress = false;
 	}
@@ -1883,8 +1885,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			mFullScoreComputationNeeded = true;
 		}
 		
-		// If we're in debug mode we always run computeAllScores to find errors in this function.
-		assert(mFullScoreComputationNeeded || (!mFullScoreComputationNeeded && computeAllScoresWithoutCommit()));
+		// I've disabled this assert because it makes debugging VERY slow. Instead, finishTrustListImport now does assert(computeAllScores...).
+		// assert(mFullScoreComputationNeeded || (!mFullScoreComputationNeeded && computeAllScoresWithoutCommit()));
 		
 		if(mFullScoreComputationNeeded && !mTrustListImportInProgress) {
 			// FIXME before 0.4.0 final: Write a computeAllScores() which does not keep all objects in memory.
