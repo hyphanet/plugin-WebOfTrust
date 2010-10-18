@@ -236,6 +236,7 @@ public final class XMLTransformer {
 				identityProperties.put(propertyElement.getAttribute("Name"), propertyElement.getAttribute("Value"));
 			}
 			
+			if(identityPublishesTrustList) {
 			final Element trustListElement = (Element)identityElement.getElementsByTagName("TrustList").item(0);
 			final NodeList trustList = trustListElement.getElementsByTagName("Trust");
 			identityTrustList = new ArrayList<TrustListEntry>(trustList.getLength() + 1);
@@ -247,6 +248,7 @@ public final class XMLTransformer {
 							Byte.parseByte(trustElement.getAttribute("Value")),
 							trustElement.getAttribute("Comment")
 						));
+			}
 			}
 		} catch(Exception e) {
 			parseError = e;
