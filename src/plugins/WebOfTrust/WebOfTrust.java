@@ -2244,7 +2244,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
      * @return Mask of the override L10n files.
      */
     public String getL10nOverrideFilesMask() {
-        return "WoT_lang_${lang}.override.l10n";
+        return "WebOfTrust_lang_${lang}.override.l10n";
     }
 
     /**
