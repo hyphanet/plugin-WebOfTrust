@@ -24,7 +24,8 @@ public final class Config {
 	/* Names of the config parameters */
 	
 	public static final String DATABASE_FORMAT_VERSION = "DatabaseFormatVersion";
-	
+
+	// FIXME: HashMaps allow null keys/values but we do not check for them. Add checks to the setters
 
 	/**
 	 * The HashMap that contains all cofiguration parameters
