@@ -52,7 +52,7 @@ public final class Config extends Persistent {
 				checkedStore(this);
 			}
 			catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
+				checkedRollbackAndThrow(e);
 			}
 		}
 	}
