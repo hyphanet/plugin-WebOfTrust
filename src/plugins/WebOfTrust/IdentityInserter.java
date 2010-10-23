@@ -33,7 +33,8 @@ import freenet.support.io.NativeThread;
 /**
  * Inserts OwnIdentities to Freenet when they need it.
  * 
- * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public final class IdentityInserter extends TransferThread {
 	
@@ -128,6 +129,9 @@ public final class IdentityInserter extends TransferThread {
 
 	/**
 	 * Inserts an OwnIdentity.
+	 * 
+	 * You have to synchronize on the WebOfTrust when calling this function.
+	 * 
 	 * @throws IOException 
 	 */
 	private void insert(OwnIdentity identity) throws IOException {
@@ -169,7 +173,6 @@ public final class IdentityInserter extends TransferThread {
 		try {
 			synchronized(mWoT) {
 				OwnIdentity identity = mWoT.getOwnIdentityByURI(state.getURI());
-				synchronized(identity) {
 					try {
 						identity.setEdition(state.getURI().getEdition());
 					} catch(InvalidParameterException e) {
@@ -182,8 +185,7 @@ public final class IdentityInserter extends TransferThread {
 						
 					}
 					identity.updateLastInsertDate();
-					mWoT.storeAndCommit(identity);
-				}
+					identity.storeAndCommit();
 			}
 		}
 		catch(Exception e)
