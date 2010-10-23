@@ -72,7 +72,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	protected IdentityFetcher(WebOfTrust myWoT) {
 		mWoT = myWoT;
 		
-		mDB = mWoT.getDB();
+		mDB = mWoT.getDatabase();
 		
 		mUSKManager = mWoT.getPluginRespirator().getNode().clientCore.uskManager;
 		mClient = mWoT.getPluginRespirator().getHLSimpleClient();
@@ -342,7 +342,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * @param identity the Identity to fetch
 	 */
 	protected synchronized void fetch(Identity identity) throws Exception {
-		synchronized(identity) {
+		// FIXME: Add synchronized(mWoT) once we have switched the synchronization order of WoT/IdentityFetcher. Currently, we lock the 
+		// WoT first, but we should lock it after the identityFetcher
 			USKRetriever retriever = mRequests.get(identity.getID());
 
 			USK usk;
@@ -365,19 +366,18 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 				mRequests.put(identity.getID(), fetch(usk));
 
 			mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
-
-		}
 	}
 	
 	/**
 	 * Has to be called when the edition hint of the given identity was updated. Tells the USKManager about the new hint.
+	 * 
+	 * You have to synchronize on the WebOfTrust and then on this IdentityFetcher before calling this function!
+	 * 
 	 * @throws Exception 
 	 */
-	private synchronized void editionHintUpdated(String identityID) throws Exception {
+	private void editionHintUpdated(String identityID) throws Exception {
 		try {
 			Identity identity = mWoT.getIdentityByID(identityID);
-
-			synchronized(identity) {
 				if(mRequests.get(identity.getID()) == null)
 					throw new UnknownIdentityException("updateEdtitionHint() called for an identity which is not being fetched: " + identityID);
 
@@ -393,8 +393,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 				Logger.debug(this, "Updating edition hint to " + editionHint + " for " + identityID);
 
 				mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
-
-			}
 		} catch (UnknownIdentityException e) {
 			Logger.normal(this, "Updating edition hint failed, the identity was deleted already.", e);
 		}
