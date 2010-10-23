@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -19,6 +20,7 @@ import plugins.WebOfTrust.introduction.IntroductionClient;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.IntroductionServer;
+import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import plugins.WebOfTrust.ui.web.WebInterface;
 
@@ -248,9 +250,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 
 	/**
-	 * Initializes the plugin's db4o database.
+	 * ATTENTION: This function is duplicated in the Freetalk plugin, please backport any changes.
 	 * 
-	 * @return A db4o <code>ObjectContainer</code>. 
+	 * Initializes the plugin's db4o database.
 	 */
 	private ExtObjectContainer openDatabase(String filename) {
 		Logger.debug(this, "Using db4o " + Db4o.version());
@@ -268,22 +270,53 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         cfg.callbacks(false); // We don't use callbacks yet. TODO: Investigate whether we might want to use them
         cfg.classActivationDepthConfigurable(false);
         
+        // Registration of indices (also performance)
+        
+        @SuppressWarnings("unchecked")
+		final Class<? extends Persistent>[] persistentClasses = new Class[] {
+        	Identity.class,
+        	OwnIdentity.class,
+        	Trust.class,
+        	Score.class,
+        	IntroductionPuzzle.class,
+        	OwnIntroductionPuzzle.class
+        };
+        
+        for(Class<? extends Persistent> clazz : persistentClasses) {
+        	boolean classHasIndex = clazz.getAnnotation(Persistent.IndexedClass.class) != null;
+        	
+        	// TODO: We enable class indexes for all classes to make sure nothing breaks because it is the db4o default, check whether enabling
+        	// them only for the classes where we need them does not cause any harm.
+        	classHasIndex = true;
+        	
+        	Logger.debug(this, "Peristent class: " + clazz.getCanonicalName() + "; hasIndex==" + classHasIndex);
+        	
+        	// TODO: Make very sure that it has no negative side effects if we disable class indices for some classes
+        	// Maybe benchmark in comparison to a database which has class indices enabled for ALL classes.
+        	cfg.objectClass(clazz).indexed(classHasIndex);
+   
+        	// Check the class' fields for @IndexedField annotations
+        	for(Field field : clazz.getDeclaredFields()) {
+        		if(field.getAnnotation(Persistent.IndexedField.class) != null) {
+        			Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + field.getName());
+        			cfg.objectClass(clazz).objectField(field.getName()).indexed(true);
+        		}
+        	}
+        	
+    		// Check whether the class itself has an @IndexedField annotation
+    		final Persistent.IndexedField annotation =  clazz.getAnnotation(Persistent.IndexedField.class);
+    		if(annotation != null) {
+        		for(String fieldName : annotation.names()) {
+        			Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + fieldName);
+        			cfg.objectClass(clazz).objectField(fieldName).indexed(true);
+        		}
+    		}
+        }
+        
         // TODO: We should check whether db4o inherits the indexed attribute to child classes, for example for this one:
         // Unforunately, db4o does not provide any way to query the indexed() property of fields, you can only set it
         // We might figure out whether inheritance works by writing a benchmark.
 
-		
-		for(String field : Identity.getIndexedFields()) cfg.objectClass(Identity.class).objectField(field).indexed(true);
-		for(String field : OwnIdentity.getIndexedFields()) cfg.objectClass(OwnIdentity.class).objectField(field).indexed(true);
-		for(String field : Trust.getIndexedFields()) cfg.objectClass(Trust.class).objectField(field).indexed(true);
-		for(String field : Score.getIndexedFields()) cfg.objectClass(Score.class).objectField(field).indexed(true);
-		
-		for(String field : IdentityFetcher.IdentityFetcherCommand.getIndexedFields())
-			cfg.objectClass(IdentityFetcher.IdentityFetcherCommand.class).objectField(field).indexed(true);
-		
-		cfg.objectClass(IntroductionPuzzle.PuzzleType.class).persistStaticFieldValues(); /* Needed to be able to store enums */
-		for(String field : IntroductionPuzzle.getIndexedFields()) cfg.objectClass(IntroductionPuzzle.class).objectField(field).indexed(true);
-		
 		return Db4o.openFile(cfg, filename).ext();
 	}
 	
@@ -331,7 +364,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				q.constrain(Identity.class);
 				q.descend("mID").constrain(identity.getID());
 				q.constrain(identity).identity().not();
-				ObjectSet<Identity> duplicates = q.execute();
+				ObjectSet<Identity> duplicates = new Persistent.InitializingObjectSet<Identity>(this, q);
 				for(Identity duplicate : duplicates) {
 					if(deleted.contains(duplicate.getID()) == false) {
 						Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
@@ -728,7 +761,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						Logger.debug(this, "Best capacity changed from 0 to positive, refetching " + target);
 
 						target.markForRefetch();
-						storeWithoutCommit(target);
+						target.storeWithoutCommit();
 
 						if(mFetcher != null) {
 							mFetcher.storeStartFetchCommandWithoutCommit(target);
@@ -760,18 +793,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				seed = getIdentityByURI(seedURI);
 				if(seed instanceof OwnIdentity) {
 					OwnIdentity ownSeed = (OwnIdentity)seed;
-					// TODO: Does the cast make that necessary? I'm adding it to make sure that we do not lose information when storing
-					mDB.activate(ownSeed, 5);
 					ownSeed.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
 					ownSeed.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY,
 							Integer.toString(IntroductionServer.SEED_IDENTITY_PUZZLE_COUNT));
 					
-					storeAndCommit(ownSeed);
+					ownSeed.storeAndCommit();
 				}
 				else {
 					try {
 						seed.setEdition(new FreenetURI(seedURI).getEdition());
-						storeAndCommit(seed);
+						seed.storeAndCommit();
 					} catch(InvalidParameterException e) {
 						/* We already have the latest edition stored */
 					}
@@ -780,16 +811,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			catch (UnknownIdentityException uie) {
 				try {
 					seed = new Identity(seedURI, null, true);
+					seed.initializeTransient(this);
 					// We have to explicitely set the edition number because the constructor only considers the given edition as a hint.
 					seed.setEdition(new FreenetURI(seedURI).getEdition());
-					storeAndCommit(seed);
+					seed.storeAndCommit();
 				} catch (Exception e) {
 					Logger.error(this, "Seed identity creation error", e);
 				}
 			}
 			catch (Exception e) {
-				Logger.error(this, "Seed identity loading error", e);
-				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+				Persistent.checkedRollback(mDB, this, e);
 			}
 		}
 	}
@@ -872,20 +903,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @throws DuplicateIdentityException if there are more than one identity with this id in the database
 	 * @throws UnknownIdentityException if there is no identity with this id in the database
 	 */
-	@SuppressWarnings("unchecked")
 	public synchronized Identity getIdentityByID(String id) throws UnknownIdentityException {
-		Query query = mDB.query();
+		final Query query = mDB.query();
 		query.constrain(Identity.class);
 		query.descend("mID").constrain(id);
-		ObjectSet<Identity> result = query.execute();
+		final ObjectSet<Identity> result = new Persistent.InitializingObjectSet<Identity>(this, query);
 		
 		switch(result.size()) {
-			case 1:
-				return result.next();
-			case 0:
-				throw new UnknownIdentityException(id);
-			default:
-				throw new DuplicateIdentityException(id, result.size());
+			case 1: return result.next();
+			case 0: throw new UnknownIdentityException(id);
+			default: throw new DuplicateIdentityException(id, result.size());
 		}  
 	}
 	
@@ -896,20 +923,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @return The requested OwnIdentity
 	 * @throws UnknownIdentityException if there is now OwnIdentity with that id
 	 */
-	@SuppressWarnings("unchecked")
 	public synchronized OwnIdentity getOwnIdentityByID(String id) throws UnknownIdentityException {
-		Query query = mDB.query();
+		final Query query = mDB.query();
 		query.constrain(OwnIdentity.class);
 		query.descend("mID").constrain(id);
-		ObjectSet<OwnIdentity> result = query.execute();
+		final ObjectSet<OwnIdentity> result = new Persistent.InitializingObjectSet<OwnIdentity>(this, query);
 		
 		switch(result.size()) {
-			case 1:
-				return result.next();
-			case 0:
-				throw new UnknownIdentityException(id);
-			default:
-				throw new DuplicateIdentityException(id, result.size());
+			case 1: return result.next();
+			case 0: throw new UnknownIdentityException(id);
+			default: throw new DuplicateIdentityException(id, result.size());
 		}  
 	}
 
@@ -967,8 +990,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * @return An {@link ObjectSet} containing all identities present in the database 
 	 */
-	public synchronized ObjectSet<Identity> getAllIdentities() {
-		return mDB.queryByExample(Identity.class);
+	public synchronized ObjectSet<Identity> getAllIdentities() { // FIXME: Get rid of the synchronization & check whether the callers do it
+		final Query query = mDB.query();
+		query.constrain(Identity.class);
+		return new Persistent.InitializingObjectSet<Identity>(this, query);
 	}
 	
 	public static enum SortOrder {
@@ -984,7 +1009,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Get a filtered and sorted list of identities.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list.
 	 */
-	@SuppressWarnings("unchecked")
+	// FIXME: Get rid of the synchronization & check whether the callers do it
 	public synchronized ObjectSet<Identity> getAllIdentitiesFilteredAndSorted(OwnIdentity truster, String nickFilter, SortOrder sortInstruction) {
 		Query q = mDB.query();
 		
@@ -1030,7 +1055,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			if(!nickFilter.equals("")) q.descend("mNickname").constrain(nickFilter).like();
 		}
 		
-		return q.execute();
+		return new Persistent.InitializingObjectSet<Identity>(this, q);
 	}
 	
 	/**
@@ -1038,12 +1063,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 */
-	@SuppressWarnings("unchecked")
+	// FIXME: Get rid of the synchronization & check whether the callers do it
 	public synchronized ObjectSet<Identity> getAllNonOwnIdentities() {
-		Query q = mDB.query();
+		final Query q = mDB.query();
 		q.constrain(Identity.class);
 		q.constrain(OwnIdentity.class).not();
-		return q.execute();
+		return new Persistent.InitializingObjectSet<Identity>(this, q);
 	}
 	
 	/**
@@ -1054,16 +1079,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * Used by the IntroductionClient for fetching puzzles from recently modified identities.
 	 */
-	@SuppressWarnings("unchecked")
+	// FIXME: Get rid of the synchronization & check whether the callers do it
 	public synchronized ObjectSet<Identity> getAllNonOwnIdentitiesSortedByModification () {
-		Query q = mDB.query();
+		final Query q = mDB.query();
 		q.constrain(Identity.class);
 		q.constrain(OwnIdentity.class).not();
 		/* TODO: As soon as identities announce that they were online every day, uncomment the following line */
 		/* q.descend("mLastChangedDate").constrain(new Date(CurrentTimeUTC.getInMillis() - 1 * 24 * 60 * 60 * 1000)).greater(); */
 		q.descend("mLastFetchedDate").orderDescending();
-		
-		return q.execute();
+		return new Persistent.InitializingObjectSet<Identity>(this, q);
 	}
 	
 	/**
@@ -1072,60 +1096,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * @return An {@link ObjectSet} containing all identities present in the database.
 	 */
+	// FIXME: Get rid of the synchronization & check whether the callers do it
 	public synchronized ObjectSet<OwnIdentity> getAllOwnIdentities() {
-		return mDB.queryByExample(OwnIdentity.class);
+		final Query q = mDB.query();
+		q.constrain(OwnIdentity.class);
+		return new Persistent.InitializingObjectSet<OwnIdentity>(this, q);
 	}
 
-	/**
-	 * Locks the WoT, locks the identity, locks the database and stores the identity.
-	 */
-	public synchronized void storeAndCommit(Identity identity) {
-		synchronized(identity) {
-		synchronized(mDB.lock()) {
-			try {
-				storeWithoutCommit(identity);
-				mDB.commit(); Logger.debug(identity, "COMMITED.");
-			}
-			catch(RuntimeException e) {
-				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
-				throw e;
-			}
-		}
-		}
-	}
-	
-	/**
-	 * Locks the identity and stores it in the database without committing.
-	 * You must synchronize on the WoT, on the identity and then on the database when using this function!
-	 * @param identity The identity to store.
-	 */
-	protected void storeWithoutCommit(Identity identity) {
-		
-		DBUtil.checkedActivate(mDB, identity, 4);
-
-		try {
-			if(identity instanceof OwnIdentity) {
-				OwnIdentity ownId = (OwnIdentity)identity;
-				mDB.store(ownId.mInsertURI);
-				// mDB.store(ownId.mCreationDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-				// mDB.store(ownId.mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			}
-			// mDB.store(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			mDB.store(identity.mRequestURI);
-			// mDB.store(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			// mDB.store(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			// mDB.store(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			// mDB.store(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			// mDB.store(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			mDB.store(identity.mProperties);
-			mDB.store(identity.mContexts);
-			mDB.store(identity);
-		}
-		catch(RuntimeException e) {
-			System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
-			throw e;
-		}
-	}
 	
 	/**
 	 * You have to lock the WoT and the IntroductionPuzzleStore before calling this function.
@@ -1160,34 +1137,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 			Logger.debug(this, "Deleting associated introduction puzzles ...");
 			mPuzzleStore.onIdentityDeletion(identity);
-
-			Logger.debug(this, "Deleting the identity...");
-
-			DBUtil.checkedActivate(mDB, identity, 4);
-
+			
+			Logger.debug(this, "Storing an abort-fetch-command...");
+			
 			if(mFetcher != null)
 				mFetcher.storeAbortFetchCommandWithoutCommit(identity);
 
-			if(identity instanceof OwnIdentity) {
-				OwnIdentity ownId = (OwnIdentity)identity;
-				ownId.mInsertURI.removeFrom(mDB);
-				// mDB.delete(ownId.mCreationDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-				// mDB.delete(ownId.mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			}
-			// mDB.delete(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			identity.mRequestURI.removeFrom(mDB);
-			// mDB.delete(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			// mDB.delete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			// mDB.delete(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			// mDB.delete(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			// mDB.delete(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			mDB.delete(identity.mProperties);
-			mDB.delete(identity.mContexts);
-			mDB.delete(identity);
+			Logger.debug(this, "Deleting the identity...");
+			identity.deleteWithoutCommit();
 		}
 		catch(RuntimeException e) {
-			System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
-			throw e;
+			Persistent.checkedRollbackAndThrow(mDB, this, e);
 		}
 	}
 
@@ -1529,7 +1489,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		} 
 
 		truster.updated();
-		storeWithoutCommit(truster);
+		truster.storeWithoutCommit();
 	}
 	
 	/**
@@ -1879,7 +1839,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						Logger.debug(this, "Fetch status changed from false to true, refetching " + trustee);
 
 						trustee.markForRefetch();
-						storeWithoutCommit(trustee);
+						trustee.storeWithoutCommit();
 
 						if(mFetcher != null)
 							mFetcher.storeStartFetchCommandWithoutCommit(trustee);
@@ -1943,7 +1903,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			//try {
 			identity = new Identity(requestURI, null, false);
-			storeAndCommit(identity);
+			identity.storeAndCommit();
 			//storeWithoutCommit(identity);
 			Logger.debug(this, "Created identity " + identity);
 			
@@ -1966,24 +1926,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	public synchronized void deleteIdentity(Identity identity) {
 		synchronized(mPuzzleStore) {
-		synchronized(identity) {
 		synchronized(mDB.lock()) {
 			try {
 				deleteWithoutCommit(identity);
-				mDB.commit(); Logger.debug(this, "COMMITED.");
+				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
-				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
-				throw e;
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
-		}
 		}
 		}
 	}
 	
 	public synchronized void deleteIdentity(String id) throws UnknownIdentityException {
-		Identity identity = getIdentityByID(id);
-		deleteIdentity(identity);
+		deleteIdentity(getIdentityByID(id));
 	}
 	
 	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
@@ -2010,6 +1966,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 			catch(UnknownIdentityException uie) {
 				identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
+				identity.initializeTransient(this);
+				
 				if(context != null)
 					identity.addContext(context);
 				
@@ -2019,7 +1977,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 				
 				try {
-					storeWithoutCommit(identity);
+					identity.storeWithoutCommit();
 					initTrustTreeWithoutCommit(identity);
 					
 					for(String seedURI : SEED_IDENTITIES) {
@@ -2030,7 +1988,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						}
 					}
 					
-					mDB.commit(); Logger.debug(this, "COMMITED.");
+					Persistent.checkedCommit(mDB, this);
 					
 					if(mIntroductionClient != null)
 						mIntroductionClient.nextIteration(); // This will make it fetch more introduction puzzles.
@@ -2039,8 +1997,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					return identity;
 				}
 				catch(RuntimeException e) {
-					System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
-					throw e;
+					Persistent.checkedRollbackAndThrow(mDB, this, e);
+					return null; // Satisfy the compiler
 				}
 			}
 		}
@@ -2069,6 +2027,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					// We already have fetched this identity as a stranger's one. We need to update the database.
 					identity = new OwnIdentity(insertFreenetURI, requestFreenetURI, old.getNickname(), old.doesPublishTrustList());
+					identity.initializeTransient(this);
 					/* We re-fetch the current edition to make sure all trustees are imported */
 					identity.restoreEdition(edition);
 				
@@ -2091,7 +2050,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						mDB.store(newScore);
 					}
 		
-					storeWithoutCommit(identity);
+					identity.storeWithoutCommit();
 					initTrustTreeWithoutCommit(identity);
 					
 					// Update all given trusts
@@ -2111,13 +2070,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 				} catch (UnknownIdentityException e) {
 					identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), null, false);
+					identity.initializeTransient(this);
 					identity.restoreEdition(edition);
 					identity.updateLastInsertDate();
 					
 					// TODO: Instead of deciding by date whether the current edition was inserted, we should probably decide via a boolean.
 					
 					// Store the new identity
-					storeWithoutCommit(identity);
+					identity.storeWithoutCommit();
 					initTrustTreeWithoutCommit(identity);
 					
 					Logger.debug(this, "Successfully restored not-yet-known identity from Freenet (" + identity.getRequestURI() + ")");
@@ -2130,11 +2090,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				identity.updateLastInsertDate();
 				
 				mFetcher.storeStartFetchCommandWithoutCommit(identity);
-				mDB.commit(); Logger.debug(this, "COMMITED.");
+				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
-				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
-				throw e;
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
 		}
@@ -2167,17 +2126,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {
-		Identity identity = getOwnIdentityByID(ownIdentityID);
+		final Identity identity = getOwnIdentityByID(ownIdentityID);
 		identity.addContext(newContext);
-		storeAndCommit(identity);
+		identity.storeAndCommit();
 		
 		Logger.debug(this, "Added context '" + newContext + "' to identity '" + identity.getNickname() + "'");
 	}
 
 	public synchronized void removeContext(String ownIdentityID, String context) throws UnknownIdentityException, InvalidParameterException {
-		Identity identity = getOwnIdentityByID(ownIdentityID);
+		final Identity identity = getOwnIdentityByID(ownIdentityID);
 		identity.removeContext(context);
-		storeAndCommit(identity);
+		identity.storeAndCommit();
 		
 		Logger.debug(this, "Removed context '" + context + "' from identity '" + identity.getNickname() + "'");
 	}
@@ -2191,15 +2150,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		Identity identity = getOwnIdentityByID(ownIdentityID);
 		identity.setProperty(property, value);
-		storeAndCommit(identity);
+		identity.storeAndCommit();
 		
 		Logger.debug(this, "Added property '" + property + "=" + value + "' to identity '" + identity.getNickname() + "'");
 	}
 	
 	public void removeProperty(String ownIdentityID, String property) throws UnknownIdentityException, InvalidParameterException {
-		Identity identity = getOwnIdentityByID(ownIdentityID);
+		final Identity identity = getOwnIdentityByID(ownIdentityID);
 		identity.removeProperty(property);
-		storeAndCommit(identity);
+		identity.storeAndCommit();
 		
 		Logger.debug(this, "Removed property '" + property + "' from identity '" + identity.getNickname() + "'");
 	}
