@@ -13,23 +13,14 @@ import freenet.support.CurrentTimeUTC;
 /**
  * A local Identity (it belongs to the user)
  * 
- * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
- *
+ * @author xor (xor@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class OwnIdentity extends Identity {
+public final class OwnIdentity extends Identity {
 	
 	protected FreenetURI mInsertURI;
 	
-	protected final Date mCreationDate;
-	
 	protected Date mLastInsertDate;
-	
-	/**
-	 * Get a list of fields which the database should create an index on.
-	 */
-	public static String[] getIndexedFields() {
-		return new String[] { "mID" };
-	}
 	
 	
 	/**
@@ -46,8 +37,12 @@ public class OwnIdentity extends Identity {
 		// This is already done by super()
 		// setEdition(0);
 		
-		mCreationDate = CurrentTimeUTC.get();
-		setInsertURI(insertURI); // Also sets the edition to the edition of the request URI
+		if(!insertURI.isUSK() && !insertURI.isSSK())
+			throw new IllegalArgumentException("Identity URI keytype not supported: " + insertURI);
+		
+		// TODO: Check whether the insert URI fits with the request URI. I don't know how to do this...
+		
+		mInsertURI = insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(getEdition()).setMetaString(null);
 		mLastInsertDate = new Date(0);
 
 		// Must be set to "fetched" to prevent the identity fetcher from trying to fetch the current edition and to make the identity inserter
@@ -55,11 +50,7 @@ public class OwnIdentity extends Identity {
 		// own identity.
 		mCurrentEditionFetchState = FetchState.Fetched;
 		
-		if(mRequestURI == null)
-			throw new InvalidParameterException("Own identities must have a request URI.");
-		
-		if(mInsertURI == null)
-			throw new InvalidParameterException("Own identities must have an insert URI.");
+		// Don't check for mNickname == null to allow restoring of own identities
 	}
 	
 	/**
@@ -82,8 +73,8 @@ public class OwnIdentity extends Identity {
 	 * We insert OwnIdentities when they have been modified AND at least once every three days.
 	 * @return Whether this OwnIdentity needs to be inserted or not
 	 */
-	public synchronized boolean needsInsert() {
-		if(mCurrentEditionFetchState != FetchState.Fetched)
+	public final boolean needsInsert() {
+		if(getCurrentEditionFetchState() != FetchState.Fetched)
 			return false;
 		
 		return (getLastChangeDate().after(getLastInsertDate()) ||
@@ -93,35 +84,19 @@ public class OwnIdentity extends Identity {
 	/**
 	 * @return This OwnIdentity's insertURI
 	 */
-	public synchronized FreenetURI getInsertURI() {
+	public final FreenetURI getInsertURI() {
+		checkedActivate(3);
 		return mInsertURI;
 	}
 	
-	/**
-	 * Sets this OwnIdentity's insertURI. 
-	 * The key must be a USK or a SSK, and is stored as a USK anyway.
-	 * 
-	 * The edition number is set to the same edition number as the request URI of this own identity.
-	 *  
-	 * @param newInsertURI This OwnIdentity's insertURI
-	 * @throws InvalidParameterException if the supplied key is neither a USK nor a SSK
-	 */
-	private void setInsertURI(FreenetURI newInsertURI) throws InvalidParameterException {
-		if(mInsertURI != null && !newInsertURI.equalsKeypair(mInsertURI))
-			throw new IllegalArgumentException("Cannot change the insert URI of an existing identity.");
-		
-		if(!newInsertURI.isUSK() && !newInsertURI.isSSK())
-			throw new IllegalArgumentException("Identity URI keytype not supported: " + newInsertURI);
-		
-		mInsertURI = newInsertURI.setKeyType("USK").setDocName("WoT").setMetaString(null).setSuggestedEdition(getEdition());
-		updated();
-	}
 	
 	@Override
-	protected synchronized void setEdition(long edition) throws InvalidParameterException {
+	protected final void setEdition(long edition) throws InvalidParameterException {
 		super.setEdition(edition);
 		
 		mCurrentEditionFetchState = FetchState.Fetched;
+		
+		checkedActivate(3);
 		
 		if(edition > mInsertURI.getEdition()) {
 			mInsertURI = mInsertURI.setSuggestedEdition(edition);
@@ -134,33 +109,31 @@ public class OwnIdentity extends Identity {
 	 * Only needed for normal identities.
 	 */
 	@Override
-	protected synchronized void markForRefetch() {
+	protected final void markForRefetch() {
 		return;
 	}
 	
 	/**
 	 * Sets the edition to the given edition and marks it for re-fetching. Used for restoring own identities.
 	 */
-	protected synchronized void restoreEdition(long edition) throws InvalidParameterException {
+	protected final void restoreEdition(long edition) throws InvalidParameterException {
 		setEdition(edition);
 		mCurrentEditionFetchState = FetchState.NotFetched;
-	}
-	
-	public Date getCreationDate() {
-		return (Date)mCreationDate.clone();
 	}
 
 	/**
 	 * Get the Date of last insertion of this OwnIdentity, in UTC, null if it was not inserted yet.
 	 */
-	public synchronized Date getLastInsertDate() {
+	public final Date getLastInsertDate() {
+		// checkedActivate(depth) is not needed, Date is a db4o primitive type
 		return (Date)mLastInsertDate.clone();
 	}
 	
 	/**
 	 * Sets the last insertion date of this OwnIdentity to current time in UTC.
 	 */
-	protected synchronized void updateLastInsertDate() {
+	protected final void updateLastInsertDate() {
+		// checkedActivate(depth) is not needed, Date is a db4o primitive type
 		mLastInsertDate = CurrentTimeUTC.get();
 	}
 
@@ -169,7 +142,7 @@ public class OwnIdentity extends Identity {
 	 * Checks whether two OwnIdentity objects are equal.
 	 * This checks <b>all</b> properties of the identities <b>excluding</b> the {@link Date} properties.
 	 */
-	public boolean equals(Object obj) {
+	public final boolean equals(Object obj) {
 		if(!super.equals(obj))
 			return false;
 		
@@ -187,9 +160,11 @@ public class OwnIdentity extends Identity {
 	/**
 	 * Clones this OwnIdentity. Does <b>not</b> clone the {@link Date} attributes, they are initialized to the current time!
 	 */
-	public OwnIdentity clone() {
+	public final OwnIdentity clone() {
 		try {
 			OwnIdentity clone = new OwnIdentity(getInsertURI(), getRequestURI(), getNickname(), doesPublishTrustList());
+			
+			checkedActivate(4); // For performance only
 			
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
 			clone.setNewEditionHint(getLatestEditionHint()); 
@@ -200,6 +175,40 @@ public class OwnIdentity extends Identity {
 		} catch(InvalidParameterException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	/**
+	 * Stores this identity in the database without committing the transaction
+	 * You must synchronize on the WoT, on the identity and then on the database when using this function!
+	 */
+	protected final void storeWithoutCommit() {
+		try {
+			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(4);
+			
+			checkedStore(mInsertURI);
+			// checkedStore(mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+		}
+		catch(RuntimeException e) {
+			checkedRollbackAndThrow(e);
+		}
+		
+		super.storeWithoutCommit(); // Not in the try{} so we don't do checkedRollbackAndThrow twice
+	}
+	
+	protected final void deleteWithoutCommit() {
+		try {
+			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(4);
+
+			mInsertURI.removeFrom(mDB);
+			// checkedDelete(mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+		}
+		catch(RuntimeException e) {
+			checkedRollbackAndThrow(e);
+		}
+		
+		super.deleteWithoutCommit(); // Not in the try{} so we don't do checkedRollbackAndThrow twice
 	}
 
 }

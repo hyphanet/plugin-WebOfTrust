@@ -23,15 +23,10 @@ import freenet.support.StringValidityChecker;
  * 
  * It has a nickname and as many custom properties as needed (set by the user).
  * 
- * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
- * @param mID A unique identifier used to query an Identity from the database
- * @param mRequestURI The requestURI used to fetch this identity from Freenet
- * @param mNickname The nickname of an Identity
- * @param mDoesPublishTrustList Whether an identity publishes its trust list or not
- * @param mContexts An ArrayList containing contexts (eg. client apps) an Identity is used for
- * @param mProperties A Hashtable containing all custom properties o an Identity
+ * @author xor (xor@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class Identity implements Cloneable {
+public class Identity extends Persistent implements Cloneable {
 	
 	public static final int MAX_CONTEXT_NAME_LENGTH = 32;
 	public static final int MAX_CONTEXT_AMOUNT = 32;
@@ -40,11 +35,12 @@ public class Identity implements Cloneable {
 	public static final int MAX_PROPERTY_AMOUNT = 64;
 
 	/** A unique identifier used to query this Identity from the database. In fact, it is simply a String representing its routing key. */
+	@IndexedField
 	protected final String mID;
 	
 	/** The USK requestURI used to fetch this identity from Freenet. It's edition number is the one of the data which we have currently stored
-	 * in the database (the values of this identity, trust values, etc.) if mCurrentEditionWasFetched is true, otherwise it is the next
-	 * edition number which should be downloaded. */
+	 * in the database (the values of this identity, trust values, etc.) if mCurrentEditionFetchState is Fetched or ParsingFailed, otherwise it
+	 * is the next edition number which should be downloaded. */
 	protected FreenetURI mRequestURI;
 	
 	public static enum FetchState {
@@ -55,23 +51,19 @@ public class Identity implements Cloneable {
 	
 	protected FetchState mCurrentEditionFetchState;
 	
-	/** When obtaining identities through other people's trust lists instead of identity introduction, we store the edition number they have specified
-	 * and pass it as a hint to the USKManager. */
+	/** When obtaining identities through other people's trust lists instead of identity introduction, we store the edition number they have
+	 * specified and pass it as a hint to the USKManager. */
 	protected long mLatestEditionHint;
 	
-	/** Date when this identity was added. */
-	protected final Date mAddedDate;
-	
-	/** Date of the first time we successfully fetched the XML of this identity */
-	protected Date mFirstFetchedDate;
-	
 	/** Date of the last time we successfully fetched the XML of this identity */
+	@IndexedField
 	protected Date mLastFetchedDate;
 	
 	/** Date of this identity's last modification, for example when it has received new contexts, etc.*/
 	protected Date mLastChangedDate;
 	
 	/** The nickname of this Identity */
+	@IndexedField
 	protected String mNickname;
 	
 	/** Whether this Identity publishes its trust list or not */
@@ -85,13 +77,6 @@ public class Identity implements Cloneable {
 	
 	
 	/**
-	 * Get a list of fields which the database should create an index on.
-	 */
-	public static String[] getIndexedFields() {
-		return new String[] { "mID", "mLastFetchedDate" };
-	}
-	
-	/**
 	 * Creates an Identity. Only for being used by the WoT package and unit tests, not for user interfaces!
 	 * 
 	 * @param newRequestURI A {@link FreenetURI} to fetch this Identity 
@@ -100,8 +85,13 @@ public class Identity implements Cloneable {
 	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 */
 	protected Identity(FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException {
-		// We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
-		setRequestURI(newRequestURI.setSuggestedEdition(0));
+		if (!newRequestURI.isUSK() && !newRequestURI.isSSK())
+			throw new IllegalArgumentException("Identity URI keytype not supported: " + newRequestURI);
+		
+		//  We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
+		mRequestURI = newRequestURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(0).setMetaString(null);
+		mID = getIDFromURI(mRequestURI);
+		
 		try {
 			mLatestEditionHint = newRequestURI.getEdition();
 		} catch (IllegalStateException e) {
@@ -109,10 +99,6 @@ public class Identity implements Cloneable {
 		}
 		mCurrentEditionFetchState = FetchState.NotFetched;
 		
-		mID = getIDFromURI(getRequestURI());
-		
-		mAddedDate = CurrentTimeUTC.get();
-		mFirstFetchedDate = new Date(0);
 		mLastFetchedDate = new Date(0);
 		mLastChangedDate = new Date(0);
 		
@@ -151,7 +137,8 @@ public class Identity implements Cloneable {
 	 *  
 	 * @return A unique identifier for this Identity.
 	 */
-	public String getID() {
+	public final String getID() {
+		// checkedActivate(depth) is not needed, Strings are native to db4o
 		return mID;
 	}
 
@@ -170,39 +157,20 @@ public class Identity implements Cloneable {
 	/**
 	 * @return The requestURI ({@link FreenetURI}) to fetch this Identity 
 	 */
-	public synchronized FreenetURI getRequestURI() {
+	public final FreenetURI getRequestURI() {
+		checkedActivate(3);
 		return mRequestURI;
-	}
-
-	
-	/**
-	 * Sets the requestURI of this Identity.
-	 * The given {@link FreenetURI} is converted to USK and the document name is forced to WoT.
-	 * 
-	 * @param newRequestURI The FreenetURI used to fetch this identity 
-	 * @throws IllegalArgumentException If the given FreenetURI is neither a SSK nor a USK or if the keypair does not match the old one.
-	 */
-	protected synchronized void setRequestURI(FreenetURI newRequestURI) {
-		if (mRequestURI != null && !newRequestURI.equalsKeypair(mRequestURI)) {
-			throw new IllegalArgumentException("Cannot change the request URI of an existing identity.");
-		}
-		
-		if (!newRequestURI.isUSK() && !newRequestURI.isSSK()) {
-			throw new IllegalArgumentException("Identity URI keytype not supported: " + newRequestURI);
-		}
-		
-		mRequestURI = newRequestURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setMetaString(null);
-		updated();
 	}
 
 	/**
 	 * Get the edition number of the request URI of this identity.
 	 */
-	public synchronized long getEdition() {
+	public final long getEdition() {
 		return getRequestURI().getEdition();
 	}
 	
-	public synchronized FetchState getCurrentEditionFetchState() {
+	public final FetchState getCurrentEditionFetchState() {
+		checkedActivate(2); // TODO: Optimization: Do we really need to activate for enums?
 		return mCurrentEditionFetchState;
 	}
 
@@ -213,7 +181,9 @@ public class Identity implements Cloneable {
 	 * @param newEdition A long representing the last fetched version of this identity.
 	 * @throws InvalidParameterException If the new edition is less than the current one.
 	 */
-	protected synchronized void setEdition(long newEdition) throws InvalidParameterException {
+	protected void setEdition(long newEdition) throws InvalidParameterException {
+		checkedActivate(3);
+		
 		long currentEdition = mRequestURI.getEdition();
 		
 		if (newEdition < currentEdition) {
@@ -231,7 +201,8 @@ public class Identity implements Cloneable {
 		}
 	}
 	
-	public synchronized long getLatestEditionHint() {
+	public final long getLatestEditionHint() {
+		// checkedActivate(depth) is not needed, long is a db4o primitive type
 		return mLatestEditionHint;
 	}
 	
@@ -243,7 +214,9 @@ public class Identity implements Cloneable {
 	 * 
 	 * @return True, if the given hint was newer than the already stored one. You have to tell the {@link IdentityFetcher} about that then.
 	 */
-	protected synchronized boolean setNewEditionHint(long newLatestEditionHint) {
+	protected final boolean setNewEditionHint(long newLatestEditionHint) {
+		// checkedActivate(depth) is not needed, long is a db4o primitive type
+		
 		if (newLatestEditionHint > mLatestEditionHint) {
 			mLatestEditionHint = newLatestEditionHint;
 			Logger.debug(this, "Received a new edition hint of " + newLatestEditionHint + " (current: " + mLatestEditionHint + ") for "+ this);
@@ -256,7 +229,8 @@ public class Identity implements Cloneable {
 	/**
 	 * Decrease the current edition by one. Used by {@link #markForRefetch()}.
 	 */
-	private synchronized void decreaseEdition() {
+	private final void decreaseEdition() {
+		checkedActivate(3);
 		mRequestURI = mRequestURI.setSuggestedEdition(Math.max(getEdition() - 1, 0));
 		// TODO: I decided that we should not decrease the edition hint here. Think about that again.
 	}
@@ -268,7 +242,9 @@ public class Identity implements Cloneable {
 	 * Called by the {@link WebOfTrust} when the {@link Score} of an identity changes from negative or 0 to > 0 to make the {@link IdentityFetcher} re-download it's
 	 * current trust list. This is necessary because we do not create the trusted identities of someone if he has a negative score. 
 	 */
-	protected synchronized void markForRefetch() {
+	protected void markForRefetch() {
+		checkedActivate(2);	// TODO: Optimization: Do we really need to activate for enums?
+		
 		if (mCurrentEditionFetchState == FetchState.Fetched) {
 			mCurrentEditionFetchState = FetchState.NotFetched;
 		} else {
@@ -279,42 +255,31 @@ public class Identity implements Cloneable {
 	/**
 	 * @return The date when this identity was first seen in a trust list of someone.
 	 */
-	public Date getAddedDate() {
-		return (Date)mAddedDate.clone();
+	public final Date getAddedDate() {
+		return (Date)getCreationDate().clone();
 	}
 
 	/**
-	 * @return The date when the identity was fetched successfully for the first time,
-	 * equal to "new Date(0)" if it was never fetched.
-	 */
-	public Date getFirstFetchedDate() {
-		return (Date)mFirstFetchedDate.clone();
-	}
-	
-	/**
 	 * @return The date of this Identity's last modification.
 	 */
-	public synchronized Date getLastFetchedDate() {
+	public final Date getLastFetchedDate() {
+		// checkedActivate(depth) is not needed, Date is a db4o primitive type
 		return (Date)mLastFetchedDate.clone();
 	}
 
 	/**
 	 * @return The date of this Identity's last modification.
 	 */
-	public synchronized Date getLastChangeDate() {
+	public final Date getLastChangeDate() {
+		// checkedActivate(depth) is not needed, Date is a db4o primitive type
 		return (Date)mLastChangedDate.clone();
 	}
 	
 	/**
 	 * Has to be called when the identity was fetched and parsed successfully. Must not be called before setEdition!
 	 */
-	protected synchronized void onFetched() {
+	protected final void onFetched() {
 		mCurrentEditionFetchState = FetchState.Fetched;
-		
-		if (mFirstFetchedDate.equals(new Date(0))) {
-			mFirstFetchedDate = CurrentTimeUTC.get();
-		}
-		
 		mLastFetchedDate = CurrentTimeUTC.get();
 		updated();
 	}
@@ -322,13 +287,8 @@ public class Identity implements Cloneable {
 	/**
 	 * Has to be called when the identity was fetched and parsing failed. Must not be called before setEdition!
 	 */
-	protected synchronized void onParsingFailed() {
+	protected final void onParsingFailed() {
 		mCurrentEditionFetchState = FetchState.ParsingFailed;
-		
-		if (mFirstFetchedDate.equals(new Date(0))) {
-			mFirstFetchedDate = CurrentTimeUTC.get();
-		}
-		
 		mLastFetchedDate = CurrentTimeUTC.get();
 		updated();
 	}
@@ -336,13 +296,14 @@ public class Identity implements Cloneable {
 	/**
 	 * @return The Identity's nickName
 	 */
-	public synchronized String getNickname() {
+	public final String getNickname() {
+		// checkedActivate(depth) is not needed, String is a db4o primitive type
 		return mNickname;
 	}
 
 	/* IMPORTANT: This code is duplicated in plugins.Freetalk.WoT.WoTIdentity.validateNickname().
 	 * Please also modify it there if you modify it here */
-	public boolean isNicknameValid(String newNickname) {
+	public static final boolean isNicknameValid(String newNickname) {
 		return newNickname.length() > 0 && newNickname.length() <= 30
 			&& StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
 			&& StringValidityChecker.containsNoInvalidCharacters(newNickname)
@@ -357,7 +318,7 @@ public class Identity implements Cloneable {
 	 * @param newNickname A String containing this Identity's NickName. Setting it to null means that it was not retrieved yet.
 	 * @throws InvalidParameterException If the nickname contains invalid characters, is empty or longer than 30 characters.
 	 */
-	public synchronized void setNickname(String newNickname) throws InvalidParameterException {
+	public final void setNickname(String newNickname) throws InvalidParameterException {
 		if (newNickname == null) {
 			throw new NullPointerException("Nickname is null");
 		}
@@ -376,6 +337,8 @@ public class Identity implements Cloneable {
 			throw new InvalidParameterException("Nickname contains illegal characters.");
 		}
 		
+		// checkedActivate(depth) is not needed, String is a db4o primitive type
+		
 		if (mNickname != null && !mNickname.equals(newNickname)) {
 			throw new InvalidParameterException("Changing the nickname of an identity is not allowed.");
 		}
@@ -389,14 +352,17 @@ public class Identity implements Cloneable {
 	 * 
 	 * @return Whether this Identity publishes its trustList or not.
 	 */
-	public synchronized boolean doesPublishTrustList() {
+	public final boolean doesPublishTrustList() {
+		// checkedActivate(depth) is not needed, boolean is a db4o primitive type
 		return mDoesPublishTrustList;
 	}
 
 	/**
 	 * Sets if this Identity publishes its trust list or not. 
 	 */
-	public synchronized void setPublishTrustList(boolean doesPublishTrustList) {
+	public final void setPublishTrustList(boolean doesPublishTrustList) {
+		// checkedActivate(depth) is not needed, boolean is a db4o primitive type
+		
 		if (mDoesPublishTrustList == doesPublishTrustList) {
 			return;
 		}
@@ -411,7 +377,8 @@ public class Identity implements Cloneable {
 	 * @param context The context we want to know if this Identity has it or not
 	 * @return Whether this Identity has that context or not
 	 */
-	public synchronized boolean hasContext(String context) {
+	public final boolean hasContext(String context) {
+		checkedActivate(3);
 		return mContexts.contains(context.trim());
 	}
 
@@ -421,9 +388,10 @@ public class Identity implements Cloneable {
 	 * @return A copy of the ArrayList<String> of all contexts of this identity.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized ArrayList<String> getContexts() {
+	public final ArrayList<String> getContexts() {
 		/* TODO: If this is used often - which it probably is, we might verify that no code corrupts the Hashtable and return the original one
 		 * instead of a copy */
+		checkedActivate(3);
 		return (ArrayList<String>)mContexts.clone();
 	}
 
@@ -438,7 +406,7 @@ public class Identity implements Cloneable {
 	 * @param newContext Name of the context. Must be latin letters and numbers only.
 	 * @throws InvalidParameterException If the context name is empty
 	 */
-	public synchronized void addContext(String newContext) throws InvalidParameterException {
+	public final void addContext(String newContext) throws InvalidParameterException {
 		newContext = newContext.trim();
 		
 		final int length = newContext.length();
@@ -454,6 +422,8 @@ public class Identity implements Cloneable {
 		if (!StringValidityChecker.isLatinLettersAndNumbersOnly(newContext)) {
 			throw new InvalidParameterException("Context names must be latin letters and numbers only");
 		}
+		
+		checkedActivate(3);
 		
 		if (!mContexts.contains(newContext)) {
 			if (mContexts.size() >= MAX_CONTEXT_AMOUNT) {
@@ -472,7 +442,9 @@ public class Identity implements Cloneable {
 	 * IMPORTANT: This always marks the identity as updated so it should not be used on OwnIdentities because it would result in
 	 * a re-insert even if nothing was changed.
 	 */
-	protected synchronized void setContexts(List<String> newContexts) {
+	protected final void setContexts(List<String> newContexts) {
+		checkedActivate(3);
+		
 		mContexts.clear();
 		
 		for (String context : newContexts) {
@@ -492,8 +464,10 @@ public class Identity implements Cloneable {
 	 * 
 	 * @param context Name of the context.
 	 */
-	public synchronized void removeContext(String context) throws InvalidParameterException {
+	public final void removeContext(String context) throws InvalidParameterException {
 		context = context.trim();
+		
+		checkedActivate(3);
 		
 		if (mContexts.contains(context)) {
 			mContexts.remove(context);
@@ -508,8 +482,12 @@ public class Identity implements Cloneable {
 	 * @return The value of the requested custom property
 	 * @throws InvalidParameterException if this Identity doesn't have the required property
 	 */
-	public synchronized String getProperty(String key) throws InvalidParameterException {
+	public final String getProperty(String key) throws InvalidParameterException {
 		key = key.trim();
+		
+		// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
+		if(mProperties != null) mDB.deactivate(mProperties);
+		checkedActivate(4);
 		
 		if (!mProperties.containsKey(key)) {
 			throw new InvalidParameterException("The property '" + key +"' isn't set on this identity.");
@@ -524,7 +502,10 @@ public class Identity implements Cloneable {
 	 * @return A copy of the Hashtable<String, String> referencing all this Identity's custom properties.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized Hashtable<String, String> getProperties() {
+	public final Hashtable<String, String> getProperties() {
+		// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
+		if(mProperties != null) mDB.deactivate(mProperties);
+		checkedActivate(4);
 		/* TODO: If this is used often, we might verify that no code corrupts the Hashtable and return the original one instead of a copy */
 		return (Hashtable<String, String>)mProperties.clone();
 	}
@@ -538,7 +519,7 @@ public class Identity implements Cloneable {
 	 * @param value Value of the custom property.
 	 * @throws InvalidParameterException If the key or the value is empty.
 	 */
-	public synchronized void setProperty(String key, String value) throws InvalidParameterException {
+	public final void setProperty(String key, String value) throws InvalidParameterException {
 		key = key.trim();
 		
 		final int keyLength = key.length();
@@ -571,6 +552,9 @@ public class Identity implements Cloneable {
 			throw new InvalidParameterException("Property values must not be longer than " + MAX_PROPERTY_VALUE_LENGTH + " characters");
 		}
 		
+		// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
+		if(mProperties != null) mDB.deactivate(mProperties);
+		checkedActivate(4);
 		
 		String oldValue = mProperties.get(key);
 		if (oldValue == null && mProperties.size() >= MAX_PROPERTY_AMOUNT) {
@@ -590,7 +574,12 @@ public class Identity implements Cloneable {
 	 * IMPORTANT: This always marks the identity as updated so it should not be used on OwnIdentities because it would result in
 	 * a re-insert even if nothing was changed.
 	 */
-	protected synchronized void setProperties(Hashtable<String, String> newProperties) {
+	protected final void setProperties(Hashtable<String, String> newProperties) {
+		// TODO: Optimization: Figure out whether anything breaks if we do not activate since mProperties is set to a new Hashtable anyway
+		// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
+		if(mProperties != null) mDB.deactivate(mProperties);
+		checkedActivate(4);
+		
 		mProperties = new Hashtable<String, String>();
 		
 		for (Entry<String, String> property : newProperties.entrySet()) {
@@ -607,7 +596,11 @@ public class Identity implements Cloneable {
 	 * 
 	 * @param key Name of the custom property.
 	 */
-	public synchronized void removeProperty(String key) throws InvalidParameterException {
+	public final void removeProperty(String key) throws InvalidParameterException {
+		// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
+		if(mProperties != null) mDB.deactivate(mProperties);
+		checkedActivate(4);
+		
 		key = key.trim();		
 		if (mProperties.remove(key) != null) {
 			updated();
@@ -619,11 +612,13 @@ public class Identity implements Cloneable {
 	 * 
 	 * Updated OwnIdentities will be reinserted by the IdentityInserter automatically.
 	 */
-	public synchronized void updated() {
+	public final void updated() {
+		// checkedActivate(depth) is not needed, Date is a db4o primitive type
 		mLastChangedDate = CurrentTimeUTC.get();
 	}
 
-	public String toString() {
+	public final String toString() {
+		// checkedActivate(depth) is not needed, String is a db4o primitive type 
 		return mNickname + "(" + mID + ")";
 	}
 
@@ -631,7 +626,6 @@ public class Identity implements Cloneable {
 	 * Compares whether two identities are equal.
 	 * This checks <b>all</b> properties of the identities <b>excluding</b> the {@link Date} properties.
 	 */
-	@SuppressWarnings("unchecked")
 	public boolean equals(Object obj) {
 		if (obj == this) {
 			return true;
@@ -692,7 +686,9 @@ public class Identity implements Cloneable {
 		try {
 			Identity clone = new Identity(getRequestURI(), getNickname(), doesPublishTrustList());
 			
-			clone.mCurrentEditionFetchState = mCurrentEditionFetchState;
+			checkedActivate(4); // For performance only
+			
+			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
 			clone.setNewEditionHint(getLatestEditionHint()); 
 			clone.setContexts(getContexts());
 			clone.setProperties(getProperties());
@@ -704,4 +700,74 @@ public class Identity implements Cloneable {
 		}
 	}
 	
+	/**
+	 * Stores this identity in the database without committing the transaction
+	 * You must synchronize on the WoT, on the identity and then on the database when using this function!
+	 */
+	protected void storeWithoutCommit() {
+		try {		
+			// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
+			if(mProperties != null) mDB.deactivate(mProperties);
+			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(4);
+
+			// checkedStore(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			checkedStore(mRequestURI);
+			// checkedStore(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// checkedStore(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// checkedStore(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// checkedStore(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// checkedStore(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			checkedStore(mProperties);
+			checkedStore(mContexts);
+			checkedStore();
+		}
+		catch(final RuntimeException e) {
+			checkedRollbackAndThrow(e);
+		}
+	}
+	
+	/**
+	 * Locks the WoT, locks the database and stores the identity.
+	 */
+	public final void storeAndCommit() {
+		synchronized(mWebOfTrust) {
+		synchronized(mDB.lock()) {
+			try {
+				storeWithoutCommit();
+				checkedCommit(this);
+			}
+			catch(RuntimeException e) {
+				checkedRollbackAndThrow(e);
+			}
+		}
+		}
+	}
+	
+	/**
+	 * You have to lock the WoT and the IntroductionPuzzleStore before calling this function.
+	 * @param identity
+	 */
+	protected void deleteWithoutCommit() {
+		try {
+			// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
+			if(mProperties != null) mDB.deactivate(mProperties);
+			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(4);
+			
+			// mDB.delete(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			mRequestURI.removeFrom(mDB);
+			// mDB.delete(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// mDB.delete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// mDB.delete(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// mDB.delete(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// mDB.delete(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			checkedDelete(mProperties);
+			checkedDelete(mContexts);
+			checkedDelete();
+		}
+		catch(RuntimeException e) {
+			checkedRollbackAndThrow(e);
+		}
+	}
 }
