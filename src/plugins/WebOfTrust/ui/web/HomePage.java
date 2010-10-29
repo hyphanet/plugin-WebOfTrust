@@ -42,6 +42,7 @@ public class HomePage extends WebPageImpl {
 		
 		HTMLNode box = addContentBox(l10n().getString("HomePage.SummaryBox.Header"));
 		
+		synchronized(wot) {
 		HTMLNode list = new HTMLNode("ul");
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.OwnIdentities") + ": " + wot.getAllOwnIdentities().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.KnownIdentities") + ": " + wot.getAllNonOwnIdentities().size()));
@@ -49,11 +50,14 @@ public class HomePage extends WebPageImpl {
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.ScoreRelationships") + ": " + wot.getAllScores().size()));
 		
 		IntroductionPuzzleStore puzzleStore = wot.getIntroductionPuzzleStore();
+		synchronized(puzzleStore) {
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.UnsolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(false)));
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.SolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(true)));
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.UnsolvedCaptchasOfOthers") + ": " + puzzleStore.getNonOwnCaptchaAmount(false)));
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.SolvedCaptchasOfOthers") + ": " + puzzleStore.getNonOwnCaptchaAmount(true)));
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.NotInsertedCaptchasSolutions") + ": " + puzzleStore.getUninsertedSolvedPuzzles().size()));
+		}
+		}
 		
 		box.addChild(list);
 	}

@@ -248,9 +248,12 @@ public final class IntroductionClient extends TransferThread  {
 	}
 
 	private synchronized void downloadPuzzles() {
-		/* Normally we would lock the whole WoT here because we iterate over a list returned by it. But because it is not a severe
+		/* Normally we would lock the WoT for the whole time here because we iterate over a list returned by it. But because it is not a severe
 		 * problem if we download a puzzle of an identity which has been deleted or so we do not do that. */
-		final ObjectSet<Identity> allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
+		final ObjectSet<Identity> allIdentities;
+		synchronized(mWoT) {
+			allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
+		}
 		final ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(PUZZLE_REQUEST_COUNT + 1);
 		
 		/* Download puzzles from identities from which we have not downloaded for a certain period. This is ensured by

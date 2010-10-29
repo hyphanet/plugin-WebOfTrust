@@ -71,6 +71,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 
 		HTMLNode boxContent = addContentBox(l10n().getString("OwnIdentitiesPage.OwnIdentities.Header"));
 		
+		synchronized(wot) {
 		ObjectSet<OwnIdentity> ownIdentities = wot.getAllOwnIdentities();
 		if(ownIdentities.size() == 0) {
 			boxContent.addChild("p", l10n().getString("OwnIdentitiesPage.OwnIdentities.NoOwnIdentity"));
@@ -135,6 +136,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.IntroduceButton") });				
 			}
+		}
 		}
 	
 		HTMLNode createForm = pr.addFormChild(boxContent, createIdentityURI, "CreateIdentity");
