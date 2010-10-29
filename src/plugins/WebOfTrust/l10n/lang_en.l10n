@@ -54,7 +54,6 @@ IdentityPage.IdentityUriBox.Text=The following Freenet URI is a reference to thi
 IdentityPage.ServicesBox.Header=Services of identity '${nickname}'
 IdentityPage.StatisticsBox.Header=Statistics about identity '${nickname}'
 IdentityPage.StatisticsBox.Added=Added
-IdentityPage.StatisticsBox.FirstFetched=First fetched
 IdentityPage.StatisticsBox.LastFetched=Last fetched
 IntroduceIdentityPage.InfoBox.Header=Introduce identity '${nickname}'
 IntroduceIdentityPage.InfoBox.Text=Solve about 10 puzzles to get your identity known by other identities. DO NOT continously solve puzzles.

@@ -64,31 +64,27 @@ public class IdentityPage extends WebPageImpl {
 	 * @see WebPage#make()
 	 */
 	public void make() {
-		synchronized(identity) {
-			/* Does not matter much if this information is not synchronous to the trust tables so we put it outside the lock on the WoT
-			 * to reduce the time the whole WoT is locked. */
+		synchronized(wot) {
+			HTMLNode trusteeTrustsNode = addContentBox(l10n().getString("IdentityPage.TrusteeTrustsBox.Header", "nickname", identity.getNickname()));
+			HTMLNode trusteesTable = trusteeTrustsNode.addChild("table");
+			HTMLNode trusteesTableHeader = trusteesTable.addChild("tr");
+			trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Nickname"));
+			trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Identity"));
+			trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Value"));
+			trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Comment"));
+
+			HTMLNode trusterTrustsNode = addContentBox(l10n().getString("IdentityPage.TrusterTrustsBox.Header", "nickname", identity.getNickname()));
+			HTMLNode trustersTable = trusterTrustsNode.addChild("table");
+			HTMLNode trustersTableHeader = trustersTable.addChild("tr");
+			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Nickname"));
+			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Identity"));
+			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Value"));
+			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Comment"));
+			
 			makeURIBox();
 			makeServicesBox();
 			makeStatisticsBox();
-		}
-
-		HTMLNode trusteeTrustsNode = addContentBox(l10n().getString("IdentityPage.TrusteeTrustsBox.Header", "nickname", identity.getNickname()));
-		HTMLNode trusteesTable = trusteeTrustsNode.addChild("table");
-		HTMLNode trusteesTableHeader = trusteesTable.addChild("tr");
-		trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Nickname"));
-		trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Identity"));
-		trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Value"));
-		trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Comment"));
-
-		HTMLNode trusterTrustsNode = addContentBox(l10n().getString("IdentityPage.TrusterTrustsBox.Header", "nickname", identity.getNickname()));
-		HTMLNode trustersTable = trusterTrustsNode.addChild("table");
-		HTMLNode trustersTableHeader = trustersTable.addChild("tr");
-		trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Nickname"));
-		trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Identity"));
-		trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Value"));
-		trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Comment"));
-		
-		synchronized(wot) {
+			
 			for (Trust trust : wot.getGivenTrusts(identity)) {
 				HTMLNode trustRow = trusteesTable.addChild("tr");
 				Identity trustee = trust.getTrustee();
@@ -139,24 +135,20 @@ public class IdentityPage extends WebPageImpl {
 			addedString = mDateFormat.format(addedDate) + " (" + CommonWebUtils.formatTimeDelta(currentTime - addedDate.getTime(), l10n()) + ")";
 		}
 
-		Date firstFetched = identity.getFirstFetchedDate();
 		Date lastFetched = identity.getLastFetchedDate();
-		String firstFetchedString;
 		String lastFetchedString;
-		if(!firstFetched.equals(new Date(0))) {
+		if(!lastFetched.equals(new Date(0))) {
 			synchronized(mDateFormat) {
 				mDateFormat.setTimeZone(TimeZone.getDefault());
 				/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
-				firstFetchedString = mDateFormat.format(firstFetched) + " (" + CommonWebUtils.formatTimeDelta(currentTime - firstFetched.getTime(), l10n()) + ")";
 				lastFetchedString = mDateFormat.format(lastFetched) + " (" + CommonWebUtils.formatTimeDelta(currentTime - lastFetched.getTime(), l10n()) + ")";
 			}
 		}
 		else {
-			firstFetchedString = lastFetchedString = l10n().getString("Common.Never");
+			lastFetchedString = l10n().getString("Common.Never");
 		}
 		
 		box.addChild("p", l10n().getString("IdentityPage.StatisticsBox.Added") + ": " + addedString); 
-		box.addChild("p", l10n().getString("IdentityPage.StatisticsBox.FirstFetched") + ": " + firstFetchedString);
 		box.addChild("p", l10n().getString("IdentityPage.StatisticsBox.LastFetched") + ": " + lastFetchedString);
 	}
 }
