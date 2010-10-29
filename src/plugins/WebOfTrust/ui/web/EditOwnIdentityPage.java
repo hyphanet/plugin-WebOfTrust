@@ -31,7 +31,6 @@ public class EditOwnIdentityPage extends WebPageImpl {
 	
 	public void make() {
 		synchronized(wot) {
-		synchronized(mIdentity) {
 			if(request.isPartSet("Edit")) {
 				try {
 					mIdentity.setPublishTrustList(request.isPartSet("PublishTrustList") && 
@@ -48,7 +47,11 @@ public class EditOwnIdentityPage extends WebPageImpl {
 						mIdentity.removeProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY);
 					}
 					
-					wot.storeAndCommit(mIdentity);
+					// FIXME: Write a special storeAndCommit which does this
+					if(!wot.getDatabase().isStored(mIdentity))
+						throw new RuntimeException("Your identity was deleted already");
+					
+					mIdentity.storeAndCommit();
 					
 		            HTMLNode aBox = addContentBox(l10n().getString("EditOwnIdentityPage.SettingsSaved.Header"));
 		            aBox.addChild("p", l10n().getString("EditOwnIdentityPage.SettingsSaved.Text"));
@@ -92,7 +95,6 @@ public class EditOwnIdentityPage extends WebPageImpl {
 				p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "PublishPuzzles", "true"});
 			
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Edit", l10n().getString("EditOwnIdentityPage.EditIdentityBox.SaveButton") });
-		}
 		}
 	}
 }
