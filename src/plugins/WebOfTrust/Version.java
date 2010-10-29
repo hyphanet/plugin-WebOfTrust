@@ -22,10 +22,10 @@ public class Version {
 	 * 
 	 * I have set this to 4000 to allow encoding marketing versions into real versions.
 	 * Long provides plenty of leeway! Toad. */
-	public static final long version = 4003;
+	public static final long version = 4003; // FIXME: Don't forget to adjust when we release 0.4  final!
 	
 	/** Published as an identity property if you own a seed identity. */
-	public static final long mandatoryVersion = 4001;
+	public static final long mandatoryVersion = 4001; // FIXME: Don't forget to adjust when we release 0.4  final!
 	
 	/** Published as an identity property if you own a seed identity. */
 	public static final long latestVersion = version;
