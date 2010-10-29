@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.util.Hashtable;
 
 import plugins.WebOfTrust.Identity.FetchState;
+import plugins.WebOfTrust.Persistent.IndexedField;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
@@ -84,13 +85,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		deleteAllCommands();
 	}
 	
-	public static class IdentityFetcherCommand {
+	public static class IdentityFetcherCommand extends Persistent {
 		
+		@IndexedField
 		private final String mIdentityID;
-
-		public static String[] getIndexedFields() {
-			return new String[] { "mIdentityID" };
-		}
 		
 		protected IdentityFetcherCommand(String myIdentityID) {
 			mIdentityID = myIdentityID;
@@ -99,18 +97,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		protected String getIdentityID() {
 			return mIdentityID;
 		}
-		
-		protected void storeWithoutCommit(ExtObjectContainer db) {
-			db.store(this);
-		}
-		
-		protected void deleteWithoutCommit(ExtObjectContainer db) {
-			db.delete(this);
-		}
 
 	}
 	
-	private static final class StartFetchCommand extends IdentityFetcherCommand {
+	protected static final class StartFetchCommand extends IdentityFetcherCommand {
 
 		protected StartFetchCommand(Identity identity) {
 			super(identity.getID());
@@ -122,7 +112,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		
 	}
 	
-	private static final class AbortFetchCommand extends IdentityFetcherCommand {
+	protected static final class AbortFetchCommand extends IdentityFetcherCommand {
 
 		protected AbortFetchCommand(Identity identity) {
 			super(identity.getID());
@@ -130,7 +120,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		
 	}
 	
-	private static final class UpdateEditionHintCommand extends IdentityFetcherCommand {
+	protected static final class UpdateEditionHintCommand extends IdentityFetcherCommand {
 
 		protected UpdateEditionHintCommand(Identity identity) {
 			super(identity.getID());
@@ -157,13 +147,13 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	}
 	
 	@SuppressWarnings("unchecked")
-	private IdentityFetcherCommand getCommand(Class<? extends IdentityFetcherCommand> commandType, String identityID)
+	private IdentityFetcherCommand getCommand(final Class<? extends IdentityFetcherCommand> commandType, final String identityID)
 		throws NoSuchCommandException {
 		
-		Query q = mDB.query();
+		final Query q = mDB.query();
 		q.constrain(commandType);
 		q.descend("mIdentityID").constrain(identityID);
-		ObjectSet<IdentityFetcherCommand> result = q.execute();
+		final ObjectSet<IdentityFetcherCommand> result = new Persistent.InitializingObjectSet<IdentityFetcher.IdentityFetcherCommand>(mWoT, q);
 		
 		switch(result.size()) {
 			case 1: return result.next();
@@ -173,10 +163,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	}
 	
 	@SuppressWarnings("unchecked")
-	private ObjectSet<IdentityFetcherCommand> getCommands(Class<? extends IdentityFetcherCommand> commandType) {
-		Query q = mDB.query();
+	private ObjectSet<IdentityFetcherCommand> getCommands(final Class<? extends IdentityFetcherCommand> commandType) {
+		final Query q = mDB.query();
 		q.constrain(commandType);
-		return q.execute();
+		return new Persistent.InitializingObjectSet<IdentityFetcher.IdentityFetcherCommand>(mWoT, q);
 	}
 	
 	private synchronized void deleteAllCommands() {
@@ -187,17 +177,16 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 				int amount = 0;
 				
 				for(IdentityFetcherCommand command : getCommands(IdentityFetcherCommand.class)) {
-					command.deleteWithoutCommit(mDB);
+					command.deleteWithoutCommit();
 					++amount;
 				}
 				
 				Logger.debug(this, "Deleted " + amount + " commands.");
 				
-				mDB.commit(); Logger.debug(this, "COMMITED.");
+				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
-				System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
 	}
@@ -210,7 +199,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		Logger.debug(this, "Start fetch command received for " + identityID);
 		
 		try {
-			getCommand(AbortFetchCommand.class, identityID).deleteWithoutCommit(mDB);
+			getCommand(AbortFetchCommand.class, identityID).deleteWithoutCommit();
 			Logger.debug(this, "Deleting abort fetch command for " + identityID);
 		}
 		catch(NoSuchCommandException e) { }
@@ -220,7 +209,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			Logger.debug(this, "Start fetch command already in queue!");
 		}
 		catch(NoSuchCommandException e) {
-			new StartFetchCommand(identityID).storeWithoutCommit(mDB);
+			new StartFetchCommand(identityID).storeWithoutCommit();
 			scheduleCommandProcessing();
 		}
 	}
@@ -229,7 +218,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		Logger.debug(this, "Abort fetch command received for " + identity);
 		
 		try {
-			getCommand(StartFetchCommand.class, identity).deleteWithoutCommit(mDB);
+			getCommand(StartFetchCommand.class, identity).deleteWithoutCommit();
 			Logger.debug(this, "Deleting start fetch command for " + identity);
 		}
 		catch(NoSuchCommandException e) { }
@@ -239,7 +228,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			Logger.debug(this, "Abort fetch command already in queue!");
 		}
 		catch(NoSuchCommandException e) {
-			new AbortFetchCommand(identity).storeWithoutCommit(mDB);
+			new AbortFetchCommand(identity).storeWithoutCommit();
 			scheduleCommandProcessing();
 		}
 	}
@@ -257,7 +246,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 				Logger.debug(this, "Update edition hint command already in queue!");
 			}
 			catch(NoSuchCommandException e2) {
-				new UpdateEditionHintCommand(identityID).storeWithoutCommit(mDB);
+				new UpdateEditionHintCommand(identityID).storeWithoutCommit();
 				scheduleCommandProcessing();
 			}
 		}
@@ -281,7 +270,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 				for(IdentityFetcherCommand command : getCommands(AbortFetchCommand.class)) {
 					try {
 						abortFetch(command.getIdentityID());
-						command.deleteWithoutCommit(mDB);
+						command.deleteWithoutCommit();
 					} catch(Exception e) {
 						Logger.error(this, "Aborting fetch failed", e);
 					}
@@ -290,7 +279,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 				for(IdentityFetcherCommand command : getCommands(StartFetchCommand.class)) {
 					try {
 						fetch(command.getIdentityID());
-						command.deleteWithoutCommit(mDB);
+						command.deleteWithoutCommit();
 					} catch (Exception e) {
 						Logger.error(this, "Fetching identity failed", e);
 					}
@@ -300,7 +289,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 				for(IdentityFetcherCommand command : getCommands(UpdateEditionHintCommand.class)) {
 					try {
 						editionHintUpdated(command.getIdentityID());
-						command.deleteWithoutCommit(mDB);
+						command.deleteWithoutCommit();
 					} catch (Exception e) { 
 						Logger.error(this, "Updating edition hint failed", e);
 					}
@@ -309,9 +298,9 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 				
 				Logger.debug(this, "Processing finished.");
 				
-				mDB.commit(); Logger.debug(this, "COMMITED.");
+				Persistent.checkedCommit(mDB, this);
 			} catch(RuntimeException e) {
-				System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				Persistent.checkedRollback(mDB, this, e);
 			}
 		}
 		}
