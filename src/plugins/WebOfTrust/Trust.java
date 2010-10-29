@@ -15,26 +15,24 @@ import freenet.support.StringValidityChecker;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Trust implements Cloneable {
+public final class Trust extends Persistent implements Cloneable {
 	
 	public static final int MAX_TRUST_COMMENT_LENGTH = 256;
 
 	/** The identity which gives the trust. */
+	@IndexedField
 	private final Identity mTruster;
 	
 	/** The identity which receives the trust. */
+	@IndexedField
 	private final Identity mTrustee;
 	
 	/** The value assigned with the trust, from -100 to +100 where negative means distrust */
+	@IndexedField
 	private byte mValue;
 	
 	/** An explanation of why the trust value was assigned */
 	private String mComment;
-	
-	/**
-	 * The date when this trust relationship was seen for the first time. This stays constant if the trust value changes.
-	 */
-	private final Date mCreationDate; // FIXME: Use the date of class Persistent as soon as it is wired in.
 	
 	/**
 	 * The date when the value of this trust relationship changed for the last time.
@@ -55,15 +53,11 @@ public final class Trust implements Cloneable {
 	 * database for trust objects from the truster which have an old trust list edition number and delete them - the old edition number
 	 * means that the trust has been removed from the latest trust list.
 	 */
+	// TODO: Optimization: An index on this WOULD make sense if db4o supported joined indices. then we would create an index on
+	// {mTruster,mTrusterTrustListEdition}. WITHOUT joined indicies, the way getGivenTrustsOlderThan works will make the query faster if
+	// db4o uses the index on mTruster instead of the index on mTrusterTrustListEditon, so we don't create that index.
+	// @IndexedField
 	private long mTrusterTrustListEdition;
-	
-	
-	/**
-	 * Get a list of fields which the database should create an index on.
-	 */
-	protected static String[] getIndexedFields() {
-		return new String[] { "mTruster", "mTrustee" };
-	}
 
 
 	/**
@@ -91,8 +85,6 @@ public final class Trust implements Cloneable {
 		mComment = "";	// Simplify setComment
 		setComment(comment);
 		
-		mCreationDate = CurrentTimeUTC.get();
-		
 		// mLastChangedDate = CurrentTimeUTC.get();	// Done by setValue / setComment.
 		mTrusterTrustListEdition = truster.getEdition(); 
 	}
@@ -104,16 +96,21 @@ public final class Trust implements Cloneable {
 
 	/** @return The Identity that gives this trust. */
 	public Identity getTruster() {
+		checkedActivate(2);
+		mTruster.initializeTransient(mWebOfTrust);
 		return mTruster;
 	}
 
 	/** @return The Identity that receives this trust. */
 	public Identity getTrustee() {
+		checkedActivate(2);
+		mTrustee.initializeTransient(mWebOfTrust);
 		return mTrustee;
 	}
 
 	/** @return value Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. */
 	public synchronized byte getValue() {
+		// checkedActivate(depth) is not needed, byte is a db4o primitive type
 		return mValue;
 	}
 
@@ -125,6 +122,8 @@ public final class Trust implements Cloneable {
 		// TODO: Use l10n Trust.InvalidValue
 		if(newValue < -100 || newValue > 100) 
 			throw new InvalidParameterException("Invalid trust value ("+ newValue +"). Trust values must be in range of -100 to +100.");
+
+		// checkedActivate(depth) is not needed, byte is a db4o primitive type
 		
 		if(mValue != newValue) {
 			mValue = newValue;
@@ -134,6 +133,7 @@ public final class Trust implements Cloneable {
 
 	/** @return The comment associated to this Trust relationship. */
 	public synchronized String getComment() {
+		// checkedActivate(depth) is not needed, String is a db4o primitive type
 		return mComment;
 	}
 
@@ -153,6 +153,8 @@ public final class Trust implements Cloneable {
 			|| !StringValidityChecker.containsNoControlCharacters(newComment)
 			|| !StringValidityChecker.containsNoInvalidFormatting(newComment))
 			throw new InvalidParameterException("Comment contains illegal characters.");
+
+		// checkedActivate(depth) is not needed, String is a db4o primitive type
 		
 		if(!mComment.equals(newComment)) {
 			mComment = newComment;
@@ -161,10 +163,12 @@ public final class Trust implements Cloneable {
 	}
 	
 	public synchronized Date getDateOfCreation() {
+		// checkedActivate(depth) is not needed, Date is a db4o primitive type
 		return mCreationDate;
 	}
 	
 	public synchronized Date getDateOfLastChange() {
+		// checkedActivate(depth) is not needed, Date is a db4o primitive type
 		return mLastChangedDate;
 	}
 	
@@ -173,11 +177,25 @@ public final class Trust implements Cloneable {
 	 * For an explanation for what this is needed please read the description of {@link #mTrusterTrustListEdition}.
 	 */
 	protected synchronized void trusterEditionUpdated() {
-		mTrusterTrustListEdition = mTruster.getEdition();
+		mTrusterTrustListEdition = getTruster().getEdition();
 	}
 	
 	protected synchronized long getTrusterEdition() {
+		// checkedActivate(depth) is not needed, long is a db4o primitive type
 		return mTrusterTrustListEdition;
+	}
+	
+	protected void storeWithoutCommit() {
+		try {		
+			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(2);
+			throwIfNotStored(mTruster);
+			throwIfNotStored(mTrustee);
+			checkedStore();
+		}
+		catch(final RuntimeException e) {
+			checkedRollbackAndThrow(e);
+		}
 	}
 
 	/**
@@ -218,6 +236,7 @@ public final class Trust implements Cloneable {
 		try {
 			Trust clone = new Trust(getTruster(), getTrustee(), getValue(), getComment());
 			clone.mTrusterTrustListEdition = this.mTrusterTrustListEdition;
+			clone.initializeTransient(mWebOfTrust);
 			return clone;
 		} catch (InvalidParameterException e) {
 			throw new RuntimeException(e);
