@@ -145,18 +145,16 @@ public final class FCPInterface implements FredPluginFCP {
         	if(!identityPublishesTrustList)
         		throw new InvalidParameterException("An identity cannot publish introduction puzzles if it does not publish its trust list.");
 
-        	synchronized(identity) {
 	            // TODO: Create a function for those? 
         		try {
 		            identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
 		            identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
-		            mWoT.storeAndCommit(identity);
+		            identity.storeAndCommit();
         		}
         		catch(RuntimeException e) {
         			mWoT.deleteIdentity(identity);
         			throw e;
         		}
-        	}
         }
     	}
 
