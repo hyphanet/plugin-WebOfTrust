@@ -13,17 +13,21 @@ import freenet.support.CurrentTimeUTC;
  * A score is the actual rating of how much an identity can be trusted from the point of view of the OwnIdentity which owns the score.
  * If the Score is negative, the identity is considered malicious, if it is zero or positive, it is trusted. 
  * 
- * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Score implements Cloneable {
+public final class Score extends Persistent implements Cloneable {
 	
 	/** The OwnIdentity which assigns this score to the trustee */
+	@IndexedField
 	private final OwnIdentity mTruster;
 	
 	/** The Identity which is rated by this score */
+	@IndexedField
 	private final Identity mTrustee;
 	
 	/** The actual score of the Identity. Used to decide if the OwnIdentity sees the Identity or not */
+	@IndexedField
 	private int mValue;
 	
 	/** How far the Identity is from the tree's root. Tells how much point it can add to its trustees score. */
@@ -33,24 +37,12 @@ public final class Score implements Cloneable {
 	 * If the truster sets a negative trust on the trusted identity, it gets zero capacity, even if it has a positive score. */
 	private int mCapacity;
 	
-	
-	/**
-	 * The date when this score was created. Stays constant if the value of this score changes.
-	 */
-	private final Date mCreationDate; // FIXME: Use the field of class Persistent as soon as it is wired in
-	
 	/**
 	 * The date when the value, rank or capacity was last changed.
 	 */
 	private Date mLastChangedDate;
-	
-	/**
-	 * Get a list of fields which the database should create an index on.
-	 */
-	protected static String[] getIndexedFields() {
-		return new String[] { "mTruster", "mTrustee" };
-	}
-	
+
+
 	/**
 	 * Creates a Score from given parameters. Only for being used by the WoT package and unit tests, not for user interfaces!
 	 * 
@@ -73,7 +65,6 @@ public final class Score implements Cloneable {
 		setRank(myRank);
 		setCapacity(myCapacity);
 		
-		mCreationDate = CurrentTimeUTC.get();
 		// mLastChangedDate = CurrentTimeUTC.get(); <= setValue() etc do this already.
 	}
 	
@@ -93,6 +84,8 @@ public final class Score implements Cloneable {
 	 * @return in which OwnIdentity's trust tree this score is
 	 */
 	public OwnIdentity getTruster() {
+		checkedActivate(2);
+		mTruster.initializeTransient(mWebOfTrust);
 		return mTruster;
 	}
 
@@ -100,6 +93,8 @@ public final class Score implements Cloneable {
 	 * @return Identity that has this Score
 	 */
 	public Identity getTrustee() {
+		checkedActivate(2);
+		mTruster.initializeTransient(mWebOfTrust);
 		return mTrustee;
 	}
 
@@ -108,6 +103,7 @@ public final class Score implements Cloneable {
 	 */
 	/* XXX: Rename to getValue */
 	public synchronized int getScore() {
+		// checkedActivate(depth) is not needed, int is a db4o primitive type
 		return mValue;
 	}
 
@@ -115,6 +111,8 @@ public final class Score implements Cloneable {
 	 * Sets the numeric value of this Score.
 	 */
 	protected synchronized void setValue(int newValue) {
+		// checkedActivate(depth) is not needed, int is a db4o primitive type
+		
 		if(mValue == newValue)
 			return;
 		
@@ -126,15 +124,18 @@ public final class Score implements Cloneable {
 	 * @return The minimal distance in steps of {@link Trust} values from the truster to the trustee
 	 */
 	public synchronized int getRank() {
+		// checkedActivate(depth) is not needed, int is a db4o primitive type
 		return mRank;
 	}
 
 	/**
 	 * Sets the distance of how far the trusted Identity is from the truster, measured in minimal steps of {@link Trust} values.
 	 */
-	protected synchronized void setRank(int newRank) {
+	protected synchronized void setRank(int newRank) {		
 		if(newRank < -1)
 			throw new IllegalArgumentException("Illegal rank.");
+		
+		// checkedActivate(depth) is not needed, int is a db4o primitive type
 		
 		if(newRank == mRank)
 			return;
@@ -147,6 +148,7 @@ public final class Score implements Cloneable {
 	 * @return how much points the trusted Identity can add to its trustees score
 	 */
 	public synchronized int getCapacity() {
+		// checkedActivate(depth) is not needed, int is a db4o primitive type
 		return mCapacity;
 	}
 
@@ -156,6 +158,8 @@ public final class Score implements Cloneable {
 	protected synchronized void setCapacity(int newCapacity) {
 		if(newCapacity < 0)
 			throw new IllegalArgumentException("Negative capacities are not allowed.");
+		
+		// checkedActivate(depth) is not needed, int is a db4o primitive type
 		
 		if(newCapacity == mCapacity)
 			return;
@@ -169,6 +173,7 @@ public final class Score implements Cloneable {
 	 * or capacity of a score changes then its date of creation stays constant.
 	 */
 	public synchronized Date getDateOfCreation() {
+		// checkedActivate(depth) is not needed, Date is a db4o primitive type
 		return mCreationDate;
 	}
 	
@@ -176,9 +181,22 @@ public final class Score implements Cloneable {
 	 * Gets the {@link Date} when the value, capacity or rank of this score was last changed.
 	 */
 	public synchronized Date getDateOfLastChange() {
+		// checkedActivate(depth) is not needed, Date is a db4o primitive type
 		return mLastChangedDate;
 	}
 	
+	protected void storeWithoutCommit() {
+		try {		
+			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(2);
+			throwIfNotStored(mTruster);
+			throwIfNotStored(mTrustee);
+			checkedStore();
+		}
+		catch(final RuntimeException e) {
+			checkedRollbackAndThrow(e);
+		}
+	}
 	
 	/**
 	 * Test if two scores are equal.
