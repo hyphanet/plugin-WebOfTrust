@@ -17,7 +17,6 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 
-import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
 import freenet.clients.http.ToadletContext;
@@ -95,7 +94,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		}
 
 		OwnIdentity treeOwner = null;
-		ObjectContainer db = wot.getDB();
 		PluginRespirator _pr = wot.getPluginRespirator();
 		int nbOwnIdentities = 1;
 		String ownerID = request.getPartAsString("OwnerID", 128);
@@ -120,13 +118,13 @@ public class KnownIdentitiesPage extends WebPageImpl {
 
 		if(treeOwner != null) {
 			try {
-				makeKnownIdentitiesList(treeOwner, db, _pr);
+				makeKnownIdentitiesList(treeOwner, _pr);
 			} catch (Exception e) {
 				Logger.error(this, "Error", e);
 				addErrorBox("Error", e);
 			}
 		} else if(nbOwnIdentities > 1)
-			makeSelectTreeOwnerForm(db, _pr);
+			makeSelectTreeOwnerForm(_pr);
 		else
 			makeNoOwnIdentityWarning();
 	}
@@ -175,7 +173,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		addErrorBox(l10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Header"), l10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Text"));
 	}
 	
-	private void makeSelectTreeOwnerForm(ObjectContainer db, PluginRespirator _pr) {
+	private void makeSelectTreeOwnerForm(PluginRespirator _pr) {
 
 		HTMLNode listBoxContent = addContentBox(l10n().getString("KnownIdentitiesPage.SelectTreeOwner.Header"));
 		HTMLNode selectForm = _pr.addFormChild(listBoxContent, uri, "ViewTree");
@@ -234,7 +232,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * @param _pr a reference to the {@link PluginRespirator}
 	 * @param treeOwner owner of the trust tree we want to display 
 	 */
-	private void makeKnownIdentitiesList(OwnIdentity treeOwner, ObjectContainer db, PluginRespirator _pr) throws DuplicateScoreException, DuplicateTrustException {
+	private void makeKnownIdentitiesList(OwnIdentity treeOwner, PluginRespirator _pr) throws DuplicateScoreException, DuplicateTrustException {
 
 		String nickFilter = request.isPartSet("nickfilter") ? request.getPartAsString("nickfilter", 100).trim() : "";
 		String sortBy = request.isPartSet("sortby") ? request.getPartAsString("sortby", 100).trim() : "Nickname";
