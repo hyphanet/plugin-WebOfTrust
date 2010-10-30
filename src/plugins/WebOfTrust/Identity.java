@@ -757,7 +757,7 @@ public class Identity extends Persistent implements Cloneable {
 			
 			// mDB.delete(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			mRequestURI.removeFrom(mDB);
-			// mDB.delete(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			checkedDelete(mCurrentEditionFetchState); // TODO: Is this still necessary?
 			// mDB.delete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			// mDB.delete(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			// mDB.delete(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
