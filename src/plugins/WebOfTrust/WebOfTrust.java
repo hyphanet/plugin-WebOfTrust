@@ -188,8 +188,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			Logger.normal(this, "Veriying all stored scores ...");
 			synchronized(this) {
 			synchronized(mDB.lock()) {
-				computeAllScoresWithoutCommit();
-				mDB.commit();
+				try {
+					computeAllScoresWithoutCommit();
+					Persistent.checkedCommit(mDB, this);
+				} catch(RuntimeException e) {
+					Persistent.checkedRollbackAndThrow(mDB, this, e);
+				}
 			}
 			}
 			
@@ -278,6 +282,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         	OwnIdentity.class,
         	Trust.class,
         	Score.class,
+        	IdentityFetcher.IdentityFetcherCommand.class,
+        	IdentityFetcher.AbortFetchCommand.class,
+        	IdentityFetcher.StartFetchCommand.class,
+        	IdentityFetcher.UpdateEditionHintCommand.class,
         	IntroductionPuzzle.class,
         	OwnIntroductionPuzzle.class
         };
@@ -326,6 +334,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		if(databaseVersion == WebOfTrust.DATABASE_FORMAT_VERSION)
 			return;
 		
+		synchronized(mDB.lock()) {
 		try {
 			//if(databaseVersion == 1) {
 			//
@@ -337,8 +346,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
 		}
 		catch(RuntimeException e) {
-			System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
-			throw e;
+			Persistent.checkedRollbackAndThrow(mDB, this, e);
+		}
 		}
 	}
 	
@@ -350,16 +359,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	/**
 	 * Debug function for deleting duplicate identities etc. which might have been created due to bugs :)
 	 */
-	@SuppressWarnings("unchecked")
 	private synchronized void deleteDuplicateObjects() {
-
+		synchronized(mDB.lock()) {
 		try {
-			ObjectSet<Identity> identities = getAllIdentities();
 			HashSet<String> deleted = new HashSet<String>();
 
 			Logger.debug(this, "Searching for duplicate identities ...");
 
-			for(Identity identity : identities) {
+			for(Identity identity : getAllIdentities()) {
 				Query q = mDB.query();
 				q.constrain(Identity.class);
 				q.descend("mID").constrain(identity.getID());
@@ -373,15 +380,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 				deleted.add(identity.getID());
 			}
-
+			Persistent.checkedCommit(mDB, this);
+			
 			Logger.debug(this, "Finished searching for duplicate identities.");
 		}
 		catch(RuntimeException e) {
-			Logger.error(this, "Error while deleting duplicate identities", e);
+			Persistent.checkedRollback(mDB, this, e);
+		}
 		}
 
+		synchronized(mDB.lock()) {
+		try {
 		Logger.debug(this, "Searching for duplicate Trust objects ...");
 
+		boolean duplicateTrustFound = false;
 		for(OwnIdentity truster : getAllOwnIdentities()) {
 			HashSet<String> givenTo = new HashSet<String>();
 
@@ -389,23 +401,24 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				if(givenTo.contains(trust.getTrustee().getID()) == false)
 					givenTo.add(trust.getTrustee().getID());
 				else {
-					synchronized(mDB.lock()) {
-						try {
-							Logger.error(this, "Deleting duplicate given trust:" + trust);
-							removeTrustWithoutCommit(trust);
-							mDB.commit(); Logger.debug(this, "COMMITED.");
-						}
-						catch(RuntimeException e) {
-							System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
-						}
-					}
-
+					Logger.error(this, "Deleting duplicate given trust:" + trust);
+					removeTrustWithoutCommit(trust);
+					duplicateTrustFound = true;
 				}
 			}
-
 		}
-
+		
+		if(duplicateTrustFound) {
+			computeAllScoresWithoutCommit();
+		}
+		
+		Persistent.checkedCommit(mDB, this);
 		Logger.debug(this, "Finished searching for duplicate trust objects.");
+		}
+		catch(RuntimeException e) {
+			Persistent.checkedRollback(mDB, this, e);
+		}
+		}
 		
 		/* TODO: Also delete duplicate score */
 	}
@@ -413,14 +426,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	/**
 	 * Debug function for deleting trusts or scores of which one of the involved partners is missing.
 	 */
-	@SuppressWarnings("unchecked")
 	private synchronized void deleteOrphanObjects() {
-		synchronized(mDB) {
+		synchronized(mDB.lock()) {
 			try {
+				boolean orphanTrustFound = true;
+				
 				Query q = mDB.query();
 				q.constrain(Trust.class);
 				q.descend("mTruster").constrain(null).identity().or(q.descend("mTrustee").constrain(null).identity());
-				ObjectSet<Trust> orphanTrusts = q.execute();
+				ObjectSet<Trust> orphanTrusts = new Persistent.InitializingObjectSet<Trust>(this, q);
+				
 				for(Trust trust : orphanTrusts) {
 					if(trust.getTruster() != null && trust.getTrustee() != null) {
 						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
@@ -429,19 +444,29 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					}
 					
 					Logger.error(trust, "Deleting orphan trust, truster = " + trust.getTruster() + ", trustee = " + trust.getTrustee());
-					mDB.delete(trust);
+					orphanTrustFound = true;
+					trust.deleteWithoutCommit();
+				}
+				
+				if(orphanTrustFound) {
+					computeAllScoresWithoutCommit();
+					Persistent.checkedCommit(mDB, this);
 				}
 			}
 			catch(Exception e) {
-				Logger.error(this, "Deleting orphan trusts failed.", e);
-				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!"); 
+				Persistent.checkedRollback(mDB, this, e); 
 			}
-			
+		}
+		
+		synchronized(mDB.lock()) {
 			try {
+				boolean orphanScoresFound = true;
+				
 				Query q = mDB.query();
 				q.constrain(Score.class);
 				q.descend("mTruster").constrain(null).identity().or(q.descend("mTrustee").constrain(null).identity());
-				ObjectSet<Score> orphanScores = q.execute();
+				ObjectSet<Score> orphanScores = new Persistent.InitializingObjectSet<Score>(this, q);
+				
 				for(Score score : orphanScores) {
 					if(score.getTruster() != null && score.getTrustee() != null) {
 						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
@@ -450,14 +475,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					}
 					
 					Logger.error(score, "Deleting orphan score, truster = " + score.getTruster() + ", trustee = " + score.getTrustee());
-					mDB.delete(score);
+					orphanScoresFound = true;
+					score.deleteWithoutCommit();
 				}
 				
-				mDB.commit(); Logger.debug(this, "COMMITED.");
+				if(orphanScoresFound) {
+					computeAllScoresWithoutCommit();
+					Persistent.checkedCommit(mDB, this);
+				}
 			}
 			catch(Exception e) {
-				Logger.error(this, "Deleting orphan trusts failed.", e);
-				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!"); 
+				Persistent.checkedRollback(mDB, this, e);
 			}
 		}
 	}
@@ -724,7 +752,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
 						
-						mDB.delete(storedScore);
+						storedScore.deleteWithoutCommit();
 						
 					} else {
 						if(!expectedScore.equals(storedScore)) {
@@ -739,7 +767,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 							storedScore.setCapacity(computeCapacity(expectedScore.getTruster(), expectedScore.getTrustee(), expectedScore.getRank()));
 							storedScore.setValue(expectedScore.getScore());
 
-							mDB.store(storedScore);
+							storedScore.storeWithoutCommit();
 						}
 					}
 				} catch(NotInTrustTreeException e) {
@@ -751,7 +779,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
 						
-						mDB.store(expectedScore);
+						expectedScore.storeWithoutCommit();
 					}
 				}
 				
@@ -876,7 +904,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				 * If it becomes possible some day, we should check that here, and log an error if there is an uncommitted transaction. 
 				 * - All transactions should be committed after obtaining the lock() on the database. */
 				synchronized(mDB.lock()) {
-					System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+					Persistent.checkedRollback(mDB, this, null);
 					mDB.close();
 				}
 			}
@@ -990,7 +1018,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * @return An {@link ObjectSet} containing all identities present in the database 
 	 */
-	public synchronized ObjectSet<Identity> getAllIdentities() { // FIXME: Get rid of the synchronization & check whether the callers do it
+	public ObjectSet<Identity> getAllIdentities() {
 		final Query query = mDB.query();
 		query.constrain(Identity.class);
 		return new Persistent.InitializingObjectSet<Identity>(this, query);
@@ -1009,8 +1037,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Get a filtered and sorted list of identities.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list.
 	 */
-	// FIXME: Get rid of the synchronization & check whether the callers do it
-	public synchronized ObjectSet<Identity> getAllIdentitiesFilteredAndSorted(OwnIdentity truster, String nickFilter, SortOrder sortInstruction) {
+	public ObjectSet<Identity> getAllIdentitiesFilteredAndSorted(OwnIdentity truster, String nickFilter, SortOrder sortInstruction) {
 		Query q = mDB.query();
 		
 		switch(sortInstruction) {
@@ -1024,27 +1051,27 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				break;
 			case ByScoreAscending:
 				q.constrain(Score.class);
-				q.descend("mTruster").constrain(truster);
+				q.descend("mTruster").constrain(truster).identity();
 				q.descend("mValue").orderAscending();
 				q = q.descend("mTrustee"); 
 				break;
 			case ByScoreDescending:
 				// TODO: This excludes identities which have no score
 				q.constrain(Score.class);
-				q.descend("mTruster").constrain(truster);
+				q.descend("mTruster").constrain(truster).identity();
 				q.descend("mValue").orderDescending();
 				q = q.descend("mTrustee");
 				break;
 			case ByLocalTrustAscending:
 				q.constrain(Trust.class);
-				q.descend("mTruster").constrain(truster);
+				q.descend("mTruster").constrain(truster).identity();
 				q.descend("mValue").orderAscending();
 				q = q.descend("mTrustee");
 				break;
 			case ByLocalTrustDescending:
 				// TODO: This excludes untrusted identities.
 				q.constrain(Trust.class);
-				q.descend("mTruster").constrain(truster);
+				q.descend("mTruster").constrain(truster).identity();
 				q.descend("mValue").orderDescending();
 				q = q.descend("mTrustee");
 				break;
@@ -1063,8 +1090,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 */
-	// FIXME: Get rid of the synchronization & check whether the callers do it
-	public synchronized ObjectSet<Identity> getAllNonOwnIdentities() {
+	public ObjectSet<Identity> getAllNonOwnIdentities() {
 		final Query q = mDB.query();
 		q.constrain(Identity.class);
 		q.constrain(OwnIdentity.class).not();
@@ -1079,8 +1105,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * Used by the IntroductionClient for fetching puzzles from recently modified identities.
 	 */
-	// FIXME: Get rid of the synchronization & check whether the callers do it
-	public synchronized ObjectSet<Identity> getAllNonOwnIdentitiesSortedByModification () {
+	public ObjectSet<Identity> getAllNonOwnIdentitiesSortedByModification () {
 		final Query q = mDB.query();
 		q.constrain(Identity.class);
 		q.constrain(OwnIdentity.class).not();
@@ -1096,8 +1121,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * @return An {@link ObjectSet} containing all identities present in the database.
 	 */
-	// FIXME: Get rid of the synchronization & check whether the callers do it
-	public synchronized ObjectSet<OwnIdentity> getAllOwnIdentities() {
+	public ObjectSet<OwnIdentity> getAllOwnIdentities() {
 		final Query q = mDB.query();
 		q.constrain(OwnIdentity.class);
 		return new Persistent.InitializingObjectSet<OwnIdentity>(this, q);
@@ -1114,22 +1138,22 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			Logger.debug(this, "Deleting received scores...");
 			for(Score score : getScores(identity))
-				mDB.delete(score);
+				score.deleteWithoutCommit();
 
 			if(identity instanceof OwnIdentity) {
 				Logger.debug(this, "Deleting given scores...");
 
 				for(Score score : getGivenScores((OwnIdentity)identity))
-					mDB.delete(score);
+					score.deleteWithoutCommit();
 			}
 
 			Logger.debug(this, "Deleting received trusts...");
 			for(Trust trust : getReceivedTrusts(identity))
-				mDB.delete(trust);
+				trust.deleteWithoutCommit();
 
 			Logger.debug(this, "Deleting given trusts...");
 			for(Trust givenTrust : getGivenTrusts(identity)) {
-				mDB.delete(givenTrust);
+				givenTrust.deleteWithoutCommit();
 				// We call computeAllScores anyway so we do not use removeTrustWithoutCommit()
 			}
 			
@@ -1159,21 +1183,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @return The {@link Score} of this Identity in the required trust tree
 	 * @throws NotInTrustTreeException if this identity is not in the required trust tree 
 	 */
-	@SuppressWarnings("unchecked")
-	public synchronized Score getScore(OwnIdentity truster, Identity trustee) throws NotInTrustTreeException {
-		Query query = mDB.query();
+	public synchronized Score getScore(final OwnIdentity truster, final Identity trustee) throws NotInTrustTreeException {
+		final Query query = mDB.query();
 		query.constrain(Score.class);
 		query.descend("mTruster").constrain(truster).identity();
 		query.descend("mTrustee").constrain(trustee).identity();
-		ObjectSet<Score> result = query.execute();
+		final ObjectSet<Score> result = new Persistent.InitializingObjectSet<Score>(this, query);
 		
 		switch(result.size()) {
-			case 1:
-				return result.next();
-			case 0:
-				throw new NotInTrustTreeException(truster, trustee);
-			default:
-				throw new DuplicateScoreException(truster, trustee, result.size());
+			case 1: return result.next();
+			case 0: throw new NotInTrustTreeException(truster, trustee);
+			default: throw new DuplicateScoreException(truster, trustee, result.size());
 		}
 	}
 
@@ -1183,12 +1203,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * @return An {@link ObjectSet} containing all {@link Score} this Identity has.
 	 */
-	@SuppressWarnings("unchecked")
-	public ObjectSet<Score> getScores(Identity identity) {
-		Query query = mDB.query();
+	public ObjectSet<Score> getScores(final Identity identity) {
+		final Query query = mDB.query();
 		query.constrain(Score.class);
 		query.descend("mTrustee").constrain(identity).identity();
-		return query.execute();
+		return new Persistent.InitializingObjectSet<Score>(this, query);
 	}
 	
 	/**
@@ -1197,12 +1216,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * You have to synchronize on this WoT around the call to this function and the processing of the returned list! 
 	 * @return An {@link ObjectSet} containing all {@link Score} this Identity has given.
 	 */
-	@SuppressWarnings("unchecked")
-	public ObjectSet<Score> getGivenScores(OwnIdentity truster) {
-		Query query = mDB.query();
+	public ObjectSet<Score> getGivenScores(final OwnIdentity truster) {
+		final Query query = mDB.query();
 		query.constrain(Score.class);
 		query.descend("mTruster").constrain(truster).identity();
-		return query.execute();
+		return new Persistent.InitializingObjectSet<Score>(this, query);
 	}
 	
 	/**
@@ -1211,15 +1229,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @return the best score this Identity has
 	 * @throws NotInTrustTreeException If the identity has no score in any trusttree.
 	 */
-	public synchronized int getBestScore(Identity identity) throws NotInTrustTreeException {
+	public synchronized int getBestScore(final Identity identity) throws NotInTrustTreeException {
 		int bestScore = Integer.MIN_VALUE;
-		ObjectSet<Score> scores = getScores(identity);
+		final ObjectSet<Score> scores = getScores(identity);
 		
 		if(scores.size() == 0)
 			throw new NotInTrustTreeException(identity);
 		
 		// TODO: Cache the best score of an identity as a member variable.
-		for(Score score : scores) 
+		for(final Score score : scores) 
 			bestScore = Math.max(score.getScore(), bestScore);
 		
 		return bestScore;
@@ -1229,15 +1247,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Gets the best capacity this identity has in any trust tree.
 	 * @throws NotInTrustTreeException If the identity is not in any trust tree. Can be interpreted as capacity 0.
 	 */
-	public int getBestCapacity(Identity identity) throws NotInTrustTreeException {
+	public int getBestCapacity(final Identity identity) throws NotInTrustTreeException {
 		int bestCapacity = 0;
-		ObjectSet<Score> scores = getScores(identity);
+		final ObjectSet<Score> scores = getScores(identity);
 		
 		if(scores.size() == 0)
 			throw new NotInTrustTreeException(identity);
 		
 		// TODO: Cache the best score of an identity as a member variable.
-		for(Score score : scores) 
+		for(final Score score : scores) 
 			bestCapacity  = Math.max(score.getCapacity(), bestCapacity);
 		
 		return bestCapacity;
@@ -1247,21 +1265,23 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Get all scores in the database.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 */
-	public synchronized ObjectSet<Score> getAllScores() {
-		return mDB.queryByExample(Score.class);
+	public ObjectSet<Score> getAllScores() {
+		final Query query = mDB.query();
+		query.constrain(Score.class);
+		return new Persistent.InitializingObjectSet<Score>(this, query);
 	}
 	
 	/**
 	 * Checks whether the given identity should be downloaded. 
 	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity.
 	 */
-	public boolean shouldFetchIdentity(Identity identity) {
+	public boolean shouldFetchIdentity(final Identity identity) {
 		if(identity instanceof OwnIdentity)
 			return true;
 		
 		int bestScore = Integer.MIN_VALUE;
 		int bestCapacity = 0;
-		ObjectSet<Score> scores = getScores(identity);
+		final ObjectSet<Score> scores = getScores(identity);
 			
 		if(scores.size() == 0)
 			return false;
@@ -1287,9 +1307,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 		and negative with score < 0. Zero is included in the positive range by convention because solving an introduction puzzle gives you a trust value of 0.
 	 * @return an {@link ObjectSet} containing Scores of the identities that match the criteria
 	 */
-	@SuppressWarnings("unchecked")
-	public synchronized ObjectSet<Score> getIdentitiesByScore(OwnIdentity truster, int select) {		
-		Query query = mDB.query();
+	public ObjectSet<Score> getIdentitiesByScore(final OwnIdentity truster, final int select) {		
+		final Query query = mDB.query();
 		query.constrain(Score.class);
 		if(truster != null)
 			query.descend("mTruster").constrain(truster).identity();
@@ -1299,12 +1318,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		if(select > 0)
 			query.descend("mValue").constrain(0).smaller().not();
-		else if(select < 0 )
+		else if(select < 0)
 			query.descend("mValue").constrain(0).smaller();
 		else 
 			query.descend("mValue").constrain(0);
 
-		return query.execute();
+		return  new Persistent.InitializingObjectSet<Score>(this, query);
 	}
 	
 	/**
@@ -1315,21 +1334,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @return The trust given to the trustee by the specified truster
 	 * @throws NotTrustedException if the truster doesn't trust the trustee
 	 */
-	@SuppressWarnings("unchecked")
-	public synchronized Trust getTrust(Identity truster, Identity trustee) throws NotTrustedException, DuplicateTrustException {
-		Query query = mDB.query();
+	public synchronized Trust getTrust(final Identity truster, final Identity trustee) throws NotTrustedException, DuplicateTrustException {
+		final Query query = mDB.query();
 		query.constrain(Trust.class);
 		query.descend("mTruster").constrain(truster).identity();
 		query.descend("mTrustee").constrain(trustee).identity();
-		ObjectSet<Trust> result = query.execute();
+		final ObjectSet<Trust> result = new Persistent.InitializingObjectSet<Trust>(this, query);
 		
 		switch(result.size()) {
-			case 1:
-				return result.next();
-			case 0:
-				throw new NotTrustedException(truster, trustee);
-			default:
-				throw new DuplicateTrustException(truster, trustee, result.size());
+			case 1: return result.next();
+			case 0: throw new NotTrustedException(truster, trustee);
+			default: throw new DuplicateTrustException(truster, trustee, result.size());
 		}
 	}
 
@@ -1339,12 +1354,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * @return An {@link ObjectSet} containing all {@link Trust} the passed Identity has given.
 	 */
-	@SuppressWarnings("unchecked")
-	public synchronized ObjectSet<Trust> getGivenTrusts(Identity truster) {
-		Query query = mDB.query();
+	public ObjectSet<Trust> getGivenTrusts(final Identity truster) {
+		final Query query = mDB.query();
 		query.constrain(Trust.class);
 		query.descend("mTruster").constrain(truster).identity();
-		return query.execute();
+		return new Persistent.InitializingObjectSet<Trust>(this, query);
 	}
 	
 	/**
@@ -1355,14 +1369,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @param select Trust value criteria, can be > zero, zero or negative. Greater than zero returns all trust values >= 0, zero returns trust values equal to 0.
 	 * 		Negative returns trust values < 0. Zero is included in the positive range by convention because solving an introduction puzzle gives you a value of 0.
 	 * @return an {@link ObjectSet} containing received trust values that match the criteria.
-	 * @throws NullPointerException If truster is null.
 	 */
-	@SuppressWarnings("unchecked")
-	public synchronized ObjectSet<Trust> getGivenTrusts(Identity truster, int select) {		
-		if(truster == null)
-			throw new NullPointerException("No truster specified");
-		
-		Query query = mDB.query();
+	public ObjectSet<Trust> getGivenTrusts(final Identity truster, final int select) {
+		final Query query = mDB.query();
 		query.constrain(Trust.class);
 		query.descend("mTruster").constrain(truster).identity();
 	
@@ -1375,19 +1384,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		else 
 			query.descend("mValue").constrain(0);
 
-		return query.execute();
+		return new Persistent.InitializingObjectSet<Trust>(this, query);
 	}
 	/**
 	 * Gets all trusts given by the given truster in a trust list older than the given edition number.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 */
-	@SuppressWarnings("unchecked")
-	protected synchronized ObjectSet<Trust> getGivenTrustsOlderThan(Identity truster, long edition) {
-		Query q = mDB.query();
+	protected ObjectSet<Trust> getGivenTrustsOlderThan(final Identity truster, final long edition) {
+		final Query q = mDB.query();
 		q.constrain(Trust.class);
 		q.descend("mTruster").constrain(truster).identity();
 		q.descend("mTrusterTrustListEdition").constrain(edition).smaller();
-		return q.execute();
+		return new Persistent.InitializingObjectSet<Trust>(this, q);
 	}
 
 	/**
@@ -1396,12 +1404,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * @return An {@link ObjectSet} containing all {@link Trust} the passed Identity has received.
 	 */
-	@SuppressWarnings("unchecked")
-	public synchronized ObjectSet<Trust> getReceivedTrusts(Identity trustee) {
-		Query query = mDB.query();
+	public ObjectSet<Trust> getReceivedTrusts(final Identity trustee) {
+		final Query query = mDB.query();
 		query.constrain(Trust.class);
 		query.descend("mTrustee").constrain(trustee).identity();
-		return query.execute();
+		return new Persistent.InitializingObjectSet<Trust>(this, query);
 	}
 	
 	/**
@@ -1412,14 +1419,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @param select Trust value criteria, can be > zero, zero or negative. Greater than zero returns all trust values >= 0, zero returns trust values equal to 0.
 	 * 		Negative returns trust values < 0. Zero is included in the positive range by convention because solving an introduction puzzle gives you a value of 0.
 	 * @return an {@link ObjectSet} containing received trust values that match the criteria.
-	 * @throws NullPointerException If trustee is null.
 	 */
-	@SuppressWarnings("unchecked")
-	public synchronized ObjectSet<Trust> getReceivedTrusts(Identity trustee, int select) {		
-		if(trustee == null)
-			throw new NullPointerException("No trustee specified");
-		
-		Query query = mDB.query();
+	public ObjectSet<Trust> getReceivedTrusts(final Identity trustee, final int select) {		
+		final Query query = mDB.query();
 		query.constrain(Trust.class);
 		query.descend("mTrustee").constrain(trustee).identity();
 	
@@ -1432,7 +1434,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		else 
 			query.descend("mValue").constrain(0);
 
-		return query.execute();
+		return new Persistent.InitializingObjectSet<Trust>(this, query);
 	}
 	
 	/**
@@ -1441,11 +1443,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * @return An {@link ObjectSet} containing all {@link Trust} the passed Identity has received.
 	 */
-	@SuppressWarnings("unchecked")
-	public synchronized ObjectSet<Trust> getAllTrusts() {
-		Query query = mDB.query();
+	public ObjectSet<Trust> getAllTrusts() {
+		final Query query = mDB.query();
 		query.constrain(Trust.class);
-		return query.execute();
+		return new Persistent.InitializingObjectSet<Trust>(this, query); 
 	}
 	
 	/**
@@ -1473,17 +1474,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			Trust oldTrust = trust.clone();
 			trust.trusterEditionUpdated();
 			trust.setComment(newComment);
-			mDB.store(trust);
+			trust.storeWithoutCommit();
 
 			if(trust.getValue() != newValue) {
 				trust.setValue(newValue);
-				mDB.store(trust);
+				trust.storeWithoutCommit();
 				Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
 				updateScoresWithoutCommit(oldTrust, trust);
 			}
 		} catch (NotTrustedException e) {
 			trust = new Trust(truster, trustee, newValue, newComment);
-			mDB.store(trust);
+			trust.storeWithoutCommit();
 			Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
 			updateScoresWithoutCommit(null, trust);
 		} 
@@ -1501,11 +1502,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		synchronized(mDB.lock()) {
 			try {
 				setTrustWithoutCommit(truster, trustee, newValue, newComment);
-				mDB.commit(); Logger.debug(this, "COMMITED.");
+				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
-				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
-				throw e;
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
 	}
@@ -1532,8 +1532,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				} 
 			}
 			catch(RuntimeException e) {
-				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
-				throw e;
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 	}
 	
@@ -1547,10 +1546,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 */
 	protected synchronized void removeTrustWithoutCommit(Trust trust) {
-		mDB.delete(trust);
+		trust.deleteWithoutCommit();
 		updateScoresWithoutCommit(trust, null);
 	}
-	
+
 	/**
 	 * Initializes this OwnIdentity's trust tree without commiting the transaction. 
 	 * Meaning : It creates a Score object for this OwnIdentity in its own trust so it can give trust to other Identities. 
@@ -1571,29 +1570,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			Logger.error(this, "initTrusTree called even though there is already one for " + identity);
 			return;
 		} catch (NotInTrustTreeException e) {
-			mDB.store(new Score(identity, identity, Integer.MAX_VALUE, 0, 100));
+			final Score score = new Score(identity, identity, Integer.MAX_VALUE, 0, 100);
+			score.initializeTransient(this);
+			score.storeWithoutCommit();
 		}
 	}
-	
-	/**
-	 * Updates this Identity's {@link Score} in every trust tree.
-	 * 
-	 * This function does neither lock the database nor commit the transaction. You have to surround it with
-	 * synchronized(mDB.lock()) {
-	 *     try { ... updateScoreWithoutCommit(...); storeAndCommit(trustee); }
-	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
-	 * }
-	 * 
-	 */
-//	private synchronized void updateScoreWithoutCommit(Identity trustee) {
-//		ObjectSet<OwnIdentity> treeOwners = getAllOwnIdentities();
-//		if(treeOwners.size() == 0)
-//			Logger.debug(this, "Can't update " + trustee.getNickname() + "'s score: there is no own identity yet");
-//
-//		while(treeOwners.hasNext())
-//			updateScoreWithoutCommit(treeOwners.next(), trustee);
-//	}
-	
+
 	/**
 	 * Computes the trustee's Score value according to the trusts it has received and the capacity of its trusters in the specified
 	 * trust tree.
@@ -1717,7 +1699,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		assert(mTrustListImportInProgress);
 		mTrustListImportInProgress = false;
 		mFullScoreComputationNeeded = false;
-		System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+		Persistent.checkedRollback(mDB, this, e);
 		assert(computeAllScoresWithoutCommit()); // Test rollback.
 	}
 	
@@ -1903,6 +1885,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			//try {
 			identity = new Identity(requestURI, null, false);
+			identity.initializeTransient(this);
 			identity.storeAndCommit();
 			//storeWithoutCommit(identity);
 			Logger.debug(this, "Created identity " + identity);
@@ -1945,7 +1928,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
 		throws MalformedURLException, InvalidParameterException {
 		
-		FreenetURI[] keypair = getPluginRespirator().getHLSimpleClient().generateKeyPair("WoT");
+		FreenetURI[] keypair = getPluginRespirator().getHLSimpleClient().generateKeyPair(WOT_NAME);
 		return createOwnIdentity(keypair[0].toString(), keypair[1].toString(), nickName, publishTrustList, context);
 	}
 
@@ -1998,7 +1981,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 				catch(RuntimeException e) {
 					Persistent.checkedRollbackAndThrow(mDB, this, e);
-					return null; // Satisfy the compiler
+					throw e; // Satisfy the compiler
 				}
 			}
 		}
@@ -2039,7 +2022,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						Trust newReceivedTrust = new Trust(oldReceivedTrust.getTruster(), identity,
 								oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
 						
-						mDB.store(newReceivedTrust);
+						newReceivedTrust.initializeTransient(this);
+						newReceivedTrust.storeWithoutCommit();
 					}
 		
 					// Update all received scores
@@ -2047,11 +2031,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						Score newScore = new Score(oldScore.getTruster(), identity, oldScore.getScore(),
 								oldScore.getRank(), oldScore.getCapacity());
 						
-						mDB.store(newScore);
+						newScore.initializeTransient(this);
+						newScore.storeWithoutCommit();
 					}
 		
 					identity.storeWithoutCommit();
 					initTrustTreeWithoutCommit(identity);
+					
+					beginTrustListImport();
 					
 					// Update all given trusts
 					for(Trust givenTrust : getGivenTrusts(old)) {
@@ -2062,6 +2049,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						// we should introduce the db.delete(givenTrust)  hereonly after having a unit test for restoreIdentity().
 						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 					}
+					
+					finishTrustListImport();
 		
 					// Remove the old identity and all objects associated with it.
 					deleteWithoutCommit(old);
@@ -2093,6 +2082,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
+				abortTrustListImport(e);
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
@@ -2115,12 +2105,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		synchronized(mDB.lock()) {
 			try  {
 				removeTrustWithoutCommit(truster, trustee);
-				mDB.commit(); Logger.debug(this, "COMMITED.");
+				Persistent.checkedCommit(mDB, this);
 			}
-			catch(RuntimeException e)
-			{
-				System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
-				throw e;
+			catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
 	}
@@ -2155,7 +2143,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		Logger.debug(this, "Added property '" + property + "=" + value + "' to identity '" + identity.getNickname() + "'");
 	}
 	
-	public void removeProperty(String ownIdentityID, String property) throws UnknownIdentityException, InvalidParameterException {
+	public synchronized void removeProperty(String ownIdentityID, String property) throws UnknownIdentityException, InvalidParameterException {
 		final Identity identity = getOwnIdentityByID(ownIdentityID);
 		identity.removeProperty(property);
 		identity.storeAndCommit();
@@ -2261,7 +2249,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
      * Tests whether two WoT are equal.
      * This is a complex operation in terms of execution time and memory usage and only intended for being used in unit tests.
      */
-	public boolean equals(Object obj) {
+	public synchronized boolean equals(Object obj) {
 		if(obj == this)
 			return true;
 		
@@ -2270,6 +2258,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		WebOfTrust other = (WebOfTrust)obj;
 		
+		synchronized(other) {
+
 		{ // Compare own identities
 			final ObjectSet<OwnIdentity> allIdentities = getAllOwnIdentities();
 			
@@ -2343,6 +2333,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					return false;
 				}
 			}
+		}
+		
 		}
 		
 		return true;
