@@ -94,7 +94,7 @@ public final class Score extends Persistent implements Cloneable {
 	 */
 	public Identity getTrustee() {
 		checkedActivate(2);
-		mTruster.initializeTransient(mWebOfTrust);
+		mTrustee.initializeTransient(mWebOfTrust);
 		return mTrustee;
 	}
 
