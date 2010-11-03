@@ -496,8 +496,10 @@ public final class IntroductionClient extends TransferThread  {
 			synchronized(mWoT) { /* getPuzzleByRequestURI requires this */
 			synchronized(mPuzzleStore) {
 				final IntroductionPuzzle puzzle = mPuzzleStore.getPuzzleBySolutionURI(state.getURI());
+				synchronized(puzzle) {
 				puzzle.setInserted();
 				mPuzzleStore.storeAndCommit(puzzle);
+				}
 			}
 			}
 		}
