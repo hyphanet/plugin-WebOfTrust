@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map.Entry;
@@ -85,6 +87,8 @@ public final class XMLTransformer {
 	/* TODO: Check with a profiler how much memory this takes, do not cache it if it is too much */
 	/** Used for storing the XML DOM of encoded identities as physical XML text */
 	private final Transformer mSerializer;
+	
+	private final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	
 	/**
 	 * Initializes the XML creator & parser and caches those objects in the new IdentityXML object so that they do not have to be initialized
@@ -359,6 +363,7 @@ public final class XMLTransformer {
 							catch(UnknownIdentityException e) {
 								if(hasCapacity) { /* We only create trustees if the truster has capacity to rate them. */
 									trustee = new Identity(trusteeURI, null, false);
+									trustee.initializeTransient(mWoT);
 									trustee.storeWithoutCommit();
 								}
 							}
@@ -372,7 +377,7 @@ public final class XMLTransformer {
 						}
 
 						IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
-						if(positiveScore && identityFetcher != null) {
+						if(positiveScore) {
 							for(String id : identitiesWithUpdatedEditionHint)
 								identityFetcher.storeUpdateEditionHintCommandWithoutCommit(id);
 
@@ -432,7 +437,9 @@ public final class XMLTransformer {
 		introElement.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
 
 		Element identityElement = xmlDoc.createElement("Identity");
+		synchronized(mWoT) {
 		identityElement.setAttribute("URI", identity.getRequestURI().toString());
+		}
 		introElement.appendChild(identityElement);
 	
 		rootElement.appendChild(introElement);
@@ -487,6 +494,7 @@ public final class XMLTransformer {
 					}
 					catch (UnknownIdentityException e) {
 						newIdentity = new Identity(identityURI, null, false);
+						newIdentity.initializeTransient(mWoT);
 						// We do NOT call setEdition(): An attacker might solve puzzles pretending to be someone else and publish bogus edition numbers for
 						// that identity by that. The identity constructor only takes the edition number as edition hint, this is the proper behavior.
 						// TODO: As soon as we have code for signing XML with an identity SSK we could sign the introduction XML and therefore prevent that
@@ -506,8 +514,7 @@ public final class XMLTransformer {
 						mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");	
 					}
 					
-					if(identityFetcher != null)
-						identityFetcher.storeStartFetchCommandWithoutCommit(newIdentity.getID());
+					identityFetcher.storeStartFetchCommandWithoutCommit(newIdentity.getID());
 
 					newIdentity.checkedCommit(this);
 				}
@@ -540,7 +547,9 @@ public final class XMLTransformer {
 			puzzleElement.setAttribute("ID", puzzle.getID());
 			puzzleElement.setAttribute("Type", puzzle.getType().toString());
 			puzzleElement.setAttribute("MimeType", puzzle.getMimeType());
-			puzzleElement.setAttribute("ValidUntilTime", Long.toString(puzzle.getValidUntilTime()));
+			synchronized(mDateFormat) {
+			puzzleElement.setAttribute("ValidUntil", mDateFormat.format(puzzle.getValidUntilDate()));
+			}
 			
 			Element dataElement = xmlDoc.createElement("Data");
 			dataElement.setAttribute("Value", Base64.encodeStandard(puzzle.getData()));
@@ -562,7 +571,7 @@ public final class XMLTransformer {
 		String puzzleID;
 		IntroductionPuzzle.PuzzleType puzzleType;
 		String puzzleMimeType;
-		long puzzleValidUntilTime;
+		Date puzzleValidUntilDate;
 		byte[] puzzleData;
 		
 		
@@ -578,7 +587,9 @@ public final class XMLTransformer {
 		puzzleID = puzzleElement.getAttribute("ID");
 		puzzleType = IntroductionPuzzle.PuzzleType.valueOf(puzzleElement.getAttribute("Type"));
 		puzzleMimeType = puzzleElement.getAttribute("MimeType");
-		puzzleValidUntilTime = Long.parseLong(puzzleElement.getAttribute("ValidUntilTime"));
+		synchronized(mDateFormat) {
+		puzzleValidUntilDate = mDateFormat.parse(puzzleElement.getAttribute("ValidUntil"));
+		}
 
 		Element dataElement = (Element)puzzleElement.getElementsByTagName("Data").item(0);
 		puzzleData = Base64.decodeStandard(dataElement.getAttribute("Value"));
@@ -589,7 +600,7 @@ public final class XMLTransformer {
 		synchronized(mWoT) {
 			Identity puzzleInserter = mWoT.getIdentityByURI(puzzleURI);
 			puzzle = new IntroductionPuzzle(puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, 
-					IntroductionPuzzle.getDateFromRequestURI(puzzleURI), puzzleValidUntilTime, IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
+					IntroductionPuzzle.getDateFromRequestURI(puzzleURI), puzzleValidUntilDate, IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
 		
 			mWoT.getIntroductionPuzzleStore().storeAndCommit(puzzle);
 		}
