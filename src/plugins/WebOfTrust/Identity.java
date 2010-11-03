@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+
+import com.db4o.query.Query;
+
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
@@ -474,6 +477,19 @@ public class Identity extends Persistent implements Cloneable {
 			updated();
 		}
 	}
+	
+	@SuppressWarnings("unchecked")
+	private final void activateProperties() {
+		// TODO: As soon as the db4o bug with hashtables is fixed, remove this workaround function & replace with plain checkedActivate(4)
+		if(mProperties != null) {
+			if(mDB.isStored(mProperties)) {
+				Query q = mDB.query();
+				q.constrain(mProperties).identity();
+				mProperties = (Hashtable<String,String>)q.execute().next();
+			}
+		} else 
+			checkedActivate(4);
+	}
 
 	/**
 	 * Gets the value of one of this Identity's properties.
@@ -485,9 +501,7 @@ public class Identity extends Persistent implements Cloneable {
 	public final String getProperty(String key) throws InvalidParameterException {
 		key = key.trim();
 		
-		// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
-		if(mProperties != null) mDB.deactivate(mProperties);
-		checkedActivate(4);
+		activateProperties();
 		
 		if (!mProperties.containsKey(key)) {
 			throw new InvalidParameterException("The property '" + key +"' isn't set on this identity.");
@@ -503,9 +517,7 @@ public class Identity extends Persistent implements Cloneable {
 	 */
 	@SuppressWarnings("unchecked")
 	public final Hashtable<String, String> getProperties() {
-		// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
-		if(mProperties != null) mDB.deactivate(mProperties);
-		checkedActivate(4);
+		activateProperties();
 		/* TODO: If this is used often, we might verify that no code corrupts the Hashtable and return the original one instead of a copy */
 		return (Hashtable<String, String>)mProperties.clone();
 	}
@@ -552,9 +564,7 @@ public class Identity extends Persistent implements Cloneable {
 			throw new InvalidParameterException("Property values must not be longer than " + MAX_PROPERTY_VALUE_LENGTH + " characters");
 		}
 		
-		// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
-		if(mProperties != null) mDB.deactivate(mProperties);
-		checkedActivate(4);
+		activateProperties();
 		
 		String oldValue = mProperties.get(key);
 		if (oldValue == null && mProperties.size() >= MAX_PROPERTY_AMOUNT) {
@@ -576,9 +586,7 @@ public class Identity extends Persistent implements Cloneable {
 	 */
 	protected final void setProperties(Hashtable<String, String> newProperties) {
 		// TODO: Optimization: Figure out whether anything breaks if we do not activate since mProperties is set to a new Hashtable anyway
-		// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
-		if(mProperties != null) mDB.deactivate(mProperties);
-		checkedActivate(4);
+		activateProperties();
 		
 		mProperties = new Hashtable<String, String>();
 		
@@ -597,9 +605,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * @param key Name of the custom property.
 	 */
 	public final void removeProperty(String key) throws InvalidParameterException {
-		// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
-		if(mProperties != null) mDB.deactivate(mProperties);
-		checkedActivate(4);
+		activateProperties();
 		
 		key = key.trim();		
 		if (mProperties.remove(key) != null) {
@@ -685,6 +691,7 @@ public class Identity extends Persistent implements Cloneable {
 	public Identity clone() {
 		try {
 			Identity clone = new Identity(getRequestURI(), getNickname(), doesPublishTrustList());
+			clone.initializeTransient(mWebOfTrust);
 			
 			checkedActivate(4); // For performance only
 			
@@ -705,11 +712,10 @@ public class Identity extends Persistent implements Cloneable {
 	 * You must synchronize on the WoT, on the identity and then on the database when using this function!
 	 */
 	protected void storeWithoutCommit() {
-		try {		
-			// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
-			if(mProperties != null) mDB.deactivate(mProperties);
+		try {
 			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(4);
+			activateProperties();
 
 			// checkedStore(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			checkedStore(mRequestURI);
@@ -750,10 +756,9 @@ public class Identity extends Persistent implements Cloneable {
 	 */
 	protected void deleteWithoutCommit() {
 		try {
-			// TODO: Remove bug workaround: Hashtables break if we activate this to depth 2 before we activate to depth 4. Deactivating fixes it.
-			if(mProperties != null) mDB.deactivate(mProperties);
 			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(4);
+			activateProperties();
 			
 			// mDB.delete(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			mRequestURI.removeFrom(mDB);
