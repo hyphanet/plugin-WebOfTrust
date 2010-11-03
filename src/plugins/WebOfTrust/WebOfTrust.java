@@ -182,7 +182,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			mInserter = new IdentityInserter(this);
 			mInserter.start();
 			
-			mFetcher = new IdentityFetcher(this);		
+			mFetcher = new IdentityFetcher(this, getPluginRespirator());		
 			
 			// TODO: Don't do this as soon as we are sure that score computation works.
 			Logger.normal(this, "Veriying all stored scores ...");
@@ -251,6 +251,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
+		
+		mFetcher = new IdentityFetcher(this, null);
 	}
 
 	/**
@@ -265,7 +267,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		// Required config options:
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader()));
-		cfg.activationDepth(5); /* TODO: Change to 1 and add explicit activation everywhere */
+		// TODO: Optimization: We do explicit activation everywhere. We could change this to 1 and test whether it still works.
+		// We have to do very careful testing though, toad_ said that db4o bugs can occur with depth 1 and manual activation...
+		cfg.activationDepth(10);
 		cfg.exceptionsOnNotStorable(true);
         // The shutdown hook does auto-commit. We do NOT want auto-commit: if a transaction hasn't commit()ed, it's not safe to commit it.
         cfg.automaticShutDown(false);
@@ -736,7 +740,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					}
 				}
 				
-				Score expectedScore = targetScore != null ? new Score(treeOwner, target, targetScore, targetRank, computeCapacity(treeOwner, target, targetRank)) : null;
+				Score expectedScore = null;
+				if(targetScore != null) {
+					expectedScore = new Score(treeOwner, target, targetScore, targetRank, computeCapacity(treeOwner, target, targetRank));
+					expectedScore.initializeTransient(this);
+				}
 				
 				boolean needToCheckFetchStatus = false;
 				boolean oldShouldFetch = false;
@@ -791,16 +799,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						target.markForRefetch();
 						target.storeWithoutCommit();
 
-						if(mFetcher != null) {
-							mFetcher.storeStartFetchCommandWithoutCommit(target);
-						}
+						mFetcher.storeStartFetchCommandWithoutCommit(target);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(target)) {
 						Logger.debug(this, "Best capacity changed from positive to 0, aborting fetch of " + target);
 
-						if(mFetcher != null) {
-							mFetcher.storeAbortFetchCommandWithoutCommit(target);
-						}
+						mFetcher.storeAbortFetchCommandWithoutCommit(target);
 					}
 				}
 			}
@@ -1164,8 +1168,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			Logger.debug(this, "Storing an abort-fetch-command...");
 			
-			if(mFetcher != null)
-				mFetcher.storeAbortFetchCommandWithoutCommit(identity);
+			mFetcher.storeAbortFetchCommandWithoutCommit(identity);
 
 			Logger.debug(this, "Deleting the identity...");
 			identity.deleteWithoutCommit();
@@ -1484,6 +1487,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 		} catch (NotTrustedException e) {
 			trust = new Trust(truster, trustee, newValue, newComment);
+			trust.initializeTransient(this);
 			trust.storeWithoutCommit();
 			Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
 			updateScoresWithoutCommit(null, trust);
@@ -1788,6 +1792,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						trusteeScore = getScore(treeOwner, trustee);
 					} catch(NotInTrustTreeException e) {
 						trusteeScore = new Score(treeOwner, trustee, 0, -1, 0);
+						trusteeScore.initializeTransient(this);
 					}
 
 					final Score oldScore = trusteeScore.clone();
@@ -1823,14 +1828,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						trustee.markForRefetch();
 						trustee.storeWithoutCommit();
 
-						if(mFetcher != null)
-							mFetcher.storeStartFetchCommandWithoutCommit(trustee);
+						mFetcher.storeStartFetchCommandWithoutCommit(trustee);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(trustee)) {
 						Logger.debug(this, "Fetch status changed from true to false, aborting fetch of " + trustee);
 
-						if(mFetcher != null)
-							mFetcher.storeAbortFetchCommandWithoutCommit(trustee);
+						mFetcher.storeAbortFetchCommandWithoutCommit(trustee);
 					}
 					
 					// If the rank or capacity changed then the trustees might be affected because the could have inherited theirs
