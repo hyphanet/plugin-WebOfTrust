@@ -163,6 +163,7 @@ public final class OwnIdentity extends Identity {
 	public final OwnIdentity clone() {
 		try {
 			OwnIdentity clone = new OwnIdentity(getInsertURI(), getRequestURI(), getNickname(), doesPublishTrustList());
+			clone.initializeTransient(mWebOfTrust);
 			
 			checkedActivate(4); // For performance only
 			
