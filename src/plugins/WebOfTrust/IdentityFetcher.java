@@ -11,7 +11,6 @@ import java.net.MalformedURLException;
 import java.util.Hashtable;
 
 import plugins.WebOfTrust.Identity.FetchState;
-import plugins.WebOfTrust.Persistent.IndexedField;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
@@ -30,6 +29,7 @@ import freenet.keys.USK;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
@@ -70,17 +70,24 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * 
 	 * @param myWoT A reference to a {@link WebOfTrust}
 	 */
-	protected IdentityFetcher(WebOfTrust myWoT) {
+	protected IdentityFetcher(WebOfTrust myWoT, PluginRespirator respirator) {
 		mWoT = myWoT;
 		
 		mDB = mWoT.getDatabase();
 		
-		mUSKManager = mWoT.getPluginRespirator().getNode().clientCore.uskManager;
-		mClient = mWoT.getPluginRespirator().getHLSimpleClient();
-		mClientContext = mWoT.getPluginRespirator().getNode().clientCore.clientContext;
-		mRequestClient = mWoT.getRequestClient();
+		if(respirator != null) { // We are connected to a node
+		mUSKManager = respirator.getNode().clientCore.uskManager;
+		mClient = respirator.getHLSimpleClient();
+		mClientContext = respirator.getNode().clientCore.clientContext;
+		mTicker = new TrivialTicker(respirator.getNode().executor);
+		} else {
+			mUSKManager = null;
+			mClient = null;
+			mClientContext = null;
+			mTicker = null;
+		}
 		
-		mTicker = new TrivialTicker(mWoT.getPluginRespirator().getNode().executor);
+		mRequestClient = mWoT.getRequestClient();
 		
 		deleteAllCommands();
 	}
@@ -146,7 +153,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		return getCommand(commandType, identity.getID());
 	}
 	
-	@SuppressWarnings("unchecked")
 	private IdentityFetcherCommand getCommand(final Class<? extends IdentityFetcherCommand> commandType, final String identityID)
 		throws NoSuchCommandException {
 		
@@ -162,7 +168,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
 	private ObjectSet<IdentityFetcherCommand> getCommands(final Class<? extends IdentityFetcherCommand> commandType) {
 		final Query q = mDB.query();
 		q.constrain(commandType);
@@ -209,7 +214,9 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			Logger.debug(this, "Start fetch command already in queue!");
 		}
 		catch(NoSuchCommandException e) {
-			new StartFetchCommand(identityID).storeWithoutCommit();
+			final StartFetchCommand cmd = new StartFetchCommand(identityID);
+			cmd.initializeTransient(mWoT);
+			cmd.storeWithoutCommit();
 			scheduleCommandProcessing();
 		}
 	}
@@ -228,7 +235,9 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			Logger.debug(this, "Abort fetch command already in queue!");
 		}
 		catch(NoSuchCommandException e) {
-			new AbortFetchCommand(identity).storeWithoutCommit();
+			final AbortFetchCommand cmd = new AbortFetchCommand(identity);
+			cmd.initializeTransient(mWoT);
+			cmd.storeWithoutCommit();
 			scheduleCommandProcessing();
 		}
 	}
@@ -246,14 +255,19 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 				Logger.debug(this, "Update edition hint command already in queue!");
 			}
 			catch(NoSuchCommandException e2) {
-				new UpdateEditionHintCommand(identityID).storeWithoutCommit();
+				final UpdateEditionHintCommand cmd = new UpdateEditionHintCommand(identityID);
+				cmd.initializeTransient(mWoT);
+				cmd.storeWithoutCommit();
 				scheduleCommandProcessing();
 			}
 		}
 	}
 	
 	private void scheduleCommandProcessing() {
-		mTicker.queueTimedJob(this, "WoT IdentityFetcher", PROCESS_COMMANDS_DELAY, false, true);
+		if(mTicker != null)
+			mTicker.queueTimedJob(this, "WoT IdentityFetcher", PROCESS_COMMANDS_DELAY, false, true);
+		else
+			Logger.warning(this, "Cannot schedule command processing: Ticker is null.");
 	}
 	
 	public int getPriority() {
@@ -447,21 +461,16 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		
 		Logger.debug(this, "Fetched identity: " + realURI);
 
-		if (result.size() == 0) {
-			Logger.error(this, "Identity has 0 byte data, ignoring: "+realURI.toString(false, false) +
-					"\nIf this happens very often it is a severe bug or an attac.");
-			// Do not return, let the XMLTransformer store the edition as parsing failed...
-		}
-
 		Bucket bucket = null;
 		InputStream inputStream = null;
 		
 		try {
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
+			
 			mWoT.getXMLTransformer().importIdentity(realURI, inputStream);
 		}
-		catch (Exception e) {
+		catch (Throwable e) {
 			Logger.error(this, "Parsing failed for " + realURI, e);
 		}
 		finally {
