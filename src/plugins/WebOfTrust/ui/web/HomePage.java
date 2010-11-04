@@ -57,8 +57,7 @@ public class HomePage extends WebPageImpl {
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.SolvedCaptchasOfOthers") + ": " + puzzleStore.getNonOwnCaptchaAmount(true)));
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.NotInsertedCaptchasSolutions") + ": " + puzzleStore.getUninsertedSolvedPuzzles().size()));
 		}
-		}
-		
 		box.addChild(list);
+		}
 	}
 }
