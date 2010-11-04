@@ -423,7 +423,8 @@ public final class IntroductionClient extends TransferThread  {
 		final FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
-		final ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mWoT.getRequestClient(), this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
+		final ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mPuzzleStore.getRequestClient(), 
+				this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
 		addFetch(g);
 		
 		// Not necessary because it's not a HashSet but a fixed-length queue so the identity will get removed sometime anyway.

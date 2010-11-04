@@ -11,11 +11,13 @@ import plugins.WoT.exceptions.UnknownIdentityException;
 import plugins.WoT.exceptions.UnknownPuzzleException;
 import plugins.WoT.introduction.IntroductionPuzzle.PuzzleType;
 
+import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
@@ -44,12 +46,30 @@ public final class IntroductionPuzzleStore {
 	private final WoT mWoT;
 	
 	private final ExtObjectContainer mDB;
+	
+	private final RequestClient mRequestClient;
 
 	public IntroductionPuzzleStore(final WoT myWoT) {
 		mWoT = myWoT;
 		mDB = myWoT.getDB();
 		
+		mRequestClient = new RequestClient() {
+			
+			public boolean persistent() {
+				return false;
+			}
+
+			public void removeFrom(ObjectContainer container) {
+				throw new UnsupportedOperationException();
+			}
+			
+		};
+		
 		deleteCorruptedPuzzles();
+	}
+	
+	protected RequestClient getRequestClient() {
+		return mRequestClient;
 	}
 
 	private synchronized void deleteCorruptedPuzzles() {		
