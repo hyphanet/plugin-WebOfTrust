@@ -9,17 +9,17 @@ import java.util.Date;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
-import freenet.support.Logger;
 
 /**
  * An introduction puzzle is a puzzle (for example a CAPTCHA) which can be solved by a new identity to get onto the trust list
  * of already existing identities. This is the only way to get onto the web of trust if you do not know someone who will add you manually.
  */
-public class IntroductionPuzzle {
+public class IntroductionPuzzle extends Persistent {
 	
 	public static enum PuzzleType { Captcha };
 	
@@ -35,13 +35,15 @@ public class IntroductionPuzzle {
 	 * The ID of the puzzle is constructed as: random UUID + "@" + ID of the inserter. 
 	 * This has to be done to prevent malicious users from inserting puzzles with the IDs of puzzles which someone else has already inserted.
 	 */
+	@IndexedField
 	private final String mID;
 	
 	private final PuzzleType mType;
 	
 	private final String mMimeType;
 	
-	private final long mValidUntilTime;
+	@IndexedField
+	private final Date mValidUntilDate;
 	
 	private final byte[] mData;
 	
@@ -50,8 +52,10 @@ public class IntroductionPuzzle {
 	/**
 	 * The inserter of the puzzle. If it is an OwnIdentity then this is a locally generated puzzle.
 	 */
+	@IndexedField
 	private final Identity mInserter;
 	
+	@IndexedField
 	private final Date mDateOfInsertion;
 	
 	private final int mIndex;
@@ -60,6 +64,7 @@ public class IntroductionPuzzle {
 	 * Set to true after it was used for introducing a new identity. We keep used puzzles in the database until they expire for the purpose of
 	 * being able to figure out free index values of new puzzles. Storing a few KiB for some days will not hurt.
 	 */
+	@IndexedField
 	protected boolean mWasSolved;
 	
 	/* Supplied at creation time or by user: */
@@ -77,19 +82,9 @@ public class IntroductionPuzzle {
 	/**
 	 * Set to true after the solution was inserted (for OwnIntroductionPuzzles after the puzzle was inserted.)
 	 */
+	@IndexedField
 	protected boolean mWasInserted; 
-	
-	/**
-	 * Get a list of fields which the database should create an index on.
-	 */
-	public static String[] getIndexedFields() {
-		return new String[] {"mID",
-							"mInserter",
-							"mDateOfInsertion",
-							"mValidUntilTime",
-							"mWasSolved",
-							"mWasInserted"};
-	}
+
 	
 	/**
 	 * For construction from a received puzzle.
@@ -98,33 +93,58 @@ public class IntroductionPuzzle {
 	 */
 	@SuppressWarnings("deprecation")
 	public IntroductionPuzzle(Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData,
-			Date myDateOfInsertion, long myValidUntilTime, int myIndex) {
+			Date myDateOfInsertion, Date myExpirationDate, int myIndex) {
+		
+		if(newInserter == null)
+			throw new NullPointerException("No inserter specified.");
+		
+		if(!newInserter.hasContext(INTRODUCTION_CONTEXT))
+			throw new IllegalArgumentException("The given inserter does not have the " + INTRODUCTION_CONTEXT + " context.");
+		
+		if(newID == null)
+			throw new NullPointerException("No puzzle ID specified");
 
-		assert(newInserter != null);
-		assert(newID != null);
-		assert(newType != null);
-		assert(newMimeType != null);
-		assert(!newMimeType.equals(""));
-		assert(newData!=null);
-		assert(newData.length!=0);
-		assert(myValidUntilTime > CurrentTimeUTC.getInMillis());
-		assert(myDateOfInsertion != null);
-		assert(myDateOfInsertion.getTime() <= CurrentTimeUTC.getInMillis());
-		assert(myIndex >= 0);
+		if(!newID.endsWith(newInserter.getID()))
+			throw new IllegalArgumentException("Invalid puzzle ID, does not end with inserter ID: " + newID);
+		
+		// Verification that the rest of the ID is an UUID is not necessary: If a client inserts a puzzle with the ID just being his
+		// identity ID (or other bogus stuff) he will just shoot himself in the foot by possibly only allowing 1 puzzle of him to
+		// be available because the databases of the downloaders check whether the ID already exists.
+
+		if(newType == null)
+			throw new NullPointerException("No puzzle type specified.");
+
+		if(newMimeType == null)
+			throw new NullPointerException("No mimetype specified.");
+		
+		if(!newMimeType.equals("image/jpeg"))
+			throw new IllegalArgumentException("Invalid mime type specified.");
+
+		if(newData == null || newData.length == 0)
+			throw new NullPointerException("No data specified.");
+		
+		if(myExpirationDate.before(CurrentTimeUTC.get()))
+			throw new IllegalArgumentException("The puzzle is expired already.");
+			
+		if(myDateOfInsertion == null)
+			throw new NullPointerException("No date of insertion specified.");
+		
+		if(myDateOfInsertion.after(CurrentTimeUTC.get()))
+			throw new IllegalArgumentException("Date of insertion is in the future.");
+					
+		if(myIndex < 0)
+			throw new IllegalArgumentException("Puzzle index is negative");
 		
 		mID = newID;
 		mInserter = newInserter;
 		mType = newType;
 		mMimeType = newMimeType;
 		mDateOfInsertion = new Date(myDateOfInsertion.getYear(), myDateOfInsertion.getMonth(), myDateOfInsertion.getDate());
-		mValidUntilTime = myValidUntilTime;
+		mValidUntilDate = myExpirationDate;
 		mIndex = myIndex;
 		mData = newData;
 		mWasSolved = false; mSolution = null; mSolver = null;
 		mWasInserted = false;
-
-		if(checkConsistency() == false)
-			throw new IllegalArgumentException("Corrupted puzzle received.");
 	}
 	
 	/**
@@ -147,7 +167,7 @@ public class IntroductionPuzzle {
 	 * Get the URI where this puzzle was downloaded from.
 	 */
 	public FreenetURI getRequestURI() {
-		return generateRequestURI(mInserter, mDateOfInsertion, mIndex);
+		return generateRequestURI(getInserter(), getDateOfInsertion(), getIndex());
 	}
 
 	/**
@@ -181,39 +201,46 @@ public class IntroductionPuzzle {
 	}
 	
 	public String getID() {
+		// checkedActivate(depth) is not needed, String is a db4o primitive type
 		return mID;
 	}
 	
 	public PuzzleType getType() {
+		checkedActivate(2); // TODO: Optimization: Do we really need to activate for enums?
 		return mType;
 	}
 
 	public String getMimeType() {
+		// checkedActivate(depth) is not needed, String is a db4o primitive type
 		return mMimeType;
 	}
 	
 	public byte[] getData() {
+		// checkedActivate(depth) is not needed, byte[] is a db4o primitive type
 		return mData;
 	}
 	
 	public Identity getInserter() {
+		checkedActivate(2);
+		mInserter.initializeTransient(mWebOfTrust);
 		return mInserter;
 	}
 	
 	public Date getDateOfInsertion() {
+		// checkedActivate(depth) is not needed, Date is a db4o primitive type
 		return mDateOfInsertion;
 	}
 	
-	public long getValidUntilTime() {
-		return mValidUntilTime;
+	public Date getValidUntilDate() {
+		// checkedActivate(depth) is not needed, long is a db4o primitive type
+		return mValidUntilDate;
 	}
 	
 	public int getIndex() {
+		// checkedActivate(depth) is not needed, int is a db4o primitive type
 		return mIndex;
 	}
 
-	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
-	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
 	/**
 	 * Used by the IntroductionClient to mark a puzzle as solved
 	 * 
@@ -221,9 +248,9 @@ public class IntroductionPuzzle {
 	 * @param solution The solution which was passed by the solver.
 	 * @throws InvalidParameterException If the puzzle was already solved.
 	 */
-	public synchronized void setSolved(OwnIdentity solver, String solution) throws InvalidParameterException {
-		if(mWasSolved)
-			throw new InvalidParameterException("Puzzle is already solved!"); /* TODO: create a special exception for that */
+	public synchronized void setSolved(OwnIdentity solver, String solution) {
+		if(wasSolved())
+			throw new IllegalStateException("Puzzle is already solved!"); 
 		
 		mWasSolved = true;
 		mSolver = solver;
@@ -231,16 +258,19 @@ public class IntroductionPuzzle {
 	}
 	
 	public synchronized boolean wasSolved() {
+		// checkedActivate(depth) is not needed, boolean is a db4o primitive type
 		return mWasSolved;
 	}
 
-	/* TODO: This function probably does not need to be synchronized because the current "outside" code will not use it without locking.
-	 * However, if one only knows this class and not how it is used by the rest, its logical to synchronize it. */
 	/**
 	 * Get the OwnIdentity which solved this puzzle. Used by the IntroductionClient for inserting identity introductions.
 	 */
 	public synchronized OwnIdentity getSolver() {
-		assert(mWasSolved);
+		if(!wasSolved())
+			throw new IllegalStateException("The puzzle is not solved");
+		
+		checkedActivate(2);
+		mSolver.initializeTransient(mWebOfTrust);
 		return mSolver;
 	}
 
@@ -253,8 +283,10 @@ public class IntroductionPuzzle {
 	 * guessOfSolution = the guess of the solution which is passed to the function.
 	 */
 	public synchronized FreenetURI getSolutionURI() {
+		// checkedActivate(depth) is not needed, String is a db4o primitive type
+		
 		if(mSolution == null)
-			throw new RuntimeException("The puzzle is not solved.");
+			throw new IllegalStateException("The puzzle is not solved.");
 		
 		return new FreenetURI("KSK",	WebOfTrust.WOT_NAME + "|" +
 										INTRODUCTION_CONTEXT + "|" +
@@ -263,48 +295,33 @@ public class IntroductionPuzzle {
 	}
 	
 	public synchronized boolean wasInserted() {
+		// checkedActivate(depth) is not needed, boolean is a db4o primitive type
 		return mWasInserted;
 	}
 	
 	public synchronized void setInserted() {
-		if(mWasInserted)
+		if(wasInserted())
 			throw new RuntimeException("The puzzle was already inserted.");
 		
 		mWasInserted = true;
 	}
 	
-	/* TODO: Write an unit test which uses this function :) */
-	/* TODO: This code sucks, checkConsistency should throw a descriptive message */
-	@SuppressWarnings("deprecation")
-	public boolean checkConsistency() {
-		boolean result = true;
-		if(mID == null) 
-			{ Logger.error(this, "mID == null!"); result = false; }
-		else { /* Verify the UID */
-			if(mInserter != null) {
-				String inserterID = mInserter.getID();
-				if(mID.endsWith(inserterID) == false) { Logger.error(this, "mID does not start with InserterID: " + mID); result = false; }
-				/* Verification that the rest of the ID is an UUID is not necessary: If a client inserts a puzzle with the ID just being his
-				 * identity ID (or other bogus stuff) he will just shoot himself in the foot by possibly only allowing 1 puzzle of him to
-				 * be available because the databases of the downloaders check whether the ID already exists. */
-			}
+	protected void storeWithoutCommit() {
+		try {		
+			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(2);
+			throwIfNotStored(mInserter);
+			if(wasSolved()) 
+				throwIfNotStored(mSolver);
+			checkedStore();
 		}
-		if(mType == null)
-			{ Logger.error(this, "mType == null!"); result = false; }
-		if(mMimeType == null || !mMimeType.equals("image/jpeg"))
-			{ Logger.error(this, "mMimeType == " + mMimeType); result = false; }
-		if(new Date(mValidUntilTime).before(new Date(2008-1900, 10, 10)))
-			{ Logger.error(this, "mValidUntilTime == " + new Date(mValidUntilTime)); result = false; }
-		if(mData == null || mData.length<100)
-			{ Logger.error(this, "mData == " + mData); result = false; }
-		if(mInserter == null)
-			{ Logger.error(this, "mInserter == null"); result = false; }
-		if(mDateOfInsertion == null || mDateOfInsertion.before(new Date(2008-1900, 10, 10)) || mDateOfInsertion.after(CurrentTimeUTC.get()))
-			{ Logger.error(this, "mDateOfInsertion == " + mDateOfInsertion + "currentTime == " + CurrentTimeUTC.get()); result = false; }
-		if(mIndex < 0)
-			{ Logger.error(this, "mIndex == " + mIndex); result = false; }
-		
-		return result;
+		catch(final RuntimeException e) {
+			checkedRollbackAndThrow(e);
+		}
+	}
+	
+	protected void deleteWithoutCommit() {
+		super.deleteWithoutCommit();
 	}
 
 }
