@@ -20,6 +20,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.IntroductionServer;
 
 import com.db4o.ObjectSet;
@@ -510,7 +511,9 @@ public final class FCPInterface implements FredPluginFCP {
     	final String puzzleID = getMandatoryParameter(params, "Puzzle");
     	final String solution = getMandatoryParameter(params, "Solution");
     	
-    	mWoT.getIntroductionClient().solvePuzzle(mWoT.getOwnIdentityByID(identityID), mWoT.getIntroductionPuzzleStore().getByID(puzzleID), solution);
+    	// We do not have to take locks here. TODO: Write a solvePuzzle which only takes IDs, it re-queries the objects anyway
+    	mWoT.getIntroductionClient().solvePuzzle(
+    			mWoT.getOwnIdentityByID(identityID), mWoT.getIntroductionPuzzleStore().getByID(puzzleID), solution);
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "PuzzleSolved");
