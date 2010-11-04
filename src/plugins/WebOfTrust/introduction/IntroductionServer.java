@@ -194,7 +194,7 @@ public final class IntroductionServer extends TransferThread {
 		while(puzzlesToGenerate > 0) {
 			try {
 			final OwnIntroductionPuzzle p = mPuzzleFactories[mRandom.nextInt(mPuzzleFactories.length)].generatePuzzle(mPuzzleStore, identity);
-			Logger.debug(this, "Generated puzzle of " + p.getDateOfInsertion() + "; valid until " + new Date(p.getValidUntilTime()));
+			Logger.debug(this, "Generated puzzle of " + p.getDateOfInsertion() + "; valid until " + p.getValidUntilDate());
 			} catch(Exception e) {
 				Logger.error(this, "Puzzle generation failed.", e);
 			}
