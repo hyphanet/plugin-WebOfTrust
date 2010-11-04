@@ -10,10 +10,9 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
 
-import freenet.support.CurrentTimeUTC;
-
 /**
- * @author xor (xor@freenetproject.org) Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class IdentityTest extends DatabaseBasedTest {
 	
@@ -26,9 +25,10 @@ public class IdentityTest extends DatabaseBasedTest {
 		super.setUp();
 		
 		identity = new Identity(uri, "test", true);
+		identity.initializeTransient(mWoT);
 		identity.addContext("bleh");
 		identity.setProperty("testproperty","foo1a");
-		mWoT.storeAndCommit(identity);
+		identity.storeAndCommit();
 		
 		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
 		flushCaches();
@@ -76,6 +76,8 @@ public class IdentityTest extends DatabaseBasedTest {
 		Identity stored = mWoT.getIdentityByURI(uri);
 		assertSame(identity, stored);
 		
+		identity.checkedActivate(10);
+		
 		stored = null;
 		mWoT.terminate();
 		mWoT = null;
@@ -83,6 +85,8 @@ public class IdentityTest extends DatabaseBasedTest {
 		flushCaches();
 		
 		mWoT = new WebOfTrust(getDatabaseFilename());
+		
+		identity.initializeTransient(mWoT);  // Prevent DatabaseClosedException in .equals()
 		
 		assertEquals(1, mWoT.getAllIdentities().size());	
 		

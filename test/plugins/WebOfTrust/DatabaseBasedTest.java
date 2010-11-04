@@ -6,7 +6,6 @@ package plugins.WebOfTrust;
 import java.io.File;
 
 import junit.framework.TestCase;
-import plugins.WebOfTrust.WebOfTrust;
 
 /**
  * A JUnit <code>TestCase</code> which opens a db4o database in setUp() and closes it in tearDown().
@@ -69,7 +68,7 @@ public class DatabaseBasedTest extends TestCase {
 		System.gc();
 		System.runFinalization();
 		if(mWoT != null)
-			mWoT.getDB().purge();
+			mWoT.getDatabase().purge();
 		System.gc();
 		System.runFinalization();
 	}

@@ -10,7 +10,8 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import freenet.support.CurrentTimeUTC;
 
 /**
- * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class ScoreTest extends DatabaseBasedTest {
 	
@@ -24,14 +25,11 @@ public class ScoreTest extends DatabaseBasedTest {
 	protected void setUp() throws Exception {
 		super.setUp();
 		
-		a = new OwnIdentity(uriA, uriA, "A", true);
-		b = new OwnIdentity(uriB, uriB, "B", true);
-		mWoT.storeAndCommit(a);
-		mWoT.storeAndCommit(b);
+		a = new OwnIdentity(uriA, uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
+		b = new OwnIdentity(uriB, uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
 		
-		Score score = new Score(a,b,100,1,40);
-		mWoT.getDB().store(score);
-		mWoT.getDB().commit();
+		Score score = new Score(a,b,100,1,40); score.initializeTransient(mWoT);	score.storeWithoutCommit();
+		Persistent.checkedCommit(mWoT.getDatabase(), this);
 		
 		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
 		flushCaches();
@@ -54,6 +52,8 @@ public class ScoreTest extends DatabaseBasedTest {
 		b = mWoT.getOwnIdentityByURI(uriB);
 		final Score originalScore = mWoT.getScore(a, b);
 		
+		originalScore.checkedActivate(10);
+		
 		mWoT.terminate();
 		mWoT = null;
 		
@@ -64,6 +64,8 @@ public class ScoreTest extends DatabaseBasedTest {
 		b = mWoT.getOwnIdentityByURI(uriB);
 		final Score score = mWoT.getScore(a, b);
 		
+		originalScore.initializeTransient(mWoT); // Prevent DatabaseClosedException in .equals()
+		
 		assertSame(score, mWoT.getScore(a, b));
 		assertNotSame(score, originalScore);
 		assertEquals(originalScore, score);
@@ -71,6 +73,7 @@ public class ScoreTest extends DatabaseBasedTest {
 	
 	public void testEquals() {
 		final Score score = new Score(a, b, 100, 3, 2);
+		score.initializeTransient(mWoT);
 		
 		do {
 			try {
@@ -79,6 +82,7 @@ public class ScoreTest extends DatabaseBasedTest {
 		} while(score.getDateOfCreation().equals(CurrentTimeUTC.get()));
 		
 		final Score equalScore = new Score(score.getTruster().clone(), score.getTrustee().clone(), score.getScore(), score.getRank(), score.getCapacity());
+		equalScore.initializeTransient(mWoT);
 		
 		assertEquals(score, score);
 		assertEquals(score, equalScore);
@@ -94,7 +98,11 @@ public class ScoreTest extends DatabaseBasedTest {
 			new Score(score.getTruster(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()+1),
 		};
 		
-		for(Object other : inequalObjects)
+		for(Object other : inequalObjects) {
+			if(other instanceof Score)
+				((Score)other).initializeTransient(mWoT);
+			
 			assertFalse(score.equals(other));
+		}
 	}
 }

@@ -80,7 +80,7 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 		ByteArrayInputStream is = new ByteArrayInputStream(introductionXML.getBytes("UTF-8"));
 		
 		try {
-			mOwnIdentity.removeContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); mWoT.storeAndCommit(mOwnIdentity);
+			mOwnIdentity.removeContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); mOwnIdentity.storeAndCommit();
 			
 			mTransformer.importIntroduction(mOwnIdentity, is);
 			fail("XMLTransformer.importIntroduction() should not import an introduction if the puzzle publisher does not allow introduction anymore.");
@@ -96,7 +96,7 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 		
 		is = new ByteArrayInputStream(introductionXML.getBytes("UTF-8"));
 		
-		mOwnIdentity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); mWoT.storeAndCommit(mOwnIdentity);
+		mOwnIdentity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); mOwnIdentity.storeAndCommit();
 		
 		Identity importedIdentity = mTransformer.importIntroduction(mOwnIdentity, is);
 		

@@ -5,18 +5,14 @@ package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
 
-import plugins.WebOfTrust.Identity;
-import plugins.WebOfTrust.Trust;
-import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
-import com.db4o.ext.ExtObjectContainer;
-
 /**
- * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class TrustTest extends DatabaseBasedTest {
 	
@@ -30,15 +26,11 @@ public class TrustTest extends DatabaseBasedTest {
 	protected void setUp() throws Exception {
 		super.setUp();
 
-		a = new Identity(uriA, "A", true);
-		b = new Identity(uriB, "B", true);
-		Trust trust = new Trust(a,b,(byte)100,"test");
+		a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeWithoutCommit();
+		b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeWithoutCommit();
 		
-		ExtObjectContainer db = mWoT.getDB();
-		db.store(a, 5);
-		db.store(b, 5);
-		db.store(trust);
-		db.commit();
+		Trust trust = new Trust(a,b,(byte)100,"test"); trust.initializeTransient(mWoT);trust.storeWithoutCommit();
+		Persistent.checkedCommit(mWoT.getDatabase(), this);
 		
 		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
 		flushCaches();

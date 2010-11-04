@@ -14,7 +14,8 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import com.db4o.ext.ExtObjectContainer;
 
 /**
- * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class WoTTest extends DatabaseBasedTest {
 
@@ -48,11 +49,9 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	public void testSetTrust1() throws InvalidParameterException, MalformedURLException {
-		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", true);
-		Identity b = new Identity(uriB, "B", true);
 		/* We store A manually instead of using createOwnIdentity() so that the WoT does not initialize it's trust tree (it does not have a score for itself). */
-		mWoT.storeAndCommit(a);
-		mWoT.storeAndCommit(b);
+		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
+		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
 		
 		// With A's trust tree not initialized, B shouldn't get a Score.
 		mWoT.setTrust(a, b, (byte)10, "Foo");
@@ -67,8 +66,8 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testSetTrust2() throws MalformedURLException, InvalidParameterException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException {
 
 		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test"); /* Initializes it's trust tree */
-		Identity b = new Identity(uriB, "B", true);
-		mWoT.storeAndCommit(b);
+		
+		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		
@@ -137,15 +136,16 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testRemoveTrust() throws MalformedURLException, InvalidParameterException, UnknownIdentityException,
 		NotInTrustTreeException {
 		
-		ExtObjectContainer db = mWoT.getDB();
-		
 		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test");
-		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
-		Identity c = new Identity(uriC, "C", true); mWoT.storeAndCommit(c);
+		
+		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		Identity c = new Identity(uriC, "C", true); c.initializeTransient(mWoT); c.storeAndCommit();
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
-		mWoT.setTrustWithoutCommit(b, c, (byte)50, "Bar"); // There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
-		db.commit();
+		// There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
+		mWoT.setTrustWithoutCommit(b, c, (byte)50, "Bar");
+		
+		Persistent.checkedCommit(mWoT.getDatabase(), this);
 		
 		// Check we have the correct number of objects
 		flushCaches();
@@ -207,17 +207,16 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	public void testTrustLoop() throws MalformedURLException, InvalidParameterException, NotInTrustTreeException {
-		ExtObjectContainer db = mWoT.getDB();
-		
 		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test");
-		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
-		Identity c = new Identity(uriC, "C", true); mWoT.storeAndCommit(c);
+		
+		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		Identity c = new Identity(uriC, "C", true); c.initializeTransient(mWoT); c.storeAndCommit();
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		mWoT.setTrustWithoutCommit(b, c, (byte)50, "Bar"); // There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
 		mWoT.setTrustWithoutCommit(c, a, (byte)100, "Bleh");
 		mWoT.setTrustWithoutCommit(c, b, (byte)50, "Oops");
-		db.commit();
+		Persistent.checkedCommit(mWoT.getDatabase(), this);
 		
 		// Check we have the correct number of objects
 		flushCaches();
@@ -295,13 +294,14 @@ public class WoTTest extends DatabaseBasedTest {
 	 * Test whether the same scores are calculated if trust lists are fetched in different order.
 	 */
 	public void testStability() throws Exception {
-		ExtObjectContainer db = mWoT.getDB();
+		ExtObjectContainer db = mWoT.getDatabase();
 			
 		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
-		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); // A / B are downloaded in different orders.
-		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
-		Identity c = new Identity(uriC, "C", true); mWoT.storeAndCommit(c);
+		Identity s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit(); // Seed identity
+		// A / B are downloaded in different orders.
+		Identity a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
+		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		Identity c = new Identity(uriC, "C", true); c.initializeTransient(mWoT); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -310,32 +310,36 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(s, a, (byte)4, "Minimal trust");
 		mWoT.setTrustWithoutCommit(s, b, (byte)4, "Minimal trust");
 		mWoT.setTrustWithoutCommit(s, c, (byte)4, "Minimal trust");
-		db.commit();
+		Persistent.checkedCommit(db, this);
 
 		// First you download A. A distrusts B and trusts C
 		mWoT.setTrustWithoutCommit(a, b, (byte)-100, "Distrust");
 		mWoT.setTrustWithoutCommit(a, c, (byte)100, "Trust");
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		
 		// Then you download B who distrusts A and C
 		mWoT.setTrustWithoutCommit(b, a, (byte)-100, "Distrust");
 		mWoT.setTrustWithoutCommit(b, c, (byte)-100, "Trust");
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		
 		final Score oldScoreA = mWoT.getScore(o, a);
 		final Score oldScoreB = mWoT.getScore(o, b);
 		final Score oldScoreC = mWoT.getScore(o, c);
 		
+		oldScoreA.checkedActivate(10);
+		oldScoreB.checkedActivate(10);
+		oldScoreC.checkedActivate(10);
+		
 		// Now we want a fresh WoT.
 		tearDown();
 		setUp();
-		db = mWoT.getDB();
+		db = mWoT.getDatabase();
 		
 		o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test");
-		s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s);		
-		a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a);
-		b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
-		c = new Identity(uriC, "C", true); mWoT.storeAndCommit(c);
+		s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit();
+		a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
+		b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		c = new Identity(uriC, "C", true); c.initializeTransient(mWoT); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -344,21 +348,25 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(s, a, (byte)4, "Minimal trust");
 		mWoT.setTrustWithoutCommit(s, b, (byte)4, "Minimal trust");
 		mWoT.setTrustWithoutCommit(s, c, (byte)4, "Minimal trust");
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		
 		// Alternative download order: First B...
 		mWoT.setTrustWithoutCommit(b, a, (byte)-100, "Distrust");
 		mWoT.setTrustWithoutCommit(b, c, (byte)-100, "Trust");
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		
 		// .. then A
 		mWoT.setTrustWithoutCommit(a, b, (byte)-100, "Distrust");
 		mWoT.setTrustWithoutCommit(a, c, (byte)100, "Trust");
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		
 		final Score newScoreA = mWoT.getScore(o, a);
 		final Score newScoreB = mWoT.getScore(o, b);
 		final Score newScoreC = mWoT.getScore(o, c);
+		
+		oldScoreA.initializeTransient(mWoT); // Prevent DatabaseClosedException from getters
+		oldScoreB.initializeTransient(mWoT);
+		oldScoreC.initializeTransient(mWoT);
 		
 		// Test whether the test has correctly flushed the database
 		assertNotSame(newScoreA, oldScoreA);
@@ -377,13 +385,13 @@ public class WoTTest extends DatabaseBasedTest {
 	 */
 	public void testRemoveTrust2() throws Exception {
 		//same setup routine as testStability
-		ExtObjectContainer db = mWoT.getDB();
+		ExtObjectContainer db = mWoT.getDatabase();
 			
 		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
-		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); 
-		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
-		Identity c = new Identity(uriC, "C", true); mWoT.storeAndCommit(c);
+		Identity s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
+		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		Identity c = new Identity(uriC, "C", true); c.initializeTransient(mWoT); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -392,17 +400,17 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(s, a, (byte)4, "Minimal trust");
 		mWoT.setTrustWithoutCommit(s, b, (byte)4, "Minimal trust");
 		mWoT.setTrustWithoutCommit(s, c, (byte)4, "Minimal trust");
-		db.commit();
+		Persistent.checkedCommit(db, this);
 
 		// First you download A. A distrusts B and trusts C
 		mWoT.setTrustWithoutCommit(a, b, (byte)-100, "Distrust");
 		mWoT.setTrustWithoutCommit(a, c, (byte)100, "Trust");
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		
 		// Then you download B who distrusts A and C
 		mWoT.setTrustWithoutCommit(b, a, (byte)-100, "Distrust");
 		mWoT.setTrustWithoutCommit(b, c, (byte)-100, "Trust");
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		flushCaches();
 
 		mWoT.setTrust(o, s, (byte)-1, "Removed trust for seed identity.");
@@ -430,16 +438,15 @@ public class WoTTest extends DatabaseBasedTest {
 	 */
 	public void testMalicious() throws Exception {
 		//same setup routine as testStability
-		ExtObjectContainer db = mWoT.getDB();
 			
 		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
-		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); 
-		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
+		Identity s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
+		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
 		
-		Identity m1 = new Identity(uriM1, "M1", true); mWoT.storeAndCommit(m1); //malicious identity
-		Identity m2 = new Identity(uriM2, "M2", true); mWoT.storeAndCommit(m2); //malicious identity
-		Identity m3 = new Identity(uriM3, "M3", true); mWoT.storeAndCommit(m3); //malicious identity
+		Identity m1 = new Identity(uriM1, "M1", true); m1.initializeTransient(mWoT); m1.storeAndCommit(); //malicious identity
+		Identity m2 = new Identity(uriM2, "M2", true); m2.initializeTransient(mWoT); m2.storeAndCommit(); //malicious identity
+		Identity m3 = new Identity(uriM3, "M3", true); m3.initializeTransient(mWoT); m3.storeAndCommit(); //malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -457,7 +464,7 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(m3, a, (byte)-100, "Maliciously set");
 		mWoT.setTrustWithoutCommit(m3, b, (byte)-100, "Maliciously set");
 
-		db.commit();
+		Persistent.checkedCommit(mWoT.getDatabase(), this);
 		flushCaches();
 
 		boolean wasCorrect = mWoT.computeAllScoresWithoutCommit();
@@ -476,13 +483,13 @@ public class WoTTest extends DatabaseBasedTest {
 	 * Test whether the algorithm is stable.
 	 */
 	public void testStability2() throws Exception {
-		ExtObjectContainer db = mWoT.getDB();
-			
+		ExtObjectContainer db = mWoT.getDatabase();
+		
 		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
-		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); 
-		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
-		Identity c = new Identity(uriC, "C", true); mWoT.storeAndCommit(c);
+		Identity s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
+		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		Identity c = new Identity(uriC, "C", true); c.initializeTransient(mWoT); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -491,7 +498,7 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(a, b, (byte)100, "trust");
 		mWoT.setTrustWithoutCommit(b, c, (byte)100, "trust");
 		mWoT.setTrustWithoutCommit(c, a, (byte)-100, "distrust");
-		db.commit();
+		Persistent.checkedCommit(db, this);
 
 		flushCaches();
 
@@ -507,14 +514,14 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(a, b, (byte)0, "trust");
 		mWoT.setTrustWithoutCommit(b, c, (byte)0, "trust");
 		mWoT.setTrustWithoutCommit(c, a, (byte)0, "distrust");
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		flushCaches();
 
 		mWoT.setTrustWithoutCommit(s, a, (byte)4, "Minimal trust");
 		mWoT.setTrustWithoutCommit(c, a, (byte)-100, "distrust");
 		mWoT.setTrustWithoutCommit(b, c, (byte)100, "trust");
 		mWoT.setTrustWithoutCommit(a, b, (byte)100, "trust");
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		flushCaches();
 
 		final Score newScoreA = mWoT.getScore(o, a);
@@ -533,16 +540,16 @@ public class WoTTest extends DatabaseBasedTest {
 	 */
 	public void testMalicious2() throws Exception {
 		//same setup routine as testStability
-		ExtObjectContainer db = mWoT.getDB();
+		ExtObjectContainer db = mWoT.getDatabase();
 			
 		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
-		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); 
-		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
+		Identity s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
+		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
 		
-		Identity m1 = new Identity(uriM1, "M1", true); mWoT.storeAndCommit(m1); //malicious identity
-		Identity m2 = new Identity(uriM2, "M2", true); mWoT.storeAndCommit(m2); //malicious identity
-		Identity m3 = new Identity(uriM3, "M3", true); mWoT.storeAndCommit(m3); //malicious identity
+		Identity m1 = new Identity(uriM1, "M1", true); m1.initializeTransient(mWoT); m1.storeAndCommit(); //malicious identity
+		Identity m2 = new Identity(uriM2, "M2", true); m2.initializeTransient(mWoT); m2.storeAndCommit(); //malicious identity
+		Identity m3 = new Identity(uriM3, "M3", true); m3.initializeTransient(mWoT); m3.storeAndCommit(); //malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -563,10 +570,10 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(m2, m3, (byte)100, "Collusion");
 		mWoT.setTrustWithoutCommit(m3, m1, (byte)100, "Collusion");
 
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		flushCaches();
 		mWoT.computeAllScoresWithoutCommit();
-		db.commit();
+		Persistent.checkedCommit(db, this);
 
 		int scoreA = mWoT.getScore(o, a).getScore();
 		int scoreB = mWoT.getScore(o, b).getScore();
@@ -577,14 +584,15 @@ public class WoTTest extends DatabaseBasedTest {
 	/** Another test of resistance to malicious identities.
 	  */
 	public void testMalicious3() throws Exception {
-		ExtObjectContainer db = mWoT.getDB();
+		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(uriS, "S", true); mWoT.storeAndCommit(s); // Seed identity
-		Identity a = new Identity(uriA, "A", true); mWoT.storeAndCommit(a); 
-		Identity b = new Identity(uriB, "B", true); mWoT.storeAndCommit(b);
-		Identity m1 = new Identity(uriM1, "M1", true); mWoT.storeAndCommit(m1); //known malicious identity
-		Identity m2 = new Identity(uriM2, "M2", true); mWoT.storeAndCommit(m2); //known malicious identity
+		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner		
+		Identity s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
+		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		
+		Identity m1 = new Identity(uriM1, "M1", true); m1.initializeTransient(mWoT); m1.storeAndCommit(); //known malicious identity
+		Identity m2 = new Identity(uriM2, "M2", true); m2.initializeTransient(mWoT); m2.storeAndCommit(); //known malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -605,9 +613,9 @@ public class WoTTest extends DatabaseBasedTest {
 		mWoT.setTrustWithoutCommit(m1, b, (byte)-100, "Maliciously set");
 		mWoT.setTrustWithoutCommit(m2, b, (byte)-100, "Maliciously set");
 
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		mWoT.computeAllScoresWithoutCommit();
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		flushCaches();
 
 		int scoreM1 = mWoT.getScore(o, m1).getScore();
