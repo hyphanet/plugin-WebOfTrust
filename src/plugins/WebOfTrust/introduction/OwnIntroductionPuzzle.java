@@ -17,8 +17,8 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 			Date newDateOfInsertion, int myIndex) {
 		
 		super(newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newDateOfInsertion, 
-				 new Date(newDateOfInsertion.getYear(), newDateOfInsertion.getMonth(), newDateOfInsertion.getDate()).getTime() 
-				 + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000, myIndex);
+				 new Date(new Date(newDateOfInsertion.getYear(), newDateOfInsertion.getMonth(), newDateOfInsertion.getDate()).getTime() 
+				 + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000), myIndex);
 		
 		if(newSolution.length() < MINIMAL_SOLUTION_LENGTH)
 			throw new IllegalArgumentException("Solution is too short (" + newSolution.length() + "), minimal length is " + 
@@ -26,14 +26,11 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 		
 		mSolver = null;
 		mSolution = newSolution;
-		
-		if(checkConsistency() == false)
-			throw new IllegalArgumentException("Trying to costruct a corrupted puzzle");
 	}
 	
 	/**
 	 * Get the URI at which to insert this puzzle.
-	 * SSK@asdfasdf...|WoT|introduction|yyyy-MM-dd|#
+	 * SSK@asdfasdf...|WebOfTrust.WOT_NAME|IntroductionPuzzle.INTRODUCTION_CONTEXT|yyyy-MM-dd|#
 	 * 
 	 * # = index of the puzzle.
 	 */
@@ -53,7 +50,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	 * Used by the IntroductionServer to mark a puzzle as solved so it will not try to fetch solutions for it anymore.
 	 */
 	public synchronized void setSolved() {
-		if(mWasSolved)
+		if(wasSolved())
 			throw new RuntimeException("The puzzle was already solved by " + mSolver);
 		
 		mWasSolved = true;
