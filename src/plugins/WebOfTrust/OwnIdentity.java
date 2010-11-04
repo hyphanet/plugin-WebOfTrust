@@ -42,7 +42,8 @@ public final class OwnIdentity extends Identity {
 		
 		// TODO: Check whether the insert URI fits with the request URI. I don't know how to do this...
 		
-		mInsertURI = insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(getEdition()).setMetaString(null);
+		// initializeTransient() was not called yet so we must use mRequestURI.getEdition() instead of this.getEdition()
+		mInsertURI = insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(mRequestURI.getEdition()).setMetaString(null);
 		mLastInsertDate = new Date(0);
 
 		// Must be set to "fetched" to prevent the identity fetcher from trying to fetch the current edition and to make the identity inserter
