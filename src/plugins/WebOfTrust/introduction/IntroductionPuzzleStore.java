@@ -5,6 +5,7 @@ import java.util.Date;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.DuplicatePuzzleException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
@@ -37,7 +38,7 @@ import freenet.support.Logger;
  *
  * As of SVN revision 26940, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
  *
- * @author xor
+ * @author xor (xor@freenetproject.org)
  */
 public final class IntroductionPuzzleStore {
 
@@ -45,61 +46,47 @@ public final class IntroductionPuzzleStore {
 	
 	private final ExtObjectContainer mDB;
 
+	
 	public IntroductionPuzzleStore(final WebOfTrust myWoT) {
 		mWoT = myWoT;
-		mDB = myWoT.getDB();
+		mDB = myWoT.getDatabase();
 		
-		deleteCorruptedPuzzles();
+		verifyDatabaseIntegrity();
 	}
 
-	private synchronized void deleteCorruptedPuzzles() {		
-		synchronized(mDB.lock()) {
-			final ObjectSet<IntroductionPuzzle> puzzles = mDB.queryByExample(IntroductionPuzzle.class);
-			for(IntroductionPuzzle p : puzzles) {
-				try {
-					mDB.activate(p, 3);
-					if(p.checkConsistency() == false) {
-						Logger.error(this, "Deleting corrupted puzzle");
-						deleteWithoutCommit(p);
-						mDB.commit(); Logger.debug(this, "COMMITED.");
-					}
-				} catch(RuntimeException e) {
-					System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				}
-			}
-			
-		}
+	private synchronized void verifyDatabaseIntegrity() {		
+		// TODO: Implement.
 	}
 	
 	/**
 	 * Delete puzzles which can no longer be solved because they have expired.
 	 */
-	@SuppressWarnings("unchecked")
 	protected synchronized void deleteExpiredPuzzles() {
-		synchronized(mDB.lock()) {
 			final Query q = mDB.query();
 			q.constrain(IntroductionPuzzle.class);
-			q.descend("mValidUntilTime").constrain(CurrentTimeUTC.getInMillis()).smaller();
-			final ObjectSet<IntroductionPuzzle> result = q.execute();
+			q.descend("mValidUntilDate").constrain(CurrentTimeUTC.get()).smaller();
+			final ObjectSet<IntroductionPuzzle> result = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 			
 			int deleted = 0;
 			
 			for(IntroductionPuzzle p : result) {
+				synchronized(mDB.lock()) {
 				try {
-					Logger.debug(this, "Deleting expired puzzle, was valid until " + new Date(p.getValidUntilTime()));
-					deleteWithoutCommit(p);
-					mDB.commit(); Logger.debug(this, "COMMITED.");
+					Logger.debug(this, "Deleting expired puzzle, was valid until " + p.getValidUntilDate());
+					p.deleteWithoutCommit();
+					Persistent.checkedCommit(mDB, this);
 					++deleted;					
 				} catch(RuntimeException e) {
-					System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
+					Persistent.checkedRollback(mDB, this, e);
+				}
 				}
 			}
+			
 			
 			/* TODO: Minor but interesting optimization: In lazy query evaluation mode, result.size() should take about O(N) time
 			 * before the for() and O(1) after it if db4o is smart enough. Verify if it really calculates and stores the size
 			 * during the iteration. If not, the log line should be prefixed with if(loglevel is debug) */
 			Logger.debug(this, "Deleted " + deleted + " of " + result.size() + " expired puzzles.");
-		}
 	}
 	
 	/**
@@ -109,15 +96,13 @@ public final class IntroductionPuzzleStore {
 	 * 
 	 * @param puzzlePoolSize The amount of puzzles which should not be deleted.
 	 */
-	@SuppressWarnings("unchecked")
 	protected synchronized void deleteOldestUnsolvedPuzzles(final int puzzlePoolSize) {
-		synchronized(mDB.lock()) {
 			final Query q = mDB.query();
 			q.constrain(IntroductionPuzzle.class);
 			q.constrain(OwnIntroductionPuzzle.class).not();
-			q.descend("mValidUntilTime").orderAscending();
+			q.descend("mValidUntilDate").orderAscending();
 			q.descend("mWasSolved").constrain(false);
-			final ObjectSet<IntroductionPuzzle> result = q.execute();
+			final ObjectSet<IntroductionPuzzle> result = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 			
 			int deleteCount = Math.max(result.size() - puzzlePoolSize, 0);
 			
@@ -126,16 +111,17 @@ public final class IntroductionPuzzleStore {
 			while(deleteCount > 0 && result.hasNext()) {
 				final IntroductionPuzzle puzzle = result.next();
 
+				synchronized(mDB.lock()) {
 				try {
-					deleteWithoutCommit(puzzle);
-					mDB.commit(); Logger.debug(this, "COMMITED.");
+					puzzle.deleteWithoutCommit();
+					Persistent.checkedCommit(mDB, this);
 					deleteCount--;
 				}
 				catch(RuntimeException e) {
-					System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);	
+					Persistent.checkedRollback(mDB, this, e);	
+				}
 				}
 			}
-		}
 	}
 	
 	/**
@@ -146,44 +132,29 @@ public final class IntroductionPuzzleStore {
 	 *  
 	 * @param identity The identity which is being deleted. It must still be stored in the database.
 	 */
-	@SuppressWarnings("unchecked")
 	public void onIdentityDeletion(final Identity identity) {
 		Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(identity).identity();
-		ObjectSet<IntroductionPuzzle> puzzles = q.execute();
+		ObjectSet<IntroductionPuzzle> puzzles = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 		
 		for(IntroductionPuzzle puzzle : puzzles)
-			deleteWithoutCommit(puzzle);
+			puzzle.deleteWithoutCommit();
 		
 		if(identity instanceof OwnIdentity) {
 			q = mDB.query();
 			q.constrain(IntroductionPuzzle.class);
 			q.descend("mWasSolved").constrain(true);
-			q.descend("mSolver").constrain((OwnIdentity)identity);
-			puzzles = q.execute();
+			q.descend("mSolver").constrain((OwnIdentity)identity).identity();
+			puzzles = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 			
 			for(IntroductionPuzzle puzzle : puzzles)
-				deleteWithoutCommit(puzzle);
+				puzzle.deleteWithoutCommit();
 		}
 	}
-	
-	/**
-	 * You have to lock this IntroductionPuzzleStore and the database before calling this function.
-	 */
-	private void deleteWithoutCommit(final IntroductionPuzzle puzzle) {
-		try {
-			mDB.delete(puzzle.getType());
-			mDB.delete(puzzle);
-		}
-		catch(RuntimeException e) {
-			System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
-			throw e;
-		}
-	}
-
 
 	public synchronized void storeAndCommit(final IntroductionPuzzle puzzle) {
+		puzzle.initializeTransient(mWoT);
 		/* TODO: Convert to assert() maybe when we are sure that this does not happen. Duplicate puzzles will be deleted after they
 		 * expire anyway. Further, isn't there a db4o option which ensures that mID is a primary key and therefore no duplicates can exist? */
 		synchronized(puzzle) {
@@ -195,24 +166,12 @@ public final class IntroductionPuzzleStore {
 			}
 			catch(UnknownPuzzleException e) { }
 			
-			if(!mDB.isStored(puzzle.getInserter()))
-				throw new RuntimeException("Trying to store a puzzle of which the inserter was already deleted.");
-			
-			if(mDB.isStored(puzzle) && !mDB.isActive(puzzle))
-				throw new RuntimeException("Trying to store an inactive IntroductionPuzzle object!");
-	
 			try {
-				// IMPORTANT: When adding new .store() calls here, also add .delete() in deleteWithoutCommit()
-				
-				mDB.store(puzzle.getType());
-				// mDB.store(puzzle.getDateOfInsertion()); /* Not stored because it is a primitive for db4o */ 
-				mDB.store(puzzle);
-				mDB.commit();
-				Logger.debug(this, "COMMITED.");
+				puzzle.storeWithoutCommit();
+				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
-				System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
 		}
@@ -222,20 +181,16 @@ public final class IntroductionPuzzleStore {
 	 * Get an IntroductionPuzzle or OwnIntroductionPuzzle by it's ID.
 	 * @throws UnknownPuzzleException If there is no puzzle with the given id.
 	 */
-	@SuppressWarnings("unchecked")
 	public synchronized IntroductionPuzzle getByID(final String id) throws UnknownPuzzleException {
 		final Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mID").constrain(id);
-		final ObjectSet<IntroductionPuzzle> result = q.execute();
+		final ObjectSet<IntroductionPuzzle> result = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 
 		switch(result.size()) {
-			case 1:
-				return result.next();
-			case 0:
-				throw new UnknownPuzzleException(id);
-			default:
-				throw new DuplicatePuzzleException(id);
+			case 1: return result.next();
+			case 0: throw new UnknownPuzzleException(id);
+			default: throw new DuplicatePuzzleException(id);
 		}
 	}
 	
@@ -281,14 +236,14 @@ public final class IntroductionPuzzleStore {
 	 * You have to synchronize on this IntroductionPuzzleStore surrounding the call to this function and the storage of a puzzle which uses
 	 * the index to ensure that the index is not taken in between.
 	 */
-	@SuppressWarnings({ "deprecation", "unchecked" })
+	@SuppressWarnings("deprecation")
 	public int getFreeIndex(final OwnIdentity inserter, final Date date) {
 		final Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
 		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
 		q.descend("mIndex").orderDescending();
-		final ObjectSet<IntroductionPuzzle> result = q.execute();
+		final ObjectSet<IntroductionPuzzle> result = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
@@ -300,13 +255,12 @@ public final class IntroductionPuzzleStore {
 	 * 
 	 * Used by the IntroductionServer for inserting puzzles.
 	 */
-	@SuppressWarnings("unchecked")
 	public ObjectSet<OwnIntroductionPuzzle> getUninsertedOwnPuzzlesByInserter(final OwnIdentity identity) {
 		final Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("mInserter").constrain(identity).identity();
 		q.descend("mWasInserted").constrain(false);
-		return q.execute();
+		return new Persistent.InitializingObjectSet<OwnIntroductionPuzzle>(mWoT, q);
 	}
 
 	/**
@@ -316,13 +270,12 @@ public final class IntroductionPuzzleStore {
 	 * 
 	 * Used by the IntroductionServer for downloading solutions.
 	 */
-	@SuppressWarnings("unchecked")
 	protected ObjectSet<OwnIntroductionPuzzle> getUnsolvedByInserter(final OwnIdentity inserter) {
 		final Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
 		q.descend("mWasSolved").constrain(false);
-		return q.execute();
+		return new Persistent.InitializingObjectSet<OwnIntroductionPuzzle>(mWoT, q);
 	}
 	
 	/**
@@ -332,7 +285,7 @@ public final class IntroductionPuzzleStore {
 	 * 
 	 * Used by for checking whether new puzzles have to be inserted for a given OwnIdentity or can be downloaded from a given Identity.
 	 */
-	@SuppressWarnings({ "deprecation", "unchecked" })
+	@SuppressWarnings("deprecation")
 	protected ObjectSet<IntroductionPuzzle> getOfTodayByInserter(final Identity inserter) {
 		final Date now = CurrentTimeUTC.get();
 		final Date today = new Date(now.getYear(), now.getMonth(), now.getDate());
@@ -341,7 +294,7 @@ public final class IntroductionPuzzleStore {
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
 		q.descend("mDateOfInsertion").constrain(today);
-		return q.execute();
+		return new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 	}
 	
 	/**
@@ -350,44 +303,38 @@ public final class IntroductionPuzzleStore {
 	 * Used by the IntroductionClient to check whether we already have a puzzle from the given date and index, if yes then we do not
 	 * need to download that one.
 	 */
-	@SuppressWarnings({ "unchecked", "deprecation" })
+	@SuppressWarnings("deprecation")
 	protected synchronized IntroductionPuzzle getByInserterDateIndex(final Identity inserter, final Date date, final int index) throws UnknownPuzzleException {
 		final Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
 		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
 		q.descend("mIndex").constrain(index);
-		final ObjectSet<IntroductionPuzzle> result = q.execute();
+		final ObjectSet<IntroductionPuzzle> result = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 		
 		switch(result.size()) {
-			case 1:
-				return result.next();
-			case 0:
-				throw new UnknownPuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
-			default:
-				throw new DuplicatePuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
+			case 1: return result.next();
+			case 0: throw new UnknownPuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
+			default: throw new DuplicatePuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
 		}
 	}
 	
 	/**
 	 * Get a puzzle of a given OwnIdentity from a given date with a given index.
 	 */
-	@SuppressWarnings({ "unchecked", "deprecation" })
+	@SuppressWarnings("deprecation")
 	protected synchronized OwnIntroductionPuzzle getOwnPuzzleByInserterDateIndex(final OwnIdentity inserter, final Date date, final int index) throws UnknownPuzzleException {
 		final Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
 		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
 		q.descend("mIndex").constrain(index);
-		final ObjectSet<OwnIntroductionPuzzle> result = q.execute();
+		final ObjectSet<OwnIntroductionPuzzle> result = new Persistent.InitializingObjectSet<OwnIntroductionPuzzle>(mWoT, q);
 		
 		switch(result.size()) {
-			case 1:
-				return result.next();
-			case 0:
-				throw new UnknownPuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
-			default:
-				throw new DuplicatePuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
+			case 1: return result.next();
+			case 0: throw new UnknownPuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
+			default: throw new DuplicatePuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
 		}
 	}
 
@@ -396,15 +343,14 @@ public final class IntroductionPuzzleStore {
 	 * You have to put a synchronized(this IntroductionPuzzleStore) statement around the call to this function and the processing of the
 	 * List which was returned by it!
 	 */
-	@SuppressWarnings("unchecked")
 	protected ObjectSet<IntroductionPuzzle> getUnsolvedPuzzles(final PuzzleType puzzleType) {
-		Query q = mDB.query();
+		final Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.constrain(OwnIntroductionPuzzle.class).not();
-		q.descend("mValidUntilTime").orderDescending();
+		q.descend("mValidUntilDate").orderDescending();
 		q.descend("mWasSolved").constrain(false);
 		q.descend("mType").constrain(puzzleType);
-		return q.execute();
+		return new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 	}
 	
 	/**
@@ -414,14 +360,13 @@ public final class IntroductionPuzzleStore {
 	 * 
 	 * Used by the IntroductionClient for inserting solutions of solved puzzles.
 	 */
-	@SuppressWarnings("unchecked")
 	public ObjectSet<IntroductionPuzzle> getUninsertedSolvedPuzzles() {
 		final Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.constrain(OwnIntroductionPuzzle.class).not();
 		q.descend("mWasSolved").constrain(true);
 		q.descend("mWasInserted").constrain(false);
-		return q.execute();
+		return new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 	}
 	
 	public synchronized int getOwnCatpchaAmount(final boolean solved) {
