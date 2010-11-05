@@ -233,8 +233,8 @@ public final class FCPInterface implements FredPluginFCP {
 
 			int propertiesCounter = 0;
 			for (Entry<String, String> property : identity.getProperties().entrySet()) {
-				sfs.putOverwrite("Property" + propertiesCounter + "Name", property.getKey());
-				sfs.putOverwrite("Property" + propertiesCounter + "Value", property.getValue());
+				sfs.putOverwrite("PropertyName" + propertiesCounter, property.getKey());
+				sfs.putOverwrite("PropertyValue" + propertiesCounter, property.getValue());
 			}
     	}
     	
@@ -264,8 +264,8 @@ public final class FCPInterface implements FredPluginFCP {
 
 				int propertiesCounter = 0;
 				for (Entry<String, String> property : oid.getProperties().entrySet()) {
-					sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter + "Name", property.getKey());
-					sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter++ + "Value", property.getValue());
+					sfs.putOverwrite("Properties" + i + "PropertyName" + propertiesCounter, property.getKey());
+					sfs.putOverwrite("Properties" + i + "PropertyValue" + propertiesCounter++, property.getValue());
 				}
 				// This is here so you do not forget to do it IN the "if()" if you add an if() around the put() statements to allow selection
 				++i;
@@ -313,8 +313,8 @@ public final class FCPInterface implements FredPluginFCP {
 
 					int propertiesCounter = 0;
 					for (Entry<String, String> property : identity.getProperties().entrySet()) {
-						sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter + "Name", property.getKey());
-						sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter++ + "Value", property.getValue());
+						sfs.putOverwrite("Properties" + i + "PropertyName" + propertiesCounter, property.getKey());
+						sfs.putOverwrite("Properties" + i + "PropertyValue" + propertiesCounter++, property.getValue());
 					}
 					// TODO: Allow the client to select what data he wants
 				}
@@ -353,8 +353,8 @@ public final class FCPInterface implements FredPluginFCP {
 
 					int propertiesCounter = 0;
 					for (Entry<String, String> property : trust.getTruster().getProperties().entrySet()) {
-						sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter + "Name", property.getKey());
-						sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter++ + "Value", property.getValue());
+						sfs.putOverwrite("Properties" + i + "PropertyName" + propertiesCounter, property.getKey());
+						sfs.putOverwrite("Properties" + i + "PropertyValue" + propertiesCounter++, property.getValue());
 					}
 					// TODO: Allow the client to select what data he wants
 					++i;
@@ -426,8 +426,8 @@ public final class FCPInterface implements FredPluginFCP {
 
 					int propertiesCounter = 0;
 					for (Entry<String, String> property : trust.getTruster().getProperties().entrySet()) {
-						sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter + "Name", property.getKey());
-						sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter++ + "Value", property.getValue());
+						sfs.putOverwrite("Properties" + i + "PropertyName" + propertiesCounter, property.getKey());
+						sfs.putOverwrite("Properties" + i + "PropertyValue" + propertiesCounter++, property.getValue());
 					}
 					// TODO: Allow the client to select what data he wants
 					++i;
