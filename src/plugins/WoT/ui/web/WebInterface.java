@@ -374,8 +374,6 @@ public class WebInterface {
 				Logger.error(this, "GetPuzzle failed", e);
 			}
 			finally {
-				if(filterOutput != null)
-					Closer.close(filterOutput);
 				Closer.close(dataBucket);
 				Closer.close(filterInput);
 				Closer.close(filterOutput);
