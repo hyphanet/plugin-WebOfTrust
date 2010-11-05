@@ -377,6 +377,7 @@ public class WebInterface {
 				Closer.close(dataBucket);
 				Closer.close(filterInput);
 				Closer.close(filterOutput);
+				// Closer.close(output); // We do not have to do that, writeReply() does it for us
 			}
 		}
 		
