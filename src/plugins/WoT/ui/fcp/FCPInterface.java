@@ -6,6 +6,7 @@ package plugins.WoT.ui.fcp;
 import java.net.MalformedURLException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
 import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
@@ -229,6 +230,12 @@ public final class FCPInterface implements FredPluginFCP {
     		for(int i = 0; contexts.hasNext(); ++i) {
     			sfs.putOverwrite("Context" + i, contexts.next());
     		}
+
+			int propertiesCounter = 0;
+			for (Entry<String, String> property : identity.getProperties().entrySet()) {
+				sfs.putOverwrite("Property" + propertiesCounter + "Name", property.getKey());
+				sfs.putOverwrite("Property" + propertiesCounter + "Value", property.getValue());
+			}
     	}
     	
 		return sfs;
@@ -249,7 +256,17 @@ public final class FCPInterface implements FredPluginFCP {
 				sfs.putOverwrite("InsertURI" + i, oid.getInsertURI().toString());
 				sfs.putOverwrite("Nickname" + i, oid.getNickname());
 				// TODO: Allow the client to select what data he wants
-				
+
+				int contextCounter = 0;
+				for (String context : oid.getContexts()) {
+					sfs.putOverwrite("Contexts" + i + "Context" + contextCounter++, context);
+				}
+
+				int propertiesCounter = 0;
+				for (Entry<String, String> property : oid.getProperties().entrySet()) {
+					sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter + "Name", property.getKey());
+					sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter++ + "Value", property.getValue());
+				}
 				// This is here so you do not forget to do it IN the "if()" if you add an if() around the put() statements to allow selection
 				++i;
 			}
@@ -288,6 +305,17 @@ public final class FCPInterface implements FredPluginFCP {
 					sfs.putOverwrite("RequestURI" + i, identity.getRequestURI().toString());
 					sfs.putOverwrite("Nickname" + i, identity.getNickname() != null ? identity.getNickname() : "");
 					++i;
+
+					int contextCounter = 0;
+					for (String identityContext: identity.getContexts()) {
+						sfs.putOverwrite("Contexts" + i + "Context" + contextCounter++, identityContext);
+					}
+
+					int propertiesCounter = 0;
+					for (Entry<String, String> property : identity.getProperties().entrySet()) {
+						sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter + "Name", property.getKey());
+						sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter++ + "Value", property.getValue());
+					}
 					// TODO: Allow the client to select what data he wants
 				}
 			}
@@ -317,6 +345,17 @@ public final class FCPInterface implements FredPluginFCP {
 					sfs.putOverwrite("RequestURI" + i, trust.getTruster().getRequestURI().toString());
 					sfs.putOverwrite("Value" + i, Byte.toString(trust.getValue()));
 					sfs.putOverwrite("Comment" + i, trust.getComment());
+
+					int contextCounter = 0;
+					for (String identityContext: trust.getTruster().getContexts()) {
+						sfs.putOverwrite("Contexts" + i + "Context" + contextCounter++, identityContext);
+					}
+
+					int propertiesCounter = 0;
+					for (Entry<String, String> property : trust.getTruster().getProperties().entrySet()) {
+						sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter + "Name", property.getKey());
+						sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter++ + "Value", property.getValue());
+					}
 					// TODO: Allow the client to select what data he wants
 					++i;
 				}
@@ -379,6 +418,17 @@ public final class FCPInterface implements FredPluginFCP {
 					sfs.putOverwrite("RequestURI" + i, trustee.getRequestURI().toString());
 					sfs.putOverwrite("Value" + i, Byte.toString(trust.getValue()));
 					sfs.putOverwrite("Comment" + i, trust.getComment());
+
+					int contextCounter = 0;
+					for (String identityContext: trust.getTruster().getContexts()) {
+						sfs.putOverwrite("Contexts" + i + "Context" + contextCounter++, identityContext);
+					}
+
+					int propertiesCounter = 0;
+					for (Entry<String, String> property : trust.getTruster().getProperties().entrySet()) {
+						sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter + "Name", property.getKey());
+						sfs.putOverwrite("Properties" + i + "Property" + propertiesCounter++ + "Value", property.getValue());
+					}
 					// TODO: Allow the client to select what data he wants
 					++i;
 				}
