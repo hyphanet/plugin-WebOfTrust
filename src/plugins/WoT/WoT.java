@@ -2219,6 +2219,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					storeWithoutCommit(identity);
 					initTrustTreeWithoutCommit(identity);
 					
+					beginTrustListImport();
+					
 					for(String seedURI : SEED_IDENTITIES) {
 						try {
 							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "I trust the Freenet developers.");
@@ -2226,6 +2228,8 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 							Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e);
 						}
 					}
+					
+					finishTrustListImport();
 					
 					mDB.commit(); Logger.debug(this, "COMMITED.");
 					
@@ -2236,7 +2240,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 					return identity;
 				}
 				catch(RuntimeException e) {
-					System.gc(); mDB.rollback(); Logger.debug(this, "ROLLED BACK!");
+					abortTrustListImport(e); // Rolls back for us
 					throw e;
 				}
 			}
