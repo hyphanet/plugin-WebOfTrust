@@ -798,11 +798,17 @@ public class Identity extends Persistent implements Cloneable {
 		if(mLastFetchedDate == null)
 			throw new NullPointerException("mLastFetchedDate==null");
 		
+		if(mLastFetchedDate.after(CurrentTimeUTC.get()))
+			throw new IllegalStateException("mLastFetchedDate is in the future: " + mLastFetchedDate);
+		
 		if(mLastChangedDate == null)
 			throw new NullPointerException("mLastChangedDate==null");
 		
 		if(mLastChangedDate.before(mLastFetchedDate))
 			throw new IllegalStateException("Last changed date is before last fetched date!");
+		
+		if(mLastChangedDate.after(CurrentTimeUTC.get()))
+			throw new IllegalStateException("mLastChangedDate is in the future: " + mLastChangedDate);
 		
 		if(mNickname != null && !isNicknameValid(mNickname))
 			throw new IllegalStateException("Invalid nickname: " + mNickname);
