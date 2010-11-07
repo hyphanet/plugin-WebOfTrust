@@ -775,4 +775,50 @@ public class Identity extends Persistent implements Cloneable {
 			checkedRollbackAndThrow(e);
 		}
 	}
+
+	@Override
+	public void startupDatabaseIntegrityTest() {
+		checkedActivate(4);
+
+		if(mID == null)
+			throw new NullPointerException("mID==null");
+
+		if(mRequestURI == null)
+			throw new NullPointerException("mRequestURI==null");
+		
+		if(!mID.equals(getIDFromURI(mRequestURI)))
+			throw new RuntimeException("ID does not match request URI!");
+		
+		if(mCurrentEditionFetchState == null)
+			throw new NullPointerException("mFetchState==null");
+		
+		if(mLatestEditionHint < 0 || mLatestEditionHint < mRequestURI.getEdition())
+			throw new RuntimeException("Invalid edition hint: " + mLatestEditionHint + "; current edition: " + mRequestURI.getEdition());
+		
+		if(mLastFetchedDate == null)
+			throw new NullPointerException("mLastFetchedDate==null");
+		
+		if(mLastChangedDate == null)
+			throw new NullPointerException("mLastChangedDate==null");
+		
+		if(mLastChangedDate.before(mLastFetchedDate))
+			throw new RuntimeException("Last changed date is before last fetched date!");
+		
+		if(mNickname != null && !isNicknameValid(mNickname))
+			throw new RuntimeException("Invalid nickname: " + mNickname);
+		
+		if(mContexts == null)
+			throw new NullPointerException("mContexts==null");
+		
+		if(mProperties == null)
+			throw new NullPointerException("mProperties==null");
+		
+		if(mContexts.size() > MAX_CONTEXT_AMOUNT)
+			throw new RuntimeException("Too many contexts: " + mContexts.size());
+		
+		if(mProperties.size() > MAX_PROPERTY_AMOUNT)
+			throw new RuntimeException("Too many properties: " + mProperties.size());
+			
+		// TODO: Verify context/property names/values 
+	}
 }
