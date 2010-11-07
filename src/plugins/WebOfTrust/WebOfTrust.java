@@ -358,6 +358,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private synchronized void verifyDatabaseIntegrity() {
 		deleteDuplicateObjects();
 		deleteOrphanObjects();
+		
+		Query q = mDB.query();
+		q.constrain(Persistent.class);
+		
+		for(final Persistent p : new Persistent.InitializingObjectSet<Persistent>(this, q)) {
+			try {
+				p.startupDatabaseIntegrityTest();
+			} catch(Exception e) {
+				Logger.error(this, "Startup integrity validation failed for " + p, e);
+			}
+		}
 	}
 	
 	/**

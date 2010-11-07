@@ -84,6 +84,11 @@ public abstract class Persistent {
 	}
 	
 	/**
+	 * This function has to be implemented by all child classes. It is executed by startup on all persistent objects to test their integrity.
+	 */
+	public abstract void startupDatabaseIntegrityTest() throws Exception;
+	
+	/**
 	 * Must be called once after obtaining this object from the database before using any getter or setter member functions
 	 * and before calling storeWithoutCommit / deleteWithoutCommit.
 	 * Transient fields are NOT stored in the database. They are references to objects such as the IdentityManager.
