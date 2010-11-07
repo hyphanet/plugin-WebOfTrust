@@ -304,7 +304,6 @@ public final class FCPInterface implements FredPluginFCP {
 					sfs.putOverwrite("Identity" + i, identity.getID());
 					sfs.putOverwrite("RequestURI" + i, identity.getRequestURI().toString());
 					sfs.putOverwrite("Nickname" + i, identity.getNickname() != null ? identity.getNickname() : "");
-					++i;
 
 					int contextCounter = 0;
 					for (String identityContext: identity.getContexts()) {
@@ -317,6 +316,7 @@ public final class FCPInterface implements FredPluginFCP {
 						sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter++ + ".Value", property.getValue());
 					}
 					// TODO: Allow the client to select what data he wants
+					++i;
 				}
 			}
 		}
