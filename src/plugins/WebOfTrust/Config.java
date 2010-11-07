@@ -184,4 +184,17 @@ public final class Config extends Persistent {
 		if(!containsInt(DATABASE_FORMAT_VERSION))
 			set(DATABASE_FORMAT_VERSION, WebOfTrust.DATABASE_FORMAT_VERSION);
 	}
+
+	@Override
+	public void startupDatabaseIntegrityTest() {
+		checkedActivate(3);
+		
+		if(mIntParams == null)
+			throw new NullPointerException("mIntParams==null");
+		
+		if(mStringParams == null)
+			throw new NullPointerException("mStringParams==null");
+		
+		// TODO: Validate the content
+	}
 }
