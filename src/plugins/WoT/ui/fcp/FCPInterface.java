@@ -234,7 +234,7 @@ public final class FCPInterface implements FredPluginFCP {
 			int propertiesCounter = 0;
 			for (Entry<String, String> property : identity.getProperties().entrySet()) {
 				sfs.putOverwrite("Property" + propertiesCounter + ".Name", property.getKey());
-				sfs.putOverwrite("Property" + propertiesCounter + ".Value", property.getValue());
+				sfs.putOverwrite("Property" + propertiesCounter++ + ".Value", property.getValue());
 			}
     	}
     	
