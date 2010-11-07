@@ -6,6 +6,7 @@ import java.util.UUID;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	
@@ -54,6 +55,19 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 			throw new RuntimeException("The puzzle was already solved by " + mSolver);
 		
 		mWasSolved = true;
+	}
+	
+	@Override
+	public void startupDatabaseIntegrityTest() throws Exception {
+		checkedActivate(2);
+		super.startupDatabaseIntegrityTest();
+		
+		if(mSolution==null)
+			throw new NullPointerException("mSolution==null");
+		
+		// We do not throw in the following case because it might happen if the node forgets to call the on-insert-succeeded function
+		if(mWasSolved && !mWasInserted)
+			Logger.error(this, "mWasSolved==true but mWasInserted==false");
 	}
 	
 }

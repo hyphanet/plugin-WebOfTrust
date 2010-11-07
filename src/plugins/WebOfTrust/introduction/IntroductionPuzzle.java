@@ -324,4 +324,62 @@ public class IntroductionPuzzle extends Persistent {
 		super.deleteWithoutCommit();
 	}
 
+	@Override
+	public void startupDatabaseIntegrityTest() throws Exception {
+		checkedActivate(2);
+		
+		if(mInserter == null)
+			throw new NullPointerException("mInserter==null");
+		
+		if(mID == null)
+			throw new NullPointerException("mID==null");
+
+		if(!mID.endsWith(mInserter.getID()))
+			throw new IllegalStateException("Invalid puzzle ID, does not end with inserter ID: " + mID);
+
+		if(mType == null)
+			throw new NullPointerException("mType==null");
+
+		if(mMimeType == null)
+			throw new NullPointerException("mMimeType==null");
+		
+		if(!mMimeType.equals("image/jpeg"))
+			throw new IllegalStateException("Invalid mime type: " + mMimeType);
+
+		if(mData == null)
+			throw new NullPointerException("mData==null");
+		
+		if(mData.length == 0)
+			throw new IllegalStateException("mData is empty");
+		
+		if(mValidUntilDate == null)
+			throw new NullPointerException("mValidUntilDate==null");
+			
+		if(mValidUntilDate.before(mCreationDate))
+			throw new IllegalStateException("mValidUntilDate is before mCreationDate");
+			
+		if(mDateOfInsertion == null)
+			throw new NullPointerException("mDateOfInsertion==null");
+		
+		if(mDateOfInsertion.after(mCreationDate))
+			throw new IllegalStateException("mDateOfInsertion is in after mCreationDate");
+		
+		if(mDateOfInsertion.after(CurrentTimeUTC.get()))
+			throw new IllegalStateException("mDateOfInsertion is in the future");
+					
+		if(mIndex < 0)
+			throw new IllegalStateException("Puzzle index is negative");
+		
+		if(mWasSolved) {
+			if(mSolution==null)
+				throw new NullPointerException("mWasSolved==true but mSolution==null");
+			
+			if(!(this instanceof OwnIntroductionPuzzle) && mSolver==null)
+				throw new NullPointerException("mWasSolved==true but mSolver==null");
+		} else if(!mWasSolved && !(this instanceof OwnIntroductionPuzzle)) {
+			if(mWasInserted)
+				throw new IllegalStateException("mWasSolved==false but mWasInserted==true");
+		}
+	}
+
 }

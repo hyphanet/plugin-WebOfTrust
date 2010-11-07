@@ -237,4 +237,30 @@ public final class Score extends Persistent implements Cloneable {
 		clone.initializeTransient(mWebOfTrust);
 		return clone;
 	}
+
+	@Override
+	public void startupDatabaseIntegrityTest() throws Exception {
+		checkedActivate(2);
+		
+		if(mTruster == null)
+			throw new NullPointerException("mTruster==null");
+		
+		if(mTrustee == null)
+			throw new NullPointerException("mTrustee==null");
+		
+		if(mRank < -1)
+			throw new IllegalStateException("Invalid rank: " + mRank);
+	
+		if(mCapacity < 0)
+			throw new IllegalStateException("Negative capacity: " + mCapacity);
+		
+		if(mLastChangedDate == null)
+			throw new NullPointerException("mLastChangedDate==null");
+		
+		if(mLastChangedDate.before(mCreationDate))
+			throw new IllegalStateException("mLastChangedDate is before mCreationDate.");
+		
+		if(mLastChangedDate.after(CurrentTimeUTC.get()))
+			throw new IllegalStateException("mLastChangedDate is in the future: " + mLastChangedDate);
+	}
 }

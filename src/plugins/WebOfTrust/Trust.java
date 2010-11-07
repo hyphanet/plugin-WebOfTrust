@@ -242,4 +242,36 @@ public final class Trust extends Persistent implements Cloneable {
 			throw new RuntimeException(e);
 		}
 	}
+
+	@Override
+	public void startupDatabaseIntegrityTest() throws Exception {
+		checkedActivate(2);
+		
+		if(mTruster == null)
+			throw new NullPointerException("mTruster==null");
+		
+		if(mTrustee == null)
+			throw new NullPointerException("mTrustee==null");
+		
+		if(mValue < -100 || mValue > 100)
+			throw new IllegalStateException("Invalid value: " + mValue);
+		
+		if(mComment == null)
+			throw new NullPointerException("mComment==null");
+		
+		if(mComment.length() > MAX_TRUST_COMMENT_LENGTH)
+			throw new IllegalStateException("Comment is too long: " + mComment.length());
+		
+		if(mLastChangedDate == null)
+			throw new IllegalStateException("mLastChangedDate==null");
+		
+		if(mLastChangedDate.before(mCreationDate))
+			throw new IllegalStateException("mLastChangedDate is before mCreationDate");
+		
+		if(mLastChangedDate.after(CurrentTimeUTC.get()))
+			throw new IllegalStateException("mLastChangedDate is in the future");
+		
+		if(mTrusterTrustListEdition > mTruster.getEdition())
+			throw new IllegalStateException("mTrusterTrustListEdition is too high");
+	}
 }

@@ -105,6 +105,14 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			return mIdentityID;
 		}
 
+		@Override
+		public void startupDatabaseIntegrityTest() throws Exception {
+			if(mIdentityID == null)
+				throw new RuntimeException("mIdentityID==null");
+			
+			// TODO: Validate the ID
+		}
+
 	}
 	
 	protected static final class StartFetchCommand extends IdentityFetcherCommand {

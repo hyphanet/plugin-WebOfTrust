@@ -4,6 +4,7 @@
 package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
+import java.util.Arrays;
 import java.util.Date;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -40,10 +41,12 @@ public final class OwnIdentity extends Identity {
 		if(!insertURI.isUSK() && !insertURI.isSSK())
 			throw new IllegalArgumentException("Identity URI keytype not supported: " + insertURI);
 		
-		// TODO: Check whether the insert URI fits with the request URI. I don't know how to do this...
-		
 		// initializeTransient() was not called yet so we must use mRequestURI.getEdition() instead of this.getEdition()
 		mInsertURI = insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(mRequestURI.getEdition()).setMetaString(null);
+		
+		if(!Arrays.equals(mRequestURI.getCryptoKey(), mInsertURI.getCryptoKey()))
+			throw new RuntimeException("Request and insert URI do not fit together!");
+		
 		mLastInsertDate = new Date(0);
 
 		// Must be set to "fetched" to prevent the identity fetcher from trying to fetch the current edition and to make the identity inserter
@@ -211,6 +214,26 @@ public final class OwnIdentity extends Identity {
 		}
 		
 		super.deleteWithoutCommit(); // Not in the try{} so we don't do checkedRollbackAndThrow twice
+	}
+	
+	public void startupDatabaseIntegrityTest() {
+		checkedActivate(4);
+		super.startupDatabaseIntegrityTest();
+		
+		if(mInsertURI == null)
+			throw new NullPointerException("mInsertURI==null");
+		
+		if(!Arrays.equals(mRequestURI.getCryptoKey(), mInsertURI.getCryptoKey()))
+			throw new IllegalStateException("Request and insert URI do not fit together!");
+		
+		if(mInsertURI.getEdition() != mRequestURI.getEdition())
+			throw new IllegalStateException("Insert and request editions do not match!");
+		
+		if(mLastInsertDate == null)
+			throw new NullPointerException("mLastInsertDate==null");
+		
+		if(mLastInsertDate.after(CurrentTimeUTC.get()))
+			throw new IllegalStateException("mLastInsertDate is in the future: " + mLastInsertDate);
 	}
 
 }
