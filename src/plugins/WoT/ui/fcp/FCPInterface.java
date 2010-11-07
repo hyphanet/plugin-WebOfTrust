@@ -317,6 +317,7 @@ public final class FCPInterface implements FredPluginFCP {
 						sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter++ + ".Value", property.getValue());
 					}
 					// TODO: Allow the client to select what data he wants
+					++i;
 				}
 			}
 		}
