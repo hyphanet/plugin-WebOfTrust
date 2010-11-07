@@ -804,8 +804,11 @@ public class Identity extends Persistent implements Cloneable {
 		if(mLastChangedDate == null)
 			throw new NullPointerException("mLastChangedDate==null");
 		
+		if(mLastChangedDate.before(mCreationDate))
+			throw new IllegalStateException("mLastChangedDate is before mCreationDate!");
+		
 		if(mLastChangedDate.before(mLastFetchedDate))
-			throw new IllegalStateException("Last changed date is before last fetched date!");
+			throw new IllegalStateException("mLastChangedDate is before mLastFetchedDate!");
 		
 		if(mLastChangedDate.after(CurrentTimeUTC.get()))
 			throw new IllegalStateException("mLastChangedDate is in the future: " + mLastChangedDate);
