@@ -2,7 +2,7 @@
 <!-- ant build file for WoT -->
 
 <project name="WoT" default="dist" basedir=".">
-	<property name="freenet-cvs-snapshot.location" location="../fred/lib/freenet-cvs-snapshot.jar"/>
+	<property name="freenet-cvs-snapshot.location" location="../fred/dist/freenet.jar"/>
 	<property name="freenet-ext.location" location="../fred/lib/freenet-ext.jar"/>
 	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WoT.jar"/>
 	<property name="svn.revision" value="@custom@"/>
