@@ -267,7 +267,7 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 	private ExtObjectContainer initDB(String filename) {
 		Configuration cfg = Db4o.newConfiguration();
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader()));
-		cfg.activationDepth(5); /* TODO: Change to 1 and add explicit activation everywhere */
+		cfg.activationDepth(10); /* TODO: Change to 1 and add explicit activation everywhere */
 		cfg.exceptionsOnNotStorable(true);
 
         // TURN OFF SHUTDOWN HOOK.
