@@ -374,11 +374,10 @@ public class WebInterface {
 				Logger.error(this, "GetPuzzle failed", e);
 			}
 			finally {
-				if(filterOutput != null)
-					Closer.close(filterOutput);
 				Closer.close(dataBucket);
 				Closer.close(filterInput);
 				Closer.close(filterOutput);
+				// Closer.close(output); // We do not have to do that, writeReply() does it for us
 			}
 		}
 		
@@ -401,11 +400,25 @@ public class WebInterface {
 		@SuppressWarnings("synthetic-access")
 		public void handleMethodGET(URI uri, HTTPRequest httpRequest, ToadletContext toadletContext) throws ToadletContextClosedException, IOException {
 			String identityId = httpRequest.getParam("identity");
+			int width = 128;
+			int height = 128;
+			try {
+				width = Integer.parseInt(httpRequest.getParam("width"));
+				height = Integer.parseInt(httpRequest.getParam("height"));
+			} catch (NumberFormatException nfe1) {
+				/* could not parse, ignore. defaults are fine. */
+			}
+			if (width < 1) {
+				width = 128;
+			}
+			if (height < 1) {
+				height = 128;
+			}
 			ByteArrayOutputStream imageOutputStream = null;
 			try {
 				Identity identity = mWoT.getIdentityByID(identityId);
 				byte[] routingKey = identity.getRequestURI().getRoutingKey();
-				RenderedImage identiconImage = new Identicon(routingKey).render(128, 128);
+				RenderedImage identiconImage = new Identicon(routingKey).render(width, height);
 				imageOutputStream = new ByteArrayOutputStream();
 				ImageIO.write(identiconImage, "png", imageOutputStream);
 				Bucket imageBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, imageOutputStream.toByteArray());

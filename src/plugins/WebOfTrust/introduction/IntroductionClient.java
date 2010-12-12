@@ -347,7 +347,7 @@ public final class IntroductionClient extends TransferThread  {
 
 			final InsertContext ictx = mClient.getInsertContext(true);
 			
-			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.UPDATE_PRIORITY_CLASS);
+			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 			addInsert(pu);
 			tempB = null;
 			
@@ -426,7 +426,8 @@ public final class IntroductionClient extends TransferThread  {
 		final FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
-		final ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mWoT.getRequestClient(), this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
+		final ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mPuzzleStore.getRequestClient(), 
+				this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
 		addFetch(g);
 		
 		// Not necessary because it's not a HashSet but a fixed-length queue so the identity will get removed sometime anyway.
@@ -508,6 +509,7 @@ public final class IntroductionClient extends TransferThread  {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 	
@@ -526,6 +528,7 @@ public final class IntroductionClient extends TransferThread  {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 	

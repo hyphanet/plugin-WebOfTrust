@@ -12,11 +12,13 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 
+import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
@@ -45,17 +47,35 @@ public final class IntroductionPuzzleStore {
 	private final WebOfTrust mWoT;
 	
 	private final ExtObjectContainer mDB;
+	
+	private final RequestClient mRequestClient;
 
 	
 	public IntroductionPuzzleStore(final WebOfTrust myWoT) {
 		mWoT = myWoT;
 		mDB = myWoT.getDatabase();
+		mRequestClient = new RequestClient() {
+			
+			public boolean persistent() {
+				return false;
+			}
+
+			public void removeFrom(ObjectContainer container) {
+				throw new UnsupportedOperationException();
+			}
+			
+		};
+		
 		
 		verifyDatabaseIntegrity();
 	}
 
 	private synchronized void verifyDatabaseIntegrity() {		
 		// TODO: Implement.
+	}
+	
+	protected RequestClient getRequestClient() {
+		return mRequestClient;
 	}
 	
 	/**

@@ -1977,6 +1977,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					identity.storeWithoutCommit();
 					initTrustTreeWithoutCommit(identity);
 					
+					beginTrustListImport();
+					
 					for(String seedURI : SEED_IDENTITIES) {
 						try {
 							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "I trust the Freenet developers.");
@@ -1985,6 +1987,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						}
 					}
 					
+					finishTrustListImport();
 					Persistent.checkedCommit(mDB, this);
 					
 					if(mIntroductionClient != null)
@@ -1994,7 +1997,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					return identity;
 				}
 				catch(RuntimeException e) {
-					Persistent.checkedRollbackAndThrow(mDB, this, e);
+					abortTrustListImport(e); // Rolls back for us
 					throw e; // Satisfy the compiler
 				}
 			}

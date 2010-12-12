@@ -174,7 +174,7 @@ public final class IntroductionServer extends TransferThread {
 				// the puzzle solution during that, we might get to know it.
 				fetchContext.maxSplitfileBlockRetries = -1;
 				fetchContext.maxNonSplitfileRetries = -1;
-				final ClientGetter g = mClient.fetch(p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE, mWoT.getRequestClient(),
+				final ClientGetter g = mClient.fetch(p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE, mPuzzleStore.getRequestClient(),
 						this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS); 
 				addFetch(g);
 				Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
@@ -243,7 +243,7 @@ public final class IntroductionServer extends TransferThread {
 			final InsertBlock ib = new InsertBlock(tempB, null, puzzle.getInsertURI());
 			final InsertContext ictx = mClient.getInsertContext(true);
 
-			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.UPDATE_PRIORITY_CLASS);
+			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 			addInsert(pu);
 			tempB = null;
 
@@ -276,6 +276,7 @@ public final class IntroductionServer extends TransferThread {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 	
@@ -292,6 +293,7 @@ public final class IntroductionServer extends TransferThread {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 
