@@ -276,6 +276,7 @@ public final class IntroductionServer extends TransferThread {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 	
@@ -292,6 +293,7 @@ public final class IntroductionServer extends TransferThread {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 

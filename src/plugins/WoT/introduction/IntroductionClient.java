@@ -504,6 +504,7 @@ public final class IntroductionClient extends TransferThread  {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 	
@@ -522,6 +523,7 @@ public final class IntroductionClient extends TransferThread  {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 	

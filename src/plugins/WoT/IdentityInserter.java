@@ -192,6 +192,7 @@ public final class IdentityInserter extends TransferThread {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 
@@ -209,6 +210,7 @@ public final class IdentityInserter extends TransferThread {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 	
