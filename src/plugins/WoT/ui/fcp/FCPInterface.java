@@ -54,6 +54,8 @@ public final class FCPInterface implements FredPluginFCP {
                 replysender.send(handleCreateIdentity(params), data);
             } else if (message.equals("SetTrust")) {
                 replysender.send(handleSetTrust(params), data);
+            } else if (message.equals("RemoveTrust")) {
+            	  replysender.send(handleRemoveTrust(params), data);
             } else if (message.equals("AddIdentity")) {
                 replysender.send(handleAddIdentity(params), data);
             } else if (message.equals("GetIdentity")) {
@@ -181,8 +183,27 @@ public final class FCPInterface implements FredPluginFCP {
 
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "TrustSet");
+		sfs.putOverwrite("Truster", trusterID);
+		sfs.putOverwrite("Trustee", trusteeID);
+		sfs.putOverwrite("Value", trustValue);
+		sfs.putOverwrite("Comment", trustComment);
     	return sfs;
     }
+    
+    private SimpleFieldSet handleRemoveTrust(final SimpleFieldSet params)
+		throws InvalidParameterException, NumberFormatException, UnknownIdentityException
+	{
+		final String trusterID = getMandatoryParameter(params, "Truster");
+		final String trusteeID = getMandatoryParameter(params, "Trustee");
+
+		mWoT.removeTrust(trusterID, trusteeID);
+	
+		final SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.putOverwrite("Message", "TrustRemoved");
+		sfs.putOverwrite("Truster", trusterID);
+		sfs.putOverwrite("Trustee", trusteeID);
+		return sfs;
+	}
 
     private SimpleFieldSet handleAddIdentity(final SimpleFieldSet params) throws InvalidParameterException, MalformedURLException {
     	final String requestURI = getMandatoryParameter(params, "RequestURI");
