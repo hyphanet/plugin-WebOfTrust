@@ -62,6 +62,10 @@ public final class IntroductionPuzzleStore {
 			public void removeFrom(ObjectContainer container) {
 				throw new UnsupportedOperationException();
 			}
+
+			public boolean realTimeFlag() {
+				return false;
+			}
 			
 		};
 		

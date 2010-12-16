@@ -184,6 +184,10 @@ public class WoT implements FredPlugin, FredPluginThreadless, FredPluginFCP, Fre
 				public void removeFrom(ObjectContainer container) {
 					throw new UnsupportedOperationException();
 				}
+
+				public boolean realTimeFlag() {
+					return false;
+				}
 				
 			};
 	
