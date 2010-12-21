@@ -38,7 +38,8 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	 * # = index of the puzzle.
 	 */
 	public FreenetURI getInsertURI() {
-		assert(mWasInserted == false && mWasSolved == false);
+		assert(mWasInserted == false);
+		assert(mWasSolved == false);
 		
 		String dayOfInsertion;
 		synchronized (mDateFormat) {
