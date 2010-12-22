@@ -44,7 +44,7 @@ public final class Config extends Persistent {
 	public synchronized void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			try {
-				checkedActivate(3);
+				checkedActivate(4);
 				
 				checkedStore(mStringParams);
 				checkedStore(mIntParams);
@@ -64,7 +64,7 @@ public final class Config extends Persistent {
 	 * @param value Value of the config parameter.
 	 */
 	public synchronized void set(String key, String value) {
-		checkedActivate(3);
+		checkedActivate(4);
 		mStringParams.put(key, value);
 	}
 	
@@ -75,7 +75,7 @@ public final class Config extends Persistent {
      * @param value Value of the config parameter.
      */
     public synchronized void set(String key, boolean value) {
-    	checkedActivate(3);
+    	checkedActivate(4);
         mStringParams.put(key, Boolean.toString(value));
     }
 	
@@ -86,7 +86,7 @@ public final class Config extends Persistent {
 	 * @param value Value of the config parameter.
 	 */
 	public synchronized void set(String key, int value) {
-		checkedActivate(3);
+		checkedActivate(4);
 		mIntParams.put(key, value);
 	}
 
@@ -94,7 +94,7 @@ public final class Config extends Persistent {
 	 * Gets a String configuration parameter.
 	 */
 	public synchronized String getString(String key) {
-		checkedActivate(3);
+		checkedActivate(4);
 		return mStringParams.get(key);
 	}
 	
@@ -102,7 +102,7 @@ public final class Config extends Persistent {
 	 * Gets an Integer configuration parameter.
 	 */
 	public synchronized int getInt(String key) {
-		checkedActivate(3);
+		checkedActivate(4);
 		return mIntParams.get(key);
 	}
 
@@ -110,7 +110,7 @@ public final class Config extends Persistent {
      * Gets a boolean configuration parameter.
      */
     public synchronized boolean getBoolean(String key) {
-    	checkedActivate(3);
+    	checkedActivate(4);
         return Boolean.valueOf( mStringParams.get(key) );
     }
 
@@ -118,7 +118,7 @@ public final class Config extends Persistent {
 	 * Check wheter a String config parameter exists.
 	 */
 	public synchronized boolean containsString(String key) {
-		checkedActivate(3);
+		checkedActivate(4);
 		return mStringParams.containsKey(key);
 	}
 	
@@ -126,7 +126,7 @@ public final class Config extends Persistent {
 	 * Check wheter an Integer config parameter exists.
 	 */
 	public synchronized boolean containsInt(String key) {
-		checkedActivate(3);
+		checkedActivate(4);
 		return mIntParams.containsKey(key);
 	}
 
@@ -138,7 +138,7 @@ public final class Config extends Persistent {
 	 *         change the database.
 	 */
 	public synchronized String[] getAllStringKeys() {
-		checkedActivate(3);
+		checkedActivate(4);
 		/* We return a copy of the keySet. If we returned an iterator of the
 		 * keySet, modifications on the configuration HashMap would be reflected
 		 * in the iterator. This might lead to problems if the configuration is
@@ -160,7 +160,7 @@ public final class Config extends Persistent {
 	 *         change the database.
 	 */
 	public synchronized String[] getAllIntKeys() {
-		checkedActivate(3);
+		checkedActivate(4);
 		/* We return a copy of the keySet. If we returned an iterator of the
 		 * keySet, modifications on the configuration HashMap would be reflected
 		 * in the iterator. This might lead to problems if the configuration is
@@ -187,7 +187,7 @@ public final class Config extends Persistent {
 
 	@Override
 	public void startupDatabaseIntegrityTest() {
-		checkedActivate(3);
+		checkedActivate(4);
 		
 		if(mIntParams == null)
 			throw new NullPointerException("mIntParams==null");

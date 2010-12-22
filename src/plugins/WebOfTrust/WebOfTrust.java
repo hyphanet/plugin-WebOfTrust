@@ -518,6 +518,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		switch(result.size()) {
 			case 1: {
 				final Config config = result.next();
+				// For the HashMaps to stay alive we need to activate to full depth.
+				config.checkedActivate(4);
 				config.setDefaultValues(false);
 				config.storeAndCommit();
 				return config;
