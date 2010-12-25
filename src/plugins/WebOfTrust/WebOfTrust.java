@@ -178,6 +178,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				public void removeFrom(ObjectContainer container) {
 					throw new UnsupportedOperationException();
 				}
+
+				public boolean realTimeFlag() {
+					return false;
+				}
 				
 			};
 	
