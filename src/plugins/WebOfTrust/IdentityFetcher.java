@@ -353,8 +353,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * @param identity the Identity to fetch
 	 */
 	protected synchronized void fetch(Identity identity) throws Exception {
-		// FIXME: Add synchronized(mWoT) once we have switched the synchronization order of WoT/IdentityFetcher. Currently, we lock the 
-		// WoT first, but we should lock it after the identityFetcher
 			USKRetriever retriever = mRequests.get(identity.getID());
 
 			USK usk;
