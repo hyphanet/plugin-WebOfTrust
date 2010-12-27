@@ -12,25 +12,33 @@ import java.util.Hashtable;
  * in the database. Integer configuration values are stored separately because they might be needed very often per second and we should
  * save the time of converting String to Integer.
  * 
- * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Config extends Persistent {
-
-	/* Names of the config parameters */
-	
-	public static final String DATABASE_FORMAT_VERSION = "DatabaseFormatVersion";
+public final class Config extends Persistent { // FIXME: Rename to Configuration
 
 	/**
-	 * The HashMap that contains all configuration parameters
+	 * The database format version of this WoT-database.
+	 * Stored in a primitive integer field to ensure that db4o does not lose it - I've observed the hashtables to be null suddenly sometimes :(
+	 */
+	private int mDatabaseFormatVersion;
+	
+	/**
+	 * The {@link Hashtable} that contains all {@link String} configuration parameters
 	 */
 	private final Hashtable<String, String> mStringParams;
 	
+	/**
+	 * The {@link Hashtable} that contains all {@link Integer} configuration parameters
+	 */
 	private final Hashtable<String, Integer> mIntParams;
+	
 
 	/**
 	 * Creates a new Config object and stores the default values in it.
 	 */
 	protected Config(WebOfTrust myWebOfTrust) {
+		mDatabaseFormatVersion = WebOfTrust.DATABASE_FORMAT_VERSION;
 		mStringParams = new Hashtable<String, String>();
 		mIntParams = new Hashtable<String, Integer>();
 		initializeTransient(myWebOfTrust);
@@ -55,6 +63,17 @@ public final class Config extends Persistent {
 				checkedRollbackAndThrow(e);
 			}
 		}
+	}
+	
+	public int getDatabaseFormatVersion() {
+		return mDatabaseFormatVersion;
+	}
+	
+	protected void setDatabaseFormatVersion(int newVersion) {
+		if(newVersion <= mDatabaseFormatVersion)
+			throw new RuntimeException("mDatabaseFormatVersion==" + mDatabaseFormatVersion + "; newVersion==" + newVersion);
+		
+		mDatabaseFormatVersion = newVersion;
 	}
 
 	/**
@@ -180,14 +199,16 @@ public final class Config extends Persistent {
 	 * @param overwrite If true, overwrite already set values with the default value.
 	 */
 	public synchronized void setDefaultValues(boolean overwrite) {
-		/* Do not overwrite, it shall only be overwritten when the database has been converted to a new format */
-		if(!containsInt(DATABASE_FORMAT_VERSION))
-			set(DATABASE_FORMAT_VERSION, WebOfTrust.DATABASE_FORMAT_VERSION);
+
 	}
 
 	@Override
 	public void startupDatabaseIntegrityTest() {
 		checkedActivate(4);
+		
+		if(mDatabaseFormatVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
+			throw new IllegalStateException("FATAL: startupDatabaseIntegrityTest called with wrong database format version! is: " 
+					+ mDatabaseFormatVersion + "; should be: " + WebOfTrust.DATABASE_FORMAT_VERSION);
 		
 		if(mIntParams == null)
 			throw new NullPointerException("mIntParams==null");
@@ -197,4 +218,5 @@ public final class Config extends Persistent {
 		
 		// TODO: Validate the content
 	}
+
 }
