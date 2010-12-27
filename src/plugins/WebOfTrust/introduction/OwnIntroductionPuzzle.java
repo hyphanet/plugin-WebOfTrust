@@ -3,6 +3,7 @@ package plugins.WebOfTrust.introduction;
 import java.util.Date;
 import java.util.UUID;
 
+import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
 import freenet.keys.FreenetURI;
@@ -49,13 +50,33 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	}
 	
 	/**
-	 * Used by the IntroductionServer to mark a puzzle as solved so it will not try to fetch solutions for it anymore.
+	 * Used by the IntroductionServer to mark a puzzle as solved when the parsing of the solution-XML failed 
+	 * so it will not try to fetch solutions for it anymore.
+	 * Sets the solver to null.
 	 */
 	public synchronized void setSolved() {
 		if(wasSolved())
 			throw new RuntimeException("The puzzle was already solved by " + mSolver);
 		
+		if(mSolver != null)
+			throw new RuntimeException("mSolver==" + mSolver);
+		
 		mWasSolved = true;
+		mSolver = null;
+	}
+	
+	/**
+	 * Used by the IntroductionServer to mark a puzzle as solved when importing an identity introduction.
+	 */
+	public synchronized void setSolved(Identity solver) {
+		if(wasSolved())
+			throw new RuntimeException("The puzzle was already solved by " + mSolver);
+		
+		if(mSolver != null)
+			throw new RuntimeException("mSolver==" + mSolver);
+		
+		mWasSolved = true;
+		mSolver = solver;
 	}
 	
 	@Override

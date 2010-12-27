@@ -75,9 +75,10 @@ public class IntroductionPuzzle extends Persistent {
 	protected String mSolution;
 	
 	/**  
-	 * We store the solver of the puzzle so that we can insert the solution even if the node is shutdown directly after solving puzzles.
+	 * Class IntroductionPuzzle: We store the solver of the puzzle so that we can insert the solution even if the node is shutdown directly after solving puzzles.
+	 * Class OwnIntroductionPuzzle: We store the solver of a puzzle for future use, we do not use it yet.
 	 */
-	protected OwnIdentity mSolver;
+	protected Identity mSolver;
 	
 	/**
 	 * Set to true after the solution was inserted (for OwnIntroductionPuzzles after the puzzle was inserted.)
@@ -263,9 +264,9 @@ public class IntroductionPuzzle extends Persistent {
 	}
 
 	/**
-	 * Get the OwnIdentity which solved this puzzle. Used by the IntroductionClient for inserting identity introductions.
+	 * Get the Identity which solved this puzzle. Used by the IntroductionClient for inserting identity introductions.
 	 */
-	public synchronized OwnIdentity getSolver() {
+	public synchronized Identity getSolver() {
 		if(!wasSolved())
 			throw new IllegalStateException("The puzzle is not solved");
 		
@@ -311,7 +312,7 @@ public class IntroductionPuzzle extends Persistent {
 			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(2);
 			throwIfNotStored(mInserter);
-			if(wasSolved()) 
+			if(wasSolved() && mSolver != null) // Solver is null if parsing of his introduction XML failed. 
 				throwIfNotStored(mSolver);
 			checkedStore();
 		}
