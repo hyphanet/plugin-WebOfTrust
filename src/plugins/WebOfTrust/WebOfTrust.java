@@ -72,7 +72,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * constant below. The purpose of this costant is to allow anyone to create his own custom web of trust which is completely disconnected
 	 * from the "official" web of trust of the Freenet project.
 	 */
-	public static final String WOT_NAME = "WebOfTrustFinalTesting"; // FIXME: Change to "WebOfTrust" when deploying 0.4 final.
+	public static final String WOT_NAME = "WebOfTrustRC1"; // FIXME: Change to "WebOfTrust" when deploying 0.4 final.
 	
 	public static final String DATABASE_FILENAME =  WOT_NAME + ".db4o"; 
 	public static final int DATABASE_FORMAT_VERSION = -50;  // FIXME: Change to 1 when deploying 0.4 final. 
@@ -156,11 +156,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			mDB = openDatabase(DATABASE_FILENAME);
 			
 			mConfig = getOrCreateConfig();
-			// FIXME: We must store the format version in a member variable to make loss of this information less likely
-			// - I have experienced config objects whose hashtable member variables suddenly were null, even with proper
-			// activation. To repair such databases, we can just re-create the hashtables and initialize with the default config
-			// settings, but we really need to at least know the database format version.
-			if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WebOfTrust.DATABASE_FORMAT_VERSION)
+			if(mConfig.getDatabaseFormatVersion() > WebOfTrust.DATABASE_FORMAT_VERSION)
 				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 			
 			upgradeDB();
@@ -257,7 +253,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		mDB = openDatabase(databaseFilename);
 		mConfig = getOrCreateConfig();
 		
-		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > WebOfTrust.DATABASE_FORMAT_VERSION)
+		if(mConfig.getDatabaseFormatVersion() > WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 		
 		mFetcher = new IdentityFetcher(this, null);
@@ -341,7 +337,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	private synchronized void upgradeDB() {
-		int databaseVersion = mConfig.getInt(Config.DATABASE_FORMAT_VERSION);
+		int databaseVersion = mConfig.getDatabaseFormatVersion();
 		
 		if(databaseVersion == WebOfTrust.DATABASE_FORMAT_VERSION)
 			return;
@@ -367,16 +363,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		deleteDuplicateObjects();
 		deleteOrphanObjects();
 		
-		Query q = mDB.query();
+		Logger.normal(this, "Testing database integrity...");
+		
+		final Query q = mDB.query();
 		q.constrain(Persistent.class);
 		
 		for(final Persistent p : new Persistent.InitializingObjectSet<Persistent>(this, q)) {
 			try {
 				p.startupDatabaseIntegrityTest();
 			} catch(Exception e) {
-				Logger.error(this, "Startup integrity validation failed for " + p, e);
+				Logger.error(this, "Integrity test failed for " + p, e);
 			}
 		}
+		
+		Logger.normal(this, "Database integrity test finished.");
 	}
 	
 	/**
