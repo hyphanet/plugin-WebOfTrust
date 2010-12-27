@@ -70,7 +70,13 @@ public final class XMLTransformer {
 	 */
 	public static final int MAX_INTRODUCTIONPUZZLE_BYTE_SIZE = 16 * 1024;
 	
-	// FIXME: Limit Identity XML size!
+	/**
+	 * Maximal size of an identity XML file.
+	 * TODO: We must soon introduce limits on the amount of trust values which an identity can assign, otherwise
+	 * the WoT of some people will insert broken trust lists. Right now my seed identity of the testing WoT has 345 trustees
+	 * and fits  within 64 KiB so 256 should be enough until we have resolved this to-do.
+	 */
+	public static final int MAX_IDENTITY_XML_BYTE_SIZE = 256 * 1024;
 	
 	private final WebOfTrust mWoT;
 	
@@ -206,7 +212,10 @@ public final class XMLTransformer {
 		}
 	}
 	
-	private ParsedIdentityXML parseIdentityXML(InputStream xmlInputStream) {
+	private ParsedIdentityXML parseIdentityXML(InputStream xmlInputStream) throws IOException {
+		if(xmlInputStream.available() > MAX_IDENTITY_XML_BYTE_SIZE)
+			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
+		
 		final ParsedIdentityXML result = new ParsedIdentityXML();
 		
 		try {			
@@ -462,6 +471,9 @@ public final class XMLTransformer {
 	public Identity importIntroduction(OwnIdentity puzzleOwner, InputStream xmlInputStream)
 		throws InvalidParameterException, SAXException, IOException {
 		
+		if(xmlInputStream.available() > MAX_INTRODUCTION_BYTE_SIZE)
+			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
+		
 		FreenetURI identityURI;
 		Identity newIdentity;
 		
@@ -514,7 +526,8 @@ public final class XMLTransformer {
 						mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");	
 					}
 					
-					identityFetcher.storeStartFetchCommandWithoutCommit(newIdentity.getID());
+					// setTrustWithoutCommit() does this for us.
+					// identityFetcher.storeStartFetchCommandWithoutCommit(newIdentity.getID());
 
 					newIdentity.checkedCommit(this);
 				}
@@ -567,6 +580,9 @@ public final class XMLTransformer {
 
 	public IntroductionPuzzle importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
 		throws SAXException, IOException, InvalidParameterException, UnknownIdentityException, IllegalBase64Exception, ParseException {
+		
+		if(xmlInputStream.available() > MAX_INTRODUCTIONPUZZLE_BYTE_SIZE)
+			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
 		
 		String puzzleID;
 		IntroductionPuzzle.PuzzleType puzzleType;
