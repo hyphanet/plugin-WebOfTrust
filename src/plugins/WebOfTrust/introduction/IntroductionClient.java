@@ -338,7 +338,7 @@ public final class IntroductionClient extends TransferThread  {
 		
 		try {
 			os = tempB.getOutputStream();
-			mWoT.getXMLTransformer().exportIntroduction(puzzle.getSolver(), os);
+			mWoT.getXMLTransformer().exportIntroduction((OwnIdentity)puzzle.getSolver(), os);
 			os.close(); os = null;
 			tempB.setReadOnly();
 
@@ -351,7 +351,7 @@ public final class IntroductionClient extends TransferThread  {
 			addInsert(pu);
 			tempB = null;
 			
-			Logger.debug(this, "Started to insert puzzle solution of " + puzzle.getSolver().getNickname() + " at " + solutionURI);
+			Logger.normal(this, "Started to insert puzzle solution of " + puzzle.getSolver().getNickname() + " at " + solutionURI);
 		}
 		finally {
 			Closer.close(os);
@@ -435,14 +435,14 @@ public final class IntroductionClient extends TransferThread  {
 		//	mIdentities.removeKey(identity);
 		//}
 		
-		Logger.debug(this, "Trying to fetch puzzle from " + uri.toString());
+		Logger.normal(this, "Trying to fetch puzzle from " + uri.toString());
 	}
 
 	/**
 	 * Called when a puzzle is successfully fetched.
 	 */
 	public void onSuccess(final FetchResult result, final ClientGetter state, final ObjectContainer container) {
-		Logger.debug(this, "Fetched puzzle: " + state.getURI());
+		Logger.normal(this, "Fetched puzzle: " + state.getURI());
 		
 		Bucket bucket = null;
 		InputStream inputStream = null;
@@ -491,7 +491,7 @@ public final class IntroductionClient extends TransferThread  {
 	 */
 	public void onSuccess(final BaseClientPutter state, final ObjectContainer container)
 	{
-		Logger.debug(this, "Successful insert of puzzle solution: " + state.getURI());
+		Logger.normal(this, "Successful insert of puzzle solution: " + state.getURI());
 		
 		try {
 			synchronized(mWoT) { /* getPuzzleByRequestURI requires this */
@@ -523,8 +523,10 @@ public final class IntroductionClient extends TransferThread  {
 		try {
 			if(e.getMode() == InsertException.CANCELLED)
 				Logger.debug(this, "Insert cancelled: " + state.getURI());
+			else if(e.getMode() == InsertException.COLLISION)
+				Logger.normal(this, "Insert of puzzle solution collided, puzzle was solved already: " + state.getURI());
 			else
-				Logger.minor(this, "Insert of puzzle solution failed: " + state.getURI(), e);
+				Logger.error(this, "Insert of puzzle solution failed: " + state.getURI(), e);
 		}
 		finally {
 			removeInsert(state);
