@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Random;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -145,11 +144,11 @@ public final class IntroductionServer extends TransferThread {
 			for(final OwnIdentity identity : mWoT.getAllOwnIdentities()) {
 				if(identity.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)) {
 					try {
-						Logger.debug(this, "Managing puzzles of " + identity.getNickname());
+						Logger.normal(this, "Managing puzzles of " + identity.getNickname());
 						downloadSolutions(identity);
 						generateNewPuzzles(identity);
 						insertPuzzles(identity);
-						Logger.debug(this, "Managing puzzles finished.");
+						Logger.normal(this, "Managing puzzles finished.");
 					} catch (Exception e) {
 						Logger.error(this, "Puzzle management failed for " + identity.getNickname(), e);
 					}
@@ -164,7 +163,7 @@ public final class IntroductionServer extends TransferThread {
 	private void downloadSolutions(final OwnIdentity inserter) throws FetchException {		
 		synchronized(mPuzzleStore) {
 			final ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedByInserter(inserter);
-			Logger.debug(this, "Identity " + inserter.getNickname() + " has " + puzzles.size() + " unsolved puzzles stored. " + 
+			Logger.normal(this, "Identity " + inserter.getNickname() + " has " + puzzles.size() + " unsolved puzzles stored. " + 
 					"Trying to fetch solutions ...");
 			
 			for(final OwnIntroductionPuzzle p : puzzles) {
@@ -183,13 +182,15 @@ public final class IntroductionServer extends TransferThread {
 					Logger.error(this, "Error while trying to fetch captcha solution at " + p.getSolutionURI());
 				}
 			}
+			
+			Logger.normal(this, "Finishing with starting fetches for the puzzle solutions of " + inserter.getNickname());
 		}
 	}
 	
 	private void generateNewPuzzles(final OwnIdentity identity) throws IOException {
 		synchronized(mPuzzleStore) {
 		int puzzlesToGenerate = getIdentityPuzzleCount(identity) - mPuzzleStore.getOfTodayByInserter(identity).size();
-		Logger.debug(this, "Trying to generate " + puzzlesToGenerate + " new puzzles from " + identity.getNickname());
+		Logger.normal(this, "Trying to generate " + puzzlesToGenerate + " new puzzles from " + identity.getNickname());
 		
 		while(puzzlesToGenerate > 0) {
 			try {
@@ -202,13 +203,13 @@ public final class IntroductionServer extends TransferThread {
 		}
 		}
 		
-		Logger.debug(this, "Finished generating puzzles from " + identity.getNickname());
+		Logger.normal(this, "Finished generating puzzles from " + identity.getNickname());
 	}
 	
 	private void insertPuzzles(final OwnIdentity identity) throws IOException, InsertException {
 		synchronized(mPuzzleStore) {
 			final ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedOwnPuzzlesByInserter(identity); 
-			Logger.debug(this, "Trying to insert " + puzzles.size() + " puzzles from " + identity.getNickname());
+			Logger.normal(this, "Trying to insert " + puzzles.size() + " puzzles from " + identity.getNickname());
 			for(final OwnIntroductionPuzzle p : puzzles) {
 				try {
 					insertPuzzle(p);
@@ -217,7 +218,7 @@ public final class IntroductionServer extends TransferThread {
 					Logger.error(this, "Puzzle insert failed.", e);
 				}
 			}
-			Logger.debug(this, "Finished inserting puzzles from " + identity.getNickname());
+			Logger.normal(this, "Finished inserting puzzles from " + identity.getNickname());
 		}
 	}
 	
@@ -301,7 +302,7 @@ public final class IntroductionServer extends TransferThread {
 	 * Called when a puzzle solution is successfully fetched. We then add the identity which solved the puzzle.
 	 */
 	public void onSuccess(final FetchResult result, final ClientGetter state, final ObjectContainer container) {
-		Logger.debug(this, "Fetched puzzle solution: " + state.getURI());
+		Logger.normal(this, "Fetched puzzle solution: " + state.getURI());
 		
 		Bucket bucket = null;
 		InputStream inputStream = null;
@@ -327,12 +328,15 @@ public final class IntroductionServer extends TransferThread {
 							throw new Exception("Puzzle was solved already!");
 							
 						final Identity newIdentity = mWoT.getXMLTransformer().importIntroduction(puzzleOwner, inputStream);
-					Logger.debug(this, "Imported identity introduction for identity " + newIdentity.getRequestURI() +
-							" to the OwnIdentity " + puzzleOwner);
+						Logger.normal(this, "Imported identity introduction for identity " + newIdentity.getRequestURI() +
+										" to the OwnIdentity " + puzzleOwner);
+						
+						p.setSolved(newIdentity);
 					} catch(Exception e) { 
 						Logger.error(this, "Importing introduciton failed, marking puzzle as solved: " + state.getURI(), e);
+						p.setSolved(); // Mark it as solved even if parsing failed to prevent DoS.
 					}
-					p.setSolved(); // Mark it as solved even if parsing failed to prevent DoS.
+					
 					mPuzzleStore.storeAndCommit(p);
 				}
 			}
