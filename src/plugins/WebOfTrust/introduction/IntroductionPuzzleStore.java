@@ -165,16 +165,13 @@ public final class IntroductionPuzzleStore {
 		for(IntroductionPuzzle puzzle : puzzles)
 			puzzle.deleteWithoutCommit();
 		
-		if(identity instanceof OwnIdentity) {
-			q = mDB.query();
-			q.constrain(IntroductionPuzzle.class);
-			q.descend("mWasSolved").constrain(true);
-			q.descend("mSolver").constrain((OwnIdentity)identity).identity();
-			puzzles = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
+		q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mSolver").constrain(identity).identity();
+		puzzles = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 			
-			for(IntroductionPuzzle puzzle : puzzles)
-				puzzle.deleteWithoutCommit();
-		}
+		for(IntroductionPuzzle puzzle : puzzles)
+			puzzle.deleteWithoutCommit();
 	}
 
 	public synchronized void storeAndCommit(final IntroductionPuzzle puzzle) {
