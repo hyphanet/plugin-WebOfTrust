@@ -69,7 +69,12 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/* TODO: Maybe implement backward-downloading of puzzles, currently we only download puzzles of today.
 	/* public static final byte PUZZLE_DOWNLOAD_BACKWARDS_DAYS = IntroductionServer.PUZZLE_INVALID_AFTER_DAYS - 1; */
-	public static final int PUZZLE_REQUEST_COUNT = 10;
+	
+	/**
+	 * The amount of concurrent puzzle requests to aim for.
+	 * TODO: Decrease to 10 as soon as there are enough identities in the WoT
+	 */
+	public static final int PUZZLE_REQUEST_COUNT = 20;
 	
 	/** How many unsolved puzzles do we try to accumulate? */
 	public static final int PUZZLE_POOL_SIZE = 40;
@@ -165,6 +170,10 @@ public final class IntroductionClient extends TransferThread  {
 		insertSolutions();
 	}
 	
+	private boolean puzzleStoreIsTooEmpty() {
+		return mPuzzleStore.getNonOwnCaptchaAmount(false) <  PUZZLE_POOL_SIZE/2;
+	}
+	
 	/**
 	 * Use this function in the UI to get a list of puzzles for the user to solve.
 	 * 
@@ -247,11 +256,26 @@ public final class IntroductionClient extends TransferThread  {
 		}
 	}
 
+	/**
+	 * Starts more fetches for puzzles, up to a total amount of {@link PUZZLE_REQUEST_COUNT} running requests.
+	 * Existing requests are not aborted.
+	 */
 	private synchronized void downloadPuzzles() {
+		final int fetchCount = fetchCount();
+		
+		if(fetchCount > PUZZLE_REQUEST_COUNT) { // Check before we do the expensive database query.
+			Logger.minor(this, "Got " + fetchCount + "fetches, not fetching any more.");
+			return;
+		}
+		
+		Logger.normal(this, "Trying to start more fetches, current amount: " + fetchCount);
+		
+		final int newRequestCount = PUZZLE_REQUEST_COUNT - fetchCount;
+		
 		/* Normally we would lock the whole WoT here because we iterate over a list returned by it. But because it is not a severe
 		 * problem if we download a puzzle of an identity which has been deleted or so we do not do that. */
 		final ObjectSet<Identity> allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
-		final ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(PUZZLE_REQUEST_COUNT + 1);
+		final ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(newRequestCount + 1);
 		
 		/* Download puzzles from identities from which we have not downloaded for a certain period. This is ensured by
 		 * keeping the last few hundred identities stored in a FIFO with fixed length, named mIdentities. */
@@ -269,7 +293,7 @@ public final class IntroductionClient extends TransferThread  {
 					catch(NotInTrustTreeException e) { }
 				}
 	
-				if(identitiesToDownloadFrom.size() == PUZZLE_REQUEST_COUNT)
+				if(identitiesToDownloadFrom.size() == newRequestCount)
 					break;
 			}
 		}
@@ -288,15 +312,10 @@ public final class IntroductionClient extends TransferThread  {
 					catch(NotInTrustTreeException e) { }
 				}
 
-				if(identitiesToDownloadFrom.size() == PUZZLE_REQUEST_COUNT)
+				if(identitiesToDownloadFrom.size() == newRequestCount)
 					break;
 			}
 		}
-
-		
-		/* I suppose its a good idea to restart downloading the puzzles from the latest updated identities every time the thread iterates
-		 * This prevents denial of service because people will usually get very new puzzles. */
-		abortFetches();
 		
 		for(Identity i : identitiesToDownloadFrom) {
 			try {
@@ -306,6 +325,7 @@ public final class IntroductionClient extends TransferThread  {
 			}
 		}
 		
+		Logger.normal(this, "Finished starting more fetches. Amount of fetches now: " + fetchCount());
 	}
 	
 	private void insertSolutions() {
@@ -472,10 +492,16 @@ public final class IntroductionClient extends TransferThread  {
 			}
 			else if(e.getMode() == FetchException.DATA_NOT_FOUND) {
 				/* This is the normal case: There is no puzzle available of today because the inserter is offline and has not inserted any.
-				 * We do nothing here. The identity stays in the FIFO though so we do not try to fetch puzzzle from it again soon. */
-			}
-			else {
-				Logger.debug(this, "Downloading puzzle failed: " + state.getURI(), e);
+				 *  The identity stays in the FIFO though so we do not try to fetch puzzzle from it again soon.
+				 *  If we do not have enough puzzles yet, we immediately try to start a new fetch. If we have enough puzzles, we just
+				 *  wait for the next time-based iteration of the puzzle fetch loop to avoid wasting CPU cycles. */ 
+	
+				if(puzzleStoreIsTooEmpty()) {
+					// TODO: Use nextIteration here. This requires fixing it to allow us cause an execution even if we are below the minimal sleep time
+					downloadPuzzles();
+				}
+			} else {
+				Logger.error(this, "Downloading puzzle failed: " + state.getURI(), e);
 			}
 		}
 		finally {
