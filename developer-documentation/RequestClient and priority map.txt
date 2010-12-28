@@ -1,0 +1,23 @@
+All priority-classes are defined in class RequestStarter.
+
+Fetches:
+  RequestClient WebOfTrust.mRequestClient:
+	Identity USK subscriptions: UPDATE_PRIORITY_CLASS
+
+  RequestClient WebOfTrust.mPuzzleStore.mRequestClient:
+	Puzzle SSK fetches: UPDATE_PRIORITY_CLASS
+	Puzzle solution KSK fetches: UPDATE_PRIORITY_CLASS
+
+  RequestClient Freetalk.mMessageManger.mRequestClient:
+	New MessageList USK subscriptions: UPDATE_PRIORITY_CLASS
+	Old MessageList SSK fetches:: IMMEDIATE_SPLITFILE_PRIORITY_CLASS
+	Message CHK fetches: IMMEDIATE_SPLITFILE_PRIORITY_CLASS
+
+
+Inserts:
+  WebOfTrust Identity USK: IMMEDIATE_SPLITFILE_PRIORITY_CLASS
+  WebOfTrust Puzzle SSK: IMMEDIATE_SPLITFILE_PRIORITY_CLASS
+  WebOfTrust Puzzle Solution KSK: IMMEDIATE_SPLITFILE_PRIORITY_CLASS
+
+  Freetalk Message CHK: INTERACTIVE_PRIORITY_CLASS
+  Freetalk MessageList SSK: INTERACTIVE_PRIORITY_CLASS
