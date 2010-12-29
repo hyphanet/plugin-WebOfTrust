@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.HashSet;
@@ -153,7 +154,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			System.setProperty("java.awt.headless", "true"); 
 	
 			mPR = myPR;
-			mDB = openDatabase(DATABASE_FILENAME);
+			mDB = openDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME));
 			
 			mConfig = getOrCreateConfig();
 			if(mConfig.getDatabaseFormatVersion() > WebOfTrust.DATABASE_FORMAT_VERSION)
@@ -250,7 +251,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @param databaseFilename The filename of the database.
 	 */
 	public WebOfTrust(String databaseFilename) {
-		mDB = openDatabase(databaseFilename);
+		mDB = openDatabase(new File(databaseFilename));
 		mConfig = getOrCreateConfig();
 		
 		if(mConfig.getDatabaseFormatVersion() > WebOfTrust.DATABASE_FORMAT_VERSION)
@@ -258,13 +259,22 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		mFetcher = new IdentityFetcher(this, null);
 	}
+	
+	private File getUserDataDirectory() {
+        final File wotDirectory = new File(mPR.getNode().getUserDir(), WOT_NAME);
+        
+        if(!wotDirectory.exists() && !wotDirectory.mkdir())
+        	throw new RuntimeException("Unable to create directory " + wotDirectory);
+        
+        return wotDirectory;
+	}
 
 	/**
 	 * ATTENTION: This function is duplicated in the Freetalk plugin, please backport any changes.
 	 * 
 	 * Initializes the plugin's db4o database.
 	 */
-	private ExtObjectContainer openDatabase(String filename) {
+	private ExtObjectContainer openDatabase(File file) {
 		Logger.debug(this, "Using db4o " + Db4o.version());
 		
 		Configuration cfg = Db4o.newConfiguration();
@@ -333,7 +343,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         // Unforunately, db4o does not provide any way to query the indexed() property of fields, you can only set it
         // We might figure out whether inheritance works by writing a benchmark.
 
-		return Db4o.openFile(cfg, filename).ext();
+		return Db4o.openFile(cfg, file.getAbsolutePath()).ext();
 	}
 	
 	private synchronized void upgradeDB() {
