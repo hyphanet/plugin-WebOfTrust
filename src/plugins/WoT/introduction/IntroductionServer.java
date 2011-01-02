@@ -97,8 +97,13 @@ public final class IntroductionServer extends TransferThread {
 		try {
 			return Math.max(Integer.parseInt(i.getProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY)), 0);
 		}
-		catch(InvalidParameterException e) {
-			return 0;
+		catch(InvalidParameterException e) { // Property does not exist
+			// TODO: This is a workaround for bug 4552. Remove it and fix the underlying issue.
+			// The workaround is valid: getIdentityPuzzleCount is usually called by the IntroductionClient when it tries to download puzzles from an identity
+			// which has the introduction context. Having the introduction context means that this identity publishes puzzles so the absence of the puzzle
+			// count problem is a bug - probably a db4o one.
+			Logger.error(IntroductionServer.class, "getIdentitityPuzzleCount called even though identity has no puzzle count property: " + i);
+			return IntroductionServer.DEFAULT_PUZZLE_COUNT;
 		}
 	}
 	
