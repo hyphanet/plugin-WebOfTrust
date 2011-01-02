@@ -296,10 +296,11 @@ public final class FCPInterface implements FredPluginFCP {
 		return sfs;
     }
 
-    private SimpleFieldSet handleGetIdentitiesByScore(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
+    private SimpleFieldSet handleGetIdentitiesByScore(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException, FSParseException {
     	final String treeOwnerID = params.get("TreeOwner");
         final String selection = getMandatoryParameter(params, "Selection");
         final String context = getMandatoryParameter(params, "Context");
+        final boolean includeTrustValue = params.getBoolean("WantTrustValues");
 
 		final String selectString = selection.trim();
 		int select = 0; // TODO: decide about the default value
@@ -321,6 +322,8 @@ public final class FCPInterface implements FredPluginFCP {
 				final Score score = result.next();
 
 				if(getAll || score.getTarget().hasContext(context)) {
+					// TODO: Allow the client to select what data he wants
+					
 					final Identity identity = score.getTarget();
 					sfs.putOverwrite("Identity" + i, identity.getID());
 					sfs.putOverwrite("RequestURI" + i, identity.getRequestURI().toString());
@@ -336,7 +339,22 @@ public final class FCPInterface implements FredPluginFCP {
 						sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter + ".Name", property.getKey());
 						sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter++ + ".Value", property.getValue());
 					}
-					// TODO: Allow the client to select what data he wants
+					
+					if(treeOwner == null)
+		    			sfs.putOverwrite("ScoreOwner" + i, score.getTreeOwner().getID());
+					
+					sfs.putOverwrite("Score" + i, Integer.toString(score.getScore()));
+					sfs.putOverwrite("Rank" + i, Integer.toString(score.getRank()));
+					
+					if(includeTrustValue) {
+			    		try {
+			    			final Trust trust = mWoT.getTrust(score.getTreeOwner(), identity);
+			    			sfs.putOverwrite("Trust" + i, Byte.toString(trust.getValue()));
+			    		} catch (final NotTrustedException e1) {
+			    			sfs.putOverwrite("Trust" + i, "null");
+			    		}
+					}
+					
 					++i;
 				}
 			}
