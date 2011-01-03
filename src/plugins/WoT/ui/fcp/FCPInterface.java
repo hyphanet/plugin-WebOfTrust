@@ -300,7 +300,7 @@ public final class FCPInterface implements FredPluginFCP {
     	final String treeOwnerID = params.get("TreeOwner");
         final String selection = getMandatoryParameter(params, "Selection");
         final String context = getMandatoryParameter(params, "Context");
-        final boolean includeTrustValue = params.getBoolean("WantTrustValues");
+        final boolean includeTrustValue = params.getBoolean("WantTrustValues", false);
 
 		final String selectString = selection.trim();
 		int select = 0; // TODO: decide about the default value
