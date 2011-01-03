@@ -296,7 +296,7 @@ public class IntroductionPuzzle {
 		if(new Date(mValidUntilTime).before(new Date(2008-1900, 10, 10)))
 			{ Logger.error(this, "mValidUntilTime == " + new Date(mValidUntilTime)); result = false; }
 		if(mData == null || mData.length<100)
-			{ Logger.error(this, "mData == " + mData); result = false; }
+			{ Logger.error(this, "mData == " + mData); result = false; }  // FIXME Findbugs says "Invocation of toString on an array - The code invokes toString on an array, which will generate a fairly useless result such as [C@16f0472. Consider using Arrays.toString to convert the array into a readable String that gives the contents of the array."
 		if(mInserter == null)
 			{ Logger.error(this, "mInserter == null"); result = false; }
 		if(mDateOfInsertion == null || mDateOfInsertion.before(new Date(2008-1900, 10, 10)) || mDateOfInsertion.after(CurrentTimeUTC.get()))

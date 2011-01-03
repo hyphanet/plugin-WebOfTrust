@@ -356,7 +356,7 @@ public final class XMLTransformer {
 						mWoT.finishTrustListImport();
 						mDB.commit(); Logger.debug(this, "COMMITED.");
 					}
-					catch(Exception e) {
+					catch(Exception e) {  // FIXME Findbugs says "Exception is caught when Exception is not thrown - This method uses a try-catch block that catches Exception objects, but Exception is not thrown within the try block, and RuntimeException is not explicitly caught. It is a common bug pattern to say try { ... } catch (Exception e) { something } as a shorthand for catching a number of types of exception each of whose catch blocks is identical, but this construct also accidentally catches RuntimeException as well, masking potential bugs.
 						mWoT.abortTrustListImport(e);
 						throw e;
 					}
