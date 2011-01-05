@@ -5,7 +5,7 @@ Fetches:
 	Identity USK subscriptions: UPDATE_PRIORITY_CLASS
 
   RequestClient WebOfTrust.mPuzzleStore.mRequestClient:
-	Puzzle SSK fetches: UPDATE_PRIORITY_CLASS
+	Puzzle SSK fetches: Less than 20 puzzles stored: IMMEDIATE_SPLITFILE_PRIORITY_CLASS, otherwise UPDATE_PRIORITY_CLASS
 	Puzzle solution KSK fetches: UPDATE_PRIORITY_CLASS
 
   RequestClient Freetalk.mMessageManger.mRequestClient:
