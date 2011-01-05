@@ -263,7 +263,7 @@ public final class IntroductionClient extends TransferThread  {
 	private synchronized void downloadPuzzles() {
 		final int fetchCount = fetchCount();
 		
-		if(fetchCount > PUZZLE_REQUEST_COUNT) { // Check before we do the expensive database query.
+		if(fetchCount >= PUZZLE_REQUEST_COUNT) { // Check before we do the expensive database query.
 			Logger.minor(this, "Got " + fetchCount + "fetches, not fetching any more.");
 			return;
 		}
@@ -293,7 +293,7 @@ public final class IntroductionClient extends TransferThread  {
 					catch(NotInTrustTreeException e) { }
 				}
 	
-				if(identitiesToDownloadFrom.size() == newRequestCount)
+				if(identitiesToDownloadFrom.size() >= newRequestCount)
 					break;
 			}
 		}
@@ -312,7 +312,7 @@ public final class IntroductionClient extends TransferThread  {
 					catch(NotInTrustTreeException e) { }
 				}
 
-				if(identitiesToDownloadFrom.size() == newRequestCount)
+				if(identitiesToDownloadFrom.size() >= newRequestCount)
 					break;
 			}
 		}
@@ -441,10 +441,21 @@ public final class IntroductionClient extends TransferThread  {
 		
 		final FreenetURI uri = IntroductionPuzzle.generateRequestURI(inserter, currentDate, index);		
 		final FetchContext fetchContext = mClient.getFetchContext();
-		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
-		fetchContext.maxNonSplitfileRetries = 2;
+		// The retry-count does not include the first attempt. We only try once because we do not know whether that identity was online to insert puzzles today.
+		fetchContext.maxSplitfileBlockRetries = 0;
+		fetchContext.maxNonSplitfileRetries = 0;
+		// TODO: Do not auto-raise the priority without any evidence that the user wants to solve puzzles.
+		// The priority-raising if the puzzle store is too empty is a workaround for the poor fetch performance of fred.
+		// IMHO puzzle fetches should always be at low priority: Freetalk tells you to solve puzzles *after* you have posted your first message.
+		// New users are unlikely to post a message if no messages were downloaded yet so it does not make sense if the puzzle fetches run at higher priority
+		// before any messages have been fetched.
+		// But puzzle fetching was severely broken when I introduced the priority-raising on too empty - it is needed....
+		// So the best solution would be probably the following:
+		// Use the SubscriptionManager (its in its own branch currently) for allowing clients to subscribe to puzzles and only raise the priority if a client
+		// is subscribed.
+		final short fetchPriority = puzzleStoreIsTooEmpty() ? RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS : RequestStarter.UPDATE_PRIORITY_CLASS;
 		final ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mPuzzleStore.getRequestClient(), 
-				this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
+				this, fetchContext, fetchPriority);
 		addFetch(g);
 		
 		// Not necessary because it's not a HashSet but a fixed-length queue so the identity will get removed sometime anyway.
