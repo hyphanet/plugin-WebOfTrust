@@ -102,7 +102,7 @@ public final class IntroductionServer extends TransferThread {
 			// The workaround is valid: getIdentityPuzzleCount is usually called by the IntroductionClient when it tries to download puzzles from an identity
 			// which has the introduction context. Having the introduction context means that this identity publishes puzzles so the absence of the puzzle
 			// count problem is a bug - probably a db4o one.
-			Logger.error(IntroductionServer.class, "getIdentitityPuzzleCount called even though identity has no puzzle count property: " + i);
+			Logger.error(IntroductionServer.class, "getIdentitityPuzzleCount called even though identity has no puzzle count property, please check the XML: " + i.getRequestURI());
 			return IntroductionServer.DEFAULT_PUZZLE_COUNT;
 		}
 	}
