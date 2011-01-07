@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Config extends Persistent { // FIXME: Rename to Configuration
+public final class Configuration extends Persistent { // FIXME: Rename to Configuration
 
 	/**
 	 * The database format version of this WoT-database.
@@ -37,7 +37,7 @@ public final class Config extends Persistent { // FIXME: Rename to Configuration
 	/**
 	 * Creates a new Config object and stores the default values in it.
 	 */
-	protected Config(WebOfTrust myWebOfTrust) {
+	protected Configuration(WebOfTrust myWebOfTrust) {
 		mDatabaseFormatVersion = WebOfTrust.DATABASE_FORMAT_VERSION;
 		mStringParams = new Hashtable<String, String>();
 		mIntParams = new Hashtable<String, Integer>();

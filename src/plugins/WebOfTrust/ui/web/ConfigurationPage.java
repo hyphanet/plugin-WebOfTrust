@@ -5,7 +5,7 @@ package plugins.WebOfTrust.ui.web;
 
 import java.util.Arrays;
 
-import plugins.WebOfTrust.Config;
+import plugins.WebOfTrust.Configuration;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
@@ -30,7 +30,7 @@ public class ConfigurationPage extends WebPageImpl {
 		HTMLNode list1 = new HTMLNode("ul");
 		HTMLNode list2 = new HTMLNode("ul");
 		
-		Config config = wot.getConfig();
+		Configuration config = wot.getConfig();
 		synchronized(config) {
 			String[] intKeys = config.getAllIntKeys();
 			String[] stringKeys = config.getAllStringKeys();

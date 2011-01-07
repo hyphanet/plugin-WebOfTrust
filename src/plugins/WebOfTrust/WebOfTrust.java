@@ -28,7 +28,6 @@ import plugins.WebOfTrust.ui.web.WebInterface;
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
-import com.db4o.config.Configuration;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
@@ -98,7 +97,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/* Database & configuration of the plugin */
 	private ExtObjectContainer mDB;
-	private Config mConfig;
+	private Configuration mConfig;
 	private IntroductionPuzzleStore mPuzzleStore;
 	
 	/** Used for exporting identities, identity introductions and introduction puzzles to XML and importing them from XML. */
@@ -277,7 +276,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private ExtObjectContainer openDatabase(File file) {
 		Logger.debug(this, "Using db4o " + Db4o.version());
 		
-		Configuration cfg = Db4o.newConfiguration();
+		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		
 		// Required config options:
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader()));
@@ -528,14 +527,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Loads an existing Config object from the database and adds any missing default values to it, creates and stores a new one if none exists.
 	 * @return The config object.
 	 */
-	private synchronized Config getOrCreateConfig() {
+	private synchronized Configuration getOrCreateConfig() {
 		final Query query = mDB.query();
-		query.constrain(Config.class);
-		final ObjectSet<Config> result = new Persistent.InitializingObjectSet<Config>(this, query);
+		query.constrain(Configuration.class);
+		final ObjectSet<Configuration> result = new Persistent.InitializingObjectSet<Configuration>(this, query);
 
 		switch(result.size()) {
 			case 1: {
-				final Config config = result.next();
+				final Configuration config = result.next();
 				// For the HashMaps to stay alive we need to activate to full depth.
 				config.checkedActivate(4);
 				config.setDefaultValues(false);
@@ -543,7 +542,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				return config;
 			}
 			case 0: {
-				final Config config = new Config(this);
+				final Configuration config = new Configuration(this);
 				config.initializeTransient(this);
 				config.storeAndCommit();
 				return config;
@@ -2213,7 +2212,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		return mDB;
 	}
 	
-	public Config getConfig() {
+	public Configuration getConfig() {
 		return mConfig;
 	}
 	
