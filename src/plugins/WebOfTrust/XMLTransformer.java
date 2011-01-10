@@ -130,6 +130,9 @@ public final class XMLTransformer {
 		
 		Element rootElement = xmlDoc.getDocumentElement();
 		
+		// We include the WoT version to have an easy way of handling bogus XML which might be created by bugged versions.
+		rootElement.setAttribute("Version", Long.toString(Version.getRealVersion()));
+		
 		/* Create the identity Element */
 		
 		Element identityElement = xmlDoc.createElement("Identity");
@@ -442,6 +445,9 @@ public final class XMLTransformer {
 		}
 		Element rootElement = xmlDoc.getDocumentElement();
 
+		// We include the WoT version to have an easy way of handling bogus XML which might be created by bugged versions.
+		rootElement.setAttribute("Version", Long.toString(Version.getRealVersion()));
+
 		Element introElement = xmlDoc.createElement("IdentityIntroduction");
 		introElement.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
 
@@ -550,6 +556,9 @@ public final class XMLTransformer {
 			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
 		}
 		Element rootElement = xmlDoc.getDocumentElement();
+
+		// We include the WoT version to have an easy way of handling bogus XML which might be created by bugged versions.
+		rootElement.setAttribute("Version", Long.toString(Version.getRealVersion()));
 
 		Element puzzleElement = xmlDoc.createElement("IntroductionPuzzle");
 		puzzleElement.setAttribute("Version", Integer.toString(INTRODUCTION_XML_FORMAT_VERSION)); /* Version of the XML format */
