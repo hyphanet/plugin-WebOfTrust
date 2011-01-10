@@ -58,7 +58,7 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 		mTransformer.exportIntroduction(mOwnIdentity, os);
 		
 		String expectedXML = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>"
-							+ "<" + WebOfTrust.WOT_NAME + ">" 
+							+ "<" + WebOfTrust.WOT_NAME + " Version=\"" + Version.getRealVersion() + "\">" 
 							+ "<IdentityIntroduction Version=\"1\">"
 							+ "<Identity URI=\"USK@lY~N0Nk5NQpt6brGgtckFHPY11GzgkDn4VDszL6fwPg,GDQlSg9ncBBF8XIS-cXYb-LM9JxE3OiSydyOaZgCS4k,AQACAAE/" + WebOfTrust.WOT_NAME + "/0\"/>"
 							+ "</IdentityIntroduction>"
@@ -69,7 +69,7 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 
 	public void testImportIntroduction() throws SAXException, IOException, InvalidParameterException {
 		String introductionXML = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>"
-			+ "<" + WebOfTrust.WOT_NAME + ">" 
+			+ "<" + WebOfTrust.WOT_NAME + " Version=\"" + Version.getRealVersion() + "\">" 
 			+ "<IdentityIntroduction Version=\"1\">"
 			+ "<Identity URI=\"USK@HH~V2XmCbZp~738qtE67jUg1M5L5flVvQfc2bYpE1o4,c8H39jkp08cao-EJVTV~rISHlcMnlTlpNFICzL4gmZ4,AQACAAE/" + WebOfTrust.WOT_NAME + "/0\"/>"
 			+ "</IdentityIntroduction>"
