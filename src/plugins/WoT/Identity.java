@@ -622,7 +622,6 @@ public class Identity implements Cloneable {
 	 * Compares whether two identities are equal.
 	 * This checks <b>all</b> properties of the identities <b>excluding</b> the {@link Date} properties.
 	 */
-	@SuppressWarnings("unchecked")
 	public boolean equals(Object obj) {
 		if (obj == this) {
 			return true;
@@ -674,6 +673,10 @@ public class Identity implements Cloneable {
 		}
 		
 		return true;
+	}
+	
+	public int hashCode() {
+		return mID.hashCode();
 	}
 	
 	/**
