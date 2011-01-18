@@ -304,6 +304,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         	IdentityFetcher.AbortFetchCommand.class,
         	IdentityFetcher.StartFetchCommand.class,
         	IdentityFetcher.UpdateEditionHintCommand.class,
+        	SubscriptionManager.Subscription.class,
+        	SubscriptionManager.IdentityAttributeListSubscription.class,
+        	SubscriptionManager.IdentityListSubscription.class,
+        	SubscriptionManager.ScoreListSubscription.class,
+        	SubscriptionManager.TrustListSubscription.class,
+        	SubscriptionManager.Notification.class,
+        	SubscriptionManager.IdentityChangedNotification.class,
+        	SubscriptionManager.NewIdentityNotification.class,
+        	SubscriptionManager.ScoreChangedNotification.class,
+        	SubscriptionManager.TrustChangedNotification.class,
         	IntroductionPuzzle.class,
         	OwnIntroductionPuzzle.class
         };
@@ -2231,6 +2241,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 	public IntroductionClient getIntroductionClient() {
 		return mIntroductionClient;
+	}
+	
+	protected FCPInterface getFCPInterface() {
+		return mFCPInterface;
 	}
 
 	public RequestClient getRequestClient() {
