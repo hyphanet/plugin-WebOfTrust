@@ -685,6 +685,10 @@ public class Identity extends Persistent implements Cloneable {
 		return true;
 	}
 	
+	public int hashCode() {
+		return mID.hashCode();
+	}
+	
 	/**
 	 * Clones this identity. Does <b>not</b> clone the {@link Date} attributes, they are initialized to the current time!
 	 */
