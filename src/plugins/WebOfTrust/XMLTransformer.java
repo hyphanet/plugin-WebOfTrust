@@ -405,7 +405,7 @@ public final class XMLTransformer {
 					identity.onFetched(); // Marks the identity as parsed successfully
 					identity.storeAndCommit();
 				}
-					catch(RuntimeException e) { 
+					catch(Exception e) { 
 					mWoT.abortTrustListImport(e); // Does the rollback
 					throw e;
 				} // try
