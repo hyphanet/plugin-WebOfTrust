@@ -128,6 +128,9 @@ public final class XMLTransformer {
 			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
 		}
 		
+		// 1.0 does not support all Unicode characters which the String class supports. To prevent us from having to filter all Strings, we use 1.1
+		xmlDoc.setXmlVersion("1.1");
+		
 		Element rootElement = xmlDoc.getDocumentElement();
 		
 		// We include the WoT version to have an easy way of handling bogus XML which might be created by bugged versions.
@@ -443,6 +446,10 @@ public final class XMLTransformer {
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
 			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
 		}
+		
+		// 1.0 does not support all Unicode characters which the String class supports. To prevent us from having to filter all Strings, we use 1.1
+		xmlDoc.setXmlVersion("1.1");
+		
 		Element rootElement = xmlDoc.getDocumentElement();
 
 		// We include the WoT version to have an easy way of handling bogus XML which might be created by bugged versions.
@@ -555,6 +562,10 @@ public final class XMLTransformer {
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
 			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
 		}
+		
+		// 1.0 does not support all Unicode characters which the String class supports. To prevent us from having to filter all Strings, we use 1.1
+		xmlDoc.setXmlVersion("1.1");
+		
 		Element rootElement = xmlDoc.getDocumentElement();
 
 		// We include the WoT version to have an easy way of handling bogus XML which might be created by bugged versions.
