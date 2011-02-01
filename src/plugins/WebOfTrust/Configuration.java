@@ -17,7 +17,7 @@ import freenet.support.codeshortification.IfNull;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Configuration extends Persistent { // FIXME: Rename to Configuration
+public final class Configuration extends Persistent {
 
 	/**
 	 * The database format version of this WoT-database.
