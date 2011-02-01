@@ -549,7 +549,7 @@ public class Identity extends Persistent implements Cloneable {
 			throw new InvalidParameterException("Property names must not be longer than " + MAX_PROPERTY_NAME_LENGTH + " characters.");
 		}
 		
-		String[] keyTokens = key.split("[.]");
+		String[] keyTokens = key.split("[.]", -1); // The 1-argument-version wont return empty tokens
 		for (String token : keyTokens) {
 			if (token.length() == 0) {
 				throw new InvalidParameterException("Property names which contain periods must have at least one character before and after each period.");
