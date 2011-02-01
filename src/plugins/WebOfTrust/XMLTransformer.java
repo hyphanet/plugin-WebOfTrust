@@ -43,7 +43,6 @@ import com.db4o.ext.ExtObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 
@@ -223,7 +222,11 @@ public final class XMLTransformer {
 		}
 	}
 	
+	/**
+	 * @param xmlInputStream An InputStream which must not return more than {@link MAX_IDENTITY_XML_BYTE_SIZE} bytes.
+	 */
 	private ParsedIdentityXML parseIdentityXML(InputStream xmlInputStream) throws IOException {
+		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(xmlInputStream.available() > MAX_IDENTITY_XML_BYTE_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
 		
@@ -482,6 +485,7 @@ public final class XMLTransformer {
 	 * Creates an identity from an identity introduction, stores it in the database and returns the new identity.
 	 * If the identity already exists, the existing identity is returned.
 	 * 
+	 * @param xmlInputStream An InputStream which must not return more than {@link MAX_INTRODUCTION_BYTE_SIZE} bytes.
 	 * @throws InvalidParameterException If the XML format is unknown or if the puzzle owner does not allow introduction anymore.
 	 * @throws IOException 
 	 * @throws SAXException 
@@ -489,6 +493,7 @@ public final class XMLTransformer {
 	public Identity importIntroduction(OwnIdentity puzzleOwner, InputStream xmlInputStream)
 		throws InvalidParameterException, SAXException, IOException {
 		
+		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(xmlInputStream.available() > MAX_INTRODUCTION_BYTE_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
 		
@@ -603,9 +608,13 @@ public final class XMLTransformer {
 		}
 	}
 
+	/**
+	 * @param xmlInputStream An InputStream which must not return more than {@link MAX_INTRODUCTIONPUZZLE_BYTE_SIZE} bytes.
+	 */
 	public IntroductionPuzzle importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
 		throws SAXException, IOException, InvalidParameterException, UnknownIdentityException, IllegalBase64Exception, ParseException {
 		
+		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(xmlInputStream.available() > MAX_INTRODUCTIONPUZZLE_BYTE_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
 		
