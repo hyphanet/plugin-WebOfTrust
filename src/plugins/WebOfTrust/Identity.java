@@ -593,6 +593,7 @@ public class Identity extends Persistent implements Cloneable {
 		// TODO: Optimization: Figure out whether anything breaks if we do not activate since mProperties is set to a new HashMap anyway
 		activateProperties();
 		
+		checkedDelete(mProperties);
 		mProperties = new HashMap<String, String>(newProperties.size() * 2);
 		
 		for (Entry<String, String> property : newProperties.entrySet()) {
