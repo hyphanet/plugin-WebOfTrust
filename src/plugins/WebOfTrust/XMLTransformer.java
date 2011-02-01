@@ -10,8 +10,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Map.Entry;
 
 import javax.xml.XMLConstants;
@@ -210,7 +210,7 @@ public final class XMLTransformer {
 		String identityName = null;
 		Boolean identityPublishesTrustList = null;
 		ArrayList<String> identityContexts = null;
-		Hashtable<String, String> identityProperties = null;
+		HashMap<String, String> identityProperties = null;
 		ArrayList<TrustListEntry> identityTrustList = null;
 		
 		public ParsedIdentityXML() {
@@ -246,7 +246,7 @@ public final class XMLTransformer {
 			}
 			
 			final NodeList propertyList = identityElement.getElementsByTagName("Property");
-			result.identityProperties = new Hashtable<String, String>(propertyList.getLength() * 2);
+			result.identityProperties = new HashMap<String, String>(propertyList.getLength() * 2);
 			for(int i = 0; i < propertyList.getLength(); ++i) {
 				Element propertyElement = (Element)propertyList.item(i);
 				result.identityProperties.put(propertyElement.getAttribute("Name"), propertyElement.getAttribute("Value"));

@@ -3,7 +3,9 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
-import java.util.Hashtable;
+import java.util.HashMap;
+
+import freenet.support.codeshortification.IfNull;
 
 /* ATTENTION: This code is a duplicate of plugins.Freetalk.Config. Any changes there should also be done here! */
 
@@ -19,19 +21,19 @@ public final class Configuration extends Persistent { // FIXME: Rename to Config
 
 	/**
 	 * The database format version of this WoT-database.
-	 * Stored in a primitive integer field to ensure that db4o does not lose it - I've observed the hashtables to be null suddenly sometimes :(
+	 * Stored in a primitive integer field to ensure that db4o does not lose it - I've observed the HashMaps to be null suddenly sometimes :(
 	 */
 	private int mDatabaseFormatVersion;
 	
 	/**
-	 * The {@link Hashtable} that contains all {@link String} configuration parameters
+	 * The {@link HashMap} that contains all {@link String} configuration parameters
 	 */
-	private final Hashtable<String, String> mStringParams;
+	private final HashMap<String, String> mStringParams;
 	
 	/**
-	 * The {@link Hashtable} that contains all {@link Integer} configuration parameters
+	 * The {@link HashMap} that contains all {@link Integer} configuration parameters
 	 */
-	private final Hashtable<String, Integer> mIntParams;
+	private final HashMap<String, Integer> mIntParams;
 	
 
 	/**
@@ -39,8 +41,8 @@ public final class Configuration extends Persistent { // FIXME: Rename to Config
 	 */
 	protected Configuration(WebOfTrust myWebOfTrust) {
 		mDatabaseFormatVersion = WebOfTrust.DATABASE_FORMAT_VERSION;
-		mStringParams = new Hashtable<String, String>();
-		mIntParams = new Hashtable<String, Integer>();
+		mStringParams = new HashMap<String, String>();
+		mIntParams = new HashMap<String, Integer>();
 		initializeTransient(myWebOfTrust);
 		setDefaultValues(false);
 	}
@@ -83,6 +85,8 @@ public final class Configuration extends Persistent { // FIXME: Rename to Config
 	 * @param value Value of the config parameter.
 	 */
 	public synchronized void set(String key, String value) {
+		IfNull.thenThrow(key, "Key");
+		IfNull.thenThrow(value, "Value");
 		checkedActivate(4);
 		mStringParams.put(key, value);
 	}
@@ -94,6 +98,7 @@ public final class Configuration extends Persistent { // FIXME: Rename to Config
      * @param value Value of the config parameter.
      */
     public synchronized void set(String key, boolean value) {
+		IfNull.thenThrow(key, "Key");
     	checkedActivate(4);
         mStringParams.put(key, Boolean.toString(value));
     }
@@ -105,6 +110,7 @@ public final class Configuration extends Persistent { // FIXME: Rename to Config
 	 * @param value Value of the config parameter.
 	 */
 	public synchronized void set(String key, int value) {
+		IfNull.thenThrow(key, "Key");
 		checkedActivate(4);
 		mIntParams.put(key, value);
 	}

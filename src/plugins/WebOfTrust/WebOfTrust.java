@@ -6,8 +6,8 @@ package plugins.WebOfTrust;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.LinkedList;
 
 import plugins.WebOfTrust.exceptions.DuplicateIdentityException;
@@ -647,7 +647,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			// An identity is visible if there is a trust chain from the owner to it.
 			// The rank is the distance in trust steps from the treeOwner.			
 			// So the treeOwner is rank 0, the trustees of the treeOwner are rank 1 and so on.
-			final Hashtable<Identity, Integer> rankValues = new Hashtable<Identity, Integer>(allIdentities.size() * 2);
+			final HashMap<Identity, Integer> rankValues = new HashMap<Identity, Integer>(allIdentities.size() * 2);
 			
 			// Compute the rank values
 			{
@@ -681,7 +681,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						rankValues.put(treeOwner, selfScore.getRank());
 						unprocessedTrusters.addLast(treeOwner);
 					} else {
-						// rankValues.put(treeOwner, null); // No need to store null in a Hashtable
+						rankValues.put(treeOwner, null);
 					}
 				} catch(NotInTrustTreeException e) {
 					// This only happens in unit tests.

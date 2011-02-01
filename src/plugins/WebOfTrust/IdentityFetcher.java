@@ -8,7 +8,7 @@ package plugins.WebOfTrust;
 
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
@@ -65,7 +65,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	/* TODO: We use those HashSets for checking whether we have already have a request for the given identity if someone calls fetch().
 	 * This sucks: We always request ALL identities to allow ULPRs so we must assume that those HashSets will not fit into memory
 	 * if the WoT becomes large. We should instead ask the node whether we already have a request for the given SSK URI. So how to do that??? */
-	private final Hashtable<String, USKRetriever> mRequests = new Hashtable<String, USKRetriever>(128); /* TODO: profile & tweak */
+	private final HashMap<String, USKRetriever> mRequests = new HashMap<String, USKRetriever>(128); /* TODO: profile & tweak */
 	
 	private final TrivialTicker mTicker;
 	
