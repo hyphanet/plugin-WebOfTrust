@@ -60,6 +60,7 @@ public final class Configuration extends Persistent { // FIXME: Rename to Config
 				checkedStore(mIntParams);
 				
 				checkedStore(this);
+				checkedCommit(this);
 			}
 			catch(RuntimeException e) {
 				checkedRollbackAndThrow(e);
