@@ -6,6 +6,7 @@ package plugins.WebOfTrust.introduction;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
@@ -27,7 +28,11 @@ public class IntroductionPuzzle extends Persistent {
 	public static final int MINIMAL_SOLUTION_LENGTH = 5;
 	public static final int MAXIMAL_SOLUTION_LENGTH = 10;
 	
-	protected static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	protected static transient final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	
+	{
+		mDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+	}
 	
 	/* Included in XML: */
 	

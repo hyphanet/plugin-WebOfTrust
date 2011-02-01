@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.TimeZone;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -42,6 +43,7 @@ import com.db4o.ext.ExtObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 
@@ -94,7 +96,7 @@ public final class XMLTransformer {
 	/** Used for storing the XML DOM of encoded identities as physical XML text */
 	private final Transformer mSerializer;
 	
-	private final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	private final SimpleDateFormat mDateFormat;
 	
 	/**
 	 * Initializes the XML creator & parser and caches those objects in the new IdentityXML object so that they do not have to be initialized
@@ -116,6 +118,9 @@ public final class XMLTransformer {
 			mSerializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			mSerializer.setOutputProperty(OutputKeys.INDENT, "no");
 			mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
+			
+			mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			mDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 		}
 		catch(Exception e) {
 			throw new RuntimeException(e);
