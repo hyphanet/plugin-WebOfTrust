@@ -24,9 +24,9 @@ public class IntroductionPuzzle extends Persistent {
 	
 	public static enum PuzzleType { Captcha };
 	
-	public static final String INTRODUCTION_CONTEXT = "Introduction";
-	public static final int MINIMAL_SOLUTION_LENGTH = 5;
-	public static final int MAXIMAL_SOLUTION_LENGTH = 10;
+	public static transient final String INTRODUCTION_CONTEXT = "Introduction";
+	public static transient final int MINIMAL_SOLUTION_LENGTH = 5;
+	public static transient final int MAXIMAL_SOLUTION_LENGTH = 10;
 	
 	protected static transient final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	

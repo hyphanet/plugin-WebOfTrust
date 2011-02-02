@@ -32,11 +32,11 @@ import freenet.support.codeshortification.IfNull;
  */
 public class Identity extends Persistent implements Cloneable {
 	
-	public static final int MAX_CONTEXT_NAME_LENGTH = 32;
-	public static final int MAX_CONTEXT_AMOUNT = 32;
-	public static final int MAX_PROPERTY_NAME_LENGTH = 256;
-	public static final int MAX_PROPERTY_VALUE_LENGTH = 10 * 1024;
-	public static final int MAX_PROPERTY_AMOUNT = 64;
+	public static transient final int MAX_CONTEXT_NAME_LENGTH = 32;
+	public static transient final int MAX_CONTEXT_AMOUNT = 32;
+	public static transient final int MAX_PROPERTY_NAME_LENGTH = 256;
+	public static transient final int MAX_PROPERTY_VALUE_LENGTH = 10 * 1024;
+	public static transient final int MAX_PROPERTY_AMOUNT = 64;
 
 	/** A unique identifier used to query this Identity from the database. In fact, it is simply a String representing its routing key. */
 	@IndexedField

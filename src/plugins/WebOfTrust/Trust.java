@@ -17,7 +17,7 @@ import freenet.support.StringValidityChecker;
  */
 public final class Trust extends Persistent implements Cloneable {
 	
-	public static final int MAX_TRUST_COMMENT_LENGTH = 256;
+	public static transient final int MAX_TRUST_COMMENT_LENGTH = 256;
 
 	/** The identity which gives the trust. */
 	@IndexedField
