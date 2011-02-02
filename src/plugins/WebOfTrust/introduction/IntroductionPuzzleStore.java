@@ -1,11 +1,15 @@
 package plugins.WebOfTrust.introduction;
 
 import java.text.ParseException;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
+import plugins.WebOfTrust.TimeUtil;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.DuplicatePuzzleException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
@@ -257,12 +261,13 @@ public final class IntroductionPuzzleStore {
 	 * You have to synchronize on this IntroductionPuzzleStore surrounding the call to this function and the storage of a puzzle which uses
 	 * the index to ensure that the index is not taken in between.
 	 */
-	@SuppressWarnings("deprecation")
-	public int getFreeIndex(final OwnIdentity inserter, final Date date) {
+	public int getFreeIndex(final OwnIdentity inserter, Date date) {
+		date = TimeUtil.setTimeToZero(date);
+		
 		final Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
-		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
+		q.descend("mDateOfInsertion").constrain(date);
 		q.descend("mIndex").orderDescending();
 		final ObjectSet<IntroductionPuzzle> result = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 		
@@ -306,10 +311,8 @@ public final class IntroductionPuzzleStore {
 	 * 
 	 * Used by for checking whether new puzzles have to be inserted for a given OwnIdentity or can be downloaded from a given Identity.
 	 */
-	@SuppressWarnings("deprecation")
 	protected ObjectSet<IntroductionPuzzle> getOfTodayByInserter(final Identity inserter) {
-		final Date now = CurrentTimeUTC.get();
-		final Date today = new Date(now.getYear(), now.getMonth(), now.getDate());
+		final Date today = TimeUtil.setTimeToZero(CurrentTimeUTC.get());
 		
 		final Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
@@ -324,12 +327,13 @@ public final class IntroductionPuzzleStore {
 	 * Used by the IntroductionClient to check whether we already have a puzzle from the given date and index, if yes then we do not
 	 * need to download that one.
 	 */
-	@SuppressWarnings("deprecation")
-	protected synchronized IntroductionPuzzle getByInserterDateIndex(final Identity inserter, final Date date, final int index) throws UnknownPuzzleException {
+	protected synchronized IntroductionPuzzle getByInserterDateIndex(final Identity inserter, Date date, final int index) throws UnknownPuzzleException {
+		date = TimeUtil.setTimeToZero(date);
+		
 		final Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
-		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
+		q.descend("mDateOfInsertion").constrain(date);
 		q.descend("mIndex").constrain(index);
 		final ObjectSet<IntroductionPuzzle> result = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 		
@@ -343,12 +347,13 @@ public final class IntroductionPuzzleStore {
 	/**
 	 * Get a puzzle of a given OwnIdentity from a given date with a given index.
 	 */
-	@SuppressWarnings("deprecation")
-	protected synchronized OwnIntroductionPuzzle getOwnPuzzleByInserterDateIndex(final OwnIdentity inserter, final Date date, final int index) throws UnknownPuzzleException {
+	protected synchronized OwnIntroductionPuzzle getOwnPuzzleByInserterDateIndex(final OwnIdentity inserter, Date date, final int index) throws UnknownPuzzleException {
+		date = TimeUtil.setTimeToZero(date);
+		
 		final Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
-		q.descend("mDateOfInsertion").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
+		q.descend("mDateOfInsertion").constrain(date);
 		q.descend("mIndex").constrain(index);
 		final ObjectSet<OwnIntroductionPuzzle> result = new Persistent.InitializingObjectSet<OwnIntroductionPuzzle>(mWoT, q);
 		

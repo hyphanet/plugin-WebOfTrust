@@ -5,12 +5,15 @@ package plugins.WebOfTrust.introduction;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
+import plugins.WebOfTrust.TimeUtil;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
@@ -97,7 +100,6 @@ public class IntroductionPuzzle extends Persistent {
 	 * @param newType
 	 * @param newData
 	 */
-	@SuppressWarnings("deprecation")
 	public IntroductionPuzzle(Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData,
 			Date myDateOfInsertion, Date myExpirationDate, int myIndex) {
 		
@@ -145,7 +147,7 @@ public class IntroductionPuzzle extends Persistent {
 		mInserter = newInserter;
 		mType = newType;
 		mMimeType = newMimeType;
-		mDateOfInsertion = new Date(myDateOfInsertion.getYear(), myDateOfInsertion.getMonth(), myDateOfInsertion.getDate());
+		mDateOfInsertion = TimeUtil.setTimeToZero(myDateOfInsertion);
 		mValidUntilDate = myExpirationDate;
 		mIndex = myIndex;
 		mData = newData;

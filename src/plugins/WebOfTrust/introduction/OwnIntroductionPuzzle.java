@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.TimeUtil;
 import plugins.WebOfTrust.WebOfTrust;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
@@ -14,13 +15,11 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	/**
 	 * For construction of a puzzle which is meant to be inserted.
 	 */
-	@SuppressWarnings("deprecation")
 	public OwnIntroductionPuzzle(OwnIdentity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
 			Date newDateOfInsertion, int myIndex) {
-		
-		super(newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newDateOfInsertion, 
-				 new Date(new Date(newDateOfInsertion.getYear(), newDateOfInsertion.getMonth(), newDateOfInsertion.getDate()).getTime() 
-				 + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000), myIndex);
+		super(newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newDateOfInsertion,
+				new Date(TimeUtil.setTimeToZero(newDateOfInsertion).getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000), 
+				myIndex);
 		
 		if(newSolution.length() < MINIMAL_SOLUTION_LENGTH)
 			throw new IllegalArgumentException("Solution is too short (" + newSolution.length() + "), minimal length is " + 
