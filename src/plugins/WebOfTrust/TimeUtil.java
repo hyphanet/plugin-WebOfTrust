@@ -18,7 +18,7 @@ public final class TimeUtil {
 	public static Date setTimeToZero(final Date date) {
 		// We need to cut off the hour/minutes/seconds
 		final GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-		calendar.setTime(date);
+		calendar.setTimeInMillis(date.getTime()); // We must not use setTime(date) in case the date is not UTC.
 		calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), 0, 0, 0);
 		return calendar.getTime();
 	}
