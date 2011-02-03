@@ -780,10 +780,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				
 				boolean needToCheckFetchStatus = false;
 				boolean oldShouldFetch = false;
+				int oldCapacity = 0;
 				
 				// Now we have the rank and the score of the target computed and can check whether the database-stored score object is correct.
 				try {
 					Score storedScore = getScore(treeOwner, target);
+					oldCapacity = storedScore.getCapacity();
+					
 					if(expectedScore == null) {
 						returnValue = false;
 						if(!mFullScoreComputationNeeded)
@@ -811,6 +814,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						}
 					}
 				} catch(NotInTrustTreeException e) {
+					oldCapacity = 0;
+					
 					if(expectedScore != null) {
 						returnValue = false;
 						if(!mFullScoreComputationNeeded)
@@ -824,9 +829,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 				
 				if(needToCheckFetchStatus) {
-					// If the sign of the identities score changed, then we need to start fetching it or abort fetching it.
-					if(!oldShouldFetch && shouldFetchIdentity(target)) { 
-						Logger.debug(this, "Best capacity changed from 0 to positive, refetching " + target);
+					// If fetch status changed from false to true, we need to start fetching it
+					// If the capacity changed from 0 to positive, we need to refetch the current edition: Identities with capacity 0 cannot
+					// cause new identities to be imported from their trust list, capacity > 0 allows this.
+					// If the fetch status changed from true to false, we need to stop fetching it
+					if((!oldShouldFetch || (oldCapacity == 0 && expectedScore.getCapacity() > 0)) && shouldFetchIdentity(target) ) {
+						if(!oldShouldFetch)
+							Logger.debug(this, "Fetch status changed from false to true, refetching " + target);
+						else
+							Logger.debug(this, "Capacity changed from 0 to " + expectedScore.getCapacity() + ", refetching" + target);
 
 						target.markForRefetch();
 						target.storeWithoutCommit();
@@ -834,7 +845,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						mFetcher.storeStartFetchCommandWithoutCommit(target);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(target)) {
-						Logger.debug(this, "Best capacity changed from positive to 0, aborting fetch of " + target);
+						Logger.debug(this, "Fetch status changed from true to false, aborting fetch of " + target);
 
 						mFetcher.storeAbortFetchCommandWithoutCommit(target);
 					}
@@ -1854,8 +1865,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					if(trusteeScore.getRank() >= 0)
 						mDB.store(trusteeScore);
 					
-					if(!oldShouldFetch && shouldFetchIdentity(trustee)) { 
-						Logger.debug(this, "Fetch status changed from false to true, refetching " + trustee);
+					// If fetch status changed from false to true, we need to start fetching it
+					// If the capacity changed from 0 to positive, we need to refetch the current edition: Identities with capacity 0 cannot
+					// cause new identities to be imported from their trust list, capacity > 0 allows this.
+					// If the fetch status changed from true to false, we need to stop fetching it
+					if((!oldShouldFetch || (oldScore.getCapacity()== 0 && trusteeScore.getCapacity() > 0)) && shouldFetchIdentity(trustee)) { 
+						if(!oldShouldFetch)
+							Logger.debug(this, "Fetch status changed from false to true, refetching " + trustee);
+						else
+							Logger.debug(this, "Capacity changed from 0 to " + trusteeScore.getCapacity() + ", refetching" + trustee);
 
 						trustee.markForRefetch();
 						trustee.storeWithoutCommit();
