@@ -2002,7 +2002,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					for(String seedURI : SEED_IDENTITIES) {
 						try {
-							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "I trust the Freenet developers.");
+							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "Automatically assigned trust to a seed identity.");
 						} catch(UnknownIdentityException e) {
 							Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e);
 						}
