@@ -810,7 +810,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 							oldShouldFetch = shouldFetchIdentity(target);
 							
 							storedScore.setRank(expectedScore.getRank());
-							storedScore.setCapacity(computeCapacity(expectedScore.getTruster(), expectedScore.getTrustee(), expectedScore.getRank()));
+							storedScore.setCapacity(expectedScore.getCapacity());
 							storedScore.setValue(expectedScore.getScore());
 
 							storedScore.storeWithoutCommit();
