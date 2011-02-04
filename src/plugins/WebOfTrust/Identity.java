@@ -104,7 +104,7 @@ public class Identity extends Persistent implements Cloneable {
 		mCurrentEditionFetchState = FetchState.NotFetched;
 		
 		mLastFetchedDate = new Date(0);
-		mLastChangedDate = new Date(0);
+		mLastChangedDate = mCreationDate;
 		
 		if(newNickname == null) {
 			mNickname = null;
