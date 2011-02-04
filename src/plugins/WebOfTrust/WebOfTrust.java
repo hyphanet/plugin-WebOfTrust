@@ -162,7 +162,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 			
 			upgradeDB();
-			verifyDatabaseIntegrity();
 			
 			mXMLTransformer = new XMLTransformer(this);
 			mPuzzleStore = new IntroductionPuzzleStore(this);
@@ -182,13 +181,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 				
 			};
-	
-			createSeedIdentities();
 			
 			mInserter = new IdentityInserter(this);
-			mInserter.start();
-			
 			mFetcher = new IdentityFetcher(this, getPluginRespirator());		
+			
+			verifyDatabaseIntegrity();
 			
 			// TODO: Don't do this as soon as we are sure that score computation works.
 			Logger.normal(this, "Veriying all stored scores ...");
@@ -202,6 +199,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 			}
 			}
+			
+			// Database is up now, integrity is checked. We can start to actually do stuff
+			
+			createSeedIdentities();
 			
 			Logger.debug(this, "Starting fetches of all identities...");
 			synchronized(this) {
@@ -218,6 +219,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 			}
 			}
+			
+			mInserter.start();
 			
 			mIntroductionServer = new IntroductionServer(this, mFetcher);
 			mIntroductionServer.start();
