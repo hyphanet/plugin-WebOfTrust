@@ -836,7 +836,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// If the capacity changed from 0 to positive, we need to refetch the current edition: Identities with capacity 0 cannot
 					// cause new identities to be imported from their trust list, capacity > 0 allows this.
 					// If the fetch status changed from true to false, we need to stop fetching it
-					if((!oldShouldFetch || (oldCapacity == 0 && expectedScore.getCapacity() > 0)) && shouldFetchIdentity(target) ) {
+					if((!oldShouldFetch || (oldCapacity == 0 && expectedScore != null && expectedScore.getCapacity() > 0)) && shouldFetchIdentity(target) ) {
 						if(!oldShouldFetch)
 							Logger.debug(this, "Fetch status changed from false to true, refetching " + target);
 						else
