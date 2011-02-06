@@ -793,7 +793,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					if(expectedScore == null) {
 						returnValue = false;
 						if(!mFullScoreComputationNeeded)
-							Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + storedScore);
+							Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + storedScore, new RuntimeException());
 						
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
@@ -804,7 +804,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						if(!expectedScore.equals(storedScore)) {
 							returnValue = false;
 							if(!mFullScoreComputationNeeded)
-								Logger.error(this, "Correcting wrong score: Should have been " + expectedScore + " but was " + storedScore);
+								Logger.error(this, "Correcting wrong score: Should have been " + expectedScore + " but was " + storedScore, new RuntimeException());
 							
 							needToCheckFetchStatus = true;
 							oldShouldFetch = shouldFetchIdentity(target);
@@ -822,7 +822,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					if(expectedScore != null) {
 						returnValue = false;
 						if(!mFullScoreComputationNeeded)
-							Logger.error(this, "Correcting wrong score: No score was stored for the identity but it should be " + expectedScore);
+							Logger.error(this, "Correcting wrong score: No score was stored for the identity but it should be " + expectedScore, new RuntimeException());
 						
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
