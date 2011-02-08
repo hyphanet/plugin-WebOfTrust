@@ -279,7 +279,7 @@ public final class IntroductionServer extends TransferThread {
 			}
 		}
 		catch(Exception e) {
-			Logger.error(this, "Error", e);
+			Logger.error(this, "Marking puzzle as inserted failed", e);
 		}
 		finally {
 			removeInsert(state);
@@ -295,6 +295,24 @@ public final class IntroductionServer extends TransferThread {
 		try {
 			if(e.getMode() == InsertException.CANCELLED)
 				Logger.debug(this, "Insert cancelled: " + state.getURI());
+			else if(e.getMode() == InsertException.COLLISION) {
+				// TODO: Investigate why this happens.
+				Logger.warning(this, "Insert of puzzle collided, marking as inserted: " + state.getURI(), e);
+				
+				// We mark it as inserted to prevent continuous insert attempts
+				try {
+					synchronized(mWoT) {
+					synchronized(mPuzzleStore) {
+						final OwnIntroductionPuzzle puzzle = mPuzzleStore.getOwnPuzzleByRequestURI(state.getURI()); /* Be careful: This locks the WoT! */
+						puzzle.setInserted();
+						mPuzzleStore.storeAndCommit(puzzle);
+					}
+					}
+				}
+				catch(Exception error) {
+					Logger.error(this, "Marking puzzle as inserted failed", error);
+				}
+			}
 			else
 				Logger.error(this, "Insert of puzzle failed: " + state.getURI(), e);
 		}
