@@ -1866,7 +1866,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					assert(trusteeScore.getRank() >= 0); 
 					
 					if(trusteeScore.getRank() >= 0)
-						mDB.store(trusteeScore);
+						trusteeScore.storeWithoutCommit();
 					
 					// If fetch status changed from false to true, we need to start fetching it
 					// If the capacity changed from 0 to positive, we need to refetch the current edition: Identities with capacity 0 cannot
