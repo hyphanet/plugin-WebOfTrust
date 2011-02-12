@@ -1560,6 +1560,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 	}
 	
+	protected synchronized void removeTrust(OwnIdentity truster, Identity trustee) {
+		synchronized(mDB.lock()) {
+			try  {
+				removeTrustWithoutCommit(truster, trustee);
+				Persistent.checkedCommit(mDB, this);
+			}
+			catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+	}
+	
 	/**
 	 * Deletes a trust object.
 	 * 
@@ -2157,25 +2169,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public synchronized void setTrust(String ownTrusterID, String trusteeID, byte value, String comment)
 		throws UnknownIdentityException, NumberFormatException, InvalidParameterException {
 		
-		OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
+		final OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
 		Identity trustee = getIdentityByID(trusteeID);
 		
 		setTrust(truster, trustee, value, comment);
 	}
 	
 	public synchronized void removeTrust(String ownTrusterID, String trusteeID) throws UnknownIdentityException {
-		OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
-		Identity trustee = getIdentityByID(trusteeID);
+		final OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
+		final Identity trustee = getIdentityByID(trusteeID);
 
-		synchronized(mDB.lock()) {
-			try  {
-				removeTrustWithoutCommit(truster, trustee);
-				Persistent.checkedCommit(mDB, this);
-			}
-			catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
-			}
-		}
+		removeTrust(truster, trustee);
 	}
 	
 	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {
