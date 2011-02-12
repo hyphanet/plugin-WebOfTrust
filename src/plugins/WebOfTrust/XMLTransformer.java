@@ -361,6 +361,9 @@ public final class XMLTransformer {
 						// Importing own identities is always allowed
 						if(!positiveScore)
 							positiveScore = identity instanceof OwnIdentity;
+						
+						if(!hasCapacity)
+							hasCapacity = identity instanceof OwnIdentity;
 
 						HashSet<String>	identitiesWithUpdatedEditionHint = null;
 
