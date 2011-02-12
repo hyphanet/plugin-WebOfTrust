@@ -216,6 +216,14 @@ public final class IntroductionServer extends TransferThread {
 			final ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedOwnPuzzlesByInserter(identity); 
 			Logger.normal(this, "Trying to insert " + puzzles.size() + " puzzles from " + identity.getNickname());
 			for(final OwnIntroductionPuzzle p : puzzles) {
+				// TODO: This was added on 2011-02-12. Remove after a few months if it does not happen.
+				// Reason: Puzzle inserts seem to fail due to collison. The onFailure() then tries to mark them as inserted,
+				// which also fails because they are marked as inserted already. So we seem to start inserts for already-inserted
+				// puzzles, maybe the database query is broken?
+				if(p.wasInserted()) {
+					Logger.error(this, "Database query is broken, puzzle was inserted already: " + p, new RuntimeException());
+					continue;
+				}
 				try {
 					insertPuzzle(p);
 				}
