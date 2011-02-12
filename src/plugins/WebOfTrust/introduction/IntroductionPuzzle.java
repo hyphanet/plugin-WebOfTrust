@@ -5,9 +5,7 @@ package plugins.WebOfTrust.introduction;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 import plugins.WebOfTrust.Identity;
@@ -18,6 +16,7 @@ import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.Logger;
 
 /**
  * An introduction puzzle is a puzzle (for example a CAPTCHA) which can be solved by a new identity to get onto the trust list
@@ -308,6 +307,8 @@ public class IntroductionPuzzle extends Persistent {
 	}
 	
 	public synchronized void setInserted() {
+		Logger.debug(this, "Marking puzzle as inserted: " + this);
+		
 		if(wasInserted())
 			throw new RuntimeException("The puzzle was already inserted.");
 		
@@ -390,4 +391,8 @@ public class IntroductionPuzzle extends Persistent {
 		}
 	}
 
+	@Override
+	public String toString() {
+		return "[" + super.toString() + ": " + getRequestURI().toString() + "]";
+	}
 }
