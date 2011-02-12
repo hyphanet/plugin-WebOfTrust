@@ -352,19 +352,22 @@ public final class XMLTransformer {
 						boolean positiveScore = false;
 						boolean hasCapacity = false;
 						
-						try {
-							positiveScore = mWoT.getBestScore(identity) > 0;
-							hasCapacity = mWoT.getBestCapacity(identity) > 0;
+						// TODO: getBestScore/getBestCapacity should always yield a positive result because we store a positive score object for an OwnIdentity
+						// upon creation. The only case where it could not exist might be restoreIdentity() ... check that. If it is created there as well,
+						// remove the additional check here.
+						if(identity instanceof OwnIdentity) {
+							// Importing of OwnIdentities is always allowed
+							positiveScore = true;
+							hasCapacity = true;
+						} else {
+							try {
+								positiveScore = mWoT.getBestScore(identity) > 0;
+								hasCapacity = mWoT.getBestCapacity(identity) > 0;
+							}
+							catch(NotInTrustTreeException e) { }
 						}
-						catch(NotInTrustTreeException e) { }
-
-						// Importing own identities is always allowed
-						if(!positiveScore)
-							positiveScore = identity instanceof OwnIdentity;
 						
-						if(!hasCapacity)
-							hasCapacity = identity instanceof OwnIdentity;
-
+						
 						HashSet<String>	identitiesWithUpdatedEditionHint = null;
 
 						if(positiveScore) {
