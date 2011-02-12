@@ -1348,7 +1348,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	/**
-	 * Gets Identities matching a specified score criteria.
+	 * Gets non-own Identities matching a specified score criteria.
+	 * TODO: Rename to getNonOwnIdentitiesByScore. Or even better: Make it return own identities as well, this will speed up the database query and clients might be ok with it.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 * 
 	 * @param truster The owner of the trust tree, null if you want the trusted identities of all owners.
@@ -1356,7 +1357,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 		and negative with score < 0. Zero is included in the positive range by convention because solving an introduction puzzle gives you a trust value of 0.
 	 * @return an {@link ObjectSet} containing Scores of the identities that match the criteria
 	 */
-	public ObjectSet<Score> getIdentitiesByScore(final OwnIdentity truster, final int select) {		
+	public ObjectSet<Score> getIdentitiesByScore(final OwnIdentity truster, final int select) {
 		final Query query = mDB.query();
 		query.constrain(Score.class);
 		if(truster != null)
