@@ -1518,10 +1518,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	protected synchronized void setTrustWithoutCommit(Identity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
-		Trust trust;
 		try { // Check if we are updating an existing trust value
-			trust = getTrust(truster, trustee);
-			Trust oldTrust = trust.clone();
+			final Trust trust = getTrust(truster, trustee);
+			final Trust oldTrust = trust.clone();
 			trust.trusterEditionUpdated();
 			trust.setComment(newComment);
 			trust.storeWithoutCommit();
@@ -1533,7 +1532,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				updateScoresWithoutCommit(oldTrust, trust);
 			}
 		} catch (NotTrustedException e) {
-			trust = new Trust(truster, trustee, newValue, newComment);
+			final Trust trust = new Trust(truster, trustee, newValue, newComment);
 			trust.initializeTransient(this);
 			trust.storeWithoutCommit();
 			Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
