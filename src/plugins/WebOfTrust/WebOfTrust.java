@@ -1801,6 +1801,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		if(trustWasModified && oldTrust.getTrustee() != newTrust.getTrustee())
 			throw new IllegalArgumentException("oldTrust has different trustee, oldTrust:" + oldTrust + "; newTrust: " + newTrust);
+		
+		// We cannot iteratively REMOVE an inherited rank from the trustees because we don't know whether there is a circle in the trust values
+		// which would make the current identity get its old rank back via the circle: computeRank searches the trusters of an identity for the best
+		// rank, if we remove the rank from an identity, all its trustees will have a better rank and if one of them trusts the original identity
+		// then this function would run into an infinite loop. Decreasing or incrementing an existing rank is possible with this function because
+		// the rank received from the trustees will always be higher (that is exactly 1 more) than this identities rank.
+		if(trustWasDeleted) { 
+			mFullScoreComputationNeeded = true;
+		}
 
 		if(!mFullScoreComputationNeeded && (trustWasCreated || trustWasModified)) {
 			for(OwnIdentity treeOwner : getAllOwnIdentities()) {
@@ -1812,11 +1821,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					continue;
 				}
 				
-				// We cannot iteratively REMOVE an inherited rank from the trustees because we don't know whether there is a circle in the trust values
-				// which would make the current identity get its old rank back via the circle: computeRank searches the trusters of an identity for the best
-				// rank, if we remove the rank from an identity, all its trustees will have a better rank and if one of them trusts the original identity
-				// then this function would run into an infinite loop. Decreasing or incrementing an existing rank is possible with this function because
-				// the rank received from the trustees will always be higher (that is exactly 1 more) than this identities rank.
+				// See explanation above "We cannot iteratively REMOVE an inherited rank..."
 				if(trustWasModified && oldTrust.getValue() > 0 && newTrust.getValue() <= 0) {
 					mFullScoreComputationNeeded = true;
 					break;
@@ -1906,10 +1911,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				if(mFullScoreComputationNeeded)
 					break;
 			}
-		}
-		
-		if(trustWasDeleted) { 
-			mFullScoreComputationNeeded = true;
 		}
 		
 		// I've disabled this assert because it makes debugging VERY slow. Instead, finishTrustListImport now does assert(computeAllScores...).
