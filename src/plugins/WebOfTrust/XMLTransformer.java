@@ -440,11 +440,11 @@ public final class XMLTransformer {
 						Logger.normal(this, "Marking edition as parsing failed: " + identityURI);
 						identity.setEdition(newEdition);
 						identity.onParsingFailed();
+						identity.storeAndCommit();
 					} else {
 						Logger.normal(this, "Not marking edition as parsing failed, we have already fetched a new one (" + 
 								identity.getEdition() + "):" + identityURI);
 					}
-					identity.storeAndCommit();
 				}
 				catch(UnknownIdentityException uie) {
 					Logger.error(this, "Fetched an unknown identity: " + identityURI);
