@@ -1913,15 +1913,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 		}
 		
-		// I've disabled this assert because it makes debugging VERY slow. Instead, finishTrustListImport now does assert(computeAllScores...).
-		// assert(mFullScoreComputationNeeded || (!mFullScoreComputationNeeded && computeAllScoresWithoutCommit()));
-		
-		if(mFullScoreComputationNeeded && !mTrustListImportInProgress) {
-			// TODO: Optimization: This uses very much CPU and memory. Write a partial computation function...
-			// TODO: Optimization: While we do not have a partial computation function, we could at least optimize computeAllScores to NOT
-			// keep all objects in memory etc.
-			computeAllScoresWithoutCommit();
-			assert(computeAllScoresWithoutCommit()); // It is stable
+		if(!mTrustListImportInProgress) {
+			if(mFullScoreComputationNeeded) {
+				// TODO: Optimization: This uses very much CPU and memory. Write a partial computation function...
+				// TODO: Optimization: While we do not have a partial computation function, we could at least optimize computeAllScores to NOT
+				// keep all objects in memory etc.
+				computeAllScoresWithoutCommit();
+				assert(computeAllScoresWithoutCommit()); // computeAllScoresWithoutCommit is stable
+			} else {
+				assert(computeAllScoresWithoutCommit()); // This function worked correctly.
+			}
+		} else { // a trust list import is in progress
+			// We not do the following here because it would cause too much CPU usage during debugging: Trust lists are large and therefore 
+			// updateScoresWithoutCommit is called often during import of a single trust list
+			// assert(computeAllScoresWithoutCommit());
 		}
 	}
 
