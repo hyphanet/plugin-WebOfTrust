@@ -47,9 +47,11 @@ public class EditOwnIdentityPage extends WebPageImpl {
 						mIdentity.removeProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY);
 					}
 					
-					// TODO: Cleanup: Write a special storeAndCommit which does this
-					if(!wot.getDatabase().isStored(mIdentity))
+					try {
+						mIdentity.throwIfNotStored();
+					} catch(RuntimeException e) {
 						throw new RuntimeException("Your identity was deleted already");
+					}
 					
 					mIdentity.storeAndCommit();
 					
