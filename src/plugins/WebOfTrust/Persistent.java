@@ -198,6 +198,13 @@ public abstract class Persistent {
 	}
 	
 	/**
+	 * Checks whether this object is stored in the database already and throws a RuntimeException if it is not.<br /><br />
+	 */
+	public final void throwIfNotStored() {
+		throwIfNotStored(this);
+	}
+	
+	/**
 	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction, logs the passed exception and throws it.
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
 	 * synchronized(mDB.lock()) {<br />
