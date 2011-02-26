@@ -16,6 +16,7 @@ import java.util.ListIterator;
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.ext.ExtObjectSet;
+import com.db4o.ext.ObjectInfo;
 import com.db4o.query.Query;
 
 import freenet.support.CurrentTimeUTC;
@@ -344,6 +345,27 @@ public abstract class Persistent {
 	 */
 	public final Date getCreationDate() {
 		return mCreationDate;
+	}
+	
+	/**
+	 * Returns the java object ID and the database object ID of this Persistent object.
+	 * Notice: The database object ID can change between restarts if we defragment the database.
+	 */
+	@Override
+	public String toString() {
+		final String databaseID;
+		
+		if(mDB == null)
+			databaseID = "mDB==null!";
+		else {
+			final ObjectInfo oi = mDB.getObjectInfo(this);
+			if(oi == null)
+				databaseID = "object not stored";
+			else
+				databaseID = Long.toString(oi.getInternalID());
+		}
+		
+		return super.toString() + " (databaseID: " + databaseID + ")";
 	}
 	
 	/**
