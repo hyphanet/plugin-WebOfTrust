@@ -72,10 +72,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * constant below. The purpose of this costant is to allow anyone to create his own custom web of trust which is completely disconnected
 	 * from the "official" web of trust of the Freenet project.
 	 */
-	public static final String WOT_NAME = "WebOfTrustRC1"; // FIXME: Change to "WebOfTrust" when deploying 0.4 final.
+	public static final String WOT_NAME = "WebOfTrustRC2"; // FIXME: Change to "WebOfTrust" when deploying 0.4 final.
 	
 	public static final String DATABASE_FILENAME =  WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = -50;  // FIXME: Change to 1 when deploying 0.4 final. 
+	public static final int DATABASE_FORMAT_VERSION = -49;  // FIXME: Change to 1 when deploying 0.4 final. 
 	
 	/**
 	 * The official seed identities of the WoT plugin: If a newbie wants to download the whole offficial web of trust, he needs at least one
@@ -84,8 +84,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 */
 	private static final String[] SEED_IDENTITIES = new String[] { 
 		// FIXME: Add seeds when deploying 0.4 final.
-		"USK@mMjZoaCid0rUpkdkuZRKTWPI5X1JCHw3sMFI2M-YcSM,rTHG6svyYfD2rb3G8TJ5KXg5VGouTqoVcOqAOTeBlho,AQACAAE/WebOfTrustRC1/1", // xor
-		"USK@0mjeg8Pie1pLEmvpTPr7~ujBuO6-BifbCyRvF61q3Zg,CgpicQS79hGEB5i0Ha41G6cAJ2bw~Ou3KLlSu54HINE,AQACAAE/WebOfTrustRC1/0" // nextgens
+
 	};
 
 	/* References from the node */
@@ -466,7 +465,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private synchronized void deleteOrphanObjects() {
 		synchronized(mDB.lock()) {
 			try {
-				boolean orphanTrustFound = true;
+				boolean orphanTrustFound = false;
 				
 				Query q = mDB.query();
 				q.constrain(Trust.class);
@@ -497,7 +496,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		synchronized(mDB.lock()) {
 			try {
-				boolean orphanScoresFound = true;
+				boolean orphanScoresFound = false;
 				
 				Query q = mDB.query();
 				q.constrain(Score.class);
@@ -2165,6 +2164,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		}
 	}
+	
+	// FIXME: Debug code, remove after we have fixed https://bugs.freenetproject.org/view.php?id=4736
+	private void testScores() {
+		System.gc();
+		mDB.rollback();
+		System.gc();
+		if(!computeAllScoresWithoutCommit())
+			Logger.error(this, "EPIC FAIL!", new RuntimeException());
+		System.gc();
+		mDB.rollback();
+		System.gc();
+	}
 
 	public synchronized void setTrust(String ownTrusterID, String trusteeID, byte value, String comment)
 		throws UnknownIdentityException, NumberFormatException, InvalidParameterException {
@@ -2172,14 +2183,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		final OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
 		Identity trustee = getIdentityByID(trusteeID);
 		
+		testScores();
 		setTrust(truster, trustee, value, comment);
+		testScores();
 	}
 	
 	public synchronized void removeTrust(String ownTrusterID, String trusteeID) throws UnknownIdentityException {
 		final OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
 		final Identity trustee = getIdentityByID(trusteeID);
 
+		testScores();
 		removeTrust(truster, trustee);
+		testScores();
 	}
 	
 	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {
