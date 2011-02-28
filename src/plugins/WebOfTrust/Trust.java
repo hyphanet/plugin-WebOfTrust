@@ -7,6 +7,7 @@ import java.util.Date;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
 /**
@@ -91,7 +92,8 @@ public final class Trust extends Persistent implements Cloneable {
 
 	@Override
 	public synchronized String toString() {
-		return "[" + getTruster().getNickname() + " trusts " + getTrustee().getNickname() + " with value " + getValue() + "; comment: \"" + getComment() + "\"]";
+		return "[Trust " + super.toString() + ": truster: " + getTruster().getNickname() + "; trustee: " + getTrustee().getNickname() +
+		 	"; value:" + getValue() + "; comment: \"" + getComment() + "\"]";
 	}
 
 	/** @return The Identity that gives this trust. */
@@ -192,10 +194,19 @@ public final class Trust extends Persistent implements Cloneable {
 			throwIfNotStored(mTruster);
 			throwIfNotStored(mTrustee);
 			checkedStore();
+			// FIXME: Debug code, remove after we have fixed https://bugs.freenetproject.org/view.php?id=4736
+			Logger.debug(this, "Trust.storeWithoutCommit " + this, new RuntimeException());
 		}
 		catch(final RuntimeException e) {
 			checkedRollbackAndThrow(e);
 		}
+	}
+	
+	// FIXME: Debug code, remove after we have fixed https://bugs.freenetproject.org/view.php?id=4736
+	@Override
+	protected void deleteWithoutCommit() {
+		super.deleteWithoutCommit();
+		Logger.debug(this, "Trust.deleteWithoutCommit " + this, new RuntimeException());
 	}
 
 	/**

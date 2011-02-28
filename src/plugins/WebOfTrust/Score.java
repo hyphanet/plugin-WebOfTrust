@@ -6,6 +6,7 @@ package plugins.WebOfTrust;
 import java.util.Date;
 
 import freenet.support.CurrentTimeUTC;
+import freenet.support.Logger;
 
 
 /**
@@ -76,8 +77,8 @@ public final class Score extends Persistent implements Cloneable {
 		/* We do not synchronize on truster and trustee because nickname changes are not allowed, the only thing which can happen
 		 * is that we get a blank nickname if it has not been received yet, that is not severe though.*/
 		
-		return "[" + getTrustee().getNickname() + " has " + getScore() + " points in " + getTruster().getNickname() + "'s trust tree" +
-				"; rank: " + getRank() + "; capacity : " + getCapacity() + "]";
+		return "[Score " + super.toString() + ": truster: " + getTruster().getNickname() + "; trustee: " + getTrustee().getNickname() +
+				"; value: " + getScore() +  "; rank: " + getRank() + "; capacity : " + getCapacity() + "]";
 	}
 
 	/**
@@ -185,6 +186,7 @@ public final class Score extends Persistent implements Cloneable {
 		return mLastChangedDate;
 	}
 	
+	@Override
 	protected void storeWithoutCommit() {
 		try {		
 			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
@@ -192,10 +194,19 @@ public final class Score extends Persistent implements Cloneable {
 			throwIfNotStored(mTruster);
 			throwIfNotStored(mTrustee);
 			checkedStore();
+			// FIXME: Debug code, remove after we have fixed https://bugs.freenetproject.org/view.php?id=4736
+			Logger.debug(this, "Score.storeWithoutCommit " + this, new RuntimeException());
 		}
 		catch(final RuntimeException e) {
 			checkedRollbackAndThrow(e);
 		}
+	}
+	
+	// FIXME: Debug code, remove after we have fixed https://bugs.freenetproject.org/view.php?id=4736
+	@Override
+	protected void deleteWithoutCommit() {
+		super.deleteWithoutCommit();
+		Logger.debug(this, "Score.deleteWithoutCommit " + this, new RuntimeException());
 	}
 	
 	/**
