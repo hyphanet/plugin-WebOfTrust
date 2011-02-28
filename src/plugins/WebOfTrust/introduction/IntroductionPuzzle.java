@@ -62,8 +62,15 @@ public class IntroductionPuzzle extends Persistent {
 	@IndexedField
 	private final Identity mInserter;
 	
+	/**
+	 * The Unix-date of the day when this puzzle was inserted.
+	 * For example if a puzzle is generated on "2011-02-28 14:28:16.123" this will be the unix time "2011-02-28 00:00:00.000"
+	 * We store as long/unix-time instead of Date because we need database queries on the exact day to work and they do not work very
+	 * well with Date objects because their internal structure is messy (they store as localtime even when we tell them to use UTC).
+	 * TODO: Get rid of unix-time before 2038 :|
+	 */
 	@IndexedField
-	private final Date mDateOfInsertion;
+	private final long mDayOfInsertion;
 	
 	private final int mIndex;
 
@@ -146,7 +153,7 @@ public class IntroductionPuzzle extends Persistent {
 		mInserter = newInserter;
 		mType = newType;
 		mMimeType = newMimeType;
-		mDateOfInsertion = TimeUtil.setTimeToZero(myDateOfInsertion);
+		mDayOfInsertion = TimeUtil.setTimeToZero(myDateOfInsertion).getTime();
 		mValidUntilDate = myExpirationDate;
 		mIndex = myIndex;
 		mData = newData;
@@ -235,7 +242,7 @@ public class IntroductionPuzzle extends Persistent {
 	
 	public Date getDateOfInsertion() {
 		// checkedActivate(depth) is not needed, Date is a db4o primitive type
-		return mDateOfInsertion;
+		return new Date(mDayOfInsertion);
 	}
 	
 	public Date getValidUntilDate() {
@@ -367,13 +374,13 @@ public class IntroductionPuzzle extends Persistent {
 		if(mValidUntilDate.before(mCreationDate))
 			throw new IllegalStateException("mValidUntilDate is before mCreationDate");
 			
-		if(mDateOfInsertion == null)
-			throw new NullPointerException("mDateOfInsertion==null");
+		if(mDayOfInsertion < 0)
+			throw new NullPointerException("mDayOfInsertion==" + mDayOfInsertion);
 		
-		if(mDateOfInsertion.after(mCreationDate))
+		if(new Date(mDayOfInsertion).after(mCreationDate))
 			throw new IllegalStateException("mDateOfInsertion is in after mCreationDate");
 		
-		if(mDateOfInsertion.after(CurrentTimeUTC.get()))
+		if(new Date(mDayOfInsertion).after(CurrentTimeUTC.get()))
 			throw new IllegalStateException("mDateOfInsertion is in the future");
 					
 		if(mIndex < 0)

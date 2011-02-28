@@ -264,7 +264,7 @@ public final class IntroductionPuzzleStore {
 		final Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
-		q.descend("mDateOfInsertion").constrain(date);
+		q.descend("mDayOfInsertion").constrain(date.getTime());
 		q.descend("mIndex").orderDescending();
 		final ObjectSet<IntroductionPuzzle> result = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 		
@@ -314,7 +314,7 @@ public final class IntroductionPuzzleStore {
 		final Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
-		q.descend("mDateOfInsertion").constrain(today);
+		q.descend("mDayOfInsertion").constrain(today.getTime());
 		return new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 	}
 	
@@ -330,7 +330,7 @@ public final class IntroductionPuzzleStore {
 		final Query q = mDB.query();
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
-		q.descend("mDateOfInsertion").constrain(date);
+		q.descend("mDayOfInsertion").constrain(date.getTime());
 		q.descend("mIndex").constrain(index);
 		final ObjectSet<IntroductionPuzzle> result = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 		
@@ -350,7 +350,7 @@ public final class IntroductionPuzzleStore {
 		final Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
-		q.descend("mDateOfInsertion").constrain(date);
+		q.descend("mDayOfInsertion").constrain(date.getTime());
 		q.descend("mIndex").constrain(index);
 		final ObjectSet<OwnIntroductionPuzzle> result = new Persistent.InitializingObjectSet<OwnIntroductionPuzzle>(mWoT, q);
 		
