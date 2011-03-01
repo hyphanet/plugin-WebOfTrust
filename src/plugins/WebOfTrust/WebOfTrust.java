@@ -84,7 +84,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 */
 	private static final String[] SEED_IDENTITIES = new String[] { 
 		// FIXME: Add seeds when deploying 0.4 final.
-
+		"USK@xyzElfFQnwBb4ZuSEh1aSNsbRjEGCTa-2rcjeW58A4E,TiYrXSCcoGETPf0TWLNthaimJEP1PW7nJ2tYXKxdC4s,AQACAAE/WebOfTrustRC2/0" // xor
 	};
 
 	/* References from the node */
