@@ -416,6 +416,7 @@ public class WebInterface {
 			}
 			ByteArrayOutputStream imageOutputStream = null;
 			try {
+				// TODO: Optimization: We do not have to query the identity here, the ID *is* the routing key, we could just base64-decode it.
 				Identity identity = mWoT.getIdentityByID(identityId);
 				byte[] routingKey = identity.getRequestURI().getRoutingKey();
 				RenderedImage identiconImage = new Identicon(routingKey).render(width, height);
