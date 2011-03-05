@@ -5,6 +5,7 @@ package plugins.WebOfTrust.introduction;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -22,7 +23,7 @@ import freenet.support.Logger;
  * An introduction puzzle is a puzzle (for example a CAPTCHA) which can be solved by a new identity to get onto the trust list
  * of already existing identities. This is the only way to get onto the web of trust if you do not know someone who will add you manually.
  */
-public class IntroductionPuzzle extends Persistent {
+public class IntroductionPuzzle extends Persistent implements Cloneable {
 	
 	public static enum PuzzleType { Captcha };
 	
@@ -284,6 +285,10 @@ public class IntroductionPuzzle extends Persistent {
 			throw new IllegalStateException("The puzzle is not solved");
 		
 		checkedActivate(2);
+		
+		if(mSolver == null)
+			return null;
+		
 		mSolver.initializeTransient(mWebOfTrust);
 		return mSolver;
 	}
@@ -401,5 +406,44 @@ public class IntroductionPuzzle extends Persistent {
 	@Override
 	public String toString() {
 		return "[" + super.toString() + ": " + getRequestURI().toString() + "]";
+	}
+	
+	@Override
+	public IntroductionPuzzle clone() {
+		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
+		final IntroductionPuzzle copy = new IntroductionPuzzle(getInserter(), getID(), getType(), getMimeType(), getData(), getDateOfInsertion(), getValidUntilDate(), getIndex());
+		if(wasSolved()) copy.setSolved((OwnIdentity)getSolver(), mSolution);
+		if(wasInserted()) copy.setInserted();
+		copy.initializeTransient(mWebOfTrust);
+		return copy;
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if(o == this)
+			return true;
+		
+		if(!(o instanceof IntroductionPuzzle))
+			throw new IllegalArgumentException();
+		
+		final IntroductionPuzzle other = (IntroductionPuzzle)o;
+		
+		
+		return (
+					getID().equals(other.getID()) &&
+					getType().equals(other.getType()) &&
+					getMimeType().equals(other.getMimeType()) &&
+					getValidUntilDate().equals(other.getValidUntilDate()) &&
+					Arrays.equals(getData(), other.getData()) &&
+					getInserter().equals(other.getInserter()) &&
+					getDateOfInsertion().equals(other.getDateOfInsertion()) &&
+					getIndex() == other.getIndex() &&
+					wasSolved() == other.wasSolved() &&
+					(
+							!wasSolved() || 
+							(getSolver() == null || getSolver().equals(other.getSolver())) && getSolutionURI().equals(other.getSolutionURI())
+					) &&
+					wasInserted() == other.wasInserted()
+				);
 	}
 }

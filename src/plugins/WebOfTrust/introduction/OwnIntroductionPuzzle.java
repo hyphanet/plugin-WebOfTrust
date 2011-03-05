@@ -17,7 +17,15 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	 */
 	public OwnIntroductionPuzzle(OwnIdentity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
 			Date newDateOfInsertion, int myIndex) {
-		super(newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newDateOfInsertion,
+		this(newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newSolution, newDateOfInsertion, myIndex);
+	}
+	
+	/**
+	 * Clone() needs to set the ID.
+	 */
+	private OwnIntroductionPuzzle(OwnIdentity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
+			Date newDateOfInsertion, int myIndex) {
+		super(newInserter, newID, newType, newMimeType, newData, newDateOfInsertion,
 				new Date(TimeUtil.setTimeToZero(newDateOfInsertion).getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000), 
 				myIndex);
 		
@@ -28,6 +36,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 		mSolver = null;
 		mSolution = newSolution;
 	}
+	
 	
 	/**
 	 * Get the URI at which to insert this puzzle.
@@ -78,6 +87,14 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 		mSolver = solver;
 	}
 	
+	/**
+	 * Get the Identity which solved this puzzle. It is set by the IntroductionServer when a puzzle solution to this puzzle was fetched. 
+	 * Returns null if the puzzle was solved but the parsing of the solution failed.
+	 */
+	public Identity getSolver() {
+		return super.getSolver();
+	}
+	
 	@Override
 	public void startupDatabaseIntegrityTest() throws Exception {
 		checkedActivate(2);
@@ -91,4 +108,28 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 			Logger.error(this, "mWasSolved==true but mWasInserted==false");
 	}
 	
+	
+	@Override
+	public OwnIntroductionPuzzle clone() {
+		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
+		final OwnIntroductionPuzzle copy = new OwnIntroductionPuzzle((OwnIdentity)getInserter(), getID(), getType(), getMimeType(), getData(), mSolution, getDateOfInsertion(), getIndex());
+		
+		if(wasSolved()) {
+			if(getSolver() != null)
+				copy.setSolved(getSolver());
+			else
+				copy.setSolved();
+		}
+		
+		if(wasInserted()) copy.setInserted();
+		
+		copy.initializeTransient(mWebOfTrust);
+		
+		return copy;
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		return super.equals(o);
+	}
 }
