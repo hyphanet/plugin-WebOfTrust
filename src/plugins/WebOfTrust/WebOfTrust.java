@@ -260,6 +260,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		if(mConfig.getDatabaseFormatVersion() > WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 		
+		mPuzzleStore = new IntroductionPuzzleStore(this);
+		
 		mFetcher = new IdentityFetcher(this, null);
 	}
 	

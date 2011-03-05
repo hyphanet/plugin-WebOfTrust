@@ -77,7 +77,13 @@ public final class IntroductionServer extends TransferThread {
 	
 	/* Private objects */
 	
-	private static final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] { new CaptchaFactory1() };
+	/**
+	 * The {@link IntroductionPuzzleFactory} objects which shall be used to generate puzzles.
+	 */
+	private static final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] {
+		new CaptchaFactory1()
+		// ATTENTION: When adding new ones please also add them to IntroductionPuzzleStoreTest
+	};
 	
 	 
 
