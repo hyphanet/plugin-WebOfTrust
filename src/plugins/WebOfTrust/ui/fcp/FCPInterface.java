@@ -14,6 +14,7 @@ import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.SubscriptionManager.Notification;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
+import plugins.WebOfTrust.SubscriptionManager.SubscriptionExistsAlreadyException;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
@@ -49,6 +50,7 @@ public final class FCPInterface implements FredPluginFCP {
 
     public FCPInterface(final WebOfTrust myWoT) {
         mWoT = myWoT;
+        mSubscriptionManager = mWoT.getSubscriptionManager();
     }
 
     public void handle(final PluginReplySender replysender, final SimpleFieldSet params, final Bucket data, final int accesstype) {
@@ -652,16 +654,20 @@ public final class FCPInterface implements FredPluginFCP {
     	
     	final Subscription<? extends Notification> subscription;
     	
-    	if(to.equals("IdentityAttriubteList")) {
-    		subscription = mSubscriptionManager.subscribeToIdentityAttributeList(fcpID);
-    	} else if(to.equals("IdentityList")) {
-    		subscription = mSubscriptionManager.subscribeToIdentityList(fcpID);
-    	} else if(to.equals("TrustList")) {
-    		subscription = mSubscriptionManager.subscribeToTrustList(fcpID);
-    	} else if(to.equals("ScoreList")) {
-    		subscription = mSubscriptionManager.subscribeToScoreList(fcpID);
-    	} else
-    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
+    	try {
+	    	if(to.equals("IdentityAttriubteList")) {
+	    		subscription = mSubscriptionManager.subscribeToIdentityAttributeList(fcpID);
+	    	} else if(to.equals("IdentityList")) {
+	    		subscription = mSubscriptionManager.subscribeToIdentityList(fcpID);
+	    	} else if(to.equals("TrustList")) {
+	    		subscription = mSubscriptionManager.subscribeToTrustList(fcpID);
+	    	} else if(to.equals("ScoreList")) {
+	    		subscription = mSubscriptionManager.subscribeToScoreList(fcpID);
+	    	} else
+	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
+    	} catch(SubscriptionExistsAlreadyException e) {
+    		subscription = e.existingSubscription;
+    	}
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Subscribed");

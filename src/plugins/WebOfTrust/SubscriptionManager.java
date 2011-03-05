@@ -155,6 +155,18 @@ public final class SubscriptionManager implements PrioRunnable {
 				}
 			}
 		}
+		
+		
+		/**
+		 * Called by this subscription when processing an {@link InitialSynchronizationNotification}.
+		 * Such a notification is stored as the first notification for all subscriptions upon creation.
+		 * When processing it, this function shall synchronize the state of the subscriber if this is
+		 * required before it can be kept up to date by event notifications.
+		 * For example, if a client subscribes to the list of identities, it must always receive a full list of
+		 * all existing identities at first. Then it can be kept up to date by sending single new identities
+		 * as they eventually appear.
+		 */
+		protected abstract void synchronizeSubscriberByFCP();
 
 		/**
 		 * Called by this Subscription when the type of it is FCP and a {@link Notification} shall be sent via FCP. 
@@ -178,11 +190,16 @@ public final class SubscriptionManager implements PrioRunnable {
 				case FCP:
 					for(final Notification notification : manager.getAllNotifications(this)) {
 						try {
-							notifySubscriberByFCP((NotificationType)notification);
-							notification.deleteWithoutCommit();
+							if(notification instanceof InitialSynchronizationNotification) {
+								synchronizeSubscriberByFCP();
+							} else {
+								notifySubscriberByFCP((NotificationType)notification);
+								notification.deleteWithoutCommit();
+							}
 							// If processing of a single notification fails, we do not want the previous notifications
 							// to be sent again when the failed notification is retried. Therefore, we commit after
 							// each processed notification but do not catch RuntimeExceptions here
+							
 							Persistent.checkedCommit(mDB, this);
 						} catch(RuntimeException e) {
 							Persistent.checkedRollbackAndThrow(mDB, this, e);
@@ -233,6 +250,20 @@ public final class SubscriptionManager implements PrioRunnable {
 			
 			if(mIndex < 0)
 				throw new IllegalStateException("mIndex==" + mIndex);
+		}
+		
+	}
+	
+	/**
+	 * This {@link Notification} is stored as the first Notification for all types of Subscription which require
+	 * an initial synchronization with the client.
+	 * For example, if a client subscribes to the list of identities, it should always first receive a full list of
+	 * all existing identities and after that be notified about each single new identity which eventually appears.
+	 */
+	protected static class InitialSynchronizationNotification extends Notification {
+		
+		protected InitialSynchronizationNotification(Subscription<? extends Notification> mySubscription) {
+			super(mySubscription);
 		}
 		
 	}
@@ -328,6 +359,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
 		@Override
+		protected void synchronizeSubscriberByFCP() {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
 		protected void notifySubscriberByFCP(IdentityChangedNotification notification) {
 			// TODO Auto-generated method stub
 			
@@ -350,7 +387,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		protected IdentityListSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
 		}
-
+		
+		@Override
+		protected void synchronizeSubscriberByFCP() {
+			// TODO Auto-generated method stub
+			
+		}
+		
 		@Override
 		protected void notifySubscriberByFCP(NewIdentityNotification notification) {
 			// TODO Auto-generated method stub
@@ -373,6 +416,12 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		protected TrustListSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
+		}
+		
+		@Override
+		protected void synchronizeSubscriberByFCP() {
+			// TODO Auto-generated method stub
+			
 		}
 
 		@Override
@@ -397,6 +446,12 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		protected ScoreListSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
+		}
+		
+		@Override
+		protected void synchronizeSubscriberByFCP() {
+			// TODO Auto-generated method stub
+			
 		}
 
 		@Override
@@ -445,31 +500,58 @@ public final class SubscriptionManager implements PrioRunnable {
 		deleteAllSubscriptions();
 	}
 	
-	public synchronized IdentityAttributeListSubscription subscribeToIdentityAttributeList(String fcpID) {
+	public static final class SubscriptionExistsAlreadyException extends Exception {
+		private static final long serialVersionUID = 1L;
+		public final Subscription<? extends Notification> existingSubscription;
+		
+		public SubscriptionExistsAlreadyException(Subscription<? extends Notification> existingSubscription) {
+			this.existingSubscription = existingSubscription;
+		}
+	}
+	
+	private synchronized void throwIfSimilarSubscriptionExists(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
+		// FIXME: Implement.
+		final Subscription<? extends Notification> existingSubscription = null;
+		throw new SubscriptionExistsAlreadyException(existingSubscription);
+	}
+	
+	/**
+	 * Creates an {@link InitialSynchronizationNotification} for the given subscription, stores it and
+	 * the subscription and commits the transaction.
+	 * Takes care of all required synchronization
+	 * @throws SubscriptionExistsAlreadyException If a subscription of the same type for the same client exists already.
+	 */
+	private synchronized void storeNewSubscriptionAndCommit(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
+		throwIfSimilarSubscriptionExists(subscription);
+		
+		subscription.initializeTransient(mWoT); // takeFreeNotificationIndex requires transient init
+		final InitialSynchronizationNotification notification = new InitialSynchronizationNotification(subscription);
+		notification.initializeTransient(mWoT);
+		notification.storeWithoutCommit();
+		subscription.storeAndCommit();
+	}
+	
+	public IdentityAttributeListSubscription subscribeToIdentityAttributeList(String fcpID) throws SubscriptionExistsAlreadyException {
 		final IdentityAttributeListSubscription subscription = new IdentityAttributeListSubscription(fcpID);
-		subscription.initializeTransient(mWoT);
-		subscription.storeAndCommit();
+		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
 	}
 	
-	public synchronized IdentityListSubscription subscribeToIdentityList(String fcpID) {
+	public IdentityListSubscription subscribeToIdentityList(String fcpID) throws SubscriptionExistsAlreadyException {
 		final IdentityListSubscription subscription = new IdentityListSubscription(fcpID);
-		subscription.initializeTransient(mWoT);
-		subscription.storeAndCommit();
+		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
 	}
 	
-	public synchronized TrustListSubscription subscribeToTrustList(String fcpID) {
+	public TrustListSubscription subscribeToTrustList(String fcpID) throws SubscriptionExistsAlreadyException {
 		final TrustListSubscription subscription = new TrustListSubscription(fcpID);
-		subscription.initializeTransient(mWoT);
-		subscription.storeAndCommit();
+		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
 	}
 	
-	public synchronized ScoreListSubscription subscribeToScoreList(String fcpID) {
+	public ScoreListSubscription subscribeToScoreList(String fcpID) throws SubscriptionExistsAlreadyException {
 		final ScoreListSubscription subscription = new ScoreListSubscription(fcpID);
-		subscription.initializeTransient(mWoT);
-		subscription.storeAndCommit();
+		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
 	}
 	
