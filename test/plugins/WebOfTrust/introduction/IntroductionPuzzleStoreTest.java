@@ -5,6 +5,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -288,12 +289,54 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		}
 	}
 
-	public void testGetUninsertedOwnPuzzlesByInserter() {
-		// FIXME: Implement
+	public void testGetUninsertedOwnPuzzlesByInserter() throws IOException {
+		final List<OwnIntroductionPuzzle> uninsertedPuzzles0 = deepCopy(generateNewPuzzles(mOwnIdentities.get(0)));
+		final List<OwnIntroductionPuzzle> uninsertedPuzzles1 = deepCopy(generateNewPuzzles(mOwnIdentities.get(1)));
+		List<OwnIntroductionPuzzle> insertedPuzzles0 = generateNewPuzzles(mOwnIdentities.get(0));
+		List<OwnIntroductionPuzzle> insertedPuzzles1 = generateNewPuzzles(mOwnIdentities.get(1));
+		
+		for(OwnIntroductionPuzzle p : insertedPuzzles0) {
+			p.setInserted();
+			mPuzzleStore.storeAndCommit(p);
+		}
+		
+		for(OwnIntroductionPuzzle p : insertedPuzzles1) {
+			p.setInserted();
+			mPuzzleStore.storeAndCommit(p);
+		}
+
+		insertedPuzzles0 = null;
+		insertedPuzzles1 = null;
+		
+		flushCaches();
+		
+		assertEquals(new HashSet<OwnIntroductionPuzzle>(uninsertedPuzzles0), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUninsertedOwnPuzzlesByInserter(mOwnIdentities.get(0))));
+		assertEquals(new HashSet<OwnIntroductionPuzzle>(uninsertedPuzzles1), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUninsertedOwnPuzzlesByInserter(mOwnIdentities.get(1))));
 	}
 
-	public void testGetUnsolvedByInserter() {
-		// FIXME: Implement
+	public void testGetUnsolvedByInserter() throws IOException {
+		final List<OwnIntroductionPuzzle> unsolvedPuzzles0 = deepCopy(generateNewPuzzles(mOwnIdentities.get(0)));
+		final List<OwnIntroductionPuzzle> unsolvedPuzzles1 = deepCopy(generateNewPuzzles(mOwnIdentities.get(1)));
+		List<OwnIntroductionPuzzle> solvedPuzzles0 = generateNewPuzzles(mOwnIdentities.get(0));
+		List<OwnIntroductionPuzzle> solvedPuzzles1 = generateNewPuzzles(mOwnIdentities.get(1));
+		
+		for(OwnIntroductionPuzzle p : solvedPuzzles0) {
+			p.setSolved();
+			mPuzzleStore.storeAndCommit(p);
+		}
+		
+		for(OwnIntroductionPuzzle p : solvedPuzzles1) {
+			p.setSolved();
+			mPuzzleStore.storeAndCommit(p);
+		}
+		
+		solvedPuzzles0 = null;
+		solvedPuzzles1 = null;
+		
+		flushCaches();
+		
+		assertEquals(new HashSet<OwnIntroductionPuzzle>(unsolvedPuzzles0), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUnsolvedByInserter(mOwnIdentities.get(0))));
+		assertEquals(new HashSet<OwnIntroductionPuzzle>(unsolvedPuzzles1), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUnsolvedByInserter(mOwnIdentities.get(1))));
 	}
 
 	public void testGetOfTodayByInserter() {

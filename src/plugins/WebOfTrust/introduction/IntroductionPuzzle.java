@@ -446,4 +446,9 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 					wasInserted() == other.wasInserted()
 				);
 	}
+	
+	@Override
+	public int hashCode() {
+		return mID.hashCode();
+	}
 }
