@@ -82,13 +82,25 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		return Collections.unmodifiableList(result);
 	}
 	
-	private IntroductionPuzzle constructPuzzle(OwnIdentity identity, Date dateOfExpiration) {
+	/**
+	 * Constructs a puzzle of the given identity with the given expiration date. Does not store the puzzle in the database.
+	 */
+	private IntroductionPuzzle constructPuzzleWithExpirationDate(OwnIdentity identity, Date dateOfExpiration) {
 		return new IntroductionPuzzle(identity, UUID.randomUUID().toString() + "@" + identity.getID(), PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, 
 				new Date(dateOfExpiration.getTime() - IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000), dateOfExpiration, mPuzzleStore.getFreeIndex(identity, dateOfExpiration));
 	}
 	
+	/**
+	 * Constructs a puzzle of the given identity with the given insertion date. Does not store the puzzle in the database.
+	 */
+	private IntroductionPuzzle constructPuzzleWithDate(OwnIdentity identity, Date date) {
+		final Date dateOfExpiration = new Date(date.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000);
+		return new IntroductionPuzzle(identity, UUID.randomUUID().toString() + "@" + identity.getID(), PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, 
+				date, dateOfExpiration, mPuzzleStore.getFreeIndex(identity, dateOfExpiration));
+	}
+	
 	private IntroductionPuzzle constructPuzzle() {
-		return constructPuzzle(mOwnIdentity, new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));
+		return constructPuzzleWithExpirationDate(mOwnIdentity, new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));
 	}
 	
 	/**
@@ -111,8 +123,8 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 	public void testDeleteExpiredPuzzles() throws UnknownPuzzleException, IOException {
 		final List<IntroductionPuzzle> deletedPuzzles = new ArrayList<IntroductionPuzzle>();
 		final Date expirationDate = new Date(CurrentTimeUTC.getInMillis() + 500);
-		deletedPuzzles.add(constructPuzzle(mOwnIdentity, expirationDate));
-		deletedPuzzles.add(constructPuzzle(mOwnIdentity, expirationDate));
+		deletedPuzzles.add(constructPuzzleWithExpirationDate(mOwnIdentity, expirationDate));
+		deletedPuzzles.add(constructPuzzleWithExpirationDate(mOwnIdentity, expirationDate));
 		for(IntroductionPuzzle p : deletedPuzzles) mPuzzleStore.storeAndCommit(p);
 
 		final List<OwnIntroductionPuzzle> notDeletedPuzzles = generateNewPuzzles(mOwnIdentity);
@@ -143,13 +155,13 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		long currentTime = CurrentTimeUTC.getInMillis();
 		
 		final List<IntroductionPuzzle> deletedPuzzles = new ArrayList<IntroductionPuzzle>();
-		deletedPuzzles.add(constructPuzzle(mOwnIdentity, new Date(currentTime + 100*1000 + 1)));
-		deletedPuzzles.add(constructPuzzle(mOwnIdentity, new Date(currentTime + 100*1000 + 2)));
+		deletedPuzzles.add(constructPuzzleWithExpirationDate(mOwnIdentity, new Date(currentTime + 100*1000 + 1)));
+		deletedPuzzles.add(constructPuzzleWithExpirationDate(mOwnIdentity, new Date(currentTime + 100*1000 + 2)));
 		for(IntroductionPuzzle p : deletedPuzzles) mPuzzleStore.storeAndCommit(p);
 
 		final List<IntroductionPuzzle> notDeletedPuzzles = new ArrayList<IntroductionPuzzle>();
-		notDeletedPuzzles.add(constructPuzzle(mOwnIdentity, new Date(currentTime + 100*1000 + 3)));
-		notDeletedPuzzles.add(constructPuzzle(mOwnIdentity, new Date(currentTime + 100*1000 + 4)));
+		notDeletedPuzzles.add(constructPuzzleWithExpirationDate(mOwnIdentity, new Date(currentTime + 100*1000 + 3)));
+		notDeletedPuzzles.add(constructPuzzleWithExpirationDate(mOwnIdentity, new Date(currentTime + 100*1000 + 4)));
 		for(IntroductionPuzzle p :notDeletedPuzzles) mPuzzleStore.storeAndCommit(p);
 		
 		mPuzzleStore.deleteOldestUnsolvedPuzzles(2);
@@ -277,7 +289,7 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 			}
 			
 			// To check whether the free index of other days does not make the free index of today go wrong, we store a puzzle for a different day for each identity.
-			mPuzzleStore.storeAndCommit(constructPuzzle(mOwnIdentities.get(i), new Date(CurrentTimeUTC.getInMillis() + 10 * IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 10 * 24 * 60 * 60 * 1000)));
+			mPuzzleStore.storeAndCommit(constructPuzzleWithExpirationDate(mOwnIdentities.get(i), new Date(CurrentTimeUTC.getInMillis() + 10 * IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 10 * 24 * 60 * 60 * 1000)));
 		}
 		
 		final Date date = CurrentTimeUTC.get();
@@ -339,8 +351,25 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		assertEquals(new HashSet<OwnIntroductionPuzzle>(unsolvedPuzzles1), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUnsolvedByInserter(mOwnIdentities.get(1))));
 	}
 
-	public void testGetOfTodayByInserter() {
-		// FIXME: Implement
+	public void testGetOfTodayByInserter() throws IOException { 
+		final Date today = CurrentTimeUTC.get();
+		final Date yesterday = new Date (CurrentTimeUTC.getInMillis() - 24 * 60 * 60 * 1000);
+		
+		final List<IntroductionPuzzle> ofToday = new ArrayList<IntroductionPuzzle>();
+		
+		for(int i=0; i < mOwnIdentities.size(); ++i) {
+			final IntroductionPuzzle p1 = constructPuzzleWithDate(mOwnIdentities.get(i), today);
+			mPuzzleStore.storeAndCommit(p1);
+			
+			if(i == 0)
+				ofToday.add(p1.clone());
+			
+			mPuzzleStore.storeAndCommit(constructPuzzleWithDate(mOwnIdentities.get(i), yesterday));
+		}
+		
+		flushCaches();
+		
+		assertEquals(new HashSet<IntroductionPuzzle>(ofToday), new HashSet<IntroductionPuzzle>(mPuzzleStore.getOfTodayByInserter(mOwnIdentities.get(0))));
 	}
 
 	public void testGetByInserterDateIndex() {
