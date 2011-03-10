@@ -258,11 +258,11 @@ public final class IntroductionPuzzleStore {
 	 * You have to synchronize on this IntroductionPuzzleStore surrounding the call to this function and the storage of a puzzle which uses
 	 * the index to ensure that the index is not taken in between.
 	 */
-	public int getFreeIndex(final OwnIdentity inserter, Date date) {
+	public int getFreeIndex(final Identity inserter, Date date) {
 		date = TimeUtil.setTimeToZero(date);
 		
 		final Query q = mDB.query();
-		q.constrain(OwnIntroductionPuzzle.class);
+		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter).identity();
 		q.descend("mDayOfInsertion").constrain(date.getTime());
 		q.descend("mIndex").orderDescending();

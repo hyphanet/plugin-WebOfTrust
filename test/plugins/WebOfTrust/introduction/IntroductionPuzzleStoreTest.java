@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import plugins.WebOfTrust.DatabaseBasedTest;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.exceptions.DuplicatePuzzleException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
@@ -86,18 +87,35 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 	 * Constructs a puzzle of the given identity with the given expiration date. Does not store the puzzle in the database.
 	 */
 	private IntroductionPuzzle constructPuzzleWithExpirationDate(OwnIdentity identity, Date dateOfExpiration) {
+		Date dateOfInsertion = new Date(dateOfExpiration.getTime() - IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000);
 		return new IntroductionPuzzle(identity, UUID.randomUUID().toString() + "@" + identity.getID(), PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, 
-				new Date(dateOfExpiration.getTime() - IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000), dateOfExpiration, mPuzzleStore.getFreeIndex(identity, dateOfExpiration));
+				dateOfInsertion, dateOfExpiration, mPuzzleStore.getFreeIndex(identity, dateOfInsertion));
 	}
 	
 	/**
 	 * Constructs a puzzle of the given identity with the given insertion date. Does not store the puzzle in the database.
 	 */
-	private IntroductionPuzzle constructPuzzleWithDate(OwnIdentity identity, Date date) {
-		final Date dateOfExpiration = new Date(date.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000);
+	private IntroductionPuzzle constructPuzzleWithDate(OwnIdentity identity, Date dateOfInsertion) {
+		final Date dateOfExpiration = new Date(dateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000);
 		return new IntroductionPuzzle(identity, UUID.randomUUID().toString() + "@" + identity.getID(), PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, 
-				date, dateOfExpiration, mPuzzleStore.getFreeIndex(identity, dateOfExpiration));
+				dateOfInsertion, dateOfExpiration, mPuzzleStore.getFreeIndex(identity, dateOfInsertion));
 	}
+	
+	/**
+	 * Constructs a puzzle of the given OwnIdentity with the given insertion date. Does not store the puzzle in the database.
+	 */
+	private OwnIntroductionPuzzle constructOwnPuzzleWithDate(OwnIdentity identity, Date dateOfInsertion) {
+		return new OwnIntroductionPuzzle(identity, PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, "foobar",
+				dateOfInsertion, mPuzzleStore.getFreeIndex(identity, dateOfInsertion));
+	}
+	
+	/**
+	 * Constructs a puzzle of the given OwnIdentity with the given insertion date and idnex. Does not store the puzzle in the database.
+	 */
+	private OwnIntroductionPuzzle constructOwnPuzzleWithDateAndIndex(OwnIdentity identity, Date dateOfInsertion, int index) {
+		return new OwnIntroductionPuzzle(identity, PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, "foobar",  dateOfInsertion, index);
+	}
+	
 	
 	private IntroductionPuzzle constructPuzzle() {
 		return constructPuzzleWithExpirationDate(mOwnIdentity, new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));
@@ -372,12 +390,86 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		assertEquals(new HashSet<IntroductionPuzzle>(ofToday), new HashSet<IntroductionPuzzle>(mPuzzleStore.getOfTodayByInserter(mOwnIdentities.get(0))));
 	}
 
-	public void testGetByInserterDateIndex() {
-		// FIXME: Implement
+	public void testGetByInserterDateIndex() throws UnknownPuzzleException {
+		final Date today = CurrentTimeUTC.get();
+		final Date yesterday = new Date (CurrentTimeUTC.getInMillis() - 24 * 60 * 60 * 1000);
+		final Date tomorrow = new Date (CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000);
+		
+		final List<IntroductionPuzzle> puzzles = new ArrayList<IntroductionPuzzle>();
+		
+		for(int i=0; i < mOwnIdentities.size()-1; ++i) {
+			IntroductionPuzzle p;
+						
+			p = constructPuzzleWithDate(mOwnIdentities.get(i), today);
+			mPuzzleStore.storeAndCommit(p);
+			puzzles.add(p.clone());
+			
+			p = constructPuzzleWithDate(mOwnIdentities.get(i), yesterday);
+			mPuzzleStore.storeAndCommit(p);
+			puzzles.add(p.clone());
+		}
+		
+		flushCaches();
+		
+		for(IntroductionPuzzle p : puzzles) {
+			assertEquals(p, mPuzzleStore.getByInserterDateIndex(p.getInserter(), p.getDateOfInsertion(), p.getIndex()));
+
+			try {
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(mOwnIdentities.get(mOwnIdentities.size()-1), p.getDateOfInsertion(), p.getIndex()));
+			} catch(UnknownPuzzleException e) {}
+			
+			try {
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(p.getInserter(), tomorrow, p.getIndex()));
+			} catch(UnknownPuzzleException e) {}
+			
+			try {
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(p.getInserter(), p.getDateOfInsertion(), 2));
+			} catch(UnknownPuzzleException e) {}
+			
+			mPuzzleStore.storeAndCommit(constructOwnPuzzleWithDateAndIndex((OwnIdentity)p.getInserter(), p.getDateOfInsertion(), p.getIndex()));
+			try {
+				mPuzzleStore.getByInserterDateIndex(p.getInserter(), p.getDateOfInsertion(), p.getIndex());
+				fail("Duplicate-Exception should have been thrown.");
+			} catch(DuplicatePuzzleException e) {}
+		}
 	}
 
-	public void testGetOwnPuzzleByInserterDateIndex() {
-		// FIXME: Implement
+	public void testGetOwnPuzzleByInserterDateIndex() throws UnknownPuzzleException {
+		final Date today = CurrentTimeUTC.get();
+		final Date yesterday = new Date (CurrentTimeUTC.getInMillis() - 24 * 60 * 60 * 1000);
+		final Date tomorrow = new Date (CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000);
+		
+		final List<OwnIntroductionPuzzle> puzzles = new ArrayList<OwnIntroductionPuzzle>();
+		
+		for(int i=0; i < mOwnIdentities.size()-1; ++i) {
+			OwnIntroductionPuzzle p;
+			
+			p = constructOwnPuzzleWithDate(mOwnIdentities.get(i), today);
+			mPuzzleStore.storeAndCommit(p);
+			puzzles.add(p.clone());
+			
+			p = constructOwnPuzzleWithDate(mOwnIdentities.get(i), yesterday);
+			mPuzzleStore.storeAndCommit(p);
+			puzzles.add(p.clone());
+		}
+		
+		flushCaches();
+		
+		for(OwnIntroductionPuzzle p : puzzles) {
+			assertEquals(p, mPuzzleStore.getOwnPuzzleByInserterDateIndex((OwnIdentity)p.getInserter(), p.getDateOfInsertion(), p.getIndex()));
+
+			try {
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(mOwnIdentities.get(mOwnIdentities.size()-1), p.getDateOfInsertion(), p.getIndex()));
+			} catch(UnknownPuzzleException e) {}
+			
+			try {
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(p.getInserter(), tomorrow, p.getIndex()));
+			} catch(UnknownPuzzleException e) {}
+			
+			try {
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(p.getInserter(), p.getDateOfInsertion(), 2));
+			} catch(UnknownPuzzleException e) {}
+		}
 	}
 
 	public void testGetUnsolvedPuzzles() {
