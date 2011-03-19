@@ -87,9 +87,11 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 	 * Constructs a puzzle of the given identity with the given expiration date. Does not store the puzzle in the database.
 	 */
 	private IntroductionPuzzle constructPuzzleWithExpirationDate(OwnIdentity identity, Date dateOfExpiration) {
-		Date dateOfInsertion = new Date(dateOfExpiration.getTime() - IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000);
-		return new IntroductionPuzzle(identity, UUID.randomUUID().toString() + "@" + identity.getID(), PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, 
+		final Date dateOfInsertion = new Date(dateOfExpiration.getTime() - IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000);
+		final IntroductionPuzzle p = new IntroductionPuzzle(identity, UUID.randomUUID().toString() + "@" + identity.getID(), PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, 
 				dateOfInsertion, dateOfExpiration, mPuzzleStore.getFreeIndex(identity, dateOfInsertion));
+		p.initializeTransient(mWoT);
+		return p;
 	}
 	
 	/**
@@ -97,25 +99,38 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 	 */
 	private IntroductionPuzzle constructPuzzleWithDate(OwnIdentity identity, Date dateOfInsertion) {
 		final Date dateOfExpiration = new Date(dateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000);
-		return new IntroductionPuzzle(identity, UUID.randomUUID().toString() + "@" + identity.getID(), PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, 
+		final IntroductionPuzzle p =  new IntroductionPuzzle(identity, UUID.randomUUID().toString() + "@" + identity.getID(), PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, 
 				dateOfInsertion, dateOfExpiration, mPuzzleStore.getFreeIndex(identity, dateOfInsertion));
+		p.initializeTransient(mWoT);
+		return p;
 	}
 	
 	/**
 	 * Constructs a puzzle of the given OwnIdentity with the given insertion date. Does not store the puzzle in the database.
 	 */
 	private OwnIntroductionPuzzle constructOwnPuzzleWithDate(OwnIdentity identity, Date dateOfInsertion) {
-		return new OwnIntroductionPuzzle(identity, PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, "foobar",
+		final OwnIntroductionPuzzle p =  new OwnIntroductionPuzzle(identity, PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, "foobar",
 				dateOfInsertion, mPuzzleStore.getFreeIndex(identity, dateOfInsertion));
+		p.initializeTransient(mWoT);
+		return p;
 	}
 	
 	/**
 	 * Constructs a puzzle of the given OwnIdentity with the given insertion date and idnex. Does not store the puzzle in the database.
 	 */
 	private OwnIntroductionPuzzle constructOwnPuzzleWithDateAndIndex(OwnIdentity identity, Date dateOfInsertion, int index) {
-		return new OwnIntroductionPuzzle(identity, PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, "foobar",  dateOfInsertion, index);
+		final OwnIntroductionPuzzle p = new OwnIntroductionPuzzle(identity, PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, "foobar",  dateOfInsertion, index);
+		p.initializeTransient(mWoT);
+		return p;
 	}
 	
+	private OwnIntroductionPuzzle constructOwnPuzzleOf(OwnIdentity identity) {
+		return constructOwnPuzzleWithDate(identity, CurrentTimeUTC.get());
+	}
+
+	private IntroductionPuzzle constructPuzzleOf(OwnIdentity identity) {
+		return constructPuzzleWithExpirationDate(identity, new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));
+	}
 	
 	private IntroductionPuzzle constructPuzzle() {
 		return constructPuzzleWithExpirationDate(mOwnIdentity, new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));
@@ -472,20 +487,121 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		}
 	}
 
-	public void testGetUnsolvedPuzzles() {
-		// FIXME: Implement
+	public void testGetUnsolvedPuzzles() throws IOException {
+		final List<IntroductionPuzzle> unsolvedPuzzles = new ArrayList<IntroductionPuzzle>();
+		
+		for(OwnIdentity ownId : mOwnIdentities.subList(1, mOwnIdentities.size())) {
+			IntroductionPuzzle p;
+			
+			p = constructPuzzleOf(ownId);
+			mPuzzleStore.storeAndCommit(p);
+			unsolvedPuzzles.add(p.clone());
+			
+			// non own but solved
+			p = constructPuzzleOf(ownId);
+			p.setSolved(mOwnIdentities.get(0), "blehblah");
+			mPuzzleStore.storeAndCommit(p);
+			
+			// unsolved but own one
+			p = constructOwnPuzzleOf(ownId);
+			mPuzzleStore.storeAndCommit(p);
+		}
+		
+		flushCaches();
+
+		// TODO: As soon as we have more puzzle types, test them here
+		assertEquals(new HashSet<IntroductionPuzzle>(unsolvedPuzzles), new HashSet<IntroductionPuzzle>(mPuzzleStore.getUnsolvedPuzzles(PuzzleType.Captcha)));
 	}
 
-	public void testGetUninsertedSolvedPuzzles() {
-		// FIXME: Implement
+	public void testGetUninsertedSolvedPuzzles() throws IOException {
+		final List<IntroductionPuzzle> uninsertedSolvedPuzzles = new ArrayList<IntroductionPuzzle>();
+		
+		for(OwnIdentity ownId : mOwnIdentities.subList(1, mOwnIdentities.size())) {
+			IntroductionPuzzle p;
+			
+			// solved but not uninserted
+			p = constructPuzzleOf(ownId);
+			p.setInserted();
+			p.setSolved(mOwnIdentities.get(0), "blehblah");
+			mPuzzleStore.storeAndCommit(p);
+			
+			// uninserted but not solved
+			p = constructPuzzleOf(ownId);
+			mPuzzleStore.storeAndCommit(p);
+			
+			// uninserted, solved but an own one
+			OwnIntroductionPuzzle ownPuzzle = constructOwnPuzzleOf(ownId);
+			ownPuzzle.setSolved();
+			mPuzzleStore.storeAndCommit(ownPuzzle);
+			
+			// uninserted, solved
+			p = constructPuzzleOf(ownId);
+			p.setSolved(ownId, "blehblah");
+			mPuzzleStore.storeAndCommit(p);
+			uninsertedSolvedPuzzles.add(p.clone());
+		}
+		
+		flushCaches();
+		// TODO: As soon as we have more puzzle types, test them here
+		assertEquals(new HashSet<IntroductionPuzzle>(uninsertedSolvedPuzzles), new HashSet<IntroductionPuzzle>(mPuzzleStore.getUninsertedSolvedPuzzles()));
 	}
 
-	public void testGetOwnCatpchaAmount() {
-		// FIXME: Implement
+	public void testGetOwnCatpchaAmount() throws IOException {
+		int unsolvedOwnPuzzleCount = 0;
+		int solvedOwnPuzzleCount = 0;
+		
+		for(OwnIdentity ownId : mOwnIdentities.subList(1, mOwnIdentities.size())) {			
+			mPuzzleStore.storeAndCommit(constructOwnPuzzleOf(ownId));
+			mPuzzleStore.storeAndCommit(constructOwnPuzzleOf(ownId));
+			unsolvedOwnPuzzleCount += 2;
+			
+			final OwnIntroductionPuzzle solvedOwn = constructOwnPuzzleOf(ownId);
+			solvedOwn.setSolved();
+			mPuzzleStore.storeAndCommit(solvedOwn);
+			++solvedOwnPuzzleCount;
+			
+			// Non-own ones should not be counted.
+			
+			final IntroductionPuzzle solvedNonOwn = constructPuzzleOf(ownId);
+			solvedNonOwn.setSolved(mOwnIdentities.get(0), "foobar");
+			mPuzzleStore.storeAndCommit(solvedNonOwn);
+			
+			mPuzzleStore.storeAndCommit(constructPuzzleOf(ownId));
+		}
+		
+		flushCaches();
+		
+		assertEquals(unsolvedOwnPuzzleCount, mPuzzleStore.getOwnCatpchaAmount(false));
+		assertEquals(solvedOwnPuzzleCount, mPuzzleStore.getOwnCatpchaAmount(true));
 	}
 
 	public void testGetNonOwnCaptchaAmount() {
-		// FIXME: Implement
+		int unsolvedPuzzleCount = 0;
+		int solvedPuzzleCount = 0;
+		
+		for(OwnIdentity ownId : mOwnIdentities.subList(1, mOwnIdentities.size())) {			
+			mPuzzleStore.storeAndCommit(constructPuzzleOf(ownId));
+			mPuzzleStore.storeAndCommit(constructPuzzleOf(ownId));
+			unsolvedPuzzleCount += 2;
+			
+			final IntroductionPuzzle solvedNonOwn = constructPuzzleOf(ownId);
+			solvedNonOwn.setSolved(mOwnIdentities.get(0), "foobar");
+			mPuzzleStore.storeAndCommit(solvedNonOwn);
+			++solvedPuzzleCount;
+			
+			// Own ones should not be counted.
+			
+			final OwnIntroductionPuzzle solvedOwn = constructOwnPuzzleOf(ownId);
+			solvedOwn.setSolved();
+			mPuzzleStore.storeAndCommit(solvedOwn);
+			
+			mPuzzleStore.storeAndCommit(constructOwnPuzzleOf(ownId));
+		}
+		
+		flushCaches();
+		
+		assertEquals(unsolvedPuzzleCount, mPuzzleStore.getNonOwnCaptchaAmount(false));
+		assertEquals(solvedPuzzleCount, mPuzzleStore.getNonOwnCaptchaAmount(true));
 	}
 
 }
