@@ -77,7 +77,8 @@ public final class Score extends Persistent implements Cloneable {
 		/* We do not synchronize on truster and trustee because nickname changes are not allowed, the only thing which can happen
 		 * is that we get a blank nickname if it has not been received yet, that is not severe though.*/
 		
-		return "[Score " + super.toString() + ": truster: " + getTruster().getNickname() + "; trustee: " + getTrustee().getNickname() +
+		return "[Score " + super.toString() + ": truster: " + getTruster().getNickname() + "@" + getTruster().getID() +
+				"; trustee: " + getTrustee().getNickname() + "@" + getTrustee().getID() +
 				"; value: " + getScore() +  "; rank: " + getRank() + "; capacity : " + getCapacity() + "]";
 	}
 
