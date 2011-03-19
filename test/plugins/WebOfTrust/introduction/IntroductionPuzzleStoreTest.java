@@ -316,6 +316,7 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 			// 1. identity => 1x generateNewPuzzles
 			// 2. identity => 2x generateNewPuzzles
 			for(int j=i; j > 0; --j) {
+				// FIXME: We should manually generate the puzzles, generateNewPuzzles uses getFreeIndex!
 				for(OwnIntroductionPuzzle p : generateNewPuzzles(mOwnIdentities.get(i))) {
 					freeIndices[i] = Math.max(freeIndices[i], p.getIndex() + 1);
 				}
