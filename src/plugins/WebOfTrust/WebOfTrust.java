@@ -75,7 +75,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public static final String WOT_NAME = "WebOfTrustRC2"; // FIXME: Change to "WebOfTrust" when deploying 0.4 final.
 	
 	public static final String DATABASE_FILENAME =  WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = -49;  // FIXME: Change to 1 when deploying 0.4 final. 
+	public static final int DATABASE_FORMAT_VERSION = -48;  // FIXME: Change to 1 when deploying 0.4 final. 
 	
 	/**
 	 * The official seed identities of the WoT plugin: If a newbie wants to download the whole offficial web of trust, he needs at least one
@@ -359,9 +359,32 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		synchronized(mDB.lock()) {
 		try {
-			//if(databaseVersion == 1) {
-			//
-			//}
+			if(databaseVersion == -49) {
+				Logger.normal(this, "Upgrading database version " + databaseVersion);
+				Logger.normal(this, "Correcting nicknames...");
+				
+				for(Identity identity : getAllIdentities()) {
+					if(identity.getNickname() != null && identity.getNickname().contains("@")) {
+						// This CAN cause the nickname to exceed the length limit but we are in RC phase so this is an okay
+						// hackish quickfix to upgrade the database
+						final String newName = identity.mNickname.replace("@", "_");
+						Logger.debug(this, "Renaming " + identity.mNickname + " to " + newName);
+						identity.mNickname = newName;
+						identity.storeWithoutCommit();
+					}
+				}
+				
+				Logger.normal(this, "Correcting null mLastChangedDate of trust values...");
+				
+				for(Trust trust : getAllTrusts()) {
+					trust.fixDateOfLastChange();
+				}
+				
+				
+				mConfig.setDatabaseFormatVersion(++databaseVersion);
+				mConfig.storeAndCommit();
+				Logger.normal(this, "Upgraded database to version " + databaseVersion);
+			}
 		
 	
 			if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
