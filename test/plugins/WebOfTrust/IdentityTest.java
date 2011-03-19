@@ -97,6 +97,11 @@ public class IdentityTest extends DatabaseBasedTest {
 		assertEquals(identity.getLastChangeDate(), stored.getLastChangeDate());
 	}
 	
+	public void testIsNicknameValid() {
+		assertFalse(Identity.isNicknameValid("a@b"));
+		// TODO: Implement a full test.
+	}
+	
 //	public void testEquals() {
 //		do {
 //			try {
