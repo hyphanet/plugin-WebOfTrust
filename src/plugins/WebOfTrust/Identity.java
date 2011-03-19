@@ -308,12 +308,13 @@ public class Identity extends Persistent implements Cloneable {
 	/* IMPORTANT: This code is duplicated in plugins.Freetalk.WoT.WoTIdentity.validateNickname().
 	 * Please also modify it there if you modify it here */
 	public static final boolean isNicknameValid(String newNickname) {
-		return newNickname.length() > 0 && newNickname.length() <= 30
+		return newNickname.length() > 0 && newNickname.length() <= 30 
 			&& StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
 			&& StringValidityChecker.containsNoInvalidCharacters(newNickname)
 			&& StringValidityChecker.containsNoLinebreaks(newNickname)
 			&& StringValidityChecker.containsNoControlCharacters(newNickname)
-			&& StringValidityChecker.containsNoInvalidFormatting(newNickname);
+			&& StringValidityChecker.containsNoInvalidFormatting(newNickname)
+			&& !newNickname.contains("@"); // Must not be allowed since we use it to generate "identity@public-key-hash" unique nicknames;
 	}
 
 	/**
