@@ -148,6 +148,7 @@ public final class IntroductionServer extends TransferThread {
 		 * puzzles which still exist.
 		 * I think it makes sense to restart them because there are not many puzzles and therefore not many requests. */
 		abortFetches();
+		abortInserts();
 		
 		synchronized(mWoT) {
 			/* TODO: We might want to not lock all the time during captcha creation... figure out how long this takes ... */
@@ -219,17 +220,12 @@ public final class IntroductionServer extends TransferThread {
 	
 	private void insertPuzzles(final OwnIdentity identity) throws IOException, InsertException {
 		synchronized(mPuzzleStore) {
+			// TODO: This query will also return puzzles which are currently being inserted! Mark them as being inserted somehow
+			// Either have a hashtable here or wire it in to class IntroductionPuzzle.
+			
 			final ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedOwnPuzzlesByInserter(identity); 
 			Logger.normal(this, "Trying to insert " + puzzles.size() + " puzzles from " + identity.getNickname());
 			for(final OwnIntroductionPuzzle p : puzzles) {
-				// TODO: This was added on 2011-02-12. Remove after a few months if it does not happen.
-				// Reason: Puzzle inserts seem to fail due to collison. The onFailure() then tries to mark them as inserted,
-				// which also fails because they are marked as inserted already. So we seem to start inserts for already-inserted
-				// puzzles, maybe the database query is broken?
-				if(p.wasInserted()) {
-					Logger.error(this, "Database query is broken, puzzle was inserted already: " + p, new RuntimeException());
-					continue;
-				}
 				try {
 					insertPuzzle(p);
 				}
