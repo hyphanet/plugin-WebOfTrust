@@ -86,7 +86,7 @@ public final class Trust extends Persistent implements Cloneable {
 		mComment = "";	// Simplify setComment
 		setComment(comment);
 		
-		// mLastChangedDate = CurrentTimeUTC.get();	// Done by setValue / setComment.
+		mLastChangedDate = CurrentTimeUTC.get();
 		mTrusterTrustListEdition = truster.getEdition(); 
 	}
 
