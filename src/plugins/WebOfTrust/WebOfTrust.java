@@ -1461,14 +1461,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		return new Persistent.InitializingObjectSet<Trust>(this, query);
 	}
 	/**
-	 * Gets all trusts given by the given truster in a trust list older than the given edition number.
+	 * Gets all trusts given by the given truster in a trust list with a different edition than the passed in one.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 */
-	protected ObjectSet<Trust> getGivenTrustsOlderThan(final Identity truster, final long edition) {
+	protected ObjectSet<Trust> getGivenTrustsOfDifferentEdition(final Identity truster, final long edition) {
 		final Query q = mDB.query();
 		q.constrain(Trust.class);
 		q.descend("mTruster").constrain(truster).identity();
-		q.descend("mTrusterTrustListEdition").constrain(edition).smaller();
+		q.descend("mTrusterTrustListEdition").constrain(edition).not();
 		return new Persistent.InitializingObjectSet<Trust>(this, q);
 	}
 

@@ -401,7 +401,7 @@ public final class XMLTransformer {
 								mWoT.setTrustWithoutCommit(identity, trustee, trustValue, trustComment);
 						}
 
-						for(Trust trust : mWoT.getGivenTrustsOlderThan(identity, identityURI.getEdition())) {
+						for(Trust trust : mWoT.getGivenTrustsOfDifferentEdition(identity, identityURI.getEdition())) {
 							mWoT.removeTrustWithoutCommit(trust);
 						}
 

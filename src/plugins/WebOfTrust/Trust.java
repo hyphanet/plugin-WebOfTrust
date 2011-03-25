@@ -291,7 +291,7 @@ public final class Trust extends Persistent implements Cloneable {
 		if(mLastChangedDate.after(CurrentTimeUTC.get()))
 			throw new IllegalStateException("mLastChangedDate is in the future");
 		
-		if(mTrusterTrustListEdition > getTruster().getEdition())
-			throw new IllegalStateException("mTrusterTrustListEdition is too high");
+		if(mTrusterTrustListEdition != getTruster().getEdition() && getTruster().getCurrentEditionFetchState() == Identity.FetchState.Fetched)
+			throw new IllegalStateException("mTrusterTrustListEdition is invalid: " + mTrusterTrustListEdition);
 	}
 }
