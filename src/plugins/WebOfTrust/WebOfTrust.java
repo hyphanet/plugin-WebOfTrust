@@ -799,10 +799,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					}
 				}
 				
-				Score expectedScore = null;
+				Score newScore = null;
 				if(targetScore != null) {
-					expectedScore = new Score(treeOwner, target, targetScore, targetRank, computeCapacity(treeOwner, target, targetRank));
-					expectedScore.initializeTransient(this);
+					newScore = new Score(treeOwner, target, targetScore, targetRank, computeCapacity(treeOwner, target, targetRank));
+					newScore.initializeTransient(this);
 				}
 				
 				boolean needToCheckFetchStatus = false;
@@ -811,47 +811,47 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				
 				// Now we have the rank and the score of the target computed and can check whether the database-stored score object is correct.
 				try {
-					Score storedScore = getScore(treeOwner, target);
-					oldCapacity = storedScore.getCapacity();
+					Score currentStoredScore = getScore(treeOwner, target);
+					oldCapacity = currentStoredScore.getCapacity();
 					
-					if(expectedScore == null) {
+					if(newScore == null) {
 						returnValue = false;
 						if(!mFullScoreComputationNeeded)
-							Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + storedScore, new RuntimeException());
+							Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + currentStoredScore, new RuntimeException());
 						
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
 						
-						storedScore.deleteWithoutCommit();
+						currentStoredScore.deleteWithoutCommit();
 						
 					} else {
-						if(!expectedScore.equals(storedScore)) {
+						if(!newScore.equals(currentStoredScore)) {
 							returnValue = false;
 							if(!mFullScoreComputationNeeded)
-								Logger.error(this, "Correcting wrong score: Should have been " + expectedScore + " but was " + storedScore, new RuntimeException());
+								Logger.error(this, "Correcting wrong score: Should have been " + newScore + " but was " + currentStoredScore, new RuntimeException());
 							
 							needToCheckFetchStatus = true;
 							oldShouldFetch = shouldFetchIdentity(target);
 							
-							storedScore.setRank(expectedScore.getRank());
-							storedScore.setCapacity(expectedScore.getCapacity());
-							storedScore.setValue(expectedScore.getScore());
+							currentStoredScore.setRank(newScore.getRank());
+							currentStoredScore.setCapacity(newScore.getCapacity());
+							currentStoredScore.setValue(newScore.getScore());
 
-							storedScore.storeWithoutCommit();
+							currentStoredScore.storeWithoutCommit();
 						}
 					}
 				} catch(NotInTrustTreeException e) {
 					oldCapacity = 0;
 					
-					if(expectedScore != null) {
+					if(newScore != null) {
 						returnValue = false;
 						if(!mFullScoreComputationNeeded)
-							Logger.error(this, "Correcting wrong score: No score was stored for the identity but it should be " + expectedScore, new RuntimeException());
+							Logger.error(this, "Correcting wrong score: No score was stored for the identity but it should be " + newScore, new RuntimeException());
 						
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
 						
-						expectedScore.storeWithoutCommit();
+						newScore.storeWithoutCommit();
 					}
 				}
 				
@@ -860,11 +860,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// If the capacity changed from 0 to positive, we need to refetch the current edition: Identities with capacity 0 cannot
 					// cause new identities to be imported from their trust list, capacity > 0 allows this.
 					// If the fetch status changed from true to false, we need to stop fetching it
-					if((!oldShouldFetch || (oldCapacity == 0 && expectedScore != null && expectedScore.getCapacity() > 0)) && shouldFetchIdentity(target) ) {
+					if((!oldShouldFetch || (oldCapacity == 0 && newScore != null && newScore.getCapacity() > 0)) && shouldFetchIdentity(target) ) {
 						if(!oldShouldFetch)
 							Logger.debug(this, "Fetch status changed from false to true, refetching " + target);
 						else
-							Logger.debug(this, "Capacity changed from 0 to " + expectedScore.getCapacity() + ", refetching" + target);
+							Logger.debug(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + target);
 
 						target.markForRefetch();
 						target.storeWithoutCommit();
