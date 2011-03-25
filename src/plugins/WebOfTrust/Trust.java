@@ -203,8 +203,6 @@ public final class Trust extends Persistent implements Cloneable {
 			throwIfNotStored(mTruster);
 			throwIfNotStored(mTrustee);
 			checkedStore();
-			// FIXME: Debug code, remove after we have fixed https://bugs.freenetproject.org/view.php?id=4736
-			Logger.debug(this, "Trust.storeWithoutCommit " + this, new RuntimeException());
 		}
 		catch(final RuntimeException e) {
 			checkedRollbackAndThrow(e);
