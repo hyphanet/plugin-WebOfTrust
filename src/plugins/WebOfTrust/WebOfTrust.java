@@ -1873,51 +1873,59 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					if(trustee == treeOwner)
 						continue;
 
-					Score trusteeScore;
+					Score currentStoredTrusteeScore;
 
 					try {
-						trusteeScore = getScore(treeOwner, trustee);
+						currentStoredTrusteeScore = getScore(treeOwner, trustee);
 					} catch(NotInTrustTreeException e) {
-						trusteeScore = new Score(treeOwner, trustee, 0, -1, 0);
-						trusteeScore.initializeTransient(this);
+						currentStoredTrusteeScore = new Score(treeOwner, trustee, 0, -1, 0);
+						currentStoredTrusteeScore.initializeTransient(this);
 					}
-
-					final Score oldScore = trusteeScore.clone();
+					
+					final Score oldScore = currentStoredTrusteeScore.clone();
 					boolean oldShouldFetch = shouldFetchIdentity(trustee);
 					
-					trusteeScore.setValue(computeScoreValue(treeOwner, trustee));
-					trusteeScore.setRank(computeRank(treeOwner, trustee));
-					trusteeScore.setCapacity(computeCapacity(treeOwner, trustee, trusteeScore.getRank()));
+					final int newScoreValue = computeScoreValue(treeOwner, trustee); 
+					final int newRank = computeRank(treeOwner, trustee);
+					final int newCapacity = computeCapacity(treeOwner, trustee, newRank);
+					final Score newScore = new Score(treeOwner, trustee, newScoreValue, newRank, newCapacity);
 
 					// Normally we couldn't detect the following two cases due to circular trust values. However, if an own identity assigns a trust value,
 					// the rank and capacity are always computed based on the trust value of the own identity so we must also check this here:
 
 					if((oldScore.getRank() >= 0 && oldScore.getRank() < Integer.MAX_VALUE) // It had an inheritable rank
-							&& (trusteeScore.getRank() == -1 || trusteeScore.getRank() == Integer.MAX_VALUE)) { // It has no inheritable rank anymore
+							&& (newScore.getRank() == -1 || newScore.getRank() == Integer.MAX_VALUE)) { // It has no inheritable rank anymore
 						mFullScoreComputationNeeded = true;
 						break;
 					}
 					
-					if(oldScore.getCapacity() > 0 && trusteeScore.getCapacity() == 0) {
+					if(oldScore.getCapacity() > 0 && newScore.getCapacity() == 0) {
 						mFullScoreComputationNeeded = true;
 						break;
 					}
+					
+					// We are OK to update it now. We must not update the values of the stored score object before determining whether we need
+					// a full score computation - the full computation needs the old values of the object.
+					
+					currentStoredTrusteeScore.setValue(newScore.getScore());
+					currentStoredTrusteeScore.setRank(newScore.getRank());
+					currentStoredTrusteeScore.setCapacity(newScore.getCapacity());
 					
 					// Identities should not get into the queue if they have no rank, see the large if() about 20 lines below
-					assert(trusteeScore.getRank() >= 0); 
+					assert(currentStoredTrusteeScore.getRank() >= 0); 
 					
-					if(trusteeScore.getRank() >= 0)
-						trusteeScore.storeWithoutCommit();
+					if(currentStoredTrusteeScore.getRank() >= 0)
+						currentStoredTrusteeScore.storeWithoutCommit();
 					
 					// If fetch status changed from false to true, we need to start fetching it
 					// If the capacity changed from 0 to positive, we need to refetch the current edition: Identities with capacity 0 cannot
 					// cause new identities to be imported from their trust list, capacity > 0 allows this.
 					// If the fetch status changed from true to false, we need to stop fetching it
-					if((!oldShouldFetch || (oldScore.getCapacity()== 0 && trusteeScore.getCapacity() > 0)) && shouldFetchIdentity(trustee)) { 
+					if((!oldShouldFetch || (oldScore.getCapacity()== 0 && newScore.getCapacity() > 0)) && shouldFetchIdentity(trustee)) { 
 						if(!oldShouldFetch)
 							Logger.debug(this, "Fetch status changed from false to true, refetching " + trustee);
 						else
-							Logger.debug(this, "Capacity changed from 0 to " + trusteeScore.getCapacity() + ", refetching" + trustee);
+							Logger.debug(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + trustee);
 
 						trustee.markForRefetch();
 						trustee.storeWithoutCommit();
@@ -1931,11 +1939,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					}
 					
 					// If the rank or capacity changed then the trustees might be affected because the could have inherited theirs
-					if(oldScore.getRank() != trusteeScore.getRank() || oldScore.getCapacity() != trusteeScore.getCapacity()) {
+					if(oldScore.getRank() != newScore.getRank() || oldScore.getCapacity() != newScore.getCapacity()) {
 						// If this identity has no capacity or no rank then it cannot affect its trustees:
 						// (- If it had none and it has none now then there is none which can be inherited, this is obvious)
 						// - If it had one before and it was removed, this algorithm will have aborted already because a full computation is needed
-						if(trusteeScore.getCapacity() > 0 || (trusteeScore.getRank() >= 0 && trusteeScore.getRank() < Integer.MAX_VALUE)) {
+						if(newScore.getCapacity() > 0 || (newScore.getRank() >= 0 && newScore.getRank() < Integer.MAX_VALUE)) {
 							// We need to update the trustees of trustee
 							for(Trust givenTrust : getGivenTrusts(trustee)) {
 								unprocessedEdges.add(givenTrust);
