@@ -2197,18 +2197,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		}
 	}
-	
-	// FIXME: Debug code, remove after we have fixed https://bugs.freenetproject.org/view.php?id=4736
-	private void testScores() {
-		System.gc();
-		mDB.rollback();
-		System.gc();
-		if(!computeAllScoresWithoutCommit())
-			Logger.error(this, "EPIC FAIL!", new RuntimeException());
-		System.gc();
-		mDB.rollback();
-		System.gc();
-	}
 
 	public synchronized void setTrust(String ownTrusterID, String trusteeID, byte value, String comment)
 		throws UnknownIdentityException, NumberFormatException, InvalidParameterException {
@@ -2216,18 +2204,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		final OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
 		Identity trustee = getIdentityByID(trusteeID);
 		
-		testScores();
 		setTrust(truster, trustee, value, comment);
-		testScores();
 	}
 	
 	public synchronized void removeTrust(String ownTrusterID, String trusteeID) throws UnknownIdentityException {
 		final OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
 		final Identity trustee = getIdentityByID(trusteeID);
 
-		testScores();
 		removeTrust(truster, trustee);
-		testScores();
 	}
 	
 	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {

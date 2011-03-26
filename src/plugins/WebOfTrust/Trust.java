@@ -208,13 +208,6 @@ public final class Trust extends Persistent implements Cloneable {
 			checkedRollbackAndThrow(e);
 		}
 	}
-	
-	// FIXME: Debug code, remove after we have fixed https://bugs.freenetproject.org/view.php?id=4736
-	@Override
-	protected void deleteWithoutCommit() {
-		super.deleteWithoutCommit();
-		Logger.debug(this, "Trust.deleteWithoutCommit " + this, new RuntimeException());
-	}
 
 	/**
 	 * Test if two trust objects are equal.<br />

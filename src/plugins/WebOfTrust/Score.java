@@ -201,13 +201,6 @@ public final class Score extends Persistent implements Cloneable {
 		}
 	}
 	
-	// FIXME: Debug code, remove after we have fixed https://bugs.freenetproject.org/view.php?id=4736
-	@Override
-	protected void deleteWithoutCommit() {
-		super.deleteWithoutCommit();
-		Logger.debug(this, "Score.deleteWithoutCommit " + this, new RuntimeException());
-	}
-	
 	/**
 	 * Test if two scores are equal.
 	 * - <b>All</b> attributes are compared <b>except</b> the dates.<br />
