@@ -29,6 +29,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	private final String showIdentityURI;
 	private final String createIdentityURI;
 	private final String editIdentityURI;
+	private final String disableIdentityURI;
 	private final String deleteIdentityURI;
 	private final String introduceIdentityURI;
 	
@@ -46,6 +47,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		showIdentityURI = baseURI+"/ShowIdentity";
 		createIdentityURI = baseURI+"/CreateIdentity";
 		editIdentityURI = baseURI+"/EditOwnIdentity";
+		disableIdentityURI = baseURI+"/DisableOwnIdentity";
 		deleteIdentityURI = baseURI+"/DeleteOwnIdentity";
 		introduceIdentityURI = baseURI+"/IntroduceIdentity";
 	}
@@ -125,7 +127,12 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EditIdentity" });
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.EditButton") });
-								
+				
+				HTMLNode disableForm = pr.addFormChild(manageCell, disableIdentityURI, "DisableIdentity");
+				disableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "DisableIdentity" });
+				disableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
+				disableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "disable", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.DisableButton") });
+				
 				HTMLNode deleteForm = pr.addFormChild(manageCell, deleteIdentityURI, "DeleteIdentity");
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "DeleteIdentity" });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });

@@ -78,6 +78,9 @@ public class Identity extends Persistent implements Cloneable {
 
 	/** A list of this Identity's custom properties */
 	protected HashMap<String, String> mProperties;
+	 
+	/** Whether this Identity is disabled */
+	protected boolean mDisabled;
 	
 	
 	/**
@@ -116,6 +119,7 @@ public class Identity extends Persistent implements Cloneable {
 		setPublishTrustList(doesPublishTrustList);
 		mContexts = new ArrayList<String>(4); /* Currently we have: Introduction, Freetalk */
 		mProperties = new HashMap<String, String>();
+		mDisabled = false;
 		
 		Logger.debug(this, "New identity: " + getNickname() + ", URI: " + newRequestURI);
 	}	
