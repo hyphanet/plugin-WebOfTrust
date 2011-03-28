@@ -57,7 +57,9 @@ public class WebInterface {
 	// Invisible
 	private final WebInterfaceToadlet createIdentityToadlet;
 	private final WebInterfaceToadlet deleteOwnIdentityToadlet;
+	private final WebInterfaceToadlet disableOwnIdentityToadlet;
 	private final WebInterfaceToadlet editOwnIdentityToadlet;
+	private final WebInterfaceToadlet enableOwnIdentityToadlet;
 	private final WebInterfaceToadlet introduceIdentityToadlet;
 	private final WebInterfaceToadlet identityToadlet;
 	private final WebInterfaceToadlet getPuzzleToadlet;
@@ -239,6 +241,38 @@ public class WebInterface {
 			return ownIdentitiesToadlet;
 		}
 	}
+	
+	public class DisableOwnIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		@Override
+		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
+				throws ToadletContextClosedException, IOException,
+				RedirectException {
+			super.handleMethodGET(uri, req, ctx);
+		}
+
+		@Override
+		public void handleMethodPOST(URI uri, HTTPRequest request,
+				ToadletContext ctx) throws ToadletContextClosedException,
+				IOException, RedirectException {
+			super.handleMethodPOST(uri, request, ctx);
+		}
+
+		protected DisableOwnIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
+			return new DisableOwnIdentityPage(this, req, context, l10n());
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return ownIdentitiesToadlet;
+		}
+	}
+
 
 	public class EditOwnIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
 
@@ -263,6 +297,37 @@ public class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
 			return new EditOwnIdentityPage(this, req, context, l10n());
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return ownIdentitiesToadlet;
+		}
+	}
+	
+	public class EnableOwnIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		@Override
+		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
+				throws ToadletContextClosedException, IOException,
+				RedirectException {
+			super.handleMethodGET(uri, req, ctx);
+		}
+
+		@Override
+		public void handleMethodPOST(URI uri, HTTPRequest request,
+				ToadletContext ctx) throws ToadletContextClosedException,
+				IOException, RedirectException {
+			super.handleMethodPOST(uri, request, ctx);
+		}
+
+		protected EnableOwnIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
+			return new EnableOwnIdentityPage(this, req, context, l10n());
 		}
 		
 		@Override
@@ -467,7 +532,9 @@ public class WebInterface {
 		
 		createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "CreateIdentity");
 		deleteOwnIdentityToadlet = new DeleteOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "DeleteOwnIdentity");
+		disableOwnIdentityToadlet = new DisableOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "DisableOwnIdentity");
 		editOwnIdentityToadlet = new EditOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "EditOwnIdentity");
+		enableOwnIdentityToadlet = new EnableOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "EnableOwnIdentity");
 		introduceIdentityToadlet = new IntroduceIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "IntroduceIdentity");
 		identityToadlet = new IdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "ShowIdentity");
 		getPuzzleToadlet = new GetPuzzleWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "GetPuzzle");
@@ -475,7 +542,9 @@ public class WebInterface {
 
 		container.register(createIdentityToadlet, null, mURI + "/CreateIdentity", true, false);
 		container.register(deleteOwnIdentityToadlet, null, mURI + "/DeleteOwnIdentity", true, false);
+		container.register(disableOwnIdentityToadlet, null, mURI + "/DisableOwnIdentity", true, false);
 		container.register(editOwnIdentityToadlet, null, mURI + "/EditOwnIdentity", true, false);
+		container.register(enableOwnIdentityToadlet, null, mURI + "/EnableOwnIdentity", true, false);
 		container.register(introduceIdentityToadlet, null, mURI + "/IntroduceIdentity", true, false);
 		container.register(identityToadlet, null, mURI + "/ShowIdentity", true, false);
 		container.register(getPuzzleToadlet, null, mURI + "/GetPuzzle", true, false);
@@ -503,7 +572,9 @@ public class WebInterface {
 				configurationToadlet,
 				createIdentityToadlet,
 				deleteOwnIdentityToadlet,
+				disableOwnIdentityToadlet,
 				editOwnIdentityToadlet,
+				enableOwnIdentityToadlet,
 				introduceIdentityToadlet,
 				identityToadlet,
 				getPuzzleToadlet,

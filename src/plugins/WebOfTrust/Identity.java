@@ -171,6 +171,29 @@ public class Identity extends Persistent implements Cloneable {
 	}
 
 	/**
+	 * @return True if identity is disabled
+	 */
+	public final boolean isDisabled() {
+		return mDisabled;
+	}
+	
+	/** 
+	 * Mark identity as disabled
+	 */
+	public final void disable() {
+		mDisabled = true;
+		updated();
+	}
+
+	/**
+	 *  Mark identity as enabled
+	 */
+	public final void enable() {
+		mDisabled = false;
+		updated();
+	}
+	
+	/**
 	 * Get the edition number of the request URI of this identity.
 	 */
 	public final long getEdition() {

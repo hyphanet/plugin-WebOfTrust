@@ -1349,6 +1349,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity.
 	 */
 	public boolean shouldFetchIdentity(final Identity identity) {
+		if(identity.isDisabled())
+			return false;
+		
 		if(identity instanceof OwnIdentity)
 			return true;
 		
@@ -2029,6 +2032,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	public synchronized void deleteIdentity(String id) throws UnknownIdentityException {
 		deleteIdentity(getIdentityByID(id));
+	}
+	
+	public synchronized void disableIdentity(Identity identity){
+		/* TODO: Implement method disableIdentity */
+		identity.disable();
+		identity.storeAndCommit();
+	}
+	
+	public synchronized void enableIdentity(Identity identity){
+		/* TODO: Implement method enableIdentity */
+		identity.enable();
+		identity.storeAndCommit();
 	}
 	
 	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
