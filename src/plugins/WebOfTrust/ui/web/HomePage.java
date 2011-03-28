@@ -3,8 +3,6 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
-import plugins.WebOfTrust.Version;
-import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
@@ -37,9 +35,6 @@ public class HomePage extends WebPageImpl {
 	 * Creates a short summary of what the plugin knows of the WoT.
 	 */
 	private void makeSummary() {
-		// FIXME: Remove the beta warning from here (and elsewhere?) when deploying 0.4 final
-		addErrorBox(l10n().getString("HomePage.BetaWarning.Header"), l10n().getString("HomePage.BetaWarning.Text"));
-		
 		HTMLNode box = addContentBox(l10n().getString("HomePage.SummaryBox.Header"));
 		
 		synchronized(wot) {
