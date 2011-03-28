@@ -72,10 +72,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * constant below. The purpose of this costant is to allow anyone to create his own custom web of trust which is completely disconnected
 	 * from the "official" web of trust of the Freenet project.
 	 */
-	public static final String WOT_NAME = "WebOfTrustRC2"; // FIXME: Change to "WebOfTrust" when deploying 0.4 final.
+	public static final String WOT_NAME = "WebOfTrust";
 	
 	public static final String DATABASE_FILENAME =  WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = -48;  // FIXME: Change to 1 when deploying 0.4 final. 
+	public static final int DATABASE_FORMAT_VERSION = 1; 
 	
 	/**
 	 * The official seed identities of the WoT plugin: If a newbie wants to download the whole offficial web of trust, he needs at least one
@@ -83,8 +83,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * the Freenet development team provides a list of seed identities - each of them is one of the developers.
 	 */
 	private static final String[] SEED_IDENTITIES = new String[] { 
-		// FIXME: Add seeds when deploying 0.4 final.
-		"USK@xyzElfFQnwBb4ZuSEh1aSNsbRjEGCTa-2rcjeW58A4E,TiYrXSCcoGETPf0TWLNthaimJEP1PW7nJ2tYXKxdC4s,AQACAAE/WebOfTrustRC2/0" // xor
+		"USK@QeTBVWTwBldfI-lrF~xf0nqFVDdQoSUghT~PvhyJ1NE,OjEywGD063La2H-IihD7iYtZm3rC0BP6UTvvwyF5Zh4,AQACAAE/WebOfTrust/0" // xor
 	};
 
 	/* References from the node */
@@ -357,44 +356,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		if(databaseVersion == WebOfTrust.DATABASE_FORMAT_VERSION)
 			return;
 		
-		synchronized(mDB.lock()) {
-		try {
-			if(databaseVersion == -49) {
-				Logger.normal(this, "Upgrading database version " + databaseVersion);
-				Logger.normal(this, "Correcting nicknames...");
-				
-				for(Identity identity : getAllIdentities()) {
-					if(identity.getNickname() != null && identity.getNickname().contains("@")) {
-						// This CAN cause the nickname to exceed the length limit but we are in RC phase so this is an okay
-						// hackish quickfix to upgrade the database
-						final String newName = identity.mNickname.replace("@", "_");
-						Logger.debug(this, "Renaming " + identity.mNickname + " to " + newName);
-						identity.mNickname = newName;
-						identity.storeWithoutCommit();
-					}
-				}
-				
-				Logger.normal(this, "Correcting null mLastChangedDate of trust values...");
-				
-				for(Trust trust : getAllTrusts()) {
-					trust.fixDateOfLastChange();
-				}
-				
-				
-				mConfig.setDatabaseFormatVersion(++databaseVersion);
-				mConfig.storeAndCommit();
-				Logger.normal(this, "Upgraded database to version " + databaseVersion);
-			}
+		// Insert upgrade code here. See Freetalk.java for a skeleton.
 		
-	
-			if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
-				throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
+		if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
+			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
-		}
-		catch(RuntimeException e) {
-			Persistent.checkedRollbackAndThrow(mDB, this, e);
-		}
-		}
 	}
 	
 	private synchronized void verifyDatabaseIntegrity() {

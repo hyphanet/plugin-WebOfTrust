@@ -175,14 +175,6 @@ public final class Trust extends Persistent implements Cloneable {
 		return mLastChangedDate;
 	}
 	
-	// FIXME: Remove in 0.4 final
-	public synchronized void fixDateOfLastChange() {
-		if(mLastChangedDate == null) {
-			mLastChangedDate = mCreationDate;
-			storeWithoutCommit();
-		}
-	}
-	
 	/**
 	 * Called by the XMLTransformer when a new trust list of the truster has been imported. Stores the edition number of the trust list in this trust object.
 	 * For an explanation for what this is needed please read the description of {@link #mTrusterTrustListEdition}.
