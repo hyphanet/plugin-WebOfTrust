@@ -5,10 +5,10 @@ import java.util.UUID;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.TimeUtil;
 import plugins.WebOfTrust.WebOfTrust;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 
 public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	

@@ -6,7 +6,6 @@ import java.util.Date;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
-import plugins.WebOfTrust.TimeUtil;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.DuplicatePuzzleException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
@@ -22,6 +21,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 
 
 /**

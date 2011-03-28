@@ -12,12 +12,12 @@ import java.util.TimeZone;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
-import plugins.WebOfTrust.TimeUtil;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 
 /**
  * An introduction puzzle is a puzzle (for example a CAPTCHA) which can be solved by a new identity to get onto the trust list
