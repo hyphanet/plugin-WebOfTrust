@@ -308,25 +308,24 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 
 	public void testGetFreeIndex() throws IOException {
 		int[] freeIndices = new int[mOwnIdentities.size()];
+		 
+		final Date date = CurrentTimeUTC.get();
 		
 		for(int i=0; i < mOwnIdentities.size(); ++i) {
 			freeIndices[i] = 0;
 			
-			// 0. identity => 0x generateNewPuzzles
-			// 1. identity => 1x generateNewPuzzles
-			// 2. identity => 2x generateNewPuzzles
-			for(int j=i; j > 0; --j) {
-				// FIXME: We should manually generate the puzzles, generateNewPuzzles uses getFreeIndex!
-				for(OwnIntroductionPuzzle p : generateNewPuzzles(mOwnIdentities.get(i))) {
-					freeIndices[i] = Math.max(freeIndices[i], p.getIndex() + 1);
-				}
+			// 0. identity => 0 puzzles
+			// 1. identity => 1 puzzle
+			// 2. identity => 2 puzzles
+			for(int index=0; index < i; ++index) {
+				mPuzzleStore.storeAndCommit(constructOwnPuzzleWithDateAndIndex(mOwnIdentities.get(i), date, index));
+				freeIndices[i] = index+1;
 			}
 			
 			// To check whether the free index of other days does not make the free index of today go wrong, we store a puzzle for a different day for each identity.
-			mPuzzleStore.storeAndCommit(constructPuzzleWithExpirationDate(mOwnIdentities.get(i), new Date(CurrentTimeUTC.getInMillis() + 10 * IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 10 * 24 * 60 * 60 * 1000)));
+			mPuzzleStore.storeAndCommit(constructPuzzleWithExpirationDate(mOwnIdentities.get(i), new Date(date.getTime() + 10 * IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 10 * 24 * 60 * 60 * 1000)));
 		}
 		
-		final Date date = CurrentTimeUTC.get();
 		final Date nullDate = new Date(0);
 	
 		for(int i=0; i < mOwnIdentities.size(); ++i) {
