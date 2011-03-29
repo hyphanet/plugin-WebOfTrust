@@ -1200,8 +1200,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		q.constrain(OwnIdentity.class);
 		return new Persistent.InitializingObjectSet<OwnIdentity>(this, q);
 	}
-
 	
+	/**
+	 * Returns all own identities that are enabled
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 * 
+	 * @return An {@link ObjectSet} containing all enabled identities.
+	 */
+	public ObjectSet<OwnIdentity> getAllOwnEnabledIdentities() {
+		final Query q = mDB.query();
+		q.constrain(OwnIdentity.class);
+		q.descend("mDisabled").constrain(false);
+		return new Persistent.InitializingObjectSet<OwnIdentity>(this, q);
+	}
+
 	/**
 	 * You have to lock the WoT and the IntroductionPuzzleStore before calling this function.
 	 * @param identity
