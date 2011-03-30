@@ -336,8 +336,8 @@ public final class IntroductionPuzzleStore {
 		
 		switch(result.size()) {
 			case 1: return result.next();
-			case 0: throw new UnknownPuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
-			default: throw new DuplicatePuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
+			case 0: throw new UnknownPuzzleException("inserter=" + inserter + "; date=" + date.getTime() + "; index=" + index);
+			default: throw new DuplicatePuzzleException("inserter=" + inserter + "; date=" + date.getTime() + "; index=" + index);
 		}
 	}
 	
@@ -356,8 +356,8 @@ public final class IntroductionPuzzleStore {
 		
 		switch(result.size()) {
 			case 1: return result.next();
-			case 0: throw new UnknownPuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
-			default: throw new DuplicatePuzzleException("inserter=" + inserter + "; date=" + date + "; index=" + index);
+			case 0: throw new UnknownPuzzleException("inserter=" + inserter + "; date=" + date.getTime() + "; index=" + index);
+			default: throw new DuplicatePuzzleException("inserter=" + inserter + "; date=" + date.getTime() + "; index=" + index);
 		}
 	}
 
