@@ -600,15 +600,18 @@ public final class IntroductionClient extends TransferThread  {
 	
 	@Override
 	protected synchronized void abortInserts() {
-		mBeingInsertedPuzzleSolutions = new HashSet<String>();
 		super.abortInserts();
+		// Needs to be done afterwards, otherwise removeInsert() complains about not finding the puzzles
+		mBeingInsertedPuzzleSolutions = new HashSet<String>();
 	}
 	
 	@Override
 	protected synchronized void addInsert(BaseClientPutter p) {
 		try {
-			if(!mBeingInsertedPuzzleSolutions.add(IntroductionPuzzle.getIDFromSolutionURI(p.getURI())))
-				throw new RuntimeException("Already in HashSet: " + p.getURI());
+			final FreenetURI uri = ((ClientPutter)p).getTargetURI();
+			final String id = IntroductionPuzzle.getIDFromSolutionURI(uri);
+			if(!mBeingInsertedPuzzleSolutions.add(id))
+				throw new RuntimeException("Already in HashSet: uri: " + uri + "; id: " + id);
 		} catch(RuntimeException e) { // Also for exceptions which might happen in getIDFromSolutionURI etc.
 			Logger.error(this, "Unable to add puzzle ID to the list of running inserts.", e);
 		}
@@ -618,8 +621,12 @@ public final class IntroductionClient extends TransferThread  {
 	@Override
 	protected synchronized void removeInsert(BaseClientPutter p) {
 		try {
-			if(!mBeingInsertedPuzzleSolutions.remove(IntroductionPuzzle.getIDFromSolutionURI(p.getURI())))
-				throw new RuntimeException("Not in HashSet: " + p.getURI());
+			final FreenetURI uri = ((ClientPutter)p).getTargetURI();
+			final String id = IntroductionPuzzle.getIDFromSolutionURI(uri);
+			mBeingInsertedPuzzleSolutions.remove(id);
+			// TODO: ClientPutter currently does the onFailure callback TWICE so this would always throw. Check whether it is fixed.
+			//if(!mBeingInsertedPuzzleSolutions.remove(id))
+			//	throw new RuntimeException("Not in HashSet: uri: " + uri + "; id: " + id);
 		} catch(RuntimeException e) { // Also for exceptions which might happen in getIDFromSolutionURI etc.
 			Logger.error(this, "Unable to remove puzzle ID from list of running inserts.", e);
 		}
