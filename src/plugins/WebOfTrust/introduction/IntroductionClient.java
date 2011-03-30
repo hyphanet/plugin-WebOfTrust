@@ -109,6 +109,8 @@ public final class IntroductionClient extends TransferThread  {
 	 */
 	private final LRUQueue<String> mIdentities = new LRUQueue<String>(); // A suitable default size might be PUZZLE_POOL_SIZE + 1
 	
+	private HashSet<String> mBeingInsertedPuzzleSolutions = new HashSet<String>();
+	
 	public static final int IDENTITIES_LRU_QUEUE_SIZE_LIMIT = 512;
 
 	/**
@@ -224,8 +226,10 @@ public final class IntroductionClient extends TransferThread  {
 	}
 	
 	/**
-	 * Use this function to store the solution of a puzzle and upload it.
+	 * Use this function to store the solution of a puzzle.
+	 * It will start the upload of the solution immediately.
 	 * No synchronization is needed when using this function.
+	 * 
 	 * @throws InvalidParameterException If the puzzle was already solved.
 	 * @throws RuntimeException If the identity or the puzzle was deleted already.
 	 */
@@ -248,6 +252,7 @@ public final class IntroductionClient extends TransferThread  {
 		}
 		}
 		}
+		
 		try {
 			insertPuzzleSolution(puzzle);
 		}
@@ -331,8 +336,11 @@ public final class IntroductionClient extends TransferThread  {
 		Logger.normal(this, "Finished starting more fetches. Amount of fetches now: " + fetchCount());
 	}
 	
-	private void insertSolutions() {
-		abortInserts();
+	/**
+	 * Synchronized because insertPuzzleSolution synchronizes on this IntroductionClient and that lock must be
+	 * taken <b>before</b> the mPuzzleStore-lock which this function also takes.
+	 */
+	private synchronized void insertSolutions() {
 		synchronized(mPuzzleStore) {
 			final ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedSolvedPuzzles();
 			
@@ -348,9 +356,15 @@ public final class IntroductionClient extends TransferThread  {
 	}
 	
 	/**
-	 * Not synchronized because its caller is synchronized already.
+	 * Checks whether the given puzzle is currently being inserted.
+	 * If not, starts an insert for it and marks it as currently being inserted in the HashSet of this IntroductionClient.
+	 * 
+	 * Synchronized because it accesses the mBeingInsertedPuzzleSolutions HashSet.
 	 */
-	private void insertPuzzleSolution(final IntroductionPuzzle puzzle) throws IOException, TransformerException, InsertException {
+	private synchronized void insertPuzzleSolution(final IntroductionPuzzle puzzle) throws IOException, TransformerException, InsertException {
+		if(mBeingInsertedPuzzleSolutions.contains(puzzle.getID())) 
+			return;
+		
 		assert(!puzzle.wasInserted());
 		
 		Bucket tempB = mTBF.makeBucket(1024); /* TODO: Set to a reasonable value */
@@ -368,7 +382,7 @@ public final class IntroductionClient extends TransferThread  {
 			final InsertContext ictx = mClient.getInsertContext(true);
 			
 			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
-			addInsert(pu);
+			addInsert(pu); // Takes care of mBeingInsertedPuzleSolutions for us.
 			tempB = null;
 			
 			Logger.normal(this, "Started to insert puzzle solution of " + puzzle.getSolver().getNickname() + " at " + solutionURI);
@@ -545,7 +559,7 @@ public final class IntroductionClient extends TransferThread  {
 			Logger.error(this, "Error", e);
 		}
 		finally {
-			removeInsert(state);
+			removeInsert(state); // Takes care of mBeingInsertedPuzleSolutions for us.
 			Closer.close(((ClientPutter)state).getData());
 		}
 	}
@@ -566,7 +580,7 @@ public final class IntroductionClient extends TransferThread  {
 				Logger.error(this, "Insert of puzzle solution failed: " + state.getURI(), e);
 		}
 		finally {
-			removeInsert(state);
+			removeInsert(state); // Takes care of mBeingInsertedPuzleSolutions for us.
 			Closer.close(((ClientPutter)state).getData());
 		}
 	}
@@ -582,6 +596,34 @@ public final class IntroductionClient extends TransferThread  {
 	/** Called when freenet.async thinks that the request should be serialized to
 	 * disk, if it is a persistent request. */
 	public void onMajorProgress(ObjectContainer container) {}
-
+	
+	
+	@Override
+	protected synchronized void abortInserts() {
+		mBeingInsertedPuzzleSolutions = new HashSet<String>();
+		super.abortInserts();
+	}
+	
+	@Override
+	protected synchronized void addInsert(BaseClientPutter p) {
+		try {
+			if(!mBeingInsertedPuzzleSolutions.add(IntroductionPuzzle.getIDFromSolutionURI(p.getURI())))
+				throw new RuntimeException("Already in HashSet: " + p.getURI());
+		} catch(RuntimeException e) { // Also for exceptions which might happen in getIDFromSolutionURI etc.
+			Logger.error(this, "Unable to add puzzle ID to the list of running inserts.", e);
+		}
+		super.addInsert(p);
+	}
+	
+	@Override
+	protected synchronized void removeInsert(BaseClientPutter p) {
+		try {
+			if(!mBeingInsertedPuzzleSolutions.remove(IntroductionPuzzle.getIDFromSolutionURI(p.getURI())))
+				throw new RuntimeException("Not in HashSet: " + p.getURI());
+		} catch(RuntimeException e) { // Also for exceptions which might happen in getIDFromSolutionURI etc.
+			Logger.error(this, "Unable to remove puzzle ID from list of running inserts.", e);
+		}
+		super.removeInsert(p);
+	}
 
 }
