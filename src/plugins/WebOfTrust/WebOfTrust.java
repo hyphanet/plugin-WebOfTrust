@@ -653,7 +653,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * - It is used by unit tests (and WoT) to check whether the real implementation works<br />
 	 * - It is the function which you should read if you want to understand how WoT works.<br />
 	 * 
-	 * Computes all rank and score values and checks whether the database is correct. If wrong values are found, they are correct.<br />
+	 * Computes all rank and score values of enabled identities and checks whether the database is correct. If wrong values are found, they are correct.<br />
 	 * 
 	 * There was a bug in the score computation for a long time which resulted in wrong computation when trust values very removed under certain conditions.<br />
 	 * 
@@ -1205,7 +1205,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	/**
-	 * Returns all own identities that are enabled
+	 * Returns all own enabled identities
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 * 
 	 * @return An {@link ObjectSet} containing all enabled identities.
@@ -1361,7 +1361,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * Checks whether the given identity should be downloaded. 
-	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity.
+	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity and is enabled.
 	 */
 	public boolean shouldFetchIdentity(final Identity identity) {
 		if(identity.isDisabled())
@@ -1833,6 +1833,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * Updates all trust trees which are affected by the given modified score.
+	 * Skips disabled identities.
 	 * For understanding how score calculation works you should first read {@link computeAllScores
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
@@ -2050,15 +2051,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	public synchronized void disableIdentity(Identity identity){
-		/* TODO: Implement method disableIdentity */
 		identity.disable();
 		identity.storeAndCommit();
+		Logger.debug(this, "Disabled identity '" + identity.getNickname() + "'");
 	}
 	
 	public synchronized void enableIdentity(Identity identity){
-		/* TODO: Implement method enableIdentity */
 		identity.enable();
 		identity.storeAndCommit();
+		Logger.debug(this, "Enabled identity '" + identity.getNickname() + "'");
 	}
 	
 	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
