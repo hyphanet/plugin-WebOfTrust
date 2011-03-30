@@ -168,6 +168,7 @@ public class Identity extends Persistent implements Cloneable {
 
 	/**
 	 * Get the edition number of the request URI of this identity.
+	 * Safe to be called without any additional synchronization.
 	 */
 	public final long getEdition() {
 		return getRequestURI().getEdition();

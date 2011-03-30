@@ -473,9 +473,9 @@ public final class XMLTransformer {
 		introElement.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
 
 		Element identityElement = xmlDoc.createElement("Identity");
-		synchronized(mWoT) {
+		// synchronized(mWoT) { // Not necessary according to JavaDoc of identity.getRequestURI()
 		identityElement.setAttribute("URI", identity.getRequestURI().toString());
-		}
+		//}
 		introElement.appendChild(identityElement);
 	
 		rootElement.appendChild(introElement);
