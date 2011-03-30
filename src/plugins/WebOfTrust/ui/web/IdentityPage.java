@@ -142,7 +142,7 @@ public class IdentityPage extends WebPageImpl {
 
 		HTMLNode boxContent = addContentBox(l10n().getString("IdentityPage.ChangeTrustBox.Header", "nickname", identity.getNickname()));
 
-		ObjectSet<OwnIdentity> ownId = wot.getAllOwnIdentities();
+		ObjectSet<OwnIdentity> ownId = wot.getAllOwnEnabledIdentities();
 
 		while(ownId.hasNext()) {
 			OwnIdentity treeOwner = ownId.next();

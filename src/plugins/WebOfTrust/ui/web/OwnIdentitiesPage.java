@@ -88,7 +88,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.LastInsert"));
 			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.PublishesTrustlist"));
 			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Trusters"));
-			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Disabled"));
+			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Enabled"));
 			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Manage"));
 			
 			while(ownIdentities.hasNext()) {
@@ -125,7 +125,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 						Long.toString(wot.getReceivedTrusts(id).size())));
 				
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, 
-				        id.isDisabled() 
+				        !id.isDisabled() 
 				                ? l10n().getString("Common.Yes") 
 				                : l10n().getString("Common.No"));
 				

@@ -671,7 +671,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		final ObjectSet<Identity> allIdentities = getAllIdentities();
 		
 		// Scores are a rating of an identity from the view of an OwnIdentity so we compute them per OwnIdentity.
-		for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+		for(OwnIdentity treeOwner : getAllOwnEnabledIdentities()) {
 			// At the end of the loop body, this table will be filled with the ranks of all identities which are visible for treeOwner.
 			// An identity is visible if there is a trust chain from the owner to it.
 			// The rank is the distance in trust steps from the treeOwner.			
@@ -1108,7 +1108,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	/**
-	 * Get a filtered and sorted list of identities.
+	 * Get a filtered and sorted list of enabled identities.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list.
 	 */
 	public ObjectSet<Identity> getAllIdentitiesFilteredAndSorted(OwnIdentity truster, String nickFilter, SortOrder sortInstruction) {
@@ -1155,6 +1155,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			nickFilter = nickFilter.trim();
 			if(!nickFilter.equals("")) q.descend("mNickname").constrain(nickFilter).like();
 		}
+		
+		// return only enabled identities
+		q.descend("mDisabled").constrain(false);
 		
 		return new Persistent.InitializingObjectSet<Identity>(this, q);
 	}
@@ -1863,7 +1866,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 
 		if(!mFullScoreComputationNeeded && (trustWasCreated || trustWasModified)) {
-			for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+			for(OwnIdentity treeOwner : getAllOwnEnabledIdentities()) {
 				try {
 					// Throws to abort the update of the trustee's score: If the truster has no rank or capacity in the tree owner's view then we don't need to update the trustee's score.
 					if(getScore(treeOwner, newTrust.getTruster()).getCapacity() == 0)
