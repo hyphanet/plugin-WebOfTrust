@@ -212,7 +212,9 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	 * was fetched or inserted successfully.
 	 */
 	public static String getIDFromSolutionURI(FreenetURI uri) {
-		return uri.getDocName().split("[|]")[2];
+		return uri.
+				getDocName().
+				split("[|]")[2];
 	}
 	
 	public String getID() {
