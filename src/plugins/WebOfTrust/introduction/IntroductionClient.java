@@ -536,6 +536,26 @@ public final class IntroductionClient extends TransferThread  {
 			removeFetch(state);
 		}
 	}
+	
+	/**
+	 * Does not throw any Exceptions
+	 */
+	private final void markPuzzleSolutionAsInserted(BaseClientPutter state) {
+		try {
+			synchronized(mWoT) { /* getPuzzleByRequestURI requires this */
+			synchronized(mPuzzleStore) {
+				final IntroductionPuzzle puzzle = mPuzzleStore.getPuzzleBySolutionURI(((ClientPutter)state).getTargetURI());
+				synchronized(puzzle) {
+				puzzle.setInserted();
+				mPuzzleStore.storeAndCommit(puzzle);
+				}
+			}
+			}
+		}
+		catch(Exception e) {
+			Logger.error(this, "Unable to mark puzzle solution as inserted", e);
+		}
+	}
 
 	/**
 	 * Called when a puzzle solution is successfully inserted.
@@ -545,20 +565,8 @@ public final class IntroductionClient extends TransferThread  {
 		Logger.normal(this, "Successful insert of puzzle solution: " + state.getURI());
 		
 		try {
-			synchronized(mWoT) { /* getPuzzleByRequestURI requires this */
-			synchronized(mPuzzleStore) {
-				final IntroductionPuzzle puzzle = mPuzzleStore.getPuzzleBySolutionURI(state.getURI());
-				synchronized(puzzle) {
-				puzzle.setInserted();
-				mPuzzleStore.storeAndCommit(puzzle);
-				}
-			}
-			}
-		}
-		catch(Exception e) {
-			Logger.error(this, "Error", e);
-		}
-		finally {
+			markPuzzleSolutionAsInserted(state);
+		} finally {
 			removeInsert(state); // Takes care of mBeingInsertedPuzleSolutions for us.
 			Closer.close(((ClientPutter)state).getData());
 		}
@@ -574,8 +582,10 @@ public final class IntroductionClient extends TransferThread  {
 		try {
 			if(e.getMode() == InsertException.CANCELLED)
 				Logger.debug(this, "Insert cancelled: " + state.getURI());
-			else if(e.getMode() == InsertException.COLLISION)
-				Logger.normal(this, "Insert of puzzle solution collided, puzzle was solved already: " + state.getURI());
+			else if(e.getMode() == InsertException.COLLISION) {
+				Logger.normal(this, "Insert of puzzle solution collided, puzzle was solved already, marking as inserted: " + state.getURI());
+				markPuzzleSolutionAsInserted(state);
+			}
 			else
 				Logger.error(this, "Insert of puzzle solution failed: " + state.getURI(), e);
 		}
