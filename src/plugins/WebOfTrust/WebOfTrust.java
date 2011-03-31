@@ -2093,6 +2093,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				
 					identity.setContexts(old.getContexts());
 					identity.setProperties(old.getProperties());
+					
+					identity.storeWithoutCommit();
+					initTrustTreeWithoutCommit(identity);
 	
 					// Update all received trusts
 					for(Trust oldReceivedTrust : getReceivedTrusts(old)) {
@@ -2111,9 +2114,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						newScore.initializeTransient(this);
 						newScore.storeWithoutCommit();
 					}
-		
-					identity.storeWithoutCommit();
-					initTrustTreeWithoutCommit(identity);
 					
 					beginTrustListImport();
 					
