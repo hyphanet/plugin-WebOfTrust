@@ -102,6 +102,10 @@ public class IdentityTest extends DatabaseBasedTest {
 		// TODO: Implement a full test.
 	}
 	
+	public void testEnabled() {
+		assertFalse(identity.isDisabled());
+	}
+	
 //	public void testEquals() {
 //		do {
 //			try {
