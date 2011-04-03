@@ -6,8 +6,8 @@ package plugins.WebOfTrust;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.LinkedList;
 
 import plugins.WebOfTrust.exceptions.DuplicateIdentityException;
@@ -28,7 +28,6 @@ import plugins.WebOfTrust.ui.web.WebInterface;
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
-import com.db4o.config.Configuration;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
@@ -73,10 +72,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * constant below. The purpose of this costant is to allow anyone to create his own custom web of trust which is completely disconnected
 	 * from the "official" web of trust of the Freenet project.
 	 */
-	public static final String WOT_NAME = "WebOfTrustRC1"; // FIXME: Change to "WebOfTrust" when deploying 0.4 final.
+	public static final String WOT_NAME = "WebOfTrust";
 	
 	public static final String DATABASE_FILENAME =  WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = -50;  // FIXME: Change to 1 when deploying 0.4 final. 
+	public static final int DATABASE_FORMAT_VERSION = 1; 
 	
 	/**
 	 * The official seed identities of the WoT plugin: If a newbie wants to download the whole offficial web of trust, he needs at least one
@@ -84,7 +83,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * the Freenet development team provides a list of seed identities - each of them is one of the developers.
 	 */
 	private static final String[] SEED_IDENTITIES = new String[] { 
-		// FIXME: Add seeds when deploying 0.4 final.
+		"USK@QeTBVWTwBldfI-lrF~xf0nqFVDdQoSUghT~PvhyJ1NE,OjEywGD063La2H-IihD7iYtZm3rC0BP6UTvvwyF5Zh4,AQACAAE/WebOfTrust/0", // xor
+		"USK@z9dv7wqsxIBCiFLW7VijMGXD9Gl-EXAqBAwzQ4aq26s,4Uvc~Fjw3i9toGeQuBkDARUV5mF7OTKoAhqOA9LpNdo,AQACAAE/WebOfTrust/0", // Toad
+		"USK@e3myoFyp5avg6WYN16ImHri6J7Nj8980Fm~aQe4EX1U,QvbWT0ImE0TwLODTl7EoJx2NBnwDxTbLTE6zkB-eGPs,AQACAAE/WebOfTrust/0", // Bombe
 	};
 
 	/* References from the node */
@@ -98,7 +99,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/* Database & configuration of the plugin */
 	private ExtObjectContainer mDB;
-	private Config mConfig;
+	private Configuration mConfig;
 	private IntroductionPuzzleStore mPuzzleStore;
 	
 	/** Used for exporting identities, identity introductions and introduction puzzles to XML and importing them from XML. */
@@ -161,7 +162,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 			
 			upgradeDB();
-			verifyDatabaseIntegrity();
 			
 			mXMLTransformer = new XMLTransformer(this);
 			mPuzzleStore = new IntroductionPuzzleStore(this);
@@ -181,13 +181,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 				
 			};
-	
-			createSeedIdentities();
 			
 			mInserter = new IdentityInserter(this);
-			mInserter.start();
-			
 			mFetcher = new IdentityFetcher(this, getPluginRespirator());		
+			
+			verifyDatabaseIntegrity();
 			
 			// TODO: Don't do this as soon as we are sure that score computation works.
 			Logger.normal(this, "Veriying all stored scores ...");
@@ -201,6 +199,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 			}
 			}
+			
+			// Database is up now, integrity is checked. We can start to actually do stuff
+			
+			createSeedIdentities();
 			
 			Logger.debug(this, "Starting fetches of all identities...");
 			synchronized(this) {
@@ -217,6 +219,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 			}
 			}
+			
+			mInserter.start();
 			
 			mIntroductionServer = new IntroductionServer(this, mFetcher);
 			mIntroductionServer.start();
@@ -257,6 +261,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		if(mConfig.getDatabaseFormatVersion() > WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 		
+		mPuzzleStore = new IntroductionPuzzleStore(this);
+		
 		mFetcher = new IdentityFetcher(this, null);
 	}
 	
@@ -277,7 +283,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private ExtObjectContainer openDatabase(File file) {
 		Logger.debug(this, "Using db4o " + Db4o.version());
 		
-		Configuration cfg = Db4o.newConfiguration();
+		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		
 		// Required config options:
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader()));
@@ -362,21 +368,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		if(databaseVersion == WebOfTrust.DATABASE_FORMAT_VERSION)
 			return;
 		
-		synchronized(mDB.lock()) {
-		try {
-			//if(databaseVersion == 1) {
-			//
-			//}
+		// Insert upgrade code here. See Freetalk.java for a skeleton.
 		
-	
-			if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
-				throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
+		if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
+			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
-		}
-		catch(RuntimeException e) {
-			Persistent.checkedRollbackAndThrow(mDB, this, e);
-		}
-		}
 	}
 	
 	private synchronized void verifyDatabaseIntegrity() {
@@ -472,7 +468,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private synchronized void deleteOrphanObjects() {
 		synchronized(mDB.lock()) {
 			try {
-				boolean orphanTrustFound = true;
+				boolean orphanTrustFound = false;
 				
 				Query q = mDB.query();
 				q.constrain(Trust.class);
@@ -503,7 +499,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		synchronized(mDB.lock()) {
 			try {
-				boolean orphanScoresFound = true;
+				boolean orphanScoresFound = false;
 				
 				Query q = mDB.query();
 				q.constrain(Score.class);
@@ -538,14 +534,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Loads an existing Config object from the database and adds any missing default values to it, creates and stores a new one if none exists.
 	 * @return The config object.
 	 */
-	private synchronized Config getOrCreateConfig() {
+	private synchronized Configuration getOrCreateConfig() {
 		final Query query = mDB.query();
-		query.constrain(Config.class);
-		final ObjectSet<Config> result = new Persistent.InitializingObjectSet<Config>(this, query);
+		query.constrain(Configuration.class);
+		final ObjectSet<Configuration> result = new Persistent.InitializingObjectSet<Configuration>(this, query);
 
 		switch(result.size()) {
 			case 1: {
-				final Config config = result.next();
+				final Configuration config = result.next();
 				// For the HashMaps to stay alive we need to activate to full depth.
 				config.checkedActivate(4);
 				config.setDefaultValues(false);
@@ -553,7 +549,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				return config;
 			}
 			case 0: {
-				final Config config = new Config(this);
+				final Configuration config = new Configuration(this);
 				config.initializeTransient(this);
 				config.storeAndCommit();
 				return config;
@@ -658,7 +654,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			// An identity is visible if there is a trust chain from the owner to it.
 			// The rank is the distance in trust steps from the treeOwner.			
 			// So the treeOwner is rank 0, the trustees of the treeOwner are rank 1 and so on.
-			final Hashtable<Identity, Integer> rankValues = new Hashtable<Identity, Integer>(allIdentities.size() * 2);
+			final HashMap<Identity, Integer> rankValues = new HashMap<Identity, Integer>(allIdentities.size() * 2);
 			
 			// Compute the rank values
 			{
@@ -692,7 +688,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						rankValues.put(treeOwner, selfScore.getRank());
 						unprocessedTrusters.addLast(treeOwner);
 					} else {
-						// rankValues.put(treeOwner, null); // No need to store null in a Hashtable
+						rankValues.put(treeOwner, null);
 					}
 				} catch(NotInTrustTreeException e) {
 					// This only happens in unit tests.
@@ -781,61 +777,72 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					}
 				}
 				
-				Score expectedScore = null;
+				Score newScore = null;
 				if(targetScore != null) {
-					expectedScore = new Score(treeOwner, target, targetScore, targetRank, computeCapacity(treeOwner, target, targetRank));
-					expectedScore.initializeTransient(this);
+					newScore = new Score(treeOwner, target, targetScore, targetRank, computeCapacity(treeOwner, target, targetRank));
+					newScore.initializeTransient(this);
 				}
 				
 				boolean needToCheckFetchStatus = false;
 				boolean oldShouldFetch = false;
+				int oldCapacity = 0;
 				
 				// Now we have the rank and the score of the target computed and can check whether the database-stored score object is correct.
 				try {
-					Score storedScore = getScore(treeOwner, target);
-					if(expectedScore == null) {
+					Score currentStoredScore = getScore(treeOwner, target);
+					oldCapacity = currentStoredScore.getCapacity();
+					
+					if(newScore == null) {
 						returnValue = false;
 						if(!mFullScoreComputationNeeded)
-							Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + storedScore);
+							Logger.error(this, "Correcting wrong score: The identity has no rank and should have no score but score was " + currentStoredScore, new RuntimeException());
 						
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
 						
-						storedScore.deleteWithoutCommit();
+						currentStoredScore.deleteWithoutCommit();
 						
 					} else {
-						if(!expectedScore.equals(storedScore)) {
+						if(!newScore.equals(currentStoredScore)) {
 							returnValue = false;
 							if(!mFullScoreComputationNeeded)
-								Logger.error(this, "Correcting wrong score: Should have been " + expectedScore + " but was " + storedScore);
+								Logger.error(this, "Correcting wrong score: Should have been " + newScore + " but was " + currentStoredScore, new RuntimeException());
 							
 							needToCheckFetchStatus = true;
 							oldShouldFetch = shouldFetchIdentity(target);
 							
-							storedScore.setRank(expectedScore.getRank());
-							storedScore.setCapacity(computeCapacity(expectedScore.getTruster(), expectedScore.getTrustee(), expectedScore.getRank()));
-							storedScore.setValue(expectedScore.getScore());
+							currentStoredScore.setRank(newScore.getRank());
+							currentStoredScore.setCapacity(newScore.getCapacity());
+							currentStoredScore.setValue(newScore.getScore());
 
-							storedScore.storeWithoutCommit();
+							currentStoredScore.storeWithoutCommit();
 						}
 					}
 				} catch(NotInTrustTreeException e) {
-					if(expectedScore != null) {
+					oldCapacity = 0;
+					
+					if(newScore != null) {
 						returnValue = false;
 						if(!mFullScoreComputationNeeded)
-							Logger.error(this, "Correcting wrong score: No score was stored for the identity but it should be " + expectedScore);
+							Logger.error(this, "Correcting wrong score: No score was stored for the identity but it should be " + newScore, new RuntimeException());
 						
 						needToCheckFetchStatus = true;
 						oldShouldFetch = shouldFetchIdentity(target);
 						
-						expectedScore.storeWithoutCommit();
+						newScore.storeWithoutCommit();
 					}
 				}
 				
 				if(needToCheckFetchStatus) {
-					// If the sign of the identities score changed, then we need to start fetching it or abort fetching it.
-					if(!oldShouldFetch && shouldFetchIdentity(target)) { 
-						Logger.debug(this, "Best capacity changed from 0 to positive, refetching " + target);
+					// If fetch status changed from false to true, we need to start fetching it
+					// If the capacity changed from 0 to positive, we need to refetch the current edition: Identities with capacity 0 cannot
+					// cause new identities to be imported from their trust list, capacity > 0 allows this.
+					// If the fetch status changed from true to false, we need to stop fetching it
+					if((!oldShouldFetch || (oldCapacity == 0 && newScore != null && newScore.getCapacity() > 0)) && shouldFetchIdentity(target) ) {
+						if(!oldShouldFetch)
+							Logger.debug(this, "Fetch status changed from false to true, refetching " + target);
+						else
+							Logger.debug(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + target);
 
 						target.markForRefetch();
 						target.storeWithoutCommit();
@@ -843,7 +850,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						mFetcher.storeStartFetchCommandWithoutCommit(target);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(target)) {
-						Logger.debug(this, "Best capacity changed from positive to 0, aborting fetch of " + target);
+						Logger.debug(this, "Fetch status changed from true to false, aborting fetch of " + target);
 
 						mFetcher.storeAbortFetchCommandWithoutCommit(target);
 					}
@@ -1343,7 +1350,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	/**
-	 * Gets Identities matching a specified score criteria.
+	 * Gets non-own Identities matching a specified score criteria.
+	 * TODO: Rename to getNonOwnIdentitiesByScore. Or even better: Make it return own identities as well, this will speed up the database query and clients might be ok with it.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 * 
 	 * @param truster The owner of the trust tree, null if you want the trusted identities of all owners.
@@ -1351,7 +1359,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 		and negative with score < 0. Zero is included in the positive range by convention because solving an introduction puzzle gives you a trust value of 0.
 	 * @return an {@link ObjectSet} containing Scores of the identities that match the criteria
 	 */
-	public ObjectSet<Score> getIdentitiesByScore(final OwnIdentity truster, final int select) {		
+	public ObjectSet<Score> getIdentitiesByScore(final OwnIdentity truster, final int select) {
 		final Query query = mDB.query();
 		query.constrain(Score.class);
 		if(truster != null)
@@ -1431,14 +1439,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		return new Persistent.InitializingObjectSet<Trust>(this, query);
 	}
 	/**
-	 * Gets all trusts given by the given truster in a trust list older than the given edition number.
+	 * Gets all trusts given by the given truster in a trust list with a different edition than the passed in one.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 */
-	protected ObjectSet<Trust> getGivenTrustsOlderThan(final Identity truster, final long edition) {
+	protected ObjectSet<Trust> getGivenTrustsOfDifferentEdition(final Identity truster, final long edition) {
 		final Query q = mDB.query();
 		q.constrain(Trust.class);
 		q.descend("mTruster").constrain(truster).identity();
-		q.descend("mTrusterTrustListEdition").constrain(edition).smaller();
+		q.descend("mTrusterTrustListEdition").constrain(edition).not();
 		return new Persistent.InitializingObjectSet<Trust>(this, q);
 	}
 
@@ -1512,10 +1520,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	protected synchronized void setTrustWithoutCommit(Identity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
-		Trust trust;
 		try { // Check if we are updating an existing trust value
-			trust = getTrust(truster, trustee);
-			Trust oldTrust = trust.clone();
+			final Trust trust = getTrust(truster, trustee);
+			final Trust oldTrust = trust.clone();
 			trust.trusterEditionUpdated();
 			trust.setComment(newComment);
 			trust.storeWithoutCommit();
@@ -1527,7 +1534,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				updateScoresWithoutCommit(oldTrust, trust);
 			}
 		} catch (NotTrustedException e) {
-			trust = new Trust(truster, trustee, newValue, newComment);
+			final Trust trust = new Trust(truster, trustee, newValue, newComment);
 			trust.initializeTransient(this);
 			trust.storeWithoutCommit();
 			Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
@@ -1547,6 +1554,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		synchronized(mDB.lock()) {
 			try {
 				setTrustWithoutCommit(truster, trustee, newValue, newComment);
+				Persistent.checkedCommit(mDB, this);
+			}
+			catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+	}
+	
+	protected synchronized void removeTrust(OwnIdentity truster, Identity trustee) {
+		synchronized(mDB.lock()) {
+			try  {
+				removeTrustWithoutCommit(truster, trustee);
 				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
@@ -1796,6 +1815,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		if(trustWasModified && oldTrust.getTrustee() != newTrust.getTrustee())
 			throw new IllegalArgumentException("oldTrust has different trustee, oldTrust:" + oldTrust + "; newTrust: " + newTrust);
+		
+		// We cannot iteratively REMOVE an inherited rank from the trustees because we don't know whether there is a circle in the trust values
+		// which would make the current identity get its old rank back via the circle: computeRank searches the trusters of an identity for the best
+		// rank, if we remove the rank from an identity, all its trustees will have a better rank and if one of them trusts the original identity
+		// then this function would run into an infinite loop. Decreasing or incrementing an existing rank is possible with this function because
+		// the rank received from the trustees will always be higher (that is exactly 1 more) than this identities rank.
+		if(trustWasDeleted) { 
+			mFullScoreComputationNeeded = true;
+		}
 
 		if(!mFullScoreComputationNeeded && (trustWasCreated || trustWasModified)) {
 			for(OwnIdentity treeOwner : getAllOwnIdentities()) {
@@ -1807,11 +1835,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					continue;
 				}
 				
-				// We cannot iteratively REMOVE an inherited rank from the trustees because we don't know whether there is a circle in the trust values
-				// which would make the current identity get its old rank back via the circle: computeRank searches the trusters of an identity for the best
-				// rank, if we remove the rank from an identity, all its trustees will have a better rank and if one of them trusts the original identity
-				// then this function would run into an infinite loop. Decreasing or incrementing an existing rank is possible with this function because
-				// the rank received from the trustees will always be higher (that is exactly 1 more) than this identities rank.
+				// See explanation above "We cannot iteratively REMOVE an inherited rank..."
 				if(trustWasModified && oldTrust.getValue() > 0 && newTrust.getValue() <= 0) {
 					mFullScoreComputationNeeded = true;
 					break;
@@ -1827,44 +1851,59 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					if(trustee == treeOwner)
 						continue;
 
-					Score trusteeScore;
+					Score currentStoredTrusteeScore;
 
 					try {
-						trusteeScore = getScore(treeOwner, trustee);
+						currentStoredTrusteeScore = getScore(treeOwner, trustee);
 					} catch(NotInTrustTreeException e) {
-						trusteeScore = new Score(treeOwner, trustee, 0, -1, 0);
-						trusteeScore.initializeTransient(this);
+						currentStoredTrusteeScore = new Score(treeOwner, trustee, 0, -1, 0);
+						currentStoredTrusteeScore.initializeTransient(this);
 					}
-
-					final Score oldScore = trusteeScore.clone();
+					
+					final Score oldScore = currentStoredTrusteeScore.clone();
 					boolean oldShouldFetch = shouldFetchIdentity(trustee);
 					
-					trusteeScore.setValue(computeScoreValue(treeOwner, trustee));
-					trusteeScore.setRank(computeRank(treeOwner, trustee));
-					trusteeScore.setCapacity(computeCapacity(treeOwner, trustee, trusteeScore.getRank()));
+					final int newScoreValue = computeScoreValue(treeOwner, trustee); 
+					final int newRank = computeRank(treeOwner, trustee);
+					final int newCapacity = computeCapacity(treeOwner, trustee, newRank);
+					final Score newScore = new Score(treeOwner, trustee, newScoreValue, newRank, newCapacity);
 
 					// Normally we couldn't detect the following two cases due to circular trust values. However, if an own identity assigns a trust value,
 					// the rank and capacity are always computed based on the trust value of the own identity so we must also check this here:
 
 					if((oldScore.getRank() >= 0 && oldScore.getRank() < Integer.MAX_VALUE) // It had an inheritable rank
-							&& (trusteeScore.getRank() == -1 || trusteeScore.getRank() == Integer.MAX_VALUE)) { // It has no inheritable rank anymore
+							&& (newScore.getRank() == -1 || newScore.getRank() == Integer.MAX_VALUE)) { // It has no inheritable rank anymore
 						mFullScoreComputationNeeded = true;
 						break;
 					}
 					
-					if(oldScore.getCapacity() > 0 && trusteeScore.getCapacity() == 0) {
+					if(oldScore.getCapacity() > 0 && newScore.getCapacity() == 0) {
 						mFullScoreComputationNeeded = true;
 						break;
 					}
+					
+					// We are OK to update it now. We must not update the values of the stored score object before determining whether we need
+					// a full score computation - the full computation needs the old values of the object.
+					
+					currentStoredTrusteeScore.setValue(newScore.getScore());
+					currentStoredTrusteeScore.setRank(newScore.getRank());
+					currentStoredTrusteeScore.setCapacity(newScore.getCapacity());
 					
 					// Identities should not get into the queue if they have no rank, see the large if() about 20 lines below
-					assert(trusteeScore.getRank() >= 0); 
+					assert(currentStoredTrusteeScore.getRank() >= 0); 
 					
-					if(trusteeScore.getRank() >= 0)
-						mDB.store(trusteeScore);
+					if(currentStoredTrusteeScore.getRank() >= 0)
+						currentStoredTrusteeScore.storeWithoutCommit();
 					
-					if(!oldShouldFetch && shouldFetchIdentity(trustee)) { 
-						Logger.debug(this, "Fetch status changed from false to true, refetching " + trustee);
+					// If fetch status changed from false to true, we need to start fetching it
+					// If the capacity changed from 0 to positive, we need to refetch the current edition: Identities with capacity 0 cannot
+					// cause new identities to be imported from their trust list, capacity > 0 allows this.
+					// If the fetch status changed from true to false, we need to stop fetching it
+					if((!oldShouldFetch || (oldScore.getCapacity()== 0 && newScore.getCapacity() > 0)) && shouldFetchIdentity(trustee)) { 
+						if(!oldShouldFetch)
+							Logger.debug(this, "Fetch status changed from false to true, refetching " + trustee);
+						else
+							Logger.debug(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + trustee);
 
 						trustee.markForRefetch();
 						trustee.storeWithoutCommit();
@@ -1878,11 +1917,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					}
 					
 					// If the rank or capacity changed then the trustees might be affected because the could have inherited theirs
-					if(oldScore.getRank() != trusteeScore.getRank() || oldScore.getCapacity() != trusteeScore.getCapacity()) {
+					if(oldScore.getRank() != newScore.getRank() || oldScore.getCapacity() != newScore.getCapacity()) {
 						// If this identity has no capacity or no rank then it cannot affect its trustees:
 						// (- If it had none and it has none now then there is none which can be inherited, this is obvious)
 						// - If it had one before and it was removed, this algorithm will have aborted already because a full computation is needed
-						if(trusteeScore.getCapacity() > 0 || (trusteeScore.getRank() >= 0 && trusteeScore.getRank() < Integer.MAX_VALUE)) {
+						if(newScore.getCapacity() > 0 || (newScore.getRank() >= 0 && newScore.getRank() < Integer.MAX_VALUE)) {
 							// We need to update the trustees of trustee
 							for(Trust givenTrust : getGivenTrusts(trustee)) {
 								unprocessedEdges.add(givenTrust);
@@ -1896,19 +1935,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 		}
 		
-		if(trustWasDeleted) { 
-			mFullScoreComputationNeeded = true;
-		}
-		
-		// I've disabled this assert because it makes debugging VERY slow. Instead, finishTrustListImport now does assert(computeAllScores...).
-		// assert(mFullScoreComputationNeeded || (!mFullScoreComputationNeeded && computeAllScoresWithoutCommit()));
-		
-		if(mFullScoreComputationNeeded && !mTrustListImportInProgress) {
-			// TODO: Optimization: This uses very much CPU and memory. Write a partial computation function...
-			// TODO: Optimization: While we do not have a partial computation function, we could at least optimize computeAllScores to NOT
-			// keep all objects in memory etc.
-			computeAllScoresWithoutCommit();
-			assert(computeAllScoresWithoutCommit()); // It is stable
+		if(!mTrustListImportInProgress) {
+			if(mFullScoreComputationNeeded) {
+				// TODO: Optimization: This uses very much CPU and memory. Write a partial computation function...
+				// TODO: Optimization: While we do not have a partial computation function, we could at least optimize computeAllScores to NOT
+				// keep all objects in memory etc.
+				computeAllScoresWithoutCommit();
+				assert(computeAllScoresWithoutCommit()); // computeAllScoresWithoutCommit is stable
+			} else {
+				assert(computeAllScoresWithoutCommit()); // This function worked correctly.
+			}
+		} else { // a trust list import is in progress
+			// We not do the following here because it would cause too much CPU usage during debugging: Trust lists are large and therefore 
+			// updateScoresWithoutCommit is called often during import of a single trust list
+			// assert(computeAllScoresWithoutCommit());
 		}
 	}
 
@@ -2011,7 +2051,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					for(String seedURI : SEED_IDENTITIES) {
 						try {
-							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "I trust the Freenet developers.");
+							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "Automatically assigned trust to a seed identity.");
 						} catch(UnknownIdentityException e) {
 							Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e);
 						}
@@ -2063,6 +2103,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				
 					identity.setContexts(old.getContexts());
 					identity.setProperties(old.getProperties());
+					
+					identity.storeWithoutCommit();
+					initTrustTreeWithoutCommit(identity);
 	
 					// Update all received trusts
 					for(Trust oldReceivedTrust : getReceivedTrusts(old)) {
@@ -2081,9 +2124,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						newScore.initializeTransient(this);
 						newScore.storeWithoutCommit();
 					}
-		
-					identity.storeWithoutCommit();
-					initTrustTreeWithoutCommit(identity);
 					
 					beginTrustListImport();
 					
@@ -2139,25 +2179,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public synchronized void setTrust(String ownTrusterID, String trusteeID, byte value, String comment)
 		throws UnknownIdentityException, NumberFormatException, InvalidParameterException {
 		
-		OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
+		final OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
 		Identity trustee = getIdentityByID(trusteeID);
 		
 		setTrust(truster, trustee, value, comment);
 	}
 	
 	public synchronized void removeTrust(String ownTrusterID, String trusteeID) throws UnknownIdentityException {
-		OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
-		Identity trustee = getIdentityByID(trusteeID);
+		final OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
+		final Identity trustee = getIdentityByID(trusteeID);
 
-		synchronized(mDB.lock()) {
-			try  {
-				removeTrustWithoutCommit(truster, trustee);
-				Persistent.checkedCommit(mDB, this);
-			}
-			catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
-			}
-		}
+		removeTrust(truster, trustee);
 	}
 	
 	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {
@@ -2223,7 +2255,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		return mDB;
 	}
 	
-	public Config getConfig() {
+	public Configuration getConfig() {
 		return mConfig;
 	}
 	

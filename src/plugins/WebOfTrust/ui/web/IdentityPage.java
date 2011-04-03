@@ -24,8 +24,14 @@ import java.util.Iterator;
 import java.util.TimeZone;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Trust;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+
+import com.db4o.ObjectSet;
+
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.support.CurrentTimeUTC;
@@ -64,7 +70,12 @@ public class IdentityPage extends WebPageImpl {
 	 * @see WebPage#make()
 	 */
 	public void make() {
-		synchronized(wot) {
+		synchronized(wot) {			
+			makeURIBox();
+			makeServicesBox();
+			makeStatisticsBox();
+			makeAddTrustBox();
+			
 			HTMLNode trusteeTrustsNode = addContentBox(l10n().getString("IdentityPage.TrusteeTrustsBox.Header", "nickname", identity.getNickname()));
 			HTMLNode trusteesTable = trusteeTrustsNode.addChild("table");
 			HTMLNode trusteesTableHeader = trusteesTable.addChild("tr");
@@ -80,10 +91,6 @@ public class IdentityPage extends WebPageImpl {
 			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Identity"));
 			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Value"));
 			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Comment"));
-			
-			makeURIBox();
-			makeServicesBox();
-			makeStatisticsBox();
 			
 			for (Trust trust : wot.getGivenTrusts(identity)) {
 				HTMLNode trustRow = trusteesTable.addChild("tr");
@@ -105,6 +112,75 @@ public class IdentityPage extends WebPageImpl {
 		}
 	}
 	
+	/**
+	 * @author ShadowW4lk3r (ShadowW4lk3r@ye~rQ4m~pu2Iu3O2TH-GOLBbSeKoQ~QR~vC6tJbKmDg.freetalkrc2) - Most of the code
+	 * @author xor (xor@freenetproject.org)	- Minor improvements only
+	 */
+	private void makeAddTrustBox() {
+		//Change trust level if needed
+		if(request.isPartSet("SetTrust")) {
+			String trusterID = request.getPartAsStringFailsafe("OwnerID", 128);
+			String trusteeID = request.isPartSet("Trustee") ? request.getPartAsStringFailsafe("Trustee", 128) : null;
+			String value = request.getPartAsStringFailsafe("Value", 4).trim();
+			// TODO: getPartAsString() will return an empty String if the length is exceeded, it should rather return a too long string so that setTrust throws
+			// an exception. It's not a severe problem though since we limit the length of the text input field anyway.
+			String comment = request.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);
+
+			try {
+				if(value.equals(""))
+					wot.removeTrust(trusterID, trusteeID);
+				else
+					wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
+			} catch(NumberFormatException e) {
+				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), l10n().getString("Trust.InvalidValue"));
+			} catch(InvalidParameterException e) {
+				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e.getMessage());
+			} catch(Exception e) {
+				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e);
+			}
+		}
+
+		HTMLNode boxContent = addContentBox(l10n().getString("IdentityPage.ChangeTrustBox.Header", "nickname", identity.getNickname()));
+
+		ObjectSet<OwnIdentity> ownId = wot.getAllOwnIdentities();
+
+		while(ownId.hasNext()) {
+			OwnIdentity treeOwner = ownId.next();
+			//Create a block
+			// HTMLNode boxContent = addContentBox(l10n().getString("IdentityPage.ChangeTrustBox.Header", "nickname", identity.getNickname()));
+
+			String trustValue = "";
+			String trustComment = "";
+
+			try
+			{
+				Trust trust = wot.getTrust(treeOwner, identity);
+				trustValue = String.valueOf(trust.getValue());
+				trustComment = trust.getComment();
+			}
+			catch(NotTrustedException e){
+			}
+			//Adds a caption
+			boxContent.addChild("div").addChild("strong", l10n().getString("IdentityPage.ChangeTrustBox.FromOwnIdentity","nickname",treeOwner.getNickname()));
+			HTMLNode trustForm = pr.addFormChild(boxContent, uri+"?id="+identity.getID(), "SetTrust");
+			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "SetTrust" });
+			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID() });
+			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Trustee", identity.getID() });
+
+			// Trust value input field
+			trustForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ");
+			trustForm.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" },
+					new String[] { "text", "Value", "4", "4", trustValue });
+
+			// Trust comment input field
+			trustForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Comment") + ": ");
+			trustForm.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" },
+					new String[] { "text", "Comment", "50", Integer.toString(Trust.MAX_TRUST_COMMENT_LENGTH), trustComment });
+
+			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SetTrust", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton") });
+		}
+	}
+        
 	private void makeURIBox() {
         HTMLNode boxContent = addContentBox(l10n().getString("IdentityPage.IdentityUriBox.Header", "nickname", identity.getNickname()));
 		boxContent.addChild("p", l10n().getString("IdentityPage.IdentityUriBox.Text"));

@@ -12,14 +12,10 @@ import javax.xml.transform.TransformerException;
 
 import org.xml.sax.SAXException;
 
-import freenet.keys.FreenetURI;
-
-import plugins.WebOfTrust.Identity;
-import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
+import freenet.keys.FreenetURI;
 
 /**
  * A unit test for class {@link XMLTransformer}.
@@ -49,7 +45,7 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 		// TODO: Test that we do not export the trust list if trust list export is disabled.
 	}
 
-	public void testImportIdentity() {
+	public void testImportIdentity() throws Exception {
 		//fail("Not yet implemented"); // TODO
 	}
 
@@ -57,8 +53,8 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		mTransformer.exportIntroduction(mOwnIdentity, os);
 		
-		String expectedXML = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>"
-							+ "<" + WebOfTrust.WOT_NAME + ">" 
+		String expectedXML = "<?xml version=\"1.1\" encoding=\"UTF-8\" standalone=\"no\"?>"
+							+ "<" + WebOfTrust.WOT_NAME + " Version=\"" + Version.getRealVersion() + "\">" 
 							+ "<IdentityIntroduction Version=\"1\">"
 							+ "<Identity URI=\"USK@lY~N0Nk5NQpt6brGgtckFHPY11GzgkDn4VDszL6fwPg,GDQlSg9ncBBF8XIS-cXYb-LM9JxE3OiSydyOaZgCS4k,AQACAAE/" + WebOfTrust.WOT_NAME + "/0\"/>"
 							+ "</IdentityIntroduction>"
@@ -68,8 +64,8 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 	}
 
 	public void testImportIntroduction() throws SAXException, IOException, InvalidParameterException {
-		String introductionXML = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>"
-			+ "<" + WebOfTrust.WOT_NAME + ">" 
+		String introductionXML = "<?xml version=\"1.1\" encoding=\"UTF-8\" standalone=\"no\"?>"
+			+ "<" + WebOfTrust.WOT_NAME + " Version=\"" + Version.getRealVersion() + "\">" 
 			+ "<IdentityIntroduction Version=\"1\">"
 			+ "<Identity URI=\"USK@HH~V2XmCbZp~738qtE67jUg1M5L5flVvQfc2bYpE1o4,c8H39jkp08cao-EJVTV~rISHlcMnlTlpNFICzL4gmZ4,AQACAAE/" + WebOfTrust.WOT_NAME + "/0\"/>"
 			+ "</IdentityIntroduction>"

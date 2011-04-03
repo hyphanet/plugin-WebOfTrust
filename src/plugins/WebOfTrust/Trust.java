@@ -7,6 +7,7 @@ import java.util.Date;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
 /**
@@ -17,7 +18,7 @@ import freenet.support.StringValidityChecker;
  */
 public final class Trust extends Persistent implements Cloneable {
 	
-	public static final int MAX_TRUST_COMMENT_LENGTH = 256;
+	public static transient final int MAX_TRUST_COMMENT_LENGTH = 256;
 
 	/** The identity which gives the trust. */
 	@IndexedField
@@ -85,13 +86,15 @@ public final class Trust extends Persistent implements Cloneable {
 		mComment = "";	// Simplify setComment
 		setComment(comment);
 		
-		// mLastChangedDate = CurrentTimeUTC.get();	// Done by setValue / setComment.
+		mLastChangedDate = mCreationDate;
 		mTrusterTrustListEdition = truster.getEdition(); 
 	}
 
 	@Override
 	public synchronized String toString() {
-		return getTruster().getNickname() + " trusts " + getTrustee().getNickname() + " with value " + getValue() + " (comment: " + getComment() + ")";
+		return "[Trust " + super.toString() + ": truster: " + getTruster().getNickname() + "@" + getTruster().getID() +
+			"; trustee: " + getTrustee().getNickname() + "@" + getTrustee().getID()  +
+		 	"; value:" + getValue() + "; comment: \"" + getComment() + "\"]";
 	}
 
 	/** @return The Identity that gives this trust. */
@@ -271,7 +274,8 @@ public final class Trust extends Persistent implements Cloneable {
 		if(mLastChangedDate.after(CurrentTimeUTC.get()))
 			throw new IllegalStateException("mLastChangedDate is in the future");
 		
-		if(mTrusterTrustListEdition > mTruster.getEdition())
-			throw new IllegalStateException("mTrusterTrustListEdition is too high");
+		if(mTrusterTrustListEdition != getTruster().getEdition() && getTruster().getCurrentEditionFetchState() == Identity.FetchState.Fetched
+				&& !(getTruster() instanceof OwnIdentity)) // We do not update mTrusterTrustListEdition for OwnIdentities, they do not need it.
+			throw new IllegalStateException("mTrusterTrustListEdition is invalid: " + mTrusterTrustListEdition);
 	}
 }

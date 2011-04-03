@@ -5,7 +5,9 @@ package plugins.WebOfTrust.introduction;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.TimeZone;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
@@ -14,20 +16,26 @@ import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.Logger;
+import freenet.support.TimeUtil;
 
 /**
  * An introduction puzzle is a puzzle (for example a CAPTCHA) which can be solved by a new identity to get onto the trust list
  * of already existing identities. This is the only way to get onto the web of trust if you do not know someone who will add you manually.
  */
-public class IntroductionPuzzle extends Persistent {
+public class IntroductionPuzzle extends Persistent implements Cloneable {
 	
 	public static enum PuzzleType { Captcha };
 	
-	public static final String INTRODUCTION_CONTEXT = "Introduction";
-	public static final int MINIMAL_SOLUTION_LENGTH = 5;
-	public static final int MAXIMAL_SOLUTION_LENGTH = 10;
+	public static transient final String INTRODUCTION_CONTEXT = "Introduction";
+	public static transient final int MINIMAL_SOLUTION_LENGTH = 5;
+	public static transient final int MAXIMAL_SOLUTION_LENGTH = 10;
 	
-	protected static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	protected static transient final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	
+	{
+		mDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+	}
 	
 	/* Included in XML: */
 	
@@ -55,8 +63,15 @@ public class IntroductionPuzzle extends Persistent {
 	@IndexedField
 	private final Identity mInserter;
 	
+	/**
+	 * The Unix-date of the day when this puzzle was inserted.
+	 * For example if a puzzle is generated on "2011-02-28 14:28:16.123" this will be the unix time "2011-02-28 00:00:00.000"
+	 * We store as long/unix-time instead of Date because we need database queries on the exact day to work and they do not work very
+	 * well with Date objects because their internal structure is messy (they store as localtime even when we tell them to use UTC).
+	 * TODO: Get rid of unix-time before 2038 :|
+	 */
 	@IndexedField
-	private final Date mDateOfInsertion;
+	private final long mDayOfInsertion;
 	
 	private final int mIndex;
 
@@ -92,7 +107,6 @@ public class IntroductionPuzzle extends Persistent {
 	 * @param newType
 	 * @param newData
 	 */
-	@SuppressWarnings("deprecation")
 	public IntroductionPuzzle(Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData,
 			Date myDateOfInsertion, Date myExpirationDate, int myIndex) {
 		
@@ -140,7 +154,7 @@ public class IntroductionPuzzle extends Persistent {
 		mInserter = newInserter;
 		mType = newType;
 		mMimeType = newMimeType;
-		mDateOfInsertion = new Date(myDateOfInsertion.getYear(), myDateOfInsertion.getMonth(), myDateOfInsertion.getDate());
+		mDayOfInsertion = TimeUtil.setTimeToZero(myDateOfInsertion).getTime();
 		mValidUntilDate = myExpirationDate;
 		mIndex = myIndex;
 		mData = newData;
@@ -198,7 +212,9 @@ public class IntroductionPuzzle extends Persistent {
 	 * was fetched or inserted successfully.
 	 */
 	public static String getIDFromSolutionURI(FreenetURI uri) {
-		return uri.getDocName().split("[|]")[2];
+		return uri.
+				getDocName().
+				split("[|]")[2];
 	}
 	
 	public String getID() {
@@ -229,7 +245,7 @@ public class IntroductionPuzzle extends Persistent {
 	
 	public Date getDateOfInsertion() {
 		// checkedActivate(depth) is not needed, Date is a db4o primitive type
-		return mDateOfInsertion;
+		return new Date(mDayOfInsertion);
 	}
 	
 	public Date getValidUntilDate() {
@@ -271,6 +287,10 @@ public class IntroductionPuzzle extends Persistent {
 			throw new IllegalStateException("The puzzle is not solved");
 		
 		checkedActivate(2);
+		
+		if(mSolver == null)
+			return null;
+		
 		mSolver.initializeTransient(mWebOfTrust);
 		return mSolver;
 	}
@@ -301,6 +321,8 @@ public class IntroductionPuzzle extends Persistent {
 	}
 	
 	public synchronized void setInserted() {
+		Logger.debug(this, "Marking puzzle as inserted: " + this);
+		
 		if(wasInserted())
 			throw new RuntimeException("The puzzle was already inserted.");
 		
@@ -359,13 +381,13 @@ public class IntroductionPuzzle extends Persistent {
 		if(mValidUntilDate.before(mCreationDate))
 			throw new IllegalStateException("mValidUntilDate is before mCreationDate");
 			
-		if(mDateOfInsertion == null)
-			throw new NullPointerException("mDateOfInsertion==null");
+		if(mDayOfInsertion < 0)
+			throw new NullPointerException("mDayOfInsertion==" + mDayOfInsertion);
 		
-		if(mDateOfInsertion.after(mCreationDate))
+		if(new Date(mDayOfInsertion).after(mCreationDate))
 			throw new IllegalStateException("mDateOfInsertion is in after mCreationDate");
 		
-		if(mDateOfInsertion.after(CurrentTimeUTC.get()))
+		if(new Date(mDayOfInsertion).after(CurrentTimeUTC.get()))
 			throw new IllegalStateException("mDateOfInsertion is in the future");
 					
 		if(mIndex < 0)
@@ -383,4 +405,52 @@ public class IntroductionPuzzle extends Persistent {
 		}
 	}
 
+	@Override
+	public String toString() {
+		return "[" + super.toString() + ": mID:" + mID + "; mDayOfInsertion: " + mDayOfInsertion + "; mRequestURI: " + getRequestURI().toString() + "]";
+	}
+	
+	@Override
+	public IntroductionPuzzle clone() {
+		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
+		final IntroductionPuzzle copy = new IntroductionPuzzle(getInserter(), getID(), getType(), getMimeType(), getData(), getDateOfInsertion(), getValidUntilDate(), getIndex());
+		if(wasSolved()) copy.setSolved((OwnIdentity)getSolver(), mSolution);
+		if(wasInserted()) copy.setInserted();
+		copy.initializeTransient(mWebOfTrust);
+		return copy;
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if(o == this)
+			return true;
+		
+		if(!(o instanceof IntroductionPuzzle))
+			throw new IllegalArgumentException();
+		
+		final IntroductionPuzzle other = (IntroductionPuzzle)o;
+		
+		
+		return (
+					getID().equals(other.getID()) &&
+					getType().equals(other.getType()) &&
+					getMimeType().equals(other.getMimeType()) &&
+					getValidUntilDate().equals(other.getValidUntilDate()) &&
+					Arrays.equals(getData(), other.getData()) &&
+					getInserter().equals(other.getInserter()) &&
+					getDateOfInsertion().equals(other.getDateOfInsertion()) &&
+					getIndex() == other.getIndex() &&
+					wasSolved() == other.wasSolved() &&
+					(
+							!wasSolved() || 
+							(getSolver() == null || getSolver().equals(other.getSolver())) && getSolutionURI().equals(other.getSolutionURI())
+					) &&
+					wasInserted() == other.wasInserted()
+				);
+	}
+	
+	@Override
+	public int hashCode() {
+		return mID.hashCode();
+	}
 }

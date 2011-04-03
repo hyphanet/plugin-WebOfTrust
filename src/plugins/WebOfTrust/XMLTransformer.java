@@ -10,9 +10,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Map.Entry;
+import java.util.TimeZone;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -94,7 +95,7 @@ public final class XMLTransformer {
 	/** Used for storing the XML DOM of encoded identities as physical XML text */
 	private final Transformer mSerializer;
 	
-	private final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	private final SimpleDateFormat mDateFormat;
 	
 	/**
 	 * Initializes the XML creator & parser and caches those objects in the new IdentityXML object so that they do not have to be initialized
@@ -114,8 +115,11 @@ public final class XMLTransformer {
 
 			mSerializer = TransformerFactory.newInstance().newTransformer();
 			mSerializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-			mSerializer.setOutputProperty(OutputKeys.INDENT, "no");
+			mSerializer.setOutputProperty(OutputKeys.INDENT, "yes"); // TODO: Disable as soon as bug 0004850 is fixed.
 			mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
+			
+			mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			mDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 		}
 		catch(Exception e) {
 			throw new RuntimeException(e);
@@ -128,7 +132,13 @@ public final class XMLTransformer {
 			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
 		}
 		
+		// 1.0 does not support all Unicode characters which the String class supports. To prevent us from having to filter all Strings, we use 1.1
+		xmlDoc.setXmlVersion("1.1");
+		
 		Element rootElement = xmlDoc.getDocumentElement();
+		
+		// We include the WoT version to have an easy way of handling bogus XML which might be created by bugged versions.
+		rootElement.setAttribute("Version", Long.toString(Version.getRealVersion()));
 		
 		/* Create the identity Element */
 		
@@ -204,7 +214,7 @@ public final class XMLTransformer {
 		String identityName = null;
 		Boolean identityPublishesTrustList = null;
 		ArrayList<String> identityContexts = null;
-		Hashtable<String, String> identityProperties = null;
+		HashMap<String, String> identityProperties = null;
 		ArrayList<TrustListEntry> identityTrustList = null;
 		
 		public ParsedIdentityXML() {
@@ -212,7 +222,11 @@ public final class XMLTransformer {
 		}
 	}
 	
+	/**
+	 * @param xmlInputStream An InputStream which must not return more than {@link MAX_IDENTITY_XML_BYTE_SIZE} bytes.
+	 */
 	private ParsedIdentityXML parseIdentityXML(InputStream xmlInputStream) throws IOException {
+		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(xmlInputStream.available() > MAX_IDENTITY_XML_BYTE_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
 		
@@ -240,7 +254,7 @@ public final class XMLTransformer {
 			}
 			
 			final NodeList propertyList = identityElement.getElementsByTagName("Property");
-			result.identityProperties = new Hashtable<String, String>(propertyList.getLength() * 2);
+			result.identityProperties = new HashMap<String, String>(propertyList.getLength() * 2);
 			for(int i = 0; i < propertyList.getLength(); ++i) {
 				Element propertyElement = (Element)propertyList.item(i);
 				result.identityProperties.put(propertyElement.getAttribute("Name"), propertyElement.getAttribute("Value"));
@@ -338,16 +352,22 @@ public final class XMLTransformer {
 						boolean positiveScore = false;
 						boolean hasCapacity = false;
 						
-						try {
-							positiveScore = mWoT.getBestScore(identity) > 0;
-							hasCapacity = mWoT.getBestCapacity(identity) > 0;
+						// TODO: getBestScore/getBestCapacity should always yield a positive result because we store a positive score object for an OwnIdentity
+						// upon creation. The only case where it could not exist might be restoreIdentity() ... check that. If it is created there as well,
+						// remove the additional check here.
+						if(identity instanceof OwnIdentity) {
+							// Importing of OwnIdentities is always allowed
+							positiveScore = true;
+							hasCapacity = true;
+						} else {
+							try {
+								positiveScore = mWoT.getBestScore(identity) > 0;
+								hasCapacity = mWoT.getBestCapacity(identity) > 0;
+							}
+							catch(NotInTrustTreeException e) { }
 						}
-						catch(NotInTrustTreeException e) { }
-
-						// Importing own identities is always allowed
-						if(!positiveScore)
-							positiveScore = identity instanceof OwnIdentity;
-
+						
+						
 						HashSet<String>	identitiesWithUpdatedEditionHint = null;
 
 						if(positiveScore) {
@@ -381,7 +401,7 @@ public final class XMLTransformer {
 								mWoT.setTrustWithoutCommit(identity, trustee, trustValue, trustComment);
 						}
 
-						for(Trust trust : mWoT.getGivenTrustsOlderThan(identity, identityURI.getEdition())) {
+						for(Trust trust : mWoT.getGivenTrustsOfDifferentEdition(identity, identityURI.getEdition())) {
 							mWoT.removeTrustWithoutCommit(trust);
 						}
 
@@ -402,7 +422,7 @@ public final class XMLTransformer {
 					identity.onFetched(); // Marks the identity as parsed successfully
 					identity.storeAndCommit();
 				}
-				catch(Exception e) {
+					catch(Exception e) { 
 					mWoT.abortTrustListImport(e); // Does the rollback
 					throw e;
 				} // try
@@ -420,11 +440,11 @@ public final class XMLTransformer {
 						Logger.normal(this, "Marking edition as parsing failed: " + identityURI);
 						identity.setEdition(newEdition);
 						identity.onParsingFailed();
+						identity.storeAndCommit();
 					} else {
 						Logger.normal(this, "Not marking edition as parsing failed, we have already fetched a new one (" + 
 								identity.getEdition() + "):" + identityURI);
 					}
-					identity.storeAndCommit();
 				}
 				catch(UnknownIdentityException uie) {
 					Logger.error(this, "Fetched an unknown identity: " + identityURI);
@@ -440,15 +460,22 @@ public final class XMLTransformer {
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
 			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
 		}
+		
+		// 1.0 does not support all Unicode characters which the String class supports. To prevent us from having to filter all Strings, we use 1.1
+		xmlDoc.setXmlVersion("1.1");
+		
 		Element rootElement = xmlDoc.getDocumentElement();
+
+		// We include the WoT version to have an easy way of handling bogus XML which might be created by bugged versions.
+		rootElement.setAttribute("Version", Long.toString(Version.getRealVersion()));
 
 		Element introElement = xmlDoc.createElement("IdentityIntroduction");
 		introElement.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
 
 		Element identityElement = xmlDoc.createElement("Identity");
-		synchronized(mWoT) {
+		// synchronized(mWoT) { // Not necessary according to JavaDoc of identity.getRequestURI()
 		identityElement.setAttribute("URI", identity.getRequestURI().toString());
-		}
+		//}
 		introElement.appendChild(identityElement);
 	
 		rootElement.appendChild(introElement);
@@ -464,6 +491,7 @@ public final class XMLTransformer {
 	 * Creates an identity from an identity introduction, stores it in the database and returns the new identity.
 	 * If the identity already exists, the existing identity is returned.
 	 * 
+	 * @param xmlInputStream An InputStream which must not return more than {@link MAX_INTRODUCTION_BYTE_SIZE} bytes.
 	 * @throws InvalidParameterException If the XML format is unknown or if the puzzle owner does not allow introduction anymore.
 	 * @throws IOException 
 	 * @throws SAXException 
@@ -471,6 +499,7 @@ public final class XMLTransformer {
 	public Identity importIntroduction(OwnIdentity puzzleOwner, InputStream xmlInputStream)
 		throws InvalidParameterException, SAXException, IOException {
 		
+		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(xmlInputStream.available() > MAX_INTRODUCTION_BYTE_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
 		
@@ -549,7 +578,14 @@ public final class XMLTransformer {
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
 			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
 		}
+		
+		// 1.0 does not support all Unicode characters which the String class supports. To prevent us from having to filter all Strings, we use 1.1
+		xmlDoc.setXmlVersion("1.1");
+		
 		Element rootElement = xmlDoc.getDocumentElement();
+
+		// We include the WoT version to have an easy way of handling bogus XML which might be created by bugged versions.
+		rootElement.setAttribute("Version", Long.toString(Version.getRealVersion()));
 
 		Element puzzleElement = xmlDoc.createElement("IntroductionPuzzle");
 		puzzleElement.setAttribute("Version", Integer.toString(INTRODUCTION_XML_FORMAT_VERSION)); /* Version of the XML format */
@@ -578,9 +614,13 @@ public final class XMLTransformer {
 		}
 	}
 
+	/**
+	 * @param xmlInputStream An InputStream which must not return more than {@link MAX_INTRODUCTIONPUZZLE_BYTE_SIZE} bytes.
+	 */
 	public IntroductionPuzzle importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
 		throws SAXException, IOException, InvalidParameterException, UnknownIdentityException, IllegalBase64Exception, ParseException {
 		
+		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(xmlInputStream.available() > MAX_INTRODUCTIONPUZZLE_BYTE_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
 		

@@ -77,7 +77,13 @@ public final class IntroductionServer extends TransferThread {
 	
 	/* Private objects */
 	
-	private static final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] { new CaptchaFactory1() };
+	/**
+	 * The {@link IntroductionPuzzleFactory} objects which shall be used to generate puzzles.
+	 */
+	private static final IntroductionPuzzleFactory[] mPuzzleFactories = new IntroductionPuzzleFactory[] {
+		new CaptchaFactory1()
+		// ATTENTION: When adding new ones please also add them to IntroductionPuzzleStoreTest
+	};
 	
 	 
 
@@ -96,8 +102,13 @@ public final class IntroductionServer extends TransferThread {
 		try {
 			return Math.max(Integer.parseInt(i.getProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY)), 0);
 		}
-		catch(InvalidParameterException e) {
-			return 0;
+		catch(InvalidParameterException e) { // Property does not exist
+			// TODO: This is a workaround for bug 4552. Remove it and fix the underlying issue.
+			// The workaround is valid: getIdentityPuzzleCount is usually called by the IntroductionClient when it tries to download puzzles from an identity
+			// which has the introduction context. Having the introduction context means that this identity publishes puzzles so the absence of the puzzle
+			// count problem is a bug - probably a db4o one.
+			Logger.error(IntroductionServer.class, "getIdentitityPuzzleCount called even though identity has no puzzle count property, please check the XML: " + i.getRequestURI());
+			return IntroductionServer.DEFAULT_PUZZLE_COUNT;
 		}
 	}
 	
@@ -137,6 +148,7 @@ public final class IntroductionServer extends TransferThread {
 		 * puzzles which still exist.
 		 * I think it makes sense to restart them because there are not many puzzles and therefore not many requests. */
 		abortFetches();
+		abortInserts();
 		
 		synchronized(mWoT) {
 			/* TODO: We might want to not lock all the time during captcha creation... figure out how long this takes ... */
@@ -208,6 +220,9 @@ public final class IntroductionServer extends TransferThread {
 	
 	private void insertPuzzles(final OwnIdentity identity) throws IOException, InsertException {
 		synchronized(mPuzzleStore) {
+			// TODO: This query will also return puzzles which are currently being inserted! Mark them as being inserted somehow
+			// Either have a hashtable here or wire it in to class IntroductionPuzzle.
+			
 			final ObjectSet<OwnIntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedOwnPuzzlesByInserter(identity); 
 			Logger.normal(this, "Trying to insert " + puzzles.size() + " puzzles from " + identity.getNickname());
 			for(final OwnIntroductionPuzzle p : puzzles) {
@@ -248,7 +263,7 @@ public final class IntroductionServer extends TransferThread {
 			addInsert(pu);
 			tempB = null;
 
-			Logger.debug(this, "Started insert of puzzle from " + puzzle.getInserter().getNickname());
+			Logger.debug(this, "Started insert of puzzle:" + puzzle);
 		}
 		finally {
 			Closer.close(os);
@@ -273,7 +288,7 @@ public final class IntroductionServer extends TransferThread {
 			}
 		}
 		catch(Exception e) {
-			Logger.error(this, "Error", e);
+			Logger.error(this, "Marking puzzle as inserted failed", e);
 		}
 		finally {
 			removeInsert(state);
@@ -289,6 +304,24 @@ public final class IntroductionServer extends TransferThread {
 		try {
 			if(e.getMode() == InsertException.CANCELLED)
 				Logger.debug(this, "Insert cancelled: " + state.getURI());
+			else if(e.getMode() == InsertException.COLLISION) {
+				// TODO: Investigate why this happens.
+				Logger.warning(this, "Insert of puzzle collided, marking as inserted: " + state.getURI(), e);
+				
+				// We mark it as inserted to prevent continuous insert attempts
+				try {
+					synchronized(mWoT) {
+					synchronized(mPuzzleStore) {
+						final OwnIntroductionPuzzle puzzle = mPuzzleStore.getOwnPuzzleByRequestURI(state.getURI()); /* Be careful: This locks the WoT! */
+						puzzle.setInserted();
+						mPuzzleStore.storeAndCommit(puzzle);
+					}
+					}
+				}
+				catch(Exception error) {
+					Logger.error(this, "Marking puzzle as inserted failed", error);
+				}
+			}
 			else
 				Logger.error(this, "Insert of puzzle failed: " + state.getURI(), e);
 		}

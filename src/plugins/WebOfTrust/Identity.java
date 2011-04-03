@@ -7,7 +7,7 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -20,6 +20,7 @@ import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
+import freenet.support.codeshortification.IfNull;
 
 /**
  * An identity as handled by the WoT (a USK). 
@@ -31,11 +32,11 @@ import freenet.support.StringValidityChecker;
  */
 public class Identity extends Persistent implements Cloneable {
 	
-	public static final int MAX_CONTEXT_NAME_LENGTH = 32;
-	public static final int MAX_CONTEXT_AMOUNT = 32;
-	public static final int MAX_PROPERTY_NAME_LENGTH = 256;
-	public static final int MAX_PROPERTY_VALUE_LENGTH = 10 * 1024;
-	public static final int MAX_PROPERTY_AMOUNT = 64;
+	public static transient final int MAX_CONTEXT_NAME_LENGTH = 32;
+	public static transient final int MAX_CONTEXT_AMOUNT = 32;
+	public static transient final int MAX_PROPERTY_NAME_LENGTH = 256;
+	public static transient final int MAX_PROPERTY_VALUE_LENGTH = 10 * 1024;
+	public static transient final int MAX_PROPERTY_AMOUNT = 64;
 
 	/** A unique identifier used to query this Identity from the database. In fact, it is simply a String representing its routing key. */
 	@IndexedField
@@ -76,7 +77,7 @@ public class Identity extends Persistent implements Cloneable {
 	protected ArrayList<String> mContexts;	
 
 	/** A list of this Identity's custom properties */
-	protected Hashtable<String, String> mProperties;
+	protected HashMap<String, String> mProperties;
 	
 	
 	/**
@@ -103,7 +104,7 @@ public class Identity extends Persistent implements Cloneable {
 		mCurrentEditionFetchState = FetchState.NotFetched;
 		
 		mLastFetchedDate = new Date(0);
-		mLastChangedDate = new Date(0);
+		mLastChangedDate = mCreationDate;
 		
 		if(newNickname == null) {
 			mNickname = null;
@@ -114,7 +115,7 @@ public class Identity extends Persistent implements Cloneable {
 		
 		setPublishTrustList(doesPublishTrustList);
 		mContexts = new ArrayList<String>(4); /* Currently we have: Introduction, Freetalk */
-		mProperties = new Hashtable<String, String>();
+		mProperties = new HashMap<String, String>();
 		
 		Logger.debug(this, "New identity: " + getNickname() + ", URI: " + newRequestURI);
 	}	
@@ -167,6 +168,7 @@ public class Identity extends Persistent implements Cloneable {
 
 	/**
 	 * Get the edition number of the request URI of this identity.
+	 * Safe to be called without any additional synchronization.
 	 */
 	public final long getEdition() {
 		return getRequestURI().getEdition();
@@ -307,12 +309,13 @@ public class Identity extends Persistent implements Cloneable {
 	/* IMPORTANT: This code is duplicated in plugins.Freetalk.WoT.WoTIdentity.validateNickname().
 	 * Please also modify it there if you modify it here */
 	public static final boolean isNicknameValid(String newNickname) {
-		return newNickname.length() > 0 && newNickname.length() <= 30
+		return newNickname.length() > 0 && newNickname.length() <= 30 
 			&& StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
 			&& StringValidityChecker.containsNoInvalidCharacters(newNickname)
 			&& StringValidityChecker.containsNoLinebreaks(newNickname)
 			&& StringValidityChecker.containsNoControlCharacters(newNickname)
-			&& StringValidityChecker.containsNoInvalidFormatting(newNickname);
+			&& StringValidityChecker.containsNoInvalidFormatting(newNickname)
+			&& !newNickname.contains("@"); // Must not be allowed since we use it to generate "identity@public-key-hash" unique nicknames;
 	}
 
 	/**
@@ -392,7 +395,7 @@ public class Identity extends Persistent implements Cloneable {
 	 */
 	@SuppressWarnings("unchecked")
 	public final ArrayList<String> getContexts() {
-		/* TODO: If this is used often - which it probably is, we might verify that no code corrupts the Hashtable and return the original one
+		/* TODO: If this is used often - which it probably is, we might verify that no code corrupts the HashMap and return the original one
 		 * instead of a copy */
 		checkedActivate(3);
 		return (ArrayList<String>)mContexts.clone();
@@ -480,12 +483,12 @@ public class Identity extends Persistent implements Cloneable {
 	
 	@SuppressWarnings("unchecked")
 	private final void activateProperties() {
-		// TODO: As soon as the db4o bug with hashtables is fixed, remove this workaround function & replace with plain checkedActivate(4)
+		// TODO: As soon as the db4o bug with hashmaps is fixed, remove this workaround function & replace with plain checkedActivate(4)
 		if(mProperties != null) {
 			if(mDB.isStored(mProperties)) {
 				Query q = mDB.query();
 				q.constrain(mProperties).identity();
-				mProperties = (Hashtable<String,String>)q.execute().next();
+				mProperties = (HashMap<String,String>)q.execute().next();
 			}
 		} else 
 			checkedActivate(4);
@@ -513,13 +516,13 @@ public class Identity extends Persistent implements Cloneable {
 	/**
 	 * Gets all custom properties from this Identity.
 	 * 
-	 * @return A copy of the Hashtable<String, String> referencing all this Identity's custom properties.
+	 * @return A copy of the HashMap<String, String> referencing all this Identity's custom properties.
 	 */
 	@SuppressWarnings("unchecked")
-	public final Hashtable<String, String> getProperties() {
+	public final HashMap<String, String> getProperties() {
 		activateProperties();
-		/* TODO: If this is used often, we might verify that no code corrupts the Hashtable and return the original one instead of a copy */
-		return (Hashtable<String, String>)mProperties.clone();
+		/* TODO: If this is used often, we might verify that no code corrupts the HashMap and return the original one instead of a copy */
+		return (HashMap<String, String>)mProperties.clone();
 	}
 	
 	/**
@@ -532,6 +535,10 @@ public class Identity extends Persistent implements Cloneable {
 	 * @throws InvalidParameterException If the key or the value is empty.
 	 */
 	public final void setProperty(String key, String value) throws InvalidParameterException {
+		// Double check in case someone removes the implicit checks...
+		IfNull.thenThrow(key, "Key");
+		IfNull.thenThrow(value, "Value");
+		
 		key = key.trim();
 		
 		final int keyLength = key.length();
@@ -544,7 +551,7 @@ public class Identity extends Persistent implements Cloneable {
 			throw new InvalidParameterException("Property names must not be longer than " + MAX_PROPERTY_NAME_LENGTH + " characters.");
 		}
 		
-		String[] keyTokens = key.split("[.]");
+		String[] keyTokens = key.split("[.]", -1); // The 1-argument-version wont return empty tokens
 		for (String token : keyTokens) {
 			if (token.length() == 0) {
 				throw new InvalidParameterException("Property names which contain periods must have at least one character before and after each period.");
@@ -584,11 +591,12 @@ public class Identity extends Persistent implements Cloneable {
 	 * IMPORTANT: This always marks the identity as updated so it should not be used on OwnIdentities because it would result in
 	 * a re-insert even if nothing was changed.
 	 */
-	protected final void setProperties(Hashtable<String, String> newProperties) {
-		// TODO: Optimization: Figure out whether anything breaks if we do not activate since mProperties is set to a new Hashtable anyway
+	protected final void setProperties(HashMap<String, String> newProperties) {
+		// TODO: Optimization: Figure out whether anything breaks if we do not activate since mProperties is set to a new HashMap anyway
 		activateProperties();
 		
-		mProperties = new Hashtable<String, String>();
+		checkedDelete(mProperties);
+		mProperties = new HashMap<String, String>(newProperties.size() * 2);
 		
 		for (Entry<String, String> property : newProperties.entrySet()) {
 			try {
@@ -683,6 +691,10 @@ public class Identity extends Persistent implements Cloneable {
 		}
 		
 		return true;
+	}
+	
+	public int hashCode() {
+		return mID.hashCode();
 	}
 	
 	/**
