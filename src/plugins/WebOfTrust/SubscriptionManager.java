@@ -5,6 +5,7 @@ package plugins.WebOfTrust;
 
 import java.util.UUID;
 
+import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 
 import com.db4o.ObjectSet;
@@ -28,7 +29,7 @@ import freenet.support.io.NativeThread;
  * The {@link Notification}s are deployed strictly sequential per {@link Subscription}.
  * If a single Notification cannot be deployed, the processing of the Notifications for that Subscription is halted until the failed
  * Notification can be deployed successfully.
- * TODO: Allow out-of-order notifications of the client desires them
+ * TODO: Allow out-of-order notifications if the client desires them
  * TODO: Allow coalescing of notifications: If a single object changes twice, only send one notification 
  * 
  * 
@@ -69,11 +70,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * An ID which associates this subscription with a FCP connection if the type is FCP.
 		 */
+		@IndexedField
 		private final String mFCPKey;
 
 		/**
 		 * Each {@link Notification} is given an index upon creation. The indexes ensure sequential processing.
-		 * If an error happens when trying to process a notification to a client, we might want to rety some time later.
+		 * If an error happens when trying to process a notification to a client, we might want to retry some time later.
 		 * Therefore, the {@link Notification} queue exists per client and not globally - if a single {@link Notification} is created by WoT,
 		 * multiple {@link Notification} objects are stored - one for each Subscription.
 		 */
@@ -109,6 +111,17 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		public final String getID() {
 			return mID;
+		}
+		
+		public final Type getType() {
+			return mType;
+		}
+		
+		public final String getFCPKey() {
+			if(getType() != Type.FCP)
+				throw new UnsupportedOperationException("Type is not FCP:" + getType());
+			
+			return mFCPKey;
 		}
 		
 		/**
@@ -499,9 +512,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		deleteAllSubscriptions();
 	}
-	
+
+	@SuppressWarnings("serial")
 	public static final class SubscriptionExistsAlreadyException extends Exception {
-		private static final long serialVersionUID = 1L;
 		public final Subscription<? extends Notification> existingSubscription;
 		
 		public SubscriptionExistsAlreadyException(Subscription<? extends Notification> existingSubscription) {
@@ -509,10 +522,28 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 	}
 	
+	@SuppressWarnings("serial")
+	public static final class UnknownSubscriptionException extends Exception {
+		
+		public UnknownSubscriptionException(String message) {
+			super(message);
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
 	private synchronized void throwIfSimilarSubscriptionExists(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
-		// FIXME: Implement.
-		final Subscription<? extends Notification> existingSubscription = null;
-		throw new SubscriptionExistsAlreadyException(existingSubscription);
+		switch(subscription.getType()) {
+			case FCP:
+				try {
+					throw new SubscriptionExistsAlreadyException(
+								getSubscription((Class<? extends Subscription<? extends Notification>>)subscription.getClass(), subscription.getFCPKey())
+							);
+				} catch (UnknownSubscriptionException e) {
+					return;
+				}
+			default:
+				throw new UnsupportedOperationException("Unknown type: " + subscription.getType());
+		}
 	}
 	
 	/**
@@ -565,6 +596,19 @@ public final class SubscriptionManager implements PrioRunnable {
 		final Query q = mDB.query();
 		q.constrain(clazz);
 		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
+	}
+	
+	private Subscription<? extends Notification> getSubscription(final Class<? extends Subscription<? extends Notification>> clazz, String fcpKey) throws UnknownSubscriptionException {
+		final Query q = mDB.query();
+		q.constrain(clazz);
+		q.descend("mFCPKey").constrain(fcpKey);		
+		ObjectSet<Subscription<? extends Notification>> result = new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
+		
+		switch(result.size()) {
+			case 1: return result.next();
+			case 0: throw new UnknownSubscriptionException(clazz.getSimpleName().toString() + " with fcpKey: " + fcpKey);
+			default: throw new DuplicateObjectException(clazz.getSimpleName().toString() + " with fcpKey:" + fcpKey);
+		}
 	}
 	
 	private synchronized final void deleteAllSubscriptions() {
