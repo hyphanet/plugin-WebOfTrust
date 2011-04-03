@@ -263,8 +263,7 @@ public final class IntroductionServer extends TransferThread {
 			addInsert(pu);
 			tempB = null;
 
-			Logger.debug(this, "Started insert of puzzle from " + puzzle.getInserter().getNickname()  + " for request URI "
-					+ puzzle.getRequestURI() + " to insert URI " + puzzle.getInsertURI());
+			Logger.debug(this, "Started insert of puzzle:" + puzzle);
 		}
 		finally {
 			Closer.close(os);

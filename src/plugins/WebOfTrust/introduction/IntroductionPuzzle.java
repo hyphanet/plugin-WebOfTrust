@@ -407,7 +407,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 
 	@Override
 	public String toString() {
-		return "[" + super.toString() + ": " + getRequestURI().toString() + "]";
+		return "[" + super.toString() + ": mID:" + mID + "; mDayOfInsertion: " + mDayOfInsertion + "; mRequestURI: " + getRequestURI().toString() + "]";
 	}
 	
 	@Override
