@@ -322,8 +322,10 @@ public final class IntroductionServer extends TransferThread {
 					Logger.error(this, "Marking puzzle as inserted failed", error);
 				}
 			}
-			else
+			else if(e.isFatal())
 				Logger.error(this, "Insert of puzzle failed: " + state.getURI(), e);
+			else
+				Logger.warning(this, "Insert of puzzle failed, isFatal()==false: " + state.getURI(), e);
 		}
 		finally {
 			removeInsert(state);
