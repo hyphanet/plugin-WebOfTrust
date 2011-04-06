@@ -30,7 +30,8 @@ import freenet.support.io.NativeThread;
  * If a single Notification cannot be deployed, the processing of the Notifications for that Subscription is halted until the failed
  * Notification can be deployed successfully.
  * TODO: Allow out-of-order notifications if the client desires them
- * TODO: Allow coalescing of notifications: If a single object changes twice, only send one notification 
+ * TODO: Optimization: Allow coalescing of notifications: If a single object changes twice, only send one notification
+ * TODO: Optimization: Allow the client to specify filters to reduce traffic: - Context of identities, etc. 
  * 
  * 
  * TODO: This should be used for powering the IntroductionClient/IntroductionServer.
@@ -106,6 +107,10 @@ public final class SubscriptionManager implements PrioRunnable {
 				throw new IllegalStateException("mNextNotificationIndex==" + mNextNotificationIndex);
 		}
 		
+		protected final SubscriptionManager getSubscriptionManager() {
+			return mWebOfTrust.getSubscriptionManager();
+		}
+		
 		/**
 		 * @return The UUID of this Subscription. Stored as String for db4o performance, but must be valid in terms of the UUID class.
 		 */
@@ -127,10 +132,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * Returns the next free index for a {@link Notification} in the queue of this Subscription
 		 * and stores this Subscription object without committing the transaction.
+		 * 
+		 * Schedules processing of the Notifications of the SubscriptionManger.
 		 */
 		protected final int takeFreeNotificationIndexWithoutCommit() {
 			final int index = mNextNotificationIndex++;
 			storeWithoutCommit();
+			getSubscriptionManager().scheduleNotificationProcessing();
 			return index;
 		}
 		
@@ -177,9 +185,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * required before it can be kept up to date by event notifications.
 		 * For example, if a client subscribes to the list of identities, it must always receive a full list of
 		 * all existing identities at first. Then it can be kept up to date by sending single new identities
-		 * as they eventually appear.
+		 * as they eventually appear. 
 		 */
-		protected abstract void synchronizeSubscriberByFCP();
+		protected abstract void synchronizeSubscriberByFCP() throws Exception;
 
 		/**
 		 * Called by this Subscription when the type of it is FCP and a {@link Notification} shall be sent via FCP. 
@@ -187,7 +195,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Subscriptions are supposed to be reliable, if transmitting a {@link Notification} fails it shall
 		 * be resent.
 		 */
-		protected abstract void notifySubscriberByFCP(NotificationType notification);
+		protected abstract void notifySubscriberByFCP(NotificationType notification) throws Exception;
 
 		/**
 		 * Sends out the notification queue for this Subscription, in sequence.
@@ -203,11 +211,16 @@ public final class SubscriptionManager implements PrioRunnable {
 				case FCP:
 					for(final Notification notification : manager.getAllNotifications(this)) {
 						try {
-							if(notification instanceof InitialSynchronizationNotification) {
-								synchronizeSubscriberByFCP();
-							} else {
-								notifySubscriberByFCP((NotificationType)notification);
-								notification.deleteWithoutCommit();
+							try {
+								if(notification instanceof InitialSynchronizationNotification) {
+									synchronizeSubscriberByFCP();
+								} else {
+									notifySubscriberByFCP((NotificationType)notification);
+									notification.deleteWithoutCommit();
+								}
+							} catch(Exception e) {
+								// Disconnected etc.
+								throw new RuntimeException(e);
 							}
 							// If processing of a single notification fails, we do not want the previous notifications
 							// to be sent again when the failed notification is retried. Therefore, we commit after
@@ -283,10 +296,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * This notification is issued when the attributes of an identity change.
-	 * It is also used as a base class for {@link NewIdentityNotification} and {@link IdentityDeletedNotification}.
+	 * It is also used as a base class for {@link IdentityListChangedNotification} and {@link IdentityDeletedNotification}.
 	 */
 	protected static class IdentityChangedNotification extends Notification {
-		private final String mIdentityID;
+		final String mIdentityID;
 	
 		protected IdentityChangedNotification(final Subscription<? extends IdentityChangedNotification> mySubscription, Identity myIdentity) {
 			super(mySubscription);
@@ -303,11 +316,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 
 	/**
-	 * This notification is issued when a new identity is discovered.
+	 * This notification is issued when a new identity is discovered or deleted
 	 */
-	protected static final class NewIdentityNotification extends IdentityChangedNotification {		
+	protected static final class IdentityListChangedNotification extends IdentityChangedNotification {		
 		
-		protected NewIdentityNotification(final Subscription<NewIdentityNotification> mySubscription, Identity myIdentity) {
+		protected IdentityListChangedNotification(final Subscription<IdentityListChangedNotification> mySubscription, Identity myIdentity) {
 			super(mySubscription, myIdentity);
 		}
 		
@@ -363,7 +376,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * A subscription to the attributes of all identities.
 	 * If the attributes of an identity change, the subscriber gets notified.
-	 * The subscriber will also get notified if a new identity is created.
+	 * The subscriber will also get notified if a new identity is created or if an identity is deleted.
 	 */
 	public static final class IdentityAttributeListSubscription extends Subscription<IdentityChangedNotification> {
 
@@ -372,15 +385,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
 		@Override
-		protected void synchronizeSubscriberByFCP() {
-			// TODO Auto-generated method stub
-			
+		protected void synchronizeSubscriberByFCP() throws Exception {
+			mWebOfTrust.getFCPInterface().sendAllIdentities(getFCPKey());
 		}
 		
 		@Override
-		protected void notifySubscriberByFCP(IdentityChangedNotification notification) {
-			// TODO Auto-generated method stub
-			
+		protected void notifySubscriberByFCP(IdentityChangedNotification notification) throws Exception {
+			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getFCPKey(), notification.mIdentityID);
 		}
 
 		private void storeNotificationWithoutCommit(Identity identity) {
@@ -395,26 +406,24 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * A subscription to the list of identities.
 	 * If an identity gets added or deleted, the subscriber is notified.
 	 */
-	public static final class IdentityListSubscription extends Subscription<NewIdentityNotification> {
+	public static final class IdentityListSubscription extends Subscription<IdentityListChangedNotification> {
 
 		protected IdentityListSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
 		}
 		
 		@Override
-		protected void synchronizeSubscriberByFCP() {
-			// TODO Auto-generated method stub
-			
+		protected void synchronizeSubscriberByFCP() throws Exception {
+			mWebOfTrust.getFCPInterface().sendAllIdentities(getFCPKey());
 		}
 		
 		@Override
-		protected void notifySubscriberByFCP(NewIdentityNotification notification) {
-			// TODO Auto-generated method stub
-			
+		protected void notifySubscriberByFCP(IdentityListChangedNotification notification) throws Exception {
+			mWebOfTrust.getFCPInterface().sendIdentityListChangedNotification(getFCPKey(), notification.mIdentityID);
 		}
 
 		public void storeNotificationWithoutCommit(Identity identity) {
-			final NewIdentityNotification notification = new NewIdentityNotification(this, identity);
+			final IdentityListChangedNotification notification = new IdentityListChangedNotification(this, identity);
 			notification.initializeTransient(mWebOfTrust);
 			notification.storeWithoutCommit();
 		}
@@ -432,15 +441,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 		
 		@Override
-		protected void synchronizeSubscriberByFCP() {
-			// TODO Auto-generated method stub
-			
+		protected void synchronizeSubscriberByFCP() throws Exception {
+			mWebOfTrust.getFCPInterface().sendAllTrustValues(getFCPKey());
 		}
 
 		@Override
-		protected void notifySubscriberByFCP(TrustChangedNotification notification) {
-			// TODO Auto-generated method stub
-			
+		protected void notifySubscriberByFCP(TrustChangedNotification notification) throws Exception {
+			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getFCPKey(), notification.mTrusterID, notification.mTrusteeID);
 		}
 
 		public void storeNotificationWithoutCommit(Trust trust) {
@@ -462,15 +469,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 		
 		@Override
-		protected void synchronizeSubscriberByFCP() {
-			// TODO Auto-generated method stub
-			
+		protected void synchronizeSubscriberByFCP() throws Exception {
+			mWebOfTrust.getFCPInterface().sendAllScoreValues(getFCPKey());
 		}
 
 		@Override
-		protected void notifySubscriberByFCP(ScoreChangedNotification notification) {
-			// TODO Auto-generated method stub
-			
+		protected void notifySubscriberByFCP(ScoreChangedNotification notification) throws Exception {
+			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getFCPKey(), notification.mTrusterID, notification.mTrusteeID);
 		}
 		
 		public void storeNotificationWithoutCommit(Score score) {
@@ -489,9 +494,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	
 	private final WebOfTrust mWoT;
-	
-	private final FCPInterface mFCPInterface;
-	
+		
 	private final ExtObjectContainer mDB;
 	
 	private final TrivialTicker mTicker;
@@ -499,7 +502,6 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	public SubscriptionManager(WebOfTrust myWoT) {
 		mWoT = myWoT;
-		mFCPInterface = mWoT.getFCPInterface();
 		mDB = mWoT.getDatabase();
 		
 		PluginRespirator respirator = mWoT.getPluginRespirator();
@@ -509,8 +511,6 @@ public final class SubscriptionManager implements PrioRunnable {
 		} else {
 			mTicker = null;
 		}
-		
-		deleteAllSubscriptions();
 	}
 
 	@SuppressWarnings("serial")
@@ -586,6 +586,28 @@ public final class SubscriptionManager implements PrioRunnable {
 		return subscription;
 	}
 	
+	public synchronized void unsubscribe(String subscriptionID) throws UnknownSubscriptionException {
+		final Subscription<? extends Notification> subscription = getSubscription(subscriptionID);
+		synchronized(mDB.lock()) {
+			try {
+				// TODO: Optimization: Remove this: To make debugging easier, we also send an final InitialSubscriptionNotification when disconnecting a client:
+				// Sending an InitialSubscriptionNotification usually sends the full stored dataset to synchronize the client.
+				// The client can use it to check whether the state of WOT which he received through notifications was correct.
+				{
+					final InitialSynchronizationNotification notification = new InitialSynchronizationNotification(subscription);
+					notification.initializeTransient(mWoT);
+					notification.storeWithoutCommit();
+					subscription.sendNotifications(this);
+				}
+
+				subscription.deleteWithoutCommit(this);
+				Persistent.checkedCommit(mDB, this);
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+	}
+	
 	private ObjectSet<Subscription<? extends Notification>> getAllSubscriptions() {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
@@ -596,6 +618,19 @@ public final class SubscriptionManager implements PrioRunnable {
 		final Query q = mDB.query();
 		q.constrain(clazz);
 		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
+	}
+	
+	private Subscription<? extends Notification> getSubscription(final String id) throws UnknownSubscriptionException {
+		final Query q = mDB.query();
+		q.constrain(Subscription.class);
+		q.descend("mID").constrain(id);		
+		ObjectSet<Subscription<? extends Notification>> result = new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
+		
+		switch(result.size()) {
+			case 1: return result.next();
+			case 0: throw new UnknownSubscriptionException(id);
+			default: throw new DuplicateObjectException(id);
+		}
 	}
 	
 	private Subscription<? extends Notification> getSubscription(final Class<? extends Subscription<? extends Notification>> clazz, String fcpKey) throws UnknownSubscriptionException {
@@ -612,6 +647,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	private synchronized final void deleteAllSubscriptions() {
+		Logger.normal(this, "Deleting all subscriptions...");
+		
 		synchronized(mDB.lock()) {
 			try {
 				for(Subscription<? extends Notification> s : getAllSubscriptions()) {
@@ -622,6 +659,8 @@ public final class SubscriptionManager implements PrioRunnable {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
+		
+		Logger.normal(this, "Finished deleting all subscriptions.");
 	}
 	
 	private ObjectSet<? extends Notification> getAllNotifications(final Subscription<? extends Notification> subscription) {
@@ -630,11 +669,6 @@ public final class SubscriptionManager implements PrioRunnable {
 		q.descend("mSubscription").constrain(subscription).identity();
 		q.descend("mIndex").orderAscending();
 		return new Persistent.InitializingObjectSet<Notification>(mWoT, q);
-	}
-	
-
-	public int getPriority() {
-		return NativeThread.LOW_PRIORITY;
 	}
 	
 	protected void storeIdentityChangedNotificationWithoutCommit(final Identity identity) {
@@ -657,21 +691,32 @@ public final class SubscriptionManager implements PrioRunnable {
 		storeIdentityChangedNotificationWithoutCommit(identity);
 	}
 	
-	protected void storeTrustChangedNotificationWithoutCommit(final Trust trust) {
+	protected void storeDeletedIdentityNotificationWithoutCommit(final Identity identity) {
+		@SuppressWarnings("unchecked")
+		final ObjectSet<IdentityListSubscription> subscriptions = (ObjectSet<IdentityListSubscription>)getSubscriptions(IdentityListSubscription.class);
+		
+		for(IdentityListSubscription subscription : subscriptions) {
+			subscription.storeNotificationWithoutCommit(identity);
+		}
+		
+		storeIdentityChangedNotificationWithoutCommit(identity);
+	}
+	
+	protected void storeTrustChangedNotificationWithoutCommit(final Trust oldTrust, final Trust newTrust) {
 		@SuppressWarnings("unchecked")
 		final ObjectSet<TrustListSubscription> subscriptions = (ObjectSet<TrustListSubscription>)getSubscriptions(TrustListSubscription.class);
 		
 		for(TrustListSubscription subscription : subscriptions) {
-			subscription.storeNotificationWithoutCommit(trust);
+			subscription.storeNotificationWithoutCommit(oldTrust);
 		}
 	}
 	
-	protected void storeScoreChangedNotificationWithoutCommit(final Score score) {
+	protected void storeScoreChangedNotificationWithoutCommit(final Score oldScore, final Score newScore) {
 		@SuppressWarnings("unchecked")
 		final ObjectSet<ScoreListSubscription> subscriptions = (ObjectSet<ScoreListSubscription>)getSubscriptions(ScoreListSubscription.class);
 		
 		for(ScoreListSubscription subscription : subscriptions) {
-			subscription.storeNotificationWithoutCommit(score);
+			subscription.storeNotificationWithoutCommit(oldScore);
 		}
 	}
 
@@ -697,6 +742,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 	}
 	
+	public int getPriority() {
+		return NativeThread.LOW_PRIORITY;
+	}
+	
 	/**
 	 * Schedules the {@link run()} method to be executed after a delay of {@link PROCESS_NOTIFICATIONS_DELY}
 	 */
@@ -705,6 +754,14 @@ public final class SubscriptionManager implements PrioRunnable {
 			mTicker.queueTimedJob(this, "WoT SubscriptionManager", PROCESS_NOTIFICATIONS_DELAY, false, true);
 		else
 			Logger.warning(this, "Cannot schedule notification processing: Ticker is null.");
+	}
+	
+
+	/**
+	 * Deletes all old subscriptions and enables subscription processing. 
+	 */
+	protected synchronized void start() {
+		deleteAllSubscriptions();
 	}
 	
 	/**
