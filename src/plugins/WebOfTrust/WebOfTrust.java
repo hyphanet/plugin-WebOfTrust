@@ -111,6 +111,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	/* Worker objects which actually run the plugin */
 	
 	/**
+	 * Clients can subscribe to certain events such as identity creation, trust changes, etc. with the {@link SubscriptionManager}
+	 */
+	private SubscriptionManager mSubscriptionManager;
+	
+	/**
 	 * Periodically wakes up and inserts any OwnIdentity which needs to be inserted.
 	 */
 	private IdentityInserter mInserter;
@@ -124,6 +129,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * - ...
 	 */
 	private IdentityFetcher mFetcher;
+	
 	
 	/**
 	 * Uploads captchas belonging to our own identities which others can solve to get on the trust list of them. Checks whether someone
@@ -184,6 +190,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				
 			};
 			
+			mSubscriptionManager = new SubscriptionManager(this);
+			
 			mInserter = new IdentityInserter(this);
 			mFetcher = new IdentityFetcher(this, getPluginRespirator());		
 			
@@ -204,6 +212,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			// Database is up now, integrity is checked. We can start to actually do stuff
 			
+			mSubscriptionManager.start();
+			
 			createSeedIdentities();
 			
 			Logger.debug(this, "Starting fetches of all identities...");
@@ -223,7 +233,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 			
 			mInserter.start();
-			
+
 			mIntroductionServer = new IntroductionServer(this, mFetcher);
 			mIntroductionServer.start();
 			
@@ -264,6 +274,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 		
 		mPuzzleStore = new IntroductionPuzzleStore(this);
+		
+		mSubscriptionManager = new SubscriptionManager(this);
 		
 		mFetcher = new IdentityFetcher(this, null);
 	}
@@ -318,8 +330,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         	SubscriptionManager.ScoreListSubscription.class,
         	SubscriptionManager.TrustListSubscription.class,
         	SubscriptionManager.Notification.class,
+        	SubscriptionManager.InitialSynchronizationNotification.class,
         	SubscriptionManager.IdentityChangedNotification.class,
-        	SubscriptionManager.NewIdentityNotification.class,
+        	SubscriptionManager.IdentityListChangedNotification.class,
         	SubscriptionManager.ScoreChangedNotification.class,
         	SubscriptionManager.TrustChangedNotification.class,
         	IntroductionPuzzle.class,
@@ -951,6 +964,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			Logger.error(this, "Error during termination.", e);
 		}
 		
+		try {
+			if(mSubscriptionManager != null)
+				mSubscriptionManager.stop();
+		} catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}	
 		
 		try {
 			if(mDB != null) {
@@ -2259,6 +2278,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	public Configuration getConfig() {
 		return mConfig;
+	}
+	
+	public SubscriptionManager getSubscriptionManager() {
+		return mSubscriptionManager;
 	}
 	
 	public IdentityFetcher getIdentityFetcher() {
