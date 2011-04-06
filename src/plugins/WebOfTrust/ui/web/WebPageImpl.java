@@ -145,6 +145,17 @@ public abstract class WebPageImpl implements WebPage {
 		return infobox.content;
 	}
 	
+	/**
+	 * Get a new Infobox but do not add it to the page. Can be used for putting Infoboxes inside Infoboxes.
+	 * @param title The title of the desired Infobox
+	 * @return the contentNode of the newly created Infobox
+	 */
+	protected final HTMLNode getContentBox(String title) {
+		InfoboxNode infobox = pm.getInfobox(title);
+		return infobox.outer;
+	}
+	
+	
 	protected BaseL10n l10n() {
 	    return baseL10n;
 	}

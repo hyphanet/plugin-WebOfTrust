@@ -20,7 +20,7 @@ public class Version {
 	 * etc, at a minimum any build inserted into auto-update should have a unique 
 	 * version.
 	 */
-	public static final long version = 2;
+	public static final long version = 3;
 	
 	/** Published as an identity property if you own a seed identity. */
 	public static final long mandatoryVersion = 1;

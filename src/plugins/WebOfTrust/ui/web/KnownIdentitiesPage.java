@@ -59,7 +59,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	public void make() {
 		if(request.isPartSet("AddIdentity")) {
 			try {
-				wot.addIdentity(request.getPartAsString("IdentityURI", 1024));
+				wot.addIdentity(request.getPartAsStringFailsafe("IdentityURI", 1024));
 				HTMLNode successBox = addContentBox(l10n().getString("KnownIdentitiesPage.AddIdentity.Success.Header"));
 				successBox.addChild("#", l10n().getString("KnownIdentitiesPage.AddIdentity.Success.Text"));
 			}
@@ -69,16 +69,19 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		}
 		
 		if(request.isPartSet("SetTrust")) {
-			String trusterID = request.getPartAsString("OwnerID", 128);
-			String trusteeID = request.isPartSet("Trustee") ? request.getPartAsString("Trustee", 128) : null;
-			String value = request.getPartAsString("Value", 4).trim();
+			String trusterID = request.getPartAsStringFailsafe("OwnerID", 128);
+		
+			for(String part : request.getParts()) {
+			if(part.startsWith("SetTrustOf")) {
+			String trusteeID = request.getPartAsStringFailsafe(part, 128);
+			String value = request.getPartAsStringFailsafe("Value" + trusteeID, 4).trim();
 			// TODO: getPartAsString() will return an empty String if the length is exceeded, it should rather return a too long string so that setTrust throws
 			// an exception. It's not a severe problem though since we limit the length of the text input field anyway.
-			String comment = request.getPartAsString("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);
+			String comment = request.getPartAsStringFailsafe("Comment" + trusteeID, Trust.MAX_TRUST_COMMENT_LENGTH + 1);
 			
 			try {
 				if(trusteeID == null) /* For AddIdentity */
-					trusteeID = Identity.getIDFromURI(new FreenetURI(request.getPartAsString("IdentityURI", 1024)));
+					trusteeID = Identity.getIDFromURI(new FreenetURI(request.getPartAsStringFailsafe("IdentityURI", 1024)));
 				
 				if(value.equals(""))
 					wot.removeTrust(trusterID, trusteeID);
@@ -91,12 +94,13 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			} catch(Exception e) {
 				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e);
 			}
+			}
+			}
 		}
 
 		OwnIdentity treeOwner = null;
-		PluginRespirator _pr = wot.getPluginRespirator();
 		int nbOwnIdentities = 1;
-		String ownerID = request.getPartAsString("OwnerID", 128);
+		String ownerID = request.getPartAsStringFailsafe("OwnerID", 128);
 		
 		if(!ownerID.equals("")) {
 			try {
@@ -114,17 +118,17 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 			
-		makeAddIdentityForm(_pr, treeOwner);
+		makeAddIdentityForm(treeOwner);
 
 		if(treeOwner != null) {
 			try {
-				makeKnownIdentitiesList(treeOwner, _pr);
+				makeKnownIdentitiesList(treeOwner);
 			} catch (Exception e) {
 				Logger.error(this, "Error", e);
 				addErrorBox("Error", e);
 			}
 		} else if(nbOwnIdentities > 1)
-			makeSelectTreeOwnerForm(_pr);
+			makeSelectTreeOwnerForm();
 		else
 			makeNoOwnIdentityWarning();
 	}
@@ -132,16 +136,16 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	/**
 	 * Makes a form where the user can enter the requestURI of an Identity he knows.
 	 * 
-	 * @param _pr a reference to the {@link PluginRespirator}
+	 * @param pr a reference to the {@link PluginRespirator}
 	 * @param treeOwner The owner of the known identity list. Not used for adding the identity but for showing the known identity list properly after adding.
 	 */
-	private void makeAddIdentityForm(PluginRespirator _pr, OwnIdentity treeOwner) {
+	private void makeAddIdentityForm(OwnIdentity treeOwner) {
 		
 		// TODO Add trust value and comment fields and make them mandatory
 		// The user should only add an identity he trusts
 		HTMLNode addBoxContent = addContentBox(l10n().getString("KnownIdentitiesPage.AddIdentity.Header"));
 	
-		HTMLNode createForm = _pr.addFormChild(addBoxContent, uri, "AddIdentity");
+		HTMLNode createForm = pr.addFormChild(addBoxContent, uri, "AddIdentity");
 		if(treeOwner != null)
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "AddIdentity" });
@@ -173,10 +177,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		addErrorBox(l10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Header"), l10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Text"));
 	}
 	
-	private void makeSelectTreeOwnerForm(PluginRespirator _pr) {
+	private void makeSelectTreeOwnerForm() {
 
 		HTMLNode listBoxContent = addContentBox(l10n().getString("KnownIdentitiesPage.SelectTreeOwner.Header"));
-		HTMLNode selectForm = _pr.addFormChild(listBoxContent, uri, "ViewTree");
+		HTMLNode selectForm = pr.addFormChild(listBoxContent, uri, "ViewTree");
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "ViewTree" });
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnerID");
 
@@ -232,19 +236,26 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * @param _pr a reference to the {@link PluginRespirator}
 	 * @param treeOwner owner of the trust tree we want to display 
 	 */
-	private void makeKnownIdentitiesList(OwnIdentity treeOwner, PluginRespirator _pr) throws DuplicateScoreException, DuplicateTrustException {
+	private void makeKnownIdentitiesList(OwnIdentity treeOwner) throws DuplicateScoreException, DuplicateTrustException {
 
-		String nickFilter = request.isPartSet("nickfilter") ? request.getPartAsString("nickfilter", 100).trim() : "";
-		String sortBy = request.isPartSet("sortby") ? request.getPartAsString("sortby", 100).trim() : "Nickname";
-		String sortType = request.isPartSet("sorttype") ? request.getPartAsString("sorttype", 100).trim() : "Ascending";
-
-		HTMLNode filters = addContentBox(l10n().getString("KnownIdentitiesPage.FiltersAndSorting.Header"));
-		HTMLNode filtersForm = _pr.addFormChild(filters, uri, "Filters").addChild("p");
-		filtersForm.addChild("#", l10n().getString("KnownIdentitiesPage.FiltersAndSorting.ShowOnlyNicksContaining") + " : ");
-		filtersForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
-		filtersForm.addChild("input", new String[]{"type", "size", "name", "value"}, new String[]{"text", "15", "nickfilter", nickFilter});
-		filtersForm.addChild("#", " " + l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy") + " : ");
-		HTMLNode option = filtersForm.addChild("select", new String[]{"name", "id"}, new String[]{"sortby", "sortby"});
+		String nickFilter = request.getPartAsStringFailsafe("nickfilter", 100).trim();
+		String sortBy = request.isPartSet("sortby") ? request.getPartAsStringFailsafe("sortby", 100).trim() : "Nickname";
+		String sortType = request.isPartSet("sorttype") ? request.getPartAsStringFailsafe("sorttype", 100).trim() : "Ascending";
+		
+		
+		HTMLNode knownIdentitiesBox = addContentBox(l10n().getString("KnownIdentitiesPage.KnownIdentities.Header"));
+		knownIdentitiesBox = pr.addFormChild(knownIdentitiesBox, uri, "Filters").addChild("p");
+		knownIdentitiesBox.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
+		
+		
+		HTMLNode filtersBox = getContentBox(l10n().getString("KnownIdentitiesPage.FiltersAndSorting.Header"));
+		{ // Filters box
+		knownIdentitiesBox.addChild(filtersBox);
+		filtersBox.addChild("#", l10n().getString("KnownIdentitiesPage.FiltersAndSorting.ShowOnlyNicksContaining") + " : ");
+		filtersBox.addChild("#", " " + l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy") + " : ");
+		filtersBox.addChild("input", new String[] {"type", "size", "name", "value"}, new String[]{"text", "15", "nickfilter", nickFilter});
+		
+		HTMLNode option = filtersBox.addChild("select", new String[]{"name", "id"}, new String[]{"sortby", "sortby"});
 		TreeMap<String, String> options = new TreeMap<String, String>();
 		options.put(SortBy.Nickname.toString(), l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Nickname"));
 		options.put(SortBy.Score.toString(), l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Score"));
@@ -256,7 +267,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 
-		option = filtersForm.addChild("select", new String[]{"name", "id"}, new String[]{"sorttype", "sorttype"});
+		option =  filtersBox.addChild("select", new String[]{"name", "id"}, new String[]{"sorttype", "sorttype"});
 		options = new TreeMap<String, String>();
 		options.put("Ascending", l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Ascending"));
 		options.put("Descending", l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Descending"));
@@ -267,23 +278,12 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 
-		filtersForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.SubmitButton")});
-
-
-		HTMLNode listBoxContent = addContentBox(l10n().getString("KnownIdentitiesPage.KnownIdentities.Header"));
+		filtersBox.addChild("input", new String[]{"type", "value"}, new String[]{"submit", l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.SubmitButton")});
+		}
 
 		// Display the list of known identities
-		HTMLNode identitiesTable = listBoxContent.addChild("table", "border", "0");
-		HTMLNode row=identitiesTable.addChild("tr");
-		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Nickname"));
-		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Added"));
-		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Fetched"));
-		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.PublishesTrustlist"));
-		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.ScoreAndRank"));
-		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.TrustAndComment"));
-		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Trusters"));
-		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Trustees"));
-		
+		HTMLNode identitiesTable = knownIdentitiesBox.addChild("table", "border", "0");
+		identitiesTable.addChild(getKnownIdentitiesListTableHeader());
 		
 		WebOfTrust.SortOrder sortInstruction = WebOfTrust.SortOrder.valueOf("By" + sortBy + sortType);
 		
@@ -293,7 +293,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		for(Identity id : wot.getAllIdentitiesFilteredAndSorted(treeOwner, nickFilter, sortInstruction)) {
 			if(id == treeOwner) continue;
 
-			row=identitiesTable.addChild("tr");
+			HTMLNode row=identitiesTable.addChild("tr");
 			
 			// NickName
 			HTMLNode nameLink = row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"})
@@ -337,7 +337,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 			
 			// Own Trust
-			row.addChild(getReceivedTrustForm(treeOwner, id));
+			row.addChild(getReceivedTrustCell(treeOwner, id));
+			
+			// Checkbox
+			row.addChild(getSetTrustCell(id));
 			
 			// Nb Trusters
 			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
@@ -350,9 +353,25 @@ public class KnownIdentitiesPage extends WebPageImpl {
 					Long.toString(wot.getGivenTrusts(id).size())));
 		}
 		}
+		
+		identitiesTable.addChild(getKnownIdentitiesListTableHeader());
 	}
 	
-	private HTMLNode getReceivedTrustForm (OwnIdentity truster, Identity trustee) throws DuplicateTrustException {
+	private HTMLNode getKnownIdentitiesListTableHeader() {
+		HTMLNode row = new HTMLNode("tr");
+		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Nickname"));
+		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Added"));
+		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Fetched"));
+		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.PublishesTrustlist"));
+		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.ScoreAndRank"));
+		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.TrustAndComment"));
+		row.addChild("th").addChild(new HTMLNode("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SetTrust", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton") }));
+		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Trusters"));
+		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Trustees"));
+		return row;
+	}
+	
+	private HTMLNode getReceivedTrustCell (OwnIdentity truster, Identity trustee) throws DuplicateTrustException {
 
 		String trustValue = "";
 		String trustComment = "";
@@ -371,21 +390,22 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			cell.addAttribute("style", "background-color:" + KnownIdentitiesPage.getTrustColor(Integer.parseInt(trustValue)) + ";");
 		}
 
-		HTMLNode trustForm = pr.addFormChild(cell, uri, "SetTrust");
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "SetTrust" });
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", truster.getID() });
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Trustee", trustee.getID() });
 		
 		// Trust value input field
-		trustForm.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, 
-				new String[] { "text", "Value", "4", "4", trustValue });
+		cell.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, 
+				new String[] { "text", "Value" + trustee.getID(), "4", "4", trustValue });
 		
 		// Trust comment input field
-		trustForm.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, 
-				new String[] { "text", "Comment", "50", Integer.toString(Trust.MAX_TRUST_COMMENT_LENGTH), trustComment });
-		
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SetTrust", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton") });
+		cell.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, 
+				new String[] { "text", "Comment" + trustee.getID(), "50", Integer.toString(Trust.MAX_TRUST_COMMENT_LENGTH), trustComment });
 
+		return cell;
+	}
+	
+	private HTMLNode getSetTrustCell(Identity trustee) {
+		HTMLNode cell = new HTMLNode("td");
+		// There can be multiple checkboxes with the same name in HTML, however Fred does not support it...
+		cell.addChild(new HTMLNode("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "SetTrustOf" + trustee.getID(), trustee.getID()}));
 		return cell;
 	}
 }

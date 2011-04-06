@@ -528,9 +528,10 @@ public final class IntroductionClient extends TransferThread  {
 					// TODO: Use nextIteration here. This requires fixing it to allow us cause an execution even if we are below the minimal sleep time
 					downloadPuzzles();
 				}
-			} else {
+			} else if (e.isFatal()) {
 				Logger.error(this, "Downloading puzzle failed: " + state.getURI(), e);
-			}
+			} else
+				Logger.warning(this, "Downloading puzzle failed, isFatal()==false: " + state.getURI(), e);
 		}
 		finally {
 			removeFetch(state);
@@ -586,8 +587,10 @@ public final class IntroductionClient extends TransferThread  {
 				Logger.normal(this, "Insert of puzzle solution collided, puzzle was solved already, marking as inserted: " + state.getURI());
 				markPuzzleSolutionAsInserted(state);
 			}
-			else
+			else if(e.isFatal())
 				Logger.error(this, "Insert of puzzle solution failed: " + state.getURI(), e);
+			else
+				Logger.warning(this, "Insert of puzzle solution failed, isFatal()==false: " + state.getURI(), e);
 		}
 		finally {
 			removeInsert(state); // Takes care of mBeingInsertedPuzleSolutions for us.

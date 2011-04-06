@@ -205,7 +205,10 @@ public final class IdentityInserter extends TransferThread {
 				Logger.debug(this, "Insert cancelled: " + state.getURI());
 			}
 			else {
-				Logger.error(this, "Error during insert of identity: " + state.getURI(), e);
+				if(e.isFatal())
+					Logger.error(this, "Error during insert of identity: " + state.getURI(), e);
+				else
+					Logger.warning(this, "Error during insert of identity, isFatal()==false: " + state.getURI(), e);
 				/* We do not increase the edition of the identity if there is a collision because the fetcher will fetch the new edition
 				 * and the Inserter will insert it with that edition in the next run. */
 			}
