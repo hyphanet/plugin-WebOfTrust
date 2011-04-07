@@ -1248,6 +1248,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 			Logger.debug(this, "Deleting the identity...");
 			identity.deleteWithoutCommit();
+			mSubscriptionManager.storeDeletedIdentityNotificationWithoutCommit(identity);
 		}
 		catch(RuntimeException e) {
 			Persistent.checkedRollbackAndThrow(mDB, this, e);
