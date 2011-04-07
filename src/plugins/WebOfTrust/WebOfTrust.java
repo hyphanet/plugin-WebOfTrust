@@ -904,14 +904,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 			}
 			catch (UnknownIdentityException uie) {
+				synchronized(mDB.lock()) {
 				try {
 					seed = new Identity(seedURI, null, true);
 					seed.initializeTransient(this);
 					// We have to explicitely set the edition number because the constructor only considers the given edition as a hint.
 					seed.setEdition(new FreenetURI(seedURI).getEdition());
-					seed.storeAndCommit();
+					seed.storeWithoutCommit();
+					mSubscriptionManager.storeNewIdentityNotificationWithoutCommit(seed);
+					Persistent.checkedCommit(mDB, this);
 				} catch (Exception e) {
-					Logger.error(this, "Seed identity creation error", e);
+					Persistent.checkedRollback(mDB, this, e);					
+				}
 				}
 			}
 			catch (Exception e) {
@@ -1988,12 +1992,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			// TODO: The identity won't be fetched because it has not received a trust value yet.
 			// IMHO we should not support adding identities without giving them a trust value.
 			
-			//try {
+			synchronized(mDB.lock()) {
+			try {
 			identity = new Identity(requestURI, null, false);
 			identity.initializeTransient(this);
-			identity.storeAndCommit();
+			identity.storeWithoutCommit();
+			mSubscriptionManager.storeNewIdentityNotificationWithoutCommit(identity);
+			Persistent.checkedCommit(mDB, this);
 			//storeWithoutCommit(identity);
-			Logger.debug(this, "Created identity " + identity);
+			Logger.normal(this, "Added identity " + identity);
+			} catch(RuntimeException e2) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e2);
+				identity = null; // Will not be executed, needed to make the compiler happy. 
+			}
+			}
 			
 			//if(!shouldFetchIdentity(identity)) {
 			//	assert(false);
@@ -2066,6 +2078,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				
 				try {
 					identity.storeWithoutCommit();
+					mSubscriptionManager.storeNewIdentityNotificationWithoutCommit(identity);
 					initTrustTreeWithoutCommit(identity);
 					
 					beginTrustListImport();
@@ -2187,6 +2200,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				identity.updateLastInsertDate();
 				
 				mFetcher.storeStartFetchCommandWithoutCommit(identity);
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(identity);
 				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {

@@ -394,6 +394,7 @@ public final class XMLTransformer {
 									trustee = new Identity(trusteeURI, null, false);
 									trustee.initializeTransient(mWoT);
 									trustee.storeWithoutCommit();
+									mWoT.getSubscriptionManager().storeNewIdentityNotificationWithoutCommit(trustee);
 								}
 							}
 
@@ -542,6 +543,7 @@ public final class XMLTransformer {
 						// attack.
 						//newIdentity.setEdition(identityURI.getEdition());
 						newIdentity.storeWithoutCommit();
+						mWoT.getSubscriptionManager().storeNewIdentityNotificationWithoutCommit(newIdentity);
 						Logger.minor(this, "Imported introduction for an unknown identity: " + newIdentity);
 					}
 
