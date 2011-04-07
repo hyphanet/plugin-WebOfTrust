@@ -746,18 +746,22 @@ public class Identity extends Persistent implements Cloneable {
 	}
 	
 	/**
-	 * Locks the WoT, locks the database and stores the identity.
+	 * Locks the WoT, the SubscriptionManager and the database and stores the identity.
+	 * Notifies the SubscriptionManager of the change.
 	 */
 	public final void storeAndCommit() {
 		synchronized(mWebOfTrust) {
+		synchronized(mWebOfTrust.getSubscriptionManager()) {
 		synchronized(mDB.lock()) {
 			try {
 				storeWithoutCommit();
+				mWebOfTrust.getSubscriptionManager().storeIdentityChangedNotificationWithoutCommit(this);
 				checkedCommit(this);
 			}
 			catch(RuntimeException e) {
 				checkedRollbackAndThrow(e);
 			}
+		}
 		}
 		}
 	}
