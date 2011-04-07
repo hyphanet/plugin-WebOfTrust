@@ -296,14 +296,20 @@ public final class FCPInterface implements FredPluginFCP {
     	}
 
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-    	sfs.putOverwrite("Message", "Identity");
     	
     	synchronized(mWoT) {
     		final Identity identity = mWoT.getIdentityByID(identityID);
+    		
+        	sfs.putOverwrite("Message", (identity instanceof OwnIdentity) ? "OwnIdentity" : "Identity");
 
         	sfs.putOverwrite("ID", identity.getID());
     		sfs.putOverwrite("Nickname", identity.getNickname());
     		sfs.putOverwrite("RequestURI", identity.getRequestURI().toString());
+    		
+    		if(identity instanceof OwnIdentity) {
+    			OwnIdentity ownId = (OwnIdentity)identity;
+    			sfs.putOverwrite("InsertURI", ownId.getInsertURI().toString());
+    		}
 
     		if(trusterID != null) {
     			final OwnIdentity truster = mWoT.getOwnIdentityByID(trusterID);
