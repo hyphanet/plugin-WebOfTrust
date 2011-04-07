@@ -500,6 +500,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					Logger.error(trust, "Deleting orphan trust, truster = " + trust.getTruster() + ", trustee = " + trust.getTrustee());
 					orphanTrustFound = true;
 					trust.deleteWithoutCommit();
+					// No need to update subscriptions as the trust is broken anyway.
 				}
 				
 				if(orphanTrustFound) {
@@ -531,6 +532,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					Logger.error(score, "Deleting orphan score, truster = " + score.getTruster() + ", trustee = " + score.getTrustee());
 					orphanScoresFound = true;
 					score.deleteWithoutCommit();
+					// No need to update subscriptions as the score is broken anyway.
 				}
 				
 				if(orphanScoresFound) {
@@ -816,6 +818,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						oldShouldFetch = shouldFetchIdentity(target);
 						
 						currentStoredScore.deleteWithoutCommit();
+						mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(currentStoredScore, null);
 						
 					} else {
 						if(!newScore.equals(currentStoredScore)) {
@@ -826,11 +829,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 							needToCheckFetchStatus = true;
 							oldShouldFetch = shouldFetchIdentity(target);
 							
+							final Score oldScore = currentStoredScore.clone();
+							
 							currentStoredScore.setRank(newScore.getRank());
 							currentStoredScore.setCapacity(newScore.getCapacity());
 							currentStoredScore.setValue(newScore.getScore());
 
 							currentStoredScore.storeWithoutCommit();
+							mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, currentStoredScore);
 						}
 					}
 				} catch(NotInTrustTreeException e) {
@@ -845,6 +851,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						oldShouldFetch = shouldFetchIdentity(target);
 						
 						newScore.storeWithoutCommit();
+						mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(null, newScore);
 					}
 				}
 				
@@ -1217,14 +1224,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			Logger.debug(this, "Deleting identity " + identity + " ...");
 			
 			Logger.debug(this, "Deleting received scores...");
-			for(Score score : getScores(identity))
+			for(Score score : getScores(identity)) {
 				score.deleteWithoutCommit();
+				mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(score, null);
+			}
 
 			if(identity instanceof OwnIdentity) {
 				Logger.debug(this, "Deleting given scores...");
 
-				for(Score score : getGivenScores((OwnIdentity)identity))
+				for(Score score : getGivenScores((OwnIdentity)identity)) {
 					score.deleteWithoutCommit();
+					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(score, null);
+				}
 			}
 
 			Logger.debug(this, "Deleting received trusts...");
@@ -1670,6 +1681,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			final Score score = new Score(identity, identity, Integer.MAX_VALUE, 0, 100);
 			score.initializeTransient(this);
 			score.storeWithoutCommit();
+			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(null, score);
 		}
 	}
 
@@ -1886,9 +1898,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 					Score currentStoredTrusteeScore;
 
+					boolean scoreExistedBefore;
+					
 					try {
 						currentStoredTrusteeScore = getScore(treeOwner, trustee);
+						scoreExistedBefore = true;
 					} catch(NotInTrustTreeException e) {
+						scoreExistedBefore = false;
 						currentStoredTrusteeScore = new Score(treeOwner, trustee, 0, -1, 0);
 						currentStoredTrusteeScore.initializeTransient(this);
 					}
@@ -1925,8 +1941,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// Identities should not get into the queue if they have no rank, see the large if() about 20 lines below
 					assert(currentStoredTrusteeScore.getRank() >= 0); 
 					
-					if(currentStoredTrusteeScore.getRank() >= 0)
+					if(currentStoredTrusteeScore.getRank() >= 0) {
 						currentStoredTrusteeScore.storeWithoutCommit();
+						mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(scoreExistedBefore ? oldScore : null, currentStoredTrusteeScore);
+					}
 					
 					// If fetch status changed from false to true, we need to start fetching it
 					// If the capacity changed from 0 to positive, we need to refetch the current edition: Identities with capacity 0 cannot
@@ -2168,6 +2186,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						
 						newScore.initializeTransient(this);
 						newScore.storeWithoutCommit();
+						
+						// Nothing has changed about the actual score so we do not notify.
+						// mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, newScore);
 					}
 					
 					beginTrustListImport();

@@ -671,6 +671,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		return new Persistent.InitializingObjectSet<Notification>(mWoT, q);
 	}
 	
+	/**
+	 * This function does not store a reference to the given identity object in the database, it only stores the ID.
+	 * You are safe to pass non-stored objects or objects which must not be stored.
+	 */
 	protected void storeIdentityChangedNotificationWithoutCommit(final Identity identity) {
 		@SuppressWarnings("unchecked")
 		final ObjectSet<IdentityAttributeListSubscription> subscriptions = (ObjectSet<IdentityAttributeListSubscription>)getSubscriptions(IdentityAttributeListSubscription.class);
@@ -680,6 +684,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 	}
 	
+	/**
+	 * This function does not store a reference to the given identity object in the database, it only stores the ID.
+	 * You are safe to pass non-stored objects or objects which must not be stored.
+	 */
 	protected void storeNewIdentityNotificationWithoutCommit(final Identity identity) {
 		@SuppressWarnings("unchecked")
 		final ObjectSet<IdentityListSubscription> subscriptions = (ObjectSet<IdentityListSubscription>)getSubscriptions(IdentityListSubscription.class);
@@ -691,6 +699,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		storeIdentityChangedNotificationWithoutCommit(identity);
 	}
 	
+	/**
+	 * This function does not store a reference to the given identity object in the database, it only stores the ID.
+	 * You are safe to pass non-stored objects or objects which must not be stored.
+	 */
 	protected void storeDeletedIdentityNotificationWithoutCommit(final Identity identity) {
 		@SuppressWarnings("unchecked")
 		final ObjectSet<IdentityListSubscription> subscriptions = (ObjectSet<IdentityListSubscription>)getSubscriptions(IdentityListSubscription.class);
@@ -702,6 +714,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		storeIdentityChangedNotificationWithoutCommit(identity);
 	}
 	
+	/**
+	 * This function does not store references to the passed objects in the database, it only stores their IDs.
+	 * You are safe to pass non-stored objects or objects which must not be stored.
+	 */
 	protected void storeTrustChangedNotificationWithoutCommit(final Trust oldTrust, final Trust newTrust) {
 		@SuppressWarnings("unchecked")
 		final ObjectSet<TrustListSubscription> subscriptions = (ObjectSet<TrustListSubscription>)getSubscriptions(TrustListSubscription.class);
@@ -711,6 +727,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 	}
 	
+	/**
+	 * This function does not store references to the passed objects in the database, it only stores their IDs.
+	 * You are safe to pass non-stored objects or objects which must not be stored.
+	 */
 	protected void storeScoreChangedNotificationWithoutCommit(final Score oldScore, final Score newScore) {
 		@SuppressWarnings("unchecked")
 		final ObjectSet<ScoreListSubscription> subscriptions = (ObjectSet<ScoreListSubscription>)getSubscriptions(ScoreListSubscription.class);
