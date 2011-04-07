@@ -861,6 +861,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 						target.markForRefetch();
 						target.storeWithoutCommit();
+						
+						// We don't notify clients about this because the WOT fetch state is of little interest to them, they determine theirs from the Score
+						// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(target);
 
 						mFetcher.storeStartFetchCommandWithoutCommit(target);
 					}
@@ -1568,6 +1571,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 		truster.updated();
 		truster.storeWithoutCommit();
+		
+		// TODO: Mabye notify clients about this. IMHO it would create too much notifications on trust list import so we don't.
+		// As soon as we have notification-coalescing we might do it.
+		// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(truster);
 	}
 	
 	/**
@@ -1932,6 +1939,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 						trustee.markForRefetch();
 						trustee.storeWithoutCommit();
+						
+						// We don't notify clients about this because the WOT fetch state is of little interest to them, they determine theirs from the Score
+						// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(trustee);
 
 						mFetcher.storeStartFetchCommandWithoutCommit(trustee);
 					}

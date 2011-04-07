@@ -386,6 +386,9 @@ public final class XMLTransformer {
 									if(trustee.setNewEditionHint(trusteeURI.getEdition())) {
 										identitiesWithUpdatedEditionHint.add(trustee.getID());
 										trustee.storeWithoutCommit();
+										
+										// We don't notify clients about this: The edition hint is not very useful to them.
+										// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(trustee);
 									}
 								}
 							}
