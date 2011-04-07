@@ -5,8 +5,8 @@ package plugins.WebOfTrust;
 
 import java.util.UUID;
 
+import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
-import plugins.WebOfTrust.ui.fcp.FCPInterface;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
