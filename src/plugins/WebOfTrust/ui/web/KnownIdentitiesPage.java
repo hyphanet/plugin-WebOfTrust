@@ -111,7 +111,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		} else {
 			synchronized(wot) {
-				ObjectSet<OwnIdentity> allOwnIdentities = wot.getAllOwnIdentities();
+				ObjectSet<OwnIdentity> allOwnIdentities = wot.getAllOwnEnabledIdentities();
 				nbOwnIdentities = allOwnIdentities.size();
 				if(nbOwnIdentities == 1)
 					treeOwner = allOwnIdentities.next();
@@ -185,7 +185,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnerID");
 
 		synchronized(wot) {
-			for(OwnIdentity ownIdentity : wot.getAllOwnIdentities())
+			for(OwnIdentity ownIdentity : wot.getAllOwnEnabledIdentities())
 				selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getNickname());
 		}
 
