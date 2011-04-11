@@ -1239,12 +1239,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 
 			Logger.debug(this, "Deleting received trusts...");
-			for(Trust trust : getReceivedTrusts(identity))
+			for(Trust trust : getReceivedTrusts(identity)) {
 				trust.deleteWithoutCommit();
+				mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(trust, null);
+			}
 
 			Logger.debug(this, "Deleting given trusts...");
 			for(Trust givenTrust : getGivenTrusts(identity)) {
 				givenTrust.deleteWithoutCommit();
+				mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(givenTrust, null);
 				// We call computeAllScores anyway so we do not use removeTrustWithoutCommit()
 			}
 			
@@ -1570,6 +1573,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			if(trust.getValue() != newValue) {
 				trust.setValue(newValue);
 				trust.storeWithoutCommit();
+				mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(oldTrust, trust);
 				Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
 				updateScoresWithoutCommit(oldTrust, trust);
 			}
@@ -1577,6 +1581,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			final Trust trust = new Trust(truster, trustee, newValue, newComment);
 			trust.initializeTransient(this);
 			trust.storeWithoutCommit();
+			mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(null, trust);
 			Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
 			updateScoresWithoutCommit(null, trust);
 		} 
@@ -1655,6 +1660,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 */
 	protected synchronized void removeTrustWithoutCommit(Trust trust) {
 		trust.deleteWithoutCommit();
+		mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(trust, null);
 		updateScoresWithoutCommit(trust, null);
 	}
 

@@ -562,18 +562,28 @@ public final class SubscriptionManager implements PrioRunnable {
 		subscription.storeAndCommit();
 	}
 	
+	/**
+	 * The client is notified when a new identity XML was fetched. TODO: Also notify if internal things such as edition change.
+	 */
 	public IdentityAttributeListSubscription subscribeToIdentityAttributeList(String fcpID) throws SubscriptionExistsAlreadyException {
 		final IdentityAttributeListSubscription subscription = new IdentityAttributeListSubscription(fcpID);
 		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
 	}
 	
+	/**
+	 * The client is notified when an identity is created or deleted
+	 */
 	public IdentityListSubscription subscribeToIdentityList(String fcpID) throws SubscriptionExistsAlreadyException {
 		final IdentityListSubscription subscription = new IdentityListSubscription(fcpID);
 		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
 	}
 	
+	/**
+	 * The client is notified when a trust value changes, is created or removed.
+	 * The client is NOT notified when the comment on a trust value changes.
+	 */
 	public TrustListSubscription subscribeToTrustList(String fcpID) throws SubscriptionExistsAlreadyException {
 		final TrustListSubscription subscription = new TrustListSubscription(fcpID);
 		storeNewSubscriptionAndCommit(subscription);

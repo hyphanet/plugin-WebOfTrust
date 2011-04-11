@@ -779,8 +779,10 @@ public final class FCPInterface implements FredPluginFCP {
     }
     
     /**
-     * To == IdentityList: The client is notified when an identity is created or deleted
-     * To == IdentityAttributeList: The client is notified when a new identity XML was fetched. TODO: Also notify if internal things such as edition change.
+     * @see {@link SubscriptionManager#subscribeToIdentityAttributeList(String)}
+     * @see {@link SubscriptionManager#subscribeToIdentityList(String)}
+     * @see {@link SubscriptionManager#subscribeToScoreList(String)}
+     * @see {@link SubscriptionManager#subscribeToTrustList(String)}
      */
     private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException {
     	final String to = getMandatoryParameter(params, "To");
