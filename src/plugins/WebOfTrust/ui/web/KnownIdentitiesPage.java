@@ -288,6 +288,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		WebOfTrust.SortOrder sortInstruction = WebOfTrust.SortOrder.valueOf("By" + sortBy + sortType);
 		
 		long currentTime = CurrentTimeUTC.getInMillis();
+		
+		long editionSum = 0;
 
 		synchronized(wot) {
 		for(Identity id : wot.getAllIdentitiesFilteredAndSorted(treeOwner, nickFilter, sortInstruction)) {
@@ -351,10 +353,20 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 			trusteesCell.addChild(new HTMLNode("a", "href", identitiesPageURI + "?id="+id.getID(),
 					Long.toString(wot.getGivenTrusts(id).size())));
+			
+			// TODO: Show in advanced mode only once someone finally fixes the "Switch to advanced mode" link on FProxy to work on ALL pages.
+			
+			final long edition = id.getEdition();
+			editionSum += edition;
+			row.addChild("td", "align", "center", Long.toString(edition));
+			
+			row.addChild("td", "align", "center", Long.toString(id.getLatestEditionHint()));
 		}
 		}
 		
 		identitiesTable.addChild(getKnownIdentitiesListTableHeader());
+		
+		knownIdentitiesBox.addChild("#", l10n().getString("KnownIdentitiesPage.KnownIdentities.FetchProgress", "editionCount", Long.toString(editionSum)));
 	}
 	
 	private HTMLNode getKnownIdentitiesListTableHeader() {
@@ -368,6 +380,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		row.addChild("th").addChild(new HTMLNode("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SetTrust", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton") }));
 		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Trusters"));
 		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Trustees"));
+		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Edition"));
+		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.EditionHint"));
+		
 		return row;
 	}
 	
