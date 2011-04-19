@@ -180,19 +180,11 @@ public class Identity extends Persistent implements Cloneable {
 	/** 
 	 * Mark identity as disabled
 	 */
-	public final void disable() {
-		mDisabled = true;
+	public final void setDisabled(boolean disabled) {
+		mDisabled = disabled;
 		updated();
 	}
-
-	/**
-	 *  Mark identity as enabled
-	 */
-	public final void enable() {
-		mDisabled = false;
-		updated();
-	}
-	
+		
 	/**
 	 * Get the edition number of the request URI of this identity.
 	 * Safe to be called without any additional synchronization.

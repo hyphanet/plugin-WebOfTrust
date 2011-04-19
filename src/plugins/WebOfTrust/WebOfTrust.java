@@ -2018,18 +2018,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		deleteIdentity(getIdentityByID(id));
 	}
 	
-	public synchronized void disableIdentity(Identity identity){
-		identity.disable();
+	public synchronized void setDisabledState(String identityID, boolean disabled) throws UnknownIdentityException, InvalidParameterException {
+		final Identity identity = getOwnIdentityByID(identityID);
+		identity.setDisabled(disabled);
 		identity.storeAndCommit();
-		Logger.debug(this, "Disabled identity '" + identity.getNickname() + "'");
+		Logger.debug(this, "Set identity state disabled: '" + disabled + "'" + identity.getNickname() + "'");
 	}
-	
-	public synchronized void enableIdentity(Identity identity){
-		identity.enable();
-		identity.storeAndCommit();
-		Logger.debug(this, "Enabled identity '" + identity.getNickname() + "'");
-	}
-	
+			
 	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
 		throws MalformedURLException, InvalidParameterException {
 		

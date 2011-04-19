@@ -22,7 +22,7 @@ public class DisableOwnIdentityPage extends WebPageImpl {
 		try {
 			OwnIdentity mIdentity = wot.getOwnIdentityByID(request.getPartAsStringThrowing("id", 128));
 			if(request.isPartSet("disable")) {
-				wot.disableIdentity(mIdentity);
+				wot.setDisabledState(mIdentity.getID(), true);
 				
 				/* TODO: Show the OwnIdentities page instead! Use the trick which Freetalk does for inlining pages */
 				HTMLNode box = addContentBox(l10n().getString("DisableOwnIdentityPage.IdentityDisabled.Header"));
