@@ -78,7 +78,9 @@ public final class OwnIdentity extends Identity {
 	 * @return Whether this OwnIdentity needs to be inserted or not
 	 */
 	public final boolean needsInsert() {
-		if(getCurrentEditionFetchState() != FetchState.Fetched)
+		// If the current edition was fetched successfully OR if parsing of it failed, we may insert a new one
+		// We may NOT insert a new one if it was not fetched: The identity might be in restore-mode
+		if(getCurrentEditionFetchState() == FetchState.NotFetched)
 			return false;
 		
 		return (getLastChangeDate().after(getLastInsertDate()) ||
