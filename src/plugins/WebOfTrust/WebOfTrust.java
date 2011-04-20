@@ -83,11 +83,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * the Freenet development team provides a list of seed identities - each of them is one of the developers.
 	 */
 	private static final String[] SEED_IDENTITIES = new String[] { 
-		"USK@QeTBVWTwBldfI-lrF~xf0nqFVDdQoSUghT~PvhyJ1NE,OjEywGD063La2H-IihD7iYtZm3rC0BP6UTvvwyF5Zh4,AQACAAE/WebOfTrust/90", // xor
-		"USK@z9dv7wqsxIBCiFLW7VijMGXD9Gl-EXAqBAwzQ4aq26s,4Uvc~Fjw3i9toGeQuBkDARUV5mF7OTKoAhqOA9LpNdo,AQACAAE/WebOfTrust/60", // Toad
-		"USK@o2~q8EMoBkCNEgzLUL97hLPdddco9ix1oAnEa~VzZtg,X~vTpL2LSyKvwQoYBx~eleI2RF6QzYJpzuenfcKDKBM,AQACAAE/WebOfTrust/0", // Bombe
-		"USK@cI~w2hrvvyUa1E6PhJ9j5cCoG1xmxSooi7Nez4V2Gd4,A3ArC3rrJBHgAJV~LlwY9kgxM8kUR2pVYXbhGFtid78,AQACAAE/WebOfTrust/19", // TheSeeker
-		"USK@D3MrAR-AVMqKJRjXnpKW2guW9z1mw5GZ9BB15mYVkVc,xgddjFHx2S~5U6PeFkwqO5V~1gZngFLoM-xaoMKSBI8,AQACAAE/WebOfTrust/47", // zidel
+		"USK@Z~jA3QJJEF4-Q8pbWwQwilKo~Mpc7MsGO8sRuD5qsa4,QvblREQwQtgGD0xTvu~QJuxnegK~Z6tuf2K46rMDR-I,AQACAAE/WebOfTrust/0", // ArneBab
+		"USK@1QiRgSn~XYX9M1yI-fpBB1Arz2c-gf26qzvjwI8XCSA,T16nzt2pujySeqeR~kJd-d4Au88KDsOSGsJWq76sIs4,AQACAAE/WebOfTrust/0" // Toad
 	};
 
 	/* References from the node */
