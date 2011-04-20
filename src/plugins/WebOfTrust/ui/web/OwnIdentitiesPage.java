@@ -29,8 +29,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	private final String showIdentityURI;
 	private final String createIdentityURI;
 	private final String editIdentityURI;
-	private final String disableIdentityURI;
-	private final String enableIdentityURI;
+	private final String setDisabledIdentityStateURI;
 	private final String deleteIdentityURI;
 	private final String introduceIdentityURI;
 	
@@ -48,8 +47,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		showIdentityURI = baseURI+"/ShowIdentity";
 		createIdentityURI = baseURI+"/CreateIdentity";
 		editIdentityURI = baseURI+"/EditOwnIdentity";
-		disableIdentityURI = baseURI+"/DisableOwnIdentity";
-		enableIdentityURI = baseURI+"/EnableOwnIdentity";
+		setDisabledIdentityStateURI = baseURI+"/SetDisabledOwnIdentityState";
 		deleteIdentityURI = baseURI+"/DeleteOwnIdentity";
 		introduceIdentityURI = baseURI+"/IntroduceIdentity";
 	}
@@ -139,14 +137,14 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				}
 				
 				if (!id.isDisabled()) {
-					HTMLNode disableForm = pr.addFormChild(manageCell, disableIdentityURI, "DisableIdentity");
+					HTMLNode disableForm = pr.addFormChild(manageCell, setDisabledIdentityStateURI, "DisableIdentity");
 					disableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "DisableIdentity" });
 					disableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 					disableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "disable", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.DisableButton") });
 				}
 			
 				if (id.isDisabled()) {
-					HTMLNode enableForm = pr.addFormChild(manageCell, enableIdentityURI, "EnableIdentity");
+					HTMLNode enableForm = pr.addFormChild(manageCell, setDisabledIdentityStateURI, "EnableIdentity");
 					enableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EnableIdentity" });
 					enableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 					enableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "enable", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.EnableButton") });
