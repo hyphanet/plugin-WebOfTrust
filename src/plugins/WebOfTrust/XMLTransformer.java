@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -196,6 +197,26 @@ public final class XMLTransformer {
 		}
 	}
 	
+	/**
+	 * Workaround class for:
+	 * https://bugs.freenetproject.org/view.php?id=4850
+	 * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7031732
+	 * 
+	 * @author 	NowWhat@0plokJYoIwsHORk6RlUVPRA-HJ3-Cg7SjJP4S2fWEnw.freetalk
+	 */
+	public class OneBytePerReadInputStream extends FilterInputStream {
+
+		public OneBytePerReadInputStream(InputStream in) {
+			super(in);
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			return super.read(b, off, len<=1 ? len : 1);
+		}
+
+	}
+	
 	private static final class ParsedIdentityXML {
 		static final class TrustListEntry {
 			final FreenetURI mTrusteeURI;
@@ -226,6 +247,10 @@ public final class XMLTransformer {
 	 * @param xmlInputStream An InputStream which must not return more than {@link MAX_IDENTITY_XML_BYTE_SIZE} bytes.
 	 */
 	private ParsedIdentityXML parseIdentityXML(InputStream xmlInputStream) throws IOException {
+		Logger.normal(this, "Parsing identity XML...");
+		
+		xmlInputStream = new OneBytePerReadInputStream(xmlInputStream); // Workaround for Java bug, see the stream class for explanation
+
 		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(xmlInputStream.available() > MAX_IDENTITY_XML_BYTE_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
@@ -278,6 +303,8 @@ public final class XMLTransformer {
 			result.parseError = e;
 		}
 		
+		Logger.normal(this, "Finished parsing identity XML.");
+		
 		return result;
 	}
 	
@@ -296,6 +323,8 @@ public final class XMLTransformer {
 		synchronized(mWoT) {
 		synchronized(mWoT.getIdentityFetcher()) {
 			final Identity identity = mWoT.getIdentityByURI(identityURI);
+			
+			Logger.normal(this, "Importing parsed XML for " + identity);
 			
 				long newEdition = identityURI.getEdition();
 				if(identity.getEdition() > newEdition) {
@@ -427,6 +456,8 @@ public final class XMLTransformer {
 					throw e;
 				} // try
 				} // synchronized(db.lock())
+				
+			Logger.normal(this, "Finished XML import for " + identity);
 		} // synchronized(mWoT)
 		} // synchronized(mWoT.getIdentityFetcher())
 		} // try
@@ -498,6 +529,7 @@ public final class XMLTransformer {
 	 */
 	public Identity importIntroduction(OwnIdentity puzzleOwner, InputStream xmlInputStream)
 		throws InvalidParameterException, SAXException, IOException {
+		xmlInputStream = new OneBytePerReadInputStream(xmlInputStream); // Workaround for Java bug, see the stream class for explanation
 		
 		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(xmlInputStream.available() > MAX_INTRODUCTION_BYTE_SIZE)
@@ -619,6 +651,8 @@ public final class XMLTransformer {
 	 */
 	public IntroductionPuzzle importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
 		throws SAXException, IOException, InvalidParameterException, UnknownIdentityException, IllegalBase64Exception, ParseException {
+		
+		xmlInputStream = new OneBytePerReadInputStream(xmlInputStream); // Workaround for Java bug, see the stream class for explanation
 		
 		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(xmlInputStream.available() > MAX_INTRODUCTIONPUZZLE_BYTE_SIZE)
