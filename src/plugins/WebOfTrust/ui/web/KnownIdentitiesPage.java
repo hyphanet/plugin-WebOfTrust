@@ -74,35 +74,35 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			String trusterID = request.getPartAsStringFailsafe("OwnerID", 128);
 		
 			for(String part : request.getParts()) {
-			if(!part.startsWith("SetTrustOf"))
-				continue;
-			
+				if(!part.startsWith("SetTrustOf"))
+					continue;
+
 				final String trusteeID;
 				final String value;
 				final String comment;
-			
-			try { 
-				if(addIdentity) { // Add a single identity and set its trust value
-					trusteeID = Identity.getIDFromURI(new FreenetURI(request.getPartAsStringFailsafe("IdentityURI", 1024)));
-					value = request.getPartAsStringFailsafe("Value", 4).trim();
-					comment = request.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);				 	
-				} else { // Change multiple trust values via the known-identities-list
-					trusteeID = request.getPartAsStringFailsafe(part, 128);
-					value = request.getPartAsStringFailsafe("Value" + trusteeID, 4).trim();
-					comment = request.getPartAsStringFailsafe("Comment" + trusteeID, Trust.MAX_TRUST_COMMENT_LENGTH + 1);
+
+				try { 
+					if(addIdentity) { // Add a single identity and set its trust value
+						trusteeID = Identity.getIDFromURI(new FreenetURI(request.getPartAsStringFailsafe("IdentityURI", 1024)));
+						value = request.getPartAsStringFailsafe("Value", 4).trim();
+						comment = request.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);				 	
+					} else { // Change multiple trust values via the known-identities-list
+						trusteeID = request.getPartAsStringFailsafe(part, 128);
+						value = request.getPartAsStringFailsafe("Value" + trusteeID, 4).trim();
+						comment = request.getPartAsStringFailsafe("Comment" + trusteeID, Trust.MAX_TRUST_COMMENT_LENGTH + 1);
+					}
+
+					if(value.equals(""))
+						wot.removeTrust(trusterID, trusteeID);
+					else
+						wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
+				} catch(NumberFormatException e) {
+					addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), l10n().getString("Trust.InvalidValue"));
+				} catch(InvalidParameterException e) {
+					addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e.getMessage());
+				} catch(Exception e) {
+					addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e);
 				}
-				
-				if(value.equals(""))
-					wot.removeTrust(trusterID, trusteeID);
-				else
-					wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
-			} catch(NumberFormatException e) {
-				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), l10n().getString("Trust.InvalidValue"));
-			} catch(InvalidParameterException e) {
-				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e.getMessage());
-			} catch(Exception e) {
-				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e);
-			}
 			}
 		}
 
