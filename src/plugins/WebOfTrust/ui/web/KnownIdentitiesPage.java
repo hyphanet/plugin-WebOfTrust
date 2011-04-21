@@ -74,7 +74,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			String trusterID = request.getPartAsStringFailsafe("OwnerID", 128);
 		
 			for(String part : request.getParts()) {
-			if(part.startsWith("SetTrustOf")) {
+			if(!part.startsWith("SetTrustOf"))
+				continue;
+			
 				final String trusteeID;
 				final String value;
 				final String comment;
@@ -100,7 +102,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e.getMessage());
 			} catch(Exception e) {
 				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e);
-			}
 			}
 			}
 		}
