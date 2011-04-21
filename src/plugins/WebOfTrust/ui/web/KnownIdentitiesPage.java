@@ -57,7 +57,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	}
 
 	public void make() {
-		if(request.isPartSet("AddIdentity")) {
+		final boolean addIdentity = request.isPartSet("AddIdentity");
+		
+		if(addIdentity) {
 			try {
 				wot.addIdentity(request.getPartAsStringFailsafe("IdentityURI", 1024));
 				HTMLNode successBox = addContentBox(l10n().getString("KnownIdentitiesPage.AddIdentity.Success.Header"));
@@ -73,15 +75,20 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 			for(String part : request.getParts()) {
 			if(part.startsWith("SetTrustOf")) {
-			String trusteeID = request.getPartAsStringFailsafe(part, 128);
-			String value = request.getPartAsStringFailsafe("Value" + trusteeID, 4).trim();
-			// TODO: getPartAsString() will return an empty String if the length is exceeded, it should rather return a too long string so that setTrust throws
-			// an exception. It's not a severe problem though since we limit the length of the text input field anyway.
-			String comment = request.getPartAsStringFailsafe("Comment" + trusteeID, Trust.MAX_TRUST_COMMENT_LENGTH + 1);
+				final String trusteeID;
+				final String value;
+				final String comment;
 			
-			try {
-				if(trusteeID == null) /* For AddIdentity */
+			try { 
+				if(addIdentity) { // Add a single identity and set its trust value
 					trusteeID = Identity.getIDFromURI(new FreenetURI(request.getPartAsStringFailsafe("IdentityURI", 1024)));
+					value = request.getPartAsStringFailsafe("Value", 4).trim();
+					comment = request.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);				 	
+				} else { // Change multiple trust values via the known-identities-list
+					trusteeID = request.getPartAsStringFailsafe(part, 128);
+					value = request.getPartAsStringFailsafe("Value" + trusteeID, 4).trim();
+					comment = request.getPartAsStringFailsafe("Comment" + trusteeID, Trust.MAX_TRUST_COMMENT_LENGTH + 1);
+				}
 				
 				if(value.equals(""))
 					wot.removeTrust(trusterID, trusteeID);
@@ -160,6 +167,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		if(treeOwner != null) {
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrust", "true"});
+			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrustOf", "void"});
 			
 			createForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ")
 				.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Value", "4", "" });
