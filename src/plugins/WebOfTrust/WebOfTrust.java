@@ -2022,7 +2022,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		final Identity identity = getOwnIdentityByID(identityID);
 		identity.setDisabled(disabled);
 		identity.storeAndCommit();
-		Logger.debug(this, "Set identity state disabled: '" + disabled + "'" + identity.getNickname() + "'");
+		if(!disabled){
+			computeAllScoresWithoutCommit();
+		}
+		
+		Logger.debug(this, "Set identity '" + identity.getNickname() + "' state disabled: '" + disabled + "'");
 	}
 			
 	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
