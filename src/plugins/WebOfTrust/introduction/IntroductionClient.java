@@ -518,7 +518,7 @@ public final class IntroductionClient extends TransferThread  {
 			if(e.getMode() == FetchException.CANCELLED) {
 				Logger.debug(this, "Fetch cancelled: " + state.getURI());
 			}
-			else if(e.getMode() == FetchException.DATA_NOT_FOUND) {
+			else if(e.isDNF()) {
 				/* This is the normal case: There is no puzzle available of today because the inserter is offline and has not inserted any.
 				 *  The identity stays in the FIFO though so we do not try to fetch puzzzle from it again soon.
 				 *  If we do not have enough puzzles yet, we immediately try to start a new fetch. If we have enough puzzles, we just
