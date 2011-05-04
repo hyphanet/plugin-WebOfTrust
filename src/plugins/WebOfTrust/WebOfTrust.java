@@ -303,6 +303,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         
         @SuppressWarnings("unchecked")
 		final Class<? extends Persistent>[] persistentClasses = new Class[] {
+        	Configuration.class,
         	Identity.class,
         	OwnIdentity.class,
         	Trust.class,
