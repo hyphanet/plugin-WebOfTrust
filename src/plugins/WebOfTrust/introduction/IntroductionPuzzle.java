@@ -414,7 +414,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	public IntroductionPuzzle clone() {
 		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
 		final IntroductionPuzzle copy = new IntroductionPuzzle(getInserter(), getID(), getType(), getMimeType(), getData(), getDateOfInsertion(), getValidUntilDate(), getIndex());
-		if(wasSolved()) copy.setSolved((OwnIdentity)getSolver(), mSolution);
+		if(wasSolved()) copy.setSolved((OwnIdentity)getSolver(), mSolution); // checkedActivate(depth) is not needed, String is a db4o primitive type
 		if(wasInserted()) copy.setInserted();
 		copy.initializeTransient(mWebOfTrust);
 		return copy;
@@ -451,6 +451,6 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	
 	@Override
 	public int hashCode() {
-		return mID.hashCode();
+		return mID.hashCode(); // checkedActivate(depth) is not needed, String is a db4o primitive type
 	}
 }

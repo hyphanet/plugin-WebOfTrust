@@ -7,7 +7,6 @@ import java.util.Date;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.support.CurrentTimeUTC;
-import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
 /**
@@ -238,6 +237,7 @@ public final class Trust extends Persistent implements Cloneable {
 	public Trust clone() {
 		try {
 			Trust clone = new Trust(getTruster(), getTrustee(), getValue(), getComment());
+			// checkedActivate(depth) is not needed, long is a db4o primitive type
 			clone.mTrusterTrustListEdition = this.mTrusterTrustListEdition;
 			clone.initializeTransient(mWebOfTrust);
 			return clone;

@@ -694,6 +694,7 @@ public class Identity extends Persistent implements Cloneable {
 	}
 	
 	public int hashCode() {
+		// checkedActivate(depth) is not needed, String is a db4o primitive type
 		return mID.hashCode();
 	}
 	

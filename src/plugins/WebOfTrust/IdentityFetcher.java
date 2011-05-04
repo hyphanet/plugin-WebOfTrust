@@ -106,7 +106,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		}
 		
 		protected String getIdentityID() {
-			return mIdentityID;
+			return mIdentityID;	// checkedActivate(depth) is not needed, String is a db4o primitive type
 		}
 
 		@Override

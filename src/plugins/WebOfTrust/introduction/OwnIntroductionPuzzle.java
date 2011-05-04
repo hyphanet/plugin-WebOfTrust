@@ -45,7 +45,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	 * # = index of the puzzle.
 	 */
 	public FreenetURI getInsertURI() {
-		assert(mWasInserted == false);
+		assert(mWasInserted == false);  // checkedActivate(depth) is not needed, boolean is a db4o primitive type
 		assert(mWasSolved == false);
 		
 		String dayOfInsertion;
@@ -63,6 +63,8 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	 * Sets the solver to null.
 	 */
 	public synchronized void setSolved() {
+		checkedActivate(2); // For mSolver
+		
 		if(wasSolved())
 			throw new RuntimeException("The puzzle was already solved by " + mSolver);
 		
@@ -77,6 +79,8 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	 * Used by the IntroductionServer to mark a puzzle as solved when importing an identity introduction.
 	 */
 	public synchronized void setSolved(Identity solver) {
+		checkedActivate(2); // For mSolver
+		
 		if(wasSolved())
 			throw new RuntimeException("The puzzle was already solved by " + mSolver);
 		
@@ -112,6 +116,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	@Override
 	public OwnIntroductionPuzzle clone() {
 		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
+		// checkedActivate(depth) for mSolution is not needed, String is a db4o primitive type
 		final OwnIntroductionPuzzle copy = new OwnIntroductionPuzzle((OwnIdentity)getInserter(), getID(), getType(), getMimeType(), getData(), mSolution, getDateOfInsertion(), getIndex());
 		
 		if(wasSolved()) {
