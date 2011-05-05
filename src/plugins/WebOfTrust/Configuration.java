@@ -69,10 +69,12 @@ public final class Configuration extends Persistent {
 	}
 	
 	public int getDatabaseFormatVersion() {
+		// checkedActivate(depth) is not needed, int is a db4o primitive type
 		return mDatabaseFormatVersion;
 	}
 	
 	protected void setDatabaseFormatVersion(int newVersion) {
+		// checkedActivate(depth) is not needed, int is a db4o primitive type
 		if(newVersion <= mDatabaseFormatVersion)
 			throw new RuntimeException("mDatabaseFormatVersion==" + mDatabaseFormatVersion + "; newVersion==" + newVersion);
 		
