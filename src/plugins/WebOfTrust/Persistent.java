@@ -344,6 +344,7 @@ public abstract class Persistent {
 	 * This date is stored in the database so it is constant for a given persistent object.
 	 */
 	public final Date getCreationDate() {
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return mCreationDate;
 	}
 	

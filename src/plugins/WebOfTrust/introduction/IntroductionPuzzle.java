@@ -218,43 +218,43 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	}
 	
 	public String getID() {
-		// checkedActivate(depth) is not needed, String is a db4o primitive type
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
 	}
 	
 	public PuzzleType getType() {
-		checkedActivate(2); // TODO: Optimization: Do we really need to activate for enums?
+		checkedActivate(1);
 		return mType;
 	}
 
 	public String getMimeType() {
-		// checkedActivate(depth) is not needed, String is a db4o primitive type
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mMimeType;
 	}
 	
 	public byte[] getData() {
-		// checkedActivate(depth) is not needed, byte[] is a db4o primitive type
+		checkedActivate(1); // byte[] is a db4o primitive type so 1 is enough
 		return mData;
 	}
 	
 	public Identity getInserter() {
-		checkedActivate(2);
+		checkedActivate(1);
 		mInserter.initializeTransient(mWebOfTrust);
 		return mInserter;
 	}
 	
 	public Date getDateOfInsertion() {
-		// checkedActivate(depth) is not needed, Date is a db4o primitive type
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return new Date(mDayOfInsertion);
 	}
 	
 	public Date getValidUntilDate() {
-		// checkedActivate(depth) is not needed, long is a db4o primitive type
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return mValidUntilDate;
 	}
 	
 	public int getIndex() {
-		// checkedActivate(depth) is not needed, int is a db4o primitive type
+		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mIndex;
 	}
 
@@ -266,7 +266,9 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	 * @throws InvalidParameterException If the puzzle was already solved.
 	 */
 	public synchronized void setSolved(OwnIdentity solver, String solution) {
-		if(wasSolved())
+		checkedActivate(1);
+		
+		if(mWasSolved)
 			throw new IllegalStateException("Puzzle is already solved!"); 
 		
 		mWasSolved = true;
@@ -275,18 +277,23 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	}
 	
 	public synchronized boolean wasSolved() {
-		// checkedActivate(depth) is not needed, boolean is a db4o primitive type
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 		return mWasSolved;
+	}
+	
+	protected synchronized String getSolution() {
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
+		return mSolution;
 	}
 
 	/**
 	 * Get the Identity which solved this puzzle. Used by the IntroductionClient for inserting identity introductions.
 	 */
 	public synchronized Identity getSolver() {
-		if(!wasSolved())
-			throw new IllegalStateException("The puzzle is not solved");
+		checkedActivate(1);
 		
-		checkedActivate(2);
+		if(!mWasSolved)
+			throw new IllegalStateException("The puzzle is not solved");
 		
 		if(mSolver == null)
 			return null;
@@ -304,7 +311,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	 * guessOfSolution = the guess of the solution which is passed to the function.
 	 */
 	public synchronized FreenetURI getSolutionURI() {
-		// checkedActivate(depth) is not needed, String is a db4o primitive type
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		
 		if(mSolution == null)
 			throw new IllegalStateException("The puzzle is not solved.");
@@ -316,14 +323,16 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	}
 	
 	public synchronized boolean wasInserted() {
-		// checkedActivate(depth) is not needed, boolean is a db4o primitive type
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 		return mWasInserted;
 	}
 	
 	public synchronized void setInserted() {
 		Logger.debug(this, "Marking puzzle as inserted: " + this);
 		
-		if(wasInserted())
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
+		
+		if(mWasInserted)
 			throw new RuntimeException("The puzzle was already inserted.");
 		
 		mWasInserted = true;
@@ -331,8 +340,8 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	
 	protected void storeWithoutCommit() {
 		try {		
-			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			checkedActivate(2);
+			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(1);
 			throwIfNotStored(mInserter);
 			if(wasSolved() && mSolver != null) // Solver is null if parsing of his introduction XML failed. 
 				throwIfNotStored(mSolver);
@@ -349,7 +358,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 
 	@Override
 	public void startupDatabaseIntegrityTest() throws Exception {
-		checkedActivate(2);
+		checkedActivate(1);
 		
 		if(mInserter == null)
 			throw new NullPointerException("mInserter==null");
@@ -414,7 +423,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	public IntroductionPuzzle clone() {
 		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
 		final IntroductionPuzzle copy = new IntroductionPuzzle(getInserter(), getID(), getType(), getMimeType(), getData(), getDateOfInsertion(), getValidUntilDate(), getIndex());
-		if(wasSolved()) copy.setSolved((OwnIdentity)getSolver(), mSolution); // checkedActivate(depth) is not needed, String is a db4o primitive type
+		if(wasSolved()) copy.setSolved((OwnIdentity)getSolver(), getSolution());
 		if(wasInserted()) copy.setInserted();
 		copy.initializeTransient(mWebOfTrust);
 		return copy;
@@ -451,6 +460,6 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	
 	@Override
 	public int hashCode() {
-		return mID.hashCode(); // checkedActivate(depth) is not needed, String is a db4o primitive type
+		return getID().hashCode();
 	}
 }

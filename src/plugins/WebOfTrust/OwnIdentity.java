@@ -91,7 +91,8 @@ public final class OwnIdentity extends Identity {
 	 * @return This OwnIdentity's insertURI
 	 */
 	public final FreenetURI getInsertURI() {
-		checkedActivate(3);
+		checkedActivate(1);
+		checkedActivate(mInsertURI, 2);
 		return mInsertURI;
 	}
 	
@@ -100,9 +101,11 @@ public final class OwnIdentity extends Identity {
 	protected final void setEdition(long edition) throws InvalidParameterException {
 		super.setEdition(edition);
 		
+		checkedActivate(1);
+		
 		mCurrentEditionFetchState = FetchState.Fetched;
 		
-		checkedActivate(3);
+		checkedActivate(mInsertURI, 2);
 		
 		if(edition > mInsertURI.getEdition()) {
 			mInsertURI = mInsertURI.setSuggestedEdition(edition);
@@ -124,6 +127,7 @@ public final class OwnIdentity extends Identity {
 	 */
 	protected final void restoreEdition(long edition) throws InvalidParameterException {
 		setEdition(edition);
+		checkedActivate(1);
 		mCurrentEditionFetchState = FetchState.NotFetched;
 	}
 
@@ -131,7 +135,7 @@ public final class OwnIdentity extends Identity {
 	 * Get the Date of last insertion of this OwnIdentity, in UTC, null if it was not inserted yet.
 	 */
 	public final Date getLastInsertDate() {
-		// checkedActivate(depth) is not needed, Date is a db4o primitive type
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastInsertDate.clone();
 	}
 	
@@ -139,7 +143,7 @@ public final class OwnIdentity extends Identity {
 	 * Sets the last insertion date of this OwnIdentity to current time in UTC.
 	 */
 	protected final void updateLastInsertDate() {
-		// checkedActivate(depth) is not needed, Date is a db4o primitive type
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		mLastInsertDate = CurrentTimeUTC.get();
 	}
 

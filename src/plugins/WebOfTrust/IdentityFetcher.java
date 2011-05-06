@@ -106,11 +106,14 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		}
 		
 		protected String getIdentityID() {
-			return mIdentityID;	// checkedActivate(depth) is not needed, String is a db4o primitive type
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
+			return mIdentityID;
 		}
 
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
+			checkedActivate(1); // int is a db4o primitive type so 1 is enough
+			
 			if(mIdentityID == null)
 				throw new RuntimeException("mIdentityID==null");
 			
