@@ -12,9 +12,6 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
-
-import com.db4o.query.Query;
-
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
@@ -85,6 +82,17 @@ public class Identity extends Persistent implements Cloneable {
 	private transient boolean mPropertiesActivated;
 	
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	// We inherit them from class Persistent.
+	//private static transient volatile boolean logDEBUG = false;
+	//private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(Identity.class);
+	}
+	
+	
 	/**
 	 * Creates an Identity. Only for being used by the WoT package and unit tests, not for user interfaces!
 	 * 
@@ -124,7 +132,7 @@ public class Identity extends Persistent implements Cloneable {
 		mContexts = new ArrayList<String>(4); /* Currently we have: Introduction, Freetalk */
 		mProperties = new HashMap<String, String>();
 		
-		Logger.debug(this, "New identity: " + mNickname + ", URI: " + mRequestURI);
+		if(logDEBUG) Logger.debug(this, "New identity: " + mNickname + ", URI: " + mRequestURI);
 	}	
 
 	/**
@@ -235,7 +243,7 @@ public class Identity extends Persistent implements Cloneable {
 		
 		if (newLatestEditionHint > mLatestEditionHint) {
 			mLatestEditionHint = newLatestEditionHint;
-			Logger.debug(this, "Received a new edition hint of " + newLatestEditionHint + " (current: " + mLatestEditionHint + ") for "+ this);
+			if(logDEBUG) Logger.debug(this, "Received a new edition hint of " + newLatestEditionHint + " (current: " + mLatestEditionHint + ") for "+ this);
 			return true;
 		}
 		

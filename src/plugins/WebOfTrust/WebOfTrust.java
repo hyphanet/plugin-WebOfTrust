@@ -148,10 +148,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	private WebInterface mWebInterface;
 	private FCPInterface mFCPInterface;
+	
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(WebOfTrust.class);
+	}
 
 	public void runPlugin(PluginRespirator myPR) {
 		try {
-			Logger.debug(this, "Start");
+			Logger.normal(this, "Start");
 			
 			/* Catpcha generation needs headless mode on linux */
 			System.setProperty("java.awt.headless", "true"); 
@@ -206,7 +216,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			createSeedIdentities();
 			
-			Logger.debug(this, "Starting fetches of all identities...");
+			Logger.normal(this, "Starting fetches of all identities...");
 			synchronized(this) {
 			synchronized(mFetcher) {
 				for(Identity identity : getAllIdentities()) {
@@ -233,7 +243,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			mWebInterface = new WebInterface(this, SELF_URI);
 			mFCPInterface = new FCPInterface(this);
 			
-			Logger.debug(this, "WoT startup completed.");
+			Logger.normal(this, "WoT startup completed.");
 		}
 		catch(RuntimeException e){
 			Logger.error(this, "Error during startup", e);
@@ -283,7 +293,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Initializes the plugin's db4o database.
 	 */
 	private ExtObjectContainer openDatabase(File file) {
-		Logger.debug(this, "Using db4o " + Db4o.version());
+		if(logDEBUG) Logger.debug(this, "Using db4o " + Db4o.version());
 		
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		
@@ -293,7 +303,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		// We have to do very careful testing though, toad_ said that db4o bugs can occur with depth 1 and manual activation...
 		cfg.activationDepth(10);
 		cfg.updateDepth(1); // This must not be changed: We only activate(this, 1) before store(this).
-		Logger.minor(this, "Default activation depth: " + cfg.activationDepth());
+		if(logMINOR) Logger.minor(this, "Default activation depth: " + cfg.activationDepth());
 		cfg.exceptionsOnNotStorable(true);
         // The shutdown hook does auto-commit. We do NOT want auto-commit: if a transaction hasn't commit()ed, it's not safe to commit it.
         cfg.automaticShutDown(false);
@@ -326,7 +336,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         	// them only for the classes where we need them does not cause any harm.
         	classHasIndex = true;
         	
-        	Logger.debug(this, "Peristent class: " + clazz.getCanonicalName() + "; hasIndex==" + classHasIndex);
+        	if(logDEBUG) Logger.debug(this, "Peristent class: " + clazz.getCanonicalName() + "; hasIndex==" + classHasIndex);
         	
         	// TODO: Make very sure that it has no negative side effects if we disable class indices for some classes
         	// Maybe benchmark in comparison to a database which has class indices enabled for ALL classes.
@@ -335,7 +345,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         	// Check the class' fields for @IndexedField annotations
         	for(Field field : clazz.getDeclaredFields()) {
         		if(field.getAnnotation(Persistent.IndexedField.class) != null) {
-        			Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + field.getName());
+        			if(logDEBUG) Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + field.getName());
         			cfg.objectClass(clazz).objectField(field.getName()).indexed(true);
         		}
         	}
@@ -344,7 +354,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
     		final Persistent.IndexedField annotation =  clazz.getAnnotation(Persistent.IndexedField.class);
     		if(annotation != null) {
         		for(String fieldName : annotation.names()) {
-        			Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + fieldName);
+        			if(logDEBUG) Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + fieldName);
         			cfg.objectClass(clazz).objectField(fieldName).indexed(true);
         		}
     		}
@@ -398,7 +408,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		try {
 			HashSet<String> deleted = new HashSet<String>();
 
-			Logger.debug(this, "Searching for duplicate identities ...");
+			if(logDEBUG) Logger.debug(this, "Searching for duplicate identities ...");
 
 			for(Identity identity : getAllIdentities()) {
 				Query q = mDB.query();
@@ -416,7 +426,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 			Persistent.checkedCommit(mDB, this);
 			
-			Logger.debug(this, "Finished searching for duplicate identities.");
+			if(logDEBUG) Logger.debug(this, "Finished searching for duplicate identities.");
 		}
 		catch(RuntimeException e) {
 			Persistent.checkedRollback(mDB, this, e);
@@ -425,7 +435,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 		synchronized(mDB.lock()) {
 		try {
-		Logger.debug(this, "Searching for duplicate Trust objects ...");
+		if(logDEBUG) Logger.debug(this, "Searching for duplicate Trust objects ...");
 
 		boolean duplicateTrustFound = false;
 		for(OwnIdentity truster : getAllOwnIdentities()) {
@@ -447,7 +457,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		
 		Persistent.checkedCommit(mDB, this);
-		Logger.debug(this, "Finished searching for duplicate trust objects.");
+		if(logDEBUG) Logger.debug(this, "Finished searching for duplicate trust objects.");
 		}
 		catch(RuntimeException e) {
 			Persistent.checkedRollback(mDB, this, e);
@@ -638,7 +648,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
 	 */
 	protected synchronized boolean computeAllScoresWithoutCommit() {
-		Logger.debug(this, "Doing a full computation of all Scores...");
+		if(logDEBUG) Logger.debug(this, "Doing a full computation of all Scores...");
 		
 		boolean returnValue = true;
 		final ObjectSet<Identity> allIdentities = getAllIdentities();
@@ -834,9 +844,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// If the fetch status changed from true to false, we need to stop fetching it
 					if((!oldShouldFetch || (oldCapacity == 0 && newScore != null && newScore.getCapacity() > 0)) && shouldFetchIdentity(target) ) {
 						if(!oldShouldFetch)
-							Logger.debug(this, "Fetch status changed from false to true, refetching " + target);
+							if(logDEBUG) Logger.debug(this, "Fetch status changed from false to true, refetching " + target);
 						else
-							Logger.debug(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + target);
+							if(logDEBUG) Logger.debug(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + target);
 
 						target.markForRefetch();
 						target.storeWithoutCommit();
@@ -844,7 +854,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						mFetcher.storeStartFetchCommandWithoutCommit(target);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(target)) {
-						Logger.debug(this, "Fetch status changed from true to false, aborting fetch of " + target);
+						if(logDEBUG) Logger.debug(this, "Fetch status changed from true to false, aborting fetch of " + target);
 
 						mFetcher.storeAbortFetchCommandWithoutCommit(target);
 					}
@@ -854,7 +864,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		mFullScoreComputationNeeded = false;
 		
-		Logger.debug(this, "Full score computation finished.");
+		if(logDEBUG) Logger.debug(this, "Full score computation finished.");
 		
 		return returnValue;
 	}
@@ -899,7 +909,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 
 	public void terminate() {
-		Logger.debug(this, "WoT plugin terminating ...");
+		if(logDEBUG) Logger.debug(this, "WoT plugin terminating ...");
 		
 		/* We use single try/catch blocks so that failure of termination of one service does not prevent termination of the others */
 		try {
@@ -958,7 +968,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			Logger.error(this, "Error during termination.", e);
 		}
 
-		Logger.debug(this, "WoT plugin terminated.");
+		if(logDEBUG) Logger.debug(this, "WoT plugin terminated.");
 	}
 
 	/**
@@ -1179,24 +1189,24 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 */
 	private void deleteWithoutCommit(Identity identity) {
 		try {
-			Logger.debug(this, "Deleting identity " + identity + " ...");
+			if(logDEBUG) Logger.debug(this, "Deleting identity " + identity + " ...");
 			
-			Logger.debug(this, "Deleting received scores...");
+			if(logDEBUG) Logger.debug(this, "Deleting received scores...");
 			for(Score score : getScores(identity))
 				score.deleteWithoutCommit();
 
 			if(identity instanceof OwnIdentity) {
-				Logger.debug(this, "Deleting given scores...");
+				if(logDEBUG) Logger.debug(this, "Deleting given scores...");
 
 				for(Score score : getGivenScores((OwnIdentity)identity))
 					score.deleteWithoutCommit();
 			}
 
-			Logger.debug(this, "Deleting received trusts...");
+			if(logDEBUG) Logger.debug(this, "Deleting received trusts...");
 			for(Trust trust : getReceivedTrusts(identity))
 				trust.deleteWithoutCommit();
 
-			Logger.debug(this, "Deleting given trusts...");
+			if(logDEBUG) Logger.debug(this, "Deleting given trusts...");
 			for(Trust givenTrust : getGivenTrusts(identity)) {
 				givenTrust.deleteWithoutCommit();
 				// We call computeAllScores anyway so we do not use removeTrustWithoutCommit()
@@ -1204,14 +1214,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			computeAllScoresWithoutCommit();
 
-			Logger.debug(this, "Deleting associated introduction puzzles ...");
+			if(logDEBUG) Logger.debug(this, "Deleting associated introduction puzzles ...");
 			mPuzzleStore.onIdentityDeletion(identity);
 			
-			Logger.debug(this, "Storing an abort-fetch-command...");
+			if(logDEBUG) Logger.debug(this, "Storing an abort-fetch-command...");
 			
 			mFetcher.storeAbortFetchCommandWithoutCommit(identity);
 
-			Logger.debug(this, "Deleting the identity...");
+			if(logDEBUG) Logger.debug(this, "Deleting the identity...");
 			identity.deleteWithoutCommit();
 		}
 		catch(RuntimeException e) {
@@ -1523,13 +1533,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			if(trust.getValue() != newValue) {
 				trust.setValue(newValue);
 				trust.storeWithoutCommit();
-				Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
+				if(logDEBUG) Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
 				updateScoresWithoutCommit(oldTrust, trust);
 			}
 		} catch (NotTrustedException e) {
 			final Trust trust = new Trust(this, truster, trustee, newValue, newComment);
 			trust.storeWithoutCommit();
-			Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
+			if(logDEBUG) Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
 			updateScoresWithoutCommit(null, trust);
 		} 
 
@@ -1891,9 +1901,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// If the fetch status changed from true to false, we need to stop fetching it
 					if((!oldShouldFetch || (oldScore.getCapacity()== 0 && newScore.getCapacity() > 0)) && shouldFetchIdentity(trustee)) { 
 						if(!oldShouldFetch)
-							Logger.debug(this, "Fetch status changed from false to true, refetching " + trustee);
+							if(logDEBUG) Logger.debug(this, "Fetch status changed from false to true, refetching " + trustee);
 						else
-							Logger.debug(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + trustee);
+							if(logDEBUG) Logger.debug(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + trustee);
 
 						trustee.markForRefetch();
 						trustee.storeWithoutCommit();
@@ -1901,7 +1911,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						mFetcher.storeStartFetchCommandWithoutCommit(trustee);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(trustee)) {
-						Logger.debug(this, "Fetch status changed from true to false, aborting fetch of " + trustee);
+						if(logDEBUG) Logger.debug(this, "Fetch status changed from true to false, aborting fetch of " + trustee);
 
 						mFetcher.storeAbortFetchCommandWithoutCommit(trustee);
 					}
@@ -1950,7 +1960,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		try {
 			identity = getIdentityByURI(requestURI);
-			Logger.debug(this, "Tried to manually add an identity we already know, ignored.");
+			if(logDEBUG) Logger.debug(this, "Tried to manually add an identity we already know, ignored.");
 			throw new InvalidParameterException("We already have this identity");
 		}
 		catch(UnknownIdentityException e) {
@@ -1961,7 +1971,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			identity = new Identity(this, requestURI, null, false);
 			identity.storeAndCommit();
 			//storeWithoutCommit(identity);
-			Logger.debug(this, "Created identity " + identity);
+			if(logDEBUG) Logger.debug(this, "Created identity " + identity);
 			
 			//if(!shouldFetchIdentity(identity)) {
 			//	assert(false);
@@ -1969,7 +1979,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			//}
 			
 			//mFetcher.storeStartFetchCommandWithoutCommit(identity);
-			//mDB.commit(); Logger.debug(this, "COMMITED.");
+			//mDB.commit(); if(logDEBUG) Logger.debug(this, "COMMITED.");
 			//}
 			//catch(RuntimeException error) {
 			//	System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK: addIdentity() failed", e);
@@ -2016,7 +2026,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			try {
 				identity = getOwnIdentityByURI(requestURI);
-				Logger.debug(this, "Tried to create an own identity with an already existing request URI.");
+				if(logDEBUG) Logger.debug(this, "Tried to create an own identity with an already existing request URI.");
 				throw new InvalidParameterException("The URI you specified is already used by the own identity " +
 						identity.getNickname() + ".");
 			}
@@ -2051,7 +2061,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					if(mIntroductionClient != null)
 						mIntroductionClient.nextIteration(); // This will make it fetch more introduction puzzles.
 					
-					Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickname() + ")");
+					if(logDEBUG) Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickname() + ")");
 					return identity;
 				}
 				catch(RuntimeException e) {
@@ -2127,7 +2137,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// Remove the old identity and all objects associated with it.
 					deleteWithoutCommit(old);
 					
-					Logger.debug(this, "Successfully restored an already known identity from Freenet (" + identity.getNickname() + ")");
+					if(logDEBUG) Logger.debug(this, "Successfully restored an already known identity from Freenet (" + identity.getNickname() + ")");
 					
 				} catch (UnknownIdentityException e) {
 					identity = new OwnIdentity(this, new FreenetURI(insertURI), new FreenetURI(requestURI), null, false);
@@ -2140,7 +2150,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					identity.storeWithoutCommit();
 					initTrustTreeWithoutCommit(identity);
 					
-					Logger.debug(this, "Successfully restored not-yet-known identity from Freenet (" + identity.getRequestURI() + ")");
+					if(logDEBUG) Logger.debug(this, "Successfully restored not-yet-known identity from Freenet (" + identity.getRequestURI() + ")");
 				}
 				
 				// This is not really necessary because OwnIdenity.needsInsert() returns false if currentEditionWasFetched() is false.
@@ -2181,7 +2191,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		identity.addContext(newContext);
 		identity.storeAndCommit();
 		
-		Logger.debug(this, "Added context '" + newContext + "' to identity '" + identity.getNickname() + "'");
+		if(logDEBUG) Logger.debug(this, "Added context '" + newContext + "' to identity '" + identity.getNickname() + "'");
 	}
 
 	public synchronized void removeContext(String ownIdentityID, String context) throws UnknownIdentityException, InvalidParameterException {
@@ -2189,7 +2199,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		identity.removeContext(context);
 		identity.storeAndCommit();
 		
-		Logger.debug(this, "Removed context '" + context + "' from identity '" + identity.getNickname() + "'");
+		if(logDEBUG) Logger.debug(this, "Removed context '" + context + "' from identity '" + identity.getNickname() + "'");
 	}
 	
 	public synchronized String getProperty(String identityID, String property) throws InvalidParameterException, UnknownIdentityException {
@@ -2203,7 +2213,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		identity.setProperty(property, value);
 		identity.storeAndCommit();
 		
-		Logger.debug(this, "Added property '" + property + "=" + value + "' to identity '" + identity.getNickname() + "'");
+		if(logDEBUG) Logger.debug(this, "Added property '" + property + "=" + value + "' to identity '" + identity.getNickname() + "'");
 	}
 	
 	public synchronized void removeProperty(String ownIdentityID, String property) throws UnknownIdentityException, InvalidParameterException {
@@ -2211,7 +2221,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		identity.removeProperty(property);
 		identity.storeAndCommit();
 		
-		Logger.debug(this, "Removed property '" + property + "' from identity '" + identity.getNickname() + "'");
+		if(logDEBUG) Logger.debug(this, "Removed property '" + property + "' from identity '" + identity.getNickname() + "'");
 	}
 
 	public String getVersion() {
@@ -2228,7 +2238,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	public void setLanguage(LANGUAGE newLanguage) {
         WebOfTrust.l10n = new PluginL10n(this, newLanguage);
-        Logger.debug(this, "Set LANGUAGE to: " + newLanguage.isoCode);
+        if(logDEBUG) Logger.debug(this, "Set LANGUAGE to: " + newLanguage.isoCode);
 	}
 	
 	public PluginRespirator getPluginRespirator() {

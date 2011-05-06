@@ -100,7 +100,16 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	 */
 	@IndexedField
 	protected boolean mWasInserted; 
-
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(IntroductionPuzzle.class);
+	}
+	
 	
 	/**
 	 * For construction from a received puzzle.
@@ -330,7 +339,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	}
 	
 	public synchronized void setInserted() {
-		Logger.debug(this, "Marking puzzle as inserted: " + this);
+		if(logDEBUG) Logger.debug(this, "Marking puzzle as inserted: " + this);
 		
 		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 		

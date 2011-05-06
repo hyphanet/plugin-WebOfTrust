@@ -98,6 +98,16 @@ public final class XMLTransformer {
 	
 	private final SimpleDateFormat mDateFormat;
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static volatile boolean logDEBUG = false;
+	private static volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(XMLTransformer.class);
+	}
+
+	
 	/**
 	 * Initializes the XML creator & parser and caches those objects in the new IdentityXML object so that they do not have to be initialized
 	 * each time an identity is exported/imported.
@@ -328,11 +338,11 @@ public final class XMLTransformer {
 			
 				long newEdition = identityURI.getEdition();
 				if(identity.getEdition() > newEdition) {
-					Logger.debug(this, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
+					if(logDEBUG) Logger.debug(this, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
 					return;
 				} else if(identity.getEdition() == newEdition) {
 					if(identity.getCurrentEditionFetchState() == FetchState.Fetched) {
-						Logger.debug(this, "Fetched current edition which is marked as fetched already, not importing: " + identityURI);
+						if(logDEBUG) Logger.debug(this, "Fetched current edition which is marked as fetched already, not importing: " + identityURI);
 						return;
 					} else if(identity.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
 						Logger.normal(this, "Re-fetched current-edition which was marked as parsing failed: " + identityURI);
@@ -562,7 +572,7 @@ public final class XMLTransformer {
 				try {
 					try {
 						newIdentity = mWoT.getIdentityByURI(identityURI);
-						Logger.minor(this, "Imported introduction for an already existing identity: " + newIdentity);
+						if(logMINOR) Logger.minor(this, "Imported introduction for an already existing identity: " + newIdentity);
 					}
 					catch (UnknownIdentityException e) {
 						newIdentity = new Identity(mWoT, identityURI, null, false);
@@ -572,12 +582,12 @@ public final class XMLTransformer {
 						// attack.
 						//newIdentity.setEdition(identityURI.getEdition());
 						newIdentity.storeWithoutCommit();
-						Logger.minor(this, "Imported introduction for an unknown identity: " + newIdentity);
+						if(logMINOR) Logger.minor(this, "Imported introduction for an unknown identity: " + newIdentity);
 					}
 
 					try {
 						mWoT.getTrust(puzzleOwner, newIdentity); /* Double check ... */
-						Logger.minor(this, "The identity is already trusted.");
+						if(logMINOR) Logger.minor(this, "The identity is already trusted.");
 					}
 					catch(NotTrustedException ex) {
 						// 0 trust will not allow the import of other new identities for the new identity because the trust list import code will only create
