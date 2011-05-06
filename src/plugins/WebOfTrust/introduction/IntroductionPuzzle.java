@@ -377,7 +377,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		if(mID == null)
 			throw new NullPointerException("mID==null");
 
-		if(!mID.endsWith(mInserter.getID()))
+		if(!mID.endsWith(getInserter().getID()))
 			throw new IllegalStateException("Invalid puzzle ID, does not end with inserter ID: " + mID);
 
 		if(mType == null)
