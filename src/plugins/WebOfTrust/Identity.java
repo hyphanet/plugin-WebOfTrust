@@ -79,6 +79,11 @@ public class Identity extends Persistent implements Cloneable {
 	/** A list of this Identity's custom properties */
 	protected HashMap<String, String> mProperties;
 	
+	/**
+	 * @see Identity#activateProperties()
+	 */
+	private transient boolean mPropertiesActivated;
+	
 	
 	/**
 	 * Creates an Identity. Only for being used by the WoT package and unit tests, not for user interfaces!
@@ -88,7 +93,9 @@ public class Identity extends Persistent implements Cloneable {
 	 * @param doesPublishTrustList Whether this identity publishes its trustList or not
 	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 */
-	protected Identity(FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException {
+	protected Identity(WebOfTrust myWoT, FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException {
+		initializeTransient(myWoT);
+		
 		if (!newRequestURI.isUSK() && !newRequestURI.isSSK())
 			throw new IllegalArgumentException("Identity URI keytype not supported: " + newRequestURI);
 		
@@ -117,7 +124,7 @@ public class Identity extends Persistent implements Cloneable {
 		mContexts = new ArrayList<String>(4); /* Currently we have: Introduction, Freetalk */
 		mProperties = new HashMap<String, String>();
 		
-		Logger.debug(this, "New identity: " + getNickname() + ", URI: " + newRequestURI);
+		Logger.debug(this, "New identity: " + mNickname + ", URI: " + mRequestURI);
 	}	
 
 	/**
@@ -129,10 +136,10 @@ public class Identity extends Persistent implements Cloneable {
 	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 * @throws MalformedURLException if the supplied requestURI isn't a valid FreenetURI
 	 */
-	public Identity(String newRequestURI, String newNickname, boolean doesPublishTrustList)
+	public Identity(WebOfTrust myWoT, String newRequestURI, String newNickname, boolean doesPublishTrustList)
 		throws InvalidParameterException, MalformedURLException {
 		
-		this(new FreenetURI(newRequestURI), newNickname, doesPublishTrustList);
+		this(myWoT, new FreenetURI(newRequestURI), newNickname, doesPublishTrustList);
 	}
 
 	/**
@@ -336,7 +343,7 @@ public class Identity extends Persistent implements Cloneable {
 		if (newNickname == null) {
 			throw new NullPointerException("Nickname is null");
 		}
-	
+		
 		newNickname = newNickname.trim();
 		
 		if(newNickname.length() == 0) {
@@ -494,19 +501,22 @@ public class Identity extends Persistent implements Cloneable {
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
-	private final void activateProperties() {
+	private synchronized final void activateProperties() {
+		// We must not deactivate mProperties if it was already modified by a setter so we need this guard
+		if(mPropertiesActivated)
+			return;
+		
 		// TODO: As soon as the db4o bug with hashmaps is fixed, remove this workaround function & replace with:
 		// checkedActivate(1);
 		// checkedActivate(mProperties, 3);
 		checkedActivate(1);
 		
 		if(mDB.isStored(mProperties)) {
-			Query q = mDB.query();
-			q.constrain(mProperties).identity();
-			mProperties = (HashMap<String,String>)q.execute().next();
+			mDB.deactivate(mProperties);
 			checkedActivate(mProperties, 3);
 		}
+		
+		mPropertiesActivated = true;
 	}
 
 	/**
@@ -715,8 +725,7 @@ public class Identity extends Persistent implements Cloneable {
 	 */
 	public Identity clone() {
 		try {
-			Identity clone = new Identity(getRequestURI(), getNickname(), doesPublishTrustList());
-			clone.initializeTransient(mWebOfTrust);
+			Identity clone = new Identity(mWebOfTrust, getRequestURI(), getNickname(), doesPublishTrustList());
 			
 			checkedActivate(4); // For performance only
 			

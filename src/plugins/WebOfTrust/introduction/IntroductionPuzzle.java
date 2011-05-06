@@ -107,8 +107,10 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	 * @param newType
 	 * @param newData
 	 */
-	public IntroductionPuzzle(Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData,
+	public IntroductionPuzzle(WebOfTrust myWebOfTrust, Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData,
 			Date myDateOfInsertion, Date myExpirationDate, int myIndex) {
+		
+		initializeTransient(myWebOfTrust);
 		
 		if(newInserter == null)
 			throw new NullPointerException("No inserter specified.");
@@ -422,7 +424,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	@Override
 	public IntroductionPuzzle clone() {
 		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
-		final IntroductionPuzzle copy = new IntroductionPuzzle(getInserter(), getID(), getType(), getMimeType(), getData(), getDateOfInsertion(), getValidUntilDate(), getIndex());
+		final IntroductionPuzzle copy = new IntroductionPuzzle(mWebOfTrust, getInserter(), getID(), getType(), getMimeType(), getData(), getDateOfInsertion(), getValidUntilDate(), getIndex());
 		if(wasSolved()) copy.setSolved((OwnIdentity)getSolver(), getSolution());
 		if(wasInserted()) copy.setInserted();
 		copy.initializeTransient(mWebOfTrust);

@@ -79,6 +79,10 @@ public final class IntroductionPuzzleStore {
 		// TODO: Implement.
 	}
 	
+	public WebOfTrust getWebOfTrust() {
+		return mWoT;
+	}
+	
 	protected RequestClient getRequestClient() {
 		return mRequestClient;
 	}

@@ -44,7 +44,7 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 			
 			Date dateOfInsertion = CurrentTimeUTC.get();
 			synchronized(store) {
-				OwnIntroductionPuzzle puzzle = new OwnIntroductionPuzzle(inserter, PuzzleType.Captcha, "image/jpeg", out.toByteArray(), text, 
+				OwnIntroductionPuzzle puzzle = new OwnIntroductionPuzzle(store.getWebOfTrust(), inserter, PuzzleType.Captcha, "image/jpeg", out.toByteArray(), text, 
 						dateOfInsertion, store.getFreeIndex(inserter, dateOfInsertion));
 				
 				store.storeAndCommit(puzzle);

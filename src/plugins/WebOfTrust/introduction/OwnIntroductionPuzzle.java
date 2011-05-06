@@ -15,17 +15,17 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	/**
 	 * For construction of a puzzle which is meant to be inserted.
 	 */
-	public OwnIntroductionPuzzle(OwnIdentity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
+	public OwnIntroductionPuzzle(WebOfTrust myWoT, OwnIdentity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
 			Date newDateOfInsertion, int myIndex) {
-		this(newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newSolution, newDateOfInsertion, myIndex);
+		this(myWoT, newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newSolution, newDateOfInsertion, myIndex);
 	}
 	
 	/**
 	 * Clone() needs to set the ID.
 	 */
-	private OwnIntroductionPuzzle(OwnIdentity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
+	private OwnIntroductionPuzzle(WebOfTrust myWoT, OwnIdentity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
 			Date newDateOfInsertion, int myIndex) {
-		super(newInserter, newID, newType, newMimeType, newData, newDateOfInsertion,
+		super(myWoT, newInserter, newID, newType, newMimeType, newData, newDateOfInsertion,
 				new Date(TimeUtil.setTimeToZero(newDateOfInsertion).getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000), 
 				myIndex);
 		
@@ -118,7 +118,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	public OwnIntroductionPuzzle clone() {
 		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
 		// checkedActivate(depth) for mSolution is not needed, String is a db4o primitive type
-		final OwnIntroductionPuzzle copy = new OwnIntroductionPuzzle((OwnIdentity)getInserter(), getID(), getType(), getMimeType(), getData(), getSolution(), getDateOfInsertion(), getIndex());
+		final OwnIntroductionPuzzle copy = new OwnIntroductionPuzzle(mWebOfTrust, (OwnIdentity)getInserter(), getID(), getType(), getMimeType(), getData(), getSolution(), getDateOfInsertion(), getIndex());
 		
 		if(wasSolved()) {
 			if(getSolver() != null)

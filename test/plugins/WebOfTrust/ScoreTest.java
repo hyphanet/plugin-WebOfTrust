@@ -25,10 +25,10 @@ public class ScoreTest extends DatabaseBasedTest {
 	protected void setUp() throws Exception {
 		super.setUp();
 		
-		a = new OwnIdentity(uriA, uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
-		b = new OwnIdentity(uriB, uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		a = new OwnIdentity(mWoT, uriA, uriA, "A", true); a.storeAndCommit();
+		b = new OwnIdentity(mWoT, uriB, uriB, "B", true); b.storeAndCommit();
 		
-		Score score = new Score(a,b,100,1,40); score.initializeTransient(mWoT);	score.storeWithoutCommit();
+		Score score = new Score(mWoT, a,b,100,1,40); score.storeWithoutCommit();
 		Persistent.checkedCommit(mWoT.getDatabase(), this);
 		
 		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
@@ -72,8 +72,7 @@ public class ScoreTest extends DatabaseBasedTest {
 	}
 	
 	public void testEquals() {
-		final Score score = new Score(a, b, 100, 3, 2);
-		score.initializeTransient(mWoT);
+		final Score score = new Score(mWoT, a, b, 100, 3, 2);
 		
 		do {
 			try {
@@ -81,8 +80,7 @@ public class ScoreTest extends DatabaseBasedTest {
 			} catch (InterruptedException e) { }
 		} while(score.getDateOfCreation().equals(CurrentTimeUTC.get()));
 		
-		final Score equalScore = new Score(score.getTruster().clone(), score.getTrustee().clone(), score.getScore(), score.getRank(), score.getCapacity());
-		equalScore.initializeTransient(mWoT);
+		final Score equalScore = new Score(mWoT, score.getTruster().clone(), score.getTrustee().clone(), score.getScore(), score.getRank(), score.getCapacity());
 		
 		assertEquals(score, score);
 		assertEquals(score, equalScore);
@@ -90,18 +88,15 @@ public class ScoreTest extends DatabaseBasedTest {
 		
 		final Object[] inequalObjects = new Object[] {
 			new Object(),
-			new Score((OwnIdentity)score.getTrustee(), score.getTruster(), score.getScore(), score.getRank(), score.getCapacity()),
-			new Score(score.getTruster(), score.getTruster(), score.getScore(), score.getRank(), score.getCapacity()),
-			new Score((OwnIdentity)score.getTrustee(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()),
-			new Score(score.getTruster(), score.getTrustee(), score.getScore()+1, score.getRank(), score.getCapacity()),
-			new Score(score.getTruster(), score.getTrustee(), score.getScore(), score.getRank()+1, score.getCapacity()),
-			new Score(score.getTruster(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()+1),
+			new Score(mWoT, (OwnIdentity)score.getTrustee(), score.getTruster(), score.getScore(), score.getRank(), score.getCapacity()),
+			new Score(mWoT, score.getTruster(), score.getTruster(), score.getScore(), score.getRank(), score.getCapacity()),
+			new Score(mWoT, (OwnIdentity)score.getTrustee(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()),
+			new Score(mWoT, score.getTruster(), score.getTrustee(), score.getScore()+1, score.getRank(), score.getCapacity()),
+			new Score(mWoT, score.getTruster(), score.getTrustee(), score.getScore(), score.getRank()+1, score.getCapacity()),
+			new Score(mWoT, score.getTruster(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()+1),
 		};
 		
 		for(Object other : inequalObjects) {
-			if(other instanceof Score)
-				((Score)other).initializeTransient(mWoT);
-			
 			assertFalse(score.equals(other));
 		}
 	}

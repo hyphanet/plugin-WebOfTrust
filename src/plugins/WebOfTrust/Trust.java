@@ -69,7 +69,9 @@ public final class Trust extends Persistent implements Cloneable {
 	 * @param comment A comment to explain the numeric trust value
 	 * @throws InvalidParameterException if the trust value is not between -100 and +100
 	 */
-	public Trust(Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
+	public Trust(WebOfTrust myWoT, Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
+		initializeTransient(myWoT);
+		
 		if(truster == null)
 			throw new NullPointerException();
 		
@@ -237,9 +239,8 @@ public final class Trust extends Persistent implements Cloneable {
 	
 	public Trust clone() {
 		try {
-			Trust clone = new Trust(getTruster(), getTrustee(), getValue(), getComment());
+			Trust clone = new Trust(mWebOfTrust, getTruster(), getTrustee(), getValue(), getComment());
 			clone.mTrusterTrustListEdition = getTrusterEdition();
-			clone.initializeTransient(mWebOfTrust);
 			return clone;
 		} catch (InvalidParameterException e) {
 			throw new RuntimeException(e);

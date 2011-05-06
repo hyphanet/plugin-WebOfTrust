@@ -292,6 +292,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		// TODO: Optimization: We do explicit activation everywhere. We could change this to 1 and test whether it still works.
 		// We have to do very careful testing though, toad_ said that db4o bugs can occur with depth 1 and manual activation...
 		cfg.activationDepth(10);
+		cfg.updateDepth(1); // This must not be changed: We only activate(this, 1) before store(this).
+		Logger.minor(this, "Default activation depth: " + cfg.activationDepth());
 		cfg.exceptionsOnNotStorable(true);
         // The shutdown hook does auto-commit. We do NOT want auto-commit: if a transaction hasn't commit()ed, it's not safe to commit it.
         cfg.automaticShutDown(false);
@@ -772,8 +774,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				
 				Score newScore = null;
 				if(targetScore != null) {
-					newScore = new Score(treeOwner, target, targetScore, targetRank, computeCapacity(treeOwner, target, targetRank));
-					newScore.initializeTransient(this);
+					newScore = new Score(this, treeOwner, target, targetScore, targetRank, computeCapacity(treeOwner, target, targetRank));
 				}
 				
 				boolean needToCheckFetchStatus = false;
@@ -883,8 +884,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 			catch (UnknownIdentityException uie) {
 				try {
-					seed = new Identity(seedURI, null, true);
-					seed.initializeTransient(this);
+					seed = new Identity(this, seedURI, null, true);
 					// We have to explicitely set the edition number because the constructor only considers the given edition as a hint.
 					seed.setEdition(new FreenetURI(seedURI).getEdition());
 					seed.storeAndCommit();
@@ -1527,8 +1527,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				updateScoresWithoutCommit(oldTrust, trust);
 			}
 		} catch (NotTrustedException e) {
-			final Trust trust = new Trust(truster, trustee, newValue, newComment);
-			trust.initializeTransient(this);
+			final Trust trust = new Trust(this, truster, trustee, newValue, newComment);
 			trust.storeWithoutCommit();
 			Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
 			updateScoresWithoutCommit(null, trust);
@@ -1627,8 +1626,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			Logger.error(this, "initTrusTree called even though there is already one for " + identity);
 			return;
 		} catch (NotInTrustTreeException e) {
-			final Score score = new Score(identity, identity, Integer.MAX_VALUE, 0, 100);
-			score.initializeTransient(this);
+			final Score score = new Score(this, identity, identity, Integer.MAX_VALUE, 0, 100);
 			score.storeWithoutCommit();
 		}
 	}
@@ -1849,8 +1847,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					try {
 						currentStoredTrusteeScore = getScore(treeOwner, trustee);
 					} catch(NotInTrustTreeException e) {
-						currentStoredTrusteeScore = new Score(treeOwner, trustee, 0, -1, 0);
-						currentStoredTrusteeScore.initializeTransient(this);
+						currentStoredTrusteeScore = new Score(this, treeOwner, trustee, 0, -1, 0);
 					}
 					
 					final Score oldScore = currentStoredTrusteeScore.clone();
@@ -1859,7 +1856,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					final int newScoreValue = computeScoreValue(treeOwner, trustee); 
 					final int newRank = computeRank(treeOwner, trustee);
 					final int newCapacity = computeCapacity(treeOwner, trustee, newRank);
-					final Score newScore = new Score(treeOwner, trustee, newScoreValue, newRank, newCapacity);
+					final Score newScore = new Score(this, treeOwner, trustee, newScoreValue, newRank, newCapacity);
 
 					// Normally we couldn't detect the following two cases due to circular trust values. However, if an own identity assigns a trust value,
 					// the rank and capacity are always computed based on the trust value of the own identity so we must also check this here:
@@ -1961,8 +1958,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			// IMHO we should not support adding identities without giving them a trust value.
 			
 			//try {
-			identity = new Identity(requestURI, null, false);
-			identity.initializeTransient(this);
+			identity = new Identity(this, requestURI, null, false);
 			identity.storeAndCommit();
 			//storeWithoutCommit(identity);
 			Logger.debug(this, "Created identity " + identity);
@@ -2025,8 +2021,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						identity.getNickname() + ".");
 			}
 			catch(UnknownIdentityException uie) {
-				identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
-				identity.initializeTransient(this);
+				identity = new OwnIdentity(this, new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 				
 				if(context != null)
 					identity.addContext(context);
@@ -2089,8 +2084,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					edition = Math.max(old.getEdition(), edition);
 					
 					// We already have fetched this identity as a stranger's one. We need to update the database.
-					identity = new OwnIdentity(insertFreenetURI, requestFreenetURI, old.getNickname(), old.doesPublishTrustList());
-					identity.initializeTransient(this);
+					identity = new OwnIdentity(this, insertFreenetURI, requestFreenetURI, old.getNickname(), old.doesPublishTrustList());
 					/* We re-fetch the current edition to make sure all trustees are imported */
 					identity.restoreEdition(edition);
 				
@@ -2102,19 +2096,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 					// Update all received trusts
 					for(Trust oldReceivedTrust : getReceivedTrusts(old)) {
-						Trust newReceivedTrust = new Trust(oldReceivedTrust.getTruster(), identity,
+						Trust newReceivedTrust = new Trust(this, oldReceivedTrust.getTruster(), identity,
 								oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
 						
-						newReceivedTrust.initializeTransient(this);
 						newReceivedTrust.storeWithoutCommit();
 					}
 		
 					// Update all received scores
 					for(Score oldScore : getScores(old)) {
-						Score newScore = new Score(oldScore.getTruster(), identity, oldScore.getScore(),
+						Score newScore = new Score(this, oldScore.getTruster(), identity, oldScore.getScore(),
 								oldScore.getRank(), oldScore.getCapacity());
 						
-						newScore.initializeTransient(this);
 						newScore.storeWithoutCommit();
 					}
 					
@@ -2138,8 +2130,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					Logger.debug(this, "Successfully restored an already known identity from Freenet (" + identity.getNickname() + ")");
 					
 				} catch (UnknownIdentityException e) {
-					identity = new OwnIdentity(new FreenetURI(insertURI), new FreenetURI(requestURI), null, false);
-					identity.initializeTransient(this);
+					identity = new OwnIdentity(this, new FreenetURI(insertURI), new FreenetURI(requestURI), null, false);
 					identity.restoreEdition(edition);
 					identity.updateLastInsertDate();
 					

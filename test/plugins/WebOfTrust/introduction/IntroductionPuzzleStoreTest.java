@@ -88,9 +88,8 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 	 */
 	private IntroductionPuzzle constructPuzzleWithExpirationDate(OwnIdentity identity, Date dateOfExpiration) {
 		final Date dateOfInsertion = new Date(dateOfExpiration.getTime() - IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000);
-		final IntroductionPuzzle p = new IntroductionPuzzle(identity, UUID.randomUUID().toString() + "@" + identity.getID(), PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, 
+		final IntroductionPuzzle p = new IntroductionPuzzle(mWoT, identity, UUID.randomUUID().toString() + "@" + identity.getID(), PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, 
 				dateOfInsertion, dateOfExpiration, mPuzzleStore.getFreeIndex(identity, dateOfInsertion));
-		p.initializeTransient(mWoT);
 		return p;
 	}
 	
@@ -99,9 +98,8 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 	 */
 	private IntroductionPuzzle constructPuzzleWithDate(OwnIdentity identity, Date dateOfInsertion) {
 		final Date dateOfExpiration = new Date(dateOfInsertion.getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000);
-		final IntroductionPuzzle p =  new IntroductionPuzzle(identity, UUID.randomUUID().toString() + "@" + identity.getID(), PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, 
+		final IntroductionPuzzle p =  new IntroductionPuzzle(mWoT, identity, UUID.randomUUID().toString() + "@" + identity.getID(), PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, 
 				dateOfInsertion, dateOfExpiration, mPuzzleStore.getFreeIndex(identity, dateOfInsertion));
-		p.initializeTransient(mWoT);
 		return p;
 	}
 	
@@ -109,9 +107,8 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 	 * Constructs a puzzle of the given OwnIdentity with the given insertion date. Does not store the puzzle in the database.
 	 */
 	private OwnIntroductionPuzzle constructOwnPuzzleWithDate(OwnIdentity identity, Date dateOfInsertion) {
-		final OwnIntroductionPuzzle p =  new OwnIntroductionPuzzle(identity, PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, "foobar",
+		final OwnIntroductionPuzzle p =  new OwnIntroductionPuzzle(mWoT, identity, PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, "foobar",
 				dateOfInsertion, mPuzzleStore.getFreeIndex(identity, dateOfInsertion));
-		p.initializeTransient(mWoT);
 		return p;
 	}
 	
@@ -119,8 +116,7 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 	 * Constructs a puzzle of the given OwnIdentity with the given insertion date and idnex. Does not store the puzzle in the database.
 	 */
 	private OwnIntroductionPuzzle constructOwnPuzzleWithDateAndIndex(OwnIdentity identity, Date dateOfInsertion, int index) {
-		final OwnIntroductionPuzzle p = new OwnIntroductionPuzzle(identity, PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, "foobar",  dateOfInsertion, index);
-		p.initializeTransient(mWoT);
+		final OwnIntroductionPuzzle p = new OwnIntroductionPuzzle(mWoT, identity, PuzzleType.Captcha, "image/jpeg", new byte[] { 0 }, "foobar",  dateOfInsertion, index);
 		return p;
 	}
 	

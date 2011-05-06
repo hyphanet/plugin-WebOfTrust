@@ -52,7 +52,9 @@ public final class Score extends Persistent implements Cloneable {
 	 * @param myRank How far the Identity is from the tree's root. 
 	 * @param myCapacity How much point the trusted Identity can add to its trustees score.
 	 */
-	public Score(OwnIdentity myTruster, Identity myTrustee, int myValue, int myRank, int myCapacity) {
+	public Score(WebOfTrust myWoT, OwnIdentity myTruster, Identity myTrustee, int myValue, int myRank, int myCapacity) {
+		initializeTransient(myWoT);
+		
 		if(myTruster == null)
 			throw new NullPointerException();
 			
@@ -235,8 +237,7 @@ public final class Score extends Persistent implements Cloneable {
 	}
 
 	public Score clone() {
-		final Score clone = new Score(getTruster(), getTrustee(), getScore(), getRank(), getCapacity());
-		clone.initializeTransient(mWebOfTrust);
+		final Score clone = new Score(mWebOfTrust, getTruster(), getTrustee(), getScore(), getRank(), getCapacity());
 		return clone;
 	}
 

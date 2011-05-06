@@ -33,8 +33,8 @@ public final class OwnIdentity extends Identity {
 	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
 	 * @throws InvalidParameterException If a given parameter is invalid
 	 */
-	public OwnIdentity (FreenetURI insertURI, FreenetURI requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException {	
-		super(requestURI, nickName, publishTrustList);
+	public OwnIdentity (WebOfTrust myWoT, FreenetURI insertURI, FreenetURI requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException {	
+		super(myWoT, requestURI, nickName, publishTrustList);
 		// This is already done by super()
 		// setEdition(0);
 		
@@ -68,8 +68,8 @@ public final class OwnIdentity extends Identity {
 	 * @throws InvalidParameterException If a given parameter is invalid
 	 * @throws MalformedURLException If either requestURI or insertURI is not a valid FreenetURI
 	 */
-	public OwnIdentity(String insertURI, String requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
-		this(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
+	public OwnIdentity(WebOfTrust myWoT, String insertURI, String requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
+		this(myWoT, new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 	}
 	
 	/**
@@ -172,8 +172,7 @@ public final class OwnIdentity extends Identity {
 	 */
 	public final OwnIdentity clone() {
 		try {
-			OwnIdentity clone = new OwnIdentity(getInsertURI(), getRequestURI(), getNickname(), doesPublishTrustList());
-			clone.initializeTransient(mWebOfTrust);
+			OwnIdentity clone = new OwnIdentity(mWebOfTrust, getInsertURI(), getRequestURI(), getNickname(), doesPublishTrustList());
 			
 			checkedActivate(4); // For performance only
 			

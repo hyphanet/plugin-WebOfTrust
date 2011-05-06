@@ -26,10 +26,10 @@ public class TrustTest extends DatabaseBasedTest {
 	protected void setUp() throws Exception {
 		super.setUp();
 
-		a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeWithoutCommit();
-		b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeWithoutCommit();
+		a = new Identity(mWoT, uriA, "A", true); a.storeWithoutCommit();
+		b = new Identity(mWoT, uriB, "B", true); b.storeWithoutCommit();
 		
-		Trust trust = new Trust(a,b,(byte)100,"test"); trust.initializeTransient(mWoT);trust.storeWithoutCommit();
+		Trust trust = new Trust(mWoT, a,b,(byte)100,"test"); trust.storeWithoutCommit();
 		Persistent.checkedCommit(mWoT.getDatabase(), this);
 		
 		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
@@ -38,31 +38,31 @@ public class TrustTest extends DatabaseBasedTest {
 	
 	public void testConstructor() throws InvalidParameterException {		
 		try {
-			new Trust(a, null, (byte)100, "test");
+			new Trust(mWoT, a, null, (byte)100, "test");
 			fail("Constructor allows trustee to be null");
 		}
 		catch(NullPointerException e) { }
 		
 		try {
-			new Trust(null, a, (byte)100, "test");
+			new Trust(mWoT, null, a, (byte)100, "test");
 			fail("Constructor allows truster to be null");
 		}
 		catch(NullPointerException e) {}
 		
 		try {
-			new Trust(a, b, (byte)-101, "test");
+			new Trust(mWoT, a, b, (byte)-101, "test");
 			fail("Constructor allows values less than -100");
 		}
 		catch(InvalidParameterException e) {}
 		
 		try {
-			new Trust(a, b, (byte)101, "test");
+			new Trust(mWoT, a, b, (byte)101, "test");
 			fail("Constructor allows values higher than 100");
 		}
 		catch(InvalidParameterException e) {}
 		
 		try { 
-			new Trust(a, a, (byte)100, "test");
+			new Trust(mWoT, a, a, (byte)100, "test");
 			fail("Constructor allows self-referential trust values");
 		}
 		catch(InvalidParameterException e) { }

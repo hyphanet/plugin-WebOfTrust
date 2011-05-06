@@ -420,8 +420,7 @@ public final class XMLTransformer {
 							}
 							catch(UnknownIdentityException e) {
 								if(hasCapacity) { /* We only create trustees if the truster has capacity to rate them. */
-									trustee = new Identity(trusteeURI, null, false);
-									trustee.initializeTransient(mWoT);
+									trustee = new Identity(mWoT, trusteeURI, null, false);
 									trustee.storeWithoutCommit();
 								}
 							}
@@ -566,8 +565,7 @@ public final class XMLTransformer {
 						Logger.minor(this, "Imported introduction for an already existing identity: " + newIdentity);
 					}
 					catch (UnknownIdentityException e) {
-						newIdentity = new Identity(identityURI, null, false);
-						newIdentity.initializeTransient(mWoT);
+						newIdentity = new Identity(mWoT, identityURI, null, false);
 						// We do NOT call setEdition(): An attacker might solve puzzles pretending to be someone else and publish bogus edition numbers for
 						// that identity by that. The identity constructor only takes the edition number as edition hint, this is the proper behavior.
 						// TODO: As soon as we have code for signing XML with an identity SSK we could sign the introduction XML and therefore prevent that
@@ -689,7 +687,7 @@ public final class XMLTransformer {
 		
 		synchronized(mWoT) {
 			Identity puzzleInserter = mWoT.getIdentityByURI(puzzleURI);
-			puzzle = new IntroductionPuzzle(puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, 
+			puzzle = new IntroductionPuzzle(mWoT, puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, 
 					IntroductionPuzzle.getDateFromRequestURI(puzzleURI), puzzleValidUntilDate, IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
 		
 			mWoT.getIntroductionPuzzleStore().storeAndCommit(puzzle);
