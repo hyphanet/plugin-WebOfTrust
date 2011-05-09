@@ -62,6 +62,16 @@ public final class IdentityInserter extends TransferThread {
 	/** Random number generator */
 	private Random mRandom;
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(IdentityInserter.class);
+	}
+	
+	
 	/**
 	 * Creates an IdentityInserter.
 	 * 
@@ -110,13 +120,13 @@ public final class IdentityInserter extends TransferThread {
 						long maxDelayedInsertTime = identity.getLastInsertDate().getTime() + MAX_DELAY_BEFORE_INSERT; 
 						
 						if(CurrentTimeUTC.getInMillis() > Math.min(minDelayedInsertTime, maxDelayedInsertTime)) {
-							Logger.debug(this, "Starting insert of " + identity.getNickname() + " (" + identity.getInsertURI() + ")");
+							if(logDEBUG) Logger.debug(this, "Starting insert of " + identity.getNickname() + " (" + identity.getInsertURI() + ")");
 							insert(identity);
 						} else {
 							long lastChangeBefore = (CurrentTimeUTC.getInMillis() - identity.getLastChangeDate().getTime()) / (60*1000);
 							long lastInsertBefore = (CurrentTimeUTC.getInMillis() - identity.getLastInsertDate().getTime()) / (60*1000); 
 							
-							Logger.debug(this, "Delaying insert of " + identity.getNickname() + " (" + identity.getInsertURI() + "), " +
+							if(logDEBUG) Logger.debug(this, "Delaying insert of " + identity.getNickname() + " (" + identity.getInsertURI() + "), " +
 									"last change: " + lastChangeBefore + "min ago, last insert: " + lastInsertBefore + "min ago");
 						}
 					} catch (Exception e) {
@@ -155,7 +165,7 @@ public final class IdentityInserter extends TransferThread {
 			addInsert(pu);
 			tempB = null;
 			
-			Logger.debug(this, "Started insert of identity '" + identity.getNickname() + "'");
+			if(logDEBUG) Logger.debug(this, "Started insert of identity '" + identity.getNickname() + "'");
 		}
 		catch(Exception e) {
 			Logger.error(this, "Error during insert of identity '" + identity.getNickname() + "'", e);
@@ -168,7 +178,7 @@ public final class IdentityInserter extends TransferThread {
 	
 	public void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
-		Logger.debug(this, "Successful insert of identity: " + state.getURI());
+		if(logDEBUG) Logger.debug(this, "Successful insert of identity: " + state.getURI());
 		
 		try {
 			synchronized(mWoT) {
@@ -202,7 +212,7 @@ public final class IdentityInserter extends TransferThread {
 	{
 		try {
 			if(e.getMode() == InsertException.CANCELLED) {
-				Logger.debug(this, "Insert cancelled: " + state.getURI());
+				if(logDEBUG) Logger.debug(this, "Insert cancelled: " + state.getURI());
 			}
 			else {
 				if(e.isFatal())

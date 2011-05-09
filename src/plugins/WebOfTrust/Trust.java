@@ -69,7 +69,9 @@ public final class Trust extends Persistent implements Cloneable {
 	 * @param comment A comment to explain the numeric trust value
 	 * @throws InvalidParameterException if the trust value is not between -100 and +100
 	 */
-	public Trust(Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
+	public Trust(WebOfTrust myWoT, Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
+		initializeTransient(myWoT);
+		
 		if(truster == null)
 			throw new NullPointerException();
 		
@@ -98,21 +100,21 @@ public final class Trust extends Persistent implements Cloneable {
 
 	/** @return The Identity that gives this trust. */
 	public Identity getTruster() {
-		checkedActivate(2);
+		checkedActivate(1);
 		mTruster.initializeTransient(mWebOfTrust);
 		return mTruster;
 	}
 
 	/** @return The Identity that receives this trust. */
 	public Identity getTrustee() {
-		checkedActivate(2);
+		checkedActivate(1);
 		mTrustee.initializeTransient(mWebOfTrust);
 		return mTrustee;
 	}
 
 	/** @return value Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. */
 	public synchronized byte getValue() {
-		// checkedActivate(depth) is not needed, byte is a db4o primitive type
+		checkedActivate(1); // byte is a db4o primitive type so 1 is enough
 		return mValue;
 	}
 
@@ -125,7 +127,7 @@ public final class Trust extends Persistent implements Cloneable {
 		if(newValue < -100 || newValue > 100) 
 			throw new InvalidParameterException("Invalid trust value ("+ newValue +"). Trust values must be in range of -100 to +100.");
 
-		// checkedActivate(depth) is not needed, byte is a db4o primitive type
+		checkedActivate(1); // byte is a db4o primitive type so 1 is enough
 		
 		if(mValue != newValue) {
 			mValue = newValue;
@@ -135,7 +137,7 @@ public final class Trust extends Persistent implements Cloneable {
 
 	/** @return The comment associated to this Trust relationship. */
 	public synchronized String getComment() {
-		// checkedActivate(depth) is not needed, String is a db4o primitive type
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mComment;
 	}
 
@@ -156,7 +158,7 @@ public final class Trust extends Persistent implements Cloneable {
 			|| !StringValidityChecker.containsNoInvalidFormatting(newComment))
 			throw new InvalidParameterException("Comment contains illegal characters.");
 
-		// checkedActivate(depth) is not needed, String is a db4o primitive type
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		
 		if(!mComment.equals(newComment)) {
 			mComment = newComment;
@@ -165,12 +167,12 @@ public final class Trust extends Persistent implements Cloneable {
 	}
 	
 	public synchronized Date getDateOfCreation() {
-		// checkedActivate(depth) is not needed, Date is a db4o primitive type
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return mCreationDate;
 	}
 	
 	public synchronized Date getDateOfLastChange() {
-		// checkedActivate(depth) is not needed, Date is a db4o primitive type
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return mLastChangedDate;
 	}
 	
@@ -179,18 +181,19 @@ public final class Trust extends Persistent implements Cloneable {
 	 * For an explanation for what this is needed please read the description of {@link #mTrusterTrustListEdition}.
 	 */
 	protected synchronized void trusterEditionUpdated() {
+		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		mTrusterTrustListEdition = getTruster().getEdition();
 	}
 	
 	protected synchronized long getTrusterEdition() {
-		// checkedActivate(depth) is not needed, long is a db4o primitive type
+		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		return mTrusterTrustListEdition;
 	}
 	
 	protected void storeWithoutCommit() {
 		try {		
-			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			checkedActivate(2);
+			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(1);
 			throwIfNotStored(mTruster);
 			throwIfNotStored(mTrustee);
 			checkedStore();
@@ -236,10 +239,8 @@ public final class Trust extends Persistent implements Cloneable {
 	
 	public Trust clone() {
 		try {
-			Trust clone = new Trust(getTruster(), getTrustee(), getValue(), getComment());
-			// checkedActivate(depth) is not needed, long is a db4o primitive type
-			clone.mTrusterTrustListEdition = this.mTrusterTrustListEdition;
-			clone.initializeTransient(mWebOfTrust);
+			Trust clone = new Trust(mWebOfTrust, getTruster(), getTrustee(), getValue(), getComment());
+			clone.mTrusterTrustListEdition = getTrusterEdition();
 			return clone;
 		} catch (InvalidParameterException e) {
 			throw new RuntimeException(e);
@@ -248,7 +249,7 @@ public final class Trust extends Persistent implements Cloneable {
 
 	@Override
 	public void startupDatabaseIntegrityTest() throws Exception {
-		checkedActivate(2);
+		checkedActivate(1);
 		
 		if(mTruster == null)
 			throw new NullPointerException("mTruster==null");

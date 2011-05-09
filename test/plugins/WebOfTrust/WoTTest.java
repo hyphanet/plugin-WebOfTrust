@@ -50,8 +50,8 @@ public class WoTTest extends DatabaseBasedTest {
 	
 	public void testSetTrust1() throws InvalidParameterException, MalformedURLException {
 		/* We store A manually instead of using createOwnIdentity() so that the WoT does not initialize it's trust tree (it does not have a score for itself). */
-		OwnIdentity a = new OwnIdentity(uriA, uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
-		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		OwnIdentity a = new OwnIdentity(mWoT, uriA, uriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
 		
 		// With A's trust tree not initialized, B shouldn't get a Score.
 		mWoT.setTrust(a, b, (byte)10, "Foo");
@@ -67,7 +67,7 @@ public class WoTTest extends DatabaseBasedTest {
 
 		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test"); /* Initializes it's trust tree */
 		
-		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		
@@ -138,8 +138,8 @@ public class WoTTest extends DatabaseBasedTest {
 		
 		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test");
 		
-		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
-		Identity c = new Identity(uriC, "C", true); c.initializeTransient(mWoT); c.storeAndCommit();
+		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		// There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
@@ -209,8 +209,8 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testTrustLoop() throws MalformedURLException, InvalidParameterException, NotInTrustTreeException {
 		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test");
 		
-		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
-		Identity c = new Identity(uriC, "C", true); c.initializeTransient(mWoT); c.storeAndCommit();
+		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		mWoT.setTrustWithoutCommit(b, c, (byte)50, "Bar"); // There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
@@ -297,11 +297,11 @@ public class WoTTest extends DatabaseBasedTest {
 		ExtObjectContainer db = mWoT.getDatabase();
 			
 		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit(); // Seed identity
+		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
 		// A / B are downloaded in different orders.
-		Identity a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
-		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
-		Identity c = new Identity(uriC, "C", true); c.initializeTransient(mWoT); c.storeAndCommit();
+		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -336,10 +336,10 @@ public class WoTTest extends DatabaseBasedTest {
 		db = mWoT.getDatabase();
 		
 		o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test");
-		s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit();
-		a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
-		b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
-		c = new Identity(uriC, "C", true); c.initializeTransient(mWoT); c.storeAndCommit();
+		s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit();
+		a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
+		b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -388,10 +388,10 @@ public class WoTTest extends DatabaseBasedTest {
 		ExtObjectContainer db = mWoT.getDatabase();
 			
 		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
-		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
-		Identity c = new Identity(uriC, "C", true); c.initializeTransient(mWoT); c.storeAndCommit();
+		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -440,13 +440,13 @@ public class WoTTest extends DatabaseBasedTest {
 		//same setup routine as testStability
 			
 		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
-		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
 		
-		Identity m1 = new Identity(uriM1, "M1", true); m1.initializeTransient(mWoT); m1.storeAndCommit(); //malicious identity
-		Identity m2 = new Identity(uriM2, "M2", true); m2.initializeTransient(mWoT); m2.storeAndCommit(); //malicious identity
-		Identity m3 = new Identity(uriM3, "M3", true); m3.initializeTransient(mWoT); m3.storeAndCommit(); //malicious identity
+		Identity m1 = new Identity(mWoT, uriM1, "M1", true); m1.storeAndCommit(); //malicious identity
+		Identity m2 = new Identity(mWoT, uriM2, "M2", true); m2.storeAndCommit(); //malicious identity
+		Identity m3 = new Identity(mWoT, uriM3, "M3", true); m3.storeAndCommit(); //malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -486,10 +486,10 @@ public class WoTTest extends DatabaseBasedTest {
 		ExtObjectContainer db = mWoT.getDatabase();
 		
 		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
-		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
-		Identity c = new Identity(uriC, "C", true); c.initializeTransient(mWoT); c.storeAndCommit();
+		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -543,13 +543,13 @@ public class WoTTest extends DatabaseBasedTest {
 		ExtObjectContainer db = mWoT.getDatabase();
 			
 		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
-		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
 		
-		Identity m1 = new Identity(uriM1, "M1", true); m1.initializeTransient(mWoT); m1.storeAndCommit(); //malicious identity
-		Identity m2 = new Identity(uriM2, "M2", true); m2.initializeTransient(mWoT); m2.storeAndCommit(); //malicious identity
-		Identity m3 = new Identity(uriM3, "M3", true); m3.initializeTransient(mWoT); m3.storeAndCommit(); //malicious identity
+		Identity m1 = new Identity(mWoT, uriM1, "M1", true); m1.storeAndCommit(); //malicious identity
+		Identity m2 = new Identity(mWoT, uriM2, "M2", true); m2.storeAndCommit(); //malicious identity
+		Identity m3 = new Identity(mWoT, uriM3, "M3", true); m3.storeAndCommit(); //malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -587,12 +587,12 @@ public class WoTTest extends DatabaseBasedTest {
 		ExtObjectContainer db = mWoT.getDatabase();
 			
 		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner		
-		Identity s = new Identity(uriS, "S", true); s.initializeTransient(mWoT); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(uriA, "A", true); a.initializeTransient(mWoT); a.storeAndCommit();
-		Identity b = new Identity(uriB, "B", true); b.initializeTransient(mWoT); b.storeAndCommit();
+		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
 		
-		Identity m1 = new Identity(uriM1, "M1", true); m1.initializeTransient(mWoT); m1.storeAndCommit(); //known malicious identity
-		Identity m2 = new Identity(uriM2, "M2", true); m2.initializeTransient(mWoT); m2.storeAndCommit(); //known malicious identity
+		Identity m1 = new Identity(mWoT, uriM1, "M1", true); m1.storeAndCommit(); //known malicious identity
+		Identity m2 = new Identity(mWoT, uriM2, "M2", true); m2.storeAndCommit(); //known malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");

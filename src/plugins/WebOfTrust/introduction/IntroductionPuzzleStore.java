@@ -50,7 +50,16 @@ public final class IntroductionPuzzleStore {
 	private final ExtObjectContainer mDB;
 	
 	private final RequestClient mRequestClient;
-
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(IntroductionPuzzleStore.class);
+	}
+	
 	
 	public IntroductionPuzzleStore(final WebOfTrust myWoT) {
 		mWoT = myWoT;
@@ -79,6 +88,10 @@ public final class IntroductionPuzzleStore {
 		// TODO: Implement.
 	}
 	
+	public WebOfTrust getWebOfTrust() {
+		return mWoT;
+	}
+	
 	protected RequestClient getRequestClient() {
 		return mRequestClient;
 	}
@@ -97,7 +110,7 @@ public final class IntroductionPuzzleStore {
 			for(IntroductionPuzzle p : result) {
 				synchronized(mDB.lock()) {
 				try {
-					Logger.debug(this, "Deleting expired puzzle, was valid until " + p.getValidUntilDate());
+					if(logDEBUG) Logger.debug(this, "Deleting expired puzzle, was valid until " + p.getValidUntilDate());
 					p.deleteWithoutCommit();
 					Persistent.checkedCommit(mDB, this);
 					++deleted;					
@@ -111,7 +124,7 @@ public final class IntroductionPuzzleStore {
 			/* TODO: Minor but interesting optimization: In lazy query evaluation mode, result.size() should take about O(N) time
 			 * before the for() and O(1) after it if db4o is smart enough. Verify if it really calculates and stores the size
 			 * during the iteration. If not, the log line should be prefixed with if(loglevel is debug) */
-			Logger.debug(this, "Deleted " + deleted + " of " + result.size() + " expired puzzles.");
+			if(logDEBUG) Logger.debug(this, "Deleted " + deleted + " of " + result.size() + " expired puzzles.");
 	}
 	
 	/**
@@ -131,7 +144,7 @@ public final class IntroductionPuzzleStore {
 			
 			int deleteCount = Math.max(result.size() - puzzlePoolSize, 0);
 			
-			Logger.debug(this, "Deleting " + deleteCount + " old puzzles, keeping " + puzzlePoolSize);
+			if(logDEBUG) Logger.debug(this, "Deleting " + deleteCount + " old puzzles, keeping " + puzzlePoolSize);
 			
 			while(deleteCount > 0 && result.hasNext()) {
 				final IntroductionPuzzle puzzle = result.next();

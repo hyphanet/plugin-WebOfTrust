@@ -6,7 +6,6 @@ package plugins.WebOfTrust;
 import java.util.Date;
 
 import freenet.support.CurrentTimeUTC;
-import freenet.support.Logger;
 
 
 /**
@@ -53,7 +52,9 @@ public final class Score extends Persistent implements Cloneable {
 	 * @param myRank How far the Identity is from the tree's root. 
 	 * @param myCapacity How much point the trusted Identity can add to its trustees score.
 	 */
-	public Score(OwnIdentity myTruster, Identity myTrustee, int myValue, int myRank, int myCapacity) {
+	public Score(WebOfTrust myWoT, OwnIdentity myTruster, Identity myTrustee, int myValue, int myRank, int myCapacity) {
+		initializeTransient(myWoT);
+		
 		if(myTruster == null)
 			throw new NullPointerException();
 			
@@ -86,7 +87,7 @@ public final class Score extends Persistent implements Cloneable {
 	 * @return in which OwnIdentity's trust tree this score is
 	 */
 	public OwnIdentity getTruster() {
-		checkedActivate(2);
+		checkedActivate(1);
 		mTruster.initializeTransient(mWebOfTrust);
 		return mTruster;
 	}
@@ -95,7 +96,7 @@ public final class Score extends Persistent implements Cloneable {
 	 * @return Identity that has this Score
 	 */
 	public Identity getTrustee() {
-		checkedActivate(2);
+		checkedActivate(1);
 		mTrustee.initializeTransient(mWebOfTrust);
 		return mTrustee;
 	}
@@ -105,7 +106,7 @@ public final class Score extends Persistent implements Cloneable {
 	 */
 	/* XXX: Rename to getValue */
 	public synchronized int getScore() {
-		// checkedActivate(depth) is not needed, int is a db4o primitive type
+		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mValue;
 	}
 
@@ -113,7 +114,7 @@ public final class Score extends Persistent implements Cloneable {
 	 * Sets the numeric value of this Score.
 	 */
 	protected synchronized void setValue(int newValue) {
-		// checkedActivate(depth) is not needed, int is a db4o primitive type
+		checkedActivate(1); // int/Date is a db4o primitive type so 1 is enough
 		
 		if(mValue == newValue)
 			return;
@@ -126,7 +127,7 @@ public final class Score extends Persistent implements Cloneable {
 	 * @return The minimal distance in steps of {@link Trust} values from the truster to the trustee
 	 */
 	public synchronized int getRank() {
-		// checkedActivate(depth) is not needed, int is a db4o primitive type
+		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mRank;
 	}
 
@@ -137,7 +138,7 @@ public final class Score extends Persistent implements Cloneable {
 		if(newRank < -1)
 			throw new IllegalArgumentException("Illegal rank.");
 		
-		// checkedActivate(depth) is not needed, int is a db4o primitive type
+		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		
 		if(newRank == mRank)
 			return;
@@ -150,7 +151,7 @@ public final class Score extends Persistent implements Cloneable {
 	 * @return how much points the trusted Identity can add to its trustees score
 	 */
 	public synchronized int getCapacity() {
-		// checkedActivate(depth) is not needed, int is a db4o primitive type
+		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mCapacity;
 	}
 
@@ -161,7 +162,7 @@ public final class Score extends Persistent implements Cloneable {
 		if(newCapacity < 0)
 			throw new IllegalArgumentException("Negative capacities are not allowed.");
 		
-		// checkedActivate(depth) is not needed, int is a db4o primitive type
+		checkedActivate(1); // int/Date is a db4o primitive type so 1 is enough
 		
 		if(newCapacity == mCapacity)
 			return;
@@ -175,7 +176,7 @@ public final class Score extends Persistent implements Cloneable {
 	 * or capacity of a score changes then its date of creation stays constant.
 	 */
 	public synchronized Date getDateOfCreation() {
-		// checkedActivate(depth) is not needed, Date is a db4o primitive type
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return mCreationDate;
 	}
 	
@@ -183,15 +184,15 @@ public final class Score extends Persistent implements Cloneable {
 	 * Gets the {@link Date} when the value, capacity or rank of this score was last changed.
 	 */
 	public synchronized Date getDateOfLastChange() {
-		// checkedActivate(depth) is not needed, Date is a db4o primitive type
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return mLastChangedDate;
 	}
 	
 	@Override
 	protected void storeWithoutCommit() {
 		try {		
-			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			checkedActivate(2);
+			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(1);
 			throwIfNotStored(mTruster);
 			throwIfNotStored(mTrustee);
 			checkedStore();
@@ -236,14 +237,13 @@ public final class Score extends Persistent implements Cloneable {
 	}
 
 	public Score clone() {
-		final Score clone = new Score(getTruster(), getTrustee(), getScore(), getRank(), getCapacity());
-		clone.initializeTransient(mWebOfTrust);
+		final Score clone = new Score(mWebOfTrust, getTruster(), getTrustee(), getScore(), getRank(), getCapacity());
 		return clone;
 	}
 
 	@Override
 	public void startupDatabaseIntegrityTest() throws Exception {
-		checkedActivate(2);
+		checkedActivate(1);
 		
 		if(mTruster == null)
 			throw new NullPointerException("mTruster==null");

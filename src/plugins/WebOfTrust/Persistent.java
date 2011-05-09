@@ -52,6 +52,16 @@ public abstract class Persistent {
 	 * Also it is needed in many cases for the UI.
 	 */
 	protected final Date mCreationDate = CurrentTimeUTC.get();
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	protected static transient volatile boolean logDEBUG = false;
+	protected static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(Persistent.class);
+	}
+	
 
 	/**
 	 * This annotation should be added to all member variables (of Persistent classes) which the database should be configured to generate an index on.
@@ -110,9 +120,6 @@ public abstract class Persistent {
 	 */
 	protected final void checkedActivate(final Object object, final int depth) {
 		if(mDB.isStored(object)) {
-			if(!mDB.isActive(object))
-				Logger.error(this, "Trying to store a non-active object: " + object);
-				
 			mDB.activate(this, depth);
 		}
 	}
@@ -321,7 +328,7 @@ public abstract class Persistent {
 	public static final void checkedCommit(final ExtObjectContainer db, final Object loggingObject) {
 		testDatabaseIntegrity(null, db);
 		db.commit();
-		Logger.debug(loggingObject, "COMMITED.");
+		if(logDEBUG) Logger.debug(loggingObject, "COMMITED.");
 		testDatabaseIntegrity(null, db);
 	}
 	
@@ -344,6 +351,7 @@ public abstract class Persistent {
 	 * This date is stored in the database so it is constant for a given persistent object.
 	 */
 	public final Date getCreationDate() {
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return mCreationDate;
 	}
 	
