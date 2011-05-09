@@ -293,7 +293,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Initializes the plugin's db4o database.
 	 */
 	private ExtObjectContainer openDatabase(File file) {
-		if(logDEBUG) Logger.debug(this, "Using db4o " + Db4o.version());
+		Logger.normal(this, "Using db4o " + Db4o.version());
 		
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		
@@ -301,9 +301,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader()));
 		// TODO: Optimization: We do explicit activation everywhere. We could change this to 1 and test whether it still works.
 		// We have to do very careful testing though, toad_ said that db4o bugs can occur with depth 1 and manual activation...
-		cfg.activationDepth(10);
+		cfg.activationDepth(1);
 		cfg.updateDepth(1); // This must not be changed: We only activate(this, 1) before store(this).
-		if(logMINOR) Logger.minor(this, "Default activation depth: " + cfg.activationDepth());
+		Logger.normal(this, "Default activation depth: " + cfg.activationDepth());
 		cfg.exceptionsOnNotStorable(true);
         // The shutdown hook does auto-commit. We do NOT want auto-commit: if a transaction hasn't commit()ed, it's not safe to commit it.
         cfg.automaticShutDown(false);
