@@ -419,6 +419,8 @@ public final class FCPInterface implements FredPluginFCP {
 						sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter + ".Name", property.getKey());
 						sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter++ + ".Value", property.getValue());
 					}
+					
+					++i;
 				}
 			}
 		}
@@ -441,6 +443,8 @@ public final class FCPInterface implements FredPluginFCP {
 				sfs.putOverwrite("Trustee" + i, trust.getTrustee().getID());
 				sfs.putOverwrite("Value" + i, Byte.toString(trust.getValue()));
 				sfs.putOverwrite("Comment" + i, trust.getComment());
+				
+				++i;
 			}
         }
         
@@ -461,6 +465,8 @@ public final class FCPInterface implements FredPluginFCP {
 				sfs.putOverwrite("Truster" + i, score.getTruster().getID());
 				sfs.putOverwrite("Trustee" + i, score.getTrustee().getID());
 				sfs.putOverwrite("Value" + i, Integer.toString(score.getScore()));
+				
+				++i;
 			}
         }
         
