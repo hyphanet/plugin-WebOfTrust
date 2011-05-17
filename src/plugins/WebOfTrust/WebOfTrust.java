@@ -959,7 +959,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				 * If it becomes possible some day, we should check that here, and log an error if there is an uncommitted transaction. 
 				 * - All transactions should be committed after obtaining the lock() on the database. */
 				synchronized(mDB.lock()) {
-					Persistent.checkedRollback(mDB, this, null);
+					System.gc();
+					mDB.rollback();
+					System.gc(); 
 					mDB.close();
 				}
 			}
