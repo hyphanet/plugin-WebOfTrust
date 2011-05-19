@@ -780,7 +780,7 @@ public class Identity extends Persistent implements Cloneable {
 	 */
 	public final void storeAndCommit() {
 		synchronized(mWebOfTrust) {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				storeWithoutCommit();
 				checkedCommit(this);

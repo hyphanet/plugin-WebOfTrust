@@ -354,7 +354,7 @@ public final class XMLTransformer {
 					throw xmlData.parseError;
 				
 			
-				synchronized(mDB.lock()) {
+				synchronized(Persistent.transactionLock(mDB)) {
 				try { // Transaction rollback block
 					identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
 					boolean didPublishTrustListPreviously = identity.doesPublishTrustList();
@@ -464,7 +464,7 @@ public final class XMLTransformer {
 					mWoT.abortTrustListImport(e); // Does the rollback
 					throw e;
 				} // try
-				} // synchronized(db.lock())
+				} // synchronized(Persistent.transactionLock(db))
 				
 			Logger.normal(this, "Finished XML import for " + identity);
 		} // synchronized(mWoT)
@@ -568,7 +568,7 @@ public final class XMLTransformer {
 			if(!puzzleOwner.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT))
 				throw new InvalidParameterException("Trying to import an identity identroduction for an own identity which does not allow introduction.");
 			
-			synchronized(mDB.lock()) {
+			synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					try {
 						newIdentity = mWoT.getIdentityByURI(identityURI);

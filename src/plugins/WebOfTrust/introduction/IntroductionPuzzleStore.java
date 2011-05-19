@@ -108,7 +108,7 @@ public final class IntroductionPuzzleStore {
 			int deleted = 0;
 			
 			for(IntroductionPuzzle p : result) {
-				synchronized(mDB.lock()) {
+				synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					if(logDEBUG) Logger.debug(this, "Deleting expired puzzle, was valid until " + p.getValidUntilDate());
 					p.deleteWithoutCommit();
@@ -149,7 +149,7 @@ public final class IntroductionPuzzleStore {
 			while(deleteCount > 0 && result.hasNext()) {
 				final IntroductionPuzzle puzzle = result.next();
 
-				synchronized(mDB.lock()) {
+				synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					puzzle.deleteWithoutCommit();
 					Persistent.checkedCommit(mDB, this);
@@ -193,7 +193,7 @@ public final class IntroductionPuzzleStore {
 		/* TODO: Convert to assert() maybe when we are sure that this does not happen. Duplicate puzzles will be deleted after they
 		 * expire anyway. Further, isn't there a db4o option which ensures that mID is a primary key and therefore no duplicates can exist? */
 		synchronized(puzzle) {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				final IntroductionPuzzle existingPuzzle = getByID(puzzle.getID());
 				if(existingPuzzle != puzzle)

@@ -202,7 +202,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			// TODO: Don't do this as soon as we are sure that score computation works.
 			Logger.normal(this, "Veriying all stored scores ...");
 			synchronized(this) {
-			synchronized(mDB.lock()) {
+			synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					computeAllScoresWithoutCommit();
 					Persistent.checkedCommit(mDB, this);
@@ -404,7 +404,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Debug function for deleting duplicate identities etc. which might have been created due to bugs :)
 	 */
 	private synchronized void deleteDuplicateObjects() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 		try {
 			HashSet<String> deleted = new HashSet<String>();
 
@@ -433,7 +433,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		}
 
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 		try {
 		if(logDEBUG) Logger.debug(this, "Searching for duplicate Trust objects ...");
 
@@ -471,7 +471,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Debug function for deleting trusts or scores of which one of the involved partners is missing.
 	 */
 	private synchronized void deleteOrphanObjects() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				boolean orphanTrustFound = false;
 				
@@ -502,7 +502,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 		}
 		
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				boolean orphanScoresFound = false;
 				
@@ -958,7 +958,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				/* TODO: At 2009-06-15, it does not seem possible to ask db4o for whether a transaction is pending.
 				 * If it becomes possible some day, we should check that here, and log an error if there is an uncommitted transaction. 
 				 * - All transactions should be committed after obtaining the lock() on the database. */
-				synchronized(mDB.lock()) {
+				synchronized(Persistent.transactionLock(mDB)) {
 					System.gc();
 					mDB.rollback();
 					System.gc(); 
@@ -1511,7 +1511,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * It creates or updates an existing Trust object and make the trustee compute its {@link Score}.
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
-	 * synchronized(mDB.lock()) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... setTrustWithoutCommit(...); mDB.commit(); }
 	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
 	 * }
@@ -1555,7 +1555,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	synchronized void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				setTrustWithoutCommit(truster, trustee, newValue, newComment);
 				Persistent.checkedCommit(mDB, this);
@@ -1567,7 +1567,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	protected synchronized void removeTrust(OwnIdentity truster, Identity trustee) {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try  {
 				removeTrustWithoutCommit(truster, trustee);
 				Persistent.checkedCommit(mDB, this);
@@ -1582,7 +1582,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Deletes a trust object.
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
-	 * synchronized(mDB.lock()) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... removeTrustWithoutCommit(...); mDB.commit(); }
 	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
 	 * }
@@ -1607,7 +1607,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	/**
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
-	 * synchronized(mDB.lock()) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... setTrustWithoutCommit(...); mDB.commit(); }
 	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
 	 * }
@@ -1625,7 +1625,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * The score will have a rank of 0, a capacity of 100 (= 100 percent) and a score value of Integer.MAX_VALUE.
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
-	 * synchronized(mDB.lock()) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... initTrustTreeWithoutCommit(...); mDB.commit(); }
 	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
 	 * }
@@ -1742,7 +1742,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * This speeds up setTrust/removeTrust as the score calculation is only performed when endTrustListImport is called.
 	 * 
 	 * You MUST synchronize on this WoT around beginTrustListImport, abortTrustListImport and finishTrustListImport!
-	 * You MUST create a database transaction by synchronizing on db.lock().
+	 * You MUST create a database transaction by synchronizing on Persistent.transactionLock(db).
 	 */
 	protected void beginTrustListImport() {
 		if(mTrustListImportInProgress) {
@@ -1799,7 +1799,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * For understanding how score calculation works you should first read {@link computeAllScores
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
-	 * synchronized(mDB.lock()) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... updateScoreWithoutCommit(...); mDB.commit(); }
 	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
 	 * }
@@ -1994,7 +1994,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	public synchronized void deleteIdentity(Identity identity) {
 		synchronized(mPuzzleStore) {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				deleteWithoutCommit(identity);
 				Persistent.checkedCommit(mDB, this);
@@ -2023,7 +2023,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public synchronized OwnIdentity createOwnIdentity(String insertURI, String requestURI, String nickName,
 			boolean publishTrustList, String context) throws MalformedURLException, InvalidParameterException {
 		
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			OwnIdentity identity;
 			
 			try {
@@ -2077,7 +2077,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public synchronized void restoreIdentity(String requestURI, String insertURI) throws MalformedURLException, InvalidParameterException {
 		OwnIdentity identity;
 		synchronized(mPuzzleStore) {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				FreenetURI requestFreenetURI = new FreenetURI(requestURI);
 				FreenetURI insertFreenetURI = new FreenetURI(insertURI);

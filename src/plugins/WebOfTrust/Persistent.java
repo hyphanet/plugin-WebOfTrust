@@ -53,6 +53,12 @@ public abstract class Persistent {
 	 */
 	protected final Date mCreationDate = CurrentTimeUTC.get();
 	
+	/**
+	 * The object used for locking transactions.
+	 * Since we only support one open database at a moment there is only one.
+	 */
+	private static transient final Object mTransactionLock = new Object();
+	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
 	protected static transient volatile boolean logDEBUG = false;
@@ -107,6 +113,18 @@ public abstract class Persistent {
 	public final void initializeTransient(final WebOfTrust myWebOfTrust) {
 		mWebOfTrust = myWebOfTrust;
 		mDB = mWebOfTrust.getDatabase();
+	}
+	
+	/**
+	 * Returns the lock for creating a transaction.
+	 * A proper transaction typically looks like this:
+	 * synchronized(Persistent.transactionLock(db)) { try { ... do stuff ... Persistent.checkedCommit() } catch(RuntimeException e) { Persistent.checkedRollback(); } }
+	 * 
+	 * The db parameter is currently ignored - the same lock will be returned for all databases!
+	 * We don't need multi-database support in Freetalk yet.
+	 */
+	public static final Object transactionLock(ExtObjectContainer db) {
+		return mTransactionLock;
 	}
 
 	/**
@@ -215,7 +233,7 @@ public abstract class Persistent {
 	/**
 	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction, logs the passed exception and throws it.
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
-	 * synchronized(mDB.lock()) {<br />
+	 * synchronized(Persistent.transactionLock(mDB)) {<br />
 	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
 	 * 	catch(RuntimeException e) { Persistent.checkedRollback(mDB, this, e); }<br />
 	 * } 
@@ -233,7 +251,7 @@ public abstract class Persistent {
 	/**
 	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction, logs the passed exception and throws it.
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
-	 * synchronized(mDB.lock()) {<br />
+	 * synchronized(Persistent.transactionLock(mDB)) {<br />
 	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
 	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
 	 * } 
@@ -275,7 +293,7 @@ public abstract class Persistent {
 	/**
 	 * This is one of the only functions which outside classes should use. It is used for storing the object.
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
-	 * synchronized(mDB.lock()) {<br />
+	 * synchronized(Persistent.transactionLock(mDB)) {<br />
 	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
 	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
 	 * } 
@@ -307,7 +325,7 @@ public abstract class Persistent {
 	/**
 	 * This is one of the only functions which outside classes should use. It is used for deleting the object.
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
-	 * synchronized(mDB.lock()) {<br />
+	 * synchronized(Persistent.transactionLock(mDB)) {<br />
 	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
 	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
 	 * } 
@@ -320,7 +338,7 @@ public abstract class Persistent {
 	/**
 	 * This is one of the only functions which outside classes should use. It is used for committing the transaction. 
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
-	 * synchronized(mDB.lock()) {<br />
+	 * synchronized(Persistent.transactionLock(mDB)) {<br />
 	 * 	try { object.storeWithoutCommit(); Persistent.checkedCommit(mDB, this); }<br />
 	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
 	 * } 
@@ -335,7 +353,7 @@ public abstract class Persistent {
 	/**
 	 * This is one of the only functions which outside classes should use. It is used for committing the transaction.
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
-	 * synchronized(mDB.lock()) {<br />
+	 * synchronized(Persistent.transactionLock(mDB)) {<br />
 	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
 	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
 	 * } 
