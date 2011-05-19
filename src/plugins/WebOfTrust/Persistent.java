@@ -137,9 +137,7 @@ public abstract class Persistent {
 	 * Activates the object to the specified depth.<br /><br />
 	 */
 	protected final void checkedActivate(final Object object, final int depth) {
-		if(mDB.isStored(object)) {
-			mDB.activate(this, depth);
-		}
+		mDB.activate(this, depth);
 	}
 	
 	/**
