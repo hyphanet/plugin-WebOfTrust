@@ -3,7 +3,7 @@
 
 <project name="WoT" default="dist" basedir=".">
 	<property name="freenet-cvs-snapshot.location" location="../fred/dist/freenet.jar"/>
-	<property name="freenet-ext.location" location="../fred/lib/freenet/freenet-ext.jar"/>
+	<property name="freenet-ext.location" location="../fred/lib/freenet-ext.jar"/>
 	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WebOfTrust.jar"/>
 	<property name="svn.revision" value="@custom@"/>
 	<property name="source-version" value="1.5"/>
@@ -33,7 +33,6 @@
 		<arg value="describe" />
 		<arg value="--always" />
 		<arg value="--abbrev=4" />
-		<arg value="--dirty" />
 	</exec>
 
 	<condition property="git.revision" value="${git.describe}" else="@unknown@">
