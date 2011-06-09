@@ -46,8 +46,6 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	 */
 	public FreenetURI getInsertURI() {
 		checkedActivate(1); // Needed for the getters below anyway so we can do it here for the assert()
-		assert(mWasInserted == false);  // checkedActivate(depth) is not needed, boolean is a db4o primitive type
-		assert(mWasSolved == false);
 		
 		String dayOfInsertion;
 		synchronized (mDateFormat) {
@@ -72,6 +70,9 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 		if(mSolver != null)
 			throw new RuntimeException("mSolver==" + mSolver);
 		
+		if(!mWasInserted)
+			Logger.error(this, "Non-inserted puzzle was solved, impossible: " + this);
+		
 		mWasSolved = true;
 		mSolver = null;
 	}
@@ -87,6 +88,9 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 		
 		if(mSolver != null)
 			throw new RuntimeException("mSolver==" + mSolver);
+		
+		if(!mWasInserted)
+			Logger.error(this, "Non-inserted puzzle was solved, impossible: " + this);
 		
 		mWasSolved = true;
 		mSolver = solver;
