@@ -424,4 +424,11 @@ public final class IntroductionServer extends TransferThread {
 	/** Called when freenet.async thinks that the request should be serialized to disk, if it is a persistent request. */
 	public void onMajorProgress(ObjectContainer container) {}
 
+	@Override
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
+			ObjectContainer container) {
+		metadata.free();
+		throw new UnsupportedOperationException();
+	}
+
 }

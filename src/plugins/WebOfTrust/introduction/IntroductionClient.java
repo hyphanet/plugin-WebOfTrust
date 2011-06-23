@@ -656,4 +656,11 @@ public final class IntroductionClient extends TransferThread  {
 		super.removeInsert(p);
 	}
 
+	@Override
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
+			ObjectContainer container) {
+		metadata.free();
+		throw new UnsupportedOperationException();
+	}
+
 }
