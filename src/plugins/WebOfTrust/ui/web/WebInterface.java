@@ -33,6 +33,8 @@ import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.Base64;
+import freenet.support.IllegalBase64Exception;
 
 /**
  * The web interface of the WoT plugin.
@@ -416,15 +418,12 @@ public class WebInterface {
 			}
 			ByteArrayOutputStream imageOutputStream = null;
 			try {
-				// TODO: Optimization: We do not have to query the identity here, the ID *is* the routing key, we could just base64-decode it.
-				Identity identity = mWoT.getIdentityByID(identityId);
-				byte[] routingKey = identity.getRequestURI().getRoutingKey();
-				RenderedImage identiconImage = new Identicon(routingKey).render(width, height);
+				RenderedImage identiconImage = new Identicon(Base64.decode(identityId)).render(width, height);
 				imageOutputStream = new ByteArrayOutputStream();
 				ImageIO.write(identiconImage, "png", imageOutputStream);
 				Bucket imageBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, imageOutputStream.toByteArray());
 				writeReply(toadletContext, 200, "image/png", "OK", imageBucket);
-			} catch (UnknownIdentityException uie1) {
+			} catch (IllegalBase64Exception e) {
 				writeReply(toadletContext, 404, "text/plain", "Not found", "Not found.");
 			} finally {
 				Closer.close(imageOutputStream);
