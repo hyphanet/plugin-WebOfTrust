@@ -15,6 +15,7 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 import freenet.support.codeshortification.IfNull;
@@ -171,6 +172,10 @@ public class Identity extends Persistent implements Cloneable {
 	public static final String getIDFromURI(FreenetURI uri) {
 		/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
 		return Base64.encode(uri.getRoutingKey());
+	}
+	
+	public static final byte[] getRoutingKeyFromID(String id) throws IllegalBase64Exception {
+		return Base64.decode(id);
 	}
 
 	/**
