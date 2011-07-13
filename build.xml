@@ -33,6 +33,7 @@
 		<arg value="describe" />
 		<arg value="--always" />
 		<arg value="--abbrev=4" />
+		<arg value="--dirty" />
 	</exec>
 
 	<condition property="git.revision" value="${git.describe}" else="@unknown@">
