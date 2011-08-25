@@ -161,7 +161,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 	public void runPlugin(PluginRespirator myPR) {
 		try {
-			Logger.normal(this, "Start");
+			Logger.normal(this, "Web Of Trust plugin starting up...");
 			
 			/* Catpcha generation needs headless mode on linux */
 			System.setProperty("java.awt.headless", "true"); 
@@ -237,7 +237,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			mWebInterface = new WebInterface(this, SELF_URI);
 			mFCPInterface = new FCPInterface(this);
 			
-			Logger.normal(this, "WoT startup completed.");
+			Logger.normal(this, "Web Of Trust plugin starting up completed.");
 		}
 		catch(RuntimeException e){
 			Logger.error(this, "Error during startup", e);
