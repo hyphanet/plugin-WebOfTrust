@@ -393,7 +393,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			try {
 				p.startupDatabaseIntegrityTest();
 			} catch(Exception e) {
-				Logger.error(this, "Integrity test failed for " + p, e);
+				try {
+					Logger.error(this, "Integrity test failed for " + p, e);
+				} catch(Exception e2) {
+					Logger.error(this, "Integrity test failed for Persistent of class " + p.getClass(), e);
+					Logger.error(this, "Exception thrown by toString() was:", e2);
+				}
 			}
 		}
 		
