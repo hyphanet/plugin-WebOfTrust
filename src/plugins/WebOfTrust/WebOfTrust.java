@@ -943,7 +943,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 			}
 			catch (UnknownIdentityException uie) {
-				synchronized(mDB.lock()) {
+				synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					seed = new Identity(this, seedURI, null, true);
 					// We have to explicitely set the edition number because the constructor only considers the given edition as a hint.
@@ -2054,7 +2054,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			// TODO: The identity won't be fetched because it has not received a trust value yet.
 			// IMHO we should not support adding identities without giving them a trust value.
 			
-			synchronized(mDB.lock()) {
+			synchronized(Persistent.transactionLock(mDB)) {
 			try {
 			identity = new Identity(this, requestURI, null, false);
 			identity.storeWithoutCommit();

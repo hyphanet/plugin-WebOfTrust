@@ -95,6 +95,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
+			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
+			
 			IfNull.thenThrow(mID, "mID");
 			UUID.fromString(mID); // Throws if invalid
 			
@@ -115,10 +117,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @return The UUID of this Subscription. Stored as String for db4o performance, but must be valid in terms of the UUID class.
 		 */
 		public final String getID() {
+			checkedActivate(1);
 			return mID;
 		}
 		
 		public final Type getType() {
+			checkedActivate(1);
 			return mType;
 		}
 		
@@ -126,6 +130,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			if(getType() != Type.FCP)
 				throw new UnsupportedOperationException("Type is not FCP:" + getType());
 			
+			checkedActivate(1);
 			return mFCPKey;
 		}
 		
@@ -136,6 +141,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Schedules processing of the Notifications of the SubscriptionManger.
 		 */
 		protected final int takeFreeNotificationIndexWithoutCommit() {
+			checkedActivate(1);
 			final int index = mNextNotificationIndex++;
 			storeWithoutCommit();
 			getSubscriptionManager().scheduleNotificationProcessing();
@@ -167,7 +173,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * You must synchronize on the {@link SubscriptionManager} while calling this function.
 		 */
 		protected void storeAndCommit() {
-			synchronized(mDB.lock()) {
+			synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					storeWithoutCommit();
 					checkedCommit(this);
@@ -270,6 +276,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
+			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
+			
 			IfNull.thenThrow(mSubscription);
 			
 			// TODO: Throw if no subscription exists with the given ID
@@ -310,7 +318,14 @@ public final class SubscriptionManager implements PrioRunnable {
 		public void startupDatabaseIntegrityTest() throws Exception {
 			super.startupDatabaseIntegrityTest();
 			
+			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
+			
 			IfNull.thenThrow(mIdentityID, "mIdentityID");
+		}
+		
+		protected final String getIdentityID() {
+			checkedActivate(1);
+			return mIdentityID;
 		}
 
 	}
@@ -344,8 +359,20 @@ public final class SubscriptionManager implements PrioRunnable {
 		public void startupDatabaseIntegrityTest() throws Exception {
 			super.startupDatabaseIntegrityTest();
 			
+			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
+			
 			IfNull.thenThrow(mTrusterID, "mTrusterID");
 			IfNull.thenThrow(mTrusteeID, "mTrusteeID");
+		}
+		
+		protected final String getTrusterID() {
+			checkedActivate(1);
+			return mTrusterID;
+		}
+		
+		protected final String getTrusteeID() {
+			checkedActivate(1);
+			return mTrusteeID;
 		}
 		
 	}
@@ -368,8 +395,20 @@ public final class SubscriptionManager implements PrioRunnable {
 		public void startupDatabaseIntegrityTest() throws Exception {
 			super.startupDatabaseIntegrityTest();
 			
+			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
+			
 			IfNull.thenThrow(mTrusterID, "mTrusterID");
 			IfNull.thenThrow(mTrusteeID, "mTrusteeID");
+		}
+		
+		protected final String getTrusterID() {
+			checkedActivate(1);
+			return mTrusterID;
+		}
+		
+		protected final String getTrusteeID() {
+			checkedActivate(1);
+			return mTrusteeID;
 		}
 	}
 
@@ -391,7 +430,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		@Override
 		protected void notifySubscriberByFCP(IdentityChangedNotification notification) throws Exception {
-			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getFCPKey(), notification.mIdentityID);
+			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getFCPKey(), notification.getIdentityID());
 		}
 
 		private void storeNotificationWithoutCommit(Identity identity) {
@@ -419,7 +458,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		@Override
 		protected void notifySubscriberByFCP(IdentityListChangedNotification notification) throws Exception {
-			mWebOfTrust.getFCPInterface().sendIdentityListChangedNotification(getFCPKey(), notification.mIdentityID);
+			mWebOfTrust.getFCPInterface().sendIdentityListChangedNotification(getFCPKey(), notification.getIdentityID());
 		}
 
 		public void storeNotificationWithoutCommit(Identity identity) {
@@ -447,7 +486,7 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		@Override
 		protected void notifySubscriberByFCP(TrustChangedNotification notification) throws Exception {
-			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getFCPKey(), notification.mTrusterID, notification.mTrusteeID);
+			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getFCPKey(), notification.getTrusterID(), notification.getTrusteeID());
 		}
 
 		public void storeNotificationWithoutCommit(Trust trust) {
@@ -475,7 +514,7 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		@Override
 		protected void notifySubscriberByFCP(ScoreChangedNotification notification) throws Exception {
-			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getFCPKey(), notification.mTrusterID, notification.mTrusteeID);
+			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getFCPKey(), notification.getTrusterID(), notification.getTrusteeID());
 		}
 		
 		public void storeNotificationWithoutCommit(Score score) {
@@ -598,7 +637,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	public synchronized void unsubscribe(String subscriptionID) throws UnknownSubscriptionException {
 		final Subscription<? extends Notification> subscription = getSubscription(subscriptionID);
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				// TODO: Optimization: Remove this: To make debugging easier, we also send an final InitialSubscriptionNotification when disconnecting a client:
 				// Sending an InitialSubscriptionNotification usually sends the full stored dataset to synchronize the client.
@@ -659,7 +698,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	private synchronized final void deleteAllSubscriptions() {
 		Logger.normal(this, "Deleting all subscriptions...");
 		
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				for(Subscription<? extends Notification> s : getAllSubscriptions()) {
 					s.deleteWithoutCommit(this);
