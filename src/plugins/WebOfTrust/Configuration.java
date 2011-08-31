@@ -52,7 +52,7 @@ public final class Configuration extends Persistent {
 	 * because the user interface will usually change many values at once.
 	 */
 	public synchronized void storeAndCommit() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				checkedActivate(4);
 				
@@ -69,10 +69,12 @@ public final class Configuration extends Persistent {
 	}
 	
 	public int getDatabaseFormatVersion() {
+		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mDatabaseFormatVersion;
 	}
 	
 	protected void setDatabaseFormatVersion(int newVersion) {
+		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		if(newVersion <= mDatabaseFormatVersion)
 			throw new RuntimeException("mDatabaseFormatVersion==" + mDatabaseFormatVersion + "; newVersion==" + newVersion);
 		

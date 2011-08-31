@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -96,6 +97,16 @@ public final class XMLTransformer {
 	private final Transformer mSerializer;
 	
 	private final SimpleDateFormat mDateFormat;
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static volatile boolean logDEBUG = false;
+	private static volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(XMLTransformer.class);
+	}
+
 	
 	/**
 	 * Initializes the XML creator & parser and caches those objects in the new IdentityXML object so that they do not have to be initialized
@@ -196,6 +207,26 @@ public final class XMLTransformer {
 		}
 	}
 	
+	/**
+	 * Workaround class for:
+	 * https://bugs.freenetproject.org/view.php?id=4850
+	 * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7031732
+	 * 
+	 * @author 	NowWhat@0plokJYoIwsHORk6RlUVPRA-HJ3-Cg7SjJP4S2fWEnw.freetalk
+	 */
+	public class OneBytePerReadInputStream extends FilterInputStream {
+
+		public OneBytePerReadInputStream(InputStream in) {
+			super(in);
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			return super.read(b, off, len<=1 ? len : 1);
+		}
+
+	}
+	
 	private static final class ParsedIdentityXML {
 		static final class TrustListEntry {
 			final FreenetURI mTrusteeURI;
@@ -226,6 +257,10 @@ public final class XMLTransformer {
 	 * @param xmlInputStream An InputStream which must not return more than {@link MAX_IDENTITY_XML_BYTE_SIZE} bytes.
 	 */
 	private ParsedIdentityXML parseIdentityXML(InputStream xmlInputStream) throws IOException {
+		Logger.normal(this, "Parsing identity XML...");
+		
+		xmlInputStream = new OneBytePerReadInputStream(xmlInputStream); // Workaround for Java bug, see the stream class for explanation
+
 		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(xmlInputStream.available() > MAX_IDENTITY_XML_BYTE_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
@@ -278,6 +313,8 @@ public final class XMLTransformer {
 			result.parseError = e;
 		}
 		
+		Logger.normal(this, "Finished parsing identity XML.");
+		
 		return result;
 	}
 	
@@ -297,13 +334,15 @@ public final class XMLTransformer {
 		synchronized(mWoT.getIdentityFetcher()) {
 			final Identity identity = mWoT.getIdentityByURI(identityURI);
 			
+			Logger.normal(this, "Importing parsed XML for " + identity);
+			
 				long newEdition = identityURI.getEdition();
 				if(identity.getEdition() > newEdition) {
-					Logger.debug(this, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
+					if(logDEBUG) Logger.debug(this, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
 					return;
 				} else if(identity.getEdition() == newEdition) {
 					if(identity.getCurrentEditionFetchState() == FetchState.Fetched) {
-						Logger.debug(this, "Fetched current edition which is marked as fetched already, not importing: " + identityURI);
+						if(logDEBUG) Logger.debug(this, "Fetched current edition which is marked as fetched already, not importing: " + identityURI);
 						return;
 					} else if(identity.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
 						Logger.normal(this, "Re-fetched current-edition which was marked as parsing failed: " + identityURI);
@@ -315,7 +354,7 @@ public final class XMLTransformer {
 					throw xmlData.parseError;
 				
 			
-				synchronized(mDB.lock()) {
+				synchronized(Persistent.transactionLock(mDB)) {
 				try { // Transaction rollback block
 					identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
 					boolean didPublishTrustListPreviously = identity.doesPublishTrustList();
@@ -394,8 +433,7 @@ public final class XMLTransformer {
 							}
 							catch(UnknownIdentityException e) {
 								if(hasCapacity) { /* We only create trustees if the truster has capacity to rate them. */
-									trustee = new Identity(trusteeURI, null, false);
-									trustee.initializeTransient(mWoT);
+									trustee = new Identity(mWoT, trusteeURI, null, false);
 									trustee.storeWithoutCommit();
 									mWoT.getSubscriptionManager().storeNewIdentityNotificationWithoutCommit(trustee);
 								}
@@ -430,7 +468,9 @@ public final class XMLTransformer {
 					mWoT.abortTrustListImport(e); // Does the rollback
 					throw e;
 				} // try
-				} // synchronized(db.lock())
+				} // synchronized(Persistent.transactionLock(db))
+				
+			Logger.normal(this, "Finished XML import for " + identity);
 		} // synchronized(mWoT)
 		} // synchronized(mWoT.getIdentityFetcher())
 		} // try
@@ -502,6 +542,7 @@ public final class XMLTransformer {
 	 */
 	public Identity importIntroduction(OwnIdentity puzzleOwner, InputStream xmlInputStream)
 		throws InvalidParameterException, SAXException, IOException {
+		xmlInputStream = new OneBytePerReadInputStream(xmlInputStream); // Workaround for Java bug, see the stream class for explanation
 		
 		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(xmlInputStream.available() > MAX_INTRODUCTION_BYTE_SIZE)
@@ -531,15 +572,14 @@ public final class XMLTransformer {
 			if(!puzzleOwner.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT))
 				throw new InvalidParameterException("Trying to import an identity identroduction for an own identity which does not allow introduction.");
 			
-			synchronized(mDB.lock()) {
+			synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					try {
 						newIdentity = mWoT.getIdentityByURI(identityURI);
-						Logger.minor(this, "Imported introduction for an already existing identity: " + newIdentity);
+						if(logMINOR) Logger.minor(this, "Imported introduction for an already existing identity: " + newIdentity);
 					}
 					catch (UnknownIdentityException e) {
-						newIdentity = new Identity(identityURI, null, false);
-						newIdentity.initializeTransient(mWoT);
+						newIdentity = new Identity(mWoT, identityURI, null, false);
 						// We do NOT call setEdition(): An attacker might solve puzzles pretending to be someone else and publish bogus edition numbers for
 						// that identity by that. The identity constructor only takes the edition number as edition hint, this is the proper behavior.
 						// TODO: As soon as we have code for signing XML with an identity SSK we could sign the introduction XML and therefore prevent that
@@ -547,12 +587,12 @@ public final class XMLTransformer {
 						//newIdentity.setEdition(identityURI.getEdition());
 						newIdentity.storeWithoutCommit();
 						mWoT.getSubscriptionManager().storeNewIdentityNotificationWithoutCommit(newIdentity);
-						Logger.minor(this, "Imported introduction for an unknown identity: " + newIdentity);
+						if(logMINOR) Logger.minor(this, "Imported introduction for an unknown identity: " + newIdentity);
 					}
 
 					try {
 						mWoT.getTrust(puzzleOwner, newIdentity); /* Double check ... */
-						Logger.minor(this, "The identity is already trusted.");
+						if(logMINOR) Logger.minor(this, "The identity is already trusted.");
 					}
 					catch(NotTrustedException ex) {
 						// 0 trust will not allow the import of other new identities for the new identity because the trust list import code will only create
@@ -625,6 +665,8 @@ public final class XMLTransformer {
 	public IntroductionPuzzle importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
 		throws SAXException, IOException, InvalidParameterException, UnknownIdentityException, IllegalBase64Exception, ParseException {
 		
+		xmlInputStream = new OneBytePerReadInputStream(xmlInputStream); // Workaround for Java bug, see the stream class for explanation
+		
 		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(xmlInputStream.available() > MAX_INTRODUCTIONPUZZLE_BYTE_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
@@ -660,7 +702,7 @@ public final class XMLTransformer {
 		
 		synchronized(mWoT) {
 			Identity puzzleInserter = mWoT.getIdentityByURI(puzzleURI);
-			puzzle = new IntroductionPuzzle(puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, 
+			puzzle = new IntroductionPuzzle(mWoT, puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, 
 					IntroductionPuzzle.getDateFromRequestURI(puzzleURI), puzzleValidUntilDate, IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
 		
 			mWoT.getIntroductionPuzzleStore().storeAndCommit(puzzle);

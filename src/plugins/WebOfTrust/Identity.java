@@ -12,12 +12,10 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
-
-import com.db4o.query.Query;
-
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 import freenet.support.codeshortification.IfNull;
@@ -79,6 +77,22 @@ public class Identity extends Persistent implements Cloneable {
 	/** A list of this Identity's custom properties */
 	protected HashMap<String, String> mProperties;
 	
+	/**
+	 * @see Identity#activateProperties()
+	 */
+	private transient boolean mPropertiesActivated;
+	
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	// We inherit them from class Persistent.
+	//private static transient volatile boolean logDEBUG = false;
+	//private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(Identity.class);
+	}
+	
 	
 	/**
 	 * Creates an Identity. Only for being used by the WoT package and unit tests, not for user interfaces!
@@ -88,7 +102,9 @@ public class Identity extends Persistent implements Cloneable {
 	 * @param doesPublishTrustList Whether this identity publishes its trustList or not
 	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 */
-	protected Identity(FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException {
+	protected Identity(WebOfTrust myWoT, FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException {
+		initializeTransient(myWoT);
+		
 		if (!newRequestURI.isUSK() && !newRequestURI.isSSK())
 			throw new IllegalArgumentException("Identity URI keytype not supported: " + newRequestURI);
 		
@@ -117,7 +133,7 @@ public class Identity extends Persistent implements Cloneable {
 		mContexts = new ArrayList<String>(4); /* Currently we have: Introduction, Freetalk */
 		mProperties = new HashMap<String, String>();
 		
-		Logger.debug(this, "New identity: " + getNickname() + ", URI: " + newRequestURI);
+		if(logDEBUG) Logger.debug(this, "New identity: " + mNickname + ", URI: " + mRequestURI);
 	}	
 
 	/**
@@ -129,10 +145,10 @@ public class Identity extends Persistent implements Cloneable {
 	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 * @throws MalformedURLException if the supplied requestURI isn't a valid FreenetURI
 	 */
-	public Identity(String newRequestURI, String newNickname, boolean doesPublishTrustList)
+	public Identity(WebOfTrust myWoT, String newRequestURI, String newNickname, boolean doesPublishTrustList)
 		throws InvalidParameterException, MalformedURLException {
 		
-		this(new FreenetURI(newRequestURI), newNickname, doesPublishTrustList);
+		this(myWoT, new FreenetURI(newRequestURI), newNickname, doesPublishTrustList);
 	}
 
 	/**
@@ -142,7 +158,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * @return A unique identifier for this Identity.
 	 */
 	public final String getID() {
-		// checkedActivate(depth) is not needed, Strings are native to db4o
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
 	}
 
@@ -157,12 +173,17 @@ public class Identity extends Persistent implements Cloneable {
 		/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
 		return Base64.encode(uri.getRoutingKey());
 	}
+	
+	public static final byte[] getRoutingKeyFromID(String id) throws IllegalBase64Exception {
+		return Base64.decode(id);
+	}
 
 	/**
 	 * @return The requestURI ({@link FreenetURI}) to fetch this Identity 
 	 */
 	public final FreenetURI getRequestURI() {
-		checkedActivate(3);
+		checkedActivate(1);
+		checkedActivate(mRequestURI, 2);
 		return mRequestURI;
 	}
 
@@ -175,7 +196,7 @@ public class Identity extends Persistent implements Cloneable {
 	}
 	
 	public final FetchState getCurrentEditionFetchState() {
-		checkedActivate(2); // TODO: Optimization: Do we really need to activate for enums?
+		checkedActivate(1);
 		return mCurrentEditionFetchState;
 	}
 
@@ -187,7 +208,10 @@ public class Identity extends Persistent implements Cloneable {
 	 * @throws InvalidParameterException If the new edition is less than the current one.
 	 */
 	protected void setEdition(long newEdition) throws InvalidParameterException {
-		checkedActivate(3);
+		checkedActivate(1);
+		checkedActivate(mRequestURI, 2);
+		// checkedActivate(mCurrentEditionFetchState, 1); is not needed, has no members
+		// checkedActivate(mLatestEditionHint, 1); is not needed, long is a db4o primitive type 
 		
 		long currentEdition = mRequestURI.getEdition();
 		
@@ -207,7 +231,7 @@ public class Identity extends Persistent implements Cloneable {
 	}
 	
 	public final long getLatestEditionHint() {
-		// checkedActivate(depth) is not needed, long is a db4o primitive type
+		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		return mLatestEditionHint;
 	}
 	
@@ -220,11 +244,11 @@ public class Identity extends Persistent implements Cloneable {
 	 * @return True, if the given hint was newer than the already stored one. You have to tell the {@link IdentityFetcher} about that then.
 	 */
 	protected final boolean setNewEditionHint(long newLatestEditionHint) {
-		// checkedActivate(depth) is not needed, long is a db4o primitive type
+		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		
 		if (newLatestEditionHint > mLatestEditionHint) {
 			mLatestEditionHint = newLatestEditionHint;
-			Logger.debug(this, "Received a new edition hint of " + newLatestEditionHint + " (current: " + mLatestEditionHint + ") for "+ this);
+			if(logDEBUG) Logger.debug(this, "Received a new edition hint of " + newLatestEditionHint + " (current: " + mLatestEditionHint + ") for "+ this);
 			return true;
 		}
 		
@@ -235,8 +259,9 @@ public class Identity extends Persistent implements Cloneable {
 	 * Decrease the current edition by one. Used by {@link #markForRefetch()}.
 	 */
 	private final void decreaseEdition() {
-		checkedActivate(3);
-		mRequestURI = mRequestURI.setSuggestedEdition(Math.max(getEdition() - 1, 0));
+		checkedActivate(1);
+		checkedActivate(mRequestURI, 2);
+		mRequestURI = mRequestURI.setSuggestedEdition(Math.max(mRequestURI.getEdition() - 1, 0));
 		// TODO: I decided that we should not decrease the edition hint here. Think about that again.
 	}
 	
@@ -248,7 +273,8 @@ public class Identity extends Persistent implements Cloneable {
 	 * current trust list. This is necessary because we do not create the trusted identities of someone if he has a negative score. 
 	 */
 	protected void markForRefetch() {
-		checkedActivate(2);	// TODO: Optimization: Do we really need to activate for enums?
+		checkedActivate(1);
+		// checkedActivate(mCurrentEditionFetchState, 1); not needed, it has no members
 		
 		if (mCurrentEditionFetchState == FetchState.Fetched) {
 			mCurrentEditionFetchState = FetchState.NotFetched;
@@ -268,7 +294,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * @return The date of this Identity's last modification.
 	 */
 	public final Date getLastFetchedDate() {
-		// checkedActivate(depth) is not needed, Date is a db4o primitive type
+		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		return (Date)mLastFetchedDate.clone();
 	}
 
@@ -276,7 +302,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * @return The date of this Identity's last modification.
 	 */
 	public final Date getLastChangeDate() {
-		// checkedActivate(depth) is not needed, Date is a db4o primitive type
+		checkedActivate(1);  // long is a db4o primitive type so 1 is enough
 		return (Date)mLastChangedDate.clone();
 	}
 	
@@ -284,6 +310,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * Has to be called when the identity was fetched and parsed successfully. Must not be called before setEdition!
 	 */
 	protected final void onFetched() {
+		checkedActivate(1);
 		mCurrentEditionFetchState = FetchState.Fetched;
 		mLastFetchedDate = CurrentTimeUTC.get();
 		updated();
@@ -293,6 +320,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * Has to be called when the identity was fetched and parsing failed. Must not be called before setEdition!
 	 */
 	protected final void onParsingFailed() {
+		checkedActivate(1);
 		mCurrentEditionFetchState = FetchState.ParsingFailed;
 		mLastFetchedDate = CurrentTimeUTC.get();
 		updated();
@@ -302,7 +330,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * @return The Identity's nickName
 	 */
 	public final String getNickname() {
-		// checkedActivate(depth) is not needed, String is a db4o primitive type
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mNickname;
 	}
 
@@ -328,7 +356,7 @@ public class Identity extends Persistent implements Cloneable {
 		if (newNickname == null) {
 			throw new NullPointerException("Nickname is null");
 		}
-	
+		
 		newNickname = newNickname.trim();
 		
 		if(newNickname.length() == 0) {
@@ -343,7 +371,7 @@ public class Identity extends Persistent implements Cloneable {
 			throw new InvalidParameterException("Nickname contains illegal characters.");
 		}
 		
-		// checkedActivate(depth) is not needed, String is a db4o primitive type
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		
 		if (mNickname != null && !mNickname.equals(newNickname)) {
 			throw new InvalidParameterException("Changing the nickname of an identity is not allowed.");
@@ -359,7 +387,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * @return Whether this Identity publishes its trustList or not.
 	 */
 	public final boolean doesPublishTrustList() {
-		// checkedActivate(depth) is not needed, boolean is a db4o primitive type
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 		return mDoesPublishTrustList;
 	}
 
@@ -367,7 +395,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * Sets if this Identity publishes its trust list or not. 
 	 */
 	public final void setPublishTrustList(boolean doesPublishTrustList) {
-		// checkedActivate(depth) is not needed, boolean is a db4o primitive type
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 		
 		if (mDoesPublishTrustList == doesPublishTrustList) {
 			return;
@@ -384,7 +412,8 @@ public class Identity extends Persistent implements Cloneable {
 	 * @return Whether this Identity has that context or not
 	 */
 	public final boolean hasContext(String context) {
-		checkedActivate(3);
+		checkedActivate(1);
+		checkedActivate(mContexts, 2);
 		return mContexts.contains(context.trim());
 	}
 
@@ -397,7 +426,8 @@ public class Identity extends Persistent implements Cloneable {
 	public final ArrayList<String> getContexts() {
 		/* TODO: If this is used often - which it probably is, we might verify that no code corrupts the HashMap and return the original one
 		 * instead of a copy */
-		checkedActivate(3);
+		checkedActivate(1);
+		checkedActivate(mContexts, 2);
 		return (ArrayList<String>)mContexts.clone();
 	}
 
@@ -429,7 +459,8 @@ public class Identity extends Persistent implements Cloneable {
 			throw new InvalidParameterException("Context names must be latin letters and numbers only");
 		}
 		
-		checkedActivate(3);
+		checkedActivate(1);
+		checkedActivate(mContexts, 2);
 		
 		if (!mContexts.contains(newContext)) {
 			if (mContexts.size() >= MAX_CONTEXT_AMOUNT) {
@@ -449,7 +480,8 @@ public class Identity extends Persistent implements Cloneable {
 	 * a re-insert even if nothing was changed.
 	 */
 	protected final void setContexts(List<String> newContexts) {
-		checkedActivate(3);
+		checkedActivate(1);
+		checkedActivate(mContexts, 2);
 		
 		mContexts.clear();
 		
@@ -473,7 +505,8 @@ public class Identity extends Persistent implements Cloneable {
 	public final void removeContext(String context) throws InvalidParameterException {
 		context = context.trim();
 		
-		checkedActivate(3);
+		checkedActivate(1);
+		checkedActivate(mContexts, 2);
 		
 		if (mContexts.contains(context)) {
 			mContexts.remove(context);
@@ -481,17 +514,22 @@ public class Identity extends Persistent implements Cloneable {
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
-	private final void activateProperties() {
-		// TODO: As soon as the db4o bug with hashmaps is fixed, remove this workaround function & replace with plain checkedActivate(4)
-		if(mProperties != null) {
-			if(mDB.isStored(mProperties)) {
-				Query q = mDB.query();
-				q.constrain(mProperties).identity();
-				mProperties = (HashMap<String,String>)q.execute().next();
-			}
-		} else 
-			checkedActivate(4);
+	private synchronized final void activateProperties() {
+		// We must not deactivate mProperties if it was already modified by a setter so we need this guard
+		if(mPropertiesActivated)
+			return;
+		
+		// TODO: As soon as the db4o bug with hashmaps is fixed, remove this workaround function & replace with:
+		// checkedActivate(1);
+		// checkedActivate(mProperties, 3);
+		checkedActivate(1);
+		
+		if(mDB.isStored(mProperties)) {
+			mDB.deactivate(mProperties);
+			checkedActivate(mProperties, 3);
+		}
+		
+		mPropertiesActivated = true;
 	}
 
 	/**
@@ -592,9 +630,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * a re-insert even if nothing was changed.
 	 */
 	protected final void setProperties(HashMap<String, String> newProperties) {
-		// TODO: Optimization: Figure out whether anything breaks if we do not activate since mProperties is set to a new HashMap anyway
 		activateProperties();
-		
 		checkedDelete(mProperties);
 		mProperties = new HashMap<String, String>(newProperties.size() * 2);
 		
@@ -627,12 +663,12 @@ public class Identity extends Persistent implements Cloneable {
 	 * Updated OwnIdentities will be reinserted by the IdentityInserter automatically.
 	 */
 	public final void updated() {
-		// checkedActivate(depth) is not needed, Date is a db4o primitive type
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		mLastChangedDate = CurrentTimeUTC.get();
 	}
 
 	public final String toString() {
-		// checkedActivate(depth) is not needed, String is a db4o primitive type 
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough 
 		return mNickname + "(" + mID + ")";
 	}
 
@@ -694,7 +730,7 @@ public class Identity extends Persistent implements Cloneable {
 	}
 	
 	public int hashCode() {
-		return mID.hashCode();
+		return getID().hashCode();
 	}
 	
 	/**
@@ -702,8 +738,7 @@ public class Identity extends Persistent implements Cloneable {
 	 */
 	public Identity clone() {
 		try {
-			Identity clone = new Identity(getRequestURI(), getNickname(), doesPublishTrustList());
-			clone.initializeTransient(mWebOfTrust);
+			Identity clone = new Identity(mWebOfTrust, getRequestURI(), getNickname(), doesPublishTrustList());
 			
 			checkedActivate(4); // For performance only
 			
@@ -752,7 +787,7 @@ public class Identity extends Persistent implements Cloneable {
 	public final void storeAndCommit() {
 		synchronized(mWebOfTrust) {
 		synchronized(mWebOfTrust.getSubscriptionManager()) {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				storeWithoutCommit();
 				mWebOfTrust.getSubscriptionManager().storeIdentityChangedNotificationWithoutCommit(this);

@@ -57,7 +57,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	}
 
 	public void make() {
-		if(request.isPartSet("AddIdentity")) {
+		final boolean addIdentity = request.isPartSet("AddIdentity");
+		
+		if(addIdentity) {
 			try {
 				wot.addIdentity(request.getPartAsStringFailsafe("IdentityURI", 1024));
 				HTMLNode successBox = addContentBox(l10n().getString("KnownIdentitiesPage.AddIdentity.Success.Header"));
@@ -72,29 +74,35 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			String trusterID = request.getPartAsStringFailsafe("OwnerID", 128);
 		
 			for(String part : request.getParts()) {
-			if(part.startsWith("SetTrustOf")) {
-			String trusteeID = request.getPartAsStringFailsafe(part, 128);
-			String value = request.getPartAsStringFailsafe("Value" + trusteeID, 4).trim();
-			// TODO: getPartAsString() will return an empty String if the length is exceeded, it should rather return a too long string so that setTrust throws
-			// an exception. It's not a severe problem though since we limit the length of the text input field anyway.
-			String comment = request.getPartAsStringFailsafe("Comment" + trusteeID, Trust.MAX_TRUST_COMMENT_LENGTH + 1);
-			
-			try {
-				if(trusteeID == null) /* For AddIdentity */
-					trusteeID = Identity.getIDFromURI(new FreenetURI(request.getPartAsStringFailsafe("IdentityURI", 1024)));
-				
-				if(value.equals(""))
-					wot.removeTrust(trusterID, trusteeID);
-				else
-					wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
-			} catch(NumberFormatException e) {
-				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), l10n().getString("Trust.InvalidValue"));
-			} catch(InvalidParameterException e) {
-				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e.getMessage());
-			} catch(Exception e) {
-				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e);
-			}
-			}
+				if(!part.startsWith("SetTrustOf"))
+					continue;
+
+				final String trusteeID;
+				final String value;
+				final String comment;
+
+				try { 
+					if(addIdentity) { // Add a single identity and set its trust value
+						trusteeID = Identity.getIDFromURI(new FreenetURI(request.getPartAsStringFailsafe("IdentityURI", 1024)));
+						value = request.getPartAsStringFailsafe("Value", 4).trim();
+						comment = request.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);				 	
+					} else { // Change multiple trust values via the known-identities-list
+						trusteeID = request.getPartAsStringFailsafe(part, 128);
+						value = request.getPartAsStringFailsafe("Value" + trusteeID, 4).trim();
+						comment = request.getPartAsStringFailsafe("Comment" + trusteeID, Trust.MAX_TRUST_COMMENT_LENGTH + 1);
+					}
+
+					if(value.equals(""))
+						wot.removeTrust(trusterID, trusteeID);
+					else
+						wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
+				} catch(NumberFormatException e) {
+					addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), l10n().getString("Trust.InvalidValue"));
+				} catch(InvalidParameterException e) {
+					addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e.getMessage());
+				} catch(Exception e) {
+					addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), e);
+				}
 			}
 		}
 
@@ -160,6 +168,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		if(treeOwner != null) {
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrust", "true"});
+			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrustOf", "void"});
 			
 			createForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ")
 				.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Value", "4", "" });
@@ -288,6 +297,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		WebOfTrust.SortOrder sortInstruction = WebOfTrust.SortOrder.valueOf("By" + sortBy + sortType);
 		
 		long currentTime = CurrentTimeUTC.getInMillis();
+		
+		long editionSum = 0;
 
 		synchronized(wot) {
 		for(Identity id : wot.getAllIdentitiesFilteredAndSorted(treeOwner, nickFilter, sortInstruction)) {
@@ -351,10 +362,20 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 			trusteesCell.addChild(new HTMLNode("a", "href", identitiesPageURI + "?id="+id.getID(),
 					Long.toString(wot.getGivenTrusts(id).size())));
+			
+			// TODO: Show in advanced mode only once someone finally fixes the "Switch to advanced mode" link on FProxy to work on ALL pages.
+			
+			final long edition = id.getEdition();
+			editionSum += edition;
+			row.addChild("td", "align", "center", Long.toString(edition));
+			
+			row.addChild("td", "align", "center", Long.toString(id.getLatestEditionHint()));
 		}
 		}
 		
 		identitiesTable.addChild(getKnownIdentitiesListTableHeader());
+		
+		knownIdentitiesBox.addChild("#", l10n().getString("KnownIdentitiesPage.KnownIdentities.FetchProgress", "editionCount", Long.toString(editionSum)));
 	}
 	
 	private HTMLNode getKnownIdentitiesListTableHeader() {
@@ -368,6 +389,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		row.addChild("th").addChild(new HTMLNode("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SetTrust", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton") }));
 		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Trusters"));
 		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Trustees"));
+		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.Edition"));
+		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.EditionHint"));
+		
 		return row;
 	}
 	

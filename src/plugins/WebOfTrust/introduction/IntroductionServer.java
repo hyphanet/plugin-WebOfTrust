@@ -85,7 +85,15 @@ public final class IntroductionServer extends TransferThread {
 		// ATTENTION: When adding new ones please also add them to IntroductionPuzzleStoreTest
 	};
 	
-	 
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(IntroductionServer.class);
+	}
+	
 
 	/**
 	 * Creates an IntroductionServer
@@ -188,7 +196,7 @@ public final class IntroductionServer extends TransferThread {
 				final ClientGetter g = mClient.fetch(p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE, mPuzzleStore.getRequestClient(),
 						this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS); 
 				addFetch(g);
-				Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
+				if(logDEBUG) Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
 				}
 				catch(RuntimeException e) {
 					Logger.error(this, "Error while trying to fetch captcha solution at " + p.getSolutionURI());
@@ -207,7 +215,7 @@ public final class IntroductionServer extends TransferThread {
 		while(puzzlesToGenerate > 0) {
 			try {
 			final OwnIntroductionPuzzle p = mPuzzleFactories[mRandom.nextInt(mPuzzleFactories.length)].generatePuzzle(mPuzzleStore, identity);
-			Logger.debug(this, "Generated puzzle of " + p.getDateOfInsertion() + "; valid until " + p.getValidUntilDate());
+			if(logDEBUG) Logger.debug(this, "Generated puzzle of " + p.getDateOfInsertion() + "; valid until " + p.getValidUntilDate());
 			} catch(Exception e) {
 				Logger.error(this, "Puzzle generation failed.", e);
 			}
@@ -263,7 +271,7 @@ public final class IntroductionServer extends TransferThread {
 			addInsert(pu);
 			tempB = null;
 
-			Logger.debug(this, "Started insert of puzzle:" + puzzle);
+			if(logDEBUG) Logger.debug(this, "Started insert of puzzle:" + puzzle);
 		}
 		finally {
 			Closer.close(os);
@@ -276,7 +284,7 @@ public final class IntroductionServer extends TransferThread {
 	 */
 	public void onSuccess(final BaseClientPutter state, final ObjectContainer container)
 	{
-		Logger.debug(this, "Successful insert of puzzle: " + state.getURI());
+		if(logDEBUG) Logger.debug(this, "Successful insert of puzzle: " + state.getURI());
 		
 		try {
 			synchronized(mWoT) {
@@ -303,7 +311,7 @@ public final class IntroductionServer extends TransferThread {
 	{
 		try {
 			if(e.getMode() == InsertException.CANCELLED)
-				Logger.debug(this, "Insert cancelled: " + state.getURI());
+				if(logDEBUG) Logger.debug(this, "Insert cancelled: " + state.getURI());
 			else if(e.getMode() == InsertException.COLLISION) {
 				// TODO: Investigate why this happens.
 				Logger.warning(this, "Insert of puzzle collided, marking as inserted: " + state.getURI(), e);
@@ -393,7 +401,7 @@ public final class IntroductionServer extends TransferThread {
 	public void onFailure(final FetchException e, final ClientGetter state, final ObjectContainer container) {
 		try {
 			if(e.getMode() == FetchException.CANCELLED) {
-				Logger.debug(this, "Fetch cancelled: " + state.getURI());
+				if(logDEBUG) Logger.debug(this, "Fetch cancelled: " + state.getURI());
 			}
 			else {
 				// We use retries = -1 so this should never happen unless a client inserts bogus data to the puzzle slot.
@@ -415,5 +423,12 @@ public final class IntroductionServer extends TransferThread {
 
 	/** Called when freenet.async thinks that the request should be serialized to disk, if it is a persistent request. */
 	public void onMajorProgress(ObjectContainer container) {}
+
+	@Override
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
+			ObjectContainer container) {
+		metadata.free();
+		throw new UnsupportedOperationException();
+	}
 
 }

@@ -34,8 +34,7 @@ public final class IdentityTest extends DatabaseBasedTest {
 		
 		uri = new FreenetURI(uriString);
 
-		identity = new Identity(uri, "test", true);
-		identity.initializeTransient(mWoT);
+		identity = new Identity(mWoT, uri, "test", true);
 		identity.addContext("bleh");
 		identity.setProperty("testproperty","foo1a");
 		identity.storeAndCommit();
@@ -141,8 +140,7 @@ public final class IdentityTest extends DatabaseBasedTest {
 		// We need the edition not to change so the assertNotSame test makes sense.
 		
 		final FreenetURI uriWithProperEdition = new FreenetURI("USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WebOfTrust/0");
-		final Identity identity = new Identity(uriWithProperEdition, "test", true);
-		identity.initializeTransient(mWoT);
+		final Identity identity = new Identity(mWoT, uriWithProperEdition, "test", true);
 		
 		assertEquals(uriWithProperEdition, identity.getRequestURI());
 		

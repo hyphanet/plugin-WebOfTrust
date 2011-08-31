@@ -15,17 +15,17 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	/**
 	 * For construction of a puzzle which is meant to be inserted.
 	 */
-	public OwnIntroductionPuzzle(OwnIdentity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
+	public OwnIntroductionPuzzle(WebOfTrust myWoT, OwnIdentity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
 			Date newDateOfInsertion, int myIndex) {
-		this(newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newSolution, newDateOfInsertion, myIndex);
+		this(myWoT, newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newSolution, newDateOfInsertion, myIndex);
 	}
 	
 	/**
 	 * Clone() needs to set the ID.
 	 */
-	private OwnIntroductionPuzzle(OwnIdentity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
+	private OwnIntroductionPuzzle(WebOfTrust myWoT, OwnIdentity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
 			Date newDateOfInsertion, int myIndex) {
-		super(newInserter, newID, newType, newMimeType, newData, newDateOfInsertion,
+		super(myWoT, newInserter, newID, newType, newMimeType, newData, newDateOfInsertion,
 				new Date(TimeUtil.setTimeToZero(newDateOfInsertion).getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000), 
 				myIndex);
 		
@@ -45,8 +45,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	 * # = index of the puzzle.
 	 */
 	public FreenetURI getInsertURI() {
-		assert(mWasInserted == false);
-		assert(mWasSolved == false);
+		checkedActivate(1); // Needed for the getters below anyway so we can do it here for the assert()
 		
 		String dayOfInsertion;
 		synchronized (mDateFormat) {
@@ -63,11 +62,16 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	 * Sets the solver to null.
 	 */
 	public synchronized void setSolved() {
-		if(wasSolved())
+		checkedActivate(1);
+		
+		if(mWasSolved)
 			throw new RuntimeException("The puzzle was already solved by " + mSolver);
 		
 		if(mSolver != null)
 			throw new RuntimeException("mSolver==" + mSolver);
+		
+		if(!mWasInserted)
+			Logger.error(this, "Non-inserted puzzle was solved, impossible: " + this);
 		
 		mWasSolved = true;
 		mSolver = null;
@@ -77,11 +81,16 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	 * Used by the IntroductionServer to mark a puzzle as solved when importing an identity introduction.
 	 */
 	public synchronized void setSolved(Identity solver) {
-		if(wasSolved())
+		checkedActivate(1);
+		
+		if(mWasSolved)
 			throw new RuntimeException("The puzzle was already solved by " + mSolver);
 		
 		if(mSolver != null)
 			throw new RuntimeException("mSolver==" + mSolver);
+		
+		if(!mWasInserted)
+			Logger.error(this, "Non-inserted puzzle was solved, impossible: " + this);
 		
 		mWasSolved = true;
 		mSolver = solver;
@@ -97,7 +106,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	
 	@Override
 	public void startupDatabaseIntegrityTest() throws Exception {
-		checkedActivate(2);
+		checkedActivate(1);
 		super.startupDatabaseIntegrityTest();
 		
 		if(mSolution==null)
@@ -112,7 +121,8 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	@Override
 	public OwnIntroductionPuzzle clone() {
 		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
-		final OwnIntroductionPuzzle copy = new OwnIntroductionPuzzle((OwnIdentity)getInserter(), getID(), getType(), getMimeType(), getData(), mSolution, getDateOfInsertion(), getIndex());
+		// checkedActivate(depth) for mSolution is not needed, String is a db4o primitive type
+		final OwnIntroductionPuzzle copy = new OwnIntroductionPuzzle(mWebOfTrust, (OwnIdentity)getInserter(), getID(), getType(), getMimeType(), getData(), getSolution(), getDateOfInsertion(), getIndex());
 		
 		if(wasSolved()) {
 			if(getSolver() != null)

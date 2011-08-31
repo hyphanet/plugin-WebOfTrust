@@ -112,6 +112,16 @@ public final class IntroductionClient extends TransferThread  {
 	private HashSet<String> mBeingInsertedPuzzleSolutions = new HashSet<String>();
 	
 	public static final int IDENTITIES_LRU_QUEUE_SIZE_LIMIT = 512;
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(IntroductionClient.class);
+	}
+
 
 	/**
 	 * Creates an IntroductionClient
@@ -269,7 +279,7 @@ public final class IntroductionClient extends TransferThread  {
 		final int fetchCount = fetchCount();
 		
 		if(fetchCount >= PUZZLE_REQUEST_COUNT) { // Check before we do the expensive database query.
-			Logger.minor(this, "Got " + fetchCount + "fetches, not fetching any more.");
+			if(logMINOR) Logger.minor(this, "Got " + fetchCount + "fetches, not fetching any more.");
 			return;
 		}
 		
@@ -516,9 +526,9 @@ public final class IntroductionClient extends TransferThread  {
 	public void onFailure(final FetchException e, final ClientGetter state, final ObjectContainer container) {
 		try {
 			if(e.getMode() == FetchException.CANCELLED) {
-				Logger.debug(this, "Fetch cancelled: " + state.getURI());
+				if(logDEBUG) Logger.debug(this, "Fetch cancelled: " + state.getURI());
 			}
-			else if(e.getMode() == FetchException.DATA_NOT_FOUND) {
+			else if(e.isDNF()) {
 				/* This is the normal case: There is no puzzle available of today because the inserter is offline and has not inserted any.
 				 *  The identity stays in the FIFO though so we do not try to fetch puzzzle from it again soon.
 				 *  If we do not have enough puzzles yet, we immediately try to start a new fetch. If we have enough puzzles, we just
@@ -582,7 +592,7 @@ public final class IntroductionClient extends TransferThread  {
 		
 		try {
 			if(e.getMode() == InsertException.CANCELLED)
-				Logger.debug(this, "Insert cancelled: " + state.getURI());
+				if(logDEBUG) Logger.debug(this, "Insert cancelled: " + state.getURI());
 			else if(e.getMode() == InsertException.COLLISION) {
 				Logger.normal(this, "Insert of puzzle solution collided, puzzle was solved already, marking as inserted: " + state.getURI());
 				markPuzzleSolutionAsInserted(state);
@@ -644,6 +654,13 @@ public final class IntroductionClient extends TransferThread  {
 			Logger.error(this, "Unable to remove puzzle ID from list of running inserts.", e);
 		}
 		super.removeInsert(p);
+	}
+
+	@Override
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
+			ObjectContainer container) {
+		metadata.free();
+		throw new UnsupportedOperationException();
 	}
 
 }

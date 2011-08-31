@@ -33,8 +33,8 @@ public final class OwnIdentity extends Identity {
 	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
 	 * @throws InvalidParameterException If a given parameter is invalid
 	 */
-	public OwnIdentity (FreenetURI insertURI, FreenetURI requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException {	
-		super(requestURI, nickName, publishTrustList);
+	public OwnIdentity (WebOfTrust myWoT, FreenetURI insertURI, FreenetURI requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException {	
+		super(myWoT, requestURI, nickName, publishTrustList);
 		// This is already done by super()
 		// setEdition(0);
 		
@@ -68,8 +68,8 @@ public final class OwnIdentity extends Identity {
 	 * @throws InvalidParameterException If a given parameter is invalid
 	 * @throws MalformedURLException If either requestURI or insertURI is not a valid FreenetURI
 	 */
-	public OwnIdentity(String insertURI, String requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
-		this(new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
+	public OwnIdentity(WebOfTrust myWoT, String insertURI, String requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
+		this(myWoT, new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
 	}
 	
 	/**
@@ -78,7 +78,9 @@ public final class OwnIdentity extends Identity {
 	 * @return Whether this OwnIdentity needs to be inserted or not
 	 */
 	public final boolean needsInsert() {
-		if(getCurrentEditionFetchState() != FetchState.Fetched)
+		// If the current edition was fetched successfully OR if parsing of it failed, we may insert a new one
+		// We may NOT insert a new one if it was not fetched: The identity might be in restore-mode
+		if(getCurrentEditionFetchState() == FetchState.NotFetched)
 			return false;
 		
 		return (getLastChangeDate().after(getLastInsertDate()) ||
@@ -89,7 +91,8 @@ public final class OwnIdentity extends Identity {
 	 * @return This OwnIdentity's insertURI
 	 */
 	public final FreenetURI getInsertURI() {
-		checkedActivate(3);
+		checkedActivate(1);
+		checkedActivate(mInsertURI, 2);
 		return mInsertURI;
 	}
 	
@@ -98,9 +101,11 @@ public final class OwnIdentity extends Identity {
 	protected final void setEdition(long edition) throws InvalidParameterException {
 		super.setEdition(edition);
 		
+		checkedActivate(1);
+		
 		mCurrentEditionFetchState = FetchState.Fetched;
 		
-		checkedActivate(3);
+		checkedActivate(mInsertURI, 2);
 		
 		if(edition > mInsertURI.getEdition()) {
 			mInsertURI = mInsertURI.setSuggestedEdition(edition);
@@ -122,6 +127,7 @@ public final class OwnIdentity extends Identity {
 	 */
 	protected final void restoreEdition(long edition) throws InvalidParameterException {
 		setEdition(edition);
+		checkedActivate(1);
 		mCurrentEditionFetchState = FetchState.NotFetched;
 	}
 
@@ -129,7 +135,7 @@ public final class OwnIdentity extends Identity {
 	 * Get the Date of last insertion of this OwnIdentity, in UTC, null if it was not inserted yet.
 	 */
 	public final Date getLastInsertDate() {
-		// checkedActivate(depth) is not needed, Date is a db4o primitive type
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastInsertDate.clone();
 	}
 	
@@ -137,7 +143,7 @@ public final class OwnIdentity extends Identity {
 	 * Sets the last insertion date of this OwnIdentity to current time in UTC.
 	 */
 	protected final void updateLastInsertDate() {
-		// checkedActivate(depth) is not needed, Date is a db4o primitive type
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		mLastInsertDate = CurrentTimeUTC.get();
 	}
 
@@ -166,8 +172,7 @@ public final class OwnIdentity extends Identity {
 	 */
 	public final OwnIdentity clone() {
 		try {
-			OwnIdentity clone = new OwnIdentity(getInsertURI(), getRequestURI(), getNickname(), doesPublishTrustList());
-			clone.initializeTransient(mWebOfTrust);
+			OwnIdentity clone = new OwnIdentity(mWebOfTrust, getInsertURI(), getRequestURI(), getNickname(), doesPublishTrustList());
 			
 			checkedActivate(4); // For performance only
 			
