@@ -29,6 +29,17 @@ import freenet.support.io.NativeThread;
  * The {@link Notification}s are deployed strictly sequential per {@link Subscription}.
  * If a single Notification cannot be deployed, the processing of the Notifications for that Subscription is halted until the failed
  * Notification can be deployed successfully.
+ * This especially applies to the FCP-client-interface and all other client interfaces: If a client returns "ERROR!" from the callback it has received,
+ * the notification queue is halted and the previous notification is re-sent a few times until it can be imported successfully by the client
+ * or the connection is dropped due to too many failures.
+ * This is a very important principle which makes client design easy: You do not need transaction-safety when caching things such as score values
+ * incrementally. For example your client might need to do mandatory actions due to a score-value change, such as deleting messages from identities
+ * which have a bad score now. If the score-value import succeeds but the message deletion fails, you can just return "ERROR!" to the WOT-callback-caller
+ * (and maybe even keep your score-cache as is) - you will continue to receive the notification about the changed score value for which the import failed,
+ * you will not receive change-notifications after that. This ensures that your consistency is not destroyed: There will be no missing slot
+ * in the incremental change chain.
+ * FIXME: AFAIK the FCP-client does not support the above yet, this is a MUST-have feature needed by Freetalk, check whether it works.
+ * 
  * TODO: Allow out-of-order notifications if the client desires them
  * TODO: Optimization: Allow coalescing of notifications: If a single object changes twice, only send one notification
  * TODO: Optimization: Allow the client to specify filters to reduce traffic: - Context of identities, etc. 
