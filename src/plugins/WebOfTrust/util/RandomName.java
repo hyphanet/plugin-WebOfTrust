@@ -4,7 +4,7 @@ package plugins.WebOfTrust.util;
 
 import java.util.Random;
 import java.util.Set;
-import java.lang.StringBuilder;
+import java.lang.StringBuffer;
 
 public class RandomName
 {
@@ -5398,7 +5398,7 @@ public class RandomName
     /** Generate a Name. */
     static public String newName()
     {
-        StringBuilder name = new StringBuilder();
+        StringBuffer name = new StringBuffer();
         Random rand = new Random();
         String nextpart = new String(firstnames[rand.nextInt(firstnames.length)]);
         name.append(nextpart);
@@ -5419,7 +5419,7 @@ public class RandomName
     /** Generate a Nickname: No spaces. */
     static public String newNickname()
     {
-        StringBuilder name = new StringBuilder();
+        StringBuffer name = new StringBuffer();
         Random rand = new Random();
         String nextpart = new String(firstnames[rand.nextInt(firstnames.length)]);
         name.append(nextpart);
