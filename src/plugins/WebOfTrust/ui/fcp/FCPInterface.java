@@ -23,6 +23,7 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.IntroductionServer;
+import plugins.WebOfTrust.util.RandomName;
 
 import com.db4o.ObjectSet;
 
@@ -91,6 +92,8 @@ public final class FCPInterface implements FredPluginFCP {
             	replysender.send(handleSolveIntroductionPuzzle(params), data);
             } else if (message.equals("Ping")) {
             	replysender.send(handlePing(), data);
+            } else if (message.equals("RandomName")) {
+            	replysender.send(handleRandomName(params), data);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
@@ -548,6 +551,23 @@ public final class FCPInterface implements FredPluginFCP {
         sfs.putOverwrite("Message", "PropertyValue");
         sfs.putOverwrite("Property", mWoT.getProperty(identityID, propertyName));
         return sfs;
+    }
+
+    private SimpleFieldSet handleRandomName(final SimpleFieldSet params) {
+        final String nameType = params.get("type");
+
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "Name");
+	if (nameType == "Nickname")
+	    {
+		sfs.putOverwrite("Name", RandomName.newNickname());
+		
+	    }
+	else
+	    {
+	sfs.putOverwrite("Name", RandomName.newName());
+	    }
+      return sfs;
     }
 
     private SimpleFieldSet handleRemoveProperty(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
