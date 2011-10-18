@@ -5424,7 +5424,7 @@ public class RandomName
     /** Generate a Nickname: No spaces. */
     static public String newNickname()
     {
-        return newNameBase("-");
+        return newNameBase("_");
     };
     /** Generate a new name without protected spaces. */
     static public String newUnprotectedName()
