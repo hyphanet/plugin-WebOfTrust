@@ -1,6 +1,16 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed
  * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL. */
+ * any later version). See http://www.gnu.org/ for details of the GPL.
+ *
+ * The nameparts are compiled from names of (often long) deceased
+ * scientists found in Wikipedia. Names themselves can not be
+ * copyrighted and since the Wikipedia is based in the USA where no
+ * copyright on uncreative databases exists(1), the list of names can be
+ * used freely. Thus we have the right to use it under GPL (though this
+ * does not protect the selection of names).
+ *
+ * (1) http://en.wikipedia.org/wiki/Database_copyright#United_States
+*/
 
 /** Create a random name from a list of names of scientists. **/
 
