@@ -5396,45 +5396,39 @@ public class RandomName
 "الوفا",
 "وخلان"};
     /** Generate a Name. */
-    static public String newName()
+    static public String newNameBase(String seperator)
     {
         StringBuffer name = new StringBuffer();
         Random rand = new Random();
         String nextpart = new String(firstnames[rand.nextInt(firstnames.length)]);
         name.append(nextpart);
-        name.append(" ");
+        name.append(seperator);
         nextpart = lastnames[rand.nextInt(lastnames.length)];
         name.append(nextpart);
         /* Append nameparts as long as the last part is either not
          * sensible (ends with . [middle name] or is ibn ["son of"] or is just 1 letter)
          * or you roll 1 on a die :) */
-        while (nextpart.endsWith(".") || nextpart == "ibn" || nextpart == " " || nextpart == "al" || rand.nextInt(6) == 1)
+        while (nextpart.endsWith(".") || nextpart == "ibn" || nextpart == seperator || nextpart == "al" || rand.nextInt(6) == 1)
             {
-                name.append(" ");
+                name.append(seperator);
                 nextpart = lastnames[rand.nextInt(lastnames.length)];
                 name.append(nextpart);
             }
         return name.toString();
     };
+    /** Generate a Name. */
+    static public String newName()
+    {
+        return newNameBase(" ");
+    };
     /** Generate a Nickname: No spaces. */
     static public String newNickname()
     {
-        StringBuffer name = new StringBuffer();
-        Random rand = new Random();
-        String nextpart = new String(firstnames[rand.nextInt(firstnames.length)]);
-        name.append(nextpart);
-        name.append("-");
-        nextpart = lastnames[rand.nextInt(lastnames.length)];
-        name.append(nextpart);
-        /* Append nameparts as long as the last part is either not
-         * sensible (ends with . [middle name] or is ibn ["son of"] or is just 1 letter)
-         * or you roll 1 on a die :) */
-        while (nextpart.endsWith(".") || nextpart == "ibn" || nextpart == "al" || nextpart == "-" || rand.nextInt(6) == 1)
-            {
-                name.append("-");
-                nextpart = lastnames[rand.nextInt(lastnames.length)];
-                name.append(nextpart);
-            }
-        return name.toString();
+        return newNameBase("-");
+    };
+    /** Generate a new name without protected spaces. */
+    static public String newUnprotectedName()
+    {
+        return newNameBase(" ");
     };
 }
