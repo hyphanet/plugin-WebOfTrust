@@ -145,7 +145,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		createForm.addChild("span", new String[] { "title", "style" }, 
 				new String[] { l10n().getString("OwnIdentitiesPage.OwnIdentities.Nickname.Tooltip"), "border-bottom: 1px dotted; cursor: help;"}, 
 		        l10n().getString("OwnIdentitiesPage.OwnIdentities.Nickname") + " : ");
-		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] {"text", "Nickname", "30", RandomName.newNickname()});
+		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] {"text", "Nickname", "30", RandomName.newName()});
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "create", l10n().getString("OwnIdentitiesPage.OwnIdentities.CreateButton") });
 	}
 
