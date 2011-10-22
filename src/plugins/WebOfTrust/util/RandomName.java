@@ -1119,7 +1119,7 @@ public class RandomName
         /* Append nameparts as long as the last part is either not
          * sensible (ends with . [middle name] or is ibn ["son of"] or
          * is just 1 letter) or you roll 1 on a die :) */
-        while (nextpart.endsWith(".") || nextpart == "ibn" || nextpart == seperator || nextpart == "al" || rand.nextInt(6) == 1){
+        while (nextpart.endsWith(".") || "ibn".equals(nextpart) || seperator.equals(nextpart) || "al".equals(nextpart) || rand.nextInt(6) == 1){
                 name.append(seperator);
                 nextpart = lastnames[rand.nextInt(lastnames.length)];
                 name.append(nextpart);
