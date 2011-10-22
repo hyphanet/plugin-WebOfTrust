@@ -1108,7 +1108,7 @@ public class RandomName
         "Zuckermandel", "Zuhr", "Zülicke", "Zwicker", "اخوان",
         "الصفا", "الوفا", "وخلان"};
     /** Generate a Name. */
-    static public String newNameBase(String seperator){
+    static public String newNameBase(String seperator) {
         StringBuffer name = new StringBuffer();
         Random rand = new Random();
         String nextpart = new String(firstnames[rand.nextInt(firstnames.length)]);
@@ -1119,7 +1119,7 @@ public class RandomName
         /* Append nameparts as long as the last part is either not
          * sensible (ends with . [middle name] or is ibn ["son of"] or
          * is just 1 letter) or you roll 1 on a die :) */
-        while (nextpart.endsWith(".") || "ibn".equals(nextpart) || seperator.equals(nextpart) || "al".equals(nextpart) || rand.nextInt(6) == 1){
+        while (nextpart.endsWith(".") || "ibn".equals(nextpart) || seperator.equals(nextpart) || "al".equals(nextpart) || rand.nextInt(6) == 1) {
                 name.append(seperator);
                 nextpart = lastnames[rand.nextInt(lastnames.length)];
                 name.append(nextpart);
@@ -1127,15 +1127,15 @@ public class RandomName
         return name.toString();
     };
     /** Generate a Name. */
-    static public String newName(){
+    static public String newName() {
         return newNameBase(" ");
     };
     /** Generate a Nickname: No spaces. */
-    static public String newNickname(){
+    static public String newNickname() {
         return newNameBase("_");
     };
     /** Generate a new name without protected spaces. */
-    static public String newUnprotectedName(){
+    static public String newUnprotectedName() {
         return newNameBase(" ");
     };
 }
