@@ -558,10 +558,10 @@ public final class FCPInterface implements FredPluginFCP {
 
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Message", "Name");
-	if (nameType == "Nickname"){
+	if ("Nickname".equals(nameType)){
 		sfs.putOverwrite("Name", RandomName.newNickname());
 	    }
-	else if (nameType == "UnprotectedName"){
+	else if ("UnprotectedName".equals(nameType)){
 		sfs.putOverwrite("Name", RandomName.newUnprotectedName());
 	    }
 	else {
