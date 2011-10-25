@@ -4,10 +4,10 @@
  *
  * The nameparts are compiled from names of (often long) deceased
  * scientists found in Wikipedia. Names themselves can not be
- * copyrighted and since the Wikipedia is based in the USA where no
- * copyright on uncreative databases exists(1), the list of names can be
- * used freely. Thus we have the right to use it under GPL (though this
- * does not protect the selection of names).
+ * copyrighted and the level needed for copyrighting a list is not
+ * reached (reply from Wikipedia supporters), so the list of names can
+ * be used freely. Thus we have the right to use it under GPL (though
+ * this does not protect the selection of names).
  *
  * (1) http://en.wikipedia.org/wiki/Database_copyright#United_States
  */
@@ -18,7 +18,7 @@ package plugins.WebOfTrust.util;
 
 import java.util.Random;
 import java.util.Set;
-import java.lang.StringBuffer;
+import java.lang.StringBuilder;
 
 public class RandomName
 {
@@ -1109,7 +1109,7 @@ public class RandomName
         "الصفا", "الوفا", "وخلان"};
     /** Generate a Name. */
     static public String newNameBase(String seperator) {
-        StringBuffer name = new StringBuffer();
+        StringBuilder name = new StringBuilder();
         Random rand = new Random();
         String nextpart = new String(firstnames[rand.nextInt(firstnames.length)]);
         name.append(nextpart);
