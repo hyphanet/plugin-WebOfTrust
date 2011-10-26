@@ -9,7 +9,7 @@
  * be used freely(1). Thus we have the right to use it under GPL (though
  * this does not protect the selection of names).
  *
- * (1) http://de.wikipedia.org/w/index.php?title=Hilfe:FAQ_Rechtliches&oldid=94743640#Darf_ich_Tabellen.2C_Listen_oder_statistische_Daten_.C3.BCbernehmen.3Fhttp://en.wikipedia.org/wiki/Database_copyright#United_States
+ * (1) http://de.wikipedia.org/w/index.php?title=Hilfe:FAQ_Rechtliches&oldid=94743640#Darf_ich_Tabellen.2C_Listen_oder_statistische_Daten_.C3.BCbernehmen.3F
  */
 
 /** Create a random name from a list of names of scientists. **/
@@ -1118,7 +1118,8 @@ public class RandomName
         name.append(nextpart);
         /* Append nameparts as long as the last part is either not
          * sensible (ends with . [middle name] or is ibn ["son of"] or
-         * is just 1 letter) or you roll 1 on a die :) */
+         * is al [arabic prefix for "the"] or is just 1 letter) or you
+         * roll 1 on a die :) */
         while (nextpart.endsWith(".") || "ibn".equals(nextpart) || seperator.equals(nextpart) || "al".equals(nextpart) || rand.nextInt(6) == 1) {
                 name.append(seperator);
                 nextpart = lastnames[rand.nextInt(lastnames.length)];
