@@ -6,10 +6,10 @@
  * scientists found in Wikipedia. Names themselves can not be
  * copyrighted and the level needed for copyrighting a list is not
  * reached (reply from Wikipedia supporters), so the list of names can
- * be used freely. Thus we have the right to use it under GPL (though
+ * be used freely(1). Thus we have the right to use it under GPL (though
  * this does not protect the selection of names).
  *
- * (1) http://en.wikipedia.org/wiki/Database_copyright#United_States
+ * (1) http://de.wikipedia.org/w/index.php?title=Hilfe:FAQ_Rechtliches&oldid=94743640#Darf_ich_Tabellen.2C_Listen_oder_statistische_Daten_.C3.BCbernehmen.3Fhttp://en.wikipedia.org/wiki/Database_copyright#United_States
  */
 
 /** Create a random name from a list of names of scientists. **/
