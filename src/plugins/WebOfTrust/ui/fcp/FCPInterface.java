@@ -269,7 +269,7 @@ public final class FCPInterface implements FredPluginFCP {
 		sfs.putOverwrite("Message", "OwnIdentities");
 
 		synchronized(mWoT) {
-			final ObjectSet<OwnIdentity> result = mWoT.getAllOwnIdentities();
+			final ObjectSet<OwnIdentity> result = mWoT.getAllOwnEnabledIdentities();
 	
 			for(int i = 0; result.hasNext(); ) {
 				final OwnIdentity oid = result.next();

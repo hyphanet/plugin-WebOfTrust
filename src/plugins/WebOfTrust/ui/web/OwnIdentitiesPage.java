@@ -30,6 +30,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	private final String showIdentityURI;
 	private final String createIdentityURI;
 	private final String editIdentityURI;
+	private final String setDisabledIdentityStateURI;
 	private final String deleteIdentityURI;
 	private final String introduceIdentityURI;
 	
@@ -47,6 +48,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		showIdentityURI = baseURI+"/ShowIdentity";
 		createIdentityURI = baseURI+"/CreateIdentity";
 		editIdentityURI = baseURI+"/EditOwnIdentity";
+		setDisabledIdentityStateURI = baseURI+"/SetDisabledOwnIdentityState";
 		deleteIdentityURI = baseURI+"/DeleteOwnIdentity";
 		introduceIdentityURI = baseURI+"/IntroduceIdentity";
 	}
@@ -85,6 +87,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.LastInsert"));
 			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.PublishesTrustlist"));
 			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Trusters"));
+			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Enabled"));
 			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Manage"));
 			
 			while(ownIdentities.hasNext()) {
@@ -120,22 +123,45 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				trustersCell.addChild(new HTMLNode("a", "href", showIdentityURI + "?id=" + id.getID(),
 						Long.toString(wot.getReceivedTrusts(id).size())));
 				
+				row.addChild("td", new String[] { "align" }, new String[] { "center" }, 
+				        !id.isDisabled() 
+				                ? l10n().getString("Common.Yes") 
+				                : l10n().getString("Common.No"));
+				
 				HTMLNode manageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				
-				HTMLNode editForm = pr.addFormChild(manageCell, editIdentityURI, "EditIdentity");
-				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EditIdentity" });
-				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
-				editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.EditButton") });
-								
+				if (!id.isDisabled()) {
+					HTMLNode editForm = pr.addFormChild(manageCell, editIdentityURI, "EditIdentity");
+					editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EditIdentity" });
+					editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
+					editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.EditButton") });
+				}
+				
+				if (!id.isDisabled()) {
+					HTMLNode disableForm = pr.addFormChild(manageCell, setDisabledIdentityStateURI, "DisableIdentity");
+					disableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "DisableIdentity" });
+					disableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
+					disableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "disable", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.DisableButton") });
+				}
+			
+				if (id.isDisabled()) {
+					HTMLNode enableForm = pr.addFormChild(manageCell, setDisabledIdentityStateURI, "EnableIdentity");
+					enableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EnableIdentity" });
+					enableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
+					enableForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "enable", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.EnableButton") });
+				}
+				
 				HTMLNode deleteForm = pr.addFormChild(manageCell, deleteIdentityURI, "DeleteIdentity");
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "DeleteIdentity" });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.DeleteButton") });
 				
-				HTMLNode introduceForm = pr.addFormChild(manageCell, introduceIdentityURI, "IntroduceIdentity");
-				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "IntroduceIdentity" });
-				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
-				introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.IntroduceButton") });				
+				if (!id.isDisabled()) {
+					HTMLNode introduceForm = pr.addFormChild(manageCell, introduceIdentityURI, "IntroduceIdentity");
+					introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "IntroduceIdentity" });
+					introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
+					introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTable.IntroduceButton") });				
+				}
 			}
 		}
 		}

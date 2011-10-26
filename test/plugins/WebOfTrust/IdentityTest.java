@@ -217,6 +217,10 @@ public final class IdentityTest extends DatabaseBasedTest {
 	
 
 	
+	public void testEnabled() {
+		assertFalse(identity.isDisabled());
+	}
+	
 //	public void testEquals() {
 //		do {
 //			try {

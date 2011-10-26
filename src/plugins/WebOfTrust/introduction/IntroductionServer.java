@@ -161,7 +161,7 @@ public final class IntroductionServer extends TransferThread {
 		synchronized(mWoT) {
 			/* TODO: We might want to not lock all the time during captcha creation... figure out how long this takes ... */
 			
-			for(final OwnIdentity identity : mWoT.getAllOwnIdentities()) {
+			for(final OwnIdentity identity : mWoT.getAllOwnEnabledIdentities()) {
 				if(identity.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)) {
 					try {
 						Logger.normal(this, "Managing puzzles of " + identity.getNickname());

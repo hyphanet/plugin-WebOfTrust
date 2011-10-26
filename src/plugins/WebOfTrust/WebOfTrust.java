@@ -653,7 +653,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * - It is used by unit tests (and WoT) to check whether the real implementation works<br />
 	 * - It is the function which you should read if you want to understand how WoT works.<br />
 	 * 
-	 * Computes all rank and score values and checks whether the database is correct. If wrong values are found, they are correct.<br />
+	 * Computes all rank and score values of enabled identities and checks whether the database is correct. If wrong values are found, they are correct.<br />
 	 * 
 	 * There was a bug in the score computation for a long time which resulted in wrong computation when trust values very removed under certain conditions.<br />
 	 * 
@@ -671,7 +671,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		final ObjectSet<Identity> allIdentities = getAllIdentities();
 		
 		// Scores are a rating of an identity from the view of an OwnIdentity so we compute them per OwnIdentity.
-		for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+		for(OwnIdentity treeOwner : getAllOwnEnabledIdentities()) {
 			// At the end of the loop body, this table will be filled with the ranks of all identities which are visible for treeOwner.
 			// An identity is visible if there is a trust chain from the owner to it.
 			// The rank is the distance in trust steps from the treeOwner.			
@@ -1108,7 +1108,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	/**
-	 * Get a filtered and sorted list of identities.
+	 * Get a filtered and sorted list of enabled identities.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list.
 	 */
 	public ObjectSet<Identity> getAllIdentitiesFilteredAndSorted(OwnIdentity truster, String nickFilter, SortOrder sortInstruction) {
@@ -1156,6 +1156,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			if(!nickFilter.equals("")) q.descend("mNickname").constrain(nickFilter).like();
 		}
 		
+		// return only enabled identities
+		q.descend("mDisabled").constrain(false);
+		
 		return new Persistent.InitializingObjectSet<Identity>(this, q);
 	}
 	
@@ -1200,8 +1203,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		q.constrain(OwnIdentity.class);
 		return new Persistent.InitializingObjectSet<OwnIdentity>(this, q);
 	}
-
 	
+	/**
+	 * Returns all own enabled identities
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 * 
+	 * @return An {@link ObjectSet} containing all enabled identities.
+	 */
+	public ObjectSet<OwnIdentity> getAllOwnEnabledIdentities() {
+		final Query q = mDB.query();
+		q.constrain(OwnIdentity.class);
+		q.descend("mDisabled").constrain(false);
+		return new Persistent.InitializingObjectSet<OwnIdentity>(this, q);
+	}
+
 	/**
 	 * You have to lock the WoT and the IntroductionPuzzleStore before calling this function.
 	 * @param identity
@@ -1346,9 +1361,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * Checks whether the given identity should be downloaded. 
-	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity.
+	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity and is enabled.
 	 */
 	public boolean shouldFetchIdentity(final Identity identity) {
+		if(identity.isDisabled())
+			return false;
+		
 		if(identity instanceof OwnIdentity)
 			return true;
 		
@@ -1813,6 +1831,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * Updates all trust trees which are affected by the given modified score.
+	 * Skips disabled identities.
 	 * For understanding how score calculation works you should first read {@link computeAllScores
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
@@ -1846,7 +1865,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 
 		if(!mFullScoreComputationNeeded && (trustWasCreated || trustWasModified)) {
-			for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+			for(OwnIdentity treeOwner : getAllOwnEnabledIdentities()) {
 				try {
 					// Throws to abort the update of the trustee's score: If the truster has no rank or capacity in the tree owner's view then we don't need to update the trustee's score.
 					if(getScore(treeOwner, newTrust.getTruster()).getCapacity() == 0)
@@ -2027,6 +2046,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		deleteIdentity(getIdentityByID(id));
 	}
 	
+	public synchronized void setDisabledState(String identityID, boolean disabled) throws UnknownIdentityException, InvalidParameterException {
+		final Identity identity = getOwnIdentityByID(identityID);
+		identity.setDisabled(disabled);
+		identity.storeAndCommit();
+		if(!disabled){
+			computeAllScoresWithoutCommit();
+		}
+		
+		Logger.debug(this, "Set identity '" + identity.getNickname() + "' state disabled: '" + disabled + "'");
+	}
+			
 	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
 		throws MalformedURLException, InvalidParameterException {
 		
