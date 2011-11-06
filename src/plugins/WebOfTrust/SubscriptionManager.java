@@ -32,6 +32,9 @@ import freenet.support.io.NativeThread;
  * This especially applies to the FCP-client-interface and all other client interfaces: If a client returns "ERROR!" from the callback it has received,
  * the notification queue is halted and the previous notification is re-sent a few times until it can be imported successfully by the client
  * or the connection is dropped due to too many failures.
+ * 
+ * QA: What to do, if the client does not support a certain message?
+ * 
  * This is a very important principle which makes client design easy: You do not need transaction-safety when caching things such as score values
  * incrementally. For example your client might need to do mandatory actions due to a score-value change, such as deleting messages from identities
  * which have a bad score now. If the score-value import succeeds but the message deletion fails, you can just return "ERROR!" to the WOT-callback-caller
@@ -47,6 +50,8 @@ import freenet.support.io.NativeThread;
  * 
  * TODO: This should be used for powering the IntroductionClient/IntroductionServer.
  * 
+ * QA: So I need one Subscription manager per subscription type? Or do I have one Subscription manager per client?
+ * 
  * @author xor (xor@freenetproject.org)
  */
 public final class SubscriptionManager implements PrioRunnable {
@@ -57,6 +62,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Subscriptions are stored one per {@link Notification}-type and per way of notification:
 	 * Because we want the notification queue to block on error, a single subscription does not support
 	 * multiple ways of notifying the client.
+	 * 
+	 * QA: Would there be any good reason to request multiple types of notification for a subscription?
 	 */
 	public static abstract class Subscription<NotificationType extends Notification> extends Persistent {
 		
@@ -90,6 +97,19 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * If an error happens when trying to process a notification to a client, we might want to retry some time later.
 		 * Therefore, the {@link Notification} queue exists per client and not globally - if a single {@link Notification} is created by WoT,
 		 * multiple {@link Notification} objects are stored - one for each Subscription.
+		 * 
+		 * QA: What happens for really huge indexes? Java
+		 * integers overflow and are 32 bit, so we have about
+		 * 4 billion index values before collision. So it
+		 * would collide on 1 million IDs with 1000 messages
+		 * each trying to send notifications for each
+		 * message. Not likely, but maybe a long should be
+		 * used anyway. On 64 bit machines that should not be
+		 * much slower than an int and it’s safe.  We either
+		 * need this big enough that it won’t overflow, or we
+		 * need to queue up notifications which would collide
+		 * on not-yet-sent notifications. I would just use
+		 * long.
 		 */
 		private int mNextNotificationIndex = 0;
 		
@@ -104,9 +124,15 @@ public final class SubscriptionManager implements PrioRunnable {
 			mFCPKey = fcpID;
 		}
 		
+		/**
+		 * Basic value test. Throws errors if the Type, the
+		 * ID, the FCP key (only for FCP notifications) or the
+		 * index are invalid.
+		 */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
 			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
+			// QA: What does checkedActivate() do?
 			
 			IfNull.thenThrow(mID, "mID");
 			UUID.fromString(mID); // Throws if invalid
@@ -151,9 +177,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * 
 		 * Schedules processing of the Notifications of the SubscriptionManger.
 		 */
-		protected final int takeFreeNotificationIndexWithoutCommit() {
+		protected final int takeFreeNotificationIndexWithoutCommit() { // QA: long, too?
 			checkedActivate(1);
-			final int index = mNextNotificationIndex++;
+			final int index = mNextNotificationIndex++; // QA: long, too?
 			storeWithoutCommit();
 			getSubscriptionManager().scheduleNotificationProcessing();
 			return index;
@@ -221,6 +247,18 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * and an exception is thrown.
 		 * You have to synchronize on the WoT, the SubscriptionManager and the database lock before calling this
 		 * function!
+		 * 
+		 * QA: Do we need transactions here? Wouldn’t it be
+		 * enough to just store the index of all successful
+		 * notifications, if that index is higher than the
+		 * last known successful index? 
+		 * 
+		 * If (successful_index - last_successful_index > 0 &&
+		 *     successful_index - last_successful_index < Integer.MAX_INT/2) {
+		 *   successful_index = last_successful_index;
+		 * } // this means that we only use half the 
+		 *     
+		 *      
 		 */
 		@SuppressWarnings("unchecked")
 		protected void sendNotifications(SubscriptionManager manager) {
@@ -243,6 +281,7 @@ public final class SubscriptionManager implements PrioRunnable {
 							// to be sent again when the failed notification is retried. Therefore, we commit after
 							// each processed notification but do not catch RuntimeExceptions here
 							
+							// QA: Does this mean we write to the database on every sent notification?
 							Persistent.checkedCommit(mDB, this);
 						} catch(RuntimeException e) {
 							Persistent.checkedRollbackAndThrow(mDB, this, e);
