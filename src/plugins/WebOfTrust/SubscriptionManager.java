@@ -256,7 +256,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * If (successful_index - last_successful_index > 0 &&
 		 *     successful_index - last_successful_index < Integer.MAX_INT/2) {
 		 *   successful_index = last_successful_index;
-		 * } // this means that we only use half the 
+		 * } // this means that we only use half the integer range
 		 *     
 		 *      
 		 */
