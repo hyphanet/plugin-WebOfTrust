@@ -473,6 +473,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * A subscription to the attributes of all identities.
 	 * If the attributes of an identity change, the subscriber gets notified.
 	 * The subscriber will also get notified if a new identity is created or if an identity is deleted.
+	 * 
+	 * QA: Does this effectively send an ID object?
 	 */
 	public static final class IdentityAttributeListSubscription extends Subscription<IdentityChangedNotification> {
 
@@ -585,6 +587,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * After a notification command is stored, we wait this amount of time before processing the commands.
+	 * 
+	 * QA: Why?
 	 */
 	private static final long PROCESS_NOTIFICATIONS_DELAY = 60 * 1000;
 	
@@ -625,7 +629,10 @@ public final class SubscriptionManager implements PrioRunnable {
 			super(message);
 		}
 	}
-	
+
+        /** 
+	 * QA: What does "similar" mean? I'm not sure, what this does.
+	 */
 	@SuppressWarnings("unchecked")
 	private synchronized void throwIfSimilarSubscriptionExists(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
 		switch(subscription.getType()) {
