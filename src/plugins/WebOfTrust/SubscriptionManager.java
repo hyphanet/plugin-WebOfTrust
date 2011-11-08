@@ -253,10 +253,11 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * notifications, if that index is higher than the
 		 * last known successful index? 
 		 * 
-		 * If (successful_index - last_successful_index > 0 &&
+		 * If (successful_index > last_successful_index &&
 		 *     successful_index - last_successful_index < Integer.MAX_INT/2) {
 		 *   successful_index = last_successful_index;
-		 * } // this means that we only use half the integer range
+		 * } // this means that we only use half the integer range.  
+		 *   // With floats et would be easier.
 		 *     
 		 *      
 		 */
@@ -281,6 +282,8 @@ public final class SubscriptionManager implements PrioRunnable {
 							// to be sent again when the failed notification is retried. Therefore, we commit after
 							// each processed notification but do not catch RuntimeExceptions here
 							
+							// Why should they be sent again? 
+							
 							// QA: Does this mean we write to the database on every sent notification?
 							Persistent.checkedCommit(mDB, this);
 						} catch(RuntimeException e) {
@@ -299,6 +302,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * An object of type Notification is stored when an event happens to which a client is possibly subscribed.
 	 * The SubscriptionManager will wake up some time after that, pull all notifications from the database and process them.
+	 * 
+	 * QA: So: Event → Notification → checked by subscription manager?
 	 */
 	public static abstract class Notification extends Persistent {
 		
@@ -343,6 +348,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * an initial synchronization with the client.
 	 * For example, if a client subscribes to the list of identities, it should always first receive a full list of
 	 * all existing identities and after that be notified about each single new identity which eventually appears.
+	 * 
+	 * QA: I don't understand this well enough to QA it...
 	 */
 	protected static class InitialSynchronizationNotification extends Notification {
 		
