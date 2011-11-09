@@ -211,7 +211,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * 
 		 * TODO: (later) see if it's possible to use/replace
 		 * the db4o with/for a pure in-memory structure to
-		 * make commits cheaper.
+		 * make commits
+		 * cheaper. 
+		 * - http://community.versant.com/documentation/reference/db4o-8.0/java/reference/Content/configuration/file/storage.htm
+		 * - http://community.versant.com/Blogs/db4o/tabid/197/entryid/148/Default.aspx
+		 * Alternative: replace the db4o with a pure in-memory
+		 * database. Google found this: http://prevayler.org/
 		 */
 		protected void storeAndCommit() {
 			synchronized(Persistent.transactionLock(mDB)) {
