@@ -208,6 +208,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * Takes the database lock to begin a transaction, stores this object and commits the transaction.
 		 * You must synchronize on the {@link SubscriptionManager} while calling this function.
+		 * 
+		 * TODO: (later) see if it's possible to use/replace
+		 * the db4o with/for a pure in-memory structure to
+		 * make commits cheaper.
 		 */
 		protected void storeAndCommit() {
 			synchronized(Persistent.transactionLock(mDB)) {
