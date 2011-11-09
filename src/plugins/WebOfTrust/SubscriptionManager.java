@@ -33,7 +33,7 @@ import freenet.support.io.NativeThread;
  * the notification queue is halted and the previous notification is re-sent a few times until it can be imported successfully by the client
  * or the connection is dropped due to too many failures.
  * 
- * QA: What to do, if the client does not support a certain message?
+ * TODO: What to do, if the client does not support a certain message?
  * 
  * This is a very important principle which makes client design easy: You do not need transaction-safety when caching things such as score values
  * incrementally. For example your client might need to do mandatory actions due to a score-value change, such as deleting messages from identities
@@ -50,7 +50,7 @@ import freenet.support.io.NativeThread;
  * 
  * TODO: This should be used for powering the IntroductionClient/IntroductionServer.
  * 
- * QA: So I need one Subscription manager per subscription type? Or do I have one Subscription manager per client?
+ * TODO: So I need one Subscription manager per subscription type? Or do I have one Subscription manager per client?
  * 
  * @author xor (xor@freenetproject.org)
  */
@@ -63,7 +63,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Because we want the notification queue to block on error, a single subscription does not support
 	 * multiple ways of notifying the client.
 	 * 
-	 * QA: Would there be any good reason to request multiple types of notification for a subscription?
+	 * TODO: Would there be any good reason to request multiple types of notification for a subscription?
 	 */
 	public static abstract class Subscription<NotificationType extends Notification> extends Persistent {
 		
@@ -98,7 +98,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Therefore, the {@link Notification} queue exists per client and not globally - if a single {@link Notification} is created by WoT,
 		 * multiple {@link Notification} objects are stored - one for each Subscription.
 		 * 
-		 * QA: What happens for really huge indexes? Java
+		 * TODO: What happens for really huge indexes? Java
 		 * integers overflow and are 32 bit, so we have about
 		 * 4 billion index values before collision. So it
 		 * would collide on 1 million IDs with 1000 messages
@@ -132,7 +132,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
 			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
-			// QA: What does checkedActivate() do?
+			// TODO: What does checkedActivate() do?
 			
 			IfNull.thenThrow(mID, "mID");
 			UUID.fromString(mID); // Throws if invalid
@@ -177,9 +177,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * 
 		 * Schedules processing of the Notifications of the SubscriptionManger.
 		 */
-		protected final int takeFreeNotificationIndexWithoutCommit() { // QA: long, too?
+		protected final int takeFreeNotificationIndexWithoutCommit() { // TODO: long, too?
 			checkedActivate(1);
-			final int index = mNextNotificationIndex++; // QA: long, too?
+			final int index = mNextNotificationIndex++; // TODO: long, too?
 			storeWithoutCommit();
 			getSubscriptionManager().scheduleNotificationProcessing();
 			return index;
@@ -248,7 +248,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * You have to synchronize on the WoT, the SubscriptionManager and the database lock before calling this
 		 * function!
 		 * 
-		 * QA: Do we need transactions here? Wouldn’t it be
+		 * TODO: Do we need transactions here? Wouldn’t it be
 		 * enough to just store the index of all successful
 		 * notifications, if that index is higher than the
 		 * last known successful index? 
@@ -284,7 +284,7 @@ public final class SubscriptionManager implements PrioRunnable {
 							
 							// Why should they be sent again? 
 							
-							// QA: Does this mean we write to the database on every sent notification?
+							// TODO: Does this mean we write to the database on every sent notification?
 							Persistent.checkedCommit(mDB, this);
 						} catch(RuntimeException e) {
 							Persistent.checkedRollbackAndThrow(mDB, this, e);
@@ -303,7 +303,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * An object of type Notification is stored when an event happens to which a client is possibly subscribed.
 	 * The SubscriptionManager will wake up some time after that, pull all notifications from the database and process them.
 	 * 
-	 * QA: So: Event → Notification → checked by subscription manager?
+	 * TODO: So: Event → Notification → checked by subscription manager?
 	 */
 	public static abstract class Notification extends Persistent {
 		
@@ -349,7 +349,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * For example, if a client subscribes to the list of identities, it should always first receive a full list of
 	 * all existing identities and after that be notified about each single new identity which eventually appears.
 	 * 
-	 * QA: I don't understand this well enough to QA it...
+	 * TODO: I don't understand this well enough to QA it...
 	 */
 	protected static class InitialSynchronizationNotification extends Notification {
 		
@@ -474,7 +474,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * If the attributes of an identity change, the subscriber gets notified.
 	 * The subscriber will also get notified if a new identity is created or if an identity is deleted.
 	 * 
-	 * QA: Does this effectively send an ID object?
+	 * TODO: Does this effectively send an ID object?
 	 */
 	public static final class IdentityAttributeListSubscription extends Subscription<IdentityChangedNotification> {
 
@@ -588,7 +588,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * After a notification command is stored, we wait this amount of time before processing the commands.
 	 * 
-	 * QA: Why?
+	 * TODO: Why?
 	 */
 	private static final long PROCESS_NOTIFICATIONS_DELAY = 60 * 1000;
 	
@@ -631,7 +631,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 
         /** 
-	 * QA: What does "similar" mean? I'm not sure, what this does.
+	 * TODO: What does "similar" mean? I'm not sure, what this does.
 	 */
 	@SuppressWarnings("unchecked")
 	private synchronized void throwIfSimilarSubscriptionExists(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
@@ -728,7 +728,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	private ObjectSet<? extends Subscription<? extends Notification>> getSubscriptions(final Class<? extends Subscription<? extends Notification>> clazz) {
-	        /* QA: So clazz is any kind of Subscription for any kind of Notifiction? */
+	        /* TODO: So clazz is any kind of Subscription for any kind of Notifiction? */
 		final Query q = mDB.query();
 		q.constrain(clazz);
 		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
@@ -738,13 +738,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
 		q.descend("mID").constrain(id);	
-		/* QA: So this returns an iterator with at most 1 element? */
+		/* TODO: So this returns an iterator with at most 1 element? */
 		ObjectSet<Subscription<? extends Notification>> result = new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
 		
 		switch(result.size()) {
 			case 1: return result.next(); 
 			case 0: throw new UnknownSubscriptionException(id);
-		        default: throw new DuplicateObjectException(id); /* QA: How should a client react to this? */
+		        default: throw new DuplicateObjectException(id); /* TODO: How should a client react to this? */
 		}
 	}
 	
@@ -766,7 +766,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-			        /* QA: Does this also remove the notifications by other clients? */
+			        /* TODO: Does this also remove the notifications by other clients? */
 				for(Subscription<? extends Notification> s : getAllSubscriptions()) {
 					s.deleteWithoutCommit(this);
 				}
@@ -868,7 +868,7 @@ public final class SubscriptionManager implements PrioRunnable {
 				try {
 					subscription.sendNotifications(this);
 					Persistent.checkedCommit(mDB, this);
-					/* QA: A subscription can have
+					/* TODO: A subscription can have
 					 * many notifications, right?
 					 * And every notification also
 					 * commits. So at the end of
@@ -907,7 +907,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * Deletes all old subscriptions and enables subscription processing. 
 	 * 
-	 * QA: Where/How does it enable subscription processing? 
+	 * TODO: Where/How does it enable subscription processing? 
 	 */
 	protected synchronized void start() {
 		deleteAllSubscriptions();
