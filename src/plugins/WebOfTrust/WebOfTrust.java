@@ -26,6 +26,8 @@ import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import plugins.WebOfTrust.ui.web.WebInterface;
 
 import com.db4o.Db4o;
+import com.db4o.io.CachedIoAdapter;
+import com.db4o.io.RandomAccessFileAdapter;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -290,6 +292,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		Logger.normal(this, "Using db4o " + Db4o.version());
 		
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
+		// use cached io
+		RandomAccessFileAdapter delegateAdapter = new RandomAccessFileAdapter();
+		// A cache with 4096 pages of 4096KB size, gives a 16MiB cache
+		cfg.io(new CachedIoAdapter(delegateAdapter,4096,4096));
 		
 		// Required config options:
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader()));
