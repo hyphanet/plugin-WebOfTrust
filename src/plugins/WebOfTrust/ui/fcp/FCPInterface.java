@@ -3,7 +3,9 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.fcp;
 
+import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -11,8 +13,14 @@ import java.util.Map.Entry;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
+import plugins.WebOfTrust.SubscriptionManager;
+import plugins.WebOfTrust.SubscriptionManager.Notification;
+import plugins.WebOfTrust.SubscriptionManager.Subscription;
+import plugins.WebOfTrust.SubscriptionManager.SubscriptionExistsAlreadyException;
+import plugins.WebOfTrust.SubscriptionManager.UnknownSubscriptionException;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NoSuchContextException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
@@ -21,7 +29,6 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
-import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.IntroductionServer;
 import plugins.WebOfTrust.util.RandomName;
 
@@ -42,9 +49,19 @@ import freenet.support.api.Bucket;
 public final class FCPInterface implements FredPluginFCP {
 
     private final WebOfTrust mWoT;
+    
+    private final SubscriptionManager mSubscriptionManager;
+    
+    /**
+     * Contains all clients which ever subscribed to content.
+     * Key = replySender.getPluginName() + ";" + replySender.getIdentifier()
+     * FIXME: We should have a proper disconnection mechanism instead of using WeakReferences.
+     */
+    private final HashMap<String, WeakReference<PluginReplySender>> mClients = new HashMap<String, WeakReference<PluginReplySender>>();
 
     public FCPInterface(final WebOfTrust myWoT) {
         mWoT = myWoT;
+        mSubscriptionManager = mWoT.getSubscriptionManager();
     }
 
     public void handle(final PluginReplySender replysender, final SimpleFieldSet params, final Bucket data, final int accesstype) {
@@ -52,7 +69,13 @@ public final class FCPInterface implements FredPluginFCP {
         try {
             final String message = params.get("Message");
             
-            if (message.equals("CreateIdentity")) {
+            // TODO: Optimization: This should use a HashMap<String, HandleInterface> instead of zillions of equals()
+            
+            if (message.equals("GetTrust")) {
+                replysender.send(handleGetTrust(params, null, null), data);
+            } else if(message.equals("GetScore")) {
+            	replysender.send(handleGetScore(params, null, null), data);
+            }else if (message.equals("CreateIdentity")) {
                 replysender.send(handleCreateIdentity(params), data);
             } else if (message.equals("SetTrust")) {
                 replysender.send(handleSetTrust(params), data);
@@ -61,9 +84,15 @@ public final class FCPInterface implements FredPluginFCP {
             } else if (message.equals("AddIdentity")) {
                 replysender.send(handleAddIdentity(params), data);
             } else if (message.equals("GetIdentity")) {
-                replysender.send(handleGetIdentity(params), data);
+                replysender.send(handleGetIdentity(params, null, null), data);
             } else if (message.equals("GetOwnIdentities")) {
                 replysender.send(handleGetOwnIdentities(params), data);
+            } else if (message.equals("GetAllIdentities")) {
+            	replysender.send(handleGetAllIdentities(params), data);
+            } else if (message.equals("GetAllTrustValues")) {
+            	replysender.send(handleGetAllTrustValues(params), data);
+            } else if (message.equals("GetAllScoreValues")) {
+            	replysender.send(handleGetAllScoreValues(params), data);
             } else if (message.equals("GetIdentitiesByScore")) {
                 replysender.send(handleGetIdentitiesByScore(params), data);
             } else if (message.equals("GetTrusters")) {
@@ -90,6 +119,10 @@ public final class FCPInterface implements FredPluginFCP {
             	replysender.send(handleGetIntroductionPuzzle(params), data);
             } else if (message.equals("SolveIntroductionPuzzle")) {
             	replysender.send(handleSolveIntroductionPuzzle(params), data);
+            } else if (message.equals("Subscribe")) {
+            	replysender.send(handleSubscribe(replysender, params), data);
+            } else if (message.equals("Unsubscribe")) {
+            	replysender.send(handleUnsubscribe(params), data);
             } else if (message.equals("Ping")) {
             	replysender.send(handlePing(), data);
             } else if (message.equals("RandomName")) {
@@ -172,6 +205,46 @@ public final class FCPInterface implements FredPluginFCP {
         sfs.putOverwrite("RequestURI", identity.getRequestURI().toString());
         return sfs;
     }
+    
+    private SimpleFieldSet handleGetTrust(final SimpleFieldSet params, String trusterID, String trusteeID) throws InvalidParameterException, DuplicateTrustException, NotTrustedException, UnknownIdentityException {
+    	if(params != null) {
+    		trusterID = getMandatoryParameter(params, "Truster");
+    		trusteeID = getMandatoryParameter(params, "Trustee");
+    	}
+
+    	final Trust trust;
+    	synchronized(mWoT) {
+    		trust = mWoT.getTrust(mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID));
+    	}
+
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+    	sfs.putOverwrite("Message", "Trust");
+		sfs.putOverwrite("Truster", trusterID);
+		sfs.putOverwrite("Trustee", trusteeID);
+		sfs.putOverwrite("Value", Byte.toString(trust.getValue()));
+		sfs.putOverwrite("Comment", trust.getComment());
+		return sfs;
+    }
+    
+    private SimpleFieldSet handleGetScore(final SimpleFieldSet params, String trusterID, String trusteeID) throws InvalidParameterException, NotInTrustTreeException, UnknownIdentityException {
+    	if(params != null) {
+    		trusterID = getMandatoryParameter(params, "Truster");
+    		trusteeID = getMandatoryParameter(params, "Trustee");
+    	}
+
+    	final Score score;
+    	synchronized(mWoT) {
+    		score = mWoT.getScore(mWoT.getOwnIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID));
+    	}
+
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+    	sfs.putOverwrite("Message", "Score");
+		sfs.putOverwrite("Truster", trusterID);
+		sfs.putOverwrite("Trustee", trusteeID);
+		sfs.putOverwrite("Value", Integer.toString(score.getScore()));
+		return sfs;
+    }
+
 
     private SimpleFieldSet handleSetTrust(final SimpleFieldSet params)
     	throws InvalidParameterException, NumberFormatException, UnknownIdentityException
@@ -206,7 +279,7 @@ public final class FCPInterface implements FredPluginFCP {
 		sfs.putOverwrite("Trustee", trusteeID);
 		return sfs;
 	}
-
+    
     private SimpleFieldSet handleAddIdentity(final SimpleFieldSet params) throws InvalidParameterException, MalformedURLException {
     	final String requestURI = getMandatoryParameter(params, "RequestURI");
 
@@ -219,20 +292,31 @@ public final class FCPInterface implements FredPluginFCP {
     	return sfs;
     }
 
-    private SimpleFieldSet handleGetIdentity(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
-    	final String trusterID = getMandatoryParameter(params, "Truster"); 
-    	final String identityID = getMandatoryParameter(params, "Identity");
+    private SimpleFieldSet handleGetIdentity(final SimpleFieldSet params, String trusterID, String identityID) throws InvalidParameterException, UnknownIdentityException {
+    	if(params != null) {
+    		trusterID = params.get("Truster"); 
+    		identityID = getMandatoryParameter(params, "Identity");
+    	}
 
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-    	sfs.putOverwrite("Message", "Identity");
     	
     	synchronized(mWoT) {
-    		final OwnIdentity truster = mWoT.getOwnIdentityByID(trusterID);
     		final Identity identity = mWoT.getIdentityByID(identityID);
+    		
+        	sfs.putOverwrite("Message", (identity instanceof OwnIdentity) ? "OwnIdentity" : "Identity");
 
+        	sfs.putOverwrite("ID", identity.getID());
     		sfs.putOverwrite("Nickname", identity.getNickname());
     		sfs.putOverwrite("RequestURI", identity.getRequestURI().toString());
+    		
+    		if(identity instanceof OwnIdentity) {
+    			OwnIdentity ownId = (OwnIdentity)identity;
+    			sfs.putOverwrite("InsertURI", ownId.getInsertURI().toString());
+    		}
 
+    		if(trusterID != null) {
+    			final OwnIdentity truster = mWoT.getOwnIdentityByID(trusterID);
+    		
     		try {
     			final Trust trust = mWoT.getTrust(truster, identity);
     			sfs.putOverwrite("Trust", Byte.toString(trust.getValue()));
@@ -247,6 +331,7 @@ public final class FCPInterface implements FredPluginFCP {
     		} catch (final NotInTrustTreeException e) {
     			sfs.putOverwrite("Score", "null");
     			sfs.putOverwrite("Rank", "null");
+    		}
     		}
 
     		final Iterator<String> contexts = identity.getContexts().iterator();
@@ -296,6 +381,99 @@ public final class FCPInterface implements FredPluginFCP {
 		}
 
 		return sfs;
+    }
+    
+    private SimpleFieldSet handleGetAllIdentities(final SimpleFieldSet params) {
+        final String context;
+        
+        if(params!= null) {
+        	context = params.get("Context");
+        } else {
+        	context = null;
+        }
+
+		final SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.putOverwrite("Message", "Identities");
+		
+		// TODO: Optimization: Remove this lock if it works without it.
+		synchronized(mWoT) {
+			final ObjectSet<Identity> result = mWoT.getAllIdentities();
+			final boolean getAll = context == null || context.equals("");
+	
+			for(int i = 0; result.hasNext(); ) {
+				final Identity identity = result.next();
+
+				if(getAll || identity.hasContext(context)) {
+					// TODO: Allow the client to select what data he wants
+					
+					sfs.putOverwrite("Identity" + i, identity.getID());
+					sfs.putOverwrite("RequestURI" + i, identity.getRequestURI().toString());
+					if(identity instanceof OwnIdentity)
+						sfs.putOverwrite("InsertURI" + i, ((OwnIdentity)identity).getInsertURI().toString());
+					sfs.putOverwrite("Nickname" + i, identity.getNickname() != null ? identity.getNickname() : "");
+
+					int contextCounter = 0;
+					for (String identityContext: identity.getContexts()) {
+						sfs.putOverwrite("Contexts" + i + ".Context" + contextCounter++, identityContext);
+					}
+
+					int propertiesCounter = 0;
+					for (Entry<String, String> property : identity.getProperties().entrySet()) {
+						sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter + ".Name", property.getKey());
+						sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter++ + ".Value", property.getValue());
+					}
+					
+					++i;
+				}
+			}
+		}
+		
+		return sfs;
+    }
+    
+    private SimpleFieldSet handleGetAllTrustValues(final SimpleFieldSet params) {
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "TrustValues");
+   
+		// TODO: Optimization: Remove this lock if it works without it.
+        synchronized(mWoT) {
+        	final ObjectSet<Trust> allTrusts = mWoT.getAllTrusts();
+
+			for(int i = 0; allTrusts.hasNext(); ) {
+				final Trust trust = allTrusts.next();
+				
+				sfs.putOverwrite("Truster" + i, trust.getTruster().getID());
+				sfs.putOverwrite("Trustee" + i, trust.getTrustee().getID());
+				sfs.putOverwrite("Value" + i, Byte.toString(trust.getValue()));
+				sfs.putOverwrite("Comment" + i, trust.getComment());
+				
+				++i;
+			}
+        }
+        
+        return sfs;
+    }
+    
+    private SimpleFieldSet handleGetAllScoreValues(final SimpleFieldSet params) {
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "ScoreValues");
+   
+		// TODO: Optimization: Remove this lock if it works without it.
+        synchronized(mWoT) {
+        	final ObjectSet<Score> allScores = mWoT.getAllScores();
+
+			for(int i = 0; allScores.hasNext(); ) {
+				final Score score = allScores.next();
+				
+				sfs.putOverwrite("Truster" + i, score.getTruster().getID());
+				sfs.putOverwrite("Trustee" + i, score.getTrustee().getID());
+				sfs.putOverwrite("Value" + i, Integer.toString(score.getScore()));
+				
+				++i;
+			}
+        }
+        
+        return sfs;
     }
 
     private SimpleFieldSet handleGetIdentitiesByScore(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException, FSParseException {
@@ -626,6 +804,92 @@ public final class FCPInterface implements FredPluginFCP {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "PuzzleSolved");
     	return sfs;
+    }
+    
+    /**
+     * @see {@link SubscriptionManager#subscribeToIdentityAttributeList(String)}
+     * @see {@link SubscriptionManager#subscribeToIdentityList(String)}
+     * @see {@link SubscriptionManager#subscribeToScoreList(String)}
+     * @see {@link SubscriptionManager#subscribeToTrustList(String)}
+     */
+    private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException {
+    	final String to = getMandatoryParameter(params, "To");
+    	
+    	final String fcpID = replySender.getPluginName() + ";" + replySender.getIdentifier();
+    	
+    	synchronized(mClients) {
+    		mClients.put(fcpID, new WeakReference<PluginReplySender>(replySender));
+    	}
+    	
+    	Subscription<? extends Notification> subscription;
+    	
+    	try {
+	    	if(to.equals("IdentityAttriubteList")) {
+	    		subscription = mSubscriptionManager.subscribeToIdentityAttributeList(fcpID);
+	    	} else if(to.equals("IdentityList")) {
+	    		subscription = mSubscriptionManager.subscribeToIdentityList(fcpID);
+	    	} else if(to.equals("TrustList")) {
+	    		subscription = mSubscriptionManager.subscribeToTrustList(fcpID);
+	    	} else if(to.equals("ScoreList")) {
+	    		subscription = mSubscriptionManager.subscribeToScoreList(fcpID);
+	    	} else
+	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
+    	} catch(SubscriptionExistsAlreadyException e) {
+    		subscription = e.existingSubscription;
+    	}
+    	
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+    	sfs.putOverwrite("Message", "Subscribed");
+    	sfs.putOverwrite("Subscription", subscription.getID());
+    	return sfs;
+    }
+    
+    private SimpleFieldSet handleUnsubscribe(final SimpleFieldSet params) throws InvalidParameterException, UnknownSubscriptionException {
+    	final String subscriptionID = getMandatoryParameter(params, "SubscriptionID");
+    	mSubscriptionManager.unsubscribe(subscriptionID);
+    	
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+    	sfs.putOverwrite("Message", "Unubscribed");
+    	sfs.putOverwrite("Subscription", subscriptionID);
+    	return sfs;
+    }
+    
+    private PluginReplySender getReplySender(String fcpID) throws PluginNotFoundException {
+    	WeakReference<PluginReplySender> ref = mClients.get(fcpID);
+    	PluginReplySender sender =  ref!= null ? ref.get() : null;
+    	
+    	if(sender == null)
+    		throw new PluginNotFoundException();
+    	
+    	return sender;
+    }
+    
+    public void sendAllIdentities(String fcpID) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException, FSParseException {
+    	getReplySender(fcpID).send(handleGetAllIdentities(null));
+    }
+    
+    public void sendAllTrustValues(String fcpID) throws PluginNotFoundException {
+    	getReplySender(fcpID).send(handleGetAllTrustValues(null));
+    }
+    
+    public void sendAllScoreValues(String fcpID) throws PluginNotFoundException {
+    	getReplySender(fcpID).send(handleGetAllScoreValues(null));
+    }
+    
+    public void sendIdentityChangedNotification(String fcpID, final String identityID) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException {
+    	sendIdentityListChangedNotification(fcpID, identityID);
+    }
+    
+    public void sendIdentityListChangedNotification(String fcpID, final String identityID) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException {
+    	getReplySender(fcpID).send(handleGetIdentity(null, null, identityID));
+    }
+    
+    public void sendTrustChangedNotification(String fcpID, final String trusterID, final String trusteeID) throws DuplicateTrustException, InvalidParameterException, NotTrustedException, UnknownIdentityException, PluginNotFoundException {
+    	getReplySender(fcpID).send(handleGetTrust(null, trusterID, trusteeID));
+    }
+    
+    public void sendScoreChangedNotification(String fcpID, final String trusterID, final String trusteeID) throws InvalidParameterException, NotInTrustTreeException, UnknownIdentityException, PluginNotFoundException {
+    	getReplySender(fcpID).send(handleGetScore(null, trusterID, trusteeID));
     }
     
     private SimpleFieldSet handlePing() {

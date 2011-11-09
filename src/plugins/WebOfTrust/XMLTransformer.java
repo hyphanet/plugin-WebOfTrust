@@ -425,6 +425,9 @@ public final class XMLTransformer {
 									if(trustee.setNewEditionHint(trusteeURI.getEdition())) {
 										identitiesWithUpdatedEditionHint.add(trustee.getID());
 										trustee.storeWithoutCommit();
+										
+										// We don't notify clients about this: The edition hint is not very useful to them.
+										// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(trustee);
 									}
 								}
 							}
@@ -432,6 +435,7 @@ public final class XMLTransformer {
 								if(hasCapacity) { /* We only create trustees if the truster has capacity to rate them. */
 									trustee = new Identity(mWoT, trusteeURI, null, false);
 									trustee.storeWithoutCommit();
+									mWoT.getSubscriptionManager().storeNewIdentityNotificationWithoutCommit(trustee);
 								}
 							}
 
@@ -582,6 +586,7 @@ public final class XMLTransformer {
 						// attack.
 						//newIdentity.setEdition(identityURI.getEdition());
 						newIdentity.storeWithoutCommit();
+						mWoT.getSubscriptionManager().storeNewIdentityNotificationWithoutCommit(newIdentity);
 						if(logMINOR) Logger.minor(this, "Imported introduction for an unknown identity: " + newIdentity);
 					}
 

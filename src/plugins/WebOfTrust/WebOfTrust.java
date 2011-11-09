@@ -111,6 +111,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	/* Worker objects which actually run the plugin */
 	
 	/**
+	 * Clients can subscribe to certain events such as identity creation, trust changes, etc. with the {@link SubscriptionManager}
+	 */
+	private SubscriptionManager mSubscriptionManager;
+	
+	/**
 	 * Periodically wakes up and inserts any OwnIdentity which needs to be inserted.
 	 */
 	private IdentityInserter mInserter;
@@ -124,6 +129,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * - ...
 	 */
 	private IdentityFetcher mFetcher;
+	
 	
 	/**
 	 * Uploads captchas belonging to our own identities which others can solve to get on the trust list of them. Checks whether someone
@@ -194,6 +200,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				
 			};
 			
+			mSubscriptionManager = new SubscriptionManager(this);
+			
 			mInserter = new IdentityInserter(this);
 			mFetcher = new IdentityFetcher(this, getPluginRespirator());		
 			
@@ -207,6 +215,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			verifyAndCorrectStoredScores();
 			
 			// Database is up now, integrity is checked. We can start to actually do stuff
+			
+			mSubscriptionManager.start();
 			
 			createSeedIdentities();
 			
@@ -227,7 +237,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 			
 			mInserter.start();
-			
+
 			mIntroductionServer = new IntroductionServer(this, mFetcher);
 			mIntroductionServer.start();
 			
@@ -268,6 +278,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 		
 		mPuzzleStore = new IntroductionPuzzleStore(this);
+		
+		mSubscriptionManager = new SubscriptionManager(this);
 		
 		mFetcher = new IdentityFetcher(this, null);
 	}
@@ -319,6 +331,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         	IdentityFetcher.AbortFetchCommand.class,
         	IdentityFetcher.StartFetchCommand.class,
         	IdentityFetcher.UpdateEditionHintCommand.class,
+        	SubscriptionManager.Subscription.class,
+        	SubscriptionManager.IdentityAttributeListSubscription.class,
+        	SubscriptionManager.IdentityListSubscription.class,
+        	SubscriptionManager.ScoreListSubscription.class,
+        	SubscriptionManager.TrustListSubscription.class,
+        	SubscriptionManager.Notification.class,
+        	SubscriptionManager.InitialSynchronizationNotification.class,
+        	SubscriptionManager.IdentityChangedNotification.class,
+        	SubscriptionManager.IdentityListChangedNotification.class,
+        	SubscriptionManager.ScoreChangedNotification.class,
+        	SubscriptionManager.TrustChangedNotification.class,
         	IntroductionPuzzle.class,
         	OwnIntroductionPuzzle.class
         };
@@ -507,6 +530,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					Logger.error(trust, "Deleting orphan trust, truster = " + trust.getTruster() + ", trustee = " + trust.getTrustee());
 					orphanTrustFound = true;
 					trust.deleteWithoutCommit();
+					// No need to update subscriptions as the trust is broken anyway.
 				}
 				
 				if(orphanTrustFound) {
@@ -538,6 +562,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					Logger.error(score, "Deleting orphan score, truster = " + score.getTruster() + ", trustee = " + score.getTrustee());
 					orphanScoresFound = true;
 					score.deleteWithoutCommit();
+					// No need to update subscriptions as the score is broken anyway.
 				}
 				
 				if(orphanScoresFound) {
@@ -822,6 +847,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						oldShouldFetch = shouldFetchIdentity(target);
 						
 						currentStoredScore.deleteWithoutCommit();
+						mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(currentStoredScore, null);
 						
 					} else {
 						if(!newScore.equals(currentStoredScore)) {
@@ -832,11 +858,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 							needToCheckFetchStatus = true;
 							oldShouldFetch = shouldFetchIdentity(target);
 							
+							final Score oldScore = currentStoredScore.clone();
+							
 							currentStoredScore.setRank(newScore.getRank());
 							currentStoredScore.setCapacity(newScore.getCapacity());
 							currentStoredScore.setValue(newScore.getScore());
 
 							currentStoredScore.storeWithoutCommit();
+							mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, currentStoredScore);
 						}
 					}
 				} catch(NotInTrustTreeException e) {
@@ -851,6 +880,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						oldShouldFetch = shouldFetchIdentity(target);
 						
 						newScore.storeWithoutCommit();
+						mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(null, newScore);
 					}
 				}
 				
@@ -867,6 +897,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 						target.markForRefetch();
 						target.storeWithoutCommit();
+						
+						// We don't notify clients about this because the WOT fetch state is of little interest to them, they determine theirs from the Score
+						// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(target);
 
 						mFetcher.storeStartFetchCommandWithoutCommit(target);
 					}
@@ -910,13 +943,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 			}
 			catch (UnknownIdentityException uie) {
+				synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					seed = new Identity(this, seedURI, null, true);
 					// We have to explicitely set the edition number because the constructor only considers the given edition as a hint.
 					seed.setEdition(new FreenetURI(seedURI).getEdition());
-					seed.storeAndCommit();
+					seed.storeWithoutCommit();
+					mSubscriptionManager.storeNewIdentityNotificationWithoutCommit(seed);
+					Persistent.checkedCommit(mDB, this);
 				} catch (Exception e) {
-					Logger.error(this, "Seed identity creation error", e);
+					Persistent.checkedRollback(mDB, this, e);					
+				}
 				}
 			}
 			catch (Exception e) {
@@ -969,6 +1006,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			Logger.error(this, "Error during termination.", e);
 		}
 		
+		try {
+			if(mSubscriptionManager != null)
+				mSubscriptionManager.stop();
+		} catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}	
 		
 		try {
 			if(mDB != null) {
@@ -1211,23 +1254,30 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			if(logDEBUG) Logger.debug(this, "Deleting identity " + identity + " ...");
 			
 			if(logDEBUG) Logger.debug(this, "Deleting received scores...");
-			for(Score score : getScores(identity))
+			for(Score score : getScores(identity)) {
 				score.deleteWithoutCommit();
+				mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(score, null);
+			}
 
 			if(identity instanceof OwnIdentity) {
 				if(logDEBUG) Logger.debug(this, "Deleting given scores...");
 
-				for(Score score : getGivenScores((OwnIdentity)identity))
+				for(Score score : getGivenScores((OwnIdentity)identity)) {
 					score.deleteWithoutCommit();
+					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(score, null);
+				}
 			}
 
 			if(logDEBUG) Logger.debug(this, "Deleting received trusts...");
-			for(Trust trust : getReceivedTrusts(identity))
+			for(Trust trust : getReceivedTrusts(identity)) {
 				trust.deleteWithoutCommit();
+				mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(trust, null);
+			}
 
 			if(logDEBUG) Logger.debug(this, "Deleting given trusts...");
 			for(Trust givenTrust : getGivenTrusts(identity)) {
 				givenTrust.deleteWithoutCommit();
+				mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(givenTrust, null);
 				// We call computeAllScores anyway so we do not use removeTrustWithoutCommit()
 			}
 			
@@ -1242,6 +1292,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 			if(logDEBUG) Logger.debug(this, "Deleting the identity...");
 			identity.deleteWithoutCommit();
+			mSubscriptionManager.storeDeletedIdentityNotificationWithoutCommit(identity);
 		}
 		catch(RuntimeException e) {
 			Persistent.checkedRollbackAndThrow(mDB, this, e);
@@ -1552,18 +1603,24 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			if(trust.getValue() != newValue) {
 				trust.setValue(newValue);
 				trust.storeWithoutCommit();
+				mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(oldTrust, trust);
 				if(logDEBUG) Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
 				updateScoresWithoutCommit(oldTrust, trust);
 			}
 		} catch (NotTrustedException e) {
 			final Trust trust = new Trust(this, truster, trustee, newValue, newComment);
 			trust.storeWithoutCommit();
+			mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(null, trust);
 			if(logDEBUG) Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
 			updateScoresWithoutCommit(null, trust);
 		} 
 
 		truster.updated();
 		truster.storeWithoutCommit();
+		
+		// TODO: Mabye notify clients about this. IMHO it would create too much notifications on trust list import so we don't.
+		// As soon as we have notification-coalescing we might do it.
+		// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(truster);
 	}
 	
 	/**
@@ -1632,6 +1689,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 */
 	protected synchronized void removeTrustWithoutCommit(Trust trust) {
 		trust.deleteWithoutCommit();
+		mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(trust, null);
 		updateScoresWithoutCommit(trust, null);
 	}
 
@@ -1657,6 +1715,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		} catch (NotInTrustTreeException e) {
 			final Score score = new Score(this, identity, identity, Integer.MAX_VALUE, 0, 100);
 			score.storeWithoutCommit();
+			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(null, score);
 		}
 	}
 
@@ -1873,9 +1932,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 					Score currentStoredTrusteeScore;
 
+					boolean scoreExistedBefore;
+					
 					try {
 						currentStoredTrusteeScore = getScore(treeOwner, trustee);
+						scoreExistedBefore = true;
 					} catch(NotInTrustTreeException e) {
+						scoreExistedBefore = false;
 						currentStoredTrusteeScore = new Score(this, treeOwner, trustee, 0, -1, 0);
 					}
 					
@@ -1911,8 +1974,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// Identities should not get into the queue if they have no rank, see the large if() about 20 lines below
 					assert(currentStoredTrusteeScore.getRank() >= 0); 
 					
-					if(currentStoredTrusteeScore.getRank() >= 0)
+					if(currentStoredTrusteeScore.getRank() >= 0) {
 						currentStoredTrusteeScore.storeWithoutCommit();
+						mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(scoreExistedBefore ? oldScore : null, currentStoredTrusteeScore);
+					}
 					
 					// If fetch status changed from false to true, we need to start fetching it
 					// If the capacity changed from 0 to positive, we need to refetch the current edition: Identities with capacity 0 cannot
@@ -1926,6 +1991,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 						trustee.markForRefetch();
 						trustee.storeWithoutCommit();
+						
+						// We don't notify clients about this because the WOT fetch state is of little interest to them, they determine theirs from the Score
+						// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(trustee);
 
 						mFetcher.storeStartFetchCommandWithoutCommit(trustee);
 					}
@@ -1986,11 +2054,19 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			// TODO: The identity won't be fetched because it has not received a trust value yet.
 			// IMHO we should not support adding identities without giving them a trust value.
 			
-			//try {
+			synchronized(Persistent.transactionLock(mDB)) {
+			try {
 			identity = new Identity(this, requestURI, null, false);
-			identity.storeAndCommit();
+			identity.storeWithoutCommit();
+			mSubscriptionManager.storeNewIdentityNotificationWithoutCommit(identity);
+			Persistent.checkedCommit(mDB, this);
 			//storeWithoutCommit(identity);
 			if(logDEBUG) Logger.debug(this, "Created identity " + identity);
+			} catch(RuntimeException e2) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e2);
+				identity = null; // Will not be executed, needed to make the compiler happy. 
+			}
+			}
 			
 			//if(!shouldFetchIdentity(identity)) {
 			//	assert(false);
@@ -2062,6 +2138,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				
 				try {
 					identity.storeWithoutCommit();
+					mSubscriptionManager.storeNewIdentityNotificationWithoutCommit(identity);
 					initTrustTreeWithoutCommit(identity);
 					
 					beginTrustListImport();
@@ -2137,6 +2214,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 								oldScore.getRank(), oldScore.getCapacity());
 						
 						newScore.storeWithoutCommit();
+						
+						// Nothing has changed about the actual score so we do not notify.
+						// mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, newScore);
 					}
 					
 					beginTrustListImport();
@@ -2179,6 +2259,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				identity.updateLastInsertDate();
 				
 				mFetcher.storeStartFetchCommandWithoutCommit(identity);
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(identity);
 				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
@@ -2272,6 +2353,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		return mConfig;
 	}
 	
+	public SubscriptionManager getSubscriptionManager() {
+		return mSubscriptionManager;
+	}
+	
 	public IdentityFetcher getIdentityFetcher() {
 		return mFetcher;
 	}
@@ -2286,6 +2371,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 	public IntroductionClient getIntroductionClient() {
 		return mIntroductionClient;
+	}
+	
+	protected FCPInterface getFCPInterface() {
+		return mFCPInterface;
 	}
 
 	public RequestClient getRequestClient() {
