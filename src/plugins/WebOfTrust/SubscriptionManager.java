@@ -728,6 +728,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	private ObjectSet<? extends Subscription<? extends Notification>> getSubscriptions(final Class<? extends Subscription<? extends Notification>> clazz) {
+	        /* QA: So clazz is any kind of Subscription for any kind of Notifiction? */
 		final Query q = mDB.query();
 		q.constrain(clazz);
 		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
@@ -736,13 +737,14 @@ public final class SubscriptionManager implements PrioRunnable {
 	private Subscription<? extends Notification> getSubscription(final String id) throws UnknownSubscriptionException {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
-		q.descend("mID").constrain(id);		
+		q.descend("mID").constrain(id);	
+		/* QA: So this returns an iterator with at most 1 element? */
 		ObjectSet<Subscription<? extends Notification>> result = new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
 		
 		switch(result.size()) {
-			case 1: return result.next();
+			case 1: return result.next(); 
 			case 0: throw new UnknownSubscriptionException(id);
-			default: throw new DuplicateObjectException(id);
+		        default: throw new DuplicateObjectException(id); /* QA: How should a client react to this? */
 		}
 	}
 	
@@ -764,6 +766,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
+			        /* QA: Does this also remove the notifications by other clients? */
 				for(Subscription<? extends Notification> s : getAllSubscriptions()) {
 					s.deleteWithoutCommit(this);
 				}
@@ -865,6 +868,17 @@ public final class SubscriptionManager implements PrioRunnable {
 				try {
 					subscription.sendNotifications(this);
 					Persistent.checkedCommit(mDB, this);
+					/* QA: A subscription can have
+					 * many notifications, right?
+					 * And every notification also
+					 * commits. So at the end of
+					 * the sendNotifications loop
+					 * we get two checkedCommit,
+					 * except if the last
+					 * notification fails. This is
+					 * only useful, when
+					 * subscriptions really have
+					 * many notifications.*/
 				} catch(Exception e) {
 					Persistent.checkedRollback(mDB, this, e);
 					// FIXME: After a certain number of retries, delete the subscription
@@ -892,6 +906,8 @@ public final class SubscriptionManager implements PrioRunnable {
 
 	/**
 	 * Deletes all old subscriptions and enables subscription processing. 
+	 * 
+	 * QA: Where/How does it enable subscription processing? 
 	 */
 	protected synchronized void start() {
 		deleteAllSubscriptions();
