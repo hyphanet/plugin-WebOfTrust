@@ -294,8 +294,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		// use cached io
 		RandomAccessFileAdapter delegateAdapter = new RandomAccessFileAdapter();
-		// A cache with 4096 pages of 4096KB size, gives a 16MiB cache
-		cfg.io(new CachedIoAdapter(delegateAdapter,4096,4096));
+		// A cache with 16384 pages of 4096KB size, gives a 64MiB cache
+		cfg.io(new CachedIoAdapter(delegateAdapter,16384,4096));
 		
 		// Required config options:
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader()));
