@@ -295,9 +295,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		// use cached io
 		/** Caching store access 
 		 * 
-		 * When you call commit() then db4o does a flush
-		 * anyway to ensure that the commit is
-		 * persistent. 
+		 * When you call commit() then db4o does a flush anyway to ensure that the commit is persistent. 
 		 * http://community.versant.com/Forums/tabid/98/aft/10198/Default.aspx
 		 */
 		RandomAccessFileAdapter delegateAdapter = new RandomAccessFileAdapter();
