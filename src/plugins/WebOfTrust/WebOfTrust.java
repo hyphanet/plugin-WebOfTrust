@@ -293,6 +293,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		// use cached io
+		/** Caching store access 
+		 * 
+		 * When you call commit() then db4o does a flush
+		 * anyway to ensure that the commit is
+		 * persistent. 
+		 * http://community.versant.com/Forums/tabid/98/aft/10198/Default.aspx
+		 */
 		RandomAccessFileAdapter delegateAdapter = new RandomAccessFileAdapter();
 		// A cache with 16384 pages of 4096KB size, gives a 64MiB cache
 		cfg.io(new CachedIoAdapter(delegateAdapter,16384,4096));
