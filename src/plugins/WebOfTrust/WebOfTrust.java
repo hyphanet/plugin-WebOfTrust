@@ -286,6 +286,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	/**
 	 * ATTENTION: This function is duplicated in the Freetalk plugin, please backport any changes.
 	 * 
+	 * TODO: get the size with cfg.io().getLength() to get the size of the database. If it's bigger than a default value (100MiB?), use 
+	 * com.db4o.defragment.Defragment.defrag(file.getAbsolutePath(), file.getAbsolutePath() + "." + randomString) 
+	 * to defrag it. Without defragging, the performance gets much worse over time.
+	 * 
 	 * Initializes the plugin's db4o database.
 	 */
 	private ExtObjectContainer openDatabase(File file) {
