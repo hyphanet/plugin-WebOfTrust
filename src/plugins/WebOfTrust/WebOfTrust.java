@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+import plugins.WebOfTrust.Score.ScoreID;
+import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.exceptions.DuplicateIdentityException;
 import plugins.WebOfTrust.exceptions.DuplicateScoreException;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
@@ -1259,12 +1261,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public synchronized Score getScore(final OwnIdentity truster, final Identity trustee) throws NotInTrustTreeException {
 		final Query query = mDB.query();
 		query.constrain(Score.class);
-		query.descend("mTruster").constrain(truster).identity();
-		query.descend("mTrustee").constrain(trustee).identity();
+		query.descend("mID").constrain(new ScoreID(truster, trustee).toString());
 		final ObjectSet<Score> result = new Persistent.InitializingObjectSet<Score>(this, query);
 		
 		switch(result.size()) {
-			case 1: return result.next();
+			case 1: 
+				final Score score = result.next();
+				assert(score.getTruster() == truster);
+				assert(score.getTrustee() == trustee);
+				return score;
 			case 0: throw new NotInTrustTreeException(truster, trustee);
 			default: throw new DuplicateScoreException(truster, trustee, result.size());
 		}
@@ -1411,12 +1416,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public synchronized Trust getTrust(final Identity truster, final Identity trustee) throws NotTrustedException, DuplicateTrustException {
 		final Query query = mDB.query();
 		query.constrain(Trust.class);
-		query.descend("mTruster").constrain(truster).identity();
-		query.descend("mTrustee").constrain(trustee).identity();
+		query.descend("mID").constrain(new TrustID(truster, trustee).toString());
 		final ObjectSet<Trust> result = new Persistent.InitializingObjectSet<Trust>(this, query);
 		
 		switch(result.size()) {
-			case 1: return result.next();
+			case 1: 
+				final Trust trust = result.next();
+				assert(trust.getTruster() == truster);
+				assert(trust.getTrustee() == trustee);
+				return trust;
 			case 0: throw new NotTrustedException(truster, trustee);
 			default: throw new DuplicateTrustException(truster, trustee, result.size());
 		}

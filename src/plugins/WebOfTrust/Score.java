@@ -79,7 +79,7 @@ public final class Score extends Persistent implements Cloneable {
 	 * 
 	 * TODO: This was added after we already had manual ID-generation / checking in the code everywhere. Use this class instead. 
 	 */
-	private static final class ScoreID {
+	protected static final class ScoreID {
 		
 		private static final int MAX_SCORE_ID_LENGTH = IdentityID.MAX_IDENTITY_ID_LENGTH + "@".length() + IdentityID.MAX_IDENTITY_ID_LENGTH;
 		
