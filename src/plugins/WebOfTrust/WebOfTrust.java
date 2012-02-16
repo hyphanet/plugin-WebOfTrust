@@ -161,7 +161,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 	public void runPlugin(PluginRespirator myPR) {
 		try {
-			Logger.normal(this, "Start");
+			Logger.normal(this, "Web Of Trust plugin starting up...");
 			
 			/* Catpcha generation needs headless mode on linux */
 			System.setProperty("java.awt.headless", "true"); 
@@ -197,20 +197,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			mInserter = new IdentityInserter(this);
 			mFetcher = new IdentityFetcher(this, getPluginRespirator());		
 			
-			verifyDatabaseIntegrity();
+			// We only do this if debug logging is enabled since the integrity verification cannot repair anything anyway,
+			// if the user does not read his logs there is no need to check the integrity.
+			// TODO: Do this once every few startups and notify the user in the web ui if errors are found.
+			if(logDEBUG)
+				verifyDatabaseIntegrity();
 			
-			// TODO: Don't do this as soon as we are sure that score computation works.
-			Logger.normal(this, "Veriying all stored scores ...");
-			synchronized(this) {
-			synchronized(Persistent.transactionLock(mDB)) {
-				try {
-					computeAllScoresWithoutCommit();
-					Persistent.checkedCommit(mDB, this);
-				} catch(RuntimeException e) {
-					Persistent.checkedRollbackAndThrow(mDB, this, e);
-				}
-			}
-			}
+			// TODO: Only do this once every few startups once we are certain that score computation does not have any serious bugs.
+			verifyAndCorrectStoredScores();
 			
 			// Database is up now, integrity is checked. We can start to actually do stuff
 			
@@ -243,7 +237,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			mWebInterface = new WebInterface(this, SELF_URI);
 			mFCPInterface = new FCPInterface(this);
 			
-			Logger.normal(this, "WoT startup completed.");
+			Logger.normal(this, "Web Of Trust plugin starting up completed.");
 		}
 		catch(RuntimeException e){
 			Logger.error(this, "Error during startup", e);
@@ -384,7 +378,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		deleteDuplicateObjects();
 		deleteOrphanObjects();
 		
-		Logger.normal(this, "Testing database integrity...");
+		Logger.debug(this, "Testing database integrity...");
 		
 		final Query q = mDB.query();
 		q.constrain(Persistent.class);
@@ -402,7 +396,25 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 		}
 		
-		Logger.normal(this, "Database integrity test finished.");
+		Logger.debug(this, "Database integrity test finished.");
+	}
+	
+	/**
+	 * Recomputes the {@link Score} of all identities and checks whether the score which is stored in the database is correct.
+	 * Incorrect scores are corrected & stored.
+	 * The function is synchronized and does a transaction, no outer synchronization is needed. 
+	 */
+	private synchronized void verifyAndCorrectStoredScores() {
+		Logger.normal(this, "Veriying all stored scores ...");
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				computeAllScoresWithoutCommit();
+				Persistent.checkedCommit(mDB, this);
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		Logger.normal(this, "Veriying all stored scores finished.");
 	}
 	
 	/**
