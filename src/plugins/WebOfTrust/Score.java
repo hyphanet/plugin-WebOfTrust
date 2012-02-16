@@ -51,7 +51,7 @@ public final class Score extends Persistent implements Cloneable {
 	 * final ObjectSet<Score> result = new Persistent.InitializingObjectSet<Score>(this, query); 
 	 */
 	@IndexedField
-	private final String mID;
+	private String mID;
 	
 	/** The actual score of the Identity. Used to decide if the OwnIdentity sees the Identity or not */
 	@IndexedField
@@ -202,6 +202,17 @@ public final class Score extends Persistent implements Cloneable {
 	private String getID() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
+	}
+	
+	/**
+	 * @deprecated Only for being used in {@link WebOfTrust.upgradeDB()}
+	 */
+	@Deprecated
+	protected void generateID() {
+		checkedActivate(1);
+		if(mID != null)
+			throw new RuntimeException("ID is already set for " + this);
+		mID = new ScoreID(getTruster(), getTrustee()).toString();
 	}
 
 	/**

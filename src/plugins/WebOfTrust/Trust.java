@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.StringTokenizer;
 
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.Score.ScoreID;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.StringValidityChecker;
@@ -52,7 +53,7 @@ public final class Trust extends Persistent implements Cloneable {
 	 * final ObjectSet<Trust> result = new Persistent.InitializingObjectSet<Trust>(this, query); 
 	 */
 	@IndexedField
-	private final String mID;
+	private String mID;
 	
 	/** The value assigned with the trust, from -100 to +100 where negative means distrust */
 	@IndexedField
@@ -214,6 +215,17 @@ public final class Trust extends Persistent implements Cloneable {
 	private String getID() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
+	}
+	
+	/**
+	 * @deprecated Only for being used in {@link WebOfTrust.upgradeDB()}
+	 */
+	@Deprecated
+	protected void generateID() {
+		checkedActivate(1);
+		if(mID != null)
+			throw new RuntimeException("ID is already set for " + this);
+		mID = new TrustID(getTruster(), getTrustee()).toString();
 	}
 
 	/** @return value Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. */

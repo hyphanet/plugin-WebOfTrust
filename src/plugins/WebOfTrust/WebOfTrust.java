@@ -363,6 +363,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		return Db4o.openFile(cfg, file.getAbsolutePath()).ext();
 	}
 	
+	@SuppressWarnings("deprecation")
 	private synchronized void upgradeDB() {
 		int databaseVersion = mConfig.getDatabaseFormatVersion();
 		
@@ -371,6 +372,34 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		// Insert upgrade code here. See Freetalk.java for a skeleton.
 		
+		if(databaseVersion == 1) {
+			Logger.normal(this, "Upgrading database version " + databaseVersion);
+			
+			//synchronized(this) { // Already done at function level
+				synchronized(Persistent.transactionLock(mDB)) {
+					try {
+						Logger.normal(this, "Generating Score IDs...");
+						for(Score score : getAllScores()) {
+							score.generateID();
+							score.storeWithoutCommit();
+						}
+						
+						Logger.normal(this, "Generating Trust IDs...");
+						for(Trust trust : getAllTrusts()) {
+							trust.generateID();
+							trust.storeWithoutCommit();
+						}
+						
+						mConfig.setDatabaseFormatVersion(++databaseVersion);
+						mConfig.storeAndCommit();
+						Logger.normal(this, "Upgraded database to version " + databaseVersion);
+					} catch(RuntimeException e) {
+						Persistent.checkedRollbackAndThrow(mDB, this, e);
+					}
+				}
+			//}			
+		}
+
 		if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
