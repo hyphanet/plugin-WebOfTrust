@@ -75,7 +75,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public static final String WOT_NAME = "WebOfTrust";
 	
 	public static final String DATABASE_FILENAME =  WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = 1; 
+	public static final int DATABASE_FORMAT_VERSION = 2; 
 	
 	/**
 	 * The official seed identities of the WoT plugin: If a newbie wants to download the whole offficial web of trust, he needs at least one
