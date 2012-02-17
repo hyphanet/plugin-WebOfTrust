@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
+import freenet.keys.USK;
 import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.IllegalBase64Exception;
@@ -110,6 +111,14 @@ public class Identity extends Persistent implements Cloneable {
 		
 		//  We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
 		mRequestURI = newRequestURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(0).setMetaString(null);
+		
+		// Make sure that it actually is a request URI and not an insert URI - if it's an insert URI, this will throw.
+		try {
+			USK.create(mRequestURI);
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
+		
 		mID = getIDFromURI(mRequestURI);
 		
 		try {
