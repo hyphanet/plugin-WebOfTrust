@@ -769,7 +769,13 @@ public class Identity extends Persistent implements Cloneable {
 			return false;
 		}
 		
-		if (!getNickname().equals(other.getNickname())) {
+		final String nickname = getNickname();
+		final String otherNickname = other.getNickname();
+		if ((nickname == null) != (otherNickname == null)) {
+			return false;
+		}
+		
+		if(nickname != null && !nickname.equals(otherNickname)) {
 			return false;
 		}
 		
