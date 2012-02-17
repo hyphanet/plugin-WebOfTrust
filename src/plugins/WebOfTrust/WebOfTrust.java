@@ -46,6 +46,7 @@ import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -148,6 +149,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	private WebInterface mWebInterface;
 	private FCPInterface mFCPInterface;
+	
+	/* Statistics */
+	private int mFullScoreRecomputationCount = 0;
+	private long mFullScoreRecomputationMilliseconds = 0;
+	private int mIncrementalScoreRecomputationCount = 0;
+	private long mIncrementalScoreRecomputationMilliseconds = 0;
 	
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
@@ -665,7 +672,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
 	 */
 	protected synchronized boolean computeAllScoresWithoutCommit() {
-		if(logDEBUG) Logger.debug(this, "Doing a full computation of all Scores...");
+		if(logMINOR) Logger.debug(this, "Doing a full computation of all Scores...");
+		
+		final long beginTime = CurrentTimeUTC.getInMillis();
 		
 		boolean returnValue = true;
 		final ObjectSet<Identity> allIdentities = getAllIdentities();
@@ -881,7 +890,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		mFullScoreComputationNeeded = false;
 		
-		if(logDEBUG) Logger.debug(this, "Full score computation finished.");
+		++mFullScoreRecomputationCount;
+		mFullScoreRecomputationMilliseconds += CurrentTimeUTC.getInMillis() - beginTime;
+		
+		if(logMINOR) {
+			Logger.debug(this, "Full score computation finished. Amount: " + mFullScoreRecomputationCount + "; Avg Time:" + getAverageFullScoreRecomputationTime() + "s");
+		}
 		
 		return returnValue;
 	}
@@ -1823,6 +1837,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 */
 	private synchronized void updateScoresWithoutCommit(final Trust oldTrust, final Trust newTrust) {
+		if(logMINOR) Logger.minor(this, "Doing an incremental computation of all Scores...");
+		
+		final long beginTime = CurrentTimeUTC.getInMillis();
+		// We only include the time measurement if we actually do something.
+		// If we figure out that a full score recomputation is needed just by looking at the initial parameters, the measurement won't be included.
+		boolean includeMeasurement = false;
+		
 		final boolean trustWasCreated = (oldTrust == null);
 		final boolean trustWasDeleted = (newTrust == null);
 		final boolean trustWasModified = !trustWasCreated && !trustWasDeleted;
@@ -1846,6 +1867,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 
 		if(!mFullScoreComputationNeeded && (trustWasCreated || trustWasModified)) {
+			includeMeasurement = true; 
+			
 			for(OwnIdentity treeOwner : getAllOwnIdentities()) {
 				try {
 					// Throws to abort the update of the trustee's score: If the truster has no rank or capacity in the tree owner's view then we don't need to update the trustee's score.
@@ -1952,6 +1975,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				if(mFullScoreComputationNeeded)
 					break;
 			}
+		}	
+		
+		if(includeMeasurement) {
+			++mIncrementalScoreRecomputationCount;
+			mIncrementalScoreRecomputationMilliseconds += CurrentTimeUTC.getInMillis() - beginTime;
+		}
+		
+		if(logMINOR) {
+			String time = "Amount: " + mIncrementalScoreRecomputationCount + "; Avg Time:" + getAverageIncrementalScoreRecomputationTime() + "s";
+			
+			if(!mFullScoreComputationNeeded)
+				Logger.minor(this, "Incremental computation of all Scores finished. " + time);
+			else
+				Logger.minor(this, "Incremental computation of all Scores not possible, full computation is needed. " + time);
 		}
 		
 		if(!mTrustListImportInProgress) {
@@ -2336,6 +2373,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         return WebOfTrust.l10n.getBase();
     }
 
+    public int getNumberOfFullScoreRecomputations() {
+    	return mFullScoreRecomputationCount;
+    }
+    
+    public synchronized double getAverageFullScoreRecomputationTime() {
+    	return (double)mFullScoreRecomputationMilliseconds / ((mFullScoreRecomputationCount!= 0 ? mFullScoreRecomputationCount : 1) * 1000); 
+    }
+    
+    public int getNumberOfIncrementalScoreRecomputations() {
+    	return mIncrementalScoreRecomputationCount;
+    }
+    
+    public synchronized double getAverageIncrementalScoreRecomputationTime() {
+    	return (double)mIncrementalScoreRecomputationMilliseconds / ((mIncrementalScoreRecomputationCount!= 0 ? mIncrementalScoreRecomputationCount : 1) * 1000); 
+    }
 	
     /**
      * Tests whether two WoT are equal.
