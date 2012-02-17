@@ -112,11 +112,10 @@ public class Identity extends Persistent implements Cloneable {
 		//  We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
 		mRequestURI = newRequestURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(0).setMetaString(null);
 		
-		// Make sure that it actually is a request URI and not an insert URI - if it's an insert URI, this will throw.
 		try {
 			USK.create(mRequestURI);
 		} catch (MalformedURLException e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException("Insert URI specified as request URI!");
 		}
 		
 		mID = getIDFromURI(mRequestURI);

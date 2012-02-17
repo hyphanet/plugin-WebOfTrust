@@ -45,11 +45,10 @@ public final class OwnIdentity extends Identity {
 		// initializeTransient() was not called yet so we must use mRequestURI.getEdition() instead of this.getEdition()
 		mInsertURI = insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(mRequestURI.getEdition()).setMetaString(null);
 		
-		// Make sure that it actually is an insert URI and not an request URI - if it's an request URI, this will throw.
 		try {
 			InsertableUSK.createInsertable(mInsertURI, false);
 		} catch (MalformedURLException e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException("Request URI specified as insert URI!");
 		}
 		
 		if(!Arrays.equals(mRequestURI.getCryptoKey(), mInsertURI.getCryptoKey()))
