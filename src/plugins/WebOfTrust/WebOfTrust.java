@@ -35,6 +35,7 @@ import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.keys.FreenetURI;
+import freenet.keys.USK;
 import freenet.l10n.BaseL10n;
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.l10n.PluginL10n;
@@ -395,6 +396,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						for(Trust trust : getAllTrusts()) {
 							trust.generateID();
 							trust.storeWithoutCommit();
+						}
+						
+						Logger.normal(this, "Searching for identities with mixed up insert/request URIs...");
+						for(Identity identity : getAllIdentities()) {
+							try {
+								USK.create(identity.getRequestURI());
+							} catch (MalformedURLException e) {
+								if(identity instanceof OwnIdentity) {
+									Logger.error(this, "Insert URI specified as request URI for OwnIdentity, not correcting the URIs as the insert URI" +
+											"might have been published by solving captchas - the identity could be compromised: " + identity);
+								} else {
+									Logger.error(this, "Insert URI specified as request URI for non-own Identity, deleting: " + identity);
+									deleteWithoutCommit(identity);
+								}								
+							}
 						}
 						
 						mConfig.setDatabaseFormatVersion(++databaseVersion);
