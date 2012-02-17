@@ -19,17 +19,20 @@ import com.db4o.ext.ExtObjectContainer;
  */
 public class WoTTest extends DatabaseBasedTest {
 
-	private final String uriO = "USK@8VTguDZehMlShIb7Q~F1wYpOnDK7pSZVwrGArACP~04,MK0wfPtNud~nWyp~oy0Kr1~kFuYfJ9~LlxNribWD4Us,AQACAAE/WoT/0";
-	private final String uriS = "USK@hAOgofNsQEbT~aRqGuXwt8vI7tOeQVCrcIHrD9PvS6g,fG7LHRJhczCAApOwgaXNJO41L8wRIZj9oN37LSLZZY8,AQACAAE/WoT/0";
-	private final String uriA = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0";
-	private final String uriB = "USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WoT/0";
-	private final String uriC = "USK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/WoT/0";
-	private final String uriM1 = "USK@XoOIYo6blZDb6qb2iaBKJVMSehnvxVnxkgFCtbT4yw4,92NJVhKYBK3B4oJkcSmDaau53vbzPMKxws9dC~fagFU,AQACAAE/WoT/0";
-	private final String uriM2 = "USK@rhiNEDWcDXNvkT7R3K1zkr2FgMjW~6DudrAbuYbaY-w,Xl4nOxOzRyzHpEQwu--nb3PaLFSK2Ym9c~Un0rIdne4,AQACAAE/WoT/0";
-	private final String uriM3 = "USK@9c57T1yNOi7aeK-6lorACBcOH4cC-vgZ6Ky~-f9mcUI,anOcB7Z05g55oViCa3LcClrXNcQcmR3SBooN4qssuPs,AQACAAE/WoT/0";
+	private final String requestUriO = "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/0";
+	private final String insertUriO = "USK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/WebOfTrust/0"; 
+	private final String requestUriS = "USK@hAOgofNsQEbT~aRqGuXwt8vI7tOeQVCrcIHrD9PvS6g,fG7LHRJhczCAApOwgaXNJO41L8wRIZj9oN37LSLZZY8,AQACAAE/WoT/0";
+	private final String requestUriA = "SSK@uKbou7HXlFrQWMIMxOqYqdVcgPpTAeSaJtoAHtBk~Tg,yz5HdAA36MBOlmumfEFukNPwP1vHjwiWGy-GCMTIuT8,AQACAAE/WebOfTrust/0";
+	private final String insertUriA = "USK@AJy2oHQ-W7wXVFmfYHY2igmC0SUEMgIetxL2HbNqaXT0,yz5HdAA36MBOlmumfEFukNPwP1vHjwiWGy-GCMTIuT8,AQECAAE/WebOfTrust/0";
+	private final String requestUriB = "USK@9SWa5sYwQm2O738SPLva0wpHd7KECrOe8iQdts8auXI,Ond06NVRidGaLrvpbi~gIo5eigsSebVWPHEto7lGPgA,AQACAAE/WebOfTrust/0";
+	private final String insertUriB = "USK@Rcb3gXZXynQOJmDNqKMEht87sr3mtTYl9wsyblTpt0k,Ond06NVRidGaLrvpbi~gIo5eigsSebVWPHEto7lGPgA,AQECAAE/WebOfTrust/0";
+	private final String requestUriC = "USK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/WoT/0";
+	private final String requestUriM1 = "USK@XoOIYo6blZDb6qb2iaBKJVMSehnvxVnxkgFCtbT4yw4,92NJVhKYBK3B4oJkcSmDaau53vbzPMKxws9dC~fagFU,AQACAAE/WoT/0";
+	private final String requestUriM2 = "USK@rhiNEDWcDXNvkT7R3K1zkr2FgMjW~6DudrAbuYbaY-w,Xl4nOxOzRyzHpEQwu--nb3PaLFSK2Ym9c~Un0rIdne4,AQACAAE/WoT/0";
+	private final String requestUriM3 = "USK@9c57T1yNOi7aeK-6lorACBcOH4cC-vgZ6Ky~-f9mcUI,anOcB7Z05g55oViCa3LcClrXNcQcmR3SBooN4qssuPs,AQACAAE/WoT/0";
 
 	public void testInitTrustTree() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
-		mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test"); /* This also initializes the trust tree */
+		mWoT.createOwnIdentity(insertUriA, requestUriA, "A", true, "Test"); /* This also initializes the trust tree */
 		
 		flushCaches();
 		assertEquals(0, mWoT.getAllNonOwnIdentities().size());
@@ -38,7 +41,7 @@ public class WoTTest extends DatabaseBasedTest {
 		assertEquals(1, mWoT.getAllScores().size());
 		
 		flushCaches();
-		OwnIdentity a = mWoT.getOwnIdentityByURI(uriA);
+		OwnIdentity a = mWoT.getOwnIdentityByURI(requestUriA);
 
 		Score score = mWoT.getScore(a,a);
 		assertEquals(Integer.MAX_VALUE, score.getScore());
@@ -50,8 +53,8 @@ public class WoTTest extends DatabaseBasedTest {
 	
 	public void testSetTrust1() throws InvalidParameterException, MalformedURLException {
 		/* We store A manually instead of using createOwnIdentity() so that the WoT does not initialize it's trust tree (it does not have a score for itself). */
-		OwnIdentity a = new OwnIdentity(mWoT, uriA, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		OwnIdentity a = new OwnIdentity(mWoT, insertUriA, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		
 		// With A's trust tree not initialized, B shouldn't get a Score.
 		mWoT.setTrust(a, b, (byte)10, "Foo");
@@ -65,9 +68,9 @@ public class WoTTest extends DatabaseBasedTest {
 	
 	public void testSetTrust2() throws MalformedURLException, InvalidParameterException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException {
 
-		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test"); /* Initializes it's trust tree */
+		OwnIdentity a = mWoT.createOwnIdentity(insertUriA, requestUriA, "A", true, "Test"); /* Initializes it's trust tree */
 		
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		
@@ -136,10 +139,10 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testRemoveTrust() throws MalformedURLException, InvalidParameterException, UnknownIdentityException,
 		NotInTrustTreeException {
 		
-		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test");
+		OwnIdentity a = mWoT.createOwnIdentity(insertUriA, requestUriA, "A", true, "Test");
 		
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
-		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		// There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
@@ -207,10 +210,10 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	public void testTrustLoop() throws MalformedURLException, InvalidParameterException, NotInTrustTreeException {
-		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test");
+		OwnIdentity a = mWoT.createOwnIdentity(insertUriA, requestUriA, "A", true, "Test");
 		
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
-		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		mWoT.setTrustWithoutCommit(b, c, (byte)50, "Bar"); // There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
@@ -248,8 +251,8 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	public void testOwnIndentitiesTrust() throws MalformedURLException, InvalidParameterException, NotInTrustTreeException {
-		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test");
-		OwnIdentity b = mWoT.createOwnIdentity(uriB, uriB, "B", true, "Test");
+		OwnIdentity a = mWoT.createOwnIdentity(insertUriA, requestUriA, "A", true, "Test");
+		OwnIdentity b = mWoT.createOwnIdentity(insertUriB, requestUriB, "B", true, "Test");
 
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		mWoT.setTrust(b, a, (byte)80, "Bar");
@@ -296,12 +299,12 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testStability() throws Exception {
 		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
+		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner
+		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
 		// A / B are downloaded in different orders.
-		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
-		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
+		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -335,11 +338,11 @@ public class WoTTest extends DatabaseBasedTest {
 		setUp();
 		db = mWoT.getDatabase();
 		
-		o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test");
-		s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit();
-		a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
-		c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
+		o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test");
+		s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit();
+		a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -387,11 +390,11 @@ public class WoTTest extends DatabaseBasedTest {
 		//same setup routine as testStability
 		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
-		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
+		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner
+		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -439,14 +442,14 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testMalicious() throws Exception {
 		//same setup routine as testStability
 			
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner
+		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		
-		Identity m1 = new Identity(mWoT, uriM1, "M1", true); m1.storeAndCommit(); //malicious identity
-		Identity m2 = new Identity(mWoT, uriM2, "M2", true); m2.storeAndCommit(); //malicious identity
-		Identity m3 = new Identity(mWoT, uriM3, "M3", true); m3.storeAndCommit(); //malicious identity
+		Identity m1 = new Identity(mWoT, requestUriM1, "M1", true); m1.storeAndCommit(); //malicious identity
+		Identity m2 = new Identity(mWoT, requestUriM2, "M2", true); m2.storeAndCommit(); //malicious identity
+		Identity m3 = new Identity(mWoT, requestUriM3, "M3", true); m3.storeAndCommit(); //malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -485,11 +488,11 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testStability2() throws Exception {
 		ExtObjectContainer db = mWoT.getDatabase();
 		
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
-		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
+		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner
+		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -542,14 +545,14 @@ public class WoTTest extends DatabaseBasedTest {
 		//same setup routine as testStability
 		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner
+		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		
-		Identity m1 = new Identity(mWoT, uriM1, "M1", true); m1.storeAndCommit(); //malicious identity
-		Identity m2 = new Identity(mWoT, uriM2, "M2", true); m2.storeAndCommit(); //malicious identity
-		Identity m3 = new Identity(mWoT, uriM3, "M3", true); m3.storeAndCommit(); //malicious identity
+		Identity m1 = new Identity(mWoT, requestUriM1, "M1", true); m1.storeAndCommit(); //malicious identity
+		Identity m2 = new Identity(mWoT, requestUriM2, "M2", true); m2.storeAndCommit(); //malicious identity
+		Identity m3 = new Identity(mWoT, requestUriM3, "M3", true); m3.storeAndCommit(); //malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -586,13 +589,13 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testMalicious3() throws Exception {
 		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner		
-		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner		
+		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		
-		Identity m1 = new Identity(mWoT, uriM1, "M1", true); m1.storeAndCommit(); //known malicious identity
-		Identity m2 = new Identity(mWoT, uriM2, "M2", true); m2.storeAndCommit(); //known malicious identity
+		Identity m1 = new Identity(mWoT, requestUriM1, "M1", true); m1.storeAndCommit(); //known malicious identity
+		Identity m2 = new Identity(mWoT, requestUriM2, "M2", true); m2.storeAndCommit(); //known malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");

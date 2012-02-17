@@ -48,7 +48,7 @@ public final class OwnIdentity extends Identity {
 		try {
 			InsertableUSK.createInsertable(mInsertURI, false);
 		} catch (MalformedURLException e) {
-			throw new RuntimeException("Request URI specified as insert URI!");
+			throw new InvalidParameterException("Request URI specified as insert URI!");
 		}
 		
 		if(!Arrays.equals(mRequestURI.getCryptoKey(), mInsertURI.getCryptoKey()))

@@ -15,8 +15,10 @@ import freenet.support.CurrentTimeUTC;
  */
 public class ScoreTest extends DatabaseBasedTest {
 	
-	private String uriA = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0";
-	private String uriB = "USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WoT/0";
+	private String requestUriA = "USK@Pn5K9Lt4pE0v5I3TDF40yPkDeE6IJP-nZ~zxxEq76Yc,t3vIf26txb~g6yP1f5cANe1Cb98uzcQBqCAG1PO03OQ,AQACAAE/WebOfTrust/0";
+	private String insertUriA = "USK@f3bEbhW5xmevbzAE2sfAsioNQezrKeak6vUYWhHAoLk,t3vIf26txb~g6yP1f5cANe1Cb98uzcQBqCAG1PO03OQ,AQECAAE/WebOfTrust/0";
+	private String requestUriB = "USK@a6dD~md7InpruJ3B98RiqRwPJ9L3w~N6l5Ad14neUVU,WZkyt7jgLFJLnVpQ7q7vWBCkz8t8O9JbU1Qsg9bLvdo,AQACAAE/WebOfTrust/0";
+	private String insertUriB = "USK@CSkCsPeEqkRNbO~xtEpL~gMHzEydwwP6ofJBMMArZX4,WZkyt7jgLFJLnVpQ7q7vWBCkz8t8O9JbU1Qsg9bLvdo,AQECAAE/WebOfTrust/0";
 	private OwnIdentity a;
 	private OwnIdentity b;
 
@@ -25,8 +27,8 @@ public class ScoreTest extends DatabaseBasedTest {
 	protected void setUp() throws Exception {
 		super.setUp();
 		
-		a = new OwnIdentity(mWoT, uriA, uriA, "A", true); a.storeAndCommit();
-		b = new OwnIdentity(mWoT, uriB, uriB, "B", true); b.storeAndCommit();
+		a = new OwnIdentity(mWoT, insertUriA, requestUriA, "A", true); a.storeAndCommit();
+		b = new OwnIdentity(mWoT, insertUriB, requestUriB, "B", true); b.storeAndCommit();
 		
 		Score score = new Score(mWoT, a,b,100,1,40); score.storeWithoutCommit();
 		Persistent.checkedCommit(mWoT.getDatabase(), this);
@@ -48,8 +50,8 @@ public class ScoreTest extends DatabaseBasedTest {
 	
 	// TODO: Move to WoTTest
 	public void testScorePersistence() throws MalformedURLException, UnknownIdentityException, NotInTrustTreeException {
-		a = mWoT.getOwnIdentityByURI(uriA);
-		b = mWoT.getOwnIdentityByURI(uriB);
+		a = mWoT.getOwnIdentityByURI(requestUriA);
+		b = mWoT.getOwnIdentityByURI(requestUriB);
 		final Score originalScore = mWoT.getScore(a, b);
 		
 		originalScore.checkedActivate(10);
@@ -60,8 +62,8 @@ public class ScoreTest extends DatabaseBasedTest {
 		flushCaches();
 		
 		mWoT = new WebOfTrust(getDatabaseFilename());
-		a = mWoT.getOwnIdentityByURI(uriA);
-		b = mWoT.getOwnIdentityByURI(uriB);
+		a = mWoT.getOwnIdentityByURI(requestUriA);
+		b = mWoT.getOwnIdentityByURI(requestUriB);
 		final Score score = mWoT.getScore(a, b);
 		
 		originalScore.initializeTransient(mWoT); // Prevent DatabaseClosedException in .equals()

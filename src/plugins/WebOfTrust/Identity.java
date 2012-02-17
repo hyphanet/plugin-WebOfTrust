@@ -168,7 +168,7 @@ public class Identity extends Persistent implements Cloneable {
 		try {
 			USK.create(mRequestURI);
 		} catch (MalformedURLException e) {
-			throw new RuntimeException("Insert URI specified as request URI!");
+			throw new InvalidParameterException("Insert URI specified as request URI!");
 		}
 		
 		mID = getIDFromURI(mRequestURI);
