@@ -183,10 +183,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			if(mConfig.getDatabaseFormatVersion() > WebOfTrust.DATABASE_FORMAT_VERSION)
 				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 			
+			mPuzzleStore = new IntroductionPuzzleStore(this);
+			
 			upgradeDB();
 			
 			mXMLTransformer = new XMLTransformer(this);
-			mPuzzleStore = new IntroductionPuzzleStore(this);
 			
 			mRequestClient = new RequestClient() {
 	
@@ -1299,7 +1300,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			if(logDEBUG) Logger.debug(this, "Storing an abort-fetch-command...");
 			
-			mFetcher.storeAbortFetchCommandWithoutCommit(identity);
+			if(mFetcher != null) // Can be null if we use this function in upgradeDB()
+				mFetcher.storeAbortFetchCommandWithoutCommit(identity);
 
 			if(logDEBUG) Logger.debug(this, "Deleting the identity...");
 			identity.deleteWithoutCommit();
