@@ -9,6 +9,7 @@ import java.util.Date;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableUSK;
 import freenet.support.CurrentTimeUTC;
 
 /**
@@ -43,6 +44,12 @@ public final class OwnIdentity extends Identity {
 		
 		// initializeTransient() was not called yet so we must use mRequestURI.getEdition() instead of this.getEdition()
 		mInsertURI = insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(mRequestURI.getEdition()).setMetaString(null);
+		
+		try {
+			InsertableUSK.createInsertable(mInsertURI, false);
+		} catch (MalformedURLException e) {
+			throw new RuntimeException("Request URI specified as insert URI!");
+		}
 		
 		if(!Arrays.equals(mRequestURI.getCryptoKey(), mInsertURI.getCryptoKey()))
 			throw new RuntimeException("Request and insert URI do not fit together!");

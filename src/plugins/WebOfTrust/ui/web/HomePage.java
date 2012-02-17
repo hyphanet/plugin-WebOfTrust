@@ -43,7 +43,10 @@ public class HomePage extends WebPageImpl {
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.KnownIdentities") + ": " + wot.getAllNonOwnIdentities().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.TrustRelationships") + ": " + wot.getAllTrusts().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.ScoreRelationships") + ": " + wot.getAllScores().size()));
-		
+		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.FullRecomputations") + ": " + wot.getNumberOfFullScoreRecomputations()));
+		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.FullRecomputationTime") + ": " + wot.getAverageFullScoreRecomputationTime()));
+		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.IncrementalRecomputations") + ": " + wot.getNumberOfIncrementalScoreRecomputations()));
+		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.IncrementalRecomputationTime") + ": " + wot.getAverageIncrementalScoreRecomputationTime()));
 		IntroductionPuzzleStore puzzleStore = wot.getIntroductionPuzzleStore();
 		synchronized(puzzleStore) {
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.UnsolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(false)));
