@@ -4,11 +4,13 @@
 package plugins.WebOfTrust;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Random;
 
 import plugins.WebOfTrust.Score.ScoreID;
 import plugins.WebOfTrust.Trust.TrustID;
@@ -30,6 +32,8 @@ import plugins.WebOfTrust.ui.web.WebInterface;
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.defragment.Defragment;
+import com.db4o.defragment.DefragmentConfig;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
@@ -52,7 +56,9 @@ import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.SizeUtil;
 import freenet.support.api.Bucket;
+import freenet.support.io.FileUtil;
 
 /**
  * A web of trust plugin based on Freenet.
@@ -365,14 +371,133 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         return cfg;
 	}
 	
+	private synchronized void restoreDatabaseBackup(File databaseFile, File backupFile) throws IOException {
+		Logger.warning(this, "Trying to restore database backup: " + backupFile.getAbsolutePath());
+		
+		if(mDB != null)
+			throw new RuntimeException("Database is opened already!");
+		
+		if(backupFile.exists()) {
+			try {
+				FileUtil.secureDelete(databaseFile, mPR.getNode().fastWeakRandom);
+			} catch(IOException e) {
+				Logger.warning(this, "Deleting of the database failed: " + databaseFile.getAbsolutePath());
+			}
+			
+			if(backupFile.renameTo(databaseFile)) {
+				Logger.warning(this, "Backup restored!");
+			} else {
+				throw new IOException("Unable to rename backup file back to database file: " + databaseFile.getAbsolutePath());
+			}
+
+		} else {
+			throw new IOException("Cannot restore backup, it does not exist!");
+		}
+	}
+
+	private synchronized void defragmentDatabase(File databaseFile) throws IOException {
+		Logger.normal(this, "Defragmenting database ...");
+		
+		if(mDB != null) 
+			throw new RuntimeException("Database is opened already!");
+		
+		if(mPR == null) {
+			Logger.normal(this, "No PluginRespirator found, probably running as unit test, not defragmenting.");
+			return;
+		}
+		
+		final Random random = mPR.getNode().fastWeakRandom;
+		
+		// Open it first, because defrag will throw if it needs to upgrade the file.
+		{
+			final ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(), databaseFile.getAbsolutePath());
+			while(!database.close());
+			if(!databaseFile.exists()) {
+				Logger.error(this, "Database file does not exist after openFile: " + databaseFile.getAbsolutePath());
+				return;
+			}
+		}
+
+		final File backupFile = new File(databaseFile.getAbsolutePath() + ".backup");
+		
+		if(backupFile.exists()) {
+			Logger.error(this, "Not defragmenting database: Backup file exists, maybe the node was shot during defrag: " + backupFile.getAbsolutePath());
+			return;
+		}	
+
+		final File tmpFile = new File(databaseFile.getAbsolutePath() + ".temp");
+		FileUtil.secureDelete(tmpFile, random);
+
+		/* As opposed to the default, BTreeIDMapping uses an on-disk file instead of in-memory for mapping IDs. 
+		/* Reduces memory usage during defragmentation while being slower.
+		/* However as of db4o 7.4.63.11890, it is bugged and prevents defragmentation from succeeding for my database, so we don't use it for now. */
+		final DefragmentConfig config = new DefragmentConfig(databaseFile.getAbsolutePath(), 
+																backupFile.getAbsolutePath()
+															//	,new BTreeIDMapping(tmpFile.getAbsolutePath())
+															);
+		
+		/* Delete classes which are not known to the classloader anymore - We do NOT do this because:
+		/* - It is buggy and causes exceptions often as of db4o 7.4.63.11890
+		/* - WOT has always had proper database upgrade code (function upgradeDB()) and does not rely on automatic schema evolution.
+		/*   If we need to get rid of certain objects we should do it in the database upgrade code, */
+		// config.storedClassFilter(new AvailableClassFilter());
+		
+		config.db4oConfig(getNewDatabaseConfiguration());
+		
+		try {
+			Defragment.defrag(config);
+		} catch (Exception e) {
+			Logger.error(this, "Defragment failed", e);
+			
+			try {
+				restoreDatabaseBackup(databaseFile, backupFile);
+				return;
+			} catch(IOException e2) {
+				Logger.error(this, "Unable to restore backup", e2);
+				throw new IOException(e);
+			}
+		}
+
+		final long oldSize = backupFile.length();
+		final long newSize = databaseFile.length();
+
+		if(newSize <= 0) {
+			Logger.error(this, "Defrag produced an empty file! Trying to restore old database file...");
+			
+			databaseFile.delete();
+			try {
+				restoreDatabaseBackup(databaseFile, backupFile);
+			} catch(IOException e2) {
+				Logger.error(this, "Unable to restore backup", e2);
+				throw new IOException(e2);
+			}
+		} else {
+			final double change = 100.0 * (((double)(oldSize - newSize)) / ((double)oldSize));
+			FileUtil.secureDelete(tmpFile, random);
+			FileUtil.secureDelete(backupFile, random);
+			Logger.normal(this, "Defragment completed. "+SizeUtil.formatSize(oldSize)+" ("+oldSize+") -> "
+					+SizeUtil.formatSize(newSize)+" ("+newSize+") ("+(int)change+"% shrink)");
+		}
+
+	}
+
+	
 	/**
 	 * ATTENTION: This function is duplicated in the Freetalk plugin, please backport any changes.
 	 * 
 	 * Initializes the plugin's db4o database.
 	 */
-	private ExtObjectContainer openDatabase(File file) {
-		Logger.normal(this, "Using db4o " + Db4o.version());
+	private synchronized ExtObjectContainer openDatabase(File file) {
+		Logger.normal(this, "Opening database using db4o " + Db4o.version());
 		
+		if(mDB != null) 
+			throw new RuntimeException("Database is opened already!");
+		
+		try {
+			defragmentDatabase(file);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 
 		return Db4o.openFile(getNewDatabaseConfiguration(), file.getAbsolutePath()).ext();
 	}
