@@ -7,6 +7,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -430,8 +431,20 @@ public final class XMLTransformer {
 							}
 							catch(UnknownIdentityException e) {
 								if(hasCapacity) { /* We only create trustees if the truster has capacity to rate them. */
-									trustee = new Identity(mWoT, trusteeURI, null, false);
-									trustee.storeWithoutCommit();
+									try {
+										trustee = new Identity(mWoT, trusteeURI, null, false);
+										trustee.storeWithoutCommit();
+									} catch(MalformedURLException e2) {
+										/* Malformed URI in the trustlist. Log at minor since there
+										 * is nothing the user can do anyway. */
+										if(logMINOR) {
+											Logger.minor(this,
+													"Caugth IllegalArgumentException while creating new " +
+													"Identity. Truster is " + identity + ", request URI " +
+													"is " + trusteeURI,
+													e2);
+										}
+									}
 								}
 							}
 
