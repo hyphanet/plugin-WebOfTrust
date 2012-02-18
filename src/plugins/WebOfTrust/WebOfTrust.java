@@ -291,15 +291,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         
         return wotDirectory;
 	}
-
-	/**
-	 * ATTENTION: This function is duplicated in the Freetalk plugin, please backport any changes.
-	 * 
-	 * Initializes the plugin's db4o database.
-	 */
-	private ExtObjectContainer openDatabase(File file) {
-		Logger.normal(this, "Using db4o " + Db4o.version());
-		
+	
+	private com.db4o.config.Configuration getNewDatabaseConfiguration() {
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		
 		// Required config options:
@@ -368,8 +361,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         // TODO: We should check whether db4o inherits the indexed attribute to child classes, for example for this one:
         // Unforunately, db4o does not provide any way to query the indexed() property of fields, you can only set it
         // We might figure out whether inheritance works by writing a benchmark.
+        
+        return cfg;
+	}
+	
+	/**
+	 * ATTENTION: This function is duplicated in the Freetalk plugin, please backport any changes.
+	 * 
+	 * Initializes the plugin's db4o database.
+	 */
+	private ExtObjectContainer openDatabase(File file) {
+		Logger.normal(this, "Using db4o " + Db4o.version());
+		
 
-		return Db4o.openFile(cfg, file.getAbsolutePath()).ext();
+		return Db4o.openFile(getNewDatabaseConfiguration(), file.getAbsolutePath()).ext();
 	}
 	
 	@SuppressWarnings("deprecation")
