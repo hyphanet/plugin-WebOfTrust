@@ -155,8 +155,9 @@ public class Identity extends Persistent implements Cloneable {
 	 * @param newNickname The nickname of this identity
 	 * @param doesPublishTrustList Whether this identity publishes its trustList or not
 	 * @throws InvalidParameterException if a supplied parameter is invalid
+	 * @throws MalformedURLException if newRequestURI isn't a valid request URI
 	 */
-	protected Identity(WebOfTrust myWoT, FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException {
+	protected Identity(WebOfTrust myWoT, FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException, MalformedURLException {
 		initializeTransient(myWoT);
 		
 		if (!newRequestURI.isUSK() && !newRequestURI.isSSK())
@@ -165,11 +166,8 @@ public class Identity extends Persistent implements Cloneable {
 		//  We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
 		mRequestURI = newRequestURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(0).setMetaString(null);
 		
-		try {
-			USK.create(mRequestURI);
-		} catch (MalformedURLException e) {
-			throw new InvalidParameterException("Insert URI specified as request URI!");
-		}
+		//Check that mRequestURI really is a request URI
+		USK.create(mRequestURI);
 		
 		mID = getIDFromURI(mRequestURI);
 		
@@ -204,7 +202,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * @param newNickname The nickname of this identity
 	 * @param doesPublishTrustList Whether this identity publishes its trustList or not
 	 * @throws InvalidParameterException if a supplied parameter is invalid
-	 * @throws MalformedURLException if the supplied requestURI isn't a valid FreenetURI
+	 * @throws MalformedURLException if the supplied requestURI isn't a valid request URI
 	 */
 	public Identity(WebOfTrust myWoT, String newRequestURI, String newNickname, boolean doesPublishTrustList)
 		throws InvalidParameterException, MalformedURLException {
@@ -823,6 +821,10 @@ public class Identity extends Persistent implements Cloneable {
 			
 		} catch (InvalidParameterException e) {
 			throw new RuntimeException(e);
+		} catch (MalformedURLException e) {
+			/* This should never happen since we checked when this object was created */
+			Logger.error(this, "Caugth MalformedURLException in clone()", e);
+			throw new IllegalStateException(e); 
 		}
 	}
 	
