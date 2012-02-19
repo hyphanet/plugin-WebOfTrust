@@ -183,6 +183,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			System.setProperty("java.awt.headless", "true"); 
 	
 			mPR = myPR;
+			
+			/* TODO: This can be used for clean copies of the database to get rid of corrupted internal db4o structures. 
+			/* We should provide an option on the web interface to run this once during next startup and switch to the cloned database */
+			// cloneDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME), new File(getUserDataDirectory(), DATABASE_FILENAME + ".clone"));
+			
 			mDB = openDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME));
 			
 			mConfig = getOrCreateConfig();
@@ -322,6 +327,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         
         // Registration of indices (also performance)
         
+        // ATTENTION: Also update cloneDatabase() when adding new classes!
         @SuppressWarnings("unchecked")
 		final Class<? extends Persistent>[] persistentClasses = new Class[] {
         	Configuration.class,
@@ -605,7 +611,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		Logger.normal(this, "Backing up database to " + newDatabase.getAbsolutePath());
 		
 		if(newDatabase.exists())
-			throw new RuntimeException("File exists already");
+			throw new RuntimeException("Target exists already: " + newDatabase.getAbsolutePath());
 			
 		WebOfTrust backup = null;
 		
@@ -642,6 +648,119 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		
 		Logger.normal(this, "Backing up database finished.");
+	}
+	
+	/**
+	 * Does not do proper synchronization! Only use it in single-thread-mode during startup.
+	 * 
+	 * Creates a clone of the source database by reading all objects of it into memory and then writing them out to the target database.
+	 * Does NOT copy the Configuration, the IntroductionPuzzles or the IdentityFetcher command queue.
+	 * 
+	 * The difference to backupDatabase is that it does NOT use db4o's backup mechanism, instead it creates the whole database from scratch.
+	 * This is useful because the backup mechanism of db4o does nothing but copying the raw file:
+	 * It wouldn't fix databases which cannot be defragmented anymore due to internal corruption.
+	 * - Databases which were cloned by this function CAN be defragmented even if the original database couldn't.
+	 * 
+	 * HOWEVER this function uses lots of memory as the whole database is copied into memory.
+	 */
+	private synchronized void cloneDatabase(File sourceDatabase, File targetDatabase) {
+		Logger.normal(this, "Cloning " + sourceDatabase.getAbsolutePath() + " to " + targetDatabase.getAbsolutePath());
+		
+		if(targetDatabase.exists())
+			throw new RuntimeException("Target exists already: " + targetDatabase.getAbsolutePath());
+		
+		WebOfTrust original = null;
+		WebOfTrust clone = null;
+		
+		boolean success = false;
+		
+		try {
+			original = new WebOfTrust(sourceDatabase.getAbsolutePath());
+			
+			// We need to copy all objects into memory and then close & unload the source database before writing the objects to the target one.
+			// - I tried implementing this function in a way where it directly takes the objects from the source database and stores them
+			// in the target database while the source is still open. This did not work: Identity objects disappeared magically, resulting
+			// in Trust objects .storeWithoutCommit throwing "Mandatory object not found" on their associated identities.
+			
+			final HashSet<Identity> allIdentities = new HashSet<Identity>(original.getAllIdentities());
+			final HashSet<Trust> allTrusts = new HashSet<Trust>(original.getAllTrusts());
+			final HashSet<Score> allScores = new HashSet<Score>(original.getAllScores());
+			
+			for(Identity identity : allIdentities) {
+				identity.checkedActivate(16);
+				identity.mWebOfTrust = null;
+				identity.mDB = null;
+			}
+			
+			for(Trust trust : allTrusts) {
+				trust.checkedActivate(16);
+				trust.mWebOfTrust = null;
+				trust.mDB = null;
+			}
+			
+			for(Score score : allScores) {
+				score.checkedActivate(16);
+				score.mWebOfTrust = null;
+				score.mDB = null;
+			}
+			
+			original.terminate();
+			original = null;
+			System.gc();
+			
+			// Now we write out the in-memory copies ...
+			
+			clone = new WebOfTrust(targetDatabase.getAbsolutePath());
+			
+			for(Identity identity : allIdentities) {
+				identity.initializeTransient(clone);
+				identity.storeWithoutCommit();
+			}
+			Persistent.checkedCommit(clone.getDatabase(), clone);
+			
+			for(Trust trust : allTrusts) {
+				trust.initializeTransient(clone);
+				trust.storeWithoutCommit();
+			}
+			Persistent.checkedCommit(clone.getDatabase(), clone);
+			
+			for(Score score : allScores) {
+				score.initializeTransient(clone);
+				score.storeWithoutCommit();
+			}
+			Persistent.checkedCommit(clone.getDatabase(), clone);
+			
+			// And because cloning is a complex operation we do a mandatory database integrity check
+
+			Logger.normal(this, "Checking database integrity of clone...");
+			if(clone.verifyDatabaseIntegrity())
+				Logger.normal(this, "Checking database integrity of clone finished.");
+			else 
+				throw new RuntimeException("Database integrity check of clone failed!");
+			
+			// ... and also test whether the Web Of Trust is equals() to the clone. This does a deep check of all identities, scores & trusts!
+
+			original = new WebOfTrust(sourceDatabase.getAbsolutePath());
+				
+			Logger.normal(this, "Checking original.equals(clone)...");
+			if(original.equals(clone))
+				Logger.normal(this, "Clone is equal!");
+			else
+				throw new RuntimeException("Clone is not equal!");
+
+			success = true;
+		} finally {
+			if(original != null)
+				original.terminate();
+			
+			if(clone != null)
+				clone.terminate();
+			
+			if(!success)
+				targetDatabase.delete();
+		}
+		
+		Logger.normal(this, "Cloning database finished.");
 	}
 	
 	/**
