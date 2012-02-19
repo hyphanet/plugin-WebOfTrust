@@ -226,7 +226,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			// Database is up now, integrity is checked. We can start to actually do stuff
 			
 			// TODO: This can be used for doing backups. Implement auto backup, maybe once a week or month
-			// cloneDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME + ".clone"));
+			//backupDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME + ".backup"));
 			
 			createSeedIdentities();
 			
@@ -284,8 +284,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		mDB = openDatabase(new File(databaseFilename));
 		mConfig = getOrCreateConfig();
 		
-		if(mConfig.getDatabaseFormatVersion() > WebOfTrust.DATABASE_FORMAT_VERSION)
-			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
+		if(mConfig.getDatabaseFormatVersion() != WebOfTrust.DATABASE_FORMAT_VERSION)
+			throw new RuntimeException("Database format version mismatch. Found: " + mConfig.getDatabaseFormatVersion() + 
+					"; expected: " + WebOfTrust.DATABASE_FORMAT_VERSION);
 		
 		mPuzzleStore = new IntroductionPuzzleStore(this);
 		
@@ -595,14 +596,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * Does not do proper synchronization! Only use it in single-thread-mode during startup.
+	 * 
+	 * Does a backup of the database using db4o's backup mechanism.
+	 * 
+	 * This will NOT fix corrupted internal structures of databases - use cloneDatabase if you need to fix your database.
 	 */
-	private synchronized void cloneDatabase(File newDatabase) {
-		Logger.normal(this, "Cloning database to " + newDatabase.getAbsolutePath());
+	private synchronized void backupDatabase(File newDatabase) {
+		Logger.normal(this, "Backing up database to " + newDatabase.getAbsolutePath());
 		
 		if(newDatabase.exists())
 			throw new RuntimeException("File exists already");
 			
-		WebOfTrust clone = null;
+		WebOfTrust backup = null;
 		
 		boolean success = false;
 		
@@ -610,18 +615,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			mDB.backup(newDatabase.getAbsolutePath());
 			
 			if(logDEBUG) {
-				clone = new WebOfTrust(newDatabase.getAbsolutePath());
+				backup = new WebOfTrust(newDatabase.getAbsolutePath());
 
 				// We do not throw to make the clone mechanism more robust in case it is being used for creating backups
 				
 				Logger.debug(this, "Checking database integrity of clone...");
-				if(clone.verifyDatabaseIntegrity())
+				if(backup.verifyDatabaseIntegrity())
 					Logger.debug(this, "Checking database integrity of clone finished.");
 				else 
 					Logger.error(this, "Database integrity check of clone failed!");
 
 				Logger.debug(this, "Checking this.equals(clone)...");
-				if(equals(clone))
+				if(equals(backup))
 					Logger.normal(this, "Clone is equal!");
 				else
 					Logger.error(this, "Clone is not equal!");
@@ -629,14 +634,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			success = true;
 		} finally {
-			if(clone != null)
-				clone.terminate();
+			if(backup != null)
+				backup.terminate();
 			
 			if(!success)
 				newDatabase.delete();
 		}
 		
-		Logger.normal(this, "Cloning database finished.");
+		Logger.normal(this, "Backing up database finished.");
 	}
 	
 	/**
