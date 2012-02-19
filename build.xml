@@ -2,6 +2,8 @@
 <!-- ant build file for WoT -->
 
 <project name="WoT" default="dist" basedir=".">
+	<property file="override.properties"/>
+
 	<property name="freenet-cvs-snapshot.location" location="../fred/dist/freenet.jar"/>
 	<property name="freenet-ext.location" location="../fred/lib/freenet/freenet-ext.jar"/>
 	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WebOfTrust.jar"/>
