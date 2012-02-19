@@ -225,6 +225,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			// Database is up now, integrity is checked. We can start to actually do stuff
 			
+			// TODO: This can be used for doing backups. Implement auto backup, maybe once a week or month
+			// cloneDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME + ".clone"));
+			
 			createSeedIdentities();
 			
 			Logger.normal(this, "Starting fetches of all identities...");
@@ -559,7 +562,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
 	}
 	
-	private synchronized void verifyDatabaseIntegrity() {
+	private synchronized boolean verifyDatabaseIntegrity() {
 		deleteDuplicateObjects();
 		deleteOrphanObjects();
 		
@@ -568,10 +571,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		final Query q = mDB.query();
 		q.constrain(Persistent.class);
 		
+		boolean result = true;
+		
 		for(final Persistent p : new Persistent.InitializingObjectSet<Persistent>(this, q)) {
 			try {
 				p.startupDatabaseIntegrityTest();
 			} catch(Exception e) {
+				result = false;
+				
 				try {
 					Logger.error(this, "Integrity test failed for " + p, e);
 				} catch(Exception e2) {
@@ -582,6 +589,54 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		
 		Logger.debug(this, "Database integrity test finished.");
+		
+		return result;
+	}
+	
+	/**
+	 * Does not do proper synchronization! Only use it in single-thread-mode during startup.
+	 */
+	private synchronized void cloneDatabase(File newDatabase) {
+		Logger.normal(this, "Cloning database to " + newDatabase.getAbsolutePath());
+		
+		if(newDatabase.exists())
+			throw new RuntimeException("File exists already");
+			
+		WebOfTrust clone = null;
+		
+		boolean success = false;
+		
+		try {
+			mDB.backup(newDatabase.getAbsolutePath());
+			
+			if(logDEBUG) {
+				clone = new WebOfTrust(newDatabase.getAbsolutePath());
+
+				// We do not throw to make the clone mechanism more robust in case it is being used for creating backups
+				
+				Logger.debug(this, "Checking database integrity of clone...");
+				if(clone.verifyDatabaseIntegrity())
+					Logger.debug(this, "Checking database integrity of clone finished.");
+				else 
+					Logger.error(this, "Database integrity check of clone failed!");
+
+				Logger.debug(this, "Checking this.equals(clone)...");
+				if(equals(clone))
+					Logger.normal(this, "Clone is equal!");
+				else
+					Logger.error(this, "Clone is not equal!");
+			}
+			
+			success = true;
+		} finally {
+			if(clone != null)
+				clone.terminate();
+			
+			if(!success)
+				newDatabase.delete();
+		}
+		
+		Logger.normal(this, "Cloning database finished.");
 	}
 	
 	/**
