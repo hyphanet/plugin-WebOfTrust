@@ -2223,7 +2223,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		
 		if(logMINOR) {
-			String time = "Amount: " + mIncrementalScoreRecomputationCount + "; Avg Time:" + getAverageIncrementalScoreRecomputationTime() + "s";
+			final String time = includeMeasurement ?
+							("Stats: Amount: " + mIncrementalScoreRecomputationCount + "; Avg Time:" + getAverageIncrementalScoreRecomputationTime() + "s")
+							: ("Time not measured: Computation was aborted before doing anything.");
 			
 			if(!mFullScoreComputationNeeded)
 				Logger.minor(this, "Incremental computation of all Scores finished. " + time);
