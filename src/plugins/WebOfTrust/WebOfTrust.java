@@ -2342,6 +2342,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					initTrustTreeWithoutCommit(identity);
 					
 					beginTrustListImport();
+
+					// Incremental score computation has proven to be very very slow when creating identities so we just schedule a full computation.
+					mFullScoreComputationNeeded = true;
 					
 					for(String seedURI : SEED_IDENTITIES) {
 						try {
