@@ -276,6 +276,8 @@ public final class IntroductionClient extends TransferThread  {
 	 * Existing requests are not aborted.
 	 */
 	private synchronized void downloadPuzzles() {
+		if( mPuzzleStore.getNonOwnCaptchaAmount(false) > PUZZLE_POOL_SIZE ) { return; }
+		
 		final int fetchCount = fetchCount();
 		
 		if(fetchCount >= PUZZLE_REQUEST_COUNT) { // Check before we do the expensive database query.
