@@ -51,18 +51,18 @@ public final class IdentityTest extends DatabaseBasedTest {
 			new Identity(mWoT, insertURI, "test", true);
 			fail("Identity creation with insert URI allowed!");
 		} catch (MalformedURLException e) {
-			fail("Not expected MalformedURLException - the URLs are valid by themselves, they are just mixed up.");
-		} catch (InvalidParameterException e) {
 			// This is what we expect.
+		} catch (InvalidParameterException e) {
+			fail("Not expected MalformedURLException - the URLs are valid by themselves, they are just mixed up.");
 		}
 		
 		try {
 			new OwnIdentity(mWoT, requestURI, insertURI, "test", true);
 			fail("OwnIdentity creation with mixed up request/insert URI allowed!");
 		} catch (MalformedURLException e) {
-			fail("Not expected MalformedURLException - the URLs are valid by themselves, they are just mixed up.");
-		} catch (InvalidParameterException e) {
 			// This is what we expect.
+		} catch (InvalidParameterException e) {
+			fail("Not expected MalformedURLException - the URLs are valid by themselves, they are just mixed up.");
 		}
 	}
 	

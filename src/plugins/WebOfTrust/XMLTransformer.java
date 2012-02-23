@@ -336,25 +336,25 @@ public final class XMLTransformer {
 			
 			Logger.normal(this, "Importing parsed XML for " + identity);
 			
-				long newEdition = identityURI.getEdition();
-				if(identity.getEdition() > newEdition) {
-					if(logDEBUG) Logger.debug(this, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
+			long newEdition = identityURI.getEdition();
+			if(identity.getEdition() > newEdition) {
+				if(logDEBUG) Logger.debug(this, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
+				return;
+			} else if(identity.getEdition() == newEdition) {
+				if(identity.getCurrentEditionFetchState() == FetchState.Fetched) {
+					if(logDEBUG) Logger.debug(this, "Fetched current edition which is marked as fetched already, not importing: " + identityURI);
 					return;
-				} else if(identity.getEdition() == newEdition) {
-					if(identity.getCurrentEditionFetchState() == FetchState.Fetched) {
-						if(logDEBUG) Logger.debug(this, "Fetched current edition which is marked as fetched already, not importing: " + identityURI);
-						return;
-					} else if(identity.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
-						Logger.normal(this, "Re-fetched current-edition which was marked as parsing failed: " + identityURI);
-					}
+				} else if(identity.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
+					Logger.normal(this, "Re-fetched current-edition which was marked as parsing failed: " + identityURI);
 				}
+			}
 				
-				// We throw parse errors AFTER checking the edition number: If this XML was outdated anyway, we don't have to throw.
-				if(xmlData.parseError != null)
-					throw xmlData.parseError;
+			// We throw parse errors AFTER checking the edition number: If this XML was outdated anyway, we don't have to throw.
+			if(xmlData.parseError != null)
+				throw xmlData.parseError;
 				
 			
-				synchronized(Persistent.transactionLock(mDB)) {
+			synchronized(Persistent.transactionLock(mDB)) {
 				try { // Transaction rollback block
 					identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
 					boolean didPublishTrustListPreviously = identity.doesPublishTrustList();
@@ -460,11 +460,11 @@ public final class XMLTransformer {
 					identity.onFetched(); // Marks the identity as parsed successfully
 					identity.storeAndCommit();
 				}
-					catch(Exception e) { 
+				catch(Exception e) { 
 					mWoT.abortTrustListImport(e); // Does the rollback
 					throw e;
 				} // try
-				} // synchronized(Persistent.transactionLock(db))
+			} // synchronized(Persistent.transactionLock(db))
 				
 			Logger.normal(this, "Finished XML import for " + identity);
 		} // synchronized(mWoT)
