@@ -43,7 +43,7 @@ public final class IdentityTest extends DatabaseBasedTest {
 		flushCaches();
 	}
 	
-	public void testInsertRequestUriMixup() {
+	public void testInsertRequestUriMixup() throws InvalidParameterException {
 		final String requestURI = "SSK@i-cMLfOF0D5kDf3OpV~W~S57TkJHmLNGRYAcAfxJ7VM,4i-eSsxL7UMUwKOegQfBJ3yIqxaQJzOCxujY0Snr8YA,AQACAAE/WebOfTrust";
 		final String insertURI = "SSK@IxTDudcTeNlorAr0jFaoQVxV-Mtu-Dln42-2fIXoLK4,4i-eSsxL7UMUwKOegQfBJ3yIqxaQJzOCxujY0Snr8YA,AQECAAE/WebOfTrust";
 		
@@ -52,8 +52,6 @@ public final class IdentityTest extends DatabaseBasedTest {
 			fail("Identity creation with insert URI allowed!");
 		} catch (MalformedURLException e) {
 			// This is what we expect.
-		} catch (InvalidParameterException e) {
-			fail("Not expected MalformedURLException - the URLs are valid by themselves, they are just mixed up.");
 		}
 		
 		try {
@@ -61,8 +59,6 @@ public final class IdentityTest extends DatabaseBasedTest {
 			fail("OwnIdentity creation with mixed up request/insert URI allowed!");
 		} catch (MalformedURLException e) {
 			// This is what we expect.
-		} catch (InvalidParameterException e) {
-			fail("Not expected MalformedURLException - the URLs are valid by themselves, they are just mixed up.");
 		}
 	}
 	
