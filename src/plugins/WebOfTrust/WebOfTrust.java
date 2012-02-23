@@ -421,7 +421,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		// Open it first, because defrag will throw if it needs to upgrade the file.
 		{
 			final ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(), databaseFile.getAbsolutePath());
+			
+			// Db4o will throw during defragmentation if new fields were added to classes and we didn't initialize their values on existing
+			// objects before defragmenting. So we just don't defragment if the database format version has changed.
+			final boolean canDefragment = peekDatabaseFormatVersion(this, database.ext()) == WebOfTrust.DATABASE_FORMAT_VERSION;
+
 			while(!database.close());
+			
+			if(!canDefragment) {
+				Logger.normal(this, "Not defragmenting, database format version changed!");
+				return;
+			}
+			
 			if(!databaseFile.exists()) {
 				Logger.error(this, "Database file does not exist after openFile: " + databaseFile.getAbsolutePath());
 				return;
@@ -915,6 +926,29 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 	}
 	
+	/**
+	 * Warning: This function is not synchronized, use it only in single threaded mode.
+	 * @return The WOT database format version of the given database. -1 if there is no Configuration stored in it or multiple configurations exist.
+	 */
+	private static int peekDatabaseFormatVersion(WebOfTrust wot, ExtObjectContainer database) {
+		final Query query = database.query();
+		query.constrain(Configuration.class);
+		@SuppressWarnings("unchecked")
+		ObjectSet<Configuration> result = (ObjectSet<Configuration>)query.execute(); 
+		
+		switch(result.size()) {
+			case 1: {
+				final Configuration config = (Configuration)result.next();
+				config.mWebOfTrust = wot;
+				config.mDB = database;
+				// For the HashMaps to stay alive we need to activate to full depth.
+				config.checkedActivate(4);
+				return config.getDatabaseFormatVersion();
+			}
+			default:
+				return -1;
+		}
+	}
 	
 	/**
 	 * Loads an existing Config object from the database and adds any missing default values to it, creates and stores a new one if none exists.
