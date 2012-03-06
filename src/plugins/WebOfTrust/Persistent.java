@@ -116,6 +116,15 @@ public abstract class Persistent {
 	}
 	
 	/**
+	 * @deprecated Only for being used when dealing with objects which are from a different object container than the passed Freetalk uses.
+	 */
+	@Deprecated
+	public final void initializeTransient(final WebOfTrust myWebOfTrust, final ExtObjectContainer db) {
+		mWebOfTrust = myWebOfTrust;
+		mDB = db;
+	}
+	
+	/**
 	 * Returns the lock for creating a transaction.
 	 * A proper transaction typically looks like this:
 	 * synchronized(Persistent.transactionLock(db)) { try { ... do stuff ... Persistent.checkedCommit() } catch(RuntimeException e) { Persistent.checkedRollback(); } }

@@ -930,6 +930,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Warning: This function is not synchronized, use it only in single threaded mode.
 	 * @return The WOT database format version of the given database. -1 if there is no Configuration stored in it or multiple configurations exist.
 	 */
+	@SuppressWarnings("deprecation")
 	private static int peekDatabaseFormatVersion(WebOfTrust wot, ExtObjectContainer database) {
 		final Query query = database.query();
 		query.constrain(Configuration.class);
@@ -939,8 +940,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		switch(result.size()) {
 			case 1: {
 				final Configuration config = (Configuration)result.next();
-				config.mWebOfTrust = wot;
-				config.mDB = database;
+				config.initializeTransient(wot, database);
 				// For the HashMaps to stay alive we need to activate to full depth.
 				config.checkedActivate(4);
 				return config.getDatabaseFormatVersion();
