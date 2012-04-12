@@ -271,7 +271,8 @@ public final class FCPInterface implements FredPluginFCP {
 		synchronized(mWoT) {
 			final ObjectSet<OwnIdentity> result = mWoT.getAllOwnIdentities();
 	
-			for(int i = 0; result.hasNext(); ) {
+			int i = 0;
+			while(result.hasNext()) {
 				final OwnIdentity oid = result.next();
 
 				sfs.putOverwrite("Identity" + i, oid.getID());
@@ -293,6 +294,8 @@ public final class FCPInterface implements FredPluginFCP {
 				// This is here so you do not forget to do it IN the "if()" if you add an if() around the put() statements to allow selection
 				++i;
 			}
+			
+			sfs.putOverwrite("Amount", Integer.toString(i));
 		}
 
 		return sfs;
