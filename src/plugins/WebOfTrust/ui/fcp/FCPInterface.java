@@ -320,7 +320,8 @@ public final class FCPInterface implements FredPluginFCP {
 			final ObjectSet<Score> result = mWoT.getIdentitiesByScore(truster, select);
 			final boolean getAll = context.equals("");
 	
-			for(int i = 0; result.hasNext(); ) {
+			int i = 0;
+			while(result.hasNext()) {
 				final Score score = result.next();
 
 				if(getAll || score.getTrustee().hasContext(context)) {
@@ -359,6 +360,8 @@ public final class FCPInterface implements FredPluginFCP {
 					++i;
 				}
 			}
+			
+			sfs.putOverwrite("Amount", Integer.toString(i));
 		}
 		
 		return sfs;
