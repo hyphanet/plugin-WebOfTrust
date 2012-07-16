@@ -31,6 +31,7 @@ import freenet.support.codeshortification.IfNull;
  */
 public class Identity extends Persistent implements Cloneable {
 	
+	public static transient final int MAX_NICKNAME_LENGTH = 30;
 	public static transient final int MAX_CONTEXT_NAME_LENGTH = 32;
 	public static transient final int MAX_CONTEXT_AMOUNT = 32;
 	public static transient final int MAX_PROPERTY_NAME_LENGTH = 256;
@@ -401,7 +402,7 @@ public class Identity extends Persistent implements Cloneable {
 	/* IMPORTANT: This code is duplicated in plugins.Freetalk.WoT.WoTIdentity.validateNickname().
 	 * Please also modify it there if you modify it here */
 	public static final boolean isNicknameValid(String newNickname) {
-		return newNickname.length() > 0 && newNickname.length() <= 30 
+		return newNickname.length() > 0 && newNickname.length() <= MAX_NICKNAME_LENGTH 
 			&& StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
 			&& StringValidityChecker.containsNoInvalidCharacters(newNickname)
 			&& StringValidityChecker.containsNoLinebreaks(newNickname)
@@ -414,7 +415,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * Sets the nickName of this Identity. 
 	 * 
 	 * @param newNickname A String containing this Identity's NickName. Setting it to null means that it was not retrieved yet.
-	 * @throws InvalidParameterException If the nickname contains invalid characters, is empty or longer than 30 characters.
+	 * @throws InvalidParameterException If the nickname contains invalid characters, is empty or longer than MAX_NICKNAME_LENGTH characters.
 	 */
 	public final void setNickname(String newNickname) throws InvalidParameterException {
 		if (newNickname == null) {
@@ -427,8 +428,8 @@ public class Identity extends Persistent implements Cloneable {
 			throw new InvalidParameterException("Blank nickname");
 		}
 		
-		if(newNickname.length() > 30) {
-			throw new InvalidParameterException("Nickname is too long (30 chars max)");
+		if(newNickname.length() > MAX_NICKNAME_LENGTH) {
+			throw new InvalidParameterException("Nickname is too long (" + MAX_NICKNAME_LENGTH + " chars max)");
 		}
 			
 		if(!isNicknameValid(newNickname)) {
