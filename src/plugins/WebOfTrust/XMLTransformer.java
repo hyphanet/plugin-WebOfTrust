@@ -74,11 +74,17 @@ public final class XMLTransformer {
 	
 	/**
 	 * Maximal size of an identity XML file.
-	 * TODO: We must soon introduce limits on the amount of trust values which an identity can assign, otherwise
-	 * the WoT of some people will insert broken trust lists. Right now my seed identity of the testing WoT has 345 trustees
-	 * and fits  within 64 KiB so 256 should be enough until we have resolved this to-do.
+	 * FIXME: Reduce this to about 256KiB again once bug 0005406 is fixed. Also adjust MAX_IDENTITY_XML_TRUSTEE_AMOUNT then.
 	 */
-	public static final int MAX_IDENTITY_XML_BYTE_SIZE = 256 * 1024;
+	public static final int MAX_IDENTITY_XML_BYTE_SIZE = 1024 * 1024;
+	
+	/**
+	 * The maximal amount of trustees which will be added to the XML.
+	 * This value has been computed by XMLTransformerTest.testMaximalOwnIdentityXMLSize - that function is able to generate a XML file with all
+	 * data fields (nicknames, comments, etc) maxed out and add identities until it exceeds the maximal XML byte size.
+	 * In other words: If you ever need to re-adjust this value to fit into a new MAX_IDENTITY_XML_BYTE_SIZE, look at XMLTransformerTest.testMaximalOwnIdentityXMLSize.
+	 */
+	public static final int MAX_IDENTITY_XML_TRUSTEE_AMOUNT = 512;
 	
 	private final WebOfTrust mWoT;
 	
@@ -182,7 +188,13 @@ public final class XMLTransformer {
 			if(identity.doesPublishTrustList()) {
 				Element trustListElement = xmlDoc.createElement("TrustList");
 
-				for(Trust trust : mWoT.getGivenTrusts(identity)) {
+				int trustCount = 0;
+				for(Trust trust : mWoT.getGivenTrustsSortedDescendingByLastSeen(identity)) {
+					if(++trustCount > MAX_IDENTITY_XML_TRUSTEE_AMOUNT) {
+						Logger.normal(this, "Amount of trustees exceeded " + MAX_IDENTITY_XML_TRUSTEE_AMOUNT + ", not adding any more to trust list of " + identity);
+						break;
+					}
+					
 					/* We should make very sure that we do not reveal the other own identity's */
 					if(trust.getTruster() != identity) 
 						throw new RuntimeException("Error in WoT: It is trying to export trust values of someone else in the trust list " +
