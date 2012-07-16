@@ -4,6 +4,7 @@
 package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
+import java.util.Date;
 
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -11,6 +12,7 @@ import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
+import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 
 /**
@@ -629,5 +631,36 @@ public class WoTTest extends DatabaseBasedTest {
 		int scoreB = mWoT.getScore(o, b).getScore();
 		assertTrue("A score: " + scoreA, scoreA > 0);
 		assertTrue("B score: " + scoreB, scoreB > 0);
+	}
+	
+	public void testGetGivenTrustsSortedDescendingByLastSeen() throws MalformedURLException, InvalidParameterException, InterruptedException {
+		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner
+
+		Identity a = new Identity(mWoT, requestUriA, "A", true); Thread.sleep(10); a.onFetched(); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); Thread.sleep(10); b.onFetched(); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); Thread.sleep(10); c.onFetched(); c.storeAndCommit();
+		
+		mWoT.setTrust(o, a, (byte)0, "");
+		mWoT.setTrust(o, b, (byte)1, "");
+		mWoT.setTrust(o, c, (byte)2, "");
+		
+		{
+			ObjectSet<Trust> abc = mWoT.getGivenTrustsSortedDescendingByLastSeen(o);
+			assertTrue(abc.hasNext()); assertSame(c, abc.next().getTrustee());
+			assertTrue(abc.hasNext()); assertSame(b, abc.next().getTrustee());
+			assertTrue(abc.hasNext()); assertSame(a, abc.next().getTrustee());
+			assertFalse(abc.hasNext());
+		}
+		
+		a.onFetched(); a.storeAndCommit();
+		
+		{
+			ObjectSet<Trust> abc = mWoT.getGivenTrustsSortedDescendingByLastSeen(o);
+			assertTrue(abc.hasNext()); assertSame(a, abc.next().getTrustee());
+			assertTrue(abc.hasNext()); assertSame(c, abc.next().getTrustee());
+			assertTrue(abc.hasNext()); assertSame(b, abc.next().getTrustee());
+			assertFalse(abc.hasNext());
+		}
+
 	}
 }

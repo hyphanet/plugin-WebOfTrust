@@ -1848,6 +1848,22 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	/**
+	 * Gets all trusts given by the given truster.
+	 * The result is sorted descending by the time we last fetched the trusted identity. 
+	 * You have to synchronize on this WoT when calling the function and processing the returned list!
+	 * 
+	 * @return An {@link ObjectSet} containing all {@link Trust} the passed Identity has given.
+	 */
+	public ObjectSet<Trust> getGivenTrustsSortedDescendingByLastSeen(final Identity truster) {
+		final Query query = mDB.query();
+		query.constrain(Trust.class);
+		query.descend("mTruster").constrain(truster).identity();
+		query.descend("mTrustee").descend("mLastFetchedDate").orderDescending();
+		
+		return new Persistent.InitializingObjectSet<Trust>(this, query);
+	}
+	
+	/**
 	 * Gets given trust values of an identity matching a specified trust value criteria.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 * 
