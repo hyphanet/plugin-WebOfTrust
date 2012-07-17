@@ -123,6 +123,7 @@
 			</batchtest>
 			<sysproperty key="benchmark" value="${benchmark}" />
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
+			<jvmarg value="-Djava.awt.headless=true"/>
 		</junit>
 	</target>
 
