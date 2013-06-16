@@ -2554,11 +2554,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			try {
 				FreenetURI requestFreenetURI = new FreenetURI(requestURI);
 				FreenetURI insertFreenetURI = new FreenetURI(insertURI);
+
+				long edition = 0;
 				
-				if(requestFreenetURI.isSSKForUSK()) requestFreenetURI = requestFreenetURI.uskForSSK();
-				if(insertFreenetURI.isSSKForUSK()) insertFreenetURI = insertFreenetURI.uskForSSK();
+				try {
+					edition = Math.max(edition, requestFreenetURI.getEdition());
+				} catch(IllegalStateException e) {
+					// The user supplied URI did not have an edition specified
+				}
 				
-				long edition = Math.max(requestFreenetURI.getEdition(), insertFreenetURI.getEdition());
+				try {
+					edition = Math.max(edition, insertFreenetURI.getEdition());
+				} catch(IllegalStateException e) {
+					// The user supplied URI did not have an edition specified
+				}
 				
 				try {
 					Identity old = getIdentityByURI(requestURI);
@@ -2566,11 +2575,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					if(old instanceof OwnIdentity)
 						throw new InvalidParameterException("There is already an own identity with the given URI pair.");
 					
-					edition = Math.max(old.getEdition(), edition);
-					
 					// We already have fetched this identity as a stranger's one. We need to update the database.
 					identity = new OwnIdentity(this, insertFreenetURI, requestFreenetURI, old.getNickname(), old.doesPublishTrustList());
-					/* We re-fetch the current edition to make sure all trustees are imported */
+					
+					/* We re-fetch the most recent edition to make sure all trustees are imported */
+					edition = Math.max(edition, old.getEdition());
 					identity.restoreEdition(edition);
 				
 					identity.setContexts(old.getContexts());
