@@ -229,40 +229,67 @@ public final class FCPInterface implements FredPluginFCP {
     	synchronized(mWoT) {
     		final OwnIdentity truster = mWoT.getOwnIdentityByID(trusterID);
     		final Identity identity = mWoT.getIdentityByID(identityID);
-
-    		sfs.putOverwrite("Nickname", identity.getNickname());
-    		sfs.putOverwrite("RequestURI", identity.getRequestURI().toString());
-
-    		try {
-    			final Trust trust = mWoT.getTrust(truster, identity);
-    			sfs.putOverwrite("Trust", Byte.toString(trust.getValue()));
-    		} catch (final NotTrustedException e1) {
-    			sfs.putOverwrite("Trust", "null");
-    		}
-
-    		try {
-    			final Score score = mWoT.getScore(truster, identity);
-    			sfs.putOverwrite("Score", Integer.toString(score.getScore()));
-    			sfs.putOverwrite("Rank", Integer.toString(score.getRank()));
-    		} catch (final NotInTrustTreeException e) {
-    			sfs.putOverwrite("Score", "null");
-    			sfs.putOverwrite("Rank", "null");
-    		}
-
-    		final Iterator<String> contexts = identity.getContexts().iterator();
-    		for(int i = 0; contexts.hasNext(); ++i) {
-    			sfs.putOverwrite("Context" + i, contexts.next());
-    		}
-
-			int propertiesCounter = 0;
-			for (Entry<String, String> property : identity.getProperties().entrySet()) {
-				sfs.putOverwrite("Property" + propertiesCounter + ".Name", property.getKey());
-				sfs.putOverwrite("Property" + propertiesCounter++ + ".Value", property.getValue());
-			}
+            addIdentityFields(sfs, identity, truster, "", true);
+            addIdentityFields(sfs, identity, truster, "0", true);
     	}
     	
 		return sfs;
 	}
+
+    /**
+     * Add fields describing the perspective on the given identity from truster. If there is no suffix, the fields are
+     * set up as the only identity described. If not, they are set up as the identity is one of possibly multiple.<br/>
+     * Existing fields will be overwritten.
+     * @param sfs to add fields to.
+     * @param identity to describe
+     * @param truster use for trust and score
+     * @param suffix added as descriptor for possibly multiple identities. Empty string is special case.
+     * @param addTrustFields If true, add "Trust" field. If false, don't and skip trust query.
+     */
+    private void addIdentityFields(SimpleFieldSet sfs, Identity identity, OwnIdentity truster, String suffix,
+                                   boolean addTrustFields) {
+        sfs.putOverwrite("Nickname" + suffix, identity.getNickname());
+        sfs.putOverwrite("RequestURI" + suffix, identity.getRequestURI().toString());
+
+        if (addTrustFields) {
+            try {
+                final Trust trust = mWoT.getTrust(truster, identity);
+                sfs.putOverwrite("Trust" + suffix, Byte.toString(trust.getValue()));
+            } catch (final NotTrustedException e1) {
+                sfs.putOverwrite("Trust" + suffix, "null");
+            }
+        }
+
+        try {
+            final Score score = mWoT.getScore(truster, identity);
+            sfs.putOverwrite("Score" + suffix, Integer.toString(score.getScore()));
+            sfs.putOverwrite("Rank" + suffix, Integer.toString(score.getRank()));
+        } catch (final NotInTrustTreeException e) {
+            sfs.putOverwrite("Score" + suffix, "null");
+            sfs.putOverwrite("Rank" + suffix, "null");
+        }
+
+        final Iterator<String> contexts = identity.getContexts().iterator();
+        int propertiesCounter = 0;
+        if (suffix.isEmpty()) {
+            for(int i = 0; contexts.hasNext(); ++i) {
+                sfs.putOverwrite("Context" + i, contexts.next());
+            }
+            for (Entry<String, String> property : identity.getProperties().entrySet()) {
+                sfs.putOverwrite("Property" + propertiesCounter + ".Name", property.getKey());
+                sfs.putOverwrite("Property" + propertiesCounter++ + ".Value", property.getValue());
+            }
+        } else {
+            for(int i = 0; contexts.hasNext(); ++i) {
+                sfs.putOverwrite("Contexts" + suffix + ".Context" + i, contexts.next());
+            }
+            for (Entry<String, String> property : identity.getProperties().entrySet()) {
+                sfs.putOverwrite("Properties" + suffix + ".Property" + propertiesCounter + ".Name", property.getKey());
+                sfs.putOverwrite("Properties" + suffix + ".Property" + propertiesCounter++ + ".Value",
+                        property.getValue());
+            }
+        }
+    }
 
     private SimpleFieldSet handleGetOwnIdentities(final SimpleFieldSet params) {
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
@@ -326,35 +353,10 @@ public final class FCPInterface implements FredPluginFCP {
 				if(getAll || score.getTrustee().hasContext(context)) {
 					// TODO: Allow the client to select what data he wants
 					final Identity identity = score.getTrustee();
-					sfs.putOverwrite("Identity" + i, identity.getID());
-					sfs.putOverwrite("RequestURI" + i, identity.getRequestURI().toString());
-					sfs.putOverwrite("Nickname" + i, identity.getNickname() != null ? identity.getNickname() : "");
-
-					int contextCounter = 0;
-					for (String identityContext: identity.getContexts()) {
-						sfs.putOverwrite("Contexts" + i + ".Context" + contextCounter++, identityContext);
-					}
-
-					int propertiesCounter = 0;
-					for (Entry<String, String> property : identity.getProperties().entrySet()) {
-						sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter + ".Name", property.getKey());
-						sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter++ + ".Value", property.getValue());
-					}
+					addIdentityFields(sfs, identity, score.getTruster(), Integer.toString(i), includeTrustValue);
 					
 					if(truster == null)
 		    			sfs.putOverwrite("ScoreOwner" + i, score.getTruster().getID());
-					
-					sfs.putOverwrite("Score" + i, Integer.toString(score.getScore()));
-					sfs.putOverwrite("Rank" + i, Integer.toString(score.getRank()));
-					
-					if(includeTrustValue) {
-			    		try {
-			    			final Trust trust = mWoT.getTrust(score.getTruster(), identity);
-			    			sfs.putOverwrite("Trust" + i, Byte.toString(trust.getValue()));
-			    		} catch (final NotTrustedException e1) {
-			    			sfs.putOverwrite("Trust" + i, "null");
-			    		}
-					}
 					
 					++i;
 				}
