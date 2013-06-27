@@ -9,8 +9,8 @@
 	<property name="bcprov.location" location="../fred/lib/bcprov.jar"/>
 	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WebOfTrust.jar"/>
 	<property name="svn.revision" value="@custom@"/>
-	<property name="source-version" value="1.5"/>
-	<property name="target-version" value="1.5"/>
+	<property name="source-version" value="1.6"/>
+	<property name="target-version" value="1.6"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
 	<property name="dist" location="dist/"/>
@@ -28,6 +28,21 @@
 		<pathelement location="${freenet-ext.location}"/>
 		<pathelement location="${freenet-cvs-snapshot.location}"/>
 	</path>
+	
+	<presetdef name="javac">
+		<!--
+		Workaround for ant 1.8 misfeature. TODO: Remove when ant fixes this.
+		
+		If we don't set this to false, we will get "warning: 'includeantruntime' was not set, defaulting to
+		build.sysclasspath=last; set to false for repeatable builds"
+		
+		(includeAntRuntime = "Whether to include the Ant run-time libraries in the classpath; defaults to yes, 
+		unless build.sysclasspath is set. It is usually best to set this to false so the script's behavior 
+		is not sensitive to the environment in which it is run."
+		Source: https://ant.apache.org/manual/Tasks/javac.html)
+		-->
+		<javac includeantruntime="false" />
+	</presetdef>
 
 	<exec executable="git"
 		failifexecutionfails="false"
@@ -72,9 +87,7 @@
 		<!-- Force compile of Version.java in case compile of ${src} didn't trigger it -->
 		<javac srcdir="${build}" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
 			<classpath>
-				<pathelement location="${bcprov.location}"/>
-				<pathelement location="${freenet-ext.location}"/>
-				<pathelement location="${freenet-cvs-snapshot.location}"/>
+				<path refid="lib.path"/>
 			</classpath>
 			<include name="${version.src}"/>
 		</javac>
@@ -97,7 +110,7 @@
 	<!-- ================================================== -->
 
 	<target name="unit-build" depends="compile" if="junit.present" unless="skip_tests">
-		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on" source="1.5">
+		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on" source="${source-version}" target="${target-version}" >
 			<classpath>
 				<path refid="lib.path"/>
 				<pathelement path="${build}"/>
@@ -152,7 +165,7 @@
 			<fileset dir="src/" defaultexcludes="yes">
 				<include name="**/*.java"/>
 			</fileset>
-			<link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
+			<link href="http://docs.oracle.com/javase/6/docs/api/"/>
 			<link href="http://freenetproject.org/javadocs/"/>
 		</javadoc>
 	</target>
