@@ -6,6 +6,7 @@
 
 	<property name="freenet-cvs-snapshot.location" location="../fred/dist/freenet.jar"/>
 	<property name="freenet-ext.location" location="../fred/lib/freenet/freenet-ext.jar"/>
+	<property name="bcprov.location" location="../fred/lib/bcprov.jar"/>
 	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WebOfTrust.jar"/>
 	<property name="svn.revision" value="@custom@"/>
 	<property name="source-version" value="1.5"/>
@@ -23,6 +24,7 @@
 	<available file="${junit.location}" property="junit.present"/>
 
 	<path id="lib.path">
+		<pathelement location="${bcprov.location}"/>
 		<pathelement location="${freenet-ext.location}"/>
 		<pathelement location="${freenet-cvs-snapshot.location}"/>
 	</path>
@@ -51,6 +53,7 @@
 		<mkdir dir="${dist}"/>
 		<echo message="Using ${freenet-cvs-snapshot.location} as freenet-cvs-snapshot.jar"/>
 		<echo message="Using ${freenet-ext.location} as freenet-ext.jar"/>
+		<echo message="Using ${bcprov.location} as bcprov.jar"/>
 	</target>
 
 	<!-- ================================================== -->
@@ -69,6 +72,7 @@
 		<!-- Force compile of Version.java in case compile of ${src} didn't trigger it -->
 		<javac srcdir="${build}" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
 			<classpath>
+				<pathelement location="${bcprov.location}"/>
 				<pathelement location="${freenet-ext.location}"/>
 				<pathelement location="${freenet-cvs-snapshot.location}"/>
 			</classpath>
