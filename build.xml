@@ -136,9 +136,10 @@
 			<batchtest fork="yes">
 				<fileset dir="${build-test}">
 					<include name="**/*.class"/>
+					<exclude name="**/Benchmark*.class" unless="benchmark" />
 				</fileset>
 			</batchtest>
-			<sysproperty key="benchmark" value="${benchmark}" />
+			
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
 			<jvmarg value="-Djava.awt.headless=true"/>
 		</junit>

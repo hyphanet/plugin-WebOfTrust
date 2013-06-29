@@ -8,6 +8,14 @@ import freenet.keys.FreenetURI;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 
 
+/**
+ * This is NOT an actual unit test. It is a set of benchmarks to measure the performance of WOT.
+ * 
+ * Also, this is NOT run in the default test suite which is run by Ant when building.
+ * To run it, put "benchmark=true" into the "override.properties" build confiugration file. If it does not exist, create it in the root of the project.
+ * 
+ * @author xor (xor@freenetproject.org)
+ */
 public class BenchmarkTest extends DatabaseBasedTest {
 
 	/**
@@ -18,9 +26,9 @@ public class BenchmarkTest extends DatabaseBasedTest {
 	public void test_BenchmarkVerifyAndCorrectStoredScores() throws MalformedURLException, InvalidParameterException {		
 		// Benchmark parameters...
 		
-		int identityCount = 1000;
-		int trustCount = 50 * 1000;
-		int iterations = 1000;
+		int identityCount = 6600;
+		int trustCount = 142 * 1000;
+		int iterations = 100;
 		
 		// Random trust graph setup...
 		
