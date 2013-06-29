@@ -96,7 +96,7 @@ public class DatabaseBasedTest extends TestCase {
 	 * @param count Amount of identities to add
 	 * @return An {@link ArrayList} which contains all added identities.
 	 */
-	protected List<Identity> addRandomIdentities(int count) {
+	protected ArrayList<Identity> addRandomIdentities(int count) {
 		ArrayList<Identity> result = new ArrayList<Identity>(count+1);
 		
 		while(count-- > 0) {
