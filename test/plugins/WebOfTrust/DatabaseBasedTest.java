@@ -83,6 +83,15 @@ public class DatabaseBasedTest extends TestCase {
 	}
 	
 	/**
+	 * Generates a random SSK request-/insert-keypair, suitable for being used when creating identities.
+	 * @return An array where slot 0 is the request URI and slot 1 is the insert URI
+	 */
+	protected FreenetURI[] getRandomSSKPair() {
+		InsertableClientSSK ssk = InsertableClientSSK.createRandom(mRandom, "");
+		return new FreenetURI[]{ ssk.getURI(), ssk.getInsertURI() };
+	}
+	
+	/**
 	 * Generates a random SSK request URI, suitable for being used when creating identities.
 	 */
 	protected FreenetURI getRandomRequestURI() {
