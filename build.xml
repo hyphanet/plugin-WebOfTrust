@@ -109,7 +109,7 @@
 
 	<!-- ================================================== -->
 
-	<target name="unit-build" depends="compile" if="junit.present" unless="skip_tests">
+	<target name="unit-build" depends="compile" if="junit.present">
 		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on" source="${source-version}" target="${target-version}" >
 			<classpath>
 				<path refid="lib.path"/>
