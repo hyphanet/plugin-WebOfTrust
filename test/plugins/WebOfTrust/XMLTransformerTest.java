@@ -7,7 +7,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.Random;
 
 import javax.xml.transform.TransformerException;
 
@@ -16,10 +15,7 @@ import org.xml.sax.SAXException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
-import freenet.crypt.RandomSource;
-import freenet.crypt.Yarrow;
 import freenet.keys.FreenetURI;
-import freenet.keys.InsertableClientSSK;
 
 /**
  * A unit test for class {@link XMLTransformer}.
@@ -48,14 +44,6 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 		
 		// TODO: Test that we do not export the trust list if trust list export is disabled.
 	}
-	
-	protected String getFilledRandomString(int length) {
-		Random r = new Random();
-		char[] s = new char[length];
-		for(int i=0; i<length; ++i)
-			s[i] = (char)('a' + r.nextInt(26));
-		return new String(s);
-	}
 		 
 	/**
 	 * XMLTransformer has a constant called MAX_IDENTITY_XML_TRUSTEE_AMOUNT. 
@@ -65,21 +53,20 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 		final OwnIdentity ownId = mWoT.createOwnIdentity(
 				"USK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/WebOfTrust/0",
 				"USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/0",
-				getFilledRandomString(OwnIdentity.MAX_NICKNAME_LENGTH), true, getFilledRandomString(OwnIdentity.MAX_CONTEXT_NAME_LENGTH));
+				getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH), true, getRandomLatinString(OwnIdentity.MAX_CONTEXT_NAME_LENGTH));
 		
 		final int initialContextCount = ownId.getContexts().size();
 		
 		for(int i=0; i < OwnIdentity.MAX_CONTEXT_AMOUNT-initialContextCount; ++i)
-			ownId.addContext(getFilledRandomString(OwnIdentity.MAX_CONTEXT_NAME_LENGTH));
+			ownId.addContext(getRandomLatinString(OwnIdentity.MAX_CONTEXT_NAME_LENGTH));
 		
 		final int initialPropertyCount = ownId.getProperties().size();
 		
 		for(int i=0; i < OwnIdentity.MAX_PROPERTY_AMOUNT-initialPropertyCount; ++i)
-			ownId.setProperty(getFilledRandomString(OwnIdentity.MAX_PROPERTY_NAME_LENGTH), getFilledRandomString(OwnIdentity.MAX_PROPERTY_VALUE_LENGTH));
+			ownId.setProperty(getRandomLatinString(OwnIdentity.MAX_PROPERTY_NAME_LENGTH), getRandomLatinString(OwnIdentity.MAX_PROPERTY_VALUE_LENGTH));
 		
 		ownId.storeAndCommit();
 		
-		RandomSource random = new Yarrow();
 		ByteArrayOutputStream os;
 		
 		/* When adjusting the size limit of the XML file (XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE), you can use the commented-out lines
@@ -87,7 +74,7 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 		 * Also, you have to comment out the part of XMLTransfomer which limits the amount of identities in the XML. */
 		//int count = 0;
 		//do {
-		//	final Identity trustee = new Identity(mWoT,InsertableClientSSK.createRandom(random,"").getURI(), 
+		//	final Identity trustee = new Identity(mWoT,getRandomRequestURI(), 
 		//									getFilledRandomString(Identity.MAX_NICKNAME_LENGTH), true); 
 		//	trustee.storeAndCommit();
 		//	mWoT.setTrust(ownId, trustee, (byte)100, getFilledRandomString(Trust.MAX_TRUST_COMMENT_LENGTH));
@@ -101,10 +88,10 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 		/* Remove the following when using the commented out lines above */
 		mWoT.beginTrustListImport();
 		for(int i=0; i < XMLTransformer.MAX_IDENTITY_XML_TRUSTEE_AMOUNT; ++i) {
-			final Identity trustee = new Identity(mWoT,InsertableClientSSK.createRandom(random,"").getURI(), 
-											getFilledRandomString(Identity.MAX_NICKNAME_LENGTH), true); 
+			final Identity trustee = new Identity(mWoT,getRandomRequestURI(), 
+											getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true); 
 			trustee.storeAndCommit();
-			mWoT.setTrust(ownId, trustee, (byte)100, getFilledRandomString(Trust.MAX_TRUST_COMMENT_LENGTH));
+			mWoT.setTrust(ownId, trustee, (byte)100, getRandomLatinString(Trust.MAX_TRUST_COMMENT_LENGTH));
 		}
 		mWoT.finishTrustListImport();
 		
