@@ -161,7 +161,7 @@ public class Identity extends Persistent implements Cloneable {
 		 * @param uri The requestURI or insertURI of the Identity
 		 * @return An IdentityID to uniquely identify the identity.
 		 */
-		public static final IdentityID constructAndValidateFromURI(FreenetURI uri) {
+		public static IdentityID constructAndValidateFromURI(FreenetURI uri) {
 			return new IdentityID(uri);
 		}
 		
@@ -188,8 +188,6 @@ public class Identity extends Persistent implements Cloneable {
 		public static final byte[] getRoutingKeyFromID(String id) throws IllegalBase64Exception {
 			return Base64.decode(id);
 		}
-
-
 
 	}
 	
