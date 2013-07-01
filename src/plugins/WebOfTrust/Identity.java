@@ -146,6 +146,20 @@ public class Identity extends Persistent implements Cloneable {
 			return false;
 		}
 
+		/**
+		 * Generates a unique IDfrom a {@link FreenetURI}, which is the routing key of the author encoded with the Freenet-variant of Base64
+		 * We use this to identify identities and perform requests on the database. 
+		 * 
+		 * TODO: Return an IdentityID, not a String
+		 * 
+		 * @param uri The requestURI of the Identity
+		 * @return A string to uniquely identify the identity.
+		 */
+		public static final String getIDFromURI(FreenetURI uri) {
+			/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
+			return Base64.encode(uri.getRoutingKey());
+		}
+
 	}
 	
 	
@@ -170,7 +184,7 @@ public class Identity extends Persistent implements Cloneable {
 		//Check that mRequestURI really is a request URI
 		USK.create(mRequestURI);
 		
-		mID = getIDFromURI(mRequestURI);
+		mID = IdentityID.getIDFromURI(mRequestURI);
 		
 		try {
 			mLatestEditionHint = newRequestURI.getEdition();
@@ -222,20 +236,6 @@ public class Identity extends Persistent implements Cloneable {
 		return mID;
 	}
 
-	/**
-	 * Generates a unique IDfrom a {@link FreenetURI}, which is the routing key of the author encoded with the Freenet-variant of Base64
-	 * We use this to identify identities and perform requests on the database. 
-	 * 
-	 * TODO: Move to class IdentityID.
-	 * 
-	 * @param uri The requestURI of the Identity
-	 * @return A string to uniquely identify the identity.
-	 */
-	public static final String getIDFromURI(FreenetURI uri) {
-		/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
-		return Base64.encode(uri.getRoutingKey());
-	}
-	
 	/**
 	 * TODO: Move to class IdentityID.
 	 */
@@ -908,7 +908,7 @@ public class Identity extends Persistent implements Cloneable {
 		if(mRequestURI == null)
 			throw new NullPointerException("mRequestURI==null");
 		
-		if(!mID.equals(getIDFromURI(mRequestURI)))
+		if(!mID.equals(IdentityID.getIDFromURI(mRequestURI)))
 			throw new IllegalStateException("ID does not match request URI!");
 		
 		IdentityID.constructAndValidate(mID); // Throws if invalid

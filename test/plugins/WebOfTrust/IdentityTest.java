@@ -6,6 +6,7 @@ package plugins.WebOfTrust;
 import java.net.MalformedURLException;
 
 import plugins.WebOfTrust.Identity.FetchState;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
@@ -151,7 +152,7 @@ public final class IdentityTest extends DatabaseBasedTest {
 	}
 
 	public final void testGetIDFromURI() {
-		assertEquals(Base64.encode(uri.getRoutingKey()), Identity.getIDFromURI(uri));
+		assertEquals(Base64.encode(uri.getRoutingKey()), IdentityID.getIDFromURI(uri));
 	}
 
 	public final void testGetRequestURI() throws InvalidParameterException, MalformedURLException {
