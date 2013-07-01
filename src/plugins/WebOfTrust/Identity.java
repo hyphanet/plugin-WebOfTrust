@@ -126,6 +126,13 @@ public class Identity extends Persistent implements Cloneable {
 			mID = id;
 		}
 		
+		private IdentityID(FreenetURI uri) {
+			assert(uri.isSSK() || uri.isUSK());
+			
+			/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
+			mID = Base64.encode(uri.getRoutingKey());
+		}
+		
 		public static String constructAndValidate(String id) {
 			return new IdentityID(id).toString();
 		}
@@ -158,14 +165,14 @@ public class Identity extends Persistent implements Cloneable {
 		 * Generates a unique IDfrom a {@link FreenetURI}, which is the routing key of the author encoded with the Freenet-variant of Base64
 		 * We use this to identify identities and perform requests on the database. 
 		 * 
-		 * TODO: Return an IdentityID, not a String
-		 * 
 		 * @param uri The requestURI of the Identity
 		 * @return A string to uniquely identify the identity.
 		 */
-		public static final String getIDFromURI(FreenetURI uri) {
-			/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
-			return Base64.encode(uri.getRoutingKey());
+		public static final IdentityID getIDFromURI(FreenetURI uri) {
+			if(!uri.isUSK() && !uri.isSSK())
+				throw new IllegalArgumentException("URI must be USK or SSK!");
+			
+			return new IdentityID(uri);
 		}
 
 	}
@@ -192,7 +199,7 @@ public class Identity extends Persistent implements Cloneable {
 		//Check that mRequestURI really is a request URI
 		USK.create(mRequestURI);
 		
-		mID = IdentityID.getIDFromURI(mRequestURI);
+		mID = IdentityID.getIDFromURI(mRequestURI).toString();
 		
 		try {
 			mLatestEditionHint = newRequestURI.getEdition();

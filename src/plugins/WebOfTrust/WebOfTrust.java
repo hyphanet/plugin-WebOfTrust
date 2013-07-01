@@ -1452,7 +1452,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @throws UnknownIdentityException if there is no identity with this id in the database
 	 */
 	public Identity getIdentityByURI(FreenetURI uri) throws UnknownIdentityException {
-		return getIdentityByID(IdentityID.getIDFromURI(uri));
+		return getIdentityByID(IdentityID.getIDFromURI(uri).toString());
 	}
 
 	/**
@@ -1476,7 +1476,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @throws UnknownIdentityException if the OwnIdentity isn't in the database
 	 */
 	public OwnIdentity getOwnIdentityByURI(FreenetURI uri) throws UnknownIdentityException {
-		return getOwnIdentityByID(IdentityID.getIDFromURI(uri));
+		return getOwnIdentityByID(IdentityID.getIDFromURI(uri).toString());
 	}
 
 	/**
