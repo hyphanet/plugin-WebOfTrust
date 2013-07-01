@@ -780,7 +780,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Incorrect scores are corrected & stored.
 	 * The function is synchronized and does a transaction, no outer synchronization is needed. 
 	 */
-	private synchronized void verifyAndCorrectStoredScores() {
+	protected synchronized void verifyAndCorrectStoredScores() {
 		Logger.normal(this, "Veriying all stored scores ...");
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
