@@ -152,7 +152,7 @@ public final class IdentityTest extends DatabaseBasedTest {
 	}
 
 	public final void testGetIDFromURI() {
-		assertEquals(Base64.encode(uri.getRoutingKey()), IdentityID.getIDFromURI(uri).toString());
+		assertEquals(Base64.encode(uri.getRoutingKey()), IdentityID.constructAndValidateFromURI(uri).toString());
 	}
 
 	public final void testGetRequestURI() throws InvalidParameterException, MalformedURLException {

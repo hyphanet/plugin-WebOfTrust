@@ -113,6 +113,11 @@ public class Identity extends Persistent implements Cloneable {
 		
 		private final String mID;
 		
+		/**
+		 * Constructs an identityID from the given String. This is the inverse of IdentityID.toString().
+		 * Checks whether the String matches the length limit.
+		 * Checks whether it is valid Base64-encoding.
+		 */
 		private IdentityID(String id) {
 			if(id.length() > MAX_IDENTITY_ID_LENGTH)
 				throw new IllegalArgumentException("ID is too long, length: " + id.length());
@@ -126,15 +131,38 @@ public class Identity extends Persistent implements Cloneable {
 			mID = id;
 		}
 		
+		/**
+		 * Constructs an IdentityID from the given {@link FreenetURI}.
+		 * Checks whether the URI is of the right type: Only USK or SSK is accepted.
+		 */
 		private IdentityID(FreenetURI uri) {
-			assert(uri.isSSK() || uri.isUSK());
+			if(!uri.isUSK() && !uri.isSSK())
+				throw new IllegalArgumentException("URI must be USK or SSK!");
 			
 			/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
 			mID = Base64.encode(uri.getRoutingKey());
 		}
 		
-		public static String constructAndValidate(String id) {
-			return new IdentityID(id).toString();
+		/**
+		 * Constructs an identityID from the given String. This is the inverse of IdentityID.toString().
+		 * Checks whether the String matches the length limit.
+		 * Checks whether it is valid Base64-encoding.
+		 */
+		public static IdentityID constructAndValidateFromString(String id) {
+			return new IdentityID(id);
+		}
+		
+		/**
+		 * Generates a unique ID from a {@link FreenetURI}, which is the routing key of the author encoded with the Freenet-variant of Base64
+		 * We use this to identify identities and perform requests on the database. 
+		 * 
+		 * Checks whether the URI is of the right type: Only USK or SSK is accepted.
+		 * 
+		 * @param uri The requestURI or insertURI of the Identity
+		 * @return An IdentityID to uniquely identify the identity.
+		 */
+		public static final IdentityID constructAndValidateFromURI(FreenetURI uri) {
+			return new IdentityID(uri);
 		}
 		
 		@Override
@@ -161,19 +189,7 @@ public class Identity extends Persistent implements Cloneable {
 			return Base64.decode(id);
 		}
 
-		/**
-		 * Generates a unique IDfrom a {@link FreenetURI}, which is the routing key of the author encoded with the Freenet-variant of Base64
-		 * We use this to identify identities and perform requests on the database. 
-		 * 
-		 * @param uri The requestURI of the Identity
-		 * @return A string to uniquely identify the identity.
-		 */
-		public static final IdentityID getIDFromURI(FreenetURI uri) {
-			if(!uri.isUSK() && !uri.isSSK())
-				throw new IllegalArgumentException("URI must be USK or SSK!");
-			
-			return new IdentityID(uri);
-		}
+
 
 	}
 	
@@ -199,7 +215,7 @@ public class Identity extends Persistent implements Cloneable {
 		//Check that mRequestURI really is a request URI
 		USK.create(mRequestURI);
 		
-		mID = IdentityID.getIDFromURI(mRequestURI).toString();
+		mID = IdentityID.constructAndValidateFromURI(mRequestURI).toString();
 		
 		try {
 			mLatestEditionHint = newRequestURI.getEdition();
@@ -916,10 +932,10 @@ public class Identity extends Persistent implements Cloneable {
 		if(mRequestURI == null)
 			throw new NullPointerException("mRequestURI==null");
 		
-		if(!mID.equals(IdentityID.getIDFromURI(mRequestURI)))
+		if(!mID.equals(IdentityID.constructAndValidateFromURI(mRequestURI)))
 			throw new IllegalStateException("ID does not match request URI!");
 		
-		IdentityID.constructAndValidate(mID); // Throws if invalid
+		IdentityID.constructAndValidateFromString(mID); // Throws if invalid
 		
 		if(mCurrentEditionFetchState == null)
 			throw new NullPointerException("mFetchState==null");

@@ -84,7 +84,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 
 				try { 
 					if(addIdentity) { // Add a single identity and set its trust value
-						trusteeID = IdentityID.getIDFromURI(new FreenetURI(request.getPartAsStringFailsafe("IdentityURI", 1024))).toString();
+						trusteeID = IdentityID.constructAndValidateFromURI(new FreenetURI(request.getPartAsStringFailsafe("IdentityURI", 1024))).toString();
 						value = request.getPartAsStringFailsafe("Value", 4).trim();
 						comment = request.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);				 	
 					} else { // Change multiple trust values via the known-identities-list
