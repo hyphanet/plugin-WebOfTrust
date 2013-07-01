@@ -932,7 +932,7 @@ public class Identity extends Persistent implements Cloneable {
 		if(mRequestURI == null)
 			throw new NullPointerException("mRequestURI==null");
 		
-		if(!mID.equals(IdentityID.constructAndValidateFromURI(mRequestURI)))
+		if(!mID.equals(IdentityID.constructAndValidateFromURI(mRequestURI).toString()))
 			throw new IllegalStateException("ID does not match request URI!");
 		
 		IdentityID.constructAndValidateFromString(mID); // Throws if invalid
