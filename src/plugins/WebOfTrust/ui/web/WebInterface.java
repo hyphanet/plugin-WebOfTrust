@@ -12,7 +12,7 @@ import java.net.URI;
 
 import javax.imageio.ImageIO;
 
-import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.identicon.Identicon;
@@ -418,7 +418,7 @@ public class WebInterface {
 			}
 			ByteArrayOutputStream imageOutputStream = null;
 			try {
-				RenderedImage identiconImage = new Identicon(Identity.getRoutingKeyFromID(identityId)).render(width, height);
+				RenderedImage identiconImage = new Identicon(IdentityID.getRoutingKeyFromID(identityId)).render(width, height);
 				imageOutputStream = new ByteArrayOutputStream();
 				ImageIO.write(identiconImage, "png", imageOutputStream);
 				Bucket imageBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, imageOutputStream.toByteArray());

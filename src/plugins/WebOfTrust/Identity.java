@@ -118,7 +118,7 @@ public class Identity extends Persistent implements Cloneable {
 				throw new IllegalArgumentException("ID is too long, length: " + id.length());
 			
 			try {
-				getRoutingKeyFromID(id);
+				IdentityID.getRoutingKeyFromID(id);
 			} catch (IllegalBase64Exception e) {
 				throw new RuntimeException("ID does not contain valid Base64: " + id);
 			}
@@ -144,6 +144,14 @@ public class Identity extends Persistent implements Cloneable {
 				return mID.equals((String)o);
 			
 			return false;
+		}
+
+		/**
+		 * TODO: Instead of taking a String ID, this should be a non-static function, not take any parameters and return the routing key
+		 * of the object it belongs to.
+		 */
+		public static final byte[] getRoutingKeyFromID(String id) throws IllegalBase64Exception {
+			return Base64.decode(id);
 		}
 
 		/**
@@ -234,13 +242,6 @@ public class Identity extends Persistent implements Cloneable {
 	public final String getID() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
-	}
-
-	/**
-	 * TODO: Move to class IdentityID.
-	 */
-	public static final byte[] getRoutingKeyFromID(String id) throws IllegalBase64Exception {
-		return Base64.decode(id);
 	}
 
 	/**
