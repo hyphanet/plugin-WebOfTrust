@@ -151,6 +151,7 @@ public final class IdentityTest extends DatabaseBasedTest {
 		assertEquals(Base64.encode(identity.getRequestURI().getRoutingKey()), identity.getID());
 	}
 
+	// TODO: Move to a seperate test class for IdentityID
 	public final void testGetIDFromURI() {
 		assertEquals(Base64.encode(uri.getRoutingKey()), IdentityID.constructAndValidateFromURI(uri).toString());
 	}
