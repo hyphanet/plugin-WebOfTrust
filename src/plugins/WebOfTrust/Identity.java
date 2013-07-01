@@ -123,7 +123,7 @@ public class Identity extends Persistent implements Cloneable {
 				throw new IllegalArgumentException("ID is too long, length: " + id.length());
 			
 			try {
-				IdentityID.getRoutingKeyFromID(id);
+				Base64.decode(id);
 			} catch (IllegalBase64Exception e) {
 				throw new RuntimeException("ID does not contain valid Base64: " + id);
 			}
@@ -182,11 +182,13 @@ public class Identity extends Persistent implements Cloneable {
 		}
 
 		/**
-		 * TODO: Instead of taking a String ID, this should be a non-static function, not take any parameters and return the routing key
-		 * of the object it belongs to.
+		 * Gets the routing key to which this ID is equivalent.
+		 * 
+		 * It is equivalent because:
+		 * An identity is uniquely identified by the USK URI which belongs to it and an USK URI is uniquely identified by its routing key.
 		 */
-		public static final byte[] getRoutingKeyFromID(String id) throws IllegalBase64Exception {
-			return Base64.decode(id);
+		public byte[] getRoutingKey() throws IllegalBase64Exception {
+			return Base64.decode(mID);
 		}
 
 	}

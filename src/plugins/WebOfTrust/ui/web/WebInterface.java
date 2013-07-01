@@ -418,7 +418,7 @@ public class WebInterface {
 			}
 			ByteArrayOutputStream imageOutputStream = null;
 			try {
-				RenderedImage identiconImage = new Identicon(IdentityID.getRoutingKeyFromID(identityId)).render(width, height);
+				RenderedImage identiconImage = new Identicon(IdentityID.constructAndValidateFromString(identityId).getRoutingKey()).render(width, height);
 				imageOutputStream = new ByteArrayOutputStream();
 				ImageIO.write(identiconImage, "png", imageOutputStream);
 				Bucket imageBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, imageOutputStream.toByteArray());
