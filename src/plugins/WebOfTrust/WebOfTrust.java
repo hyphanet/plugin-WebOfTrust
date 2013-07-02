@@ -1064,7 +1064,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
 	 */
 	protected synchronized boolean computeAllScoresWithoutCommit() {
-		if(logMINOR) Logger.debug(this, "Doing a full computation of all Scores...");
+		if(logMINOR) Logger.minor(this, "Doing a full computation of all Scores...");
 		
 		final long beginTime = CurrentTimeUTC.getInMillis();
 		
@@ -1286,7 +1286,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		mFullScoreRecomputationMilliseconds += CurrentTimeUTC.getInMillis() - beginTime;
 		
 		if(logMINOR) {
-			Logger.debug(this, "Full score computation finished. Amount: " + mFullScoreRecomputationCount + "; Avg Time:" + getAverageFullScoreRecomputationTime() + "s");
+			Logger.minor(this, "Full score computation finished. Amount: " + mFullScoreRecomputationCount + "; Avg Time:" + getAverageFullScoreRecomputationTime() + "s");
 		}
 		
 		return returnValue;
