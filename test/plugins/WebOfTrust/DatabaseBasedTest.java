@@ -130,7 +130,7 @@ public class DatabaseBasedTest extends TestCase {
 		System.gc();
 		System.runFinalization();
 		if(mWoT != null) {
-			mWoT.getDatabase().rollback();
+			Persistent.checkedRollback(mWoT.getDatabase(), this, null);
 			mWoT.getDatabase().purge();
 		}
 		System.gc();
