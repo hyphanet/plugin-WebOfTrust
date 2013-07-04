@@ -87,9 +87,8 @@ public class Identity extends Persistent implements Cloneable {
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
-	// We inherit them from class Persistent.
-	//private static transient volatile boolean logDEBUG = false;
-	//private static transient volatile boolean logMINOR = false;
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
 	
 	static {
 		Logger.registerClass(Identity.class);
