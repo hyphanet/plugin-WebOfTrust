@@ -121,7 +121,7 @@
 		</javac>
 	</target>
 
-	<target name="junit" depends="unit-build" if="junit.present" unless="skip_tests">
+	<target name="junit" depends="unit-build" if="junit.present" unless="${skip_tests}">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes">
 			<classpath>
 				<path refid="lib.path"/>
