@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.Random;
 
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.Persistent.RollbackHandler;
 import plugins.WebOfTrust.Score.ScoreID;
 import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.exceptions.DuplicateIdentityException;
@@ -55,6 +56,7 @@ import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.LRUCache;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
@@ -112,6 +114,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/* Database & configuration of the plugin */
 	private ExtObjectContainer mDB;
+	private Cache mCache;
 	private Configuration mConfig;
 	private IntroductionPuzzleStore mPuzzleStore;
 	
@@ -178,6 +181,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 	public void runPlugin(PluginRespirator myPR) {
 		try {
+			throw new UnsupportedOperationException("This branch is currently broken, do not use it!" +
+					"The unit test fail because score computation fails." +
+					"Most likely this happens because the cache is not flushed if a Score/Trust object is deleted. " +
+					"(The identity cache would also have to be flushed when an identity is deleted but the side effects of that are" +
+					"not visible in unit test yet). ");
+			
 			Logger.normal(this, "Web Of Trust plugin starting up...");
 			
 			/* Catpcha generation needs headless mode on linux */
@@ -190,6 +199,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			// cloneDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME), new File(getUserDataDirectory(), DATABASE_FILENAME + ".clone"));
 			
 			mDB = openDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME));
+			
+			mCache = new Cache();
 			
 			mConfig = getOrCreateConfig();
 			if(mConfig.getDatabaseFormatVersion() > WebOfTrust.DATABASE_FORMAT_VERSION)
@@ -288,6 +299,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 */
 	public WebOfTrust(String databaseFilename) {
 		mDB = openDatabase(new File(databaseFilename));
+		mCache = new Cache();
 		mConfig = getOrCreateConfig();
 		
 		if(mConfig.getDatabaseFormatVersion() != WebOfTrust.DATABASE_FORMAT_VERSION)
@@ -1383,6 +1395,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				 * - All transactions should be committed after obtaining the lock() on the database. */
 				synchronized(Persistent.transactionLock(mDB)) {
 					System.gc();
+					mCache.onRollback();
 					mDB.rollback();
 					System.gc(); 
 					mDB.close();
@@ -1412,13 +1425,23 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @throws UnknownIdentityException if there is no identity with this id in the database
 	 */
 	public synchronized Identity getIdentityByID(String id) throws UnknownIdentityException {
+		final IdentityID identityID = IdentityID.constructAndValidateFromString(id);
+		
+		Identity identity = mCache.getIdentity(identityID);
+		if(identity != null)
+			return identity; 
+		
 		final Query query = mDB.query();
 		query.constrain(Identity.class);
 		query.descend("mID").constrain(id);
 		final ObjectSet<Identity> result = new Persistent.InitializingObjectSet<Identity>(this, query);
 		
 		switch(result.size()) {
-			case 1: return result.next();
+			case 1:
+				identity = result.next();
+				assert(id.equals(identity.getID()));
+				mCache.putIdentity(identityID, identity);
+				return identity;
 			case 0: throw new UnknownIdentityException(id);
 			default: throw new DuplicateIdentityException(id, result.size());
 		}  
@@ -1432,13 +1455,23 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @throws UnknownIdentityException if there is now OwnIdentity with that id
 	 */
 	public synchronized OwnIdentity getOwnIdentityByID(String id) throws UnknownIdentityException {
+		final IdentityID identityID = IdentityID.constructAndValidateFromString(id);
+		
+		OwnIdentity identity = mCache.getOwnIdentity(identityID);
+		if(identity != null)
+			return identity; 
+		
 		final Query query = mDB.query();
 		query.constrain(OwnIdentity.class);
 		query.descend("mID").constrain(id);
 		final ObjectSet<OwnIdentity> result = new Persistent.InitializingObjectSet<OwnIdentity>(this, query);
 		
 		switch(result.size()) {
-			case 1: return result.next();
+			case 1:
+				identity = result.next();
+				assert(id.equals(identity.getID()));
+				mCache.putIdentity(identityID, identity);
+				return identity;
 			case 0: throw new UnknownIdentityException(id);
 			default: throw new DuplicateIdentityException(id, result.size());
 		}  
@@ -1664,16 +1697,23 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @throws NotInTrustTreeException if this identity is not in the required trust tree 
 	 */
 	public synchronized Score getScore(final OwnIdentity truster, final Identity trustee) throws NotInTrustTreeException {
+		final ScoreID id = new ScoreID(truster, trustee);
+		
+		Score score = mCache.getScore(id);
+		if(score != null)
+			return score;
+		
 		final Query query = mDB.query();
 		query.constrain(Score.class);
-		query.descend("mID").constrain(new ScoreID(truster, trustee).toString());
+		query.descend("mID").constrain(id.toString());
 		final ObjectSet<Score> result = new Persistent.InitializingObjectSet<Score>(this, query);
 		
 		switch(result.size()) {
 			case 1: 
-				final Score score = result.next();
+				score = result.next();
 				assert(score.getTruster() == truster);
 				assert(score.getTrustee() == trustee);
+				mCache.putScore(id, score);
 				return score;
 			case 0: throw new NotInTrustTreeException(truster, trustee);
 			default: throw new DuplicateScoreException(truster, trustee, result.size());
@@ -1819,16 +1859,23 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @throws NotTrustedException if the truster doesn't trust the trustee
 	 */
 	public synchronized Trust getTrust(final Identity truster, final Identity trustee) throws NotTrustedException, DuplicateTrustException {
+		final TrustID id = new TrustID(truster, trustee);
+		
+		Trust trust = mCache.getTrust(id);
+		if(trust != null)
+			return trust;
+		
 		final Query query = mDB.query();
 		query.constrain(Trust.class);
-		query.descend("mID").constrain(new TrustID(truster, trustee).toString());
+		query.descend("mID").constrain(id.toString());
 		final ObjectSet<Trust> result = new Persistent.InitializingObjectSet<Trust>(this, query);
 		
 		switch(result.size()) {
 			case 1: 
-				final Trust trust = result.next();
+				trust = result.next();
 				assert(trust.getTruster() == truster);
 				assert(trust.getTrustee() == trustee);
+				mCache.putTrust(id, trust);
 				return trust;
 			case 0: throw new NotTrustedException(truster, trustee);
 			default: throw new DuplicateTrustException(truster, trustee, result.size());
@@ -2911,6 +2958,82 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		
 		return true;
+	}
+	
+	private static final class Cache implements RollbackHandler {
+		
+		final LRUCache<IdentityID, Identity> mIdentityCache = new LRUCache<IdentityID, Identity>(256);
+		final LRUCache<IdentityID, OwnIdentity> mOwnIdentityCache = new LRUCache<IdentityID, OwnIdentity>(16);
+		final LRUCache<TrustID, Trust> mTrustCache = new LRUCache<TrustID, Trust>(1024);
+		final LRUCache<ScoreID, Score> mScoreCache = new LRUCache<ScoreID, Score>(1024);
+		
+		protected int mTrustPutCount = 0;
+		protected int mTrustGetCount = 0;
+		protected int mTrustHitCount = 0;
+		
+		public Cache() {
+			Persistent.registerRollbackHandler(this);
+		}
+
+		public void onRollback() {
+			mIdentityCache.clear();
+			mOwnIdentityCache.clear();
+			mTrustCache.clear();
+			mScoreCache.clear();
+		}
+		
+		/**
+		 * @return The requested {@link Identity} or {@link OwnIdentity} if it is cached, null otherwise.
+		 */
+		public Identity getIdentity(IdentityID id) {
+			return mIdentityCache.get(id);
+		}
+		
+		public void putIdentity(IdentityID id, Identity identity) {
+			mIdentityCache.put(id, identity);
+			
+			if(identity instanceof OwnIdentity)
+				mOwnIdentityCache.put(id, (OwnIdentity)identity);
+		}
+		
+		/**
+		 * @return The requested {@link OwnIdentity} if it is cached, null otherwise.
+		 */
+		public OwnIdentity getOwnIdentity(IdentityID id) {
+			return mOwnIdentityCache.get(id);
+		}
+		
+		/**
+		 * @return The requested {@link Trust} if it is cached, null otherwise.
+		 */
+		public Trust getTrust(TrustID id) {
+			Trust result = mTrustCache.get(id);
+			++mTrustGetCount;
+			if(result != null)
+				++mTrustHitCount;
+			return result;
+		}
+		
+		public void putTrust(TrustID id, Trust trust) {
+			mTrustCache.put(id, trust);
+			++mTrustPutCount;
+		}
+		
+		public void putTrust(Trust trust) {
+			mTrustCache.put(new TrustID(trust.getTruster(), trust.getTrustee()), trust);
+			++mTrustPutCount;
+		}
+		
+		/**
+		 * @return The requested {@link Score} if it is cached, null otherwise. 
+		 */
+		public Score getScore(ScoreID id) {			
+			return mScoreCache.get(id);
+		}
+
+		public void putScore(ScoreID id, Score score) {
+			mScoreCache.put(id, score);
+		}
 	}
     
     

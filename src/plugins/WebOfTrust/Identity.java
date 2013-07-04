@@ -105,7 +105,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * 
 	 * TODO: This was added after we already had manual ID-generation / checking in the code everywhere. Use this class instead. 
 	 */
-	public static final class IdentityID {
+	public static final class IdentityID implements Comparable<IdentityID> {
 		/**
 		 * Taken from Freetalk. TODO: Reduce to the actual value which can be found out by looking up the maximal length of the base64-encoded routing key.
 		 */
@@ -189,6 +189,16 @@ public class Identity extends Persistent implements Cloneable {
 		 */
 		public byte[] getRoutingKey() throws IllegalBase64Exception {
 			return Base64.decode(mID);
+		}
+
+		/**
+		 * It doesn't make sense to compare these random IDs.
+		 * But to prevent an attacker from provoking hash-collisions when putting the IDs into HashMaps, it is preferable to use TreeMaps instead.
+		 * And TreeMaps need a compareTo.
+		 */
+		@Override
+		public int compareTo(IdentityID o) {
+			return mID.compareTo(o.mID);
 		}
 
 	}

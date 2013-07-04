@@ -7,6 +7,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
@@ -58,6 +59,12 @@ public abstract class Persistent {
 	 * Since we only support one open database at a moment there is only one.
 	 */
 	private static transient final Object mTransactionLock = new Object();
+	
+	/**
+	 * A {@link RollbackHandler} is an object which wants to be notified about a rollback.
+	 * The handlers are called before the rollback actually happens.
+	 */
+	private static transient final ArrayList<RollbackHandler> mRollbackHandlers = new ArrayList<RollbackHandler>(2);
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
@@ -248,6 +255,7 @@ public abstract class Persistent {
 	public static final void checkedRollback(final ExtObjectContainer db, final Object loggingObject, final Throwable error) {
 		// As of db4o 7.4 it seems necessary to call gc(); to cause rollback() to work.
 		testDatabaseIntegrity(null, db);
+		callRollbackHandlers();
 		System.gc();
 		db.rollback();
 		System.gc(); 
@@ -601,6 +609,34 @@ public abstract class Persistent {
 			throw new UnsupportedOperationException();
 		}
 
+	}
+	
+	/**
+	 * A RollbackHandler is an object which wants to be notified about an rollback happening.
+	 * This is useful for flushing caches for example.
+	 */
+	public static interface RollbackHandler {
+	
+		/**
+		 * Is called before the rollback happens.
+		 */
+		public void onRollback();
+	
+	}
+	
+	/**
+	 * @see RollbackHandler
+	 */
+	public static void registerRollbackHandler(RollbackHandler handler) {
+		mRollbackHandlers.add(handler);
+	}
+	
+	/**
+	 * Calls all {@link RollbackHandler}s which have been registered using {@link registerRollbackHandler}. 
+	 */
+	private static void callRollbackHandlers() {
+		for(RollbackHandler handler : mRollbackHandlers)
+			handler.onRollback();
 	}
 	
 }

@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.StringTokenizer;
 
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.Trust.TrustID;
 import freenet.support.CurrentTimeUTC;
 
 
@@ -79,7 +80,7 @@ public final class Score extends Persistent implements Cloneable {
 	 * 
 	 * TODO: This was added after we already had manual ID-generation / checking in the code everywhere. Use this class instead. 
 	 */
-	protected static final class ScoreID {
+	protected static final class ScoreID implements Comparable<ScoreID> {
 		
 		private static final int MAX_SCORE_ID_LENGTH = IdentityID.MAX_IDENTITY_ID_LENGTH + "@".length() + IdentityID.MAX_IDENTITY_ID_LENGTH;
 		
@@ -133,6 +134,16 @@ public final class Score extends Persistent implements Cloneable {
 				return mID.equals((String)o);
 			
 			return false;
+		}
+		
+		/**
+		 * It doesn't make sense to compare these random IDs.
+		 * But to prevent an attacker from provoking hash-collisions when putting the IDs into HashMaps, it is preferable to use TreeMaps instead.
+		 * And TreeMaps need a compareTo.
+		 */
+		@Override
+		public int compareTo(ScoreID o) {
+			return mID.compareTo(o.mID);
 		}
 		
 	}
