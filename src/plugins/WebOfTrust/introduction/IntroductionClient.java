@@ -72,9 +72,8 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/**
 	 * The amount of concurrent puzzle requests to aim for.
-	 * TODO: Decrease to 10 as soon as there are enough identities in the WoT
 	 */
-	public static final int PUZZLE_REQUEST_COUNT = 20;
+	public static final int PUZZLE_REQUEST_COUNT = 10;
 	
 	/** How many unsolved puzzles do we try to accumulate? */
 	public static final int PUZZLE_POOL_SIZE = 40;
