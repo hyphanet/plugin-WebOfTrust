@@ -282,6 +282,13 @@ public final class IntroductionClient extends TransferThread  {
 			return;
 		}
 		
+		/*
+		 * We do not stop fetching once the puzzle pool is full by purpose.
+		 * We want the available puzzles to be as new as possible so there is a high chance of the inserter of them still being online.
+		 * This decrease the latency of the solution arriving at the inserter and therefore speeds up introduction.
+		 */
+		// if(mPuzzleStore.getNonOwnCaptchaAmount(false) >= PUZZLE_POOL_SIZE) return; 
+		
 		Logger.normal(this, "Trying to start more fetches, current amount: " + fetchCount);
 		
 		final int newRequestCount = PUZZLE_REQUEST_COUNT - fetchCount;
