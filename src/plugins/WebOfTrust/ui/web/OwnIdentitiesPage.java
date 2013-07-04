@@ -85,6 +85,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.LastInsert"));
 			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.PublishesTrustlist"));
 			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Trusters"));
+			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Trustees"));
 			row.addChild("th", l10n().getString("OwnIdentitiesPage.OwnIdentities.OwnIdentityTableHeader.Manage"));
 			
 			while(ownIdentities.hasNext()) {
@@ -116,9 +117,15 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				                ? l10n().getString("Common.Yes") 
 				                : l10n().getString("Common.No"));
 				
+				// TODO: Do a direct link to the received-trusts part of the linked page
 				HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				trustersCell.addChild(new HTMLNode("a", "href", showIdentityURI + "?id=" + id.getID(),
 						Long.toString(wot.getReceivedTrusts(id).size())));
+				
+				// TODO: Do a direct link to the given-trusts part of the linked page
+				HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+				trusteesCell.addChild(new HTMLNode("a", "href", showIdentityURI + "?id=" + id.getID(),
+						Long.toString(wot.getGivenTrusts(id).size())));
 				
 				HTMLNode manageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				
