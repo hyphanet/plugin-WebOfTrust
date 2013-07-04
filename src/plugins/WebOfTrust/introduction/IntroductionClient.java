@@ -283,6 +283,8 @@ public final class IntroductionClient extends TransferThread  {
 			return;
 		}
 		
+		if(mPuzzleStore.getNonOwnCaptchaAmount(false) >= PUZZLE_POOL_SIZE) return;
+		
 		Logger.normal(this, "Trying to start more fetches, current amount: " + fetchCount);
 		
 		final int newRequestCount = PUZZLE_REQUEST_COUNT - fetchCount;
