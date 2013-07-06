@@ -351,7 +351,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         	// them only for the classes where we need them does not cause any harm.
         	classHasIndex = true;
         	
-        	if(logDEBUG) Logger.debug(this, "Peristent class: " + clazz.getCanonicalName() + "; hasIndex==" + classHasIndex);
+        	if(logDEBUG) Logger.debug(this, "Persistent class: " + clazz.getCanonicalName() + "; hasIndex==" + classHasIndex);
         	
         	// TODO: Make very sure that it has no negative side effects if we disable class indices for some classes
         	// Maybe benchmark in comparison to a database which has class indices enabled for ALL classes.
