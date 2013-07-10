@@ -30,6 +30,7 @@ import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
@@ -69,6 +70,23 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	
 	private final TrivialTicker mTicker;
 	
+	/* Statistics */
+	
+	/**
+	 * The value of CurrentTimeUTC.getInMillis() when this IdentityFetcher was created.
+	 */
+	private final long mStartupTimeMilliseconds;
+	
+	/**
+	 * The number of identity XML files which this IdentityFetcher has fetched.
+	 */
+	private int mFetchedCount = 0;
+	
+	/**
+	 * The total time in milliseconds which processing of all fetched identity XML files took.
+	 */
+	private long mIdentityImportNanoseconds = 0;
+	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
 	private static transient volatile boolean logDEBUG = false;
@@ -102,6 +120,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		}
 		
 		mRequestClient = mWoT.getRequestClient();
+		
+		mStartupTimeMilliseconds = CurrentTimeUTC.getInMillis();
 		
 		deleteAllCommands();
 	}
@@ -493,7 +513,14 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
 			
+			final long startTime = System.nanoTime();
 			mWoT.getXMLTransformer().importIdentity(realURI, inputStream);
+			final long endTime = System.nanoTime();
+			
+			synchronized(this) {
+				++mFetchedCount;
+				mIdentityImportNanoseconds +=  endTime - startTime;
+			}
 		}
 		catch (Throwable e) {
 			Logger.error(this, "Parsing failed for " + realURI, e);
@@ -502,6 +529,40 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			Closer.close(inputStream);
 			Closer.close(bucket);
 		}
+	}
+	
+	/**
+	 * @return The number of identity XML files which this fetcher has fetched and processed successfully.
+	 */
+	public int getFetchedCount() {
+		return mFetchedCount;
+	}
+	
+	/**
+	 * Notice that this function is synchronized because it processes multiple member variables.
+	 * 
+	 * @return The average time it took for parsing an identity XML file in seconds.
+	 */
+	public synchronized double getAverageXMLImportTime() {
+		if(mFetchedCount == 0) // prevent division by 0
+			return 0;
+		
+		return ((double)mIdentityImportNanoseconds/(1000*1000*1000)) / (double)mFetchedCount;
+	}
+	
+	/**
+	 * Notice that this function is synchronized because it processes multiple member variables.
+	 * 
+	 * @return The average number of identity XML files which are fetched per hour.
+	 */
+	public synchronized float getAverageFetchCountPerHour() {
+		float uptimeSeconds = (float)(CurrentTimeUTC.getInMillis() - mStartupTimeMilliseconds)/1000;
+		float uptimeHours = uptimeSeconds / (60*60);
+		
+		if(uptimeHours == 0) // prevent division by 0
+			return 0;
+		
+		return (float)mFetchedCount / uptimeHours;		
 	}
 
 }
