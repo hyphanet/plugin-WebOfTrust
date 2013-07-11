@@ -293,7 +293,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * That number is published in trustLists to limit the number of editions a newbie has to fetch before he actually gets ans Identity.
 	 * 
 	 * @param newEdition A long representing the last fetched version of this identity.
-	 * @throws InvalidParameterException If the new edition is less than the current one.
+	 * @throws InvalidParameterException If the new edition is less than the current one. TODO: Evaluate whether we shouldn't be throwing a RuntimeException instead
 	 */
 	protected void setEdition(long newEdition) throws InvalidParameterException {
 		checkedActivate(1);
