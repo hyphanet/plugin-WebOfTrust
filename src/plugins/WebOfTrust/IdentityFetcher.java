@@ -522,8 +522,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 				mIdentityImportNanoseconds +=  endTime - startTime;
 			}
 		}
-		catch (Throwable e) {
-			Logger.error(this, "Parsing failed for " + realURI, e);
+		catch(Exception e) {
+			Logger.error(this, "Parsing identity XML failed severely - edition probably could NOT be marked for not being fetched again: " + realURI, e);
 		}
 		finally {
 			Closer.close(inputStream);

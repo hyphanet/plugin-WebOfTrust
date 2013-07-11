@@ -338,7 +338,7 @@ public final class XMLTransformer {
 	 * 
 	 * @param xmlInputStream The input stream containing the XML.
 	 */
-	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  {
+	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) {
 		try { // Catch import problems so we can mark the edition as parsing failed
 		// We first parse the XML without synchronization, then do the synchronized import into the WebOfTrust		
 		final ParsedIdentityXML xmlData = parseIdentityXML(xmlInputStream);
@@ -378,21 +378,21 @@ public final class XMLTransformer {
 					}
 					catch(Exception e) {
 						/* Nickname changes are not allowed, ignore them... */
-						Logger.error(this, "setNickname() failed.", e);
+						Logger.warning(this, "setNickname() failed.", e);
 					}
 	
 					try { /* Failure of context importing should not make an identity disappear, therefore we catch exceptions. */
 						identity.setContexts(xmlData.identityContexts);
 					}
 					catch(Exception e) {
-						Logger.error(this, "setContexts() failed.", e);
+						Logger.warning(this, "setContexts() failed.", e);
 					}
 	
 					try { /* Failure of property importing should not make an identity disappear, therefore we catch exceptions. */
 						identity.setProperties(xmlData.identityProperties);
 					}
 					catch(Exception e) {
-						Logger.error(this, "setProperties() failed", e);
+						Logger.warning(this, "setProperties() failed", e);
 					}
 				
 					
@@ -480,7 +480,7 @@ public final class XMLTransformer {
 					identity.storeAndCommit();
 				}
 				catch(Exception e) { 
-					mWoT.abortTrustListImport(e); // Does the rollback
+					mWoT.abortTrustListImport(e, Logger.LogLevel.WARNING); // Does the rollback
 					throw e;
 				} // try
 			} // synchronized(Persistent.transactionLock(db))
@@ -497,20 +497,26 @@ public final class XMLTransformer {
 					final long newEdition = identityURI.getEdition();
 					if(identity.getEdition() <= newEdition) {
 						Logger.normal(this, "Marking edition as parsing failed: " + identityURI);
-						identity.setEdition(newEdition);
+						try {
+							identity.setEdition(newEdition);
+						} catch (InvalidParameterException e1) {
+							// Would only happen if newEdition < current edition.
+							// We have validated the opposite.
+							throw new RuntimeException(e1);
+						}
 						identity.onParsingFailed();
 						identity.storeAndCommit();
 					} else {
 						Logger.normal(this, "Not marking edition as parsing failed, we have already fetched a new one (" + 
 								identity.getEdition() + "):" + identityURI);
 					}
+					Logger.normal(this, "Parsing identity XML failed gracefully for " + identityURI, e);
 				}
 				catch(UnknownIdentityException uie) {
 					Logger.error(this, "Fetched an unknown identity: " + identityURI);
 				}	
 			}
 			}
-			throw e;
 		}
 	}
 
