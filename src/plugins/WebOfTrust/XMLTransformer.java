@@ -7,6 +7,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -442,8 +443,14 @@ public final class XMLTransformer {
 							}
 							catch(UnknownIdentityException e) {
 								if(hasCapacity) { /* We only create trustees if the truster has capacity to rate them. */
-									trustee = new Identity(mWoT, trusteeURI, null, false);
-									trustee.storeWithoutCommit();
+									try {
+										trustee = new Identity(mWoT, trusteeURI, null, false);
+										trustee.storeWithoutCommit();
+									} catch(MalformedURLException urlEx) {
+										// Logging the exception does NOT log the actual malformed URL so we do it manually.
+										Logger.warning(this, "Received malformed identity URL: " + trusteeURI, urlEx);
+										throw urlEx;
+									}
 								}
 							}
 
