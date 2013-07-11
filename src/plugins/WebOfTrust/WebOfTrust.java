@@ -56,6 +56,7 @@ import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.api.Bucket;
@@ -2211,13 +2212,27 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * See {@link beginTrustListImport} for an explanation of the purpose of this function.
 	 * 
 	 * Aborts the import of a trust list and rolls back the current transaction.
+	 * 
+	 * @param e The exception which triggered the abort. Will be logged to the Freenet log file.
+	 * @param logLevel The {@link LogLevel} to use when logging the abort to the Freenet log file.
 	 */
-	protected void abortTrustListImport(Exception e) {
+	protected void abortTrustListImport(Exception e, LogLevel logLevel) {
 		assert(mTrustListImportInProgress);
 		mTrustListImportInProgress = false;
 		mFullScoreComputationNeeded = false;
-		Persistent.checkedRollback(mDB, this, e);
+		Persistent.checkedRollback(mDB, this, e, logLevel);
 		assert(computeAllScoresWithoutCommit()); // Test rollback.
+	}
+	
+	/**
+	 * See {@link beginTrustListImport} for an explanation of the purpose of this function.
+	 * 
+	 * Aborts the import of a trust list and rolls back the current transaction.
+	 * 
+	 * @param e The exception which triggered the abort. Will be logged to the Freenet log file with log level {@link LogLevel.ERROR}
+	 */
+	protected void abortTrustListImport(Exception e) {
+		abortTrustListImport(e, Logger.LogLevel.ERROR);
 	}
 	
 	/**
