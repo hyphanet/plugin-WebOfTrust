@@ -43,7 +43,7 @@ public final class OwnIdentity extends Identity {
 		// setEdition(0);
 		
 		if(!insertURI.isUSK() && !insertURI.isSSK())
-			throw new IllegalArgumentException("Identity URI keytype not supported: " + insertURI);
+			throw new InvalidParameterException("Identity URI keytype not supported: " + insertURI);
 		
 		// initializeTransient() was not called yet so we must use mRequestURI.getEdition() instead of this.getEdition()
 		mInsertURI = insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(mRequestURI.getEdition()).setMetaString(null);
