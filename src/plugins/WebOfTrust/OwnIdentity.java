@@ -9,7 +9,6 @@ import java.util.Date;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
-import freenet.keys.InsertableUSK;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
@@ -30,15 +29,13 @@ public final class OwnIdentity extends Identity {
 	 * Creates a new OwnIdentity with the given parameters.
 	 * 
 	 * @param insertURI A {@link FreenetURI} used to insert this OwnIdentity in Freenet
-	 * @param requestURI A {@link FreenetURI} used to fetch this OwnIdentity in Freenet
 	 * @param nickName The nickName of this OwnIdentity
 	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
 	 * @throws InvalidParameterException If a given parameter is invalid
-	 * @throws MalformedURLException if insertURI isn't a valid insert URI, or if requestURI isn't
-	 *                               a valid request URI
+	 * @throws MalformedURLException If insertURI isn't a valid insert URI.
 	 */
-	public OwnIdentity (WebOfTrust myWoT, FreenetURI insertURI, FreenetURI requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {	
-		super(myWoT, requestURI, nickName, publishTrustList);
+	public OwnIdentity (WebOfTrust myWoT, FreenetURI insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {	
+		super(myWoT, insertURI.deriveRequestURIFromInsertURI(), nickName, publishTrustList);
 		// This is already done by super()
 		// setEdition(0);
 		
@@ -48,11 +45,8 @@ public final class OwnIdentity extends Identity {
 		// initializeTransient() was not called yet so we must use mRequestURI.getEdition() instead of this.getEdition()
 		mInsertURI = insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(mRequestURI.getEdition()).setMetaString(null);
 		
-		//Check that mInsertURI really is a insert URI
-		InsertableUSK.createInsertable(mInsertURI, false);
-		
-		if(!Arrays.equals(mRequestURI.getCryptoKey(), mInsertURI.getCryptoKey()))
-			throw new RuntimeException("Request and insert URI do not fit together!");
+		// Notice: Check that mInsertURI really is a insert URI is NOT necessary, FreenetURI.deriveRequestURIFromInsertURI() did that already for us.
+		// InsertableUSK.createInsertable(mInsertURI, false);
 		
 		mLastInsertDate = new Date(0);
 
@@ -69,14 +63,13 @@ public final class OwnIdentity extends Identity {
 	 * insertURI and requestURI are converted from String to {@link FreenetURI}
 	 * 
 	 * @param insertURI A String representing the key needed to insert this OwnIdentity in Freenet
-	 * @param requestURI A String representing the key needed to fetch this OwnIdentity from Freenet
 	 * @param nickName The nickName of this OwnIdentity
 	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
 	 * @throws InvalidParameterException If a given parameter is invalid
-	 * @throws MalformedURLException If either requestURI or insertURI is not a valid FreenetURI
+	 * @throws MalformedURLException If insertURI is not a valid FreenetURI or a request URI instead of an insert URI.
 	 */
-	public OwnIdentity(WebOfTrust myWoT, String insertURI, String requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
-		this(myWoT, new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
+	public OwnIdentity(WebOfTrust myWoT, String insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
+		this(myWoT, new FreenetURI(insertURI), nickName, publishTrustList);
 	}
 	
 	/**
@@ -179,7 +172,7 @@ public final class OwnIdentity extends Identity {
 	 */
 	public final OwnIdentity clone() {
 		try {
-			OwnIdentity clone = new OwnIdentity(mWebOfTrust, getInsertURI(), getRequestURI(), getNickname(), doesPublishTrustList());
+			OwnIdentity clone = new OwnIdentity(mWebOfTrust, getInsertURI(), getNickname(), doesPublishTrustList());
 			
 			checkedActivate(4); // For performance only
 			
@@ -239,11 +232,12 @@ public final class OwnIdentity extends Identity {
 		if(mInsertURI == null)
 			throw new NullPointerException("mInsertURI==null");
 		
-		if(!Arrays.equals(mRequestURI.getCryptoKey(), mInsertURI.getCryptoKey()))
-			throw new IllegalStateException("Request and insert URI do not fit together!");
-		
-		if(mInsertURI.getEdition() != mRequestURI.getEdition())
-			throw new IllegalStateException("Insert and request editions do not match!");
+		try {
+			if(!mInsertURI.deriveRequestURIFromInsertURI().equals(mRequestURI))
+				throw new IllegalStateException("Insert and request URI do not fit together!");
+		} catch (MalformedURLException e) {
+			throw new IllegalStateException("mInsertURI is not an insert URI!");
+		}
 		
 		if(mLastInsertDate == null)
 			throw new NullPointerException("mLastInsertDate==null");
