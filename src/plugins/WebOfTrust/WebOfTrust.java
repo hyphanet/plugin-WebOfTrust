@@ -2518,7 +2518,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			try {
 				identity = getOwnIdentityByURI(requestURI);
-				if(logDEBUG) Logger.debug(this, "Tried to create an own identity with an already existing request URI.");
 				throw new InvalidParameterException("The URI you specified is already used by the own identity " +
 						identity.getNickname() + ".");
 			}
