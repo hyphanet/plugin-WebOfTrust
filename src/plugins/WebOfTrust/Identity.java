@@ -138,6 +138,12 @@ public class Identity extends Persistent implements Cloneable {
 			if(!uri.isUSK() && !uri.isSSK())
 				throw new IllegalArgumentException("URI must be USK or SSK!");
 			
+			try {
+				uri = uri.deriveRequestURIFromInsertURI();
+			} catch(MalformedURLException e) {
+				// It is already a request URI
+			}
+			
 			/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
 			mID = Base64.encode(uri.getRoutingKey());
 		}
