@@ -34,7 +34,14 @@ public final class OwnIdentity extends Identity {
 	 * @throws MalformedURLException If insertURI isn't a valid insert URI.
 	 */
 	public OwnIdentity (WebOfTrust myWoT, FreenetURI insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {	
-		super(myWoT, insertURI.deriveRequestURIFromInsertURI(), nickName, publishTrustList);
+		super(myWoT,
+				// If we don't set a document name, we will get "java.net.MalformedURLException: SSK URIs must have a document name (to avoid ambiguity)"
+				// when calling  FreenetURI.deriveRequestURIFromInsertURI().
+				// To make sure the code works, I have copypasted the URI normalization code which we have been using anyway instead of only 
+				// adding a .setDocName() - I remember that it was tricky to get code which properly normalizes ALL existing URIs which
+				// people shove into WOT
+				insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setMetaString(null).deriveRequestURIFromInsertURI(),
+				nickName, publishTrustList);
 		// This is already done by super()
 		// setEdition(0);
 		
