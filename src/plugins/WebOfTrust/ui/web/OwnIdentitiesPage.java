@@ -13,6 +13,7 @@ import plugins.WebOfTrust.util.RandomName;
 import com.db4o.ObjectSet;
 
 import freenet.clients.http.ToadletContext;
+import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -54,7 +55,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	public void make() {
 		if(request.isPartSet("RestoreIdentity")) {
 			try {
-				wot.restoreIdentity(request.getPartAsString("RequestURI", 1024), request.getPartAsString("InsertURI", 1024));
+				wot.restoreIdentity(new FreenetURI(request.getPartAsString("InsertURI", 1024)));
 				HTMLNode restoreBox = addContentBox(l10n().getString("OwnIdentitiesPage.RestoreIdentityInProgress.Header"));
 				restoreBox.addChild("p", l10n().getString("OwnIdentitiesPage.RestoreIdentityInProgress.Text"));
 			}
@@ -165,8 +166,6 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		
 		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, uri, "RestoreIdentity");
 		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "RestoreIdentity" });
-		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "RequestURI", "70", l10n().getString("OwnIdentitiesPage.RestoreIdentity.RequestURI") });
-		restoreForm.addChild("br");
 		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "InsertURI", "70", l10n().getString("OwnIdentitiesPage.RestoreIdentity.InsertURI") });
 		restoreForm.addChild("br");
 		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "RestoreIdentity", l10n().getString("OwnIdentitiesPage.RestoreIdentity.RestoreButton") });

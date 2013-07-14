@@ -31,7 +31,7 @@ public class CreateIdentityPage extends WebPageImpl {
 	public void make() {
 		if(request.isPartSet("CreateIdentity")) {
 			try {
-				wot.createOwnIdentity(request.getPartAsString("InsertURI",1024), request.getPartAsString("RequestURI",1024),
+				wot.createOwnIdentity(new FreenetURI(request.getPartAsString("InsertURI",1024)),
 										request.getPartAsString("Nickname", 1024), request.getPartAsString("PublishTrustList", 5).equals("true"),
 										null);
 				
@@ -59,9 +59,6 @@ public class CreateIdentityPage extends WebPageImpl {
 		
 		HTMLNode createForm = pr.addFormChild(boxContent, uri, "CreateIdentity");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "CreateIdentity" });
-		createForm.addChild("#", l10n().getString("CreateIdentityPage.CreateIdentityBox.RequestUri") + " : ");
-		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "RequestURI", "70", keypair[1].toString() });
-		createForm.addChild("br");
 		createForm.addChild("#", l10n().getString("CreateIdentityPage.CreateIdentityBox.InsertUri") + " : ");
 		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "InsertURI", "70", keypair[0].toString() });
 		createForm.addChild("br");
