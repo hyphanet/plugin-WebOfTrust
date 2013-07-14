@@ -195,7 +195,7 @@ public abstract class Persistent {
 		if(mDB.isStored(object))
 			mDB.delete(object);
 		else
-			Logger.error(this, "Trying to delete a inexistent object: " + object);
+			Logger.error(this, "Trying to delete a inexistent object: " + object, new RuntimeException()); // Exception added to get a stack trace
 		testDatabaseIntegrity();
 	}
 	
