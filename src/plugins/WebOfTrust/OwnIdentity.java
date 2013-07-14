@@ -4,7 +4,6 @@
 package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
-import java.util.Arrays;
 import java.util.Date;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
