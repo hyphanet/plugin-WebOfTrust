@@ -2504,25 +2504,25 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		throws MalformedURLException, InvalidParameterException {
 		
 		FreenetURI[] keypair = getPluginRespirator().getHLSimpleClient().generateKeyPair(WOT_NAME);
-		return createOwnIdentity(keypair[0].toString(), keypair[1].toString(), nickName, publishTrustList, context);
+		return createOwnIdentity(keypair[0], nickName, publishTrustList, context);
 	}
 
 	/**
 	 * @param context A context with which you want to use the identity. Null if you want to add it later.
 	 */
-	public synchronized OwnIdentity createOwnIdentity(String insertURI, String requestURI, String nickName,
+	public synchronized OwnIdentity createOwnIdentity(FreenetURI insertURI, String nickName,
 			boolean publishTrustList, String context) throws MalformedURLException, InvalidParameterException {
 		
 		synchronized(Persistent.transactionLock(mDB)) {
 			OwnIdentity identity;
 			
 			try {
-				identity = getOwnIdentityByURI(requestURI);
+				identity = getOwnIdentityByURI(insertURI);
 				throw new InvalidParameterException("The URI you specified is already used by the own identity " +
 						identity.getNickname() + ".");
 			}
 			catch(UnknownIdentityException uie) {
-				identity = new OwnIdentity(this, new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
+				identity = new OwnIdentity(this, insertURI, nickName, publishTrustList);
 				
 				if(context != null)
 					identity.addContext(context);
@@ -2566,21 +2566,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 	}
 
-	public synchronized void restoreIdentity(String requestURI, String insertURI) throws MalformedURLException, InvalidParameterException {
+	public synchronized void restoreIdentity(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
 		OwnIdentity identity;
 		synchronized(mPuzzleStore) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				FreenetURI requestFreenetURI = new FreenetURI(requestURI);
-				FreenetURI insertFreenetURI = new FreenetURI(insertURI);
-
 				long edition = 0;
-				
-				try {
-					edition = Math.max(edition, requestFreenetURI.getEdition());
-				} catch(IllegalStateException e) {
-					// The user supplied URI did not have an edition specified
-				}
 				
 				try {
 					edition = Math.max(edition, insertFreenetURI.getEdition());
@@ -2589,13 +2580,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 				
 				try {
-					Identity old = getIdentityByURI(requestURI);
+					Identity old = getIdentityByURI(insertFreenetURI);
 					
 					if(old instanceof OwnIdentity)
 						throw new InvalidParameterException("There is already an own identity with the given URI pair.");
 					
 					// We already have fetched this identity as a stranger's one. We need to update the database.
-					identity = new OwnIdentity(this, insertFreenetURI, requestFreenetURI, old.getNickname(), old.doesPublishTrustList());
+					identity = new OwnIdentity(this, insertFreenetURI, old.getNickname(), old.doesPublishTrustList());
 					
 					/* We re-fetch the most recent edition to make sure all trustees are imported */
 					edition = Math.max(edition, old.getEdition());
@@ -2643,7 +2634,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					if(logDEBUG) Logger.debug(this, "Successfully restored an already known identity from Freenet (" + identity.getNickname() + ")");
 					
 				} catch (UnknownIdentityException e) {
-					identity = new OwnIdentity(this, new FreenetURI(insertURI), new FreenetURI(requestURI), null, false);
+					identity = new OwnIdentity(this, insertFreenetURI, null, false);
 					identity.restoreEdition(edition);
 					identity.updateLastInsertDate();
 					
