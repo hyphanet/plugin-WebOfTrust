@@ -21,12 +21,12 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
-import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.IntroductionServer;
 import plugins.WebOfTrust.util.RandomName;
 
 import com.db4o.ObjectSet;
 
+import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -134,16 +134,15 @@ public final class FCPInterface implements FredPluginFCP {
     	final String identityPublishesTrustListStr = getMandatoryParameter(params, "PublishTrustList");
     	
     	final boolean identityPublishesTrustList = identityPublishesTrustListStr.equals("true") || identityPublishesTrustListStr.equals("yes");
-    	final String identityRequestURI = params.get("RequestURI");
     	final String identityInsertURI = params.get("InsertURI");
 
     	/* The constructor will throw for us if one is missing. Do not use "||" because that would lead to creation of a new URI if the
     	 * user forgot one of the URIs and the user would not get notified about that.  */
     	synchronized(mWoT) { /* Preserve the locking order to prevent future deadlocks */
-        if (identityRequestURI == null && identityInsertURI == null) {
+        if (identityInsertURI == null) {
             identity = mWoT.createOwnIdentity(identityNickname, identityPublishesTrustList, identityContext);
         } else {
-            identity = mWoT.createOwnIdentity(identityInsertURI, identityRequestURI, identityNickname, identityPublishesTrustList,
+            identity = mWoT.createOwnIdentity(new FreenetURI(identityInsertURI), identityNickname, identityPublishesTrustList,
             		identityContext);
         }
    
