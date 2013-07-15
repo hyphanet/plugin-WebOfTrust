@@ -14,6 +14,8 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 
+import freenet.keys.FreenetURI;
+
 /**
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
@@ -33,7 +35,7 @@ public class WoTTest extends DatabaseBasedTest {
 	private final String requestUriM3 = "USK@9c57T1yNOi7aeK-6lorACBcOH4cC-vgZ6Ky~-f9mcUI,anOcB7Z05g55oViCa3LcClrXNcQcmR3SBooN4qssuPs,AQACAAE/WoT/0";
 
 	public void testInitTrustTree() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
-		mWoT.createOwnIdentity(insertUriA, requestUriA, "A", true, "Test"); /* This also initializes the trust tree */
+		mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test"); /* This also initializes the trust tree */
 		
 		flushCaches();
 		assertEquals(0, mWoT.getAllNonOwnIdentities().size());
@@ -54,7 +56,7 @@ public class WoTTest extends DatabaseBasedTest {
 	
 	public void testSetTrust1() throws InvalidParameterException, MalformedURLException {
 		/* We store A manually instead of using createOwnIdentity() so that the WoT does not initialize it's trust tree (it does not have a score for itself). */
-		OwnIdentity a = new OwnIdentity(mWoT, insertUriA, requestUriA, "A", true); a.storeAndCommit();
+		OwnIdentity a = new OwnIdentity(mWoT, insertUriA, "A", true); a.storeAndCommit();
 		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		
 		// With A's trust tree not initialized, B shouldn't get a Score.
@@ -69,7 +71,7 @@ public class WoTTest extends DatabaseBasedTest {
 	
 	public void testSetTrust2() throws MalformedURLException, InvalidParameterException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException {
 
-		OwnIdentity a = mWoT.createOwnIdentity(insertUriA, requestUriA, "A", true, "Test"); /* Initializes it's trust tree */
+		OwnIdentity a = mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test"); /* Initializes it's trust tree */
 		
 		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		
@@ -140,7 +142,7 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testRemoveTrust() throws MalformedURLException, InvalidParameterException, UnknownIdentityException,
 		NotInTrustTreeException {
 		
-		OwnIdentity a = mWoT.createOwnIdentity(insertUriA, requestUriA, "A", true, "Test");
+		OwnIdentity a = mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test");
 		
 		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
@@ -211,7 +213,7 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	public void testTrustLoop() throws MalformedURLException, InvalidParameterException, NotInTrustTreeException {
-		OwnIdentity a = mWoT.createOwnIdentity(insertUriA, requestUriA, "A", true, "Test");
+		OwnIdentity a = mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test");
 		
 		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
@@ -252,8 +254,8 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	public void testOwnIndentitiesTrust() throws MalformedURLException, InvalidParameterException, NotInTrustTreeException {
-		OwnIdentity a = mWoT.createOwnIdentity(insertUriA, requestUriA, "A", true, "Test");
-		OwnIdentity b = mWoT.createOwnIdentity(insertUriB, requestUriB, "B", true, "Test");
+		OwnIdentity a = mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test");
+		OwnIdentity b = mWoT.createOwnIdentity(new FreenetURI(insertUriB), "B", true, "Test");
 
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		mWoT.setTrust(b, a, (byte)80, "Bar");
@@ -300,7 +302,7 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testStability() throws Exception {
 		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
 		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
 		// A / B are downloaded in different orders.
 		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
@@ -339,7 +341,7 @@ public class WoTTest extends DatabaseBasedTest {
 		setUp();
 		db = mWoT.getDatabase();
 		
-		o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test");
+		o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test");
 		s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit();
 		a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
 		b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
@@ -391,7 +393,7 @@ public class WoTTest extends DatabaseBasedTest {
 		//same setup routine as testStability
 		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
 		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
 		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
 		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
@@ -443,7 +445,7 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testMalicious() throws Exception {
 		//same setup routine as testStability
 			
-		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
 		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
 		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
 		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
@@ -489,7 +491,7 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testStability2() throws Exception {
 		ExtObjectContainer db = mWoT.getDatabase();
 		
-		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
 		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
 		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
 		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
@@ -546,7 +548,7 @@ public class WoTTest extends DatabaseBasedTest {
 		//same setup routine as testStability
 		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
 		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
 		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
 		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
@@ -590,7 +592,7 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testMalicious3() throws Exception {
 		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner		
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner		
 		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
 		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
 		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
@@ -633,7 +635,7 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	public void testGetGivenTrustsSortedDescendingByLastSeen() throws MalformedURLException, InvalidParameterException, InterruptedException {
-		OwnIdentity o = mWoT.createOwnIdentity(insertUriO, requestUriO, "O", true, "Test"); // Tree owner
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
 
 		Identity a = new Identity(mWoT, requestUriA, "A", true); Thread.sleep(10); a.onFetched(); a.storeAndCommit();
 		Identity b = new Identity(mWoT, requestUriB, "B", true); Thread.sleep(10); b.onFetched(); b.storeAndCommit();
