@@ -44,7 +44,7 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		final String insertUriC = "SSK@ct973RBN~JX1LmHRsZqP2w181V3gOixrun~7a6BqguE,l6xQzhaW2QtKA2MbWvjSFesx3XSLMDwCyP8qRTmOh1k,AQECAAE/WebOfTrust";
 		
 		mOwnIdentities = new ArrayList<OwnIdentity>();
-		mOwnIdentities.add(mWoT.createOwnIdentity(new FreenetURI(insertUriA), "B", true, "Test"));
+		mOwnIdentities.add(mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test"));
 		mOwnIdentities.add(mWoT.createOwnIdentity(new FreenetURI(insertUriB), "B", true, "Test"));
 		mOwnIdentities.add(mWoT.createOwnIdentity(new FreenetURI(insertUriC), "C", true, "Test"));
 		mOwnIdentities = Collections.unmodifiableList(mOwnIdentities);
