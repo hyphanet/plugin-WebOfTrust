@@ -27,8 +27,8 @@ public class ScoreTest extends DatabaseBasedTest {
 	protected void setUp() throws Exception {
 		super.setUp();
 		
-		a = new OwnIdentity(mWoT, insertUriA, requestUriA, "A", true); a.storeAndCommit();
-		b = new OwnIdentity(mWoT, insertUriB, requestUriB, "B", true); b.storeAndCommit();
+		a = new OwnIdentity(mWoT, insertUriA, "A", true); a.storeAndCommit();
+		b = new OwnIdentity(mWoT, insertUriB, "B", true); b.storeAndCommit();
 		
 		Score score = new Score(mWoT, a,b,100,1,40); score.storeWithoutCommit();
 		Persistent.checkedCommit(mWoT.getDatabase(), this);
