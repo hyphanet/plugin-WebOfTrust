@@ -33,7 +33,7 @@ public class BenchmarkTest extends DatabaseBasedTest {
 		// Random trust graph setup...
 		
 		FreenetURI[] keypair = getRandomSSKPair();
-		Identity ownIdentity = mWoT.createOwnIdentity(keypair[1].toString(), keypair[0].toString(), "Test", true, "Test");
+		Identity ownIdentity = mWoT.createOwnIdentity(keypair[1], "Test", true, "Test");
 				
 		ArrayList<Identity> identities = addRandomIdentities(identityCount);
 		identities.add(ownIdentity);
