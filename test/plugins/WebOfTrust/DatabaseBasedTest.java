@@ -88,7 +88,7 @@ public class DatabaseBasedTest extends TestCase {
 	 */
 	protected FreenetURI[] getRandomSSKPair() {
 		InsertableClientSSK ssk = InsertableClientSSK.createRandom(mRandom, "");
-		return new FreenetURI[]{ ssk.getURI(), ssk.getInsertURI() };
+		return new FreenetURI[]{ ssk.getInsertURI(), ssk.getURI() };
 	}
 	
 	/**
