@@ -405,7 +405,7 @@ public final class XMLTransformer {
 						boolean hasCapacity = false;
 						
 						// TODO: getBestScore/getBestCapacity should always yield a positive result because we store a positive score object for an OwnIdentity
-						// upon creation. The only case where it could not exist might be restoreIdentity() ... check that. If it is created there as well,
+						// upon creation. The only case where it could not exist might be restoreOwnIdentity() ... check that. If it is created there as well,
 						// remove the additional check here.
 						if(identity instanceof OwnIdentity) {
 							// Importing of OwnIdentities is always allowed

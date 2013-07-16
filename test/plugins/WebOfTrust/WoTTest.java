@@ -669,11 +669,11 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	/**
-	 * Test for {@link restoreIdentity}: Using a request URI instead of an insert URI. Restoring should fail. 
+	 * Test for {@link restoreOwnIdentity}: Using a request URI instead of an insert URI. Restoring should fail. 
 	 */
-	public void testRestoreIdentity_URIMixup() throws InvalidParameterException {
+	public void testRestoreOwnIdentity_URIMixup() throws InvalidParameterException {
 		try {
-			mWoT.restoreIdentity(new FreenetURI(requestUriO));
+			mWoT.restoreOwnIdentity(new FreenetURI(requestUriO));
 			fail("Restoring an identity with request URI instead of insert URI should fail!");
 		} catch(MalformedURLException e) {
 			// Success.
@@ -681,12 +681,12 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	/**
-	 * Test for {@link restoreIdentity}: The identity to restore already exists as own identity. Restoring should fail.
+	 * Test for {@link restoreOwnIdentity}: The identity to restore already exists as own identity. Restoring should fail.
 	 */
-	public void testRestoreIdentity_AlreadyExisting() throws MalformedURLException, InvalidParameterException {
+	public void testRestoreOwnIdentity_AlreadyExisting() throws MalformedURLException, InvalidParameterException {
 		mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
 		try {
-			mWoT.restoreIdentity(new FreenetURI(insertUriO));
+			mWoT.restoreOwnIdentity(new FreenetURI(insertUriO));
 			fail("Restoring an already existing own identity should fail!");
 		} catch(InvalidParameterException e) {
 			// Success.
@@ -694,12 +694,12 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	/**
-	 * Test for {@link restoreIdentity}: No identity with the given ID exists.
+	 * Test for {@link restoreOwnIdentity}: No identity with the given ID exists.
 	 */
-	public void testRestoreIdentity_Inexistent() throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
+	public void testRestoreOwnIdentity_Inexistent() throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
 		final FreenetURI insertURI = new FreenetURI("USK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/WebOfTrust/10");
 		
-		mWoT.restoreIdentity(insertURI);
+		mWoT.restoreOwnIdentity(insertURI);
 		final OwnIdentity restored = mWoT.getOwnIdentityByURI(insertURI);
 		
 		assertEquals("The edition of the supplied URI can be used because the owner of the identity supplied it.", insertURI.getEdition(), restored.getEdition());
@@ -709,7 +709,7 @@ public class WoTTest extends DatabaseBasedTest {
 		
 		assertEquals("The identity was not fetched yet so the last-fetched date should be zero.", new Date(0), restored.getLastFetchedDate());
 		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
-				(CurrentTimeUTC.getInMillis() - restored.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreIdentity() and this line.
+				(CurrentTimeUTC.getInMillis() - restored.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
 		
 		assertEquals("We cannot know the nickname yet", null, restored.getNickname());
 		assertEquals("We should assume the identity does not insert a trust list for as long as we don't know", false, restored.doesPublishTrustList());
@@ -723,7 +723,7 @@ public class WoTTest extends DatabaseBasedTest {
 	/**
 	 * - The identity to restore already exists as a non-own identity. The non-own one should be replaced. The new own-one should inherit the data of the old non-own one.
 	 */
-	public void testRestoreIdentity_ExistingAsNonOwnIdentityAlready() {
+	public void testRestoreOwnIdentity_ExistingAsNonOwnIdentityAlready() {
 		 throw new UnsupportedOperationException("Not implemented yet!");
 	}
 }

@@ -53,14 +53,14 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	}
 
 	public void make() {
-		if(request.isPartSet("RestoreIdentity")) {
+		if(request.isPartSet("RestoreOwnIdentity")) {
 			try {
-				wot.restoreIdentity(new FreenetURI(request.getPartAsString("InsertURI", 1024)));
-				HTMLNode restoreBox = addContentBox(l10n().getString("OwnIdentitiesPage.RestoreIdentityInProgress.Header"));
-				restoreBox.addChild("p", l10n().getString("OwnIdentitiesPage.RestoreIdentityInProgress.Text"));
+				wot.restoreOwnIdentity(new FreenetURI(request.getPartAsString("InsertURI", 1024)));
+				HTMLNode restoreBox = addContentBox(l10n().getString("OwnIdentitiesPage.RestoreOwnIdentityInProgress.Header"));
+				restoreBox.addChild("p", l10n().getString("OwnIdentitiesPage.RestoreOwnIdentityInProgress.Text"));
 			}
 			catch(Exception e) {
-				addErrorBox(l10n().getString("OwnIdentitiesPage.RestoreIdentityFailed"), e);
+				addErrorBox(l10n().getString("OwnIdentitiesPage.RestoreOwnIdentityFailed"), e);
 			}
 		}
 		synchronized(wot) {
@@ -161,13 +161,13 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	 * Makes the form used to restore an OwnIdentity from Freenet.
 	 */
 	private void makeRestoreOwnIdentityForm() {
-		HTMLNode restoreBoxContent = addContentBox(l10n().getString("OwnIdentitiesPage.RestoreIdentity.Header"));
-		restoreBoxContent.addChild("p", l10n().getString("OwnIdentitiesPage.RestoreIdentity.Text"));
+		HTMLNode restoreBoxContent = addContentBox(l10n().getString("OwnIdentitiesPage.RestoreOwnIdentity.Header"));
+		restoreBoxContent.addChild("p", l10n().getString("OwnIdentitiesPage.RestoreOwnIdentity.Text"));
 		
-		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, uri, "RestoreIdentity");
-		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "RestoreIdentity" });
-		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "InsertURI", "70", l10n().getString("OwnIdentitiesPage.RestoreIdentity.InsertURI") });
+		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, uri, "RestoreOwnIdentity");
+		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "RestoreOwnIdentity" });
+		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "InsertURI", "70", l10n().getString("OwnIdentitiesPage.RestoreOwnIdentity.InsertURI") });
 		restoreForm.addChild("br");
-		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "RestoreIdentity", l10n().getString("OwnIdentitiesPage.RestoreIdentity.RestoreButton") });
+		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "RestoreOwnIdentity", l10n().getString("OwnIdentitiesPage.RestoreOwnIdentity.RestoreButton") });
 	}
 }

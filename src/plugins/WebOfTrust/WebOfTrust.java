@@ -2586,7 +2586,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 	}
 
-	public synchronized void restoreIdentity(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
+	public synchronized void restoreOwnIdentity(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
 		OwnIdentity identity;
 		synchronized(mPuzzleStore) {
 		synchronized(Persistent.transactionLock(mDB)) {
@@ -2639,10 +2639,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// Update all given trusts
 					for(Trust givenTrust : getGivenTrusts(old)) {
 						// TODO: Deleting the trust object right here would save us N score recalculations for N trust objects and probably make
-						// restoreIdentity() almost twice as fast:
+						// restoreOwnIdentity() almost twice as fast:
 						// deleteWithoutCommit() calls updateScoreWithoutCommit() per trust value, setTrustWithoutCommit() also does that
 						// However, the current approach of letting deleteWithoutCommit() do all the deletions is more clean. Therefore,
-						// we should introduce the db.delete(givenTrust)  hereonly after having a unit test for restoreIdentity().
+						// we should introduce the db.delete(givenTrust)  hereonly after having a unit test for restoreOwnIdentity().
 						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 					}
 		
