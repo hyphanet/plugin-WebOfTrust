@@ -2599,7 +2599,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// The user supplied URI did not have an edition specified
 				}
 				
-				try {
+				try { // Try replacing an existing non-own version of the identity with an OwnIdentity
 					Identity old = getIdentityByURI(insertFreenetURI);
 					
 					if(old instanceof OwnIdentity)
@@ -2653,7 +2653,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					if(logDEBUG) Logger.debug(this, "Successfully restored an already known identity from Freenet (" + identity.getNickname() + ")");
 					
-				} catch (UnknownIdentityException e) {
+				} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
 					identity = new OwnIdentity(this, insertFreenetURI, null, false);
 					identity.restoreEdition(edition);
 					
