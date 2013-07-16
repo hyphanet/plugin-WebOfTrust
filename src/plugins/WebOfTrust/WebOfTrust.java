@@ -2645,11 +2645,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						// we should introduce the db.delete(givenTrust)  hereonly after having a unit test for restoreIdentity().
 						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 					}
-					
-					finishTrustListImport();
 		
 					// Remove the old identity and all objects associated with it.
 					deleteWithoutCommit(old);
+					
+					finishTrustListImport();
 					
 					if(logDEBUG) Logger.debug(this, "Successfully restored an already known identity from Freenet (" + identity.getNickname() + ")");
 					
