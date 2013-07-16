@@ -89,6 +89,11 @@ public final class OwnIdentity extends Identity {
 		if(getCurrentEditionFetchState() == FetchState.NotFetched)
 			return false;
 		
+		// TODO: Instead of only deciding by date whether the current edition was inserted, we should store both the date of
+		// the last insert and the date of the next scheduled insert AND the reason for the scheduled insert.
+		// There should be different reasons because some changes are not as important as others so we can have larger
+		// delays for unimportant reasons.
+		
 		return (getLastChangeDate().after(getLastInsertDate()) ||
 				(CurrentTimeUTC.getInMillis() - getLastInsertDate().getTime()) > IdentityInserter.MAX_UNCHANGED_TINE_BEFORE_REINSERT); 
 	}
@@ -135,6 +140,12 @@ public final class OwnIdentity extends Identity {
 		setEdition(edition);
 		checkedActivate(1);
 		mCurrentEditionFetchState = FetchState.NotFetched;
+		
+		// This is not really necessary because needsInsert() returns false if mCurrentEditionFetchState == NotFetched
+		// However, we still do it because the user might have specified URIs with old edition numbers: Then the IdentityInserter would
+		// start insertion the old trust lists immediately after the first one was fetched. With the last insert date being set to current
+		// time, this is less likely to happen because the identity inserter has a minimal delay between last insert and next insert.
+		updateLastInsertDate();
 	}
 
 	/**

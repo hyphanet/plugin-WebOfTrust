@@ -2656,9 +2656,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				} catch (UnknownIdentityException e) {
 					identity = new OwnIdentity(this, insertFreenetURI, null, false);
 					identity.restoreEdition(edition);
-					identity.updateLastInsertDate();
-					
-					// TODO: Instead of deciding by date whether the current edition was inserted, we should probably decide via a boolean.
 					
 					// Store the new identity
 					identity.storeWithoutCommit();
@@ -2666,12 +2663,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					if(logDEBUG) Logger.debug(this, "Successfully restored not-yet-known identity from Freenet (" + identity.getRequestURI() + ")");
 				}
-				
-				// This is not really necessary because OwnIdenity.needsInsert() returns false if currentEditionWasFetched() is false.
-				// However, we still do it because the user might have specified URIs with old edition numbers: Then the IdentityInserter would
-				// start insertion the old trust lists immediately after the first one was fetched. With the last insert date being set to current
-				// time, this is less likely to happen because the identity inserter has a minimal delay between last insert and next insert.
-				identity.updateLastInsertDate();
 				
 				mFetcher.storeStartFetchCommandWithoutCommit(identity);
 				Persistent.checkedCommit(mDB, this);
