@@ -1612,8 +1612,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	/**
 	 * You have to lock the WoT and the IntroductionPuzzleStore before calling this function.
 	 * @param identity
-	 * @deprecated FIXME TODO: It probably leaks the deleted Identity because the {@link IdentityFetcher} stores object references to it and we don't run() the IdentityFetcher. See https://bugs.freenetproject.org/view.php?id=5820
-	 * @deprecated Also, when deleting OwnIdentity objects, we should instead replace them with a normal Identity object
+	 * @deprecated When deleting OwnIdentity objects, we should instead replace them with a normal Identity object
 	 * @deprecated Further, deleting all associated trust values is dangerous because they might be owned by other OwnIdentity objects so we would modify their trust list. 
 	 */
 	@Deprecated
