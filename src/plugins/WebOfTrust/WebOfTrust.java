@@ -1618,7 +1618,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 */
 	@Deprecated
 	private void deleteWithoutCommit(Identity identity) {
+		// We want to use beginTrustListImport, finishTrustListImport / abortTrustListImport.
+		// If the caller already handles that for us though, we should not call those function again.
+		// So we check whether the caller already started an import.
+		boolean trustListImportWasInProgress = mTrustListImportInProgress;
+		
 		try {
+			if(!trustListImportWasInProgress)
+				beginTrustListImport();
+			
 			if(logDEBUG) Logger.debug(this, "Deleting identity " + identity + " ...");
 			
 			if(logDEBUG) Logger.debug(this, "Deleting received scores...");
@@ -1642,7 +1650,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				// We call computeAllScores anyway so we do not use removeTrustWithoutCommit()
 			}
 			
-			computeAllScoresWithoutCommit();
+			mFullScoreComputationNeeded = true; // finishTrustListImport will call computeAllScoresWithoutCommit for us.
 
 			if(logDEBUG) Logger.debug(this, "Deleting associated introduction puzzles ...");
 			mPuzzleStore.onIdentityDeletion(identity);
@@ -1660,8 +1668,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 			if(logDEBUG) Logger.debug(this, "Deleting the identity...");
 			identity.deleteWithoutCommit();
+			
+			if(!trustListImportWasInProgress)
+				finishTrustListImport();
 		}
 		catch(RuntimeException e) {
+			if(!trustListImportWasInProgress)
+				abortTrustListImport(e);
+			
 			Persistent.checkedRollbackAndThrow(mDB, this, e);
 		}
 	}
