@@ -2687,6 +2687,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 				
 				mFetcher.storeStartFetchCommandWithoutCommit(identity);
+				
+				// This function messes with the trust graph manually so it is a good idea to check whether it is intact afterwards.
+				assert(computeAllScoresWithoutCommit());
+				
 				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
