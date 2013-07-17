@@ -2599,26 +2599,26 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 				
 				try { // Try replacing an existing non-own version of the identity with an OwnIdentity
-					Identity old = getIdentityByURI(insertFreenetURI);
+					Identity oldIdentity = getIdentityByURI(insertFreenetURI);
 					
-					if(old instanceof OwnIdentity)
+					if(oldIdentity instanceof OwnIdentity)
 						throw new InvalidParameterException("There is already an own identity with the given URI pair.");
 					
 					// We already have fetched this identity as a stranger's one. We need to update the database.
-					identity = new OwnIdentity(this, insertFreenetURI, old.getNickname(), old.doesPublishTrustList());
+					identity = new OwnIdentity(this, insertFreenetURI, oldIdentity.getNickname(), oldIdentity.doesPublishTrustList());
 					
 					/* We re-fetch the most recent edition to make sure all trustees are imported */
-					edition = Math.max(edition, old.getEdition());
+					edition = Math.max(edition, oldIdentity.getEdition());
 					identity.restoreEdition(edition);
 				
-					identity.setContexts(old.getContexts());
-					identity.setProperties(old.getProperties());
+					identity.setContexts(oldIdentity.getContexts());
+					identity.setProperties(oldIdentity.getProperties());
 					
 					identity.storeWithoutCommit();
 					initTrustTreeWithoutCommit(identity);
 	
 					// Update all received trusts
-					for(Trust oldReceivedTrust : getReceivedTrusts(old)) {
+					for(Trust oldReceivedTrust : getReceivedTrusts(oldIdentity)) {
 						Trust newReceivedTrust = new Trust(this, oldReceivedTrust.getTruster(), identity,
 								oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
 						
@@ -2628,7 +2628,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					}
 		
 					// Update all received scores
-					for(Score oldScore : getScores(old)) {
+					for(Score oldScore : getScores(oldIdentity)) {
 						Score newScore = new Score(this, oldScore.getTruster(), identity, oldScore.getScore(),
 								oldScore.getRank(), oldScore.getCapacity());
 						
@@ -2640,7 +2640,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					beginTrustListImport();
 					
 					// Update all given trusts
-					for(Trust givenTrust : getGivenTrusts(old)) {
+					for(Trust givenTrust : getGivenTrusts(oldIdentity)) {
 						// TODO: Deleting the trust object right here would save us N score recalculations for N trust objects and probably make
 						// restoreOwnIdentity() almost twice as fast:
 						// deleteWithoutCommit() calls updateScoreWithoutCommit() per trust value, setTrustWithoutCommit() also does that
@@ -2650,7 +2650,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					}
 		
 					// Remove the old identity and all objects associated with it.
-					deleteWithoutCommit(old);
+					deleteWithoutCommit(oldIdentity);
 					
 					finishTrustListImport();
 					
