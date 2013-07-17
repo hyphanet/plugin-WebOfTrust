@@ -2622,6 +2622,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						Trust newReceivedTrust = new Trust(this, oldReceivedTrust.getTruster(), identity,
 								oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
 						
+						assert(newReceivedTrust.equals(oldReceivedTrust));
+						
 						newReceivedTrust.storeWithoutCommit();
 					}
 		
@@ -2629,6 +2631,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					for(Score oldScore : getScores(old)) {
 						Score newScore = new Score(this, oldScore.getTruster(), identity, oldScore.getScore(),
 								oldScore.getRank(), oldScore.getCapacity());
+						
+						assert(newScore.equals(oldScore));
 						
 						newScore.storeWithoutCommit();
 					}
