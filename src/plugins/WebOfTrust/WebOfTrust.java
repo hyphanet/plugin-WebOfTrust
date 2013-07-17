@@ -1609,13 +1609,22 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 
 	
-	/**
+	/** 
+	 * DO NOT USE THIS FUNCTION FOR DELETING OWN IDENTITIES UPON USER REQUEST!
+	 * IN FACT BE VERY CAREFUL WHEN USING IT FOR ANYTHING FOR THE FOLLOWING REAONS:
+	 * - This function deletes ALL given and received trust values of the given identity. This modifies the trust list of the trusters against their will.
+	 * - Especially it might be an information leak if the trust values of other OwnIdentities are deleted!
+	 * - If WOT one day is designed to be used by many different users at once, the deletion of other OwnIdentity's trust values would even be corruption.
+	 * 
+	 * The intended purpose of this function is:
+	 * - To specify which objects have to be dealt with when messing with storage of an identity.
+	 * - To be able to do database object leakage tests: Many classes have a deleteWithoutCommit function and there are valid usecases for them.
+	 *   However, the implementations of those functions might cause leaks by forgetting to delete certain object members.
+	 *   If you call this function for ALL identities in a database, EVERYTHING should be deleted and the database SHOULD be empty.
+	 *   You then can check whether the database actually IS empty to test for leakage.
+	 * 
 	 * You have to lock the WoT and the IntroductionPuzzleStore before calling this function.
-	 * @param identity
-	 * @deprecated When deleting OwnIdentity objects, we should instead replace them with a normal Identity object
-	 * @deprecated Further, deleting all associated trust values is dangerous because they might be owned by other OwnIdentity objects so we would modify their trust list. 
 	 */
-	@Deprecated
 	private void deleteWithoutCommit(Identity identity) {
 		// We want to use beginTrustListImport, finishTrustListImport / abortTrustListImport.
 		// If the caller already handles that for us though, we should not call those function again.
