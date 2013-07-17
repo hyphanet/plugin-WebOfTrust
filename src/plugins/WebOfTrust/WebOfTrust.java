@@ -2626,7 +2626,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					identity.storeWithoutCommit();
 					initTrustTreeWithoutCommit(identity);
 	
-					// Update all received trusts
+					// Copy all received trusts.
+					// We don't have to modify them because they are user-assigned values and the assignment
+					// of the user does not change just because the type of the identity changes.
 					for(Trust oldReceivedTrust : getReceivedTrusts(oldIdentity)) {
 						Trust newReceivedTrust = new Trust(this, oldReceivedTrust.getTruster(), identity,
 								oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
@@ -2636,7 +2638,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						newReceivedTrust.storeWithoutCommit();
 					}
 		
-					// Update all received scores
+					// Copy all received scores.
+					// We don't have to modify them because the rating of the identity from the perspective of a
+					// different own identity should NOT be dependent upon whether it is an own identity or not.
 					for(Score oldScore : getScores(oldIdentity)) {
 						Score newScore = new Score(this, oldScore.getTruster(), identity, oldScore.getScore(),
 								oldScore.getRank(), oldScore.getCapacity());
@@ -2645,6 +2649,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						
 						newScore.storeWithoutCommit();
 					}
+					
+					// What we do NOT have to deal with is the given scores of the old identity:
+					// Given scores do NOT exist for non-own identities, so there are no old ones to update.
+					// Of cause there WILL be scores because it is an own identity now.
+					// They will be created automatically when updating the given trusts
+					// - so thats what we will do now.
 					
 					beginTrustListImport();
 					
