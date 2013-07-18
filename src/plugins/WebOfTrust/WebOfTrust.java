@@ -2114,7 +2114,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private synchronized void initTrustTreeWithoutCommit(OwnIdentity identity) throws DuplicateScoreException {
 		try {
 			getScore(identity, identity);
-			Logger.error(this, "initTrusTree called even though there is already one for " + identity);
+			Logger.error(this, "initTrustTreeWithoutCommit called even though there is already one for " + identity);
 			return;
 		} catch (NotInTrustTreeException e) {
 			final Score score = new Score(this, identity, identity, Integer.MAX_VALUE, 0, 100);
