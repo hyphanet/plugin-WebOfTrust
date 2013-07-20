@@ -2657,6 +2657,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						
 						newReceivedTrust.storeWithoutCommit();
 					}
+					
+					assert(getReceivedTrusts(oldIdentity).size() == 0);
 		
 					// Copy all received scores.
 					// We don't have to modify them because the rating of the identity from the perspective of a
@@ -2672,6 +2674,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						
 						newScore.storeWithoutCommit();
 					}
+					
+					assert(getScores(oldIdentity).size() == 0);
 					
 					// What we do NOT have to deal with is the given scores of the old identity:
 					// Given scores do NOT exist for non-own identities, so there are no old ones to update.
