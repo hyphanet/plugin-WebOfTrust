@@ -2650,7 +2650,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						Trust newReceivedTrust = new Trust(this, oldReceivedTrust.getTruster(), identity,
 								oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
 						
-						assert(newReceivedTrust.equals(oldReceivedTrust));
+						// The following assert() cannot be added because it would always fail:
+						// It would implicitly trigger oldIdentity.equals(identity) which is not the case:
+						// Certain member values such as the edition might not be equal.
+						/* assert(newReceivedTrust.equals(oldReceivedTrust)); */
 						
 						newReceivedTrust.storeWithoutCommit();
 					}
@@ -2662,7 +2665,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						Score newScore = new Score(this, oldScore.getTruster(), identity, oldScore.getScore(),
 								oldScore.getRank(), oldScore.getCapacity());
 						
-						assert(newScore.equals(oldScore));
+						// The following assert() cannot be added because it would always fail:
+						// It would implicitly trigger oldIdentity.equals(identity) which is not the case:
+						// Certain member values such as the edition might not be equal.
+						/* assert(newScore.equals(oldScore)); */
 						
 						newScore.storeWithoutCommit();
 					}
