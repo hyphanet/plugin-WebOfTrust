@@ -2621,6 +2621,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					if(oldIdentity instanceof OwnIdentity)
 						throw new InvalidParameterException("There is already an own identity with the given URI pair.");
 					
+					Logger.normal(this, "Restoring an already known identity from Freenet: " + oldIdentity);
+					
 					// We already have fetched this identity as a stranger's one. We need to update the database.
 					identity = new OwnIdentity(this, insertFreenetURI, oldIdentity.getNickname(), oldIdentity.doesPublishTrustList());
 					
@@ -2681,17 +2683,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					finishTrustListImport();
 					
-					if(logDEBUG) Logger.debug(this, "Successfully restored an already known identity from Freenet (" + identity.getNickname() + ")");
 					
 				} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
 					identity = new OwnIdentity(this, insertFreenetURI, null, false);
+					
+					Logger.normal(this, "Restoring not-yet-known identity from Freenet: " + identity);
+					
 					identity.restoreEdition(edition);
 					
 					// Store the new identity
 					identity.storeWithoutCommit();
 					initTrustTreeWithoutCommit(identity);
-					
-					if(logDEBUG) Logger.debug(this, "Successfully restored not-yet-known identity from Freenet (" + identity.getRequestURI() + ")");
 				}
 				
 				mFetcher.storeStartFetchCommandWithoutCommit(identity);
