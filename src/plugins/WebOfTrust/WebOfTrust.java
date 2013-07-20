@@ -2655,6 +2655,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						// Certain member values such as the edition might not be equal.
 						/* assert(newReceivedTrust.equals(oldReceivedTrust)); */
 						
+						oldReceivedTrust.deleteWithoutCommit();
 						newReceivedTrust.storeWithoutCommit();
 					}
 					
@@ -2672,6 +2673,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						// Certain member values such as the edition might not be equal.
 						/* assert(newScore.equals(oldScore)); */
 						
+						oldScore.deleteWithoutCommit();
 						newScore.storeWithoutCommit();
 					}
 					
@@ -2685,20 +2687,34 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					// Update all given trusts
 					for(Trust givenTrust : getGivenTrusts(oldIdentity)) {
-						// TODO: Deleting the trust object right here would save us N score recalculations for N trust objects and probably make
-						// restoreOwnIdentity() almost twice as fast:
-						// deleteWithoutCommit() calls updateScoreWithoutCommit() per trust value, setTrustWithoutCommit() also does that
-						// However, the current approach of letting deleteWithoutCommit() do all the deletions is more clean. Therefore,
-						// we should introduce the db.delete(givenTrust)  hereonly after having a unit test for restoreOwnIdentity().
+						// TODO: Instead of using the regular removeTrustWithoutCommit on all trust values, we could:
+						// - manually delete the old Trust objects from the database
+						// - manually store the new trust objects
+						// - Realize that only the trust graph of the restored identity needs to be updated and write an optimized version
+						// of setTrustWithoutCommit which deals with that.
+						// But before we do that, we should first do the existing possible optimization of removeTrustWithoutCommit:
+						// To get rid of removeTrustWithoutCommit always triggering a FULL score recomputation and instead make
+						// it only update the parts of the trust graph which are affected.
+						// Maybe the optimized version is fast enough that we don't have to do the optimization which this TODO suggests.
+						removeTrustWithoutCommit(givenTrust);
 						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 					}
+					
+					// We do not call finishTrustListImport() now: It might trigger execution of computeAllScoresWithoutCommit
+					// which would re-create scores of the old identity. We later call it AFTER deleting the old identity.
+					/* finishTrustListImport(); */
 		
-					// Remove the old identity and all objects associated with it.
-					deleteWithoutCommit(oldIdentity);
+					mPuzzleStore.onIdentityDeletion(oldIdentity);
+					mFetcher.storeAbortFetchCommandWithoutCommit(oldIdentity);
+					// NOTICE:
+					// If the fetcher did store a db4o object reference to the identity, we would have to trigger command processing
+					// now to prevent leakage of the identity object.
+					// But the fetcher does NOT store a db4o object reference to the given identity. It stores its ID as String only.
+					// Therefore, it is OK that the fetcher does not immediately process the commands now.
+					
+					oldIdentity.deleteWithoutCommit();
 					
 					finishTrustListImport();
-					
-					
 				} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
 					identity = new OwnIdentity(this, insertFreenetURI, null, false);
 					
