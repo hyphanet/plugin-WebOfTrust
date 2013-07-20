@@ -2623,6 +2623,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					Logger.normal(this, "Restoring an already known identity from Freenet: " + oldIdentity);
 					
+					// Normally, one would expect beginTrustListImport() to happen close to the actual trust list changes later on in this function.
+					// But beginTrustListImport() contains an assert(computeAllScoresWithoutCommit()) and that call to the score computation reference
+					// implementation will fail if two identities with the same ID exist.
+					// This would be the case later on - we cannot delete the non-own version of the OwnIdentity before we modified the trust graph
+					// but we must also store the own version to be able to modify the trust graph.
+					beginTrustListImport();
+					
 					// We already have fetched this identity as a stranger's one. We need to update the database.
 					identity = new OwnIdentity(this, insertFreenetURI, oldIdentity.getNickname(), oldIdentity.doesPublishTrustList());
 					
@@ -2665,8 +2672,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// Of cause there WILL be scores because it is an own identity now.
 					// They will be created automatically when updating the given trusts
 					// - so thats what we will do now.
-					
-					beginTrustListImport();
 					
 					// Update all given trusts
 					for(Trust givenTrust : getGivenTrusts(oldIdentity)) {
