@@ -2224,6 +2224,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * You MUST create a database transaction by synchronizing on Persistent.transactionLock(db).
 	 */
 	protected void beginTrustListImport() {
+		Logger.minor(this, "beginTrustListImport()");
+		
 		if(mTrustListImportInProgress) {
 			abortTrustListImport(new RuntimeException("There was already a trust list import in progress!"));
 			mFullScoreComputationNeeded = true;
@@ -2245,6 +2247,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @param logLevel The {@link LogLevel} to use when logging the abort to the Freenet log file.
 	 */
 	protected void abortTrustListImport(Exception e, LogLevel logLevel) {
+		Logger.minor(this, "abortTrustListImport()");
+		
 		assert(mTrustListImportInProgress);
 		mTrustListImportInProgress = false;
 		mFullScoreComputationNeeded = false;
@@ -2271,6 +2275,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Does NOT commit the transaction, you must do this.
 	 */
 	protected void finishTrustListImport() {
+		Logger.minor(this, "finishTrustListImport()");
+		
 		if(!mTrustListImportInProgress) {
 			Logger.error(this, "There was no trust list import in progress!");
 			return;
@@ -2595,6 +2601,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 
 	public synchronized void restoreOwnIdentity(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
+		Logger.normal(this, "restoreOwnIdentity(): Starting... ");
+		
 		OwnIdentity identity;
 		synchronized(mPuzzleStore) {
 		synchronized(Persistent.transactionLock(mDB)) {
@@ -2699,6 +2707,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 		}
 		}
+		
+		Logger.normal(this, "restoreOwnIdentity(): Finished.");
 	}
 
 	public synchronized void setTrust(String ownTrusterID, String trusteeID, byte value, String comment)
