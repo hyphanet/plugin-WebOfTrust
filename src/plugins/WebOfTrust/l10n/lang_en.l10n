@@ -1,6 +1,8 @@
 Common.Never=Never
 Common.Yes=Yes
 Common.No=No
+Common.UnknownIdentityExceptionTitle=Unknown identity
+Common.UnknownIdentityExceptionDescription=The given identity does not exist.
 CommonWebUtils.daysAgo=${days}d ago
 CommonWebUtils.daysHoursAgo=${days}d ${hours}h ago
 CommonWebUtils.hoursAgo=${hours}h ago
