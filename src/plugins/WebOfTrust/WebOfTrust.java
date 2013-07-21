@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Random;
 
+import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.Score.ScoreID;
 import plugins.WebOfTrust.Trust.TrustID;
@@ -2598,6 +2599,170 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 			}
 		}
+	}
+	
+	/**
+	 * This "deletes" an {@link OwnIdentity} by replacing it with an {@link Identity}.
+	 * 
+	 * The {@link OwnIdentity} is not deleted because this would be a security issue:
+	 * If other {@link OwnIdentity}s have assigned a trust value to it, the trust value would be gone if there is no {@link Identity} object to be the target
+	 * 
+	 * @param id The {@link Identity.IdentityID} of the identity.
+	 * @throws UnknownIdentityException If there is no {@link OwnIdentity} with the given ID. Also thrown if a non-own identity exists with the given ID.
+	 */
+	public synchronized void deleteOwnIdentity(String id) throws UnknownIdentityException {
+		Logger.normal(this, "deleteOwnIdentity(): Starting... ");
+		
+		// TODO FIXME XXX: What about synchronization of the IdentityFetcher?
+		synchronized(mPuzzleStore) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			final OwnIdentity oldIdentity = getOwnIdentityByID(id);
+			
+			try {
+				Logger.normal(this, "Deleting an OwnIdentity by converting it to a non-own Identity: " + oldIdentity);
+
+				// We don't need any score computations to happen (explanation will follow below) so we don't need the following: 
+				/* beginTrustListImport(); */
+
+				// This function messes with the score graph manually so it is a good idea to check whether it is intact before and afterwards.
+				assert(computeAllScoresWithoutCommit());
+
+				final Identity newIdentity;
+				
+				try {
+					newIdentity = new Identity(this, oldIdentity.getRequestURI(), oldIdentity.getNickname(), oldIdentity.doesPublishTrustList());
+				} catch(MalformedURLException e) { // The data was taken from the OwnIdentity so this shouldn't happen
+					throw new RuntimeException(e);
+				} catch (InvalidParameterException e) { // The data was taken from the OwnIdentity so this shouldn't happen
+					throw new RuntimeException(e);
+				}
+				
+				newIdentity.setContexts(oldIdentity.getContexts());
+				newIdentity.setProperties(oldIdentity.getProperties());
+				
+				try {
+					newIdentity.setEdition(oldIdentity.getEdition());
+				} catch (InvalidParameterException e) { // The data was taken from old identity so this shouldn't happen
+					throw new RuntimeException(e);
+				}
+				
+				// In theory we do not need to re-fetch the current trust list edition:
+				// The trust list of an own identity is always stored completely in the database, i.e. all trustees exist.
+				// HOWEVER if the user had used the restoreOwnIdentity feature and then used this function, it might be the case that
+				// the current edition of the old OwndIdentity was not fetched yet.
+				// So we set the fetch state to FetchState.Fetched if the oldIdentity's fetch state was like that as well.
+				if(oldIdentity.getCurrentEditionFetchState() == FetchState.Fetched)
+					newIdentity.onFetched();
+				// An else to set the fetch state to FetchState.NotFetched is not necessary, newIdentity.setEdition() did that already.
+
+				newIdentity.storeWithoutCommit();
+
+				// Copy all received trusts.
+				// We don't have to modify them because they are user-assigned values and the assignment
+				// of the user does not change just because the type of the identity changes.
+				for(Trust oldReceivedTrust : getReceivedTrusts(oldIdentity)) {
+					Trust newReceivedTrust;
+					try {
+						newReceivedTrust = new Trust(this, oldReceivedTrust.getTruster(), newIdentity,
+								oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
+					} catch (InvalidParameterException e) { // The data was taken from the old Trust so this shouldn't happen
+						throw new RuntimeException(e);
+					}
+
+					// The following assert() cannot be added because it would always fail:
+					// It would implicitly trigger oldIdentity.equals(identity) which is not the case:
+					// Certain member values such as the edition might not be equal.
+					/* assert(newReceivedTrust.equals(oldReceivedTrust)); */
+
+					oldReceivedTrust.deleteWithoutCommit();
+					newReceivedTrust.storeWithoutCommit();
+				}
+
+				assert(getReceivedTrusts(oldIdentity).size() == 0);
+
+				// Copy all received scores.
+				// We don't have to modify them because the rating of the identity from the perspective of a
+				// different own identity should NOT be dependent upon whether it is an own identity or not.
+				for(Score oldScore : getScores(oldIdentity)) {
+					Score newScore = new Score(this, oldScore.getTruster(), newIdentity, oldScore.getScore(),
+							oldScore.getRank(), oldScore.getCapacity());
+
+					// The following assert() cannot be added because it would always fail:
+					// It would implicitly trigger oldIdentity.equals(identity) which is not the case:
+					// Certain member values such as the edition might not be equal.
+					/* assert(newScore.equals(oldScore)); */
+
+					oldScore.deleteWithoutCommit();
+					newScore.storeWithoutCommit();
+				}
+
+				assert(getScores(oldIdentity).size() == 0);
+
+				// Delete all given scores:
+				// Non-own identities do not assign scores to other identities so we can just delete them.
+				for(Score oldScore : getGivenScores(oldIdentity)) {
+					final Identity trustee = oldScore.getTrustee();
+					final boolean oldShouldFetchTrustee = shouldFetchIdentity(trustee);
+					
+					oldScore.deleteWithoutCommit();
+					
+					// If the OwnIdentity which we are converting was the only source of trust to the trustee
+					// of this Score value, the should-fetch state of the trustee might change to false.
+					if(oldShouldFetchTrustee && shouldFetchIdentity(trustee) == false) {
+						mFetcher.storeAbortFetchCommandWithoutCommit(trustee);
+					}
+				}
+				
+				assert(getGivenScores(oldIdentity).size() == 0);
+
+				// Copy all given trusts:
+				// We don't have to use the removeTrust/setTrust functions because the score graph does not need updating:
+				// - To the rating of the converted identity in the score graphs of other own identities it is irrelevant
+				//   whether it is an own identity or not. The rating should never depend on whether it is an own identity!
+				// - Non-own identities do not have a score graph. So the score graph of the converted identity is deleted
+				//   completely and therefore it does not need to be updated.
+				for(Trust oldGivenTrust : getGivenTrusts(oldIdentity)) {
+					Trust newGivenTrust;
+					try {
+						newGivenTrust = new Trust(this, oldGivenTrust.getTruster(), newIdentity,
+								oldGivenTrust.getValue(), oldGivenTrust.getComment());
+					} catch (InvalidParameterException e) { // The data was taken from the old Trust so this shouldn't happen
+						throw new RuntimeException(e);
+					}
+
+					// The following assert() cannot be added because it would always fail:
+					// It would implicitly trigger oldIdentity.equals(identity) which is not the case:
+					// Certain member values such as the edition might not be equal.
+					/* assert(newGivenTrust.equals(oldGivenTrust)); */
+
+					oldGivenTrust.deleteWithoutCommit();
+					newGivenTrust.storeWithoutCommit();
+				}
+
+				mPuzzleStore.onIdentityDeletion(oldIdentity);
+				mFetcher.storeAbortFetchCommandWithoutCommit(oldIdentity);
+				// NOTICE:
+				// If the fetcher did store a db4o object reference to the identity, we would have to trigger command processing
+				// now to prevent leakage of the identity object.
+				// But the fetcher does NOT store a db4o object reference to the given identity. It stores its ID as String only.
+				// Therefore, it is OK that the fetcher does not immediately process the commands now.
+
+				oldIdentity.deleteWithoutCommit();
+
+				mFetcher.storeStartFetchCommandWithoutCommit(newIdentity);
+
+				// This function messes with the score graph manually so it is a good idea to check whether it is intact before and afterwards.
+				assert(computeAllScoresWithoutCommit());
+
+				Persistent.checkedCommit(mDB, this);
+			}
+			catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		}
+		
+		Logger.normal(this, "deleteOwnIdentity(): Finished.");
 	}
 
 	public synchronized void restoreOwnIdentity(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
