@@ -2724,7 +2724,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				for(Trust oldGivenTrust : getGivenTrusts(oldIdentity)) {
 					Trust newGivenTrust;
 					try {
-						newGivenTrust = new Trust(this, oldGivenTrust.getTruster(), newIdentity,
+						newGivenTrust = new Trust(this, newIdentity, oldGivenTrust.getTrustee(),
 								oldGivenTrust.getValue(), oldGivenTrust.getComment());
 					} catch (InvalidParameterException e) { // The data was taken from the old Trust so this shouldn't happen
 						throw new RuntimeException(e);
