@@ -696,12 +696,31 @@ public class WoTTest extends DatabaseBasedTest {
 	/**
 	 * Test for {@link restoreOwnIdentity}: No identity with the given ID exists.
 	 */
-	public void testRestoreOwnIdentity_Inexistent() throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
+	public void testRestoreOwnIdentity_Inexistent() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
 		final FreenetURI insertURI = new FreenetURI("USK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/WebOfTrust/10");
 		
 		mWoT.restoreOwnIdentity(insertURI);
-		final OwnIdentity restored = mWoT.getOwnIdentityByURI(insertURI);
 		
+		// The following is a copypasta of testInitTrustTree - restoring of an inexistent OwnIdentity is similar to creation of a new one
+		// and the creation of a new OwnIdentity should init the trust tree.
+		flushCaches();
+		assertEquals(0, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(1, mWoT.getAllOwnIdentities().size());
+		assertEquals(0, mWoT.getAllTrusts().size());
+		assertEquals(1, mWoT.getAllScores().size());
+		
+		flushCaches();
+		final OwnIdentity restored = mWoT.getOwnIdentityByURI(insertURI);
+
+		Score score = mWoT.getScore(restored, restored);
+		assertEquals(Integer.MAX_VALUE, score.getScore());
+		assertEquals(0, score.getRank());
+		assertEquals(100, score.getCapacity());
+		assertSame(restored, score.getTruster());
+		assertSame(restored, score.getTrustee());
+		
+		// End of initTrustTree copy
+
 		assertEquals("The edition of the supplied URI can be used because the owner of the identity supplied it.", insertURI.getEdition(), restored.getEdition());
 		assertEquals("Edition hint should be equal to the edition.", restored.getEdition(), restored.getLatestEditionHint());
 		assertEquals("The current edition should be marked as not fetched.", FetchState.NotFetched, restored.getCurrentEditionFetchState());
