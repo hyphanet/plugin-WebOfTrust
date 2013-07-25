@@ -735,8 +735,6 @@ public class WoTTest extends DatabaseBasedTest {
 		
 		assertEquals("We cannot know the contexts yet", 0, restored.getContexts().size());
 		assertEquals("We cannot know the properties yet", 0, restored.getProperties().size());
-		
-
 	}
 	
 	/**
