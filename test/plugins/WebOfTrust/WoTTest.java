@@ -37,6 +37,12 @@ public class WoTTest extends DatabaseBasedTest {
 	private final String requestUriM2 = "USK@rhiNEDWcDXNvkT7R3K1zkr2FgMjW~6DudrAbuYbaY-w,Xl4nOxOzRyzHpEQwu--nb3PaLFSK2Ym9c~Un0rIdne4,AQACAAE/WoT/0";
 	private final String requestUriM3 = "USK@9c57T1yNOi7aeK-6lorACBcOH4cC-vgZ6Ky~-f9mcUI,anOcB7Z05g55oViCa3LcClrXNcQcmR3SBooN4qssuPs,AQACAAE/WoT/0";
 
+	
+	/**
+	 * NOTICE: When changing this function, please also update the following functions as they contain similar code:
+	 * - testRestoreOwnIdentity_Inexistent
+	 * - testRestoreOwnIdentity_ExistingAsDanglingNonOwnIdentityAlready
+	 */
 	public void testInitTrustTree() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
 		mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test"); /* This also initializes the trust tree */
 		
