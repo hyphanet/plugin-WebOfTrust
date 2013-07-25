@@ -221,6 +221,10 @@ public class WoTTest extends DatabaseBasedTest {
 		catch (NotInTrustTreeException e) {}
 	}
 	
+	/**
+	 * NOTICE: When changing this function, please also update the following function as it contains similar code:
+	 * - testRestoreOwnIdentity_TrustAndScoreImpact
+	 */
 	public void testTrustLoop() throws MalformedURLException, InvalidParameterException, NotInTrustTreeException {
 		OwnIdentity a = mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test");
 		
@@ -802,7 +806,75 @@ public class WoTTest extends DatabaseBasedTest {
 		assertEquals(oldNonOwnIdentity.getProperties(), restoredOwnIdentity.getProperties());
 	}
 	
-	public void testRestoreOwnIdentity_TrustAndScoreImpact() {
-		throw new UnsupportedOperationException("Not implemented yet!");
+	/**
+	 * Tests restoring of an own identity which existed already as non-own identity and had received and given trust values.
+	 * Checks whether the trust values keep existing and the score recomputation sort of works for simple cases at least.
+	 * 
+	 * It is a modified copypasta of testTrustLoop.
+	 */
+	public void testRestoreOwnIdentity_TrustAndScoreImpact() throws MalformedURLException, InvalidParameterException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException, UnknownIdentityException {
+		OwnIdentity a = mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test");
+		
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
+		
+		mWoT.setTrust(a, b, (byte)100, "Foo");
+		mWoT.setTrustWithoutCommit(b, c, (byte)50, "Bar"); // There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
+		mWoT.setTrustWithoutCommit(c, a, (byte)100, "Bleh");
+		mWoT.setTrustWithoutCommit(c, b, (byte)50, "Oops");
+		Persistent.checkedCommit(mWoT.getDatabase(), this);
+		
+		mWoT.restoreOwnIdentity(new FreenetURI(insertUriB));
+		OwnIdentity restoredB = mWoT.getOwnIdentityByURI(insertUriB);
+	
+		// Check we have the correct number of objects
+		flushCaches();
+		assertEquals(2, mWoT.getAllOwnIdentities().size());
+		assertEquals(1, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(4, mWoT.getAllTrusts().size());
+		assertEquals(6, mWoT.getAllScores().size());
+
+		// Check a's Score object in a's tree
+		flushCaches();
+		Score scoreAA = mWoT.getScore(a, a);
+		assertEquals(Integer.MAX_VALUE, scoreAA.getScore());
+		assertEquals(0, scoreAA.getRank());
+		assertEquals(100, scoreAA.getCapacity());
+		
+		// Check B's Score object in a's tree
+		flushCaches();
+		Score scoreAB = mWoT.getScore(a, restoredB);
+		assertEquals(100, scoreAB.getScore()); // 100 and not 108 because own trust values override calculated scores.
+		assertEquals(1, scoreAB.getRank());
+		assertEquals(40, scoreAB.getCapacity());
+		
+		// Check C's Score object in c's tree
+		flushCaches();
+		Score scoreAC = mWoT.getScore(a, c);
+		assertEquals(20, scoreAC.getScore());
+		assertEquals(2, scoreAC.getRank());
+		assertEquals(16, scoreAC.getCapacity());
+		
+		
+		// Check b's Score object in b's tree
+		flushCaches();
+		Score scoreBB = mWoT.getScore(restoredB, restoredB);
+		assertEquals(Integer.MAX_VALUE, scoreBB.getScore());
+		assertEquals(0, scoreBB.getRank());
+		assertEquals(100, scoreBB.getCapacity());
+		
+		// Check a's Score object in b's tree
+		flushCaches();
+		Score scoreBA = mWoT.getScore(restoredB, a);
+		assertEquals(40, scoreBA.getScore());
+		assertEquals(2, scoreBA.getRank());
+		assertEquals(16, scoreBA.getCapacity());
+		
+		// Check c's Score object in b's tree
+		flushCaches();
+		Score scoreBC = mWoT.getScore(restoredB, c);
+		assertEquals(50, scoreBC.getScore());
+		assertEquals(1, scoreBC.getRank());
+		assertEquals(40, scoreBC.getCapacity());
 	}
 }
