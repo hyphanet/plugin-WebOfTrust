@@ -738,9 +738,65 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	/**
-	 * - The identity to restore already exists as a non-own identity. The non-own one should be replaced. The new own-one should inherit the data of the old non-own one.
+	 * - The identity to restore already exists as a non-own identity. It did not have any trust values from/to anyone, therefore it is "dangling". 
+	 * - The non-own one should be replaced. Its empty trust tree should be initialized. The new own-one should inherit the data of the old non-own one. 
 	 */
-	public void testRestoreOwnIdentity_ExistingAsNonOwnIdentityAlready() {
-		 throw new UnsupportedOperationException("Not implemented yet!");
+	public void testRestoreOwnIdentity_ExistingAsDanglingNonOwnIdentityAlready() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
+		final Identity oldNonOwnIdentity = new Identity(mWoT, requestUriO, "TestNickname", true);
+		
+		oldNonOwnIdentity.addContext("testContext1");
+		oldNonOwnIdentity.addContext("testContext2");
+		oldNonOwnIdentity.setProperty("testProperty1", "testValue1");
+		oldNonOwnIdentity.setProperty("testProperty2", "testValue2");
+		
+		// FetchState.Fetched should NOT be copied to the OwnIdentity: In cases of low trust we do not store the
+		// full trust list of a non-own identity. We need to re-fetch the current trust list therefore.
+		oldNonOwnIdentity.setEdition(10);
+		oldNonOwnIdentity.onFetched();
+		
+		oldNonOwnIdentity.storeAndCommit();
+		
+		// We use an edition which is lower than the edition of the old identity so we can test whether the too-low edition
+		// does not overwrite the known latest edition.
+		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(5));
+		
+		// The following is a modified copypasta of testInitTrustTree - restoring of an OwnIdentity from an identity which did not
+		// give any trust values is similar to creation of a new one and the creation of a new OwnIdentity should init the trust tree.
+		flushCaches();
+		assertEquals(0, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(1, mWoT.getAllOwnIdentities().size());
+		assertEquals(0, mWoT.getAllTrusts().size());
+		assertEquals(1, mWoT.getAllScores().size());
+		
+		flushCaches();
+		final OwnIdentity restoredOwnIdentity = mWoT.getOwnIdentityByURI(requestUriO);
+
+		Score score = mWoT.getScore(restoredOwnIdentity,restoredOwnIdentity);
+		assertEquals(Integer.MAX_VALUE, score.getScore());
+		assertEquals(0, score.getRank());
+		assertEquals(100, score.getCapacity());
+		assertSame(restoredOwnIdentity, score.getTruster());
+		assertSame(restoredOwnIdentity, score.getTrustee()); 
+		
+		// End of initTrustTree copy
+		
+		assertEquals(oldNonOwnIdentity.getRequestURI(), restoredOwnIdentity.getRequestURI());
+		assertEquals("An obsolete edition in the insert URI should not overwrite a higher edition in the known request URI", oldNonOwnIdentity.getEdition(), restoredOwnIdentity.getEdition());
+		assertEquals(restoredOwnIdentity.getEdition(), restoredOwnIdentity.getLatestEditionHint());
+		assertEquals("We don't always store the full trust list of non-own identities, current edition should be re-fetched", FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
+		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
+		
+		assertEquals("The identity was not fetched yet so the last-fetched date should be zero.", new Date(0), restoredOwnIdentity.getLastFetchedDate());
+		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
+				(CurrentTimeUTC.getInMillis() - restoredOwnIdentity.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
+		
+		assertEquals(oldNonOwnIdentity.getNickname(), restoredOwnIdentity.getNickname());
+		assertEquals(oldNonOwnIdentity.doesPublishTrustList(), restoredOwnIdentity.doesPublishTrustList());
+		assertEquals(oldNonOwnIdentity.getContexts(), restoredOwnIdentity.getContexts());
+		assertEquals(oldNonOwnIdentity.getProperties(), restoredOwnIdentity.getProperties());
+	}
+	
+	public void testRestoreOwnIdentity_TrustAndScoreImpact() {
+		throw new UnsupportedOperationException("Not implemented yet!");
 	}
 }
