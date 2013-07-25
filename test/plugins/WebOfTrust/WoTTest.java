@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.util.Date;
 
 import plugins.WebOfTrust.Identity.FetchState;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
@@ -877,4 +878,41 @@ public class WoTTest extends DatabaseBasedTest {
 		assertEquals(1, scoreBC.getRank());
 		assertEquals(40, scoreBC.getCapacity());
 	}
+	
+	/**
+	 * Test for {@link restoreOwnIdentity}:
+	 * - The identity to delete does not exist. Deleting should fail.
+	 * - The identity to delete is not an own identity. Deleting should fail
+	 */
+	public void testDeleteOwnIdentity_Inexistent() throws MalformedURLException, InvalidParameterException {
+		final String id = IdentityID.constructAndValidateFromURI(new FreenetURI(requestUriA)).toString();
+		
+		try {
+			mWoT.deleteOwnIdentity(id);
+			fail("deleteOwnIdentity() should fail for inexistent identities.");
+		} catch (UnknownIdentityException e) {
+			// Success.
+		}
+			
+		mWoT.addIdentity(requestUriA);
+		
+		try {
+			mWoT.deleteOwnIdentity(id);
+			fail("deleteOwnIdentity() should fail for non-own identities.");
+		} catch (UnknownIdentityException e) {
+			// Success.
+		}
+	}
+	
+	/**
+	 * Tests {@link restoreOwnIdentity} AND {@link deleteOwnIdentity} by:
+	 * - Creating a random WOT.
+	 * - Using restoreOwnIdentity on a non-own identity of the random WOT
+	 * - Using deleteOwnIdentity on the restored identity which should invert the previous restoreOwnIdentity
+	 * - Checking whether the resulting WOT is equal to the WOT which existed before restoreOwnIdentity/deleteOwnIdentity were used.
+	 */
+	public void test_RestoreOwnIdentity_DeleteOwnIdentity_Chained() {
+		throw new UnsupportedOperationException("Not implemented yet");
+	}
+	
 }
