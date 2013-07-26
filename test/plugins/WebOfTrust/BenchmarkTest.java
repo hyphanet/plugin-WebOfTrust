@@ -27,8 +27,8 @@ public class BenchmarkTest extends DatabaseBasedTest {
 	public void test_BenchmarkVerifyAndCorrectStoredScores() throws MalformedURLException, InvalidParameterException {		
 		// Benchmark parameters...
 		
-		int identityCount = 6600;
-		int trustCount = 142 * 1000;
+		int identityCount = 100;
+		int trustCount = (identityCount*identityCount) / 5; // A complete graph would be identityCount² trust values.
 		int iterations = 100;
 		
 		// Random trust graph setup...
