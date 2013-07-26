@@ -54,13 +54,18 @@ public class BenchmarkTest extends DatabaseBasedTest {
 		
 		// The actual benchmark
 		
-		long startTime = System.nanoTime();
+		long totalTime = 0;
 		for(int i=0; i < iterations; ++i) {
+			flushCaches();
+			
+			long startTime = System.nanoTime();
 			mWoT.verifyAndCorrectStoredScores();
+			long endTime = System.nanoTime();
+			
+			totalTime += endTime-startTime;
 		}
-		long endTime = System.nanoTime();
 		
-		double seconds = (double)(endTime-startTime)/(1000*1000*1000); 
+		double seconds = (double)totalTime/(1000*1000*1000); 
 		
 		System.out.println("Benchmarked " + iterations + " iterations of verifyAndCorrectStoredScores: " + (seconds/iterations) + " seconds/iteration");
 	}
