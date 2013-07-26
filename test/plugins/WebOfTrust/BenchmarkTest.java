@@ -50,6 +50,7 @@ public class BenchmarkTest extends DatabaseBasedTest {
 			mWoT.setTrustWithoutCommit(truster, trustee, (byte)(mRandom.nextInt(201) - 100), "");
 		}
 		mWoT.finishTrustListImport();
+		Persistent.checkedCommit(mWoT.getDatabase(), this);
 		
 		// The actual benchmark
 		
