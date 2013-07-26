@@ -5,10 +5,11 @@ package plugins.WebOfTrust;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import junit.framework.TestCase;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
@@ -117,6 +118,32 @@ public class DatabaseBasedTest extends TestCase {
 		}
 		
 		return result;
+	}
+	
+	protected void addRandomTrustValues(final ArrayList<Identity> identities, final int trustCount) throws InvalidParameterException {
+		final int identityCount = identities.size();
+		
+		mWoT.beginTrustListImport();
+		for(int i=0; i < trustCount; ++i) {
+			Identity truster = identities.get(mRandom.nextInt(identityCount));
+			Identity trustee = identities.get(mRandom.nextInt(identityCount));
+			
+			if(truster == trustee) { // You cannot assign trust to yourself
+				--i;
+				continue;
+			}
+			
+			try {
+				mWoT.getTrust(truster, trustee);
+				--i;
+				continue;
+			} catch(NotTrustedException e) {}
+			
+			
+			mWoT.setTrustWithoutCommit(truster, trustee, (byte)(mRandom.nextInt(201) - 100), "");
+		}
+		mWoT.finishTrustListImport();
+		Persistent.checkedCommit(mWoT.getDatabase(), this);
 	}
 
 	/**

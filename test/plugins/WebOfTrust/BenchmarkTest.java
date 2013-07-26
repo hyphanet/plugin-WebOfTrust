@@ -39,27 +39,7 @@ public class BenchmarkTest extends DatabaseBasedTest {
 		ArrayList<Identity> identities = addRandomIdentities(identityCount);
 		identities.add(ownIdentity);
 		
-		mWoT.beginTrustListImport();
-		for(int i=0; i < trustCount; ++i) {
-			Identity truster = identities.get(mRandom.nextInt(identityCount));
-			Identity trustee = identities.get(mRandom.nextInt(identityCount));
-			
-			if(truster == trustee) { // You cannot assign trust to yourself
-				--i;
-				continue;
-			}
-			
-			try {
-				mWoT.getTrust(truster, trustee);
-				--i;
-				continue;
-			} catch(NotTrustedException e) {}
-			
-			
-			mWoT.setTrustWithoutCommit(truster, trustee, (byte)(mRandom.nextInt(201) - 100), "");
-		}
-		mWoT.finishTrustListImport();
-		Persistent.checkedCommit(mWoT.getDatabase(), this);
+		addRandomTrustValues(identities, trustCount);
 		
 		// The actual benchmark
 		
