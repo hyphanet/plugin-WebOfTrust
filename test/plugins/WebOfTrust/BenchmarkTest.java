@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import freenet.keys.FreenetURI;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
 
 
 /**
@@ -42,10 +43,18 @@ public class BenchmarkTest extends DatabaseBasedTest {
 		for(int i=0; i < trustCount; ++i) {
 			Identity truster = identities.get(mRandom.nextInt(identityCount));
 			Identity trustee = identities.get(mRandom.nextInt(identityCount));
+			
 			if(truster == trustee) { // You cannot assign trust to yourself
 				--i;
 				continue;
 			}
+			
+			try {
+				mWoT.getTrust(truster, trustee);
+				--i;
+				continue;
+			} catch(NotTrustedException e) {}
+			
 			
 			mWoT.setTrustWithoutCommit(truster, trustee, (byte)(mRandom.nextInt(201) - 100), "");
 		}
