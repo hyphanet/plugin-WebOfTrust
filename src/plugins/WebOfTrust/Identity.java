@@ -843,7 +843,7 @@ public class Identity extends Persistent implements Cloneable {
 			checkedActivate(4); // For performance only
 			
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
-			clone.setNewEditionHint(getLatestEditionHint()); 
+			clone.mLatestEditionHint = getLatestEditionHint(); // Don't use the setter since it won't lower the current edition hint.
 			clone.setContexts(getContexts());
 			clone.setProperties(getProperties());
 			
