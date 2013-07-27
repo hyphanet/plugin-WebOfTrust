@@ -11,6 +11,14 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
  * @author xor (xor@freenetproject.org)
  */
 public class OwnIdentityTest extends DatabaseBasedTest {
+	
+	public void testConstructors() throws MalformedURLException, InvalidParameterException {
+		final OwnIdentity identity = new OwnIdentity(mWoT, "SSK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/",
+				getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH), true);
+		
+		assertEquals(0, identity.getEdition());
+		assertEquals(0, identity.getLatestEditionHint());
+	}
 
 	/**
 	 * Tests whether {@link OwnIdentity.clone()} returns an OwnIdentity which {@link equals()} the original.
