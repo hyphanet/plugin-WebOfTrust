@@ -37,6 +37,14 @@ public class WoTTest extends DatabaseBasedTest {
 	private final String requestUriM1 = "USK@XoOIYo6blZDb6qb2iaBKJVMSehnvxVnxkgFCtbT4yw4,92NJVhKYBK3B4oJkcSmDaau53vbzPMKxws9dC~fagFU,AQACAAE/WoT/0";
 	private final String requestUriM2 = "USK@rhiNEDWcDXNvkT7R3K1zkr2FgMjW~6DudrAbuYbaY-w,Xl4nOxOzRyzHpEQwu--nb3PaLFSK2Ym9c~Un0rIdne4,AQACAAE/WoT/0";
 	private final String requestUriM3 = "USK@9c57T1yNOi7aeK-6lorACBcOH4cC-vgZ6Ky~-f9mcUI,anOcB7Z05g55oViCa3LcClrXNcQcmR3SBooN4qssuPs,AQACAAE/WoT/0";
+	
+	
+	public void testCreateOwnIdentity() throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
+		// Test persistence
+		final OwnIdentity cloneOfOriginal = mWoT.createOwnIdentity(getRandomSSKPair()[0], getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH), true, getRandomLatinString(OwnIdentity.MAX_CONTEXT_NAME_LENGTH)).clone();
+		
+		assertEquals(cloneOfOriginal, mWoT.getOwnIdentityByID(cloneOfOriginal.getID()));
+	}
 
 	
 	/**

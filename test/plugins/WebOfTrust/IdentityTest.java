@@ -44,6 +44,24 @@ public final class IdentityTest extends DatabaseBasedTest {
 		flushCaches();
 	}
 	
+	/**
+	 * Tests whether {@link Identity.clone()} returns an Identity which {@link equals()} the original.
+	 */
+	public void testClone() throws MalformedURLException, InvalidParameterException {
+		final Identity original = new Identity(mWoT, getRandomSSKPair()[1], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
+		final Identity clone = original.clone();
+		
+		assertEquals(original, clone);
+	}
+	
+	public void testConstructors() throws MalformedURLException, InvalidParameterException {
+		final Identity identity = new Identity(mWoT, "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/-1",
+				getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
+		
+		assertEquals(0, identity.getEdition());
+		assertEquals(0, identity.getLatestEditionHint());
+	}
+	
 	public void testInsertRequestUriMixup() throws InvalidParameterException {		
 		try {
 			new Identity(mWoT, new FreenetURI(insertUriString), "test", true);
