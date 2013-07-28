@@ -5,11 +5,15 @@ package plugins.WebOfTrust;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
 
 import junit.framework.TestCase;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
+
+import com.db4o.ObjectSet;
+
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
@@ -144,6 +148,45 @@ public class DatabaseBasedTest extends TestCase {
 		}
 		mWoT.finishTrustListImport();
 		Persistent.checkedCommit(mWoT.getDatabase(), this);
+	}
+	
+	protected HashSet<Identity> cloneAllIdentities() {
+		final ObjectSet<Identity> identities = mWoT.getAllIdentities();
+		final HashSet<Identity> clones = new HashSet<Identity>(identities.size() * 2);
+		
+		for(Identity identity : identities) {
+			// We assertTrue upon the return value of HashSet.add() because it will return false if the identity was already in the HashSet:
+			// Each identity should only exist once!
+			assertTrue(clones.add(identity.clone()));
+		}
+
+		return clones;
+	}
+	
+	protected HashSet<Trust> cloneAllTrusts() {
+		final ObjectSet<Trust> trusts = mWoT.getAllTrusts();
+		final HashSet<Trust> clones = new HashSet<Trust>(trusts.size() * 2);
+		
+		for(Trust trust : trusts) {
+			// We assertTrue upon the return value of HashSet.add() because it will return false if the Trust was already in the HashSet:
+			// Each Trust should only exist once!
+			assertTrue(clones.add(trust.clone()));
+		}
+
+		return clones;
+	}
+	
+	protected HashSet<Score> cloneAllScores() {
+		final ObjectSet<Score> scores = mWoT.getAllScores();
+		final HashSet<Score> clones = new HashSet<Score>(scores.size() * 2);
+		
+		for(Score score : scores) {
+			// We assertTrue upon the return value of HashSet.add() because it will return false if the Score was already in the HashSet:
+			// Each Score should only exist once!
+			assertTrue(clones.add(score.clone()));
+		}
+		
+		return clones;
 	}
 
 	/**
