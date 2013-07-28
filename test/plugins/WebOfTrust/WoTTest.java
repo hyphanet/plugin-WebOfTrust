@@ -891,6 +891,25 @@ public class WoTTest extends DatabaseBasedTest {
 	
 	/**
 	 * Test for {@link restoreOwnIdentity}:
+	 * - At the point of execution, the identity exists as non-own Identity but was never fetched yet.
+	 * - Then deleteOwnIdentity is called upon the unfetched Identity.
+	 */
+	public void testRestoreOwnIdentity_Unfetched() {
+		throw new UnsupportedOperationException("FIXME: Implement");
+	}
+	
+	/**
+	 * Test for {@link deleteOwnIdentity}:
+	 * - The identity which shall be deleted was created by using the {@link WebOfTrust.restoreOwnIdentity()} function.
+	 * - Unfortunately, at the point of execution {@link WebOfTrust.restoreOwnIdentity()}, the identity was unknown, therefore marked for fetching but never fetched yet.
+	 * - Then deleteOwnIdentity is called with the unfetched OwnIdentity as parameter.
+	 */
+	public void testDeleteOwnIdentity_Unfetched() {
+		throw new UnsupportedOperationException("FIXME: Implement");
+	}
+	
+	/**
+	 * Test for {@link restoreOwnIdentity}:
 	 * - The identity to delete does not exist. Deleting should fail.
 	 * - The identity to delete is not an own identity. Deleting should fail
 	 */
