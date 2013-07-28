@@ -4,7 +4,9 @@
 package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.Identity.IdentityID;
@@ -919,8 +921,39 @@ public class WoTTest extends DatabaseBasedTest {
 	 * - Using deleteOwnIdentity on the restored identity which should invert the previous restoreOwnIdentity
 	 * - Checking whether the resulting WOT is equal to the WOT which existed before restoreOwnIdentity/deleteOwnIdentity were used.
 	 */
-	public void test_RestoreOwnIdentity_DeleteOwnIdentity_Chained() {
-		throw new UnsupportedOperationException("Not implemented yet");
+	public void test_RestoreOwnIdentity_DeleteOwnIdentity_Chained() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException {
+		final int identityCount = 100;
+		final int trustCount = (identityCount*identityCount) / 5; // A complete graph would be identityCount² trust values.
+
+		// Random trust graph setup...
+	
+		final ArrayList<Identity> identities = addRandomIdentities(identityCount);
+		
+		// This identity will be converted to OwnIdentity and back to Identity.
+		final Identity identityToConvert = mWoT.addIdentity(requestUriO);
+		identities.add(identityToConvert);
+		
+		// At least one own identity needs to exist to ensure that scores are computed.
+		final OwnIdentity ownIdentity = mWoT.createOwnIdentity(getRandomSSKPair()[0], "Test", true, "Test");
+		identities.add(ownIdentity); 
+		
+		addRandomTrustValues(identities, trustCount);
+		
+		// We need to make sure that our random trust graph parameters actually result in Trusts/Scores on the converted identity.
+		assertTrue(mWoT.getReceivedTrusts(identityToConvert).size() > 0);
+		assertTrue(mWoT.getGivenTrusts(identityToConvert).size() > 0);
+		assertTrue(mWoT.getScores(identityToConvert).size() > 0);
+
+		final HashSet<Identity> oldIdentities = cloneAllIdentities();
+		final HashSet<Trust> oldTrusts = cloneAllTrusts();
+		final HashSet<Score> oldScores = cloneAllScores();
+
+		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO));
+		mWoT.deleteOwnIdentity(identityToConvert.getID());
+
+		assertEquals(oldIdentities, new HashSet<Identity>(mWoT.getAllIdentities()));
+		assertEquals(oldTrusts, new HashSet<Trust>(mWoT.getAllTrusts()));
+		assertEquals(oldScores, new HashSet<Score>(mWoT.getAllScores()));
 	}
 	
 }
