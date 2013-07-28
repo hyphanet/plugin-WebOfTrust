@@ -166,6 +166,11 @@ public final class Score extends Persistent implements Cloneable {
 	}
 	
 	@Override
+	public int hashCode() {
+		return getID().hashCode();
+	}
+	
+	@Override
 	public synchronized String toString() {
 		// This function locks very much stuff and is synchronized. The lock on Score objects should always be taken last by our locking policy right now,
 		// otherwise this function might be dangerous to be used for example with logging. Therefore TODO: Ensure that locks on Score are really taken last.

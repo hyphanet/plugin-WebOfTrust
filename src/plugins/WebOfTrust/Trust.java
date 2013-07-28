@@ -7,7 +7,6 @@ import java.util.Date;
 import java.util.StringTokenizer;
 
 import plugins.WebOfTrust.Identity.IdentityID;
-import plugins.WebOfTrust.Score.ScoreID;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.StringValidityChecker;
@@ -186,6 +185,11 @@ public final class Trust extends Persistent implements Cloneable {
 		
 		mLastChangedDate = mCreationDate;
 		mTrusterTrustListEdition = truster.getEdition(); 
+	}
+	
+	@Override
+	public int hashCode() {
+		return getID().hashCode();
 	}
 
 	@Override
