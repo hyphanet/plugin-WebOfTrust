@@ -223,7 +223,7 @@ public class Identity extends Persistent implements Cloneable {
 		mID = IdentityID.constructAndValidateFromURI(mRequestURI).toString();
 		
 		try {
-			mLatestEditionHint = newRequestURI.getEdition();
+			mLatestEditionHint = Math.max(newRequestURI.getEdition(), 0);
 		} catch (IllegalStateException e) {
 			mLatestEditionHint = 0;
 		}
