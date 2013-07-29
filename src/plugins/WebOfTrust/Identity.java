@@ -230,7 +230,7 @@ public class Identity extends Persistent implements Cloneable {
 		mCurrentEditionFetchState = FetchState.NotFetched;
 		
 		mLastFetchedDate = new Date(0);
-		mLastChangedDate = mCreationDate;
+		mLastChangedDate = (Date)mCreationDate.clone(); // Don't re-use objects which are stored by db4o to prevent issues when they are being deleted.
 		
 		if(newNickname == null) {
 			mNickname = null;
