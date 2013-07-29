@@ -388,7 +388,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * @return The date of this Identity's last modification.
 	 */
 	public final Date getLastFetchedDate() {
-		checkedActivate(1); // long is a db4o primitive type so 1 is enough
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastFetchedDate.clone();
 	}
 
@@ -396,7 +396,7 @@ public class Identity extends Persistent implements Cloneable {
 	 * @return The date of this Identity's last modification.
 	 */
 	public final Date getLastChangeDate() {
-		checkedActivate(1);  // long is a db4o primitive type so 1 is enough
+		checkedActivate(1);  // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastChangedDate.clone();
 	}
 	
