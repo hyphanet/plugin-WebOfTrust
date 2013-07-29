@@ -2651,8 +2651,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				// HOWEVER if the user had used the restoreOwnIdentity feature and then used this function, it might be the case that
 				// the current edition of the old OwndIdentity was not fetched yet.
 				// So we set the fetch state to FetchState.Fetched if the oldIdentity's fetch state was like that as well.
-				if(oldIdentity.getCurrentEditionFetchState() == FetchState.Fetched)
-					newIdentity.onFetched();
+				if(oldIdentity.getCurrentEditionFetchState() == FetchState.Fetched) {
+					newIdentity.onFetched(oldIdentity.getLastFetchedDate());
+				}
 				// An else to set the fetch state to FetchState.NotFetched is not necessary, newIdentity.setEdition() did that already.
 
 				newIdentity.storeWithoutCommit();

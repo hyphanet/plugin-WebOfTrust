@@ -404,9 +404,19 @@ public class Identity extends Persistent implements Cloneable {
 	 * Has to be called when the identity was fetched and parsed successfully. Must not be called before setEdition!
 	 */
 	protected final void onFetched() {
+		onFetched(CurrentTimeUTC.get());
+	}
+	
+	/**
+	 * Can be used for restoring the last-fetched date from a copy of the identity.
+	 * When an identity is fetched in normal operation, please use the version without a parameter. 
+	 * 
+	 * Must not be called before setEdition!
+	 */
+	protected final void onFetched(Date fetchDate) {
 		checkedActivate(1);
 		mCurrentEditionFetchState = FetchState.Fetched;
-		mLastFetchedDate = CurrentTimeUTC.get();
+		mLastFetchedDate = (Date)fetchDate.clone(); // Clone it to prevent duplicate usage of db4o-stored objects
 		updated();
 	}
 	
