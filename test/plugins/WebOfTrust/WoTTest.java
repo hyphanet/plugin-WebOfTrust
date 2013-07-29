@@ -810,7 +810,7 @@ public class WoTTest extends DatabaseBasedTest {
 		assertEquals("We don't always store the full trust list of non-own identities, current edition should be re-fetched", FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
 		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
 		
-		assertEquals("The identity was not fetched yet so the last-fetched date should be zero.", new Date(0), restoredOwnIdentity.getLastFetchedDate());
+		assertEquals(oldNonOwnIdentity.getLastFetchedDate(), restoredOwnIdentity.getLastFetchedDate());
 		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
 				(CurrentTimeUTC.getInMillis() - restoredOwnIdentity.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
 		
@@ -845,7 +845,7 @@ public class WoTTest extends DatabaseBasedTest {
 		assertEquals(FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
 		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
 		
-		assertEquals("The identity was not fetched yet so the last-fetched date should be zero.", new Date(0), restoredOwnIdentity.getLastFetchedDate());
+		assertEquals(oldNonOwnIdentity.getLastFetchedDate(), restoredOwnIdentity.getLastFetchedDate());
 		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
 				(CurrentTimeUTC.getInMillis() - restoredOwnIdentity.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
 	}

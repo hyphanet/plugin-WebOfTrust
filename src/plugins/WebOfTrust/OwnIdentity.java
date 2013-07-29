@@ -135,11 +135,13 @@ public final class OwnIdentity extends Identity {
 	
 	/**
 	 * Sets the edition to the given edition and marks it for re-fetching. Used for restoring own identities.
+	 * @param fetchedDate The date when the given edition was fetched. Null if it was not fetched yet.
 	 */
-	protected final void restoreEdition(long edition) throws InvalidParameterException {
+	protected final void restoreEdition(long edition, Date fetchedDate) throws InvalidParameterException {
 		setEdition(edition);
 		checkedActivate(1);
 		mCurrentEditionFetchState = FetchState.NotFetched;
+		mLastFetchedDate = fetchedDate != null ? (Date)fetchedDate.clone() : new Date(0);
 		
 		// This is not really necessary because needsInsert() returns false if mCurrentEditionFetchState == NotFetched
 		// However, we still do it because the user might have specified URIs with old edition numbers: Then the IdentityInserter would

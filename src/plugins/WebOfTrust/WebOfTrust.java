@@ -2801,7 +2801,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					/* We re-fetch the most recent edition to make sure all trustees are imported */
 					edition = Math.max(edition, oldIdentity.getEdition());
-					identity.restoreEdition(edition);
+					identity.restoreEdition(edition, oldIdentity.getLastFetchedDate());
 				
 					identity.setContexts(oldIdentity.getContexts());
 					identity.setProperties(oldIdentity.getProperties());
@@ -2886,7 +2886,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					Logger.normal(this, "Restoring not-yet-known identity from Freenet: " + identity);
 					
-					identity.restoreEdition(edition);
+					identity.restoreEdition(edition, null);
 					
 					// Store the new identity
 					identity.storeWithoutCommit();
