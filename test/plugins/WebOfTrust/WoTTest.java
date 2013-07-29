@@ -821,6 +821,36 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	/**
+	 * Tests {@link WebOfTrust.restoreOwnIdentity()}:
+	 * - The identity exists as non-own identity already.
+	 * - The user-provided insert URI contains a higher edition than the current known edition, it should override it therefore. 
+	 */
+	public void testRestoreOwnIdentity_NewEdition() throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
+		final Identity oldNonOwnIdentity = new Identity(mWoT, requestUriO, "TestNickname", true);
+		
+		// FetchState.Fetched should NOT be copied to the OwnIdentity:
+		// The insert URI we pass to restoreOwnIdentity provides a higher edition number.
+		oldNonOwnIdentity.setEdition(10);
+		oldNonOwnIdentity.onFetched();
+		
+		oldNonOwnIdentity.storeAndCommit();
+		
+		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(11));
+		
+		flushCaches();
+		final OwnIdentity restoredOwnIdentity = mWoT.getOwnIdentityByURI(requestUriO);
+		
+		assertEquals(11, restoredOwnIdentity.getEdition());
+		assertEquals(restoredOwnIdentity.getEdition(), restoredOwnIdentity.getLatestEditionHint());
+		assertEquals(FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
+		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
+		
+		assertEquals("The identity was not fetched yet so the last-fetched date should be zero.", new Date(0), restoredOwnIdentity.getLastFetchedDate());
+		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
+				(CurrentTimeUTC.getInMillis() - restoredOwnIdentity.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
+	}
+	
+	/**
 	 * Tests restoring of an own identity which existed already as non-own identity and had received and given trust values.
 	 * Checks whether the trust values keep existing and the score recomputation sort of works for simple cases at least.
 	 * 
