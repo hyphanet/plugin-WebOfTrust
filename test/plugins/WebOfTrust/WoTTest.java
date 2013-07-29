@@ -958,8 +958,22 @@ public class WoTTest extends DatabaseBasedTest {
 	 * - Unfortunately, at the point of execution {@link WebOfTrust.restoreOwnIdentity()}, the identity was unknown, therefore marked for fetching but never fetched yet.
 	 * - Then deleteOwnIdentity is called with the unfetched OwnIdentity as parameter.
 	 */
-	public void testDeleteOwnIdentity_Unfetched() {
-		throw new UnsupportedOperationException("FIXME: Implement");
+	public void testDeleteOwnIdentity_Unfetched() throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
+		// Restoring a unknown identity should mark the FetchState as NotFetched as this test desires
+		// Further, it is a nice special case to immediately delete a restored identity.
+		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(5));
+		final OwnIdentity oldOwnIdentity = mWoT.getOwnIdentityByURI(insertUriO);
+		
+		mWoT.deleteOwnIdentity(oldOwnIdentity.getID());
+		
+		flushCaches();
+		final Identity replacementNonOwnIdentity = mWoT.getIdentityByURI(insertUriO);
+		
+		assertEquals(5, replacementNonOwnIdentity.getEdition());
+		assertEquals(5, replacementNonOwnIdentity.getLatestEditionHint());
+		assertEquals(FetchState.NotFetched, replacementNonOwnIdentity.getCurrentEditionFetchState());
+		
+		assertEquals(new Date(0), replacementNonOwnIdentity.getLastFetchedDate());
 	}
 	
 	/**
