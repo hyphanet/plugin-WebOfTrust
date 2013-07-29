@@ -53,6 +53,7 @@ public class WoTTest extends DatabaseBasedTest {
 	 * NOTICE: When changing this function, please also update the following functions as they contain similar code:
 	 * - testRestoreOwnIdentity_Inexistent
 	 * - testRestoreOwnIdentity_ExistingAsDanglingNonOwnIdentityAlready
+	 * - testDeleteOwnIdentity_Dangling
 	 */
 	public void testInitTrustTree() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
 		mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test"); /* This also initializes the trust tree */
@@ -760,7 +761,9 @@ public class WoTTest extends DatabaseBasedTest {
 	
 	/**
 	 * - The identity to restore already exists as a non-own identity. It did not have any trust values from/to anyone, therefore it is "dangling". 
-	 * - The non-own one should be replaced. Its empty trust tree should be initialized. The new own-one should inherit the data of the old non-own one. 
+	 * - The non-own one should be replaced. Its empty trust tree should be initialized. The new own-one should inherit the data of the old non-own one.
+	 * 
+	 *  NOTICE: {@link testDeleteOwnIdentity_Dangling()} is similar to this function. Also apply improvements there if possible.
 	 */
 	public void testRestoreOwnIdentity_ExistingAsDanglingNonOwnIdentityAlready() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
 		final Identity oldNonOwnIdentity = new Identity(mWoT, requestUriO, "TestNickname", true);
@@ -931,6 +934,60 @@ public class WoTTest extends DatabaseBasedTest {
 		} catch (UnknownIdentityException e) {
 			// Success.
 		}
+	}
+	
+	/**
+	 * - The identity to delete exists. It did not have any trust values from/to anyone, therefore it is "dangling". 
+	 * - It should be replaced by a non-own identity. Its score tree should be removed.
+	 * - The new non-own-identity should inherit the data of the old own one.
+	 * 
+	 *  NOTICE: {@link testRestoreOwnIdentity_ExistingAsDanglingNonOwnIdentityAlready} is similar to this function. Also apply improvements there if possible.
+	 */
+	public void testDeleteOwnIdentity_Dangling() throws MalformedURLException, UnknownIdentityException, InvalidParameterException {
+		final Identity oldOwnIdentity = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "TestNickname", true, "testContext0");
+		
+		oldOwnIdentity.addContext("testContext1");
+		oldOwnIdentity.addContext("testContext2");
+		oldOwnIdentity.setProperty("testProperty1", "testValue1");
+		oldOwnIdentity.setProperty("testProperty2", "testValue2");
+		
+		// FetchState.Fetched should be copied to the non-own Identity:
+		// For own identities, all information stored on the network is also stored in the local database
+		// - A re-fetch of the current edition is NOT needed.
+		oldOwnIdentity.setEdition(10);
+		oldOwnIdentity.onFetched();
+		
+		oldOwnIdentity.storeAndCommit();
+		
+		mWoT.deleteOwnIdentity(oldOwnIdentity.getID());
+		
+		// The following is a modified copypasta of testInitTrustTree:
+		// We created the OwnIdentity using the regular function for that which is createOwnIdentity. 
+		// createOwnIdentity should have triggered initTrustTree on the OwnIdentity.
+		// But a non-own identity should not have a score tree (yes, initTrustTree is misnamed) so we now do the "inverse" checks of testInitTrustTree:
+		// The score tree of the own identity should have been deleted.
+		flushCaches();
+		assertEquals(1, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(0, mWoT.getAllOwnIdentities().size());
+		assertEquals(0, mWoT.getAllTrusts().size());
+		assertEquals(0, mWoT.getAllScores().size());
+		
+		flushCaches();
+		final Identity replacementNonOwnIdentity = mWoT.getIdentityByURI(insertUriO);
+
+		// End of initTrustTree copy
+		
+		assertEquals(oldOwnIdentity.getRequestURI(), replacementNonOwnIdentity.getRequestURI());
+		assertEquals(oldOwnIdentity.getEdition(), replacementNonOwnIdentity.getEdition());
+		assertEquals(replacementNonOwnIdentity.getEdition(), replacementNonOwnIdentity.getLatestEditionHint());
+		assertEquals("We always store the full trust list of own identities, current edition does not have to be re-fetched", FetchState.Fetched, replacementNonOwnIdentity.getCurrentEditionFetchState());
+		
+		assertEquals(oldOwnIdentity.getLastFetchedDate(), replacementNonOwnIdentity.getLastFetchedDate());
+		
+		assertEquals(oldOwnIdentity.getNickname(), replacementNonOwnIdentity.getNickname());
+		assertEquals(oldOwnIdentity.doesPublishTrustList(), replacementNonOwnIdentity.doesPublishTrustList());
+		assertEquals(oldOwnIdentity.getContexts(), replacementNonOwnIdentity.getContexts());
+		assertEquals(oldOwnIdentity.getProperties(), replacementNonOwnIdentity.getProperties());
 	}
 	
 	/**
