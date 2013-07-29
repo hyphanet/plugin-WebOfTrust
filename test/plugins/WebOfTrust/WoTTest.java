@@ -894,11 +894,32 @@ public class WoTTest extends DatabaseBasedTest {
 	
 	/**
 	 * Test for {@link restoreOwnIdentity}:
-	 * - At the point of execution, the identity exists as non-own Identity but was never fetched yet.
-	 * - Then deleteOwnIdentity is called upon the unfetched Identity.
+	 * - At the point of execution, the identity exists as non-own Identity but the current edition was not fetched yet.
+	 * - Then restoreOwnIdentity is called upon the unfetched Identity.
 	 */
-	public void testRestoreOwnIdentity_Unfetched() {
-		throw new UnsupportedOperationException("FIXME: Implement");
+	public void testRestoreOwnIdentity_Unfetched() throws InvalidParameterException, MalformedURLException, UnknownIdentityException, NotInTrustTreeException {
+		final Identity oldNonOwnIdentity = new Identity(mWoT, requestUriO, "TestNickname", true);
+		
+		// FetchState.NotFetched should be copied to the OwnIdentity.
+		oldNonOwnIdentity.setEdition(10);
+		assertEquals(FetchState.NotFetched, oldNonOwnIdentity.getCurrentEditionFetchState());
+		oldNonOwnIdentity.storeAndCommit();
+		
+		// We use an edition which is lower than the edition of the old identity so we can test whether the too-low edition
+		// does not overwrite the known latest edition.
+		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(5));
+		
+		flushCaches();
+		final OwnIdentity restoredOwnIdentity = mWoT.getOwnIdentityByURI(requestUriO);
+		
+		assertEquals("An obsolete edition in the insert URI should not overwrite a higher edition in the known request URI", oldNonOwnIdentity.getEdition(), restoredOwnIdentity.getEdition());
+		assertEquals(restoredOwnIdentity.getEdition(), restoredOwnIdentity.getLatestEditionHint());
+		assertEquals(FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
+		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
+		
+		assertEquals("The identity was not fetched yet so the last-fetched date should be zero.", new Date(0), restoredOwnIdentity.getLastFetchedDate());
+		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
+				(CurrentTimeUTC.getInMillis() - restoredOwnIdentity.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
 	}
 	
 	/**
