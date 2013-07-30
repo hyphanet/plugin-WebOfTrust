@@ -1612,7 +1612,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/** 
 	 * DO NOT USE THIS FUNCTION FOR DELETING OWN IDENTITIES UPON USER REQUEST!
-	 * IN FACT BE VERY CAREFUL WHEN USING IT FOR ANYTHING FOR THE FOLLOWING REAONS:
+	 * IN FACT BE VERY CAREFUL WHEN USING IT FOR ANYTHING FOR THE FOLLOWING REASONS:
 	 * - This function deletes ALL given and received trust values of the given identity. This modifies the trust list of the trusters against their will.
 	 * - Especially it might be an information leak if the trust values of other OwnIdentities are deleted!
 	 * - If WOT one day is designed to be used by many different users at once, the deletion of other OwnIdentity's trust values would even be corruption.
