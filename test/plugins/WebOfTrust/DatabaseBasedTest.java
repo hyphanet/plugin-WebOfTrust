@@ -138,6 +138,9 @@ public class DatabaseBasedTest extends TestCase {
 			}
 			
 			try {
+				// Only one trust value can exist between a given pair of identities:
+				// We are bound to generate an amount of trustCount values,
+				// so we have to check whether this pair of identities already has a trust.
 				mWoT.getTrust(truster, trustee);
 				--i;
 				continue;
