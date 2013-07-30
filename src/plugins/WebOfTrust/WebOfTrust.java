@@ -2225,7 +2225,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * You MUST create a database transaction by synchronizing on Persistent.transactionLock(db).
 	 */
 	protected void beginTrustListImport() {
-		Logger.minor(this, "beginTrustListImport()");
+		if(logMINOR) Logger.minor(this, "beginTrustListImport()");
 		
 		if(mTrustListImportInProgress) {
 			abortTrustListImport(new RuntimeException("There was already a trust list import in progress!"));
@@ -2248,7 +2248,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @param logLevel The {@link LogLevel} to use when logging the abort to the Freenet log file.
 	 */
 	protected void abortTrustListImport(Exception e, LogLevel logLevel) {
-		Logger.minor(this, "abortTrustListImport()");
+		if(logMINOR) Logger.minor(this, "abortTrustListImport()");
 		
 		assert(mTrustListImportInProgress);
 		mTrustListImportInProgress = false;
@@ -2276,7 +2276,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Does NOT commit the transaction, you must do this.
 	 */
 	protected void finishTrustListImport() {
-		Logger.minor(this, "finishTrustListImport()");
+		if(logMINOR) Logger.minor(this, "finishTrustListImport()");
 		
 		if(!mTrustListImportInProgress) {
 			Logger.error(this, "There was no trust list import in progress!");
