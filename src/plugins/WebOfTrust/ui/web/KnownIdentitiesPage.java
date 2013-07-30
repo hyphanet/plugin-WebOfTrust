@@ -126,6 +126,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 					treeOwner = allOwnIdentities.next();
 			}
 		}
+		
+		if(treeOwner != null && treeOwner.isRestoreInProgress()) {
+			makeRestoreInProgressWarning();
+			return;
+		}
 			
 		makeAddIdentityForm(treeOwner);
 
@@ -185,6 +190,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 
 	private void makeNoOwnIdentityWarning() {
 		addErrorBox(l10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Header"), l10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Text"));
+	}
+	
+	private void makeRestoreInProgressWarning() {
+		addErrorBox(l10n().getString("KnownIdentitiesPage.RestoreInProgressWarning.Header"), l10n().getString("KnownIdentitiesPage.RestoreInProgressWarning.Text"));
 	}
 	
 	private void makeSelectTreeOwnerForm() {
