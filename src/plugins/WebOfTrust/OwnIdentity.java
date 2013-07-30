@@ -79,14 +79,39 @@ public final class OwnIdentity extends Identity {
 	}
 	
 	/**
+	 * NOTICE: When changing this function, please also take care of {@link WebOfTrust.restoreOwnIdentity()}
+	 * 
+	 * @see {@link WebOfTrust.restoreOwnIdentity()}
+	 * @return True if getCurrentEditionFetchState()==FetchState.NotFetched/FetchState.ParsingFailed, false for FetchState.Fetched.
+	 */
+	public final boolean isRestoreInProgress() {
+		switch(getCurrentEditionFetchState()) {
+			case Fetched:
+					// Normal state for an OwnIdentity: When the IdentityInserted has inserted a new edition,
+					// it uses setEdition() which immediately sets the FetchState to Fetched
+					return false;
+			case NotFetched:
+					// The identity is definitely in restore mode: When restoreOwnIdentity() converts a non-own
+					// identity to an own one, it sets FetchState to NotFetched.
+					// Nothing else shall set this state on an OwnIdentity.
+					return true;
+			case ParsingFailed:
+					// We tried to restore the current edition but it didn't parse successfully.
+					// We should keep it in restore mode until we have successfully imported an edition:
+					// The nickname can be null if no edition of the identity was ever imported.
+					return true;
+			default:
+				throw new IllegalStateException("Unknown FetchState: " + getCurrentEditionFetchState());
+		}
+	}
+	
+	/**
 	 * Whether this OwnIdentity needs to be inserted or not.
 	 * We insert OwnIdentities when they have been modified AND at least once every three days.
 	 * @return Whether this OwnIdentity needs to be inserted or not
 	 */
 	public final boolean needsInsert() {
-		// If the current edition was fetched successfully OR if parsing of it failed, we may insert a new one
-		// We may NOT insert a new one if it was not fetched: The identity might be in restore-mode
-		if(getCurrentEditionFetchState() == FetchState.NotFetched)
+		if(isRestoreInProgress())
 			return false;
 		
 		// TODO: Instead of only deciding by date whether the current edition was inserted, we should store both the date of

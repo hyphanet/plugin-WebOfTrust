@@ -2766,6 +2766,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		Logger.normal(this, "deleteOwnIdentity(): Finished.");
 	}
 
+	/**
+	 * NOTICE: When changing this function, please also take care of {@link OwnIdentity.isRestoreInProgress()}
+	 */
 	public synchronized void restoreOwnIdentity(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
 		Logger.normal(this, "restoreOwnIdentity(): Starting... ");
 		
