@@ -18,23 +18,22 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.identicon.Identicon;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.filter.ContentFilter;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
-import freenet.client.filter.ContentFilter;
 import freenet.l10n.BaseL10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
-import freenet.support.Base64;
-import freenet.support.IllegalBase64Exception;
 
 /**
  * The web interface of the WoT plugin.
@@ -346,6 +345,11 @@ public class WebInterface {
 
 			// ATTENTION: The same code is used in Freetalk's WebInterface.java. Please synchronize any changes which happen there.
 			
+			if(!ctx.isAllowedFullAccess()) {
+				sendUnauthorizedPage(ctx);
+				return;
+			}
+			
 			Bucket dataBucket = null;
 			Bucket output = core.tempBucketFactory.makeBucket(-1);
 			InputStream filterInput = null;
@@ -401,6 +405,11 @@ public class WebInterface {
 		@Override
 		@SuppressWarnings("synthetic-access")
 		public void handleMethodGET(URI uri, HTTPRequest httpRequest, ToadletContext toadletContext) throws ToadletContextClosedException, IOException {
+			if(!toadletContext.isAllowedFullAccess()) {
+				sendUnauthorizedPage(toadletContext);
+				return;
+			}
+			
 			String identityId = httpRequest.getParam("identity");
 			int width = 128;
 			int height = 128;
@@ -457,10 +466,10 @@ public class WebInterface {
 		knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "KnownIdentities");
 		configurationToadlet = new ConfigWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "Configuration");
 		
-		container.register(homeToadlet, "WebInterface.WotMenuName", mURI+"/", true, "WebInterface.WotMenuItem.Home", "WebInterface.WotMenuItem.Home.Tooltip", false, null);
-		container.register(ownIdentitiesToadlet, "WebInterface.WotMenuName", mURI + "/OwnIdentities", true, "WebInterface.WotMenuItem.OwnIdentities", "WebInterface.WotMenuItem.OwnIdentities.Tooltip", false, null);
-		container.register(knownIdentitiesToadlet, "WebInterface.WotMenuName", mURI + "/KnownIdentities", true, "WebInterface.WotMenuItem.KnownIdentities", "WebInterface.WotMenuItem.KnownIdentities.Tooltip", false, null);
-		container.register(configurationToadlet, "WebInterface.WotMenuName", mURI + "/Configuration", true, "WebInterface.WotMenuItem.Configuration", "WebInterface.WotMenuItem.Configuration.Tooltip", false, null);
+		container.register(homeToadlet, "WebInterface.WotMenuName", mURI+"/", true, "WebInterface.WotMenuItem.Home", "WebInterface.WotMenuItem.Home.Tooltip", true, null);
+		container.register(ownIdentitiesToadlet, "WebInterface.WotMenuName", mURI + "/OwnIdentities", true, "WebInterface.WotMenuItem.OwnIdentities", "WebInterface.WotMenuItem.OwnIdentities.Tooltip", true, null);
+		container.register(knownIdentitiesToadlet, "WebInterface.WotMenuName", mURI + "/KnownIdentities", true, "WebInterface.WotMenuItem.KnownIdentities", "WebInterface.WotMenuItem.KnownIdentities.Tooltip", true, null);
+		container.register(configurationToadlet, "WebInterface.WotMenuName", mURI + "/Configuration", true, "WebInterface.WotMenuItem.Configuration", "WebInterface.WotMenuItem.Configuration.Tooltip", true, null);
 		
 		// Invisible pages
 		
@@ -472,13 +481,13 @@ public class WebInterface {
 		getPuzzleToadlet = new GetPuzzleWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "GetPuzzle");
 		getIdenticonToadlet = new GetIdenticonWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "GetIdenticon");
 
-		container.register(createIdentityToadlet, null, mURI + "/CreateIdentity", true, false);
-		container.register(deleteOwnIdentityToadlet, null, mURI + "/DeleteOwnIdentity", true, false);
-		container.register(editOwnIdentityToadlet, null, mURI + "/EditOwnIdentity", true, false);
-		container.register(introduceIdentityToadlet, null, mURI + "/IntroduceIdentity", true, false);
-		container.register(identityToadlet, null, mURI + "/ShowIdentity", true, false);
-		container.register(getPuzzleToadlet, null, mURI + "/GetPuzzle", true, false);
-		container.register(getIdenticonToadlet, null, mURI + "/GetIdenticon", true, false);
+		container.register(createIdentityToadlet, null, mURI + "/CreateIdentity", true, true);
+		container.register(deleteOwnIdentityToadlet, null, mURI + "/DeleteOwnIdentity", true, true);
+		container.register(editOwnIdentityToadlet, null, mURI + "/EditOwnIdentity", true, true);
+		container.register(introduceIdentityToadlet, null, mURI + "/IntroduceIdentity", true, true);
+		container.register(identityToadlet, null, mURI + "/ShowIdentity", true, true);
+		container.register(getPuzzleToadlet, null, mURI + "/GetPuzzle", true, true);
+		container.register(getIdenticonToadlet, null, mURI + "/GetIdenticon", true, true);
 	}
 	
 	public String getURI() {
