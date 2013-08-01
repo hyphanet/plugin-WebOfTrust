@@ -20,7 +20,6 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.filter.ContentFilter;
 import freenet.clients.http.PageMaker;
-import freenet.clients.http.RedirectException;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
@@ -86,36 +85,9 @@ public class WebInterface {
 			return new HomePage(this, req, context, l10n());
 		}
 
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
 	}
 	
 	public class OwnIdentitiesWebInterfaceToadlet extends WebInterfaceToadlet {
-
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
 
 		protected OwnIdentitiesWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
@@ -129,20 +101,6 @@ public class WebInterface {
 	
 	public class KnownIdentitiesWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
-
 		protected KnownIdentitiesWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
@@ -155,20 +113,6 @@ public class WebInterface {
 	
 	public class ConfigWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
-
 		protected ConfigWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
@@ -180,20 +124,6 @@ public class WebInterface {
 	}
 
 	public class CreateIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
-
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
 
 		protected CreateIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
@@ -212,20 +142,6 @@ public class WebInterface {
 
 	public class DeleteOwnIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
-
 		protected DeleteOwnIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
@@ -242,20 +158,6 @@ public class WebInterface {
 	}
 
 	public class EditOwnIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
-
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
 
 		protected EditOwnIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
@@ -274,20 +176,6 @@ public class WebInterface {
 
 	public class IntroduceIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
-
 		protected IntroduceIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
@@ -304,20 +192,6 @@ public class WebInterface {
 	}
 	
 	public class IdentityWebInterfaceToadlet extends WebInterfaceToadlet {
-
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
 
 		protected IdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
