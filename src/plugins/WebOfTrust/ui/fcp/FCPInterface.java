@@ -356,11 +356,11 @@ public final class FCPInterface implements FredPluginFCP {
 
 				if(getAll || score.getTrustee().hasContext(context)) {
 					// TODO: Allow the client to select what data he wants
-					final Identity identity = score.getTrustee();
-					addIdentityFields(sfs, score.getTruster(), identity, Integer.toString(i), includeTrustValue);
+					final OwnIdentity scoreOwner = score.getTruster();
+					addIdentityFields(sfs, scoreOwner, score.getTrustee(), Integer.toString(i), includeTrustValue);
 					
 					if(truster == null)
-		    			sfs.putOverwrite("ScoreOwner" + i, score.getTruster().getID());
+		    			sfs.putOverwrite("ScoreOwner" + i, scoreOwner.getID());
 					
 					++i;
 				}
