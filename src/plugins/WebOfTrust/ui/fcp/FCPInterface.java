@@ -228,46 +228,42 @@ public final class FCPInterface implements FredPluginFCP {
     	synchronized(mWoT) {
     		final OwnIdentity truster = mWoT.getOwnIdentityByID(trusterID);
     		final Identity identity = mWoT.getIdentityByID(identityID);
-            addIdentityFields(sfs, truster, identity, "", true);
-            addIdentityFields(sfs, truster, identity, "0", true);
+            addIdentityFields(sfs, identity, "");
+            addTrustFields(sfs, truster, identity, "");
+            addScoreFields(sfs, truster, identity, "");
+            
+            addIdentityFields(sfs, identity, "0");
+            addTrustFields(sfs, truster, identity, "0");
+            addScoreFields(sfs, truster, identity, "0");
     	}
     	
 		return sfs;
 	}
 
     /**
-     * Add fields describing the perspective on the given identity from truster. If there is no suffix, the fields are
-     * set up as the only identity described. If not, they are set up as the identity is one of possibly multiple.<br/>
-     * Existing fields will be overwritten.
-     * @param sfs to add fields to.
-     * @param identity to describe
-     * @param truster use for trust and score
-     * @param suffix added as descriptor for possibly multiple identities. Empty string is special case.
-     * @param addTrustFields If true, add "Trust" field. If false, don't and skip trust query.
+     * Add fields describing the given identity.
+     * NicknameSUFFIX = nickname of the identity
+     * RequestURISUFFIX = request URI of the identity
+     * IdentitySUFFIX = ID of the identity
+     * 
+     * If suffix.isEmpty() is true:
+     * ContextX = name of context with index X
+     * PropertyX.Name = name of property with index X
+     * PropertyX.Value = value of property with index X
+     * 
+     * If suffix.isEmpty() is false:
+     * ContextsSUFFIX.ContextX = name of context with index X
+     * PropertiesSUFFIX.PropertyX.Name = name of property X
+     * PropertiesSUFFIX.PropertyX.Value = value of property X
+     * 
+     * @param sfs The {@link SimpleFieldSet} to add fields to.
+     * @param identity The {@link Identity} to describe.
+     * @param suffix Added as descriptor for possibly multiple identities. Empty string is special case as explained in the function description.
      */
-    private void addIdentityFields(SimpleFieldSet sfs, OwnIdentity truster, Identity identity, String suffix,
-                                   boolean addTrustFields) {
+    private void addIdentityFields(SimpleFieldSet sfs, Identity identity, String suffix) {
         sfs.putOverwrite("Nickname" + suffix, identity.getNickname());
         sfs.putOverwrite("RequestURI" + suffix, identity.getRequestURI().toString());
         sfs.putOverwrite("Identity" + suffix, identity.getID());
-
-        if (addTrustFields) {
-            try {
-                final Trust trust = mWoT.getTrust(truster, identity);
-                sfs.putOverwrite("Trust" + suffix, Byte.toString(trust.getValue()));
-            } catch (final NotTrustedException e1) {
-                sfs.putOverwrite("Trust" + suffix, "null");
-            }
-        }
-
-        try {
-            final Score score = mWoT.getScore(truster, identity);
-            sfs.putOverwrite("Score" + suffix, Integer.toString(score.getScore()));
-            sfs.putOverwrite("Rank" + suffix, Integer.toString(score.getRank()));
-        } catch (final NotInTrustTreeException e) {
-            sfs.putOverwrite("Score" + suffix, "null");
-            sfs.putOverwrite("Rank" + suffix, "null");
-        }
 
         final Iterator<String> contexts = identity.getContexts().iterator();
         int propertiesCounter = 0;
@@ -289,6 +285,52 @@ public final class FCPInterface implements FredPluginFCP {
                         property.getValue());
             }
         }
+    }
+    
+    /**
+     * Adds fields (currently only one) describing the trust value from the given truster to the given trustee:
+     * 
+     * TrustSUFFIX = Value of trust, from -100 to +100. "null" if no such trust exists.
+     * 
+     * @param suffix Added as descriptor for possibly multiple identities.
+     */
+    private void addTrustFields(SimpleFieldSet sfs, Identity truster, Identity trustee, String suffix) {
+        try {
+            final Trust trust = mWoT.getTrust(truster, trustee);
+            sfs.putOverwrite("Trust" + suffix, Byte.toString(trust.getValue()));
+        } catch (final NotTrustedException e1) {
+            sfs.putOverwrite("Trust" + suffix, "null");
+        }
+    }
+    
+    /**
+     * Adds field describing the given score value
+     * 
+     * ScoreSUFFIX = Integer value of the Score
+     * RankSUFFIX = Integer value of the rank of the score.
+     * 
+     * @param suffix Added as descriptor for possibly multiple identities.
+     */
+    private void addScoreFields(SimpleFieldSet sfs, Score score, String suffix) {
+        sfs.putOverwrite("Score" + suffix, Integer.toString(score.getScore()));
+        sfs.putOverwrite("Rank" + suffix, Integer.toString(score.getRank()));
+    }
+    
+    /**
+     * Adds field describing the score value from the given truster to the given trustee.
+     * 
+     * ScoreSUFFIX = Integer value of the Score. "null" if no such score exists.
+     * RankSUFFIX = Integer value of the rank of the score. "null" if no such score exists.
+     * @param suffix Added as descriptor for possibly multiple identities.
+     */
+    private void addScoreFields(SimpleFieldSet sfs, OwnIdentity truster, Identity trustee, String suffix) {
+        try {
+            addScoreFields(sfs, mWoT.getScore(truster, trustee), suffix);
+        } catch (final NotInTrustTreeException e) {
+            sfs.putOverwrite("Score" + suffix, "null");
+            sfs.putOverwrite("Rank" + suffix, "null");
+        }
+
     }
 
     private SimpleFieldSet handleGetOwnIdentities(final SimpleFieldSet params) {
@@ -357,7 +399,14 @@ public final class FCPInterface implements FredPluginFCP {
 				if(getAll || score.getTrustee().hasContext(context)) {
 					// TODO: Allow the client to select what data he wants
 					final OwnIdentity scoreOwner = score.getTruster();
-					addIdentityFields(sfs, scoreOwner, score.getTrustee(), Integer.toString(i), includeTrustValue);
+					final Identity identity = score.getTrustee();
+					final String suffix = Integer.toString(i);
+					
+					addIdentityFields(sfs, identity, suffix);
+					addScoreFields(sfs, score, suffix);
+					
+					if(includeTrustValue)
+						addTrustFields(sfs, scoreOwner, identity, suffix);
 					
 					if(truster == null)
 		    			sfs.putOverwrite("ScoreOwner" + i, scoreOwner.getID());
