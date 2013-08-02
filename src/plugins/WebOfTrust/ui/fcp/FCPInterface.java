@@ -228,8 +228,8 @@ public final class FCPInterface implements FredPluginFCP {
     	synchronized(mWoT) {
     		final OwnIdentity truster = mWoT.getOwnIdentityByID(trusterID);
     		final Identity identity = mWoT.getIdentityByID(identityID);
-            addIdentityFields(sfs, identity, truster, "", true);
-            addIdentityFields(sfs, identity, truster, "0", true);
+            addIdentityFields(sfs, truster, identity, "", true);
+            addIdentityFields(sfs, truster, identity, "0", true);
     	}
     	
 		return sfs;
@@ -245,7 +245,7 @@ public final class FCPInterface implements FredPluginFCP {
      * @param suffix added as descriptor for possibly multiple identities. Empty string is special case.
      * @param addTrustFields If true, add "Trust" field. If false, don't and skip trust query.
      */
-    private void addIdentityFields(SimpleFieldSet sfs, Identity identity, OwnIdentity truster, String suffix,
+    private void addIdentityFields(SimpleFieldSet sfs, OwnIdentity truster, Identity identity, String suffix,
                                    boolean addTrustFields) {
         sfs.putOverwrite("Nickname" + suffix, identity.getNickname());
         sfs.putOverwrite("RequestURI" + suffix, identity.getRequestURI().toString());
@@ -357,7 +357,7 @@ public final class FCPInterface implements FredPluginFCP {
 				if(getAll || score.getTrustee().hasContext(context)) {
 					// TODO: Allow the client to select what data he wants
 					final Identity identity = score.getTrustee();
-					addIdentityFields(sfs, identity, score.getTruster(), Integer.toString(i), includeTrustValue);
+					addIdentityFields(sfs, score.getTruster(), identity, Integer.toString(i), includeTrustValue);
 					
 					if(truster == null)
 		    			sfs.putOverwrite("ScoreOwner" + i, score.getTruster().getID());
