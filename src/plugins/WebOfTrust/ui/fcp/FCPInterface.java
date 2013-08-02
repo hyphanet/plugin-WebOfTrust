@@ -228,13 +228,15 @@ public final class FCPInterface implements FredPluginFCP {
     	synchronized(mWoT) {
     		final OwnIdentity truster = mWoT.getOwnIdentityByID(trusterID);
     		final Identity identity = mWoT.getIdentityByID(identityID);
-            addIdentityFields(sfs, identity, "");
-            addTrustFields(sfs, truster, identity, "");
-            addScoreFields(sfs, truster, identity, "");
             
             addIdentityFields(sfs, identity, "0");
             addTrustFields(sfs, truster, identity, "0");
             addScoreFields(sfs, truster, identity, "0");
+            
+    		// TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
+            addIdentityFields(sfs, identity, "");
+            addTrustFields(sfs, truster, identity, "");
+            addScoreFields(sfs, truster, identity, "");
     	}
     	
 		return sfs;
