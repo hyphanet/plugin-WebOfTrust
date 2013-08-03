@@ -35,10 +35,8 @@ public abstract class WebInterfaceToadlet extends Toadlet {
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) 
 			throws ToadletContextClosedException, IOException, RedirectException {
 		
-		if(!ctx.isAllowedFullAccess()) {
-			sendUnauthorizedPage(ctx);
-			return;
-		}
+	    if(!ctx.checkFullAccess(this))
+	        return;
 		
 		String ret;
 		try {
@@ -60,10 +58,8 @@ public abstract class WebInterfaceToadlet extends Toadlet {
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		if(!ctx.isAllowedFullAccess()) {
-			sendUnauthorizedPage(ctx);
-			return;
-		}
+	    if(!ctx.checkFullAccess(this))
+	        return;
 		
 		String pass = request.getPartAsString("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {

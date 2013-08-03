@@ -219,11 +219,9 @@ public class WebInterface {
 
 			// ATTENTION: The same code is used in Freetalk's WebInterface.java. Please synchronize any changes which happen there.
 			
-			if(!ctx.isAllowedFullAccess()) {
-				sendUnauthorizedPage(ctx);
-				return;
-			}
-			
+		    if(!ctx.checkFullAccess(this))
+		        return;
+		    
 			Bucket dataBucket = null;
 			Bucket output = core.tempBucketFactory.makeBucket(-1);
 			InputStream filterInput = null;
@@ -279,10 +277,8 @@ public class WebInterface {
 		@Override
 		@SuppressWarnings("synthetic-access")
 		public void handleMethodGET(URI uri, HTTPRequest httpRequest, ToadletContext toadletContext) throws ToadletContextClosedException, IOException {
-			if(!toadletContext.isAllowedFullAccess()) {
-				sendUnauthorizedPage(toadletContext);
-				return;
-			}
+		    if(!toadletContext.checkFullAccess(this))
+		        return;
 			
 			String identityId = httpRequest.getParam("identity");
 			int width = 128;
