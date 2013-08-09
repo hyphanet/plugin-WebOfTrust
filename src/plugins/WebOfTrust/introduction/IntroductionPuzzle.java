@@ -166,7 +166,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		mType = newType;
 		mMimeType = newMimeType;
 		mDayOfInsertion = TimeUtil.setTimeToZero(myDateOfInsertion).getTime();
-		mValidUntilDate = myExpirationDate;
+		mValidUntilDate = (Date)myExpirationDate.clone();
 		mIndex = myIndex;
 		mData = newData;
 		mWasSolved = false; mSolution = null; mSolver = null;
@@ -261,7 +261,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	
 	public Date getValidUntilDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		return mValidUntilDate;
+		return (Date)mValidUntilDate.clone();
 	}
 	
 	public int getIndex() {
