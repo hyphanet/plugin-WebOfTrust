@@ -962,7 +962,7 @@ public class Identity extends Persistent implements Cloneable {
 		IdentityID.constructAndValidateFromString(mID); // Throws if invalid
 		
 		if(mCurrentEditionFetchState == null)
-			throw new NullPointerException("mFetchState==null");
+			throw new NullPointerException("mCurrentEditionFetchState==null");
 		
 		if(mLatestEditionHint < 0 || mLatestEditionHint < mRequestURI.getEdition())
 			throw new IllegalStateException("Invalid edition hint: " + mLatestEditionHint + "; current edition: " + mRequestURI.getEdition());
