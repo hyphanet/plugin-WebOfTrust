@@ -4,6 +4,11 @@ This is because they are very expensive or destroy the database.
 They can only be manually executed by developers. And as a developer you SHOULD do that periodically.
 
 Those are:
+- DEBUG logging: You should set a loglevel of "plugins.WebOfTrust:DEBUG" in your Freenet node and let WOT run for a long time with that.
+  There are some checks, for example the startup database integrity test, which only get executed if debug logging is enabled.
+  Additionally, you can set the base log level ("Minimum priority to log messages at") of your node to NONE to ensure that nothing
+  but WOT messages gets logged.
+  
 - WebOfTrust.checkForDatabaseLeaks(). It will delete all identities in the database which should also delete ALL other objects.
   Then it will check whether objects of any class still exist in the database. If they do, they are leaks.
   Ideally, you would use this on a WOT database upon which WOT has been running for quite a few days. 
