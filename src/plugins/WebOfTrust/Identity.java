@@ -930,13 +930,13 @@ public class Identity extends Persistent implements Cloneable {
 			checkedActivate(4);
 			activateProperties();
 			
-			// mDB.delete(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// checkedDelete(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			mRequestURI.removeFrom(mDB);
 			checkedDelete(mCurrentEditionFetchState); // TODO: Is this still necessary?
-			// mDB.delete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			// mDB.delete(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			// mDB.delete(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			// mDB.delete(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// checkedDelete(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// checkedDelete(mNickname); /* Not stored because db4o considers it as a primitive and automatically stores it. */
+			// checkedDelete(mDoesPublishTrustList); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			checkedDelete(mProperties);
 			checkedDelete(mContexts);
 			checkedDelete();
