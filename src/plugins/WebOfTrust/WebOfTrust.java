@@ -583,6 +583,77 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
 	}
 	
+	/**
+	 * DO NOT USE THIS FUNCTION ON A DATABASE WHICH YOU WANT TO CONTINUE TO USE!
+	 * 
+	 * Debug function for finding object leaks in the database.
+	 * 
+	 * - Deletes all identities in the database - This should delete ALL objects in the database.
+	 * - Then it checks for whether any objects still exist - those are leaks.
+	 */
+	private synchronized void checkForDatabaseLeaks() {
+		Logger.normal(this, "Checking for database leaks... This will delete all identities!");
+		 
+		{
+			Logger.debug(this, "Checking FetchState leakage...");
+			
+			final Query query = mDB.query();
+			query.constrain(FetchState.class);
+			@SuppressWarnings("unchecked")
+			ObjectSet<FetchState> result = (ObjectSet<FetchState>)query.execute();
+			
+			for(FetchState state : result) {
+				Logger.debug(this, "Checking " + state);
+				
+				final Query query2 = mDB.query();
+				query2.constrain(Identity.class);
+				query.descend("mCurrentEditionFetchState").constrain(state).identity();
+				@SuppressWarnings("unchecked")
+				ObjectSet<FetchState> result2 = (ObjectSet<FetchState>)query.execute();
+				
+				switch(result2.size()) {
+					case 0:
+						Logger.error(this, "Found leaked FetchState!");
+						break;
+					case 1:
+						break;
+					default:
+						Logger.error(this, "Found re-used FetchState, count: " + result2.size());
+						break;
+				}
+			}
+			
+			Logger.debug(this, "Finished checking FetchState leakage, amount:" + result.size());
+		}
+		
+		
+		Logger.normal(this, "Deleting ALL identities...");
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				beginTrustListImport();
+				for(Identity identity : getAllIdentities()) {
+					deleteWithoutCommit(identity);
+				}
+				finishTrustListImport();
+				Persistent.checkedCommit(mDB, this);
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		Logger.normal(this, "Deleting ALL identities finished.");
+		
+		Query query = mDB.query();
+		query.constrain(Object.class);
+		@SuppressWarnings("unchecked")
+		ObjectSet<Object> result = query.execute();
+
+		for(Object leak : result) {
+			Logger.error(this, "Found leaked object: " + leak);
+		}
+		
+		Logger.warning(this, "Finished checking for database leaks. This database is empty now, delete it.");
+	}
+	
 	private synchronized boolean verifyDatabaseIntegrity() {
 		deleteDuplicateObjects();
 		deleteOrphanObjects();
