@@ -166,6 +166,8 @@ public final class OwnIdentity extends Identity {
 		setEdition(edition);
 		checkedActivate(1);
 		mCurrentEditionFetchState = FetchState.NotFetched;
+		
+		// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive */
 		mLastFetchedDate = fetchedDate != null ? (Date)fetchedDate.clone() : new Date(0);
 		
 		// This is not really necessary because needsInsert() returns false if mCurrentEditionFetchState == NotFetched
@@ -188,6 +190,7 @@ public final class OwnIdentity extends Identity {
 	 */
 	protected final void updateLastInsertDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
+		// checkedDelete(mLastInsertDate); /* Not stored because db4o considers it as a primitive */
 		mLastInsertDate = CurrentTimeUTC.get();
 	}
 

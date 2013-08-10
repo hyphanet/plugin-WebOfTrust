@@ -415,8 +415,12 @@ public class Identity extends Persistent implements Cloneable {
 	 */
 	protected final void onFetched(Date fetchDate) {
 		checkedActivate(1);
+		
 		mCurrentEditionFetchState = FetchState.Fetched;
+		
+		// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive */
 		mLastFetchedDate = (Date)fetchDate.clone(); // Clone it to prevent duplicate usage of db4o-stored objects
+		
 		updated();
 	}
 	
@@ -425,8 +429,12 @@ public class Identity extends Persistent implements Cloneable {
 	 */
 	protected final void onParsingFailed() {
 		checkedActivate(1);
+		
 		mCurrentEditionFetchState = FetchState.ParsingFailed;
+		
+		// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive */
 		mLastFetchedDate = CurrentTimeUTC.get();
+		
 		updated();
 	}
 
@@ -768,6 +776,7 @@ public class Identity extends Persistent implements Cloneable {
 	 */
 	public final void updated() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
+		// checkedDelete(mLastChangedDate); /* Not stored because db4o considers it as a primitive */
 		mLastChangedDate = CurrentTimeUTC.get();
 	}
 
