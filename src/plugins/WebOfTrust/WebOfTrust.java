@@ -2606,10 +2606,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 	}
 	
-	public synchronized void deleteIdentity(String id) throws UnknownIdentityException {
-		deleteIdentity(getIdentityByID(id));
-	}
-	
 	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
 		throws MalformedURLException, InvalidParameterException {
 		
