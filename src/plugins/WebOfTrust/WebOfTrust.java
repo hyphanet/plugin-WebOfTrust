@@ -2588,6 +2588,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		return identity;
 	}
 	
+	/**
+	 * @deprecated Please use {@link #deleteOwnIdentity(String)} instead. See {@link #deleteWithoutCommit(Identity)} for the reasons.
+	 */
+	@Deprecated
 	public synchronized void deleteIdentity(Identity identity) {
 		synchronized(mPuzzleStore) {
 		synchronized(Persistent.transactionLock(mDB)) {
