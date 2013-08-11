@@ -2844,6 +2844,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		Logger.normal(this, "restoreOwnIdentity(): Starting... ");
 		
 		OwnIdentity identity;
+		
+		// TODO FIXME XXX: What about synchronization of the IdentityFetcher?
 		synchronized(mPuzzleStore) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
