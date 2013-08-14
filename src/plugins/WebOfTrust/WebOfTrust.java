@@ -199,7 +199,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			mPuzzleStore = new IntroductionPuzzleStore(this);
 			
-			upgradeDB();
+			upgradeDB(); // Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher while this is executing.
 			
 			mXMLTransformer = new XMLTransformer(this);
 			
@@ -526,6 +526,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		return Db4o.openFile(getNewDatabaseConfiguration(), file.getAbsolutePath()).ext();
 	}
 	
+	/**
+	 * ATTENTION: Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher while this is executing.
+	 * It doesn't synchronize on the IntroductionPuzzleStore and IdentityFetcher because it assumes that they are not being used yet.
+	 * (I didn't upgrade this function to do the locking because it would be much work to test the changes for little benefit)  
+	 */
 	@SuppressWarnings("deprecation")
 	private synchronized void upgradeDB() {
 		int databaseVersion = mConfig.getDatabaseFormatVersion();
@@ -539,6 +544,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			Logger.normal(this, "Upgrading database version " + databaseVersion);
 			
 			//synchronized(this) { // Already done at function level
+			//synchronized(mPuzzleStore) { // Normally would be needed for deleteWithoutCommit(Identity) but IntroductionClient/Server are not running yet
+			//synchronized(mFetcher) { // Normally would be needed for deleteWithoutCommit(Identity) but the IdentityFetcher is not running yet
 				synchronized(Persistent.transactionLock(mDB)) {
 					try {
 						Logger.normal(this, "Generating Score IDs...");
