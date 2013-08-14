@@ -881,6 +881,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Debug function for deleting duplicate identities etc. which might have been created due to bugs :)
 	 */
 	private synchronized void deleteDuplicateObjects() {
+		synchronized(mPuzzleStore) { // Needed for deleteIdentity()
+		synchronized(mFetcher) { // // Needed for deleteIdentity()
 		synchronized(Persistent.transactionLock(mDB)) {
 		try {
 			HashSet<String> deleted = new HashSet<String>();
@@ -907,6 +909,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		catch(RuntimeException e) {
 			Persistent.checkedRollback(mDB, this, e);
+		}
+		}
 		}
 		}
 
