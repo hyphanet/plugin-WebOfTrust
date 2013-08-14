@@ -45,6 +45,13 @@ import freenet.support.io.NativeThread;
  * It still works because those places are typically synchronized on the WoT anyway. We should fix it nevertheless.
  * Maybe we just might want to get rid of synchronization on the fetcher for storing commands... I will have to investigate.
  * 
+ * <b>Synchronization:</b>
+ * The locking order must be:
+ * 	synchronized(instance of WebOfTrust) {
+ *	synchronized(instance of IntroductionPuzzleStore) {
+ *	synchronized(instance of IdentityFetcher) {
+ *	synchronized(Persistent.transactionLock(instance of ObjectContainer)) {
+ * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
 public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable {
