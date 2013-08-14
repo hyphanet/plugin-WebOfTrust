@@ -635,6 +635,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		
 		Logger.normal(this, "Deleting ALL identities...");
+		synchronized(mPuzzleStore) {
+		synchronized(mFetcher) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				beginTrustListImport();
@@ -646,6 +648,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
+		}
+		}
 		}
 		Logger.normal(this, "Deleting ALL identities finished.");
 		
