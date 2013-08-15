@@ -1710,7 +1710,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 *   If you call this function for ALL identities in a database, EVERYTHING should be deleted and the database SHOULD be empty.
 	 *   You then can check whether the database actually IS empty to test for leakage.
 	 * 
-	 * You have to lock the WoT and the IntroductionPuzzleStore before calling this function.
+	 * You have to lock the WebOfTrust, the IntroductionPuzzleStore and the IdentityFetcher before calling this function.
 	 */
 	private void deleteWithoutCommit(Identity identity) {
 		// We want to use beginTrustListImport, finishTrustListImport / abortTrustListImport.
