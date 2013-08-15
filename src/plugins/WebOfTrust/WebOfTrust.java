@@ -2701,8 +2701,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public synchronized void deleteOwnIdentity(String id) throws UnknownIdentityException {
 		Logger.normal(this, "deleteOwnIdentity(): Starting... ");
 		
-		// TODO FIXME XXX: What about synchronization of the IdentityFetcher?
 		synchronized(mPuzzleStore) {
+		synchronized(mFetcher) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			final OwnIdentity oldIdentity = getOwnIdentityByID(id);
 			
@@ -2850,6 +2850,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 		}
 		}
+		}
 		
 		Logger.normal(this, "deleteOwnIdentity(): Finished.");
 	}
@@ -2862,8 +2863,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		OwnIdentity identity;
 		
-		// TODO FIXME XXX: What about synchronization of the IdentityFetcher?
 		synchronized(mPuzzleStore) {
+		synchronized(mFetcher) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				long edition = 0;
@@ -2997,6 +2998,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				abortTrustListImport(e);
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
+		}
 		}
 		}
 		
