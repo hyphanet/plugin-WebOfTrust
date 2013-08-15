@@ -556,6 +556,9 @@ public final class XMLTransformer {
 	 * Creates an identity from an identity introduction, stores it in the database and returns the new identity.
 	 * If the identity already exists, the existing identity is returned.
 	 * 
+	 * You have to synchronize on the WebOfTrust object when using this function!
+	 * TODO: Remove this requirement and re-query the parameter OwnIdentity puzzleOwner from the database after we are synchronized. 
+	 * 
 	 * @param xmlInputStream An InputStream which must not return more than {@link MAX_INTRODUCTION_BYTE_SIZE} bytes.
 	 * @throws InvalidParameterException If the XML format is unknown or if the puzzle owner does not allow introduction anymore.
 	 * @throws IOException 
