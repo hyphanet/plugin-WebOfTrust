@@ -220,7 +220,7 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		final List<OwnIntroductionPuzzle> deletedPuzzles = generateNewPuzzles(a);
 		final int puzzleCountB = generateNewPuzzles(b).size();
 		
-		mWoT.deleteIdentity(a);
+		mWoT.deleteOwnIdentity(a.getID());
 		flushCaches();
 		
 		// We should not query for the puzzle count of the identity to ensure that we catch puzzles whose owner has become null as well.
