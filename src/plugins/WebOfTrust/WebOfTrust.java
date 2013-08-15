@@ -1239,7 +1239,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 								// If we found a rank less than infinite we can overwrite the old rank with this one, but only if the infinite rank was not
 								// given by the tree owner.
 								try {
-									getTrust(treeOwner, trustee);
+									final Trust treeOwnerTrust = getTrust(treeOwner, trustee);
+									assert(treeOwnerTrust.getValue() <= 0); // TODO: Is this correct?
 								} catch(NotTrustedException e) {
 									if(trust.getValue() > 0) {
 										rankValues.put(trustee, trusteeRank);
