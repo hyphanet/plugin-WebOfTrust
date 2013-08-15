@@ -2078,9 +2078,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * It creates or updates an existing Trust object and make the trustee compute its {@link Score}.
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(WebOfTrust.this) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... setTrustWithoutCommit(...); mDB.commit(); }
 	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
+	 * }
 	 * }
 	 * 
 	 * @param truster The Identity that gives the trust
@@ -2089,7 +2091,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @param newComment A comment to explain the given value
 	 * @throws InvalidParameterException if a given parameter isn't valid, see {@link Trust} for details on accepted values.
 	 */
-	protected synchronized void setTrustWithoutCommit(Identity truster, Identity trustee, byte newValue, String newComment)
+	protected void setTrustWithoutCommit(Identity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
 		try { // Check if we are updating an existing trust value
