@@ -2609,6 +2609,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	@Deprecated
 	public synchronized void deleteIdentity(Identity identity) {
 		synchronized(mPuzzleStore) {
+		synchronized(mFetcher) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				deleteWithoutCommit(identity);
@@ -2617,6 +2618,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
+		}
 		}
 		}
 	}
