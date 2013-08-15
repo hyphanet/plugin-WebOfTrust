@@ -898,7 +898,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				for(Identity duplicate : duplicates) {
 					if(deleted.contains(duplicate.getID()) == false) {
 						Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
-						deleteIdentity(duplicate);
+						deleteWithoutCommit(duplicate);
+						Persistent.checkedCommit(mDB, this);
 					}
 				}
 				deleted.add(identity.getID());
@@ -2601,26 +2602,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		
 		return identity;
-	}
-	
-	/**
-	 * @deprecated Please use {@link #deleteOwnIdentity(String)} instead. See {@link #deleteWithoutCommit(Identity)} for the reasons.
-	 */
-	@Deprecated
-	public synchronized void deleteIdentity(Identity identity) {
-		synchronized(mPuzzleStore) {
-		synchronized(mFetcher) {
-		synchronized(Persistent.transactionLock(mDB)) {
-			try {
-				deleteWithoutCommit(identity);
-				Persistent.checkedCommit(mDB, this);
-			}
-			catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
-			}
-		}
-		}
-		}
 	}
 	
 	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
