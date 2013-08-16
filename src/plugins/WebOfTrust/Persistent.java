@@ -21,6 +21,7 @@ import com.db4o.query.Query;
 
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 
 /**
@@ -116,6 +117,15 @@ public abstract class Persistent {
 	}
 	
 	/**
+	 * @deprecated Only for being used when dealing with objects which are from a different object container than the passed Freetalk uses.
+	 */
+	@Deprecated
+	public final void initializeTransient(final WebOfTrust myWebOfTrust, final ExtObjectContainer db) {
+		mWebOfTrust = myWebOfTrust;
+		mDB = db;
+	}
+	
+	/**
 	 * Returns the lock for creating a transaction.
 	 * A proper transaction typically looks like this:
 	 * synchronized(Persistent.transactionLock(db)) { try { ... do stuff ... Persistent.checkedCommit() } catch(RuntimeException e) { Persistent.checkedRollback(); } }
@@ -185,7 +195,7 @@ public abstract class Persistent {
 		if(mDB.isStored(object))
 			mDB.delete(object);
 		else
-			Logger.error(this, "Trying to delete a inexistent object: " + object);
+			Logger.warning(this, "Trying to delete a inexistent object: " + object, new RuntimeException()); // Exception added to get a stack trace
 		testDatabaseIntegrity();
 	}
 	
@@ -229,22 +239,44 @@ public abstract class Persistent {
 	}
 	
 	/**
-	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction, logs the passed exception and throws it.
+	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction and logs the passed exception. 
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
 	 * synchronized(Persistent.transactionLock(mDB)) {<br />
 	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
 	 * 	catch(RuntimeException e) { Persistent.checkedRollback(mDB, this, e); }<br />
-	 * } 
+	 * }
+	 * 
+	 * @param db The database on which the rollback shall happen.
+	 * @param loggingObject The object whose class shall appear in the Freenet log file.
+	 * @param error The Exception which triggered the rollback. Will be logged to the Freenet log file.
+	 * @param logLevel The {@link LogLevel} to use in the Freenet log file when the rollback is logged.
 	 */
-	public static final void checkedRollback(final ExtObjectContainer db, final Object loggingObject, final Throwable error) {
+	public static final void checkedRollback(final ExtObjectContainer db, final Object loggingObject, final Throwable error, LogLevel logLevel) {
 		// As of db4o 7.4 it seems necessary to call gc(); to cause rollback() to work.
 		testDatabaseIntegrity(null, db);
 		System.gc();
 		db.rollback();
 		System.gc(); 
-		Logger.error(loggingObject, "ROLLED BACK!", error);
+		Logger.logStatic(loggingObject, "ROLLED BACK!", error, logLevel);
 		testDatabaseIntegrity(null, db);
 	}
+	
+	/**
+	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction and logs the passed exception with LogLevel {@link LogLevel.ERROR}.
+	 * The call to this function must be embedded in a transaction, that is a block of:<br />
+	 * synchronized(Persistent.transactionLock(mDB)) {<br />
+	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
+	 * 	catch(RuntimeException e) { Persistent.checkedRollback(mDB, this, e); }<br />
+	 * } 
+	 * 	
+	 * @param db The database on which the rollback shall happen.
+	 * @param loggingObject The object whose class shall appear in the Freenet log file.
+	 * @param error The Exception which triggered the rollback. Will be logged to the Freenet log file.
+	 */
+	public static final void checkedRollback(final ExtObjectContainer db, final Object loggingObject, final Throwable error) {
+		checkedRollback(db, loggingObject, error, LogLevel.ERROR);
+	}
+	
 
 	/**
 	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction, logs the passed exception and throws it.

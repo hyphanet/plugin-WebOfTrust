@@ -28,11 +28,15 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 
 	public void make() {
 		if(request.isPartSet("confirm")) {
-			wot.deleteIdentity(mIdentity);
-			
-			/* TODO: Show the OwnIdentities page instead! Use the trick which Freetalk does for inlining pages */
-			HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Header"));
-			box.addChild("#", l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text"));
+			try {
+				wot.deleteOwnIdentity(mIdentity.getID());
+				
+				/* TODO: Show the OwnIdentities page instead! Use the trick which Freetalk does for inlining pages */
+				HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Header"));
+				box.addChild("#", l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text"));
+			} catch (UnknownIdentityException e) {
+				addErrorBox(l10n().getString("Common.UnknownIdentityExceptionTitle"), l10n().getString("Common.UnknownIdentityExceptionDescription"));
+			}
 		}
 		else
 			makeConfirmation();

@@ -4,7 +4,9 @@
 package plugins.WebOfTrust;
 
 import java.util.Date;
+import java.util.StringTokenizer;
 
+import plugins.WebOfTrust.Identity.IdentityID;
 import freenet.support.CurrentTimeUTC;
 
 
@@ -26,6 +28,31 @@ public final class Score extends Persistent implements Cloneable {
 	@IndexedField
 	private final Identity mTrustee;
 	
+	/**
+	 * The ID of this Score in the database. Composed by:
+	 * mTruster.getID() + "@" + mTrustee.getID()
+	 * 
+	 * We need this ID because the following query takes O(N) instead of O(1) with db4o:
+	 * 
+	 * final Query query = mDB.query();
+	 * query.constrain(Score.class);
+	 * query.descend("mTruster").constrain(truster).identity();
+	 * query.descend("mTrustee").constrain(trustee).identity();
+	 * final ObjectSet<Score> result = new Persistent.InitializingObjectSet<Score>(this, query);
+	 * 
+	 * (With N being the number of Score objects, the query takes O(N) because db4o either uses the index on mTruster and then has to check a worst case of
+	 * N objects for the right mTrustee value - or vice versa with the mTrustee index)
+	 * 
+	 * With this composite ID, the same query can be executed in O(1) by doing:
+	 * 
+	 * final Query query = mDB.query();
+	 * query.constrain(Score.class);
+	 * query.descend("mID").constrain(mTruster.getID() + "@" + mTrustee.getID()).identity();
+	 * final ObjectSet<Score> result = new Persistent.InitializingObjectSet<Score>(this, query); 
+	 */
+	@IndexedField
+	private String mID;
+	
 	/** The actual score of the Identity. Used to decide if the OwnIdentity sees the Identity or not */
 	@IndexedField
 	private int mValue;
@@ -41,7 +68,74 @@ public final class Score extends Persistent implements Cloneable {
 	 * The date when the value, rank or capacity was last changed.
 	 */
 	private Date mLastChangedDate;
+	
+	
+	/**
+	 * A class for generating and validating Score IDs.
+	 * Its purpose is NOT to be stored in the database: That would make the queries significantly slower.
+	 * We store the IDs as Strings instead for fast queries.
+	 * 
+	 * Its purpose is to allow validation of ScoreIDs which we obtain from the database or from the network.
+	 * 
+	 * TODO: This was added after we already had manual ID-generation / checking in the code everywhere. Use this class instead. 
+	 */
+	protected static final class ScoreID {
+		
+		private static final int MAX_SCORE_ID_LENGTH = IdentityID.MAX_IDENTITY_ID_LENGTH + "@".length() + IdentityID.MAX_IDENTITY_ID_LENGTH;
+		
+		private final String mID;
+		private final String mTrusterID;
+		private final String mTrusteeID;
+		
+		public ScoreID(Identity truster, Identity trustee) {
+			mTrusterID = truster.getID();
+			mTrusteeID = trustee.getID();
+			mID = truster.getID() + "@" + trustee.getID();
+		}
+		
+		private ScoreID(String id) {
+			if(id.length() > MAX_SCORE_ID_LENGTH)
+				throw new IllegalArgumentException("ID is too long, length: " + id.length());
 
+			mID = id;
+
+			final StringTokenizer tokenizer = new StringTokenizer(id, "@");
+
+			mTrusterID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
+			mTrusteeID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
+
+			if(tokenizer.hasMoreTokens())
+				throw new IllegalArgumentException("Invalid MessageID: " + id);
+		}
+		
+		public static ScoreID constructAndValidate(Score score, String id) {
+			final ScoreID scoreID = new ScoreID(id);
+			if(!score.getTruster().getID().equals(scoreID.mTrusterID))
+				throw new RuntimeException("Truster ID mismatch for Score " + score + ": ScoreID is " + id);
+			
+			if(!score.getTrustee().getID().equals(scoreID.mTrusteeID))
+				throw new RuntimeException("Trustee ID mismatch for Score " + score + ": ScoreID is " + id);
+			
+			return scoreID;
+		}
+		
+		@Override
+		public final String toString() {
+			return mID;
+		}
+		
+		@Override
+		public final boolean equals(final Object o) {
+			if(o instanceof ScoreID)
+				return mID.equals(((ScoreID)o).mID);
+			
+			if(o instanceof String)
+				return mID.equals((String)o);
+			
+			return false;
+		}
+		
+	}
 
 	/**
 	 * Creates a Score from given parameters. Only for being used by the WoT package and unit tests, not for user interfaces!
@@ -63,11 +157,17 @@ public final class Score extends Persistent implements Cloneable {
 			
 		mTruster = myTruster;
 		mTrustee = myTrustee;
+		mID = new ScoreID(mTruster, mTrustee).toString();
 		setValue(myValue);
 		setRank(myRank);
 		setCapacity(myCapacity);
 		
 		// mLastChangedDate = CurrentTimeUTC.get(); <= setValue() etc do this already.
+	}
+	
+	@Override
+	public int hashCode() {
+		return getID().hashCode();
 	}
 	
 	@Override
@@ -99,6 +199,25 @@ public final class Score extends Persistent implements Cloneable {
 		checkedActivate(1);
 		mTrustee.initializeTransient(mWebOfTrust);
 		return mTrustee;
+	}
+	
+	/**
+	 * @see {@link ScoreID}
+	 */
+	private String getID() {
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
+		return mID;
+	}
+	
+	/**
+	 * @deprecated Only for being used in {@link WebOfTrust.upgradeDB()}
+	 */
+	@Deprecated
+	protected void generateID() {
+		checkedActivate(1);
+		if(mID != null)
+			throw new RuntimeException("ID is already set for " + this);
+		mID = new ScoreID(getTruster(), getTrustee()).toString();
 	}
 
 	/**
@@ -215,6 +334,9 @@ public final class Score extends Persistent implements Cloneable {
 			return false;
 		
 		Score other = (Score)obj;
+		
+		if(!getID().equals(other.getID()))
+			return false;
 	
 		if(getScore() != other.getScore())
 			return false;
@@ -250,6 +372,11 @@ public final class Score extends Persistent implements Cloneable {
 		
 		if(mTrustee == null)
 			throw new NullPointerException("mTrustee==null");
+		
+		if(mID == null)
+			throw new NullPointerException("mID==null");
+		
+		ScoreID.constructAndValidate(this, mID); // Throws if invalid
 		
 		if(mRank < -1)
 			throw new IllegalStateException("Invalid rank: " + mRank);

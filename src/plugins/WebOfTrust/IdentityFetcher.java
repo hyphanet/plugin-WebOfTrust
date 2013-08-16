@@ -30,6 +30,7 @@ import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
@@ -43,6 +44,13 @@ import freenet.support.io.NativeThread;
  * TODO: There is some synchronization missing for the fetcher in some places where fetcher commands are issued.
  * It still works because those places are typically synchronized on the WoT anyway. We should fix it nevertheless.
  * Maybe we just might want to get rid of synchronization on the fetcher for storing commands... I will have to investigate.
+ * 
+ * <b>Synchronization:</b>
+ * The locking order must be:
+ * 	synchronized(instance of WebOfTrust) {
+ *	synchronized(instance of IntroductionPuzzleStore) {
+ *	synchronized(instance of IdentityFetcher) {
+ *	synchronized(Persistent.transactionLock(instance of ObjectContainer)) {
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
@@ -68,6 +76,23 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	private final HashMap<String, USKRetriever> mRequests = new HashMap<String, USKRetriever>(128); /* TODO: profile & tweak */
 	
 	private final TrivialTicker mTicker;
+	
+	/* Statistics */
+	
+	/**
+	 * The value of CurrentTimeUTC.getInMillis() when this IdentityFetcher was created.
+	 */
+	private final long mStartupTimeMilliseconds;
+	
+	/**
+	 * The number of identity XML files which this IdentityFetcher has fetched.
+	 */
+	private int mFetchedCount = 0;
+	
+	/**
+	 * The total time in milliseconds which processing of all fetched identity XML files took.
+	 */
+	private long mIdentityImportNanoseconds = 0;
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
@@ -102,6 +127,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		}
 		
 		mRequestClient = mWoT.getRequestClient();
+		
+		mStartupTimeMilliseconds = CurrentTimeUTC.getInMillis();
 		
 		deleteAllCommands();
 	}
@@ -463,7 +490,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	protected synchronized void stop() {
 		if(logDEBUG) Logger.debug(this, "Trying to stop all requests");
 		
-		mTicker.shutdown();
+		if(mTicker != null)
+			mTicker.shutdown();
 		
 		USKRetriever[] retrievers = mRequests.values().toArray(new USKRetriever[mRequests.size()]);		
 		int counter = 0;		 
@@ -492,15 +520,56 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
 			
+			final long startTime = System.nanoTime();
 			mWoT.getXMLTransformer().importIdentity(realURI, inputStream);
+			final long endTime = System.nanoTime();
+			
+			synchronized(this) {
+				++mFetchedCount;
+				mIdentityImportNanoseconds +=  endTime - startTime;
+			}
 		}
-		catch (Throwable e) {
-			Logger.error(this, "Parsing failed for " + realURI, e);
+		catch(Exception e) {
+			Logger.error(this, "Parsing identity XML failed severely - edition probably could NOT be marked for not being fetched again: " + realURI, e);
 		}
 		finally {
 			Closer.close(inputStream);
 			Closer.close(bucket);
 		}
+	}
+	
+	/**
+	 * @return The number of identity XML files which this fetcher has fetched and processed successfully.
+	 */
+	public int getFetchedCount() {
+		return mFetchedCount;
+	}
+	
+	/**
+	 * Notice that this function is synchronized because it processes multiple member variables.
+	 * 
+	 * @return The average time it took for parsing an identity XML file in seconds.
+	 */
+	public synchronized double getAverageXMLImportTime() {
+		if(mFetchedCount == 0) // prevent division by 0
+			return 0;
+		
+		return ((double)mIdentityImportNanoseconds/(1000*1000*1000)) / (double)mFetchedCount;
+	}
+	
+	/**
+	 * Notice that this function is synchronized because it processes multiple member variables.
+	 * 
+	 * @return The average number of identity XML files which are fetched per hour.
+	 */
+	public synchronized float getAverageFetchCountPerHour() {
+		float uptimeSeconds = (float)(CurrentTimeUTC.getInMillis() - mStartupTimeMilliseconds)/1000;
+		float uptimeHours = uptimeSeconds / (60*60);
+		
+		if(uptimeHours == 0) // prevent division by 0
+			return 0;
+		
+		return (float)mFetchedCount / uptimeHours;		
 	}
 
 }

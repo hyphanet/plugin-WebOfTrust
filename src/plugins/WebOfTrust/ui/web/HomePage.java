@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
@@ -36,14 +37,17 @@ public class HomePage extends WebPageImpl {
 	 */
 	private void makeSummary() {
 		HTMLNode box = addContentBox(l10n().getString("HomePage.SummaryBox.Header"));
+		HTMLNode list = new HTMLNode("ul");
 		
 		synchronized(wot) {
-		HTMLNode list = new HTMLNode("ul");
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.OwnIdentities") + ": " + wot.getAllOwnIdentities().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.KnownIdentities") + ": " + wot.getAllNonOwnIdentities().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.TrustRelationships") + ": " + wot.getAllTrusts().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.ScoreRelationships") + ": " + wot.getAllScores().size()));
-		
+		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.FullRecomputations") + ": " + wot.getNumberOfFullScoreRecomputations()));
+		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.FullRecomputationTime") + ": " + wot.getAverageFullScoreRecomputationTime()));
+		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.IncrementalRecomputations") + ": " + wot.getNumberOfIncrementalScoreRecomputations()));
+		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.IncrementalRecomputationTime") + ": " + wot.getAverageIncrementalScoreRecomputationTime()));
 		IntroductionPuzzleStore puzzleStore = wot.getIntroductionPuzzleStore();
 		synchronized(puzzleStore) {
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.UnsolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(false)));
@@ -52,7 +56,15 @@ public class HomePage extends WebPageImpl {
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.SolvedCaptchasOfOthers") + ": " + puzzleStore.getNonOwnCaptchaAmount(true)));
 		list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.NotInsertedCaptchasSolutions") + ": " + puzzleStore.getUninsertedSolvedPuzzles().size()));
 		}
-		box.addChild(list);
 		}
+		
+		IdentityFetcher fetcher = wot.getIdentityFetcher();
+		synchronized(fetcher) {
+			list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.FetchedIdentities") + ": " + fetcher.getFetchedCount()));
+			list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.AverageFetchedIdentitiesPerHour") + ": " + fetcher.getAverageFetchCountPerHour()));
+			list.addChild(new HTMLNode("li", l10n().getString("HomePage.SummaryBox.AverageIdentityImportTime") + ": " + fetcher.getAverageXMLImportTime()));			
+		}
+		
+		box.addChild(list);
 	}
 }

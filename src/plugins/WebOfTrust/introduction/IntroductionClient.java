@@ -72,9 +72,8 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/**
 	 * The amount of concurrent puzzle requests to aim for.
-	 * TODO: Decrease to 10 as soon as there are enough identities in the WoT
 	 */
-	public static final int PUZZLE_REQUEST_COUNT = 20;
+	public static final int PUZZLE_REQUEST_COUNT = 10;
 	
 	/** How many unsolved puzzles do we try to accumulate? */
 	public static final int PUZZLE_POOL_SIZE = 40;
@@ -282,6 +281,15 @@ public final class IntroductionClient extends TransferThread  {
 			if(logMINOR) Logger.minor(this, "Got " + fetchCount + "fetches, not fetching any more.");
 			return;
 		}
+		
+		/*
+		 * We do not stop fetching new puzzles once the puzzle pool is full by purpose:
+		 * We want the available puzzles to be as new as possible so there is a high chance of the inserter of them still being online.
+		 * This decrease the latency of the solution arriving at the inserter and therefore speeds up introduction.
+		 * (Notice: If the puzzle pool contains an amount of PUZZLE_POOL_SIZE puzzles already and new fetches finish,
+		 * the oldest puzzles will be deleted automatically. So the pool won't grow beyond the size limit.)
+		 */
+		// if(mPuzzleStore.getNonOwnCaptchaAmount(false) >= PUZZLE_POOL_SIZE) return; 
 		
 		Logger.normal(this, "Trying to start more fetches, current amount: " + fetchCount);
 		

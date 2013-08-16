@@ -4,7 +4,9 @@
 package plugins.WebOfTrust;
 
 import java.util.Date;
+import java.util.StringTokenizer;
 
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.StringValidityChecker;
@@ -26,6 +28,31 @@ public final class Trust extends Persistent implements Cloneable {
 	/** The identity which receives the trust. */
 	@IndexedField
 	private final Identity mTrustee;
+	
+	/**
+	 * The ID of this Trust in the database. Composed by:
+	 * mTruster.getID() + "@" + mTrustee.getID()
+	 * 
+	 * We need this ID because the following query takes O(N) instead of O(1) with db4o:
+	 * 
+	 * final Query query = mDB.query();
+	 * query.constrain(Trust.class);
+	 * query.descend("mTruster").constrain(truster).identity();
+	 * query.descend("mTrustee").constrain(trustee).identity();
+	 * final ObjectSet<Trust> result = new Persistent.InitializingObjectSet<Trust>(this, query);
+	 * 
+	 * (With N being the number of Trust objects, the query takes O(N) because db4o either uses the index on mTruster and then has to check a worst case of
+	 * N objects for the right mTrustee value - or vice versa with the mTrustee index)
+	 * 
+	 * With this composite ID, the same query can be executed in O(1) by doing:
+	 * 
+	 * final Query query = mDB.query();
+	 * query.constrain(Trust.class);
+	 * query.descend("mID").constrain(mTruster.getID() + "@" + mTrustee.getID()).identity();
+	 * final ObjectSet<Trust> result = new Persistent.InitializingObjectSet<Trust>(this, query); 
+	 */
+	@IndexedField
+	private String mID;
 	
 	/** The value assigned with the trust, from -100 to +100 where negative means distrust */
 	@IndexedField
@@ -58,6 +85,74 @@ public final class Trust extends Persistent implements Cloneable {
 	// db4o uses the index on mTruster instead of the index on mTrusterTrustListEditon, so we don't create that index.
 	// @IndexedField
 	private long mTrusterTrustListEdition;
+	
+	/**
+	 * A class for generating and validating Trust IDs.
+	 * Its purpose is NOT to be stored in the database: That would make the queries significantly slower.
+	 * We store the IDs as Strings instead for fast queries.
+	 * 
+	 * Its purpose is to allow validation of TrustIDs which we obtain from the database or from the network.
+	 * 
+	 * TODO: This was added after we already had manual ID-generation / checking in the code everywhere. Use this class instead. 
+	 */
+	protected static final class TrustID {
+		
+		private static final int MAX_TRUST_ID_LENGTH = IdentityID.MAX_IDENTITY_ID_LENGTH + "@".length() + IdentityID.MAX_IDENTITY_ID_LENGTH;
+		
+		private final String mID;
+		private final String mTrusterID;
+		private final String mTrusteeID;
+		
+		public TrustID(Identity truster, Identity trustee) {
+			mTrusterID = truster.getID();
+			mTrusteeID = trustee.getID();
+			mID = truster.getID() + "@" + trustee.getID();
+		}
+		
+		private TrustID(String id) {
+			if(id.length() > MAX_TRUST_ID_LENGTH)
+				throw new IllegalArgumentException("ID is too long, length: " + id.length());
+
+			mID = id;
+
+			final StringTokenizer tokenizer = new StringTokenizer(id, "@");
+
+			mTrusterID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
+			mTrusteeID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
+
+			if(tokenizer.hasMoreTokens())
+				throw new IllegalArgumentException("Invalid MessageID: " + id);
+		}
+		
+		public static TrustID constructAndValidate(Trust trust, String id) {
+			final TrustID trustID = new TrustID(id);
+			
+			if(!trust.getTruster().getID().equals(trustID.mTrusterID))
+				throw new RuntimeException("Truster ID mismatch for Trust " + trust + ": TrustID is " + id);
+			
+			if(!trust.getTrustee().getID().equals(trustID.mTrusteeID))
+				throw new RuntimeException("Trustee ID mismatch for Trust " + trust + ": TrustID is " + id);
+			
+			return trustID;
+		}
+		
+		@Override
+		public final String toString() {
+			return mID;
+		}
+		
+		@Override
+		public final boolean equals(final Object o) {
+			if(o instanceof TrustID)
+				return mID.equals(((TrustID)o).mID);
+			
+			if(o instanceof String)
+				return mID.equals((String)o);
+			
+			return false;
+		}
+		
+	}
 
 
 	/**
@@ -83,12 +178,18 @@ public final class Trust extends Persistent implements Cloneable {
 		
 		mTruster = truster;
 		mTrustee = trustee;
+		mID = new TrustID(mTruster, mTrustee).toString();
 		setValue(value);
 		mComment = "";	// Simplify setComment
 		setComment(comment);
 		
 		mLastChangedDate = mCreationDate;
 		mTrusterTrustListEdition = truster.getEdition(); 
+	}
+	
+	@Override
+	public int hashCode() {
+		return getID().hashCode();
 	}
 
 	@Override
@@ -110,6 +211,25 @@ public final class Trust extends Persistent implements Cloneable {
 		checkedActivate(1);
 		mTrustee.initializeTransient(mWebOfTrust);
 		return mTrustee;
+	}
+	
+	/**
+	 * @see {@link TrustID}
+	 */
+	private String getID() {
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
+		return mID;
+	}
+	
+	/**
+	 * @deprecated Only for being used in {@link WebOfTrust.upgradeDB()}
+	 */
+	@Deprecated
+	protected void generateID() {
+		checkedActivate(1);
+		if(mID != null)
+			throw new RuntimeException("ID is already set for " + this);
+		mID = new TrustID(getTruster(), getTrustee()).toString();
 	}
 
 	/** @return value Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. */
@@ -217,6 +337,9 @@ public final class Trust extends Persistent implements Cloneable {
 		
 		final Trust other = (Trust)obj;
 		
+		if(!getID().equals(other.getID()))
+			return false;
+		
 		if(getValue() != other.getValue())
 			return false;
 		
@@ -256,6 +379,11 @@ public final class Trust extends Persistent implements Cloneable {
 		
 		if(mTrustee == null)
 			throw new NullPointerException("mTrustee==null");
+		
+		if(mID == null)
+			throw new NullPointerException("mID==null");
+		
+		TrustID.constructAndValidate(this, mID); // Throws if invalid
 		
 		if(mValue < -100 || mValue > 100)
 			throw new IllegalStateException("Invalid value: " + mValue);

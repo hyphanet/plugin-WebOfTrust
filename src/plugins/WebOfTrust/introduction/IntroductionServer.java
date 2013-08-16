@@ -310,9 +310,9 @@ public final class IntroductionServer extends TransferThread {
 	public void onFailure(final InsertException e, final BaseClientPutter state, final ObjectContainer container) 
 	{
 		try {
-			if(e.getMode() == InsertException.CANCELLED)
+			if(e.getMode() == InsertException.CANCELLED) {
 				if(logDEBUG) Logger.debug(this, "Insert cancelled: " + state.getURI());
-			else if(e.getMode() == InsertException.COLLISION) {
+			} else if(e.getMode() == InsertException.COLLISION) {
 				// TODO: Investigate why this happens.
 				Logger.warning(this, "Insert of puzzle collided, marking as inserted: " + state.getURI(), e);
 				

@@ -7,6 +7,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -74,11 +75,17 @@ public final class XMLTransformer {
 	
 	/**
 	 * Maximal size of an identity XML file.
-	 * TODO: We must soon introduce limits on the amount of trust values which an identity can assign, otherwise
-	 * the WoT of some people will insert broken trust lists. Right now my seed identity of the testing WoT has 345 trustees
-	 * and fits  within 64 KiB so 256 should be enough until we have resolved this to-do.
+	 * FIXME: Reduce this to about 256KiB again once bug 0005406 is fixed. Also adjust MAX_IDENTITY_XML_TRUSTEE_AMOUNT then.
 	 */
-	public static final int MAX_IDENTITY_XML_BYTE_SIZE = 256 * 1024;
+	public static final int MAX_IDENTITY_XML_BYTE_SIZE = 1024 * 1024;
+	
+	/**
+	 * The maximal amount of trustees which will be added to the XML.
+	 * This value has been computed by XMLTransformerTest.testMaximalOwnIdentityXMLSize - that function is able to generate a XML file with all
+	 * data fields (nicknames, comments, etc) maxed out and add identities until it exceeds the maximal XML byte size.
+	 * In other words: If you ever need to re-adjust this value to fit into a new MAX_IDENTITY_XML_BYTE_SIZE, look at XMLTransformerTest.testMaximalOwnIdentityXMLSize.
+	 */
+	public static final int MAX_IDENTITY_XML_TRUSTEE_AMOUNT = 512;
 	
 	private final WebOfTrust mWoT;
 	
@@ -182,7 +189,13 @@ public final class XMLTransformer {
 			if(identity.doesPublishTrustList()) {
 				Element trustListElement = xmlDoc.createElement("TrustList");
 
-				for(Trust trust : mWoT.getGivenTrusts(identity)) {
+				int trustCount = 0;
+				for(Trust trust : mWoT.getGivenTrustsSortedDescendingByLastSeen(identity)) {
+					if(++trustCount > MAX_IDENTITY_XML_TRUSTEE_AMOUNT) {
+						Logger.normal(this, "Amount of trustees exceeded " + MAX_IDENTITY_XML_TRUSTEE_AMOUNT + ", not adding any more to trust list of " + identity);
+						break;
+					}
+					
 					/* We should make very sure that we do not reveal the other own identity's */
 					if(trust.getTruster() != identity) 
 						throw new RuntimeException("Error in WoT: It is trying to export trust values of someone else in the trust list " +
@@ -325,7 +338,7 @@ public final class XMLTransformer {
 	 * 
 	 * @param xmlInputStream The input stream containing the XML.
 	 */
-	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) throws Exception  {
+	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) {
 		try { // Catch import problems so we can mark the edition as parsing failed
 		// We first parse the XML without synchronization, then do the synchronized import into the WebOfTrust		
 		final ParsedIdentityXML xmlData = parseIdentityXML(xmlInputStream);
@@ -336,25 +349,25 @@ public final class XMLTransformer {
 			
 			Logger.normal(this, "Importing parsed XML for " + identity);
 			
-				long newEdition = identityURI.getEdition();
-				if(identity.getEdition() > newEdition) {
-					if(logDEBUG) Logger.debug(this, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
+			long newEdition = identityURI.getEdition();
+			if(identity.getEdition() > newEdition) {
+				if(logDEBUG) Logger.debug(this, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
+				return;
+			} else if(identity.getEdition() == newEdition) {
+				if(identity.getCurrentEditionFetchState() == FetchState.Fetched) {
+					if(logDEBUG) Logger.debug(this, "Fetched current edition which is marked as fetched already, not importing: " + identityURI);
 					return;
-				} else if(identity.getEdition() == newEdition) {
-					if(identity.getCurrentEditionFetchState() == FetchState.Fetched) {
-						if(logDEBUG) Logger.debug(this, "Fetched current edition which is marked as fetched already, not importing: " + identityURI);
-						return;
-					} else if(identity.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
-						Logger.normal(this, "Re-fetched current-edition which was marked as parsing failed: " + identityURI);
-					}
+				} else if(identity.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
+					Logger.normal(this, "Re-fetched current-edition which was marked as parsing failed: " + identityURI);
 				}
+			}
 				
-				// We throw parse errors AFTER checking the edition number: If this XML was outdated anyway, we don't have to throw.
-				if(xmlData.parseError != null)
-					throw xmlData.parseError;
+			// We throw parse errors AFTER checking the edition number: If this XML was outdated anyway, we don't have to throw.
+			if(xmlData.parseError != null)
+				throw xmlData.parseError;
 				
 			
-				synchronized(Persistent.transactionLock(mDB)) {
+			synchronized(Persistent.transactionLock(mDB)) {
 				try { // Transaction rollback block
 					identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
 					boolean didPublishTrustListPreviously = identity.doesPublishTrustList();
@@ -365,21 +378,21 @@ public final class XMLTransformer {
 					}
 					catch(Exception e) {
 						/* Nickname changes are not allowed, ignore them... */
-						Logger.error(this, "setNickname() failed.", e);
+						Logger.warning(this, "setNickname() failed.", e);
 					}
 	
 					try { /* Failure of context importing should not make an identity disappear, therefore we catch exceptions. */
 						identity.setContexts(xmlData.identityContexts);
 					}
 					catch(Exception e) {
-						Logger.error(this, "setContexts() failed.", e);
+						Logger.warning(this, "setContexts() failed.", e);
 					}
 	
 					try { /* Failure of property importing should not make an identity disappear, therefore we catch exceptions. */
 						identity.setProperties(xmlData.identityProperties);
 					}
 					catch(Exception e) {
-						Logger.error(this, "setProperties() failed", e);
+						Logger.warning(this, "setProperties() failed", e);
 					}
 				
 					
@@ -392,7 +405,7 @@ public final class XMLTransformer {
 						boolean hasCapacity = false;
 						
 						// TODO: getBestScore/getBestCapacity should always yield a positive result because we store a positive score object for an OwnIdentity
-						// upon creation. The only case where it could not exist might be restoreIdentity() ... check that. If it is created there as well,
+						// upon creation. The only case where it could not exist might be restoreOwnIdentity() ... check that. If it is created there as well,
 						// remove the additional check here.
 						if(identity instanceof OwnIdentity) {
 							// Importing of OwnIdentities is always allowed
@@ -433,9 +446,15 @@ public final class XMLTransformer {
 							}
 							catch(UnknownIdentityException e) {
 								if(hasCapacity) { /* We only create trustees if the truster has capacity to rate them. */
-									trustee = new Identity(mWoT, trusteeURI, null, false);
-									trustee.storeWithoutCommit();
-									mWoT.getSubscriptionManager().storeNewIdentityNotificationWithoutCommit(trustee);
+									try {
+										trustee = new Identity(mWoT, trusteeURI, null, false);
+										trustee.storeWithoutCommit();
+										mWoT.getSubscriptionManager().storeNewIdentityNotificationWithoutCommit(trustee);
+									} catch(MalformedURLException urlEx) {
+										// Logging the exception does NOT log the actual malformed URL so we do it manually.
+										Logger.warning(this, "Received malformed identity URL: " + trusteeURI, urlEx);
+										throw urlEx;
+									}
 								}
 							}
 
@@ -464,11 +483,11 @@ public final class XMLTransformer {
 					identity.onFetched(); // Marks the identity as parsed successfully
 					identity.storeAndCommit();
 				}
-					catch(Exception e) { 
-					mWoT.abortTrustListImport(e); // Does the rollback
+				catch(Exception e) { 
+					mWoT.abortTrustListImport(e, Logger.LogLevel.WARNING); // Does the rollback
 					throw e;
 				} // try
-				} // synchronized(Persistent.transactionLock(db))
+			} // synchronized(Persistent.transactionLock(db))
 				
 			Logger.normal(this, "Finished XML import for " + identity);
 		} // synchronized(mWoT)
@@ -482,20 +501,26 @@ public final class XMLTransformer {
 					final long newEdition = identityURI.getEdition();
 					if(identity.getEdition() <= newEdition) {
 						Logger.normal(this, "Marking edition as parsing failed: " + identityURI);
-						identity.setEdition(newEdition);
+						try {
+							identity.setEdition(newEdition);
+						} catch (InvalidParameterException e1) {
+							// Would only happen if newEdition < current edition.
+							// We have validated the opposite.
+							throw new RuntimeException(e1);
+						}
 						identity.onParsingFailed();
 						identity.storeAndCommit();
 					} else {
 						Logger.normal(this, "Not marking edition as parsing failed, we have already fetched a new one (" + 
 								identity.getEdition() + "):" + identityURI);
 					}
+					Logger.normal(this, "Parsing identity XML failed gracefully for " + identityURI, e);
 				}
 				catch(UnknownIdentityException uie) {
 					Logger.error(this, "Fetched an unknown identity: " + identityURI);
 				}	
 			}
 			}
-			throw e;
 		}
 	}
 
@@ -534,6 +559,9 @@ public final class XMLTransformer {
 	/**
 	 * Creates an identity from an identity introduction, stores it in the database and returns the new identity.
 	 * If the identity already exists, the existing identity is returned.
+	 * 
+	 * You have to synchronize on the WebOfTrust object when using this function!
+	 * TODO: Remove this requirement and re-query the parameter OwnIdentity puzzleOwner from the database after we are synchronized. 
 	 * 
 	 * @param xmlInputStream An InputStream which must not return more than {@link MAX_INTRODUCTION_BYTE_SIZE} bytes.
 	 * @throws InvalidParameterException If the XML format is unknown or if the puzzle owner does not allow introduction anymore.

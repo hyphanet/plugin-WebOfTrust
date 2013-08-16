@@ -4,14 +4,23 @@
 package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
 
+import plugins.WebOfTrust.Identity.FetchState;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
+import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
+
+import freenet.keys.FreenetURI;
+import freenet.support.CurrentTimeUTC;
 
 /**
  * @author xor (xor@freenetproject.org)
@@ -19,17 +28,35 @@ import com.db4o.ext.ExtObjectContainer;
  */
 public class WoTTest extends DatabaseBasedTest {
 
-	private final String uriO = "USK@8VTguDZehMlShIb7Q~F1wYpOnDK7pSZVwrGArACP~04,MK0wfPtNud~nWyp~oy0Kr1~kFuYfJ9~LlxNribWD4Us,AQACAAE/WoT/0";
-	private final String uriS = "USK@hAOgofNsQEbT~aRqGuXwt8vI7tOeQVCrcIHrD9PvS6g,fG7LHRJhczCAApOwgaXNJO41L8wRIZj9oN37LSLZZY8,AQACAAE/WoT/0";
-	private final String uriA = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0";
-	private final String uriB = "USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WoT/0";
-	private final String uriC = "USK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/WoT/0";
-	private final String uriM1 = "USK@XoOIYo6blZDb6qb2iaBKJVMSehnvxVnxkgFCtbT4yw4,92NJVhKYBK3B4oJkcSmDaau53vbzPMKxws9dC~fagFU,AQACAAE/WoT/0";
-	private final String uriM2 = "USK@rhiNEDWcDXNvkT7R3K1zkr2FgMjW~6DudrAbuYbaY-w,Xl4nOxOzRyzHpEQwu--nb3PaLFSK2Ym9c~Un0rIdne4,AQACAAE/WoT/0";
-	private final String uriM3 = "USK@9c57T1yNOi7aeK-6lorACBcOH4cC-vgZ6Ky~-f9mcUI,anOcB7Z05g55oViCa3LcClrXNcQcmR3SBooN4qssuPs,AQACAAE/WoT/0";
+	private final String requestUriO = "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/0";
+	private final String insertUriO = "USK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/WebOfTrust/0"; 
+	private final String requestUriS = "USK@hAOgofNsQEbT~aRqGuXwt8vI7tOeQVCrcIHrD9PvS6g,fG7LHRJhczCAApOwgaXNJO41L8wRIZj9oN37LSLZZY8,AQACAAE/WoT/0";
+	private final String requestUriA = "SSK@uKbou7HXlFrQWMIMxOqYqdVcgPpTAeSaJtoAHtBk~Tg,yz5HdAA36MBOlmumfEFukNPwP1vHjwiWGy-GCMTIuT8,AQACAAE/WebOfTrust/0";
+	private final String insertUriA = "USK@AJy2oHQ-W7wXVFmfYHY2igmC0SUEMgIetxL2HbNqaXT0,yz5HdAA36MBOlmumfEFukNPwP1vHjwiWGy-GCMTIuT8,AQECAAE/WebOfTrust/0";
+	private final String requestUriB = "USK@9SWa5sYwQm2O738SPLva0wpHd7KECrOe8iQdts8auXI,Ond06NVRidGaLrvpbi~gIo5eigsSebVWPHEto7lGPgA,AQACAAE/WebOfTrust/0";
+	private final String insertUriB = "USK@Rcb3gXZXynQOJmDNqKMEht87sr3mtTYl9wsyblTpt0k,Ond06NVRidGaLrvpbi~gIo5eigsSebVWPHEto7lGPgA,AQECAAE/WebOfTrust/0";
+	private final String requestUriC = "USK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/WoT/0";
+	private final String requestUriM1 = "USK@XoOIYo6blZDb6qb2iaBKJVMSehnvxVnxkgFCtbT4yw4,92NJVhKYBK3B4oJkcSmDaau53vbzPMKxws9dC~fagFU,AQACAAE/WoT/0";
+	private final String requestUriM2 = "USK@rhiNEDWcDXNvkT7R3K1zkr2FgMjW~6DudrAbuYbaY-w,Xl4nOxOzRyzHpEQwu--nb3PaLFSK2Ym9c~Un0rIdne4,AQACAAE/WoT/0";
+	private final String requestUriM3 = "USK@9c57T1yNOi7aeK-6lorACBcOH4cC-vgZ6Ky~-f9mcUI,anOcB7Z05g55oViCa3LcClrXNcQcmR3SBooN4qssuPs,AQACAAE/WoT/0";
+	
+	
+	public void testCreateOwnIdentity() throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
+		// Test persistence
+		final OwnIdentity cloneOfOriginal = mWoT.createOwnIdentity(getRandomSSKPair()[0], getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH), true, getRandomLatinString(OwnIdentity.MAX_CONTEXT_NAME_LENGTH)).clone();
+		
+		assertEquals(cloneOfOriginal, mWoT.getOwnIdentityByID(cloneOfOriginal.getID()));
+	}
 
+	
+	/**
+	 * NOTICE: When changing this function, please also update the following functions as they contain similar code:
+	 * - testRestoreOwnIdentity_Inexistent
+	 * - testRestoreOwnIdentity_ExistingAsDanglingNonOwnIdentityAlready
+	 * - testDeleteOwnIdentity_Dangling
+	 */
 	public void testInitTrustTree() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
-		mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test"); /* This also initializes the trust tree */
+		mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test"); /* This also initializes the trust tree */
 		
 		flushCaches();
 		assertEquals(0, mWoT.getAllNonOwnIdentities().size());
@@ -38,7 +65,7 @@ public class WoTTest extends DatabaseBasedTest {
 		assertEquals(1, mWoT.getAllScores().size());
 		
 		flushCaches();
-		OwnIdentity a = mWoT.getOwnIdentityByURI(uriA);
+		OwnIdentity a = mWoT.getOwnIdentityByURI(requestUriA);
 
 		Score score = mWoT.getScore(a,a);
 		assertEquals(Integer.MAX_VALUE, score.getScore());
@@ -50,8 +77,8 @@ public class WoTTest extends DatabaseBasedTest {
 	
 	public void testSetTrust1() throws InvalidParameterException, MalformedURLException {
 		/* We store A manually instead of using createOwnIdentity() so that the WoT does not initialize it's trust tree (it does not have a score for itself). */
-		OwnIdentity a = new OwnIdentity(mWoT, uriA, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		OwnIdentity a = new OwnIdentity(mWoT, insertUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		
 		// With A's trust tree not initialized, B shouldn't get a Score.
 		mWoT.setTrust(a, b, (byte)10, "Foo");
@@ -65,9 +92,9 @@ public class WoTTest extends DatabaseBasedTest {
 	
 	public void testSetTrust2() throws MalformedURLException, InvalidParameterException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException {
 
-		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test"); /* Initializes it's trust tree */
+		OwnIdentity a = mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test"); /* Initializes it's trust tree */
 		
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		
@@ -136,10 +163,10 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testRemoveTrust() throws MalformedURLException, InvalidParameterException, UnknownIdentityException,
 		NotInTrustTreeException {
 		
-		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test");
+		OwnIdentity a = mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test");
 		
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
-		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		// There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
@@ -206,11 +233,15 @@ public class WoTTest extends DatabaseBasedTest {
 		catch (NotInTrustTreeException e) {}
 	}
 	
+	/**
+	 * NOTICE: When changing this function, please also update the following function as it contains similar code:
+	 * - testRestoreOwnIdentity_TrustAndScoreImpact
+	 */
 	public void testTrustLoop() throws MalformedURLException, InvalidParameterException, NotInTrustTreeException {
-		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test");
+		OwnIdentity a = mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test");
 		
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
-		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
 		
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		mWoT.setTrustWithoutCommit(b, c, (byte)50, "Bar"); // There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
@@ -248,8 +279,8 @@ public class WoTTest extends DatabaseBasedTest {
 	}
 	
 	public void testOwnIndentitiesTrust() throws MalformedURLException, InvalidParameterException, NotInTrustTreeException {
-		OwnIdentity a = mWoT.createOwnIdentity(uriA, uriA, "A", true, "Test");
-		OwnIdentity b = mWoT.createOwnIdentity(uriB, uriB, "B", true, "Test");
+		OwnIdentity a = mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test");
+		OwnIdentity b = mWoT.createOwnIdentity(new FreenetURI(insertUriB), "B", true, "Test");
 
 		mWoT.setTrust(a, b, (byte)100, "Foo");
 		mWoT.setTrust(b, a, (byte)80, "Bar");
@@ -296,12 +327,12 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testStability() throws Exception {
 		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
+		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
 		// A / B are downloaded in different orders.
-		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
-		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
+		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -335,11 +366,11 @@ public class WoTTest extends DatabaseBasedTest {
 		setUp();
 		db = mWoT.getDatabase();
 		
-		o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test");
-		s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit();
-		a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
-		c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
+		o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test");
+		s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit();
+		a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -387,11 +418,11 @@ public class WoTTest extends DatabaseBasedTest {
 		//same setup routine as testStability
 		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
-		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
+		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -439,14 +470,14 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testMalicious() throws Exception {
 		//same setup routine as testStability
 			
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
+		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		
-		Identity m1 = new Identity(mWoT, uriM1, "M1", true); m1.storeAndCommit(); //malicious identity
-		Identity m2 = new Identity(mWoT, uriM2, "M2", true); m2.storeAndCommit(); //malicious identity
-		Identity m3 = new Identity(mWoT, uriM3, "M3", true); m3.storeAndCommit(); //malicious identity
+		Identity m1 = new Identity(mWoT, requestUriM1, "M1", true); m1.storeAndCommit(); //malicious identity
+		Identity m2 = new Identity(mWoT, requestUriM2, "M2", true); m2.storeAndCommit(); //malicious identity
+		Identity m3 = new Identity(mWoT, requestUriM3, "M3", true); m3.storeAndCommit(); //malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -485,11 +516,11 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testStability2() throws Exception {
 		ExtObjectContainer db = mWoT.getDatabase();
 		
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
-		Identity c = new Identity(mWoT, uriC, "C", true); c.storeAndCommit();
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
+		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -542,14 +573,14 @@ public class WoTTest extends DatabaseBasedTest {
 		//same setup routine as testStability
 		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner
-		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
+		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		
-		Identity m1 = new Identity(mWoT, uriM1, "M1", true); m1.storeAndCommit(); //malicious identity
-		Identity m2 = new Identity(mWoT, uriM2, "M2", true); m2.storeAndCommit(); //malicious identity
-		Identity m3 = new Identity(mWoT, uriM3, "M3", true); m3.storeAndCommit(); //malicious identity
+		Identity m1 = new Identity(mWoT, requestUriM1, "M1", true); m1.storeAndCommit(); //malicious identity
+		Identity m2 = new Identity(mWoT, requestUriM2, "M2", true); m2.storeAndCommit(); //malicious identity
+		Identity m3 = new Identity(mWoT, requestUriM3, "M3", true); m3.storeAndCommit(); //malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -586,13 +617,13 @@ public class WoTTest extends DatabaseBasedTest {
 	public void testMalicious3() throws Exception {
 		ExtObjectContainer db = mWoT.getDatabase();
 			
-		OwnIdentity o = mWoT.createOwnIdentity(uriO, uriO, "O", true, "Test"); // Tree owner		
-		Identity s = new Identity(mWoT, uriS, "S", true); s.storeAndCommit(); // Seed identity
-		Identity a = new Identity(mWoT, uriA, "A", true); a.storeAndCommit();
-		Identity b = new Identity(mWoT, uriB, "B", true); b.storeAndCommit();
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner		
+		Identity s = new Identity(mWoT, requestUriS, "S", true); s.storeAndCommit(); // Seed identity
+		Identity a = new Identity(mWoT, requestUriA, "A", true); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
 		
-		Identity m1 = new Identity(mWoT, uriM1, "M1", true); m1.storeAndCommit(); //known malicious identity
-		Identity m2 = new Identity(mWoT, uriM2, "M2", true); m2.storeAndCommit(); //known malicious identity
+		Identity m1 = new Identity(mWoT, requestUriM1, "M1", true); m1.storeAndCommit(); //known malicious identity
+		Identity m2 = new Identity(mWoT, requestUriM2, "M2", true); m2.storeAndCommit(); //known malicious identity
 		
 		// You get all the identities from the seed identity.
 		mWoT.setTrust(o, s, (byte)100, "I trust the seed identity.");
@@ -627,4 +658,439 @@ public class WoTTest extends DatabaseBasedTest {
 		assertTrue("A score: " + scoreA, scoreA > 0);
 		assertTrue("B score: " + scoreB, scoreB > 0);
 	}
+	
+	public void testGetGivenTrustsSortedDescendingByLastSeen() throws MalformedURLException, InvalidParameterException, InterruptedException {
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
+
+		Identity a = new Identity(mWoT, requestUriA, "A", true); Thread.sleep(10); a.onFetched(); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); Thread.sleep(10); b.onFetched(); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); Thread.sleep(10); c.onFetched(); c.storeAndCommit();
+		
+		mWoT.setTrust(o, a, (byte)0, "");
+		mWoT.setTrust(o, b, (byte)1, "");
+		mWoT.setTrust(o, c, (byte)2, "");
+		
+		{
+			ObjectSet<Trust> abc = mWoT.getGivenTrustsSortedDescendingByLastSeen(o);
+			assertTrue(abc.hasNext()); assertSame(c, abc.next().getTrustee());
+			assertTrue(abc.hasNext()); assertSame(b, abc.next().getTrustee());
+			assertTrue(abc.hasNext()); assertSame(a, abc.next().getTrustee());
+			assertFalse(abc.hasNext());
+		}
+		
+		a.onFetched(); a.storeAndCommit();
+		
+		{
+			ObjectSet<Trust> abc = mWoT.getGivenTrustsSortedDescendingByLastSeen(o);
+			assertTrue(abc.hasNext()); assertSame(a, abc.next().getTrustee());
+			assertTrue(abc.hasNext()); assertSame(c, abc.next().getTrustee());
+			assertTrue(abc.hasNext()); assertSame(b, abc.next().getTrustee());
+			assertFalse(abc.hasNext());
+		}
+
+	}
+	
+	/**
+	 * Test for {@link restoreOwnIdentity}: Using a request URI instead of an insert URI. Restoring should fail. 
+	 */
+	public void testRestoreOwnIdentity_URIMixup() throws InvalidParameterException {
+		try {
+			mWoT.restoreOwnIdentity(new FreenetURI(requestUriO));
+			fail("Restoring an identity with request URI instead of insert URI should fail!");
+		} catch(MalformedURLException e) {
+			// Success.
+		}
+	}
+	
+	/**
+	 * Test for {@link restoreOwnIdentity}: The identity to restore already exists as own identity. Restoring should fail.
+	 */
+	public void testRestoreOwnIdentity_AlreadyExisting() throws MalformedURLException, InvalidParameterException {
+		mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
+		try {
+			mWoT.restoreOwnIdentity(new FreenetURI(insertUriO));
+			fail("Restoring an already existing own identity should fail!");
+		} catch(InvalidParameterException e) {
+			// Success.
+		}
+	}
+	
+	/**
+	 * Test for {@link restoreOwnIdentity}: No identity with the given ID exists.
+	 */
+	public void testRestoreOwnIdentity_Inexistent() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
+		final FreenetURI insertURI = new FreenetURI("USK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/WebOfTrust/10");
+		
+		mWoT.restoreOwnIdentity(insertURI);
+		
+		// The following is a copypasta of testInitTrustTree - restoring of an inexistent OwnIdentity is similar to creation of a new one
+		// and the creation of a new OwnIdentity should init the trust tree.
+		flushCaches();
+		assertEquals(0, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(1, mWoT.getAllOwnIdentities().size());
+		assertEquals(0, mWoT.getAllTrusts().size());
+		assertEquals(1, mWoT.getAllScores().size());
+		
+		flushCaches();
+		final OwnIdentity restored = mWoT.getOwnIdentityByURI(insertURI);
+
+		Score score = mWoT.getScore(restored, restored);
+		assertEquals(Integer.MAX_VALUE, score.getScore());
+		assertEquals(0, score.getRank());
+		assertEquals(100, score.getCapacity());
+		assertSame(restored, score.getTruster());
+		assertSame(restored, score.getTrustee());
+		
+		// End of initTrustTree copy
+
+		assertEquals("The edition of the supplied URI can be used because the owner of the identity supplied it.", insertURI.getEdition(), restored.getEdition());
+		assertEquals("Edition hint should be equal to the edition.", restored.getEdition(), restored.getLatestEditionHint());
+		assertEquals("The current edition should be marked as not fetched.", FetchState.NotFetched, restored.getCurrentEditionFetchState());
+		assertEquals("The current edition should NOT be marked for inserting.", false, restored.needsInsert());
+		
+		assertEquals("The identity was not fetched yet so the last-fetched date should be zero.", new Date(0), restored.getLastFetchedDate());
+		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
+				(CurrentTimeUTC.getInMillis() - restored.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
+		
+		assertEquals("We cannot know the nickname yet", null, restored.getNickname());
+		assertEquals("We should assume the identity does not insert a trust list for as long as we don't know", false, restored.doesPublishTrustList());
+		
+		assertEquals("We cannot know the contexts yet", 0, restored.getContexts().size());
+		assertEquals("We cannot know the properties yet", 0, restored.getProperties().size());
+	}
+	
+	/**
+	 * - The identity to restore already exists as a non-own identity. It did not have any trust values from/to anyone, therefore it is "dangling". 
+	 * - The non-own one should be replaced. Its empty trust tree should be initialized. The new own-one should inherit the data of the old non-own one.
+	 * 
+	 *  NOTICE: {@link testDeleteOwnIdentity_Dangling()} is similar to this function. Also apply improvements there if possible.
+	 */
+	public void testRestoreOwnIdentity_ExistingAsDanglingNonOwnIdentityAlready() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
+		final Identity oldNonOwnIdentity = new Identity(mWoT, requestUriO, "TestNickname", true);
+		
+		oldNonOwnIdentity.addContext("testContext1");
+		oldNonOwnIdentity.addContext("testContext2");
+		oldNonOwnIdentity.setProperty("testProperty1", "testValue1");
+		oldNonOwnIdentity.setProperty("testProperty2", "testValue2");
+		
+		// FetchState.Fetched should NOT be copied to the OwnIdentity: In cases of low trust we do not store the
+		// full trust list of a non-own identity. We need to re-fetch the current trust list therefore.
+		oldNonOwnIdentity.setEdition(10);
+		oldNonOwnIdentity.onFetched();
+		
+		oldNonOwnIdentity.storeAndCommit();
+		
+		// We use an edition which is lower than the edition of the old identity so we can test whether the too-low edition
+		// does not overwrite the known latest edition.
+		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(5));
+		
+		// The following is a modified copypasta of testInitTrustTree - restoring of an OwnIdentity from an identity which did not
+		// give any trust values is similar to creation of a new one and the creation of a new OwnIdentity should init the trust tree.
+		flushCaches();
+		assertEquals(0, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(1, mWoT.getAllOwnIdentities().size());
+		assertEquals(0, mWoT.getAllTrusts().size());
+		assertEquals(1, mWoT.getAllScores().size());
+		
+		flushCaches();
+		final OwnIdentity restoredOwnIdentity = mWoT.getOwnIdentityByURI(requestUriO);
+
+		Score score = mWoT.getScore(restoredOwnIdentity,restoredOwnIdentity);
+		assertEquals(Integer.MAX_VALUE, score.getScore());
+		assertEquals(0, score.getRank());
+		assertEquals(100, score.getCapacity());
+		assertSame(restoredOwnIdentity, score.getTruster());
+		assertSame(restoredOwnIdentity, score.getTrustee()); 
+		
+		// End of initTrustTree copy
+		
+		assertEquals(oldNonOwnIdentity.getRequestURI(), restoredOwnIdentity.getRequestURI());
+		assertEquals("An obsolete edition in the insert URI should not overwrite a higher edition in the known request URI", oldNonOwnIdentity.getEdition(), restoredOwnIdentity.getEdition());
+		assertEquals(restoredOwnIdentity.getEdition(), restoredOwnIdentity.getLatestEditionHint());
+		assertEquals("We don't always store the full trust list of non-own identities, current edition should be re-fetched", FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
+		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
+		
+		assertEquals(oldNonOwnIdentity.getLastFetchedDate(), restoredOwnIdentity.getLastFetchedDate());
+		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
+				(CurrentTimeUTC.getInMillis() - restoredOwnIdentity.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
+		
+		assertEquals(oldNonOwnIdentity.getNickname(), restoredOwnIdentity.getNickname());
+		assertEquals(oldNonOwnIdentity.doesPublishTrustList(), restoredOwnIdentity.doesPublishTrustList());
+		assertEquals(oldNonOwnIdentity.getContexts(), restoredOwnIdentity.getContexts());
+		assertEquals(oldNonOwnIdentity.getProperties(), restoredOwnIdentity.getProperties());
+	}
+	
+	/**
+	 * Tests {@link WebOfTrust.restoreOwnIdentity()}:
+	 * - The identity exists as non-own identity already.
+	 * - The user-provided insert URI contains a higher edition than the current known edition, it should override it therefore. 
+	 */
+	public void testRestoreOwnIdentity_NewEdition() throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
+		final Identity oldNonOwnIdentity = new Identity(mWoT, requestUriO, "TestNickname", true);
+		
+		// FetchState.Fetched should NOT be copied to the OwnIdentity:
+		// The insert URI we pass to restoreOwnIdentity provides a higher edition number.
+		oldNonOwnIdentity.setEdition(10);
+		oldNonOwnIdentity.onFetched();
+		
+		oldNonOwnIdentity.storeAndCommit();
+		
+		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(11));
+		
+		flushCaches();
+		final OwnIdentity restoredOwnIdentity = mWoT.getOwnIdentityByURI(requestUriO);
+		
+		assertEquals(11, restoredOwnIdentity.getEdition());
+		assertEquals(restoredOwnIdentity.getEdition(), restoredOwnIdentity.getLatestEditionHint());
+		assertEquals(FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
+		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
+		
+		assertEquals(oldNonOwnIdentity.getLastFetchedDate(), restoredOwnIdentity.getLastFetchedDate());
+		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
+				(CurrentTimeUTC.getInMillis() - restoredOwnIdentity.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
+	}
+	
+	/**
+	 * Tests restoring of an own identity which existed already as non-own identity and had received and given trust values.
+	 * Checks whether the trust values keep existing and the score recomputation sort of works for simple cases at least.
+	 * 
+	 * It is a modified copypasta of testTrustLoop.
+	 */
+	public void testRestoreOwnIdentity_TrustAndScoreImpact() throws MalformedURLException, InvalidParameterException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException, UnknownIdentityException {
+		OwnIdentity a = mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test");
+		
+		Identity b = new Identity(mWoT, requestUriB, "B", true); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); c.storeAndCommit();
+		
+		mWoT.setTrust(a, b, (byte)100, "Foo");
+		mWoT.setTrustWithoutCommit(b, c, (byte)50, "Bar"); // There is no committing setTrust() for non-OwnIdentity (trust-list import uses rollback() on error)
+		mWoT.setTrustWithoutCommit(c, a, (byte)100, "Bleh");
+		mWoT.setTrustWithoutCommit(c, b, (byte)50, "Oops");
+		Persistent.checkedCommit(mWoT.getDatabase(), this);
+		
+		mWoT.restoreOwnIdentity(new FreenetURI(insertUriB));
+		OwnIdentity restoredB = mWoT.getOwnIdentityByURI(insertUriB);
+	
+		// Check we have the correct number of objects
+		flushCaches();
+		assertEquals(2, mWoT.getAllOwnIdentities().size());
+		assertEquals(1, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(4, mWoT.getAllTrusts().size());
+		assertEquals(6, mWoT.getAllScores().size());
+
+		// Check a's Score object in a's tree
+		flushCaches();
+		Score scoreAA = mWoT.getScore(a, a);
+		assertEquals(Integer.MAX_VALUE, scoreAA.getScore());
+		assertEquals(0, scoreAA.getRank());
+		assertEquals(100, scoreAA.getCapacity());
+		
+		// Check B's Score object in a's tree
+		flushCaches();
+		Score scoreAB = mWoT.getScore(a, restoredB);
+		assertEquals(100, scoreAB.getScore()); // 100 and not 108 because own trust values override calculated scores.
+		assertEquals(1, scoreAB.getRank());
+		assertEquals(40, scoreAB.getCapacity());
+		
+		// Check C's Score object in c's tree
+		flushCaches();
+		Score scoreAC = mWoT.getScore(a, c);
+		assertEquals(20, scoreAC.getScore());
+		assertEquals(2, scoreAC.getRank());
+		assertEquals(16, scoreAC.getCapacity());
+		
+		
+		// Check b's Score object in b's tree
+		flushCaches();
+		Score scoreBB = mWoT.getScore(restoredB, restoredB);
+		assertEquals(Integer.MAX_VALUE, scoreBB.getScore());
+		assertEquals(0, scoreBB.getRank());
+		assertEquals(100, scoreBB.getCapacity());
+		
+		// Check a's Score object in b's tree
+		flushCaches();
+		Score scoreBA = mWoT.getScore(restoredB, a);
+		assertEquals(40, scoreBA.getScore());
+		assertEquals(2, scoreBA.getRank());
+		assertEquals(16, scoreBA.getCapacity());
+		
+		// Check c's Score object in b's tree
+		flushCaches();
+		Score scoreBC = mWoT.getScore(restoredB, c);
+		assertEquals(50, scoreBC.getScore());
+		assertEquals(1, scoreBC.getRank());
+		assertEquals(40, scoreBC.getCapacity());
+	}
+	
+	/**
+	 * Test for {@link restoreOwnIdentity}:
+	 * - At the point of execution, the identity exists as non-own Identity but the current edition was not fetched yet.
+	 * - Then restoreOwnIdentity is called upon the unfetched Identity.
+	 */
+	public void testRestoreOwnIdentity_Unfetched() throws InvalidParameterException, MalformedURLException, UnknownIdentityException, NotInTrustTreeException {
+		// addIdentity should set the FetchState of the identity to NotFetched as desired by this test
+		mWoT.addIdentity(requestUriO);
+		
+		// We use an edition which is lower than the edition of the old identity so we can test whether the too-low edition
+		// does not overwrite the known latest edition.
+		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(5));
+		
+		flushCaches();
+		final OwnIdentity restoredOwnIdentity = mWoT.getOwnIdentityByURI(requestUriO);
+		
+		assertEquals(5, restoredOwnIdentity.getEdition());
+		assertEquals(5, restoredOwnIdentity.getLatestEditionHint());
+		assertEquals(FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
+		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
+		
+		assertEquals("The identity was not fetched yet so the last-fetched date should be zero.", new Date(0), restoredOwnIdentity.getLastFetchedDate());
+		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
+				(CurrentTimeUTC.getInMillis() - restoredOwnIdentity.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
+	}
+	
+	/**
+	 * Test for {@link deleteOwnIdentity}:
+	 * - The identity which shall be deleted was created by using the {@link WebOfTrust.restoreOwnIdentity()} function.
+	 * - Unfortunately, at the point of execution {@link WebOfTrust.restoreOwnIdentity()}, the identity was unknown, therefore marked for fetching but never fetched yet.
+	 * - Then deleteOwnIdentity is called with the unfetched OwnIdentity as parameter.
+	 */
+	public void testDeleteOwnIdentity_Unfetched() throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
+		// Restoring a unknown identity should mark the FetchState as NotFetched as this test desires
+		// Further, it is a nice special case to immediately delete a restored identity.
+		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(5));
+		final OwnIdentity oldOwnIdentity = mWoT.getOwnIdentityByURI(insertUriO);
+		
+		mWoT.deleteOwnIdentity(oldOwnIdentity.getID());
+		
+		flushCaches();
+		final Identity replacementNonOwnIdentity = mWoT.getIdentityByURI(insertUriO);
+		
+		assertEquals(5, replacementNonOwnIdentity.getEdition());
+		assertEquals(5, replacementNonOwnIdentity.getLatestEditionHint());
+		assertEquals(FetchState.NotFetched, replacementNonOwnIdentity.getCurrentEditionFetchState());
+		
+		assertEquals(new Date(0), replacementNonOwnIdentity.getLastFetchedDate());
+	}
+	
+	/**
+	 * Test for {@link restoreOwnIdentity}:
+	 * - The identity to delete does not exist. Deleting should fail.
+	 * - The identity to delete is not an own identity. Deleting should fail
+	 */
+	public void testDeleteOwnIdentity_Inexistent() throws MalformedURLException, InvalidParameterException {
+		final String id = IdentityID.constructAndValidateFromURI(new FreenetURI(requestUriA)).toString();
+		
+		try {
+			mWoT.deleteOwnIdentity(id);
+			fail("deleteOwnIdentity() should fail for inexistent identities.");
+		} catch (UnknownIdentityException e) {
+			// Success.
+		}
+			
+		mWoT.addIdentity(requestUriA);
+		
+		try {
+			mWoT.deleteOwnIdentity(id);
+			fail("deleteOwnIdentity() should fail for non-own identities.");
+		} catch (UnknownIdentityException e) {
+			// Success.
+		}
+	}
+	
+	/**
+	 * - The identity to delete exists. It did not have any trust values from/to anyone, therefore it is "dangling". 
+	 * - It should be replaced by a non-own identity. Its score tree should be removed.
+	 * - The new non-own-identity should inherit the data of the old own one.
+	 * 
+	 *  NOTICE: {@link testRestoreOwnIdentity_ExistingAsDanglingNonOwnIdentityAlready} is similar to this function. Also apply improvements there if possible.
+	 */
+	public void testDeleteOwnIdentity_Dangling() throws MalformedURLException, UnknownIdentityException, InvalidParameterException {
+		final Identity oldOwnIdentity = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "TestNickname", true, "testContext0");
+		
+		oldOwnIdentity.addContext("testContext1");
+		oldOwnIdentity.addContext("testContext2");
+		oldOwnIdentity.setProperty("testProperty1", "testValue1");
+		oldOwnIdentity.setProperty("testProperty2", "testValue2");
+		
+		// FetchState.Fetched should be copied to the non-own Identity:
+		// For own identities, all information stored on the network is also stored in the local database
+		// - A re-fetch of the current edition is NOT needed.
+		oldOwnIdentity.setEdition(10);
+		oldOwnIdentity.onFetched();
+		
+		oldOwnIdentity.storeAndCommit();
+		
+		mWoT.deleteOwnIdentity(oldOwnIdentity.getID());
+		
+		// The following is a modified copypasta of testInitTrustTree:
+		// We created the OwnIdentity using the regular function for that which is createOwnIdentity. 
+		// createOwnIdentity should have triggered initTrustTree on the OwnIdentity.
+		// But a non-own identity should not have a score tree (yes, initTrustTree is misnamed) so we now do the "inverse" checks of testInitTrustTree:
+		// The score tree of the own identity should have been deleted.
+		flushCaches();
+		assertEquals(1, mWoT.getAllNonOwnIdentities().size());
+		assertEquals(0, mWoT.getAllOwnIdentities().size());
+		assertEquals(0, mWoT.getAllTrusts().size());
+		assertEquals(0, mWoT.getAllScores().size());
+		
+		flushCaches();
+		final Identity replacementNonOwnIdentity = mWoT.getIdentityByURI(insertUriO);
+
+		// End of initTrustTree copy
+		
+		assertEquals(oldOwnIdentity.getRequestURI(), replacementNonOwnIdentity.getRequestURI());
+		assertEquals(oldOwnIdentity.getEdition(), replacementNonOwnIdentity.getEdition());
+		assertEquals(replacementNonOwnIdentity.getEdition(), replacementNonOwnIdentity.getLatestEditionHint());
+		assertEquals("We always store the full trust list of own identities, current edition does not have to be re-fetched", FetchState.Fetched, replacementNonOwnIdentity.getCurrentEditionFetchState());
+		
+		assertEquals(oldOwnIdentity.getLastFetchedDate(), replacementNonOwnIdentity.getLastFetchedDate());
+		
+		assertEquals(oldOwnIdentity.getNickname(), replacementNonOwnIdentity.getNickname());
+		assertEquals(oldOwnIdentity.doesPublishTrustList(), replacementNonOwnIdentity.doesPublishTrustList());
+		assertEquals(oldOwnIdentity.getContexts(), replacementNonOwnIdentity.getContexts());
+		assertEquals(oldOwnIdentity.getProperties(), replacementNonOwnIdentity.getProperties());
+	}
+	
+	/**
+	 * Tests {@link restoreOwnIdentity} AND {@link deleteOwnIdentity} by:
+	 * - Creating a random WOT.
+	 * - Using restoreOwnIdentity on a non-own identity of the random WOT
+	 * - Using deleteOwnIdentity on the restored identity which should invert the previous restoreOwnIdentity
+	 * - Checking whether the resulting WOT is equal to the WOT which existed before restoreOwnIdentity/deleteOwnIdentity were used.
+	 */
+	public void test_RestoreOwnIdentity_DeleteOwnIdentity_Chained() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, DuplicateTrustException, NotTrustedException, NotInTrustTreeException {
+		final int identityCount = 100;
+		final int trustCount = (identityCount*identityCount) / 5; // A complete graph would be identityCount² trust values.
+
+		// Random trust graph setup...
+	
+		final ArrayList<Identity> identities = addRandomIdentities(identityCount);
+		
+		// This identity will be converted to OwnIdentity and back to Identity.
+		final Identity identityToConvert = mWoT.addIdentity(requestUriO);
+		identities.add(identityToConvert);
+		
+		// At least one own identity needs to exist to ensure that scores are computed.
+		final OwnIdentity ownIdentity = mWoT.createOwnIdentity(getRandomSSKPair()[0], "Test", true, "Test");
+		identities.add(ownIdentity); 
+		
+		addRandomTrustValues(identities, trustCount);
+		
+		// We need to make sure that our random trust graph parameters actually result in Trusts/Scores on the converted identity.
+		assertTrue(mWoT.getReceivedTrusts(identityToConvert).size() > 0);
+		assertTrue(mWoT.getGivenTrusts(identityToConvert).size() > 0);
+		assertTrue(mWoT.getScores(identityToConvert).size() > 0);
+
+		final HashSet<Identity> oldIdentities = cloneAllIdentities();
+		final HashSet<Trust> oldTrusts = cloneAllTrusts();
+		final HashSet<Score> oldScores = cloneAllScores();
+
+		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO));
+		mWoT.deleteOwnIdentity(identityToConvert.getID());
+
+		assertEquals(oldIdentities, new HashSet<Identity>(mWoT.getAllIdentities()));
+		assertEquals(oldTrusts, new HashSet<Trust>(mWoT.getAllTrusts()));
+		assertEquals(oldScores, new HashSet<Score>(mWoT.getAllScores()));
+	}
+	
 }

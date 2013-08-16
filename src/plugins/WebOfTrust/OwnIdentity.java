@@ -4,12 +4,12 @@
 package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
-import java.util.Arrays;
 import java.util.Date;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.Logger;
 
 /**
  * A local Identity (it belongs to the user)
@@ -28,24 +28,31 @@ public final class OwnIdentity extends Identity {
 	 * Creates a new OwnIdentity with the given parameters.
 	 * 
 	 * @param insertURI A {@link FreenetURI} used to insert this OwnIdentity in Freenet
-	 * @param requestURI A {@link FreenetURI} used to fetch this OwnIdentity in Freenet
 	 * @param nickName The nickName of this OwnIdentity
 	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
 	 * @throws InvalidParameterException If a given parameter is invalid
+	 * @throws MalformedURLException If insertURI isn't a valid insert URI.
 	 */
-	public OwnIdentity (WebOfTrust myWoT, FreenetURI insertURI, FreenetURI requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException {	
-		super(myWoT, requestURI, nickName, publishTrustList);
+	public OwnIdentity (WebOfTrust myWoT, FreenetURI insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {	
+		super(myWoT,
+				// If we don't set a document name, we will get "java.net.MalformedURLException: SSK URIs must have a document name (to avoid ambiguity)"
+				// when calling  FreenetURI.deriveRequestURIFromInsertURI().
+				// To make sure the code works, I have copypasted the URI normalization code which we have been using anyway instead of only 
+				// adding a .setDocName() - I remember that it was tricky to get code which properly normalizes ALL existing URIs which
+				// people shove into WOT
+				insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setMetaString(null).deriveRequestURIFromInsertURI(),
+				nickName, publishTrustList);
 		// This is already done by super()
 		// setEdition(0);
 		
 		if(!insertURI.isUSK() && !insertURI.isSSK())
-			throw new IllegalArgumentException("Identity URI keytype not supported: " + insertURI);
+			throw new InvalidParameterException("Identity URI keytype not supported: " + insertURI);
 		
 		// initializeTransient() was not called yet so we must use mRequestURI.getEdition() instead of this.getEdition()
 		mInsertURI = insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(mRequestURI.getEdition()).setMetaString(null);
 		
-		if(!Arrays.equals(mRequestURI.getCryptoKey(), mInsertURI.getCryptoKey()))
-			throw new RuntimeException("Request and insert URI do not fit together!");
+		// Notice: Check that mInsertURI really is a insert URI is NOT necessary, FreenetURI.deriveRequestURIFromInsertURI() did that already for us.
+		// InsertableUSK.createInsertable(mInsertURI, false);
 		
 		mLastInsertDate = new Date(0);
 
@@ -62,14 +69,40 @@ public final class OwnIdentity extends Identity {
 	 * insertURI and requestURI are converted from String to {@link FreenetURI}
 	 * 
 	 * @param insertURI A String representing the key needed to insert this OwnIdentity in Freenet
-	 * @param requestURI A String representing the key needed to fetch this OwnIdentity from Freenet
 	 * @param nickName The nickName of this OwnIdentity
 	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
 	 * @throws InvalidParameterException If a given parameter is invalid
-	 * @throws MalformedURLException If either requestURI or insertURI is not a valid FreenetURI
+	 * @throws MalformedURLException If insertURI is not a valid FreenetURI or a request URI instead of an insert URI.
 	 */
-	public OwnIdentity(WebOfTrust myWoT, String insertURI, String requestURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
-		this(myWoT, new FreenetURI(insertURI), new FreenetURI(requestURI), nickName, publishTrustList);
+	public OwnIdentity(WebOfTrust myWoT, String insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
+		this(myWoT, new FreenetURI(insertURI), nickName, publishTrustList);
+	}
+	
+	/**
+	 * NOTICE: When changing this function, please also take care of {@link WebOfTrust.restoreOwnIdentity()}
+	 * 
+	 * @see {@link WebOfTrust.restoreOwnIdentity()}
+	 * @return True if getCurrentEditionFetchState()==FetchState.NotFetched/FetchState.ParsingFailed, false for FetchState.Fetched.
+	 */
+	public final boolean isRestoreInProgress() {
+		switch(getCurrentEditionFetchState()) {
+			case Fetched:
+					// Normal state for an OwnIdentity: When the IdentityInserted has inserted a new edition,
+					// it uses setEdition() which immediately sets the FetchState to Fetched
+					return false;
+			case NotFetched:
+					// The identity is definitely in restore mode: When restoreOwnIdentity() converts a non-own
+					// identity to an own one, it sets FetchState to NotFetched.
+					// Nothing else shall set this state on an OwnIdentity.
+					return true;
+			case ParsingFailed:
+					// We tried to restore the current edition but it didn't parse successfully.
+					// We should keep it in restore mode until we have successfully imported an edition:
+					// The nickname can be null if no edition of the identity was ever imported.
+					return true;
+			default:
+				throw new IllegalStateException("Unknown FetchState: " + getCurrentEditionFetchState());
+		}
 	}
 	
 	/**
@@ -78,10 +111,13 @@ public final class OwnIdentity extends Identity {
 	 * @return Whether this OwnIdentity needs to be inserted or not
 	 */
 	public final boolean needsInsert() {
-		// If the current edition was fetched successfully OR if parsing of it failed, we may insert a new one
-		// We may NOT insert a new one if it was not fetched: The identity might be in restore-mode
-		if(getCurrentEditionFetchState() == FetchState.NotFetched)
+		if(isRestoreInProgress())
 			return false;
+		
+		// TODO: Instead of only deciding by date whether the current edition was inserted, we should store both the date of
+		// the last insert and the date of the next scheduled insert AND the reason for the scheduled insert.
+		// There should be different reasons because some changes are not as important as others so we can have larger
+		// delays for unimportant reasons.
 		
 		return (getLastChangeDate().after(getLastInsertDate()) ||
 				(CurrentTimeUTC.getInMillis() - getLastInsertDate().getTime()) > IdentityInserter.MAX_UNCHANGED_TINE_BEFORE_REINSERT); 
@@ -124,11 +160,21 @@ public final class OwnIdentity extends Identity {
 	
 	/**
 	 * Sets the edition to the given edition and marks it for re-fetching. Used for restoring own identities.
+	 * @param fetchedDate The date when the given edition was fetched. Null if it was not fetched yet.
 	 */
-	protected final void restoreEdition(long edition) throws InvalidParameterException {
+	protected final void restoreEdition(long edition, Date fetchedDate) throws InvalidParameterException {
 		setEdition(edition);
 		checkedActivate(1);
 		mCurrentEditionFetchState = FetchState.NotFetched;
+		
+		// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive */
+		mLastFetchedDate = fetchedDate != null ? (Date)fetchedDate.clone() : new Date(0);
+		
+		// This is not really necessary because needsInsert() returns false if mCurrentEditionFetchState == NotFetched
+		// However, we still do it because the user might have specified URIs with old edition numbers: Then the IdentityInserter would
+		// start insertion the old trust lists immediately after the first one was fetched. With the last insert date being set to current
+		// time, this is less likely to happen because the identity inserter has a minimal delay between last insert and next insert.
+		updateLastInsertDate();
 	}
 
 	/**
@@ -144,6 +190,7 @@ public final class OwnIdentity extends Identity {
 	 */
 	protected final void updateLastInsertDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
+		// checkedDelete(mLastInsertDate); /* Not stored because db4o considers it as a primitive */
 		mLastInsertDate = CurrentTimeUTC.get();
 	}
 
@@ -172,18 +219,22 @@ public final class OwnIdentity extends Identity {
 	 */
 	public final OwnIdentity clone() {
 		try {
-			OwnIdentity clone = new OwnIdentity(mWebOfTrust, getInsertURI(), getRequestURI(), getNickname(), doesPublishTrustList());
+			OwnIdentity clone = new OwnIdentity(mWebOfTrust, getInsertURI(), getNickname(), doesPublishTrustList());
 			
 			checkedActivate(4); // For performance only
 			
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
-			clone.setNewEditionHint(getLatestEditionHint()); 
+			clone.mLatestEditionHint = getLatestEditionHint(); // Don't use the setter since it won't lower the current edition hint.
 			clone.setContexts(getContexts());
 			clone.setProperties(getProperties());
 			
 			return clone;
 		} catch(InvalidParameterException e) {
 			throw new RuntimeException(e);
+		} catch (MalformedURLException e) {
+			/* This should never happen since we checked when this object was created */
+			Logger.error(this, "Caugth MalformedURLException in clone()", e);
+			throw new IllegalStateException(e); 
 		}
 	}
 	
@@ -228,11 +279,12 @@ public final class OwnIdentity extends Identity {
 		if(mInsertURI == null)
 			throw new NullPointerException("mInsertURI==null");
 		
-		if(!Arrays.equals(mRequestURI.getCryptoKey(), mInsertURI.getCryptoKey()))
-			throw new IllegalStateException("Request and insert URI do not fit together!");
-		
-		if(mInsertURI.getEdition() != mRequestURI.getEdition())
-			throw new IllegalStateException("Insert and request editions do not match!");
+		try {
+			if(!mInsertURI.deriveRequestURIFromInsertURI().equals(mRequestURI))
+				throw new IllegalStateException("Insert and request URI do not fit together!");
+		} catch (MalformedURLException e) {
+			throw new IllegalStateException("mInsertURI is not an insert URI!");
+		}
 		
 		if(mLastInsertDate == null)
 			throw new NullPointerException("mLastInsertDate==null");

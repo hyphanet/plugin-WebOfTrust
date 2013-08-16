@@ -16,6 +16,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.introduction.captcha.CaptchaFactory1;
+import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 
 public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
@@ -35,14 +36,17 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		mPuzzleFactories = Collections.unmodifiableList(mPuzzleFactories);
 		assertEquals(1, mPuzzleFactories.size());
 		
-		final String uriA = "SSK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/";
-		final String uriB = "SSK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/";
-		final String uriC = "SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/";
+		// final String requestUriA = "SSK@JbL1YKGe7Db5nOKiCfepqzsYVHM6Wky1fy1nxGj1OiY,UWICDLtymysOXSO7LDgUDQtVfvx9434BiyJB0TtvxRc,AQACAAE/WebOfTrust";
+		final String insertUriA = "SSK@AIF07w9GVcz70eciE8CoKpGbAv9wAxrUx8ZhDxm8~6Ve,UWICDLtymysOXSO7LDgUDQtVfvx9434BiyJB0TtvxRc,AQECAAE/WebOfTrust";
+		// final String requestUriB = "SSK@LXT92Bbip~qlYtepgKjBDwnbBcNrGD9S8jUDzSF64XA,uC-6AoFB4laXLBsr2Eee8mw7BlrXbqQXvDJj~i8BM68,AQACAAE/WebOfTrust";
+		final String insertUriB = "SSK@ZyR14uN74EFIL6EwIOcCifj17d5Z-l7lpJdfYNEeT4Y,uC-6AoFB4laXLBsr2Eee8mw7BlrXbqQXvDJj~i8BM68,AQECAAE/WebOfTrust";
+		// final String requestUriC = "SSK@DFbvyoJPnUnNB4akjLfdSpxBB8tvHhZ3AZ7AP3TlzzE,l6xQzhaW2QtKA2MbWvjSFesx3XSLMDwCyP8qRTmOh1k,AQACAAE/WebOfTrust";
+		final String insertUriC = "SSK@ct973RBN~JX1LmHRsZqP2w181V3gOixrun~7a6BqguE,l6xQzhaW2QtKA2MbWvjSFesx3XSLMDwCyP8qRTmOh1k,AQECAAE/WebOfTrust";
 		
 		mOwnIdentities = new ArrayList<OwnIdentity>();
-		mOwnIdentities.add(mWoT.createOwnIdentity(uriA, uriA, "B", true, "Test"));
-		mOwnIdentities.add(mWoT.createOwnIdentity(uriB, uriB, "B", true, "Test"));
-		mOwnIdentities.add(mWoT.createOwnIdentity(uriC, uriC, "C", true, "Test"));
+		mOwnIdentities.add(mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test"));
+		mOwnIdentities.add(mWoT.createOwnIdentity(new FreenetURI(insertUriB), "B", true, "Test"));
+		mOwnIdentities.add(mWoT.createOwnIdentity(new FreenetURI(insertUriC), "C", true, "Test"));
 		mOwnIdentities = Collections.unmodifiableList(mOwnIdentities);
 		
 		mOwnIdentity = mOwnIdentities.get(0);
@@ -216,7 +220,7 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		final List<OwnIntroductionPuzzle> deletedPuzzles = generateNewPuzzles(a);
 		final int puzzleCountB = generateNewPuzzles(b).size();
 		
-		mWoT.deleteIdentity(a);
+		mWoT.deleteOwnIdentity(a.getID());
 		flushCaches();
 		
 		// We should not query for the puzzle count of the identity to ensure that we catch puzzles whose owner has become null as well.

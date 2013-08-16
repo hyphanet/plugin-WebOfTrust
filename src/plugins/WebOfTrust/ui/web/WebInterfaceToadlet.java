@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URI;
 
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
-
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.Toadlet;
@@ -35,6 +34,10 @@ public abstract class WebInterfaceToadlet extends Toadlet {
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) 
 			throws ToadletContextClosedException, IOException, RedirectException {
+		
+	    if(!ctx.checkFullAccess(this))
+	        return;
+		
 		String ret;
 		try {
 			WebPage page = makeWebPage(req, ctx);
@@ -55,6 +58,8 @@ public abstract class WebInterfaceToadlet extends Toadlet {
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	    if(!ctx.checkFullAccess(this))
+	        return;
 		
 		String pass = request.getPartAsString("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
