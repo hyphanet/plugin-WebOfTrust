@@ -69,6 +69,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static abstract class Subscription<NotificationType extends Notification> extends Persistent {
 		
 		/**
+		 * The UUID of this Subscription. Stored as String for db4o performance, but must be valid in terms of the UUID class.
+		 * 
 		 * @see #getID()
 		 */
 		@IndexedField
@@ -116,6 +118,9 @@ public final class SubscriptionManager implements PrioRunnable {
 			mFCPKey = fcpID;
 		}
 		
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
 			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
@@ -141,6 +146,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/**
 		 * @return The UUID of this Subscription. Stored as String for db4o performance, but must be valid in terms of the UUID class.
+		 * @see #mID
 		 */
 		public final String getID() {
 			checkedActivate(1);
@@ -149,6 +155,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/**
 		 * @return The {@link Type} of this Subscription.
+		 * @see #mType
 		 */
 		public final Type getType() {
 			checkedActivate(1);
@@ -157,6 +164,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/**
 		 * @return An ID which associates this subscription with a FCP connection if the type is FCP.
+		 * @see #mFCPKey
 		 */
 		public final String getFCPKey() {
 			if(getType() != Type.FCP)
