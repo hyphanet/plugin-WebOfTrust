@@ -569,25 +569,39 @@ public final class SubscriptionManager implements PrioRunnable {
 
 	/**
 	 * A subscription to the attributes of all identities.
-	 * If the attributes of an identity change, the subscriber gets notified.
-	 * The subscriber will also get notified if a new identity is created or if an identity is deleted.
+	 * If the attributes of an identity change, the subscriber gets notified by a {@link IdentityChangedNotification}.
+	 * The subscriber will also get notified if a new identity is created or if an identity is deleted. FIXME: Is this correct? We have IdentityListSubscription for this. 
 	 */
 	public static final class IdentityAttributeListSubscription extends Subscription<IdentityChangedNotification> {
 
+		/**
+		 * @param fcpID See {@link Subscription#getFCPKey()}. 
+		 */
 		protected IdentityAttributeListSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
 		}
 
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws Exception {
 			mWebOfTrust.getFCPInterface().sendAllIdentities(getFCPKey());
 		}
 		
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		protected void notifySubscriberByFCP(IdentityChangedNotification notification) throws Exception {
 			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getFCPKey(), notification.getIdentityID());
 		}
 
+		/**
+		 * Stores a {@link IdentityChangedNotification} to the {@link Notification} queue of this {@link Subscription}.
+		 * 
+		 * @param identity The {@link Identity} whose attributes have changed.
+		 */
 		private void storeNotificationWithoutCommit(Identity identity) {
 			final IdentityChangedNotification notification = new IdentityChangedNotification(this, identity);
 			notification.initializeTransient(mWebOfTrust);
