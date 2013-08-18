@@ -83,12 +83,16 @@ public final class SubscriptionManager implements PrioRunnable {
 		};
 		
 		/**
-		 * The way the client of this subscription desires notification
+		 * The way the client of this subscription desires notification.
+		 * 
+		 * @see #getType()
 		 */
 		private final Type mType;
 		
 		/**
 		 * An ID which associates this subscription with a FCP connection if the type is FCP.
+		 * 
+		 * @see #getFCPKey()
 		 */
 		@IndexedField
 		private final String mFCPKey;
@@ -128,6 +132,9 @@ public final class SubscriptionManager implements PrioRunnable {
 				throw new IllegalStateException("mNextNotificationIndex==" + mNextNotificationIndex);
 		}
 		
+		/**
+		 * You must call {@link #initializeTransient} before using this!
+		 */
 		protected final SubscriptionManager getSubscriptionManager() {
 			return mWebOfTrust.getSubscriptionManager();
 		}
@@ -140,11 +147,17 @@ public final class SubscriptionManager implements PrioRunnable {
 			return mID;
 		}
 		
+		/**
+		 * @return The {@link Type} of this Subscription.
+		 */
 		public final Type getType() {
 			checkedActivate(1);
 			return mType;
 		}
 		
+		/**
+		 * @return An ID which associates this subscription with a FCP connection if the type is FCP.
+		 */
 		public final String getFCPKey() {
 			if(getType() != Type.FCP)
 				throw new UnsupportedOperationException("Type is not FCP:" + getType());
