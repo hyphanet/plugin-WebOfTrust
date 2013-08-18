@@ -198,6 +198,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * Deletes this Subscription and - using the passed in {@link SubscriptionManager} - also deletes all
 		 * queued {@link Notification}s of it. Does not commit the transaction.
+		 * 
 		 * @param manager The {@link SubscriptionManager} to which this Subscription belongs.
 		 */
 		protected void deleteWithoutCommit(final SubscriptionManager manager) {
@@ -239,6 +240,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * The implementation MUST throw a {@link RuntimeException} if the FCP message was not sent successfully: 
 		 * Subscriptions are supposed to be reliable, if transmitting a {@link Notification} fails it shall
 		 * be resent.
+		 * 
+		 * @param notification The {@link Notification} to send out via FCP.
 		 */
 		protected abstract void notifySubscriberByFCP(NotificationType notification) throws Exception;
 
@@ -249,6 +252,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * and an exception is thrown.
 		 * You have to synchronize on the WoT, the SubscriptionManager and the database lock before calling this
 		 * function!
+		 * 
+		 * @param manager The {@link SubscriptionManager} from which to query the {@link Notification}s of this Subscription.
 		 */
 		@SuppressWarnings("unchecked")
 		protected void sendNotifications(SubscriptionManager manager) {
@@ -307,12 +312,17 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * Constructs a Notification in the queue of the given subscription.
 		 * Takes a free notification index from it with {@link Subscription#takeFreeNotificationIndexWithoutCommit}
+		 * 
+		 * @param mySubscription The {@link Subscription} to whose Notification queue this Notification belongs.
 		 */
 		protected Notification(final Subscription<? extends Notification> mySubscription) {
 			mSubscription = mySubscription;
 			mIndex = mySubscription.takeFreeNotificationIndexWithoutCommit();
 		}
 		
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
 			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
@@ -333,6 +343,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	protected static class InitialSynchronizationNotification extends Notification {
 		
+		/**
+		 * @param mySubscription The {@link Subscription} to whose {@link Notification} queue this {@link Notification}  will belong.
+		 */
 		protected InitialSynchronizationNotification(Subscription<? extends Notification> mySubscription) {
 			super(mySubscription);
 		}
