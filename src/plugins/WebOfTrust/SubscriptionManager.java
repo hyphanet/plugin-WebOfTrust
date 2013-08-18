@@ -354,7 +354,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * This notification is issued when the attributes of an identity change.
-	 * It is also used as a base class for {@link IdentityListChangedNotification} and {@link IdentityDeletedNotification}.
+	 * It is also used as a base class for {@link IdentityListChangedNotification}.
 	 */
 	protected static class IdentityChangedNotification extends Notification {
 		final String mIdentityID;
