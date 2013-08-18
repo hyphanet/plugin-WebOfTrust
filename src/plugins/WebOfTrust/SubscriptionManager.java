@@ -361,7 +361,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * The ID of the identity which has changed.
 		 * 
-		 * @see Identity#mID
+		 * @see Identity#getID()
 		 * @see #getIdentityID()
 		 */
 		final String mIdentityID;
