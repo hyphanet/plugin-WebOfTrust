@@ -425,6 +425,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/**
 		 * The ID of the truster of the changed {@link Trust}.
+		 * 
 		 * @see Identity#getID()
 		 * @see Trust#getTruster()
 		 * @see #getTrusterID()
@@ -433,6 +434,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/**
 		 * The ID of the trustee of the changed {@link Trust}.
+		 * 
 		 * @see Identity#getID()
 		 * @see Trust#getTrustee()
 		 * @see #getTrusteeID()
@@ -464,6 +466,7 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		/**
 		 * The ID of the truster of the changed {@link Trust}.
+		 * 
 		 * @see Identity#getID()
 		 * @see Trust#getTruster()
 		 * @see #mTrusterID
@@ -475,6 +478,7 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		/**
 		 * The ID of the trustee of the changed {@link Trust}.
+		 * 
 		 * @see Identity#getID()
 		 * @see Trust#getTrustee()
 		 * @see #mTrusteeID
