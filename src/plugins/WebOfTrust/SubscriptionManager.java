@@ -61,7 +61,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static abstract class Subscription<NotificationType extends Notification> extends Persistent {
 		
 		/**
-		 * @see getID()
+		 * @see #getID()
 		 */
 		@IndexedField
 		private final String mID;
@@ -160,7 +160,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 		
 		/**
-		 * @throws UnsupportedOperationException Is always thrown: Use {@link deleteWithoutCommit(SubscriptionManager manager)} instead.
+		 * @throws UnsupportedOperationException Is always thrown: Use {@link #deleteWithoutCommit(SubscriptionManager)} instead.
 		 */
 		@Override
 		protected void deleteWithoutCommit() {
@@ -278,7 +278,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/**
 		 * Constructs a Notification in the queue of the given subscription.
-		 * Takes a free notification index from it with {@link Subscription.takeFreeNotificationIndexWithoutCommit}
+		 * Takes a free notification index from it with {@link Subscription#takeFreeNotificationIndexWithoutCommit}
 		 */
 		protected Notification(final Subscription<? extends Notification> mySubscription) {
 			mSubscription = mySubscription;
@@ -827,7 +827,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Schedules the {@link run()} method to be executed after a delay of {@link PROCESS_NOTIFICATIONS_DELY}
+	 * Schedules the {@link #run()} method to be executed after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}
 	 */
 	private void scheduleNotificationProcessing() {
 		if(mTicker != null)
