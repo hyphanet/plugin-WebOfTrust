@@ -5,7 +5,6 @@ package plugins.WebOfTrust;
 
 import java.util.UUID;
 
-import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 
 import com.db4o.ObjectSet;
