@@ -401,7 +401,7 @@ public final class SubscriptionManager implements PrioRunnable {
 
 	/**
 	 * This notification is issued when a new identity is discovered or deleted.
-	 * TODO: What about restoreOwnIdentity / deleteOwnIdentity? They replace an OwnIdentity object with an Identity object and vice versa. 
+	 * FIXME: What about restoreOwnIdentity / deleteOwnIdentity? They replace an OwnIdentity object with an Identity object and vice versa.
 	 */
 	protected static final class IdentityListChangedNotification extends IdentityChangedNotification {		
 		
