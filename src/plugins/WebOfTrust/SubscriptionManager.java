@@ -357,13 +357,27 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * It is also used as a base class for {@link IdentityListChangedNotification}.
 	 */
 	protected static class IdentityChangedNotification extends Notification {
+		
+		/**
+		 * The ID of the identity which has changed.
+		 * 
+		 * @see Identity#mID
+		 * @see #getIdentityID()
+		 */
 		final String mIdentityID;
 	
+		/**
+		 * @param mySubscription The {@link Subscription} to whose {@link Notification} queue this {@link Notification} belongs.
+		 * @param myIdentity The {@link Identity} which has changed.
+		 */
 		protected IdentityChangedNotification(final Subscription<? extends IdentityChangedNotification> mySubscription, Identity myIdentity) {
 			super(mySubscription);
 			mIdentityID = myIdentity.getID();
 		}
 		
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
 			super.startupDatabaseIntegrityTest();
@@ -373,6 +387,11 @@ public final class SubscriptionManager implements PrioRunnable {
 			IfNull.thenThrow(mIdentityID, "mIdentityID");
 		}
 		
+		/**
+		 * @return The ID of the identity which has changed.
+		 * @see Identity#getID()
+		 * @see #mIdentityID
+		 */
 		protected final String getIdentityID() {
 			checkedActivate(1);
 			return mIdentityID;
