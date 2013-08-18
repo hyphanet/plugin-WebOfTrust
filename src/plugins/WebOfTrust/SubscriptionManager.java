@@ -93,6 +93,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * An ID which associates this subscription with a FCP connection if the type is FCP.
 		 * 
+		 * FIXME: Rename to mFCP_ID because we don't use "key" anywhere. 
+		 * 
 		 * @see #getFCPKey()
 		 */
 		@IndexedField
