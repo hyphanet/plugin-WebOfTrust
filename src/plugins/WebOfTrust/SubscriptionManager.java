@@ -491,19 +491,44 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * This notification is issued when a score value is added, removed or changed.
+	 * This notification is issued when a score value is added, deleted or changed.
+	 * FIXME: We use IdentityChangedNotification if the attributes of an Identity have changed and IdentityListChangedNotification if an identity
+	 * 		is added or deleted. But we use ScoreChangedNotification for all cases. This decoherent. Either get rid of the two Identity notification
+	 * 		types or introduce two types for Score. Same applies to TrustChangedNotification.
 	 */
 	protected static final class ScoreChangedNotification extends Notification {
 		
+		/**
+		 * The ID of the truster of the changed {@link Score}.
+		 * 
+		 * @see Identity#getID()
+		 * @see Score#getTruster()
+		 * @see #getTrusterID()
+		 */
 		private final String mTrusterID;
-		private final String mTrusteeID;
 		
+		/**
+		 * The ID of the trustee of the changed {@link Score}.
+		 * 
+		 * @see Identity#getID()
+		 * @see Score#getTrustee()
+		 * @see #getTrusteeID()
+		 */
+		private final String mTrusteeID;
+
+		/**
+		 * @param mySubscription The {@link Subscription} to whose {@link Notification} queue this {@link Notification} belongs.
+		 * @param myScore The {@link Score} which was added, deleted or changed.
+		 */
 		protected ScoreChangedNotification(final Subscription<ScoreChangedNotification> mySubscription, Score myScore) {
 			super(mySubscription);
 			mTrusterID = myScore.getTruster().getID();
 			mTrusteeID = myScore.getTrustee().getID();
 		}
 		
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
 			super.startupDatabaseIntegrityTest();
@@ -514,11 +539,26 @@ public final class SubscriptionManager implements PrioRunnable {
 			IfNull.thenThrow(mTrusteeID, "mTrusteeID");
 		}
 		
+		/**
+		 * The ID of the truster of the changed {@link Score}.
+		 * 
+		 * @see Identity#getID()
+		 * @see Score#getTruster()
+		 * @see #mTrusterID
+		 */
 		protected final String getTrusterID() {
 			checkedActivate(1);
 			return mTrusterID;
 		}
 		
+		
+		/**
+		 * The ID of the trustee of the changed {@link Score}.
+		 * 
+		 * @see Identity#getID()
+		 * @see Score#getTrustee()
+		 * @see #mTrusteeID()
+		 */
 		protected final String getTrusteeID() {
 			checkedActivate(1);
 			return mTrusteeID;
