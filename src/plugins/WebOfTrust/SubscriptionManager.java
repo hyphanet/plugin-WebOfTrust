@@ -320,8 +320,6 @@ public final class SubscriptionManager implements PrioRunnable {
 			
 			IfNull.thenThrow(mSubscription);
 			
-			// TODO: Throw if no subscription exists with the given ID
-			
 			if(mIndex < 0)
 				throw new IllegalStateException("mIndex==" + mIndex);
 		}
