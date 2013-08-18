@@ -416,19 +416,42 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * This notification is issued when a trust value is added, removed or changed.
+	 * This notification is issued when a {@link Trust} is added, deleted or changed.
+	 * FIXME: We use IdentityChangedNotification if the attributes of an Identity have changed and IdentityListChangedNotification if an identity
+	 * 		is added or deleted. But we use TrustChangedNotification for all cases. This decoherent. Either get rid of the two Identity notification
+	 * 		types or introduce two types for Trust. Same applies to ScoreChangedNotification.
 	 */
 	protected static final class TrustChangedNotification extends Notification {
 		
+		/**
+		 * The ID of the truster of the changed {@link Trust}.
+		 * @see Identity#getID()
+		 * @see Trust#getTruster()
+		 * @see #getTrusterID()
+		 */
 		private final String mTrusterID;
+		
+		/**
+		 * The ID of the trustee of the changed {@link Trust}.
+		 * @see Identity#getID()
+		 * @see Trust#getTrustee()
+		 * @see #getTrusteeID()
+		 */
 		private final String mTrusteeID;
 		
+		/**
+		 * @param mySubscription The {@link Subscription} to whose {@link Notification} queue this {@link Notification} belongs.
+		 * @param myTrust The {@link Trust} which was added, removed or changed.
+		 */
 		protected TrustChangedNotification(final Subscription<TrustChangedNotification> mySubscription, Trust myTrust) {
 			super(mySubscription);
 			mTrusterID = myTrust.getTruster().getID();
 			mTrusteeID = myTrust.getTrustee().getID();
 		}
 		
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
 			super.startupDatabaseIntegrityTest();
@@ -438,12 +461,24 @@ public final class SubscriptionManager implements PrioRunnable {
 			IfNull.thenThrow(mTrusterID, "mTrusterID");
 			IfNull.thenThrow(mTrusteeID, "mTrusteeID");
 		}
-		
+
+		/**
+		 * The ID of the truster of the changed {@link Trust}.
+		 * @see Identity#getID()
+		 * @see Trust#getTruster()
+		 * @see #mTrusterID
+		 */
 		protected final String getTrusterID() {
 			checkedActivate(1);
 			return mTrusterID;
 		}
-		
+
+		/**
+		 * The ID of the trustee of the changed {@link Trust}.
+		 * @see Identity#getID()
+		 * @see Trust#getTrustee()
+		 * @see #mTrusteeID
+		 */
 		protected final String getTrusteeID() {
 			checkedActivate(1);
 			return mTrusteeID;
