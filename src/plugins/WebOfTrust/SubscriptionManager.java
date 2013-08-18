@@ -57,6 +57,14 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Subscriptions are stored one per {@link Notification}-type and per way of notification:
 	 * Because we want the notification queue to block on error, a single subscription does not support
 	 * multiple ways of notifying the client.
+	 * 
+	 * Notice: Even though this is an abstract class, it contains code specific <b>all</>b> types of subscription clients such as FCP and callback.
+	 * At first glance, this looks like a violation of abstraction principles. But it is not:
+	 * Subclasses of this class shall NOT be created for different types of clients such as FCP and callbacks.
+	 * Subclasses are created for different types of content to which the subscriber is subscribed: There is a subclass for subscriptions to the
+	 * list of {@link Identity}s, the list of {@link Trust}s, and so on. Each subclass has to implement the code for notifying <b>all</b> types
+	 * of clients (FCP, callback, etc.).
+	 * Therefore, this base class also contains code for <b>all</b> kinds of clients.
 	 */
 	public static abstract class Subscription<NotificationType extends Notification> extends Persistent {
 		
