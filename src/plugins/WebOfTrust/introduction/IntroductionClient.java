@@ -476,6 +476,7 @@ public final class IntroductionClient extends TransferThread  {
 		
 		final FreenetURI uri = IntroductionPuzzle.generateRequestURI(inserter, currentDate, index);		
 		final FetchContext fetchContext = mClient.getFetchContext();
+		fetchContext.maxArchiveLevels = 0; // Because archives can become huge and WOT does not use them, we should disallow them. See JavaDoc of the variable.
 		// The retry-count does not include the first attempt. We only try once because we do not know whether that identity was online to insert puzzles today.
 		fetchContext.maxSplitfileBlockRetries = 0;
 		fetchContext.maxNonSplitfileRetries = 0;

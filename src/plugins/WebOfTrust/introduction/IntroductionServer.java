@@ -189,6 +189,7 @@ public final class IntroductionServer extends TransferThread {
 			for(final OwnIntroductionPuzzle p : puzzles) {
 				try {
 				final FetchContext fetchContext = mClient.getFetchContext();
+				fetchContext.maxArchiveLevels = 0; // Because archives can become huge and WOT does not use them, we should disallow them. See JavaDoc of the variable.
 				// -1 means retry forever. Does make sense here: After 2 retries the fetches go into the cooldown queue, ULPRs are used. So if someone inserts
 				// the puzzle solution during that, we might get to know it.
 				fetchContext.maxSplitfileBlockRetries = -1;
