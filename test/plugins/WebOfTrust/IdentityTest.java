@@ -255,7 +255,7 @@ public final class IdentityTest extends DatabaseBasedTest {
 	}
 	
 
-	
+// TODO: Finish implementation and enable.	
 //	public void testEquals() {
 //		do {
 //			try {
