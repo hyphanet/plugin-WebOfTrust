@@ -618,20 +618,34 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	public static final class IdentityListSubscription extends Subscription<IdentityListChangedNotification> {
 
+		/**
+		 * @param fcpID See {@link Subscription#getFCPKey()}. 
+		 */
 		protected IdentityListSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
 		}
 		
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws Exception {
 			mWebOfTrust.getFCPInterface().sendAllIdentities(getFCPKey());
 		}
-		
+
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		protected void notifySubscriberByFCP(IdentityListChangedNotification notification) throws Exception {
 			mWebOfTrust.getFCPInterface().sendIdentityListChangedNotification(getFCPKey(), notification.getIdentityID());
 		}
 
+		/**
+		 * Stores a {@link IdentityListChangedNotification} to the {@link Notification} queue of this {@link Subscription}.
+		 * 
+		 * @param identity The {@link Identity} which was added or deleted.
+		 */
 		public void storeNotificationWithoutCommit(Identity identity) {
 			final IdentityListChangedNotification notification = new IdentityListChangedNotification(this, identity);
 			notification.initializeTransient(mWebOfTrust);
