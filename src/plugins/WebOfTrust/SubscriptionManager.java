@@ -702,20 +702,34 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	public static final class ScoreListSubscription extends Subscription<ScoreChangedNotification> {
 
+		/**
+		 * @param fcpID See {@link Subscription#getFCPKey()}. 
+		 */
 		protected ScoreListSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
 		}
 		
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws Exception {
 			mWebOfTrust.getFCPInterface().sendAllScoreValues(getFCPKey());
 		}
 
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		protected void notifySubscriberByFCP(ScoreChangedNotification notification) throws Exception {
 			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getFCPKey(), notification.getTrusterID(), notification.getTrusteeID());
 		}
-		
+
+		/**
+		 * Stores a {@link ScoreChangedNotification} to the {@link Notification} queue of this {@link Subscription}.
+		 * 
+		 * @param score The {@link Score} which was added, changed deleted.
+		 */
 		public void storeNotificationWithoutCommit(Score score) {
 			final ScoreChangedNotification notification = new ScoreChangedNotification(this, score);
 			notification.initializeTransient(mWebOfTrust);
