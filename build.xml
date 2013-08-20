@@ -16,7 +16,7 @@
 	<property name="dist" location="dist/"/>
 	<property name="src" location="src/"/>
 	<property name="javadoc" location="javadoc/"/>
-	<property name="junit.location" value="/usr/share/java/junit.jar"/>
+	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
 	<property name="version.src" value="plugins/WebOfTrust/Version.java" />
 	<property name="version.build" value="plugins/WebOfTrust/Version.class" />
 
