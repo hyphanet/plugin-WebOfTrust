@@ -842,9 +842,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @throws SubscriptionExistsAlreadyException Thrown if a subscription of the same type for the same client exists already. See {@link #throwIfSimilarSubscriptionExists(Subscription)}
 	 */
 	private synchronized void storeNewSubscriptionAndCommit(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
+		subscription.initializeTransient(mWoT);
 		throwIfSimilarSubscriptionExists(subscription);
 		
-		subscription.initializeTransient(mWoT); // takeFreeNotificationIndex requires transient init
 		final InitialSynchronizationNotification notification = new InitialSynchronizationNotification(subscription);
 		notification.initializeTransient(mWoT);
 		notification.storeWithoutCommit();
