@@ -740,15 +740,28 @@ public final class SubscriptionManager implements PrioRunnable {
 
 	
 	/**
-	 * After a notification command is stored, we wait this amount of time before processing the commands.
+	 * After a {@link Notification} command is stored, we wait this amount of time before processing it.
+	 * This is to allow some coalescing when multiple notifications happen in a short interval.
+	 * This is usually the case as the import of trust lists often causes multiple changes. 
 	 */
 	private static final long PROCESS_NOTIFICATIONS_DELAY = 60 * 1000;
 	
 	
+	/**
+	 * The {@link WebOfTrust} to which this SubscriptionManager belongs.
+	 */
 	private final WebOfTrust mWoT;
-		
+
+	/**
+	 * The database in which to store {@link Subscription} and {@link Notification} objects.
+	 * Same as <code>mWoT.getDatabase();</code>
+	 */
 	private final ExtObjectContainer mDB;
-	
+
+	/**
+	 * The SubscriptionManager schedules execution of its notification deployment thread on this {@link TrivialTicker}.
+	 * The execution typically is scheduled after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}. 
+	 */
 	private final TrivialTicker mTicker;
 	
 	
