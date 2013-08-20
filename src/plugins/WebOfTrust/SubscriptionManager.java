@@ -765,6 +765,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	private final TrivialTicker mTicker;
 	
 	
+	/**
+	 * Constructor both for regular in-node operation as well as operation in unit tests.
+	 * 
+	 * @param myWoT The {@link WebOfTrust} to which this SubscriptionManager belongs. Its {@link WebOfTrust#getPluginRespirator()} may return null in unit tests.
+	 */
 	public SubscriptionManager(WebOfTrust myWoT) {
 		mWoT = myWoT;
 		mDB = mWoT.getDatabase();
