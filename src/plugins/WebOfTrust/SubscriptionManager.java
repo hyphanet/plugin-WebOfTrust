@@ -835,10 +835,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Creates an {@link InitialSynchronizationNotification} for the given subscription, stores it and
-	 * the subscription and commits the transaction.
-	 * Takes care of all required synchronization
-	 * @throws SubscriptionExistsAlreadyException If a subscription of the same type for the same client exists already.
+	 * Creates an {@link InitialSynchronizationNotification} for the given subscription, stores it and the subscription and commits the transaction.
+	 * Takes care of all required synchronization.
+	 * Shall be used as back-end for all front-end functions for creating subscriptions.
+	 * 
+	 * @throws SubscriptionExistsAlreadyException Thrown if a subscription of the same type for the same client exists already. See {@link #throwIfSimilarSubscriptionExists(Subscription)}
 	 */
 	private synchronized void storeNewSubscriptionAndCommit(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
 		throwIfSimilarSubscriptionExists(subscription);
