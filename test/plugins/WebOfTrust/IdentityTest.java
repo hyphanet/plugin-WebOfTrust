@@ -4,6 +4,9 @@
 package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
+import java.util.Date;
+
+import org.junit.Ignore;
 
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.Identity.IdentityID;
@@ -212,14 +215,25 @@ public final class IdentityTest extends DatabaseBasedTest {
 		assertEquals(FetchState.NotFetched, identity.getCurrentEditionFetchState());
 	}
 
-	// FIXME: Test whether updated() is called as well.
-	public final void testtSetEdition() throws InvalidParameterException {
+	public final void testSetEdition() throws InvalidParameterException, InterruptedException {
 		// Test preconditions
 		assertEquals(0, identity.getEdition());
 		assertEquals(identity.getEdition(), identity.getRequestURI().getEdition());
 		assertEquals(23, requestUri.getEdition());
 		assertEquals(requestUri.getEdition(), identity.getLatestEditionHint());
 		identity.onFetched();
+		@Ignore
+		class OldLastChangedDate {
+			Date self = identity.getLastChangeDate();
+			public void update() throws InterruptedException {
+				self = identity.getLastChangeDate();
+				Thread.sleep(10); // Make sure CurrentTimeUTC.get() changes.
+			}
+			public boolean equals(Object other) {
+				return self.equals(other);
+			}
+		};
+		OldLastChangedDate oldLastChangedDate = new OldLastChangedDate();
 		
 		// Test fetching of a new edition while edition hint stays valid and fetch state gets invalidated
 		identity.setEdition(10);
@@ -227,14 +241,25 @@ public final class IdentityTest extends DatabaseBasedTest {
 		assertEquals(identity.getEdition(), identity.getRequestURI().getEdition());
 		assertEquals(23, identity.getLatestEditionHint());
 		assertEquals(FetchState.NotFetched, identity.getCurrentEditionFetchState());
+		assertFalse(oldLastChangedDate.equals(identity.getLastChangeDate()));
+		// Test done.
 		
 		// Test fetching of a new edition which invalidates the edition hint
+		oldLastChangedDate.update();
 		identity.setEdition(24);
 		assertEquals(24, identity.getLatestEditionHint());
+		assertFalse(oldLastChangedDate.equals(identity.getLastChangeDate()));
+		// Test done.
 		
+		// Test whether setting a new hint does NOT mark the identity as changed:
+		// We receive hints from other identities, not the identity itself. Other identities should not be allowed to mark someone as changed.
+		oldLastChangedDate.update();
 		identity.setNewEditionHint(50);
+		assertTrue(oldLastChangedDate.equals(identity.getLastChangeDate()));
+		// Test done.
 		
 		// Test whether decreasing of edition is correctly disallowed
+		oldLastChangedDate.update();
 		try {
 			identity.setEdition(23);
 			fail("Decreasing the edition should not be allowed");
@@ -242,20 +267,25 @@ public final class IdentityTest extends DatabaseBasedTest {
 			assertEquals(24, identity.getEdition());
 			assertEquals(identity.getEdition(), identity.getRequestURI().getEdition());
 			assertEquals(50, identity.getLatestEditionHint());
+			assertTrue(oldLastChangedDate.equals(identity.getLastChangeDate()));
 		}
+		// Test done.
 		
 		// Test setEdition(currentEdition) - should not touch the edition hint.
 		assertEquals(50, identity.getLatestEditionHint());
 		identity.onFetched();
+		oldLastChangedDate.update();
 		identity.setEdition(identity.getEdition());
 		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
 		assertEquals(24, identity.getEdition());
 		assertEquals(identity.getEdition(), identity.getRequestURI().getEdition());
 		assertEquals(50, identity.getLatestEditionHint());
+		assertTrue(oldLastChangedDate.equals(identity.getLastChangeDate()));
+		// Test done.
 	}
 	
 
-	
+// TODO: Finish implementation and enable.	
 //	public void testEquals() {
 //		do {
 //			try {

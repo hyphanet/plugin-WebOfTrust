@@ -469,6 +469,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 */
 	private USKRetriever fetch(USK usk) throws MalformedURLException {
 		FetchContext fetchContext = mClient.getFetchContext();
+		fetchContext.maxArchiveLevels = 0; // Because archives can become huge and WOT does not use them, we should disallow them. See JavaDoc of the variable.
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		fetchContext.maxOutputLength = XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE;
