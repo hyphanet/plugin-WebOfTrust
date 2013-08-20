@@ -660,20 +660,34 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	public static final class TrustListSubscription extends Subscription<TrustChangedNotification> {
 
+		/**
+		 * @param fcpID See {@link Subscription#getFCPKey()}. 
+		 */
 		protected TrustListSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
 		}
 		
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws Exception {
 			mWebOfTrust.getFCPInterface().sendAllTrustValues(getFCPKey());
 		}
-
+		
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		protected void notifySubscriberByFCP(TrustChangedNotification notification) throws Exception {
 			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getFCPKey(), notification.getTrusterID(), notification.getTrusteeID());
 		}
 
+		/**
+		 * Stores a {@link TrustChangedNotification} to the {@link Notification} queue of this {@link Subscription}.
+		 * 
+		 * @param trust The {@link Trust} which was added, changed deleted.
+		 */
 		public void storeNotificationWithoutCommit(Trust trust) {
 			final TrustChangedNotification notification = new TrustChangedNotification(this, trust);
 			notification.initializeTransient(mWebOfTrust);
