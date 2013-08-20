@@ -783,6 +783,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 	}
 
+	
+	/**
+	 * Thrown when a single client tries to file a {@link Subscription} of the same class of event {@link Notification} and the same {@link Subscription.Type} of notification deployment.
+	 * 
+	 * @see #throwIfSimilarSubscriptionExists
+	 */
 	@SuppressWarnings("serial")
 	public static final class SubscriptionExistsAlreadyException extends Exception {
 		public final Subscription<? extends Notification> existingSubscription;
@@ -800,6 +806,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 	}
 	
+	/**
+	 * Throws when a single client tries to file a {@link Subscription} of the same class of event {@link Notification} and the same {@link Subscription.Type} of notification deployment.
+	 * 
+	 * @param subscription The new subscription which the client is trying to create. The database is checked for an existing one with similar properties as specified above.
+	 * @see SubscriptionExistsAlreadyException
+	 */
 	@SuppressWarnings("unchecked")
 	private synchronized void throwIfSimilarSubscriptionExists(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
 		switch(subscription.getType()) {
