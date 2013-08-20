@@ -798,9 +798,15 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 	}
 	
+	/**
+	 * Thrown by various functions which query the database for a certain {@link Subscription} if none exists matching the given filters.
+	 */
 	@SuppressWarnings("serial")
 	public static final class UnknownSubscriptionException extends Exception {
 		
+		/**
+		 * @param message A description of the filters which were set in the database query for the {@link Subscription}.
+		 */
 		public UnknownSubscriptionException(String message) {
 			super(message);
 		}
