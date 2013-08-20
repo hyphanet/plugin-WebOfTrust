@@ -561,7 +561,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * 
 		 * @see Identity#getID()
 		 * @see Score#getTrustee()
-		 * @see #mTrusteeID()
+		 * @see #mTrusteeID
 		 */
 		protected final String getTrusteeID() {
 			checkedActivate(1);
