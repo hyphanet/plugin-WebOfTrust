@@ -900,7 +900,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		final Subscription<? extends Notification> subscription = getSubscription(subscriptionID);
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				// TODO: Optimization: Remove this: To make debugging easier, we also send an final InitialSubscriptionNotification when disconnecting a client:
+				// FIXME: This is debug code and removing it is a critical optimization:
+				// To make debugging easier, we also send an final InitialSubscriptionNotification when disconnecting a client
+				// instead of only sending one at the beginning of the connection.
 				// Sending an InitialSubscriptionNotification usually sends the full stored dataset to synchronize the client.
 				// The client can use it to check whether the state of WOT which he received through notifications was correct.
 				{
