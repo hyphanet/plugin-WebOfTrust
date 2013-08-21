@@ -930,6 +930,11 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 	}
 	
+	/**
+	 * Typically used at startup by {@link #deleteAllSubscriptions()} and {@link #run()}
+	 * 
+	 * @return All existing {@link Subscription}s.
+	 */
 	private ObjectSet<Subscription<? extends Notification>> getAllSubscriptions() {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
