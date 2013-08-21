@@ -896,6 +896,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		return subscription;
 	}
 	
+	/**
+	 * Deletes the given {@link Subscription}.
+	 * 
+	 * @param subscriptionID See {@link Subscription#getID()}
+	 * @throws UnknownSubscriptionException If no subscription with the given ID exists.
+	 */
 	public void unsubscribe(String subscriptionID) throws UnknownSubscriptionException {
 		synchronized(mWoT) { // FIXME: Remove this synchronization when resolving the inner FIXME
 		synchronized(this) {
