@@ -941,6 +941,15 @@ public final class SubscriptionManager implements PrioRunnable {
 		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
 	}
 	
+	/**
+	 * Get all {@link Subscription}s to a certain {@link Notification} type.
+	 * 
+	 * Typically used by the functions store*NotificationWithoutCommit() for storing the given {@link Notification} to the queues of all Subscriptions
+	 * which are subscribed to the type of the given notification.
+	 * 
+	 * @param clazz The type of {@link Notification} to filter by.
+	 * @return Get all {@link Subscription}s to a certain {@link Notification} type.
+	 */
 	private ObjectSet<? extends Subscription<? extends Notification>> getSubscriptions(final Class<? extends Subscription<? extends Notification>> clazz) {
 		final Query q = mDB.query();
 		q.constrain(clazz);
