@@ -25,6 +25,12 @@ import freenet.support.io.NativeThread;
  * The architecture of this class supports implementing different types of subscriptions: Currently, only FCP is implemented, but it is also technically possible to have subscriptions
  * which do a callback within the WoT plugin or maybe even via OSGI.
  * 
+ * The class/object model is as following:
+ * - There is exactly one SubscriptionManager object running in the WOT plugin. It is the interface for clients.
+ * - Subscribing to something yields a {@link Subscription} object which is stored by the SubscriptionManager in the database. Clients do not need to keep track of it. They only need to know its ID.
+ * - When an event happens, a {@link Notification} object is created for each {@link Subscription} which matches the type of event. The Notification is stored in the database.
+ * - After a delay, the SubscriptionManager deploys the notifications to the clients.
+ * 
  * The {@link Notification}s are deployed strictly sequential per {@link Subscription}.
  * If a single Notification cannot be deployed, the processing of the Notifications for that Subscription is halted until the failed
  * Notification can be deployed successfully.
@@ -48,8 +54,6 @@ import freenet.support.io.NativeThread;
  * 
  * 
  * TODO: This should be used for powering the IntroductionClient/IntroductionServer.
- * 
- * TODO: So I need one Subscription manager per subscription type? Or do I have one Subscription manager per client?
  * 
  * @author xor (xor@freenetproject.org)
  */
