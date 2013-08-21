@@ -31,6 +31,9 @@ import freenet.support.io.NativeThread;
  * This especially applies to the FCP-client-interface and all other client interfaces: If a client returns "ERROR!" from the callback it has received,
  * the notification queue is halted and the previous notification is re-sent a few times until it can be imported successfully by the client
  * or the connection is dropped due to too many failures.
+ * 
+ * TODO: What to do, if the client does not support a certain message?
+ * 
  * This is a very important principle which makes client design easy: You do not need transaction-safety when caching things such as score values
  * incrementally. For example your client might need to do mandatory actions due to a score-value change, such as deleting messages from identities
  * which have a bad score now. If the score-value import succeeds but the message deletion fails, you can just return "ERROR!" to the WOT-callback-caller
@@ -45,6 +48,8 @@ import freenet.support.io.NativeThread;
  * 
  * 
  * TODO: This should be used for powering the IntroductionClient/IntroductionServer.
+ * 
+ * TODO: So I need one Subscription manager per subscription type? Or do I have one Subscription manager per client?
  * 
  * @author xor (xor@freenetproject.org)
  */
@@ -105,6 +110,19 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * If an error happens when trying to process a notification to a client, we might want to retry some time later.
 		 * Therefore, the {@link Notification} queue exists per client and not globally - if a single {@link Notification} is created by WoT,
 		 * multiple {@link Notification} objects are stored - one for each Subscription.
+		 * 
+		 * TODO: What happens for really huge indexes? Java
+		 * integers overflow and are 32 bit, so we have about
+		 * 4 billion index values before collision. So it
+		 * would collide on 1 million IDs with 1000 messages
+		 * each trying to send notifications for each
+		 * message. Not likely, but maybe a long should be
+		 * used anyway. On 64 bit machines that should not be
+		 * much slower than an int and it’s safe.  We either
+		 * need this big enough that it won’t overflow, or we
+		 * need to queue up notifications which would collide
+		 * on not-yet-sent notifications. I would just use
+		 * long.
 		 */
 		private int mNextNotificationIndex = 0;
 		
@@ -181,9 +199,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * 
 		 * Schedules processing of the Notifications of the SubscriptionManger.
 		 */
-		protected final int takeFreeNotificationIndexWithoutCommit() {
+		protected final int takeFreeNotificationIndexWithoutCommit() { // TODO: long, too?
 			checkedActivate(1);
-			final int index = mNextNotificationIndex++;
+			final int index = mNextNotificationIndex++; // TODO: long, too?
 			storeWithoutCommit();
 			getSubscriptionManager().scheduleNotificationProcessing();
 			return index;
@@ -573,6 +591,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * A subscription to the attributes of all identities.
 	 * If the attributes of an identity change, the subscriber gets notified by a {@link IdentityChangedNotification}.
 	 * The subscriber will also get notified if a new identity is created or if an identity is deleted. FIXME: Is this correct? We have IdentityListSubscription for this. 
+	 * 
+	 * TODO: Does this effectively send an ID object?
 	 */
 	public static final class IdentityAttributeListSubscription extends Subscription<IdentityChangedNotification> {
 
@@ -959,7 +979,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	private Subscription<? extends Notification> getSubscription(final String id) throws UnknownSubscriptionException {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
-		q.descend("mID").constrain(id);		
+		q.descend("mID").constrain(id);	
+		/* TODO: So this returns an iterator with at most 1 element? */
 		ObjectSet<Subscription<? extends Notification>> result = new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
 		
 		switch(result.size()) {
@@ -1088,6 +1109,17 @@ public final class SubscriptionManager implements PrioRunnable {
 				try {
 					subscription.sendNotifications(this);
 					Persistent.checkedCommit(mDB, this);
+					/* TODO: A subscription can have
+					 * many notifications, right?
+					 * And every notification also
+					 * commits. So at the end of
+					 * the sendNotifications loop
+					 * we get two checkedCommit,
+					 * except if the last
+					 * notification fails. This is
+					 * only useful, when
+					 * subscriptions really have
+					 * many notifications.*/
 				} catch(Exception e) {
 					Persistent.checkedRollback(mDB, this, e);
 					// FIXME: After a certain number of retries, delete the subscription
@@ -1115,6 +1147,8 @@ public final class SubscriptionManager implements PrioRunnable {
 
 	/**
 	 * Deletes all old subscriptions and enables subscription processing. 
+	 * 
+	 * TODO: Where/How does it enable subscription processing? 
 	 */
 	protected synchronized void start() {
 		deleteAllSubscriptions();
