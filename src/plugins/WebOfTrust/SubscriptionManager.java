@@ -853,6 +853,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * The client is notified when a new identity XML was fetched. TODO: Also notify if internal things such as edition change.
+	 * 
+	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
 	 */
 	public IdentityAttributeListSubscription subscribeToIdentityAttributeList(String fcpID) throws SubscriptionExistsAlreadyException {
 		final IdentityAttributeListSubscription subscription = new IdentityAttributeListSubscription(fcpID);
@@ -861,7 +863,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * The client is notified when an identity is created or deleted
+	 * The client is notified when an identity is created or deleted.
+	 * 
+	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
 	 */
 	public IdentityListSubscription subscribeToIdentityList(String fcpID) throws SubscriptionExistsAlreadyException {
 		final IdentityListSubscription subscription = new IdentityListSubscription(fcpID);
@@ -872,6 +876,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * The client is notified when a trust value changes, is created or removed.
 	 * The client is NOT notified when the comment on a trust value changes.
+	 * 
+	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
 	 */
 	public TrustListSubscription subscribeToTrustList(String fcpID) throws SubscriptionExistsAlreadyException {
 		final TrustListSubscription subscription = new TrustListSubscription(fcpID);
@@ -879,6 +885,11 @@ public final class SubscriptionManager implements PrioRunnable {
 		return subscription;
 	}
 	
+	/**
+	 * The client is notified when a score value changes, is created or removed.
+	 * 
+	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
+	 */
 	public ScoreListSubscription subscribeToScoreList(String fcpID) throws SubscriptionExistsAlreadyException {
 		final ScoreListSubscription subscription = new ScoreListSubscription(fcpID);
 		storeNewSubscriptionAndCommit(subscription);
