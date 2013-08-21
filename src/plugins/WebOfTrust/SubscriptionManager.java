@@ -896,7 +896,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		return subscription;
 	}
 	
-	public synchronized void unsubscribe(String subscriptionID) throws UnknownSubscriptionException {
+	public void unsubscribe(String subscriptionID) throws UnknownSubscriptionException {
+		synchronized(mWoT) { // FIXME: Remove this synchronization when resolving the inner FIXME
+		synchronized(this) {
 		final Subscription<? extends Notification> subscription = getSubscription(subscriptionID);
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
@@ -917,6 +919,8 @@ public final class SubscriptionManager implements PrioRunnable {
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
+		}
+		}
 		}
 	}
 	
