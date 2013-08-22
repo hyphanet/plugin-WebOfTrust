@@ -789,9 +789,11 @@ public final class SubscriptionManager implements PrioRunnable {
 
 	/**
 	 * The SubscriptionManager schedules execution of its notification deployment thread on this {@link TrivialTicker}.
-	 * The execution typically is scheduled after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}. 
+	 * The execution typically is scheduled after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}.
+	 * 
+	 * Is null until {@link #start()} was called.
 	 */
-	private final TrivialTicker mTicker;
+	private TrivialTicker mTicker = null;
 	
 	
 	/**
@@ -802,14 +804,6 @@ public final class SubscriptionManager implements PrioRunnable {
 	public SubscriptionManager(WebOfTrust myWoT) {
 		mWoT = myWoT;
 		mDB = mWoT.getDatabase();
-		
-		PluginRespirator respirator = mWoT.getPluginRespirator();
-		
-		if(respirator != null) { // We are connected to a node
-			mTicker = new TrivialTicker(respirator.getNode().executor);
-		} else {
-			mTicker = null;
-		}
 	}
 
 	
@@ -1150,10 +1144,20 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * Deletes all old subscriptions and enables subscription processing. 
 	 * 
-	 * TODO: Where/How does it enable subscription processing? 
+	 * You must call this before any subscriptions are created, so for example before FCP is available.
+	 * 
+	 * Does NOT work in unit tests - you must manually trigger subscription processing by calling {@link #run()} there.
 	 */
 	protected synchronized void start() {
 		deleteAllSubscriptions();
+		
+		final PluginRespirator respirator = mWoT.getPluginRespirator();
+		
+		if(respirator != null) { // We are connected to a node
+			mTicker = new TrivialTicker(respirator.getNode().executor);
+		} else { // We are inside of a unit test
+			mTicker = null;
+		}
 	}
 	
 	/**
