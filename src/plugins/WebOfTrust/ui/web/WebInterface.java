@@ -374,14 +374,14 @@ public class WebInterface {
 
 	/**
 	 * Register the given Toadlet as fullAccessOnly at its .path() and list it in the menu.<br/>
-	 * The menu item is "WebInterface.WoTMenuItem." followed by the pageTitle.<br/>
+	 * The menu item is "WebInterface.WotMenuItem." followed by the pageTitle.<br/>
 	 * The tooltip is the same followed by ".Tooltip".<br/>
 	 * @param container to register with.
 	 * @param toadlet to register.
 	 */
 	private void registerMenu(ToadletContainer container, WebInterfaceToadlet toadlet) {
 		container.register(toadlet, menuName, toadlet.path(), true,
-		    "WebInterface.WoTMenuItem." + toadlet.pageTitle,
+		    "WebInterface.WotMenuItem." + toadlet.pageTitle,
 		    "WebInterface.WotMenuItem." + toadlet.pageTitle + ".Tooltip", true, null);
 	}
 
