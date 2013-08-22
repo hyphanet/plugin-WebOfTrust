@@ -982,11 +982,15 @@ public final class SubscriptionManager implements PrioRunnable {
 		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
 	}
 	
+	/**
+	 * @param id The unique identificator of the desired {@link Subscription}. See {@link Subscription#getID()}.
+	 * @return The {@link Subscription} with the given ID. Only one Subscription can exist for a single ID.
+	 * @throws UnknownSubscriptionException If no {@link Subscription} exists with the given ID.
+	 */
 	private Subscription<? extends Notification> getSubscription(final String id) throws UnknownSubscriptionException {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
 		q.descend("mID").constrain(id);	
-		/* TODO: So this returns an iterator with at most 1 element? */
 		ObjectSet<Subscription<? extends Notification>> result = new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
 		
 		switch(result.size()) {
