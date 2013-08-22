@@ -114,21 +114,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * If an error happens when trying to process a notification to a client, we might want to retry some time later.
 		 * Therefore, the {@link Notification} queue exists per client and not globally - if a single {@link Notification} is created by WoT,
 		 * multiple {@link Notification} objects are stored - one for each Subscription.
-		 * 
-		 * TODO: What happens for really huge indexes? Java
-		 * integers overflow and are 32 bit, so we have about
-		 * 4 billion index values before collision. So it
-		 * would collide on 1 million IDs with 1000 messages
-		 * each trying to send notifications for each
-		 * message. Not likely, but maybe a long should be
-		 * used anyway. On 64 bit machines that should not be
-		 * much slower than an int and it’s safe.  We either
-		 * need this big enough that it won’t overflow, or we
-		 * need to queue up notifications which would collide
-		 * on not-yet-sent notifications. I would just use
-		 * long.
 		 */
-		private int mNextNotificationIndex = 0;
+		private long mNextNotificationIndex = 0;
 		
 		/**
 		 * Constructor for being used by child classes.
@@ -203,9 +190,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * 
 		 * Schedules processing of the Notifications of the SubscriptionManger.
 		 */
-		protected final int takeFreeNotificationIndexWithoutCommit() { // TODO: long, too?
+		protected final long takeFreeNotificationIndexWithoutCommit() {
 			checkedActivate(1);
-			final int index = mNextNotificationIndex++; // TODO: long, too?
+			final long index = mNextNotificationIndex++;
 			storeWithoutCommit();
 			getSubscriptionManager().scheduleNotificationProcessing();
 			return index;
@@ -335,7 +322,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Notifications are supposed to be sent out in proper sequence, therefore we use incremental indices.
 		 */
 		@IndexedField
-		private final int mIndex;
+		private final long mIndex;
 		
 		/**
 		 * Constructs a Notification in the queue of the given subscription.
