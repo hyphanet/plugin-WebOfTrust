@@ -262,11 +262,14 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		/**
 		 * Sends out the notification queue for this Subscription, in sequence.
+		 * 
 		 * If a notification is sent successfully, it is deleted and the transaction is committed.
 		 * If sending a single notification fails, the transaction for the current Notification is rolled back
 		 * and an exception is thrown.
+		 * 
 		 * You have to synchronize on the WoT, the SubscriptionManager and the database lock before calling this
 		 * function!
+		 * You don't have to commit the transaction after calling this function.
 		 * 
 		 * @param manager The {@link SubscriptionManager} from which to query the {@link Notification}s of this Subscription.
 		 */
@@ -1118,18 +1121,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			for(Subscription<? extends Notification> subscription : getAllSubscriptions()) {
 				try {
 					subscription.sendNotifications(this);
-					Persistent.checkedCommit(mDB, this);
-					/* TODO: A subscription can have
-					 * many notifications, right?
-					 * And every notification also
-					 * commits. So at the end of
-					 * the sendNotifications loop
-					 * we get two checkedCommit,
-					 * except if the last
-					 * notification fails. This is
-					 * only useful, when
-					 * subscriptions really have
-					 * many notifications.*/
+					// Persistent.checkedCommit(mDB, this);	/* sendNotifications() does this already */
 				} catch(Exception e) {
 					Persistent.checkedRollback(mDB, this, e);
 					// FIXME: After a certain number of retries, delete the subscription
