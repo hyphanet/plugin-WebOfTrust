@@ -344,13 +344,16 @@ public class WebInterface {
 			new ConfigWebInterfaceToadlet(null, this, core, "Configuration")
 		));
 
+		/*
+		 * For backwards compatibility also register at the root. This must be before the other pages or it will
+		 * match all /WebOfTrust/ requests.
+		 */
+		// TODO: Skip by giving the navigation category the home path?
+		container.register(home, null, mURI + "/", true, true);
+
 		for (WebInterfaceToadlet toadlet : listed) {
 			registerMenu(container, toadlet);
 		}
-
-		// For backwards compatibility also register at the root.
-		// TODO: Skip by giving the navigation category the home path?
-		container.register(home, null, mURI + "/", true, true);
 
 		// Pages not listed in the menu:
 
