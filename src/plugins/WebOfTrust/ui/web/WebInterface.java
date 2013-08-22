@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.imageio.ImageIO;
 
@@ -47,24 +49,17 @@ public class WebInterface {
 	private final WebOfTrust mWoT;
 	private final PluginRespirator mPluginRespirator;
 	private final PageMaker mPageMaker;
-	
-	// Visible
-	private final WebInterfaceToadlet homeToadlet;
+
+	// Used by pages not listed in the menu. TODO: For what?
 	private final WebInterfaceToadlet ownIdentitiesToadlet;
 	private final WebInterfaceToadlet knownIdentitiesToadlet;
-	private final WebInterfaceToadlet configurationToadlet;
-	
-	// Invisible
-	private final WebInterfaceToadlet createIdentityToadlet;
-	private final WebInterfaceToadlet deleteOwnIdentityToadlet;
-	private final WebInterfaceToadlet editOwnIdentityToadlet;
-	private final WebInterfaceToadlet introduceIdentityToadlet;
-	private final WebInterfaceToadlet identityToadlet;
-	private final WebInterfaceToadlet getPuzzleToadlet;
-	private final WebInterfaceToadlet getIdenticonToadlet;
+
+	private final ArrayList<Toadlet> toadlets;
 
 	private final String mURI;
-	
+
+	private static final String menuName = "WebInterface.WotMenuName";
+
 	/**
 	 * Forward access to current l10n data.
 	 * 
@@ -327,39 +322,81 @@ public class WebInterface {
 		ToadletContainer container = mPluginRespirator.getToadletContainer();
 		mPageMaker = mPluginRespirator.getPageMaker();
 		
-		mPageMaker.addNavigationCategory(mURI+"/", "WebInterface.WotMenuName", "WebInterface.WotMenuName.Tooltip", mWoT, mPluginRespirator.getNode().pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk") ? 2 : 1);
-		
-		// Visible pages
-		
-		homeToadlet = new HomeWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "");
-		ownIdentitiesToadlet = new OwnIdentitiesWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "OwnIdentities");
-		knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "KnownIdentities");
-		configurationToadlet = new ConfigWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "Configuration");
-		
-		container.register(homeToadlet, "WebInterface.WotMenuName", mURI+"/", true, "WebInterface.WotMenuItem.Home", "WebInterface.WotMenuItem.Home.Tooltip", true, null);
-		container.register(ownIdentitiesToadlet, "WebInterface.WotMenuName", mURI + "/OwnIdentities", true, "WebInterface.WotMenuItem.OwnIdentities", "WebInterface.WotMenuItem.OwnIdentities.Tooltip", true, null);
-		container.register(knownIdentitiesToadlet, "WebInterface.WotMenuName", mURI + "/KnownIdentities", true, "WebInterface.WotMenuItem.KnownIdentities", "WebInterface.WotMenuItem.KnownIdentities.Tooltip", true, null);
-		container.register(configurationToadlet, "WebInterface.WotMenuName", mURI + "/Configuration", true, "WebInterface.WotMenuItem.Configuration", "WebInterface.WotMenuItem.Configuration.Tooltip", true, null);
-		
-		// Invisible pages
-		
-		createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "CreateIdentity");
-		deleteOwnIdentityToadlet = new DeleteOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "DeleteOwnIdentity");
-		editOwnIdentityToadlet = new EditOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "EditOwnIdentity");
-		introduceIdentityToadlet = new IntroduceIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "IntroduceIdentity");
-		identityToadlet = new IdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "ShowIdentity");
-		getPuzzleToadlet = new GetPuzzleWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "GetPuzzle");
-		getIdenticonToadlet = new GetIdenticonWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "GetIdenticon");
+		mPageMaker.addNavigationCategory(mURI+"/", menuName, menuName + ".Tooltip", mWoT, mPluginRespirator.getNode().pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk") ? 2 : 1);
 
-		container.register(createIdentityToadlet, null, mURI + "/CreateIdentity", true, true);
-		container.register(deleteOwnIdentityToadlet, null, mURI + "/DeleteOwnIdentity", true, true);
-		container.register(editOwnIdentityToadlet, null, mURI + "/EditOwnIdentity", true, true);
-		container.register(introduceIdentityToadlet, null, mURI + "/IntroduceIdentity", true, true);
-		container.register(identityToadlet, null, mURI + "/ShowIdentity", true, true);
-		container.register(getPuzzleToadlet, null, mURI + "/GetPuzzle", true, true);
-		container.register(getIdenticonToadlet, null, mURI + "/GetIdenticon", true, true);
+		final NodeClientCore core = mWoT.getPluginRespirator().getNode().clientCore;
+
+		/*
+		 * These are WebInterfaceToadlets instead of Toadlets because the package-scope pageTitle is used to look up
+		 * the menu localization keys.
+		 *
+		 * Pages listed in the menu:
+		 */
+
+		WebInterfaceToadlet home = new HomeWebInterfaceToadlet(null, this, core, "Home");
+		ownIdentitiesToadlet = new OwnIdentitiesWebInterfaceToadlet(null, this, core, "OwnIdentities");
+		knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, core, "KnownIdentities");
+
+		ArrayList<WebInterfaceToadlet> listed = new ArrayList<WebInterfaceToadlet>(Arrays.asList(
+			home,
+			ownIdentitiesToadlet,
+			knownIdentitiesToadlet,
+			new ConfigWebInterfaceToadlet(null, this, core, "Configuration")
+		));
+
+		/*
+		 * For backwards compatibility also register at the root. This must be before the other pages or it will
+		 * match all /WebOfTrust/ requests.
+		 */
+		// TODO: Skip by giving the navigation category the home path?
+		container.register(home, null, mURI + "/", true, true);
+
+		for (WebInterfaceToadlet toadlet : listed) {
+			registerMenu(container, toadlet);
+		}
+
+		// Pages not listed in the menu:
+
+		ArrayList<Toadlet> unlisted = new ArrayList<Toadlet>(Arrays.asList(
+			new CreateIdentityWebInterfaceToadlet(null, this, core, "CreateIdentity"),
+			new DeleteOwnIdentityWebInterfaceToadlet(null, this, core, "DeleteOwnIdentity"),
+			new EditOwnIdentityWebInterfaceToadlet(null, this, core, "EditOwnIdentity"),
+			new IntroduceIdentityWebInterfaceToadlet(null, this, core, "IntroduceIdentity"),
+			new IdentityWebInterfaceToadlet(null, this, core, "ShowIdentity"),
+			new GetPuzzleWebInterfaceToadlet(null, this, core, "GetPuzzle"),
+			new GetIdenticonWebInterfaceToadlet(null, this, core, "GetIdenticon")
+		));
+
+		for (Toadlet toadlet : unlisted) {
+			registerHidden(container, toadlet);
+		}
+
+		toadlets = new ArrayList<Toadlet>(listed);
+		toadlets.addAll(unlisted);
 	}
-	
+
+	/**
+	 * Register the given Toadlet as fullAccessOnly at its .path() and list it in the menu.<br/>
+	 * The menu item is "WebInterface.WotMenuItem." followed by the pageTitle.<br/>
+	 * The tooltip is the same followed by ".Tooltip".<br/>
+	 * @param container to register with.
+	 * @param toadlet to register.
+	 */
+	private void registerMenu(ToadletContainer container, WebInterfaceToadlet toadlet) {
+		container.register(toadlet, menuName, toadlet.path(), true,
+		    "WebInterface.WotMenuItem." + toadlet.pageTitle,
+		    "WebInterface.WotMenuItem." + toadlet.pageTitle + ".Tooltip", true, null);
+	}
+
+	/**
+	 * Register the given Toadlet as fullAccessOnly at its .path() without listing it in the menu.
+	 * @param container to register with.
+	 * @param toadlet to register.
+	 */
+	private void registerHidden(ToadletContainer container, Toadlet toadlet) {
+		container.register(toadlet, null, toadlet.path(), true, true);
+	}
+
 	public String getURI() {
 		return mURI;
 	}
@@ -374,19 +411,9 @@ public class WebInterface {
 	
 	public void unload() {
 		ToadletContainer container = mPluginRespirator.getToadletContainer();
-		for(Toadlet t : new Toadlet[] { 
-				homeToadlet,
-				ownIdentitiesToadlet,
-				knownIdentitiesToadlet,
-				configurationToadlet,
-				createIdentityToadlet,
-				deleteOwnIdentityToadlet,
-				editOwnIdentityToadlet,
-				introduceIdentityToadlet,
-				identityToadlet,
-				getPuzzleToadlet,
-				getIdenticonToadlet
-		}) container.unregister(t);
-		mPageMaker.removeNavigationCategory("WebInterface.WotMenuName");
+		for(Toadlet t : toadlets) {
+			container.unregister(t);
+		}
+		mPageMaker.removeNavigationCategory(menuName);
 	}
 }
