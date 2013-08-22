@@ -250,12 +250,16 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/**
 		 * Called by this subscription when processing an {@link InitialSynchronizationNotification}.
-		 * Such a notification is stored as the first notification for all subscriptions upon creation.
-		 * When processing it, this function shall synchronize the state of the subscriber if this is
-		 * required before it can be kept up to date by event notifications.
-		 * For example, if a client subscribes to the list of identities, it must always receive a full list of
-		 * all existing identities at first. Then it can be kept up to date by sending single new identities
-		 * as they eventually appear. 
+		 * 
+		 * Upon creation of a Subscription, such a notification is stored immediately, i.e. not triggered by an event.
+		 * When real events happen, we only want to send a "diff" between the last state of the database before the event happened and the new state.
+		 * For being able to only send a diff, the subscriber must know what the <i>initial</i> state of the database was.
+		 * And thats the purpose of this function: To send the full initial state of the database to the client.
+		 * 
+		 * For example, if a client subscribes to the list of identities, it must always receive a full list of all existing identities at first.
+		 * As new identities appear afterwards, the client can be kept up to date by sending each single new identity as it appears. 
+		 * 
+		 * @see InitialSynchronizationNotification
 		 */
 		protected abstract void synchronizeSubscriberByFCP() throws Exception;
 
@@ -360,10 +364,17 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * This {@link Notification} is stored as the first Notification for all types of Subscription which require
-	 * an initial synchronization with the client.
-	 * For example, if a client subscribes to the list of identities, it should always first receive a full list of
-	 * all existing identities and after that be notified about each single new identity which eventually appears.
+	 * This {@link Notification} is stored as the first Notification for all types of {@link Subscription} which require an initial synchronization of the client.
+	 * 
+	 * Upon creation of a {@link Subscription}, such a notification is stored immediately, i.e. not triggered by an event.
+	 * When real events happen, we only want to send a "diff" between the last state of the database before the event happened and the new state.
+	 * For being able to only send a diff, the subscriber must know what the <i>initial</i> state of the database was.
+	 * And thats the purpose of this notification: To send the full initial state of the database to the client.
+	 * 
+	 * For example, if a client subscribes to the list of identities, it must always receive a full list of all existing identities at first.
+	 * As new identities appear afterwards, the client can be kept up to date by sending each single new identity as it appears.
+	 * 
+	 * @see Subscription#synchronizeSubscriberByFCP() The function which typically deploys this Notification.
 	 */
 	protected static class InitialSynchronizationNotification extends Notification {
 		
