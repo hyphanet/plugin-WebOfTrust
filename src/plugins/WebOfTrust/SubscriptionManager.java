@@ -604,6 +604,10 @@ public final class SubscriptionManager implements PrioRunnable {
 
 	/**
 	 * A subscription to the attributes of all identities.
+	 * 
+	 * The attributes are things such as the nickname, the URIs, the contexts, the properties
+	 * - Basically anything which you can get from an {@link Identity} object.
+	 * 
 	 * If the attributes of an identity change, the subscriber gets notified by a {@link IdentityChangedNotification}.
 	 * The subscriber will also get notified if a new identity is created or if an identity is deleted. FIXME: Is this correct? We have IdentityListSubscription for this. 
 	 * 
