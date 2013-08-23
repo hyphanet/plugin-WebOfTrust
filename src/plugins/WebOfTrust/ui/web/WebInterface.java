@@ -74,15 +74,15 @@ public class WebInterface {
 	    return mWoT.getBaseL10n();
 	}
 
-	public class HomeWebInterfaceToadlet extends WebInterfaceToadlet {
+	public class StatisticsWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		protected HomeWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+		protected StatisticsWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new HomePage(this, req, context, l10n());
+			return new StatisticsPage(this, req, context, l10n());
 		}
 
 	}
@@ -309,7 +309,7 @@ public class WebInterface {
 		
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			// Not expected to make it here...
-			return new HomePage(this, req, context, l10n());
+			return new StatisticsPage(this, req, context, l10n());
 		}
 	}
 
@@ -374,7 +374,7 @@ public class WebInterface {
 		mPluginRespirator = mWoT.getPluginRespirator();
 		ToadletContainer container = mPluginRespirator.getToadletContainer();
 		mPageMaker = mPluginRespirator.getPageMaker();
-		
+
 		mPageMaker.addNavigationCategory(mURI+"/", MENU_NAME, MENU_NAME + ".Tooltip", mWoT, mPluginRespirator.getNode().pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk") ? 2 : 1);
 
 		final NodeClientCore core = mWoT.getPluginRespirator().getNode().clientCore;
@@ -386,7 +386,7 @@ public class WebInterface {
 		 * Pages listed in the menu:
 		 */
 
-		WebInterfaceToadlet home = new HomeWebInterfaceToadlet(null, this, core, "Home");
+		WebInterfaceToadlet home = new StatisticsWebInterfaceToadlet(null, this, core, "Statistics");
 		ownIdentitiesToadlet = new OwnIdentitiesWebInterfaceToadlet(null, this, core, "OwnIdentities");
 		knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, core, "KnownIdentities");
 
