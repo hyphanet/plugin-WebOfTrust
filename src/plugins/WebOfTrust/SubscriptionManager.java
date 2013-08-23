@@ -199,7 +199,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 		
 		/**
-		 * @throws UnsupportedOperationException Is always thrown: Use {@link #deleteWithoutCommit(SubscriptionManager)} instead.
+		 * ATTENTION: This does NOT delete the {@link Notification} objects associated with this Subscription!
+		 * Only use it if you delete them manually before!
+		 * 
+		 * - Deletes this {@link Subscription} from the database. Does not commit the transaction and does not take care of synchronization.
 		 */
 		@Override
 		protected void deleteWithoutCommit() {
@@ -1041,8 +1044,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
+				for(Notification n : getAllNotifications()) {
+					n.deleteWithoutCommit();
+				}
+				
 				for(Subscription<? extends Notification> s : getAllSubscriptions()) {
-					s.deleteWithoutCommit(this);
+					s.deleteWithoutCommit();
 				}
 				Persistent.checkedCommit(mDB, this);
 			} catch(RuntimeException e) {
@@ -1051,6 +1058,17 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 		
 		Logger.normal(this, "Finished deleting all subscriptions.");
+	}
+	
+	/**
+	 * Typically used by {@link #deleteAllSubscriptions()}.
+	 * 
+	 * @return All objects of class Notification which are stored in the database.
+	 */
+	private ObjectSet<? extends Notification> getAllNotifications() {
+		final Query q = mDB.query();
+		q.constrain(Notification.class);
+		return new Persistent.InitializingObjectSet<Notification>(mWoT, q);
 	}
 	
 	private ObjectSet<? extends Notification> getAllNotifications(final Subscription<? extends Notification> subscription) {
