@@ -9,12 +9,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.imageio.ImageIO;
+import javax.naming.SizeLimitExceededException;
 
+import freenet.clients.http.RedirectException;
+import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.identicon.Identicon;
@@ -115,6 +120,66 @@ public class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			return new ConfigurationPage(this, req, context, l10n());
+		}
+	}
+
+	public class LoginWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected LoginWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
+			return new LogInPage(this, req, context, l10n());
+		}
+
+		/** Log an user in from a POST and redirect to the BoardsPage */
+		@Override
+		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+			if(!ctx.checkFullAccess(this))
+				return;
+
+			String pass = request.getPartAsStringFailsafe("formPassword", 32);
+			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
+				writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
+				return;
+			}
+
+			final String ID;
+			try {
+				ID = request.getPartAsStringThrowing("OwnIdentityID", Identity.ID_LENGTH);
+				assert ID.length() == Identity.ID_LENGTH;
+			} catch (SizeLimitExceededException e) {
+				Logger.error(this.getClass(),
+				    "The identity ID was too long. (Expected " + Identity.ID_LENGTH +") Was the page modified?", e);
+				sendErrorPage(ctx, 500, "Unexpectedly long identity ID", "");
+				return;
+			}
+
+			try {
+				final OwnIdentity ownIdentity = mWoT.getOwnIdentityByID(ID);
+				mPluginRespirator.getSessionManager(WebOfTrust.WOT_NAME).createSession(ownIdentity.getID(), ctx);
+			} catch(UnknownIdentityException e) {
+				Logger.error(this.getClass(), "Attempted to log in to unknown identity. Was it deleted?", e);
+				writeTemporaryRedirect(ctx, "Unknown identity", path());
+			}
+
+			try {
+				/**
+				 * "redirect-target" is a node-relative target after successful login. It is encoded but the URI
+				 * constructor should decode.
+				 * @see LogInPage
+				 *
+				 * The limit of 64 characters is arbitrary.
+				 */
+				URI raw = new URI(request.getPartAsStringFailsafe("redirect-target", 64));
+				// Use only the path, query, and fragment. Stay on the node's scheme, host, and port.
+				URI target = new URI(null, null, raw.getPath(), raw.getQuery(), raw.getFragment());
+				writeTemporaryRedirect(ctx, "Login successful", target.toString());
+			} catch (URISyntaxException e) {
+				writeInternalError(e, ctx);
+			}
 		}
 	}
 
@@ -338,6 +403,7 @@ public class WebInterface {
 		knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, core, "KnownIdentities");
 
 		ArrayList<WebInterfaceToadlet> listed = new ArrayList<WebInterfaceToadlet>(Arrays.asList(
+			new LoginWebInterfaceToadlet(null, this, core, "LogIn"),
 			home,
 			ownIdentitiesToadlet,
 			knownIdentitiesToadlet,

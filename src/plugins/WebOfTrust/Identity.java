@@ -37,6 +37,10 @@ public class Identity extends Persistent implements Cloneable {
 	public static transient final int MAX_PROPERTY_NAME_LENGTH = 256;
 	public static transient final int MAX_PROPERTY_VALUE_LENGTH = 10 * 1024;
 	public static transient final int MAX_PROPERTY_AMOUNT = 64;
+	/**
+	 * Length in characters of an ID, which is a SSK public key hash.
+	 */
+	public static final int ID_LENGTH = 43;
 
 	/** A unique identifier used to query this Identity from the database. In fact, it is simply a String representing its routing key. */
 	@IndexedField

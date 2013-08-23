@@ -144,4 +144,15 @@ WebInterface.WotMenuItem.KnownIdentities=Known anonymous identities
 WebInterface.WotMenuItem.KnownIdentities.Tooltip=Manage others identities
 WebInterface.WotMenuItem.Configuration=Configuration
 WebInterface.WotMenuItem.Configuration.Tooltip=Configure the web of trust plugin
+WebInterface.WotMenuItem.LogIn=Log In
+WebInterface.WotMenuItem.LogIn.Tooltip=Log in as an identity
+LoginPage.Welcome.Header=Welcome to Web of Trust
+LoginPage.Welcome.Text1=Web of Trust is a decentralized identity creation and discovery system that provides spam resistance. Identities are like accounts for Freenet services that use Web of Trust.
+LoginPage.Welcome.Text2=Identities publish lists of other identities they know and rate them on whether they spam or rate others disruptively. Identities with low ratings are ignored.
+LoginPage.Welcome.Text3=If you choose to create multiple identities, they are not publicly associated unless you post something that associates them. An attacker may be able to associate identities based on when they post or periodically refresh, especially if your Freenet node is not constantly online. This is because while your node is offline none of your identities will be able to update, which gives them shared behavior.
+LoginPage.LogIn.Header=Log in
+LoginPage.LogIn.Button=Log in
+LoginPage.CreateOwnIdentity.Header=Create an identity
+LoginPage.CreateOwnIdentity.Text=${link}You can create another identity here${/link}
+LoginPage.CookiesRequired.Text=Please ensure your browser accepts cookies. They are necessary to log in, and expire after one hour.
 End
