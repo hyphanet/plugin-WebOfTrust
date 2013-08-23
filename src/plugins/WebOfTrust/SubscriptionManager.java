@@ -1071,6 +1071,19 @@ public final class SubscriptionManager implements PrioRunnable {
 		return new Persistent.InitializingObjectSet<Notification>(mWoT, q);
 	}
 	
+	/**
+	 * Gets all {@link Notification} objects in the queue of the given {@link Subscription}.
+	 * They are ordered ascending by the time of when the event which triggered them happened.
+	 * 
+	 * Precisely, they are ordered by their {@link Notification#mIndex}.
+	 * 
+	 * Typically used for:
+	 * - Deploying the notification queue of a Subscription in {@link Subscription#sendNotifications(SubscriptionManager)}
+	 * - Deleting a subscription in {@link Subscription#deleteWithoutCommit(SubscriptionManager)}
+	 * 
+	 * @param subscription The {@link Subscription} of whose queue to return notifications from.
+	 * @return All {@link Notification}s on the queue of the subscription, ordered ascending by time of happening of their inducing event.
+	 */
 	private ObjectSet<? extends Notification> getAllNotifications(final Subscription<? extends Notification> subscription) {
 		final Query q = mDB.query();
 		q.constrain(Notification.class);
