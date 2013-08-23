@@ -836,10 +836,15 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Throws when a single client tries to file a {@link Subscription} of the same class of event {@link Notification} and the same {@link Subscription.Type} of notification deployment.
+	 * Throws when a single client tries to file a {@link Subscription} which matches the attributes of the given Subscription:
+	 * - The class of the Subscription and thereby the same class of event {@link Notification}
+	 * - The {@link Subscription.Type} of notification deployment.
+	 * - For FCP connections, the ID of the FCP connection. See {@link Subscription#getID()}.
+	 * 
+	 * Used to ensure that each client can only subscribe once to each type of event.
 	 * 
 	 * @param subscription The new subscription which the client is trying to create. The database is checked for an existing one with similar properties as specified above.
-	 * @see SubscriptionExistsAlreadyException
+	 * @throws SubscriptionExistsAlreadyException If a {@link Subscription} exists which matches the attributes of the given Subscription as specified in the description of the function.
 	 */
 	@SuppressWarnings("unchecked")
 	private synchronized void throwIfSimilarSubscriptionExists(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
@@ -997,6 +1002,20 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 	}
 	
+	/**
+	 * Gets a  {@link Subscription} which matches the given parameters:
+	 * - the given class of Subscription and thereby event {@link Notification}
+	 * - the given FCP identificator, see {@link Subscription#getFCPKey()}.
+	 * 
+	 * Only one {@link Subscription} which matches both of these can exist: Each FCP client can only subscribe once to a type of event.
+	 * 
+	 * Typically used by {@link #throwIfSimilarSubscriptionExists(Subscription)}.
+	 * 
+	 * @param clazz The class of the Subscription.
+	 * @param fcpKey The identificator of the FCP connection. See {@link Subscription#getFCPKey()}.
+	 * @return See description.
+	 * @throws UnknownSubscriptionException If no matching {@link Subscription} exists.
+	 */
 	private Subscription<? extends Notification> getSubscription(final Class<? extends Subscription<? extends Notification>> clazz, String fcpKey) throws UnknownSubscriptionException {
 		final Query q = mDB.query();
 		q.constrain(clazz);
