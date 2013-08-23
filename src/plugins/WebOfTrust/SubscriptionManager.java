@@ -1093,8 +1093,19 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
+	 * Interface for the core of WOT to deploy an {@link IdentityChangedNotification} to clients. 
+	 * 
+	 * Typically called when a new identity XML is fetched and attributes of the identity such as the nickname, the contexts, the properties have changed therefore.
+	 * FIXME: We currently call this in identity.storeAndCommit() which can also happen when only a new edition hint is received.
+	 * 		Instead we should wire this in to code which does actual changes.
+	 * 
 	 * This function does not store a reference to the given identity object in the database, it only stores the ID.
 	 * You are safe to pass non-stored objects or objects which must not be stored.
+	 * 
+	 * You must synchronize on this {@link SubscriptionManager} and the {@link Persistent#transactionLock(ExtObjectContainer)} when calling this function!
+	 * FIXME: Check synchronization of callers.
+	 * 
+	 * @link identity The {@link Identity} which has changed.
 	 */
 	protected void storeIdentityChangedNotificationWithoutCommit(final Identity identity) {
 		@SuppressWarnings("unchecked")
