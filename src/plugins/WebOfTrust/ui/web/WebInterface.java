@@ -63,7 +63,7 @@ public class WebInterface {
 
 	private final String mURI;
 
-	private static final String menuName = "WebInterface.WotMenuName";
+	private static final String MENU_NAME = "WebInterface.WotMenuName";
 
 	/**
 	 * Forward access to current l10n data.
@@ -387,7 +387,7 @@ public class WebInterface {
 		ToadletContainer container = mPluginRespirator.getToadletContainer();
 		mPageMaker = mPluginRespirator.getPageMaker();
 		
-		mPageMaker.addNavigationCategory(mURI+"/", menuName, menuName + ".Tooltip", mWoT, mPluginRespirator.getNode().pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk") ? 2 : 1);
+		mPageMaker.addNavigationCategory(mURI+"/", MENU_NAME, MENU_NAME + ".Tooltip", mWoT, mPluginRespirator.getNode().pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk") ? 2 : 1);
 
 		final NodeClientCore core = mWoT.getPluginRespirator().getNode().clientCore;
 
@@ -449,7 +449,7 @@ public class WebInterface {
 	 * @param toadlet to register.
 	 */
 	private void registerMenu(ToadletContainer container, WebInterfaceToadlet toadlet) {
-		container.register(toadlet, menuName, toadlet.path(), true,
+		container.register(toadlet, MENU_NAME, toadlet.path(), true,
 		    "WebInterface.WotMenuItem." + toadlet.pageTitle,
 		    "WebInterface.WotMenuItem." + toadlet.pageTitle + ".Tooltip", true, null);
 	}
@@ -480,6 +480,6 @@ public class WebInterface {
 		for(Toadlet t : toadlets) {
 			container.unregister(t);
 		}
-		mPageMaker.removeNavigationCategory(menuName);
+		mPageMaker.removeNavigationCategory(MENU_NAME);
 	}
 }
