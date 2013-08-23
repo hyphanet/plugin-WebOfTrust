@@ -110,18 +110,6 @@ public class WebInterface {
 			return new KnownIdentitiesPage(this, req, context, l10n());
 		}
 	}
-	
-	public class ConfigWebInterfaceToadlet extends WebInterfaceToadlet {
-
-		protected ConfigWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
-			super(client, wi, core, pageTitle);
-		}
-
-		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new ConfigurationPage(this, req, context, l10n());
-		}
-	}
 
 	public class LoginWebInterfaceToadlet extends WebInterfaceToadlet {
 
@@ -406,8 +394,7 @@ public class WebInterface {
 			new LoginWebInterfaceToadlet(null, this, core, "LogIn"),
 			home,
 			ownIdentitiesToadlet,
-			knownIdentitiesToadlet,
-			new ConfigWebInterfaceToadlet(null, this, core, "Configuration")
+			knownIdentitiesToadlet
 		));
 
 		/*
