@@ -9,12 +9,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.imageio.ImageIO;
+import javax.naming.SizeLimitExceededException;
 
+import freenet.clients.http.RedirectException;
+import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.identicon.Identicon;
@@ -58,7 +63,7 @@ public class WebInterface {
 
 	private final String mURI;
 
-	private static final String menuName = "WebInterface.WotMenuName";
+	private static final String MENU_NAME = "WebInterface.WotMenuName";
 
 	/**
 	 * Forward access to current l10n data.
@@ -69,15 +74,15 @@ public class WebInterface {
 	    return mWoT.getBaseL10n();
 	}
 
-	public class HomeWebInterfaceToadlet extends WebInterfaceToadlet {
+	public class StatisticsWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		protected HomeWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+		protected StatisticsWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new HomePage(this, req, context, l10n());
+			return new StatisticsPage(this, req, context, l10n());
 		}
 
 	}
@@ -105,16 +110,64 @@ public class WebInterface {
 			return new KnownIdentitiesPage(this, req, context, l10n());
 		}
 	}
-	
-	public class ConfigWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		protected ConfigWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+	public class LoginWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected LoginWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new ConfigurationPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
+			return new LogInPage(this, req, context, l10n());
+		}
+
+		/** Log an user in from a POST and redirect to the BoardsPage */
+		@Override
+		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+			if(!ctx.checkFullAccess(this))
+				return;
+
+			String pass = request.getPartAsStringFailsafe("formPassword", 32);
+			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
+				writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
+				return;
+			}
+
+			final String ID;
+			try {
+				ID = request.getPartAsStringThrowing("OwnIdentityID", Identity.ID_LENGTH);
+				assert ID.length() == Identity.ID_LENGTH;
+			} catch (SizeLimitExceededException e) {
+				Logger.error(this.getClass(),
+				    "The identity ID was too long. (Expected " + Identity.ID_LENGTH +") Was the page modified?", e);
+				sendErrorPage(ctx, 500, "Unexpectedly long identity ID", "");
+				return;
+			}
+
+			try {
+				final OwnIdentity ownIdentity = mWoT.getOwnIdentityByID(ID);
+				mPluginRespirator.getSessionManager(WebOfTrust.WOT_NAME).createSession(ownIdentity.getID(), ctx);
+			} catch(UnknownIdentityException e) {
+				Logger.error(this.getClass(), "Attempted to log in to unknown identity. Was it deleted?", e);
+				writeTemporaryRedirect(ctx, "Unknown identity", path());
+			}
+
+			try {
+				/**
+				 * "redirect-target" is a node-relative target after successful login. It is encoded but the URI
+				 * constructor should decode.
+				 * @see LogInPage
+				 *
+				 * The limit of 64 characters is arbitrary.
+				 */
+				URI raw = new URI(request.getPartAsStringFailsafe("redirect-target", 64));
+				// Use only the path, query, and fragment. Stay on the node's scheme, host, and port.
+				URI target = new URI(null, null, raw.getPath(), raw.getQuery(), raw.getFragment());
+				writeTemporaryRedirect(ctx, "Login successful", target.toString());
+			} catch (URISyntaxException e) {
+				writeInternalError(e, ctx);
+			}
 		}
 	}
 
@@ -256,7 +309,7 @@ public class WebInterface {
 		
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			// Not expected to make it here...
-			return new HomePage(this, req, context, l10n());
+			return new StatisticsPage(this, req, context, l10n());
 		}
 	}
 
@@ -321,8 +374,8 @@ public class WebInterface {
 		mPluginRespirator = mWoT.getPluginRespirator();
 		ToadletContainer container = mPluginRespirator.getToadletContainer();
 		mPageMaker = mPluginRespirator.getPageMaker();
-		
-		mPageMaker.addNavigationCategory(mURI+"/", menuName, menuName + ".Tooltip", mWoT, mPluginRespirator.getNode().pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk") ? 2 : 1);
+
+		mPageMaker.addNavigationCategory(mURI+"/", MENU_NAME, MENU_NAME + ".Tooltip", mWoT, mPluginRespirator.getNode().pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk") ? 2 : 1);
 
 		final NodeClientCore core = mWoT.getPluginRespirator().getNode().clientCore;
 
@@ -333,22 +386,18 @@ public class WebInterface {
 		 * Pages listed in the menu:
 		 */
 
-		WebInterfaceToadlet home = new HomeWebInterfaceToadlet(null, this, core, "Home");
+		WebInterfaceToadlet home = new StatisticsWebInterfaceToadlet(null, this, core, "Statistics");
 		ownIdentitiesToadlet = new OwnIdentitiesWebInterfaceToadlet(null, this, core, "OwnIdentities");
 		knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, core, "KnownIdentities");
 
 		ArrayList<WebInterfaceToadlet> listed = new ArrayList<WebInterfaceToadlet>(Arrays.asList(
+			new LoginWebInterfaceToadlet(null, this, core, "LogIn"),
 			home,
 			ownIdentitiesToadlet,
-			knownIdentitiesToadlet,
-			new ConfigWebInterfaceToadlet(null, this, core, "Configuration")
+			knownIdentitiesToadlet
 		));
 
-		/*
-		 * For backwards compatibility also register at the root. This must be before the other pages or it will
-		 * match all /WebOfTrust/ requests.
-		 */
-		// TODO: Skip by giving the navigation category the home path?
+		// Register homepage at the root. This catches any otherwise unmatched request because it is registered first.
 		container.register(home, null, mURI + "/", true, true);
 
 		for (WebInterfaceToadlet toadlet : listed) {
@@ -383,7 +432,7 @@ public class WebInterface {
 	 * @param toadlet to register.
 	 */
 	private void registerMenu(ToadletContainer container, WebInterfaceToadlet toadlet) {
-		container.register(toadlet, menuName, toadlet.path(), true,
+		container.register(toadlet, MENU_NAME, toadlet.path(), true,
 		    "WebInterface.WotMenuItem." + toadlet.pageTitle,
 		    "WebInterface.WotMenuItem." + toadlet.pageTitle + ".Tooltip", true, null);
 	}
@@ -414,6 +463,6 @@ public class WebInterface {
 		for(Toadlet t : toadlets) {
 			container.unregister(t);
 		}
-		mPageMaker.removeNavigationCategory(menuName);
+		mPageMaker.removeNavigationCategory(MENU_NAME);
 	}
 }
