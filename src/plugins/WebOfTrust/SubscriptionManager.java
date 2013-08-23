@@ -1029,6 +1029,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 	}
 	
+	/**
+	 * Deletes all existing {@link Subscription} objects.
+	 * 
+	 * As a consequence, all {@link Notification} objects associated with the notification queues of the subscriptions become useless and are also deleted.
+	 * 
+	 * Typically used at {@link #start()} - we lose connection to all clients when restarting so their subscriptions are worthless.
+	 */
 	private synchronized final void deleteAllSubscriptions() {
 		Logger.normal(this, "Deleting all subscriptions...");
 		
