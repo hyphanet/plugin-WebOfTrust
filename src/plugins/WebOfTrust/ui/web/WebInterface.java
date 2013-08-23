@@ -397,11 +397,7 @@ public class WebInterface {
 			knownIdentitiesToadlet
 		));
 
-		/*
-		 * For backwards compatibility also register at the root. This must be before the other pages or it will
-		 * match all /WebOfTrust/ requests.
-		 */
-		// TODO: Skip by giving the navigation category the home path?
+		// Register homepage at the root. This catches any otherwise unmatched request because it is registered first.
 		container.register(home, null, mURI + "/", true, true);
 
 		for (WebInterfaceToadlet toadlet : listed) {
