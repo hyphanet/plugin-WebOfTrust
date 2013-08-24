@@ -35,13 +35,14 @@ public final class LogInPage extends WebPageImpl {
 	@Override
 	public void make() {
 		makeWelcomeBox();
-		final ObjectSet<OwnIdentity> ownIdentities;
+		
 		synchronized (wot) {
-			ownIdentities = wot.getAllOwnIdentities();
-		}
-		if (ownIdentities.hasNext()) {
-			makeLoginBox(ownIdentities);
-			makeCreateIdentityBox();
+			final ObjectSet<OwnIdentity> ownIdentities = wot.getAllOwnIdentities();
+		
+			if (ownIdentities.hasNext()) {
+				makeLoginBox(ownIdentities);
+				makeCreateIdentityBox();
+			}
 		}
 	}
 
