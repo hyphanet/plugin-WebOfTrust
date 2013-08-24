@@ -42,6 +42,8 @@ public final class LogInPage extends WebPageImpl {
 			if (ownIdentities.hasNext()) {
 				makeLoginBox(ownIdentities);
 				makeCreateIdentityBox();
+			} else {
+				makeCreateIdentityBox(); // TODO: We should show the CreateIdentityWizard here once it has been ported from Freetalk
 			}
 		}
 	}
