@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import freenet.clients.http.SessionManager;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
@@ -48,12 +49,14 @@ public class OwnIdentitiesPage extends WebPageImpl {
 
 		final WebOfTrust wot = toadlet.webInterface.getWoT();
 
-		String identityID = wot.getPluginRespirator().getSessionManager(WebOfTrust.WOT_NAME).useSession(context).getUserID();
-		OwnIdentity identity;
-		try {
-			identity = wot.getOwnIdentityByID(identityID);
-		} catch (UnknownIdentityException e) {
-			identity = null;
+		SessionManager.Session session = wot.getPluginRespirator().getSessionManager(WebOfTrust.WOT_NAME).useSession(context);
+		OwnIdentity identity = null;
+		if (session != null) {
+			try {
+				identity = wot.getOwnIdentityByID(session.getUserID());
+			} catch (UnknownIdentityException e) {
+				identity = null;
+			}
 		}
 		nickname = identity == null ? "" : identity.getNickname();
 
