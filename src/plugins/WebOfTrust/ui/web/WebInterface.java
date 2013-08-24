@@ -136,11 +136,11 @@ public class WebInterface {
 
 			final String ID;
 			try {
-				ID = request.getPartAsStringThrowing("OwnIdentityID", Identity.ID_LENGTH);
-				assert ID.length() == Identity.ID_LENGTH;
+				ID = request.getPartAsStringThrowing("OwnIdentityID", IdentityID.MAX_IDENTITY_ID_LENGTH);
+				assert ID.length() == IdentityID.MAX_IDENTITY_ID_LENGTH;
 			} catch (SizeLimitExceededException e) {
 				Logger.error(this.getClass(),
-				    "The identity ID was too long. (Expected " + Identity.ID_LENGTH +") Was the page modified?", e);
+				    "The identity ID was too long. (Expected " + IdentityID.MAX_IDENTITY_ID_LENGTH +") Was the page modified?", e);
 				sendErrorPage(ctx, 500, "Unexpectedly long identity ID", "");
 				return;
 			}
