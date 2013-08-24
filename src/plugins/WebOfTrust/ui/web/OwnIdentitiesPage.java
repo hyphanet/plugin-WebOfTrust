@@ -54,9 +54,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		if (session != null) {
 			try {
 				identity = wot.getOwnIdentityByID(session.getUserID());
-			} catch (UnknownIdentityException e) {
-				identity = null;
-			}
+			} catch (UnknownIdentityException e) {}
 		}
 		nickname = identity == null ? "" : identity.getNickname();
 
