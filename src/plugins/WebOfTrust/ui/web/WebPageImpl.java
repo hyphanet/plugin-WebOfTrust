@@ -5,6 +5,7 @@
  */
 package plugins.WebOfTrust.ui.web;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -31,7 +32,7 @@ public abstract class WebPageImpl implements WebPage {
 	
 	protected final WebOfTrust wot;
 	
-	protected final String uri;
+	protected final URI uri;
 
 	protected final PluginRespirator pr;
 	

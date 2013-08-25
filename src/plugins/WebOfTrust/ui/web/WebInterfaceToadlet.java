@@ -2,6 +2,7 @@ package plugins.WebOfTrust.ui.web;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.NoSuchElementException;
 
 import javax.naming.SizeLimitExceededException;
@@ -100,7 +101,11 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		writeHTMLReply(ctx, 200, "OK", ret);
 	}
 
-	public String getURI() {
-		return webInterface.getURI() + "/" + pageTitle;
+	public URI getURI() {
+		try {
+			return new URI(webInterface.getURI() + "/" + pageTitle);
+		} catch (URISyntaxException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

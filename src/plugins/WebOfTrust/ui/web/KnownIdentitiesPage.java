@@ -159,7 +159,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		// The user should only add an identity he trusts
 		HTMLNode addBoxContent = addContentBox(l10n().getString("KnownIdentitiesPage.AddIdentity.Header"));
 	
-		HTMLNode createForm = pr.addFormChild(addBoxContent, uri, "AddIdentity");
+		HTMLNode createForm = pr.addFormChild(addBoxContent, uri.toString(), "AddIdentity");
 		if(treeOwner != null)
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "AddIdentity" });
@@ -199,7 +199,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	private void makeSelectTreeOwnerForm() {
 
 		HTMLNode listBoxContent = addContentBox(l10n().getString("KnownIdentitiesPage.SelectTreeOwner.Header"));
-		HTMLNode selectForm = pr.addFormChild(listBoxContent, uri, "ViewTree");
+		HTMLNode selectForm = pr.addFormChild(listBoxContent, uri.toString(), "ViewTree");
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "ViewTree" });
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnerID");
 
@@ -263,7 +263,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		
 		HTMLNode knownIdentitiesBox = addContentBox(l10n().getString("KnownIdentitiesPage.KnownIdentities.Header"));
-		knownIdentitiesBox = pr.addFormChild(knownIdentitiesBox, uri, "Filters").addChild("p");
+		knownIdentitiesBox = pr.addFormChild(knownIdentitiesBox, uri.toString(), "Filters").addChild("p");
 		knownIdentitiesBox.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
 		
 		

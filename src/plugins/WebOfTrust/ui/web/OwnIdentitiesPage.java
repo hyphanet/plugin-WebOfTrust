@@ -206,7 +206,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		HTMLNode restoreBoxContent = addContentBox(l10n().getString("OwnIdentitiesPage.RestoreOwnIdentity.Header"));
 		restoreBoxContent.addChild("p", l10n().getString("OwnIdentitiesPage.RestoreOwnIdentity.Text"));
 		
-		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, uri, "RestoreOwnIdentity");
+		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, uri.toString(), "RestoreOwnIdentity");
 		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "RestoreOwnIdentity" });
 		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "InsertURI", "70", l10n().getString("OwnIdentitiesPage.RestoreOwnIdentity.InsertURI") });
 		restoreForm.addChild("br");

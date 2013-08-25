@@ -86,6 +86,6 @@ public final class LogInPage extends WebPageImpl {
 		        aChild,
 		        "LoginPage.CreateOwnIdentity.Text",
 		        new String[] { "link", "/link" },
-		        new HTMLNode[] { new HTMLNode("a", "href", mWebInterface.getToadlet(CreateIdentityWebInterfaceToadlet.class).getURI()) });
+		        new HTMLNode[] { new HTMLNode("a", "href", mWebInterface.getToadlet(CreateIdentityWebInterfaceToadlet.class).getURI().toString()) });
 	}
 }
