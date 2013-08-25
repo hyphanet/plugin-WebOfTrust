@@ -13,6 +13,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.NoSuchElementException;
 
 import javax.imageio.ImageIO;
 import javax.naming.SizeLimitExceededException;
@@ -125,7 +126,7 @@ public class WebInterface {
 
 		/** Log an user in from a POST and redirect to the BoardsPage */
 		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException, SizeLimitExceededException, NoSuchElementException {
 			if(!ctx.checkFullAccess(this))
 				return;
 
@@ -135,16 +136,8 @@ public class WebInterface {
 				return;
 			}
 
-			final String ID;
-			try {
-				ID = request.getPartAsStringThrowing("OwnIdentityID", IdentityID.MAX_IDENTITY_ID_LENGTH);
-				assert ID.length() == IdentityID.MAX_IDENTITY_ID_LENGTH;
-			} catch (SizeLimitExceededException e) {
-				Logger.error(this.getClass(),
-				    "The identity ID was too long. (Expected " + IdentityID.MAX_IDENTITY_ID_LENGTH +") Was the page modified?", e);
-				sendErrorPage(ctx, 500, "Unexpectedly long identity ID", "");
-				return;
-			}
+			final String ID = request.getPartAsStringThrowing("OwnIdentityID", IdentityID.MAX_IDENTITY_ID_LENGTH);
+			assert ID.length() == IdentityID.MAX_IDENTITY_ID_LENGTH;
 
 			try {
 				final OwnIdentity ownIdentity = mWoT.getOwnIdentityByID(ID);

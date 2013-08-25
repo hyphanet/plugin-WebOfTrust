@@ -2,6 +2,9 @@ package plugins.WebOfTrust.ui.web;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.NoSuchElementException;
+
+import javax.naming.SizeLimitExceededException;
 
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import freenet.client.HighLevelSimpleClient;
@@ -57,7 +60,7 @@ public abstract class WebInterfaceToadlet extends Toadlet {
 		writeHTMLReply(ctx, 200, "OK", ret);
 	}
 
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException, SizeLimitExceededException, NoSuchElementException {
 	    if(!ctx.checkFullAccess(this))
 	        return;
 		
