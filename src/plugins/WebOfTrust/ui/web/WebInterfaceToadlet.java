@@ -35,7 +35,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		this.core = core;
 	}
 
-	abstract WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException;
+	abstract WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException;
 	
 	@Override
 	public boolean isEnabled(ToadletContext ctx) {

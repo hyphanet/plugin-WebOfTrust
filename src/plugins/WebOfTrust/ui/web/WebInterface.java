@@ -168,6 +168,22 @@ public class WebInterface {
 			return !sessionManager.sessionExists(ctx);
 		}
 	}
+	
+	class LogOutWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected LogOutWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			// TODO: Secure log out against malicious links (by using POST with form password instead of GET)
+			// At the moment it is just a link and unsecured i.e. no form password check etc.
+			sessionManager.deleteSession(context);
+			throw new RedirectException(getToadlet(LoginWebInterfaceToadlet.class).getURI());
+		}
+		
+	}
 
 	public class CreateIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
 
@@ -397,7 +413,8 @@ public class WebInterface {
 			new LoginWebInterfaceToadlet(null, this, core, "LogIn"),
 			home,
 			ownIdentitiesToadlet,
-			knownIdentitiesToadlet
+			knownIdentitiesToadlet,
+			new LogOutWebInterfaceToadlet(null, this, core, "LogOut")
 		));
 
 		// Register homepage at the root. This catches any otherwise unmatched request because it is registered first.
