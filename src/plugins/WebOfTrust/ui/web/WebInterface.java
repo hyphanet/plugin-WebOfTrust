@@ -140,7 +140,7 @@ public class WebInterface {
 
 			try {
 				final OwnIdentity ownIdentity = mWoT.getOwnIdentityByID(ID);
-				mPluginRespirator.getSessionManager(WebOfTrust.WOT_NAME).createSession(ownIdentity.getID(), ctx);
+				sessionManager.createSession(ownIdentity.getID(), ctx);
 			} catch(UnknownIdentityException e) {
 				Logger.error(this.getClass(), "Attempted to log in to unknown identity. Was it deleted?", e);
 				writeTemporaryRedirect(ctx, "Unknown identity", path());
@@ -161,6 +161,11 @@ public class WebInterface {
 			} catch (URISyntaxException e) {
 				writeInternalError(e, ctx);
 			}
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return !sessionManager.sessionExists(ctx);
 		}
 	}
 
@@ -429,7 +434,7 @@ public class WebInterface {
 	private void registerMenu(ToadletContainer container, WebInterfaceToadlet toadlet) {
 		container.register(toadlet, MENU_NAME, toadlet.path(), true,
 		    "WebInterface.WotMenuItem." + toadlet.pageTitle,
-		    "WebInterface.WotMenuItem." + toadlet.pageTitle + ".Tooltip", true, null);
+		    "WebInterface.WotMenuItem." + toadlet.pageTitle + ".Tooltip", true, toadlet);
 	}
 
 	/**

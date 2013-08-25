@@ -6,29 +6,39 @@ import java.util.NoSuchElementException;
 
 import javax.naming.SizeLimitExceededException;
 
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.LinkEnabledCallback;
 import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.node.NodeClientCore;
 import freenet.support.api.HTTPRequest;
 
-public abstract class WebInterfaceToadlet extends Toadlet {
+public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabledCallback {
 	
 	final String pageTitle;
+	final SessionManager sessionManager;
 	final WebInterface webInterface;
 	final NodeClientCore core;
 
 	protected WebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 		super(client);
 		this.pageTitle = pageTitle;
+		this.sessionManager = wi.getWoT().getPluginRespirator().getSessionManager(WebOfTrust.WOT_NAME);
 		this.webInterface = wi;
 		this.core = core;
 	}
 
 	abstract WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException;
+	
+	@Override
+	public boolean isEnabled(ToadletContext ctx) {
+		return sessionManager.sessionExists(ctx);
+	}
 	
 	@Override
 	public String path() {
