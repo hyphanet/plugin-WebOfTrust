@@ -9,6 +9,7 @@ import javax.naming.SizeLimitExceededException;
 
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.LinkEnabledCallback;
 import freenet.clients.http.RedirectException;
@@ -51,6 +52,9 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		
 	    if(!ctx.checkFullAccess(this))
 	        return;
+	    
+	    if(!isEnabled(ctx))
+			throw new RedirectException(webInterface.getToadlet(LoginWebInterfaceToadlet.class).getURI());
 		
 		String ret;
 		try {
@@ -74,6 +78,9 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException, SizeLimitExceededException, NoSuchElementException {
 	    if(!ctx.checkFullAccess(this))
 	        return;
+	    
+	    if(!isEnabled(ctx))
+	    	throw new RedirectException(webInterface.getToadlet(LoginWebInterfaceToadlet.class).getURI());
 		
 		String pass = request.getPartAsString("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {

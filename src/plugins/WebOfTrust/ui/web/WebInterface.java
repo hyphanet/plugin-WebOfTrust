@@ -184,6 +184,11 @@ public class WebInterface {
 		public Toadlet showAsToadlet() {
 			return ownIdentitiesToadlet;
 		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return true;
+		}
 	}
 
 	public class DeleteOwnIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
