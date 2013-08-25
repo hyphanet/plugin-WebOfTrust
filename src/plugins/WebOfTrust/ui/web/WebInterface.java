@@ -18,8 +18,6 @@ import java.util.NoSuchElementException;
 import javax.imageio.ImageIO;
 import javax.naming.SizeLimitExceededException;
 
-import freenet.clients.http.RedirectException;
-import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
@@ -29,6 +27,7 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.filter.ContentFilter;
 import freenet.clients.http.PageMaker;
+import freenet.clients.http.RedirectException;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
