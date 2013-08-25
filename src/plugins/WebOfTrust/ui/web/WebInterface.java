@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import javax.imageio.ImageIO;
 import javax.naming.SizeLimitExceededException;
@@ -59,7 +60,7 @@ public class WebInterface {
 	private final WebInterfaceToadlet ownIdentitiesToadlet;
 	private final WebInterfaceToadlet knownIdentitiesToadlet;
 
-	private final ArrayList<Toadlet> toadlets;
+	private final HashMap<Class<? extends WebInterfaceToadlet>, WebInterfaceToadlet> toadlets;
 
 	private final String mURI;
 
@@ -399,14 +400,17 @@ public class WebInterface {
 
 		// Register homepage at the root. This catches any otherwise unmatched request because it is registered first.
 		container.register(home, null, mURI + "/", true, true);
+		
+		toadlets = new HashMap<Class<? extends WebInterfaceToadlet>, WebInterfaceToadlet>();
 
 		for (WebInterfaceToadlet toadlet : listed) {
 			registerMenu(container, toadlet);
+			toadlets.put(toadlet.getClass(), toadlet);
 		}
 
 		// Pages not listed in the menu:
 
-		ArrayList<Toadlet> unlisted = new ArrayList<Toadlet>(Arrays.asList(
+		ArrayList<WebInterfaceToadlet> unlisted = new ArrayList<WebInterfaceToadlet>(Arrays.asList(
 			new CreateIdentityWebInterfaceToadlet(null, this, core, "CreateIdentity"),
 			new DeleteOwnIdentityWebInterfaceToadlet(null, this, core, "DeleteOwnIdentity"),
 			new EditOwnIdentityWebInterfaceToadlet(null, this, core, "EditOwnIdentity"),
@@ -416,12 +420,11 @@ public class WebInterface {
 			new GetIdenticonWebInterfaceToadlet(null, this, core, "GetIdenticon")
 		));
 
-		for (Toadlet toadlet : unlisted) {
+		for (WebInterfaceToadlet toadlet : unlisted) {
 			registerHidden(container, toadlet);
+			toadlets.put(toadlet.getClass(), toadlet);
 		}
 
-		toadlets = new ArrayList<Toadlet>(listed);
-		toadlets.addAll(unlisted);
 	}
 
 	/**
@@ -445,6 +448,10 @@ public class WebInterface {
 	private void registerHidden(ToadletContainer container, Toadlet toadlet) {
 		container.register(toadlet, null, toadlet.path(), true, true);
 	}
+	
+	public WebInterfaceToadlet getToadlet(Class<? extends Toadlet> clazz) {
+		return toadlets.get(clazz);
+	}
 
 	public String getURI() {
 		return mURI;
@@ -460,7 +467,7 @@ public class WebInterface {
 	
 	public void unload() {
 		ToadletContainer container = mPluginRespirator.getToadletContainer();
-		for(Toadlet t : toadlets) {
+		for(Toadlet t : toadlets.values()) {
 			container.unregister(t);
 		}
 		mPageMaker.removeNavigationCategory(MENU_NAME);

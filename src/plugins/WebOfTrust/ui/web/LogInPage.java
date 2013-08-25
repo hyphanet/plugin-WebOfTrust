@@ -3,13 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
+
 import com.db4o.ObjectSet;
+
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
-import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.WebOfTrust;
 
 public final class LogInPage extends WebPageImpl {
 
@@ -83,6 +86,6 @@ public final class LogInPage extends WebPageImpl {
 		        aChild,
 		        "LoginPage.CreateOwnIdentity.Text",
 		        new String[] { "link", "/link" },
-		        new HTMLNode[] { new HTMLNode("a", "href", WebOfTrust.SELF_URI+"/CreateIdentity") });
+		        new HTMLNode[] { new HTMLNode("a", "href", mWebInterface.getToadlet(CreateIdentityWebInterfaceToadlet.class).getURI()) });
 	}
 }
