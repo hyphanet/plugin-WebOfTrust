@@ -405,20 +405,19 @@ public class WebInterface {
 		 * Pages listed in the menu:
 		 */
 
-		WebInterfaceToadlet home = new StatisticsWebInterfaceToadlet(null, this, core, "Statistics");
 		ownIdentitiesToadlet = new OwnIdentitiesWebInterfaceToadlet(null, this, core, "OwnIdentities");
 		knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, core, "KnownIdentities");
 
 		ArrayList<WebInterfaceToadlet> listed = new ArrayList<WebInterfaceToadlet>(Arrays.asList(
 			new LoginWebInterfaceToadlet(null, this, core, "LogIn"),
-			home,
 			ownIdentitiesToadlet,
 			knownIdentitiesToadlet,
+			new StatisticsWebInterfaceToadlet(null, this, core, "Statistics"),
 			new LogOutWebInterfaceToadlet(null, this, core, "LogOut")
 		));
 
 		// Register homepage at the root. This catches any otherwise unmatched request because it is registered first.
-		container.register(home, null, mURI + "/", true, true);
+		container.register(ownIdentitiesToadlet, null, mURI + "/", true, true);
 		
 		toadlets = new HashMap<Class<? extends WebInterfaceToadlet>, WebInterfaceToadlet>();
 
