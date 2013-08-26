@@ -135,8 +135,8 @@ public class WebInterface {
 				return;
 			}
 
-			final String ID = request.getPartAsStringThrowing("OwnIdentityID", IdentityID.MAX_IDENTITY_ID_LENGTH);
-			assert ID.length() == IdentityID.MAX_IDENTITY_ID_LENGTH;
+			final String ID = request.getPartAsStringThrowing("OwnIdentityID", IdentityID.LENGTH);
+			assert ID.length() == IdentityID.LENGTH;
 
 			try {
 				final OwnIdentity ownIdentity = mWoT.getOwnIdentityByID(ID);

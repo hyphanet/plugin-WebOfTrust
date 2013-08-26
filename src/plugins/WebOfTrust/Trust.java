@@ -97,7 +97,7 @@ public final class Trust extends Persistent implements Cloneable {
 	 */
 	protected static final class TrustID {
 		
-		private static final int MAX_TRUST_ID_LENGTH = IdentityID.MAX_IDENTITY_ID_LENGTH + "@".length() + IdentityID.MAX_IDENTITY_ID_LENGTH;
+		private static final int MAX_TRUST_ID_LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
 		
 		private final String mID;
 		private final String mTrusterID;

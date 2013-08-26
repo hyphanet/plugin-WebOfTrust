@@ -107,9 +107,9 @@ public class Identity extends Persistent implements Cloneable {
 	public static final class IdentityID {
 		
 		/**
-		 * Length in characters of an ID, currently also the minimum length.
+		 * Length in characters of an ID, which is a SSK public key hash.
 		 */
-		public static transient final int MAX_IDENTITY_ID_LENGTH = 43;
+		public static transient final int LENGTH = 43;
 		
 		private final String mID;
 		
@@ -119,7 +119,7 @@ public class Identity extends Persistent implements Cloneable {
 		 * Checks whether it is valid Base64-encoding.
 		 */
 		private IdentityID(String id) {
-			if(id.length() > MAX_IDENTITY_ID_LENGTH)
+			if(id.length() > LENGTH)
 				throw new IllegalArgumentException("ID is too long, length: " + id.length());
 			
 			try {
