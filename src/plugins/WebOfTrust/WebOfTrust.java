@@ -356,7 +356,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
         	IdentityFetcher.StartFetchCommand.class,
         	IdentityFetcher.UpdateEditionHintCommand.class,
         	SubscriptionManager.Subscription.class,
-        	SubscriptionManager.IdentityListSubscription.class,
+        	SubscriptionManager.IdentitiesSubscription.class,
         	SubscriptionManager.ScoresSubscription.class,
         	SubscriptionManager.TrustsSubscription.class,
         	SubscriptionManager.Notification.class,

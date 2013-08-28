@@ -870,7 +870,7 @@ public final class FCPInterface implements FredPluginFCP {
     
     /**
      * @see {@link SubscriptionManager#subscribeToIdentityAttributeList(String)}
-     * @see {@link SubscriptionManager#subscribeToIdentityList(String)}
+     * @see {@link SubscriptionManager#subscribeToIdentities(String)}
      * @see {@link SubscriptionManager#subscribeToScores(String)}
      * @see {@link SubscriptionManager#subscribeToTrusts(String)}
      */
@@ -886,8 +886,8 @@ public final class FCPInterface implements FredPluginFCP {
     	Subscription<? extends Notification> subscription;
     	
     	try {
-    		if(to.equals("IdentityList")) {
-	    		subscription = mSubscriptionManager.subscribeToIdentityList(fcpID);
+    		if(to.equals("Identities")) {
+	    		subscription = mSubscriptionManager.subscribeToIdentities(fcpID);
 	    	} else if(to.equals("Trusts")) {
 	    		subscription = mSubscriptionManager.subscribeToTrusts(fcpID);
 	    	} else if(to.equals("Scores")) {

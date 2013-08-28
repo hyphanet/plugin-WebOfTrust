@@ -386,7 +386,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * FIXME: Store the ID of the old / new identity and the type of change.
 	 * FIXME: What about restoreOwnIdentity / deleteOwnIdentity? They replace an OwnIdentity object with an Identity object and vice versa.
 	 * 
-	 * @see IdentityListSubscription The type of {@link Subscription} which deploys this notification.
+	 * @see IdentitiesSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	protected static class IdentityChangedNotification extends Notification {
 		
@@ -580,7 +580,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 
 	/**
-	 * A subscription to the list of all known identities.
+	 * A subscription to the set of all known identities.
 	 * If an identity gets added, changed or deleted the subscriber is notified by a {@link IdentityChangedNotification}.
 	 * 
 	 * An identity "gets changed" when things such as the nickname, the contexts or the properties change.
@@ -588,12 +588,12 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @see IdentityChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
-	public static final class IdentityListSubscription extends Subscription<IdentityChangedNotification> {
+	public static final class IdentitiesSubscription extends Subscription<IdentityChangedNotification> {
 
 		/**
 		 * @param fcpID See {@link Subscription#getFCPKey()}. 
 		 */
-		protected IdentityListSubscription(String fcpID) {
+		protected IdentitiesSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
 		}
 
@@ -832,8 +832,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
 	 */
-	public IdentityListSubscription subscribeToIdentityList(String fcpID) throws SubscriptionExistsAlreadyException {
-		final IdentityListSubscription subscription = new IdentityListSubscription(fcpID);
+	public IdentitiesSubscription subscribeToIdentities(String fcpID) throws SubscriptionExistsAlreadyException {
+		final IdentitiesSubscription subscription = new IdentitiesSubscription(fcpID);
 		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
 	}
@@ -1048,9 +1048,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	protected void storeIdentityChangedNotificationWithoutCommit(final Identity identity) {
 		@SuppressWarnings("unchecked")
-		final ObjectSet<IdentityListSubscription> subscriptions = (ObjectSet<IdentityListSubscription>)getSubscriptions(IdentityListSubscription.class);
+		final ObjectSet<IdentitiesSubscription> subscriptions = (ObjectSet<IdentitiesSubscription>)getSubscriptions(IdentitiesSubscription.class);
 		
-		for(IdentityListSubscription subscription : subscriptions) {
+		for(IdentitiesSubscription subscription : subscriptions) {
 			subscription.storeNotificationWithoutCommit(identity);
 		}
 	}
