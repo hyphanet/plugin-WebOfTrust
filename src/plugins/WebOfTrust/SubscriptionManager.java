@@ -434,7 +434,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * This notification is issued when a {@link Trust} is added, deleted or changed.
 	 * 
-	 * @see TrustListSubscription The type of {@link Subscription} which deploys this notification.
+	 * @see TrustsSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	protected static final class TrustChangedNotification extends Notification {
 		
@@ -627,17 +627,17 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * A subscription to the list of trust values.
+	 * A subscription to the set of all trust values.
 	 * If a trust value gets changed, is added or deleted, the subscriber is notified.
 	 * 
 	 * @see TrustChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
-	public static final class TrustListSubscription extends Subscription<TrustChangedNotification> {
+	public static final class TrustsSubscription extends Subscription<TrustChangedNotification> {
 
 		/**
 		 * @param fcpID See {@link Subscription#getFCPKey()}. 
 		 */
-		protected TrustListSubscription(String fcpID) {
+		protected TrustsSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
 		}
 		
@@ -844,8 +844,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
 	 */
-	public TrustListSubscription subscribeToTrustList(String fcpID) throws SubscriptionExistsAlreadyException {
-		final TrustListSubscription subscription = new TrustListSubscription(fcpID);
+	public TrustsSubscription subscribeToTrusts(String fcpID) throws SubscriptionExistsAlreadyException {
+		final TrustsSubscription subscription = new TrustsSubscription(fcpID);
 		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
 	}
@@ -1081,9 +1081,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	protected void storeTrustChangedNotificationWithoutCommit(final Trust oldTrust, final Trust newTrust) {
 		@SuppressWarnings("unchecked")
-		final ObjectSet<TrustListSubscription> subscriptions = (ObjectSet<TrustListSubscription>)getSubscriptions(TrustListSubscription.class);
+		final ObjectSet<TrustsSubscription> subscriptions = (ObjectSet<TrustsSubscription>)getSubscriptions(TrustsSubscription.class);
 		
-		for(TrustListSubscription subscription : subscriptions) {
+		for(TrustsSubscription subscription : subscriptions) {
 			subscription.storeNotificationWithoutCommit(oldTrust);
 		}
 	}
