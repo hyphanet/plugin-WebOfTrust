@@ -580,11 +580,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 
 	/**
-	 * A subscription to the set of all known identities.
-	 * If an identity gets added, changed or deleted the subscriber is notified by a {@link IdentityChangedNotification}.
-	 * 
-	 * An identity "gets changed" when things such as the nickname, the contexts or the properties change.
-	 * - Basically if anything changes which you can get from an {@link Identity} object. 
+	 * A subscription to the set of all {@link Identity} and {@link OwnIdentity} instances.
+	 * If an identity gets added/deleted or if its attributes change the subscriber is notified by a {@link IdentityChangedNotification}.
 	 * 
 	 * @see IdentityChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
@@ -627,8 +624,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * A subscription to the set of all trust values.
-	 * If a trust value gets changed, is added or deleted, the subscriber is notified.
+	 * A subscription to the set of all {@link Trust} instances.
+	 * If a trust gets added/deleted or if its attributes change the subscriber is notified by a {@link TrustChangedNotification}.
 	 * 
 	 * @see TrustChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
@@ -671,8 +668,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * A subscription to the list of scores.
-	 * If a score value gets changed, is added or deleted, the subscriber is notified.
+	 * A subscription to the set of all {@link Score} instances.
+	 * If a score gets added/deleted or if its attributes change the subscriber is notified by a {@link ScoreChangedNotification}.
 	 * 
 	 * @see ScoreChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
