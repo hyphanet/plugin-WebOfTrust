@@ -381,7 +381,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * This notification is issued when an {@link Identity} is added, changed or deleted.
+	 * This notification is issued when an {@link Identity} is added/deleted or its attributes change.
 	 * 
 	 * FIXME: Store the ID of the old / new identity and the type of change.
 	 * FIXME: What about restoreOwnIdentity / deleteOwnIdentity? They replace an OwnIdentity object with an Identity object and vice versa.
@@ -432,7 +432,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * This notification is issued when a {@link Trust} is added, deleted or changed.
+	 * This notification is issued when a {@link Trust} is added/deleted or its attributes change.
 	 * 
 	 * @see TrustsSubscription The type of {@link Subscription} which deploys this notification.
 	 */
@@ -506,7 +506,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * This notification is issued when a score value is added, deleted or changed.
+	 * This notification is issued when a score value is added/deleted or its attributes change.
 	 * 
 	 * @see ScoresSubscription The type of {@link Subscription} which deploys this notification.
 	 */
