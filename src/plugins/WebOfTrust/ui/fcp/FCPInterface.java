@@ -936,10 +936,6 @@ public final class FCPInterface implements FredPluginFCP {
     }
     
     public void sendIdentityChangedNotification(String fcpID, final String identityID) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException {
-    	sendIdentityListChangedNotification(fcpID, identityID);
-    }
-    
-    public void sendIdentityListChangedNotification(String fcpID, final String identityID) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException {
     	getReplySender(fcpID).send(handleGetIdentity(null, null, identityID));
     }
     
