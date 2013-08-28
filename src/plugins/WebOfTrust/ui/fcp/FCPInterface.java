@@ -869,10 +869,10 @@ public final class FCPInterface implements FredPluginFCP {
     }
     
     /**
-     * @see {@link SubscriptionManager#subscribeToIdentityAttributeList(String)}
-     * @see {@link SubscriptionManager#subscribeToIdentities(String)}
-     * @see {@link SubscriptionManager#subscribeToScores(String)}
-     * @see {@link SubscriptionManager#subscribeToTrusts(String)}
+     * @see SubscriptionManager#subscribeToIdentityAttributeList(String)
+     * @see SubscriptionManager#subscribeToIdentities(String)
+     * @see SubscriptionManager#subscribeToScores(String)
+     * @see SubscriptionManager#subscribeToTrusts(String)
      */
     private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException {
     	final String to = getMandatoryParameter(params, "To");
