@@ -871,7 +871,7 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * @see {@link SubscriptionManager#subscribeToIdentityAttributeList(String)}
      * @see {@link SubscriptionManager#subscribeToIdentityList(String)}
-     * @see {@link SubscriptionManager#subscribeToScoreList(String)}
+     * @see {@link SubscriptionManager#subscribeToScores(String)}
      * @see {@link SubscriptionManager#subscribeToTrusts(String)}
      */
     private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException {
@@ -890,8 +890,8 @@ public final class FCPInterface implements FredPluginFCP {
 	    		subscription = mSubscriptionManager.subscribeToIdentityList(fcpID);
 	    	} else if(to.equals("Trusts")) {
 	    		subscription = mSubscriptionManager.subscribeToTrusts(fcpID);
-	    	} else if(to.equals("ScoreList")) {
-	    		subscription = mSubscriptionManager.subscribeToScoreList(fcpID);
+	    	} else if(to.equals("Scores")) {
+	    		subscription = mSubscriptionManager.subscribeToScores(fcpID);
 	    	} else
 	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
     	} catch(SubscriptionExistsAlreadyException e) {

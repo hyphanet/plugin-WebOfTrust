@@ -508,7 +508,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * This notification is issued when a score value is added, deleted or changed.
 	 * 
-	 * @see ScoreListSubscription The type of {@link Subscription} which deploys this notification.
+	 * @see ScoresSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	protected static final class ScoreChangedNotification extends Notification {
 		
@@ -676,12 +676,12 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @see ScoreChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
-	public static final class ScoreListSubscription extends Subscription<ScoreChangedNotification> {
+	public static final class ScoresSubscription extends Subscription<ScoreChangedNotification> {
 
 		/**
 		 * @param fcpID See {@link Subscription#getFCPKey()}. 
 		 */
-		protected ScoreListSubscription(String fcpID) {
+		protected ScoresSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
 		}
 		
@@ -855,8 +855,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
 	 */
-	public ScoreListSubscription subscribeToScoreList(String fcpID) throws SubscriptionExistsAlreadyException {
-		final ScoreListSubscription subscription = new ScoreListSubscription(fcpID);
+	public ScoresSubscription subscribeToScores(String fcpID) throws SubscriptionExistsAlreadyException {
+		final ScoresSubscription subscription = new ScoresSubscription(fcpID);
 		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
 	}
@@ -1094,9 +1094,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	protected void storeScoreChangedNotificationWithoutCommit(final Score oldScore, final Score newScore) {
 		@SuppressWarnings("unchecked")
-		final ObjectSet<ScoreListSubscription> subscriptions = (ObjectSet<ScoreListSubscription>)getSubscriptions(ScoreListSubscription.class);
+		final ObjectSet<ScoresSubscription> subscriptions = (ObjectSet<ScoresSubscription>)getSubscriptions(ScoresSubscription.class);
 		
-		for(ScoreListSubscription subscription : subscriptions) {
+		for(ScoresSubscription subscription : subscriptions) {
 			subscription.storeNotificationWithoutCommit(oldScore);
 		}
 	}
