@@ -869,7 +869,6 @@ public final class FCPInterface implements FredPluginFCP {
     }
     
     /**
-     * @see SubscriptionManager#subscribeToIdentityAttributeList(String)
      * @see SubscriptionManager#subscribeToIdentities(String)
      * @see SubscriptionManager#subscribeToScores(String)
      * @see SubscriptionManager#subscribeToTrusts(String)
