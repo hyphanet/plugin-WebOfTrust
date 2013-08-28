@@ -392,7 +392,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		if(backupFile.exists()) {
 			try {
-				FileUtil.secureDelete(databaseFile, mPR.getNode().fastWeakRandom);
+				FileUtil.secureDelete(databaseFile);
 			} catch(IOException e) {
 				Logger.warning(this, "Deleting of the database failed: " + databaseFile.getAbsolutePath());
 			}
@@ -450,7 +450,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}	
 
 		final File tmpFile = new File(databaseFile.getAbsolutePath() + ".temp");
-		FileUtil.secureDelete(tmpFile, random);
+		FileUtil.secureDelete(tmpFile);
 
 		/* As opposed to the default, BTreeIDMapping uses an on-disk file instead of in-memory for mapping IDs. 
 		/* Reduces memory usage during defragmentation while being slower.
@@ -497,8 +497,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 		} else {
 			final double change = 100.0 * (((double)(oldSize - newSize)) / ((double)oldSize));
-			FileUtil.secureDelete(tmpFile, random);
-			FileUtil.secureDelete(backupFile, random);
+			FileUtil.secureDelete(tmpFile);
+			FileUtil.secureDelete(backupFile);
 			Logger.normal(this, "Defragment completed. "+SizeUtil.formatSize(oldSize)+" ("+oldSize+") -> "
 					+SizeUtil.formatSize(newSize)+" ("+newSize+") ("+(int)change+"% shrink)");
 		}
