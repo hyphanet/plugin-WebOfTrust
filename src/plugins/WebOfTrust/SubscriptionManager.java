@@ -381,10 +381,12 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * This notification is issued when the attributes of an identity change.
-	 * It is also used as a base class for {@link IdentityListChangedNotification}.
+	 * This notification is issued when an {@link Identity} is added, changed or deleted.
 	 * 
-	 * FIXME: Rename to IdentityAttributesChangedNotification to be coherent with IdentityAttributeListSubscription.
+	 * FIXME: Store the ID of the old / new identity and the type of change.
+	 * FIXME: What about restoreOwnIdentity / deleteOwnIdentity? They replace an OwnIdentity object with an Identity object and vice versa.
+	 * 
+	 * @see IdentityListSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	protected static class IdentityChangedNotification extends Notification {
 		
@@ -428,28 +430,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
 	}
-
-	/**
-	 * This notification is issued when a new identity is discovered or deleted.
-	 * FIXME: What about restoreOwnIdentity / deleteOwnIdentity? They replace an OwnIdentity object with an Identity object and vice versa.
-	 */
-	protected static final class IdentityListChangedNotification extends IdentityChangedNotification {		
-		
-		/**
-		 * @param mySubscription The {@link Subscription} to whose {@link Notification} queue this {@link Notification} belongs.
-		 * @param myIdentity The {@link Identity} which was added or deleted.
-		 */
-		protected IdentityListChangedNotification(final Subscription<IdentityListChangedNotification> mySubscription, Identity myIdentity) {
-			super(mySubscription, myIdentity);
-		}
-		
-	}
 	
 	/**
 	 * This notification is issued when a {@link Trust} is added, deleted or changed.
-	 * FIXME: We use IdentityChangedNotification if the attributes of an Identity have changed and IdentityListChangedNotification if an identity
-	 * 		is added or deleted. But we use TrustChangedNotification for all cases. This decoherent. Either get rid of the two Identity notification
-	 * 		types or introduce two types for Trust. Same applies to ScoreChangedNotification.
 	 */
 	protected static final class TrustChangedNotification extends Notification {
 		
@@ -522,9 +505,6 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * This notification is issued when a score value is added, deleted or changed.
-	 * FIXME: We use IdentityChangedNotification if the attributes of an Identity have changed and IdentityListChangedNotification if an identity
-	 * 		is added or deleted. But we use ScoreChangedNotification for all cases. This decoherent. Either get rid of the two Identity notification
-	 * 		types or introduce two types for Score. Same applies to TrustChangedNotification.
 	 */
 	protected static final class ScoreChangedNotification extends Notification {
 		
@@ -596,22 +576,20 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 
 	/**
-	 * A subscription to the attributes of all identities.
+	 * A subscription to the list of all known identities.
+	 * If an identity gets added, changed or deleted the subscriber is notified by a {@link IdentityChangedNotification}.
 	 * 
-	 * The attributes are things such as the nickname, the URIs, the contexts, the properties
-	 * - Basically anything which you can get from an {@link Identity} object.
+	 * An identity "gets changed" when things such as the nickname, the contexts or the properties change.
+	 * - Basically if anything changes which you can get from an {@link Identity} object. 
 	 * 
-	 * If the attributes of an identity change, the subscriber gets notified by a {@link IdentityChangedNotification}.
-	 * The subscriber will also get notified if a new identity is created or if an identity is deleted. FIXME: Is this correct? We have IdentityListSubscription for this. 
-	 * 
-	 * TODO: Does this effectively send an ID object?
+	 * @see IdentityChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
-	public static final class IdentityAttributeListSubscription extends Subscription<IdentityChangedNotification> {
+	public static final class IdentityListSubscription extends Subscription<IdentityChangedNotification> {
 
 		/**
 		 * @param fcpID See {@link Subscription#getFCPKey()}. 
 		 */
-		protected IdentityAttributeListSubscription(String fcpID) {
+		protected IdentityListSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
 		}
 
@@ -642,48 +620,6 @@ public final class SubscriptionManager implements PrioRunnable {
 			notification.storeWithoutCommit();
 		}
 
-	}
-	
-	/**
-	 * A subscription to the list of identities.
-	 * If an identity gets added or deleted, the subscriber is notified.
-	 */
-	public static final class IdentityListSubscription extends Subscription<IdentityListChangedNotification> {
-
-		/**
-		 * @param fcpID See {@link Subscription#getFCPKey()}. 
-		 */
-		protected IdentityListSubscription(String fcpID) {
-			super(Subscription.Type.FCP, fcpID);
-		}
-		
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		protected void synchronizeSubscriberByFCP() throws Exception {
-			mWebOfTrust.getFCPInterface().sendAllIdentities(getFCPKey());
-		}
-
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		protected void notifySubscriberByFCP(IdentityListChangedNotification notification) throws Exception {
-			mWebOfTrust.getFCPInterface().sendIdentityListChangedNotification(getFCPKey(), notification.getIdentityID());
-		}
-
-		/**
-		 * Stores a {@link IdentityListChangedNotification} to the {@link Notification} queue of this {@link Subscription}.
-		 * 
-		 * @param identity The {@link Identity} which was added or deleted.
-		 */
-		public void storeNotificationWithoutCommit(Identity identity) {
-			final IdentityListChangedNotification notification = new IdentityListChangedNotification(this, identity);
-			notification.initializeTransient(mWebOfTrust);
-			notification.storeWithoutCommit();
-		}
-		
 	}
 	
 	/**
@@ -883,18 +819,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * The client is notified when a new identity XML was fetched. TODO: Also notify if internal things such as edition change.
-	 * 
-	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
-	 */
-	public IdentityAttributeListSubscription subscribeToIdentityAttributeList(String fcpID) throws SubscriptionExistsAlreadyException {
-		final IdentityAttributeListSubscription subscription = new IdentityAttributeListSubscription(fcpID);
-		storeNewSubscriptionAndCommit(subscription);
-		return subscription;
-	}
-	
-	/**
-	 * The client is notified when an identity is created or deleted.
+	 * The client is notified when an identity is added, changed or deleted.
+	 * FIXME: Do we also notify if internal things such as edition change? Should we?
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
 	 */
@@ -1105,13 +1031,18 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * You must synchronize on this {@link SubscriptionManager} and the {@link Persistent#transactionLock(ExtObjectContainer)} when calling this function!
 	 * FIXME: Check synchronization of callers.
 	 * 
+	 * FIXME: This function should have two parameters oldIdentity and newIdentity so it can handle all possible cases of change:
+	 * - Change of an existing identity
+	 * - Deletion of an existing identity
+	 * - Introduction of a new one
+	 * 
 	 * @link identity The {@link Identity} which has changed.
 	 */
 	protected void storeIdentityChangedNotificationWithoutCommit(final Identity identity) {
 		@SuppressWarnings("unchecked")
-		final ObjectSet<IdentityAttributeListSubscription> subscriptions = (ObjectSet<IdentityAttributeListSubscription>)getSubscriptions(IdentityAttributeListSubscription.class);
+		final ObjectSet<IdentityListSubscription> subscriptions = (ObjectSet<IdentityListSubscription>)getSubscriptions(IdentityListSubscription.class);
 		
-		for(IdentityAttributeListSubscription subscription : subscriptions) {
+		for(IdentityListSubscription subscription : subscriptions) {
 			subscription.storeNotificationWithoutCommit(identity);
 		}
 	}
@@ -1119,30 +1050,20 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * This function does not store a reference to the given identity object in the database, it only stores the ID.
 	 * You are safe to pass non-stored objects or objects which must not be stored.
+	 * 
+	 * @deprecated FIXME This should be handled by {@link #storeIdentityChangedNotificationWithoutCommit(Identity)}
 	 */
 	protected void storeNewIdentityNotificationWithoutCommit(final Identity identity) {
-		@SuppressWarnings("unchecked")
-		final ObjectSet<IdentityListSubscription> subscriptions = (ObjectSet<IdentityListSubscription>)getSubscriptions(IdentityListSubscription.class);
-		
-		for(IdentityListSubscription subscription : subscriptions) {
-			subscription.storeNotificationWithoutCommit(identity);
-		}
-		
 		storeIdentityChangedNotificationWithoutCommit(identity);
 	}
 	
 	/**
 	 * This function does not store a reference to the given identity object in the database, it only stores the ID.
 	 * You are safe to pass non-stored objects or objects which must not be stored.
+	 * 
+	 * @deprecated FIXME This should be handled by {@link #storeIdentityChangedNotificationWithoutCommit(Identity)}
 	 */
 	protected void storeDeletedIdentityNotificationWithoutCommit(final Identity identity) {
-		@SuppressWarnings("unchecked")
-		final ObjectSet<IdentityListSubscription> subscriptions = (ObjectSet<IdentityListSubscription>)getSubscriptions(IdentityListSubscription.class);
-		
-		for(IdentityListSubscription subscription : subscriptions) {
-			subscription.storeNotificationWithoutCommit(identity);
-		}
-		
 		storeIdentityChangedNotificationWithoutCommit(identity);
 	}
 	

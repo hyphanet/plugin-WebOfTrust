@@ -886,9 +886,7 @@ public final class FCPInterface implements FredPluginFCP {
     	Subscription<? extends Notification> subscription;
     	
     	try {
-	    	if(to.equals("IdentityAttriubteList")) {
-	    		subscription = mSubscriptionManager.subscribeToIdentityAttributeList(fcpID);
-	    	} else if(to.equals("IdentityList")) {
+    		if(to.equals("IdentityList")) {
 	    		subscription = mSubscriptionManager.subscribeToIdentityList(fcpID);
 	    	} else if(to.equals("TrustList")) {
 	    		subscription = mSubscriptionManager.subscribeToTrustList(fcpID);
