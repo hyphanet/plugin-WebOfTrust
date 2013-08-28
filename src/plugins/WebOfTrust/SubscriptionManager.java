@@ -433,6 +433,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * This notification is issued when a {@link Trust} is added, deleted or changed.
+	 * 
+	 * @see TrustListSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	protected static final class TrustChangedNotification extends Notification {
 		
@@ -505,6 +507,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * This notification is issued when a score value is added, deleted or changed.
+	 * 
+	 * @see ScoreListSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	protected static final class ScoreChangedNotification extends Notification {
 		
@@ -625,6 +629,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * A subscription to the list of trust values.
 	 * If a trust value gets changed, is added or deleted, the subscriber is notified.
+	 * 
+	 * @see TrustChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
 	public static final class TrustListSubscription extends Subscription<TrustChangedNotification> {
 
@@ -667,6 +673,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * A subscription to the list of scores.
 	 * If a score value gets changed, is added or deleted, the subscriber is notified.
+	 * 
+	 * @see ScoreChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
 	public static final class ScoreListSubscription extends Subscription<ScoreChangedNotification> {
 
