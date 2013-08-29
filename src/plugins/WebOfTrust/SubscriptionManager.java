@@ -1104,8 +1104,18 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
+	 * Interface for the core of WOT to deploy a {@link TrustChangedNotification} to clients. 
+	 * 
+	 * Called when a {@link Trust} is added, deleted or its attributes are modified.
+	 * 
 	 * This function does not store references to the passed objects in the database, it only stores their IDs.
 	 * You are safe to pass non-stored objects or objects which must not be stored.
+	 * 
+	 * You must synchronize on this {@link SubscriptionManager} and the {@link Persistent#transactionLock(ExtObjectContainer)} when calling this function!
+	 * FIXME: Check synchronization of callers.
+	 * 
+	 * @param oldTrust A {@link Trust#clone()} of the {@link Trust} BEFORE the changes happened. In other words the old version of it.
+	 * @param newTrust The new version of the {@link Trust} as stored in the database now.
 	 */
 	protected void storeTrustChangedNotificationWithoutCommit(final Trust oldTrust, final Trust newTrust) {
 		@SuppressWarnings("unchecked")
