@@ -115,10 +115,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		mDB = mWoT.getDatabase();
 		
 		if(respirator != null) { // We are connected to a node
-		mUSKManager = respirator.getNode().clientCore.uskManager;
-		mClient = respirator.getHLSimpleClient();
-		mClientContext = respirator.getNode().clientCore.clientContext;
-		mTicker = new TrivialTicker(respirator.getNode().executor);
+			mUSKManager = respirator.getNode().clientCore.uskManager;
+			mClient = respirator.getHLSimpleClient();
+			mClientContext = respirator.getNode().clientCore.clientContext;
+			mTicker = new TrivialTicker(respirator.getNode().executor);
 		} else {
 			mUSKManager = null;
 			mClient = null;
