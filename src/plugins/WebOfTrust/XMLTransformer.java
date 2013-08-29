@@ -89,6 +89,11 @@ public final class XMLTransformer {
 	
 	private final WebOfTrust mWoT;
 	
+	/**
+	 * Equal to {@link WebOfTrust#getSubscriptionManager()} of {@link #mWoT}.
+	 */
+	private final SubscriptionManager mSubscriptionManager; 
+	
 	private final ExtObjectContainer mDB;
 	
 	/* TODO: Check with a profiler how much memory this takes, do not cache it if it is too much */
@@ -121,6 +126,7 @@ public final class XMLTransformer {
 	 */
 	public XMLTransformer(WebOfTrust myWoT) {
 		mWoT = myWoT;
+		mSubscriptionManager = mWoT.getSubscriptionManager();
 		mDB = mWoT.getDatabase();
 		
 		try {
@@ -345,7 +351,9 @@ public final class XMLTransformer {
 		
 		synchronized(mWoT) {
 		synchronized(mWoT.getIdentityFetcher()) {
+		synchronized(mSubscriptionManager) {
 			final Identity identity = mWoT.getIdentityByURI(identityURI);
+			final Identity oldIdentity = identity.clone(); // For the SubscriptionManager
 			
 			Logger.normal(this, "Importing parsed XML for " + identity);
 			
@@ -440,7 +448,7 @@ public final class XMLTransformer {
 										trustee.storeWithoutCommit();
 										
 										// We don't notify clients about this: The edition hint is not very useful to them.
-										// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(trustee);
+										// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(trustee, trustee);
 									}
 								}
 							}
@@ -449,7 +457,7 @@ public final class XMLTransformer {
 									try {
 										trustee = new Identity(mWoT, trusteeURI, null, false);
 										trustee.storeWithoutCommit();
-										mWoT.getSubscriptionManager().storeNewIdentityNotificationWithoutCommit(trustee);
+										mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, trustee);
 									} catch(MalformedURLException urlEx) {
 										// Logging the exception does NOT log the actual malformed URL so we do it manually.
 										Logger.warning(this, "Received malformed identity URL: " + trusteeURI, urlEx);
@@ -459,11 +467,11 @@ public final class XMLTransformer {
 							}
 
 							if(trustee != null)
-								mWoT.setTrustWithoutCommit(identity, trustee, trustValue, trustComment);
+								mWoT.setTrustWithoutCommit(identity, trustee, trustValue, trustComment); // Also takes care of SubscriptionManager
 						}
 
 						for(Trust trust : mWoT.getGivenTrustsOfDifferentEdition(identity, identityURI.getEdition())) {
-							mWoT.removeTrustWithoutCommit(trust);
+							mWoT.removeTrustWithoutCommit(trust); // Also takes care of SubscriptionManager
 						}
 
 						IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
@@ -476,11 +484,12 @@ public final class XMLTransformer {
 					} else if(!xmlData.identityPublishesTrustList && didPublishTrustListPreviously && !(identity instanceof OwnIdentity)) {
 						// If it does not publish a trust list anymore, we delete all trust values it has given.
 						for(Trust trust : mWoT.getGivenTrusts(identity))
-							mWoT.removeTrustWithoutCommit(trust);
+							mWoT.removeTrustWithoutCommit(trust); // Also takes care of SubscriptionManager
 					}
 
 					mWoT.finishTrustListImport();
 					identity.onFetched(); // Marks the identity as parsed successfully
+					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
 					identity.storeAndCommit();
 				}
 				catch(Exception e) { 
@@ -492,9 +501,11 @@ public final class XMLTransformer {
 			Logger.normal(this, "Finished XML import for " + identity);
 		} // synchronized(mWoT)
 		} // synchronized(mWoT.getIdentityFetcher())
+		} // synchronized(mSubscriptionManager)
 		} // try
 		catch(Exception e) {
 			synchronized(mWoT) {
+			// synchronized(mSubscriptionManager) { // We don't use the SubscriptionManager, see below
 			synchronized(mWoT.getIdentityFetcher()) {
 				try {
 					final Identity identity = mWoT.getIdentityByURI(identityURI);
@@ -509,6 +520,7 @@ public final class XMLTransformer {
 							throw new RuntimeException(e1);
 						}
 						identity.onParsingFailed();
+						// We don't notify the SubscriptionManager here since there is not really any new information about the identity because parsing failed.
 						identity.storeAndCommit();
 					} else {
 						Logger.normal(this, "Not marking edition as parsing failed, we have already fetched a new one (" + 
@@ -597,6 +609,7 @@ public final class XMLTransformer {
 		
 		synchronized(mWoT) {
 		synchronized(identityFetcher) {
+		synchronized(mSubscriptionManager) {
 			if(!puzzleOwner.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT))
 				throw new InvalidParameterException("Trying to import an identity identroduction for an own identity which does not allow introduction.");
 			
@@ -614,7 +627,7 @@ public final class XMLTransformer {
 						// attack.
 						//newIdentity.setEdition(identityURI.getEdition());
 						newIdentity.storeWithoutCommit();
-						mWoT.getSubscriptionManager().storeNewIdentityNotificationWithoutCommit(newIdentity);
+						mWoT.getSubscriptionManager().storeIdentityChangedNotificationWithoutCommit(null, newIdentity);
 						if(logMINOR) Logger.minor(this, "Imported introduction for an unknown identity: " + newIdentity);
 					}
 
@@ -625,7 +638,7 @@ public final class XMLTransformer {
 					catch(NotTrustedException ex) {
 						// 0 trust will not allow the import of other new identities for the new identity because the trust list import code will only create
 						// new identities if the score of an identity is > 0, not if it is equal to 0.
-						mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");	
+						mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");// Also takes care of SubscriptionManager
 					}
 					
 					// setTrustWithoutCommit() does this for us.
@@ -638,6 +651,7 @@ public final class XMLTransformer {
 					throw error; // Satisfy the compiler
 				}
 			}
+		}
 		}
 		}
 
