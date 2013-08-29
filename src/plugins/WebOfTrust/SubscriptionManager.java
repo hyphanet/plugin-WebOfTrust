@@ -1176,6 +1176,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
