@@ -648,7 +648,8 @@ public final class XMLTransformer {
 				}
 				catch(RuntimeException error) {
 					Persistent.checkedRollbackAndThrow(mDB, this, error);
-					throw error; // Satisfy the compiler
+					// Satisfy the compiler - without this the return at the end of the function would complain about the uninitialized newIdentity variable
+					throw error;
 				}
 			}
 		}
