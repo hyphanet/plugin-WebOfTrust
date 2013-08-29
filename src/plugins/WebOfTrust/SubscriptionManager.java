@@ -49,6 +49,14 @@ import freenet.support.io.NativeThread;
  * in the incremental change chain.
  * FIXME: AFAIK the FCP-client does not support the above yet, this is a MUST-have feature needed by Freetalk, check whether it works.
  * 
+ * <b>Synchronization:</b>
+ * The locking order must be:
+ * 	synchronized(instance of WebOfTrust) {
+ *	synchronized(instance of IntroductionPuzzleStore) {
+ *	synchronized(instance of IdentityFetcher) {
+ *	synchronized(instance of SubscriptionManager) {
+ *	synchronized(Persistent.transactionLock(instance of ObjectContainer)) {
+ * 
  * TODO: Allow out-of-order notifications if the client desires them
  * TODO: Optimization: Allow coalescing of notifications: If a single object changes twice, only send one notification
  * TODO: Optimization: Allow the client to specify filters to reduce traffic: - Context of identities, etc. 
