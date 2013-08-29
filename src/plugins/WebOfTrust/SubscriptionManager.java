@@ -479,6 +479,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * This notification is issued when a {@link Trust} is added/deleted or its attributes change.
 	 * 
+	 * FIXME: This should keep the ID of the trust instead of truster/trustee ID. Also, it should keep both the old and new ID, similar to {@link IdentityChangedNotification}
+	 * 
 	 * @see TrustsSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	protected static final class TrustChangedNotification extends Notification {
@@ -552,6 +554,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * This notification is issued when a score value is added/deleted or its attributes change.
+	 * 
+	 * FIXME: This should keep the ID of the trust instead of truster/trustee ID. Also, it should keep both the old and new ID, similar to {@link IdentityChangedNotification}
 	 * 
 	 * @see ScoresSubscription The type of {@link Subscription} which deploys this notification.
 	 */
