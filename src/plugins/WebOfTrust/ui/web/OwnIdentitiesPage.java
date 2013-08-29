@@ -7,7 +7,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import freenet.clients.http.SessionManager;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.RandomName;
 
 import com.db4o.ObjectSet;
@@ -33,6 +36,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	private final String editIdentityURI;
 	private final String deleteIdentityURI;
 	private final String introduceIdentityURI;
+	private final String nickname;
 	
 	/**
 	 * Creates a new OwnIdentitiesPage.
@@ -42,7 +46,18 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	 */
 	public OwnIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) {
 		super(toadlet, myRequest, context, _baseL10n);
-		
+
+		final WebOfTrust wot = toadlet.webInterface.getWoT();
+
+		SessionManager.Session session = wot.getPluginRespirator().getSessionManager(WebOfTrust.WOT_NAME).useSession(context);
+		OwnIdentity identity = null;
+		if (session != null) {
+			try {
+				identity = wot.getOwnIdentityByID(session.getUserID());
+			} catch (UnknownIdentityException e) {}
+		}
+		nickname = identity == null ? "" : identity.getNickname();
+
 		String baseURI = toadlet.webInterface.getURI();
 		
 		showIdentityURI = baseURI+"/ShowIdentity";
@@ -52,6 +67,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		introduceIdentityURI = baseURI+"/IntroduceIdentity";
 	}
 
+	@Override
 	public void make() {
 		if(request.isPartSet("RestoreOwnIdentity")) {
 			try {
@@ -63,10 +79,18 @@ public class OwnIdentitiesPage extends WebPageImpl {
 				addErrorBox(l10n().getString("OwnIdentitiesPage.RestoreOwnIdentityFailed"), e);
 			}
 		}
+		if (!nickname.isEmpty()) {
+			makeLoggedInAs();
+		}
 		synchronized(wot) {
 			makeOwnIdentitiesList();
 		}
 		makeRestoreOwnIdentityForm();
+	}
+
+	private void makeLoggedInAs() {
+		HTMLNode content = addContentBox(l10n().getString("OwnIdentitiesPage.LogIn.Header"));
+		content.addChild("p", nickname);
 	}
 
 	private void makeOwnIdentitiesList() {
@@ -182,7 +206,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 		HTMLNode restoreBoxContent = addContentBox(l10n().getString("OwnIdentitiesPage.RestoreOwnIdentity.Header"));
 		restoreBoxContent.addChild("p", l10n().getString("OwnIdentitiesPage.RestoreOwnIdentity.Text"));
 		
-		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, uri, "RestoreOwnIdentity");
+		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, uri.toString(), "RestoreOwnIdentity");
 		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "RestoreOwnIdentity" });
 		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "InsertURI", "70", l10n().getString("OwnIdentitiesPage.RestoreOwnIdentity.InsertURI") });
 		restoreForm.addChild("br");

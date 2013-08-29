@@ -86,7 +86,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		List<IntroductionPuzzle> puzzles = mClient.getPuzzles(mIdentity, PuzzleType.Captcha, PUZZLE_DISPLAY_COUNT);
 		
 		if(puzzles.size() > 0 ) {
-			HTMLNode solveForm = _pr.addFormChild(boxContent, uri, "solvePuzzles");
+			HTMLNode solveForm = _pr.addFormChild(boxContent, uri.toString(), "solvePuzzles");
 			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "SolvePuzzles" });
 			solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id", mIdentity.getID() });
 			

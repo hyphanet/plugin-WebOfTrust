@@ -105,10 +105,11 @@ public class Identity extends Persistent implements Cloneable {
 	 * TODO: This was added after we already had manual ID-generation / checking in the code everywhere. Use this class instead. 
 	 */
 	public static final class IdentityID {
+		
 		/**
-		 * Taken from Freetalk. TODO: Reduce to the actual value which can be found out by looking up the maximal length of the base64-encoded routing key.
+		 * Length in characters of an ID, which is a SSK public key hash.
 		 */
-		public static transient final int MAX_IDENTITY_ID_LENGTH = 64;
+		public static transient final int LENGTH = 43;
 		
 		private final String mID;
 		
@@ -118,7 +119,7 @@ public class Identity extends Persistent implements Cloneable {
 		 * Checks whether it is valid Base64-encoding.
 		 */
 		private IdentityID(String id) {
-			if(id.length() > MAX_IDENTITY_ID_LENGTH)
+			if(id.length() > LENGTH)
 				throw new IllegalArgumentException("ID is too long, length: " + id.length());
 			
 			try {
