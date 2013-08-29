@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.Random;
 
 import com.db4o.ObjectContainer;
+import com.db4o.ext.ExtObjectContainer;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -58,6 +59,10 @@ public final class IdentityInserter extends TransferThread {
 	
 	
 	private WebOfTrust mWoT;
+	
+	private SubscriptionManager mSubscriptionManager;
+	
+	private ExtObjectContainer mDB;
 
 	/** Random number generator */
 	private Random mRandom;
@@ -80,6 +85,8 @@ public final class IdentityInserter extends TransferThread {
 	public IdentityInserter(WebOfTrust myWoT) {
 		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Identity Inserter");
 		mWoT = myWoT;
+		mSubscriptionManager = mWoT.getSubscriptionManager();
+		mDB = mWoT.getDatabase();
 		mRandom = mWoT.getPluginRespirator().getNode().fastWeakRandom;
 	}
 	
@@ -112,6 +119,7 @@ public final class IdentityInserter extends TransferThread {
 	protected void iterate() {
 		abortInserts();
 		
+		// FIXME: Use SubscriptionManager instead of periodic polling
 		synchronized(mWoT) {
 			for(OwnIdentity identity : mWoT.getAllOwnIdentities()) {
 				if(identity.needsInsert()) {
@@ -182,7 +190,11 @@ public final class IdentityInserter extends TransferThread {
 		
 		try {
 			synchronized(mWoT) {
+			synchronized(mSubscriptionManager) {
+			synchronized(Persistent.transactionLock(mDB)) {
 				OwnIdentity identity = mWoT.getOwnIdentityByURI(state.getURI());
+				final OwnIdentity oldIdentity = identity.clone();
+				try {
 					try {
 						identity.setEdition(state.getURI().getEdition());
 					} catch(InvalidParameterException e) {
@@ -195,7 +207,14 @@ public final class IdentityInserter extends TransferThread {
 						
 					}
 					identity.updateLastInsertDate();
+					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
 					identity.storeAndCommit();
+				} catch(RuntimeException e) {
+					Persistent.checkedRollbackAndThrow(mDB, this, e);
+				}
+				
+			}
+			}
 			}
 		}
 		catch(Exception e)
