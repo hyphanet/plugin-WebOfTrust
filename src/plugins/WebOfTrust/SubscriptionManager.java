@@ -1150,9 +1150,15 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 
 	/**
-	 * Processes the notifications of each {@link Subscription}
-	 * If deploying the notifications of a Subscription fails, processing is re-scheduled and the next
-	 * Subscription is processed.
+	 * Sends out the {@link Notification} queue of each {@link Subscription} to its clients.
+	 * 
+	 * Typically called by the Ticker {@link #mTicker} on a separate thread. This is triggered by {@link #scheduleNotificationProcessing()}
+	 * - the scheduling function should be called whenever a {@link Notification} is stored to the database.
+	 *  
+	 * If deploying the notifications for a subscription fails, this function is scheduled to be run again after some time.
+	 * If deploying for a certain subscription fails N times, the Subscription is deleted. FIXME: Actually implement this.
+	 * 
+	 * @see Subscription#sendNotifications(SubscriptionManager) This function is called on each subscription to deploy the {@link Notification} queue.
 	 */
 	public void run() {
 		synchronized(mWoT) {
@@ -1163,7 +1169,6 @@ public final class SubscriptionManager implements PrioRunnable {
 					// Persistent.checkedCommit(mDB, this);	/* sendNotifications() does this already */
 				} catch(Exception e) {
 					Persistent.checkedRollback(mDB, this, e);
-					// FIXME: After a certain number of retries, delete the subscription
 					scheduleNotificationProcessing();
 				}
 			}
