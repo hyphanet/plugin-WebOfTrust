@@ -1091,7 +1091,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * You must synchronize on this {@link SubscriptionManager} and the {@link Persistent#transactionLock(ExtObjectContainer)} when calling this function!
 	 * FIXME: Check synchronization of callers.
 	 * 
-	 * @link identity The {@link Identity} which has changed.
+	 * @param oldIdentity A {@link Identity#clone()} of the {@link Identity} BEFORE the changes happened. In other words the old version of it.
+	 * @param newIdentity The new version of the {@link Identity} as stored in the database now. 
 	 */
 	protected void storeIdentityChangedNotificationWithoutCommit(final Identity oldIdentity, final Identity newIdentity) {
 		@SuppressWarnings("unchecked")
