@@ -178,7 +178,7 @@ public final class IdentityInserter extends TransferThread {
 	
 	public void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
-		if(logDEBUG) Logger.debug(this, "Successful insert of identity: " + state.getURI());
+		Logger.normal(this, "Successful insert of identity: " + state.getURI());
 		
 		try {
 			synchronized(mWoT) {
