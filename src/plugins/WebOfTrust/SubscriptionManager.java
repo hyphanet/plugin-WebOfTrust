@@ -877,6 +877,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * FIXME: Do we also notify if internal things such as edition change? Should we?
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
+	 * @return The {@link IdentitiesSubscription} which is created by this function.
+	 * @see IdentityChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
 	public IdentitiesSubscription subscribeToIdentities(String fcpID) throws SubscriptionExistsAlreadyException {
 		final IdentitiesSubscription subscription = new IdentitiesSubscription(fcpID);
@@ -889,6 +891,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * The client is NOT notified when the comment on a trust value changes.
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
+	 * @return The {@link TrustsSubscription} which is created by this function.
+	 * @see TrustChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
 	public TrustsSubscription subscribeToTrusts(String fcpID) throws SubscriptionExistsAlreadyException {
 		final TrustsSubscription subscription = new TrustsSubscription(fcpID);
@@ -900,6 +904,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * The client is notified when a score value changes, is created or removed.
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
+	 * @return The {@link ScoresSubscription} which is created by this function.
+	 * @see ScoreChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
 	public ScoresSubscription subscribeToScores(String fcpID) throws SubscriptionExistsAlreadyException {
 		final ScoresSubscription subscription = new ScoresSubscription(fcpID);
