@@ -5,6 +5,7 @@ package plugins.WebOfTrust;
 
 import java.util.UUID;
 
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 
 import com.db4o.ObjectSet;
@@ -383,28 +384,52 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * This notification is issued when an {@link Identity} is added/deleted or its attributes change.
 	 * 
-	 * FIXME: Store the ID of the old / new identity and the type of change.
-	 * FIXME: What about restoreOwnIdentity / deleteOwnIdentity? They replace an OwnIdentity object with an Identity object and vice versa.
+	 * It provides the ID of the identity:
+	 * - before the change via {@link IdentityChangedNotification#getOldIdentityID()}
+	 * - and and after the change via ({@link IdentityChangedNotification#getOldIdentityID()}
+	 * 
+	 * If one of the before/after values is null, this is because the identity was added/deleted.
+	 * If both are non-null, the identity was modified.
+	 * NOTICE: Modification can also mean that its class changed from {@link OwnIdentity} to {@link Identity} or vice versa!
+	 * 
+	 * FIXME: The JavaDoc of this class should be used as inspiration for the JavaDoc of TrustChangedNotification / ScoreChangedNotification.
 	 * 
 	 * @see IdentitiesSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	protected static class IdentityChangedNotification extends Notification {
 		
 		/**
-		 * The ID of the identity which has changed.
+		 * The ID of the identity before the change.
+		 * Null if the change was the creation of the identity.
+		 * If non-null it must be equal to {@link #mNewIdentityID} if that member is non-null as well.
 		 * 
 		 * @see Identity#getID()
-		 * @see #getIdentityID()
+		 * @see #getOldIdentityID()
 		 */
-		final String mIdentityID;
+		final String mOldIdentityID;
+		
+		/**
+		 * The ID of the identity after the change.
+		 * Null if the change was the deletion of the identity.
+		 * If non-null it must be equal to {@link #mOldIdentityID} if that member is non-null as well.
+		 * 
+		 * @see Identity#getID()
+		 * @see #getNewIdentityID()
+		 */
+		final String mNewIdentityID;
 	
 		/**
 		 * @param mySubscription The {@link Subscription} to whose {@link Notification} queue this {@link Notification} belongs.
-		 * @param myIdentity The {@link Identity} which has changed.
+		 * @param oldIdentity The version of the {@link Identity} before the change.
+		 * @param newIdentity The version of the {@link Identity} after the change.
 		 */
-		protected IdentityChangedNotification(final Subscription<? extends IdentityChangedNotification> mySubscription, Identity myIdentity) {
+		protected IdentityChangedNotification(final Subscription<? extends IdentityChangedNotification> mySubscription, Identity oldIdentity, Identity newIdentity) {
 			super(mySubscription);
-			mIdentityID = myIdentity.getID();
+			mOldIdentityID = oldIdentity.getID();
+			mNewIdentityID = newIdentity.getID();
+			
+			assert((mOldIdentityID == null ^ mNewIdentityID == null) ||
+					(mOldIdentityID != null && mNewIdentityID != null && mOldIdentityID.equals(mNewIdentityID)));
 		}
 		
 		/**
@@ -416,17 +441,37 @@ public final class SubscriptionManager implements PrioRunnable {
 			
 			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
 			
-			IfNull.thenThrow(mIdentityID, "mIdentityID");
+			if(mOldIdentityID == null && mNewIdentityID == null)
+				throw new NullPointerException("Only one of mOldIdentityID and mNewIdentityID may be null!");
+			
+			if(mOldIdentityID != null)
+				IdentityID.constructAndValidateFromString(mOldIdentityID);
+
+			if(mNewIdentityID != null)
+				IdentityID.constructAndValidateFromString(mNewIdentityID);
+			
+			if(mOldIdentityID != null && mNewIdentityID != null && !mOldIdentityID.equals(mNewIdentityID))
+				throw new IllegalStateException("mOldIdentityID must equal mNewIdentityID if both are non-null!");
 		}
 		
 		/**
-		 * @return The ID of the identity which has changed.
+		 * @return The ID of the {@link Identity} before the change. Null if the change was the creation of the identity. Equal to {@link #getNewIdentityID()} if both are non-null.
 		 * @see Identity#getID()
-		 * @see #mIdentityID
+		 * @see #mOldIdentityID
 		 */
-		protected final String getIdentityID() {
+		protected final String getOldIdentityID() {
 			checkedActivate(1);
-			return mIdentityID;
+			return mOldIdentityID;
+		}
+		
+		/**
+		 * @return The ID of the {@link Identity} after the change. Null if the change was the deletion of the identity. Equal to {@link #getOldIdentityID()} if both are non-null.
+		 * @see Identity#getID()
+		 * @see #mNewIdentityID
+		 */
+		protected final String getNewIdentityID() {
+			checkedActivate(1);
+			return mNewIdentityID;
 		}
 
 	}
@@ -607,7 +652,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		protected void notifySubscriberByFCP(IdentityChangedNotification notification) throws Exception {
-			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getFCPKey(), notification.getIdentityID());
+			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getFCPKey(), notification.getOldIdentityID(), notification.getNewIdentityID());
 		}
 
 		/**
@@ -615,8 +660,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * 
 		 * @param identity The {@link Identity} whose attributes have changed.
 		 */
-		private void storeNotificationWithoutCommit(Identity identity) {
-			final IdentityChangedNotification notification = new IdentityChangedNotification(this, identity);
+		private void storeNotificationWithoutCommit(Identity oldIdentity, Identity newIdentity) {
+			final IdentityChangedNotification notification = new IdentityChangedNotification(this, oldIdentity, newIdentity);
 			notification.initializeTransient(mWebOfTrust);
 			notification.storeWithoutCommit();
 		}
@@ -1036,40 +1081,15 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * You must synchronize on this {@link SubscriptionManager} and the {@link Persistent#transactionLock(ExtObjectContainer)} when calling this function!
 	 * FIXME: Check synchronization of callers.
 	 * 
-	 * FIXME: This function should have two parameters oldIdentity and newIdentity so it can handle all possible cases of change:
-	 * - Change of an existing identity
-	 * - Deletion of an existing identity
-	 * - Introduction of a new one
-	 * 
 	 * @link identity The {@link Identity} which has changed.
 	 */
-	protected void storeIdentityChangedNotificationWithoutCommit(final Identity identity) {
+	protected void storeIdentityChangedNotificationWithoutCommit(final Identity oldIdentity, final Identity newIdentity) {
 		@SuppressWarnings("unchecked")
 		final ObjectSet<IdentitiesSubscription> subscriptions = (ObjectSet<IdentitiesSubscription>)getSubscriptions(IdentitiesSubscription.class);
 		
 		for(IdentitiesSubscription subscription : subscriptions) {
-			subscription.storeNotificationWithoutCommit(identity);
+			subscription.storeNotificationWithoutCommit(oldIdentity, newIdentity);
 		}
-	}
-	
-	/**
-	 * This function does not store a reference to the given identity object in the database, it only stores the ID.
-	 * You are safe to pass non-stored objects or objects which must not be stored.
-	 * 
-	 * @deprecated FIXME This should be handled by {@link #storeIdentityChangedNotificationWithoutCommit(Identity)}
-	 */
-	protected void storeNewIdentityNotificationWithoutCommit(final Identity identity) {
-		storeIdentityChangedNotificationWithoutCommit(identity);
-	}
-	
-	/**
-	 * This function does not store a reference to the given identity object in the database, it only stores the ID.
-	 * You are safe to pass non-stored objects or objects which must not be stored.
-	 * 
-	 * @deprecated FIXME This should be handled by {@link #storeIdentityChangedNotificationWithoutCommit(Identity)}
-	 */
-	protected void storeDeletedIdentityNotificationWithoutCommit(final Identity identity) {
-		storeIdentityChangedNotificationWithoutCommit(identity);
 	}
 	
 	/**

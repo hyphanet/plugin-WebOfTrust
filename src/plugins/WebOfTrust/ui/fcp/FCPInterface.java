@@ -935,8 +935,12 @@ public final class FCPInterface implements FredPluginFCP {
     	getReplySender(fcpID).send(handleGetAllScoreValues(null));
     }
     
-    public void sendIdentityChangedNotification(String fcpID, final String identityID) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException {
-    	getReplySender(fcpID).send(handleGetIdentity(null, null, identityID));
+    /**
+     * @see SubscriptionManager.IdentityChangedNotification FIXME: The implementation should be able to handle all cases mentioned there
+     */
+    public void sendIdentityChangedNotification(String fcpID, final String oldIdentityID, final String newIdentityID) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException {
+    	throw new UnsupportedOperationException("FIXME: Implement");
+    	//getReplySender(fcpID).send(handleGetIdentity(null, null, identityID));
     }
     
     public void sendTrustChangedNotification(String fcpID, final String trusterID, final String trusteeID) throws DuplicateTrustException, InvalidParameterException, NotTrustedException, UnknownIdentityException, PluginNotFoundException {
