@@ -2578,7 +2578,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		try {
 			identity = getIdentityByURI(requestURI);
-			if(logDEBUG) Logger.debug(this, "Tried to manually add an identity we already know, ignored.");
 			throw new InvalidParameterException("We already have this identity");
 		}
 		catch(UnknownIdentityException e) {
