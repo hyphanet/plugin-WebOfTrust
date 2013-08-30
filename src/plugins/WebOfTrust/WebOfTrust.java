@@ -2645,32 +2645,28 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	/* Client interface functions */
 	
 	public synchronized Identity addIdentity(String requestURI) throws MalformedURLException, InvalidParameterException {
-		Identity identity;
-		
 		try {
-			identity = getIdentityByURI(requestURI);
-			if(logDEBUG) Logger.debug(this, "Tried to manually add an identity we already know, ignored.");
+			getIdentityByURI(requestURI);
 			throw new InvalidParameterException("We already have this identity");
 		}
 		catch(UnknownIdentityException e) {
+			final Identity identity = new Identity(this, requestURI, null, false);
 			synchronized(Persistent.transactionLock(mDB)) {
 			try {
-			identity = new Identity(this, requestURI, null, false);
 			identity.storeWithoutCommit();
 			mSubscriptionManager.storeNewIdentityNotificationWithoutCommit(identity);
 			Persistent.checkedCommit(mDB, this);
 			if(logDEBUG) Logger.debug(this, "Created identity " + identity);
 			} catch(RuntimeException e2) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e2);
-				identity = null; // Will not be executed, needed to make the compiler happy. 
+				Persistent.checkedRollbackAndThrow(mDB, this, e2); 
 			}
 			}
 
 			// The identity hasn't received a trust value. Therefore, there is no reason to fetch it and we don't notify the IdentityFetcher.
 			// TODO: Document this function and the UI which uses is to warn the user that the identity won't be fetched without trust.
+			
+			return identity;
 		}
-		
-		return identity;
 	}
 	
 	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
