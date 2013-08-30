@@ -2914,6 +2914,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		synchronized(mPuzzleStore) {
 		synchronized(mFetcher) {
+		synchronized(mSubscriptionManager) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				long edition = 0;
@@ -3027,6 +3028,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					oldIdentity.deleteWithoutCommit();
 					
 					finishTrustListImport();
+					
+					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
 				} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
 					identity = new OwnIdentity(this, insertFreenetURI, null, false);
 					
@@ -3037,10 +3040,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// Store the new identity
 					identity.storeWithoutCommit();
 					initTrustTreeWithoutCommit(identity);
+					
+					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
 				}
 				
 				mFetcher.storeStartFetchCommandWithoutCommit(identity);
-				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(identity);
 
 				// This function messes with the trust graph manually so it is a good idea to check whether it is intact afterwards.
 				assert(computeAllScoresWithoutCommit());
@@ -3051,6 +3055,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				abortTrustListImport(e);
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
+		}
 		}
 		}
 		}
