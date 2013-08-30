@@ -2653,35 +2653,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			throw new InvalidParameterException("We already have this identity");
 		}
 		catch(UnknownIdentityException e) {
-			// TODO: The identity won't be fetched because it has not received a trust value yet.
-			// IMHO we should not support adding identities without giving them a trust value.
-			
 			synchronized(Persistent.transactionLock(mDB)) {
 			try {
 			identity = new Identity(this, requestURI, null, false);
 			identity.storeWithoutCommit();
 			mSubscriptionManager.storeNewIdentityNotificationWithoutCommit(identity);
 			Persistent.checkedCommit(mDB, this);
-			//storeWithoutCommit(identity);
 			if(logDEBUG) Logger.debug(this, "Created identity " + identity);
 			} catch(RuntimeException e2) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e2);
 				identity = null; // Will not be executed, needed to make the compiler happy. 
 			}
 			}
-			
-			//if(!shouldFetchIdentity(identity)) {
-			//	assert(false);
-			//	Logger.error(this, "shouldFetchIdentity() returned false for manually added identity!");
-			//}
-			
-			//mFetcher.storeStartFetchCommandWithoutCommit(identity);
-			//mDB.commit(); if(logDEBUG) Logger.debug(this, "COMMITED.");
-			//}
-			//catch(RuntimeException error) {
-			//	System.gc(); mDB.rollback(); Logger.error(this, "ROLLED BACK: addIdentity() failed", e);
-			//	throw error;
-			//}
+
+			// The identity hasn't received a trust value. Therefore, there is no reason to fetch it and we don't notify the IdentityFetcher.
+			// TODO: Document this function and the UI which uses is to warn the user that the identity won't be fetched without trust.
 		}
 		
 		return identity;
