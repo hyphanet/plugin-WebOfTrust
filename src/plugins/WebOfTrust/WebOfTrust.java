@@ -2084,8 +2084,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(WebOfTrust.this) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
-	 *     try { ... setTrustWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
+	 *     try { ... setTrustWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
 	 * }
 	 * }
 	 * 
@@ -2156,8 +2156,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(Persistent.transactionLock(mDB)) {
-	 *     try { ... removeTrustWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
+	 *     try { ... removeTrustWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
 	 * }
 	 * 
 	 * @param truster
@@ -2181,8 +2181,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(Persistent.transactionLock(mDB)) {
-	 *     try { ... setTrustWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
+	 *     try { ... setTrustWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
 	 * }
 	 * 
 	 */
@@ -2199,8 +2199,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(Persistent.transactionLock(mDB)) {
-	 *     try { ... initTrustTreeWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
+	 *     try { ... initTrustTreeWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
 	 * }
 	 *  
 	 * @throws DuplicateScoreException if there already is more than one Score for this identity (should never happen)
@@ -2393,8 +2393,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(Persistent.transactionLock(mDB)) {
-	 *     try { ... updateScoreWithoutCommit(...); mDB.commit(); }
-	 *     catch(RuntimeException e) { System.gc(); mDB.rollback(); throw e; }
+	 *     try { ... updateScoreWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e);; }
 	 * }
 	 * 
 	 */
