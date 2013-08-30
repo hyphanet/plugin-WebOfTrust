@@ -3180,9 +3180,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 
 	public synchronized void removeContext(String ownIdentityID, String context) throws UnknownIdentityException, InvalidParameterException {
-		final Identity identity = getOwnIdentityByID(ownIdentityID);
-		identity.removeContext(context);
-		identity.storeAndCommit();
+		final OwnIdentity identity = getOwnIdentityByID(ownIdentityID);
+		final OwnIdentity oldIdentity = identity.clone(); // For the SubscriptionManager
+		
+		synchronized(mSubscriptionManager) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				identity.removeContext(context);
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
+				identity.storeAndCommit();
+			} catch(RuntimeException e){
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		}
 		
 		if(logDEBUG) Logger.debug(this, "Removed context '" + context + "' from identity '" + identity.getNickname() + "'");
 	}
