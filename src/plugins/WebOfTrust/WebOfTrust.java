@@ -2654,7 +2654,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					identity.storeWithoutCommit();
-					mSubscriptionManager.storeNewIdentityNotificationWithoutCommit(identity);
+					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
 					Persistent.checkedCommit(mDB, this);
 					if(logDEBUG) Logger.debug(this, "Created identity " + identity);
 				} catch(RuntimeException e2) {
