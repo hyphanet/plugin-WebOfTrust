@@ -3090,6 +3090,34 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		removeTrust(truster, trustee);
 	}
 	
+	/**
+	 * Enables or disables the publishing of the trust list of an {@link OwnIdentity}.
+	 * The trust list contains all trust values which the OwnIdentity has assigned to other identities.
+	 * 
+	 * @see OwnIdentity#setPublishTrustList(boolean)
+	 * @param ownIdentityID The {@link Identity.IdentityID} of the {@link OwnIdentity} you want to modify.
+	 * @param publishTrustList Whether to publish the trust list. 
+	 * @throws UnknownIdentityException If there is no {@link OwnIdentity} with the given {@link Identity.IdentityID}.
+	 */
+	public synchronized void setPublishTrustList(final String ownIdentityID, final boolean publishTrustList) throws UnknownIdentityException {
+		final OwnIdentity identity = getOwnIdentityByID(ownIdentityID);
+		final OwnIdentity oldIdentity = identity.clone(); // For the SubscriptionManager
+		
+		synchronized(mSubscriptionManager) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				identity.setPublishTrustList(publishTrustList);
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
+				identity.storeAndCommit();
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		}
+		
+		Logger.normal(this, "setPublishTrustList to " + publishTrustList + " for " + identity);
+	}
+	
 	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {
 		final Identity identity = getOwnIdentityByID(ownIdentityID);
 		identity.addContext(newContext);
