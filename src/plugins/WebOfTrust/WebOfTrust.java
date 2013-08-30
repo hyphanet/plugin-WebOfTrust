@@ -2752,6 +2752,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		synchronized(mPuzzleStore) {
 		synchronized(mFetcher) {
+		synchronized(mSubscriptionManager) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			final OwnIdentity oldIdentity = getOwnIdentityByID(id);
 			
@@ -2888,6 +2889,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				oldIdentity.deleteWithoutCommit();
 
 				mFetcher.storeStartFetchCommandWithoutCommit(newIdentity);
+				
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, newIdentity);
 
 				// This function messes with the score graph manually so it is a good idea to check whether it is intact before and afterwards.
 				assert(computeAllScoresWithoutCommit());
@@ -2897,6 +2900,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
+		}
 		}
 		}
 		}
