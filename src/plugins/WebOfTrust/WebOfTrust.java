@@ -3202,12 +3202,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		return getIdentityByID(identityID).getProperty(property);
 	}
 
-	public synchronized void setProperty(String ownIdentityID, String property, String value)
-		throws UnknownIdentityException, InvalidParameterException {
+	public synchronized void setProperty(String ownIdentityID, String property, String value) throws UnknownIdentityException, InvalidParameterException {
+		final OwnIdentity identity = getOwnIdentityByID(ownIdentityID);
+		final OwnIdentity oldIdentity = identity.clone(); // For the SubscriptionManager
 		
-		Identity identity = getOwnIdentityByID(ownIdentityID);
-		identity.setProperty(property, value);
-		identity.storeAndCommit();
+		synchronized(mSubscriptionManager) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				identity.setProperty(property, value);
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
+				identity.storeAndCommit();
+			} catch(RuntimeException e){
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		}
 		
 		if(logDEBUG) Logger.debug(this, "Added property '" + property + "=" + value + "' to identity '" + identity.getNickname() + "'");
 	}
