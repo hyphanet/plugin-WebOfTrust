@@ -1385,7 +1385,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private synchronized void createSeedIdentities() {
 		for(String seedURI : SEED_IDENTITIES) {
 			Identity seed;
-			
+			synchronized(Persistent.transactionLock(mDB)) {
 			try { 
 				seed = getIdentityByURI(seedURI);
 				if(seed instanceof OwnIdentity) {
@@ -1417,6 +1417,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 			catch (Exception e) {
 				Persistent.checkedRollback(mDB, this, e);
+			}
 			}
 		}
 	}
