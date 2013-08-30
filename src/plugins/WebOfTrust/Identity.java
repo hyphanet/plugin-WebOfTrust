@@ -907,7 +907,7 @@ public class Identity extends Persistent implements Cloneable {
 	/**
 	 * Locks the WoT and the database and stores the identity.
 	 */
-	public final void storeAndCommit() {
+	protected final void storeAndCommit() {
 		synchronized(mWebOfTrust) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
