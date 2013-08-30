@@ -888,7 +888,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	/**
 	 * Recomputes the {@link Score} of all identities and checks whether the score which is stored in the database is correct.
 	 * Incorrect scores are corrected & stored.
+	 * 
 	 * The function is synchronized and does a transaction, no outer synchronization is needed. 
+	 * ATTENTION: It is NOT synchronized on the IntroductionPuzzleStore or the IdentityFetcher. They must NOT be running yet when using this function!
 	 */
 	protected synchronized void verifyAndCorrectStoredScores() {
 		Logger.normal(this, "Veriying all stored scores ...");
