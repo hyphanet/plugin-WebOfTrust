@@ -3222,9 +3222,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	public synchronized void removeProperty(String ownIdentityID, String property) throws UnknownIdentityException, InvalidParameterException {
-		final Identity identity = getOwnIdentityByID(ownIdentityID);
-		identity.removeProperty(property);
-		identity.storeAndCommit();
+		final OwnIdentity identity = getOwnIdentityByID(ownIdentityID);
+		final OwnIdentity oldIdentity = identity.clone(); // For the SubscriptionManager
+		
+		synchronized(mSubscriptionManager) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				identity.removeProperty(property);
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
+				identity.storeAndCommit();
+			} catch(RuntimeException e){
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		}
 		
 		if(logDEBUG) Logger.debug(this, "Removed property '" + property + "' from identity '" + identity.getNickname() + "'");
 	}
