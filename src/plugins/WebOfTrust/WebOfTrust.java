@@ -1415,45 +1415,49 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	private synchronized void createSeedIdentities() {
+		synchronized(mSubscriptionManager) {
 		for(String seedURI : SEED_IDENTITIES) {
-			Identity seed;
-			
+			synchronized(Persistent.transactionLock(mDB)) {
 			try { 
-				seed = getIdentityByURI(seedURI);
-				if(seed instanceof OwnIdentity) {
-					OwnIdentity ownSeed = (OwnIdentity)seed;
-					ownSeed.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
-					ownSeed.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY,
+				final Identity existingSeed = getIdentityByURI(seedURI);
+				final Identity oldExistingSeed = existingSeed.clone(); // For the SubscriptionManager
+				
+				if(existingSeed instanceof OwnIdentity) {
+					final OwnIdentity ownExistingSeed = (OwnIdentity)existingSeed;
+					ownExistingSeed.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
+					ownExistingSeed.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY,
 							Integer.toString(IntroductionServer.SEED_IDENTITY_PUZZLE_COUNT));
 					
-					ownSeed.storeAndCommit();
+					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldExistingSeed, ownExistingSeed);
+					ownExistingSeed.storeAndCommit();
 				}
 				else {
 					try {
-						seed.setEdition(new FreenetURI(seedURI).getEdition());
-						seed.storeAndCommit();
+						existingSeed.setEdition(new FreenetURI(seedURI).getEdition());
+						mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldExistingSeed, existingSeed);
+						existingSeed.storeAndCommit();
 					} catch(InvalidParameterException e) {
 						/* We already have the latest edition stored */
 					}
 				}
 			}
 			catch (UnknownIdentityException uie) {
-				synchronized(Persistent.transactionLock(mDB)) {
 				try {
-					seed = new Identity(this, seedURI, null, true);
-					// We have to explicitely set the edition number because the constructor only considers the given edition as a hint.
-					seed.setEdition(new FreenetURI(seedURI).getEdition());
-					seed.storeWithoutCommit();
-					mSubscriptionManager.storeNewIdentityNotificationWithoutCommit(seed);
+					final Identity newSeed = new Identity(this, seedURI, null, true);
+					// We have to explicitly set the edition number because the constructor only considers the given edition as a hint.
+					newSeed.setEdition(new FreenetURI(seedURI).getEdition());
+					newSeed.storeWithoutCommit();
+					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, newSeed);
 					Persistent.checkedCommit(mDB, this);
 				} catch (Exception e) {
 					Persistent.checkedRollback(mDB, this, e);					
-				}
 				}
 			}
 			catch (Exception e) {
 				Persistent.checkedRollback(mDB, this, e);
 			}
+			}
+		}
 		}
 	}
 
