@@ -203,6 +203,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			if(mConfig.getDatabaseFormatVersion() > WebOfTrust.DATABASE_FORMAT_VERSION)
 				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 			
+			mSubscriptionManager = new SubscriptionManager(this);
+			
 			mPuzzleStore = new IntroductionPuzzleStore(this);
 			
 			upgradeDB(); // Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher while this is executing.
@@ -224,8 +226,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				}
 				
 			};
-			
-			mSubscriptionManager = new SubscriptionManager(this);
 			
 			mInserter = new IdentityInserter(this);
 			mFetcher = new IdentityFetcher(this, getPluginRespirator());		
