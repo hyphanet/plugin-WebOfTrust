@@ -2656,7 +2656,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					identity.storeWithoutCommit();
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
 					Persistent.checkedCommit(mDB, this);
-					if(logDEBUG) Logger.debug(this, "Created identity " + identity);
 				} catch(RuntimeException e2) {
 					Persistent.checkedRollbackAndThrow(mDB, this, e2); 
 				}
@@ -2665,6 +2664,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			// The identity hasn't received a trust value. Therefore, there is no reason to fetch it and we don't notify the IdentityFetcher.
 			// TODO: Document this function and the UI which uses is to warn the user that the identity won't be fetched without trust.
 			
+			Logger.normal(this, "addIdentity(): " + identity);
 			return identity;
 		}
 	}
