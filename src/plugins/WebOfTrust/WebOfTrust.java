@@ -2682,6 +2682,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public synchronized OwnIdentity createOwnIdentity(FreenetURI insertURI, String nickName,
 			boolean publishTrustList, String context) throws MalformedURLException, InvalidParameterException {
 		
+		synchronized(mSubscriptionManager) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			OwnIdentity identity;
 			
@@ -2703,7 +2704,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				
 				try {
 					identity.storeWithoutCommit();
-					mSubscriptionManager.storeNewIdentityNotificationWithoutCommit(identity);
+					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
 					initTrustTreeWithoutCommit(identity);
 					
 					beginTrustListImport();
@@ -2733,6 +2734,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					throw e; // Satisfy the compiler
 				}
 			}
+		}
 		}
 	}
 	
