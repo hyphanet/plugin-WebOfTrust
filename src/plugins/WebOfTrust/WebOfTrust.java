@@ -3118,6 +3118,47 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		Logger.normal(this, "setPublishTrustList to " + publishTrustList + " for " + identity);
 	}
 	
+	/**
+	 * Enables or disables the publishing of {@link IntroductionPuzzle}s for an {@link OwnIdentity}.
+	 * 
+	 * If publishIntroductionPuzzles==true adds, if false removes:
+	 * - the context {@link IntroductionPuzzle.INTRODUCTION_CONTEXT}
+	 * - the property {@link IntroductionServer.PUZZLE_COUNT_PROPERTY} with the value {@link IntroductionServer.DEFAULT_PUZZLE_COUNT}
+	 * 
+	 * @param ownIdentityID The {@link Identity.IdentityID} of the {@link OwnIdentity} you want to modify.
+	 * @param publishIntroductionPuzzles Whether to publish introduction puzzles. 
+	 * @throws UnknownIdentityException If there is no identity with the given ownIdentityID
+	 * @throws InvalidParameterException If {@link OwnIdentity#doesPublishTrustList()} returns false on the selected identity: It doesn't make sense for an identity to allow introduction if it doesn't publish a trust list - the purpose of introduction is to add other identities to your trust list.
+	 */
+	public synchronized void setPublishIntroductionPuzzles(final String ownIdentityID, final boolean publishIntroductionPuzzles) throws UnknownIdentityException, InvalidParameterException {
+		final OwnIdentity identity = getOwnIdentityByID(ownIdentityID);
+		final OwnIdentity oldIdentity = identity.clone(); // For the SubscriptionManager
+		
+		if(!identity.doesPublishTrustList())
+			throw new InvalidParameterException("An identity must publish its trust list if it wants to publish introduction puzzles!");
+		
+		synchronized(mSubscriptionManager) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				if(publishIntroductionPuzzles) {
+					identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
+					identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
+				} else {
+					identity.removeContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
+					identity.removeProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY);
+				}
+				
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
+				identity.storeAndCommit();
+			} catch(RuntimeException e){
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		}
+		
+		Logger.normal(this, "Set publishIntroductionPuzzles to " + true + " for " + identity);		
+	}
+	
 	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {
 		final Identity identity = getOwnIdentityByID(ownIdentityID);
 		identity.addContext(newContext);
