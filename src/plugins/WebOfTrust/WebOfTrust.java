@@ -3160,9 +3160,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {
-		final Identity identity = getOwnIdentityByID(ownIdentityID);
-		identity.addContext(newContext);
-		identity.storeAndCommit();
+		final OwnIdentity identity = getOwnIdentityByID(ownIdentityID);
+		final OwnIdentity oldIdentity = identity.clone(); // For the SubscriptionManager
+		
+		synchronized(mSubscriptionManager) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				identity.addContext(newContext);
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
+				identity.storeAndCommit();
+			} catch(RuntimeException e){
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		}
+
 		
 		if(logDEBUG) Logger.debug(this, "Added context '" + newContext + "' to identity '" + identity.getNickname() + "'");
 	}
