@@ -32,35 +32,19 @@ public class EditOwnIdentityPage extends WebPageImpl {
 	public void make() {
 		synchronized(wot) {
 			if(request.isPartSet("Edit")) {
+				final boolean newPublishTrustList = request.getPartAsStringFailsafe("PublishTrustList", 4).equals("true");
+				final boolean newPublishPuzzles = request.getPartAsStringFailsafe("PublishPuzzles", 4).equals("true");
+				
 				try {
-					mIdentity.setPublishTrustList(request.isPartSet("PublishTrustList") && 
-						request.getPartAsString("PublishTrustList", 6).equals("true"));
-
-					if(mIdentity.doesPublishTrustList() && request.isPartSet("PublishPuzzles") && 
-							request.getPartAsString("PublishPuzzles", 6).equals("true")) {
-						
-						mIdentity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
-						mIdentity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
-					}
-					else {
-						mIdentity.removeContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
-						mIdentity.removeProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY);
-					}
-					
-					try {
-						mIdentity.throwIfNotStored();
-					} catch(RuntimeException e) {
-						throw new RuntimeException("Your identity was deleted already");
-					}
-					
-					mIdentity.storeAndCommit();
+					wot.setPublishTrustList(mIdentity.getID(), newPublishTrustList);
+					wot.setPublishIntroductionPuzzles(mIdentity.getID(), newPublishTrustList && newPublishPuzzles);
 					
 		            HTMLNode aBox = addContentBox(l10n().getString("EditOwnIdentityPage.SettingsSaved.Header"));
 		            aBox.addChild("p", l10n().getString("EditOwnIdentityPage.SettingsSaved.Text"));
 				}
 				catch(Exception e) {
 					addErrorBox(l10n().getString("EditOwnIdentityPage.SettingsSaveFailed"), e);
-				}	
+				}
 			}
 
 			HTMLNode box = addContentBox(l10n().getString("EditOwnIdentityPage.EditIdentityBox.Header", "nickname", mIdentity.getNickname()));
