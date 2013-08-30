@@ -207,7 +207,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			
 			mPuzzleStore = new IntroductionPuzzleStore(this);
 			
-			upgradeDB(); // Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher while this is executing.
+			// Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager while this is executing.
+			upgradeDB();
 			
 			mXMLTransformer = new XMLTransformer(this);
 			
@@ -549,8 +550,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	/**
-	 * ATTENTION: Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher while this is executing.
-	 * It doesn't synchronize on the IntroductionPuzzleStore and IdentityFetcher because it assumes that they are not being used yet.
+	 * ATTENTION: Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager while this is executing.
+	 * It doesn't synchronize on the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager because it assumes that they are not being used yet.
 	 * (I didn't upgrade this function to do the locking because it would be much work to test the changes for little benefit)  
 	 */
 	@SuppressWarnings("deprecation")
@@ -568,6 +569,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			//synchronized(this) { // Already done at function level
 			//synchronized(mPuzzleStore) { // Normally would be needed for deleteWithoutCommit(Identity) but IntroductionClient/Server are not running yet
 			//synchronized(mFetcher) { // Normally would be needed for deleteWithoutCommit(Identity) but the IdentityFetcher is not running yet
+			//synchronized(mSubscriptionManager) { // Normally would be needed for deleteWithoutCommit(Identity) but the SubscriptionManager is not running yet
 				synchronized(Persistent.transactionLock(mDB)) {
 					try {
 						Logger.normal(this, "Generating Score IDs...");
@@ -659,6 +661,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		Logger.normal(this, "Deleting ALL identities...");
 		synchronized(mPuzzleStore) {
 		synchronized(mFetcher) {
+		synchronized(mSubscriptionManager) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				beginTrustListImport();
@@ -670,6 +673,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
+		}
 		}
 		}
 		}
@@ -905,6 +909,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private synchronized void deleteDuplicateObjects() {
 		synchronized(mPuzzleStore) { // Needed for deleteIdentity()
 		synchronized(mFetcher) { // // Needed for deleteIdentity()
+		synchronized(mSubscriptionManager) { // Needed for deleteIdentity()
 		synchronized(Persistent.transactionLock(mDB)) {
 		try {
 			HashSet<String> deleted = new HashSet<String>();
@@ -933,9 +938,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		catch(RuntimeException e) {
 			Persistent.checkedRollback(mDB, this, e);
 		}
-		}
-		}
-		}
+		} // synchronized(Persistent.transactionLock(mDB)) {
+		} // synchronized(mSubscriptionManager) {
+		} // synchronized(mFetcher) { 
+		} // synchronized(mPuzzleStore) {
 
 		synchronized(Persistent.transactionLock(mDB)) {
 		try {
@@ -1758,7 +1764,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 *   If you call this function for ALL identities in a database, EVERYTHING should be deleted and the database SHOULD be empty.
 	 *   You then can check whether the database actually IS empty to test for leakage.
 	 * 
-	 * You have to lock the WebOfTrust, the IntroductionPuzzleStore and the IdentityFetcher before calling this function.
+	 * You have to lock the WebOfTrust, the IntroductionPuzzleStore, the IdentityFetcher and the SubscriptionManager before calling this function.
 	 */
 	private void deleteWithoutCommit(Identity identity) {
 		// We want to use beginTrustListImport, finishTrustListImport / abortTrustListImport.
@@ -1819,7 +1825,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			if(logDEBUG) Logger.debug(this, "Deleting the identity...");
 			identity.deleteWithoutCommit();
 
-			mSubscriptionManager.storeDeletedIdentityNotificationWithoutCommit(identity);
+			mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(identity, null);
 			
 			if(!trustListImportWasInProgress)
 				finishTrustListImport();
