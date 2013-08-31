@@ -2449,7 +2449,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * Updates all trust trees which are affected by the given modified score.
-	 * For understanding how score calculation works you should first read {@link computeAllScores
+	 * For understanding how score calculation works you should first read {@link #computeAllScoresWithoutCommit()}
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(this) {
