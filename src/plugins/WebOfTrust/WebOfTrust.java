@@ -2357,6 +2357,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * See {@link beginTrustListImport} for an explanation of the purpose of this function.
+	 * Aborts the import of a trust list import and undoes all changes by it.
 	 * 
 	 * ATTENTION: In opposite to finishTrustListImport(), which does not commit the transaction, this rolls back the transaction.
 	 * ATTENTION: Always take care to call {@link #beginTrustListImport()} for each call to this function.
@@ -2387,6 +2388,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * See {@link beginTrustListImport} for an explanation of the purpose of this function.
+	 * Aborts the import of a trust list import and undoes all changes by it.
 	 * 
 	 * ATTENTION: In opposite to finishTrustListImport(), which does not commit the transaction, this rolls back the transaction.
 	 * ATTENTION: Always take care to call {@link #beginTrustListImport()} for each call to this function.
