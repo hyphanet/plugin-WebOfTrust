@@ -2143,6 +2143,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 	
 	protected synchronized void removeTrust(OwnIdentity truster, Identity trustee) {
+		synchronized(mFetcher) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try  {
 				removeTrustWithoutCommit(truster, trustee);
@@ -2151,6 +2152,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
+		}
 		}
 	}
 	
