@@ -1155,9 +1155,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Therefore, the algorithm is very vulnerable to bugs since one wrong value will stay in the database
 	 * and affect many others. So it is useful to have this function.
 	 * 
+	 * Synchronization:
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(WebOfTrust.this) {
+	 * synchronized(mFetcher) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
+	 *     try { ... computeAllScoresWithoutCommit(); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
+	 * }}}
+	 * 
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
 	 */
-	protected synchronized boolean computeAllScoresWithoutCommit() {
+	protected boolean computeAllScoresWithoutCommit() {
 		if(logMINOR) Logger.minor(this, "Doing a full computation of all Scores...");
 		
 		final long beginTime = CurrentTimeUTC.getInMillis();
