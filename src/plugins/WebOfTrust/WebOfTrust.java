@@ -2324,10 +2324,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * Begins the import of a trust list. This sets a flag on this WoT which signals that the import of a trust list is in progress.
-	 * This speeds up setTrust/removeTrust as the score calculation is only performed when endTrustListImport is called.
+	 * This speeds up setTrust/removeTrust as the score calculation is only performed when {@link #finishTrustListImport()} is called.
 	 * 
-	 * You MUST synchronize on this WoT around beginTrustListImport, abortTrustListImport and finishTrustListImport!
-	 * You MUST create a database transaction by synchronizing on Persistent.transactionLock(db).
+	 * ATTENTION: Always take care to call one of {@link #finishTrustListImport()} / {@link #abortTrustListImport(Exception)} / {@link #abortTrustListImport(Exception, LogLevel)}
+	 * for each call to this function.
+	 * 
+	 * Synchronization:
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with:
+	 * <code>
+	 * synchronized(WebOfTrust.this) {
+	 * synchronized(mFetcher) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
+	 *     try { beginTrustListImport(); ... finishTrustListImport(); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { abortTrustListImport(e); // Does checkedRollback() for you already }
+	 * }}}
+	 * </code>
 	 */
 	protected void beginTrustListImport() {
 		if(logMINOR) Logger.minor(this, "beginTrustListImport()");
