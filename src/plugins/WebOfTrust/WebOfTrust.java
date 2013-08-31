@@ -2358,7 +2358,19 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	/**
 	 * See {@link beginTrustListImport} for an explanation of the purpose of this function.
 	 * 
-	 * Aborts the import of a trust list and rolls back the current transaction.
+	 * ATTENTION: In opposite to finishTrustListImport(), which does not commit the transaction, this rolls back the transaction.
+	 * ATTENTION: Always take care to call {@link #beginTrustListImport()} for each call to this function.
+	 * 
+	 * Synchronization:
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with:
+	 * <code>
+	 * synchronized(WebOfTrust.this) {
+	 * synchronized(mFetcher) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
+	 *     try { beginTrustListImport(); ... finishTrustListImport(); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { abortTrustListImport(e, Logger.LogLevel.ERROR); // Does checkedRollback() for you already }
+	 * }}}
+	 * </code>
 	 * 
 	 * @param e The exception which triggered the abort. Will be logged to the Freenet log file.
 	 * @param logLevel The {@link LogLevel} to use when logging the abort to the Freenet log file.
