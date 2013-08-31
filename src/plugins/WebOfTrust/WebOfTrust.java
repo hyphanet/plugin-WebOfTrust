@@ -646,7 +646,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				finishTrustListImport();
 				Persistent.checkedCommit(mDB, this);
 			} catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
+				abortTrustListImport(e);
+				// abortTrustListImport() does rollback already
+				// Persistent.checkedRollbackAndThrow(mDB, this, e);
+				throw e;
 			}
 		}
 		}
