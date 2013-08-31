@@ -917,6 +917,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		}
 
+		// synchronized(this) { // For removeTrustWithoutCommit. Done at function level already.
+		synchronized(mFetcher) { // For removeTrustWithoutCommit
 		synchronized(Persistent.transactionLock(mDB)) {
 		try {
 		if(logDEBUG) Logger.debug(this, "Searching for duplicate Trust objects ...");
@@ -946,7 +948,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		catch(RuntimeException e) {
 			Persistent.checkedRollback(mDB, this, e);
 		}
-		}
+		} // synchronized(Persistent.transactionLock(mDB)) {
+		} // synchronized(mFetcher) { 
 		
 		/* TODO: Also delete duplicate score */
 	}
