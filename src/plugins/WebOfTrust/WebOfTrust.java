@@ -2158,15 +2158,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Deletes a trust object.
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(this) {
+	 * synchronized(mFetcher) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... removeTrustWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
 	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
-	 * }
+	 * }}}
 	 * 
 	 * @param truster
 	 * @param trustee
 	 */
-	protected synchronized void removeTrustWithoutCommit(OwnIdentity truster, Identity trustee) {
+	protected void removeTrustWithoutCommit(OwnIdentity truster, Identity trustee) {
 			try {
 				try {
 					removeTrustWithoutCommit(getTrust(truster, trustee));
