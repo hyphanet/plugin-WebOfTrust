@@ -2127,10 +2127,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * Only for being used by WoT internally and by unit tests!
+	 * 
+	 * You have to synchronize on this WebOfTrust while querying the parameter identities and calling this function.
 	 */
-	synchronized void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
+	void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
+		synchronized(mFetcher) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				setTrustWithoutCommit(truster, trustee, newValue, newComment);
@@ -2139,6 +2142,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
+		}
 		}
 	}
 	
