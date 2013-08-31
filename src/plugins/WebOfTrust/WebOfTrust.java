@@ -1160,12 +1160,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * Synchronization:
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * <code>
 	 * synchronized(WebOfTrust.this) {
 	 * synchronized(mFetcher) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... computeAllScoresWithoutCommit(); Persistent.checkedCommit(mDB, this); }
 	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
 	 * }}}
+	 * </code>
 	 * 
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
 	 */
