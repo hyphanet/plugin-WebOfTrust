@@ -2169,17 +2169,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @param trustee
 	 */
 	protected void removeTrustWithoutCommit(OwnIdentity truster, Identity trustee) {
+		try {
 			try {
-				try {
-					removeTrustWithoutCommit(getTrust(truster, trustee));
-				} catch (NotTrustedException e) {
-					Logger.error(this, "Cannot remove trust - there is none - from " + truster.getNickname() + " to "
-						+ trustee.getNickname());
-				} 
-			}
-			catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
-			}
+				removeTrustWithoutCommit(getTrust(truster, trustee));
+			} catch (NotTrustedException e) {
+				Logger.error(this, "Cannot remove trust - there is none - from " + truster.getNickname() + " to " + trustee.getNickname());
+			} 
+		}
+		catch(RuntimeException e) {
+			Persistent.checkedRollbackAndThrow(mDB, this, e);
+		}
 	}
 	
 	/**
