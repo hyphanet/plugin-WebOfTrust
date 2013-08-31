@@ -2412,10 +2412,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * See {@link beginTrustListImport} for an explanation of the purpose of this function.
+	 * Finishes the import of the current trust list and performs score computation. 
 	 * 
-	 * Finishes the import of the current trust list and clears the "trust list 
+	 * ATTENTION: In opposite to abortTrustListImport(), which rolls back the transaction, this does NOT commit the transaction. You have to do it!
+	 * ATTENTION: Always take care to call {@link #beginTrustListImport()} for each call to this function.
 	 * 
-	 * Does NOT commit the transaction, you must do this.
+	 * Synchronization:
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with:
+	 * <code>
+	 * synchronized(WebOfTrust.this) {
+	 * synchronized(mFetcher) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
+	 *     try { beginTrustListImport(); ... finishTrustListImport(); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { abortTrustListImport(e); // Does checkedRollback() for you already }
+	 * }}}
+	 * </code>
 	 */
 	protected void finishTrustListImport() {
 		if(logMINOR) Logger.minor(this, "finishTrustListImport()");
