@@ -2814,6 +2814,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 		}
 		}
+		}
 	}
 	
 	/**
@@ -3141,6 +3142,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					Persistent.checkedRollbackAndThrow(mDB, this, e);
 				}
 			}
+		}
 		}
 		}
 		}
