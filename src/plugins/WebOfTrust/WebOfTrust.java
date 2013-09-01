@@ -867,10 +867,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Incorrect scores are corrected & stored.
 	 * 
 	 * The function is synchronized and does a transaction, no outer synchronization is needed. 
-	 * ATTENTION: It is NOT synchronized on the IntroductionPuzzleStore or the IdentityFetcher. They must NOT be running yet when using this function!
 	 */
 	protected synchronized void verifyAndCorrectStoredScores() {
 		Logger.normal(this, "Veriying all stored scores ...");
+		synchronized(mFetcher) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				computeAllScoresWithoutCommit();
@@ -878,6 +878,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
+		}
 		}
 		Logger.normal(this, "Veriying all stored scores finished.");
 	}
