@@ -915,7 +915,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 */
 	private synchronized void deleteDuplicateObjects() {
 		synchronized(mPuzzleStore) { // Needed for deleteWithoutCommit(Identity)
-		synchronized(mFetcher) { // // Needed for deleteWithoutCommit(Identity)
+		synchronized(mFetcher) { // Needed for deleteWithoutCommit(Identity)
 		synchronized(mSubscriptionManager) { // Needed for deleteWithoutCommit(Identity)
 		synchronized(Persistent.transactionLock(mDB)) {
 		try {
