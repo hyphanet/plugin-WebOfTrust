@@ -671,7 +671,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				finishTrustListImport();
 				Persistent.checkedCommit(mDB, this);
 			} catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
+				abortTrustListImport(e);
+				// abortTrustListImport() does rollback already
+				// Persistent.checkedRollbackAndThrow(mDB, this, e);
+				throw e;
 			}
 		}
 		}
@@ -890,10 +893,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Incorrect scores are corrected & stored.
 	 * 
 	 * The function is synchronized and does a transaction, no outer synchronization is needed. 
-	 * ATTENTION: It is NOT synchronized on the IntroductionPuzzleStore, the IdentityFetcher or the SubscriptionManager. They must NOT be running yet when using this function!
+	 * ATTENTION: It is NOT synchronized on the SubscriptionManager. It must NOT be running yet when using this function!
 	 */
 	protected synchronized void verifyAndCorrectStoredScores() {
 		Logger.normal(this, "Veriying all stored scores ...");
+		synchronized(mFetcher) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				computeAllScoresWithoutCommit();
@@ -901,6 +905,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
+		}
 		}
 		Logger.normal(this, "Veriying all stored scores finished.");
 	}
@@ -945,6 +950,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		} // synchronized(mFetcher) { 
 		} // synchronized(mPuzzleStore) {
 
+		// synchronized(this) { // For computeAllScoresWithoutCommit() / removeTrustWithoutCommit(). Done at function level already.
+		synchronized(mFetcher) { // For computeAllScoresWithoutCommit() / removeTrustWithoutCommit
 		synchronized(Persistent.transactionLock(mDB)) {
 		try {
 		if(logDEBUG) Logger.debug(this, "Searching for duplicate Trust objects ...");
@@ -974,7 +981,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		catch(RuntimeException e) {
 			Persistent.checkedRollback(mDB, this, e);
 		}
-		}
+		} // synchronized(Persistent.transactionLock(mDB)) {
+		} // synchronized(mFetcher) { 
 		
 		/* TODO: Also delete duplicate score */
 	}
@@ -983,6 +991,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Debug function for deleting trusts or scores of which one of the involved partners is missing.
 	 */
 	private synchronized void deleteOrphanObjects() {
+		// synchronized(this) { // For computeAllScoresWithoutCommit(). Done at function level already.
+		synchronized(mFetcher) { // For computeAllScoresWithoutCommit()
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				boolean orphanTrustFound = false;
@@ -1014,7 +1024,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				Persistent.checkedRollback(mDB, this, e); 
 			}
 		}
-		
+		}
+
+		// synchronized(this) { // For computeAllScoresWithoutCommit(). Done at function level already.
+		synchronized(mFetcher) { // For computeAllScoresWithoutCommit()
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				boolean orphanScoresFound = false;
@@ -1045,6 +1058,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			catch(Exception e) {
 				Persistent.checkedRollback(mDB, this, e);
 			}
+		}
 		}
 	}
 	
@@ -1182,9 +1196,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Therefore, the algorithm is very vulnerable to bugs since one wrong value will stay in the database
 	 * and affect many others. So it is useful to have this function.
 	 * 
+	 * Synchronization:
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * <code>
+	 * synchronized(WebOfTrust.this) {
+	 * synchronized(mFetcher) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
+	 *     try { ... computeAllScoresWithoutCommit(); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
+	 * }}}
+	 * </code>
+	 * 
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
 	 */
-	protected synchronized boolean computeAllScoresWithoutCommit() {
+	protected boolean computeAllScoresWithoutCommit() {
 		if(logMINOR) Logger.minor(this, "Doing a full computation of all Scores...");
 		
 		final long beginTime = CurrentTimeUTC.getInMillis();
@@ -2143,11 +2168,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(WebOfTrust.this) {
+	 * synchronized(mFetcher) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... setTrustWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
 	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
-	 * }
-	 * }
+	 * }}}
 	 * 
 	 * @param truster The Identity that gives the trust
 	 * @param trustee The Identity that receives the trust
@@ -2190,10 +2215,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * Only for being used by WoT internally and by unit tests!
+	 * 
+	 * You have to synchronize on this WebOfTrust while querying the parameter identities and calling this function.
 	 */
-	synchronized void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
+	void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
+		synchronized(mFetcher) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				setTrustWithoutCommit(truster, trustee, newValue, newComment);
@@ -2203,17 +2231,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
-	}
-	
-	protected synchronized void removeTrust(OwnIdentity truster, Identity trustee) {
-		synchronized(Persistent.transactionLock(mDB)) {
-			try  {
-				removeTrustWithoutCommit(truster, trustee);
-				Persistent.checkedCommit(mDB, this);
-			}
-			catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
-			}
 		}
 	}
 	
@@ -2221,38 +2238,41 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Deletes a trust object.
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(this) {
+	 * synchronized(mFetcher) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... removeTrustWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
 	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
-	 * }
+	 * }}}
 	 * 
 	 * @param truster
 	 * @param trustee
 	 */
-	protected synchronized void removeTrustWithoutCommit(OwnIdentity truster, Identity trustee) {
+	protected void removeTrustWithoutCommit(OwnIdentity truster, Identity trustee) {
+		try {
 			try {
-				try {
-					removeTrustWithoutCommit(getTrust(truster, trustee));
-				} catch (NotTrustedException e) {
-					Logger.error(this, "Cannot remove trust - there is none - from " + truster.getNickname() + " to "
-						+ trustee.getNickname());
-				} 
-			}
-			catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
-			}
+				removeTrustWithoutCommit(getTrust(truster, trustee));
+			} catch (NotTrustedException e) {
+				Logger.error(this, "Cannot remove trust - there is none - from " + truster.getNickname() + " to " + trustee.getNickname());
+			} 
+		}
+		catch(RuntimeException e) {
+			Persistent.checkedRollbackAndThrow(mDB, this, e);
+		}
 	}
 	
 	/**
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(this) {
+	 * synchronized(mFetcher) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... setTrustWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
 	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
-	 * }
+	 * }}}
 	 * 
 	 */
-	protected synchronized void removeTrustWithoutCommit(Trust trust) {
+	protected void removeTrustWithoutCommit(Trust trust) {
 		trust.deleteWithoutCommit();
 		mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(trust, null);
 		updateScoresWithoutCommit(trust, null);
@@ -2380,10 +2400,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * Begins the import of a trust list. This sets a flag on this WoT which signals that the import of a trust list is in progress.
-	 * This speeds up setTrust/removeTrust as the score calculation is only performed when endTrustListImport is called.
+	 * This speeds up setTrust/removeTrust as the score calculation is only performed when {@link #finishTrustListImport()} is called.
 	 * 
-	 * You MUST synchronize on this WoT around beginTrustListImport, abortTrustListImport and finishTrustListImport!
-	 * You MUST create a database transaction by synchronizing on Persistent.transactionLock(db).
+	 * ATTENTION: Always take care to call one of {@link #finishTrustListImport()} / {@link #abortTrustListImport(Exception)} / {@link #abortTrustListImport(Exception, LogLevel)}
+	 * for each call to this function.
+	 * 
+	 * Synchronization:
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with:
+	 * <code>
+	 * synchronized(WebOfTrust.this) {
+	 * synchronized(mFetcher) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
+	 *     try { beginTrustListImport(); ... finishTrustListImport(); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { abortTrustListImport(e); // Does checkedRollback() for you already }
+	 * }}}
+	 * </code>
 	 */
 	protected void beginTrustListImport() {
 		if(logMINOR) Logger.minor(this, "beginTrustListImport()");
@@ -2402,8 +2433,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * See {@link beginTrustListImport} for an explanation of the purpose of this function.
+	 * Aborts the import of a trust list import and undoes all changes by it.
 	 * 
-	 * Aborts the import of a trust list and rolls back the current transaction.
+	 * ATTENTION: In opposite to finishTrustListImport(), which does not commit the transaction, this rolls back the transaction.
+	 * ATTENTION: Always take care to call {@link #beginTrustListImport()} for each call to this function.
+	 * 
+	 * Synchronization:
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with:
+	 * <code>
+	 * synchronized(WebOfTrust.this) {
+	 * synchronized(mFetcher) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
+	 *     try { beginTrustListImport(); ... finishTrustListImport(); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { abortTrustListImport(e, Logger.LogLevel.ERROR); // Does checkedRollback() for you already }
+	 * }}}
+	 * </code>
 	 * 
 	 * @param e The exception which triggered the abort. Will be logged to the Freenet log file.
 	 * @param logLevel The {@link LogLevel} to use when logging the abort to the Freenet log file.
@@ -2420,8 +2464,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * See {@link beginTrustListImport} for an explanation of the purpose of this function.
+	 * Aborts the import of a trust list import and undoes all changes by it.
 	 * 
-	 * Aborts the import of a trust list and rolls back the current transaction.
+	 * ATTENTION: In opposite to finishTrustListImport(), which does not commit the transaction, this rolls back the transaction.
+	 * ATTENTION: Always take care to call {@link #beginTrustListImport()} for each call to this function.
+	 * 
+	 * Synchronization:
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with:
+	 * <code>
+	 * synchronized(WebOfTrust.this) {
+	 * synchronized(mFetcher) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
+	 *     try { beginTrustListImport(); ... finishTrustListImport(); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { abortTrustListImport(e); // Does checkedRollback() for you already }
+	 * }}}
+	 * </code>
 	 * 
 	 * @param e The exception which triggered the abort. Will be logged to the Freenet log file with log level {@link LogLevel.ERROR}
 	 */
@@ -2431,10 +2488,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * See {@link beginTrustListImport} for an explanation of the purpose of this function.
+	 * Finishes the import of the current trust list and performs score computation. 
 	 * 
-	 * Finishes the import of the current trust list and clears the "trust list 
+	 * ATTENTION: In opposite to abortTrustListImport(), which rolls back the transaction, this does NOT commit the transaction. You have to do it!
+	 * ATTENTION: Always take care to call {@link #beginTrustListImport()} for each call to this function.
 	 * 
-	 * Does NOT commit the transaction, you must do this.
+	 * Synchronization:
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with:
+	 * <code>
+	 * synchronized(WebOfTrust.this) {
+	 * synchronized(mFetcher) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
+	 *     try { beginTrustListImport(); ... finishTrustListImport(); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { abortTrustListImport(e); // Does checkedRollback() for you already }
+	 * }}}
+	 * </code>
 	 */
 	protected void finishTrustListImport() {
 		if(logMINOR) Logger.minor(this, "finishTrustListImport()");
@@ -2457,16 +2525,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/**
 	 * Updates all trust trees which are affected by the given modified score.
-	 * For understanding how score calculation works you should first read {@link computeAllScores
+	 * For understanding how score calculation works you should first read {@link #computeAllScoresWithoutCommit()}
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(this) {
+	 * synchronized(mFetcher) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... updateScoreWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
 	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e);; }
-	 * }
-	 * 
+	 * }}}
 	 */
-	private synchronized void updateScoresWithoutCommit(final Trust oldTrust, final Trust newTrust) {
+	private void updateScoresWithoutCommit(final Trust oldTrust, final Trust newTrust) {
 		if(logMINOR) Logger.minor(this, "Doing an incremental computation of all Scores...");
 		
 		final long beginTime = CurrentTimeUTC.getInMillis();
@@ -2690,6 +2759,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public synchronized OwnIdentity createOwnIdentity(FreenetURI insertURI, String nickName,
 			boolean publishTrustList, String context) throws MalformedURLException, InvalidParameterException {
 		
+		synchronized(mFetcher) { // For beginTrustListImport()/setTrustWithoutCommit()
 		synchronized(mSubscriptionManager) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			OwnIdentity identity;
@@ -3064,10 +3134,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
-				abortTrustListImport(e);
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
+				if(mTrustListImportInProgress) { // We don't execute beginTrustListImport() in all code paths of this function
+					abortTrustListImport(e); // Does rollback for us
+					throw e;
+				} else {
+					Persistent.checkedRollbackAndThrow(mDB, this, e);
+				}
 			}
-		}
 		}
 		}
 		}
@@ -3088,7 +3161,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		final OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
 		final Identity trustee = getIdentityByID(trusteeID);
 
-		removeTrust(truster, trustee);
+		synchronized(mFetcher) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try  {
+				removeTrustWithoutCommit(truster, trustee);
+				Persistent.checkedCommit(mDB, this);
+			}
+			catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		}
 	}
 	
 	/**
