@@ -961,6 +961,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Debug function for deleting trusts or scores of which one of the involved partners is missing.
 	 */
 	private synchronized void deleteOrphanObjects() {
+		// synchronized(this) { // For computeAllScoresWithoutCommit(). Done at function level already.
+		synchronized(mFetcher) { // For computeAllScoresWithoutCommit()
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				boolean orphanTrustFound = false;
@@ -991,7 +993,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				Persistent.checkedRollback(mDB, this, e); 
 			}
 		}
-		
+		}
+
+		// synchronized(this) { // For computeAllScoresWithoutCommit(). Done at function level already.
+		synchronized(mFetcher) { // For computeAllScoresWithoutCommit()
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				boolean orphanScoresFound = false;
@@ -1021,6 +1026,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			catch(Exception e) {
 				Persistent.checkedRollback(mDB, this, e);
 			}
+		}
 		}
 	}
 	
