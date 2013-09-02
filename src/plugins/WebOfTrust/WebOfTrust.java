@@ -781,6 +781,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			// in the target database while the source is still open. This did not work: Identity objects disappeared magically, resulting
 			// in Trust objects .storeWithoutCommit throwing "Mandatory object not found" on their associated identities.
 			
+			// FIXME: Clone the Configuration object
+			
 			final HashSet<Identity> allIdentities = new HashSet<Identity>(original.getAllIdentities());
 			final HashSet<Trust> allTrusts = new HashSet<Trust>(original.getAllTrusts());
 			final HashSet<Score> allScores = new HashSet<Score>(original.getAllScores());
