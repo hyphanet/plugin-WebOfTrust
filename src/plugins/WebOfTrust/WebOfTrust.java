@@ -2229,14 +2229,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * The score will have a rank of 0, a capacity of 100 (= 100 percent) and a score value of Integer.MAX_VALUE.
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(WebOfTrust.this) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... initTrustTreeWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
 	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
-	 * }
+	 * }}
 	 *  
 	 * @throws DuplicateScoreException if there already is more than one Score for this identity (should never happen)
 	 */
-	private synchronized void initTrustTreeWithoutCommit(OwnIdentity identity) throws DuplicateScoreException {
+	private void initTrustTreeWithoutCommit(OwnIdentity identity) throws DuplicateScoreException {
 		try {
 			getScore(identity, identity);
 			Logger.error(this, "initTrustTreeWithoutCommit called even though there is already one for " + identity);
