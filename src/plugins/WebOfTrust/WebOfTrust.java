@@ -1145,6 +1145,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			return 100;
 		 
 		try {
+			// FIXME: The comment "Security check, if rank computation breaks this will hit." below sounds like we don't actually 
+			// need to execute this because the callers probably do it implicitly. Check if this is true and if yes, convert it to an assert.
 			if(getTrust(truster, trustee).getValue() <= 0) { // Security check, if rank computation breaks this will hit.
 				assert(rank == Integer.MAX_VALUE);
 				return 0;
