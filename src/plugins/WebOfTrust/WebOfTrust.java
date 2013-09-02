@@ -1458,7 +1458,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	}
 
 	public void terminate() {
-		if(logDEBUG) Logger.debug(this, "WoT plugin terminating ...");
+		Logger.normal(this, "Web Of Trust plugin terminating ...");
 		
 		/* We use single try/catch blocks so that failure of termination of one service does not prevent termination of the others */
 		try {
@@ -1519,7 +1519,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			Logger.error(this, "Error during termination.", e);
 		}
 
-		if(logDEBUG) Logger.debug(this, "WoT plugin terminated.");
+		Logger.normal(this, "Web Of Trust plugin terminated.");
 	}
 
 	/**
