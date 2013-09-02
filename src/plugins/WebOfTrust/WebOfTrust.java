@@ -1140,7 +1140,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @param rank The rank of the identity. The rank is the distance in trust steps from the OwnIdentity which views the web of trust,
 	 * 				- its rank is 0, the rank of its trustees is 1 and so on. Must be -1 if the truster has no rank in the tree owners view.
 	 */
-	protected int computeCapacity(OwnIdentity truster, Identity trustee, int rank) {
+	private int computeCapacity(OwnIdentity truster, Identity trustee, int rank) {
 		if(truster == trustee)
 			return 100;
 		 
