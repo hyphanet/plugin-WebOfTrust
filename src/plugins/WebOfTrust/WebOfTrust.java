@@ -2247,6 +2247,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		throws InvalidParameterException {
 		
 		synchronized(mFetcher) {
+		synchronized(mSubscriptionManager) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				setTrustWithoutCommit(truster, trustee, newValue, newComment);
@@ -2255,6 +2256,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
+		}
 		}
 		}
 	}
