@@ -499,9 +499,9 @@ public final class XMLTransformer {
 			} // synchronized(Persistent.transactionLock(db))
 				
 			Logger.normal(this, "Finished XML import for " + identity);
-		} // synchronized(mWoT)
-		} // synchronized(mWoT.getIdentityFetcher())
 		} // synchronized(mSubscriptionManager)
+		} // synchronized(mWoT.getIdentityFetcher())
+		} // synchronized(mWoT)
 		} // try
 		catch(Exception e) {
 			synchronized(mWoT) {
