@@ -698,6 +698,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		// Take locks of all objects which deal with persistent stuff because we act upon ALL persistent objects.
 		synchronized(mPuzzleStore) {
 		synchronized(mFetcher) {
+		synchronized(mSubscriptionManager) {
 		deleteDuplicateObjects();
 		deleteOrphanObjects();
 		
@@ -726,6 +727,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		Logger.debug(this, "Database integrity test finished.");
 		
 		return result;
+		}
 		}
 		}
 	}
