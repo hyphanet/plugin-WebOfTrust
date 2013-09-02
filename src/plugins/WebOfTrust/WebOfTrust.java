@@ -2290,10 +2290,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(this) {
 	 * synchronized(mFetcher) {
+	 * synchronized(mSubscriptionManager) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... setTrustWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
 	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
-	 * }}}
+	 * }}}}
 	 * 
 	 */
 	protected void removeTrustWithoutCommit(Trust trust) {
