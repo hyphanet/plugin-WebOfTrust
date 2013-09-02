@@ -2468,10 +2468,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * <code>
 	 * synchronized(WebOfTrust.this) {
 	 * synchronized(mFetcher) {
+	 * synchronized(mSubscriptionManager) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { beginTrustListImport(); ... finishTrustListImport(); Persistent.checkedCommit(mDB, this); }
 	 *     catch(RuntimeException e) { abortTrustListImport(e, Logger.LogLevel.ERROR); // Does checkedRollback() for you already }
-	 * }}}
+	 * }}}}
 	 * </code>
 	 * 
 	 * @param e The exception which triggered the abort. Will be logged to the Freenet log file.
