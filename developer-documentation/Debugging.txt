@@ -22,3 +22,6 @@ Those are:
 	  should show up in the log files. You can also set a breakpoint on those exceptions in Eclipse.
   Usually you should do an assertion test run whenever you modify the score computation algorithms since they are heavily
   guarded by assertions.
+  
+Other stuff useful for developers:
+- The constant "WebOfTrust.FAST_DEBUG_MODE" which reduces the execution delays of the IntroductionServer / IntroductionClient.
