@@ -1964,7 +1964,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Gets the best capacity this identity has in any trust tree.
 	 * @throws NotInTrustTreeException If the identity is not in any trust tree. Can be interpreted as capacity 0.
 	 */
-	public int getBestCapacity(final Identity identity) throws NotInTrustTreeException {
+	public synchronized int getBestCapacity(final Identity identity) throws NotInTrustTreeException {
 		int bestCapacity = 0;
 		final ObjectSet<Score> scores = getScores(identity);
 		
