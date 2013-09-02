@@ -1916,7 +1916,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Checks whether the given identity should be downloaded. 
 	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity.
 	 */
-	public boolean shouldFetchIdentity(final Identity identity) {
+	private boolean shouldFetchIdentity(final Identity identity) {
 		if(identity instanceof OwnIdentity)
 			return true;
 		
