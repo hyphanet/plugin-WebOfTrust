@@ -2792,7 +2792,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			boolean publishTrustList, String context) throws MalformedURLException, InvalidParameterException {
 		
 		synchronized(mFetcher) { // For beginTrustListImport()/setTrustWithoutCommit()
-		synchronized(mSubscriptionManager) {
+		synchronized(mSubscriptionManager) { // For beginTrustListImport()/setTrustWithoutCommit()
 		synchronized(Persistent.transactionLock(mDB)) {
 			OwnIdentity identity;
 			
