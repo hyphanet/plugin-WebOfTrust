@@ -829,6 +829,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				score.mDB = null;
 			}
 			
+			// We don't clone:
+			// - Introduction puzzles because we can just download new ones
+			// - IdentityFetcher commands because they aren't persistent across startups anyway
+			// - Subscription and Notification objects because subscriptions are also not persistent across startups.
+			
 			original.terminate();
 			original = null;
 			System.gc();
