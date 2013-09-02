@@ -1010,6 +1010,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private synchronized void deleteOrphanObjects() {
 		// synchronized(this) { // For computeAllScoresWithoutCommit(). Done at function level already.
 		synchronized(mFetcher) { // For computeAllScoresWithoutCommit()
+		synchronized(mSubscriptionManager) { // For computeAllScoresWithoutCommit()
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				boolean orphanTrustFound = false;
@@ -1042,9 +1043,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 		}
 		}
+		}
 
 		// synchronized(this) { // For computeAllScoresWithoutCommit(). Done at function level already.
 		synchronized(mFetcher) { // For computeAllScoresWithoutCommit()
+		synchronized(mSubscriptionManager) { // For computeAllScoresWithoutCommit()
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				boolean orphanScoresFound = false;
@@ -1075,6 +1078,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			catch(Exception e) {
 				Persistent.checkedRollback(mDB, this, e);
 			}
+		}
 		}
 		}
 	}
