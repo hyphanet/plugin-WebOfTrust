@@ -2317,14 +2317,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * The score will have a rank of 0, a capacity of 100 (= 100 percent) and a score value of Integer.MAX_VALUE.
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * synchronized(WebOfTrust.this) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... initTrustTreeWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
 	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
-	 * }
+	 * }}
 	 *  
 	 * @throws DuplicateScoreException if there already is more than one Score for this identity (should never happen)
 	 */
-	private synchronized void initTrustTreeWithoutCommit(OwnIdentity identity) throws DuplicateScoreException {
+	private void initTrustTreeWithoutCommit(OwnIdentity identity) throws DuplicateScoreException {
 		try {
 			getScore(identity, identity);
 			Logger.error(this, "initTrustTreeWithoutCommit called even though there is already one for " + identity);
@@ -2340,12 +2341,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * Computes the trustee's Score value according to the trusts it has received and the capacity of its trusters in the specified
 	 * trust tree.
 	 * 
+	 * Synchronization:
+	 * You have to synchronize on this WebOfTrust object when using this function.
+	 * 
 	 * @param truster The OwnIdentity that owns the trust tree
 	 * @param trustee The identity for which the score shall be computed.
 	 * @return The new Score of the identity. Integer.MAX_VALUE if the trustee is equal to the truster.
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 */
-	private synchronized int computeScoreValue(OwnIdentity truster, Identity trustee) throws DuplicateScoreException {
+	private int computeScoreValue(OwnIdentity truster, Identity trustee) throws DuplicateScoreException {
 		if(trustee == truster)
 			return Integer.MAX_VALUE;
 		
