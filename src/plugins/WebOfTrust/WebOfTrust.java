@@ -1185,11 +1185,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @param rank The rank of the identity. The rank is the distance in trust steps from the OwnIdentity which views the web of trust,
 	 * 				- its rank is 0, the rank of its trustees is 1 and so on. Must be -1 if the truster has no rank in the tree owners view.
 	 */
-	protected int computeCapacity(OwnIdentity truster, Identity trustee, int rank) {
+	private int computeCapacity(OwnIdentity truster, Identity trustee, int rank) {
 		if(truster == trustee)
 			return 100;
 		 
 		try {
+			// FIXME: The comment "Security check, if rank computation breaks this will hit." below sounds like we don't actually 
+			// need to execute this because the callers probably do it implicitly. Check if this is true and if yes, convert it to an assert.
 			if(getTrust(truster, trustee).getValue() <= 0) { // Security check, if rank computation breaks this will hit.
 				assert(rank == Integer.MAX_VALUE);
 				return 0;
