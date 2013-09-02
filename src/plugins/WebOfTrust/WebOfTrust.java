@@ -1224,10 +1224,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * <code>
 	 * synchronized(WebOfTrust.this) {
 	 * synchronized(mFetcher) {
+	 * synchronized(mSubscriptionManager) {
 	 * synchronized(Persistent.transactionLock(mDB)) {
 	 *     try { ... computeAllScoresWithoutCommit(); Persistent.checkedCommit(mDB, this); }
 	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
-	 * }}}
+	 * }}}}
 	 * </code>
 	 * 
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
