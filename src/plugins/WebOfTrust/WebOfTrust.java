@@ -699,34 +699,34 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		synchronized(mPuzzleStore) {
 		synchronized(mFetcher) {
 		synchronized(mSubscriptionManager) {
-		deleteDuplicateObjects();
-		deleteOrphanObjects();
-		
-		Logger.debug(this, "Testing database integrity...");
-		
-		final Query q = mDB.query();
-		q.constrain(Persistent.class);
-		
-		boolean result = true;
-		
-		for(final Persistent p : new Persistent.InitializingObjectSet<Persistent>(this, q)) {
-			try {
-				p.startupDatabaseIntegrityTest();
-			} catch(Exception e) {
-				result = false;
-				
+			deleteDuplicateObjects();
+			deleteOrphanObjects();
+			
+			Logger.debug(this, "Testing database integrity...");
+			
+			final Query q = mDB.query();
+			q.constrain(Persistent.class);
+			
+			boolean result = true;
+			
+			for(final Persistent p : new Persistent.InitializingObjectSet<Persistent>(this, q)) {
 				try {
-					Logger.error(this, "Integrity test failed for " + p, e);
-				} catch(Exception e2) {
-					Logger.error(this, "Integrity test failed for Persistent of class " + p.getClass(), e);
-					Logger.error(this, "Exception thrown by toString() was:", e2);
+					p.startupDatabaseIntegrityTest();
+				} catch(Exception e) {
+					result = false;
+					
+					try {
+						Logger.error(this, "Integrity test failed for " + p, e);
+					} catch(Exception e2) {
+						Logger.error(this, "Integrity test failed for Persistent of class " + p.getClass(), e);
+						Logger.error(this, "Exception thrown by toString() was:", e2);
+					}
 				}
 			}
-		}
-		
-		Logger.debug(this, "Database integrity test finished.");
-		
-		return result;
+			
+			Logger.debug(this, "Database integrity test finished.");
+			
+			return result;
 		}
 		}
 		}
