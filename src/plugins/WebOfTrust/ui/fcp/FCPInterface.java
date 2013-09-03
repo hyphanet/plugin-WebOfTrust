@@ -908,6 +908,8 @@ public final class FCPInterface implements FredPluginFCP {
     	final String subscriptionID = getMandatoryParameter(params, "SubscriptionID");
     	mSubscriptionManager.unsubscribe(subscriptionID);
     	
+    	// FIXME: What about mClients?
+    	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Unubscribed");
     	sfs.putOverwrite("Subscription", subscriptionID);
