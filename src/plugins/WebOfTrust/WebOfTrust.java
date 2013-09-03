@@ -2969,6 +2969,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					final boolean oldShouldFetchTrustee = shouldFetchIdentity(trustee);
 					
 					oldScore.deleteWithoutCommit();
+					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, null);
 					
 					// If the OwnIdentity which we are converting was the only source of trust to the trustee
 					// of this Score value, the should-fetch state of the trustee might change to false.
