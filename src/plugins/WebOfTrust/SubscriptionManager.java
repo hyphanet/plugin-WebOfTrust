@@ -111,12 +111,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * An ID which associates this subscription with a FCP connection if the type is FCP.
 		 * 
-		 * FIXME: Rename to mFCP_ID because we don't use "key" anywhere. 
-		 * 
-		 * @see #getFCPKey()
+		 * @see #getFCP_ID()
 		 */
 		@IndexedField
-		private final String mFCPKey;
+		private final String mFCP_ID;
 
 		/**
 		 * Each {@link Notification} is given an index upon creation. The indexes ensure sequential processing.
@@ -134,7 +132,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		protected Subscription(Type myType, String fcpID) {
 			mID = UUID.randomUUID().toString();
 			mType = myType;
-			mFCPKey = fcpID;
+			mFCP_ID = fcpID;
 		}
 		
 		/**
@@ -150,7 +148,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			IfNull.thenThrow(mType, "mType");
 			
 			if(mType == Type.FCP)
-				IfNull.thenThrow(mFCPKey, "mFCPKey");
+				IfNull.thenThrow(mFCP_ID, "mFCP_ID");
 			
 			if(mNextNotificationIndex < 0)
 				throw new IllegalStateException("mNextNotificationIndex==" + mNextNotificationIndex);
@@ -183,14 +181,14 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/**
 		 * @return An ID which associates this subscription with a FCP connection if the type is FCP.
-		 * @see #mFCPKey
+		 * @see #mFCP_ID
 		 */
-		public final String getFCPKey() {
+		public final String getFCP_ID() {
 			if(getType() != Type.FCP)
 				throw new UnsupportedOperationException("Type is not FCP:" + getType());
 			
 			checkedActivate(1);
-			return mFCPKey;
+			return mFCP_ID;
 		}
 		
 		/**
@@ -645,7 +643,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static final class IdentitiesSubscription extends Subscription<IdentityChangedNotification> {
 
 		/**
-		 * @param fcpID See {@link Subscription#getFCPKey()}. 
+		 * @param fcpID See {@link Subscription#getFCP_ID()}. 
 		 */
 		protected IdentitiesSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
@@ -656,7 +654,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws Exception {
-			mWebOfTrust.getFCPInterface().sendAllIdentities(getFCPKey());
+			mWebOfTrust.getFCPInterface().sendAllIdentities(getFCP_ID());
 		}
 		
 		/**
@@ -664,7 +662,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		protected void notifySubscriberByFCP(IdentityChangedNotification notification) throws Exception {
-			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getFCPKey(), notification.getOldIdentityID(), notification.getNewIdentityID());
+			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getFCP_ID(), notification.getOldIdentityID(), notification.getNewIdentityID());
 		}
 
 		/**
@@ -689,7 +687,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static final class TrustsSubscription extends Subscription<TrustChangedNotification> {
 
 		/**
-		 * @param fcpID See {@link Subscription#getFCPKey()}. 
+		 * @param fcpID See {@link Subscription#getFCP_ID()}. 
 		 */
 		protected TrustsSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
@@ -700,7 +698,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws Exception {
-			mWebOfTrust.getFCPInterface().sendAllTrustValues(getFCPKey());
+			mWebOfTrust.getFCPInterface().sendAllTrustValues(getFCP_ID());
 		}
 		
 		/**
@@ -708,7 +706,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		protected void notifySubscriberByFCP(TrustChangedNotification notification) throws Exception {
-			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getFCPKey(), notification.getTrusterID(), notification.getTrusteeID());
+			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getFCP_ID(), notification.getTrusterID(), notification.getTrusteeID());
 		}
 
 		/**
@@ -733,7 +731,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static final class ScoresSubscription extends Subscription<ScoreChangedNotification> {
 
 		/**
-		 * @param fcpID See {@link Subscription#getFCPKey()}. 
+		 * @param fcpID See {@link Subscription#getFCP_ID()}. 
 		 */
 		protected ScoresSubscription(String fcpID) {
 			super(Subscription.Type.FCP, fcpID);
@@ -744,7 +742,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws Exception {
-			mWebOfTrust.getFCPInterface().sendAllScoreValues(getFCPKey());
+			mWebOfTrust.getFCPInterface().sendAllScoreValues(getFCP_ID());
 		}
 
 		/**
@@ -752,7 +750,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		protected void notifySubscriberByFCP(ScoreChangedNotification notification) throws Exception {
-			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getFCPKey(), notification.getTrusterID(), notification.getTrusteeID());
+			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getFCP_ID(), notification.getTrusterID(), notification.getTrusteeID());
 		}
 
 		/**
@@ -853,7 +851,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			case FCP:
 				try {
 					throw new SubscriptionExistsAlreadyException(
-								getSubscription((Class<? extends Subscription<? extends Notification>>)subscription.getClass(), subscription.getFCPKey())
+								getSubscription((Class<? extends Subscription<? extends Notification>>)subscription.getClass(), subscription.getFCP_ID())
 							);
 				} catch (UnknownSubscriptionException e) {
 					return;
@@ -1002,27 +1000,27 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * Gets a  {@link Subscription} which matches the given parameters:
 	 * - the given class of Subscription and thereby event {@link Notification}
-	 * - the given FCP identificator, see {@link Subscription#getFCPKey()}.
+	 * - the given FCP identificator, see {@link Subscription#getFCP_ID()}.
 	 * 
 	 * Only one {@link Subscription} which matches both of these can exist: Each FCP client can only subscribe once to a type of event.
 	 * 
 	 * Typically used by {@link #throwIfSimilarSubscriptionExists(Subscription)}.
 	 * 
 	 * @param clazz The class of the Subscription.
-	 * @param fcpKey The identificator of the FCP connection. See {@link Subscription#getFCPKey()}.
+	 * @param fcpID The identificator of the FCP connection. See {@link Subscription#getFCP_ID()}.
 	 * @return See description.
 	 * @throws UnknownSubscriptionException If no matching {@link Subscription} exists.
 	 */
-	private Subscription<? extends Notification> getSubscription(final Class<? extends Subscription<? extends Notification>> clazz, String fcpKey) throws UnknownSubscriptionException {
+	private Subscription<? extends Notification> getSubscription(final Class<? extends Subscription<? extends Notification>> clazz, String fcpID) throws UnknownSubscriptionException {
 		final Query q = mDB.query();
 		q.constrain(clazz);
-		q.descend("mFCPKey").constrain(fcpKey);		
+		q.descend("mFCP_ID").constrain(fcpID);		
 		ObjectSet<Subscription<? extends Notification>> result = new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
 		
 		switch(result.size()) {
 			case 1: return result.next();
-			case 0: throw new UnknownSubscriptionException(clazz.getSimpleName().toString() + " with fcpKey: " + fcpKey);
-			default: throw new DuplicateObjectException(clazz.getSimpleName().toString() + " with fcpKey:" + fcpKey);
+			case 0: throw new UnknownSubscriptionException(clazz.getSimpleName().toString() + " with fcpID: " + fcpID);
+			default: throw new DuplicateObjectException(clazz.getSimpleName().toString() + " with fcpID:" + fcpID);
 		}
 	}
 	
