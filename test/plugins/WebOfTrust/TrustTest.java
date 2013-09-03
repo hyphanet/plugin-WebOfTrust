@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
@@ -34,6 +35,14 @@ public class TrustTest extends DatabaseBasedTest {
 		
 		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
 		flushCaches();
+	}
+	
+	public void testClone() throws DuplicateTrustException, NotTrustedException {
+		final Trust original = mWoT.getTrust(a, b);
+		final Trust clone = original.clone();
+		
+		assertEquals(original, clone);
+		assertNotSame(original, clone);
 	}
 	
 	public void testConstructor() throws InvalidParameterException {		

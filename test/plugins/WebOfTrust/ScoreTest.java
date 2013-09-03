@@ -36,6 +36,14 @@ public class ScoreTest extends DatabaseBasedTest {
 		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
 		flushCaches();
 	}
+	
+	public void testClone() throws NotInTrustTreeException {
+		final Score original = mWoT.getScore(a, b);
+		final Score clone = original.clone();
+		
+		assertEquals(original, clone);
+		assertNotSame(original, clone);
+	}
 
 	public void testScoreCreation() throws NotInTrustTreeException {
 		
