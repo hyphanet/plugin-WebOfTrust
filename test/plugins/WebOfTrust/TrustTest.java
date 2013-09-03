@@ -37,12 +37,14 @@ public class TrustTest extends DatabaseBasedTest {
 		flushCaches();
 	}
 	
-	public void testClone() throws DuplicateTrustException, NotTrustedException {
+	public void testClone() throws DuplicateTrustException, NotTrustedException, IllegalArgumentException, IllegalAccessException {
 		final Trust original = mWoT.getTrust(a, b);
 		final Trust clone = original.clone();
 		
 		assertEquals(original, clone);
 		assertNotSame(original, clone);
+		
+		testClone(original, clone);
 	}
 	
 	public void testConstructor() throws InvalidParameterException {		

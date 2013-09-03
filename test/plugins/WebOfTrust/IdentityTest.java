@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.Date;
 
@@ -50,12 +51,14 @@ public final class IdentityTest extends DatabaseBasedTest {
 	/**
 	 * Tests whether {@link Identity.clone()} returns an Identity which {@link equals()} the original.
 	 */
-	public void testClone() throws MalformedURLException, InvalidParameterException {
+	public void testClone() throws MalformedURLException, InvalidParameterException, IllegalArgumentException, IllegalAccessException {
 		final Identity original = new Identity(mWoT, getRandomSSKPair()[1], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
 		final Identity clone = original.clone();
 		
 		assertEquals(original, clone);
 		assertNotSame(original, clone);
+		
+		testClone(original, clone);
 	}
 	
 	public void testConstructors() throws MalformedURLException, InvalidParameterException {

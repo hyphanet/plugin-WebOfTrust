@@ -4,6 +4,7 @@
 package plugins.WebOfTrust;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
@@ -74,6 +75,22 @@ public class DatabaseBasedTest extends TestCase {
 		mWoT.terminate();
 		
 		new File(getDatabaseFilename()).delete();
+	}
+	
+	/**
+	 * Uses reflection to check assertEquals() and assertNotSame() on all member fields of an original and its clone().
+	 * Does not check assertNotSame() for enum and String fields.
+	 * 
+	 * @param original The original object.
+	 * @param clone A result of <code>original.clone();</code>
+	 */
+	protected void testClone(Object original, Object clone) throws IllegalArgumentException, IllegalAccessException {
+		for(Field field : original.getClass().getDeclaredFields()) {
+			field.setAccessible(true);
+			assertEquals(field.toGenericString(), field.get(original), field.get(clone));
+			if(!field.getType().isEnum() && field.getType() != String.class)
+				assertNotSame(field.toGenericString(), field.get(original), field.get(clone));
+		}
 	}
 	
 	/**
