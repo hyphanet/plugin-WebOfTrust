@@ -2299,11 +2299,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * 
 	 * Notice that 0 is included in infinite rank to prevent identities which have only solved introduction puzzles from having a capacity.
 	 * 
+	 * Synchronization:
+	 * You have to synchronize on this WebOfTrust object when using this function.
+	 * 
 	 * @param truster The OwnIdentity that owns the trust tree
 	 * @return The new Rank if this Identity
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
 	 */
-	private synchronized int computeRank(OwnIdentity truster, Identity trustee) throws DuplicateScoreException {
+	private int computeRank(OwnIdentity truster, Identity trustee) throws DuplicateScoreException {
 		if(trustee == truster)
 			return 0;
 		
