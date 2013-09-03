@@ -2772,6 +2772,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		catch(UnknownIdentityException e) {
 			final Identity identity = new Identity(this, requestURI, null, false);
+			synchronized(mSubscriptionManager) {
 			synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					identity.storeWithoutCommit();
@@ -2780,6 +2781,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				} catch(RuntimeException e2) {
 					Persistent.checkedRollbackAndThrow(mDB, this, e2); 
 				}
+			}
 			}
 
 			// The identity hasn't received a trust value. Therefore, there is no reason to fetch it and we don't notify the IdentityFetcher.
