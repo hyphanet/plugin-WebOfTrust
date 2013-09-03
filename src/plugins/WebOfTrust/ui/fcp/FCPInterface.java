@@ -878,6 +878,7 @@ public final class FCPInterface implements FredPluginFCP {
     	
     	final String fcpID = replySender.getPluginName() + ";" + replySender.getIdentifier();
     	
+    	// FIXME: What if there is already a ReplySender with the given ID?
     	synchronized(mClients) {
     		mClients.put(fcpID, new WeakReference<PluginReplySender>(replySender));
     	}
