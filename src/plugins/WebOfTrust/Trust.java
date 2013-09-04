@@ -362,7 +362,7 @@ public final class Trust extends Persistent implements Cloneable {
 	
 	public Trust clone() {
 		try {
-			Trust clone = new Trust(mWebOfTrust, getTruster(), getTrustee(), getValue(), getComment());
+			Trust clone = new Trust(mWebOfTrust, getTruster().clone(), getTrustee().clone(), getValue(), getComment());
 			clone.mTrusterTrustListEdition = getTrusterEdition();
 			return clone;
 		} catch (InvalidParameterException e) {
