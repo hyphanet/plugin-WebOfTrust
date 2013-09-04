@@ -3,7 +3,6 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
-import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
@@ -38,8 +37,12 @@ public class ScoreTest extends DatabaseBasedTest {
 		flushCaches();
 	}
 	
-	public void testClone() throws NotInTrustTreeException, IllegalArgumentException, IllegalAccessException {
+	public void testClone() throws NotInTrustTreeException, IllegalArgumentException, IllegalAccessException, InterruptedException {
 		final Score original = mWoT.getScore(a, b);
+		
+		Thread.sleep(10); // Score contains Date mLastChangedDate which might not get properly cloned.
+		assertFalse(CurrentTimeUTC.get().equals(original.getDateOfLastChange()));
+		
 		final Score clone = original.clone();
 		
 		assertEquals(original, clone);

@@ -3,8 +3,9 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
-import java.lang.reflect.Field;
 import java.net.MalformedURLException;
+
+import freenet.support.CurrentTimeUTC;
 
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -37,8 +38,12 @@ public class TrustTest extends DatabaseBasedTest {
 		flushCaches();
 	}
 	
-	public void testClone() throws DuplicateTrustException, NotTrustedException, IllegalArgumentException, IllegalAccessException {
+	public void testClone() throws DuplicateTrustException, NotTrustedException, IllegalArgumentException, IllegalAccessException, InterruptedException {
 		final Trust original = mWoT.getTrust(a, b);
+		
+		Thread.sleep(10); // Trust contains Date mLastChangedDate which might not get properly cloned.
+		assertFalse(CurrentTimeUTC.get().equals(original.getDateOfLastChange()));
+		
 		final Trust clone = original.clone();
 		
 		assertEquals(original, clone);

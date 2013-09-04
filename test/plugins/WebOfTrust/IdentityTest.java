@@ -3,7 +3,6 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
-import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.Date;
 
@@ -18,6 +17,7 @@ import com.db4o.ObjectSet;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.CurrentTimeUTC;
 
 /**
  * @author xor (xor@freenetproject.org) where not specified otherwise
@@ -51,8 +51,12 @@ public final class IdentityTest extends DatabaseBasedTest {
 	/**
 	 * Tests whether {@link Identity.clone()} returns an Identity which {@link equals()} the original.
 	 */
-	public void testClone() throws MalformedURLException, InvalidParameterException, IllegalArgumentException, IllegalAccessException {
+	public void testClone() throws MalformedURLException, InvalidParameterException, IllegalArgumentException, IllegalAccessException, InterruptedException {
 		final Identity original = new Identity(mWoT, getRandomSSKPair()[1], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
+		
+		Thread.sleep(10); // Identity contains Date mLastChangedDate which might not get properly cloned.
+		assertFalse(CurrentTimeUTC.get().equals(original.getLastChangeDate()));
+		
 		final Identity clone = original.clone();
 		
 		assertEquals(original, clone);
