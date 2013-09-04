@@ -359,7 +359,7 @@ public final class Score extends Persistent implements Cloneable {
 	}
 
 	public Score clone() {
-		final Score clone = new Score(mWebOfTrust, getTruster(), getTrustee(), getScore(), getRank(), getCapacity());
+		final Score clone = new Score(mWebOfTrust, getTruster().clone(), getTrustee().clone(), getScore(), getRank(), getCapacity());
 		return clone;
 	}
 

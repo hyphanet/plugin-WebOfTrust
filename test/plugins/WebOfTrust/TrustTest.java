@@ -5,6 +5,8 @@ package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
 
+import freenet.support.CurrentTimeUTC;
+
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
@@ -34,6 +36,20 @@ public class TrustTest extends DatabaseBasedTest {
 		
 		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
 		flushCaches();
+	}
+	
+	public void testClone() throws DuplicateTrustException, NotTrustedException, IllegalArgumentException, IllegalAccessException, InterruptedException {
+		final Trust original = mWoT.getTrust(a, b);
+		
+		Thread.sleep(10); // Trust contains Date mLastChangedDate which might not get properly cloned.
+		assertFalse(CurrentTimeUTC.get().equals(original.getDateOfLastChange()));
+		
+		final Trust clone = original.clone();
+		
+		assertEquals(original, clone);
+		assertNotSame(original, clone);
+		
+		testClone(original, clone);
 	}
 	
 	public void testConstructor() throws InvalidParameterException {		

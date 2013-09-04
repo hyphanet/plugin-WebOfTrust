@@ -2593,11 +2593,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		if(trustWasCreated && trustWasDeleted)
 			throw new NullPointerException("No old/new trust specified.");
+
+		// Check whether the old and new trust actually are between the same identities.
+		// Notice: oldTrust() is a .clone() so the truster/trustee are also clones and we must check their IDs instead of object identity.
 		
-		if(trustWasModified && oldTrust.getTruster() != newTrust.getTruster())
+		if(trustWasModified && !oldTrust.getTruster().getID().equals(newTrust.getTruster().getID())) 
 			throw new IllegalArgumentException("oldTrust has different truster, oldTrust:" + oldTrust + "; newTrust: " + newTrust);
 		
-		if(trustWasModified && oldTrust.getTrustee() != newTrust.getTrustee())
+		if(trustWasModified && !oldTrust.getTrustee().getID().equals(newTrust.getTrustee().getID()))
 			throw new IllegalArgumentException("oldTrust has different trustee, oldTrust:" + oldTrust + "; newTrust: " + newTrust);
 		
 		// We cannot iteratively REMOVE an inherited rank from the trustees because we don't know whether there is a circle in the trust values
