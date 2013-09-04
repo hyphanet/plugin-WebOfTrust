@@ -232,7 +232,10 @@ public final class IdentityTest extends DatabaseBasedTest {
 		identity.onFetched();
 		@Ignore
 		class OldLastChangedDate {
-			Date self = identity.getLastChangeDate();
+			Date self;
+			public OldLastChangedDate() throws InterruptedException {
+				update();
+			}
 			public void update() throws InterruptedException {
 				self = identity.getLastChangeDate();
 				Thread.sleep(10); // Make sure CurrentTimeUTC.get() changes.
