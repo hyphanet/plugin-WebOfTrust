@@ -363,7 +363,7 @@ public final class FCPInterface implements FredPluginFCP {
 				++i;
 			}
 			
-			sfs.putOverwrite("Amount", Integer.toString(i));
+			sfs.put("Amount", i);
 		}
 
 		return sfs;
@@ -414,7 +414,7 @@ public final class FCPInterface implements FredPluginFCP {
 				}
 			}
 			
-			sfs.putOverwrite("Amount", Integer.toString(i));
+			sfs.put("Amount", i);
 		}
 		
 		return sfs;
@@ -432,7 +432,8 @@ public final class FCPInterface implements FredPluginFCP {
         synchronized(mWoT) {
         	final ObjectSet<Trust> receivedTrusts = mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID));
 
-			for(int i = 0; receivedTrusts.hasNext(); ) {
+        	int i = 0; 
+			while(receivedTrusts.hasNext()) {
 				final Trust trust = receivedTrusts.next();
 
 				if(getAll || trust.getTruster().hasContext(params.get("Context"))) {
@@ -456,6 +457,7 @@ public final class FCPInterface implements FredPluginFCP {
 					++i;
 				}
 			}
+			sfs.put("Amount", i);
         }
         
         return sfs;
@@ -503,8 +505,9 @@ public final class FCPInterface implements FredPluginFCP {
 
         synchronized(mWoT) {
         	final ObjectSet<Trust> givenTrusts = mWoT.getGivenTrusts(mWoT.getIdentityByID(identityID));
-
-        	for(int i = 0; givenTrusts.hasNext(); ) {
+        	
+        	int i = 0;
+        	while(givenTrusts.hasNext()) {
         		final Trust trust = givenTrusts.next();
         		final Identity trustee = trust.getTrustee();
 
@@ -529,6 +532,7 @@ public final class FCPInterface implements FredPluginFCP {
 					++i;
 				}
         	}
+        	sfs.put("Amount", i);
         }
         
         return sfs;
@@ -653,6 +657,8 @@ public final class FCPInterface implements FredPluginFCP {
     		sfs.putOverwrite("Puzzle" + index, puzzle.getID());    		
     		++index;
     	}
+    	
+    	sfs.put("Amount", index);
     	
     	return sfs;
     }
