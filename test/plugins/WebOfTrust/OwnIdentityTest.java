@@ -5,6 +5,8 @@ package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
 
+import freenet.support.CurrentTimeUTC;
+
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 
 /**
@@ -21,12 +23,24 @@ public class OwnIdentityTest extends DatabaseBasedTest {
 	}
 
 	/**
-	 * Tests whether {@link OwnIdentity.clone()} returns an OwnIdentity which {@link equals()} the original.
+	 * Tests whether {@link OwnIdentity.clone()} returns an OwnIdentity:
+	 * - which {@link equals()} the original.
+	 * - which is not the same object.
+	 * - which meets the requirements of {@link DatabaseBasedTest#testClone(Class, Object, Object)}
 	 */
-	public void testClone() throws MalformedURLException, InvalidParameterException {
+	public void testClone() throws MalformedURLException, InvalidParameterException, InterruptedException, IllegalArgumentException, IllegalAccessException {
 		final OwnIdentity original = new OwnIdentity(mWoT, getRandomSSKPair()[0], getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH), true);
+		original.updateLastInsertDate();
+		
+		Thread.sleep(10); // Identity contains Date mLastChangedDate which might not get properly cloned.
+		assertFalse(CurrentTimeUTC.get().equals(original.getLastChangeDate()));
+		
 		final OwnIdentity clone = original.clone();
 		
 		assertEquals(original, clone);
+		assertNotSame(original, clone);
+		
+		testClone(Identity.class, original, clone);
+		testClone(OwnIdentity.class, original, clone);
 	}
 }
