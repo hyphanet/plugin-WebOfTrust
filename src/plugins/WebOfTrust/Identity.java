@@ -3,6 +3,12 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,6 +26,7 @@ import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 import freenet.support.codeshortification.IfNull;
+import freenet.support.io.Closer;
 
 /**
  * An identity as handled by the WoT (a USK). 
@@ -29,7 +36,9 @@ import freenet.support.codeshortification.IfNull;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class Identity extends Persistent implements Cloneable {
+public class Identity extends Persistent implements Cloneable, Serializable {
+
+	private static transient final long serialVersionUID = 1L;
 	
 	public static transient final int MAX_NICKNAME_LENGTH = 30;
 	public static transient final int MAX_CONTEXT_NAME_LENGTH = 32;
@@ -876,6 +885,46 @@ public class Identity extends Persistent implements Cloneable {
 			/* This should never happen since we checked when this object was created */
 			Logger.error(this, "Caugth MalformedURLException in clone()", e);
 			throw new IllegalStateException(e); 
+		}
+	}
+	
+	protected final byte[] serialize() {
+		ByteArrayOutputStream bos = null;
+		ObjectOutputStream ous = null;
+		
+		try {
+			bos = new ByteArrayOutputStream();
+			ous = new ObjectOutputStream(bos);
+			
+			checkedActivate(4); // Maximum level required for all members
+			activateProperties();
+			ous.writeObject(this);
+			
+			ous.flush();
+			return bos.toByteArray();
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			Closer.close(ous);
+			Closer.close(bos);
+		}
+	}
+	
+	protected static final Identity deserialize(final byte[] data) {
+		ByteArrayInputStream bis = null;
+		ObjectInputStream ois = null;
+		
+		try {
+			bis = new ByteArrayInputStream(data);
+			ois = new ObjectInputStream(bis);
+			return (Identity)ois.readObject();
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		} finally {
+			Closer.close(ois);
+			Closer.close(bis);
 		}
 	}
 	

@@ -45,4 +45,13 @@ public class OwnIdentityTest extends DatabaseBasedTest {
 		testClone(Identity.class, original, clone);
 		testClone(OwnIdentity.class, original, clone);
 	}
+	
+	public void testSerializeDeserialize() throws MalformedURLException, InvalidParameterException {
+		final OwnIdentity original = new OwnIdentity(mWoT, getRandomSSKPair()[0], getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH), true);
+		final OwnIdentity deserialized = (OwnIdentity)Identity.deserialize(original.serialize());
+		deserialized.initializeTransient(mWoT);
+		
+		assertNotSame(original, deserialized);
+		assertEquals(original, deserialized);
+	}
 }

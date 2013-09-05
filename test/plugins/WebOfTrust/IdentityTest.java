@@ -70,6 +70,15 @@ public final class IdentityTest extends DatabaseBasedTest {
 		testClone(Identity.class, original, clone);
 	}
 	
+	public void testSerializeDeserialize() throws MalformedURLException, InvalidParameterException {
+		final Identity original = new Identity(mWoT, getRandomSSKPair()[1], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
+		final Identity deserialized = Identity.deserialize(original.serialize());
+		deserialized.initializeTransient(mWoT);
+		
+		assertNotSame(original, deserialized);
+		assertEquals(original, deserialized);
+	}
+	
 	public void testConstructors() throws MalformedURLException, InvalidParameterException {
 		final Identity identity = new Identity(mWoT, "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/-1",
 				getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
