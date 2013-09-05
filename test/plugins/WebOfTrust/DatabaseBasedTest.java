@@ -81,6 +81,8 @@ public class DatabaseBasedTest extends TestCase {
 	 * Uses reflection to check assertEquals() and assertNotSame() on all member fields of an original and its clone().
 	 * Does not check assertNotSame() for enum and String fields.
 	 * 
+	 * ATTENTION: Does NOT check the fields of the super class!
+	 * 
 	 * @param original The original object.
 	 * @param clone A result of <code>original.clone();</code>
 	 */
