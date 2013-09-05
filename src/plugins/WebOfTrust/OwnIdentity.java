@@ -215,13 +215,21 @@ public final class OwnIdentity extends Identity {
 	}
 	
 	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected void activateFully() {
+		super.activateFully();
+	}
+	
+	/**
 	 * Clones this OwnIdentity. Does <b>not</b> clone the {@link Date} attributes, they are initialized to the current time!
 	 */
 	public final OwnIdentity clone() {
 		try {
 			OwnIdentity clone = new OwnIdentity(mWebOfTrust, getInsertURI(), getNickname(), doesPublishTrustList());
 			
-			checkedActivate(4); // For performance only
+			activateFully(); // For performance only
 			
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
 			clone.mLastChangedDate = (Date)getLastChangeDate().clone();
@@ -246,8 +254,7 @@ public final class OwnIdentity extends Identity {
 	 */
 	protected final void storeWithoutCommit() {
 		try {
-			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			checkedActivate(4);
+			activateFully();
 			
 			checkedStore(mInsertURI);
 			// checkedStore(mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
@@ -261,8 +268,7 @@ public final class OwnIdentity extends Identity {
 	
 	protected final void deleteWithoutCommit() {
 		try {
-			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			checkedActivate(4);
+			activateFully();
 
 			mInsertURI.removeFrom(mDB);
 			// checkedDelete(mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
@@ -275,7 +281,7 @@ public final class OwnIdentity extends Identity {
 	}
 	
 	public void startupDatabaseIntegrityTest() {
-		checkedActivate(4);
+		activateFully();
 		super.startupDatabaseIntegrityTest();
 		
 		if(mInsertURI == null)

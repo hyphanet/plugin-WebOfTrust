@@ -307,11 +307,19 @@ public final class Score extends Persistent implements Cloneable {
 		return mLastChangedDate;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected void activateFully() {
+		// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+		checkedActivate(1);
+	}
+	
 	@Override
 	protected void storeWithoutCommit() {
-		try {		
-			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			checkedActivate(1);
+		try {
+			activateFully();
 			throwIfNotStored(mTruster);
 			throwIfNotStored(mTrustee);
 			checkedStore();
@@ -366,7 +374,7 @@ public final class Score extends Persistent implements Cloneable {
 
 	@Override
 	public void startupDatabaseIntegrityTest() throws Exception {
-		checkedActivate(1);
+		activateFully();
 		
 		if(mTruster == null)
 			throw new NullPointerException("mTruster==null");

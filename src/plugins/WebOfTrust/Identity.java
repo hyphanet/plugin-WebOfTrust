@@ -863,13 +863,24 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	}
 	
 	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected void activateFully() {
+		// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+		checkedActivate(4);
+		// Workaround for db4o bug
+		activateProperties();
+	}
+	
+	/**
 	 * Clones this identity. Does <b>not</b> clone the {@link Date} attributes, they are initialized to the current time!
 	 */
 	public Identity clone() {
 		try {
 			Identity clone = new Identity(mWebOfTrust, getRequestURI(), getNickname(), doesPublishTrustList());
 			
-			checkedActivate(4); // For performance only
+			activateFully(); // For performance only
 			
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
 			clone.mLastChangedDate = (Date)getLastChangeDate().clone();
@@ -896,8 +907,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 			bos = new ByteArrayOutputStream();
 			ous = new ObjectOutputStream(bos);
 			
-			checkedActivate(4); // Maximum level required for all members
-			activateProperties();
+			activateFully();
 			ous.writeObject(this);
 			
 			ous.flush();
@@ -934,9 +944,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 */
 	protected void storeWithoutCommit() {
 		try {
-			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			checkedActivate(4);
-			activateProperties();
+			activateFully();
 
 			// checkedStore(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			checkedStore(mRequestURI);
@@ -977,9 +985,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 */
 	protected void deleteWithoutCommit() {
 		try {
-			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			checkedActivate(4);
-			activateProperties();
+			activateFully();
 			
 			// checkedDelete(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			mRequestURI.removeFrom(mDB);
@@ -999,7 +1005,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 
 	@Override
 	public void startupDatabaseIntegrityTest() {
-		checkedActivate(4);
+		activateFully();
 
 		if(mID == null)
 			throw new NullPointerException("mID==null");

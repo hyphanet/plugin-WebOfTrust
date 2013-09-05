@@ -160,6 +160,16 @@ public abstract class Persistent {
 	}
 	
 	/**
+	 * Activate this object to full depth so that all members are active.
+	 * 
+	 * Typically you would override this to adapt it to the maximal activation depth of all your getters.
+	 * Then you would use it in your override implementation of {@link #storeWithoutCommit()} or {@link #deleteWithoutCommit()}.
+	 */
+	protected void activateFully() {
+		checkedActivate(1);
+	}
+	
+	/**
 	 * Only to be used by the extending classes, not to be called from the outside.
 	 * 
 	 * Used by storeWithoutCommit for actually storing the object.<br /><br />
