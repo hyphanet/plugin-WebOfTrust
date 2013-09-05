@@ -913,7 +913,7 @@ public final class FCPInterface implements FredPluginFCP {
     	return sender;
     }
     
-    public void sendAllIdentities(String fcpID) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException, FSParseException {
+    public void sendAllIdentities(String fcpID) throws PluginNotFoundException {
     	getReplySender(fcpID).send(handleGetAllIdentities(null));
     }
     
