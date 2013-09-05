@@ -49,7 +49,7 @@ public class TrustTest extends DatabaseBasedTest {
 		assertEquals(original, clone);
 		assertNotSame(original, clone);
 		
-		testClone(original, clone);
+		testClone(Trust.class, original, clone);
 	}
 	
 	public void testConstructor() throws InvalidParameterException {		

@@ -48,7 +48,7 @@ public class ScoreTest extends DatabaseBasedTest {
 		assertEquals(original, clone);
 		assertNotSame(original, clone);
 		
-		testClone(original, clone);
+		testClone(Score.class, original, clone);
 	}
 
 	public void testScoreCreation() throws NotInTrustTreeException {

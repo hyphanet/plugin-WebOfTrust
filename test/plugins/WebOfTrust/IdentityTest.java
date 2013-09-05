@@ -62,7 +62,7 @@ public final class IdentityTest extends DatabaseBasedTest {
 		assertEquals(original, clone);
 		assertNotSame(original, clone);
 		
-		testClone(original, clone);
+		testClone(Identity.class, original, clone);
 	}
 	
 	public void testConstructors() throws MalformedURLException, InvalidParameterException {

@@ -81,13 +81,16 @@ public class DatabaseBasedTest extends TestCase {
 	 * Uses reflection to check assertEquals() and assertNotSame() on all member fields of an original and its clone().
 	 * Does not check assertNotSame() for enum and String fields.
 	 * 
-	 * ATTENTION: Does NOT check the fields of the super class!
+	 * ATTENTION: Only checks the fields of the given clazz, NOT of its parent class.
+	 * If you need to test the fields of an object of class B with parent class A, you should call this two times:
+	 * Once with clazz set to A and once for B.
 	 * 
+	 * @param class The clazz whose fields to check. The given original and clone must be an instance of this or a subclass of it. 
 	 * @param original The original object.
 	 * @param clone A result of <code>original.clone();</code>
 	 */
-	protected void testClone(Object original, Object clone) throws IllegalArgumentException, IllegalAccessException {
-		for(Field field : original.getClass().getDeclaredFields()) {
+	protected void testClone(Class<?> clazz, Object original, Object clone) throws IllegalArgumentException, IllegalAccessException {
+		for(Field field : clazz.getDeclaredFields()) {
 			field.setAccessible(true);
 			assertEquals(field.toGenericString(), field.get(original), field.get(clone));
 			if(!field.getType().isEnum() && field.getType() != String.class)
