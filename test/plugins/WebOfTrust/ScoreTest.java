@@ -47,7 +47,9 @@ public class ScoreTest extends DatabaseBasedTest {
 		
 		assertEquals(original, clone);
 		assertNotSame(original, clone);
-		
+	
+		/* Would fail because we don't clone the mCreationDate and I don't think its necessary to do so */
+		// testClone(Persistent.class, original, clone);
 		testClone(Score.class, original, clone);
 	}
 
