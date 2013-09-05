@@ -428,12 +428,8 @@ public final class FCPInterface implements FredPluginFCP {
 		sfs.putOverwrite("Message", "OwnIdentities");
 
 		synchronized(mWoT) {
-			final ObjectSet<OwnIdentity> result = mWoT.getAllOwnIdentities();
-	
 			int i = 0;
-			while(result.hasNext()) {
-				final OwnIdentity oid = result.next();
-
+			for(final OwnIdentity oid : mWoT.getAllOwnIdentities()) {
 				sfs.putOverwrite("Identity" + i, oid.getID());
 				sfs.putOverwrite("RequestURI" + i, oid.getRequestURI().toString());
 				sfs.putOverwrite("InsertURI" + i, oid.getInsertURI().toString());
@@ -474,12 +470,10 @@ public final class FCPInterface implements FredPluginFCP {
 		
 		// TODO: Optimization: Remove this lock if it works without it.
 		synchronized(mWoT) {
-			final ObjectSet<Identity> result = mWoT.getAllIdentities();
 			final boolean getAll = context == null || context.equals("");
 	
-			for(int i = 0; result.hasNext(); ) {
-				final Identity identity = result.next();
-
+			int i = 0;
+			for(final Identity identity : mWoT.getAllIdentities()) {
 				if(getAll || identity.hasContext(context)) {
 					// TODO: Allow the client to select what data he wants
 					
@@ -503,6 +497,7 @@ public final class FCPInterface implements FredPluginFCP {
 					++i;
 				}
 			}
+			sfs.put("Amount", i);
 		}
 		
 		return sfs;
@@ -514,11 +509,8 @@ public final class FCPInterface implements FredPluginFCP {
    
 		// TODO: Optimization: Remove this lock if it works without it.
         synchronized(mWoT) {
-        	final ObjectSet<Trust> allTrusts = mWoT.getAllTrusts();
-
-			for(int i = 0; allTrusts.hasNext(); ) {
-				final Trust trust = allTrusts.next();
-				
+        	int i = 0;
+			for(final Trust trust : mWoT.getAllTrusts()) {
 				sfs.putOverwrite("Truster" + i, trust.getTruster().getID());
 				sfs.putOverwrite("Trustee" + i, trust.getTrustee().getID());
 				sfs.putOverwrite("Value" + i, Byte.toString(trust.getValue()));
@@ -526,6 +518,7 @@ public final class FCPInterface implements FredPluginFCP {
 				
 				++i;
 			}
+        	sfs.put("Amount", i);
         }
         
         return sfs;
@@ -537,17 +530,15 @@ public final class FCPInterface implements FredPluginFCP {
    
 		// TODO: Optimization: Remove this lock if it works without it.
         synchronized(mWoT) {
-        	final ObjectSet<Score> allScores = mWoT.getAllScores();
-
-			for(int i = 0; allScores.hasNext(); ) {
-				final Score score = allScores.next();
-				
+        	int i = 0;
+			for(final Score score: mWoT.getAllScores()) {
 				sfs.putOverwrite("Truster" + i, score.getTruster().getID());
 				sfs.putOverwrite("Trustee" + i, score.getTrustee().getID());
 				sfs.putOverwrite("Value" + i, Integer.toString(score.getScore()));
 				
 				++i;
 			}
+			sfs.put("Amount", i);
         }
         
         return sfs;
@@ -572,13 +563,10 @@ public final class FCPInterface implements FredPluginFCP {
 		
 		synchronized(mWoT) {
 			final OwnIdentity truster = trusterID != null ? mWoT.getOwnIdentityByID(trusterID) : null;
-			final ObjectSet<Score> result = mWoT.getIdentitiesByScore(truster, select);
 			final boolean getAll = context.equals("");
 	
 			int i = 0;
-			while(result.hasNext()) {
-				final Score score = result.next();
-
+			for(final Score score : mWoT.getIdentitiesByScore(truster, select)) {
 				if(getAll || score.getTrustee().hasContext(context)) {
 					// TODO: Allow the client to select what data he wants
 					final OwnIdentity scoreOwner = score.getTruster();
@@ -614,12 +602,8 @@ public final class FCPInterface implements FredPluginFCP {
         final boolean getAll = context.equals("");
         
         synchronized(mWoT) {
-        	final ObjectSet<Trust> receivedTrusts = mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID));
-
         	int i = 0; 
-			while(receivedTrusts.hasNext()) {
-				final Trust trust = receivedTrusts.next();
-
+			for(final Trust trust : mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID))) {
 				if(getAll || trust.getTruster().hasContext(params.get("Context"))) {
 					sfs.putOverwrite("Identity" + i, trust.getTruster().getID());
 					sfs.putOverwrite("Nickname" + i, trust.getTruster().getNickname());
@@ -688,11 +672,8 @@ public final class FCPInterface implements FredPluginFCP {
         final boolean getAll = context.equals("");
 
         synchronized(mWoT) {
-        	final ObjectSet<Trust> givenTrusts = mWoT.getGivenTrusts(mWoT.getIdentityByID(identityID));
-        	
         	int i = 0;
-        	while(givenTrusts.hasNext()) {
-        		final Trust trust = givenTrusts.next();
+        	for(final Trust trust : mWoT.getGivenTrusts(mWoT.getIdentityByID(identityID))) {
         		final Identity trustee = trust.getTrustee();
 
 				if(getAll || trustee.hasContext(params.get("Context"))) {
