@@ -49,7 +49,10 @@ public final class IdentityTest extends DatabaseBasedTest {
 	}
 	
 	/**
-	 * Tests whether {@link Identity.clone()} returns an Identity which {@link equals()} the original.
+	 * Tests whether {@link Identity.clone()} returns an Identity which:
+	 * - which {@link equals()} the original.
+	 * - which is not the same object.
+	 * - which meets the requirements of {@link DatabaseBasedTest#testClone(Class, Object, Object)}
 	 */
 	public void testClone() throws MalformedURLException, InvalidParameterException, IllegalArgumentException, IllegalAccessException, InterruptedException {
 		final Identity original = new Identity(mWoT, getRandomSSKPair()[1], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
