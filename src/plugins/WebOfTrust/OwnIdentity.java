@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.util.Date;
 
@@ -299,6 +301,12 @@ public final class OwnIdentity extends Identity {
 		
 		if(mLastInsertDate.after(CurrentTimeUTC.get()))
 			throw new IllegalStateException("mLastInsertDate is in the future: " + mLastInsertDate);
+	}
+	
+	/** @see Persistent#serialize() */
+	private void writeObject(ObjectOutputStream stream) throws IOException {
+		activateFully();
+		stream.defaultWriteObject();
 	}
 
 }

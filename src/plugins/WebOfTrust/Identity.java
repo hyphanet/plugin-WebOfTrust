@@ -3,10 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.MalformedURLException;
@@ -26,7 +23,6 @@ import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 import freenet.support.codeshortification.IfNull;
-import freenet.support.io.Closer;
 
 /**
  * An identity as handled by the WoT (a USK). 
@@ -38,6 +34,7 @@ import freenet.support.io.Closer;
  */
 public class Identity extends Persistent implements Cloneable, Serializable {
 
+	/** @see Serializable */
 	private static transient final long serialVersionUID = 1L;
 	
 	public static transient final int MAX_NICKNAME_LENGTH = 30;
@@ -899,44 +896,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		}
 	}
 	
-	protected final byte[] serialize() {
-		ByteArrayOutputStream bos = null;
-		ObjectOutputStream ous = null;
-		
-		try {
-			bos = new ByteArrayOutputStream();
-			ous = new ObjectOutputStream(bos);
-			
-			activateFully();
-			ous.writeObject(this);
-			
-			ous.flush();
-			return bos.toByteArray();
-		} catch(IOException e) {
-			throw new RuntimeException(e);
-		} finally {
-			Closer.close(ous);
-			Closer.close(bos);
-		}
-	}
-	
-	protected static final Identity deserialize(final byte[] data) {
-		ByteArrayInputStream bis = null;
-		ObjectInputStream ois = null;
-		
-		try {
-			bis = new ByteArrayInputStream(data);
-			ois = new ObjectInputStream(bis);
-			return (Identity)ois.readObject();
-		} catch(IOException e) {
-			throw new RuntimeException(e);
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException(e);
-		} finally {
-			Closer.close(ois);
-			Closer.close(bis);
-		}
-	}
+
 	
 	/**
 	 * Stores this identity in the database without committing the transaction
@@ -1058,5 +1018,11 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 			throw new IllegalStateException("Too many properties: " + mProperties.size());
 			
 		// TODO: Verify context/property names/values 
+	}
+	
+	/** @see Persistent#serialize() */
+	private void writeObject(ObjectOutputStream stream) throws IOException {
+		activateFully();
+		stream.defaultWriteObject();
 	}
 }

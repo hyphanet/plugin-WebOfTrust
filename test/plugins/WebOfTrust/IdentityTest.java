@@ -72,8 +72,7 @@ public final class IdentityTest extends DatabaseBasedTest {
 	
 	public void testSerializeDeserialize() throws MalformedURLException, InvalidParameterException {
 		final Identity original = new Identity(mWoT, getRandomSSKPair()[1], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
-		final Identity deserialized = Identity.deserialize(original.serialize());
-		deserialized.initializeTransient(mWoT);
+		final Identity deserialized = (Identity)Persistent.deserialize(mWoT, original.serialize());
 		
 		assertNotSame(original, deserialized);
 		assertEquals(original, deserialized);

@@ -3,6 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -22,6 +28,7 @@ import com.db4o.query.Query;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.Closer;
 
 
 /**
@@ -33,8 +40,11 @@ import freenet.support.Logger.LogLevel;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public abstract class Persistent {
+public abstract class Persistent implements Serializable {
 	
+	/** @see Serializable */
+	private static transient final long serialVersionUID = 1L;
+
 	/**
 	 * A reference to the {@link WebOfTrust} object with which this Persistent object is associated.
 	 */
@@ -105,6 +115,21 @@ public abstract class Persistent {
 	 * This function has to be implemented by all child classes. It is executed by startup on all persistent objects to test their integrity.
 	 */
 	public abstract void startupDatabaseIntegrityTest() throws Exception;
+	
+	/**
+	 * A version of {@link #startupDatabaseIntegrityTest()} which is suitable for use in assert() statements.
+	 * 
+	 * @return True if {@link #startupDatabaseIntegrityTest()} did not throw, false if it threw an Exception.
+	 */
+	public boolean startupDatabaseIntegrityTestBoolean() {
+		try {
+			startupDatabaseIntegrityTest();
+			return true;
+		} catch(Exception e) {
+			Logger.error(this, "startupDatabaseIntegrityTestBoolean() failed", e);
+			return false;
+		}
+	}
 	
 	/**
 	 * Must be called once after obtaining this object from the database before using any getter or setter member functions
@@ -634,6 +659,67 @@ public abstract class Persistent {
 			throw new UnsupportedOperationException();
 		}
 
+	}
+	
+	
+	/* Non-db4o related code */
+
+	/**
+	 * Uses standard Java serialization to convert this Object to a byte array. NOT used by db4o.
+	 * 
+	 * The purpose for this is to allow in-db4o storage of cloned {@link Identity}/{@link Trust}/{@link Score}/etc. objects:
+	 * Normally there should only be one object with a given ID in the database, if we clone a Persistent object it will have the same ID.
+	 * If we store objects as a byte[] instead of using native db4o object storage, we can store those duplcates.
+	 * 
+	 * Typically used by {@link SubscriptionManager} for being able to store clones.
+	 * 
+	 * ATTENTION: Your Persistent class must provide an implementation of the following function:
+	 * <code>private void writeObject(ObjectOutputStream stream) throws IOException;</code>
+	 * This function is not specified by an interface, it can be read up about in the <a href="http://docs.oracle.com/javase/7/docs/platform/serialization/spec/output.html#861">serialization documentation</a>.
+	 * It must properly activate the object, all of its members and all of their members:
+	 * serialize() will store all members and their members. If they are not activated, this will fail.
+	 * After that, it must call {@link ObjectOutputStream#defaultWriteObject()}.
+	 * 
+	 * @see Persistent#deserialize(WebOfTrust, byte[]) The inverse function.
+	 */
+	final byte[] serialize() {
+		ByteArrayOutputStream bos = null;
+		ObjectOutputStream ous = null;
+		
+		try {
+			bos = new ByteArrayOutputStream();
+			ous = new ObjectOutputStream(bos);
+			ous.writeObject(this);	
+			ous.flush();
+			return bos.toByteArray();
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			Closer.close(ous);
+			Closer.close(bos);
+		}
+	}
+	
+	/** Inverse function of {@link #serialize()}. */
+	static final Persistent deserialize(final WebOfTrust wot, final byte[] data) {
+		ByteArrayInputStream bis = null;
+		ObjectInputStream ois = null;
+		
+		try {
+			bis = new ByteArrayInputStream(data);
+			ois = new ObjectInputStream(bis);
+			final Persistent deserialized = (Persistent)ois.readObject();
+			deserialized.initializeTransient(wot);
+			assert(deserialized.startupDatabaseIntegrityTestBoolean());
+			return deserialized;
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		} finally {
+			Closer.close(ois);
+			Closer.close(bis);
+		}
 	}
 	
 }
