@@ -422,7 +422,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		final byte[] mOldIdentity;
 		
 		/**
-		 * A serialized copy of the {@link Identity } after the change.
+		 * A serialized copy of the {@link Identity} after the change.
 		 * Null if the change was the deletion of the identity.
 		 * If non-null its {@link Identity#getID()} must be equal to the one of {@link #mOldIdentity} if that member is non-null as well.
 		 * 
