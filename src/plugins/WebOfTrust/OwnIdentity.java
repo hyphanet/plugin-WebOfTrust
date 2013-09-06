@@ -5,6 +5,7 @@ package plugins.WebOfTrust;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.util.Date;
 
@@ -21,6 +22,9 @@ import freenet.support.Logger;
  */
 public final class OwnIdentity extends Identity {
 	
+	/** @see Serializable */
+	private static final long serialVersionUID = 1L;
+
 	protected FreenetURI mInsertURI;
 	
 	protected Date mLastInsertDate;
