@@ -20,7 +20,7 @@ import freenet.support.Logger;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class OwnIdentity extends Identity implements Serializable {
+public final class OwnIdentity extends Identity implements Cloneable, Serializable {
 	
 	/** @see Serializable */
 	private static final long serialVersionUID = 1L;
