@@ -18,6 +18,7 @@ import plugins.WebOfTrust.SubscriptionManager.IdentityChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.Notification;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.SubscriptionManager.SubscriptionExistsAlreadyException;
+import plugins.WebOfTrust.SubscriptionManager.TrustChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.UnknownSubscriptionException;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
@@ -931,8 +932,12 @@ public final class FCPInterface implements FredPluginFCP {
     	//getReplySender(fcpID).send(handleGetIdentity(null, null, identityID));
     }
     
-    public void sendTrustChangedNotification(String fcpID, final String trusterID, final String trusteeID) throws DuplicateTrustException, InvalidParameterException, NotTrustedException, UnknownIdentityException, PluginNotFoundException {
-    	getReplySender(fcpID).send(handleGetTrust(null, trusterID, trusteeID));
+    /**
+     * @see SubscriptionManager.TrustChangedNotification FIXME: The implementation should be able to handle all cases mentioned there
+     */
+    public void sendTrustChangedNotification(String fcpID, final TrustChangedNotification notification) throws DuplicateTrustException, InvalidParameterException, NotTrustedException, UnknownIdentityException, PluginNotFoundException {
+    	throw new UnsupportedOperationException("FIXME: Implement");
+    	//getReplySender(fcpID).send(handleGetTrust(null, trusterID, trusteeID));
     }
     
     public void sendScoreChangedNotification(String fcpID, final String trusterID, final String trusteeID) throws InvalidParameterException, NotInTrustTreeException, UnknownIdentityException, PluginNotFoundException {

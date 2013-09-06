@@ -523,76 +523,31 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * This notification is issued when a {@link Trust} is added/deleted or its attributes change.
 	 * 
-	 * FIXME: This should keep the ID of the trust instead of truster/trustee ID. Also, it should keep both the old and new ID, similar to {@link IdentityChangedNotification}
+	 * It provides a {@link Trust#clone()} of the trust:
+	 * - before the change via {@link Notification#getOldObject()}
+	 * - and and after the change via ({@link Notification#getNewObject()}
+	 * 
+	 * If one of the before/after getters throws {@link NoSuchElementException}, this is because the trust was added/deleted.
+	 * If both do not throw, the trust was modified.
+	 * 
+	 * NOTICE: Both Trust objects are not stored in the database and must not be stored there to prevent duplicates!
 	 * 
 	 * @see TrustsSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	@SuppressWarnings("serial")
-	protected static final class TrustChangedNotification extends Notification {
+	public static final class TrustChangedNotification extends Notification {
 		
 		/**
-		 * The ID of the truster of the changed {@link Trust}.
+		 * Only one of oldTrust and newTrust may be null. If both are non-null, their {@link Trust#getID()} must match.
 		 * 
-		 * @see Identity#getID()
-		 * @see Trust#getTruster()
-		 * @see #getTrusterID()
-		 */
-		private final String mTrusterID;
-		
-		/**
-		 * The ID of the trustee of the changed {@link Trust}.
-		 * 
-		 * @see Identity#getID()
-		 * @see Trust#getTrustee()
-		 * @see #getTrusteeID()
-		 */
-		private final String mTrusteeID;
-		
-		/**
+		 * @see Notification#Notification(Subscription, Persistent, Persistent) The requirements of that constructor apply to this one.
 		 * @param mySubscription The {@link Subscription} to whose {@link Notification} queue this {@link Notification} belongs.
-		 * @param myTrust The {@link Trust} which was added, removed or changed.
+		 * @param oldTrust The version of the {@link Trust} before the change.
+		 * @param newTrust The version of the {@link Trust} after the change.
 		 */
-		protected TrustChangedNotification(final Subscription<TrustChangedNotification> mySubscription, Trust myTrust) {
-			super(mySubscription);
-			mTrusterID = myTrust.getTruster().getID();
-			mTrusteeID = myTrust.getTrustee().getID();
-		}
-		
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public void startupDatabaseIntegrityTest() throws Exception {
-			super.startupDatabaseIntegrityTest();
-			
-			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
-			
-			IfNull.thenThrow(mTrusterID, "mTrusterID");
-			IfNull.thenThrow(mTrusteeID, "mTrusteeID");
-		}
-
-		/**
-		 * The ID of the truster of the changed {@link Trust}.
-		 * 
-		 * @see Identity#getID()
-		 * @see Trust#getTruster()
-		 * @see #mTrusterID
-		 */
-		protected final String getTrusterID() {
-			checkedActivate(1);
-			return mTrusterID;
-		}
-
-		/**
-		 * The ID of the trustee of the changed {@link Trust}.
-		 * 
-		 * @see Identity#getID()
-		 * @see Trust#getTrustee()
-		 * @see #mTrusteeID
-		 */
-		protected final String getTrusteeID() {
-			checkedActivate(1);
-			return mTrusteeID;
+		protected TrustChangedNotification(final Subscription<TrustChangedNotification> mySubscription, 
+				final Trust oldTrust, final Trust newTrust) {
+			super(mySubscription, oldTrust, newTrust);
 		}
 		
 	}
@@ -748,17 +703,18 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected void notifySubscriberByFCP(TrustChangedNotification notification) throws Exception {
-			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getFCP_ID(), notification.getTrusterID(), notification.getTrusteeID());
+		protected void notifySubscriberByFCP(final TrustChangedNotification notification) throws Exception {
+			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getFCP_ID(), notification);
 		}
 
 		/**
 		 * Stores a {@link TrustChangedNotification} to the {@link Notification} queue of this {@link Subscription}.
 		 * 
-		 * @param trust The {@link Trust} which was added, changed deleted.
+		 * @param oldTrust The version of the {@link Trust} before the change. Null if it was newly created.
+		 * @param newTrust The version of the {@link Trust} after the change. Null if it was deleted.
 		 */
-		public void storeNotificationWithoutCommit(Trust trust) {
-			final TrustChangedNotification notification = new TrustChangedNotification(this, trust);
+		public void storeNotificationWithoutCommit(final Trust oldTrust, final Trust newTrust) {
+			final TrustChangedNotification notification = new TrustChangedNotification(this, oldTrust, newTrust);
 			notification.initializeTransient(mWebOfTrust);
 			notification.storeWithoutCommit();
 		}
@@ -1171,7 +1127,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		final ObjectSet<TrustsSubscription> subscriptions = (ObjectSet<TrustsSubscription>)getSubscriptions(TrustsSubscription.class);
 		
 		for(TrustsSubscription subscription : subscriptions) {
-			subscription.storeNotificationWithoutCommit(oldTrust);
+			subscription.storeNotificationWithoutCommit(oldTrust, newTrust);
 		}
 	}
 	
