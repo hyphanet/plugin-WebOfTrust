@@ -14,6 +14,7 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
+import plugins.WebOfTrust.SubscriptionManager.IdentityChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.Notification;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.SubscriptionManager.SubscriptionExistsAlreadyException;
@@ -925,7 +926,7 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * @see SubscriptionManager.IdentityChangedNotification FIXME: The implementation should be able to handle all cases mentioned there
      */
-    public void sendIdentityChangedNotification(String fcpID, final Identity oldIdentity, final Identity newIdentity) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException {
+    public void sendIdentityChangedNotification(String fcpID, final IdentityChangedNotification notification) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException {
     	throw new UnsupportedOperationException("FIXME: Implement");
     	//getReplySender(fcpID).send(handleGetIdentity(null, null, identityID));
     }
