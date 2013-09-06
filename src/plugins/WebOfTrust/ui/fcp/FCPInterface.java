@@ -31,9 +31,6 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.introduction.IntroductionServer;
 import plugins.WebOfTrust.util.RandomName;
-
-import com.db4o.ObjectSet;
-
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
 import freenet.pluginmanager.FredPluginFCP;
@@ -928,7 +925,7 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * @see SubscriptionManager.IdentityChangedNotification FIXME: The implementation should be able to handle all cases mentioned there
      */
-    public void sendIdentityChangedNotification(String fcpID, final String oldIdentityID, final String newIdentityID) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException {
+    public void sendIdentityChangedNotification(String fcpID, final Identity oldIdentity, final Identity newIdentity) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException {
     	throw new UnsupportedOperationException("FIXME: Implement");
     	//getReplySender(fcpID).send(handleGetIdentity(null, null, identityID));
     }
