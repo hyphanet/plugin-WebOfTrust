@@ -709,7 +709,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * Stores a {@link IdentityChangedNotification} to the {@link Notification} queue of this {@link Subscription}.
 		 * 
-		 * @param identity The {@link Identity} whose attributes have changed.
+		 * @param oldIdentity The version of the {@link Identity} before the change. Null if it was newly created.
+		 * @param newIdentity The version of the {@link Identity} after the change. Null if it was deleted.
 		 */
 		private void storeNotificationWithoutCommit(Identity oldIdentity, Identity newIdentity) {
 			final IdentityChangedNotification notification = new IdentityChangedNotification(this, oldIdentity, newIdentity);
