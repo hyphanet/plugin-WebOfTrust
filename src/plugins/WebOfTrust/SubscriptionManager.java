@@ -59,6 +59,9 @@ import freenet.support.io.NativeThread;
  *	synchronized(instance of IdentityFetcher) {
  *	synchronized(instance of SubscriptionManager) {
  *	synchronized(Persistent.transactionLock(instance of ObjectContainer)) {
+ * This does not mean that you need to take all of those locks when calling functions of the SubscriptionManager:
+ * Its just the general order of locks which is used all over Web Of Trust to prevent deadlocks.
+ * Any functions which require synchronization upon some of the locks will mention it.
  * 
  * TODO: Allow out-of-order notifications if the client desires them
  * TODO: Optimization: Allow coalescing of notifications: If a single object changes twice, only send one notification
