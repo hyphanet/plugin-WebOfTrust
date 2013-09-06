@@ -3,10 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
@@ -319,10 +321,19 @@ public final class SubscriptionManager implements PrioRunnable {
 
 	}
 	
-	
 	/**
 	 * An object of type Notification is stored when an event happens to which a client is possibly subscribed.
 	 * The SubscriptionManager will wake up some time after that, pull all notifications from the database and process them.
+	 * 
+	 * It provides two clones of the {@link Persistent} object about whose change the client shall be notified:
+	 * - A version of it before the change via {@link Notification#getOldObject()}
+	 * - A version of it after the change via {@link Notification#getNewObject()}
+	 * 
+	 * If one of the before/after getters throws {@link NoSuchElementException}, this is because the object was added/deleted.
+	 * If both do not throw, the object was modified.
+	 * NOTICE: Modification can also mean that its class has changed!
+	 * 
+	 * NOTICE: Both Persistent objects are not stored in the database and must not be stored there to prevent duplicates!
 	 */
 	@SuppressWarnings("serial")
 	public static abstract class Notification extends Persistent {
@@ -340,15 +351,42 @@ public final class SubscriptionManager implements PrioRunnable {
 		@IndexedField
 		private final long mIndex;
 		
+		
+		/**
+		 * A serialized copy of the changed {@link Persistent} object before the change.
+		 * Null if the change was the creation of the object.
+		 * 
+		 * @see Persistent#serialize()
+		 * @see #getOldObject() The public getter for this.
+		 */
+		final byte[] mOldObject;
+		
+		/**
+		 * A serialized copy of the changed {@link Persistent} object after the change.
+		 * Null if the change was the deletion of the object.
+		 * 
+		 * @see Persistent#serialize()
+		 * @see #getNewObject() The public getter for this.
+		 */
+		final byte[] mNewObject;
+		
 		/**
 		 * Constructs a Notification in the queue of the given subscription.
 		 * Takes a free notification index from it with {@link Subscription#takeFreeNotificationIndexWithoutCommit}
 		 * 
 		 * @param mySubscription The {@link Subscription} to whose Notification queue this Notification belongs.
+		 * @param oldObject The version of the changed {@link Persistent} object before the change.
+		 * @param newObject The version of the changed {@link Persistent} object after the change.
 		 */
-		protected Notification(final Subscription<? extends Notification> mySubscription) {
+		protected Notification(final Subscription<? extends Notification> mySubscription,
+				final Persistent oldObject, final Persistent newObject) {
 			mSubscription = mySubscription;
 			mIndex = mySubscription.takeFreeNotificationIndexWithoutCommit();
+			
+			mOldObject = (oldObject != null ? oldObject.serialize() : null);
+			mNewObject = (oldObject != null ? newObject.serialize() : null);
+			
+			assert !(oldObject == null && newObject == null);
 		}
 		
 		/**
@@ -362,6 +400,40 @@ public final class SubscriptionManager implements PrioRunnable {
 			
 			if(mIndex < 0)
 				throw new IllegalStateException("mIndex==" + mIndex);
+			
+			if(mOldObject == null && mNewObject == null)
+				throw new NullPointerException("Only one of mOldObject and mNewObject may be null!");
+
+			if(mOldObject != null)
+				getOldObject().startupDatabaseIntegrityTest();
+			
+			if(mNewObject != null)
+				getNewObject().startupDatabaseIntegrityTest();
+		}
+		
+		
+		/**
+		 * @return The changed {@link Persistent} object before the change. 
+		 * @see #mOldObject The backend member variable of this getter.
+		 * @throws NoSuchElementException If the change was the creation of the object.
+		 */
+		final protected Persistent getOldObject() throws NoSuchElementException {
+			checkedActivate(1);
+			if(mOldObject == null)
+				throw new NoSuchElementException();
+			return Persistent.deserialize(mWebOfTrust, mOldObject);
+		}
+		
+		/**
+		 * @return The changed {@link Persistent} object after the change.
+		 * @see #mNewObject The backend member variable of this getter.
+		 * @throws NoSuchElementException If the change was the deletion of the object.
+		 */
+		final protected Persistent getNewObject() throws UnknownIdentityException {
+			checkedActivate(1);
+			if(mNewObject == null)
+				throw new NoSuchElementException();
+			return Persistent.deserialize(mWebOfTrust, mNewObject);
 		}
 		
 	}
