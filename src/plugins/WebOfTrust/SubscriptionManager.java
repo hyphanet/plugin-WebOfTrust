@@ -553,80 +553,35 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * This notification is issued when a score value is added/deleted or its attributes change.
+	 * This notification is issued when a {@link Score} is added/deleted or its attributes change.
 	 * 
-	 * FIXME: This should keep the ID of the trust instead of truster/trustee ID. Also, it should keep both the old and new ID, similar to {@link IdentityChangedNotification}
+	 * It provides a {@link Score#clone()} of the score:
+	 * - before the change via {@link Notification#getOldObject()}
+	 * - and and after the change via ({@link Notification#getNewObject()}
+	 * 
+	 * If one of the before/after getters throws {@link NoSuchElementException}, this is because the score was added/deleted.
+	 * If both do not throw, the score was modified.
+	 * 
+	 * NOTICE: Both Score objects are not stored in the database and must not be stored there to prevent duplicates!
 	 * 
 	 * @see ScoresSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	@SuppressWarnings("serial")
-	protected static final class ScoreChangedNotification extends Notification {
-		
-		/**
-		 * The ID of the truster of the changed {@link Score}.
-		 * 
-		 * @see Identity#getID()
-		 * @see Score#getTruster()
-		 * @see #getTrusterID()
-		 */
-		private final String mTrusterID;
-		
-		/**
-		 * The ID of the trustee of the changed {@link Score}.
-		 * 
-		 * @see Identity#getID()
-		 * @see Score#getTrustee()
-		 * @see #getTrusteeID()
-		 */
-		private final String mTrusteeID;
+	public static final class ScoreChangedNotification extends Notification {
 
 		/**
+		 * Only one of oldScore and newScore may be null. If both are non-null, their {@link Score#getID()} must match.
+		 * 
+		 * @see Notification#Notification(Subscription, Persistent, Persistent) The requirements of that constructor apply to this one.
 		 * @param mySubscription The {@link Subscription} to whose {@link Notification} queue this {@link Notification} belongs.
-		 * @param myScore The {@link Score} which was added, deleted or changed.
+		 * @param oldScore The version of the {@link Score} before the change.
+		 * @param newScore The version of the {@link Score} after the change.
 		 */
-		protected ScoreChangedNotification(final Subscription<ScoreChangedNotification> mySubscription, Score myScore) {
-			super(mySubscription);
-			mTrusterID = myScore.getTruster().getID();
-			mTrusteeID = myScore.getTrustee().getID();
+		protected ScoreChangedNotification(final Subscription<ScoreChangedNotification> mySubscription,
+				final Score oldScore, final Score newScore) {
+			super(mySubscription, oldScore, newScore);
 		}
-		
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public void startupDatabaseIntegrityTest() throws Exception {
-			super.startupDatabaseIntegrityTest();
-			
-			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
-			
-			IfNull.thenThrow(mTrusterID, "mTrusterID");
-			IfNull.thenThrow(mTrusteeID, "mTrusteeID");
-		}
-		
-		/**
-		 * The ID of the truster of the changed {@link Score}.
-		 * 
-		 * @see Identity#getID()
-		 * @see Score#getTruster()
-		 * @see #mTrusterID
-		 */
-		protected final String getTrusterID() {
-			checkedActivate(1);
-			return mTrusterID;
-		}
-		
-		
-		/**
-		 * The ID of the trustee of the changed {@link Score}.
-		 * 
-		 * @see Identity#getID()
-		 * @see Score#getTrustee()
-		 * @see #mTrusteeID
-		 */
-		protected final String getTrusteeID() {
-			checkedActivate(1);
-			return mTrusteeID;
-		}
+
 	}
 
 	/**
@@ -749,17 +704,18 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected void notifySubscriberByFCP(ScoreChangedNotification notification) throws Exception {
-			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getFCP_ID(), notification.getTrusterID(), notification.getTrusteeID());
+		protected void notifySubscriberByFCP(final ScoreChangedNotification notification) throws Exception {
+			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getFCP_ID(), notification);
 		}
 
 		/**
 		 * Stores a {@link ScoreChangedNotification} to the {@link Notification} queue of this {@link Subscription}.
 		 * 
-		 * @param score The {@link Score} which was added, changed deleted.
+		 * @param oldScore The version of the {@link Score} before the change. Null if it was newly created.
+		 * @param newScore The version of the {@link Score} after the change. Null if it was deleted.
 		 */
-		public void storeNotificationWithoutCommit(Score score) {
-			final ScoreChangedNotification notification = new ScoreChangedNotification(this, score);
+		public void storeNotificationWithoutCommit(final Score oldScore, final Score newScore) {
+			final ScoreChangedNotification notification = new ScoreChangedNotification(this, oldScore, newScore);
 			notification.initializeTransient(mWebOfTrust);
 			notification.storeWithoutCommit();
 		}
@@ -1150,7 +1106,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		final ObjectSet<ScoresSubscription> subscriptions = (ObjectSet<ScoresSubscription>)getSubscriptions(ScoresSubscription.class);
 		
 		for(ScoresSubscription subscription : subscriptions) {
-			subscription.storeNotificationWithoutCommit(oldScore);
+			subscription.storeNotificationWithoutCommit(oldScore, newScore);
 		}
 	}
 

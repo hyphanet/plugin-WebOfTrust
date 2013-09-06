@@ -16,6 +16,7 @@ import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.SubscriptionManager.IdentityChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.Notification;
+import plugins.WebOfTrust.SubscriptionManager.ScoreChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.SubscriptionManager.SubscriptionExistsAlreadyException;
 import plugins.WebOfTrust.SubscriptionManager.TrustChangedNotification;
@@ -940,8 +941,12 @@ public final class FCPInterface implements FredPluginFCP {
     	//getReplySender(fcpID).send(handleGetTrust(null, trusterID, trusteeID));
     }
     
-    public void sendScoreChangedNotification(String fcpID, final String trusterID, final String trusteeID) throws InvalidParameterException, NotInTrustTreeException, UnknownIdentityException, PluginNotFoundException {
-    	getReplySender(fcpID).send(handleGetScore(null, trusterID, trusteeID));
+    /**
+     * @see SubscriptionManager.ScoreChangedNotification FIXME: The implementation should be able to handle all cases mentioned there
+     */
+    public void sendScoreChangedNotification(String fcpID, final ScoreChangedNotification notification) throws InvalidParameterException, NotInTrustTreeException, UnknownIdentityException, PluginNotFoundException {
+    	throw new UnsupportedOperationException("FIXME: Implement");
+    	// getReplySender(fcpID).send(handleGetScore(null, trusterID, trusteeID));
     }
     
     private SimpleFieldSet handlePing() {
