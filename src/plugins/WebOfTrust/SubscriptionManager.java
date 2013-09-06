@@ -398,7 +398,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * - before the change via {@link IdentityChangedNotification#getOldIdentity()}
 	 * - and and after the change via ({@link IdentityChangedNotification#getNewIdentity()}
 	 * 
-	 * If one of the before/after getters throws UnknownIdentityException, this is because the identity was added/deleted.
+	 * If one of the before/after getters throws {@link UnknownIdentityException}, this is because the identity was added/deleted.
 	 * If both do not throw, the identity was modified.
 	 * NOTICE: Modification can also mean that its class changed from {@link OwnIdentity} to {@link Identity} or vice versa!
 	 * 
