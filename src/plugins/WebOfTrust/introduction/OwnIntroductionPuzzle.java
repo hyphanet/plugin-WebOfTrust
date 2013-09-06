@@ -10,6 +10,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 
+@SuppressWarnings("serial")
 public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	
 	/**

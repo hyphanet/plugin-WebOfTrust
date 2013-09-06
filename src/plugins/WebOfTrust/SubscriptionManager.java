@@ -83,6 +83,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * of clients (FCP, callback, etc.).
 	 * Therefore, this base class also contains code for <b>all</b> kinds of clients.
 	 */
+	@SuppressWarnings("serial")
 	public static abstract class Subscription<NotificationType extends Notification> extends Persistent {
 		
 		/**
@@ -322,6 +323,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * An object of type Notification is stored when an event happens to which a client is possibly subscribed.
 	 * The SubscriptionManager will wake up some time after that, pull all notifications from the database and process them.
 	 */
+	@SuppressWarnings("serial")
 	public static abstract class Notification extends Persistent {
 		
 		/**
@@ -376,6 +378,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @see Subscription#synchronizeSubscriberByFCP() The function which typically deploys this Notification.
 	 */
+	@SuppressWarnings("serial")
 	protected static class InitialSynchronizationNotification extends Notification {
 		
 		/**
@@ -402,6 +405,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @see IdentitiesSubscription The type of {@link Subscription} which deploys this notification.
 	 */
+	@SuppressWarnings("serial")
 	protected static class IdentityChangedNotification extends Notification {
 		
 		/**
@@ -489,6 +493,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @see TrustsSubscription The type of {@link Subscription} which deploys this notification.
 	 */
+	@SuppressWarnings("serial")
 	protected static final class TrustChangedNotification extends Notification {
 		
 		/**
@@ -565,6 +570,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @see ScoresSubscription The type of {@link Subscription} which deploys this notification.
 	 */
+	@SuppressWarnings("serial")
 	protected static final class ScoreChangedNotification extends Notification {
 		
 		/**
@@ -640,6 +646,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @see IdentityChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
+	@SuppressWarnings("serial")
 	public static final class IdentitiesSubscription extends Subscription<IdentityChangedNotification> {
 
 		/**
@@ -684,6 +691,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @see TrustChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
+	@SuppressWarnings("serial")
 	public static final class TrustsSubscription extends Subscription<TrustChangedNotification> {
 
 		/**
@@ -728,6 +736,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @see ScoreChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
+	@SuppressWarnings("serial")
 	public static final class ScoresSubscription extends Subscription<ScoreChangedNotification> {
 
 		/**

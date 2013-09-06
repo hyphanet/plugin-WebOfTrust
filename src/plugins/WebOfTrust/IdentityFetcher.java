@@ -133,6 +133,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		deleteAllCommands();
 	}
 	
+	@SuppressWarnings("serial")
 	public static class IdentityFetcherCommand extends Persistent {
 		
 		@IndexedField
@@ -159,6 +160,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 
 	}
 	
+	@SuppressWarnings("serial")
 	protected static final class StartFetchCommand extends IdentityFetcherCommand {
 
 		protected StartFetchCommand(Identity identity) {
@@ -171,6 +173,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		
 	}
 	
+	@SuppressWarnings("serial")
 	protected static final class AbortFetchCommand extends IdentityFetcherCommand {
 
 		protected AbortFetchCommand(Identity identity) {
@@ -179,6 +182,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		
 	}
 	
+	@SuppressWarnings("serial")
 	protected static final class UpdateEditionHintCommand extends IdentityFetcherCommand {
 
 		protected UpdateEditionHintCommand(Identity identity) {

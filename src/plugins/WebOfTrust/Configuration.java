@@ -17,6 +17,7 @@ import freenet.support.codeshortification.IfNull;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
+@SuppressWarnings("serial")
 public final class Configuration extends Persistent {
 
 	/**

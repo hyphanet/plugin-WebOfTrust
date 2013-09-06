@@ -23,6 +23,7 @@ import freenet.support.TimeUtil;
  * An introduction puzzle is a puzzle (for example a CAPTCHA) which can be solved by a new identity to get onto the trust list
  * of already existing identities. This is the only way to get onto the web of trust if you do not know someone who will add you manually.
  */
+@SuppressWarnings("serial")
 public class IntroductionPuzzle extends Persistent implements Cloneable {
 	
 	public static enum PuzzleType { Captcha };
