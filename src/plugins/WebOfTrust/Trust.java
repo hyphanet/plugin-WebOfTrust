@@ -5,6 +5,7 @@ package plugins.WebOfTrust;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.StringTokenizer;
 
@@ -19,7 +20,7 @@ import freenet.support.StringValidityChecker;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Trust extends Persistent implements Cloneable {
+public final class Trust extends Persistent implements Cloneable, Serializable {
 	
 	/** @see Serializable */
 	private static transient final long serialVersionUID = 1L;
