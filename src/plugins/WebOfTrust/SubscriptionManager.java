@@ -411,7 +411,14 @@ public final class SubscriptionManager implements PrioRunnable {
 				getNewObject().startupDatabaseIntegrityTest();
 		}
 		
-		
+		/**
+		 * @deprecated Not implemented because we don't need it.
+		 */
+		@Deprecated()
+		public String getID() {
+			throw new UnsupportedOperationException();
+		}
+
 		/**
 		 * @return The changed {@link Persistent} object before the change. 
 		 * @see #mOldObject The backend member variable of this getter.

@@ -222,7 +222,7 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 	/**
 	 * @see {@link TrustID}
 	 */
-	private String getID() {
+	public String getID() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
 	}

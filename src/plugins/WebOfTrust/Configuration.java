@@ -47,6 +47,14 @@ public final class Configuration extends Persistent {
 		initializeTransient(myWebOfTrust);
 		setDefaultValues(false);
 	}
+	
+	/**
+	 * @deprecated Not implemented because we don't need it.
+	 */
+	@Deprecated()
+	public String getID() {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Stores the config object in the database. Please call this after any modifications to the config, it is not done automatically

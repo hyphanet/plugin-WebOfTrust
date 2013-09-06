@@ -437,6 +437,16 @@ public abstract class Persistent implements Serializable {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return mCreationDate;
 	}
+	  
+	/**
+	 * Returns an unique identifier of this persistent object.
+	 * For any given subclass class of Persistent only one object may exist in the database which has a certain ID.
+	 * 
+	 * The ID must also be unique for subclasses of the subclass:
+	 * For example an {@link OwnIdentity} object must not use an ID which is already used by an {@link Identity} object
+	 * because Identity is the parent class of OwnIdentity.
+	 */
+	public abstract String getID();
 	
 	/**
 	 * Returns the java object ID and the database object ID of this Persistent object.

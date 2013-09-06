@@ -210,7 +210,7 @@ public final class Score extends Persistent implements Cloneable, Serializable {
 	/**
 	 * @see {@link ScoreID}
 	 */
-	private String getID() {
+	public String getID() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
 	}
