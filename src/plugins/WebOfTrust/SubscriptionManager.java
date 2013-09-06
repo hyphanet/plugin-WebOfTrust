@@ -417,7 +417,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @see #mOldObject The backend member variable of this getter.
 		 * @throws NoSuchElementException If the change was the creation of the object.
 		 */
-		final protected Persistent getOldObject() throws NoSuchElementException {
+		protected final Persistent getOldObject() throws NoSuchElementException {
 			checkedActivate(1);
 			if(mOldObject == null)
 				throw new NoSuchElementException();
