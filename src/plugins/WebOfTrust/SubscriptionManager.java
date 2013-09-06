@@ -508,7 +508,6 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * Only one of oldIentity and newIdentity may be null. If both are non-null, their {@link Identity#getID()} must match.
 		 * 
-		 * @see Notification#Notification(Subscription, Persistent, Persistent) The requirements of that constructor apply to this one.
 		 * @param mySubscription The {@link Subscription} to whose {@link Notification} queue this {@link Notification} belongs.
 		 * @param oldIdentity The version of the {@link Identity} before the change.
 		 * @param newIdentity The version of the {@link Identity} after the change.
@@ -540,7 +539,6 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * Only one of oldTrust and newTrust may be null. If both are non-null, their {@link Trust#getID()} must match.
 		 * 
-		 * @see Notification#Notification(Subscription, Persistent, Persistent) The requirements of that constructor apply to this one.
 		 * @param mySubscription The {@link Subscription} to whose {@link Notification} queue this {@link Notification} belongs.
 		 * @param oldTrust The version of the {@link Trust} before the change.
 		 * @param newTrust The version of the {@link Trust} after the change.
@@ -572,7 +570,6 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * Only one of oldScore and newScore may be null. If both are non-null, their {@link Score#getID()} must match.
 		 * 
-		 * @see Notification#Notification(Subscription, Persistent, Persistent) The requirements of that constructor apply to this one.
 		 * @param mySubscription The {@link Subscription} to whose {@link Notification} queue this {@link Notification} belongs.
 		 * @param oldScore The version of the {@link Score} before the change.
 		 * @param newScore The version of the {@link Score} after the change.
