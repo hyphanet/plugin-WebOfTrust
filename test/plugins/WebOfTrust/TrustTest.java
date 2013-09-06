@@ -85,6 +85,14 @@ public class TrustTest extends DatabaseBasedTest {
 		}
 		catch(InvalidParameterException e) { }
 	}
+	
+	public void testSerializeDeserialize() throws DuplicateTrustException, NotTrustedException {
+		final Trust original = mWoT.getTrust(a, b);
+		final Trust deserialized = (Trust)Persistent.deserialize(mWoT, original.serialize());
+		
+		assertNotSame(original, deserialized);
+		assertEquals(original, deserialized);
+	}
 
 	public void testTrust() throws DuplicateTrustException, NotTrustedException {
 

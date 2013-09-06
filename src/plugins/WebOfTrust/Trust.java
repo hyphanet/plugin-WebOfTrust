@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Date;
 import java.util.StringTokenizer;
 
@@ -19,6 +21,9 @@ import freenet.support.StringValidityChecker;
  */
 public final class Trust extends Persistent implements Cloneable {
 	
+	/** @see Serializable */
+	private static transient final long serialVersionUID = 1L;
+
 	public static transient final int MAX_TRUST_COMMENT_LENGTH = 256;
 
 	/** The identity which gives the trust. */
@@ -415,5 +420,13 @@ public final class Trust extends Persistent implements Cloneable {
 		if(mTrusterTrustListEdition != getTruster().getEdition() && getTruster().getCurrentEditionFetchState() == Identity.FetchState.Fetched
 				&& !(getTruster() instanceof OwnIdentity)) // We do not update mTrusterTrustListEdition for OwnIdentities, they do not need it.
 			throw new IllegalStateException("mTrusterTrustListEdition is invalid: " + mTrusterTrustListEdition);
+	}
+	
+	/** @see Persistent#serialize() */
+	private void writeObject(ObjectOutputStream stream) throws IOException {
+		activateFully();
+		mTruster.activateFully();
+		mTrustee.activateFully();
+		stream.defaultWriteObject();
 	}
 }

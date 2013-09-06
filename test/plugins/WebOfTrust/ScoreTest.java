@@ -52,6 +52,14 @@ public class ScoreTest extends DatabaseBasedTest {
 		// testClone(Persistent.class, original, clone);
 		testClone(Score.class, original, clone);
 	}
+	
+	public void testSerializeDeserialize() throws NotInTrustTreeException {
+		final Score original = mWoT.getScore(a, b);
+		final Score deserialized = (Score)Persistent.deserialize(mWoT, original.serialize());
+		
+		assertNotSame(original, deserialized);
+		assertEquals(original, deserialized);
+	}
 
 	public void testScoreCreation() throws NotInTrustTreeException {
 		

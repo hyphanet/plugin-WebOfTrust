@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Date;
 import java.util.StringTokenizer;
 
@@ -19,6 +21,9 @@ import freenet.support.CurrentTimeUTC;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public final class Score extends Persistent implements Cloneable {
+	
+	/** @see Serializable */
+	private static transient final long serialVersionUID = 1L;
 	
 	/** The OwnIdentity which assigns this score to the trustee */
 	@IndexedField
@@ -401,5 +406,13 @@ public final class Score extends Persistent implements Cloneable {
 		
 		if(mLastChangedDate.after(CurrentTimeUTC.get()))
 			throw new IllegalStateException("mLastChangedDate is in the future: " + mLastChangedDate);
+	}
+	
+	/** @see Persistent#serialize() */
+	private void writeObject(ObjectOutputStream stream) throws IOException {
+		activateFully();
+		mTruster.activateFully();
+		mTrustee.activateFully();
+		stream.defaultWriteObject();
 	}
 }
