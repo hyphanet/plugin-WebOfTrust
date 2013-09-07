@@ -102,7 +102,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	    if(!isEnabled(ctx))
 	    	throw new RedirectException(webInterface.getToadlet(LoginWebInterfaceToadlet.class).getURI());
 		
-		String pass = request.getPartAsString("formPassword", 32);
+		String pass = request.getPartAsStringFailsafe("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
 			writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
 			return;
