@@ -3262,13 +3262,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @param ownIdentityID The {@link Identity.IdentityID} of the {@link OwnIdentity} you want to modify.
 	 * @param publishIntroductionPuzzles Whether to publish introduction puzzles. 
 	 * @throws UnknownIdentityException If there is no identity with the given ownIdentityID
-	 * @throws InvalidParameterException If {@link OwnIdentity#doesPublishTrustList()} returns false on the selected identity: It doesn't make sense for an identity to allow introduction if it doesn't publish a trust list - the purpose of introduction is to add other identities to your trust list.
+	 * @throws InvalidParameterException If publishIntroudctionPuzzles is set to true and {@link OwnIdentity#doesPublishTrustList()} returns false on the selected identity: It doesn't make sense for an identity to allow introduction if it doesn't publish a trust list - the purpose of introduction is to add other identities to your trust list.
 	 */
 	public synchronized void setPublishIntroductionPuzzles(final String ownIdentityID, final boolean publishIntroductionPuzzles, final int count) throws UnknownIdentityException, InvalidParameterException {
 		final OwnIdentity identity = getOwnIdentityByID(ownIdentityID);
 		final OwnIdentity oldIdentity = identity.clone(); // For the SubscriptionManager
 		
-		if(!identity.doesPublishTrustList())
+		if(publishIntroductionPuzzles && !identity.doesPublishTrustList())
 			throw new InvalidParameterException("An identity must publish its trust list if it wants to publish introduction puzzles!");
 		
 		synchronized(mSubscriptionManager) {
