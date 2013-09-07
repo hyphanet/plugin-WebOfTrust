@@ -1029,7 +1029,6 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * You are safe to pass non-stored objects or objects which must not be stored.
 	 * 
 	 * You must synchronize on this {@link SubscriptionManager} and the {@link Persistent#transactionLock(ExtObjectContainer)} when calling this function!
-	 * FIXME: Check synchronization of callers.
 	 * 
 	 * @param oldIdentity A {@link Identity#clone()} of the {@link Identity} BEFORE the changes happened. In other words the old version of it.
 	 * @param newIdentity The new version of the {@link Identity} as stored in the database now. 
@@ -1052,7 +1051,6 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * You are safe to pass non-stored objects or objects which must not be stored.
 	 * 
 	 * You must synchronize on this {@link SubscriptionManager} and the {@link Persistent#transactionLock(ExtObjectContainer)} when calling this function!
-	 * FIXME: Check synchronization of callers.
 	 * 
 	 * @param oldTrust A {@link Trust#clone()} of the {@link Trust} BEFORE the changes happened. In other words the old version of it.
 	 * @param newTrust The new version of the {@link Trust} as stored in the database now.
@@ -1075,7 +1073,6 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * You are safe to pass non-stored objects or objects which must not be stored.
 	 * 
 	 * You must synchronize on this {@link SubscriptionManager} and the {@link Persistent#transactionLock(ExtObjectContainer)} when calling this function!
-	 * FIXME: Check synchronization of callers.
 	 * 
 	 * @param oldScore A {@link Score#clone()} of the {@link Score} BEFORE the changes happened. In other words the old version of it.
 	 * @param newScore The new version of the {@link Score} as stored in the database now.
