@@ -1479,15 +1479,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				final Identity oldExistingSeed = existingSeed.clone(); // For the SubscriptionManager
 				
 				if(existingSeed instanceof OwnIdentity) {
-					final OwnIdentity ownExistingSeed = (OwnIdentity)existingSeed;
-					ownExistingSeed.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
-					ownExistingSeed.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY,
-							Integer.toString(IntroductionServer.SEED_IDENTITY_PUZZLE_COUNT));
-					
-					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldExistingSeed, ownExistingSeed);
-					ownExistingSeed.storeAndCommit();
-				}
-				else {
+					try {
+						setPublishIntroductionPuzzles(existingSeed.getID(), true, IntroductionServer.SEED_IDENTITY_PUZZLE_COUNT);
+					} catch(UnknownIdentityException e) {
+						throw new RuntimeException(e); // Should never happen since we are synchronized on the WOT
+					}
+				} else {
 					try {
 						existingSeed.setEdition(new FreenetURI(seedURI).getEdition());
 						mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldExistingSeed, existingSeed);
@@ -3267,7 +3264,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @throws UnknownIdentityException If there is no identity with the given ownIdentityID
 	 * @throws InvalidParameterException If {@link OwnIdentity#doesPublishTrustList()} returns false on the selected identity: It doesn't make sense for an identity to allow introduction if it doesn't publish a trust list - the purpose of introduction is to add other identities to your trust list.
 	 */
-	public synchronized void setPublishIntroductionPuzzles(final String ownIdentityID, final boolean publishIntroductionPuzzles) throws UnknownIdentityException, InvalidParameterException {
+	public synchronized void setPublishIntroductionPuzzles(final String ownIdentityID, final boolean publishIntroductionPuzzles, final int count) throws UnknownIdentityException, InvalidParameterException {
 		final OwnIdentity identity = getOwnIdentityByID(ownIdentityID);
 		final OwnIdentity oldIdentity = identity.clone(); // For the SubscriptionManager
 		
@@ -3279,7 +3276,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			try {
 				if(publishIntroductionPuzzles) {
 					identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
-					identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
+					identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(count));
 				} else {
 					identity.removeContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
 					identity.removeProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY);
@@ -3294,6 +3291,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 		
 		Logger.normal(this, "Set publishIntroductionPuzzles to " + true + " for " + identity);		
+	}
+	
+	/**
+	 * Wrapper around {@link #setPublishIntroductionPuzzles(String, boolean, int)}, passes the default puzzle amount as count to it.
+	 */
+	public void setPublishIntroductionPuzzles(final String ownIdentityID, final boolean publishIntroductionPuzzles) throws UnknownIdentityException, InvalidParameterException {
+		setPublishIntroductionPuzzles(ownIdentityID, publishIntroductionPuzzles, IntroductionServer.DEFAULT_PUZZLE_COUNT);
 	}
 	
 	public synchronized void addContext(String ownIdentityID, String newContext) throws UnknownIdentityException, InvalidParameterException {

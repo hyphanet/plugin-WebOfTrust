@@ -180,19 +180,11 @@ public final class FCPInterface implements FredPluginFCP {
             		identityContext);
         }
    
-        if (params.getBoolean("PublishIntroductionPuzzles", false))
-        {
-        	if(!identityPublishesTrustList)
-        		throw new InvalidParameterException("An identity cannot publish introduction puzzles if it does not publish its trust list.");
-
-        	try {
-	        	final String identityID = identity.getID();
-	        	mWoT.addContext(identityID, IntroductionPuzzle.INTRODUCTION_CONTEXT);
-	        	mWoT.setProperty(identityID, IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
-        	} catch(UnknownIdentityException e) {
-        		throw new RuntimeException(e);
-        	}
-        }
+        try {
+			mWoT.setPublishIntroductionPuzzles(identity.getID(), params.getBoolean("PublishIntroductionPuzzles", false));
+		} catch (UnknownIdentityException e) {
+			throw new RuntimeException(e);
+		}
     	}
 
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
