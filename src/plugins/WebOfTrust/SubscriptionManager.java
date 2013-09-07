@@ -6,9 +6,7 @@ package plugins.WebOfTrust;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
-import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
@@ -253,9 +251,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		
 		/**
-		 * Called by this subscription when processing an {@link InitialSynchronizationNotification}.
+		 * Called by the {@link SubscriptionManager} before storing a new Subscription.
 		 * 
-		 * Upon creation of a Subscription, such a notification is stored immediately, i.e. not triggered by an event.
 		 * When real events happen, we only want to send a "diff" between the last state of the database before the event happened and the new state.
 		 * For being able to only send a diff, the subscriber must know what the <i>initial</i> state of the database was.
 		 * And thats the purpose of this function: To send the full initial state of the database to the client.
@@ -263,7 +260,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * For example, if a client subscribes to the list of identities, it must always receive a full list of all existing identities at first.
 		 * As new identities appear afterwards, the client can be kept up to date by sending each single new identity as it appears. 
 		 * 
-		 * @see InitialSynchronizationNotification
+		 * Thread synchronization:
+		 * This must be called with synchronization upon the {@link WebOfTrust} and the SubscriptionManager.
+		 * Therefore it may perform database queries on the WebOfTrust to obtain the dataset.
 		 */
 		protected abstract void synchronizeSubscriberByFCP() throws Exception;
 
@@ -272,6 +271,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * The implementation MUST throw a {@link RuntimeException} if the FCP message was not sent successfully: 
 		 * Subscriptions are supposed to be reliable, if transmitting a {@link Notification} fails it shall
 		 * be resent.
+		 * 
+		 * <b>Thread synchronization:</b>
+		 * This must be called with synchronization upon the SubscriptionManager.
+		 * The {@link WebOfTrust} object shall NOT be locked:
+		 * The {@link Notification} objects which this function receives contain serialized clones of the objects from WebOfTrust.
+		 * Therefore, the notifications are self-contained and this function should and must NOT call any database query functions of the WebOfTrust. 
 		 * 
 		 * @param notification The {@link Notification} to send out via FCP.
 		 */
@@ -284,8 +289,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * If sending a single notification fails, the transaction for the current Notification is rolled back
 		 * and an exception is thrown.
 		 * 
-		 * You have to synchronize on the WoT, the SubscriptionManager and the database lock before calling this
-		 * function!
+		 * You have to synchronize on the SubscriptionManager and the database lock before calling this function!
 		 * You don't have to commit the transaction after calling this function.
 		 * 
 		 * @param manager The {@link SubscriptionManager} from which to query the {@link Notification}s of this Subscription.
@@ -297,12 +301,8 @@ public final class SubscriptionManager implements PrioRunnable {
 					for(final Notification notification : manager.getAllNotifications(this)) {
 						try {
 							try {
-								if(notification instanceof InitialSynchronizationNotification) {
-									synchronizeSubscriberByFCP();
-								} else {
-									notifySubscriberByFCP((NotificationType)notification);
-									notification.deleteWithoutCommit();
-								}
+								notifySubscriberByFCP((NotificationType)notification);
+								notification.deleteWithoutCommit();
 							} catch(Exception e) {
 								// Disconnected etc.
 								throw new RuntimeException(e);
@@ -379,7 +379,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Constructs a Notification in the queue of the given subscription.
 		 * Takes a free notification index from it with {@link Subscription#takeFreeNotificationIndexWithoutCommit}
 		 * 
-		 * If the class of this Notification is not InitialSynchronizationNotification only one of oldObject or newObject may be null.
+		 * Only one of oldObject or newObject may be null.
 		 * If both are non-null, their {@link Persistent#getID()} must be equal.
 		 * 
 		 * @param mySubscription The {@link Subscription} to whose Notification queue this Notification belongs.
@@ -393,8 +393,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			
 			assert	(
 						(oldObject == null ^ newObject == null) ||
-						(oldObject != null && newObject != null && oldObject.getID().equals(newObject.getID())) ||
-						(this instanceof InitialSynchronizationNotification) // Both my be null for InitialSynchronizationNotification
+						(oldObject != null && newObject != null && oldObject.getID().equals(newObject.getID()))
 					);
 			
 			mOldObject = (oldObject != null ? oldObject.serialize() : null);
@@ -413,7 +412,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			if(mIndex < 0)
 				throw new IllegalStateException("mIndex==" + mIndex);
 			
-			if(mOldObject == null && mNewObject == null && !(this instanceof InitialSynchronizationNotification))
+			if(mOldObject == null && mNewObject == null)
 				throw new NullPointerException("Only one of mOldObject and mNewObject may be null!");
 
 			if(mOldObject != null) // Don't use try/catch because startupDatabaseIntegrityTest can throw arbitrary stuff
@@ -459,31 +458,6 @@ public final class SubscriptionManager implements PrioRunnable {
 			if(mNewObject == null)
 				throw new NoSuchElementException();
 			return Persistent.deserialize(mWebOfTrust, mNewObject);
-		}
-		
-	}
-	
-	/**
-	 * This {@link Notification} is stored as the first Notification for all types of {@link Subscription} which require an initial synchronization of the client.
-	 * 
-	 * Upon creation of a {@link Subscription}, such a notification is stored immediately, i.e. not triggered by an event.
-	 * When real events happen, we only want to send a "diff" between the last state of the database before the event happened and the new state.
-	 * For being able to only send a diff, the subscriber must know what the <i>initial</i> state of the database was.
-	 * And thats the purpose of this notification: To send the full initial state of the database to the client.
-	 * 
-	 * For example, if a client subscribes to the list of identities, it must always receive a full list of all existing identities at first.
-	 * As new identities appear afterwards, the client can be kept up to date by sending each single new identity as it appears.
-	 * 
-	 * @see Subscription#synchronizeSubscriberByFCP() The function which typically deploys this Notification.
-	 */
-	@SuppressWarnings("serial")
-	protected static class InitialSynchronizationNotification extends Notification {
-		
-		/**
-		 * @param mySubscription The {@link Subscription} to whose {@link Notification} queue this {@link Notification}  will belong.
-		 */
-		protected InitialSynchronizationNotification(Subscription<? extends Notification> mySubscription) {
-			super(mySubscription, null, null);
 		}
 		
 	}
@@ -818,20 +792,27 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Creates an {@link InitialSynchronizationNotification} for the given subscription, stores it and the subscription and commits the transaction.
+	 * Calls {@link Subscription#synchronizeSubscriberByFCP()} on the Subscription, stores it and commits the transaction.
+	 * 
 	 * Takes care of all required synchronization.
 	 * Shall be used as back-end for all front-end functions for creating subscriptions.
 	 * 
 	 * @throws SubscriptionExistsAlreadyException Thrown if a subscription of the same type for the same client exists already. See {@link #throwIfSimilarSubscriptionExists(Subscription)}
 	 */
-	private synchronized void storeNewSubscriptionAndCommit(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
+	private void storeNewSubscriptionAndCommit(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
 		subscription.initializeTransient(mWoT);
-		throwIfSimilarSubscriptionExists(subscription);
-		
-		final InitialSynchronizationNotification notification = new InitialSynchronizationNotification(subscription);
-		notification.initializeTransient(mWoT);
-		notification.storeWithoutCommit();
-		subscription.storeAndCommit();
+		synchronized(mWoT) { // For synchronizeSubscriberByFCP()
+		synchronized(this) {
+			throwIfSimilarSubscriptionExists(subscription);
+	
+			try {
+				subscription.synchronizeSubscriberByFCP();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+			subscription.storeAndCommit();
+		}
+		}
 	}
 	
 	/**
@@ -888,15 +869,15 @@ public final class SubscriptionManager implements PrioRunnable {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				// FIXME: This is debug code and removing it is a critical optimization:
-				// To make debugging easier, we also send an final InitialSynchronizationNotification when disconnecting a client
-				// instead of only sending one at the beginning of the connection.
-				// Sending an InitialSynchronizationNotification usually sends the full stored dataset to synchronize the client.
+				// To make debugging easier, we also call synchronizeSubscriberByFCP() when disconnecting a client instead of only at the beginning of the connection.
+				// synchronizeSubscriberByFCP() usually sends the FULL stored dataset - for example ALL identities.
 				// The client can use it to check whether the state of WOT which he received through notifications was correct.
 				{
-					final InitialSynchronizationNotification notification = new InitialSynchronizationNotification(subscription);
-					notification.initializeTransient(mWoT);
-					notification.storeWithoutCommit();
-					subscription.sendNotifications(this);
+					try {
+						subscription.synchronizeSubscriberByFCP();
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
 				}
 
 				subscription.deleteWithoutCommit(this);
@@ -1122,7 +1103,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see Subscription#sendNotifications(SubscriptionManager) This function is called on each subscription to deploy the {@link Notification} queue.
 	 */
 	public void run() {
-		synchronized(mWoT) {
+		/* We do NOT allow database queries on the WebOfTrust object in sendNotifications: 
+		 * Notification objects contain serialized clones of all required objects for deploying them, they are self-contained.
+		 * Therefore, we don't have to take the WebOfTrust lock and can execute in parallel to threads which need to lock the WebOfTrust.*/
+		// synchronized(mWoT) {
 		synchronized(this) {
 			for(Subscription<? extends Notification> subscription : getAllSubscriptions()) {
 				try {
@@ -1134,7 +1118,7 @@ public final class SubscriptionManager implements PrioRunnable {
 				}
 			}
 		}
-		}
+		//}
 	}
 	
 	/**
