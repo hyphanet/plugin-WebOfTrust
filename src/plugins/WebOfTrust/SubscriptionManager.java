@@ -475,8 +475,6 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * NOTICE: Both Identity objects are not stored in the database and must not be stored there to prevent duplicates!
 	 * 
-	 * FIXME: The JavaDoc of this class should be used as inspiration for the JavaDoc of TrustChangedNotification / ScoreChangedNotification.
-	 * 
 	 * @see IdentitiesSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	@SuppressWarnings("serial")
