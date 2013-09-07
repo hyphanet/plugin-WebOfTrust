@@ -47,6 +47,41 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	public String path() {
 		return webInterface.getURI() + "/" + pageTitle;
 	}
+	
+	/**
+	 * Returns true if {@link #isEnabled(ToadletContext)}isEnabled() returns true. You must only proceed to handle GET/POST if this returrns true.
+	 * 
+	 * This function will try to redirect the user to the {@link LoginWebInterfaceToadlet} if that Toadlet is enabled and if its not equal to this Toadlet.
+	 * If redirecting to log in is not possible, it will attempt to redirect to {@link LogOutWebInterfaceToadlet}} with the same checks.
+	 * If thats also not possible, false is returned.
+	 * 
+	 * @see #handleMethodGET(URI, HTTPRequest, ToadletContext) Typical user of this function
+	 * @see #handleMethodPOST(URI, HTTPRequest, ToadletContext) Typical user of this function
+	 */
+	private final boolean checkIsEnabled(final ToadletContext ctx) throws RedirectException {
+		if(isEnabled(ctx))
+			return true;
+		
+    	// If the current Toadlet is not enabled the likely reason is that nobody is logged in.
+    	// So we want to redirect the user to the LoginWebInterfaceToadlet
+    	// However, we must not redirect to log in if we ARE the log in toaddlet to prevent a 100% CPU redirect loop.
+    	final WebInterfaceToadlet logIn = webInterface.getToadlet(LoginWebInterfaceToadlet.class);
+    	if(this != logIn && logIn.isEnabled(ctx))
+    		throw new RedirectException(logIn.getURI());
+    	
+    	// We now know that we are the log in toadlet or the log in toadlet is disabled.
+    	// This is most likely the case because a user is already logged in.
+    	// We check whether log out is possible and if yes, log out the user. Again, we must prevent a redirect loop.
+    	final WebInterfaceToadlet logOut = webInterface.getToadlet(LogOutWebInterfaceToadlet.class);
+    	if(this != logOut && logOut.isEnabled(ctx))
+    		throw new RedirectException(logOut.getURI());
+    	
+    	// The purpose of isEnabled() mainly is to determine whether someone is logged in or not.
+    	// If we reach this point of execution, its likely that something is wrong with the implementation of the toadlets.
+    	assert(false); // Don't use Logger since an unauthorized request shouldn't cause disk space usage.
+    	
+    	return false;
+	}
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) 
 			throws ToadletContextClosedException, IOException, RedirectException {
@@ -54,27 +89,8 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	    if(!ctx.checkFullAccess(this))
 	        return;
 	    
-	    if(!isEnabled(ctx)) {
-	    	// If the current Toadlet is not enabled the likely reason is that nobody is logged in.
-	    	// So we want to redirect the user to the LoginWebInterfaceToadlet
-	    	// However, we must not redirect to log in if we ARE the log in toaddlet to prevent a 100% CPU redirect loop.
-	    	final WebInterfaceToadlet logIn = webInterface.getToadlet(LoginWebInterfaceToadlet.class);
-	    	if(this != logIn && logIn.isEnabled(ctx))
-	    		throw new RedirectException(logIn.getURI());
-	    	
-	    	// We now know that we are the log in toadlet or the log in toadlet is disabled.
-	    	// This is most likely the case because a user is already logged in.
-	    	// We check whether log out is possible and if yes, log out the user. Again, we must prevent a redirect loop.
-	    	final WebInterfaceToadlet logOut = webInterface.getToadlet(LogOutWebInterfaceToadlet.class);
-	    	if(this != logOut && logOut.isEnabled(ctx))
-	    		throw new RedirectException(logOut.getURI());
-	    	
-	    	// The purpose of isEnabled() mainly is to determine whether someone is logged in or not.
-	    	// If we reach this point of execution, its likely that something is wrong with the implementation of the toadlets.
-	    	assert(false); // Don't use Logger since an unauthorized request shouldn't cause disk space usage.
-	    	
+	    if(!checkIsEnabled(ctx))
 	    	return;
-	    }
 		
 		String ret;
 		try {
@@ -99,8 +115,8 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	    if(!ctx.checkFullAccess(this))
 	        return;
 	    
-	    if(!isEnabled(ctx))
-	    	throw new RedirectException(webInterface.getToadlet(LoginWebInterfaceToadlet.class).getURI());
+	    if(!checkIsEnabled(ctx))
+	    	return;
 		
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
