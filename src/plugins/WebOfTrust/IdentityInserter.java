@@ -145,7 +145,7 @@ public final class IdentityInserter extends TransferThread {
 	 * @throws IOException 
 	 */
 	private void insert(OwnIdentity identity) throws IOException {
-		Bucket tempB = mTBF.makeBucket(64 * 1024); /* TODO: Tweak */  
+		Bucket tempB = mTBF.makeBucket(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE + 1);  
 		OutputStream os = null;
 
 		try {

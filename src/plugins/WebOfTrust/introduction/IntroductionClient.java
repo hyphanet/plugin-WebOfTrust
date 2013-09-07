@@ -385,7 +385,7 @@ public final class IntroductionClient extends TransferThread  {
 		
 		assert(!puzzle.wasInserted());
 		
-		Bucket tempB = mTBF.makeBucket(1024); /* TODO: Set to a reasonable value */
+		Bucket tempB = mTBF.makeBucket(XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE + 1);
 		OutputStream os = null;
 		
 		try {

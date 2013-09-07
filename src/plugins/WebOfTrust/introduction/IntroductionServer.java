@@ -256,7 +256,7 @@ public final class IntroductionServer extends TransferThread {
 		
 		assert(!puzzle.wasInserted());
 		
-		Bucket tempB = mTBF.makeBucket(XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE);
+		Bucket tempB = mTBF.makeBucket(XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE + 1);
 		OutputStream os = null;
 		
 		try {
