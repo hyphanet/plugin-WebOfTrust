@@ -92,23 +92,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	    if(!checkIsEnabled(ctx))
 	    	return;
 		
-		String ret;
-		try {
-			WebPage page = makeWebPage(req, ctx);
-			page.make();
-			ret = page.toHTML();
-		} catch (UnknownIdentityException e) {
-			try {
-				WebPage page = new ErrorPage(this, req, ctx, e, webInterface.l10n());
-				page.make();
-				ret = page.toHTML();
-			}
-			catch(Exception doubleFault) {
-				ret = doubleFault.toString();
-			}
-
-		}
-		writeHTMLReply(ctx, 200, "OK", ret);
+	    handleRequest(req, ctx);
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException, SizeLimitExceededException, NoSuchElementException {
@@ -124,9 +108,15 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 			return;
 		}
 
+		handleRequest(request, ctx);
+	}
+	
+	/**
+	 * Handler for POST/GET. Does not do any access control. You have to check that the user is authorized before calling this! 
+	 */
+	private void handleRequest(final HTTPRequest request, final ToadletContext ctx) throws RedirectException, ToadletContextClosedException, IOException {
 		String ret;
 		try {
-			
 			WebPage page = makeWebPage(request, ctx);
 			page.make();
 			ret = page.toHTML();
