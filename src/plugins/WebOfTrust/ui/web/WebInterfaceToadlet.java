@@ -115,7 +115,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	 * Handler for POST/GET. Does not do any access control. You have to check that the user is authorized before calling this! 
 	 */
 	private void handleRequest(final HTTPRequest request, final ToadletContext ctx) throws RedirectException, ToadletContextClosedException, IOException {
-		String ret;
+		String ret = "";
 		WebPage page = null;
 		try {
 			page = makeWebPage(request, ctx);
