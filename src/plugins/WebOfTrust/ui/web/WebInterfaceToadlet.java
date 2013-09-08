@@ -134,7 +134,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	    if(!checkIsEnabled(ctx))
 	    	return;
 		
-	    handleRequest(req, ctx);
+	    handleRequest(uri, req, ctx);
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException, SizeLimitExceededException, NoSuchElementException {
@@ -150,17 +150,26 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 			return;
 		}
 
-		handleRequest(request, ctx);
+		handleRequest(uri, request, ctx);
 	}
 	
 	/**
 	 * Handler for POST/GET. Does not do any access control. You have to check that the user is authorized before calling this! 
 	 */
-	private void handleRequest(final HTTPRequest request, final ToadletContext ctx) throws RedirectException, ToadletContextClosedException, IOException {
+	private void handleRequest(final URI uri, final HTTPRequest request, final ToadletContext ctx) throws RedirectException, ToadletContextClosedException, IOException {
 		String ret = "";
 		WebPage page = null;
 		try {
 			page = makeWebPage(request, ctx);
+		} catch(RedirectException e) {
+			final URI target = e.getTarget();
+			// Prevent infinite redirect loop
+			if(!target.equals(getURI()) && !target.equals(uri)) {
+				throw e; 
+			} else {
+				// Redirect loop detected. Wrap the exception in a new one so the stack trace points to this file
+				page = new ErrorPage(this, request, ctx, new RuntimeException(e), webInterface.l10n());
+			}
 		} catch (UnknownIdentityException e) {
 			Logger.warning(this, "Session is invalid, the own identity was deleted already.", e);
 			sessionManager.deleteSession(ctx);
