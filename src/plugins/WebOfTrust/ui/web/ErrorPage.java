@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import freenet.clients.http.RedirectException;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.support.Logger;
@@ -17,8 +18,11 @@ public class ErrorPage extends WebPageImpl {
 	
 	private final Exception mError;
 
-	public ErrorPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, Exception myError, BaseL10n _baseL10n) {
-		super(toadlet, myRequest, context, _baseL10n);
+	/**
+	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
+	 */
+	public ErrorPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, Exception myError, BaseL10n _baseL10n) throws RedirectException {
+		super(toadlet, myRequest, context, _baseL10n, false);
 		mError = myError;
 		Logger.error(this, "Internval error, please report this", mError);
 	}

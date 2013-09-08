@@ -11,6 +11,7 @@ import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionClient;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import freenet.clients.http.RedirectException;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.pluginmanager.PluginRespirator;
@@ -28,14 +29,13 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	protected final OwnIdentity mIdentity;
 
 	/**
-	 *
-	 * 
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
 	 * @throws UnknownIdentityException 
+	 * @throws RedirectException If the {@link Session} has expired. 
 	 */
-	public IntroduceIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws UnknownIdentityException {
-		super(toadlet, myRequest, context, _baseL10n);
+	public IntroduceIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws UnknownIdentityException, RedirectException {
+		super(toadlet, myRequest, context, _baseL10n, true);
 		
 		mPuzzleURI = toadlet.webInterface.getURI() + "/GetPuzzle";
 		

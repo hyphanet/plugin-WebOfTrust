@@ -9,6 +9,7 @@ import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
 
 import com.db4o.ObjectSet;
 
+import freenet.clients.http.RedirectException;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
@@ -26,9 +27,10 @@ public final class LogInPage extends WebPageImpl {
 	 *                   but any scheme, host, or port will be ignored. If this parameter is empty or not specified it
 	 *                   redirects to "/WebOfTrust".
 	 * @see WebOfTrust#SELF_URI
+	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
 	 */
-	public LogInPage(WebInterfaceToadlet toadlet, HTTPRequest request, ToadletContext context, BaseL10n _baseL10n) {
-		super(toadlet, request, context, _baseL10n);
+	public LogInPage(WebInterfaceToadlet toadlet, HTTPRequest request, ToadletContext context, BaseL10n _baseL10n) throws RedirectException {
+		super(toadlet, request, context, _baseL10n, false);
 		path = toadlet.path();
 
 		final String candidate = request.getParam("redirect-target");

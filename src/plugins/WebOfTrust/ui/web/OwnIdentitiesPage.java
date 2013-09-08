@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
@@ -43,9 +44,10 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	 * 
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
+	 * @throws RedirectException If the {@link Session} has expired.
 	 */
-	public OwnIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) {
-		super(toadlet, myRequest, context, _baseL10n);
+	public OwnIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws RedirectException {
+		super(toadlet, myRequest, context, _baseL10n, true);
 
 		final WebOfTrust wot = toadlet.webInterface.getWoT();
 

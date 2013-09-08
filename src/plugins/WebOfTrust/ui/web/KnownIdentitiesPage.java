@@ -20,6 +20,7 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 
 import com.db4o.ObjectSet;
 
+import freenet.clients.http.RedirectException;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10n;
@@ -51,9 +52,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * 
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
+	 * @throws RedirectException If the {@link Session} has expired. 
 	 */
-	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) {
-		super(toadlet, myRequest, context, _baseL10n);
+	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws RedirectException {
+		super(toadlet, myRequest, context, _baseL10n, true);
 		identitiesPageURI = toadlet.webInterface.getURI() + "/ShowIdentity";
 	}
 

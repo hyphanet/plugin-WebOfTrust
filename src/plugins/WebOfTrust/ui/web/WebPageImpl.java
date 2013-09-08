@@ -10,9 +10,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.PageNode;
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.pluginmanager.PluginRespirator;
@@ -31,6 +34,8 @@ public abstract class WebPageImpl implements WebPage {
 	protected final WebInterface mWebInterface;
 	
 	protected final WebOfTrust wot;
+	
+	protected final String mLoggedInOwnIdentityID;
 	
 	protected final URI uri;
 
@@ -57,9 +62,12 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param myRequest The request sent by the user.
 	 * @param _baseL10n TODO
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs. 
+	 * @param useSession If true, the timeout of the current {@link Session} is refreshed and {@link #mLoggedInOwnIdentityID} is initialized to the ID of the logged in identity.
+	 * @throws RedirectException If useSession was true and the {@link Session} was expired already. Then the user is redirected to the {@link LoginWebInterfaceToadlet}.
 	 */
-	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx, BaseL10n _baseL10n) {
+	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx, BaseL10n _baseL10n, boolean useSession) throws RedirectException {
 		mWebInterface = toadlet.webInterface;
+
 		wot = mWebInterface.getWoT();
 		uri = toadlet.getURI();
 		baseL10n = _baseL10n;
@@ -72,6 +80,8 @@ public abstract class WebPageImpl implements WebPage {
 		this.request = myRequest;
 		
 		this.contentBoxes = new ArrayList<HTMLNode>();
+		
+		mLoggedInOwnIdentityID = useSession ? toadlet.getLoggedInUserID(ctx) : null;
 	}
 	
 	/**
@@ -162,4 +172,5 @@ public abstract class WebPageImpl implements WebPage {
 	protected BaseL10n l10n() {
 	    return baseL10n;
 	}
+	
 }

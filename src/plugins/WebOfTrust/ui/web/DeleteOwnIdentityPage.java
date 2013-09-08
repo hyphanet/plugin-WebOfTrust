@@ -5,6 +5,7 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import freenet.clients.http.RedirectException;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
@@ -21,8 +22,12 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 	
 	private final OwnIdentity mIdentity;
 
-	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws UnknownIdentityException {
-		super(toadlet, myRequest, context, _baseL10n);
+	/**
+	 * @throws RedirectException If the {@link Session} has expired. 
+	 */
+	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws UnknownIdentityException, RedirectException {
+		super(toadlet, myRequest, context, _baseL10n, true);
+		
 		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
 	}
 
