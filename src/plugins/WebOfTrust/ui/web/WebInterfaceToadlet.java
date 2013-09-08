@@ -125,11 +125,9 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 			
 			try {
 				page = new ErrorPage(this, request, ctx, e, webInterface.l10n());
-			}
-			catch(Exception doubleFault) {
+			} catch(Exception doubleFault) {
 				ret = doubleFault.toString();
 			}
-
 		}
 		
 		if(page != null) {
