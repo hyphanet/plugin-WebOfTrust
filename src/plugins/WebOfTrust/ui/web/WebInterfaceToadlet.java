@@ -116,21 +116,24 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	 */
 	private void handleRequest(final HTTPRequest request, final ToadletContext ctx) throws RedirectException, ToadletContextClosedException, IOException {
 		String ret;
+		WebPage page = null;
 		try {
-			WebPage page = makeWebPage(request, ctx);
-			page.make();
-			ret = page.toHTML();
+			page = makeWebPage(request, ctx);
 		} catch (UnknownIdentityException e) {
 			try {
-				WebPage page = new ErrorPage(this, request, ctx, e, webInterface.l10n());
-				page.make();
-				ret = page.toHTML();
+				page = new ErrorPage(this, request, ctx, e, webInterface.l10n());
 			}
 			catch(Exception doubleFault) {
 				ret = doubleFault.toString();
 			}
 
 		}
+		
+		if(page != null) {
+			page.make();
+			ret = page.toHTML();
+		}
+		
 		writeHTMLReply(ctx, 200, "OK", ret);
 	}
 
