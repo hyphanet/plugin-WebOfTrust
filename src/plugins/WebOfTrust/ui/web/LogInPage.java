@@ -33,8 +33,7 @@ public final class LogInPage extends WebPageImpl {
 		super(toadlet, request, context, _baseL10n, false);
 		path = toadlet.path();
 
-		final String candidate = request.getParam("redirect-target");
-		target = candidate.isEmpty() ? WebOfTrust.SELF_URI : candidate;
+		target = request.getParam("redirect-target", WebOfTrust.SELF_URI /* default */);
 	}
 
 	@Override
