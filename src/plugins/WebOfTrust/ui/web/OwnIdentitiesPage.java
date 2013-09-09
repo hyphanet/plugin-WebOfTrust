@@ -7,15 +7,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import freenet.clients.http.RedirectException;
-import freenet.clients.http.SessionManager;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
-import plugins.WebOfTrust.util.RandomName;
 
 import com.db4o.ObjectSet;
 
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10n;
@@ -191,14 +191,8 @@ public class OwnIdentitiesPage extends WebPageImpl {
 			}
 		}
 		}
-	
-		HTMLNode createForm = pr.addFormChild(boxContent, createIdentityURI, "CreateIdentity");
-		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "CreateIdentity" });
-		createForm.addChild("span", new String[] { "title", "style" }, 
-				new String[] { l10n().getString("OwnIdentitiesPage.OwnIdentities.Nickname.Tooltip"), "border-bottom: 1px dotted; cursor: help;"}, 
-		        l10n().getString("OwnIdentitiesPage.OwnIdentities.Nickname") + " : ");
-		createForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] {"text", "Nickname", "30", RandomName.newNickname()});
-		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "create", l10n().getString("OwnIdentitiesPage.OwnIdentities.CreateButton") });
+
+		CreateIdentityPage.addLinkToCreateIdentityPage(this);
 	}
 
 	/**

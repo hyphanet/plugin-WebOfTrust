@@ -81,12 +81,6 @@ public final class LogInPage extends WebPageImpl {
 	}
 
 	private void makeCreateIdentityBox() {
-		HTMLNode createIdentityBox = addContentBox(l10n().getString("LoginPage.CreateOwnIdentity.Header"));
-		HTMLNode aChild = createIdentityBox.addChild("p");
-		l10n().addL10nSubstitution(
-		        aChild,
-		        "LoginPage.CreateOwnIdentity.Text",
-		        new String[] { "link", "/link" },
-		        new HTMLNode[] { new HTMLNode("a", "href", mWebInterface.getToadlet(CreateIdentityWebInterfaceToadlet.class).getURI().toString()) });
+		CreateIdentityPage.addLinkToCreateIdentityPage(this);
 	}
 }
