@@ -35,6 +35,10 @@ public abstract class WebPageImpl implements WebPage {
 	
 	protected final WebOfTrust wot;
 	
+	protected final WebInterfaceToadlet mToadlet;
+	
+	protected final ToadletContext mContext;
+	
 	protected final String mLoggedInOwnIdentityID;
 	
 	protected final URI uri;
@@ -66,10 +70,11 @@ public abstract class WebPageImpl implements WebPage {
 	 * @throws RedirectException If useSession was true and the {@link Session} was expired already. Then the user is redirected to the {@link LoginWebInterfaceToadlet}.
 	 */
 	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx, BaseL10n _baseL10n, boolean useSession) throws RedirectException {
-		mWebInterface = toadlet.webInterface;
-
+		mToadlet = toadlet;
+		mWebInterface = mToadlet.webInterface;
+		mContext = ctx;
 		wot = mWebInterface.getWoT();
-		uri = toadlet.getURI();
+		uri = mToadlet.getURI();
 		baseL10n = _baseL10n;
 		
 		pr = wot.getPluginRespirator();
@@ -80,8 +85,7 @@ public abstract class WebPageImpl implements WebPage {
 		this.request = myRequest;
 		
 		this.contentBoxes = new ArrayList<HTMLNode>();
-		
-		mLoggedInOwnIdentityID = useSession ? toadlet.getLoggedInUserID(ctx) : null;
+		mLoggedInOwnIdentityID = useSession ? mToadlet.getLoggedInUserID(ctx) : null;
 	}
 	
 	/**
