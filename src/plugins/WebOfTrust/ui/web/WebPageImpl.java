@@ -160,6 +160,9 @@ public abstract class WebPageImpl implements WebPage {
 	
 	/**
 	 * Get a new Infobox but do not add it to the page. Can be used for putting Infoboxes inside Infoboxes.
+	 * FIXME: The caller should only add HTMLNodes to the inner of the infobox. If he wants to add the box to HTMLNodes he should add
+	 * the outer of the box though. We only hand out the outer!
+	 * 
 	 * @param title The title of the desired Infobox
 	 * @return the contentNode of the newly created Infobox
 	 */
