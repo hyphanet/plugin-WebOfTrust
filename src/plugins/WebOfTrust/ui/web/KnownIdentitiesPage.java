@@ -17,6 +17,7 @@ import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
+import plugins.WebOfTrust.ui.web.WebInterface.IdentityWebInterfaceToadlet;
 
 import com.db4o.ObjectSet;
 
@@ -57,7 +58,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 */
 	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
 		super(toadlet, myRequest, context, true);
-		identitiesPageURI = toadlet.webInterface.getURI() + "/ShowIdentity";
+		identitiesPageURI = mWebInterface.getToadlet(IdentityWebInterfaceToadlet.class).getURI().toString();
 	}
 
 	public void make() {
