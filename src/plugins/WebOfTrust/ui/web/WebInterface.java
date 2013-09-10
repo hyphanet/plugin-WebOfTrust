@@ -82,8 +82,8 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new StatisticsPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			return new StatisticsPage(this, req, context);
 		}
 
 	}
@@ -95,8 +95,8 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new OwnIdentitiesPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			return new OwnIdentitiesPage(this, req, context);
 		}
 	}
 	
@@ -107,8 +107,8 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new KnownIdentitiesPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException, UnknownIdentityException {
+			return new KnownIdentitiesPage(this, req, context);
 		}
 	}
 
@@ -119,8 +119,8 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new LogInPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
+			return new LogInPage(this, req, context);
 		}
 
 		/** Log an user in from a POST and redirect to the BoardsPage */
@@ -179,7 +179,7 @@ public class WebInterface {
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			// TODO: Secure log out against malicious links (by using POST with form password instead of GET)
 			// At the moment it is just a link and unsecured i.e. no form password check etc.
-			sessionManager.deleteSession(context);
+			logOut(context);
 			throw new RedirectException(getToadlet(LoginWebInterfaceToadlet.class).getURI());
 		}
 		
@@ -192,8 +192,8 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new CreateIdentityPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			return new CreateIdentityPage(this, req, context);
 		}
 		
 		@Override
@@ -214,8 +214,8 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new DeleteOwnIdentityPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
+			return new DeleteOwnIdentityPage(this, req, context);
 		}
 		
 		@Override
@@ -231,8 +231,8 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new EditOwnIdentityPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
+			return new EditOwnIdentityPage(this, req, context);
 		}
 		
 		@Override
@@ -248,8 +248,8 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new IntroduceIdentityPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
+			return new IntroduceIdentityPage(this, req, context);
 		}
 		
 		@Override
@@ -265,8 +265,8 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new IdentityPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
+			return new IdentityPage(this, req, context);
 		}
 		
 		@Override
@@ -326,9 +326,9 @@ public class WebInterface {
 			}
 		}
 		
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			// Not expected to make it here...
-			return new StatisticsPage(this, req, context, l10n());
+			return new StatisticsPage(this, req, context);
 		}
 	}
 

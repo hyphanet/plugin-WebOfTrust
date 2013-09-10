@@ -17,12 +17,13 @@ import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
-
-import com.db4o.ObjectSet;
-
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.ui.web.WebInterface.IdentityWebInterfaceToadlet;
+import freenet.clients.http.InfoboxNode;
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
-import freenet.l10n.BaseL10n;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
@@ -38,6 +39,8 @@ import freenet.support.api.HTTPRequest;
  */
 public class KnownIdentitiesPage extends WebPageImpl {
 
+	private final OwnIdentity treeOwner;
+	
 	private final String identitiesPageURI;
 	
 	private static enum SortBy {
@@ -51,10 +54,13 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * 
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
+	 * @throws RedirectException If the {@link Session} has expired. 
+	 * @throws UnknownIdentityException If the owner of the {@link Session} does not exist anymore.
 	 */
-	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) {
-		super(toadlet, myRequest, context, _baseL10n);
-		identitiesPageURI = toadlet.webInterface.getURI() + "/ShowIdentity";
+	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException, UnknownIdentityException {
+		super(toadlet, myRequest, context, true);
+		identitiesPageURI = mWebInterface.getToadlet(IdentityWebInterfaceToadlet.class).getURI().toString();
+		treeOwner = wot.getOwnIdentityByID(mLoggedInOwnIdentityID);
 	}
 
 	public void make() {
@@ -72,7 +78,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		}
 		
 		if(request.isPartSet("SetTrust")) {
-			String trusterID = request.getPartAsStringFailsafe("OwnerID", 128);
+			String trusterID = mLoggedInOwnIdentityID;
 		
 			for(String part : request.getParts()) {
 				if(!part.startsWith("SetTrustOf"))
@@ -107,44 +113,19 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 
-		OwnIdentity treeOwner = null;
-		int nbOwnIdentities = 1;
-		String ownerID = request.getPartAsStringFailsafe("OwnerID", 128);
-		
-		if(!ownerID.equals("")) {
-			try {
-				treeOwner = wot.getOwnIdentityByID(ownerID);
-			} catch (Exception e) {
-				Logger.error(this, "Error while selecting the OwnIdentity", e);
-				addErrorBox(l10n().getString("KnownIdentitiesPage.SelectOwnIdentity.Failed"), e);
-			}
-		} else {
-			synchronized(wot) {
-				ObjectSet<OwnIdentity> allOwnIdentities = wot.getAllOwnIdentities();
-				nbOwnIdentities = allOwnIdentities.size();
-				if(nbOwnIdentities == 1)
-					treeOwner = allOwnIdentities.next();
-			}
-		}
-		
-		if(treeOwner != null && treeOwner.isRestoreInProgress()) {
+		if(treeOwner.isRestoreInProgress()) {
 			makeRestoreInProgressWarning();
 			return;
 		}
 			
-		makeAddIdentityForm(treeOwner);
+		makeAddIdentityForm();
 
-		if(treeOwner != null) {
-			try {
-				makeKnownIdentitiesList(treeOwner);
-			} catch (Exception e) {
-				Logger.error(this, "Error", e);
-				addErrorBox("Error", e);
-			}
-		} else if(nbOwnIdentities > 1)
-			makeSelectTreeOwnerForm();
-		else
-			makeNoOwnIdentityWarning();
+		try {
+			makeKnownIdentitiesList();
+		} catch (Exception e) {
+			Logger.error(this, "Error", e);
+			addErrorBox("Error", e);
+		}
 	}
 	
 	/**
@@ -153,15 +134,14 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * @param pr a reference to the {@link PluginRespirator}
 	 * @param treeOwner The owner of the known identity list. Not used for adding the identity but for showing the known identity list properly after adding.
 	 */
-	private void makeAddIdentityForm(OwnIdentity treeOwner) {
+	private void makeAddIdentityForm() {
 		
 		// TODO Add trust value and comment fields and make them mandatory
 		// The user should only add an identity he trusts
 		HTMLNode addBoxContent = addContentBox(l10n().getString("KnownIdentitiesPage.AddIdentity.Header"));
 	
 		HTMLNode createForm = pr.addFormChild(addBoxContent, uri.toString(), "AddIdentity");
-		if(treeOwner != null)
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
+
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "AddIdentity" });
 		createForm.addChild("span", new String[] {"title", "style"}, 
 				new String[] { 
@@ -172,46 +152,24 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		createForm.addChild("input", new String[] {"type", "name", "size"}, new String[] {"text", "IdentityURI", "70"});
 		createForm.addChild("br");
 		
-		if(treeOwner != null) {
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrust", "true"});
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrustOf", "void"});
-			
-			createForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ")
-				.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Value", "4", "" });
-			
-			createForm.addChild("span", " " + l10n().getString("KnownIdentitiesPage.AddIdentity.Comment") + ": ")
-				.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Comment", "20", "" });
-			
-			createForm.addChild("br");
-		}
+		
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrust", "true"});
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrustOf", "void"});
+
+		createForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ")
+		.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Value", "4", "" });
+
+		createForm.addChild("span", " " + l10n().getString("KnownIdentitiesPage.AddIdentity.Comment") + ": ")
+		.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Comment", "20", "" });
+
+		createForm.addChild("br");
+		
 		
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "AddIdentity", l10n().getString("KnownIdentitiesPage.AddIdentity.AddButton") });
-	}
-
-	private void makeNoOwnIdentityWarning() {
-		addErrorBox(l10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Header"), l10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Text"));
 	}
 	
 	private void makeRestoreInProgressWarning() {
 		addErrorBox(l10n().getString("KnownIdentitiesPage.RestoreInProgressWarning.Header"), l10n().getString("KnownIdentitiesPage.RestoreInProgressWarning.Text"));
-	}
-	
-	private void makeSelectTreeOwnerForm() {
-
-		HTMLNode listBoxContent = addContentBox(l10n().getString("KnownIdentitiesPage.SelectTreeOwner.Header"));
-		HTMLNode selectForm = pr.addFormChild(listBoxContent, uri.toString(), "ViewTree");
-		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "ViewTree" });
-		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnerID");
-
-		synchronized(wot) {
-			for(OwnIdentity ownIdentity : wot.getAllOwnIdentities())
-				selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getNickname());
-		}
-
-		selectForm.addChild(
-		        "input", 
-		        new String[] { "type", "name", "value" }, 
-		        new String[] { "submit", "select", l10n().getString("KnownIdentitiesPage.SelectTreeOwner.ViewOwnersTreeButton") });
 	}
 	
 	/**
@@ -255,7 +213,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * @param _pr a reference to the {@link PluginRespirator}
 	 * @param treeOwner owner of the trust tree we want to display 
 	 */
-	private void makeKnownIdentitiesList(OwnIdentity treeOwner) throws DuplicateScoreException, DuplicateTrustException {
+	private void makeKnownIdentitiesList() throws DuplicateScoreException, DuplicateTrustException {
 
 		String nickFilter = request.getPartAsStringFailsafe("nickfilter", 100).trim();
 		String sortBy = request.isPartSet("sortby") ? request.getPartAsStringFailsafe("sortby", 100).trim() : "Nickname";
@@ -264,16 +222,18 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		HTMLNode knownIdentitiesBox = addContentBox(l10n().getString("KnownIdentitiesPage.KnownIdentities.Header"));
 		knownIdentitiesBox = pr.addFormChild(knownIdentitiesBox, uri.toString(), "Filters").addChild("p");
-		knownIdentitiesBox.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
+
 		
 		
-		HTMLNode filtersBox = getContentBox(l10n().getString("KnownIdentitiesPage.FiltersAndSorting.Header"));
+		InfoboxNode filtersBoxNode = getContentBox(l10n().getString("KnownIdentitiesPage.FiltersAndSorting.Header"));
+		
 		{ // Filters box
-		knownIdentitiesBox.addChild(filtersBox);
+		knownIdentitiesBox.addChild(filtersBoxNode.outer);
+		HTMLNode filtersBox = filtersBoxNode.content;
 		filtersBox.addChild("#", l10n().getString("KnownIdentitiesPage.FiltersAndSorting.ShowOnlyNicksContaining") + " : ");
-		filtersBox.addChild("#", " " + l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy") + " : ");
 		filtersBox.addChild("input", new String[] {"type", "size", "name", "value"}, new String[]{"text", "15", "nickfilter", nickFilter});
 		
+		filtersBox.addChild("#", " " + l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy") + " : ");
 		HTMLNode option = filtersBox.addChild("select", new String[]{"name", "id"}, new String[]{"sortby", "sortby"});
 		TreeMap<String, String> options = new TreeMap<String, String>();
 		options.put(SortBy.Nickname.toString(), l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Nickname"));

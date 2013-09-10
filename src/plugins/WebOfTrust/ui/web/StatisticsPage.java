@@ -5,8 +5,9 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
-import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -23,9 +24,10 @@ public class StatisticsPage extends WebPageImpl {
 	 * 
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
+	 * @throws RedirectException If the {@link Session} has expired.
 	 */
-	public StatisticsPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) {
-		super(toadlet, myRequest, context, _baseL10n);
+	public StatisticsPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
+		super(toadlet, myRequest, context, true);
 	}
 
 	public void make() {

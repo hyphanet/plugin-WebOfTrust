@@ -5,12 +5,12 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
 
 import com.db4o.ObjectSet;
 
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
-import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -26,13 +26,13 @@ public final class LogInPage extends WebPageImpl {
 	 *                   but any scheme, host, or port will be ignored. If this parameter is empty or not specified it
 	 *                   redirects to "/WebOfTrust".
 	 * @see WebOfTrust#SELF_URI
+	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
 	 */
-	public LogInPage(WebInterfaceToadlet toadlet, HTTPRequest request, ToadletContext context, BaseL10n _baseL10n) {
-		super(toadlet, request, context, _baseL10n);
+	public LogInPage(WebInterfaceToadlet toadlet, HTTPRequest request, ToadletContext context) throws RedirectException {
+		super(toadlet, request, context, false);
 		path = toadlet.path();
 
-		final String candidate = request.getParam("redirect-target");
-		target = candidate.isEmpty() ? WebOfTrust.SELF_URI : candidate;
+		target = request.getParam("redirect-target", WebOfTrust.SELF_URI /* default */);
 	}
 
 	@Override
@@ -80,12 +80,6 @@ public final class LogInPage extends WebPageImpl {
 	}
 
 	private void makeCreateIdentityBox() {
-		HTMLNode createIdentityBox = addContentBox(l10n().getString("LoginPage.CreateOwnIdentity.Header"));
-		HTMLNode aChild = createIdentityBox.addChild("p");
-		l10n().addL10nSubstitution(
-		        aChild,
-		        "LoginPage.CreateOwnIdentity.Text",
-		        new String[] { "link", "/link" },
-		        new HTMLNode[] { new HTMLNode("a", "href", mWebInterface.getToadlet(CreateIdentityWebInterfaceToadlet.class).getURI().toString()) });
+		CreateIdentityPage.addLinkToCreateIdentityPage(this);
 	}
 }

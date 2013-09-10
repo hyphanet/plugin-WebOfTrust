@@ -5,8 +5,10 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
-import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -21,8 +23,12 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 	
 	private final OwnIdentity mIdentity;
 
-	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws UnknownIdentityException {
-		super(toadlet, myRequest, context, _baseL10n);
+	/**
+	 * @throws RedirectException If the {@link Session} has expired. 
+	 */
+	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
+		super(toadlet, myRequest, context, true);
+		
 		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
 	}
 
@@ -30,10 +36,18 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 		if(request.isPartSet("confirm")) {
 			try {
 				wot.deleteOwnIdentity(mIdentity.getID());
+				mToadlet.logOut(mContext);
 				
 				/* TODO: Show the OwnIdentities page instead! Use the trick which Freetalk does for inlining pages */
 				HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Header"));
 				box.addChild("#", l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text"));
+				
+				try {
+					mWebInterface.getToadlet(LoginWebInterfaceToadlet.class).makeWebPage(request, mContext).addToPage(this);
+				} catch (RedirectException e) {
+					throw new RuntimeException(e); // Shouldn't happen according to JavaDoc of constructor
+				}
+				
 			} catch (UnknownIdentityException e) {
 				addErrorBox(l10n().getString("Common.UnknownIdentityExceptionTitle"), l10n().getString("Common.UnknownIdentityExceptionDescription"));
 			}
