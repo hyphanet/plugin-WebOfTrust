@@ -20,7 +20,9 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 
 import com.db4o.ObjectSet;
 
+import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10n;
@@ -269,9 +271,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		knownIdentitiesBox.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
 		
 		
-		HTMLNode filtersBox = getContentBox(l10n().getString("KnownIdentitiesPage.FiltersAndSorting.Header"));
+		InfoboxNode filtersBoxNode = getContentBox(l10n().getString("KnownIdentitiesPage.FiltersAndSorting.Header"));
+		
 		{ // Filters box
-		knownIdentitiesBox.addChild(filtersBox);
+		knownIdentitiesBox.addChild(filtersBoxNode.outer);
+		HTMLNode filtersBox = filtersBoxNode.content;
 		filtersBox.addChild("#", l10n().getString("KnownIdentitiesPage.FiltersAndSorting.ShowOnlyNicksContaining") + " : ");
 		filtersBox.addChild("#", " " + l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy") + " : ");
 		filtersBox.addChild("input", new String[] {"type", "size", "name", "value"}, new String[]{"text", "15", "nickfilter", nickFilter});
