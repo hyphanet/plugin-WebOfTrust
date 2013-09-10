@@ -67,6 +67,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	 * 
 	 * @throws RedirectException If the session is not valid anymore. The redirect will be to the {@link LoginWebInterfaceToadlet}.
 	 * @return The ID of the logged in user. Typically the ID of the {@link OwnIdentity} which is logged in.
+	 * @see #getLoggedInUserID(ToadletContext)
 	 */
 	public final String getLoggedInUserID(ToadletContext context) throws RedirectException {
 		final Session session = sessionManager.useSession(context);
@@ -83,6 +84,15 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		}
 
 		return session.getUserID();
+	}
+	
+	/**
+	 * Ends the current {@link Session}.
+	 * 
+	 * @see #getLoggedInUserID(ToadletContext)
+	 */
+	public final void logOut(ToadletContext context) {
+		sessionManager.deleteSession(context);
 	}
 	
 	@Override
