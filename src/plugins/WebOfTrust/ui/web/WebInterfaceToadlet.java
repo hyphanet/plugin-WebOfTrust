@@ -178,14 +178,14 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 				throw e; 
 			} else {
 				// Redirect loop detected. Wrap the exception in a new one so the stack trace points to this file
-				page = new ErrorPage(this, request, ctx, new RuntimeException(e), webInterface.l10n());
+				page = new ErrorPage(this, request, ctx, new RuntimeException(e));
 			}
 		} catch (UnknownIdentityException e) {
 			Logger.warning(this, "Session is invalid, the own identity was deleted already.", e);
 			sessionManager.deleteSession(ctx);
 			
 			try {
-				page = new ErrorPage(this, request, ctx, e, webInterface.l10n());
+				page = new ErrorPage(this, request, ctx, e);
 			} catch(Exception doubleFault) {
 				ret = doubleFault.toString();
 			}

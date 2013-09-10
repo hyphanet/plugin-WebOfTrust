@@ -83,7 +83,7 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
-			return new StatisticsPage(this, req, context, l10n());
+			return new StatisticsPage(this, req, context);
 		}
 
 	}
@@ -96,7 +96,7 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
-			return new OwnIdentitiesPage(this, req, context, l10n());
+			return new OwnIdentitiesPage(this, req, context);
 		}
 	}
 	
@@ -108,7 +108,7 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
-			return new KnownIdentitiesPage(this, req, context, l10n());
+			return new KnownIdentitiesPage(this, req, context);
 		}
 	}
 
@@ -120,7 +120,7 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
-			return new LogInPage(this, req, context, l10n());
+			return new LogInPage(this, req, context);
 		}
 
 		/** Log an user in from a POST and redirect to the BoardsPage */
@@ -193,7 +193,7 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
-			return new CreateIdentityPage(this, req, context, l10n());
+			return new CreateIdentityPage(this, req, context);
 		}
 		
 		@Override
@@ -215,7 +215,7 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
-			return new DeleteOwnIdentityPage(this, req, context, l10n());
+			return new DeleteOwnIdentityPage(this, req, context);
 		}
 		
 		@Override
@@ -232,7 +232,7 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
-			return new EditOwnIdentityPage(this, req, context, l10n());
+			return new EditOwnIdentityPage(this, req, context);
 		}
 		
 		@Override
@@ -249,7 +249,7 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
-			return new IntroduceIdentityPage(this, req, context, l10n());
+			return new IntroduceIdentityPage(this, req, context);
 		}
 		
 		@Override
@@ -266,7 +266,7 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
-			return new IdentityPage(this, req, context, l10n());
+			return new IdentityPage(this, req, context);
 		}
 		
 		@Override
@@ -328,7 +328,7 @@ public class WebInterface {
 		
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			// Not expected to make it here...
-			return new StatisticsPage(this, req, context, l10n());
+			return new StatisticsPage(this, req, context);
 		}
 	}
 
