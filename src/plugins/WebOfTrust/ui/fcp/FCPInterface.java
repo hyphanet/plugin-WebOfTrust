@@ -855,10 +855,21 @@ public final class FCPInterface implements FredPluginFCP {
     private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException {
     	final String to = getMandatoryParameter(params, "To");
     	
-    	final String fcpID = replySender.getPluginName() + ";" + replySender.getIdentifier();
+    	// We not only use the Identifier which the plugin provided but also the hashCode of the replySender:
+    	// We need the ID to NOT randomly match the ID of a plugin before it was restarted.
+    	// This is necessary because subscribe functions will throw SubscriptionExistsAlreadyException
+    	// if a similar subscription with the same fcpID exists.
+    	// 
+    	// We cannot just use a random ID because then a client could subscribe multiple times to the same type of subscription:
+    	// The throwing of SubscriptionExistsAlready exception is there to prevent that.
+    	final String fcpID = replySender.getPluginName() + ";" + replySender.getIdentifier() + ";" + replySender.hashCode();
     	
-    	// FIXME: What if there is already a ReplySender with the given ID?
     	synchronized(mClients) {
+    		// Don't check for existing entry: 
+    		// - PluginTalker always uses the same PluginReplySender
+    		// - The hasCode in the ID makes it very unlikely for two IDs of different PluginTalkers to collide
+    		// - What could guarantee to prevent collisions even if the hashCode collides is that clients are allowed to uniquely
+    		//   chose replySender.getIdentifier() - if client authors do not implement a unique identifier its their fault if stuff breaks.
     		mClients.put(fcpID, new WeakReference<PluginReplySender>(replySender));
     	}
     	
