@@ -852,7 +852,7 @@ public final class FCPInterface implements FredPluginFCP {
      * @see SubscriptionManager#subscribeToScores(String)
      * @see SubscriptionManager#subscribeToTrusts(String)
      */
-    private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException {
+    private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException, SubscriptionExistsAlreadyException {
     	final String to = getMandatoryParameter(params, "To");
     	
     	// We not only use the Identifier which the plugin provided but also the hashCode of the replySender:
@@ -875,7 +875,6 @@ public final class FCPInterface implements FredPluginFCP {
     	
     	Subscription<? extends Notification> subscription;
     	
-    	try {
     		if(to.equals("Identities")) {
 	    		subscription = mSubscriptionManager.subscribeToIdentities(fcpID);
 	    	} else if(to.equals("Trusts")) {
@@ -884,10 +883,7 @@ public final class FCPInterface implements FredPluginFCP {
 	    		subscription = mSubscriptionManager.subscribeToScores(fcpID);
 	    	} else
 	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
-    	} catch(SubscriptionExistsAlreadyException e) {
-    		subscription = e.existingSubscription;
-    	}
-    	
+    		
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Subscribed");
     	sfs.putOverwrite("Subscription", subscription.getID());
