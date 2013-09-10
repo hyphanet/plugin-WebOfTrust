@@ -277,9 +277,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		knownIdentitiesBox.addChild(filtersBoxNode.outer);
 		HTMLNode filtersBox = filtersBoxNode.content;
 		filtersBox.addChild("#", l10n().getString("KnownIdentitiesPage.FiltersAndSorting.ShowOnlyNicksContaining") + " : ");
-		filtersBox.addChild("#", " " + l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy") + " : ");
 		filtersBox.addChild("input", new String[] {"type", "size", "name", "value"}, new String[]{"text", "15", "nickfilter", nickFilter});
 		
+		filtersBox.addChild("#", " " + l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy") + " : ");
 		HTMLNode option = filtersBox.addChild("select", new String[]{"name", "id"}, new String[]{"sortby", "sortby"});
 		TreeMap<String, String> options = new TreeMap<String, String>();
 		options.put(SortBy.Nickname.toString(), l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Nickname"));
