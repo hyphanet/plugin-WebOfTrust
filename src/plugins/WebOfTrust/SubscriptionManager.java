@@ -1070,7 +1070,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Interface for the core of WOT to deploy an {@link IdentityChangedNotification} to clients. 
 	 * 
 	 * Typically called when a {@link Identity} or {@link OwnIdentity} is added, deleted or its attributes are modified.
-	 * TODO: List the changes which do not trigger a notification here. For example we don't trigger one upon new edition hints.
+	 * See {@link #subscribeToIdentities(String)} for a list of the changes which do or do not trigger a notification.
 	 * 
 	 * This function does not store a reference to the given identity object in the database, it only stores the ID.
 	 * You are safe to pass non-stored objects or objects which must not be stored.
