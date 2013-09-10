@@ -48,7 +48,7 @@ public class CreateIdentityPage extends WebPageImpl {
 				    .addChild("#", l10n().getString("CreateIdentityPage.IdentityCreated.Text"));
 				
 				try {
-					new LogInPage(mWebInterface.getToadlet(LoginWebInterfaceToadlet.class), request, mContext, l10n()).addToPage(this);
+					mWebInterface.getToadlet(LoginWebInterfaceToadlet.class).makeWebPage(request, mContext).addToPage(this);
 				} catch (RedirectException e) {
 					throw new RuntimeException(e); // Shouldn't happen according to JavaDoc of constructor
 				}

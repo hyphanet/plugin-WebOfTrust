@@ -21,4 +21,9 @@ public interface WebPage {
 	 */
 	public String toHTML();
 	
+	/**
+	 * Adds this WebPage to the given page as a HTMLNode.
+	 */
+	public void addToPage(WebPageImpl other);
+	
 }

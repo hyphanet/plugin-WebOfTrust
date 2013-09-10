@@ -145,7 +145,7 @@ public abstract class WebPageImpl implements WebPage {
 	}
 
 	/**
-	 * Adds this WebPage to the given page as a HTMLNode.
+	 * {@inheritDoc}
 	 */
 	public final void addToPage(WebPageImpl other) {
 		pageNode = other.pageNode;
