@@ -107,7 +107,7 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException, UnknownIdentityException {
 			return new KnownIdentitiesPage(this, req, context);
 		}
 	}
