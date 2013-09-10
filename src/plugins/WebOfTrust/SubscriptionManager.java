@@ -815,7 +815,16 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * The client is notified when an identity is added, changed or deleted.
-	 * FIXME: Do we also notify if internal things such as edition change? Should we?
+	 * 
+	 * Some of the changes which result in a notification:
+	 * - Fetching of a new edition of an identity and all changes which result upon the {@link Identity} object because of that.
+	 * - Change of contexts, see {@link Identity#mContexts}
+	 * - Change of properties, see {@link Identity#mProperties}
+	 * 
+	 * Changes which do NOT result in a notification:
+	 * - New trust value from an identity. Use {@link #subscribeToTrusts(String)} instead.
+	 * - New edition hint for an identity. Edition hints are only useful to WOT, this shouldn't matter to clients. Also, edition hints are
+	 *   created by other identities, not by the identity which is their subject. The identity itself did not change. 
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
 	 * @return The {@link IdentitiesSubscription} which is created by this function.
