@@ -2665,6 +2665,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	/* Client interface functions */
 	
+	/**
+	 * NOTICE: The added identity will not be fetched unless you also add a positive {@link Trust} value from an {@link OwnIdentity} to it.
+     * (An exception would be if another identity which is being fetched starts trusting the added identity at some point in the future)
+	 */
 	public synchronized Identity addIdentity(String requestURI) throws MalformedURLException, InvalidParameterException {
 		try {
 			getIdentityByURI(requestURI);
@@ -2676,7 +2680,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			if(logDEBUG) Logger.debug(this, "Created identity " + identity);
 
 			// The identity hasn't received a trust value. Therefore, there is no reason to fetch it and we don't notify the IdentityFetcher.
-			// TODO: Document this function and the UI which uses is to warn the user that the identity won't be fetched without trust.
 			
 			return identity;
 		}

@@ -103,6 +103,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 						wot.removeTrust(trusterID, trusteeID);
 					else
 						wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
+					
+					if(addIdentity && (value.equals("") || Byte.parseByte(value) < 0)) {
+						addErrorBox(l10n().getString("KnownIdentitiesPage.AddIdentity.NoTrustWarning.Header"), 
+								l10n().getString("KnownIdentitiesPage.AddIdentity.NoTrustWarning.Text"));
+					}
 				} catch(NumberFormatException e) {
 					addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), l10n().getString("Trust.InvalidValue"));
 				} catch(InvalidParameterException e) {
