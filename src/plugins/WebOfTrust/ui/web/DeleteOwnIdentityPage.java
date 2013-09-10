@@ -5,6 +5,7 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
@@ -35,10 +36,18 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 		if(request.isPartSet("confirm")) {
 			try {
 				wot.deleteOwnIdentity(mIdentity.getID());
+				mToadlet.logOut(mContext);
 				
 				/* TODO: Show the OwnIdentities page instead! Use the trick which Freetalk does for inlining pages */
 				HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Header"));
 				box.addChild("#", l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text"));
+				
+				try {
+					new LogInPage(mWebInterface.getToadlet(LoginWebInterfaceToadlet.class), request, mContext, l10n()).addToPage(this);
+				} catch (RedirectException e) {
+					throw new RuntimeException(e); // Shouldn't happen according to JavaDoc of constructor
+				}
+				
 			} catch (UnknownIdentityException e) {
 				addErrorBox(l10n().getString("Common.UnknownIdentityExceptionTitle"), l10n().getString("Common.UnknownIdentityExceptionDescription"));
 			}

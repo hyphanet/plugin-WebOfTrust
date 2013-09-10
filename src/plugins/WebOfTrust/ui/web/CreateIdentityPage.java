@@ -5,6 +5,7 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
+import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
@@ -39,11 +40,18 @@ public class CreateIdentityPage extends WebPageImpl {
 				wot.createOwnIdentity(new FreenetURI(request.getPartAsString("InsertURI",1024)),
 										request.getPartAsString("Nickname", 1024), request.getPartAsString("PublishTrustList", 5).equals("true"),
 										null);
+				mToadlet.logOut(mContext);
 				
 				/* TODO: inline the own identities page. first we need to modify our base class to be able to do so, see freetalk */
 				
 				addContentBox(l10n().getString("CreateIdentityPage.IdentityCreated.Header"))
 				    .addChild("#", l10n().getString("CreateIdentityPage.IdentityCreated.Text"));
+				
+				try {
+					new LogInPage(mWebInterface.getToadlet(LoginWebInterfaceToadlet.class), request, mContext, l10n()).addToPage(this);
+				} catch (RedirectException e) {
+					throw new RuntimeException(e); // Shouldn't happen according to JavaDoc of constructor
+				}
 				
 			} catch (Exception e) {
 				addErrorBox(l10n().getString("CreateIdentityPage.IdentityCreateFailed"), e);

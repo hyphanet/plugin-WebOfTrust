@@ -6,8 +6,6 @@
 package plugins.WebOfTrust.ui.web;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
@@ -49,15 +47,12 @@ public abstract class WebPageImpl implements WebPage {
 	protected final PageMaker pm;
 
 	/** HTMLNode representing the web page */
-	protected final HTMLNode pageNode;
-	protected final HTMLNode contentNode;
+	protected HTMLNode pageNode;
+	protected HTMLNode contentNode;
 
 	/** The request performed by the user */
 	protected final HTTPRequest request;
 
-	/** List of all content boxes */
-	protected final ArrayList<HTMLNode> contentBoxes;
-	
 	protected final BaseL10n baseL10n;
 	
 	/**
@@ -84,7 +79,6 @@ public abstract class WebPageImpl implements WebPage {
 		this.contentNode = page.content;
 		this.request = myRequest;
 		
-		this.contentBoxes = new ArrayList<HTMLNode>();
 		mLoggedInOwnIdentityID = useSession ? mToadlet.getLoggedInUserID(ctx) : null;
 	}
 	
@@ -94,11 +88,6 @@ public abstract class WebPageImpl implements WebPage {
 	 * @return HTML code of the page.
 	 */
 	public String toHTML() {
-		
-		// We add every ContentBoxes
-		Iterator<HTMLNode> contentBox = contentBoxes.iterator();
-		while(contentBox.hasNext()) contentNode.addChild(contentBox.next());
-		
 		// Generate the HTML output
 		return pageNode.generate();
 	}
@@ -107,12 +96,10 @@ public abstract class WebPageImpl implements WebPage {
 	 * Adds an ErrorBox to the WebPage.
 	 * 
 	 * @param title The title of the desired ErrorBox
-
+	 * @return The content node of the ErrorBox
 	 */
 	public HTMLNode addErrorBox(String title) {
-		InfoboxNode infobox = pm.getInfobox("infobox-alert", title);
-		contentBoxes.add(infobox.outer);
-		return infobox.content;
+		return pm.getInfobox("infobox-alert", title, contentNode);
 	}
 	
 	/**
@@ -120,33 +107,29 @@ public abstract class WebPageImpl implements WebPage {
 	 * 
 	 * @param title The title of the desired ErrorBox
 	 * @param error The error message that will be displayed
+	 * @return The content node of the ErrorBox
 	 */
 	public HTMLNode addErrorBox(String title, Exception error) {
-		InfoboxNode infobox = pm.getInfobox("infobox-alert", title);
-		HTMLNode errorBox = infobox.outer;
-		HTMLNode errorInner = infobox.content;
-		// TODO use errorInner not errorBox to add stack trace
+		HTMLNode errorInner = addErrorBox(title);
 		
 		String message = error.getLocalizedMessage();
 		if(message == null || message.equals(""))
 			message = error.getMessage();
 		
-		HTMLNode p = errorBox.addChild("p", message);
+		HTMLNode p = errorInner.addChild("p", message);
 		
-		p = errorBox.addChild("p", "Stack trace:");
+		p = errorInner.addChild("p", "Stack trace:");
 		for(StackTraceElement element : error.getStackTrace()) {
 			p.addChild("br"); p.addChild("#", element.toString());
 		}
 		
-		contentBoxes.add(errorBox);
 		return errorInner;
 	}
 	
 	public HTMLNode addErrorBox(String title, String message) {
-		InfoboxNode infobox = pm.getInfobox("infobox-alert", title);
-		infobox.content.addChild("div", message);
-		contentBoxes.add(infobox.outer);
-		return infobox.content;
+		HTMLNode infobox = addErrorBox(title);
+		infobox.addChild("div", message);
+		return infobox;
 	}
 	
 	/**
@@ -156,10 +139,18 @@ public abstract class WebPageImpl implements WebPage {
 	 * @return the contentNode of the newly created InfoBox
 	 */
 	protected HTMLNode addContentBox(String title) {
-
 		InfoboxNode infobox = pm.getInfobox(title);
-		contentBoxes.add(infobox.outer);
+		contentNode.addChild(infobox.outer);
 		return infobox.content;
+	}
+
+	/**
+	 * Adds this WebPage to the given page as a HTMLNode.
+	 */
+	public final void addToPage(WebPageImpl other) {
+		pageNode = other.pageNode;
+		contentNode = other.contentNode;
+		make();
 	}
 	
 	/**
