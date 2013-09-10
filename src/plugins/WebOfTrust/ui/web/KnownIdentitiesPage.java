@@ -118,10 +118,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			return;
 		}
 			
-		makeAddIdentityForm(treeOwner);
+		makeAddIdentityForm();
 
 		try {
-			makeKnownIdentitiesList(treeOwner);
+			makeKnownIdentitiesList();
 		} catch (Exception e) {
 			Logger.error(this, "Error", e);
 			addErrorBox("Error", e);
@@ -134,7 +134,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * @param pr a reference to the {@link PluginRespirator}
 	 * @param treeOwner The owner of the known identity list. Not used for adding the identity but for showing the known identity list properly after adding.
 	 */
-	private void makeAddIdentityForm(OwnIdentity treeOwner) {
+	private void makeAddIdentityForm() {
 		
 		// TODO Add trust value and comment fields and make them mandatory
 		// The user should only add an identity he trusts
@@ -213,7 +213,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * @param _pr a reference to the {@link PluginRespirator}
 	 * @param treeOwner owner of the trust tree we want to display 
 	 */
-	private void makeKnownIdentitiesList(OwnIdentity treeOwner) throws DuplicateScoreException, DuplicateTrustException {
+	private void makeKnownIdentitiesList() throws DuplicateScoreException, DuplicateTrustException {
 
 		String nickFilter = request.getPartAsStringFailsafe("nickfilter", 100).trim();
 		String sortBy = request.isPartSet("sortby") ? request.getPartAsStringFailsafe("sortby", 100).trim() : "Nickname";
