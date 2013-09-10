@@ -875,14 +875,14 @@ public final class FCPInterface implements FredPluginFCP {
     	
     	Subscription<? extends Notification> subscription;
     	
-    		if(to.equals("Identities")) {
-	    		subscription = mSubscriptionManager.subscribeToIdentities(fcpID);
-	    	} else if(to.equals("Trusts")) {
-	    		subscription = mSubscriptionManager.subscribeToTrusts(fcpID);
-	    	} else if(to.equals("Scores")) {
-	    		subscription = mSubscriptionManager.subscribeToScores(fcpID);
-	    	} else
-	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
+    	if(to.equals("Identities")) {
+    		subscription = mSubscriptionManager.subscribeToIdentities(fcpID);
+    	} else if(to.equals("Trusts")) {
+    		subscription = mSubscriptionManager.subscribeToTrusts(fcpID);
+    	} else if(to.equals("Scores")) {
+    		subscription = mSubscriptionManager.subscribeToScores(fcpID);
+    	} else
+    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
     		
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Subscribed");
