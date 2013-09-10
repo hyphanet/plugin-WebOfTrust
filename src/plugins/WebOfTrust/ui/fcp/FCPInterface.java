@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.fcp;
 
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.util.HashMap;
@@ -32,7 +33,6 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
-import plugins.WebOfTrust.introduction.IntroductionServer;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
@@ -56,9 +56,11 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * Contains all clients which ever subscribed to content.
      * Key = replySender.getPluginName() + ";" + replySender.getIdentifier()
-     * FIXME: We should have a proper disconnection mechanism instead of using WeakReferences.
+     * 
+     * FIXME: We should have a proper disconnection mechanism instead of using SoftReferences.
+     * SoftReferences might get randomly garbage collected (WeakReferences would be garbage collected at EVERY garbage collection).
      */
-    private final HashMap<String, WeakReference<PluginReplySender>> mClients = new HashMap<String, WeakReference<PluginReplySender>>();
+    private final HashMap<String, SoftReference<PluginReplySender>> mClients = new HashMap<String, SoftReference<PluginReplySender>>();
 
     public FCPInterface(final WebOfTrust myWoT) {
         mWoT = myWoT;
