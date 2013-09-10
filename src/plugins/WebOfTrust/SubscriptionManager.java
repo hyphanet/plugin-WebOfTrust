@@ -16,6 +16,7 @@ import com.db4o.query.Query;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.TrivialTicker;
 import freenet.support.codeshortification.IfNull;
 import freenet.support.io.NativeThread;
@@ -130,6 +131,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		private long mNextNotificationIndex = 0;
 		
 		/**
+		 * If deploying the {@link Notification} queue fails, for example due to connectivity issues, this is incremented.
+		 * After a certain limit of retries, the client will be disconnected.
+		 */
+		private byte mSendNotificationsFailureCount = 0;
+		
+		/**
 		 * Constructor for being used by child classes.
 		 * @param myType The type of the Subscription
 		 * @param fcpID The FCP ID of the subscription. Can be null if the type is not FCP.
@@ -211,6 +218,19 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 		
 		/**
+		 * Increments {@link #mSendNotificationsFailureCount} and returns the new value.
+		 * Use this for disconnecting a client if {@link #sendNotifications(SubscriptionManager)} has failed too many times.
+		 * 
+		 * @return The value of {@link #mSendNotificationsFailureCount} after incrementing it.
+		 */
+		private final byte incrementSendNotificationsFailureCountWithoutCommit()  {
+			checkedActivate(1);
+			++mSendNotificationsFailureCount;
+			storeWithoutCommit();
+			return mSendNotificationsFailureCount;
+		}
+		
+		/**
 		 * ATTENTION: This does NOT delete the {@link Notification} objects associated with this Subscription!
 		 * Only use it if you delete them manually before!
 		 * 
@@ -286,16 +306,20 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Sends out the notification queue for this Subscription, in sequence.
 		 * 
 		 * If a notification is sent successfully, it is deleted and the transaction is committed.
-		 * If sending a single notification fails, the transaction for the current Notification is rolled back
-		 * and an exception is thrown.
+		 * 
+		 * If sending a single notification fails, the failure counter {@link #mSendNotificationsFailureCount} is incremented
+		 * and {@link SubscriptionManager#scheduleNotificationProcessing()} is executed to retry sending the notification after some time.
+		 * If the failure counter exceeds the limit {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT}, false is returned
+		 * to indicate that the SubscriptionManager should delete this Subscription.
 		 * 
 		 * You have to synchronize on the SubscriptionManager and the database lock before calling this function!
 		 * You don't have to commit the transaction after calling this function.
 		 * 
 		 * @param manager The {@link SubscriptionManager} from which to query the {@link Notification}s of this Subscription.
+		 * @return False if this Subscription should be deleted.
 		 */
 		@SuppressWarnings("unchecked")
-		protected void sendNotifications(SubscriptionManager manager) {
+		protected boolean sendNotifications(SubscriptionManager manager) {
 			switch(mType) {
 				case FCP:
 					for(final Notification notification : manager.getAllNotifications(this)) {
@@ -304,8 +328,14 @@ public final class SubscriptionManager implements PrioRunnable {
 								notifySubscriberByFCP((NotificationType)notification);
 								notification.deleteWithoutCommit();
 							} catch(Exception e) {
-								// Disconnected etc.
-								throw new RuntimeException(e);
+								Persistent.checkedRollback(mDB, this, e, LogLevel.WARNING);
+								
+								final byte failureCount = incrementSendNotificationsFailureCountWithoutCommit();
+								Persistent.checkedCommit(mDB, this);
+								
+								Logger.warning(this, "Notification deployment failed, failure count: " + failureCount, e);
+								manager.scheduleNotificationProcessing();
+								return failureCount < DISCONNECT_CLIENT_AFTER_FAILURE_COUNT;
 							}
 							// If processing of a single notification fails, we do not want the previous notifications
 							// to be sent again when the failed notification is retried. Therefore, we commit after
@@ -320,6 +350,8 @@ public final class SubscriptionManager implements PrioRunnable {
 				default:
 					throw new UnsupportedOperationException("Unknown Type: " + mType);
 			}
+			
+			return true;
 		}
 
 	}
@@ -701,6 +733,12 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * This is usually the case as the import of trust lists often causes multiple changes. 
 	 */
 	private static final long PROCESS_NOTIFICATIONS_DELAY = 60 * 1000;
+	
+	/**
+	 * If {@link Subscription#sendNotifications(SubscriptionManager)} fails, the failure counter of the subscription is incremented.
+	 * If the counter reaches this value, the client is disconnected.
+	 */
+	private static final byte DISCONNECT_CLIENT_AFTER_FAILURE_COUNT = 5;
 	
 	
 	/**
@@ -1114,11 +1152,15 @@ public final class SubscriptionManager implements PrioRunnable {
 		synchronized(this) {
 			for(Subscription<? extends Notification> subscription : getAllSubscriptions()) {
 				try {
-					subscription.sendNotifications(this);
-					// Persistent.checkedCommit(mDB, this);	/* sendNotifications() does this already */
+					if(subscription.sendNotifications(this)) {
+						// Persistent.checkedCommit(mDB, this);	/* sendNotifications() does this already */
+					} else {
+						Logger.warning(this, "sendNotifications tells us to delete the Subscription, deleting it: " + subscription);
+						subscription.deleteWithoutCommit(this);
+						Persistent.checkedCommit(mDB, this);
+					}
 				} catch(Exception e) {
 					Persistent.checkedRollback(mDB, this, e);
-					scheduleNotificationProcessing();
 				}
 			}
 		}
