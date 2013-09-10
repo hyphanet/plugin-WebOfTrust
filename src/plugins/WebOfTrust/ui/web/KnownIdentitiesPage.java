@@ -120,12 +120,12 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 		makeAddIdentityForm(treeOwner);
 
-			try {
-				makeKnownIdentitiesList(treeOwner);
-			} catch (Exception e) {
-				Logger.error(this, "Error", e);
-				addErrorBox("Error", e);
-			}
+		try {
+			makeKnownIdentitiesList(treeOwner);
+		} catch (Exception e) {
+			Logger.error(this, "Error", e);
+			addErrorBox("Error", e);
+		}
 	}
 	
 	/**
@@ -153,16 +153,16 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		createForm.addChild("br");
 		
 		
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrust", "true"});
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrustOf", "void"});
-			
-			createForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ")
-				.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Value", "4", "" });
-			
-			createForm.addChild("span", " " + l10n().getString("KnownIdentitiesPage.AddIdentity.Comment") + ": ")
-				.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Comment", "20", "" });
-			
-			createForm.addChild("br");
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrust", "true"});
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrustOf", "void"});
+
+		createForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ")
+		.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Value", "4", "" });
+
+		createForm.addChild("span", " " + l10n().getString("KnownIdentitiesPage.AddIdentity.Comment") + ": ")
+		.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Comment", "20", "" });
+
+		createForm.addChild("br");
 		
 		
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "AddIdentity", l10n().getString("KnownIdentitiesPage.AddIdentity.AddButton") });
