@@ -4,8 +4,8 @@
 package plugins.WebOfTrust.ui.web;
 
 import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
-import freenet.l10n.BaseL10n;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
@@ -21,8 +21,8 @@ public class ErrorPage extends WebPageImpl {
 	/**
 	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
 	 */
-	public ErrorPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, Exception myError, BaseL10n _baseL10n) throws RedirectException {
-		super(toadlet, myRequest, context, _baseL10n, false);
+	public ErrorPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, Exception myError) throws RedirectException {
+		super(toadlet, myRequest, context, false);
 		mError = myError;
 		Logger.error(this, "Internval error, please report this", mError);
 	}

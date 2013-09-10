@@ -11,7 +11,6 @@ import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
-import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -30,8 +29,8 @@ public class CreateIdentityPage extends WebPageImpl {
 	 * @param myRequest The request sent by the user.
 	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
 	 */
-	public CreateIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws RedirectException {
-		super(toadlet, myRequest, context, _baseL10n, false);
+	public CreateIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
+		super(toadlet, myRequest, context, false);
 	}
 
 	public void make() {

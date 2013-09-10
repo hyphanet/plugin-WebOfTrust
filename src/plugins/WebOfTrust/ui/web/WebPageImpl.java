@@ -64,13 +64,13 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param useSession If true, the timeout of the current {@link Session} is refreshed and {@link #mLoggedInOwnIdentityID} is initialized to the ID of the logged in identity.
 	 * @throws RedirectException If useSession was true and the {@link Session} was expired already. Then the user is redirected to the {@link LoginWebInterfaceToadlet}.
 	 */
-	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx, BaseL10n _baseL10n, boolean useSession) throws RedirectException {
+	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx, boolean useSession) throws RedirectException {
 		mToadlet = toadlet;
 		mWebInterface = mToadlet.webInterface;
 		mContext = ctx;
 		wot = mWebInterface.getWoT();
 		uri = mToadlet.getURI();
-		baseL10n = _baseL10n;
+		baseL10n = mWebInterface.l10n();
 		
 		pr = wot.getPluginRespirator();
 		this.pm = mWebInterface.getPageMaker();

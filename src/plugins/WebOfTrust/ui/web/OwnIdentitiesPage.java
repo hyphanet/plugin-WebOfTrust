@@ -18,7 +18,6 @@ import freenet.clients.http.SessionManager;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
-import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -46,8 +45,8 @@ public class OwnIdentitiesPage extends WebPageImpl {
 	 * @param myRequest The request sent by the user.
 	 * @throws RedirectException If the {@link Session} has expired.
 	 */
-	public OwnIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws RedirectException {
-		super(toadlet, myRequest, context, _baseL10n, true);
+	public OwnIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
+		super(toadlet, myRequest, context, true);
 
 		final WebOfTrust wot = toadlet.webInterface.getWoT();
 

@@ -25,7 +25,6 @@ import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
-import freenet.l10n.BaseL10n;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
@@ -56,8 +55,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * @param myRequest The request sent by the user.
 	 * @throws RedirectException If the {@link Session} has expired. 
 	 */
-	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws RedirectException {
-		super(toadlet, myRequest, context, _baseL10n, true);
+	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
+		super(toadlet, myRequest, context, true);
 		identitiesPageURI = toadlet.webInterface.getURI() + "/ShowIdentity";
 	}
 

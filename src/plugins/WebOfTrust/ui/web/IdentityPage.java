@@ -33,8 +33,8 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import com.db4o.ObjectSet;
 
 import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
-import freenet.l10n.BaseL10n;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -60,8 +60,8 @@ public class IdentityPage extends WebPageImpl {
 	 * @throws UnknownIdentityException 
 	 * @throws RedirectException If the {@link Session} has expired. 
 	 */
-	public IdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws UnknownIdentityException, RedirectException {
-		super(toadlet, myRequest, context, _baseL10n, true);
+	public IdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
+		super(toadlet, myRequest, context, true);
 		
 		identity = wot.getIdentityByID(request.getParam("id")); 
 	}

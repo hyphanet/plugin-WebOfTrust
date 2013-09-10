@@ -5,13 +5,12 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
 
 import com.db4o.ObjectSet;
 
 import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
-import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -29,8 +28,8 @@ public final class LogInPage extends WebPageImpl {
 	 * @see WebOfTrust#SELF_URI
 	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
 	 */
-	public LogInPage(WebInterfaceToadlet toadlet, HTTPRequest request, ToadletContext context, BaseL10n _baseL10n) throws RedirectException {
-		super(toadlet, request, context, _baseL10n, false);
+	public LogInPage(WebInterfaceToadlet toadlet, HTTPRequest request, ToadletContext context) throws RedirectException {
+		super(toadlet, request, context, false);
 		path = toadlet.path();
 
 		target = request.getParam("redirect-target", WebOfTrust.SELF_URI /* default */);
