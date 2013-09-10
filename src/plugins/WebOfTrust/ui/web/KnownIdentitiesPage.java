@@ -172,24 +172,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		addErrorBox(l10n().getString("KnownIdentitiesPage.RestoreInProgressWarning.Header"), l10n().getString("KnownIdentitiesPage.RestoreInProgressWarning.Text"));
 	}
 	
-	private void makeSelectTreeOwnerForm() {
-
-		HTMLNode listBoxContent = addContentBox(l10n().getString("KnownIdentitiesPage.SelectTreeOwner.Header"));
-		HTMLNode selectForm = pr.addFormChild(listBoxContent, uri.toString(), "ViewTree");
-		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "ViewTree" });
-		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnerID");
-
-		synchronized(wot) {
-			for(OwnIdentity ownIdentity : wot.getAllOwnIdentities())
-				selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getNickname());
-		}
-
-		selectForm.addChild(
-		        "input", 
-		        new String[] { "type", "name", "value" }, 
-		        new String[] { "submit", "select", l10n().getString("KnownIdentitiesPage.SelectTreeOwner.ViewOwnersTreeButton") });
-	}
-	
 	/**
 	 * Get a xHTML color (#abcdef) corresponding to a trust level.
 	 * Red : -100 or below
