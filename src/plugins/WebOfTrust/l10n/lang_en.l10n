@@ -86,7 +86,6 @@ KnownIdentitiesPage.RestoreInProgressWarning.Text=Your identity is being restore
 KnownIdentitiesPage.SelectTreeOwner.Header=Select the trust tree owner
 KnownIdentitiesPage.SelectTreeOwner.ViewOwnersTreeButton=View this identity's Web of Trust
 KnownIdentitiesPage.SetTrust.Failed=Setting trust failed
-KnownIdentitiesPage.SelectOwnIdentity.Failed=Error while selecting the OwnIdentity
 KnownIdentitiesPage.FiltersAndSorting.Header=Filters and sorting
 KnownIdentitiesPage.FiltersAndSorting.ShowOnlyNicksContaining=Show only nicks containing
 KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy=Sort identities by

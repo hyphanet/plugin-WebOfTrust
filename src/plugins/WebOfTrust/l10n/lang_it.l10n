@@ -95,7 +95,6 @@ KnownIdentitiesPage.KnownIdentities.TableHeader.Trustees=Fiduciati
 KnownIdentitiesPage.KnownIdentities.TableHeader.Trusters=Fiduciari
 KnownIdentitiesPage.NoOwnIdentityWarning.Header=Non è stata trovata nessuna identità propria
 KnownIdentitiesPage.NoOwnIdentityWarning.Text=Prima dovreste creare un'identità.
-KnownIdentitiesPage.SelectOwnIdentity.Failed=Errore durante la selezione della propria identità
 KnownIdentitiesPage.SelectTreeOwner.Header=Scegliere il proprietario dell'albero di fiducia
 KnownIdentitiesPage.SelectTreeOwner.ViewOwnersTreeButton=Visualizzare il Web Of Trust di questa identità
 KnownIdentitiesPage.SetTrust.Failed=L'impostazione della fiducia non è riuscita

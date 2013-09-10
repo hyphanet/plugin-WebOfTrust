@@ -17,10 +17,8 @@ import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.web.WebInterface.IdentityWebInterfaceToadlet;
-
-import com.db4o.ObjectSet;
-
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
@@ -41,6 +39,8 @@ import freenet.support.api.HTTPRequest;
  */
 public class KnownIdentitiesPage extends WebPageImpl {
 
+	private final OwnIdentity treeOwner;
+	
 	private final String identitiesPageURI;
 	
 	private static enum SortBy {
@@ -55,10 +55,12 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
 	 * @throws RedirectException If the {@link Session} has expired. 
+	 * @throws UnknownIdentityException If the owner of the {@link Session} does not exist anymore.
 	 */
-	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
+	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException, UnknownIdentityException {
 		super(toadlet, myRequest, context, true);
 		identitiesPageURI = mWebInterface.getToadlet(IdentityWebInterfaceToadlet.class).getURI().toString();
+		treeOwner = wot.getOwnIdentityByID(mLoggedInOwnIdentityID);
 	}
 
 	public void make() {
@@ -76,7 +78,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		}
 		
 		if(request.isPartSet("SetTrust")) {
-			String trusterID = request.getPartAsStringFailsafe("OwnerID", 128);
+			String trusterID = mLoggedInOwnIdentityID;
 		
 			for(String part : request.getParts()) {
 				if(!part.startsWith("SetTrustOf"))
@@ -111,44 +113,19 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 
-		OwnIdentity treeOwner = null;
-		int nbOwnIdentities = 1;
-		String ownerID = request.getPartAsStringFailsafe("OwnerID", 128);
-		
-		if(!ownerID.equals("")) {
-			try {
-				treeOwner = wot.getOwnIdentityByID(ownerID);
-			} catch (Exception e) {
-				Logger.error(this, "Error while selecting the OwnIdentity", e);
-				addErrorBox(l10n().getString("KnownIdentitiesPage.SelectOwnIdentity.Failed"), e);
-			}
-		} else {
-			synchronized(wot) {
-				ObjectSet<OwnIdentity> allOwnIdentities = wot.getAllOwnIdentities();
-				nbOwnIdentities = allOwnIdentities.size();
-				if(nbOwnIdentities == 1)
-					treeOwner = allOwnIdentities.next();
-			}
-		}
-		
-		if(treeOwner != null && treeOwner.isRestoreInProgress()) {
+		if(treeOwner.isRestoreInProgress()) {
 			makeRestoreInProgressWarning();
 			return;
 		}
 			
 		makeAddIdentityForm(treeOwner);
 
-		if(treeOwner != null) {
 			try {
 				makeKnownIdentitiesList(treeOwner);
 			} catch (Exception e) {
 				Logger.error(this, "Error", e);
 				addErrorBox("Error", e);
 			}
-		} else if(nbOwnIdentities > 1)
-			makeSelectTreeOwnerForm();
-		else
-			makeNoOwnIdentityWarning();
 	}
 	
 	/**
@@ -164,8 +141,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		HTMLNode addBoxContent = addContentBox(l10n().getString("KnownIdentitiesPage.AddIdentity.Header"));
 	
 		HTMLNode createForm = pr.addFormChild(addBoxContent, uri.toString(), "AddIdentity");
-		if(treeOwner != null)
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
+
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "AddIdentity" });
 		createForm.addChild("span", new String[] {"title", "style"}, 
 				new String[] { 
@@ -268,7 +244,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		HTMLNode knownIdentitiesBox = addContentBox(l10n().getString("KnownIdentitiesPage.KnownIdentities.Header"));
 		knownIdentitiesBox = pr.addFormChild(knownIdentitiesBox, uri.toString(), "Filters").addChild("p");
-		knownIdentitiesBox.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
+
 		
 		
 		InfoboxNode filtersBoxNode = getContentBox(l10n().getString("KnownIdentitiesPage.FiltersAndSorting.Header"));

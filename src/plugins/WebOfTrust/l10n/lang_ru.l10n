@@ -100,7 +100,6 @@ KnownIdentitiesPage.KnownIdentities.TableHeader.Trustees=Попечители
 KnownIdentitiesPage.KnownIdentities.TableHeader.Trusters=Доверители
 KnownIdentitiesPage.NoOwnIdentityWarning.Header=Ни одной идентичности не найдено
 KnownIdentitiesPage.NoOwnIdentityWarning.Text=Сначала вы должны создать идентичность.
-KnownIdentitiesPage.SelectOwnIdentity.Failed=Ошибка при выборе собственной идентичности
 KnownIdentitiesPage.SelectTreeOwner.Header=Выберете владельца дерева доверия
 KnownIdentitiesPage.SelectTreeOwner.ViewOwnersTreeButton=Смотреть сеть доверия этой идентичности
 KnownIdentitiesPage.SetTrust.Failed=Ошибка при установке доверия
