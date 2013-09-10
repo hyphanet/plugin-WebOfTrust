@@ -1140,7 +1140,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * - the scheduling function should be called whenever a {@link Notification} is stored to the database.
 	 *  
 	 * If deploying the notifications for a subscription fails, this function is scheduled to be run again after some time.
-	 * If deploying for a certain subscription fails N times, the Subscription is deleted. FIXME: Actually implement this.
+	 * If deploying for a certain subscription fails N times, the Subscription is deleted.
 	 * 
 	 * @see Subscription#sendNotifications(SubscriptionManager) This function is called on each subscription to deploy the {@link Notification} queue.
 	 */
