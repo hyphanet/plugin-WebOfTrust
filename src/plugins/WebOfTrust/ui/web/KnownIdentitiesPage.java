@@ -167,10 +167,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "AddIdentity", l10n().getString("KnownIdentitiesPage.AddIdentity.AddButton") });
 	}
-
-	private void makeNoOwnIdentityWarning() {
-		addErrorBox(l10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Header"), l10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Text"));
-	}
 	
 	private void makeRestoreInProgressWarning() {
 		addErrorBox(l10n().getString("KnownIdentitiesPage.RestoreInProgressWarning.Header"), l10n().getString("KnownIdentitiesPage.RestoreInProgressWarning.Text"));
