@@ -152,7 +152,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		createForm.addChild("input", new String[] {"type", "name", "size"}, new String[] {"text", "IdentityURI", "70"});
 		createForm.addChild("br");
 		
-		if(treeOwner != null) {
+		
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrust", "true"});
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrustOf", "void"});
 			
@@ -163,7 +163,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 				.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Comment", "20", "" });
 			
 			createForm.addChild("br");
-		}
+		
 		
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "AddIdentity", l10n().getString("KnownIdentitiesPage.AddIdentity.AddButton") });
 	}
