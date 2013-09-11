@@ -325,8 +325,11 @@ public final class FCPInterface implements FredPluginFCP {
 	}
 
     /**
-     * Add fields describing the given identity.
-     * TypeSUFFIX = type of the identity, "OwnIdentity" or "Identity"
+     * Add fields describing the given identity:
+     * 
+     * TypeSUFFIX = type of the identity,  "Inexistent", "OwnIdentity" or "Identity".
+     * If the Type is  "Inexistent", the identity does not exist anymore and no other fields will be present.
+     * 
      * NicknameSUFFIX = nickname of the identity
      * RequestURISUFFIX = request URI of the identity
      * InsertURISUFFIX = insert URI of the identity. Only present if Type is OwnIdentity
@@ -344,10 +347,15 @@ public final class FCPInterface implements FredPluginFCP {
      * PropertiesSUFFIX.PropertyX.Value = value of property X
      * 
      * @param sfs The {@link SimpleFieldSet} to add fields to.
-     * @param identity The {@link Identity} to describe.
+     * @param identity The {@link Identity} to describe. Can be null to signal that the identity does not exist anymore.
      * @param suffix Added as descriptor for possibly multiple identities. Empty string is special case as explained in the function description.
      */
     private void addIdentityFields(SimpleFieldSet sfs, Identity identity, String suffix) {
+    	if(identity == null) {
+    		sfs.putOverwrite("Type" + suffix, "Inexistent");
+    		return;
+    	}
+    	
     	sfs.putOverwrite("Type" + suffix, (identity instanceof OwnIdentity) ? "OwnIdentity" : "Identity");
         sfs.putOverwrite("Nickname" + suffix, identity.getNickname());
         sfs.putOverwrite("RequestURI" + suffix, identity.getRequestURI().toString());
