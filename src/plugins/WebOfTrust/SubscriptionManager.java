@@ -284,6 +284,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Thread synchronization:
 		 * This must be called with synchronization upon the {@link WebOfTrust} and the SubscriptionManager.
 		 * Therefore it may perform database queries on the WebOfTrust to obtain the dataset.
+		 * 
+		 * @throws PluginNotFoundException If the FCP client has disconnected. The SubscriptionManager then won't retry deploying this Notification, the {@link Subscription} will be terminated.
 		 */
 		protected abstract void synchronizeSubscriberByFCP() throws PluginNotFoundException;
 
@@ -300,6 +302,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Therefore, the notifications are self-contained and this function should and must NOT call any database query functions of the WebOfTrust. 
 		 * 
 		 * @param notification The {@link Notification} to send out via FCP.
+		 * @throws PluginNotFoundException If the FCP client has disconnected. The SubscriptionManager then won't retry deploying this Notification, the {@link Subscription} will be terminated.
 		 */
 		protected abstract void notifySubscriberByFCP(NotificationType notification) throws PluginNotFoundException;
 
