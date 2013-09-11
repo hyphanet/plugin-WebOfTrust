@@ -334,8 +334,13 @@ public final class SubscriptionManager implements PrioRunnable {
 								Persistent.checkedCommit(mDB, this);
 								
 								Logger.warning(this, "Notification deployment failed, failure count: " + failureCount, e);
-								manager.scheduleNotificationProcessing();
-								return failureCount < DISCONNECT_CLIENT_AFTER_FAILURE_COUNT;
+								final boolean deleteSubscription = failureCount < DISCONNECT_CLIENT_AFTER_FAILURE_COUNT;
+								
+								if(!deleteSubscription)
+									manager.scheduleNotificationProcessing();
+								
+								return deleteSubscription;
+								
 							}
 							// If processing of a single notification fails, we do not want the previous notifications
 							// to be sent again when the failed notification is retried. Therefore, we commit after
