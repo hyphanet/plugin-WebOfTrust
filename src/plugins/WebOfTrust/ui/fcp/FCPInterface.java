@@ -280,6 +280,9 @@ public final class FCPInterface implements FredPluginFCP {
     	return sfs;
     }
 
+    /**
+     * Used for handling the "GetIdentity" FCP message.
+     */
     private SimpleFieldSet handleGetIdentity(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
     	final String trusterID = params.get("Truster"); 
     	final String identityID = getMandatoryParameter(params, "Identity");
@@ -296,7 +299,12 @@ public final class FCPInterface implements FredPluginFCP {
 		return sfs;
 	}
     
-    private SimpleFieldSet handleGetIdentity(final String message, final Identity identity, final OwnIdentity truster) throws InvalidParameterException, UnknownIdentityException {
+    /**
+     * Used as backend for:
+     * - {@link #handleGetIdentity(SimpleFieldSet)}
+     * - {@link #sendIdentityChangedNotification(String, IdentityChangedNotification)} 
+     */
+    private SimpleFieldSet handleGetIdentity(final String message, final Identity identity, final OwnIdentity truster) {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	
     		sfs.putOverwrite("Message", message);
