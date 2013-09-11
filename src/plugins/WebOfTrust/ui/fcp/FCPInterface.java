@@ -326,9 +326,12 @@ public final class FCPInterface implements FredPluginFCP {
 
     /**
      * Add fields describing the given identity.
+     * TypeSUFFIX = type of the identity, "OwnIdentity" or "Identity"
      * NicknameSUFFIX = nickname of the identity
      * RequestURISUFFIX = request URI of the identity
-     * IdentitySUFFIX = ID of the identity
+     * InsertURISUFFIX = insert URI of the identity. Only present if Type is OwnIdentity
+     * IdentitySUFFIX = ID of the identity (deprecated)
+     * IDSUFFIX = ID of the identity
      * 
      * If suffix.isEmpty() is true:
      * ContextX = name of context with index X
