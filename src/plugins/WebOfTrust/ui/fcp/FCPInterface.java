@@ -32,7 +32,6 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
-import plugins.WebOfTrust.introduction.IntroductionServer;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
@@ -927,7 +926,7 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * @see SubscriptionManager.IdentityChangedNotification FIXME: The implementation should be able to handle all cases mentioned there
      */
-    public void sendIdentityChangedNotification(String fcpID, final IdentityChangedNotification notification) throws InvalidParameterException, UnknownIdentityException, PluginNotFoundException {
+    public void sendIdentityChangedNotification(String fcpID, final IdentityChangedNotification notification) throws PluginNotFoundException {
     	throw new UnsupportedOperationException("FIXME: Implement");
     	//getReplySender(fcpID).send(handleGetIdentity(null, null, identityID));
     }
@@ -935,7 +934,7 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * @see SubscriptionManager.TrustChangedNotification FIXME: The implementation should be able to handle all cases mentioned there
      */
-    public void sendTrustChangedNotification(String fcpID, final TrustChangedNotification notification) throws DuplicateTrustException, InvalidParameterException, NotTrustedException, UnknownIdentityException, PluginNotFoundException {
+    public void sendTrustChangedNotification(String fcpID, final TrustChangedNotification notification) throws PluginNotFoundException {
     	throw new UnsupportedOperationException("FIXME: Implement");
     	//getReplySender(fcpID).send(handleGetTrust(null, trusterID, trusteeID));
     }
@@ -943,7 +942,7 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * @see SubscriptionManager.ScoreChangedNotification FIXME: The implementation should be able to handle all cases mentioned there
      */
-    public void sendScoreChangedNotification(String fcpID, final ScoreChangedNotification notification) throws InvalidParameterException, NotInTrustTreeException, UnknownIdentityException, PluginNotFoundException {
+    public void sendScoreChangedNotification(String fcpID, final ScoreChangedNotification notification) throws PluginNotFoundException {
     	throw new UnsupportedOperationException("FIXME: Implement");
     	// getReplySender(fcpID).send(handleGetScore(null, trusterID, trusteeID));
     }
