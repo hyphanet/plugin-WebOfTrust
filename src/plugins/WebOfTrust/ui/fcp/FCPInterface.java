@@ -84,7 +84,7 @@ public final class FCPInterface implements FredPluginFCP {
             } else if (message.equals("AddIdentity")) {
                 replysender.send(handleAddIdentity(params), data);
             } else if (message.equals("GetIdentity")) {
-                replysender.send(handleGetIdentity(params, null, null), data);
+                replysender.send(handleGetIdentity(params), data);
             } else if (message.equals("GetOwnIdentities")) {
                 replysender.send(handleGetOwnIdentities(params), data);
             } else if (message.equals("GetAllIdentities")) {
@@ -280,26 +280,33 @@ public final class FCPInterface implements FredPluginFCP {
     	return sfs;
     }
 
-    private SimpleFieldSet handleGetIdentity(final SimpleFieldSet params, String trusterID, String identityID) throws InvalidParameterException, UnknownIdentityException {
-    	if(params != null) {
-    		trusterID = params.get("Truster"); 
-    		identityID = getMandatoryParameter(params, "Identity");
-    	}
+    private SimpleFieldSet handleGetIdentity(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
+    	final String trusterID = params.get("Truster"); 
+    	final String identityID = getMandatoryParameter(params, "Identity");
 
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	
     	synchronized(mWoT) {
     		final Identity identity = mWoT.getIdentityByID(identityID);
+    		final OwnIdentity truster = (trusterID != null ? mWoT.getOwnIdentityByID(trusterID) : null);
     		
-        	sfs.putOverwrite("Message", (identity instanceof OwnIdentity) ? "OwnIdentity" : "Identity");
+    		handleGetIdentity((identity instanceof OwnIdentity) ? "OwnIdentity" : "Identity", identity, truster);
+    	}
+    	
+		return sfs;
+	}
+    
+    private SimpleFieldSet handleGetIdentity(final String message, final Identity identity, final OwnIdentity truster) throws InvalidParameterException, UnknownIdentityException {
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+    	
+    		sfs.putOverwrite("Message", message);
+        	sfs.putOverwrite("Type", (identity instanceof OwnIdentity) ? "OwnIdentity" : "Identity"); // FIXME: Move to addIdentityFields
     		
     		addIdentityFields(sfs, identity, "0");
     		// TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
             addIdentityFields(sfs, identity, "");
 
-    		if(trusterID != null) {
-    			final OwnIdentity truster = mWoT.getOwnIdentityByID(trusterID);
-            
+    		if(truster != null) {
             	addTrustFields(sfs, truster, identity, "0");
             	addScoreFields(sfs, truster, identity, "0");
             
@@ -307,7 +314,6 @@ public final class FCPInterface implements FredPluginFCP {
             	addTrustFields(sfs, truster, identity, "");
             	addScoreFields(sfs, truster, identity, "");
     		}
-    	}
     	
 		return sfs;
 	}
