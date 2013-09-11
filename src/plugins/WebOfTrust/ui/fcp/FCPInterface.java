@@ -270,6 +270,7 @@ public final class FCPInterface implements FredPluginFCP {
      * @param suffix Added as descriptor for possibly multiple identities. Empty string is special case as explained in the function description.
      */
     private void addIdentityFields(SimpleFieldSet sfs, Identity identity, String suffix) {
+    	sfs.putOverwrite("Type", (identity instanceof OwnIdentity) ? "OwnIdentity" : "Identity");
         sfs.putOverwrite("Nickname" + suffix, identity.getNickname());
         sfs.putOverwrite("RequestURI" + suffix, identity.getRequestURI().toString());
         sfs.putOverwrite("Identity" + suffix, identity.getID()); // TODO: As of 2013-09-11, this is legacy code to support old FCP clients. Remove it after some time.
