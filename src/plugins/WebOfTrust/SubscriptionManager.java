@@ -490,7 +490,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @see #mOldObject The backend member variable of this getter.
 		 * @throws NoSuchElementException If the change was the creation of the object.
 		 */
-		protected final Persistent getOldObject() throws NoSuchElementException {
+		public final Persistent getOldObject() throws NoSuchElementException {
 			checkedActivate(1);
 			if(mOldObject == null)
 				throw new NoSuchElementException();
@@ -502,7 +502,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @see #mNewObject The backend member variable of this getter.
 		 * @throws NoSuchElementException If the change was the deletion of the object.
 		 */
-		final protected Persistent getNewObject() throws UnknownIdentityException {
+		public final Persistent getNewObject() throws NoSuchElementException {
 			checkedActivate(1);
 			if(mNewObject == null)
 				throw new NoSuchElementException();
