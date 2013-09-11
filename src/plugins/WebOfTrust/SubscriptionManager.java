@@ -464,17 +464,14 @@ public final class SubscriptionManager implements PrioRunnable {
 			if(mOldObject == null && mNewObject == null)
 				throw new NullPointerException("Only one of mOldObject and mNewObject may be null!");
 
-			if(mOldObject != null) // Don't use try/catch because startupDatabaseIntegrityTest can throw arbitrary stuff
+			if(mOldObject != null)
 				getOldObject().startupDatabaseIntegrityTest();
 			
-			if(mNewObject != null) // Don't use try/catch because startupDatabaseIntegrityTest can throw arbitrary stuff
+			if(mNewObject != null)
 				getNewObject().startupDatabaseIntegrityTest();
 
-			try {
-				if(!getOldObject().getID().equals(getNewObject().getID()))
-					throw new IllegalStateException("The ID of mOldObject and mNewObject must match!");
-			} catch(NoSuchElementException e) {}
-				
+			if(mOldObject != null && mNewObject != null && !getOldObject().getID().equals(getNewObject().getID()))
+				throw new IllegalStateException("The ID of mOldObject and mNewObject must match!");
 		}
 		
 		/**
@@ -486,27 +483,21 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
 		/**
-		 * @return The changed {@link Persistent} object before the change. 
+		 * @return The changed {@link Persistent} object before the change. Null if the change was the creation of the object.
 		 * @see #mOldObject The backend member variable of this getter.
-		 * @throws NoSuchElementException If the change was the creation of the object.
 		 */
 		public final Persistent getOldObject() throws NoSuchElementException {
 			checkedActivate(1);
-			if(mOldObject == null)
-				throw new NoSuchElementException();
-			return Persistent.deserialize(mWebOfTrust, mOldObject);
+			return mOldObject != null ? Persistent.deserialize(mWebOfTrust, mOldObject) : null;
 		}
 		
 		/**
-		 * @return The changed {@link Persistent} object after the change.
+		 * @return The changed {@link Persistent} object after the change. Null if the change was the deletion of the object.
 		 * @see #mNewObject The backend member variable of this getter.
-		 * @throws NoSuchElementException If the change was the deletion of the object.
 		 */
 		public final Persistent getNewObject() throws NoSuchElementException {
 			checkedActivate(1);
-			if(mNewObject == null)
-				throw new NoSuchElementException();
-			return Persistent.deserialize(mWebOfTrust, mNewObject);
+			return mNewObject != null ? Persistent.deserialize(mWebOfTrust, mNewObject) : null;
 		}
 		
 	}
@@ -518,8 +509,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * - before the change via {@link Notification#getOldObject()}
 	 * - and and after the change via ({@link Notification#getNewObject()}
 	 * 
-	 * If one of the before/after getters throws {@link NoSuchElementException}, this is because the identity was added/deleted.
-	 * If both do not throw, the identity was modified.
+	 * If one of the before/after getters returns null, this is because the identity was added/deleted.
+	 * If both return an identity, the identity was modified.
 	 * NOTICE: Modification can also mean that its class changed from {@link OwnIdentity} to {@link Identity} or vice versa!
 	 * 
 	 * NOTICE: Both Identity objects are not stored in the database and must not be stored there to prevent duplicates!
@@ -550,8 +541,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * - before the change via {@link Notification#getOldObject()}
 	 * - and and after the change via ({@link Notification#getNewObject()}
 	 * 
-	 * If one of the before/after getters throws {@link NoSuchElementException}, this is because the trust was added/deleted.
-	 * If both do not throw, the trust was modified.
+	 * If one of the before/after getters returns null, this is because the trust was added/deleted.
 	 * 
 	 * NOTICE: Both Trust objects are not stored in the database and must not be stored there to prevent duplicates!
 	 * 
@@ -581,8 +571,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * - before the change via {@link Notification#getOldObject()}
 	 * - and and after the change via ({@link Notification#getNewObject()}
 	 * 
-	 * If one of the before/after getters throws {@link NoSuchElementException}, this is because the score was added/deleted.
-	 * If both do not throw, the score was modified.
+	 * If one of the before/after getters returns null, this is because the score was added/deleted.
 	 * 
 	 * NOTICE: Both Score objects are not stored in the database and must not be stored there to prevent duplicates!
 	 * 
