@@ -945,11 +945,18 @@ public final class FCPInterface implements FredPluginFCP {
     }
     
     /**
-     * @see SubscriptionManager.IdentityChangedNotification FIXME: The implementation should be able to handle all cases mentioned there
+     * @see SubscriptionManager.IdentityChangedNotification
      */
-    public void sendIdentityChangedNotification(String fcpID, final IdentityChangedNotification notification) throws PluginNotFoundException {
-    	throw new UnsupportedOperationException("FIXME: Implement");
-    	//getReplySender(fcpID).send(handleGetIdentity(null, null, identityID));
+    public void sendIdentityChangedNotification(final String fcpID, final IdentityChangedNotification notification) throws PluginNotFoundException {
+    	final SimpleFieldSet oldIdentity = handleGetIdentity((Identity)notification.getOldObject(), null);
+    	final SimpleFieldSet newIdentity = handleGetIdentity((Identity)notification.getNewObject(), null);
+    	
+    	final SimpleFieldSet message = new SimpleFieldSet(true);
+    	message.putOverwrite("Message", "IdentityChangedNotification");
+    	message.put("BeforeChange", oldIdentity);
+    	message.put("AfterChange", newIdentity);
+    	
+    	getReplySender(fcpID).send(message);
     }
     
     /**
