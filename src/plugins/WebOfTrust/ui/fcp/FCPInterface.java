@@ -292,15 +292,6 @@ public final class FCPInterface implements FredPluginFCP {
     		final Identity identity = mWoT.getIdentityByID(identityID);
     		
         	sfs.putOverwrite("Message", (identity instanceof OwnIdentity) ? "OwnIdentity" : "Identity");
-
-			{ // TODO: Move to addIdentityFields()
-        		sfs.putOverwrite("ID", identity.getID());
-
-    			if(identity instanceof OwnIdentity) {
-    				OwnIdentity ownId = (OwnIdentity)identity;
-    				sfs.putOverwrite("InsertURI", ownId.getInsertURI().toString());
-    			}
-    		}
     		
     		addIdentityFields(sfs, identity, "0");
     		// TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
@@ -344,7 +335,13 @@ public final class FCPInterface implements FredPluginFCP {
     private void addIdentityFields(SimpleFieldSet sfs, Identity identity, String suffix) {
         sfs.putOverwrite("Nickname" + suffix, identity.getNickname());
         sfs.putOverwrite("RequestURI" + suffix, identity.getRequestURI().toString());
-        sfs.putOverwrite("Identity" + suffix, identity.getID());
+        sfs.putOverwrite("Identity" + suffix, identity.getID()); // TODO: As of 2013-09-11, this is legacy code to support old FCP clients. Remove it after some time.
+ 		sfs.putOverwrite("ID" + suffix, identity.getID()); 
+
+ 		if(identity instanceof OwnIdentity) {
+ 			OwnIdentity ownId = (OwnIdentity)identity;
+ 			sfs.putOverwrite("InsertURI", ownId.getInsertURI().toString());
+ 		}
 
         final Iterator<String> contexts = identity.getContexts().iterator();
         int propertiesCounter = 0;
