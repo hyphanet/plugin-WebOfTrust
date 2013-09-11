@@ -267,7 +267,11 @@ public final class FCPInterface implements FredPluginFCP {
 		sfs.putOverwrite("Trustee", trusteeID);
 		return sfs;
 	}
-    
+
+    /**
+     * NOTICE: The added identity will not be fetched unless you also add a positive {@link Trust} value from an {@link OwnIdentity} to it.
+     * (An exception would be if another identity which is being fetched starts trusting the added identity at some point in the future)
+     */
     private SimpleFieldSet handleAddIdentity(final SimpleFieldSet params) throws InvalidParameterException, MalformedURLException {
     	final String requestURI = getMandatoryParameter(params, "RequestURI");
 
