@@ -23,7 +23,6 @@ import plugins.WebOfTrust.SubscriptionManager.TrustChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.UnknownSubscriptionException;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NoSuchContextException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
@@ -72,7 +71,7 @@ public final class FCPInterface implements FredPluginFCP {
             // TODO: Optimization: This should use a HashMap<String, HandleInterface> instead of zillions of equals()
             
             if (message.equals("GetTrust")) {
-                replysender.send(handleGetTrust(params, null, null), data);
+                replysender.send(handleGetTrust(params), data);
             } else if(message.equals("GetScore")) {
             	replysender.send(handleGetScore(params, null, null), data);
             }else if (message.equals("CreateIdentity")) {
@@ -194,21 +193,29 @@ public final class FCPInterface implements FredPluginFCP {
         return sfs;
     }
     
-    private SimpleFieldSet handleGetTrust(final SimpleFieldSet params, String trusterID, String trusteeID) throws InvalidParameterException, DuplicateTrustException, NotTrustedException, UnknownIdentityException {
-    	if(params != null) {
-    		trusterID = getMandatoryParameter(params, "Truster");
-    		trusteeID = getMandatoryParameter(params, "Trustee");
-    	}
-
-    	final Trust trust;
+    private SimpleFieldSet handleGetTrust(final SimpleFieldSet params) throws InvalidParameterException, NotTrustedException, UnknownIdentityException {
+    	final String trusterID = getMandatoryParameter(params, "Truster");
+    	final String trusteeID = getMandatoryParameter(params, "Trustee");
+    	
+    	SimpleFieldSet sfs;
     	synchronized(mWoT) {
-    		trust = mWoT.getTrust(mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID));
+    		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
+    		sfs = handleGetTrust(mWoT.getTrust(mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)));
     	}
-
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Trust");
-		sfs.putOverwrite("Truster", trusterID);
-		sfs.putOverwrite("Trustee", trusteeID);
+    	return sfs;
+    }
+    
+    private SimpleFieldSet handleGetTrust(final Trust trust) {
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+    	
+    	if(trust == null) {
+    		sfs.putOverwrite("Value", "Inexistent");
+    		return sfs;
+    	}
+    	
+		sfs.putOverwrite("Truster", trust.getTruster().getID());
+		sfs.putOverwrite("Trustee", trust.getTrustee().getID());
 		sfs.putOverwrite("Value", Byte.toString(trust.getValue()));
 		sfs.putOverwrite("Comment", trust.getComment());
 		return sfs;
