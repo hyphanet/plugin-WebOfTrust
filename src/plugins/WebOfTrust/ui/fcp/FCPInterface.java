@@ -962,12 +962,7 @@ public final class FCPInterface implements FredPluginFCP {
     	final SimpleFieldSet oldIdentity = handleGetIdentity((Identity)notification.getOldObject(), null);
     	final SimpleFieldSet newIdentity = handleGetIdentity((Identity)notification.getNewObject(), null);
     	
-    	final SimpleFieldSet message = new SimpleFieldSet(true);
-    	message.putOverwrite("Message", "IdentityChangedNotification");
-    	message.put("BeforeChange", oldIdentity);
-    	message.put("AfterChange", newIdentity);
-    	
-    	getReplySender(fcpID).send(message);
+    	sendChangeNotification(fcpID, "IdentityChangedNotification", oldIdentity, newIdentity);
     }
     
     /**
@@ -984,6 +979,15 @@ public final class FCPInterface implements FredPluginFCP {
     public void sendScoreChangedNotification(String fcpID, final ScoreChangedNotification notification) throws PluginNotFoundException {
     	throw new UnsupportedOperationException("FIXME: Implement");
     	// getReplySender(fcpID).send(handleGetScore(null, trusterID, trusteeID));
+    }
+    
+    private void sendChangeNotification(final String fcpID, final String message, final SimpleFieldSet beforeChange, final SimpleFieldSet afterChange) throws PluginNotFoundException {
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+    	sfs.putOverwrite("Message", message);;
+    	sfs.put("BeforeChange", beforeChange);
+    	sfs.put("AfterChange", afterChange);
+    	
+    	getReplySender(fcpID).send(sfs);
     }
     
     private SimpleFieldSet handlePing() {
