@@ -986,11 +986,13 @@ public final class FCPInterface implements FredPluginFCP {
     }
     
     /**
-     * @see SubscriptionManager.ScoreChangedNotification FIXME: The implementation should be able to handle all cases mentioned there
+     * @see SubscriptionManager.ScoreChangedNotification
      */
     public void sendScoreChangedNotification(String fcpID, final ScoreChangedNotification notification) throws PluginNotFoundException {
-    	throw new UnsupportedOperationException("FIXME: Implement");
-    	// getReplySender(fcpID).send(handleGetScore(null, trusterID, trusteeID));
+    	final SimpleFieldSet oldScore = handleGetScore((Score)notification.getOldObject());
+    	final SimpleFieldSet newScore = handleGetScore((Score)notification.getNewObject());
+
+    	sendChangeNotification(fcpID, "ScoreChangedNotification", oldScore, newScore);
     }
     
     private void sendChangeNotification(final String fcpID, final String message, final SimpleFieldSet beforeChange, final SimpleFieldSet afterChange) throws PluginNotFoundException {
