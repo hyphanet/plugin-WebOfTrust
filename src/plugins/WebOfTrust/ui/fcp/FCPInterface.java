@@ -73,7 +73,7 @@ public final class FCPInterface implements FredPluginFCP {
             if (message.equals("GetTrust")) {
                 replysender.send(handleGetTrust(params), data);
             } else if(message.equals("GetScore")) {
-            	replysender.send(handleGetScore(params, null, null), data);
+            	replysender.send(handleGetScore(params), data);
             }else if (message.equals("CreateIdentity")) {
                 replysender.send(handleCreateIdentity(params), data);
             } else if (message.equals("SetTrust")) {
@@ -221,24 +221,34 @@ public final class FCPInterface implements FredPluginFCP {
 		return sfs;
     }
     
-    private SimpleFieldSet handleGetScore(final SimpleFieldSet params, String trusterID, String trusteeID) throws InvalidParameterException, NotInTrustTreeException, UnknownIdentityException {
-    	if(params != null) {
-    		trusterID = getMandatoryParameter(params, "Truster");
-    		trusteeID = getMandatoryParameter(params, "Trustee");
-    	}
+    private SimpleFieldSet handleGetScore(final SimpleFieldSet params) throws NotInTrustTreeException, UnknownIdentityException, InvalidParameterException {
+    	final String trusterID = getMandatoryParameter(params, "Truster");
+    	final String trusteeID = getMandatoryParameter(params, "Trustee");
 
-    	final Score score;
+    	final SimpleFieldSet sfs;
     	synchronized(mWoT) {
-    		score = mWoT.getScore(mWoT.getOwnIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID));
+    		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
+    		sfs = handleGetScore(mWoT.getScore(mWoT.getOwnIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)));
     	}
 
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Score");
-		sfs.putOverwrite("Truster", trusterID);
-		sfs.putOverwrite("Trustee", trusteeID);
+		return sfs;
+    }
+    
+    private SimpleFieldSet handleGetScore(final Score score) {
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+    	
+    	if(score == null) {
+    		sfs.putOverwrite("Value", "Inexistent");
+    		return sfs;
+    	}
+    	
+		sfs.putOverwrite("Truster", score.getTruster().getID());
+		sfs.putOverwrite("Trustee", score.getTrustee().getID());
 		sfs.putOverwrite("Value", Integer.toString(score.getScore()));
 		return sfs;
     }
+
 
 
     private SimpleFieldSet handleSetTrust(final SimpleFieldSet params)
