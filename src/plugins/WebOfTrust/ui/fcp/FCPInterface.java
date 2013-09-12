@@ -966,11 +966,13 @@ public final class FCPInterface implements FredPluginFCP {
     }
     
     /**
-     * @see SubscriptionManager.TrustChangedNotification FIXME: The implementation should be able to handle all cases mentioned there
+     * @see SubscriptionManager.TrustChangedNotification
      */
     public void sendTrustChangedNotification(String fcpID, final TrustChangedNotification notification) throws PluginNotFoundException {
-    	throw new UnsupportedOperationException("FIXME: Implement");
-    	//getReplySender(fcpID).send(handleGetTrust(null, trusterID, trusteeID));
+    	final SimpleFieldSet oldTrust = handleGetTrust((Trust)notification.getOldObject());
+    	final SimpleFieldSet newTrust = handleGetTrust((Trust)notification.getNewObject());
+
+    	sendChangeNotification(fcpID, "TrustChangedNotification", oldTrust, newTrust);
     }
     
     /**
