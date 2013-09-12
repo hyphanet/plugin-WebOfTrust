@@ -313,6 +313,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		mSubscriptionManager = new SubscriptionManager(this);
 		
 		mFetcher = new IdentityFetcher(this, null);
+		
+		mFCPInterface = new FCPInterface(this);
 	}
 	
 	private File getUserDataDirectory() {
