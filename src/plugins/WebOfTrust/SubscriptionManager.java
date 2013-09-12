@@ -412,7 +412,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @see Persistent#serialize()
 		 * @see #getOldObject() The public getter for this.
 		 */
-		final byte[] mOldObject;
+		private final byte[] mOldObject;
 		
 		/**
 		 * A serialized copy of the changed {@link Persistent} object after the change.
@@ -422,7 +422,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @see Persistent#serialize()
 		 * @see #getNewObject() The public getter for this.
 		 */
-		final byte[] mNewObject;
+		private final byte[] mNewObject;
 		
 		/**
 		 * Constructs a Notification in the queue of the given subscription.
