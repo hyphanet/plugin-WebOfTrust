@@ -146,6 +146,11 @@ public class DatabaseBasedTest extends TestCase {
 		return result;
 	}
 	
+	/**
+	 * ATTENTION: Its impossible to store more trust values than the amount of identities squared: There can only be a single trust value
+	 * between each pair of identities. The amount of such pairs is identities². If you specify a trustCount which is higher than this 
+	 * value then this function will run into an infinite loop.
+	 */
 	protected void addRandomTrustValues(final ArrayList<Identity> identities, final int trustCount) throws InvalidParameterException {
 		final int identityCount = identities.size();
 		
