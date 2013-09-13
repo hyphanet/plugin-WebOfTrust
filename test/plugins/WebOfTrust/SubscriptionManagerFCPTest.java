@@ -64,16 +64,18 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		mFCPInterface.handle(mReplySender, params, null, 0);
 	}
 	
-	SimpleFieldSet subscribeToIdentities() throws FSParseException {
+	
+	
+	void testSubscribeTo(String type) throws FSParseException {
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Subscribe");
-		sfs.putOverwrite("To", "Identities");
+		sfs.putOverwrite("To", type);
 		fcpCall(sfs);
 		
-		// First reply message is the full set of all identities so the client can synchronize its database
+		// First reply message is the full set of all objects of the type we are interested in so the client can synchronize its database
 		final SimpleFieldSet synchronization = mReplySender.getNextResult();
-		assertEquals("Identities", synchronization.get("Message"));
-		assertEquals(mWoT.getAllIdentities().size(), synchronization.getInt("Amount"));
+		assertEquals(type, synchronization.get("Message"));
+		assertEquals("0", synchronization.get("Amount")); // No identities/trusts/scores stored yet
 		
 		// Second reply message is the confirmation of the subscription
 		final SimpleFieldSet subscription = mReplySender.getNextResult();
@@ -85,11 +87,22 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 			throw e;
 		}
 		
-		return synchronization;
+		assertTrue(mReplySender.results.isEmpty());
+		
+		// Try to file the same subscription again - should fail because we already are subscribed
+		fcpCall(sfs);
+		final SimpleFieldSet duplicateSubscriptionMessage = mReplySender.getNextResult();
+		assertEquals("Error", duplicateSubscriptionMessage.get("Message"));
+		assertEquals("Subscribe", duplicateSubscriptionMessage.get("OriginalMessage"));
+		assertEquals("plugins.WebOfTrust.SubscriptionManager$SubscriptionExistsAlreadyException", duplicateSubscriptionMessage.get("Description"));
+
+		assertTrue(mReplySender.results.isEmpty());
 	}
 	
 	public void testSubscribe() throws FSParseException {
-		subscribeToIdentities();		
+		testSubscribeTo("Identities");
+		testSubscribeTo("Trusts");
+		testSubscribeTo("Scores");
 	}
 
 }
