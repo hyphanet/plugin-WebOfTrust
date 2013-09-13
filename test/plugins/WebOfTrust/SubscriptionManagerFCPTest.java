@@ -155,7 +155,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	
 		// FIXME: Make sure that this function also adds random contexts, trust values & publish trust list flags
 		// Also adapt addRandomTrustValues() to respect the publish trust list flag
-		final ArrayList<Identity> identities = addRandomIdentities(identityCount / 10);
+		final ArrayList<Identity> identities = addRandomIdentities(identityCount / 3);
 		
 		// At least one own identity needs to exist to ensure that scores are computed.
 		for(int i=0; i < Math.max(ownIdentityCount / 3, 1); ++i) {
@@ -164,7 +164,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		}
 		
 		// FIXME: Make sure that this function also adds random comments
-		addRandomTrustValues(identities, trustCount);
+		addRandomTrustValues(identities, trustCount / 10);
 
 		/* Initial test data is set up */
 		subscribeAndSynchronize("Identities");
