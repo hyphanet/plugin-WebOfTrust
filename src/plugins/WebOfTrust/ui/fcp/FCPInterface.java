@@ -385,7 +385,7 @@ public final class FCPInterface implements FredPluginFCP {
 
  		if(identity instanceof OwnIdentity) {
  			OwnIdentity ownId = (OwnIdentity)identity;
- 			sfs.putOverwrite("InsertURI", ownId.getInsertURI().toString());
+ 			sfs.putOverwrite("InsertURI" + suffix, ownId.getInsertURI().toString());
  		}
 
         final Iterator<String> contexts = identity.getContexts().iterator();
