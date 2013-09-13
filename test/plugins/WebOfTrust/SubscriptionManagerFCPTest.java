@@ -236,7 +236,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	static final class IdentityParser extends FCPParser<Identity> {
 
 		@Override
-		protected Identity parseSingle(final SimpleFieldSet sfs, final int i) {
+		protected Identity parseSingle(final SimpleFieldSet sfs, final int index) {
 			// TODO Auto-generated method stub
 			return null;
 		}
@@ -247,7 +247,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	static final class TrustParser extends FCPParser<Trust> {
 
 		@Override
-		protected Trust parseSingle(final SimpleFieldSet sfs, final int i) {
+		protected Trust parseSingle(final SimpleFieldSet sfs, final int index) {
 			// TODO Auto-generated method stub
 			return null;
 		}
@@ -257,7 +257,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	static final class ScoreParser extends FCPParser<Score> {
 
 		@Override
-		protected Score parseSingle(final SimpleFieldSet sfs, final int i) {
+		protected Score parseSingle(final SimpleFieldSet sfs, final int index) {
 			// TODO Auto-generated method stub
 			return null;
 		}
