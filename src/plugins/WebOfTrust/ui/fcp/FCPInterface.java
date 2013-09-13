@@ -354,6 +354,7 @@ public final class FCPInterface implements FredPluginFCP {
      * NicknameSUFFIX = nickname of the identity
      * RequestURISUFFIX = request URI of the identity
      * InsertURISUFFIX = insert URI of the identity. Only present if Type is OwnIdentity
+     * PublishesTrustListSUFFIX = true/false if the identity does publish a trust list or not 
      * IdentitySUFFIX = ID of the identity (deprecated)
      * IDSUFFIX = ID of the identity
      * 
@@ -386,12 +387,12 @@ public final class FCPInterface implements FredPluginFCP {
         sfs.putOverwrite("RequestURI" + suffix, identity.getRequestURI().toString());
         sfs.putOverwrite("Identity" + suffix, identity.getID()); // TODO: As of 2013-09-11, this is legacy code to support old FCP clients. Remove it after some time.
  		sfs.putOverwrite("ID" + suffix, identity.getID()); 
+        sfs.put("PublishesTrustList" + suffix, identity.doesPublishTrustList());
 
  		if(identity instanceof OwnIdentity) {
  			OwnIdentity ownId = (OwnIdentity)identity;
  			sfs.putOverwrite("InsertURI" + suffix, ownId.getInsertURI().toString());
  		}
-
   
  		final ArrayList<String> contexts = identity.getContexts();
  		final HashMap<String, String> properties = identity.getProperties();
