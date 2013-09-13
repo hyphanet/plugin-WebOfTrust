@@ -4,7 +4,8 @@
 package plugins.WebOfTrust.ui.fcp;
 
 import java.net.MalformedURLException;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -259,6 +260,10 @@ public final class FCPInterface implements FredPluginFCP {
      * PropertiesSUFFIX.PropertyX.Name = name of property X
      * PropertiesSUFFIX.PropertyX.Value = value of property X
      * 
+     * Always:
+     * ContextsSUFFIX.Amount = number of contexts
+     * PropertiesSUFFIX.Amount = number of properties
+     * 
      * @param sfs The {@link SimpleFieldSet} to add fields to.
      * @param identity The {@link Identity} to describe.
      * @param suffix Added as descriptor for possibly multiple identities. Empty string is special case as explained in the function description.
@@ -268,26 +273,34 @@ public final class FCPInterface implements FredPluginFCP {
         sfs.putOverwrite("RequestURI" + suffix, identity.getRequestURI().toString());
         sfs.putOverwrite("Identity" + suffix, identity.getID());
 
-        final Iterator<String> contexts = identity.getContexts().iterator();
-        int propertiesCounter = 0;
-        if (suffix.isEmpty()) {
-            for(int i = 0; contexts.hasNext(); ++i) {
-                sfs.putOverwrite("Context" + i, contexts.next());
+  
+ 		final ArrayList<String> contexts = identity.getContexts();
+ 		final HashMap<String, String> properties = identity.getProperties();
+ 		int contextCounter = 0;
+ 		int propertyCounter = 0;
+ 		
+        if (suffix.isEmpty()) {	
+            for(String context : contexts) {
+                sfs.putOverwrite("Context" + contextCounter++, context);
             }
-            for (Entry<String, String> property : identity.getProperties().entrySet()) {
-                sfs.putOverwrite("Property" + propertiesCounter + ".Name", property.getKey());
-                sfs.putOverwrite("Property" + propertiesCounter++ + ".Value", property.getValue());
+            
+            for (Entry<String, String> property : properties.entrySet()) {
+                sfs.putOverwrite("Property" + propertyCounter + ".Name", property.getKey());
+                sfs.putOverwrite("Property" + propertyCounter++ + ".Value", property.getValue());
             }
-        } else {
-            for(int i = 0; contexts.hasNext(); ++i) {
-                sfs.putOverwrite("Contexts" + suffix + ".Context" + i, contexts.next());
+        } else {        	
+        	for(String context : contexts) {
+                sfs.putOverwrite("Contexts" + suffix + ".Context" + contextCounter++, context);
             }
-            for (Entry<String, String> property : identity.getProperties().entrySet()) {
-                sfs.putOverwrite("Properties" + suffix + ".Property" + propertiesCounter + ".Name", property.getKey());
-                sfs.putOverwrite("Properties" + suffix + ".Property" + propertiesCounter++ + ".Value",
-                        property.getValue());
+            
+            for (Entry<String, String> property : properties.entrySet()) {
+                sfs.putOverwrite("Properties" + suffix + ".Property" + propertyCounter + ".Name", property.getKey());
+                sfs.putOverwrite("Properties" + suffix + ".Property" + propertyCounter++ + ".Value", property.getValue());
             }
         }
+        
+        sfs.put("Contexts" + suffix + ".Amount", contextCounter);
+        sfs.put("Properties" + suffix + ".Amount", propertyCounter);
     }
     
     /**
