@@ -56,13 +56,6 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	FCPInterface mFCPInterface;
 	ReplyReceiver mReplyReceiver;
 	
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
-		mFCPInterface = mWoT.getFCPInterface();
-		mReplyReceiver = new ReplyReceiver();
-	}
-	
 	/**
 	 * Sends the given {@link SimpleFieldSet} to the FCP interface of {@link DatabaseBasedTest#mWoT}
 	 * You can obtain the result(s) by <code>mReplySender.getNextResult();</code>
@@ -70,8 +63,23 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	void fcpCall(final SimpleFieldSet params) {
 		mFCPInterface.handle(mReplyReceiver, params, null, 0);
 	}
+
+	@Override
+	protected void setUp() throws Exception {
+		super.setUp();
+		mFCPInterface = mWoT.getFCPInterface();
+		mReplyReceiver = new ReplyReceiver();
+		
+		mReceivedIdentities = new HashMap<String, Identity>();
+		mReceivedTrusts = new HashMap<String, Trust>();
+		mReceivedScores = new HashMap<String, Score>();
+	}
 	
-	
+	public void testSubscribe() throws FSParseException {
+		testSubscribeTo("Identities");
+		testSubscribeTo("Trusts");
+		testSubscribeTo("Scores");
+	}
 	
 	void testSubscribeTo(String type) throws FSParseException {
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
@@ -105,11 +113,4 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 
 		assertFalse(mReplyReceiver.hasNextResult());
 	}
-	
-	public void testSubscribe() throws FSParseException {
-		testSubscribeTo("Identities");
-		testSubscribeTo("Trusts");
-		testSubscribeTo("Scores");
-	}
-
 }
