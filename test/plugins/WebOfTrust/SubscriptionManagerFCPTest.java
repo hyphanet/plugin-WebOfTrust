@@ -255,7 +255,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	        final String nickname = sfs.get("Nickname" + suffix);
 	        final String requestURI = sfs.get("RequestURI" + suffix);
 	    	final String insertURI = sfs.get("InsertURI" + suffix);
-	    	final boolean doesPublishTrustList = sfs.getBoolean("PublishesTrustList");
+	    	final boolean doesPublishTrustList = sfs.getBoolean("PublishesTrustList" + suffix);
 	        final String id = sfs.get("ID" + suffix); 
 	 	
 	 		final Identity identity;
