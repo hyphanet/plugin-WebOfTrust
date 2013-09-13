@@ -158,7 +158,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		final ArrayList<Identity> identities = addRandomIdentities(identityCount / 10);
 		
 		// At least one own identity needs to exist to ensure that scores are computed.
-		for(int i=0; i < ownIdentityCount / 3; ++i) {
+		for(int i=0; i < Math.max(ownIdentityCount / 3, 1); ++i) {
 			final OwnIdentity ownIdentity = mWoT.createOwnIdentity(getRandomSSKPair()[0], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true, "Test");
 			identities.add(ownIdentity); 
 		}
