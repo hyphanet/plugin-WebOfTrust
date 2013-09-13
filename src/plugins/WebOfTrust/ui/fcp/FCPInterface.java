@@ -509,23 +509,7 @@ public final class FCPInterface implements FredPluginFCP {
 			for(final Identity identity : mWoT.getAllIdentities()) {
 				if(getAll || identity.hasContext(context)) {
 					// TODO: Allow the client to select what data he wants
-					
-					sfs.putOverwrite("Identity" + i, identity.getID());
-					sfs.putOverwrite("RequestURI" + i, identity.getRequestURI().toString());
-					if(identity instanceof OwnIdentity)
-						sfs.putOverwrite("InsertURI" + i, ((OwnIdentity)identity).getInsertURI().toString());
-					sfs.putOverwrite("Nickname" + i, identity.getNickname() != null ? identity.getNickname() : "");
-
-					int contextCounter = 0;
-					for (String identityContext: identity.getContexts()) {
-						sfs.putOverwrite("Contexts" + i + ".Context" + contextCounter++, identityContext);
-					}
-
-					int propertiesCounter = 0;
-					for (Entry<String, String> property : identity.getProperties().entrySet()) {
-						sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter + ".Name", property.getKey());
-						sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter++ + ".Value", property.getValue());
-					}
+					addIdentityFields(sfs, identity, Integer.toString(i));
 					
 					++i;
 				}
