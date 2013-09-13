@@ -3,7 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -19,12 +19,15 @@ import freenet.support.api.Bucket;
 
 public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 
+	/**
+	 * From the perspective of this unit test, this does NOT send replies and therefore is called "ReplyRECEIVER" instead of ReplySENDER.
+	 */
 	@Ignore
-	static class MockReplySender extends PluginReplySender {
+	static class ReplyReceiver extends PluginReplySender {
 
 		LinkedList<SimpleFieldSet> results = new LinkedList<SimpleFieldSet>();
 		
-		public MockReplySender() {
+		public ReplyReceiver() {
 			super("SubscriptionManagerTest", "SubscriptionManagerTest");
 		}
 
@@ -44,16 +47,20 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 			return results.removeFirst();
 		}
 		
+		public boolean hasNextResult() {
+			return !results.isEmpty();
+		}
+		
 	}
 	
 	FCPInterface mFCPInterface;
-	MockReplySender mReplySender;
+	ReplyReceiver mReplyReceiver;
 	
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		mFCPInterface = mWoT.getFCPInterface();
-		mReplySender = new MockReplySender();
+		mReplyReceiver = new ReplyReceiver();
 	}
 	
 	/**
@@ -61,7 +68,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	 * You can obtain the result(s) by <code>mReplySender.getNextResult();</code>
 	 */
 	void fcpCall(final SimpleFieldSet params) {
-		mFCPInterface.handle(mReplySender, params, null, 0);
+		mFCPInterface.handle(mReplyReceiver, params, null, 0);
 	}
 	
 	
@@ -73,12 +80,12 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		fcpCall(sfs);
 		
 		// First reply message is the full set of all objects of the type we are interested in so the client can synchronize its database
-		final SimpleFieldSet synchronization = mReplySender.getNextResult();
+		final SimpleFieldSet synchronization = mReplyReceiver.getNextResult();
 		assertEquals(type, synchronization.get("Message"));
 		assertEquals("0", synchronization.get("Amount")); // No identities/trusts/scores stored yet
 		
 		// Second reply message is the confirmation of the subscription
-		final SimpleFieldSet subscription = mReplySender.getNextResult();
+		final SimpleFieldSet subscription = mReplyReceiver.getNextResult();
 		assertEquals("Subscribed", subscription.get("Message"));
 		try {
 			UUID.fromString(subscription.get("Subscription"));
@@ -87,16 +94,16 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 			throw e;
 		}
 		
-		assertTrue(mReplySender.results.isEmpty());
+		assertFalse(mReplyReceiver.hasNextResult());
 		
 		// Try to file the same subscription again - should fail because we already are subscribed
 		fcpCall(sfs);
-		final SimpleFieldSet duplicateSubscriptionMessage = mReplySender.getNextResult();
+		final SimpleFieldSet duplicateSubscriptionMessage = mReplyReceiver.getNextResult();
 		assertEquals("Error", duplicateSubscriptionMessage.get("Message"));
 		assertEquals("Subscribe", duplicateSubscriptionMessage.get("OriginalMessage"));
 		assertEquals("plugins.WebOfTrust.SubscriptionManager$SubscriptionExistsAlreadyException", duplicateSubscriptionMessage.get("Description"));
 
-		assertTrue(mReplySender.results.isEmpty());
+		assertFalse(mReplyReceiver.hasNextResult());
 	}
 	
 	public void testSubscribe() throws FSParseException {
