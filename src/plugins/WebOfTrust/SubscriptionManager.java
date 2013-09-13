@@ -1217,7 +1217,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	protected synchronized void stop() {
 		Logger.normal(this, "Aborting all pending notifications");
 		
-		mTicker.shutdown();
+		if(mTicker != null)
+			mTicker.shutdown();
 		
 		Logger.normal(this, "Stopped.");
 	}
