@@ -86,12 +86,12 @@ public final class FCPInterface implements FredPluginFCP {
                 replysender.send(handleGetIdentity(params), data);
             } else if (message.equals("GetOwnIdentities")) {
                 replysender.send(handleGetOwnIdentities(params), data);
-            } else if (message.equals("GetAllIdentities")) {
-            	replysender.send(handleGetAllIdentities(params), data);
-            } else if (message.equals("GetAllTrustValues")) {
-            	replysender.send(handleGetAllTrustValues(params), data);
-            } else if (message.equals("GetAllScoreValues")) {
-            	replysender.send(handleGetAllScoreValues(params), data);
+            } else if (message.equals("GetIdentities")) {
+            	replysender.send(handleGetIdentities(params), data);
+            } else if (message.equals("GetTrusts")) {
+            	replysender.send(handleGetTrusts(params), data);
+            } else if (message.equals("GetScores")) {
+            	replysender.send(handleGetScores(params), data);
             } else if (message.equals("GetIdentitiesByScore")) {
                 replysender.send(handleGetIdentitiesByScore(params), data);
             } else if (message.equals("GetTrusters")) {
@@ -489,7 +489,7 @@ public final class FCPInterface implements FredPluginFCP {
 		return sfs;
     }
     
-    private SimpleFieldSet handleGetAllIdentities(final SimpleFieldSet params) {
+    private SimpleFieldSet handleGetIdentities(final SimpleFieldSet params) {
         final String context;
         
         if(params!= null) {
@@ -536,9 +536,9 @@ public final class FCPInterface implements FredPluginFCP {
 		return sfs;
     }
     
-    private SimpleFieldSet handleGetAllTrustValues(final SimpleFieldSet params) {
+    private SimpleFieldSet handleGetTrusts(final SimpleFieldSet params) {
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
-        sfs.putOverwrite("Message", "TrustValues");
+        sfs.putOverwrite("Message", "Trusts");
    
 		// TODO: Optimization: Remove this lock if it works without it.
         synchronized(mWoT) {
@@ -557,9 +557,9 @@ public final class FCPInterface implements FredPluginFCP {
         return sfs;
     }
     
-    private SimpleFieldSet handleGetAllScoreValues(final SimpleFieldSet params) {
+    private SimpleFieldSet handleGetScores(final SimpleFieldSet params) {
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
-        sfs.putOverwrite("Message", "ScoreValues");
+        sfs.putOverwrite("Message", "Scores");
    
 		// TODO: Optimization: Remove this lock if it works without it.
         synchronized(mWoT) {
@@ -958,15 +958,15 @@ public final class FCPInterface implements FredPluginFCP {
     }
     
     public void sendAllIdentities(String fcpID) throws PluginNotFoundException {
-    	getReplySender(fcpID).send(handleGetAllIdentities(null));
+    	getReplySender(fcpID).send(handleGetIdentities(null));
     }
     
     public void sendAllTrustValues(String fcpID) throws PluginNotFoundException {
-    	getReplySender(fcpID).send(handleGetAllTrustValues(null));
+    	getReplySender(fcpID).send(handleGetTrusts(null));
     }
     
     public void sendAllScoreValues(String fcpID) throws PluginNotFoundException {
-    	getReplySender(fcpID).send(handleGetAllScoreValues(null));
+    	getReplySender(fcpID).send(handleGetScores(null));
     }
     
     /**
