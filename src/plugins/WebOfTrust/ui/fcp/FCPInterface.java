@@ -249,6 +249,7 @@ public final class FCPInterface implements FredPluginFCP {
      * NicknameSUFFIX = nickname of the identity
      * RequestURISUFFIX = request URI of the identity
      * IdentitySUFFIX = ID of the identity
+     * PublishesTrustListSUFFIX = true/false if the identity does publish a trust list or not 
      * 
      * If suffix.isEmpty() is true:
      * ContextX = name of context with index X
@@ -272,7 +273,7 @@ public final class FCPInterface implements FredPluginFCP {
         sfs.putOverwrite("Nickname" + suffix, identity.getNickname());
         sfs.putOverwrite("RequestURI" + suffix, identity.getRequestURI().toString());
         sfs.putOverwrite("Identity" + suffix, identity.getID());
-
+        sfs.put("PublishesTrustList" + suffix, identity.doesPublishTrustList());
   
  		final ArrayList<String> contexts = identity.getContexts();
  		final HashMap<String, String> properties = identity.getProperties();
