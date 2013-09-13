@@ -7,10 +7,12 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.Map.Entry;
 
 import org.junit.Ignore;
 
@@ -151,6 +153,8 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 
 		// Random trust graph setup...
 	
+		// FIXME: Make sure that this function also adds random contexts, trust values & publish trust list flags
+		// Also adapt addRandomTrustValues() to respect the publish trust list flag
 		final ArrayList<Identity> identities = addRandomIdentities(identityCount / 10);
 		
 		// At least one own identity needs to exist to ensure that scores are computed.
@@ -159,6 +163,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 			identities.add(ownIdentity); 
 		}
 		
+		// FIXME: Make sure that this function also adds random comments
 		addRandomTrustValues(identities, trustCount);
 
 		/* Initial test data is set up */
@@ -173,7 +178,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		/* FIXME: Actually test event notifications by doing random changes of the WOT now */
 	}
 	
-	void subscribeAndSynchronize(final String type) throws FSParseException {
+	void subscribeAndSynchronize(final String type) throws FSParseException, MalformedURLException, InvalidParameterException {
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Subscribe");
 		sfs.putOverwrite("To", type);
@@ -187,7 +192,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		assertFalse(mReplyReceiver.hasNextResult());
 	}
 	
-	void importSynchronization(final String type, SimpleFieldSet synchronization) throws FSParseException {
+	void importSynchronization(final String type, SimpleFieldSet synchronization) throws FSParseException, MalformedURLException, InvalidParameterException {
 		/**
 		 * It is necessary to have this class instead of the following hypothetical function:
 		 * <code>void putAllWithDupecheck(final List<Persistent> source, final HashMap<String, Persistent> target)</code>
@@ -196,6 +201,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		 * The reason is that GenericClass<Type> is not a superclass of GenericClass<subtype of Object> in Java:
 		 * "Parameterized types are not covariant."
 		 */
+		@Ignore
 		class ReceivedObjectPutter<T extends Persistent> {
 			
 			void putAllWithDupecheck(final List<T> source, final HashMap<String, T> target) {
@@ -218,9 +224,10 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	}
 	
 
-	static abstract class FCPParser<T extends Persistent> {
+	@Ignore
+	abstract class FCPParser<T extends Persistent> {
 		
-		public ArrayList<T> parseMultiple(final SimpleFieldSet sfs) throws FSParseException {
+		public ArrayList<T> parseMultiple(final SimpleFieldSet sfs) throws FSParseException, MalformedURLException, InvalidParameterException {
 			final int amount = sfs.getInt("Amount");
 			final ArrayList<T> result = new ArrayList<T>(amount+1);
 			for(int i=0; i < amount; ++i) {
@@ -229,22 +236,58 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 			return result;
 		}
 		
-		abstract protected T parseSingle(SimpleFieldSet sfs, int index);
+		abstract protected T parseSingle(SimpleFieldSet sfs, int index) throws FSParseException, MalformedURLException, InvalidParameterException;
 	
 	}
 	
-	static final class IdentityParser extends FCPParser<Identity> {
+	@Ignore
+	final class IdentityParser extends FCPParser<Identity> {
 
 		@Override
-		protected Identity parseSingle(final SimpleFieldSet sfs, final int index) {
-			// TODO Auto-generated method stub
-			return null;
+		protected Identity parseSingle(final SimpleFieldSet sfs, final int index) throws FSParseException, MalformedURLException, InvalidParameterException {
+			final String suffix = Integer.toString(index);
+			
+			final String type = sfs.get("Type" + suffix);
+	    	
+			if(type.equals("Inexistent"))
+	    		return null;
+	    	
+	        final String nickname = sfs.get("Nickname" + suffix);
+	        final String requestURI = sfs.get("RequestURI" + suffix);
+	    	final String insertURI = sfs.get("InsertURI" + suffix);
+	    	final boolean doesPublishTrustList = sfs.getBoolean("PublishesTrustList");
+	        final String id = sfs.get("ID" + suffix); 
+	 	
+	 		final Identity identity;
+	 		
+	 		if(type.equals("Identity"))
+	 			identity = new Identity(mWoT, requestURI, nickname, doesPublishTrustList);
+	 		else if(type.equals("OwnIdentity"))
+	 			identity = new OwnIdentity(mWoT, insertURI, nickname, doesPublishTrustList);
+	 		else
+	 			throw new RuntimeException("Unknown type: " + type);
+	 		
+	 		assertEquals(identity.getID(), id);
+	 		
+	 		final int contextAmount = sfs.getInt("Contexts" + suffix + ".Amount");
+	        final int propertyAmount = sfs.getInt("Properties" + suffix + ".Amount");
+	 		
+	        for(int i=0; i < contextAmount; ++i) {
+	        	identity.addContext(sfs.get("Contexts" + suffix + ".Context" + i));
+	        }
+
+	        for(int i=0; i < propertyAmount; ++i)  {
+	            identity.setProperty(sfs.get("Properties" + suffix + ".Property" + i + ".Name"),
+	            		sfs.get("Properties" + suffix + ".Property" + i + ".Value"));
+	        }
+
+	        return identity;
 		}
 		
 	}
 	
-	
-	static final class TrustParser extends FCPParser<Trust> {
+	@Ignore
+	final class TrustParser extends FCPParser<Trust> {
 
 		@Override
 		protected Trust parseSingle(final SimpleFieldSet sfs, final int index) {
@@ -254,7 +297,8 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		
 	}
 	
-	static final class ScoreParser extends FCPParser<Score> {
+	@Ignore
+	final class ScoreParser extends FCPParser<Score> {
 
 		@Override
 		protected Score parseSingle(final SimpleFieldSet sfs, final int index) {
