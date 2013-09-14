@@ -290,9 +290,18 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	final class TrustParser extends FCPParser<Trust> {
 
 		@Override
-		protected Trust parseSingle(final SimpleFieldSet sfs, final int index) {
-			// TODO Auto-generated method stub
-			return null;
+		protected Trust parseSingle(final SimpleFieldSet sfs, final int index) throws FSParseException, InvalidParameterException {
+			final String suffix = Integer.toString(index);
+			
+	    	if(sfs.get("Value" + suffix).equals("Inexistent"))
+	    		return null;
+	    	
+			final String trusterID = sfs.get("Truster" + suffix);
+			final String trusteeID = sfs.get("Trustee" + suffix);
+			final Byte value = sfs.getByte("Value" + suffix);
+			final String comment = sfs.get("Comment" + suffix);
+			
+			return new Trust(mWoT, mReceivedIdentities.get(trusterID), mReceivedIdentities.get(trusteeID), value, comment);
 		}
 		
 	}
