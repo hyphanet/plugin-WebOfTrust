@@ -310,9 +310,19 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	final class ScoreParser extends FCPParser<Score> {
 
 		@Override
-		protected Score parseSingle(final SimpleFieldSet sfs, final int index) {
-			// TODO Auto-generated method stub
-			return null;
+		protected Score parseSingle(final SimpleFieldSet sfs, final int index) throws FSParseException {
+			final String suffix = Integer.toString(index);
+			
+	    	if(sfs.get("Value" + suffix).equals("Inexistent"))
+	    		return null;
+	    	
+			final String trusterID = sfs.get("Truster" + suffix);
+			final String trusteeID = sfs.get("Trustee" + suffix);
+			final int capacity = sfs.getInt("Capacity" + suffix);
+			final int rank = sfs.getInt("Rank" + suffix);
+			final int value = sfs.getInt("Value" + suffix);
+			
+			return new Score(mWoT, (OwnIdentity)mReceivedIdentities.get(trusterID), mReceivedIdentities.get(trusteeID), value, rank, capacity);
 		}
 		
 	}
