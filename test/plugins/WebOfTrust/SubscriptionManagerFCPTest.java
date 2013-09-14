@@ -298,7 +298,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	    	
 			final String trusterID = sfs.get("Truster" + suffix);
 			final String trusteeID = sfs.get("Trustee" + suffix);
-			final Byte value = sfs.getByte("Value" + suffix);
+			final byte value = sfs.getByte("Value" + suffix);
 			final String comment = sfs.get("Comment" + suffix);
 			
 			return new Trust(mWoT, mReceivedIdentities.get(trusterID), mReceivedIdentities.get(trusteeID), value, comment);
