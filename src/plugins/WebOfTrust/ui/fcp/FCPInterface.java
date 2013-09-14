@@ -241,6 +241,8 @@ public final class FCPInterface implements FredPluginFCP {
     	
 		sfs.putOverwrite("Truster" + suffix, score.getTruster().getID());
 		sfs.putOverwrite("Trustee" + suffix, score.getTrustee().getID());
+		sfs.putOverwrite("Capacity" + suffix, Integer.toString(score.getCapacity()));
+		sfs.putOverwrite("Rank" + suffix, Integer.toString(score.getRank()));
 		sfs.putOverwrite("Value" + suffix, Integer.toString(score.getScore()));
 		return sfs;
     }
