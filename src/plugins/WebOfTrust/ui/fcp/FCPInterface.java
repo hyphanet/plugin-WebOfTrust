@@ -223,27 +223,25 @@ public final class FCPInterface implements FredPluginFCP {
     	final String trusterID = getMandatoryParameter(params, "Truster");
     	final String trusteeID = getMandatoryParameter(params, "Trustee");
 
-    	final SimpleFieldSet sfs;
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	synchronized(mWoT) {
     		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
-    		sfs = handleGetScore(mWoT.getScore(mWoT.getOwnIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)));
+    		handleGetScore(sfs, mWoT.getScore(mWoT.getOwnIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)), "");
     	}
 
     	sfs.putOverwrite("Message", "Score");
 		return sfs;
     }
     
-    private SimpleFieldSet handleGetScore(final Score score) {
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-    	
+    private SimpleFieldSet handleGetScore(final SimpleFieldSet sfs, final Score score, final String suffix) {    	
     	if(score == null) {
     		sfs.putOverwrite("Value", "Inexistent");
     		return sfs;
     	}
     	
-		sfs.putOverwrite("Truster", score.getTruster().getID());
-		sfs.putOverwrite("Trustee", score.getTrustee().getID());
-		sfs.putOverwrite("Value", Integer.toString(score.getScore()));
+		sfs.putOverwrite("Truster" + suffix, score.getTruster().getID());
+		sfs.putOverwrite("Trustee" + suffix, score.getTrustee().getID());
+		sfs.putOverwrite("Value" + suffix, Integer.toString(score.getScore()));
 		return sfs;
     }
 
@@ -556,9 +554,7 @@ public final class FCPInterface implements FredPluginFCP {
         synchronized(mWoT) {
         	int i = 0;
 			for(final Score score: mWoT.getAllScores()) {
-				sfs.putOverwrite("Truster" + i, score.getTruster().getID());
-				sfs.putOverwrite("Trustee" + i, score.getTrustee().getID());
-				sfs.putOverwrite("Value" + i, Integer.toString(score.getScore()));
+				handleGetScore(sfs, score, Integer.toString(i));
 				
 				++i;
 			}
@@ -984,8 +980,8 @@ public final class FCPInterface implements FredPluginFCP {
      * @see SubscriptionManager.ScoreChangedNotification
      */
     public void sendScoreChangedNotification(String fcpID, final ScoreChangedNotification notification) throws PluginNotFoundException {
-    	final SimpleFieldSet oldScore = handleGetScore((Score)notification.getOldObject());
-    	final SimpleFieldSet newScore = handleGetScore((Score)notification.getNewObject());
+    	final SimpleFieldSet oldScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getOldObject(), "0");
+    	final SimpleFieldSet newScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getNewObject(), "0");
 
     	sendChangeNotification(fcpID, "ScoreChangedNotification", oldScore, newScore);
     }
