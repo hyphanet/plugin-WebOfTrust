@@ -200,7 +200,7 @@ public final class FCPInterface implements FredPluginFCP {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	synchronized(mWoT) {
     		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
-    		handleGetTrust(sfs, mWoT.getTrust(mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)), "");
+    		handleGetTrust(sfs, mWoT.getTrust(mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)), "0");
     	}
     	sfs.putOverwrite("Message", "Trust");
     	return sfs;
@@ -226,7 +226,7 @@ public final class FCPInterface implements FredPluginFCP {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	synchronized(mWoT) {
     		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
-    		handleGetScore(sfs, mWoT.getScore(mWoT.getOwnIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)), "");
+    		handleGetScore(sfs, mWoT.getScore(mWoT.getOwnIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)), "0");
     	}
 
     	sfs.putOverwrite("Message", "Score");
