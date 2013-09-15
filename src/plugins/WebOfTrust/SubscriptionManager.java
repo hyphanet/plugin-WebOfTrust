@@ -7,7 +7,6 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
-import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
