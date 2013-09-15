@@ -26,7 +26,17 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 	private static transient final long serialVersionUID = 1L;
 
 	public static transient final int MAX_TRUST_COMMENT_LENGTH = 256;
-
+	
+	/**
+	 * TODO: We have hardcoded this value in many places. Get rid of the hardcoding and use this constant instead.
+	 */
+	public static transient final byte MAX_TRUST_VALUE = 100;
+	
+	/**
+	 * TODO: We have hardcoded this value in many places. Get rid of the hardcoding and use this constant instead.
+	 */
+	public static transient final byte MIN_TRUST_VALUE = -MAX_TRUST_VALUE;
+	
 	/** The identity which gives the trust. */
 	@IndexedField
 	private final Identity mTruster;
