@@ -14,7 +14,10 @@ import java.util.UUID;
 
 import org.junit.Ignore;
 
+import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import freenet.node.FSParseException;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -144,25 +147,26 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	}
 	
 	
-	public void testAllRandomized() throws MalformedURLException, InvalidParameterException, FSParseException {
-		final int ownIdentityCount = 10;
-		final int identityCount = 100;
-		final int trustCount = (identityCount*identityCount) / 5; // A complete graph would be identityCount² trust values.
-
+	public void testAllRandomized() throws MalformedURLException, InvalidParameterException, FSParseException, DuplicateTrustException, NotTrustedException, UnknownIdentityException {
+		final int initialOwnIdentityCount = 10;
+		final int initialIdentityCount = 100;
+		final int initialTrustCount = (initialIdentityCount*initialIdentityCount) / 5; // A complete graph would be identityCount² trust values.
+		final int eventCount = 1000;
+		
 		// Random trust graph setup...
 	
 		// FIXME: Make sure that this function also adds random contexts, trust values & publish trust list flags
 		// Also adapt addRandomTrustValues() to respect the publish trust list flag
-		final ArrayList<Identity> identities = addRandomIdentities(identityCount / 3);
+		final ArrayList<Identity> identities = addRandomIdentities(initialIdentityCount);
 		
 		// At least one own identity needs to exist to ensure that scores are computed.
-		for(int i=0; i < Math.max(ownIdentityCount / 3, 1); ++i) {
+		for(int i=0; i < initialOwnIdentityCount; ++i) {
 			final OwnIdentity ownIdentity = mWoT.createOwnIdentity(getRandomSSKPair()[0], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true, "Test");
 			identities.add(ownIdentity); 
 		}
 		
 		// FIXME: Make sure that this function also adds random comments
-		addRandomTrustValues(identities, trustCount / 10);
+		addRandomTrustValues(identities, initialTrustCount);
 
 		/* Initial test data is set up */
 		subscribeAndSynchronize("Identities");
@@ -173,7 +177,14 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		assertEquals(new HashSet<Trust>(mWoT.getAllTrusts()), new HashSet<Trust>(mReceivedTrusts.values()));
 		assertEquals(new HashSet<Score>(mWoT.getAllScores()), new HashSet<Score>(mReceivedScores.values()));
 		
-		/* FIXME: Actually test event notifications by doing random changes of the WOT now */
+		doRandomChangesToWOT(eventCount);
+		mWoT.getSubscriptionManager().run(); // It has no Ticker so we need to run() it manually
+		importNotifications();
+
+		assertEquals(new HashSet<Identity>(mWoT.getAllIdentities()), new HashSet<Identity>(mReceivedIdentities.values()));
+		assertEquals(new HashSet<Trust>(mWoT.getAllTrusts()), new HashSet<Trust>(mReceivedTrusts.values()));
+		assertEquals(new HashSet<Score>(mWoT.getAllScores()), new HashSet<Score>(mReceivedScores.values()));
+		
 	}
 	
 	void subscribeAndSynchronize(final String type) throws FSParseException, MalformedURLException, InvalidParameterException {
@@ -219,6 +230,10 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		} else if(type.equals("Scores")) {
 			new ReceivedObjectPutter<Score>().putAllWithDupecheck(new ScoreParser().parseMultiple(synchronization), mReceivedScores);
 		}
+	}
+	
+	void importNotifications() {
+		throw new UnsupportedOperationException("Please implement.");
 	}
 	
 
