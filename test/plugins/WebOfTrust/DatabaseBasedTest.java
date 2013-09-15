@@ -5,13 +5,21 @@ package plugins.WebOfTrust;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
 
 import junit.framework.TestCase;
+
+import org.junit.Ignore;
+
+import plugins.WebOfTrust.Trust.TrustID;
+import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
 
@@ -182,6 +190,175 @@ public class DatabaseBasedTest extends TestCase {
 		}
 		mWoT.finishTrustListImport();
 		Persistent.checkedCommit(mWoT.getDatabase(), this);
+	}
+	
+	protected void doRandomChangesToWOT(int eventCount) throws DuplicateTrustException, NotTrustedException, InvalidParameterException, UnknownIdentityException, MalformedURLException {
+		@Ignore
+		class Randomizer {
+			final ArrayList<String> allOwnIdentitiesArray = new ArrayList<String>();
+			final ArrayList<String> allIdentitiesArray = new ArrayList<String>();
+			final ArrayList<String> allTrustsArray = new ArrayList<String>();
+
+			// We have to keep HashMap of the identities so we can quickly remove them from the arrays
+			final HashMap<String, Integer> allOwnIdentities = new HashMap<String, Integer>();
+			final HashMap<String, Integer> allIdentities = new HashMap<String, Integer>();
+			final HashMap<String, Integer> allTrusts = new HashMap<String, Integer>();
+		
+			Randomizer() { 
+				for(Identity identity : mWoT.getAllIdentities()) {
+					allIdentitiesArray.add(identity.getID());
+					if(identity instanceof OwnIdentity)
+						allOwnIdentitiesArray.add(identity.getID());
+				}
+				
+				for(Trust trust : mWoT.getAllTrusts()) {
+					allTrustsArray.add(trust.getID());
+				}
+				
+				for(int i=0; i < allIdentitiesArray.size(); ++i) {
+					allIdentities.put(allIdentitiesArray.get(i), i);
+				}
+				
+				for(int i=0; i < allOwnIdentitiesArray.size(); ++i) {
+					allOwnIdentities.put(allOwnIdentitiesArray.get(i), i);
+				}
+				
+				for(int i=0; i < allTrustsArray.size(); ++i) {
+					allTrusts.put(allTrustsArray.get(i), i);
+				}
+			}
+			
+			void addIdentity(Identity identity) {
+				allIdentitiesArray.add(identity.getID());
+				assertNull(allIdentities.put(identity.getID(), allIdentitiesArray.size()-1));
+				
+				if(identity instanceof OwnIdentity) {
+					final OwnIdentity ownIdentity = (OwnIdentity)identity;
+					allOwnIdentitiesArray.add(ownIdentity.getID());
+					assertNull(allOwnIdentities.put(ownIdentity.getID(), allIdentitiesArray.size()-1));
+				}
+			}
+			
+			void removeIdentity(String identityID) {
+				assertEquals(identityID, allIdentitiesArray.remove(allIdentities.remove(identityID).intValue()));
+			}
+			
+			void addTrust(String trustID) {
+				allTrustsArray.add(trustID);
+				assertNull(allTrusts.put(trustID, allTrustsArray.size()-1));
+			}
+			
+			void removeTrust(String trustID) {
+				assertEquals(trustID, allIdentitiesArray.remove(allIdentities.remove(trustID).intValue()));
+			}
+			
+			String getOwnIdentity() {
+				return allOwnIdentitiesArray.get(mRandom.nextInt(allOwnIdentitiesArray.size()));
+			}
+			
+			String getIdentity() {
+				return allIdentitiesArray.get(mRandom.nextInt(allIdentitiesArray.size()));
+			}
+			
+			String getTrust() {
+				return allTrustsArray.get(mRandom.nextInt(allTrustsArray.size()));
+			}
+		}
+		final Randomizer randomizer = new Randomizer();
+		
+		for(int i=0; i < eventCount; ++i) {
+			switch(mRandom.nextInt(12 + 1)) {
+				case 0:
+					randomizer.addIdentity(
+							mWoT.createOwnIdentity(
+									getRandomSSKPair()[0], 
+									getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), 
+									mRandom.nextBoolean(),
+									getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH))
+							);
+					break;
+				case 1:
+					{
+						final String original = randomizer.getOwnIdentity();
+						mWoT.deleteOwnIdentity(original);
+						randomizer.removeIdentity(original);
+						randomizer.addIdentity(mWoT.getOwnIdentityByID(original));
+					}
+					break;
+				case 2:
+					{
+						final FreenetURI[] keypair = getRandomSSKPair();
+						mWoT.restoreOwnIdentity(keypair[0]);
+						randomizer.addIdentity(mWoT.getOwnIdentityByURI(keypair[1]));
+					}
+					break;
+				case 3:
+					{
+						final FreenetURI[] keypair = getRandomSSKPair();
+						mWoT.addIdentity(keypair[1].toString());
+						mWoT.restoreOwnIdentity(keypair[0]);
+						randomizer.addIdentity(mWoT.getOwnIdentityByURI(keypair[1]));
+					}
+					break;
+				case 4:
+					randomizer.addIdentity(mWoT.addIdentity(getRandomRequestURI().toString()));
+					break;
+				case 5:
+					{
+						final String ownIdentityID = randomizer.getOwnIdentity();
+						final String context = getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH);
+						mWoT.addContext(ownIdentityID, context);
+						if(mRandom.nextBoolean())
+							mWoT.removeContext(ownIdentityID, context);
+					}
+					break;
+				case 6:
+					{
+						final String ownIdentityID = randomizer.getOwnIdentity();
+						final String propertyName = getRandomLatinString(Identity.MAX_PROPERTY_NAME_LENGTH);
+						final String propertyValue = getRandomLatinString(Identity.MAX_PROPERTY_VALUE_LENGTH);
+						mWoT.setProperty(ownIdentityID, propertyName, propertyValue);
+						if(mRandom.nextBoolean())
+							mWoT.removeContext(ownIdentityID, propertyName);
+					}
+					break;
+				case 7:
+				case 8:
+				case 9:
+				case 10:
+				case 11:
+					{
+						Identity truster;
+						Identity trustee;
+						do {
+							truster = mWoT.getIdentityByID(randomizer.getIdentity());
+							trustee = mWoT.getIdentityByID(randomizer.getIdentity());
+						} while(truster == trustee);
+						
+						mWoT.beginTrustListImport();
+						mWoT.setTrustWithoutCommit(truster, trustee, getRandomTrustValue(), getRandomLatinString(Trust.MAX_TRUST_COMMENT_LENGTH));
+						mWoT.finishTrustListImport();
+						Persistent.checkedCommit(mWoT.getDatabase(), this);
+						
+						randomizer.addTrust(new TrustID(truster, trustee).toString());
+
+					}
+					break;
+				case 12:
+					{
+						mWoT.beginTrustListImport();
+						final Trust trust = mWoT.getTrust(randomizer.getTrust());
+						mWoT.removeTrustWithoutCommit(trust);
+						mWoT.finishTrustListImport();
+						Persistent.checkedCommit(mWoT.getDatabase(), this);
+						
+						randomizer.removeTrust(trust.getID());
+					}
+					break;
+				default:
+					throw new RuntimeException("Please adapt mRandom.nextInt() above!");
+			}
+		}
 	}
 	
 	protected HashSet<Identity> cloneAllIdentities() {
