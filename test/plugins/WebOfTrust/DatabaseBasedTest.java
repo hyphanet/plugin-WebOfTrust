@@ -109,6 +109,10 @@ public class DatabaseBasedTest extends TestCase {
 		return new String(s);
 	}
 	
+	private byte getRandomTrustValue() {
+		return (byte)(Trust.MIN_TRUST_VALUE + mRandom.nextInt(Trust.MAX_TRUST_VALUE - Trust.MIN_TRUST_VALUE + 1));
+	}
+	
 	/**
 	 * Generates a random SSK request-/insert-keypair, suitable for being used when creating identities.
 	 * @return An array where slot 0 is the insert URI and slot 1 is the request URI
@@ -174,7 +178,7 @@ public class DatabaseBasedTest extends TestCase {
 			} catch(NotTrustedException e) {}
 			
 			
-			mWoT.setTrustWithoutCommit(truster, trustee, (byte)(mRandom.nextInt(201) - 100), "");
+			mWoT.setTrustWithoutCommit(truster, trustee, getRandomTrustValue(), "");
 		}
 		mWoT.finishTrustListImport();
 		Persistent.checkedCommit(mWoT.getDatabase(), this);
