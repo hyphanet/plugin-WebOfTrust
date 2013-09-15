@@ -2053,20 +2053,28 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	 * @return The trust given to the trustee by the specified truster
 	 * @throws NotTrustedException if the truster doesn't trust the trustee
 	 */
-	public synchronized Trust getTrust(final Identity truster, final Identity trustee) throws NotTrustedException, DuplicateTrustException {
+	public Trust getTrust(final Identity truster, final Identity trustee) throws NotTrustedException, DuplicateTrustException {
+		return getTrust(new TrustID(truster, trustee).toString());
+	}
+	
+	/**
+	 * Gets the {@link Trust} with the given {@link TrustID}. 
+	 * 
+	 * @see #getTrust(Identity, Identity)
+	 */
+	public synchronized Trust getTrust(final String trustID) throws NotTrustedException, DuplicateTrustException {
 		final Query query = mDB.query();
 		query.constrain(Trust.class);
-		query.descend("mID").constrain(new TrustID(truster, trustee).toString());
+		query.descend("mID").constrain(trustID);
 		final ObjectSet<Trust> result = new Persistent.InitializingObjectSet<Trust>(this, query);
 		
 		switch(result.size()) {
 			case 1: 
 				final Trust trust = result.next();
-				assert(trust.getTruster() == truster);
-				assert(trust.getTrustee() == trustee);
+				assert(trustID.equals(new TrustID(trust.getTruster(), trust.getTrustee()).toString()));
 				return trust;
-			case 0: throw new NotTrustedException(truster, trustee);
-			default: throw new DuplicateTrustException(truster, trustee, result.size());
+			case 0: throw new NotTrustedException(trustID);
+			default: throw new DuplicateTrustException(trustID, result.size());
 		}
 	}
 

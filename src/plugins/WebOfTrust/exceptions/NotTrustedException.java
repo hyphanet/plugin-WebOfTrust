@@ -3,7 +3,6 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.exceptions;
 
-import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Trust;
 
 /**
@@ -16,7 +15,8 @@ public class NotTrustedException extends Exception {
 	
 	private static final long serialVersionUID = -1;
 
-	public NotTrustedException(Identity truster, Identity trustee) {
-		super(truster.getNickname() + " does not trust " + trustee.getNickname());
+	public NotTrustedException(String trustID) {
+		super("No Trust with ID " + trustID);
 	}
+	
 }
