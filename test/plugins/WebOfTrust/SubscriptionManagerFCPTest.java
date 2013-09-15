@@ -169,9 +169,9 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		subscribeAndSynchronize("Trusts");
 		subscribeAndSynchronize("Scores");
 		
-		assertEquals(new HashSet<Identity>(mWoT.getAllIdentities()), mReceivedIdentities);
-		assertEquals(new HashSet<Trust>(mWoT.getAllTrusts()), mReceivedTrusts);
-		assertEquals(new HashSet<Score>(mWoT.getAllScores()), mReceivedScores);
+		assertEquals(new HashSet<Identity>(mWoT.getAllIdentities()), new HashSet<Identity>(mReceivedIdentities.values()));
+		assertEquals(new HashSet<Trust>(mWoT.getAllTrusts()), new HashSet<Trust>(mReceivedTrusts.values()));
+		assertEquals(new HashSet<Score>(mWoT.getAllScores()), new HashSet<Score>(mReceivedScores.values()));
 		
 		/* FIXME: Actually test event notifications by doing random changes of the WOT now */
 	}
