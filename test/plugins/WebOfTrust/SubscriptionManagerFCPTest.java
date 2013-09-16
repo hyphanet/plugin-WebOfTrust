@@ -238,6 +238,32 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	}
 	
 
+	/**
+	 * Represents the data of a {@link SubscriptionManager.Notification}
+	 */
+	public static final class ChangeSet<CT extends Persistent> {
+		/**
+		 * @see SubscriptionManager.Notification#getOldObject()
+		 */
+		public final CT beforeChange;
+		
+		/**
+		 * @see SubscriptionManager.Notification#getNewbject()
+		 */
+		public final CT afterChange;
+		
+		public ChangeSet(CT myBeforeChange, CT myAfterChange) {
+			beforeChange = myBeforeChange;
+			afterChange = myAfterChange;
+			
+			assertTrue((beforeChange != null && afterChange != null)
+					|| (beforeChange == null ^ afterChange == null));
+			
+			if(beforeChange != null && afterChange != null)
+				assertEquals(beforeChange.getID(), afterChange.getID());
+		}
+	}
+	
 	@Ignore
 	abstract class FCPParser<T extends Persistent> {
 		
