@@ -267,6 +267,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	@Ignore
 	abstract class FCPParser<T extends Persistent> {
 		
+		// TODO: Rename to parseSynchronization()
 		public ArrayList<T> parseMultiple(final SimpleFieldSet sfs) throws FSParseException, MalformedURLException, InvalidParameterException {
 			final int amount = sfs.getInt("Amount");
 			final ArrayList<T> result = new ArrayList<T>(amount+1);
