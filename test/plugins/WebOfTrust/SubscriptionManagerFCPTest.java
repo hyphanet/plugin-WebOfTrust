@@ -224,11 +224,11 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		
 		assertEquals(type, synchronization.get("Message"));
 		if(type.equals("Identities")) {
-			new ReceivedSynchronizationPutter<Identity>().putAll(new IdentityParser().parseMultiple(synchronization), mReceivedIdentities);
+			new ReceivedSynchronizationPutter<Identity>().putAll(new IdentityParser().parseSynchronization(synchronization), mReceivedIdentities);
 		} else if(type.equals("Trusts")) {
-			new ReceivedSynchronizationPutter<Trust>().putAll(new TrustParser().parseMultiple(synchronization), mReceivedTrusts);
+			new ReceivedSynchronizationPutter<Trust>().putAll(new TrustParser().parseSynchronization(synchronization), mReceivedTrusts);
 		} else if(type.equals("Scores")) {
-			new ReceivedSynchronizationPutter<Score>().putAll(new ScoreParser().parseMultiple(synchronization), mReceivedScores);
+			new ReceivedSynchronizationPutter<Score>().putAll(new ScoreParser().parseSynchronization(synchronization), mReceivedScores);
 		}
 	}
 	
@@ -306,8 +306,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	@Ignore
 	abstract class FCPParser<T extends Persistent> {
 		
-		// TODO: Rename to parseSynchronization()
-		public ArrayList<T> parseMultiple(final SimpleFieldSet sfs) throws FSParseException, MalformedURLException, InvalidParameterException {
+		public ArrayList<T> parseSynchronization(final SimpleFieldSet sfs) throws FSParseException, MalformedURLException, InvalidParameterException {
 			final int amount = sfs.getInt("Amount");
 			final ArrayList<T> result = new ArrayList<T>(amount+1);
 			for(int i=0; i < amount; ++i) {
