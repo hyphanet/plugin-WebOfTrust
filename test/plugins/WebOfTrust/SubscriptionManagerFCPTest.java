@@ -211,8 +211,9 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		 * "Parameterized types are not covariant."
 		 */
 		@Ignore
-		class ReceivedObjectPutter<T extends Persistent> {
+		class ReceivedObjectPutter<T extends Persistent> { // TODO: Rename to ReceivedSynchronizationPutter
 			
+			// TODO: Rename to putAll
 			void putAllWithDupecheck(final List<T> source, final HashMap<String, T> target) {
 				for(final T p : source) {
 					assertFalse(target.containsKey(p.getID()));
