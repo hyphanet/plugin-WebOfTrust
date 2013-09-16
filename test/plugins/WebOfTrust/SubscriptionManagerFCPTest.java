@@ -213,8 +213,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		@Ignore
 		class ReceivedSynchronizationPutter<T extends Persistent> {
 			
-			// TODO: Rename to putAll
-			void putAllWithDupecheck(final List<T> source, final HashMap<String, T> target) {
+			void putAll(final List<T> source, final HashMap<String, T> target) {
 				for(final T p : source) {
 					assertFalse(target.containsKey(p.getID()));
 					target.put(p.getID(), p);
@@ -225,11 +224,11 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		
 		assertEquals(type, synchronization.get("Message"));
 		if(type.equals("Identities")) {
-			new ReceivedSynchronizationPutter<Identity>().putAllWithDupecheck(new IdentityParser().parseMultiple(synchronization), mReceivedIdentities);
+			new ReceivedSynchronizationPutter<Identity>().putAll(new IdentityParser().parseMultiple(synchronization), mReceivedIdentities);
 		} else if(type.equals("Trusts")) {
-			new ReceivedSynchronizationPutter<Trust>().putAllWithDupecheck(new TrustParser().parseMultiple(synchronization), mReceivedTrusts);
+			new ReceivedSynchronizationPutter<Trust>().putAll(new TrustParser().parseMultiple(synchronization), mReceivedTrusts);
 		} else if(type.equals("Scores")) {
-			new ReceivedSynchronizationPutter<Score>().putAllWithDupecheck(new ScoreParser().parseMultiple(synchronization), mReceivedScores);
+			new ReceivedSynchronizationPutter<Score>().putAll(new ScoreParser().parseMultiple(synchronization), mReceivedScores);
 		}
 	}
 	
