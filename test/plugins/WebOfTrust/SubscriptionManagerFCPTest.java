@@ -211,7 +211,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		 * "Parameterized types are not covariant."
 		 */
 		@Ignore
-		class ReceivedObjectPutter<T extends Persistent> { // TODO: Rename to ReceivedSynchronizationPutter
+		class ReceivedSynchronizationPutter<T extends Persistent> {
 			
 			// TODO: Rename to putAll
 			void putAllWithDupecheck(final List<T> source, final HashMap<String, T> target) {
@@ -225,11 +225,11 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		
 		assertEquals(type, synchronization.get("Message"));
 		if(type.equals("Identities")) {
-			new ReceivedObjectPutter<Identity>().putAllWithDupecheck(new IdentityParser().parseMultiple(synchronization), mReceivedIdentities);
+			new ReceivedSynchronizationPutter<Identity>().putAllWithDupecheck(new IdentityParser().parseMultiple(synchronization), mReceivedIdentities);
 		} else if(type.equals("Trusts")) {
-			new ReceivedObjectPutter<Trust>().putAllWithDupecheck(new TrustParser().parseMultiple(synchronization), mReceivedTrusts);
+			new ReceivedSynchronizationPutter<Trust>().putAllWithDupecheck(new TrustParser().parseMultiple(synchronization), mReceivedTrusts);
 		} else if(type.equals("Scores")) {
-			new ReceivedObjectPutter<Score>().putAllWithDupecheck(new ScoreParser().parseMultiple(synchronization), mReceivedScores);
+			new ReceivedSynchronizationPutter<Score>().putAllWithDupecheck(new ScoreParser().parseMultiple(synchronization), mReceivedScores);
 		}
 	}
 	
