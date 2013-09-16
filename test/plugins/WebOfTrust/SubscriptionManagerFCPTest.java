@@ -233,10 +233,50 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		}
 	}
 	
-	void importNotifications() {
-		throw new UnsupportedOperationException("Please implement.");
+	void importNotifications() throws MalformedURLException, FSParseException, InvalidParameterException {
+		/**
+		 * It is necessary to have this class instead of the following hypothetical function:
+		 * <code>void putAll(final List<Persistent> source, final HashMap<String, Persistent> target)</code>
+		 * 
+		 * We couldn't shove a HashMap<String, Identity> into target of the hypothetical function even though Identity is a subclass of Persistent:
+		 * The reason is that GenericClass<Type> is not a superclass of GenericClass<subtype of Object> in Java:
+		 * "Parameterized types are not covariant."
+		 */
+		@Ignore
+		class ReceivedNotificationPutter<T extends Persistent> {
+			
+			void putAll(final ChangeSet<T> changeSet, final HashMap<String, T> target) {
+				if(changeSet.beforeChange != null) {
+					final T currentBeforeChange = target.get(changeSet.beforeChange.getID());
+					assertEquals(currentBeforeChange, changeSet.beforeChange);
+					
+					if(changeSet.afterChange != null)
+						assertFalse(currentBeforeChange.equals(changeSet.afterChange));
+				} else {
+					assertFalse(target.containsKey(changeSet.afterChange));
+				}
+				
+				if(changeSet.afterChange != null)
+					target.put(changeSet.afterChange.getID(), changeSet.afterChange);
+				else
+					target.remove(changeSet.afterChange.getID());
+			}
+		}
+				
+		while(mReplyReceiver.hasNextResult()) {
+			final SimpleFieldSet notification = mReplyReceiver.getNextResult();
+			final String message = notification.get("Message");
+			if(message.equals("IdentityChangedNotification")) {
+				new ReceivedNotificationPutter<Identity>().putAll(new IdentityParser().parseNotification(notification), mReceivedIdentities);
+			} else if(message.equals("TrustChangedNotification")) {
+				new ReceivedNotificationPutter<Trust>().putAll(new TrustParser().parseNotification(notification), mReceivedTrusts);
+			} else if(message.equals("ScoreChangedNotification")) {
+				new ReceivedNotificationPutter<Score>().putAll(new ScoreParser().parseNotification(notification), mReceivedScores);
+			} else {
+				fail("Unknown message type: " + message);
+			}
+		}
 	}
-	
 
 	/**
 	 * Represents the data of a {@link SubscriptionManager.Notification}
