@@ -276,6 +276,13 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 			}
 			return result;
 		}
+
+		public ChangeSet<T> parseNotification(final SimpleFieldSet notification) throws MalformedURLException, FSParseException, InvalidParameterException {
+			final SimpleFieldSet beforeChange = notification.subset("BeforeChange");
+			final SimpleFieldSet afterChange = notification.subset("AfterChange");
+			
+			return new ChangeSet<T>(parseSingle(beforeChange, 0), parseSingle(afterChange, 0));
+		}
 		
 		abstract protected T parseSingle(SimpleFieldSet sfs, int index) throws FSParseException, MalformedURLException, InvalidParameterException;
 	
