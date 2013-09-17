@@ -25,9 +25,19 @@ import freenet.support.CurrentTimeUTC;
 public final class IdentityTest extends DatabaseBasedTest {
 	
 	private final String requestUriString = "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/23";
+	private final String requestUriStringSSK = "SSK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/23";
+	private final String requestUriStringSSKPlain = "SSK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/";
 	private final String insertUriString = "USK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/WebOfTrust/23";
+	private final String insertUriStringSSK = "SSK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/WebOfTrust/23";
+	private final String insertUriStringSSKPlain = "SSK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/";
 	
 	private FreenetURI requestUri;
+	private FreenetURI requestUriSSK;
+	private FreenetURI requestUriSSKPlain;
+	private FreenetURI insertUri;
+	private FreenetURI insertUriSSK;
+	private FreenetURI insertUriSSKPlain;
+	
 	private Identity identity;
 	
 	/**
@@ -38,6 +48,11 @@ public final class IdentityTest extends DatabaseBasedTest {
 		super.setUp();
 		
 		requestUri = new FreenetURI(requestUriString);
+		requestUriSSK = new FreenetURI(requestUriStringSSK);
+		requestUriSSKPlain = new FreenetURI(requestUriStringSSKPlain);
+		insertUri = new FreenetURI(insertUriString);
+		insertUriSSK = new FreenetURI(insertUriStringSSK);
+		insertUriSSKPlain = new FreenetURI(insertUriStringSSKPlain);
 
 		identity = new Identity(mWoT, requestUri, "test", true);
 		identity.addContext("bleh");
@@ -118,8 +133,17 @@ public final class IdentityTest extends DatabaseBasedTest {
 	 */
 	public void testGetByURI() throws MalformedURLException, UnknownIdentityException {
 		assertEquals(identity, mWoT.getIdentityByURI(requestUri));
+		assertEquals(identity, mWoT.getIdentityByURI(requestUriSSK));
+		assertEquals(identity, mWoT.getIdentityByURI(requestUriSSKPlain));
 		assertEquals(identity, mWoT.getIdentityByURI(requestUriString));
+		assertEquals(identity, mWoT.getIdentityByURI(requestUriStringSSK));
+		assertEquals(identity, mWoT.getIdentityByURI(requestUriStringSSKPlain));
+		assertEquals(identity, mWoT.getIdentityByURI(insertUri));
+		assertEquals(identity, mWoT.getIdentityByURI(insertUriSSK));
+		assertEquals(identity, mWoT.getIdentityByURI(insertUriSSKPlain));
 		assertEquals(identity, mWoT.getIdentityByURI(insertUriString));
+		assertEquals(identity, mWoT.getIdentityByURI(insertUriStringSSK));
+		assertEquals(identity, mWoT.getIdentityByURI(insertUriStringSSKPlain));
 	}
 
 	/**
