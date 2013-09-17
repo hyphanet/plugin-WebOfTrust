@@ -445,7 +445,7 @@ public final class SubscriptionManager implements PrioRunnable {
 					);
 			
 			mOldObject = (oldObject != null ? oldObject.serialize() : null);
-			mNewObject = (oldObject != null ? newObject.serialize() : null);
+			mNewObject = (newObject != null ? newObject.serialize() : null);
 		}
 		
 		/**
