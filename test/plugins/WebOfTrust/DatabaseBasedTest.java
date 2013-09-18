@@ -249,7 +249,7 @@ public class DatabaseBasedTest extends TestCase {
 			}
 			
 			void removeTrust(String trustID) {
-				assertEquals(trustID, allIdentitiesArray.remove(allIdentities.remove(trustID).intValue()));
+				assertEquals(trustID, allTrustsArray.remove(allTrusts.remove(trustID).intValue()));
 			}
 			
 			String getOwnIdentity() {
