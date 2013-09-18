@@ -298,7 +298,7 @@ public final class FCPInterface implements FredPluginFCP {
     	sfs.putOverwrite("Nickname", identity.getNickname());
     	return sfs;
     }
-
+    
     /**
      * Used for handling the "GetIdentity" FCP message.
      */
@@ -343,6 +343,7 @@ public final class FCPInterface implements FredPluginFCP {
 		return sfs;
 	}
 
+
     /**
      * Add fields describing the given identity:
      * 
@@ -352,9 +353,9 @@ public final class FCPInterface implements FredPluginFCP {
      * NicknameSUFFIX = nickname of the identity
      * RequestURISUFFIX = request URI of the identity
      * InsertURISUFFIX = insert URI of the identity. Only present if Type is OwnIdentity
-     * PublishesTrustListSUFFIX = true/false if the identity does publish a trust list or not 
      * IdentitySUFFIX = ID of the identity (deprecated)
      * IDSUFFIX = ID of the identity
+     * PublishesTrustListSUFFIX = true/false if the identity does publish a trust list or not 
      * 
      * If suffix.isEmpty() is true:
      * ContextX = name of context with index X
