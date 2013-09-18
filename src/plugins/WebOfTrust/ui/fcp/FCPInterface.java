@@ -313,7 +313,7 @@ public final class FCPInterface implements FredPluginFCP {
     		final OwnIdentity truster = (trusterID != null ? mWoT.getOwnIdentityByID(trusterID) : null);
     		
     		sfs = handleGetIdentity(identity, truster);
-    		sfs.putOverwrite("Message", (identity instanceof OwnIdentity) ? "OwnIdentity" : "Identity");
+    		sfs.putOverwrite("Message", "Identity");
     	}
     	
 		return sfs;
