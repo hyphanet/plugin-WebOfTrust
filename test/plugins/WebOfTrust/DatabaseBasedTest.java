@@ -282,7 +282,10 @@ public class DatabaseBasedTest extends TestCase {
 						final String original = randomizer.getOwnIdentity();
 						mWoT.deleteOwnIdentity(original);
 						randomizer.removeIdentity(original);
-						randomizer.addIdentity(mWoT.getOwnIdentityByID(original));
+						// Dummy non-own identity which deleteOwnIdenity() has replaced it with.
+						final Identity surrogate = mWoT.getIdentityByID(original);
+						assertFalse(surrogate.getClass().equals(OwnIdentity.class));
+						randomizer.addIdentity(surrogate); 
 					}
 					break;
 				case 2:
