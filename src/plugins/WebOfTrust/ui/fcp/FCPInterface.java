@@ -219,30 +219,50 @@ public final class FCPInterface implements FredPluginFCP {
     	sfs.putOverwrite("Nickname", identity.getNickname());
     	return sfs;
     }
-
+    
+    /**
+     * Used for handling the "GetIdentity" FCP message.
+     */
     private SimpleFieldSet handleGetIdentity(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
-    	final String trusterID = getMandatoryParameter(params, "Truster"); 
+    	final String trusterID = params.get("Truster"); 
     	final String identityID = getMandatoryParameter(params, "Identity");
 
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-    	sfs.putOverwrite("Message", "Identity");
+    	final SimpleFieldSet sfs;
     	
     	synchronized(mWoT) {
-    		final OwnIdentity truster = mWoT.getOwnIdentityByID(trusterID);
     		final Identity identity = mWoT.getIdentityByID(identityID);
-            
-            addIdentityFields(sfs, identity, "0");
-            addTrustFields(sfs, truster, identity, "0");
-            addScoreFields(sfs, truster, identity, "0");
-            
-    		// TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
-            addIdentityFields(sfs, identity, "");
-            addTrustFields(sfs, truster, identity, "");
-            addScoreFields(sfs, truster, identity, "");
+    		final OwnIdentity truster = (trusterID != null ? mWoT.getOwnIdentityByID(trusterID) : null);
+    		
+    		sfs = handleGetIdentity(identity, truster);
+    		sfs.putOverwrite("Message", "Identity");
     	}
     	
 		return sfs;
 	}
+    
+    /**
+     * Used as backend for:
+     * - {@link #handleGetIdentity(SimpleFieldSet)} 
+     */
+    private SimpleFieldSet handleGetIdentity(final Identity identity, final OwnIdentity truster) {
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+    		
+    		addIdentityFields(sfs, identity, "0");
+    		// TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
+            addIdentityFields(sfs, identity, "");
+
+    		if(truster != null) {
+            	addTrustFields(sfs, truster, identity, "0");
+            	addScoreFields(sfs, truster, identity, "0");
+            
+    			// TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
+            	addTrustFields(sfs, truster, identity, "");
+            	addScoreFields(sfs, truster, identity, "");
+    		}
+    	
+		return sfs;
+	}
+
 
     /**
      * Add fields describing the given identity.
