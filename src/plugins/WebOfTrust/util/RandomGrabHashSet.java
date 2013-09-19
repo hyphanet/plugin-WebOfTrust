@@ -46,7 +46,7 @@ public final class RandomGrabHashSet<E> {
 	}
 	
 	public void add(final E item) {
-		if(mIndex.containsKey(item))
+		if(contains(item))
 			throw new DuplicateObjectException(item.toString());
 		
 		mArray.add(item);
