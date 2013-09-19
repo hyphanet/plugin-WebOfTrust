@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
+import plugins.WebOfTrust.exceptions.DuplicateObjectException;
+
 import freenet.crypt.RandomSource;
 
 /**
@@ -43,16 +45,14 @@ public final class RandomGrabHashSet<E> {
 		return true;
 	}
 	
-	public boolean add(final E item) {
+	public void add(final E item) {
 		if(mIndex.containsKey(item))
-			return false;
+			throw new DuplicateObjectException(item.toString());
 		
 		mArray.add(item);
 		mIndex.put(item, mArray.size()-1);
 		
 		assert(indexIsValid());
-		
-		return true;
 	}
 	
 	public void remove(final E toRemove) {
