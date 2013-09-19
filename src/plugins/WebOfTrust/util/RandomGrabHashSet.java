@@ -9,7 +9,6 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
-
 import freenet.crypt.RandomSource;
 
 /**
@@ -30,9 +29,14 @@ public final class RandomGrabHashSet<E> {
 	
 	public RandomGrabHashSet(final RandomSource randomSource) {
 		mRandomSource = randomSource;
-		assert(indexIsValid());
 	}
 	
+	
+	/***
+	 * Debug function.
+	 * Add assert(indexIsValid()) to any functions which modify stuff.
+	 * TODO: Write an unit test which uses this.
+	 */
 	private boolean indexIsValid() {
 		if(mIndex.size() != mArray.size())
 			return false;
@@ -52,7 +56,8 @@ public final class RandomGrabHashSet<E> {
 		mArray.add(item);
 		mIndex.put(item, mArray.size()-1);
 		
-		assert(indexIsValid());
+		assert(mIndex.size() == mArray.size());
+		assert(mArray.get(mIndex.get(item)) == item);
 	}
 	
 	public boolean contains(final E item) {
@@ -64,6 +69,8 @@ public final class RandomGrabHashSet<E> {
 		if(indexOfRemovedItem == null)
 			throw new NoSuchElementException();
 		
+		assert(mArray.get(indexOfRemovedItem).equals(toRemove));
+		
 		// We cannot use ArrayList.remove() because it would shift all following elements.
 		// Instead of that, we replace the now-empty slot with the last element
 		final int indexOfLastItem = mArray.size()-1;
@@ -73,7 +80,9 @@ public final class RandomGrabHashSet<E> {
 			mIndex.put(lastItem, indexOfRemovedItem);
 		}
 		
-		assert(indexIsValid());
+		assert(mIndex.size() == mArray.size());
+		assert(mIndex.get(toRemove) == null);
+		assert(mArray.get(mIndex.get(lastItem)).equals(lastItem));
 	}
 	
 	public E getRandom() {
