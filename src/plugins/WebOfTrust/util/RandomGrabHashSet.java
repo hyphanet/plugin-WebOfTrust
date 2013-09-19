@@ -82,7 +82,7 @@ public final class RandomGrabHashSet<E> {
 		
 		assert(mIndex.size() == mArray.size());
 		assert(mIndex.get(toRemove) == null);
-		assert(mArray.get(mIndex.get(lastItem)).equals(lastItem));
+		assert(lastItem.equals(toRemove) || mArray.get(mIndex.get(lastItem)).equals(lastItem));
 	}
 	
 	public E getRandom() {
