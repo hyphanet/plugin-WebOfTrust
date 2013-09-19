@@ -55,6 +55,10 @@ public final class RandomGrabHashSet<E> {
 		assert(indexIsValid());
 	}
 	
+	public boolean contains(final E item) {
+		return mIndex.containsKey(item);
+	}
+	
 	public void remove(final E toRemove) {
 		final Integer indexOfRemovedItem = mIndex.remove(toRemove) ;
 		if(indexOfRemovedItem == null)
