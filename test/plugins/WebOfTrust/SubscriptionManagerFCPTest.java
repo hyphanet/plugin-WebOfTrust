@@ -280,6 +280,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	/**
 	 * Represents the data of a {@link SubscriptionManager.Notification}
 	 */
+	@Ignore
 	public static final class ChangeSet<CT extends Persistent> {
 		/**
 		 * @see SubscriptionManager.Notification#getOldObject()
