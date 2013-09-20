@@ -158,6 +158,18 @@ public class DatabaseBasedTest extends TestCase {
 		return result;
 	}
 	
+	protected ArrayList<OwnIdentity> addRandomOwnIdentities(int count) throws MalformedURLException, InvalidParameterException {
+		ArrayList<OwnIdentity> result = new ArrayList<OwnIdentity>(count+1);
+		
+		while(count-- > 0) {
+			final OwnIdentity ownIdentity = mWoT.createOwnIdentity(getRandomSSKPair()[0], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true, "Test");
+			result.add(ownIdentity); 
+		}
+		
+		return result;
+		
+	}
+	
 	/**
 	 * ATTENTION: Its impossible to store more trust values than the amount of identities squared: There can only be a single trust value
 	 * between each pair of identities. The amount of such pairs is identities². If you specify a trustCount which is higher than this 
