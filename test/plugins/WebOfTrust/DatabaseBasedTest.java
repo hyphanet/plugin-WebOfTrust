@@ -162,7 +162,7 @@ public class DatabaseBasedTest extends TestCase {
 		ArrayList<OwnIdentity> result = new ArrayList<OwnIdentity>(count+1);
 		
 		while(count-- > 0) {
-			final OwnIdentity ownIdentity = mWoT.createOwnIdentity(getRandomSSKPair()[0], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true, "Test");
+			final OwnIdentity ownIdentity = mWoT.createOwnIdentity(getRandomSSKPair()[0], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), mRandom.nextBoolean(), getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH));
 			result.add(ownIdentity); 
 		}
 		
