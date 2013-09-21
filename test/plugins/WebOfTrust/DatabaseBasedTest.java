@@ -4,6 +4,7 @@
 package plugins.WebOfTrust;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
@@ -104,7 +105,20 @@ public class DatabaseBasedTest extends TestCase {
 	protected void testClone(Class<?> clazz, Object original, Object clone) throws IllegalArgumentException, IllegalAccessException {
 		for(Field field : clazz.getDeclaredFields()) {
 			field.setAccessible(true);
-			assertEquals(field.toGenericString(), field.get(original), field.get(clone));
+			if(!field.getType().isArray()) {
+				assertEquals(field.toGenericString(), field.get(original), field.get(clone));
+			} else { // We need to check it deeply if it is an array
+				// Its not possible to cast primitive arrays such as byte[] to Object[]
+				// Therefore, we must store them as Object which is possible, and then use Array.get()
+				final Object originalArray = field.get(original);
+				final Object clonedArray = field.get(clone);
+				
+				assertEquals(Array.getLength(originalArray), Array.getLength(clonedArray));
+				for(int i=0; i < Array.getLength(originalArray); ++i) {
+					testClone(originalArray.getClass(), Array.get(originalArray, i), Array.get(clonedArray, i));
+				}
+			}
+				
 			
 			if(!field.getType().isEnum() // Enum objects exist only once
 				&& field.getType() != String.class // Strings are interned and therefore might also exist only once
