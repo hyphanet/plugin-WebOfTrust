@@ -47,7 +47,7 @@ public class IntroductionPuzzleTest extends DatabaseBasedTest {
 	/**
 	 * NOTICE: A copypasta of this function exists as {@link IntroductionPuzzleStoreTest#constructPuzzle()}.
 	 */
-	protected IntroductionPuzzle constructPuzzle() throws MalformedURLException, InvalidParameterException {
+	private IntroductionPuzzle constructPuzzle() throws MalformedURLException, InvalidParameterException {
 		return constructPuzzleWithExpirationDate(addRandomOwnIdentities(1).get(0), new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));
 	}
 	
