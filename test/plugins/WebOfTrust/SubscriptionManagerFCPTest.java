@@ -252,10 +252,12 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 					assertFalse(target.containsKey(changeSet.afterChange));
 				}
 				
-				if(changeSet.afterChange != null)
+				if(changeSet.afterChange != null) {
+					/* Checked in changeSet already */
+					// assertEquals(changeSet.beforeChange.getID(), changeSet.afterChange.getID()); 
 					target.put(changeSet.afterChange.getID(), changeSet.afterChange);
-				else
-					target.remove(changeSet.afterChange.getID());
+				} else
+					target.remove(changeSet.beforeChange.getID());
 			}
 		}
 				
