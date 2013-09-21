@@ -5,6 +5,7 @@ package plugins.WebOfTrust;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -87,7 +88,10 @@ public class DatabaseBasedTest extends TestCase {
 	
 	/**
 	 * Uses reflection to check assertEquals() and assertNotSame() on all member fields of an original and its clone().
-	 * Does not check assertNotSame() for enum and String fields.
+	 * Does not check assertNotSame() for:
+	 * - enum field
+	 * - String fields
+	 * - transient fields
 	 * 
 	 * ATTENTION: Only checks the fields of the given clazz, NOT of its parent class.
 	 * If you need to test the fields of an object of class B with parent class A, you should call this two times:
@@ -101,8 +105,13 @@ public class DatabaseBasedTest extends TestCase {
 		for(Field field : clazz.getDeclaredFields()) {
 			field.setAccessible(true);
 			assertEquals(field.toGenericString(), field.get(original), field.get(clone));
-			if(!field.getType().isEnum() && field.getType() != String.class)
+			
+			if(!field.getType().isEnum() // Enum objects exist only once
+				&& field.getType() != String.class // Strings are interned and therefore might also exist only once
+				&& !Modifier.isTransient(field.getModifiers())) // Persistent.mWebOfTurst/mDB are transient field which have the same value everywhere
+			{
 				assertNotSame(field.toGenericString(), field.get(original), field.get(clone));
+			}
 		}
 	}
 	
