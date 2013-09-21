@@ -125,7 +125,7 @@ public class DatabaseBasedTest extends TestCase {
 		final double trustRange = Trust.MAX_TRUST_VALUE - Trust.MIN_TRUST_VALUE + 1;
 		long result;
 		do {
-			result = (long)Math.round(mRandom.nextGaussian()*(trustRange/2) + (trustRange/3));
+			result = Math.round(mRandom.nextGaussian()*(trustRange/2) + (trustRange/3));
 		} while(result < Trust.MIN_TRUST_VALUE || result > Trust.MAX_TRUST_VALUE);
 		
 		return (byte)result;
