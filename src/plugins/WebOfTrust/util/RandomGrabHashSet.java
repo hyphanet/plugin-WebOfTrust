@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Random;
 
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
-import freenet.crypt.RandomSource;
 
 /**
  * HashSet with the ability to return a random item.
@@ -20,15 +20,15 @@ import freenet.crypt.RandomSource;
  */
 public final class RandomGrabHashSet<E> {
 
-	private final RandomSource mRandomSource; 
+	private final Random mRandom; 
 	
 	private final HashMap<E, Integer> mIndex = new HashMap<E, Integer>();
 	
 	private final ArrayList<E> mArray = new ArrayList<E>();
 	
 	
-	public RandomGrabHashSet(final RandomSource randomSource) {
-		mRandomSource = randomSource;
+	public RandomGrabHashSet(final Random random) {
+		mRandom = random;
 	}
 	
 	
@@ -86,7 +86,7 @@ public final class RandomGrabHashSet<E> {
 	}
 	
 	public E getRandom() {
-		return mArray.get(mRandomSource.nextInt(mArray.size()));
+		return mArray.get(mRandom.nextInt(mArray.size()));
 	}
 
 }
