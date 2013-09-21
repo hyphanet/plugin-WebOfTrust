@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 import plugins.WebOfTrust.DatabaseBasedTest;
+import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.DuplicatePuzzleException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
@@ -416,7 +417,7 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		assertEquals(new HashSet<IntroductionPuzzle>(ofToday), new HashSet<IntroductionPuzzle>(mPuzzleStore.getOfTodayByInserter(mOwnIdentities.get(0))));
 	}
 
-	public void testGetByInserterDateIndex() throws UnknownPuzzleException {
+	public void testGetByInserterDateIndex() throws UnknownPuzzleException, UnknownIdentityException {
 		final Date today = CurrentTimeUTC.get();
 		final Date yesterday = new Date (CurrentTimeUTC.getInMillis() - 24 * 60 * 60 * 1000);
 		final Date tomorrow = new Date (CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000);
@@ -438,29 +439,32 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		flushCaches();
 		
 		for(IntroductionPuzzle p : puzzles) {
-			assertEquals(p, mPuzzleStore.getByInserterDateIndex(p.getInserter(), p.getDateOfInsertion(), p.getIndex()));
+			// We have to re-query the identity because the cloned puzzle also only contains a clone of the identity.
+			final OwnIdentity inserter = mWoT.getOwnIdentityByID(p.getInserter().getID());
+			
+			assertEquals(p, mPuzzleStore.getByInserterDateIndex(inserter, p.getDateOfInsertion(), p.getIndex()));
 
 			try {
 				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(mOwnIdentities.get(mOwnIdentities.size()-1), p.getDateOfInsertion(), p.getIndex()));
 			} catch(UnknownPuzzleException e) {}
 			
 			try {
-				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(p.getInserter(), tomorrow, p.getIndex()));
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(inserter, tomorrow, p.getIndex()));
 			} catch(UnknownPuzzleException e) {}
 			
 			try {
-				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(p.getInserter(), p.getDateOfInsertion(), 2));
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(inserter, p.getDateOfInsertion(), 2));
 			} catch(UnknownPuzzleException e) {}
 			
-			mPuzzleStore.storeAndCommit(constructOwnPuzzleWithDateAndIndex((OwnIdentity)p.getInserter(), p.getDateOfInsertion(), p.getIndex()));
+			mPuzzleStore.storeAndCommit(constructOwnPuzzleWithDateAndIndex(inserter, p.getDateOfInsertion(), p.getIndex()));
 			try {
-				mPuzzleStore.getByInserterDateIndex(p.getInserter(), p.getDateOfInsertion(), p.getIndex());
+				mPuzzleStore.getByInserterDateIndex(inserter, p.getDateOfInsertion(), p.getIndex());
 				fail("Duplicate-Exception should have been thrown.");
 			} catch(DuplicatePuzzleException e) {}
 		}
 	}
 
-	public void testGetOwnPuzzleByInserterDateIndex() throws UnknownPuzzleException {
+	public void testGetOwnPuzzleByInserterDateIndex() throws UnknownPuzzleException, UnknownIdentityException {
 		final Date today = CurrentTimeUTC.get();
 		final Date yesterday = new Date (CurrentTimeUTC.getInMillis() - 24 * 60 * 60 * 1000);
 		final Date tomorrow = new Date (CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000);
@@ -482,18 +486,21 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		flushCaches();
 		
 		for(OwnIntroductionPuzzle p : puzzles) {
-			assertEquals(p, mPuzzleStore.getOwnPuzzleByInserterDateIndex((OwnIdentity)p.getInserter(), p.getDateOfInsertion(), p.getIndex()));
+			// We have to re-query the identity because the cloned puzzle also only contains a clone of the identity.
+			final OwnIdentity inserter = mWoT.getOwnIdentityByID(p.getInserter().getID());
+			
+			assertEquals(p, mPuzzleStore.getOwnPuzzleByInserterDateIndex(inserter, p.getDateOfInsertion(), p.getIndex()));
 
 			try {
 				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(mOwnIdentities.get(mOwnIdentities.size()-1), p.getDateOfInsertion(), p.getIndex()));
 			} catch(UnknownPuzzleException e) {}
 			
 			try {
-				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(p.getInserter(), tomorrow, p.getIndex()));
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(inserter, tomorrow, p.getIndex()));
 			} catch(UnknownPuzzleException e) {}
 			
 			try {
-				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(p.getInserter(), p.getDateOfInsertion(), 2));
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(inserter, p.getDateOfInsertion(), 2));
 			} catch(UnknownPuzzleException e) {}
 		}
 	}
