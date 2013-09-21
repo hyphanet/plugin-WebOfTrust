@@ -124,7 +124,12 @@ public class DatabaseBasedTest extends TestCase {
 				&& field.getType() != String.class // Strings are interned and therefore might also exist only once
 				&& !Modifier.isTransient(field.getModifiers())) // Persistent.mWebOfTurst/mDB are transient field which have the same value everywhere
 			{
-				assertNotSame(field.toGenericString(), field.get(original), field.get(clone));
+				final Object originalField = field.get(original);
+				final Object clonedField = field.get(clone);
+				if(originalField != null)
+					assertNotSame(field.toGenericString(), originalField, clonedField);
+				else
+					assertNull(field.toGenericString(), clonedField); // assertNotSame would fail if both are null because null and null are the same
 			}
 		}
 	}
