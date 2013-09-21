@@ -148,10 +148,10 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	
 	
 	public void testAllRandomized() throws MalformedURLException, InvalidParameterException, FSParseException, DuplicateTrustException, NotTrustedException, UnknownIdentityException {
-		final int initialOwnIdentityCount = 10;
+		final int initialOwnIdentityCount = 1;
 		final int initialIdentityCount = 100;
-		final int initialTrustCount = (initialIdentityCount*initialIdentityCount) / 5; // A complete graph would be identityCount² trust values.
-		final int eventCount = 1000;
+		final int initialTrustCount = (initialIdentityCount*initialIdentityCount) / 10; // A complete graph would be identityCount² trust values.
+		final int eventCount = 100;
 		
 		// Random trust graph setup...
 	
