@@ -208,7 +208,7 @@ public final class FCPInterface implements FredPluginFCP {
     
     private SimpleFieldSet handleGetTrust(final SimpleFieldSet sfs, final Trust trust, String suffix) {
     	if(trust == null) {
-    		sfs.putOverwrite("Value", "Inexistent");
+    		sfs.putOverwrite("Value" + suffix, "Inexistent");
     		return sfs;
     	}
     	
@@ -235,7 +235,7 @@ public final class FCPInterface implements FredPluginFCP {
     
     private SimpleFieldSet handleGetScore(final SimpleFieldSet sfs, final Score score, final String suffix) {    	
     	if(score == null) {
-    		sfs.putOverwrite("Value", "Inexistent");
+    		sfs.putOverwrite("Value" + suffix, "Inexistent");
     		return sfs;
     	}
     	
