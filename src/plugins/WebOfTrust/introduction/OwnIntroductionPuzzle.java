@@ -123,13 +123,13 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	public OwnIntroductionPuzzle clone() {
 		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
 		// checkedActivate(depth) for mSolution is not needed, String is a db4o primitive type
-		final OwnIntroductionPuzzle copy = new OwnIntroductionPuzzle(mWebOfTrust, (OwnIdentity)getInserter(), getID(), getType(), getMimeType(), getData(), getSolution(), getDateOfInsertion(), getIndex());
+		final OwnIntroductionPuzzle copy = new OwnIntroductionPuzzle(mWebOfTrust, ((OwnIdentity)getInserter()).clone(), getID(), getType(), getMimeType(), getData(), getSolution(), getDateOfInsertion(), getIndex());
 		
 		copy.setCreationDate(getCreationDate());
 		
 		if(wasSolved()) {
 			if(getSolver() != null)
-				copy.setSolved(getSolver());
+				copy.setSolved(getSolver().clone());
 			else
 				copy.setSolved();
 		}
