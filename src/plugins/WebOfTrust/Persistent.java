@@ -62,7 +62,7 @@ public abstract class Persistent implements Serializable {
 	 * It can be very useful for debugging purposes or sanitizing old databases.
 	 * Also it is needed in many cases for the UI.
 	 */
-	protected final Date mCreationDate = CurrentTimeUTC.get();
+	protected Date mCreationDate = CurrentTimeUTC.get();
 	
 	/**
 	 * The object used for locking transactions.
@@ -435,7 +435,17 @@ public abstract class Persistent implements Serializable {
 	 */
 	public final Date getCreationDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		return mCreationDate;
+		return (Date)mCreationDate.clone(); // Date is mutable so we clone it.
+	}
+	
+	/**
+	 * ATTENTION: Only use this in clone():
+	 * For debugging purposes, the creation Date shall tell clearly when this object was created, it should never change.
+	 */
+	protected void setCreationDate(final Date creationDate) {
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
+		// checkedDelete(mCreationDate); /* Not stored because db4o considers it as a primitive */
+		mCreationDate = (Date)creationDate.clone();
 	}
 	  
 	/**
