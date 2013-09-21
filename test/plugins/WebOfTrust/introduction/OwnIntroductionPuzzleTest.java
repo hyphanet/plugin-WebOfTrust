@@ -52,6 +52,7 @@ public final class OwnIntroductionPuzzleTest extends DatabaseBasedTest {
 		
 		testClone(Persistent.class, original, clone);
 		testClone(IntroductionPuzzle.class, original, clone);
+		testClone(OwnIntroductionPuzzle.class, original, clone);
 	}
 
 }
