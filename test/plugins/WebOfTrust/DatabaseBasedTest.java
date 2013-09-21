@@ -117,8 +117,18 @@ public class DatabaseBasedTest extends TestCase {
 		return new String(s);
 	}
 	
+	/**
+	 * Returns a normally distributed value with a bias towards positive trust values.
+	 * TODO: Remove this bias once trust computation is equally fast for negative values;
+	 */
 	private byte getRandomTrustValue() {
-		return (byte)(Trust.MIN_TRUST_VALUE + mRandom.nextInt(Trust.MAX_TRUST_VALUE - Trust.MIN_TRUST_VALUE + 1));
+		final double trustRange = Trust.MAX_TRUST_VALUE - Trust.MIN_TRUST_VALUE + 1;
+		long result;
+		do {
+			result = (long)Math.round(mRandom.nextGaussian()*(trustRange/2) + (trustRange/3));
+		} while(result < Trust.MIN_TRUST_VALUE || result > Trust.MAX_TRUST_VALUE);
+		
+		return (byte)result;
 	}
 	
 	/**
