@@ -35,7 +35,7 @@ public class IntroductionPuzzleTest extends DatabaseBasedTest {
 	/**
 	 * Constructs a puzzle of the given identity with the given expiration date. Does not store the puzzle in the database.
 	 * 
-	 * Copy-pasted from {@link IntroductionPuzzleStoreTest}.
+	 * NOTICE: A copypasta of this function exists as {@link IntroductionPuzzleStoreTest#constructPuzzleWithExpirationDate(OwnIdentity, Date)
 	 */
 	private IntroductionPuzzle constructPuzzleWithExpirationDate(OwnIdentity identity, Date dateOfExpiration) {
 		final Date dateOfInsertion = new Date(dateOfExpiration.getTime() - IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000);
@@ -45,7 +45,7 @@ public class IntroductionPuzzleTest extends DatabaseBasedTest {
 	}
 	
 	/**
-	 * Copy-pasted from {@link IntroductionPuzzleStoreTest}.
+	 * NOTICE: A copypasta of this function exists as {@link IntroductionPuzzleStoreTest#constructPuzzle()}.
 	 */
 	protected IntroductionPuzzle constructPuzzle() throws MalformedURLException, InvalidParameterException {
 		return constructPuzzleWithExpirationDate(addRandomOwnIdentities(1).get(0), new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));

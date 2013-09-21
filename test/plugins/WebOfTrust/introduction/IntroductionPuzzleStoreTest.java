@@ -95,6 +95,8 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 	
 	/**
 	 * Constructs a puzzle of the given identity with the given expiration date. Does not store the puzzle in the database.
+	 * 
+	 * NOTICE: A copypasta of this function exists as {@link IntroductionPuzzleTest#constructPuzzleWithExpirationDate(OwnIdentity, Date)
 	 */
 	private IntroductionPuzzle constructPuzzleWithExpirationDate(OwnIdentity identity, Date dateOfExpiration) {
 		final Date dateOfInsertion = new Date(dateOfExpiration.getTime() - IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000);
@@ -138,6 +140,9 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		return constructPuzzleWithExpirationDate(identity, new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));
 	}
 	
+	/**
+	 * NOTICE: A copypasta of this function exists as {@link IntroductionPuzzleTest#constructPuzzle()}
+	 */
 	private IntroductionPuzzle constructPuzzle() {
 		return constructPuzzleWithExpirationDate(mOwnIdentity, new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));
 	}
