@@ -332,7 +332,7 @@ public class DatabaseBasedTest extends TestCase {
 						final String propertyValue = getRandomLatinString(Identity.MAX_PROPERTY_VALUE_LENGTH);
 						mWoT.setProperty(ownIdentityID, propertyName, propertyValue);
 						if(mRandom.nextBoolean())
-							mWoT.removeContext(ownIdentityID, propertyName);
+							mWoT.removeProperty(ownIdentityID, propertyName);
 					}
 					break;
 				case 7:
