@@ -262,8 +262,14 @@ public class DatabaseBasedTest extends TestCase {
 		}
 		final Randomizer randomizer = new Randomizer();
 		
+		final int eventTypeCount = 15;
+		final long[] eventDurations = new long[eventTypeCount];
+		final int[] eventIterations = new int[eventTypeCount];
+		
 		for(int i=0; i < eventCount; ++i) {
-			switch(mRandom.nextInt(12 + 1)) {
+			final int type = mRandom.nextInt(eventTypeCount);
+			final long startTime = System.nanoTime();
+			switch(type) {
 				case 0:
 					{
 						final OwnIdentity identity = mWoT.createOwnIdentity(
@@ -334,6 +340,8 @@ public class DatabaseBasedTest extends TestCase {
 				case 9:
 				case 10:
 				case 11:
+				case 12:
+				case 13:
 					{
 						Identity truster;
 						Identity trustee;
@@ -352,7 +360,7 @@ public class DatabaseBasedTest extends TestCase {
 							randomizer.allTrusts.add(trustID); 
 					}
 					break;
-				case 12:
+				case 14:
 					{
 						mWoT.beginTrustListImport();
 						final Trust trust = mWoT.getTrust(randomizer.allTrusts.getRandom());
@@ -364,8 +372,16 @@ public class DatabaseBasedTest extends TestCase {
 					}
 					break;
 				default:
-					throw new RuntimeException("Please adapt mRandom.nextInt() above!");
+					throw new RuntimeException("Please adapt eventTypeCount above!");
 			}
+			final long endTime = System.nanoTime();
+			eventDurations[type] += (endTime-startTime);
+			++eventIterations[type];
+		}
+		
+		for(int i=0; i < eventTypeCount; ++i) {
+			System.out.println("Event type " + i + ": Happend " + eventIterations[i] + " times; "
+					+ "avg. seconds: " + (((double)eventDurations[i])/eventIterations[i]) / (1000*1000*1000));
 		}
 	}
 	
