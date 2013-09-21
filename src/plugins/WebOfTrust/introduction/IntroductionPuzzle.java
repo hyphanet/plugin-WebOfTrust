@@ -434,9 +434,9 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	@Override
 	public IntroductionPuzzle clone() {
 		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
-		final IntroductionPuzzle copy = new IntroductionPuzzle(mWebOfTrust, getInserter(), getID(), getType(), getMimeType(), getData(), getDateOfInsertion(), getValidUntilDate(), getIndex());
+		final IntroductionPuzzle copy = new IntroductionPuzzle(mWebOfTrust, getInserter().clone(), getID(), getType(), getMimeType(), getData(), getDateOfInsertion(), getValidUntilDate(), getIndex());
 		copy.setCreationDate(getCreationDate());
-		if(wasSolved()) copy.setSolved((OwnIdentity)getSolver(), getSolution());
+		if(wasSolved()) copy.setSolved(((OwnIdentity)getSolver()).clone(), getSolution());
 		if(wasInserted()) copy.setInserted();
 		copy.initializeTransient(mWebOfTrust);
 		return copy;
