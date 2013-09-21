@@ -26,7 +26,7 @@ import freenet.support.CurrentTimeUTC;
 /**
  * @author xor (xor@freenetproject.org)
  */
-public final class IntroductionPuzzleTest extends DatabaseBasedTest {
+public final class OwnIntroductionPuzzleTest extends DatabaseBasedTest {
 
 	private IntroductionPuzzleStore mPuzzleStore;
 	private IntroductionPuzzleFactory mPuzzleFactory;
