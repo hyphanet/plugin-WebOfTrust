@@ -41,6 +41,13 @@ import freenet.support.io.NativeThread;
  * the notification queue is halted and the previous notification is re-sent a few times until it can be imported successfully by the client
  * or the connection is dropped due to too many failures.
  * 
+ * Further, at each deployment run, the order of deployment is guaranteed to be:
+ * 1. {@link IdentityChangedNotification}
+ * 2. {@link TrustChangedNotification}
+ * 3. {@link ScoreChangedNotification}
+ * This allows you to assume that any identity IDs (see {@link Identity#getID()}} you receive in trust / score notifications are valid when you receive them:
+ * If a new identity is created, you will receive the notification about its creation before you receive any trust / score notifications about it.
+ * 
  * TODO: What to do, if the client does not support a certain message?
  * 
  * This is a very important principle which makes client design easy: You do not need transaction-safety when caching things such as score values
@@ -100,6 +107,14 @@ public final class SubscriptionManager implements PrioRunnable {
 		private final String mID;
 		
 		/**
+		 * The lower this field, the earlier {@link Notification}s of a subscription get deployed compared to other subscriptions.
+		 * This is to ensure that {@link IdentityChangedNotification}s get deployed before {@link TrustChangedNotification} / {@link ScoreChangedNotification}:
+		 * Trusts and Scores contain IDs of {@link Identity}s, and those IDs are not valid until the "new identity" notifications have been deployed.
+		 */
+		@IndexedField
+		private final byte mPriority;
+		
+		/**
 		 * The way of notifying a client
 		 */
 		public static enum Type {
@@ -140,11 +155,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Constructor for being used by child classes.
 		 * @param myType The type of the Subscription
 		 * @param fcpID The FCP ID of the subscription. Can be null if the type is not FCP.
+		 * @param priority The lower this value, the earlier notifications of this Subscription get processed compared to other Subscription's notifications. See {@link #mPriority}.
 		 */
-		protected Subscription(Type myType, String fcpID) {
+		protected Subscription(final Type myType, final String fcpID, final byte priority) {
 			mID = UUID.randomUUID().toString();
 			mType = myType;
 			mFCP_ID = fcpID;
+			mPriority = priority;
 		}
 		
 		/**
@@ -606,7 +623,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param fcpID See {@link Subscription#getFCP_ID()}. 
 		 */
 		protected IdentitiesSubscription(String fcpID) {
-			super(Subscription.Type.FCP, fcpID);
+			super(Subscription.Type.FCP, fcpID, (byte)0);
 		}
 
 		/**
@@ -652,7 +669,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param fcpID See {@link Subscription#getFCP_ID()}. 
 		 */
 		protected TrustsSubscription(String fcpID) {
-			super(Subscription.Type.FCP, fcpID);
+			super(Subscription.Type.FCP, fcpID, (byte)1);
 		}
 		
 		/**
@@ -698,7 +715,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param fcpID See {@link Subscription#getFCP_ID()}. 
 		 */
 		protected ScoresSubscription(String fcpID) {
-			super(Subscription.Type.FCP, fcpID);
+			super(Subscription.Type.FCP, fcpID, (byte)2);
 		}
 		
 		/**
@@ -941,13 +958,25 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Typically used at startup by {@link #deleteAllSubscriptions()} and {@link #run()}
+	 * Typically used at startup by {@link #deleteAllSubscriptions()}.
 	 * 
 	 * @return All existing {@link Subscription}s.
 	 */
 	private ObjectSet<Subscription<? extends Notification>> getAllSubscriptions() {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
+		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
+	}
+	
+	/**
+	 * Typically used by {@link #run()}
+	 * 
+	 * @return All existing {@link Subscription}s, higher priority ones first.
+	 */
+	private ObjectSet<Subscription<? extends Notification>> getAllSubscriptionsOrderedByPriority() {
+		final Query q = mDB.query();
+		q.constrain(Subscription.class);
+		q.descend("mPriority").orderAscending();
 		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
 	}
 	
@@ -1155,7 +1184,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Therefore, we don't have to take the WebOfTrust lock and can execute in parallel to threads which need to lock the WebOfTrust.*/
 		// synchronized(mWoT) {
 		synchronized(this) {
-			for(Subscription<? extends Notification> subscription : getAllSubscriptions()) {
+			for(Subscription<? extends Notification> subscription : getAllSubscriptionsOrderedByPriority()) {
 				try {
 					if(subscription.sendNotifications(this)) {
 						// Persistent.checkedCommit(mDB, this);	/* sendNotifications() does this already */
