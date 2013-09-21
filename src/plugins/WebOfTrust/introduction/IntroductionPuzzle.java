@@ -169,7 +169,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		mDayOfInsertion = TimeUtil.setTimeToZero(myDateOfInsertion).getTime();
 		mValidUntilDate = (Date)myExpirationDate.clone();
 		mIndex = myIndex;
-		mData = newData;
+		mData = Arrays.copyOf(newData, newData.length);
 		mWasSolved = false; mSolution = null; mSolver = null;
 		mWasInserted = false;
 	}
