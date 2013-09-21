@@ -237,6 +237,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 			
 			activateFully(); // For performance only
 			
+			clone.setCreationDate(getCreationDate());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
 			clone.mLastChangedDate = (Date)getLastChangeDate().clone();
 			clone.mLastInsertDate = (Date)getLastInsertDate().clone();

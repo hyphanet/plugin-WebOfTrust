@@ -374,6 +374,7 @@ public final class Score extends Persistent implements Cloneable, Serializable {
 
 	public Score clone() {
 		final Score clone = new Score(mWebOfTrust, getTruster().clone(), getTrustee().clone(), getScore(), getRank(), getCapacity());
+		clone.setCreationDate(getCreationDate());
 		clone.mLastChangedDate = (Date)getDateOfLastChange().clone();
 		return clone;
 	}

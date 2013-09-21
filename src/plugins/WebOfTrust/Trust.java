@@ -387,6 +387,7 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 	public Trust clone() {
 		try {
 			Trust clone = new Trust(mWebOfTrust, getTruster().clone(), getTrustee().clone(), getValue(), getComment());
+			clone.setCreationDate(getCreationDate());
 			clone.mLastChangedDate = (Date)getDateOfLastChange().clone();
 			clone.mTrusterTrustListEdition = getTrusterEdition();
 			return clone;
