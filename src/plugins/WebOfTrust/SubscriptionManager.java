@@ -193,6 +193,71 @@ public final class SubscriptionManager implements PrioRunnable {
 			storeWithoutCommit();
 			return mSendNotificationsFailureCount;
 		}
+
+		/**
+		 * Sends out the notification queue for this SubscriptionClient, in sequence.
+		 * 
+		 * If a notification is sent successfully, it is deleted and the transaction is committed.
+		 * 
+		 * If sending a single notification fails, the failure counter {@link #mSendNotificationsFailureCount} is incremented
+		 * and {@link SubscriptionManager#scheduleNotificationProcessing()} is executed to retry sending the notification after some time.
+		 * If the failure counter exceeds the limit {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT}, false is returned
+		 * to indicate that the SubscriptionManager should delete this SubscriptionClient.
+		 * 
+		 * You have to synchronize on the SubscriptionManager and the database lock before calling this function!
+		 * You don't have to commit the transaction after calling this function.
+		 * 
+		 * @param manager The {@link SubscriptionManager} from which to query the {@link Notification}s of this SubscriptionClient.
+		 * @return False if this SubscriptionClient should be deleted.
+		 */
+		@SuppressWarnings("unchecked")
+		protected boolean sendNotifications(SubscriptionManager manager) {
+			switch(mType) {
+				case FCP:
+					for(final Notification notification : manager.getAllNotifications(this)) {
+						try {
+							try {
+								notification.getSubscription().notifySubscriberByFCP((NotificationType)notification);
+								notification.deleteWithoutCommit();
+							} catch(Exception e) {
+								Persistent.checkedRollback(mDB, this, e, LogLevel.WARNING);
+								
+								final byte failureCount = incrementSendNotificationsFailureCountWithoutCommit();
+								Persistent.checkedCommit(mDB, this);
+								
+								boolean deleteSubscription = false;
+								
+								if(e instanceof PluginNotFoundException) {
+									Logger.warning(this, "sendNotifications() failed, client has disconnected, failure count: " + failureCount, e);
+									deleteSubscription = true;
+								} else  {
+									Logger.error(this, "sendNotifications() failed, failure count: " + failureCount, e);
+									if(failureCount >= DISCONNECT_CLIENT_AFTER_FAILURE_COUNT) 
+										deleteSubscription = true;
+								}
+								
+								if(!deleteSubscription)
+									manager.scheduleNotificationProcessing();
+								
+								return deleteSubscription;
+								
+							}
+							// If processing of a single notification fails, we do not want the previous notifications
+							// to be sent again when the failed notification is retried. Therefore, we commit after
+							// each processed notification but do not catch RuntimeExceptions here
+							
+							Persistent.checkedCommit(mDB, this);
+						} catch(RuntimeException e) {
+							Persistent.checkedRollbackAndThrow(mDB, this, e);
+						}
+					}
+					break;
+				default:
+					throw new UnsupportedOperationException("Unknown Type: " + mType);
+			}
+			
+			return true;
+		}
 				
 	}
 	
@@ -338,71 +403,6 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @throws PluginNotFoundException If the FCP client has disconnected. The SubscriptionManager then won't retry deploying this Notification, the {@link Subscription} will be terminated.
 		 */
 		protected abstract void notifySubscriberByFCP(NotificationType notification) throws PluginNotFoundException;
-
-		/**
-		 * Sends out the notification queue for this Subscription, in sequence.
-		 * 
-		 * If a notification is sent successfully, it is deleted and the transaction is committed.
-		 * 
-		 * If sending a single notification fails, the failure counter {@link #mSendNotificationsFailureCount} is incremented
-		 * and {@link SubscriptionManager#scheduleNotificationProcessing()} is executed to retry sending the notification after some time.
-		 * If the failure counter exceeds the limit {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT}, false is returned
-		 * to indicate that the SubscriptionManager should delete this Subscription.
-		 * 
-		 * You have to synchronize on the SubscriptionManager and the database lock before calling this function!
-		 * You don't have to commit the transaction after calling this function.
-		 * 
-		 * @param manager The {@link SubscriptionManager} from which to query the {@link Notification}s of this Subscription.
-		 * @return False if this Subscription should be deleted.
-		 */
-		@SuppressWarnings("unchecked")
-		protected boolean sendNotifications(SubscriptionManager manager) {
-			switch(mType) {
-				case FCP:
-					for(final Notification notification : manager.getAllNotifications(this)) {
-						try {
-							try {
-								notifySubscriberByFCP((NotificationType)notification);
-								notification.deleteWithoutCommit();
-							} catch(Exception e) {
-								Persistent.checkedRollback(mDB, this, e, LogLevel.WARNING);
-								
-								final byte failureCount = incrementSendNotificationsFailureCountWithoutCommit();
-								Persistent.checkedCommit(mDB, this);
-								
-								boolean deleteSubscription = false;
-								
-								if(e instanceof PluginNotFoundException) {
-									Logger.warning(this, "sendNotifications() failed, client has disconnected, failure count: " + failureCount, e);
-									deleteSubscription = true;
-								} else  {
-									Logger.error(this, "sendNotifications() failed, failure count: " + failureCount, e);
-									if(failureCount >= DISCONNECT_CLIENT_AFTER_FAILURE_COUNT) 
-										deleteSubscription = true;
-								}
-								
-								if(!deleteSubscription)
-									manager.scheduleNotificationProcessing();
-								
-								return deleteSubscription;
-								
-							}
-							// If processing of a single notification fails, we do not want the previous notifications
-							// to be sent again when the failed notification is retried. Therefore, we commit after
-							// each processed notification but do not catch RuntimeExceptions here
-							
-							Persistent.checkedCommit(mDB, this);
-						} catch(RuntimeException e) {
-							Persistent.checkedRollbackAndThrow(mDB, this, e);
-						}
-					}
-					break;
-				default:
-					throw new UnsupportedOperationException("Unknown Type: " + mType);
-			}
-			
-			return true;
-		}
 
 	}
 	
