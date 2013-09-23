@@ -80,6 +80,51 @@ import freenet.support.io.NativeThread;
  */
 public final class SubscriptionManager implements PrioRunnable {
 	
+	public static final class SubscriptionClient extends Persistent {
+		
+		/**
+		 * The way of notifying a client
+		 */
+		public static enum Type {
+			FCP,
+			Callback
+		};
+		
+		/**
+		 * The way the client desires notification.
+		 * 
+		 * @see #getType()
+		 */
+		private final Type mType;
+		
+		/**
+		 * An ID which associates this client with a FCP connection if the type is FCP.
+		 * 
+		 * @see #getFCP_ID()
+		 */
+		@IndexedField
+		private final String mFCP_ID;
+
+		/**
+		 * Each {@link Notification} is given an index upon creation. The indexes ensure sequential processing.
+		 * The indexed queue exists per {@link SubscriptionClient} and not per {@link Subscription}:
+		 * Events of different types of {@link Subscription} might be dependent upon each other. 
+		 * For example if we want to notify a client about a new trust value via {@link TrustChangedNotification}, it doesn't make
+		 * sense to deploy such a notification if the identity which created the trust value does not exist yet.
+		 * It must be guaranteed that the {@link IdentityChangedNotification} which creates the identity is deployed first.
+		 * Events are issued by the core of WOT in proper order, so as long as we keep a queue per SubscriptionClient which preserves
+		 * this order everything will be fine.
+		 */
+		private long mNextNotificationIndex = 0;
+		
+		/**
+		 * If deploying the {@link Notification} queue fails, for example due to connectivity issues, this is incremented.
+		 * After a certain limit of retries, the client will be disconnected.
+		 */
+		private byte mSendNotificationsFailureCount = 0;
+		
+	}
+	
 	/**
 	 * A subscription stores the information which client is subscribed to which content and how it is supposed
 	 * to be notified about updates.
@@ -113,43 +158,6 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@IndexedField
 		private final byte mPriority;
-		
-		/**
-		 * The way of notifying a client
-		 */
-		public static enum Type {
-			FCP,
-			Callback
-		};
-		
-		/**
-		 * The way the client of this subscription desires notification.
-		 * 
-		 * @see #getType()
-		 */
-		private final Type mType;
-		
-		/**
-		 * An ID which associates this subscription with a FCP connection if the type is FCP.
-		 * 
-		 * @see #getFCP_ID()
-		 */
-		@IndexedField
-		private final String mFCP_ID;
-
-		/**
-		 * Each {@link Notification} is given an index upon creation. The indexes ensure sequential processing.
-		 * If an error happens when trying to process a notification to a client, we might want to retry some time later.
-		 * Therefore, the {@link Notification} queue exists per client and not globally - if a single {@link Notification} is created by WoT,
-		 * multiple {@link Notification} objects are stored - one for each Subscription.
-		 */
-		private long mNextNotificationIndex = 0;
-		
-		/**
-		 * If deploying the {@link Notification} queue fails, for example due to connectivity issues, this is incremented.
-		 * After a certain limit of retries, the client will be disconnected.
-		 */
-		private byte mSendNotificationsFailureCount = 0;
 		
 		/**
 		 * Constructor for being used by child classes.
