@@ -123,6 +123,77 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		private byte mSendNotificationsFailureCount = 0;
 		
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public void startupDatabaseIntegrityTest() throws Exception {
+			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
+			
+			IfNull.thenThrow(mType, "mType");
+			
+			if(mType == Type.FCP)
+				IfNull.thenThrow(mFCP_ID, "mFCP_ID");
+			
+			if(mNextNotificationIndex < 0)
+				throw new IllegalStateException("mNextNotificationIndex==" + mNextNotificationIndex);
+		}
+		
+		/**
+		 * You must call {@link #initializeTransient} before using this!
+		 */
+		protected final SubscriptionManager getSubscriptionManager() {
+			return mWebOfTrust.getSubscriptionManager();
+		}
+				
+		/**
+		 * @return The {@link Type} of this Subscription.
+		 * @see #mType
+		 */
+		public final Type getType() {
+			checkedActivate(1);
+			return mType;
+		}
+		
+		/**
+		 * @return An ID which associates this SubscriptionClient with a FCP connection if the type is FCP.
+		 * @see #mFCP_ID
+		 */
+		public final String getFCP_ID() {
+			if(getType() != Type.FCP)
+				throw new UnsupportedOperationException("Type is not FCP:" + getType());
+			
+			checkedActivate(1);
+			return mFCP_ID;
+		}
+		
+		/**
+		 * Returns the next free index for a {@link Notification} in the queue of this Subscription
+		 * and stores this Subscription object without committing the transaction.
+		 * 
+		 * Schedules processing of the Notifications of the SubscriptionManger.
+		 */
+		protected final long takeFreeNotificationIndexWithoutCommit() {
+			checkedActivate(1);
+			final long index = mNextNotificationIndex++;
+			storeWithoutCommit();
+			getSubscriptionManager().scheduleNotificationProcessing();
+			return index;
+		}
+		
+		/**
+		 * Increments {@link #mSendNotificationsFailureCount} and returns the new value.
+		 * Use this for disconnecting a client if {@link #sendNotifications(SubscriptionManager)} has failed too many times.
+		 * 
+		 * @return The value of {@link #mSendNotificationsFailureCount} after incrementing it.
+		 */
+		private final byte incrementSendNotificationsFailureCountWithoutCommit()  {
+			checkedActivate(1);
+			++mSendNotificationsFailureCount;
+			storeWithoutCommit();
+			return mSendNotificationsFailureCount;
+		}
+				
 	}
 	
 	/**
@@ -171,14 +242,6 @@ public final class SubscriptionManager implements PrioRunnable {
 			
 			IfNull.thenThrow(mID, "mID");
 			UUID.fromString(mID); // Throws if invalid
-			
-			IfNull.thenThrow(mType, "mType");
-			
-			if(mType == Type.FCP)
-				IfNull.thenThrow(mFCP_ID, "mFCP_ID");
-			
-			if(mNextNotificationIndex < 0)
-				throw new IllegalStateException("mNextNotificationIndex==" + mNextNotificationIndex);
 		}
 		
 		/**
@@ -196,55 +259,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			checkedActivate(1);
 			return mID;
 		}
-		
-		/**
-		 * @return The {@link Type} of this Subscription.
-		 * @see #mType
-		 */
-		public final Type getType() {
-			checkedActivate(1);
-			return mType;
-		}
-		
-		/**
-		 * @return An ID which associates this subscription with a FCP connection if the type is FCP.
-		 * @see #mFCP_ID
-		 */
-		public final String getFCP_ID() {
-			if(getType() != Type.FCP)
-				throw new UnsupportedOperationException("Type is not FCP:" + getType());
-			
-			checkedActivate(1);
-			return mFCP_ID;
-		}
-		
-		/**
-		 * Returns the next free index for a {@link Notification} in the queue of this Subscription
-		 * and stores this Subscription object without committing the transaction.
-		 * 
-		 * Schedules processing of the Notifications of the SubscriptionManger.
-		 */
-		protected final long takeFreeNotificationIndexWithoutCommit() {
-			checkedActivate(1);
-			final long index = mNextNotificationIndex++;
-			storeWithoutCommit();
-			getSubscriptionManager().scheduleNotificationProcessing();
-			return index;
-		}
-		
-		/**
-		 * Increments {@link #mSendNotificationsFailureCount} and returns the new value.
-		 * Use this for disconnecting a client if {@link #sendNotifications(SubscriptionManager)} has failed too many times.
-		 * 
-		 * @return The value of {@link #mSendNotificationsFailureCount} after incrementing it.
-		 */
-		private final byte incrementSendNotificationsFailureCountWithoutCommit()  {
-			checkedActivate(1);
-			++mSendNotificationsFailureCount;
-			storeWithoutCommit();
-			return mSendNotificationsFailureCount;
-		}
-		
+
 		/**
 		 * ATTENTION: This does NOT delete the {@link Notification} objects associated with this Subscription!
 		 * Only use it if you delete them manually before!
