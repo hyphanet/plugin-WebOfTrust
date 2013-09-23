@@ -214,6 +214,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	@SuppressWarnings("serial")
 	public static abstract class Subscription<NotificationType extends Notification> extends Persistent {
 		
+		private final SubscriptionClient mClient;
+		
 		/**
 		 * The UUID of this Subscription. Stored as String for db4o performance, but must be valid in terms of the UUID class.
 		 * 
@@ -224,13 +226,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/**
 		 * Constructor for being used by child classes.
-		 * @param myType The type of the Subscription
-		 * @param fcpID The FCP ID of the subscription. Can be null if the type is not FCP.
+		 * @param myClient The {@link SubscriptionClient} to which this Subscription belongs.
 		 */
-		protected Subscription(final Type myType, final String fcpID) {
+		protected Subscription(final SubscriptionClient myClient) {
+			mClient = myClient;
 			mID = UUID.randomUUID().toString();
-			mType = myType;
-			mFCP_ID = fcpID;
+			
+			assert(mClient != null);
 		}
 		
 		/**
@@ -239,6 +241,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
 			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
+			
+			IfNull.thenThrow(mClient);
 			
 			IfNull.thenThrow(mID, "mID");
 			UUID.fromString(mID); // Throws if invalid
