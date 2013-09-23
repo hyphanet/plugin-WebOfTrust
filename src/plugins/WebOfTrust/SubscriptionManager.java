@@ -152,24 +152,14 @@ public final class SubscriptionManager implements PrioRunnable {
 		private final String mID;
 		
 		/**
-		 * The lower this field, the earlier {@link Notification}s of a subscription get deployed compared to other subscriptions.
-		 * This is to ensure that {@link IdentityChangedNotification}s get deployed before {@link TrustChangedNotification} / {@link ScoreChangedNotification}:
-		 * Trusts and Scores contain IDs of {@link Identity}s, and those IDs are not valid until the "new identity" notifications have been deployed.
-		 */
-		@IndexedField
-		private final byte mPriority;
-		
-		/**
 		 * Constructor for being used by child classes.
 		 * @param myType The type of the Subscription
 		 * @param fcpID The FCP ID of the subscription. Can be null if the type is not FCP.
-		 * @param priority The lower this value, the earlier notifications of this Subscription get processed compared to other Subscription's notifications. See {@link #mPriority}.
 		 */
-		protected Subscription(final Type myType, final String fcpID, final byte priority) {
+		protected Subscription(final Type myType, final String fcpID) {
 			mID = UUID.randomUUID().toString();
 			mType = myType;
 			mFCP_ID = fcpID;
-			mPriority = priority;
 		}
 		
 		/**
@@ -977,18 +967,6 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Typically used by {@link #run()}
-	 * 
-	 * @return All existing {@link Subscription}s, higher priority ones first.
-	 */
-	private ObjectSet<Subscription<? extends Notification>> getAllSubscriptionsOrderedByPriority() {
-		final Query q = mDB.query();
-		q.constrain(Subscription.class);
-		q.descend("mPriority").orderAscending();
-		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
-	}
-	
-	/**
 	 * Get all {@link Subscription}s to a certain {@link Notification} type.
 	 * 
 	 * Typically used by the functions store*NotificationWithoutCommit() for storing the given {@link Notification} to the queues of all Subscriptions
@@ -1192,7 +1170,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Therefore, we don't have to take the WebOfTrust lock and can execute in parallel to threads which need to lock the WebOfTrust.*/
 		// synchronized(mWoT) {
 		synchronized(this) {
-			for(Subscription<? extends Notification> subscription : getAllSubscriptionsOrderedByPriority()) {
+			for(Subscription<? extends Notification> subscription : getAllSubscriptions()) {
 				try {
 					if(subscription.sendNotifications(this)) {
 						// Persistent.checkedCommit(mDB, this);	/* sendNotifications() does this already */
