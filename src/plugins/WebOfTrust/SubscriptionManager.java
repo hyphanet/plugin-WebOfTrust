@@ -543,6 +543,11 @@ public final class SubscriptionManager implements PrioRunnable {
 		public String getID() {
 			throw new UnsupportedOperationException();
 		}
+		
+		public Subscription<? extends Notification> getSubscription() {
+			checkedActivate(1);
+			return mSubscription;
+		}
 
 		/**
 		 * @return The changed {@link Persistent} object before the change. Null if the change was the creation of the object.
