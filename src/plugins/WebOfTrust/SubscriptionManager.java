@@ -477,8 +477,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		private final byte[] mNewObject;
 		
 		/**
-		 * Constructs a Notification in the queue of the given subscription.
-		 * Takes a free notification index from it with {@link Subscription#takeFreeNotificationIndexWithoutCommit}
+		 * Constructs a Notification in the queue of the given SubscriptionClient.
+		 * Takes a free notification index from it with {@link SubscriptionClient#takeFreeNotificationIndexWithoutCommit}
 		 * 
 		 * Only one of oldObject or newObject may be null.
 		 * If both are non-null, their {@link Persistent#getID()} must be equal.
@@ -491,7 +491,7 @@ public final class SubscriptionManager implements PrioRunnable {
 				final Persistent oldObject, final Persistent newObject) {
 			mSubscription = mySubscription;
 			mSubscriptionClient = mSubscription.getSubscriptionClient();
-			mIndex = mySubscription.takeFreeNotificationIndexWithoutCommit();
+			mIndex = mSubscriptionClient.takeFreeNotificationIndexWithoutCommit();
 			
 			assert	(
 						(oldObject == null ^ newObject == null) ||
