@@ -1012,6 +1012,17 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
+	 * Typically used by {@link #run()}.
+	 * 
+	 * @return All existing {@link Client}s.
+	 */
+	private ObjectSet<Client> getAllClients() {
+		final Query q = mDB.query();
+		q.constrain(Client.class);
+		return new Persistent.InitializingObjectSet<Client>(mWoT, q);
+	}
+	
+	/**
 	 * Typically used at startup by {@link #deleteAllSubscriptions()}.
 	 * 
 	 * @return All existing {@link Subscription}s.
@@ -1234,13 +1245,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Therefore, we don't have to take the WebOfTrust lock and can execute in parallel to threads which need to lock the WebOfTrust.*/
 		// synchronized(mWoT) {
 		synchronized(this) {
-			for(Subscription<? extends Notification> subscription : getAllSubscriptions()) {
+			for(Client client : getAllClients()) {
 				try {
-					if(subscription.sendNotifications(this)) {
+					if(client.sendNotifications(this)) {
 						// Persistent.checkedCommit(mDB, this);	/* sendNotifications() does this already */
 					} else {
-						Logger.warning(this, "sendNotifications tells us to delete the Subscription, deleting it: " + subscription);
-						subscription.deleteWithoutCommit(this);
+						Logger.warning(this, "sendNotifications tells us to delete the Client, deleting it: " + client);
+						client.deleteWithoutCommit(this);
 						Persistent.checkedCommit(mDB, this);
 					}
 				} catch(Exception e) {
