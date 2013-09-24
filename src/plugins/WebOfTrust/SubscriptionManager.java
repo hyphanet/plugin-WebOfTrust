@@ -1023,7 +1023,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Typically used at startup by {@link #deleteAllSubscriptions()}.
+	 * Typically used at startup by {@link #deleteAllClients()}.
 	 * 
 	 * @return All existing {@link Subscription}s.
 	 */
@@ -1094,14 +1094,14 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Deletes all existing {@link Subscription} objects.
+	 * Deletes all existing {@link Client} objects.
 	 * 
-	 * As a consequence, all {@link Notification} objects associated with the notification queues of the subscriptions become useless and are also deleted.
+	 * As a consequence, all {@link Subscription} and {@link Notification} objects associated with the clients become useless and are also deleted.
 	 * 
 	 * Typically used at {@link #start()} - we lose connection to all clients when restarting so their subscriptions are worthless.
 	 */
-	private synchronized final void deleteAllSubscriptions() {
-		Logger.normal(this, "Deleting all subscriptions...");
+	private synchronized final void deleteAllClients() {
+		Logger.normal(this, "Deleting all clients...");
 		
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
@@ -1112,17 +1112,21 @@ public final class SubscriptionManager implements PrioRunnable {
 				for(Subscription<? extends Notification> s : getAllSubscriptions()) {
 					s.deleteWithoutCommit();
 				}
+				
+				for(Client client : getAllClients()) {
+					client.deleteWithoutCommit();
+				}
 				Persistent.checkedCommit(mDB, this);
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
 		
-		Logger.normal(this, "Finished deleting all subscriptions.");
+		Logger.normal(this, "Finished deleting all clients.");
 	}
 	
 	/**
-	 * Typically used by {@link #deleteAllSubscriptions()}.
+	 * Typically used by {@link #deleteAllClients()}.
 	 * 
 	 * @return All objects of class Notification which are stored in the database.
 	 */
@@ -1288,7 +1292,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Does NOT work in unit tests - you must manually trigger subscription processing by calling {@link #run()} there.
 	 */
 	protected synchronized void start() {
-		deleteAllSubscriptions();
+		deleteAllClients();
 		
 		final PluginRespirator respirator = mWoT.getPluginRespirator();
 		
