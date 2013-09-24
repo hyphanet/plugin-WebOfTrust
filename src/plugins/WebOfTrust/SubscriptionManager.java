@@ -231,7 +231,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		protected boolean sendNotifications(SubscriptionManager manager) {
 			switch(mType) {
 				case FCP:
-					for(final Notification notification : manager.getAllNotifications(this)) {
+					for(final Notification notification : manager.getNotifications(this)) {
 						try {
 							try {
 								notification.getSubscription().notifySubscriberByFCP(notification);
@@ -1175,7 +1175,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		return new Persistent.InitializingObjectSet<Notification>(mWoT, q);
 	}
 	
-	private ObjectSet<? extends Notification> getAllNotifications(final Client client) {
+	private ObjectSet<? extends Notification> getNotifications(final Client client) {
 		final Query q = mDB.query();
 		q.constrain(Notification.class);
 		q.descend("mClient").constrain(client).identity();
