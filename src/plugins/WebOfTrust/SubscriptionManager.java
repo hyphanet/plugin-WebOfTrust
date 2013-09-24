@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -83,6 +84,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	public static final class Client extends Persistent {
 		
+		/** @see Serializable */
+		private static final long serialVersionUID = 1L;
+
 		/**
 		 * The way of notifying a client
 		 */
@@ -145,6 +149,11 @@ public final class SubscriptionManager implements PrioRunnable {
 			
 			if(mNextNotificationIndex < 0)
 				throw new IllegalStateException("mNextNotificationIndex==" + mNextNotificationIndex);
+		}
+		
+		@Override
+		public final String getID() {
+			throw new UnsupportedOperationException("Not implemented.");
 		}
 		
 		/**
