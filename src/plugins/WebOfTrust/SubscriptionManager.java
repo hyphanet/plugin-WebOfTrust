@@ -234,7 +234,7 @@ public final class SubscriptionManager implements PrioRunnable {
 					for(final Notification notification : manager.getAllNotifications(this)) {
 						try {
 							try {
-								notification.getSubscription().notifySubscriberByFCP((NotificationType)notification);
+								notification.getSubscription().notifySubscriberByFCP(notification);
 								notification.deleteWithoutCommit();
 							} catch(Exception e) {
 								Persistent.checkedRollback(mDB, this, e, LogLevel.WARNING);
@@ -421,10 +421,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * The {@link Notification} objects which this function receives contain serialized clones of the objects from WebOfTrust.
 		 * Therefore, the notifications are self-contained and this function should and must NOT call any database query functions of the WebOfTrust. 
 		 * 
-		 * @param notification The {@link Notification} to send out via FCP.
+		 * @param notification The {@link Notification} to send out via FCP. Must be cast-able to NotificationType.
 		 * @throws PluginNotFoundException If the FCP client has disconnected. The SubscriptionManager then won't retry deploying this Notification, the {@link Subscription} will be terminated.
 		 */
-		protected abstract void notifySubscriberByFCP(NotificationType notification) throws PluginNotFoundException;
+		protected abstract void notifySubscriberByFCP(Notification notification) throws PluginNotFoundException;
 
 	}
 	
@@ -689,8 +689,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected void notifySubscriberByFCP(IdentityChangedNotification notification) throws PluginNotFoundException {
-			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getFCP_ID(), notification);
+		protected void notifySubscriberByFCP(Notification notification) throws PluginNotFoundException {
+			assert(notification instanceof IdentityChangedNotification);
+			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getClient().getFCP_ID(), (IdentityChangedNotification)notification);
 		}
 
 		/**
@@ -735,8 +736,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected void notifySubscriberByFCP(final TrustChangedNotification notification) throws PluginNotFoundException {
-			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getFCP_ID(), notification);
+		protected void notifySubscriberByFCP(final Notification notification) throws PluginNotFoundException {
+			assert(notification instanceof TrustChangedNotification);
+			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getClient().getFCP_ID(), (TrustChangedNotification)notification);
 		}
 
 		/**
@@ -781,8 +783,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected void notifySubscriberByFCP(final ScoreChangedNotification notification) throws PluginNotFoundException {
-			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getFCP_ID(), notification);
+		protected void notifySubscriberByFCP(final Notification notification) throws PluginNotFoundException {
+			assert(notification instanceof ScoreChangedNotification);
+			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getClient().getFCP_ID(), (ScoreChangedNotification)notification);
 		}
 
 		/**
