@@ -81,7 +81,7 @@ import freenet.support.io.NativeThread;
  */
 public final class SubscriptionManager implements PrioRunnable {
 	
-	public static final class SubscriptionClient extends Persistent {
+	public static final class Client extends Persistent {
 		
 		/**
 		 * The way of notifying a client
@@ -108,12 +108,12 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		/**
 		 * Each {@link Notification} is given an index upon creation. The indexes ensure sequential processing.
-		 * The indexed queue exists per {@link SubscriptionClient} and not per {@link Subscription}:
+		 * The indexed queue exists per {@link Client} and not per {@link Subscription}:
 		 * Events of different types of {@link Subscription} might be dependent upon each other. 
 		 * For example if we want to notify a client about a new trust value via {@link TrustChangedNotification}, it doesn't make
 		 * sense to deploy such a notification if the identity which created the trust value does not exist yet.
 		 * It must be guaranteed that the {@link IdentityChangedNotification} which creates the identity is deployed first.
-		 * Events are issued by the core of WOT in proper order, so as long as we keep a queue per SubscriptionClient which preserves
+		 * Events are issued by the core of WOT in proper order, so as long as we keep a queue per Client which preserves
 		 * this order everything will be fine.
 		 */
 		private long mNextNotificationIndex = 0;
@@ -124,7 +124,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		private byte mSendNotificationsFailureCount = 0;
 		
-		public SubscriptionClient(final String myFCP_ID) {
+		public Client(final String myFCP_ID) {
 			mType = Type.FCP;
 			mFCP_ID = myFCP_ID;
 			
@@ -164,7 +164,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 		
 		/**
-		 * @return An ID which associates this SubscriptionClient with a FCP connection if the type is FCP.
+		 * @return An ID which associates this Client with a FCP connection if the type is FCP.
 		 * @see #mFCP_ID
 		 */
 		public final String getFCP_ID() {
@@ -203,20 +203,20 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
 		/**
-		 * Sends out the notification queue for this SubscriptionClient, in sequence.
+		 * Sends out the notification queue for this Client, in sequence.
 		 * 
 		 * If a notification is sent successfully, it is deleted and the transaction is committed.
 		 * 
 		 * If sending a single notification fails, the failure counter {@link #mSendNotificationsFailureCount} is incremented
 		 * and {@link SubscriptionManager#scheduleNotificationProcessing()} is executed to retry sending the notification after some time.
 		 * If the failure counter exceeds the limit {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT}, false is returned
-		 * to indicate that the SubscriptionManager should delete this SubscriptionClient.
+		 * to indicate that the SubscriptionManager should delete this Client.
 		 * 
 		 * You have to synchronize on the SubscriptionManager and the database lock before calling this function!
 		 * You don't have to commit the transaction after calling this function.
 		 * 
-		 * @param manager The {@link SubscriptionManager} from which to query the {@link Notification}s of this SubscriptionClient.
-		 * @return False if this SubscriptionClient should be deleted.
+		 * @param manager The {@link SubscriptionManager} from which to query the {@link Notification}s of this Client.
+		 * @return False if this Client should be deleted.
 		 */
 		@SuppressWarnings("unchecked")
 		protected boolean sendNotifications(SubscriptionManager manager) {
@@ -287,7 +287,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	@SuppressWarnings("serial")
 	public static abstract class Subscription<NotificationType extends Notification> extends Persistent {
 		
-		private final SubscriptionClient mSubscriptionClient;
+		private final Client mClient;
 		
 		/**
 		 * The UUID of this Subscription. Stored as String for db4o performance, but must be valid in terms of the UUID class.
@@ -299,13 +299,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/**
 		 * Constructor for being used by child classes.
-		 * @param myClient The {@link SubscriptionClient} to which this Subscription belongs.
+		 * @param myClient The {@link Client} to which this Subscription belongs.
 		 */
-		protected Subscription(final SubscriptionClient myClient) {
-			mSubscriptionClient = myClient;
+		protected Subscription(final Client myClient) {
+			mClient = myClient;
 			mID = UUID.randomUUID().toString();
 			
-			assert(mSubscriptionClient != null);
+			assert(mClient != null);
 		}
 		
 		/**
@@ -315,7 +315,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		public void startupDatabaseIntegrityTest() throws Exception {
 			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
 			
-			IfNull.thenThrow(mSubscriptionClient);
+			IfNull.thenThrow(mClient);
 			
 			IfNull.thenThrow(mID, "mID");
 			UUID.fromString(mID); // Throws if invalid
@@ -328,9 +328,9 @@ public final class SubscriptionManager implements PrioRunnable {
 			return mWebOfTrust.getSubscriptionManager();
 		}
 		
-		protected final SubscriptionClient getSubscriptionClient() {
+		protected final Client getClient() {
 			checkedActivate(1);
-			return mSubscriptionClient;
+			return mClient;
 		}
 		
 		/**
@@ -437,10 +437,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static abstract class Notification extends Persistent {
 		
 		/**
-		 * The {@link SubscriptionClient} to which this Notification belongs
+		 * The {@link Client} to which this Notification belongs
 		 */
 		@IndexedField
-		private final SubscriptionClient mSubscriptionClient;
+		private final Client mClient;
 		
 		/**
 		 * The {@link Subscription} to which this Notification belongs
@@ -477,8 +477,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		private final byte[] mNewObject;
 		
 		/**
-		 * Constructs a Notification in the queue of the given SubscriptionClient.
-		 * Takes a free notification index from it with {@link SubscriptionClient#takeFreeNotificationIndexWithoutCommit}
+		 * Constructs a Notification in the queue of the given Client.
+		 * Takes a free notification index from it with {@link Client#takeFreeNotificationIndexWithoutCommit}
 		 * 
 		 * Only one of oldObject or newObject may be null.
 		 * If both are non-null, their {@link Persistent#getID()} must be equal.
@@ -490,8 +490,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		protected Notification(final Subscription<? extends Notification> mySubscription,
 				final Persistent oldObject, final Persistent newObject) {
 			mSubscription = mySubscription;
-			mSubscriptionClient = mSubscription.getSubscriptionClient();
-			mIndex = mSubscriptionClient.takeFreeNotificationIndexWithoutCommit();
+			mClient = mSubscription.getClient();
+			mIndex = mClient.takeFreeNotificationIndexWithoutCommit();
 			
 			assert	(
 						(oldObject == null ^ newObject == null) ||
@@ -1125,10 +1125,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		return new Persistent.InitializingObjectSet<Notification>(mWoT, q);
 	}
 	
-	private ObjectSet<? extends Notification> getAllNotifications(final SubscriptionClient subscriptionClient) {
+	private ObjectSet<? extends Notification> getAllNotifications(final Client client) {
 		final Query q = mDB.query();
 		q.constrain(Notification.class);
-		q.descend("mSubscriptionClient").constrain(subscriptionClient).identity();
+		q.descend("mClient").constrain(client).identity();
 		q.descend("mIndex").orderAscending();
 		return new Persistent.InitializingObjectSet<Notification>(mWoT, q);
 	}
