@@ -1125,6 +1125,14 @@ public final class SubscriptionManager implements PrioRunnable {
 		return new Persistent.InitializingObjectSet<Notification>(mWoT, q);
 	}
 	
+	private ObjectSet<? extends Notification> getAllNotifications(final SubscriptionClient subscriptionClient) {
+		final Query q = mDB.query();
+		q.constrain(Notification.class);
+		q.descend("mSubscriptionClient").constrain(subscriptionClient).identity();
+		q.descend("mIndex").orderAscending();
+		return new Persistent.InitializingObjectSet<Notification>(mWoT, q);
+	}
+	
 	/**
 	 * Interface for the core of WOT to deploy an {@link IdentityChangedNotification} to clients. 
 	 * 
