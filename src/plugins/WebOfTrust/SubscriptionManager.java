@@ -275,7 +275,18 @@ public final class SubscriptionManager implements PrioRunnable {
 			
 			return true;
 		}
-				
+		
+		/**
+		 * Deletes this Client and also deletes all {@link Subscription} and {@link Notification} objects belonging to it.
+		 * 
+		 * @param subscriptionManager The {@link SubscriptionManager} to which this Client belongs.
+		 */
+		protected void deleteWithoutCommit(final SubscriptionManager subscriptionManager) {
+			for(final Subscription<? extends Notification> subscription : subscriptionManager.getSubscriptions(this)) {
+				subscription.deleteWithoutCommit(subscriptionManager);
+			}
+			super.deleteWithoutCommit();
+		}
 	}
 	
 	/**
@@ -1030,6 +1041,13 @@ public final class SubscriptionManager implements PrioRunnable {
 	private ObjectSet<Subscription<? extends Notification>> getAllSubscriptions() {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
+		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
+	}
+	
+	private ObjectSet<Subscription<? extends Notification>> getSubscriptions(final Client client) {
+		final Query q = mDB.query();
+		q.constrain(Subscription.class);
+		q.descend("mClient").constrain(client).identity();
 		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
 	}
 	
