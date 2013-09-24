@@ -6,6 +6,7 @@ package plugins.WebOfTrust;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 
 import com.db4o.ObjectSet;
@@ -327,6 +328,11 @@ public final class SubscriptionManager implements PrioRunnable {
 			return mWebOfTrust.getSubscriptionManager();
 		}
 		
+		protected final SubscriptionClient getSubscriptionClient() {
+			checkedActivate(1);
+			return mClient;
+		}
+		
 		/**
 		 * @return The UUID of this Subscription. Stored as String for db4o performance, but must be valid in terms of the UUID class.
 		 * @see #mID
@@ -431,6 +437,12 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static abstract class Notification extends Persistent {
 		
 		/**
+		 * The {@link SubscriptionClient} to which this Notification belongs
+		 */
+		@IndexedField
+		private final SubscriptionClient mSubscriptionClient;
+		
+		/**
 		 * The {@link Subscription} to which this Notification belongs
 		 */
 		@IndexedField
@@ -478,6 +490,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		protected Notification(final Subscription<? extends Notification> mySubscription,
 				final Persistent oldObject, final Persistent newObject) {
 			mSubscription = mySubscription;
+			mSubscriptionClient = mSubscription.getSubscriptionClient();
 			mIndex = mySubscription.takeFreeNotificationIndexWithoutCommit();
 			
 			assert	(
