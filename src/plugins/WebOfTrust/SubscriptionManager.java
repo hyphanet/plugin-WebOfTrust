@@ -380,7 +380,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param manager The {@link SubscriptionManager} to which this Subscription belongs.
 		 */
 		protected void deleteWithoutCommit(final SubscriptionManager manager) {
-			for(final Notification notification : manager.getAllNotifications(this)) {
+			for(final Notification notification : manager.getNotifications(this)) {
 				notification.deleteWithoutCommit();
 			}
 			super.deleteWithoutCommit();
@@ -1167,7 +1167,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @param subscription The {@link Subscription} of whose queue to return notifications from.
 	 * @return All {@link Notification}s on the queue of the subscription, ordered ascending by time of happening of their inducing event.
 	 */
-	private ObjectSet<? extends Notification> getAllNotifications(final Subscription<? extends Notification> subscription) {
+	private ObjectSet<? extends Notification> getNotifications(final Subscription<? extends Notification> subscription) {
 		final Query q = mDB.query();
 		q.constrain(Notification.class);
 		q.descend("mSubscription").constrain(subscription).identity();
