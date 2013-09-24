@@ -287,7 +287,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	@SuppressWarnings("serial")
 	public static abstract class Subscription<NotificationType extends Notification> extends Persistent {
 		
-		private final SubscriptionClient mClient;
+		private final SubscriptionClient mSubscriptionClient;
 		
 		/**
 		 * The UUID of this Subscription. Stored as String for db4o performance, but must be valid in terms of the UUID class.
@@ -302,10 +302,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param myClient The {@link SubscriptionClient} to which this Subscription belongs.
 		 */
 		protected Subscription(final SubscriptionClient myClient) {
-			mClient = myClient;
+			mSubscriptionClient = myClient;
 			mID = UUID.randomUUID().toString();
 			
-			assert(mClient != null);
+			assert(mSubscriptionClient != null);
 		}
 		
 		/**
@@ -315,7 +315,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		public void startupDatabaseIntegrityTest() throws Exception {
 			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
 			
-			IfNull.thenThrow(mClient);
+			IfNull.thenThrow(mSubscriptionClient);
 			
 			IfNull.thenThrow(mID, "mID");
 			UUID.fromString(mID); // Throws if invalid
@@ -330,7 +330,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		protected final SubscriptionClient getSubscriptionClient() {
 			checkedActivate(1);
-			return mClient;
+			return mSubscriptionClient;
 		}
 		
 		/**
