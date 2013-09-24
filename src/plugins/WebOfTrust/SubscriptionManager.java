@@ -123,6 +123,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		private byte mSendNotificationsFailureCount = 0;
 		
+		public SubscriptionClient(final String myFCP_ID) {
+			mType = Type.FCP;
+			mFCP_ID = myFCP_ID;
+			
+			assert(mFCP_ID != null && mFCP_ID.length() > 0);
+		}
+		
 		/**
 		 * {@inheritDoc}
 		 */
