@@ -682,7 +682,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws PluginNotFoundException {
-			mWebOfTrust.getFCPInterface().sendAllIdentities(getFCP_ID());
+			mWebOfTrust.getFCPInterface().sendAllIdentities(getClient().getFCP_ID());
 		}
 		
 		/**
@@ -729,7 +729,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws PluginNotFoundException {
-			mWebOfTrust.getFCPInterface().sendAllTrustValues(getFCP_ID());
+			mWebOfTrust.getFCPInterface().sendAllTrustValues(getClient().getFCP_ID());
 		}
 		
 		/**
@@ -776,7 +776,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws PluginNotFoundException {
-			mWebOfTrust.getFCPInterface().sendAllScoreValues(getFCP_ID());
+			mWebOfTrust.getFCPInterface().sendAllScoreValues(getClient().getFCP_ID());
 		}
 
 		/**
