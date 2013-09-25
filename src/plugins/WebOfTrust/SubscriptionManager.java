@@ -684,8 +684,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * @param fcpID See {@link Subscription#getFCP_ID()}. 
 		 */
-		protected IdentitiesSubscription(String fcpID) {
-			super(Subscription.Type.FCP, fcpID, (byte)0);
+		protected IdentitiesSubscription(final Client myClient) {
+			super(myClient);
 		}
 
 		/**
@@ -731,8 +731,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * @param fcpID See {@link Subscription#getFCP_ID()}. 
 		 */
-		protected TrustsSubscription(String fcpID) {
-			super(Subscription.Type.FCP, fcpID, (byte)1);
+		protected TrustsSubscription(final Client myClient) {
+			super(myClient);
 		}
 		
 		/**
@@ -778,8 +778,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * @param fcpID See {@link Subscription#getFCP_ID()}. 
 		 */
-		protected ScoresSubscription(String fcpID) {
-			super(Subscription.Type.FCP, fcpID, (byte)2);
+		protected ScoresSubscription(final Client myClient) {
+			super(myClient);
 		}
 		
 		/**
