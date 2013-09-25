@@ -914,17 +914,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	@SuppressWarnings("unchecked")
 	private synchronized void throwIfSimilarSubscriptionExists(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
-		switch(subscription.getType()) {
-			case FCP:
-				try {
-					throw new SubscriptionExistsAlreadyException(
-								getSubscription((Class<? extends Subscription<? extends Notification>>)subscription.getClass(), subscription.getFCP_ID())
-							);
-				} catch (UnknownSubscriptionException e) {
-					return;
-				}
-			default:
-				throw new UnsupportedOperationException("Unknown type: " + subscription.getType());
+		try {
+			final Subscription<? extends Notification> existing = getSubscription((Class<? extends Subscription<? extends Notification>>) subscription.getClass(), subscription.getClient());
+			throw new SubscriptionExistsAlreadyException(existing);
+		} catch (UnknownSubscriptionException e) {
+			return;
 		}
 	}
 	
@@ -1133,16 +1127,16 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return See description.
 	 * @throws UnknownSubscriptionException If no matching {@link Subscription} exists.
 	 */
-	private Subscription<? extends Notification> getSubscription(final Class<? extends Subscription<? extends Notification>> clazz, String fcpID) throws UnknownSubscriptionException {
+	private Subscription<? extends Notification> getSubscription(final Class<? extends Subscription<? extends Notification>> clazz, final Client client) throws UnknownSubscriptionException {
 		final Query q = mDB.query();
 		q.constrain(clazz);
-		q.descend("mFCP_ID").constrain(fcpID);		
+		q.descend("mClient").constrain(client).identity();		
 		ObjectSet<Subscription<? extends Notification>> result = new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
 		
 		switch(result.size()) {
 			case 1: return result.next();
-			case 0: throw new UnknownSubscriptionException(clazz.getSimpleName().toString() + " with fcpID: " + fcpID);
-			default: throw new DuplicateObjectException(clazz.getSimpleName().toString() + " with fcpID:" + fcpID);
+			case 0: throw new UnknownSubscriptionException(clazz.getSimpleName().toString() + " with Client " + client);
+			default: throw new DuplicateObjectException(clazz.getSimpleName().toString() + " with Client " + client);
 		}
 	}
 	
