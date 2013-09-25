@@ -874,6 +874,20 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
+	 * Thrown by various functions which query the database for a certain {@link Client} if none exists matching the given filters.
+	 */
+	@SuppressWarnings("serial")
+	public static final class UnknownClientException extends Exception {
+		
+		/**
+		 * @param message A description of the filters which were set in the database query for the {@link Client}.
+		 */
+		public UnknownClientException(String message) {
+			super(message);
+		}
+	}
+	
+	/**
 	 * Thrown by various functions which query the database for a certain {@link Subscription} if none exists matching the given filters.
 	 */
 	@SuppressWarnings("serial")
