@@ -227,7 +227,6 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param manager The {@link SubscriptionManager} from which to query the {@link Notification}s of this Client.
 		 * @return False if this Client should be deleted.
 		 */
-		@SuppressWarnings("unchecked")
 		protected boolean sendNotifications(SubscriptionManager manager) {
 			switch(mType) {
 				case FCP:
