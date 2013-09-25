@@ -970,7 +970,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see IdentityChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
 	public IdentitiesSubscription subscribeToIdentities(String fcpID) throws SubscriptionExistsAlreadyException {
-		final IdentitiesSubscription subscription = new IdentitiesSubscription(fcpID);
+		final IdentitiesSubscription subscription = new IdentitiesSubscription(getOrCreateClient(fcpID));
 		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
 	}
@@ -984,7 +984,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see TrustChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
 	public TrustsSubscription subscribeToTrusts(String fcpID) throws SubscriptionExistsAlreadyException {
-		final TrustsSubscription subscription = new TrustsSubscription(fcpID);
+		final TrustsSubscription subscription = new TrustsSubscription(getOrCreateClient(fcpID));
 		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
 	}
@@ -997,7 +997,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see ScoreChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
 	public ScoresSubscription subscribeToScores(String fcpID) throws SubscriptionExistsAlreadyException {
-		final ScoresSubscription subscription = new ScoresSubscription(fcpID);
+		final ScoresSubscription subscription = new ScoresSubscription(getOrCreateClient(fcpID));
 		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
 	}
@@ -1045,6 +1045,27 @@ public final class SubscriptionManager implements PrioRunnable {
 		final Query q = mDB.query();
 		q.constrain(Client.class);
 		return new Persistent.InitializingObjectSet<Client>(mWoT, q);
+	}
+	
+	private Client getClient(final String fcpID) throws UnknownClientException {
+		final Query q = mDB.query();
+		q.constrain(Client.class);
+		q.descend("mFCP_ID").constrain(fcpID);
+		final ObjectSet<Client> result = new Persistent.InitializingObjectSet<Client>(mWoT, q);
+		
+		switch(result.size()) {
+			case 1: return result.next();
+			case 0: throw new UnknownClientException(fcpID);
+			default: throw new DuplicateObjectException(fcpID);
+		}
+	}
+	
+	private Client getOrCreateClient(final String fcpID) {
+		try {
+			return getClient(fcpID);
+		} catch(UnknownClientException e) {
+			return new Client(fcpID);
+		}
 	}
 	
 	/**
