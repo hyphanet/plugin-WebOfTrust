@@ -3169,10 +3169,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// Therefore, it is OK that the fetcher does not immediately process the commands now.
 					
 					oldIdentity.deleteWithoutCommit();
+					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
 					
 					finishTrustListImport();
-					
-					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
 				} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
 					identity = new OwnIdentity(this, insertFreenetURI, null, false);
 					
@@ -3182,9 +3181,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					// Store the new identity
 					identity.storeWithoutCommit();
-					initTrustTreeWithoutCommit(identity);
-					
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
+					
+					initTrustTreeWithoutCommit(identity);
 				}
 				
 				mFetcher.storeStartFetchCommandWithoutCommit(identity);
