@@ -2693,7 +2693,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					if(currentStoredTrusteeScore.getRank() >= 0) {
 						currentStoredTrusteeScore.storeWithoutCommit();
-						if(!scoreExistedBefore || !oldScore.equals(newScore))
+						if(!scoreExistedBefore || !oldScore.equals(currentStoredTrusteeScore))
 							mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(scoreExistedBefore ? oldScore : null, currentStoredTrusteeScore);
 					}
 					
