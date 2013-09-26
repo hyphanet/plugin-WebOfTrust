@@ -2693,7 +2693,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					
 					if(currentStoredTrusteeScore.getRank() >= 0) {
 						currentStoredTrusteeScore.storeWithoutCommit();
-						mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(scoreExistedBefore ? oldScore : null, currentStoredTrusteeScore);
+						if(!scoreExistedBefore || !oldScore.equals(newScore))
+							mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(scoreExistedBefore ? oldScore : null, currentStoredTrusteeScore);
 					}
 					
 					// If fetch status changed from false to true, we need to start fetching it
