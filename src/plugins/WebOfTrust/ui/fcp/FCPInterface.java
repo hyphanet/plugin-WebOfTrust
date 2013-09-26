@@ -273,7 +273,8 @@ public final class FCPInterface implements FredPluginFCP {
      * IdentitySUFFIX = ID of the identity (deprecated)
      * IDSUFFIX = ID of the identity
      * PublishesTrustListSUFFIX = true/false if the identity does publish a trust list or not 
-     * 
+     * CurrentEditionFetchState = See {@link Identity#getCurrentEditionFetchState()} 
+     *  
      * If suffix.isEmpty() is true:
      * ContextX = name of context with index X
      * PropertyX.Name = name of property with index X
@@ -304,7 +305,8 @@ public final class FCPInterface implements FredPluginFCP {
  			sfs.putOverwrite("InsertURI", ownId.getInsertURI().toString());
  		}
         sfs.put("PublishesTrustList" + suffix, identity.doesPublishTrustList());
-  
+        sfs.putOverwrite("CurrentEditionFetchState" + suffix, identity.getCurrentEditionFetchState().toString());
+        
  		final ArrayList<String> contexts = identity.getContexts();
  		final HashMap<String, String> properties = identity.getProperties();
  		int contextCounter = 0;
