@@ -91,6 +91,12 @@ public class TrustTest extends DatabaseBasedTest {
 		
 		assertNotSame(original, deserialized);
 		assertEquals(original, deserialized);
+		
+		assertNotSame(original.getTruster(), deserialized.getTruster());
+		assertEquals(original.getTruster(), deserialized.getTruster());	// Trust.equals() only checks the ID
+		
+		assertNotSame(original.getTrustee(), deserialized.getTrustee());
+		assertEquals(original.getTrustee(), deserialized.getTrustee());	// Trust.equals() only checks the ID
 	}
 
 	public void testTrust() throws DuplicateTrustException, NotTrustedException {

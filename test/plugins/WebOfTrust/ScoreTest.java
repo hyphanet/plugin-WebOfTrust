@@ -58,6 +58,12 @@ public class ScoreTest extends DatabaseBasedTest {
 		
 		assertNotSame(original, deserialized);
 		assertEquals(original, deserialized);
+		
+		assertNotSame(original.getTruster(), deserialized.getTruster());
+		assertEquals(original.getTruster(), deserialized.getTruster());	// Score.equals() only checks the ID
+		
+		assertNotSame(original.getTrustee(), deserialized.getTrustee());
+		assertEquals(original.getTrustee(), deserialized.getTrustee());	// Score.equals() only checks the ID
 	}
 
 	public void testScoreCreation() throws NotInTrustTreeException {

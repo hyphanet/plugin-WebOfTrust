@@ -350,7 +350,8 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 	/**
 	 * Test if two trust objects are equal.<br />
 	 * - <b>All</b> attributes are compared <b>except</b> the dates.<br />
-	 * - <b>The involved identities are compared in terms of equals()</b>, the objects do not have to be the same.
+	 * - <b>The involved identities are compared by {@link Identity#getID()}</b>, the objects do not have to be same or equals().
+	 * 	Also, this check is done only implicitly by comparing {@link Trust#getID()}.
 	 */
 	public boolean equals(final Object obj) {
 		if(obj == this)
@@ -364,6 +365,12 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 		if(!getID().equals(other.getID()))
 			return false;
 		
+		// Since we have already compared the ID of the Trust objects, we have implicitly checked whether the truster/trustee IDs match:
+		// The TrustID is a concatenation of their IDs
+		
+		assert(getTruster().getID().equals(other.getTruster().getID()));
+		assert(getTrustee().getID().equals(other.getTrustee().getID()));
+		
 		if(getValue() != other.getValue())
 			return false;
 		
@@ -371,14 +378,6 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 			return false;
 		
 		if(!getComment().equals(other.getComment()))
-			return false;
-		
-		// Compare the involved identities after the numerical values because getting them might involve activating objects from the database.
-		
-		if(!getTruster().equals(other.getTruster()))
-			return false;
-		
-		if(!getTrustee().equals(other.getTrustee()))
 			return false;
 		
 		return true;
