@@ -557,6 +557,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		public Subscription<? extends Notification> getSubscription() {
 			checkedActivate(1);
+			mSubscription.initializeTransient(mWebOfTrust);
 			return mSubscription;
 		}
 
