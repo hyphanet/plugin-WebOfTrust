@@ -14,6 +14,7 @@ import java.util.UUID;
 
 import org.junit.Ignore;
 
+import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
@@ -366,6 +367,14 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	            identity.setProperty(sfs.get("Properties" + suffix + ".Property" + i + ".Name"),
 	            		sfs.get("Properties" + suffix + ".Property" + i + ".Value"));
 	        }
+	        
+	    	final FetchState fetchState = FetchState.valueOf(sfs.get("CurrentEditionFetchState" + suffix));
+	        switch(fetchState) {
+		        case Fetched: 		identity.onFetched(); break;
+		        case ParsingFailed:	identity.onParsingFailed(); break;
+		        case NotFetched:	break; // Default state
+		        default:			throw new IllegalStateException(fetchState.toString());
+	        }	        
 
 	        return identity;
 		}
