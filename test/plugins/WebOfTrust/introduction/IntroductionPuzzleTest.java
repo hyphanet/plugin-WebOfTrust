@@ -15,6 +15,7 @@ import plugins.WebOfTrust.DatabaseBasedTest;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import freenet.support.CurrentTimeUTC;
 
@@ -45,14 +46,17 @@ public class IntroductionPuzzleTest extends DatabaseBasedTest {
 	}
 	
 	/**
-	 * NOTICE: A copypasta of this function exists as {@link IntroductionPuzzleStoreTest#constructPuzzle()}.
+	 * NOTICE: A copypasta of this function exists as {@link IntroductionPuzzleStoreTest#constructPuzzle()}. 
 	 */
-	private IntroductionPuzzle constructPuzzle() throws MalformedURLException, InvalidParameterException {
-		return constructPuzzleWithExpirationDate(addRandomOwnIdentities(1).get(0), new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));
+	private IntroductionPuzzle constructPuzzle() throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
+		final OwnIdentity identity = addRandomOwnIdentities(1).get(0);
+		mWoT.setPublishTrustList(identity.getID(), true);
+		mWoT.setPublishIntroductionPuzzles(identity.getID(), true);
+		return constructPuzzleWithExpirationDate(identity, new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));
 	}
 	
 	@Test
-	public void testClone() throws IllegalArgumentException, IllegalAccessException, MalformedURLException, InvalidParameterException, InterruptedException {
+	public void testClone() throws IllegalArgumentException, IllegalAccessException, MalformedURLException, InvalidParameterException, InterruptedException, UnknownIdentityException {
 		final IntroductionPuzzle original = constructPuzzle();
 		
 		Thread.sleep(10); // Persistent contains Date mCreationDate which might not get properly cloned.

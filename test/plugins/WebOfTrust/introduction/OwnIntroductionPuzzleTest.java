@@ -11,8 +11,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import plugins.WebOfTrust.DatabaseBasedTest;
+import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.captcha.CaptchaFactory1;
 import freenet.support.CurrentTimeUTC;
 
@@ -34,12 +36,15 @@ public final class OwnIntroductionPuzzleTest extends DatabaseBasedTest {
 	}
 	
 	
-	protected OwnIntroductionPuzzle constructPuzzle() throws MalformedURLException, IOException, InvalidParameterException {
-		return mPuzzleFactory.generatePuzzle(mPuzzleStore, addRandomOwnIdentities(1).get(0));
+	protected OwnIntroductionPuzzle constructPuzzle() throws MalformedURLException, IOException, InvalidParameterException, UnknownIdentityException {
+		final OwnIdentity identity = addRandomOwnIdentities(1).get(0);
+		mWoT.setPublishTrustList(identity.getID(), true);
+		mWoT.setPublishIntroductionPuzzles(identity.getID(), true);
+		return mPuzzleFactory.generatePuzzle(mPuzzleStore, identity);
 	}
 
 	@Test
-	public void testClone() throws MalformedURLException, IOException, InvalidParameterException, InterruptedException, IllegalArgumentException, IllegalAccessException {
+	public void testClone() throws MalformedURLException, IOException, InvalidParameterException, InterruptedException, IllegalArgumentException, IllegalAccessException, UnknownIdentityException {
 		final OwnIntroductionPuzzle original = constructPuzzle();
 		
 		Thread.sleep(10); // Persistent contains Date mCreationDate which might not get properly cloned.
