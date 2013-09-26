@@ -349,6 +349,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		protected final Client getClient() {
 			checkedActivate(1);
+			mClient.initializeTransient(mWebOfTrust);
 			return mClient;
 		}
 		
