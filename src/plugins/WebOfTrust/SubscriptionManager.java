@@ -914,7 +914,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	@SuppressWarnings("unchecked")
 	private synchronized void throwIfSimilarSubscriptionExists(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
 		try {
-			final Subscription<? extends Notification> existing = getSubscription((Class<? extends Subscription<? extends Notification>>) subscription.getClass(), subscription.getClient());
+			final Client client = subscription.getClient();
+			if(!mDB.isStored(client))
+				return; // The client was newly created just for this subscription so there cannot be any similar subscriptions on it. 
+			final Subscription<? extends Notification> existing = getSubscription((Class<? extends Subscription<? extends Notification>>) subscription.getClass(), client);
 			throw new SubscriptionExistsAlreadyException(existing);
 		} catch (UnknownSubscriptionException e) {
 			return;
