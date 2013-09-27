@@ -1444,11 +1444,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						else
 							if(logDEBUG) Logger.debug(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + target);
 
+						final Identity oldTarget = target.clone();
+						
 						target.markForRefetch();
 						target.storeWithoutCommit();
 						
-						// We don't notify clients about this because the WOT fetch state is of little interest to them, they determine theirs from the Score
-						// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(target);
+						// Clients shall determine shouldFetch from the scores of an identity on their own so there is no need to notify the client about that
+						// - but we do tell the client the state of Identity.getCurrentEditionFetchState() which is changed by markForRefetch().
+						// Therefore we me must store a notification nevertheless.
+						if(!oldTarget.equals(target)) // markForRefetch() will not change anything if the current edition had not been fetched yet
+							mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldTarget, target);
 
 						mFetcher.storeStartFetchCommandWithoutCommit(target);
 					}
@@ -2707,11 +2712,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						else
 							if(logDEBUG) Logger.debug(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + trustee);
 
+						final Identity oldTrustee = trustee.clone();
+						
 						trustee.markForRefetch();
 						trustee.storeWithoutCommit();
 						
-						// We don't notify clients about this because the WOT fetch state is of little interest to them, they determine theirs from the Score
-						// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(trustee);
+						// Clients shall determine shouldFetch from the scores of an identity on their own so there is no need to notify the client about that
+						// - but we do tell the client the state of Identity.getCurrentEditionFetchState() which is changed by markForRefetch().
+						// Therefore we me must store a notification nevertheless.
+						if(!oldTrustee.equals(trustee)) // markForRefetch() will not change anything if the current edition had not been fetched yet
+							mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldTrustee, trustee);
 
 						mFetcher.storeStartFetchCommandWithoutCommit(trustee);
 					}
