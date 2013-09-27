@@ -1439,10 +1439,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// cause new identities to be imported from their trust list, capacity > 0 allows this.
 					// If the fetch status changed from true to false, we need to stop fetching it
 					if((!oldShouldFetch || (oldCapacity == 0 && newScore != null && newScore.getCapacity() > 0)) && shouldFetchIdentity(target) ) {
-						if(!oldShouldFetch)
-							if(logDEBUG) Logger.debug(this, "Fetch status changed from false to true, refetching " + target);
-						else
-							if(logDEBUG) Logger.debug(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + target);
+						if(logMINOR) {
+							if(!oldShouldFetch)
+								Logger.minor(this, "Fetch status changed from false to true, refetching " + target);
+							else
+								Logger.minor(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + target);
+						}
 
 						final Identity oldTarget = target.clone();
 						
@@ -1458,7 +1460,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						mFetcher.storeStartFetchCommandWithoutCommit(target);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(target)) {
-						if(logDEBUG) Logger.debug(this, "Fetch status changed from true to false, aborting fetch of " + target);
+						if(logMINOR) Logger.minor(this, "Fetch status changed from true to false, aborting fetch of " + target);
 
 						mFetcher.storeAbortFetchCommandWithoutCommit(target);
 					}
@@ -2706,11 +2708,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 					// If the capacity changed from 0 to positive, we need to refetch the current edition: Identities with capacity 0 cannot
 					// cause new identities to be imported from their trust list, capacity > 0 allows this.
 					// If the fetch status changed from true to false, we need to stop fetching it
-					if((!oldShouldFetch || (oldScore.getCapacity()== 0 && newScore.getCapacity() > 0)) && shouldFetchIdentity(trustee)) { 
-						if(!oldShouldFetch)
-							if(logDEBUG) Logger.debug(this, "Fetch status changed from false to true, refetching " + trustee);
-						else
-							if(logDEBUG) Logger.debug(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + trustee);
+					if((!oldShouldFetch || (oldScore.getCapacity()== 0 && newScore.getCapacity() > 0)) && shouldFetchIdentity(trustee)) {
+						if(logMINOR) {
+							if(!oldShouldFetch)
+								Logger.minor(this, "Fetch status changed from false to true, refetching " + trustee);
+							else
+								Logger.minor(this, "Capacity changed from 0 to " + newScore.getCapacity() + ", refetching" + trustee);
+						}
 
 						final Identity oldTrustee = trustee.clone();
 						
@@ -2726,7 +2730,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 						mFetcher.storeStartFetchCommandWithoutCommit(trustee);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(trustee)) {
-						if(logDEBUG) Logger.debug(this, "Fetch status changed from true to false, aborting fetch of " + trustee);
+						if(logMINOR) Logger.minor(this, "Fetch status changed from true to false, aborting fetch of " + trustee);
 
 						mFetcher.storeAbortFetchCommandWithoutCommit(trustee);
 					}
