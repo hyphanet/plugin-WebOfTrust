@@ -372,7 +372,14 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	        switch(fetchState) {
 		        case Fetched: 		identity.onFetched(); break;
 		        case ParsingFailed:	identity.onParsingFailed(); break;
-		        case NotFetched:	break; // Default state
+		        case NotFetched:
+		        	if(identity instanceof OwnIdentity) {
+		        		((OwnIdentity) identity).restoreEdition(identity.getEdition(), null);
+		        		break;
+		        	} else {
+		        		// Default state is NotFetched for non-own Identity objects
+		        		break;
+		        	}
 		        default:			throw new IllegalStateException(fetchState.toString());
 	        }	        
 
