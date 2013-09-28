@@ -795,7 +795,10 @@ public class Identity extends Persistent implements Cloneable {
 			return true;
 		}
 		
-		if (!(obj instanceof Identity)) {
+		// - We need to return false when someone tries to compare an OwnIdentity to a non-own one.
+		// - We must also make sure that OwnIdentity can safely use this equals() function as foundation.
+		// Both cases are ensured by this check:
+		if (obj.getClass() != this.getClass()) {
 			return false;
 		}
 	
