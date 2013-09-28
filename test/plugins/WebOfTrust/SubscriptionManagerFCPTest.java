@@ -155,9 +155,6 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		final int eventCount = 100;
 		
 		// Random trust graph setup...
-	
-		// FIXME: Make sure that this function also adds random contexts, trust values & publish trust list flags
-		// Also adapt addRandomTrustValues() to respect the publish trust list flag
 		final ArrayList<Identity> identities = addRandomIdentities(initialIdentityCount);
 		
 		// At least one own identity needs to exist to ensure that scores are computed.
