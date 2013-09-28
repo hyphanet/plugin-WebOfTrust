@@ -368,19 +368,23 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	        }
 	        
 	    	final FetchState fetchState = FetchState.valueOf(sfs.get("CurrentEditionFetchState" + suffix));
-	        switch(fetchState) {
-		        case Fetched: 		identity.onFetched(); break;
-		        case ParsingFailed:	identity.onParsingFailed(); break;
-		        case NotFetched:
-		        	if(identity instanceof OwnIdentity) {
-		        		((OwnIdentity) identity).restoreEdition(identity.getEdition(), null);
-		        		break;
-		        	} else {
-		        		// Default state is NotFetched for non-own Identity objects
-		        		break;
-		        	}
-		        default:			throw new IllegalStateException(fetchState.toString());
-	        }	        
+	    	// Do NOT use a switch() here by purpose: The compiler would automatically create a synthetic class plugins.WebOfTrust.SubscriptionManagerFCPTest$1
+	    	// which has the purpose of efficiently processing the switch. Then JUnit would complain about that class not having a constructor.
+	    	// - Took me over an hour to figure this out, doh. - xor 2013-09-28
+	    	// Javac version: 1.7.0_25
+	    	// JUnit version: 3.8.2
+	        if(fetchState == FetchState.Fetched)  {
+		        identity.onFetched();
+	        } else if(fetchState == FetchState.ParsingFailed) {
+		        identity.onParsingFailed();
+			} else if(fetchState == FetchState.NotFetched) {
+				if(identity instanceof OwnIdentity) {
+					((OwnIdentity) identity).restoreEdition(identity.getEdition(), null);
+				} else {
+					// Default state is NotFetched for non-own Identity objects
+				}
+			} else 
+				throw new IllegalStateException(fetchState.toString());
 
 	        return identity;
 		}
