@@ -30,6 +30,8 @@ import freenet.keys.InsertableClientSSK;
  * 
  * You have to call super.setUp() and super.tearDown() if you override one of those methods.
  * 
+ * TODO: Rename to "TestBaseClass" once event-notifications is merged.
+ * 
  * @author xor (xor@freenetproject.org)
  */
 public class DatabaseBasedTest extends TestCase {
