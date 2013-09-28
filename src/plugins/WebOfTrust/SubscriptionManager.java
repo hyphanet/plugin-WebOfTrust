@@ -49,8 +49,6 @@ import freenet.support.io.NativeThread;
  * This allows you to assume that any identity IDs (see {@link Identity#getID()}} you receive in trust / score notifications are valid when you receive them:
  * If a new identity is created, you will receive the notification about its creation before you receive any trust / score notifications about it.
  * 
- * TODO: What to do, if the client does not support a certain message?
- * 
  * This is a very important principle which makes client design easy: You do not need transaction-safety when caching things such as score values
  * incrementally. For example your client might need to do mandatory actions due to a score-value change, such as deleting messages from identities
  * which have a bad score now. If the score-value import succeeds but the message deletion fails, you can just return "ERROR!" to the WOT-callback-caller
