@@ -236,7 +236,7 @@ public class DatabaseBasedTest extends TestCase {
 			} catch(NotTrustedException e) {}
 			
 			
-			mWoT.setTrustWithoutCommit(truster, trustee, getRandomTrustValue(), "");
+			mWoT.setTrustWithoutCommit(truster, trustee, getRandomTrustValue(), getRandomLatinString(mRandom.nextInt(Trust.MAX_TRUST_COMMENT_LENGTH+1)));
 		}
 		mWoT.finishTrustListImport();
 		Persistent.checkedCommit(mWoT.getDatabase(), this);

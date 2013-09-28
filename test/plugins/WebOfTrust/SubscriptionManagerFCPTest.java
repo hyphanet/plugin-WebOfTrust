@@ -163,7 +163,6 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		// At least one own identity needs to exist to ensure that scores are computed.
 		identities.addAll(addRandomOwnIdentities(initialOwnIdentityCount));
 		
-		// FIXME: Make sure that this function also adds random comments
 		addRandomTrustValues(identities, initialTrustCount);
 
 		/* Initial test data is set up */
