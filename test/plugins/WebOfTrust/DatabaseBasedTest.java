@@ -270,7 +270,7 @@ public class DatabaseBasedTest extends TestCase {
 			final int type = mRandom.nextInt(eventTypeCount);
 			final long startTime = System.nanoTime();
 			switch(type) {
-				case 0:
+				case 0: // WebOfTrust.createOwnIdentity()
 					{
 						final OwnIdentity identity = mWoT.createOwnIdentity(
 									getRandomSSKPair()[0], 
@@ -282,7 +282,7 @@ public class DatabaseBasedTest extends TestCase {
 						randomizer.allOwnIdentities.add(identity.getID());
 					}
 					break;
-				case 1:
+				case 1: // WebOfTrust.deleteOwnIdentity()
 					{
 						final String original = randomizer.allOwnIdentities.getRandom();
 						mWoT.deleteOwnIdentity(original);
@@ -294,7 +294,7 @@ public class DatabaseBasedTest extends TestCase {
 						randomizer.allIdentities.add(surrogate.getID());
 					}
 					break;
-				case 2:
+				case 2: // WebOfTrust.restoreOwnIdentity()
 					{
 						final FreenetURI[] keypair = getRandomSSKPair();
 						mWoT.restoreOwnIdentity(keypair[0]);
@@ -303,7 +303,7 @@ public class DatabaseBasedTest extends TestCase {
 						randomizer.allOwnIdentities.add(id);
 					}
 					break;
-				case 3:
+				case 3: // WebOfTrust.restoreOwnIdentity() with previously existing non-own version of it
 					{
 						final FreenetURI[] keypair = getRandomSSKPair();
 						mWoT.addIdentity(keypair[1].toString());
@@ -313,10 +313,10 @@ public class DatabaseBasedTest extends TestCase {
 						randomizer.allOwnIdentities.add(id);
 					}
 					break;
-				case 4:
+				case 4: // WebOfTrust.addIdentity()
 					randomizer.allIdentities.add(mWoT.addIdentity(getRandomRequestURI().toString()).getID());
 					break;
-				case 5:
+				case 5: // WebOfTrust.addContext() (adds context to identity)
 					{
 						final String ownIdentityID = randomizer.allOwnIdentities.getRandom();
 						final String context = getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH);
@@ -325,7 +325,7 @@ public class DatabaseBasedTest extends TestCase {
 							mWoT.removeContext(ownIdentityID, context);
 					}
 					break;
-				case 6:
+				case 6: // WebOfTrust.setProperty (adds property to identity)
 					{
 						final String ownIdentityID = randomizer.allOwnIdentities.getRandom();
 						final String propertyName = getRandomLatinString(Identity.MAX_PROPERTY_NAME_LENGTH);
@@ -335,7 +335,7 @@ public class DatabaseBasedTest extends TestCase {
 							mWoT.removeProperty(ownIdentityID, propertyName);
 					}
 					break;
-				case 7:
+				case 7: // Add/change trust value. Higher probability because trust values are the most changes which will happen on the real network
 				case 8:
 				case 9:
 				case 10:
@@ -360,7 +360,7 @@ public class DatabaseBasedTest extends TestCase {
 							randomizer.allTrusts.add(trustID); 
 					}
 					break;
-				case 14:
+				case 14: // Remove trust value
 					{
 						mWoT.beginTrustListImport();
 						final Trust trust = mWoT.getTrust(randomizer.allTrusts.getRandom());
