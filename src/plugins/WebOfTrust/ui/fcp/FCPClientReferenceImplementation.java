@@ -79,15 +79,6 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		Logger.normal(this, "Started.");
 	}
 	
-	public void terminate() {
-		Logger.normal(this, "Terminating ...");
-		
-		// This will wait for run() to exit.
-		mTicker.shutdown();
-		
-		Logger.normal(this, "Terminated.");
-	}
-	
 	/**
 	 * Schedules execution of {@link #run()} via {@link #mTicker}
 	 */
@@ -181,6 +172,15 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	abstract void handleConnectionEstablished();
 	
 	abstract void handleConnectionLost();
+	
+	public void terminate() {
+		Logger.normal(this, "Terminating ...");
+		
+		// This will wait for run() to exit.
+		mTicker.shutdown();
+		
+		Logger.normal(this, "Terminated.");
+	}
 	
 	public int getPriority() {
 		return NativeThread.MIN_PRIORITY;
