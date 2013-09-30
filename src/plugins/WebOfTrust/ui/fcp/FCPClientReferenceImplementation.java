@@ -3,27 +3,22 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.fcp;
 
-import java.util.HashSet;
 import java.util.Random;
+import java.util.UUID;
 
-import plugins.WebOfTrust.Identity;
-import plugins.WebOfTrust.Persistent;
-import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
-import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
-
-import com.db4o.ObjectSet;
-import com.db4o.query.Query;
-
 import freenet.node.PrioRunnable;
+import freenet.pluginmanager.FredPluginTalker;
 import freenet.pluginmanager.PluginNotFoundException;
+import freenet.pluginmanager.PluginTalker;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TrivialTicker;
+import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 
 /**
@@ -44,7 +39,9 @@ import freenet.support.io.NativeThread;
  * @see SubscriptionManager The foundation of event-notifications and therefore the backend of all FCP traffic which this class does.
  * @author xor (xor@freenetproject.org)
  */
-public abstract class FCPClientReferenceImplementation implements PrioRunnable {
+public abstract class FCPClientReferenceImplementation implements PrioRunnable, FredPluginTalker {
+	
+	private static final String WOT_FCP_NAME = "plugins.WebOfTrust.WebOfTrust";
 
 	/** The amount of milliseconds between each attempt to connect to the WoT plugin */
 	private static final int WOT_RECONNECT_DELAY = 1 * 1000;
@@ -56,7 +53,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 	private final TrivialTicker mTicker;
 	private final Random mRandom;
 
-	private PluginTalkerBlocking mConnection;	
+	private PluginTalker mConnection = null;
+	private String mConnectionIdentifier = null;
+	private long mLastPingSentDate = -1;
+	private long mLastPingReplyDate = 0;
 	
 	private static transient volatile boolean logDEBUG = false;
 	private static transient volatile boolean logMINOR = false;
@@ -74,7 +74,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 	public void start() {
 		Logger.normal(this, "Starting...");
 		
-		mTicker.queueTimedJob(this, "WOT " + this.getClass().getSimpleName(), 0, false, true);
+		scheduleKeepaliveLoopExecution();
 
 		Logger.normal(this, "Started.");
 	}
@@ -82,37 +82,61 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 	public void terminate() {
 		Logger.normal(this, "Terminating ...");
 		
+		// This will wait for run() to exit.
 		mTicker.shutdown();
 		
 		Logger.normal(this, "Terminated.");
 	}
 	
 	/**
-	 * Checks whether we are connected to WOT. Connects to it if the connection is lost or did not exist yet.
+	 * Schedules execution of {@link #run()} via {@link #mTicker}
+	 */
+	private void scheduleKeepaliveLoopExecution() {
+		final long sleepTime = mConnection != null ? (WOT_PING_DELAY/2 + mRandom.nextInt(WOT_PING_DELAY)) : WOT_RECONNECT_DELAY;
+		mTicker.queueTimedJob(this, "WOT " + this.getClass().getSimpleName(), sleepTime, false, true);
+		
+		if(logMINOR) Logger.minor(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
+	}
+	
+	private boolean connected()  {
+		return mConnection != null;
+	}
+	
+	/**
+	 * @return True if the last
+	 */
+	private boolean pingTimedOut() {
+		if(mLastPingSentDate < 0)
+			return false;
+		
+		/** {@link #scheduleKeepaliveLoopExecution()} has a maximal delay of 1.5 * WOT_PING_DELAY */
+		return (CurrentTimeUTC.getInMillis() - mLastPingReplyDate) > (2*WOT_PING_DELAY);
+	}
+	
+	/**
+	 * "Keepalive Loop": Checks whether we are connected to WOT. Connects to it if the connection is lost or did not exist yet.
 	 * Then files all {@link Subscription}s.
 	 * 
 	 * Executed by {@link #mTicker} as scheduled periodically:
 	 * - Every {@link #WOT_RECONNECT_DELAY} seconds if we have no connection to WOT
 	 * - Every {@link #WOT_PING_DELAY} if we have a connection to WOT
 	 */
+	@Override
 	public void run() { 
 		if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
-		 
-		boolean connectedToWOT;
+
 		try {
-			connectedToWOT = connectToWOT();
-		
-			if(connectedToWOT) {
-				try {
-					checkSubscriptions();
-				} catch (Exception e) {
-					Logger.error(this, "Checking subscriptions failed", e);
-				}
+			if(!connected() || pingTimedOut())
+				connectToWOT();
+			
+			if(connected()) {
+				sendPing();
+				checkSubscriptions();
 			}
+		} catch (Exception e) {
+			Logger.error(this, "Error in connection-checking loop!", e);
 		} finally {
-			final long sleepTime =  connectedToWOT ? (WOT_PING_DELAY/2 + mRandom.nextInt(WOT_PING_DELAY)) : WOT_RECONNECT_DELAY;
-			mTicker.queueTimedJob(this, "WOT " + this.getClass().getSimpleName(), sleepTime, false, true);
-			if(logMINOR) Logger.debug(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
+			scheduleKeepaliveLoopExecution();
 		}
 		
 		if(logMINOR) Logger.minor(this, "Connection-checking finished.");
@@ -123,27 +147,35 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 	}
 
 	private synchronized boolean connectToWOT() {
-		if(mConnection != null) { /* Old connection exists */
-			SimpleFieldSet sfs = new SimpleFieldSet(true);
-			sfs.putOverwrite("Message", "Ping");
-			try {
-				mConnection.sendBlocking(sfs, null); /* Verify that the old connection is still alive */
-				return true;
-			}
-			catch(PluginNotFoundException e) {
-				mConnection = null;
-				/* Do not return, try to reconnect in next try{} block */
-			}
-		}
-		
 		try {
-			mConnection = new PluginTalkerBlocking(mWebOfTrust.getPluginRespirator());
+			mConnectionIdentifier = UUID.randomUUID().toString();
+			mConnection = mWebOfTrust.getPluginRespirator().getPluginTalker(this, WOT_FCP_NAME, mConnectionIdentifier);
 			handleConnectionEstablished();
 			return true;
 		} catch(PluginNotFoundException e) {
 			handleConnectionLost();
 			return false;
 		}
+	}
+	
+	private void sendPing() {
+		final SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.putOverwrite("Message", "Ping");
+		mConnection.send(sfs, null);
+		mLastPingSentDate = CurrentTimeUTC.getInMillis();
+	}
+	
+	@Override
+	public synchronized final void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
+		assert(pluginname.equals(WOT_FCP_NAME));
+		assert(indentifier.equals(mConnectionIdentifier));
+		assert(data==null);
+		
+		final String message = params.get("Message");
+		assert(message != null);
+		
+		if(message.equals("Pong"))
+			mLastPingReplyDate = CurrentTimeUTC.getInMillis();
 	}
 	
 	abstract void handleConnectionEstablished();
