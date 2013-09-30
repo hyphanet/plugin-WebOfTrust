@@ -135,7 +135,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	/**
-	 * @return True if the last
+	 * @return True if the last ping didn't receive a reply within 2*{@link #WOT_PING_DELAY} milliseconds.
 	 */
 	private boolean pingTimedOut() {
 		if(mLastPingSentDate < 0)
