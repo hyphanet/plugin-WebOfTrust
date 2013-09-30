@@ -117,10 +117,6 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 		if(logMINOR) Logger.minor(this, "Connection-checking finished.");
 	}
-	
-	private void checkSubscriptions() {
-		
-	}
 
 	private synchronized boolean connect() {
 		try {
@@ -155,6 +151,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		sfs.putOverwrite("Message", "Ping");
 		mConnection.send(sfs, null);
 		mLastPingSentDate = CurrentTimeUTC.getInMillis();
+	}
+	
+	private void checkSubscriptions() {
+		
 	}
 	
 	@Override
