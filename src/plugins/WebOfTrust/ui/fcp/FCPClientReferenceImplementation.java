@@ -3,12 +3,11 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.fcp;
 
-import freenet.support.Logger.LogLevel;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
-import plugins.WebOfTrust.SubscriptionManagerFCPTest;
 import plugins.WebOfTrust.Trust;
+import freenet.support.Logger.LogLevel;
 
 /**
  * This is a reference implementation of how a FCP client application should interact with WOT via event-notifications.
@@ -25,9 +24,11 @@ import plugins.WebOfTrust.Trust;
  * - If both datasets match, the test has succeeded.
  * FIXME: Document this in developer-documentation/Debugging.txt
  * 
+ * NOTICE: This class was based upon class SubscriptionManagerFCPTest, which you can find in the unit test. Its not possible to link it in the
+ * JavaDoc because the unit tests are not within the classpath. 
+ * 
  * @see FCPInterface The "server" to which a FCP client connects.
  * @see SubscriptionManager The foundation of event-notifications and therefore the backend of all FCP traffic which this class does.
- * @see SubscriptionManagerFCPTest The unit test upon which the code of this class was based.
  * @author xor (xor@freenetproject.org)
  */
 public class FCPClientReferenceImplementation {
