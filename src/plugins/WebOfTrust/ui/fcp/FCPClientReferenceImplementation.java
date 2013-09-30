@@ -50,12 +50,23 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	private static final int WOT_PING_DELAY = 30 * 1000;
 	
 	private final WebOfTrust mWebOfTrust;
+	
+	/** For scheduling threaded execution of {@link #run()}. */
 	private final TrivialTicker mTicker;
+	
+	/** For randomizing the delay between periodic execution of {@link #run()} */
 	private final Random mRandom;
 
+	/** The connection to the Web Of Trust plugin. Null if we are disconnected.  */
 	private PluginTalker mConnection = null;
+	
+	/** A random {@link UUID} which identifies the connection to the Web Of Trust plugin. Randomized upon every reconnect. */
 	private String mConnectionIdentifier = null;
+	
+	/** The value of {@link CurrentTimeUTC#get()} when we last sent a ping to the Web Of Trust plugin. */
 	private long mLastPingSentDate = -1;
+	
+	/** The value of {@link CurrentTimeUTC#get()} when we last received a reply to a ping which we sent to the Web Of Trust plugin. */
 	private long mLastPingReplyDate = 0;
 	
 	private static transient volatile boolean logDEBUG = false;
