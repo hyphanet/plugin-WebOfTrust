@@ -171,10 +171,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	
 	@Override
 	public synchronized final void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
-		if(!pluginname.equals(WOT_FCP_NAME))
+		if(!WOT_FCP_NAME.equals(pluginname))
 			throw new RuntimeException("Plugin is not supposed to talk to us: " + pluginname);
 		
-		if(!indentifier.equals(mConnectionIdentifier)) {
+		if(mConnection == null || !mConnectionIdentifier.equals(indentifier)) {
 			Logger.error(this, "Received out of band message, maybe because we reconnected and the old server is still alive? Identifier: " + indentifier);
 			return;
 		}
