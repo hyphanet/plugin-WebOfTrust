@@ -186,7 +186,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 		if(message.equals("Pong")) {
 			if((CurrentTimeUTC.getInMillis() - mLastPingSentDate) <= WOT_PING_TIMEOUT_DELAY)
-				mLastPingSentDate = 0;
+				mLastPingSentDate = 0; // Mark the ping as successful.
 		}
 	}
 	
