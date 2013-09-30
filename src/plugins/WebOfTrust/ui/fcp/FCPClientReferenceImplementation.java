@@ -127,7 +127,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 
 		try {
 			if(!connected() || pingTimedOut())
-				connectToWOT();
+				connect();
 			
 			if(connected()) {
 				sendPing();
@@ -146,7 +146,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 	}
 
-	private synchronized boolean connectToWOT() {
+	private synchronized boolean connect() {
 		try {
 			mConnectionIdentifier = UUID.randomUUID().toString();
 			mConnection = mWebOfTrust.getPluginRespirator().getPluginTalker(this, WOT_FCP_NAME, mConnectionIdentifier);
