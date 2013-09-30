@@ -19,6 +19,7 @@ import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import freenet.node.FSParseException;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -26,6 +27,10 @@ import freenet.pluginmanager.PluginReplySender;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
+/**
+ * @see FCPClientReferenceImplementation This class can do an online test which is similar to this unit test.
+ * @author xor (xor@freenetproject.org)
+ */
 public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 
 	/**
