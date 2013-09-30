@@ -49,6 +49,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/** The amount of milliseconds between sending pings to WOT to see if we are still connected */
 	private static final int WOT_PING_DELAY = 30 * 1000;
 	
+	private static final int WOT_PING_TIMEOUT_DELAY = 2*WOT_PING_DELAY;
+	
 	private final WebOfTrust mWebOfTrust;
 	
 	/** For scheduling threaded execution of {@link #run()}. */
@@ -64,10 +66,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	private String mConnectionIdentifier = null;
 	
 	/** The value of {@link CurrentTimeUTC#get()} when we last sent a ping to the Web Of Trust plugin. */
-	private long mLastPingSentDate = -1;
-	
-	/** The value of {@link CurrentTimeUTC#get()} when we last received a reply to a ping which we sent to the Web Of Trust plugin. */
-	private long mLastPingReplyDate = 0;
+	private long mLastPingSentDate = 0;
 	
 	private static transient volatile boolean logDEBUG = false;
 	private static transient volatile boolean logMINOR = false;
@@ -106,10 +105,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * 
 	 * Executed by {@link #mTicker} as scheduled periodically:
 	 * - Every {@link #WOT_RECONNECT_DELAY} seconds if we have no connection to WOT
-	 * - Every {@link #WOT_PING_DELAY} if we have a connection to WOT
+	 * - Every {@link #WOT_PING_DELAY} if we have a connection to WOT 
 	 */
 	@Override
-	public void run() { 
+	public synchronized void run() { 
 		if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
 
 		try {
@@ -148,16 +147,18 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/**
 	 * @return True if the last ping didn't receive a reply within 2*{@link #WOT_PING_DELAY} milliseconds.
 	 */
-	private boolean pingTimedOut() {
-		if(mLastPingSentDate < 0)
+	private synchronized boolean pingTimedOut() {
+		// This is set to 0 by the onReply() handler (which receives the ping reply) when:
+		// - we never sent a ping yet. Obviously we can't blame timeout on the client then
+		// - whenever we received a pong which marked the ping as successful
+		if(mLastPingSentDate == 0)
 			return false;
 		
-		/** {@link #scheduleKeepaliveLoopExecution()} has a maximal delay of 1.5 * WOT_PING_DELAY */
-		return (CurrentTimeUTC.getInMillis() - mLastPingReplyDate) > (2*WOT_PING_DELAY);
+		return (CurrentTimeUTC.getInMillis() - mLastPingSentDate) > WOT_PING_TIMEOUT_DELAY;
 	}
 	
 	
-	private void sendPing() {
+	private synchronized void sendPing() {
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Ping");
 		mConnection.send(sfs, null);
@@ -170,15 +171,23 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	
 	@Override
 	public synchronized final void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
-		assert(pluginname.equals(WOT_FCP_NAME));
-		assert(indentifier.equals(mConnectionIdentifier));
+		if(!pluginname.equals(WOT_FCP_NAME))
+			throw new RuntimeException("Plugin is not supposed to talk to us: " + pluginname);
+		
+		if(!indentifier.equals(mConnectionIdentifier)) {
+			Logger.error(this, "Received out of band message, maybe because we reconnected and the old server is still alive? Identifier: " + indentifier);
+			return;
+		}
+		
 		assert(data==null);
 		
 		final String message = params.get("Message");
 		assert(message != null);
 		
-		if(message.equals("Pong"))
-			mLastPingReplyDate = CurrentTimeUTC.getInMillis();
+		if(message.equals("Pong")) {
+			if((CurrentTimeUTC.getInMillis() - mLastPingSentDate) <= WOT_PING_TIMEOUT_DELAY)
+				mLastPingSentDate = 0;
+		}
 	}
 	
 	abstract void handleConnectionEstablished();
