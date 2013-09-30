@@ -28,18 +28,12 @@ import freenet.support.io.NativeThread;
 
 /**
  * This is a reference implementation of how a FCP client application should interact with WOT via event-notifications.
- * Feel free to copy-paste it.
- * 
  * The foundation of event-notifications is class {@link SubscriptionManager}, you should read the JavaDoc of it to understand them.
  * 
- * Notice that it has one additional debugging functionality which a client application obviously shouldn't have:
- * It is able to validate the data it has received via FCP against the actual data in the WOT database.
- * This serves as an online test for the event-notifications code:
- * - If WOT is run with logging set to {@link LogLevel#DEBUG}, the reference client will be run inside of WOT and connect to it.
- * - It will store ALL {@link Identity}, {@link Trust} and {@link Score} objects received via FCP.
- * - At shutdown, it will compare the final state of what it has received against whats stored in the regular WOT database
- * - If both datasets match, the test has succeeded.
- * FIXME: Document this in developer-documentation/Debugging.txt
+ * You can this class in your client like this:
+ * - Copy-paste this abstract base class.
+ * - Do NOT modify it. Instead, implement a child class which implements the abstract functions.
+ * - Any improvements you have to the abstract base class should be backported to WOT! 
  * 
  * NOTICE: This class was based upon class SubscriptionManagerFCPTest, which you can find in the unit test. Its not possible to link it in the
  * JavaDoc because the unit tests are not within the classpath. 
@@ -50,7 +44,7 @@ import freenet.support.io.NativeThread;
  * @see SubscriptionManager The foundation of event-notifications and therefore the backend of all FCP traffic which this class does.
  * @author xor (xor@freenetproject.org)
  */
-public class FCPClientReferenceImplementation implements PrioRunnable {
+public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 
 	/** The amount of milliseconds between each attempt to connect to the WoT plugin */
 	private static final int WOT_RECONNECT_DELAY = 1 * 1000;
@@ -152,13 +146,9 @@ public class FCPClientReferenceImplementation implements PrioRunnable {
 		}
 	}
 	
-	private void handleConnectionEstablished() {
-		
-	}
+	abstract void handleConnectionEstablished();
 	
-	private void handleConnectionLost() {
-		
-	}
+	abstract void handleConnectionLost();
 	
 	public int getPriority() {
 		return NativeThread.MIN_PRIORITY;
