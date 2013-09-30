@@ -88,22 +88,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 		if(logMINOR) Logger.minor(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
 	}
-	
-	private boolean connected()  {
-		return mConnection != null;
-	}
-	
-	/**
-	 * @return True if the last
-	 */
-	private boolean pingTimedOut() {
-		if(mLastPingSentDate < 0)
-			return false;
-		
-		/** {@link #scheduleKeepaliveLoopExecution()} has a maximal delay of 1.5 * WOT_PING_DELAY */
-		return (CurrentTimeUTC.getInMillis() - mLastPingReplyDate) > (2*WOT_PING_DELAY);
-	}
-	
+
 	/**
 	 * "Keepalive Loop": Checks whether we are connected to WOT. Connects to it if the connection is lost or did not exist yet.
 	 * Then files all {@link Subscription}s.
@@ -148,6 +133,22 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			return false;
 		}
 	}
+	
+	private boolean connected()  {
+		return mConnection != null;
+	}
+	
+	/**
+	 * @return True if the last
+	 */
+	private boolean pingTimedOut() {
+		if(mLastPingSentDate < 0)
+			return false;
+		
+		/** {@link #scheduleKeepaliveLoopExecution()} has a maximal delay of 1.5 * WOT_PING_DELAY */
+		return (CurrentTimeUTC.getInMillis() - mLastPingReplyDate) > (2*WOT_PING_DELAY);
+	}
+	
 	
 	private void sendPing() {
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
