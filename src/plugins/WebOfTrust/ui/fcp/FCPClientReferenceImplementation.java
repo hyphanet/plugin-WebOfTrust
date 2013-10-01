@@ -76,7 +76,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		Logger.registerClass(FCPClientReferenceImplementation.class);
 	}
 
-	public FCPClientReferenceImplementation(PluginRespirator myPluginRespirator, Executor myExecutor) {
+	public FCPClientReferenceImplementation(final PluginRespirator myPluginRespirator, final Executor myExecutor) {
 		mPluginRespirator = myPluginRespirator;
 		mTicker = new TrivialTicker(myExecutor);
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
@@ -171,7 +171,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	@Override
-	public synchronized final void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
+	public synchronized final void onReply(final String pluginname, final String indentifier, final SimpleFieldSet params, final Bucket data) {
 		if(!WOT_FCP_NAME.equals(pluginname))
 			throw new RuntimeException("Plugin is not supposed to talk to us: " + pluginname);
 		
