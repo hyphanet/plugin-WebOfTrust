@@ -156,6 +156,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * Safe to be called if a connection already exists - it will be replaced with a new one then.
 	 */
 	private synchronized void connect() {
+		// Notice: PluginTalker has no disconnection mechanism, we can must drop references to existing connections and then they will be GCed
 		try {
 			mConnectionIdentifier = UUID.randomUUID().toString();
 			mConnection = mPluginRespirator.getPluginTalker(this, WOT_FCP_NAME, mConnectionIdentifier);
