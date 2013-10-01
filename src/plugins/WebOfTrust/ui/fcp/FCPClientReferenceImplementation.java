@@ -146,19 +146,17 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * Tries to connect to WOT.
 	 * Safe to be called if a connection already exists - it will be replaced with a new one then.
 	 */
-	private synchronized boolean connect() {
+	private synchronized void connect() {
 		try {
 			mConnectionIdentifier = UUID.randomUUID().toString();
 			mConnection = mPluginRespirator.getPluginTalker(this, WOT_FCP_NAME, mConnectionIdentifier);
 			Logger.normal(this, "Connected to WOT, identifier: " + mConnectionIdentifier);
 			handleConnectionEstablished();
-			return true;
 		} catch(PluginNotFoundException e) {
 			mConnectionIdentifier = null;
 			mConnection = null; // Not necessary but we anyway make sure that this happens in case we someday catch more than PluginNotFoundException
 			Logger.warning(this, "Cannot connect to WOT!");
 			handleConnectionLost();
-			return false;
 		}
 	}
 	
