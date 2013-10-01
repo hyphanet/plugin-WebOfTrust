@@ -13,8 +13,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
-import org.junit.Ignore;
-
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.OwnIdentity;
@@ -342,7 +340,6 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/**
 	 * Represents the data of a {@link SubscriptionManager.Notification}
 	 */
-	@Ignore
 	public static final class ChangeSet<CT extends Persistent> {
 		/**
 		 * @see SubscriptionManager.Notification#getOldObject()
@@ -366,7 +363,6 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 	
-	@Ignore
 	public static abstract class FCPParser<T extends Persistent> {
 		
 		protected final WebOfTrust mWoT;
@@ -395,7 +391,6 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	
 	}
 	
-	@Ignore
 	public static final class IdentityParser extends FCPParser<Identity> {
 
 		public IdentityParser(final WebOfTrust myWebOfTrust) {
@@ -463,8 +458,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 		
 	}
-	
-	@Ignore
+
 	public static final class TrustParser extends FCPParser<Trust> {
 
 		private final Map<String, Identity> mIdentities;
@@ -491,7 +485,6 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 	}
 	
-	@Ignore
 	public static final class ScoreParser extends FCPParser<Score> {
 		
 		private final Map<String, Identity> mIdentities;
