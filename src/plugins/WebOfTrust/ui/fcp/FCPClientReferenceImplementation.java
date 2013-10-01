@@ -227,11 +227,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/**
 	 * Must be called at shutdown of your plugin. 
 	 */
-	public void terminate() {
+	public synchronized void terminate() {
 		Logger.normal(this, "Terminating ...");
 		
 		// This will wait for run() to exit.
 		mTicker.shutdown();
+		mConnection = null;
+		mConnectionIdentifier = null;
 		
 		Logger.normal(this, "Terminated.");
 	}
