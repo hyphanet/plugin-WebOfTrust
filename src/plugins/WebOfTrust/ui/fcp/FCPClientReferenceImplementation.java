@@ -223,6 +223,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			}
 		} catch (Exception e) {
 			Logger.error(this, "Error in connection-checking loop!", e);
+			disconnect();
 		} finally {
 			scheduleKeepaliveLoopExecution();
 		}
