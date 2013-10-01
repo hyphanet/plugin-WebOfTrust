@@ -143,7 +143,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	/**
-	 * Call this to file or cancel an {@link Subscription}.
+	 * Call this to file a {@link Subscription}.
 	 * You will receive the following callbacks while being subscribed - depending on the {@link SubscriptionType}:
 	 * - {@link #handleIdentitiesSynchronization(Collection)}
 	 * - {@link #handleIdentityChangedNotification(Identity, Identity)}
@@ -152,12 +152,16 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * - {@link #handleScoresSynchronization(Collection)}
 	 * - {@link #handleScoreChangedNotification(Score, Score)}
 	 */
-	public synchronized void subscribeTo(final SubscriptionType type, boolean subscribe) {
-		if(subscribe)
-			mSubscribeTo.add(type);
-		else
-			mSubscribeTo.remove(type);
-		
+	public synchronized void subscribe(final SubscriptionType type) {
+		mSubscribeTo.add(type);
+		scheduleKeepaliveLoopExecution();
+	}
+	
+	/**
+	 * Call this to cancel a {@link Subscription}.
+	 */
+	public synchronized void unsubscribe(final SubscriptionType type) {
+		mSubscribeTo.remove(type);
 		scheduleKeepaliveLoopExecution();
 	}
 	
