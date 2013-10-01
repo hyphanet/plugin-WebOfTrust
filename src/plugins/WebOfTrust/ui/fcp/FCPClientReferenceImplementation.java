@@ -4,6 +4,8 @@
 package plugins.WebOfTrust.ui.fcp;
 
 import java.util.Collection;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.Random;
 import java.util.UUID;
 
@@ -83,44 +85,26 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/** The value of {@link CurrentTimeUTC#get()} when we last sent a ping to the Web Of Trust plugin. */
 	private long mLastPingSentDate = 0;
 	
-	/**
-	 * Whether the client wants to be provided with the list of all {@link Identity}s.
-	 * If true, the client will receive the callbacks {@link #handleIdentitiesSynchronization()} and {@link #handleIdentityChangedNotification()}.
-	 * @see IdentitiesSubscription 
-	 */
-	private boolean mSubscribeToIdentities = false;
+	/** All types of {@link Subscription} */
+	enum SubscriptionType {
+		/** @see IdentitiesSubscription */
+		Identities,
+		/** @see TrustsSubscription */
+		Trusts,
+		/** @see ScoresSubscription */
+		Scores
+	};
+	
+	/** Contains the {@link SubscriptionType}s the client wants to subscribe to. */
+	private EnumSet<SubscriptionType> mSubscribeTo = EnumSet.noneOf(SubscriptionType.class);
 
 	/**
-	 * Whether the client wants to be provided with the list of all {@link Trust}s.
-	 * If true, the client will receive the callbacks {@link #handleTrustsSynchronization()} and {@link #handleTrustChangedNotification()}.
-	 * @see TrustsSubscription 
-	 */
-	private boolean mSubscribeToTrusts = false;
-
-	/**
-	 * Whether the client wants to be provided with the list of all {@link Score}s.
-	 * If true, the client will receive the callbacks {@link #handleScoresSynchronization()} and {@link #handleScoreChangedNotification()}.
-	 * @see ScoresSubscription 
-	 */
-	private boolean mSubscribeToScores = false;
-	
-	/**
-	 * The ID of the current {@link IdentitiesSubscription}.
+	 * The values are the IDs of the current subscriptions of the {@link SubscriptionType} which the key specifies.
+	 * Null if the subscription for that type has not yet been filed.
 	 * @see SubscriptionManager.Subscription#getID()
 	 */
-	private String mIdentitiesSubscriptionID = null;
+	private EnumMap<SubscriptionType, String> mSubscriptionIDs = new EnumMap<SubscriptionType, String>(SubscriptionType.class);
 	
-	/**
-	 * The ID of the current {@link TrustsSubscription}.
-	 * @see SubscriptionManager.Subscription#getID()
-	 */
-	private String mTrustsSubscriptionID = null;
-	
-	/**
-	 * The ID of the current {@link ScoresSubscription}.
-	 * @see SubscriptionManager.Subscription#getID()
-	 */
-	private String mScoresSubscriptionID = null;
 	
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
 	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
@@ -159,35 +143,21 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	/**
-	 * Call this to file or cancel an {@link IdentitiesSubscription}.
-	 * You will receive the following callbacks while being subscribed:
+	 * Call this to file or cancel an {@link Subscription}.
+	 * You will receive the following callbacks while being subscribed - depending on the {@link SubscriptionType}:
 	 * - {@link #handleIdentitiesSynchronization(Collection)}
 	 * - {@link #handleIdentityChangedNotification(Identity, Identity)}
-	 */
-	public void subscribeToIdentities(final boolean subscribe) {
-		mSubscribeToIdentities = subscribe;
-		scheduleKeepaliveLoopExecution();
-	}
-	
-	/**
-	 * Call this to file or cancel a {@link TrustsSubscription}.
-	 * You will receive the following callbacks while being subscribed:
 	 * - {@link #handleTrustsSynchronization(Collection)}
 	 * - {@link #handleTrustChangedNotification(Trust, Trust)}
-	 */
-	public void subscribeToTrusts(final boolean subscribe) {
-		mSubscribeToTrusts = subscribe;
-		scheduleKeepaliveLoopExecution();
-	}
-	
-	/**
-	 * Call this to file or cancel a {@link ScoresSubscription}.
-	 * You will receive the following callbacks while being subscribed:
 	 * - {@link #handleScoresSynchronization(Collection)}
 	 * - {@link #handleScoreChangedNotification(Score, Score)}
 	 */
-	public void subscribeToScores(final boolean subscribe) {
-		mSubscribeToScores = subscribe;
+	public synchronized void subscribeTo(final SubscriptionType type, boolean subscribe) {
+		if(subscribe)
+			mSubscribeTo.add(type);
+		else
+			mSubscribeTo.remove(type);
+		
 		scheduleKeepaliveLoopExecution();
 	}
 	
@@ -250,12 +220,11 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	private synchronized void disconnect() {
+		// FIXME: Unsubscribe all subscriptions if the connection is still OK - otherwise WOT will keep collecting data for the subscription.
+		
 		// Notice: PluginTalker has no disconnection mechanism, we can must drop references to existing connections and then they will be GCed
 		mConnection = null;
 		mConnectionIdentifier = null;
-		mIdentitiesSubscriptionID = null;
-		mTrustsSubscriptionID = null;
-		mScoresSubscriptionID = null;
 	}
 	
 	private boolean connected()  {
@@ -283,7 +252,23 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		mLastPingSentDate = CurrentTimeUTC.getInMillis();
 	}
 	
-	private void checkSubscriptions() {
+	private synchronized void checkSubscriptions() {
+		for(SubscriptionType type : SubscriptionType.values()) {
+			final boolean shouldSubscribe = mSubscribeTo.contains(type);
+			final boolean isSubscribed = mSubscriptionIDs.get(type) != null;
+			if(shouldSubscribe && !isSubscribed) {
+				fcp_Subscribe(type);
+			} else if(!shouldSubscribe && isSubscribed) {
+				fcp_Unsubscribe(type);
+			}
+		}
+	}
+	
+	private void fcp_Subscribe(SubscriptionType type) {
+		
+	}
+	
+	private void fcp_Unsubscribe(SubscriptionType type) {
 		
 	}
 	
