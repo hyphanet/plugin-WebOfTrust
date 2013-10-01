@@ -137,6 +137,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			handleConnectionEstablished();
 			return true;
 		} catch(PluginNotFoundException e) {
+			mConnectionIdentifier = null;
+			mConnection = null; // Not necessary but we anyway make sure that this happens in case we someday catch more than PluginNotFoundException
 			Logger.warning(this, "Connection to WOT lost!");
 			handleConnectionLost();
 			return false;
