@@ -309,8 +309,6 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 		
 		final String messageString = params.get("Message");
-		assert(messageString != null);
-		
 		final FCPMessageHandler handler = mFCPMessageHandlers.get(messageString);
 		
 		if(handler == null) {
