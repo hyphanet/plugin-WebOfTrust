@@ -297,11 +297,11 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 			beforeChange = myBeforeChange;
 			afterChange = myAfterChange;
 			
-			assertTrue((beforeChange != null && afterChange != null)
+			assert((beforeChange != null && afterChange != null)
 					|| (beforeChange == null ^ afterChange == null));
 			
-			if(beforeChange != null && afterChange != null)
-				assertEquals(beforeChange.getID(), afterChange.getID());
+			assert(!(beforeChange != null && afterChange != null) || 
+					(beforeChange.getID().equals(afterChange.getID())));
 		}
 	}
 	
@@ -355,7 +355,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	 		else
 	 			throw new RuntimeException("Unknown type: " + type);
 	 		
-	 		assertEquals(identity.getID(), id);
+	 		assert(identity.getID().equals(id));
 	 		
 	 		final int contextAmount = sfs.getInt("Contexts" + suffix + ".Amount");
 	        final int propertyAmount = sfs.getInt("Properties" + suffix + ".Amount");
