@@ -88,21 +88,21 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * If true, the client will receive the callbacks {@link #handleIdentitiesSynchronization()} and {@link #handleIdentityChangedNotification()}.
 	 * @see IdentitiesSubscription 
 	 */
-	protected final boolean mSubscribeToIdentities;
+	private boolean mSubscribeToIdentities = false;
 
 	/**
 	 * Whether the client wants to be provided with the list of all {@link Trust}s.
 	 * If true, the client will receive the callbacks {@link #handleTrustsSynchronization()} and {@link #handleTrustChangedNotification()}.
 	 * @see TrustsSubscription 
 	 */
-	protected final boolean mSubscribeToTrusts;
+	private boolean mSubscribeToTrusts = false;
 
 	/**
 	 * Whether the client wants to be provided with the list of all {@link Score}s.
 	 * If true, the client will receive the callbacks {@link #handleScoresSynchronization()} and {@link #handleScoreChangedNotification()}.
 	 * @see ScoresSubscription 
 	 */
-	protected final boolean mSubscribeToScores;
+	private boolean mSubscribeToScores = false;
 	
 	/**
 	 * The ID of the current {@link IdentitiesSubscription}.
@@ -135,14 +135,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		Logger.registerClass(FCPClientReferenceImplementation.class);
 	}
 
-	public FCPClientReferenceImplementation(final PluginRespirator myPluginRespirator, final Executor myExecutor,
-			final boolean subscribeToIdentities, final boolean subscribeToTrusts, final boolean subscribeToScores) {
+	public FCPClientReferenceImplementation(final PluginRespirator myPluginRespirator, final Executor myExecutor) {
 		mPluginRespirator = myPluginRespirator;
 		mTicker = new TrivialTicker(myExecutor);
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
-		mSubscribeToIdentities = subscribeToIdentities;
-		mSubscribeToTrusts = subscribeToTrusts;
-		mSubscribeToScores = subscribeToScores;
 	}
 	
 	/**
@@ -160,6 +156,39 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		scheduleKeepaliveLoopExecution();
 
 		Logger.normal(this, "Started.");
+	}
+	
+	/**
+	 * Call this to file or cancel an {@link IdentitiesSubscription}.
+	 * You will receive the following callbacks while being subscribed:
+	 * - {@link #handleIdentitiesSynchronization(Collection)}
+	 * - {@link #handleIdentityChangedNotification(Identity, Identity)}
+	 */
+	public void subscribeToIdentities(final boolean subscribe) {
+		mSubscribeToIdentities = subscribe;
+		scheduleKeepaliveLoopExecution();
+	}
+	
+	/**
+	 * Call this to file or cancel a {@link TrustsSubscription}.
+	 * You will receive the following callbacks while being subscribed:
+	 * - {@link #handleTrustsSynchronization(Collection)}
+	 * - {@link #handleTrustChangedNotification(Trust, Trust)}
+	 */
+	public void subscribeToTrusts(final boolean subscribe) {
+		mSubscribeToTrusts = subscribe;
+		scheduleKeepaliveLoopExecution();
+	}
+	
+	/**
+	 * Call this to file or cancel a {@link ScoresSubscription}.
+	 * You will receive the following callbacks while being subscribed:
+	 * - {@link #handleScoresSynchronization(Collection)}
+	 * - {@link #handleScoreChangedNotification(Score, Score)}
+	 */
+	public void subscribeToScores(final boolean subscribe) {
+		mSubscribeToScores = subscribe;
+		scheduleKeepaliveLoopExecution();
 	}
 	
 	/**
