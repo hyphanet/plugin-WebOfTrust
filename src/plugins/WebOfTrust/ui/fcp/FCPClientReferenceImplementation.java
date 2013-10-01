@@ -367,7 +367,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	@Ignore
-	abstract class FCPParser<T extends Persistent> {
+	public static abstract class FCPParser<T extends Persistent> {
 		
 		protected final WebOfTrust mWoT;
 		
@@ -396,7 +396,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	@Ignore
-	final class IdentityParser extends FCPParser<Identity> {
+	public static final class IdentityParser extends FCPParser<Identity> {
 
 		public IdentityParser(final WebOfTrust myWebOfTrust) {
 			super(myWebOfTrust);
@@ -465,7 +465,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	@Ignore
-	final class TrustParser extends FCPParser<Trust> {
+	public static final class TrustParser extends FCPParser<Trust> {
 
 		private final Map<String, Identity> mIdentities;
 		
@@ -492,7 +492,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	@Ignore
-	final class ScoreParser extends FCPParser<Score> {
+	public static final class ScoreParser extends FCPParser<Score> {
 		
 		private final Map<String, Identity> mIdentities;
 		
