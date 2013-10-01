@@ -188,7 +188,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 				connect();
 			
 			if(connected()) {
-				sendPing();
+				fcp_Ping();
 				checkSubscriptions();
 			}
 		} catch (Exception e) {
@@ -245,7 +245,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	
-	private synchronized void sendPing() {
+	private synchronized void fcp_Ping() {
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Ping");
 		mConnection.send(sfs, null);
