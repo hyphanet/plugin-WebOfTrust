@@ -133,9 +133,11 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		try {
 			mConnectionIdentifier = UUID.randomUUID().toString();
 			mConnection = mPluginRespirator.getPluginTalker(this, WOT_FCP_NAME, mConnectionIdentifier);
+			Logger.normal(this, "Connected to WOT, identifier: " + mConnectionIdentifier);
 			handleConnectionEstablished();
 			return true;
 		} catch(PluginNotFoundException e) {
+			Logger.warning(this, "Connection to WOT lost!");
 			handleConnectionLost();
 			return false;
 		}
@@ -188,7 +190,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		if("Pong".equals(message)) {
 			if((CurrentTimeUTC.getInMillis() - mLastPingSentDate) <= WOT_PING_TIMEOUT_DELAY)
 				mLastPingSentDate = 0; // Mark the ping as successful.
-		}
+		} else
+			Logger.warning(this, "Unknown message type: " + message);
 	}
 	
 	abstract void handleConnectionEstablished();
