@@ -12,6 +12,7 @@ import plugins.WebOfTrust.WebOfTrust;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.FredPluginTalker;
 import freenet.pluginmanager.PluginNotFoundException;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.pluginmanager.PluginTalker;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
@@ -51,7 +52,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	
 	private static final int WOT_PING_TIMEOUT_DELAY = 2*WOT_PING_DELAY;
 	
-	private final WebOfTrust mWebOfTrust;
+	private final PluginRespirator mPluginRespirator;
 	
 	/** For scheduling threaded execution of {@link #run()}. */
 	private final TrivialTicker mTicker;
@@ -75,10 +76,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		Logger.registerClass(FCPClientReferenceImplementation.class);
 	}
 
-	public FCPClientReferenceImplementation(WebOfTrust myWebOfTrust, Executor myExecutor) {
-		mWebOfTrust = myWebOfTrust;
+	public FCPClientReferenceImplementation(PluginRespirator myPluginRespirator, Executor myExecutor) {
+		mPluginRespirator = myPluginRespirator;
 		mTicker = new TrivialTicker(myExecutor);
-		mRandom = mWebOfTrust.getPluginRespirator().getNode().fastWeakRandom;
+		mRandom = mPluginRespirator.getNode().fastWeakRandom;
 	}
 	
 	public void start() {
@@ -131,7 +132,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	private synchronized boolean connect() {
 		try {
 			mConnectionIdentifier = UUID.randomUUID().toString();
-			mConnection = mWebOfTrust.getPluginRespirator().getPluginTalker(this, WOT_FCP_NAME, mConnectionIdentifier);
+			mConnection = mPluginRespirator.getPluginTalker(this, WOT_FCP_NAME, mConnectionIdentifier);
 			handleConnectionEstablished();
 			return true;
 		} catch(PluginNotFoundException e) {
