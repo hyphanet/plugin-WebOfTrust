@@ -95,6 +95,15 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
 	}
 	
+	/**
+	 * Tells the client to start connecting to WOT and filing the requested subscriptions.
+	 * 
+	 * Must be called after your child class is ready to process messages in the event handlers:
+	 * - {@link #handleConnectionEstablished()}
+	 * - {@link #handleConnectionLost()}
+	 * 
+	 * You will not receive any event callbacks before start was called.
+	 */
 	public void start() {
 		Logger.normal(this, "Starting...");
 		
@@ -215,6 +224,9 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	
 	abstract void handleConnectionLost();
 	
+	/**
+	 * Must be called at shutdown of your plugin. 
+	 */
 	public void terminate() {
 		Logger.normal(this, "Terminating ...");
 		
