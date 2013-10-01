@@ -9,18 +9,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import org.junit.Ignore;
 
-import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import freenet.node.FSParseException;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -277,186 +276,6 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 				fail("Unknown message type: " + message);
 			}
 		}
-	}
-
-	/**
-	 * Represents the data of a {@link SubscriptionManager.Notification}
-	 */
-	@Ignore
-	public static final class ChangeSet<CT extends Persistent> {
-		/**
-		 * @see SubscriptionManager.Notification#getOldObject()
-		 */
-		public final CT beforeChange;
-		
-		/**
-		 * @see SubscriptionManager.Notification#getNewbject()
-		 */
-		public final CT afterChange;
-		
-		public ChangeSet(CT myBeforeChange, CT myAfterChange) {
-			beforeChange = myBeforeChange;
-			afterChange = myAfterChange;
-			
-			assert((beforeChange != null && afterChange != null)
-					|| (beforeChange == null ^ afterChange == null));
-			
-			assert(!(beforeChange != null && afterChange != null) || 
-					(beforeChange.getID().equals(afterChange.getID())));
-		}
-	}
-	
-	@Ignore
-	abstract class FCPParser<T extends Persistent> {
-		
-		protected final WebOfTrust mWoT;
-		
-		public FCPParser(final WebOfTrust myWebOfTrust) {
-			mWoT = myWebOfTrust;
-		}
-		
-		public ArrayList<T> parseSynchronization(final SimpleFieldSet sfs) throws FSParseException, MalformedURLException, InvalidParameterException {
-			final int amount = sfs.getInt("Amount");
-			final ArrayList<T> result = new ArrayList<T>(amount+1);
-			for(int i=0; i < amount; ++i) {
-				result.add(parseSingle(sfs, i));
-			}
-			return result;
-		}
-
-		public ChangeSet<T> parseNotification(final SimpleFieldSet notification) throws MalformedURLException, FSParseException, InvalidParameterException {
-			final SimpleFieldSet beforeChange = notification.subset("BeforeChange");
-			final SimpleFieldSet afterChange = notification.subset("AfterChange");
-			
-			return new ChangeSet<T>(parseSingle(beforeChange, 0), parseSingle(afterChange, 0));
-		}
-		
-		abstract protected T parseSingle(SimpleFieldSet sfs, int index) throws FSParseException, MalformedURLException, InvalidParameterException;
-	
-	}
-	
-	@Ignore
-	final class IdentityParser extends FCPParser<Identity> {
-
-		public IdentityParser(final WebOfTrust myWebOfTrust) {
-			super(myWebOfTrust);
-		}
-		
-		@Override
-		protected Identity parseSingle(final SimpleFieldSet sfs, final int index) throws FSParseException, MalformedURLException, InvalidParameterException {
-			final String suffix = Integer.toString(index);
-			
-			final String type = sfs.get("Type" + suffix);
-	    	
-			if(type.equals("Inexistent"))
-	    		return null;
-	    	
-	        final String nickname = sfs.get("Nickname" + suffix);
-	        final String requestURI = sfs.get("RequestURI" + suffix);
-	    	final String insertURI = sfs.get("InsertURI" + suffix);
-	    	final boolean doesPublishTrustList = sfs.getBoolean("PublishesTrustList" + suffix);
-	        final String id = sfs.get("ID" + suffix); 
-	 	
-	 		final Identity identity;
-	 		
-	 		if(type.equals("Identity"))
-	 			identity = new Identity(mWoT, requestURI, nickname, doesPublishTrustList);
-	 		else if(type.equals("OwnIdentity"))
-	 			identity = new OwnIdentity(mWoT, insertURI, nickname, doesPublishTrustList);
-	 		else
-	 			throw new RuntimeException("Unknown type: " + type);
-	 		
-	 		assert(identity.getID().equals(id));
-	 		
-	 		final int contextAmount = sfs.getInt("Contexts" + suffix + ".Amount");
-	        final int propertyAmount = sfs.getInt("Properties" + suffix + ".Amount");
-	 		
-	        for(int i=0; i < contextAmount; ++i) {
-	        	identity.addContext(sfs.get("Contexts" + suffix + ".Context" + i));
-	        }
-
-	        for(int i=0; i < propertyAmount; ++i)  {
-	            identity.setProperty(sfs.get("Properties" + suffix + ".Property" + i + ".Name"),
-	            		sfs.get("Properties" + suffix + ".Property" + i + ".Value"));
-	        }
-	        
-	    	final FetchState fetchState = FetchState.valueOf(sfs.get("CurrentEditionFetchState" + suffix));
-	    	// Do NOT use a switch() here by purpose: The compiler would automatically create a synthetic class plugins.WebOfTrust.SubscriptionManagerFCPTest$1
-	    	// which has the purpose of efficiently processing the switch. Then JUnit would complain about that class not having a constructor.
-	    	// - Took me over an hour to figure this out, doh. - xor 2013-09-28
-	    	// Javac version: 1.7.0_25
-	    	// JUnit version: 3.8.2
-	        if(fetchState == FetchState.Fetched)  {
-		        identity.onFetched();
-	        } else if(fetchState == FetchState.ParsingFailed) {
-		        identity.onParsingFailed();
-			} else if(fetchState == FetchState.NotFetched) {
-				if(identity instanceof OwnIdentity) {
-					((OwnIdentity) identity).restoreEdition(identity.getEdition(), null);
-				} else {
-					// Default state is NotFetched for non-own Identity objects
-				}
-			} else 
-				throw new IllegalStateException(fetchState.toString());
-
-	        return identity;
-		}
-		
-	}
-	
-	@Ignore
-	final class TrustParser extends FCPParser<Trust> {
-
-		private final Map<String, Identity> mIdentities;
-		
-		public TrustParser(final WebOfTrust myWebOfTrust, final Map<String, Identity> myIdentities) {
-			super(myWebOfTrust);
-			mIdentities = myIdentities;
-		}
-		
-		@Override
-		protected Trust parseSingle(final SimpleFieldSet sfs, final int index) throws FSParseException, InvalidParameterException {
-			final String suffix = Integer.toString(index);
-			
-	    	if(sfs.get("Value" + suffix).equals("Inexistent"))
-	    		return null;
-	    	
-			final String trusterID = sfs.get("Truster" + suffix);
-			final String trusteeID = sfs.get("Trustee" + suffix);
-			final byte value = sfs.getByte("Value" + suffix);
-			final String comment = sfs.get("Comment" + suffix);
-			
-			return new Trust(mWoT, mIdentities.get(trusterID), mIdentities.get(trusteeID), value, comment);
-		}
-		
-	}
-	
-	@Ignore
-	final class ScoreParser extends FCPParser<Score> {
-		
-		private final Map<String, Identity> mIdentities;
-		
-		public ScoreParser(final WebOfTrust myWebOfTrust, final Map<String, Identity> myIdentities) {
-			super(myWebOfTrust);
-			mIdentities = myIdentities;
-		}
-		
-		@Override
-		protected Score parseSingle(final SimpleFieldSet sfs, final int index) throws FSParseException {
-			final String suffix = Integer.toString(index);
-			
-	    	if(sfs.get("Value" + suffix).equals("Inexistent"))
-	    		return null;
-	    	
-			final String trusterID = sfs.get("Truster" + suffix);
-			final String trusteeID = sfs.get("Trustee" + suffix);
-			final int capacity = sfs.getInt("Capacity" + suffix);
-			final int rank = sfs.getInt("Rank" + suffix);
-			final int value = sfs.getInt("Value" + suffix);
-			
-			return new Score(mWoT, (OwnIdentity)mIdentities.get(trusterID), mIdentities.get(trusteeID), value, rank, capacity);
-		}
-		
 	}
 
 
