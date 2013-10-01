@@ -224,7 +224,12 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	private synchronized void disconnect() {
-		// FIXME: Unsubscribe all subscriptions if the connection is still OK - otherwise WOT will keep collecting data for the subscription.
+		if(mConnection != null) {
+			for(SubscriptionType type : mSubscriptionIDs.keySet()) {
+				unsubscribe(type);
+				mSubscriptionIDs.remove(type);
+			}
+		}
 		
 		// Notice: PluginTalker has no disconnection mechanism, we can must drop references to existing connections and then they will be GCed
 		mConnection = null;
