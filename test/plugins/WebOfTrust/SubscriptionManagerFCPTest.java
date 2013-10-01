@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -223,11 +224,11 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		
 		assertEquals(type, synchronization.get("Message"));
 		if(type.equals("Identities")) {
-			new ReceivedSynchronizationPutter<Identity>().putAll(new IdentityParser().parseSynchronization(synchronization), mReceivedIdentities);
+			new ReceivedSynchronizationPutter<Identity>().putAll(new IdentityParser(mWoT).parseSynchronization(synchronization), mReceivedIdentities);
 		} else if(type.equals("Trusts")) {
-			new ReceivedSynchronizationPutter<Trust>().putAll(new TrustParser().parseSynchronization(synchronization), mReceivedTrusts);
+			new ReceivedSynchronizationPutter<Trust>().putAll(new TrustParser(mWoT, mReceivedIdentities).parseSynchronization(synchronization), mReceivedTrusts);
 		} else if(type.equals("Scores")) {
-			new ReceivedSynchronizationPutter<Score>().putAll(new ScoreParser().parseSynchronization(synchronization), mReceivedScores);
+			new ReceivedSynchronizationPutter<Score>().putAll(new ScoreParser(mWoT, mReceivedIdentities).parseSynchronization(synchronization), mReceivedScores);
 		}
 	}
 	
@@ -267,11 +268,11 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 			final SimpleFieldSet notification = mReplyReceiver.getNextResult();
 			final String message = notification.get("Message");
 			if(message.equals("IdentityChangedNotification")) {
-				new ReceivedNotificationPutter<Identity>().putAll(new IdentityParser().parseNotification(notification), mReceivedIdentities);
+				new ReceivedNotificationPutter<Identity>().putAll(new IdentityParser(mWoT).parseNotification(notification), mReceivedIdentities);
 			} else if(message.equals("TrustChangedNotification")) {
-				new ReceivedNotificationPutter<Trust>().putAll(new TrustParser().parseNotification(notification), mReceivedTrusts);
+				new ReceivedNotificationPutter<Trust>().putAll(new TrustParser(mWoT, mReceivedIdentities).parseNotification(notification), mReceivedTrusts);
 			} else if(message.equals("ScoreChangedNotification")) {
-				new ReceivedNotificationPutter<Score>().putAll(new ScoreParser().parseNotification(notification), mReceivedScores);
+				new ReceivedNotificationPutter<Score>().putAll(new ScoreParser(mWoT, mReceivedIdentities).parseNotification(notification), mReceivedScores);
 			} else {
 				fail("Unknown message type: " + message);
 			}
@@ -308,6 +309,12 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	@Ignore
 	abstract class FCPParser<T extends Persistent> {
 		
+		protected final WebOfTrust mWoT;
+		
+		public FCPParser(final WebOfTrust myWebOfTrust) {
+			mWoT = myWebOfTrust;
+		}
+		
 		public ArrayList<T> parseSynchronization(final SimpleFieldSet sfs) throws FSParseException, MalformedURLException, InvalidParameterException {
 			final int amount = sfs.getInt("Amount");
 			final ArrayList<T> result = new ArrayList<T>(amount+1);
@@ -331,6 +338,10 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	@Ignore
 	final class IdentityParser extends FCPParser<Identity> {
 
+		public IdentityParser(final WebOfTrust myWebOfTrust) {
+			super(myWebOfTrust);
+		}
+		
 		@Override
 		protected Identity parseSingle(final SimpleFieldSet sfs, final int index) throws FSParseException, MalformedURLException, InvalidParameterException {
 			final String suffix = Integer.toString(index);
@@ -396,6 +407,13 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	@Ignore
 	final class TrustParser extends FCPParser<Trust> {
 
+		private final Map<String, Identity> mIdentities;
+		
+		public TrustParser(final WebOfTrust myWebOfTrust, final Map<String, Identity> myIdentities) {
+			super(myWebOfTrust);
+			mIdentities = myIdentities;
+		}
+		
 		@Override
 		protected Trust parseSingle(final SimpleFieldSet sfs, final int index) throws FSParseException, InvalidParameterException {
 			final String suffix = Integer.toString(index);
@@ -408,14 +426,21 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 			final byte value = sfs.getByte("Value" + suffix);
 			final String comment = sfs.get("Comment" + suffix);
 			
-			return new Trust(mWoT, mReceivedIdentities.get(trusterID), mReceivedIdentities.get(trusteeID), value, comment);
+			return new Trust(mWoT, mIdentities.get(trusterID), mIdentities.get(trusteeID), value, comment);
 		}
 		
 	}
 	
 	@Ignore
 	final class ScoreParser extends FCPParser<Score> {
-
+		
+		private final Map<String, Identity> mIdentities;
+		
+		public ScoreParser(final WebOfTrust myWebOfTrust, final Map<String, Identity> myIdentities) {
+			super(myWebOfTrust);
+			mIdentities = myIdentities;
+		}
+		
 		@Override
 		protected Score parseSingle(final SimpleFieldSet sfs, final int index) throws FSParseException {
 			final String suffix = Integer.toString(index);
@@ -429,7 +454,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 			final int rank = sfs.getInt("Rank" + suffix);
 			final int value = sfs.getInt("Value" + suffix);
 			
-			return new Score(mWoT, (OwnIdentity)mReceivedIdentities.get(trusterID), mReceivedIdentities.get(trusteeID), value, rank, capacity);
+			return new Score(mWoT, (OwnIdentity)mIdentities.get(trusterID), mIdentities.get(trusteeID), value, rank, capacity);
 		}
 		
 	}
