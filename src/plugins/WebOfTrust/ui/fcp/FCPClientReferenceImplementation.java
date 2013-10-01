@@ -10,7 +10,10 @@ import java.util.UUID;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
+import plugins.WebOfTrust.SubscriptionManager.IdentitiesSubscription;
+import plugins.WebOfTrust.SubscriptionManager.ScoresSubscription;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
+import plugins.WebOfTrust.SubscriptionManager.TrustsSubscription;
 import plugins.WebOfTrust.Trust;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.FredPluginTalker;
@@ -82,21 +85,42 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	
 	/**
 	 * Whether the client wants to be provided with the list of all {@link Identity}s.
-	 * If true, the client will receive the callbacks {@link #handleIdentitiesSynchronization()} and {@link #handleIdentityChangedNotification()}. 
+	 * If true, the client will receive the callbacks {@link #handleIdentitiesSynchronization()} and {@link #handleIdentityChangedNotification()}.
+	 * @see IdentitiesSubscription 
 	 */
 	protected final boolean mSubscribeToIdentities;
 
 	/**
 	 * Whether the client wants to be provided with the list of all {@link Trust}s.
-	 * If true, the client will receive the callbacks {@link #handleTrustsSynchronization()} and {@link #handleTrustChangedNotification()}. 
+	 * If true, the client will receive the callbacks {@link #handleTrustsSynchronization()} and {@link #handleTrustChangedNotification()}.
+	 * @see TrustsSubscription 
 	 */
 	protected final boolean mSubscribeToTrusts;
 
 	/**
 	 * Whether the client wants to be provided with the list of all {@link Score}s.
-	 * If true, the client will receive the callbacks {@link #handleScoresSynchronization()} and {@link #handleScoreChangedNotification()}. 
+	 * If true, the client will receive the callbacks {@link #handleScoresSynchronization()} and {@link #handleScoreChangedNotification()}.
+	 * @see ScoresSubscription 
 	 */
 	protected final boolean mSubscribeToScores;
+	
+	/**
+	 * The ID of the current {@link IdentitiesSubscription}.
+	 * @see SubscriptionManager.Subscription#getID()
+	 */
+	private String mIdentitiesSubscriptionID = null;
+	
+	/**
+	 * The ID of the current {@link TrustsSubscription}.
+	 * @see SubscriptionManager.Subscription#getID()
+	 */
+	private String mTrustsSubscriptionID = null;
+	
+	/**
+	 * The ID of the current {@link ScoresSubscription}.
+	 * @see SubscriptionManager.Subscription#getID()
+	 */
+	private String mScoresSubscriptionID = null;
 	
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
 	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
@@ -182,18 +206,26 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * Safe to be called if a connection already exists - it will be replaced with a new one then.
 	 */
 	private synchronized void connect() {
-		// Notice: PluginTalker has no disconnection mechanism, we can must drop references to existing connections and then they will be GCed
+		disconnect();
+		
 		try {
 			mConnectionIdentifier = UUID.randomUUID().toString();
 			mConnection = mPluginRespirator.getPluginTalker(this, WOT_FCP_NAME, mConnectionIdentifier);
 			Logger.normal(this, "Connected to WOT, identifier: " + mConnectionIdentifier);
 			handleConnectionEstablished();
 		} catch(PluginNotFoundException e) {
-			mConnectionIdentifier = null;
-			mConnection = null; // Not necessary but we anyway make sure that this happens in case we someday catch more than PluginNotFoundException
 			Logger.warning(this, "Cannot connect to WOT!");
 			handleConnectionLost();
 		}
+	}
+	
+	private synchronized void disconnect() {
+		// Notice: PluginTalker has no disconnection mechanism, we can must drop references to existing connections and then they will be GCed
+		mConnection = null;
+		mConnectionIdentifier = null;
+		mIdentitiesSubscriptionID = null;
+		mTrustsSubscriptionID = null;
+		mScoresSubscriptionID = null;
 	}
 	
 	private boolean connected()  {
@@ -271,8 +303,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 		// This will wait for run() to exit.
 		mTicker.shutdown();
-		mConnection = null;
-		mConnectionIdentifier = null;
+		disconnect();
 		
 		Logger.normal(this, "Terminated.");
 	}
