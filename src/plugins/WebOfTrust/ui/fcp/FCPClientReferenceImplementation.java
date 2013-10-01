@@ -264,12 +264,18 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 	
-	private void fcp_Subscribe(SubscriptionType type) {
-		
+	private void fcp_Subscribe(final SubscriptionType type) {
+		final SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.putOverwrite("Message", "Subscribe");
+		sfs.putOverwrite("To", type.toString());
+		mConnection.send(sfs, null);
 	}
 	
-	private void fcp_Unsubscribe(SubscriptionType type) {
-		
+	private void fcp_Unsubscribe(final SubscriptionType type) {
+		final SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.putOverwrite("Message", "Unsubscribe");
+		sfs.putOverwrite("Subscription", mSubscriptionIDs.get(type));
+		mConnection.send(sfs, null);
 	}
 	
 	@Override
