@@ -3,11 +3,15 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.fcp;
 
+import java.util.Collection;
 import java.util.Random;
 import java.util.UUID;
 
+import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
+import plugins.WebOfTrust.Trust;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.FredPluginTalker;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -76,6 +80,24 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/** The value of {@link CurrentTimeUTC#get()} when we last sent a ping to the Web Of Trust plugin. */
 	private long mLastPingSentDate = 0;
 	
+	/**
+	 * Whether the client wants to be provided with the list of all {@link Identity}s.
+	 * If true, the client will receive the callbacks {@link #handleIdentitiesSynchronization()} and {@link #handleIdentityChangedNotification()}. 
+	 */
+	protected final boolean mSubscribeToIdentities;
+
+	/**
+	 * Whether the client wants to be provided with the list of all {@link Trust}s.
+	 * If true, the client will receive the callbacks {@link #handleTrustsSynchronization()} and {@link #handleTrustChangedNotification()}. 
+	 */
+	protected final boolean mSubscribeToTrusts;
+
+	/**
+	 * Whether the client wants to be provided with the list of all {@link Score}s.
+	 * If true, the client will receive the callbacks {@link #handleScoresSynchronization()} and {@link #handleScoreChangedNotification()}. 
+	 */
+	protected final boolean mSubscribeToScores;
+	
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
 	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
 	private static transient volatile boolean logDEBUG = false;
@@ -89,10 +111,14 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		Logger.registerClass(FCPClientReferenceImplementation.class);
 	}
 
-	public FCPClientReferenceImplementation(final PluginRespirator myPluginRespirator, final Executor myExecutor) {
+	public FCPClientReferenceImplementation(final PluginRespirator myPluginRespirator, final Executor myExecutor,
+			final boolean subscribeToIdentities, final boolean subscribeToTrusts, final boolean subscribeToScores) {
 		mPluginRespirator = myPluginRespirator;
 		mTicker = new TrivialTicker(myExecutor);
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
+		mSubscribeToIdentities = subscribeToIdentities;
+		mSubscribeToTrusts = subscribeToTrusts;
+		mSubscribeToScores = subscribeToScores;
 	}
 	
 	/**
@@ -224,6 +250,18 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	abstract void handleConnectionEstablished();
 	
 	abstract void handleConnectionLost();
+	
+	abstract void handleIdentitiesSynchronization(Collection<Identity> allIdentities);
+	
+	abstract void handleTrustsSynchronization(Collection<Trust> allTrusts);
+	
+	abstract void handleScoresSynchronization(Collection<Score> allScores);
+	
+	abstract void handleIdentityChangedNotification(Identity oldIdentity, Identity newIdentity);
+	
+	abstract void handleTrustChangedNotification(Trust oldTrust, Trust newTrust);
+	
+	abstract void handleScoreChangedNotification(Score oldScore, Score newScore);
 	
 	/**
 	 * Must be called at shutdown of your plugin. 
