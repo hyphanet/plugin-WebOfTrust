@@ -1,5 +1,7 @@
 package plugins.WebOfTrust.ui.fcp;
 
+import java.util.Collection;
+
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
@@ -23,7 +25,7 @@ import freenet.support.Logger.LogLevel;
 public final class DebugFCPClient extends FCPClientReferenceImplementation {
 
 	public DebugFCPClient(WebOfTrust myWebOfTrust, Executor myExecutor) {
-		super(myWebOfTrust, myExecutor);
+		super(myWebOfTrust.getPluginRespirator(), myExecutor);
 		// FIXME Auto-generated constructor stub
 	}
 
@@ -37,6 +39,43 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	void handleConnectionLost() {
 		// FIXME Auto-generated method stub
 
+	}
+
+	@Override
+	void handleIdentitiesSynchronization(Collection<Identity> allIdentities) {
+		// FIXME Auto-generated method stub
+		
+	}
+
+	@Override
+	void handleTrustsSynchronization(Collection<Trust> allTrusts) {
+		// FIXME Auto-generated method stub
+		
+	}
+
+	@Override
+	void handleScoresSynchronization(Collection<Score> allScores) {
+		// FIXME Auto-generated method stub
+		
+	}
+
+	@Override
+	void handleIdentityChangedNotification(Identity oldIdentity,
+			Identity newIdentity) {
+		// FIXME Auto-generated method stub
+		
+	}
+
+	@Override
+	void handleTrustChangedNotification(Trust oldTrust, Trust newTrust) {
+		// FIXME Auto-generated method stub
+		
+	}
+
+	@Override
+	void handleScoreChangedNotification(Score oldScore, Score newScore) {
+		// FIXME Auto-generated method stub
+		
 	}
 
 }
