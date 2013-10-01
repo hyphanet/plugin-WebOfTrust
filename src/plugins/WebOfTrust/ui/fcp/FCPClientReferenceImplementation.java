@@ -85,8 +85,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/** The value of {@link CurrentTimeUTC#get()} when we last sent a ping to the Web Of Trust plugin. */
 	private long mLastPingSentDate = 0;
 	
-	/** All types of {@link Subscription} */
-	enum SubscriptionType {
+	/** All types of {@link Subscription}. The names match the FCP messages literally and are used for lookup, please do not change them.*/
+	private enum SubscriptionType {
 		/** @see IdentitiesSubscription */
 		Identities,
 		/** @see TrustsSubscription */
