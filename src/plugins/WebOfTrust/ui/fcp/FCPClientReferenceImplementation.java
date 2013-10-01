@@ -6,6 +6,8 @@ package plugins.WebOfTrust.ui.fcp;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
@@ -105,6 +107,9 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 */
 	private EnumMap<SubscriptionType, String> mSubscriptionIDs = new EnumMap<SubscriptionType, String>(SubscriptionType.class);
 	
+	/** Maps the String name of WOT FCP messages to the handler which shall deal with them */
+	private HashMap<String, FCPMessageHandler> mFCPMessageHandlers = new HashMap<String, FCPMessageHandler>();
+	
 	
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
 	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
@@ -123,6 +128,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		mPluginRespirator = myPluginRespirator;
 		mTicker = new TrivialTicker(myExecutor);
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
+		
+		mFCPMessageHandlers.put("Pong", new PongHandler());
 	}
 	
 	/**
@@ -286,7 +293,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		sfs.putOverwrite("Subscription", mSubscriptionIDs.get(type));
 		mConnection.send(sfs, null);
 	}
-	
+
 	@Override
 	public synchronized final void onReply(final String pluginname, final String indentifier, final SimpleFieldSet params, final Bucket data) {
 		if(!WOT_FCP_NAME.equals(pluginname))
@@ -300,15 +307,33 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 		assert(data==null);
 		
-		final String message = params.get("Message");
-		assert(message != null);
 		
-		if("Pong".equals(message)) {
+		final String messageString = params.get("Message");
+		assert(messageString != null);
+		
+		final FCPMessageHandler handler = mFCPMessageHandlers.get(messageString);
+		
+		if(handler == null) {
+			Logger.warning(this, "Unknown message type: " + messageString);
+			return;
+		}
+		
+		handler.handle(params);
+	}
+	
+	private interface FCPMessageHandler {
+		public void handle(final SimpleFieldSet data);
+	}
+	
+	private final class PongHandler implements FCPMessageHandler {
+		@Override
+		public void handle(final SimpleFieldSet data) {
 			if((CurrentTimeUTC.getInMillis() - mLastPingSentDate) <= WOT_PING_TIMEOUT_DELAY)
 				mLastPingSentDate = 0; // Mark the ping as successful.
-		} else
-			Logger.warning(this, "Unknown message type: " + message);
+
+		}
 	}
+	
 	
 	abstract void handleConnectionEstablished();
 	
