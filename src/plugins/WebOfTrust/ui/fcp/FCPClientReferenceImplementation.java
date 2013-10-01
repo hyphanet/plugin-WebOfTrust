@@ -304,10 +304,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			// FIXME: Do something which makes WOT cancel maybe-existing subscriptions so it doesn't keep collecting data for them.
 			return;
 		}
-		
-		assert(data==null);
-		
-		
+
 		final String messageString = params.get("Message");
 		final FCPMessageHandler handler = mFCPMessageHandlers.get(messageString);
 		
@@ -316,19 +313,18 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			return;
 		}
 		
-		handler.handle(params);
+		handler.handle(params, data);
 	}
 	
 	private interface FCPMessageHandler {
-		public void handle(final SimpleFieldSet data);
+		public void handle(final SimpleFieldSet sfs, final Bucket data);
 	}
 	
 	private final class PongHandler implements FCPMessageHandler {
 		@Override
-		public void handle(final SimpleFieldSet data) {
+		public void handle(final SimpleFieldSet sfs, final Bucket data) {
 			if((CurrentTimeUTC.getInMillis() - mLastPingSentDate) <= WOT_PING_TIMEOUT_DELAY)
 				mLastPingSentDate = 0; // Mark the ping as successful.
-
 		}
 	}
 	
