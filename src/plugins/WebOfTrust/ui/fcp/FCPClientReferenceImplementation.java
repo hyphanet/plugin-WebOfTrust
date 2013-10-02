@@ -118,6 +118,14 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/** Maps the String name of WOT FCP messages to the handler which shall deal with them */
 	private HashMap<String, FCPMessageHandler> mFCPMessageHandlers = new HashMap<String, FCPMessageHandler>();
 	
+	/** Constructs {@link Identity} objects from {@link SimpleFieldSet} data received via FCP. */
+	private final IdentityParser mIdentityParser;
+	
+	/** Constructs {@link Trust} objects from {@link SimpleFieldSet} data received via FCP. */
+	private final TrustParser mTrustParser = null;
+	
+	/** Constructs {@link Score} objects from {@link SimpleFieldSet} data received via FCP. */
+	private final ScoreParser mScoreParser = null;
 	
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
 	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
@@ -132,12 +140,21 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		Logger.registerClass(FCPClientReferenceImplementation.class);
 	}
 
-	public FCPClientReferenceImplementation(final PluginRespirator myPluginRespirator, final Executor myExecutor) {
+	/**
+	 * FIXME: Don't require a WebOfTrust because the client which copypastes this class won't have one.
+	 * We merely need it for feeding {@link Persistent#initializeTransient(WebOfTrust)} (indirectly through constructors of Identity/Trust/Score).
+	 * We could deal with this by implementing a class MockWebOfTrust which only provides whats needed for initializeTransient to work.
+	 */
+	public FCPClientReferenceImplementation(final WebOfTrust myMockWebOfTrust, final PluginRespirator myPluginRespirator, final Executor myExecutor) {
 		mPluginRespirator = myPluginRespirator;
 		mTicker = new TrivialTicker(myExecutor);
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
 		
 		mFCPMessageHandlers.put("Pong", new PongHandler());
+		mFCPMessageHandlers.put("Identities", new IdentitiesSynchronizationHandler());
+		mFCPMessageHandlers.put("IdentityChangedNotification", new IdentityChangedNotificationHandler());
+		
+		mIdentityParser = new IdentityParser(myMockWebOfTrust);
 	}
 	
 	/**
@@ -333,6 +350,29 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		public void handle(final SimpleFieldSet sfs, final Bucket data) {
 			if((CurrentTimeUTC.getInMillis() - mLastPingSentDate) <= WOT_PING_TIMEOUT_DELAY)
 				mLastPingSentDate = 0; // Mark the ping as successful.
+		}
+	}
+	
+	private final class IdentitiesSynchronizationHandler implements FCPMessageHandler {
+		@Override
+		public void handle(final SimpleFieldSet sfs, final Bucket data) {
+			try {
+				handleIdentitiesSynchronization(mIdentityParser.parseSynchronization(sfs));
+			} catch(Exception e) {
+				// FIXME: Pass it through to WOT.
+			}
+		}
+	}
+	
+	private final class IdentityChangedNotificationHandler implements FCPMessageHandler {
+		@Override
+		public void handle(SimpleFieldSet sfs, Bucket data) {
+			try {
+				final ChangeSet<Identity> changeSet = mIdentityParser.parseNotification(sfs);
+				handleIdentityChangedNotification(changeSet.beforeChange, changeSet.afterChange);
+			} catch(Exception e) {
+				// FIXME: Pass it through to WOT.
+			}
 		}
 	}
 
