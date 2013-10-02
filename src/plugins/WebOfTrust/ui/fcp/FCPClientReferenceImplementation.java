@@ -150,9 +150,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		mTicker = new TrivialTicker(myExecutor);
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
 		
-		mFCPMessageHandlers.put("Pong", new PongHandler());
-		mFCPMessageHandlers.put("Identities", new IdentitiesSynchronizationHandler());
-		mFCPMessageHandlers.put("IdentityChangedNotification", new IdentityChangedNotificationHandler());
+		final FCPMessageHandler[] handlers = {
+				new PongHandler(),
+				new IdentitiesSynchronizationHandler(),
+				new IdentityChangedNotificationHandler() };
+		
+		for(FCPMessageHandler handler : handlers)
+			mFCPMessageHandlers.put(handler.getMessageName(), handler);
 		
 		mIdentityParser = new IdentityParser(myMockWebOfTrust);
 	}
@@ -342,10 +346,20 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	private interface FCPMessageHandler {
+		/**
+		 * This function shall the value of the {@link SimpleFieldSet} "Message" field this handler belongs to with.
+		 */
+		public String getMessageName();
+		
 		public void handle(final SimpleFieldSet sfs, final Bucket data);
 	}
 	
 	private final class PongHandler implements FCPMessageHandler {
+		@Override
+		public String getMessageName() {
+			return "Pong";
+		}
+		
 		@Override
 		public void handle(final SimpleFieldSet sfs, final Bucket data) {
 			if((CurrentTimeUTC.getInMillis() - mLastPingSentDate) <= WOT_PING_TIMEOUT_DELAY)
@@ -354,6 +368,11 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	private final class IdentitiesSynchronizationHandler implements FCPMessageHandler {
+		@Override
+		public String getMessageName() {
+			return "Identities";
+		}
+		
 		@Override
 		public void handle(final SimpleFieldSet sfs, final Bucket data) {
 			try {
@@ -365,6 +384,11 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	private final class IdentityChangedNotificationHandler implements FCPMessageHandler {
+		@Override
+		public String getMessageName() {
+			return "IdentityChangedNotification";
+		}
+		
 		@Override
 		public void handle(SimpleFieldSet sfs, Bucket data) {
 			try {
