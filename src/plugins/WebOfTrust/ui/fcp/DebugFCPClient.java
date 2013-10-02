@@ -1,6 +1,7 @@
 package plugins.WebOfTrust.ui.fcp;
 
 import java.util.Collection;
+import java.util.Map;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Score;
@@ -23,9 +24,10 @@ import freenet.support.Logger.LogLevel;
  * @author xor (xor@freenetproject.org)
  */
 public final class DebugFCPClient extends FCPClientReferenceImplementation {
+	
 
-	public DebugFCPClient(WebOfTrust myWebOfTrust, Executor myExecutor) {
-		super(myWebOfTrust.getPluginRespirator(), myExecutor);
+	public DebugFCPClient(WebOfTrust myWebOfTrust, Executor myExecutor, Map<String, Identity> identityStorage) {
+		super(myWebOfTrust, identityStorage, myWebOfTrust.getPluginRespirator(), myExecutor);
 		// FIXME Auto-generated constructor stub
 	}
 
