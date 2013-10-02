@@ -300,6 +300,18 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		checkedActivate(1);
 		return mCurrentEditionFetchState;
 	}
+	
+	/**
+	 * ATTENTION: Only use this when you need to construct arbitrary Identity objects - for example when writing an FCP parser.
+	 * It won't guarantee semantic integrity of the identity object because it does not update related things such as the date when it was fetched.
+	 * Instead, use the event handlers such as {@link #onFetched()}, {@link #onFetched(Date)} and {@link #onParsingFailed()}.
+	 * 
+	 * @param fetchState The desired fetch state.
+	 */
+	public final void forceSetCurrentEditionFetchState(final FetchState fetchState) {
+		checkedActivate(1);
+		mCurrentEditionFetchState = fetchState;
+	}
 
 	/**
 	 * Sets the edition of the last fetched version of this identity.
