@@ -127,7 +127,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Unsubscribe");
-		sfs.putOverwrite("Subscription", id);
+		sfs.putOverwrite("SubscriptionID", id);
 		fcpCall(sfs);
 		
 		// Final reply message is the full set of all objects of the type the client was interested in so the client can validated whether
@@ -140,7 +140,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		final SimpleFieldSet subscription = mReplyReceiver.getNextResult();
 		assertEquals("Unsubscribed", subscription.get("Message"));
 		assertEquals(type, subscription.get("From"));
-		assertEquals(id, subscription.get("Subscription"));
+		assertEquals(id, subscription.get("SubscriptionID"));
 		assertFalse(mReplyReceiver.hasNextResult());
 	}
 	
@@ -159,11 +159,11 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		final SimpleFieldSet subscription = mReplyReceiver.getNextResult();
 		assertEquals("Subscribed", subscription.get("Message"));
 		assertEquals(type, subscription.get("To"));
-		final String id = subscription.get("Subscription");
+		final String id = subscription.get("SubscriptionID");
 		try {
 			UUID.fromString(id);
 		} catch(IllegalArgumentException e) {
-			fail("Subscription ID is invalid!");
+			fail("SubscriptionID is invalid!");
 			throw e;
 		}
 		

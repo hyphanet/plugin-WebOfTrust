@@ -219,7 +219,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		if(existingSubscription != null) {
 			final SimpleFieldSet sfs = new SimpleFieldSet(true);
 			sfs.putOverwrite("Message", "Unsubscribe");
-			sfs.putOverwrite("Subscription", existingSubscription);
+			sfs.putOverwrite("SubscriptionID", existingSubscription);
 			mConnection.send(sfs, null);
 		}
     	
@@ -348,7 +348,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	private void fcp_Unsubscribe(final SubscriptionType type) {
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Unsubscribe");
-		sfs.putOverwrite("Subscription", mSubscriptionIDs.get(type));
+		sfs.putOverwrite("SubscriptionID", mSubscriptionIDs.get(type));
 		mConnection.send(sfs, null);
 	}
 
@@ -422,7 +422,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 
 		@Override
 		public void handle(SimpleFieldSet sfs, Bucket data) {
-	    	final String id = sfs.get("Subscription");
+	    	final String id = sfs.get("SubscriptionID");
 	    	final String to = sfs.get("To");
 	    	
 	    	assert(id != null && id.length() > 0);
@@ -442,7 +442,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 
 		@Override
 		public void handle(SimpleFieldSet sfs, Bucket data) {
-	    	final String id = sfs.get("Subscription");
+	    	final String id = sfs.get("SubscriptionID");
 	    	final String from = sfs.get("From");
 	    	
 	    	assert(id != null && id.length() > 0);

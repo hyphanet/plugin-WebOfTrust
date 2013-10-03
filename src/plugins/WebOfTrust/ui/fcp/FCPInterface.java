@@ -926,13 +926,13 @@ public final class FCPInterface implements FredPluginFCP {
     		
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Subscribed");
-    	sfs.putOverwrite("Subscription", subscription.getID());
+    	sfs.putOverwrite("SubscriptionID", subscription.getID());
     	sfs.putOverwrite("To", to);
     	return sfs;
     }
     
     private SimpleFieldSet handleUnsubscribe(final SimpleFieldSet params) throws InvalidParameterException, UnknownSubscriptionException {
-    	final String subscriptionID = getMandatoryParameter(params, "Subscription");
+    	final String subscriptionID = getMandatoryParameter(params, "SubscriptionID");
     	final Class<Subscription<? extends Notification>> clazz = mSubscriptionManager.unsubscribe(subscriptionID);
     	final String type;
     	
@@ -949,7 +949,7 @@ public final class FCPInterface implements FredPluginFCP {
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Unsubscribed");
-    	sfs.putOverwrite("Subscription", subscriptionID);
+    	sfs.putOverwrite("SubscriptionID", subscriptionID);
     	sfs.putOverwrite("From", type);
     	return sfs;
     }
