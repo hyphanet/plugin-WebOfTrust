@@ -948,7 +948,7 @@ public final class FCPInterface implements FredPluginFCP {
     	// FIXME: What about mClients?
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-    	sfs.putOverwrite("Message", "Unubscribed");
+    	sfs.putOverwrite("Message", "Unsubscribed");
     	sfs.putOverwrite("Subscription", subscriptionID);
     	sfs.putOverwrite("From", type);
     	return sfs;
