@@ -160,6 +160,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		final FCPMessageHandler[] handlers = {
 				new PongHandler(),
 				new SubscriptionSucceededHandler(),
+				new SubscriptionTerminatedHandler(),
 				new IdentitiesSynchronizationHandler(),
 				new TrustsSynchronizationHandler(),
 				new ScoresSynchronizationHandler(),
@@ -213,6 +214,15 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 */
 	public synchronized void unsubscribe(final SubscriptionType type) {
 		mSubscribeTo.remove(type);
+		
+		final String existingSubscription = mSubscriptionIDs.get(type);
+		if(existingSubscription != null) {
+			final SimpleFieldSet sfs = new SimpleFieldSet(true);
+			sfs.putOverwrite("Message", "Unsubscribe");
+			sfs.putOverwrite("Subscription", existingSubscription);
+			mConnection.send(sfs, null);
+		}
+    	
 		scheduleKeepaliveLoopExecution();
 	}
 	
@@ -278,6 +288,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		if(mConnection != null) {
 			for(SubscriptionType type : mSubscriptionIDs.keySet()) {
 				unsubscribe(type);
+				// The "Unsubscribed" message would normally trigger the removal from the mSubscriptionIDs array but we cannot
+				// receive it anymore after we are disconnected so we remove the ID ourselves
+				// FIXME: Check whether it still arrives at onReply() anyway. If it does so, it will trigger error logging -
+				// we then should find a way to prevent that.
 				mSubscriptionIDs.remove(type);
 			}
 		}
@@ -417,6 +431,26 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	    	final SubscriptionType type = SubscriptionType.valueOf(to);
 	    	assert !mSubscriptionIDs.containsKey(type) : "Subscription should not exist already";
 	    	mSubscriptionIDs.put(type, id);
+		}
+	}
+	
+	private final class SubscriptionTerminatedHandler implements FCPMessageHandler {
+		@Override
+		public String getMessageName() {
+			return "Unubscribed";
+		}
+
+		@Override
+		public void handle(SimpleFieldSet sfs, Bucket data) {
+	    	final String id = sfs.get("Subscription");
+	    	final String from = sfs.get("From");
+	    	
+	    	assert(id != null && id.length() > 0);
+	    	assert(from != null);
+	    	
+	    	final SubscriptionType type = SubscriptionType.valueOf(from);
+	    	assert mSubscriptionIDs.containsKey(type) : "Subscription should exist";
+	    	mSubscriptionIDs.remove(type);
 		}
 	}
 	
