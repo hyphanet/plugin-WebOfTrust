@@ -356,8 +356,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			Logger.warning(this, "Unknown message type: " + messageString);
 			return;
 		}
-		
+
+		if(logMINOR) Logger.minor(this, "Handling message '" + messageString + "' with " + handler + " ...");
 		handler.handle(params, data);
+		if(logMINOR) Logger.minor(this, "Handling message finished.");
 	}
 	
 	private interface FCPMessageHandler {
