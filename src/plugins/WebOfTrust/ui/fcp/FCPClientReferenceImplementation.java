@@ -215,13 +215,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	public synchronized void unsubscribe(final SubscriptionType type) {
 		mSubscribeTo.remove(type);
 		
-		final String existingSubscription = mSubscriptionIDs.get(type);
-		if(existingSubscription != null) {
-			final SimpleFieldSet sfs = new SimpleFieldSet(true);
-			sfs.putOverwrite("Message", "Unsubscribe");
-			sfs.putOverwrite("SubscriptionID", existingSubscription);
-			mConnection.send(sfs, null);
-		}
+		if(mSubscriptionIDs.containsKey(type))
+			fcp_Unsubscribe(type);
     	
 		scheduleKeepaliveLoopExecution();
 	}
