@@ -924,6 +924,7 @@ public final class FCPInterface implements FredPluginFCP {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Subscribed");
     	sfs.putOverwrite("Subscription", subscription.getID());
+    	sfs.putOverwrite("To", to);
     	return sfs;
     }
     

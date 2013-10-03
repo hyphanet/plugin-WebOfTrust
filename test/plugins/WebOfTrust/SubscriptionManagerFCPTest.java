@@ -136,6 +136,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		// Second reply message is the confirmation of the subscription
 		final SimpleFieldSet subscription = mReplyReceiver.getNextResult();
 		assertEquals("Subscribed", subscription.get("Message"));
+		assertEquals(type, subscription.get("To"));
 		try {
 			UUID.fromString(subscription.get("Subscription"));
 		} catch(IllegalArgumentException e) {
