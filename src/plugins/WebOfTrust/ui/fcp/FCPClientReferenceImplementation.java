@@ -159,6 +159,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 		final FCPMessageHandler[] handlers = {
 				new PongHandler(),
+				new SubscriptionSucceededHandler(),
 				new IdentitiesSynchronizationHandler(),
 				new TrustsSynchronizationHandler(),
 				new ScoresSynchronizationHandler(),
@@ -394,6 +395,26 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			} catch(Exception e) {
 				// FIXME: Pass it through to WOT.
 			}
+		}
+	}
+	
+	private final class SubscriptionSucceededHandler implements FCPMessageHandler {
+		@Override
+		public String getMessageName() {
+			return "Subscribed";
+		}
+
+		@Override
+		public void handle(SimpleFieldSet sfs, Bucket data) {
+	    	final String id = sfs.get("Subscription");
+	    	final String to = sfs.get("To");
+	    	
+	    	assert(id != null && id.length() > 0);
+	    	assert(to != null);
+	    	
+	    	final SubscriptionType type = SubscriptionType.valueOf(to);
+	    	assert !mSubscriptionIDs.containsKey(type) : "Subscription should not exist already";
+	    	mSubscriptionIDs.put(type, id);
 		}
 	}
 	
