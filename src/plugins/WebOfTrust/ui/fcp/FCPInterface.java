@@ -932,7 +932,7 @@ public final class FCPInterface implements FredPluginFCP {
     }
     
     private SimpleFieldSet handleUnsubscribe(final SimpleFieldSet params) throws InvalidParameterException, UnknownSubscriptionException {
-    	final String subscriptionID = getMandatoryParameter(params, "SubscriptionID");
+    	final String subscriptionID = getMandatoryParameter(params, "Subscription");
     	final Class<Subscription<? extends Notification>> clazz = mSubscriptionManager.unsubscribe(subscriptionID);
     	final String type;
     	
