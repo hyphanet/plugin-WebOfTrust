@@ -1001,9 +1001,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Deletes the given {@link Subscription}.
 	 * 
 	 * @param subscriptionID See {@link Subscription#getID()}
+	 * @return The class of the terminated {@link Subscription}
 	 * @throws UnknownSubscriptionException If no subscription with the given ID exists.
 	 */
-	public void unsubscribe(String subscriptionID) throws UnknownSubscriptionException {
+	@SuppressWarnings("unchecked")
+	public Class<Subscription<? extends Notification>> unsubscribe(String subscriptionID) throws UnknownSubscriptionException {
 		synchronized(mWoT) { // FIXME: Remove this synchronization when resolving the inner FIXME
 		synchronized(this) {
 		final Subscription<? extends Notification> subscription = getSubscription(subscriptionID);
@@ -1027,6 +1029,7 @@ public final class SubscriptionManager implements PrioRunnable {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
+		return (Class<Subscription<? extends Notification>>) subscription.getClass();
 		}
 		}
 	}

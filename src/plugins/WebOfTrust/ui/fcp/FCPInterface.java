@@ -14,12 +14,15 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
+import plugins.WebOfTrust.SubscriptionManager.IdentitiesSubscription;
 import plugins.WebOfTrust.SubscriptionManager.IdentityChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.Notification;
 import plugins.WebOfTrust.SubscriptionManager.ScoreChangedNotification;
+import plugins.WebOfTrust.SubscriptionManager.ScoresSubscription;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.SubscriptionManager.SubscriptionExistsAlreadyException;
 import plugins.WebOfTrust.SubscriptionManager.TrustChangedNotification;
+import plugins.WebOfTrust.SubscriptionManager.TrustsSubscription;
 import plugins.WebOfTrust.SubscriptionManager.UnknownSubscriptionException;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
@@ -930,13 +933,24 @@ public final class FCPInterface implements FredPluginFCP {
     
     private SimpleFieldSet handleUnsubscribe(final SimpleFieldSet params) throws InvalidParameterException, UnknownSubscriptionException {
     	final String subscriptionID = getMandatoryParameter(params, "SubscriptionID");
-    	mSubscriptionManager.unsubscribe(subscriptionID);
+    	final Class<Subscription<? extends Notification>> clazz = mSubscriptionManager.unsubscribe(subscriptionID);
+    	final String type;
+    	
+    	if(clazz.equals(IdentitiesSubscription.class)) 
+    		type = "Identities";
+    	else if(clazz.equals(TrustsSubscription.class))
+    		type = "Trusts";
+    	else if(clazz.equals(ScoresSubscription.class))
+    		type = "Scores";
+    	else
+    		throw new IllegalStateException("Unknown subscription type: " + clazz);
     	
     	// FIXME: What about mClients?
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Unubscribed");
     	sfs.putOverwrite("Subscription", subscriptionID);
+    	sfs.putOverwrite("From", type);
     	return sfs;
     }
     
