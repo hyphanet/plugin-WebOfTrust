@@ -116,13 +116,35 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		mReceivedScores = new HashMap<String, Score>();
 	}
 	
-	public void testSubscribe() throws FSParseException {
-		testSubscribeTo("Identities");
-		testSubscribeTo("Trusts");
-		testSubscribeTo("Scores");
+	public void testSubscribeUnsubscribe() throws FSParseException {
+		testSubscribeUnsubscribe("Identities");
+		testSubscribeUnsubscribe("Trusts");
+		testSubscribeUnsubscribe("Scores");
 	}
 	
-	void testSubscribeTo(String type) throws FSParseException {
+	void testSubscribeUnsubscribe(String type) throws FSParseException {
+		final String id = testSubscribeTo(type); // We are subscribed now.
+		
+		final SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.putOverwrite("Message", "Unsubscribe");
+		sfs.putOverwrite("Subscription", id);
+		fcpCall(sfs);
+		
+		// Final reply message is the full set of all objects of the type the client was interested in so the client can validated whether
+		// event-notifications has sent him everything properly.
+		final SimpleFieldSet synchronization = mReplyReceiver.getNextResult();
+		assertEquals(type, synchronization.get("Message"));
+		assertEquals("0", synchronization.get("Amount")); // No identities/trusts/scores stored yet		
+
+		// Second reply message is the confirmation of the unsubscription
+		final SimpleFieldSet subscription = mReplyReceiver.getNextResult();
+		assertEquals("Unsubscribed", subscription.get("Message"));
+		assertEquals(type, subscription.get("From"));
+		assertEquals(id, subscription.get("Subscription"));
+		assertFalse(mReplyReceiver.hasNextResult());
+	}
+	
+	String testSubscribeTo(String type) throws FSParseException {
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Subscribe");
 		sfs.putOverwrite("To", type);
@@ -137,8 +159,9 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		final SimpleFieldSet subscription = mReplyReceiver.getNextResult();
 		assertEquals("Subscribed", subscription.get("Message"));
 		assertEquals(type, subscription.get("To"));
+		final String id = subscription.get("Subscription");
 		try {
-			UUID.fromString(subscription.get("Subscription"));
+			UUID.fromString(id);
 		} catch(IllegalArgumentException e) {
 			fail("Subscription ID is invalid!");
 			throw e;
@@ -154,9 +177,10 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		assertEquals("plugins.WebOfTrust.SubscriptionManager$SubscriptionExistsAlreadyException", duplicateSubscriptionMessage.get("Description"));
 
 		assertFalse(mReplyReceiver.hasNextResult());
+		
+		return id;
 	}
-	
-	
+
 	public void testAllRandomized() throws MalformedURLException, InvalidParameterException, FSParseException, DuplicateTrustException, NotTrustedException, UnknownIdentityException {
 		final int initialOwnIdentityCount = 1;
 		final int initialIdentityCount = 100;
