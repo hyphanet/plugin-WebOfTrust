@@ -1,6 +1,7 @@
 package plugins.WebOfTrust.ui.fcp;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import plugins.WebOfTrust.Identity;
@@ -24,11 +25,23 @@ import freenet.support.Logger.LogLevel;
  * @author xor (xor@freenetproject.org)
  */
 public final class DebugFCPClient extends FCPClientReferenceImplementation {
-	
 
-	public DebugFCPClient(WebOfTrust myWebOfTrust, Executor myExecutor, Map<String, Identity> identityStorage) {
+	private HashMap<String, Identity> mReceivedIdentities = null; // Cannot be constructed here because the super constructor needs it
+	
+	private final HashMap<String, Trust> mReceivedTrusts = new HashMap<String, Trust>();
+	
+	private final HashMap<String, Score> mReceivedScores = new HashMap<String, Score>();
+	
+	
+	private DebugFCPClient(final WebOfTrust myWebOfTrust, final Executor myExecutor, Map<String, Identity> identityStorage) {
 		super(myWebOfTrust, identityStorage, myWebOfTrust.getPluginRespirator(), myExecutor);
-		// FIXME Auto-generated constructor stub
+	}
+	
+	public static DebugFCPClient construct(final WebOfTrust myWebOfTrust) {
+		final HashMap<String, Identity> identityStorage = new HashMap<String, Identity>();
+		final DebugFCPClient client = new DebugFCPClient(myWebOfTrust, myWebOfTrust.getPluginRespirator().getNode().executor, identityStorage);
+		client.mReceivedIdentities = identityStorage;
+		return client;
 	}
 
 	@Override
