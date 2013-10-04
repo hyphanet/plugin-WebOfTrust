@@ -9,6 +9,7 @@ import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import freenet.support.Executor;
+import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
 /**
@@ -32,6 +33,19 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	
 	private final HashMap<String, Score> mReceivedScores = new HashMap<String, Score>();
 	
+	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
+	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
+	private static transient volatile boolean logDEBUG = false;
+	
+	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#MINOR} for this class.
+	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		// Necessary for automatic setting of logDEBUG and logMINOR
+		Logger.registerClass(DebugFCPClient.class);
+	}
+
 	
 	private DebugFCPClient(final WebOfTrust myWebOfTrust, final Executor myExecutor, Map<String, Identity> identityStorage) {
 		super(myWebOfTrust, identityStorage, myWebOfTrust.getPluginRespirator(), myExecutor);
@@ -46,30 +60,35 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 
 	@Override
 	void handleConnectionEstablished() {
+		if(logMINOR) Logger.minor(this, "handleConnectionEstablished()");
 		// FIXME Auto-generated method stub
 
 	}
 
 	@Override
 	void handleConnectionLost() {
+		if(logMINOR) Logger.minor(this, "handleConnectionLost()")
 		// FIXME Auto-generated method stub
 
 	}
 
 	@Override
 	void handleIdentitiesSynchronization(Collection<Identity> allIdentities) {
+		if(logMINOR) Logger.minor(this, "handleIdentitiesSynchronization()");
 		// FIXME Auto-generated method stub
 		
 	}
 
 	@Override
 	void handleTrustsSynchronization(Collection<Trust> allTrusts) {
+		if(logMINOR) Logger.minor(this, "handleTrustsSynchronization()");
 		// FIXME Auto-generated method stub
 		
 	}
 
 	@Override
 	void handleScoresSynchronization(Collection<Score> allScores) {
+		if(logMINOR) Logger.minor(this, "handleScoresSynchronization()");
 		// FIXME Auto-generated method stub
 		
 	}
@@ -77,20 +96,23 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	@Override
 	void handleIdentityChangedNotification(Identity oldIdentity,
 			Identity newIdentity) {
+		if(logMINOR) Logger.minor(this, "handleIdentityChangedNotification()");
 		// FIXME Auto-generated method stub
 		
 	}
 
 	@Override
 	void handleTrustChangedNotification(Trust oldTrust, Trust newTrust) {
+		if(logMINOR) Logger.minor(this, "handleTrustChangedNotification()");
 		// FIXME Auto-generated method stub
 		
 	}
 
 	@Override
 	void handleScoreChangedNotification(Score oldScore, Score newScore) {
+		if(logMINOR) Logger.minor(this, "handleScoreChangedNotification()");
 		// FIXME Auto-generated method stub
-		
+
 	}
 
 }
