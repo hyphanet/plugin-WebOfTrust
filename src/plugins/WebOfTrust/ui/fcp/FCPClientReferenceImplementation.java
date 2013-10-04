@@ -20,6 +20,7 @@ import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.SubscriptionManager.IdentitiesSubscription;
+import plugins.WebOfTrust.SubscriptionManager.Notification;
 import plugins.WebOfTrust.SubscriptionManager.ScoresSubscription;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.SubscriptionManager.TrustsSubscription;
@@ -447,103 +448,96 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 	
-	private final class IdentitiesSynchronizationHandler implements FCPMessageHandler {
+	/**
+	 * Since we let the implementing child class of the abstract FCPClientReferenceImplementation handle the events, the handler might throw.
+	 * In that case we need to gracefully tell WOT about that: In case of {@link Subscription}'s event {@link Notification}s, it will re-send them then. 
+	 */
+	private abstract class MaybeFailingFCPMessageHandler implements FCPMessageHandler {
+		public void handle(final SimpleFieldSet sfs, final Bucket data) {
+			try {	
+				handle_MaybeFailing(sfs, data);
+			} catch(Exception e) {
+				Logger.error(FCPClientReferenceImplementation.this, "Message handler failed: " + this, e);
+				// FIXME: Pass it through to WOT (so it can re-send the events in case of event-notifications) 
+			}
+		}
+		
+		abstract void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws Exception;
+	}
+	
+	private final class IdentitiesSynchronizationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "Identities";
 		}
 		
 		@Override
-		public void handle(final SimpleFieldSet sfs, final Bucket data) {
-			try {
-				handleIdentitiesSynchronization(mIdentityParser.parseSynchronization(sfs));
-			} catch(Exception e) {
-				// FIXME: Pass it through to WOT.
-			}
+		public void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
+			handleIdentitiesSynchronization(mIdentityParser.parseSynchronization(sfs));
 		}
 	}
 	
-	private final class TrustsSynchronizationHandler implements FCPMessageHandler {
+	private final class TrustsSynchronizationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "Trusts";
 		}
 
 		@Override
-		public void handle(SimpleFieldSet sfs, Bucket data) {
-			try {
-				handleTrustsSynchronization(mTrustParser.parseSynchronization(sfs));
-			} catch(Exception e) {
-				// FIXME: Pass it through to WOT.
-			}
+		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
+			handleTrustsSynchronization(mTrustParser.parseSynchronization(sfs));
 		}
 	}
 	
-	private final class ScoresSynchronizationHandler implements FCPMessageHandler {
+	private final class ScoresSynchronizationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "Scores";
 		}
 
 		@Override
-		public void handle(SimpleFieldSet sfs, Bucket data) {
-			try {
-				handleScoresSynchronization(mScoreParser.parseSynchronization(sfs));
-			} catch(Exception e) {
-				// FIXME: Pass it through to WOT.
-			}
+		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
+			handleScoresSynchronization(mScoreParser.parseSynchronization(sfs));
 		}
 	}
 
 
-	private final class IdentityChangedNotificationHandler implements FCPMessageHandler {
+	private final class IdentityChangedNotificationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "IdentityChangedNotification";
 		}
 		
 		@Override
-		public void handle(SimpleFieldSet sfs, Bucket data) {
-			try {
-				final ChangeSet<Identity> changeSet = mIdentityParser.parseNotification(sfs);
-				handleIdentityChangedNotification(changeSet.beforeChange, changeSet.afterChange);
-			} catch(Exception e) {
-				// FIXME: Pass it through to WOT.
-			}
+		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
+			final ChangeSet<Identity> changeSet = mIdentityParser.parseNotification(sfs);
+			handleIdentityChangedNotification(changeSet.beforeChange, changeSet.afterChange);
 		}
 	}
 	
-	private final class TrustChangedNotificationHandler implements FCPMessageHandler {
+	private final class TrustChangedNotificationHandler extends MaybeFailingFCPMessageHandler  {
 		@Override
 		public String getMessageName() {
 			return "TrustChangedNotification";
 		}
 		
 		@Override
-		public void handle(SimpleFieldSet sfs, Bucket data) {
-			try {
-				final ChangeSet<Trust> changeSet = mTrustParser.parseNotification(sfs);
-				handleTrustChangedNotification(changeSet.beforeChange, changeSet.afterChange);
-			} catch(Exception e) {
-				// FIXME: Pass it through to WOT.
-			}
+		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
+			final ChangeSet<Trust> changeSet = mTrustParser.parseNotification(sfs);
+			handleTrustChangedNotification(changeSet.beforeChange, changeSet.afterChange);
 		}
 	}
 	
-	private final class ScoreChangedNotificationHandler implements FCPMessageHandler {
+	private final class ScoreChangedNotificationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "ScoreChangedNotification";
 		}
 		
 		@Override
-		public void handle(SimpleFieldSet sfs, Bucket data) {
-			try {
-				final ChangeSet<Score> changeSet = mScoreParser.parseNotification(sfs);
-				handleScoreChangedNotification(changeSet.beforeChange, changeSet.afterChange);
-			} catch(Exception e) {
-				// FIXME: Pass it through to WOT.
-			}
+		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
+			final ChangeSet<Score> changeSet = mScoreParser.parseNotification(sfs);
+			handleScoreChangedNotification(changeSet.beforeChange, changeSet.afterChange);
 		}
 	}
 
