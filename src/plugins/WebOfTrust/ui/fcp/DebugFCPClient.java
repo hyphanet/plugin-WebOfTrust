@@ -58,6 +58,14 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 		client.mReceivedIdentities = identityStorage;
 		return client;
 	}
+	
+	@Override
+	public void start() {
+		subscribe(SubscriptionType.Identities);
+		subscribe(SubscriptionType.Trusts);
+		subscribe(SubscriptionType.Scores);
+		super.start();
+	}
 
 	@Override
 	void handleConnectionEstablished() {
