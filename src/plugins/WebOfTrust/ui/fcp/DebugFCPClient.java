@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
@@ -75,22 +76,54 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	@Override
 	void handleIdentitiesSynchronization(Collection<Identity> allIdentities) {
 		if(logMINOR) Logger.minor(this, "handleIdentitiesSynchronization()");
-		// FIXME Auto-generated method stub
-		
+		new ReceivedSynchronizationPutter<Identity>().putAll(allIdentities, mReceivedIdentities);
 	}
 
 	@Override
 	void handleTrustsSynchronization(Collection<Trust> allTrusts) {
 		if(logMINOR) Logger.minor(this, "handleTrustsSynchronization()");
-		// FIXME Auto-generated method stub
-		
+		new ReceivedSynchronizationPutter<Trust>().putAll(allTrusts, mReceivedTrusts);
 	}
 
 	@Override
 	void handleScoresSynchronization(Collection<Score> allScores) {
 		if(logMINOR) Logger.minor(this, "handleScoresSynchronization()");
-		// FIXME Auto-generated method stub
+		new ReceivedSynchronizationPutter<Score>().putAll(allScores, mReceivedScores);
+	}
+	
+	/**
+	 * It is necessary to have this class instead of the following hypothetical function:
+	 * <code>void putAll(final Collection<Persistent> source, final HashMap<String, Persistent> target)</code>
+	 * 
+	 * We couldn't shove a HashMap<String, Identity> into target of the hypothetical function even though Identity is a subclass of Persistent:
+	 * The reason is that GenericClass<Type> is not a superclass of GenericClass<subtype of Object> in Java:
+	 * "Parameterized types are not covariant."
+	 */
+	class ReceivedSynchronizationPutter<T extends Persistent> {
 		
+		void putAll(final Collection<T> source, final HashMap<String, T> target) {
+			if(target.size() > 0) {
+				Logger.normal(this, "Received additional synchronization, validating existing data against it...");
+				
+				if(source.size() != target.size())
+					Logger.error(this, "Size mismatch: " + source.size() + " != " + target.size());
+				else {
+					for(final T expected : source) {
+						final T existing = target.get(expected);
+						if(existing == null)
+							Logger.error(this, "Not found: " + expected);
+						else if(!existing.equals(expected))
+							Logger.error(this, "Not equals: " + expected + " to " + existing);
+					}
+				}
+				target.clear();
+			}
+			
+			for(final T p : source) {
+				target.put(p.getID(), p);
+			}
+		}
+	
 	}
 
 	@Override
