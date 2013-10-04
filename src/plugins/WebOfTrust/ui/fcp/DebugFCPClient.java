@@ -75,20 +75,23 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 
 	@Override
 	void handleIdentitiesSynchronization(Collection<Identity> allIdentities) {
-		if(logMINOR) Logger.minor(this, "handleIdentitiesSynchronization()");
+		if(logMINOR) Logger.minor(this, "handleIdentitiesSynchronization()...");
 		putSynchronization(allIdentities, mReceivedIdentities);
+		if(logMINOR) Logger.minor(this, "handleIdentitiesSynchronization() finished.");
 	}
 
 	@Override
 	void handleTrustsSynchronization(Collection<Trust> allTrusts) {
-		if(logMINOR) Logger.minor(this, "handleTrustsSynchronization()");
+		if(logMINOR) Logger.minor(this, "handleTrustsSynchronization()...");
 		putSynchronization(allTrusts, mReceivedTrusts);
+		if(logMINOR) Logger.minor(this, "handleTrustsSynchronization() finished.");
 	}
 
 	@Override
 	void handleScoresSynchronization(Collection<Score> allScores) {
-		if(logMINOR) Logger.minor(this, "handleScoresSynchronization()");
+		if(logMINOR) Logger.minor(this, "handleScoresSynchronization()...");
 		putSynchronization(allScores, mReceivedScores);
+		if(logMINOR) Logger.minor(this, "handleScoresSynchronization() finished.");
 	}
 
 	<T extends Persistent> void putSynchronization(final Collection<T> source, final HashMap<String, T> target) {
