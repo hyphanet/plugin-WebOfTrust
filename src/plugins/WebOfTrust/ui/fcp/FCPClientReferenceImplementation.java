@@ -26,6 +26,7 @@ import plugins.WebOfTrust.SubscriptionManager.TrustsSubscription;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.FredPluginTalker;
@@ -636,6 +637,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 			throw new RuntimeException("Unknown type: " + type);
 	 		
 	 		assert(identity.getID().equals(id));
+	 		
+	 		// The Identity constructor will use the edition in the URI only as edition hint so we have to set it manually.
+	 		assert(insertURI == null || new FreenetURI(requestURI).getEdition() == new FreenetURI(insertURI).getEdition());
+	 		identity.forceSetEdition(new FreenetURI(requestURI).getEdition());
 	 		
 	 		final int contextAmount = sfs.getInt("Contexts" + suffix + ".Amount");
 	        final int propertyAmount = sfs.getInt("Properties" + suffix + ".Amount");

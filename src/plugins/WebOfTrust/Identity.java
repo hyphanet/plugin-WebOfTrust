@@ -342,6 +342,28 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 			updated();
 		}
 	}
+
+	/**
+	 * ATTENTION: Only use this when you need to construct arbitrary Identity objects - for example when writing an FCP parser.
+	 * It won't guarantee semantic integrity of the identity object, for example it allows lowering of the edition.
+	 * Instead, use {@link #setEdition(long)} whenever possible.
+	 */
+	public void forceSetEdition(final long newEdition) {
+		checkedActivate(1);
+		checkedActivate(mRequestURI, 2);
+		
+		final long currentEdition = mRequestURI.getEdition();
+		
+		if(newEdition != currentEdition) {
+			mRequestURI.removeFrom(mDB);
+			mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
+			if (newEdition > mLatestEditionHint) {
+				// Do not call setNewEditionHint() to prevent confusing logging.
+				mLatestEditionHint = newEdition;
+			}
+			updated();
+		}
+	}
 	
 	public final long getLatestEditionHint() {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
