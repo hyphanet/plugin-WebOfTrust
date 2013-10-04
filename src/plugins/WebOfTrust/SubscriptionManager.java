@@ -367,7 +367,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		protected void deleteWithoutCommit() {
-			throw new UnsupportedOperationException("Need a SubscriptionManager");
+			super.deleteWithoutCommit();
 		}
 		
 		/**
