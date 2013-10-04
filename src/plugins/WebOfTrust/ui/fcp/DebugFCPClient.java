@@ -9,7 +9,6 @@ import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -63,15 +62,15 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	@Override
 	void handleConnectionEstablished() {
 		if(logMINOR) Logger.minor(this, "handleConnectionEstablished()");
-		// FIXME Auto-generated method stub
-
 	}
 
 	@Override
 	void handleConnectionLost() {
 		if(logMINOR) Logger.minor(this, "handleConnectionLost()");
-		// FIXME Auto-generated method stub
-
+		
+		mReceivedIdentities.clear();
+		mReceivedTrusts.clear();
+		mReceivedScores.clear();
 	}
 
 	@Override
