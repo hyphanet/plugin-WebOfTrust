@@ -1271,6 +1271,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		for(IdentitiesSubscription subscription : subscriptions) {
 			subscription.storeNotificationWithoutCommit(oldIdentity, newIdentity);
 		}
+		
+		if(logMINOR) Logger.minor(this, "storeIdentityChangedNotificationWithoutCommit() finished.");
 	}
 	
 	/**
@@ -1295,6 +1297,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		for(TrustsSubscription subscription : subscriptions) {
 			subscription.storeNotificationWithoutCommit(oldTrust, newTrust);
 		}
+		
+		if(logMINOR) Logger.minor(this, "storeTrustChangedNotificationWithoutCommit() finished.");
 	}
 	
 	/**
@@ -1319,6 +1323,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		for(ScoresSubscription subscription : subscriptions) {
 			subscription.storeNotificationWithoutCommit(oldScore, newScore);
 		}
+		
+		if(logMINOR) Logger.minor(this, "storeScoreChangedNotificationWithoutCommit() finished.");
 	}
 
 	/**
