@@ -1263,7 +1263,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @param newIdentity The new version of the {@link Identity} as stored in the database now. 
 	 */
 	protected void storeIdentityChangedNotificationWithoutCommit(final Identity oldIdentity, final Identity newIdentity) {
-		if(logMINOR) Logger.minor(this, "storeIdentityChangedNotificationWithoutCommit(): old=" + oldIdentity + "; new=" + newIdentity);
+		if(logDEBUG) Logger.debug(this, "storeIdentityChangedNotificationWithoutCommit(): old=" + oldIdentity + "; new=" + newIdentity);
 		
 		@SuppressWarnings("unchecked")
 		final ObjectSet<IdentitiesSubscription> subscriptions = (ObjectSet<IdentitiesSubscription>)getSubscriptions(IdentitiesSubscription.class);
@@ -1272,7 +1272,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			subscription.storeNotificationWithoutCommit(oldIdentity, newIdentity);
 		}
 		
-		if(logMINOR) Logger.minor(this, "storeIdentityChangedNotificationWithoutCommit() finished.");
+		if(logDEBUG) Logger.debug(this, "storeIdentityChangedNotificationWithoutCommit() finished.");
 	}
 	
 	/**
@@ -1289,7 +1289,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @param newTrust The new version of the {@link Trust} as stored in the database now.
 	 */
 	protected void storeTrustChangedNotificationWithoutCommit(final Trust oldTrust, final Trust newTrust) {
-		if(logMINOR) Logger.minor(this, "storeTrustChangedNotificationWithoutCommit(): old=" + oldTrust + "; new=" + newTrust);
+		if(logDEBUG) Logger.debug(this, "storeTrustChangedNotificationWithoutCommit(): old=" + oldTrust + "; new=" + newTrust);
 		
 		@SuppressWarnings("unchecked")
 		final ObjectSet<TrustsSubscription> subscriptions = (ObjectSet<TrustsSubscription>)getSubscriptions(TrustsSubscription.class);
@@ -1298,7 +1298,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			subscription.storeNotificationWithoutCommit(oldTrust, newTrust);
 		}
 		
-		if(logMINOR) Logger.minor(this, "storeTrustChangedNotificationWithoutCommit() finished.");
+		if(logDEBUG) Logger.debug(this, "storeTrustChangedNotificationWithoutCommit() finished.");
 	}
 	
 	/**
@@ -1315,7 +1315,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @param newScore The new version of the {@link Score} as stored in the database now.
 	 */
 	protected void storeScoreChangedNotificationWithoutCommit(final Score oldScore, final Score newScore) {
-		if(logMINOR) Logger.minor(this, "storeScoreChangedNotificationWithoutCommit(): old=" + oldScore + "; new=" + newScore);
+		if(logDEBUG) Logger.debug(this, "storeScoreChangedNotificationWithoutCommit(): old=" + oldScore + "; new=" + newScore);
 		
 		@SuppressWarnings("unchecked")
 		final ObjectSet<ScoresSubscription> subscriptions = (ObjectSet<ScoresSubscription>)getSubscriptions(ScoresSubscription.class);
@@ -1324,7 +1324,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			subscription.storeNotificationWithoutCommit(oldScore, newScore);
 		}
 		
-		if(logMINOR) Logger.minor(this, "storeScoreChangedNotificationWithoutCommit() finished.");
+		if(logDEBUG) Logger.debug(this, "storeScoreChangedNotificationWithoutCommit() finished.");
 	}
 
 	/**
