@@ -8,6 +8,14 @@ Those are:
   There are some checks, for example the startup database integrity test, which only get executed if debug logging is enabled.
   Additionally, you can set the base log level ("Minimum priority to log messages at") of your node to NONE to ensure that nothing
   but WOT messages gets logged.
+
+- The class "DebugFCPClient": It is a FCP client which runs inside WOT itself. You can enable it by setting its loglevel to DEBUG,
+  either explicitly via "plugins.WebOfTrust.ui.fcp.DebugFCPClient:DEBUG" by or by setting the global loglevel of WOT to DEBUG.
+  It will connect to WOT's own FCP interface and subscribe to all types of event-notifications. It will store all identities,
+  trusts and scores it has received via event-notifications in memory. At shutdown, it will validate whether the in-memory contents
+  match what is stored in the WOT database. This allows you to test whether subscriptions work as desired.
+  It might also be useful to set the loglevels of the backend classes to debug as well, so you will end up with these at "Detailed priority thresholds":
+  plugins.WebOfTrust.ui.fcp.DebugFCPClient:DEBUG,plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation:DEBUG,plugins.WebOfTrust.SubscriptionManager:DEBUG
   
 - WebOfTrust.checkForDatabaseLeaks(). It will delete all identities in the database which should also delete ALL other objects.
   Then it will check whether objects of any class still exist in the database. If they do, they are leaks.
