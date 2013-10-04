@@ -1391,6 +1391,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Does NOT work in unit tests - you must manually trigger subscription processing by calling {@link #run()} there.
 	 */
 	protected synchronized void start() {
+		Logger.normal(this, "start()...");
 		deleteAllClients();
 		
 		final PluginRespirator respirator = mWoT.getPluginRespirator();
@@ -1400,6 +1401,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		} else { // We are inside of a unit test
 			mTicker = null;
 		}
+		Logger.normal(this, "start() finished.");
 	}
 	
 	/**
@@ -1407,11 +1409,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * processing to finish.
 	 */
 	protected synchronized void stop() {
-		Logger.normal(this, "Aborting all pending notifications");
+		Logger.normal(this, "stop()...");
 		
 		if(mTicker != null)
 			mTicker.shutdown();
 		
-		Logger.normal(this, "Stopped.");
+		Logger.normal(this, "stop() finished.");
 	}
 }
