@@ -102,7 +102,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	private long mLastPingSentDate = 0;
 	
 	/** All types of {@link Subscription}. The names match the FCP messages literally and are used for lookup, please do not change them.*/
-	private enum SubscriptionType {
+	public enum SubscriptionType {
 		/** @see IdentitiesSubscription */
 		Identities,
 		/** @see TrustsSubscription */
