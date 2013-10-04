@@ -241,6 +241,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		class ReceivedSynchronizationPutter<T extends Persistent> {
 			
 			void putAll(final List<T> source, final HashMap<String, T> target) {
+				assertEquals(0, target.size());
 				for(final T p : source) {
 					assertFalse(target.containsKey(p.getID()));
 					target.put(p.getID(), p);
