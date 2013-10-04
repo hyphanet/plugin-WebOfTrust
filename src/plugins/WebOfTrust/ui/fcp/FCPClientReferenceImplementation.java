@@ -300,7 +300,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		mConnectionIdentifier = null;
 	}
 	
-	private boolean connected()  {
+	/**
+	 * @return True if we are connected to WOT, false if not. Does NOT tell whether the Subscriptions were filed yet.
+	 */
+	public boolean connected()  {
 		return mConnection != null;
 	}
 	
