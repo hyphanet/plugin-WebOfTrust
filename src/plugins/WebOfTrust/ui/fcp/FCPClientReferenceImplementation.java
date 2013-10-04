@@ -570,6 +570,11 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			assert(!(beforeChange != null && afterChange != null) || 
 					(beforeChange.getID().equals(afterChange.getID())));
 		}
+		
+		@Override
+		public String toString() {
+			return "ChangeSet { beforeChange: " + beforeChange + "; afterChange: " + afterChange + "}"; 
+		}
 	}
 	
 	public static abstract class FCPParser<T extends Persistent> {

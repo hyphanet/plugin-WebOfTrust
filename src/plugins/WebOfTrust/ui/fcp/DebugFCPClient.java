@@ -9,6 +9,7 @@ import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -118,25 +119,48 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	}
 
 	@Override
-	void handleIdentityChangedNotification(Identity oldIdentity,
-			Identity newIdentity) {
+	void handleIdentityChangedNotification(Identity oldIdentity, Identity newIdentity) {
 		if(logMINOR) Logger.minor(this, "handleIdentityChangedNotification()");
-		// FIXME Auto-generated method stub
-		
+		putNotification(new ChangeSet<Identity>(oldIdentity, newIdentity), mReceivedIdentities);
 	}
 
 	@Override
 	void handleTrustChangedNotification(Trust oldTrust, Trust newTrust) {
 		if(logMINOR) Logger.minor(this, "handleTrustChangedNotification()");
-		// FIXME Auto-generated method stub
-		
+		putNotification(new ChangeSet<Trust>(oldTrust, newTrust), mReceivedTrusts);
 	}
 
 	@Override
 	void handleScoreChangedNotification(Score oldScore, Score newScore) {
 		if(logMINOR) Logger.minor(this, "handleScoreChangedNotification()");
-		// FIXME Auto-generated method stub
-
+		putNotification(new ChangeSet<Score>(oldScore, newScore), mReceivedScores);
+	}
+	
+	<T extends Persistent> void putNotification(final ChangeSet<T> changeSet, final HashMap<String, T> target) {
+		// Check validity of existing data
+		if(changeSet.beforeChange != null) {
+			final T currentBeforeChange = target.get(changeSet.beforeChange.getID());
+			if(!currentBeforeChange.equals(changeSet.beforeChange))
+				Logger.error(this, "Existing data is not equals() to changeSet.beforeChange: " + currentBeforeChange + "; " + changeSet);
+			
+			if(changeSet.afterChange != null && currentBeforeChange.equals(changeSet.afterChange)) {
+				if(!changeSet.beforeChange.equals(changeSet.afterChange))
+					Logger.warning(this, "Received useless notification, we already have this data: " + changeSet);
+				else
+					Logger.warning(this, "Received notification which changed nothing: " + changeSet);
+			}
+		} else {
+			if(target.containsKey(changeSet.afterChange.getID()))
+				Logger.error(this, "ChangeSet claims to create the target but we already have it: "  
+					+ target.get(changeSet.afterChange.getID()) + "; " + changeSet);
+		}
+		
+		if(changeSet.afterChange != null) {
+			/* Checked in changeSet already */
+			// assert(changeSet.beforeChange.getID(), changeSet.afterChange.getID()); 
+			target.put(changeSet.afterChange.getID(), changeSet.afterChange);
+		} else
+			target.remove(changeSet.beforeChange.getID());
 	}
 
 }
