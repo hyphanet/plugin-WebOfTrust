@@ -268,6 +268,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	private synchronized void connect() {
 		disconnect();
 		
+		Logger.normal(this, "connect()");
+		
 		try {
 			mConnectionIdentifier = UUID.randomUUID().toString();
 			mConnection = mPluginRespirator.getPluginTalker(this, WOT_FCP_NAME, mConnectionIdentifier);
@@ -280,6 +282,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	private synchronized void disconnect() {
+		Logger.normal(this, "disconnect()");
+		
 		if(mConnection != null) {
 			for(SubscriptionType type : mSubscriptionIDs.keySet()) {
 				unsubscribe(type);
@@ -315,6 +319,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	
 	
 	private synchronized void fcp_Ping() {
+		if(logMINOR) Logger.minor(this, "fcp_Ping()");
+		
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Ping");
 		mConnection.send(sfs, null);
@@ -334,6 +340,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	private void fcp_Subscribe(final SubscriptionType type) {
+		Logger.normal(this, "fcp_Subscribe(): " + type);
+		
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Subscribe");
 		sfs.putOverwrite("To", type.toString());
@@ -341,6 +349,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	private void fcp_Unsubscribe(final SubscriptionType type) {
+		Logger.normal(this, "fcp_Unsubscribe(): " + type);
+		
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Unsubscribe");
 		sfs.putOverwrite("SubscriptionID", mSubscriptionIDs.get(type));
