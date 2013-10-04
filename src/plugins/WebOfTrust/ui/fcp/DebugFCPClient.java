@@ -9,6 +9,9 @@ import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
+
+import com.db4o.ObjectSet;
+
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -28,6 +31,8 @@ import freenet.support.Logger.LogLevel;
  */
 public final class DebugFCPClient extends FCPClientReferenceImplementation {
 
+	private final WebOfTrust mWebOfTrust;
+	
 	private HashMap<String, Identity> mReceivedIdentities = null; // Cannot be constructed here because the super constructor needs it
 	
 	private final HashMap<String, Trust> mReceivedTrusts = new HashMap<String, Trust>();
@@ -50,6 +55,7 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	
 	private DebugFCPClient(final WebOfTrust myWebOfTrust, final Executor myExecutor, Map<String, Identity> identityStorage) {
 		super(myWebOfTrust, identityStorage, myWebOfTrust.getPluginRespirator(), myExecutor);
+		mWebOfTrust = myWebOfTrust;
 	}
 	
 	public static DebugFCPClient construct(final WebOfTrust myWebOfTrust) {
@@ -65,6 +71,28 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 		subscribe(SubscriptionType.Trusts);
 		subscribe(SubscriptionType.Scores);
 		super.start();
+	}
+	
+	@Override
+	public void terminate() { 
+		super.terminate();
+		
+		Logger.normal(this, "terminate(): Validating received data against WOT database...");
+		validateAgainstDatabase(mWebOfTrust.getAllIdentities(), mReceivedIdentities);
+		validateAgainstDatabase(mWebOfTrust.getAllTrusts(), mReceivedTrusts);
+		validateAgainstDatabase(mWebOfTrust.getAllScores(), mReceivedScores);
+		Logger.normal(this, "terminate() finished.");
+	}
+	
+	private <T extends Persistent> void validateAgainstDatabase(final ObjectSet<T> expectedSet, final HashMap<String, T> actualSet) {
+		if(actualSet.size() != expectedSet.size())
+			Logger.error(this, "Size mismatch for " + actualSet + ": " + actualSet.size() + " != " + expectedSet.size());
+		
+		for(final T expected : expectedSet) {
+			final T actual = actualSet.get(expected.getID());
+			if(actual == null || !actual.equals(expected))
+				Logger.error(this, "Mismatch: " + actual + " not equals() to " + expected);
+		}
 	}
 
 	@Override
