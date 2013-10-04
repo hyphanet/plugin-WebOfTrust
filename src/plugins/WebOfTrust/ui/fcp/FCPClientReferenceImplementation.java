@@ -407,22 +407,6 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 	
-	private final class IdentitiesSynchronizationHandler implements FCPMessageHandler {
-		@Override
-		public String getMessageName() {
-			return "Identities";
-		}
-		
-		@Override
-		public void handle(final SimpleFieldSet sfs, final Bucket data) {
-			try {
-				handleIdentitiesSynchronization(mIdentityParser.parseSynchronization(sfs));
-			} catch(Exception e) {
-				// FIXME: Pass it through to WOT.
-			}
-		}
-	}
-	
 	private final class SubscriptionSucceededHandler implements FCPMessageHandler {
 		@Override
 		public String getMessageName() {
@@ -460,6 +444,22 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	    	final SubscriptionType type = SubscriptionType.valueOf(from);
 	    	assert mSubscriptionIDs.containsKey(type) : "Subscription should exist";
 	    	mSubscriptionIDs.remove(type);
+		}
+	}
+	
+	private final class IdentitiesSynchronizationHandler implements FCPMessageHandler {
+		@Override
+		public String getMessageName() {
+			return "Identities";
+		}
+		
+		@Override
+		public void handle(final SimpleFieldSet sfs, final Bucket data) {
+			try {
+				handleIdentitiesSynchronization(mIdentityParser.parseSynchronization(sfs));
+			} catch(Exception e) {
+				// FIXME: Pass it through to WOT.
+			}
 		}
 	}
 	
