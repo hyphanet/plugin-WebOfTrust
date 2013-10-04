@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 
 import com.db4o.ObjectSet;
@@ -225,9 +226,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @return False if this Client should be deleted.
 		 */
 		protected boolean sendNotifications(SubscriptionManager manager) {
+			if(logMINOR) Logger.minor(manager, "sendNotifications() for " + this);
+			
 			switch(mType) {
 				case FCP:
 					for(final Notification notification : manager.getNotifications(this)) {
+						if(logDEBUG) Logger.debug(manager, "Sending notification via FCP: " + notification);
 						try {
 							try {
 								notification.getSubscription().notifySubscriberByFCP(notification);
@@ -263,6 +267,7 @@ public final class SubscriptionManager implements PrioRunnable {
 						} catch(RuntimeException e) {
 							Persistent.checkedRollbackAndThrow(mDB, this, e);
 						}
+						if(logDEBUG) Logger.debug(manager, "Sending notification via FCP finished: " + notification);
 					}
 					break;
 				default:
@@ -282,6 +287,11 @@ public final class SubscriptionManager implements PrioRunnable {
 				subscription.deleteWithoutCommit(subscriptionManager);
 			}
 			super.deleteWithoutCommit();
+		}
+		
+		@Override
+		public String toString() {
+			return super.toString() + " { Type=" + getType() + "; FCP ID=" + getFCP_ID() + " }"; 
 		}
 	}
 	
@@ -434,6 +444,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		protected abstract void notifySubscriberByFCP(Notification notification) throws PluginNotFoundException;
 
+		@Override
+		public String toString() {
+			return super.toString() + " { ID=" + getID() + "; Client=" + getClient() + " }";
+		}
 	}
 	
 	/**
@@ -575,7 +589,11 @@ public final class SubscriptionManager implements PrioRunnable {
 			checkedActivate(1);
 			return mNewObject != null ? Persistent.deserialize(mWebOfTrust, mNewObject) : null;
 		}
-		
+
+		@Override
+		public String toString() {
+			return super.toString() + " { oldObject=" + getOldObject() + "; newObject=" + getNewObject() + " }";
+		}
 	}
 	
 	/**
@@ -845,6 +863,18 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	private TrivialTicker mTicker = null;
 	
+	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
+	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
+	private static transient volatile boolean logDEBUG = false;
+	
+	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#MINOR} for this class.
+	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		// Necessary for automatic setting of logDEBUG and logMINOR
+		Logger.registerClass(SubscriptionManager.class);
+	}
 	
 	/**
 	 * Constructor both for regular in-node operation as well as operation in unit tests.
@@ -943,6 +973,7 @@ public final class SubscriptionManager implements PrioRunnable {
 				throw new RuntimeException(e);
 			}
 			subscription.storeAndCommit();
+			Logger.normal(this, "Subscribed: " + subscription);
 		}
 		}
 	}
@@ -1025,6 +1056,7 @@ public final class SubscriptionManager implements PrioRunnable {
 
 				subscription.deleteWithoutCommit(this);
 				Persistent.checkedCommit(mDB, this);
+				Logger.normal(this, "Unsubscribed: " + subscription);
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
@@ -1231,6 +1263,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @param newIdentity The new version of the {@link Identity} as stored in the database now. 
 	 */
 	protected void storeIdentityChangedNotificationWithoutCommit(final Identity oldIdentity, final Identity newIdentity) {
+		if(logMINOR) Logger.minor(this, "storeIdentityChangedNotificationWithoutCommit(): old=" + oldIdentity + "; new=" + newIdentity);
+		
 		@SuppressWarnings("unchecked")
 		final ObjectSet<IdentitiesSubscription> subscriptions = (ObjectSet<IdentitiesSubscription>)getSubscriptions(IdentitiesSubscription.class);
 		
@@ -1253,6 +1287,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @param newTrust The new version of the {@link Trust} as stored in the database now.
 	 */
 	protected void storeTrustChangedNotificationWithoutCommit(final Trust oldTrust, final Trust newTrust) {
+		if(logMINOR) Logger.minor(this, "storeTrustChangedNotificationWithoutCommit(): old=" + oldTrust + "; new=" + newTrust);
+		
 		@SuppressWarnings("unchecked")
 		final ObjectSet<TrustsSubscription> subscriptions = (ObjectSet<TrustsSubscription>)getSubscriptions(TrustsSubscription.class);
 		
@@ -1275,6 +1311,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @param newScore The new version of the {@link Score} as stored in the database now.
 	 */
 	protected void storeScoreChangedNotificationWithoutCommit(final Score oldScore, final Score newScore) {
+		if(logMINOR) Logger.minor(this, "storeScoreChangedNotificationWithoutCommit(): old=" + oldScore + "; new=" + newScore);
+		
 		@SuppressWarnings("unchecked")
 		final ObjectSet<ScoresSubscription> subscriptions = (ObjectSet<ScoresSubscription>)getSubscriptions(ScoresSubscription.class);
 		
@@ -1295,6 +1333,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see Subscription#sendNotifications(SubscriptionManager) This function is called on each subscription to deploy the {@link Notification} queue.
 	 */
 	public void run() {
+		if(logMINOR) Logger.minor(this, "run()...");
+		
 		/* We do NOT allow database queries on the WebOfTrust object in sendNotifications: 
 		 * Notification objects contain serialized clones of all required objects for deploying them, they are self-contained.
 		 * Therefore, we don't have to take the WebOfTrust lock and can execute in parallel to threads which need to lock the WebOfTrust.*/
@@ -1315,6 +1355,8 @@ public final class SubscriptionManager implements PrioRunnable {
 			}
 		}
 		//}
+		
+		if(logMINOR) Logger.minor(this, "run() finished.");
 	}
 	
 	/**
