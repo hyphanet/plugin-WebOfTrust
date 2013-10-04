@@ -67,7 +67,7 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 
 	@Override
 	void handleConnectionLost() {
-		if(logMINOR) Logger.minor(this, "handleConnectionLost()")
+		if(logMINOR) Logger.minor(this, "handleConnectionLost()");
 		// FIXME Auto-generated method stub
 
 	}
