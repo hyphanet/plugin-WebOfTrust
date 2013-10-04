@@ -76,54 +76,42 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	@Override
 	void handleIdentitiesSynchronization(Collection<Identity> allIdentities) {
 		if(logMINOR) Logger.minor(this, "handleIdentitiesSynchronization()");
-		new ReceivedSynchronizationPutter<Identity>().putAll(allIdentities, mReceivedIdentities);
+		putSynchronization(allIdentities, mReceivedIdentities);
 	}
 
 	@Override
 	void handleTrustsSynchronization(Collection<Trust> allTrusts) {
 		if(logMINOR) Logger.minor(this, "handleTrustsSynchronization()");
-		new ReceivedSynchronizationPutter<Trust>().putAll(allTrusts, mReceivedTrusts);
+		putSynchronization(allTrusts, mReceivedTrusts);
 	}
 
 	@Override
 	void handleScoresSynchronization(Collection<Score> allScores) {
 		if(logMINOR) Logger.minor(this, "handleScoresSynchronization()");
-		new ReceivedSynchronizationPutter<Score>().putAll(allScores, mReceivedScores);
+		putSynchronization(allScores, mReceivedScores);
 	}
-	
-	/**
-	 * It is necessary to have this class instead of the following hypothetical function:
-	 * <code>void putAll(final Collection<Persistent> source, final HashMap<String, Persistent> target)</code>
-	 * 
-	 * We couldn't shove a HashMap<String, Identity> into target of the hypothetical function even though Identity is a subclass of Persistent:
-	 * The reason is that GenericClass<Type> is not a superclass of GenericClass<subtype of Object> in Java:
-	 * "Parameterized types are not covariant."
-	 */
-	class ReceivedSynchronizationPutter<T extends Persistent> {
-		
-		void putAll(final Collection<T> source, final HashMap<String, T> target) {
-			if(target.size() > 0) {
-				Logger.normal(this, "Received additional synchronization, validating existing data against it...");
-				
-				if(source.size() != target.size())
-					Logger.error(this, "Size mismatch: " + source.size() + " != " + target.size());
-				else {
-					for(final T expected : source) {
-						final T existing = target.get(expected);
-						if(existing == null)
-							Logger.error(this, "Not found: " + expected);
-						else if(!existing.equals(expected))
-							Logger.error(this, "Not equals: " + expected + " to " + existing);
-					}
+
+	<T extends Persistent> void putSynchronization(final Collection<T> source, final HashMap<String, T> target) {
+		if(target.size() > 0) {
+			Logger.normal(this, "Received additional synchronization, validating existing data against it...");
+
+			if(source.size() != target.size())
+				Logger.error(this, "Size mismatch: " + source.size() + " != " + target.size());
+			else {
+				for(final T expected : source) {
+					final T existing = target.get(expected);
+					if(existing == null)
+						Logger.error(this, "Not found: " + expected);
+					else if(!existing.equals(expected))
+						Logger.error(this, "Not equals: " + expected + " to " + existing);
 				}
-				target.clear();
 			}
-			
-			for(final T p : source) {
-				target.put(p.getID(), p);
-			}
+			target.clear();
 		}
-	
+
+		for(final T p : source) {
+			target.put(p.getID(), p);
+		}
 	}
 
 	@Override

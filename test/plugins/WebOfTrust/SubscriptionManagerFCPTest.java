@@ -229,83 +229,59 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	}
 	
 	void importSynchronization(final String type, SimpleFieldSet synchronization) throws FSParseException, MalformedURLException, InvalidParameterException {
-		/**
-		 * It is necessary to have this class instead of the following hypothetical function:
-		 * <code>void putAllWithDupecheck(final List<Persistent> source, final HashMap<String, Persistent> target)</code>
-		 * 
-		 * We couldn't shove a HashMap<String, Identity> into target of the hypothetical function even though Identity is a subclass of Persistent:
-		 * The reason is that GenericClass<Type> is not a superclass of GenericClass<subtype of Object> in Java:
-		 * "Parameterized types are not covariant."
-		 */
-		@Ignore
-		class ReceivedSynchronizationPutter<T extends Persistent> {
-			
-			void putAll(final List<T> source, final HashMap<String, T> target) {
-				assertEquals(0, target.size());
-				for(final T p : source) {
-					assertFalse(target.containsKey(p.getID()));
-					target.put(p.getID(), p);
-				}
-			}
-		
-		}
-		
 		assertEquals(type, synchronization.get("Message"));
 		if(type.equals("Identities")) {
-			new ReceivedSynchronizationPutter<Identity>().putAll(new IdentityParser(mWoT).parseSynchronization(synchronization), mReceivedIdentities);
+			putSynchronization(new IdentityParser(mWoT).parseSynchronization(synchronization), mReceivedIdentities);
 		} else if(type.equals("Trusts")) {
-			new ReceivedSynchronizationPutter<Trust>().putAll(new TrustParser(mWoT, mReceivedIdentities).parseSynchronization(synchronization), mReceivedTrusts);
+			putSynchronization(new TrustParser(mWoT, mReceivedIdentities).parseSynchronization(synchronization), mReceivedTrusts);
 		} else if(type.equals("Scores")) {
-			new ReceivedSynchronizationPutter<Score>().putAll(new ScoreParser(mWoT, mReceivedIdentities).parseSynchronization(synchronization), mReceivedScores);
+			putSynchronization(new ScoreParser(mWoT, mReceivedIdentities).parseSynchronization(synchronization), mReceivedScores);
 		}
 	}
 	
-	void importNotifications() throws MalformedURLException, FSParseException, InvalidParameterException {
-		/**
-		 * It is necessary to have this class instead of the following hypothetical function:
-		 * <code>void putAll(final List<Persistent> source, final HashMap<String, Persistent> target)</code>
-		 * 
-		 * We couldn't shove a HashMap<String, Identity> into target of the hypothetical function even though Identity is a subclass of Persistent:
-		 * The reason is that GenericClass<Type> is not a superclass of GenericClass<subtype of Object> in Java:
-		 * "Parameterized types are not covariant."
-		 */
-		@Ignore
-		class ReceivedNotificationPutter<T extends Persistent> {
-			
-			void putAll(final ChangeSet<T> changeSet, final HashMap<String, T> target) {
-				if(changeSet.beforeChange != null) {
-					final T currentBeforeChange = target.get(changeSet.beforeChange.getID());
-					assertEquals(currentBeforeChange, changeSet.beforeChange);
-					
-					if(changeSet.afterChange != null)
-						assertFalse(currentBeforeChange.equals(changeSet.afterChange));
-				} else {
-					assertFalse(target.containsKey(changeSet.afterChange));
-				}
-				
-				if(changeSet.afterChange != null) {
-					/* Checked in changeSet already */
-					// assertEquals(changeSet.beforeChange.getID(), changeSet.afterChange.getID()); 
-					target.put(changeSet.afterChange.getID(), changeSet.afterChange);
-				} else
-					target.remove(changeSet.beforeChange.getID());
-			}
+	<T extends Persistent> void putSynchronization(final List<T> source, final HashMap<String, T> target) {
+		assertEquals(0, target.size());
+		for(final T p : source) {
+			assertFalse(target.containsKey(p.getID()));
+			target.put(p.getID(), p);
 		}
-				
+	}
+
+	void importNotifications() throws MalformedURLException, FSParseException, InvalidParameterException {
+
+	
 		while(mReplyReceiver.hasNextResult()) {
 			final SimpleFieldSet notification = mReplyReceiver.getNextResult();
 			final String message = notification.get("Message");
 			if(message.equals("IdentityChangedNotification")) {
-				new ReceivedNotificationPutter<Identity>().putAll(new IdentityParser(mWoT).parseNotification(notification), mReceivedIdentities);
+				putNotification(new IdentityParser(mWoT).parseNotification(notification), mReceivedIdentities);
 			} else if(message.equals("TrustChangedNotification")) {
-				new ReceivedNotificationPutter<Trust>().putAll(new TrustParser(mWoT, mReceivedIdentities).parseNotification(notification), mReceivedTrusts);
+				putNotification(new TrustParser(mWoT, mReceivedIdentities).parseNotification(notification), mReceivedTrusts);
 			} else if(message.equals("ScoreChangedNotification")) {
-				new ReceivedNotificationPutter<Score>().putAll(new ScoreParser(mWoT, mReceivedIdentities).parseNotification(notification), mReceivedScores);
+				putNotification(new ScoreParser(mWoT, mReceivedIdentities).parseNotification(notification), mReceivedScores);
 			} else {
 				fail("Unknown message type: " + message);
 			}
 		}
 	}
-
+	
+	<T extends Persistent> void putNotification(final ChangeSet<T> changeSet, final HashMap<String, T> target) {
+		if(changeSet.beforeChange != null) {
+			final T currentBeforeChange = target.get(changeSet.beforeChange.getID());
+			assertEquals(currentBeforeChange, changeSet.beforeChange);
+			
+			if(changeSet.afterChange != null)
+				assertFalse(currentBeforeChange.equals(changeSet.afterChange));
+		} else {
+			assertFalse(target.containsKey(changeSet.afterChange));
+		}
+		
+		if(changeSet.afterChange != null) {
+			/* Checked in changeSet already */
+			// assertEquals(changeSet.beforeChange.getID(), changeSet.afterChange.getID()); 
+			target.put(changeSet.afterChange.getID(), changeSet.afterChange);
+		} else
+			target.remove(changeSet.beforeChange.getID());
+	}
 
 }
