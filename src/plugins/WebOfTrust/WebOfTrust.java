@@ -28,6 +28,7 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.IntroductionServer;
 import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
+import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import plugins.WebOfTrust.ui.web.WebInterface;
 
@@ -168,6 +169,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private WebInterface mWebInterface;
 	private FCPInterface mFCPInterface;
 	
+	/* Debugging */
+	
+	private DebugFCPClient mDebugFCPClient;
+	
 	/* Statistics */
 	private int mFullScoreRecomputationCount = 0;
 	private long mFullScoreRecomputationMilliseconds = 0;
@@ -276,6 +281,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 			mWebInterface = new WebInterface(this, SELF_URI);
 			mFCPInterface = new FCPInterface(this);
+			
+			if(Logger.shouldLog(LogLevel.DEBUG, DebugFCPClient.class)) {
+				mDebugFCPClient = DebugFCPClient.construct(this);
+				mDebugFCPClient.start();
+			}
 			
 			Logger.normal(this, "Web Of Trust plugin starting up completed.");
 		}
@@ -1528,6 +1538,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		Logger.normal(this, "Web Of Trust plugin terminating ...");
 		
 		/* We use single try/catch blocks so that failure of termination of one service does not prevent termination of the others */
+		
+		try {
+			if(mDebugFCPClient != null)
+				mDebugFCPClient.terminate();
+		} catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+		
 		try {
 			if(mWebInterface != null)
 				this.mWebInterface.unload();
