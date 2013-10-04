@@ -1538,14 +1538,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		Logger.normal(this, "Web Of Trust plugin terminating ...");
 		
 		/* We use single try/catch blocks so that failure of termination of one service does not prevent termination of the others */
-		
-		try {
-			if(mDebugFCPClient != null)
-				mDebugFCPClient.terminate();
-		} catch(Exception e) {
-			Logger.error(this, "Error during termination.", e);
-		}
-		
+
 		try {
 			if(mWebInterface != null)
 				this.mWebInterface.unload();
@@ -1585,13 +1578,24 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		catch(Exception e) {
 			Logger.error(this, "Error during termination.", e);
 		}
-		
+
 		try {
 			if(mSubscriptionManager != null)
 				mSubscriptionManager.stop();
 		} catch(Exception e) {
 			Logger.error(this, "Error during termination.", e);
-		}	
+		}
+		
+		// Must be terminated after anything is down which can modify the database
+		try {
+			if(mDebugFCPClient != null) {
+				mSubscriptionManager.run(); // Make sure that pending notifications are deployed.
+				mDebugFCPClient.terminate();
+			}
+		} catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+		
 		
 		try {
 			if(mDB != null) {
