@@ -864,7 +864,8 @@ public class Identity extends Persistent implements Cloneable {
 			Identity clone = new Identity(mWebOfTrust, getRequestURI(), getNickname(), doesPublishTrustList());
 			
 			checkedActivate(4); // For performance only
-			
+			clone.setEdition(getEdition());
+			clone.setNewEditionHint(getLatestEditionHint());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
 			clone.mLastChangedDate = (Date)getLastChangeDate().clone();
 			clone.mLatestEditionHint = getLatestEditionHint(); // Don't use the setter since it won't lower the current edition hint.

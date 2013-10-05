@@ -223,6 +223,8 @@ public final class OwnIdentity extends Identity {
 			
 			checkedActivate(4); // For performance only
 			
+			clone.setEdition(getEdition());
+			clone.setNewEditionHint(getLatestEditionHint());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
 			clone.mLastChangedDate = (Date)getLastChangeDate().clone();
 			clone.mLastInsertDate = (Date)getLastInsertDate().clone();
