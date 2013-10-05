@@ -994,7 +994,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return The {@link IdentitiesSubscription} which is created by this function.
 	 * @see IdentityChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
-	public IdentitiesSubscription subscribeToIdentities(String fcpID) throws SubscriptionExistsAlreadyException {
+	public synchronized IdentitiesSubscription subscribeToIdentities(String fcpID) throws SubscriptionExistsAlreadyException {
+		// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
+		// Storage will happen in storeNewSubscriptionAndCommit()
 		final IdentitiesSubscription subscription = new IdentitiesSubscription(getOrCreateClient(fcpID));
 		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
@@ -1008,7 +1010,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return The {@link TrustsSubscription} which is created by this function.
 	 * @see TrustChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
-	public TrustsSubscription subscribeToTrusts(String fcpID) throws SubscriptionExistsAlreadyException {
+	public synchronized TrustsSubscription subscribeToTrusts(String fcpID) throws SubscriptionExistsAlreadyException {
+		// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
+		// Storage will happen in storeNewSubscriptionAndCommit()
 		final TrustsSubscription subscription = new TrustsSubscription(getOrCreateClient(fcpID));
 		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
@@ -1021,7 +1025,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return The {@link ScoresSubscription} which is created by this function.
 	 * @see ScoreChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
-	public ScoresSubscription subscribeToScores(String fcpID) throws SubscriptionExistsAlreadyException {
+	public synchronized ScoresSubscription subscribeToScores(String fcpID) throws SubscriptionExistsAlreadyException {
+		// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
+		// Storage will happen in storeNewSubscriptionAndCommit()
 		final ScoresSubscription subscription = new ScoresSubscription(getOrCreateClient(fcpID));
 		storeNewSubscriptionAndCommit(subscription);
 		return subscription;
