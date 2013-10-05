@@ -225,12 +225,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @return False if this Client should be deleted.
 		 */
 		protected boolean sendNotifications(SubscriptionManager manager) {
-			if(logMINOR) Logger.minor(manager, "sendNotifications() for " + this);
+			if(SubscriptionManager.logMINOR) Logger.minor(manager, "sendNotifications() for " + this);
 			
 			switch(mType) {
 				case FCP:
 					for(final Notification notification : manager.getNotifications(this)) {
-						if(logDEBUG) Logger.debug(manager, "Sending notification via FCP: " + notification);
+						if(SubscriptionManager.logDEBUG) Logger.debug(manager, "Sending notification via FCP: " + notification);
 						try {
 							try {
 								notification.getSubscription().notifySubscriberByFCP(notification);
@@ -244,10 +244,10 @@ public final class SubscriptionManager implements PrioRunnable {
 								boolean deleteSubscription = false;
 								
 								if(e instanceof PluginNotFoundException) {
-									Logger.warning(this, "sendNotifications() failed, client has disconnected, failure count: " + failureCount, e);
+									Logger.warning(manager, "sendNotifications() failed, client has disconnected, failure count: " + failureCount, e);
 									deleteSubscription = true;
 								} else  {
-									Logger.error(this, "sendNotifications() failed, failure count: " + failureCount, e);
+									Logger.error(manager, "sendNotifications() failed, failure count: " + failureCount, e);
 									if(failureCount >= DISCONNECT_CLIENT_AFTER_FAILURE_COUNT) 
 										deleteSubscription = true;
 								}
@@ -266,7 +266,7 @@ public final class SubscriptionManager implements PrioRunnable {
 						} catch(RuntimeException e) {
 							Persistent.checkedRollbackAndThrow(mDB, this, e);
 						}
-						if(logDEBUG) Logger.debug(manager, "Sending notification via FCP finished: " + notification);
+						if(SubscriptionManager.logDEBUG) Logger.debug(manager, "Sending notification via FCP finished: " + notification);
 					}
 					break;
 				default:
