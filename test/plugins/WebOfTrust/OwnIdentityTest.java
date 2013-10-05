@@ -30,6 +30,8 @@ public class OwnIdentityTest extends DatabaseBasedTest {
 	 */
 	public void testClone() throws MalformedURLException, InvalidParameterException, InterruptedException, IllegalArgumentException, IllegalAccessException {
 		final OwnIdentity original = new OwnIdentity(mWoT, getRandomSSKPair()[0], getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH), true);
+		original.setEdition(10); // Make sure to use a non-default edition
+		original.setNewEditionHint(10); // Make sure to use a non-default edition hint
 		original.updateLastInsertDate();
 		
 		Thread.sleep(10); // Identity contains Date mLastChangedDate which might not get properly cloned.
