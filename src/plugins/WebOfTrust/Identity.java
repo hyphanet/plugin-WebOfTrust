@@ -744,7 +744,8 @@ public class Identity extends Persistent implements Cloneable {
 	 */
 	protected final void setProperties(HashMap<String, String> newProperties) {
 		activateProperties();
-		checkedDelete(mProperties);
+		if(mDB.isStored(mProperties)) // Prevent logging about deletion of non-stored object in clone()
+			checkedDelete(mProperties);
 		mProperties = new HashMap<String, String>(newProperties.size() * 2);
 		
 		for (Entry<String, String> property : newProperties.entrySet()) {
