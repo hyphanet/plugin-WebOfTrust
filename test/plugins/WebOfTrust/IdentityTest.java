@@ -71,6 +71,8 @@ public final class IdentityTest extends DatabaseBasedTest {
 	 */
 	public void testClone() throws MalformedURLException, InvalidParameterException, IllegalArgumentException, IllegalAccessException, InterruptedException {
 		final Identity original = new Identity(mWoT, getRandomSSKPair()[1], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
+		original.setEdition(10); // Make sure to use a non-default edition
+		original.setNewEditionHint(20); // Make sure to use a non-default edition hint
 		
 		Thread.sleep(10); // Identity contains Date mLastChangedDate which might not get properly cloned.
 		assertFalse(CurrentTimeUTC.get().equals(original.getLastChangeDate()));

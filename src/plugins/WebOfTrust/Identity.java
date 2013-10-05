@@ -915,6 +915,8 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 			Identity clone = new Identity(mWebOfTrust, getRequestURI(), getNickname(), doesPublishTrustList());
 			
 			activateFully(); // For performance only
+			clone.setEdition(getEdition());
+			clone.setNewEditionHint(getLatestEditionHint());
 			clone.setCreationDate(getCreationDate());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
 			clone.mLastChangedDate = (Date)getLastChangeDate().clone();
