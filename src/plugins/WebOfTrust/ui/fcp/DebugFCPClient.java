@@ -155,19 +155,19 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 
 	@Override
 	void handleIdentityChangedNotification(Identity oldIdentity, Identity newIdentity) {
-		if(logMINOR) Logger.minor(this, "handleIdentityChangedNotification()");
+		if(logMINOR) Logger.minor(this, "handleIdentityChangedNotification(): old=" + oldIdentity + "; new=" + newIdentity);
 		putNotification(new ChangeSet<Identity>(oldIdentity, newIdentity), mReceivedIdentities);
 	}
 
 	@Override
 	void handleTrustChangedNotification(Trust oldTrust, Trust newTrust) {
-		if(logMINOR) Logger.minor(this, "handleTrustChangedNotification()");
+		if(logMINOR) Logger.minor(this, "handleTrustChangedNotification(): old=" + oldTrust + "; new=" + newTrust);
 		putNotification(new ChangeSet<Trust>(oldTrust, newTrust), mReceivedTrusts);
 	}
 
 	@Override
 	void handleScoreChangedNotification(Score oldScore, Score newScore) {
-		if(logMINOR) Logger.minor(this, "handleScoreChangedNotification()");
+		if(logMINOR) Logger.minor(this, "handleScoreChangedNotification(): old=" + oldScore + "; new=" + newScore);
 		putNotification(new ChangeSet<Score>(oldScore, newScore), mReceivedScores);
 	}
 	
