@@ -101,6 +101,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		"USK@o2~q8EMoBkCNEgzLUL97hLPdddco9ix1oAnEa~VzZtg,X~vTpL2LSyKvwQoYBx~eleI2RF6QzYJpzuenfcKDKBM,AQACAAE/WebOfTrust/9379", // Bombe
 		// "USK@cI~w2hrvvyUa1E6PhJ9j5cCoG1xmxSooi7Nez4V2Gd4,A3ArC3rrJBHgAJV~LlwY9kgxM8kUR2pVYXbhGFtid78,AQACAAE/WebOfTrust/19", // TheSeeker. Disabled because he is using LCWoT and it does not support identity introduction ATM.
 		"USK@D3MrAR-AVMqKJRjXnpKW2guW9z1mw5GZ9BB15mYVkVc,xgddjFHx2S~5U6PeFkwqO5V~1gZngFLoM-xaoMKSBI8,AQACAAE/WebOfTrust/4959", // zidel
+		"USK@s88mAwLB3OW6mYlZ43XaHDM1K6QXosZ4QTt2UX-hq6s,555tpw1TUReXUixAMDQD3RcD6gUKwOBCDQ6Dot2v6qg,AQACAAE/WebOfTrust/5", // operhiem1
 	};
 
 	/* References from the node */
