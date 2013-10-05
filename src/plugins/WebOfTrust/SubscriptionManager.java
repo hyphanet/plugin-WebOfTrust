@@ -7,7 +7,6 @@ import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 
 import com.db4o.ObjectSet;
