@@ -72,8 +72,8 @@ public abstract class Persistent implements Serializable {
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
-	protected static transient volatile boolean logDEBUG = false;
-	protected static transient volatile boolean logMINOR = false;
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
 	
 	static {
 		Logger.registerClass(Persistent.class);
