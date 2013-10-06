@@ -37,6 +37,7 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
+import freenet.node.fcp.FCPCallFailedException;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
@@ -964,22 +965,22 @@ public final class FCPInterface implements FredPluginFCP {
     	return sender;
     }
     
-    public void sendAllIdentities(String fcpID) throws PluginNotFoundException {
-    	getReplySender(fcpID).send(handleGetIdentities(null));
+    public void sendAllIdentities(String fcpID) throws FCPCallFailedException, PluginNotFoundException {
+    	getReplySender(fcpID).sendSynchronous(handleGetIdentities(null), null);
     }
     
-    public void sendAllTrustValues(String fcpID) throws PluginNotFoundException {
-    	getReplySender(fcpID).send(handleGetTrusts(null));
+    public void sendAllTrustValues(String fcpID) throws FCPCallFailedException, PluginNotFoundException {
+    	getReplySender(fcpID).sendSynchronous(handleGetTrusts(null), null);
     }
     
-    public void sendAllScoreValues(String fcpID) throws PluginNotFoundException {
-    	getReplySender(fcpID).send(handleGetScores(null));
+    public void sendAllScoreValues(String fcpID) throws FCPCallFailedException, PluginNotFoundException{
+    	getReplySender(fcpID).sendSynchronous(handleGetScores(null), null);
     }
     
     /**
      * @see SubscriptionManager.IdentityChangedNotification
      */
-    public void sendIdentityChangedNotification(final String fcpID, final IdentityChangedNotification notification) throws PluginNotFoundException {
+    public void sendIdentityChangedNotification(final String fcpID, final IdentityChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
     	final SimpleFieldSet oldIdentity = handleGetIdentity((Identity)notification.getOldObject(), null);
     	final SimpleFieldSet newIdentity = handleGetIdentity((Identity)notification.getNewObject(), null);
     	
@@ -989,30 +990,30 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * @see SubscriptionManager.TrustChangedNotification
      */
-    public void sendTrustChangedNotification(String fcpID, final TrustChangedNotification notification) throws PluginNotFoundException {
+    public void sendTrustChangedNotification(String fcpID, final TrustChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
     	final SimpleFieldSet oldTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getOldObject(), "0");
     	final SimpleFieldSet newTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getNewObject(), "0");
 
     	sendChangeNotification(fcpID, "TrustChangedNotification", oldTrust, newTrust);
     }
     
-    /**
+    /** 
      * @see SubscriptionManager.ScoreChangedNotification
      */
-    public void sendScoreChangedNotification(String fcpID, final ScoreChangedNotification notification) throws PluginNotFoundException {
+    public void sendScoreChangedNotification(String fcpID, final ScoreChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
     	final SimpleFieldSet oldScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getOldObject(), "0");
     	final SimpleFieldSet newScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getNewObject(), "0");
 
     	sendChangeNotification(fcpID, "ScoreChangedNotification", oldScore, newScore);
     }
     
-    private void sendChangeNotification(final String fcpID, final String message, final SimpleFieldSet beforeChange, final SimpleFieldSet afterChange) throws PluginNotFoundException {
+    private void sendChangeNotification(final String fcpID, final String message, final SimpleFieldSet beforeChange, final SimpleFieldSet afterChange) throws FCPCallFailedException, PluginNotFoundException {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", message);;
     	sfs.put("BeforeChange", beforeChange);
     	sfs.put("AfterChange", afterChange);
     	
-    	getReplySender(fcpID).send(sfs);
+    	getReplySender(fcpID).sendSynchronous(sfs, null);
     }
     
     private SimpleFieldSet handlePing() {

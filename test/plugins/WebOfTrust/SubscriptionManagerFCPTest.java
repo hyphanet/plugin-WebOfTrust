@@ -25,6 +25,7 @@ import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ScoreParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.TrustParser;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import freenet.node.FSParseException;
+import freenet.node.fcp.FCPCallFailedException;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.support.SimpleFieldSet;
@@ -53,7 +54,15 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		 * So in our case this function actually means "receive()", not send.
 		 */
 		@Override
-		public void send(SimpleFieldSet params, Bucket bucket) throws PluginNotFoundException {
+		public void send(SimpleFieldSet params, Bucket bucket) {
+			sendSynchronous(params, bucket);
+		}
+		
+		/**
+		 * Called by the FCP-interface for deploying notifications. As with send(), in our case it means "receive()".
+		 */
+		@Override
+		public void sendSynchronous(SimpleFieldSet params, Bucket bucket) {
 			results.addLast(params);
 		}
 		
@@ -67,7 +76,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		public boolean hasNextResult() {
 			return !results.isEmpty();
 		}
-		
+
 	}
 	
 	FCPInterface mFCPInterface;

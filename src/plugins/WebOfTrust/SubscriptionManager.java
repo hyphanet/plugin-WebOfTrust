@@ -14,6 +14,7 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.node.PrioRunnable;
+import freenet.node.fcp.FCPCallFailedException;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
@@ -423,8 +424,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Therefore it may perform database queries on the WebOfTrust to obtain the dataset.
 		 * 
 		 * @throws PluginNotFoundException If the FCP client has disconnected. The SubscriptionManager then won't retry deploying this Notification, the {@link Subscription} will be terminated.
+		 * @throws FCPCallFailedException If processing failed at the client.
 		 */
-		protected abstract void synchronizeSubscriberByFCP() throws PluginNotFoundException;
+		protected abstract void synchronizeSubscriberByFCP() throws FCPCallFailedException, PluginNotFoundException;
 
 		/**
 		 * Called by this Subscription when the type of it is FCP and a {@link Notification} shall be sent via FCP. 
@@ -440,8 +442,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * 
 		 * @param notification The {@link Notification} to send out via FCP. Must be cast-able to NotificationType.
 		 * @throws PluginNotFoundException If the FCP client has disconnected. The SubscriptionManager then won't retry deploying this Notification, the {@link Subscription} will be terminated.
+		 * @throws FCPCallFailedException If processing failed at the client.
 		 */
-		protected abstract void notifySubscriberByFCP(Notification notification) throws PluginNotFoundException;
+		protected abstract void notifySubscriberByFCP(Notification notification) throws FCPCallFailedException, PluginNotFoundException;
 
 		@Override
 		public String toString() {
@@ -704,10 +707,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
 		/**
-		 * {@inheritDoc}
+		 * {@inheritDoc} 
 		 */
 		@Override
-		protected void synchronizeSubscriberByFCP() throws PluginNotFoundException {
+		protected void synchronizeSubscriberByFCP() throws FCPCallFailedException, PluginNotFoundException {
 			mWebOfTrust.getFCPInterface().sendAllIdentities(getClient().getFCP_ID());
 		}
 		
@@ -715,7 +718,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected void notifySubscriberByFCP(Notification notification) throws PluginNotFoundException {
+		protected void notifySubscriberByFCP(Notification notification) throws FCPCallFailedException, PluginNotFoundException {
 			assert(notification instanceof IdentityChangedNotification);
 			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getClient().getFCP_ID(), (IdentityChangedNotification)notification);
 		}
@@ -751,18 +754,18 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 		
 		/**
-		 * {@inheritDoc}
+		 * {@inheritDoc} 
 		 */
 		@Override
-		protected void synchronizeSubscriberByFCP() throws PluginNotFoundException {
+		protected void synchronizeSubscriberByFCP() throws FCPCallFailedException, PluginNotFoundException {
 			mWebOfTrust.getFCPInterface().sendAllTrustValues(getClient().getFCP_ID());
 		}
 		
 		/**
-		 * {@inheritDoc}
+		 * {@inheritDoc} 
 		 */
 		@Override
-		protected void notifySubscriberByFCP(final Notification notification) throws PluginNotFoundException {
+		protected void notifySubscriberByFCP(final Notification notification) throws FCPCallFailedException, PluginNotFoundException {
 			assert(notification instanceof TrustChangedNotification);
 			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getClient().getFCP_ID(), (TrustChangedNotification)notification);
 		}
@@ -801,7 +804,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected void synchronizeSubscriberByFCP() throws PluginNotFoundException {
+		protected void synchronizeSubscriberByFCP() throws FCPCallFailedException, PluginNotFoundException {
 			mWebOfTrust.getFCPInterface().sendAllScoreValues(getClient().getFCP_ID());
 		}
 
@@ -809,7 +812,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected void notifySubscriberByFCP(final Notification notification) throws PluginNotFoundException {
+		protected void notifySubscriberByFCP(final Notification notification) throws FCPCallFailedException, PluginNotFoundException {
 			assert(notification instanceof ScoreChangedNotification);
 			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getClient().getFCP_ID(), (ScoreChangedNotification)notification);
 		}
