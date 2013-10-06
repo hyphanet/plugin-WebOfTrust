@@ -50,8 +50,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		}
 
 		/**
-		 * This is called by the FCP interface to deploy the reply to the sender of the original message.
-		 * So in our case this function actually means "receive()", not send.
+		 * @see #sendSynchronous(SimpleFieldSet, Bucket)
 		 */
 		@Override
 		public void send(SimpleFieldSet params, Bucket bucket) {
@@ -59,7 +58,8 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		}
 		
 		/**
-		 * Called by the FCP-interface for deploying notifications. As with send(), in our case it means "receive()".
+		 * This is called by the FCP interface to deploy the reply to the sender of the original message.
+		 * So in our case this function actually means "receive()", not send: We are the sender of the original message.
 		 */
 		@Override
 		public void sendSynchronous(SimpleFieldSet params, Bucket bucket) {
