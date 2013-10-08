@@ -197,14 +197,19 @@ public final class FCPInterface implements FredPluginFCP {
         return sfs;
     }
     
-    private SimpleFieldSet handleGetTrust(final SimpleFieldSet params) throws InvalidParameterException, NotTrustedException, UnknownIdentityException {
+    private SimpleFieldSet handleGetTrust(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
     	final String trusterID = getMandatoryParameter(params, "Truster");
     	final String trusteeID = getMandatoryParameter(params, "Trustee");
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	synchronized(mWoT) {
-    		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
-    		handleGetTrust(sfs, mWoT.getTrust(mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)), "0");
+    		Trust trust = null;
+    		try {
+        		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
+    			trust = mWoT.getTrust(mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID));
+    		} catch(NotTrustedException e) {}
+    		
+    		handleGetTrust(sfs, trust, "0");
     	}
     	sfs.putOverwrite("Message", "Trust");
     	return sfs;
@@ -223,14 +228,19 @@ public final class FCPInterface implements FredPluginFCP {
 		return sfs;
     }
     
-    private SimpleFieldSet handleGetScore(final SimpleFieldSet params) throws NotInTrustTreeException, UnknownIdentityException, InvalidParameterException {
+    private SimpleFieldSet handleGetScore(final SimpleFieldSet params) throws UnknownIdentityException, InvalidParameterException {
     	final String trusterID = getMandatoryParameter(params, "Truster");
     	final String trusteeID = getMandatoryParameter(params, "Trustee");
 
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	synchronized(mWoT) {
-    		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
-    		handleGetScore(sfs, mWoT.getScore(mWoT.getOwnIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)), "0");
+    		Score score = null;
+    		try {
+        		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
+    			score = mWoT.getScore(mWoT.getOwnIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID));
+     		} catch(NotInTrustTreeException e) {}
+    		
+    		handleGetScore(sfs, score, "0");
     	}
 
     	sfs.putOverwrite("Message", "Score");
