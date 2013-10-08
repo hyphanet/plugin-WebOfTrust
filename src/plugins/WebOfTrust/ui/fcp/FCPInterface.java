@@ -415,10 +415,6 @@ public final class FCPInterface implements FredPluginFCP {
         sfs.put("Properties" + suffix + ".Amount", propertyCounter);
     }
     
-    /**
-     * Calls {@link #addTrustFields(SimpleFieldSet, Trust, String)}.
-     * The trust parameter is chosen as null if no trust exists between the given identities.
-     */
     private void addTrustFields(final SimpleFieldSet sfs, final Identity truster, final Identity trustee, final String suffix) {
     	Trust trust;
     	try {
@@ -430,12 +426,9 @@ public final class FCPInterface implements FredPluginFCP {
     }
     
     /**
-     * Adds fields describing the trust value from the given truster to the given trustee:
+     * Adds fields (currently only one) describing the trust value from the given truster to the given trustee:
      * 
-     * ValueSUFFIX = See {@link Trust#getValue()}. "Inexistent" if the "trust" parameter is null.
-     * TrusterSUFFIX = See {@link Trust#getTruster()}. Not added if the trust is null.
-     * TrusteeSUFFIX = See {@link Trust#getTrustee()}. Not added if the trust is null.
-     * Comment = Comment of the trust, see {@link Trust#getComment()}. Not added if the trust is null.
+     * TrustSUFFIX = Value of trust, from -100 to +100. "null" if no such trust exists.
      * 
      * @param suffix Added as descriptor for possibly multiple identities.
      */
