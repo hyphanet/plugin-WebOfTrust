@@ -1045,23 +1045,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	@SuppressWarnings("unchecked")
 	public Class<Subscription<? extends Notification>> unsubscribe(String subscriptionID) throws UnknownSubscriptionException {
-		synchronized(mWoT) { // FIXME: Remove this synchronization when resolving the inner FIXME
 		synchronized(this) {
 		final Subscription<? extends Notification> subscription = getSubscription(subscriptionID);
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				// FIXME: This is debug code and removing it is a critical optimization:
-				// To make debugging easier, we also call synchronizeSubscriberByFCP() when disconnecting a client instead of only at the beginning of the connection.
-				// synchronizeSubscriberByFCP() usually sends the FULL stored dataset - for example ALL identities.
-				// The client can use it to check whether the state of WOT which he received through notifications was correct.
-				{
-					try {
-						subscription.synchronizeSubscriberByFCP();
-					} catch (Exception e) {
-						throw new RuntimeException(e);
-					}
-				}
-
 				subscription.deleteWithoutCommit(this);
 				Persistent.checkedCommit(mDB, this);
 				Logger.normal(this, "Unsubscribed: " + subscription);
@@ -1070,7 +1057,6 @@ public final class SubscriptionManager implements PrioRunnable {
 			}
 		}
 		return (Class<Subscription<? extends Notification>>) subscription.getClass();
-		}
 		}
 	}
 	
