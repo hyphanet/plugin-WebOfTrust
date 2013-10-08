@@ -204,25 +204,12 @@ public final class FCPInterface implements FredPluginFCP {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	synchronized(mWoT) {
     		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
-    		handleGetTrust(sfs, mWoT.getTrust(mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)), "0");
+    		addTrustFields(sfs, mWoT.getTrust(mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)), "0");
     	}
     	sfs.putOverwrite("Message", "Trust");
     	return sfs;
     }
-    
-    private SimpleFieldSet handleGetTrust(final SimpleFieldSet sfs, final Trust trust, String suffix) {
-    	if(trust == null) {
-    		sfs.putOverwrite("Value" + suffix, "Inexistent");
-    		return sfs;
-    	}
-    	
-		sfs.putOverwrite("Truster" + suffix, trust.getTruster().getID());
-		sfs.putOverwrite("Trustee" + suffix, trust.getTrustee().getID());
-		sfs.putOverwrite("Value" + suffix, Byte.toString(trust.getValue()));
-		sfs.putOverwrite("Comment" + suffix, trust.getComment());
-		return sfs;
-    }
-    
+
     private SimpleFieldSet handleGetScore(final SimpleFieldSet params) throws NotInTrustTreeException, UnknownIdentityException, InvalidParameterException {
     	final String trusterID = getMandatoryParameter(params, "Truster");
     	final String trusteeID = getMandatoryParameter(params, "Trustee");
@@ -428,6 +415,16 @@ public final class FCPInterface implements FredPluginFCP {
         sfs.put("Properties" + suffix + ".Amount", propertyCounter);
     }
     
+    private void addTrustFields(final SimpleFieldSet sfs, final Identity truster, final Identity trustee, final String suffix) {
+    	Trust trust;
+    	try {
+    		trust = mWoT.getTrust(truster, trustee);
+    	} catch(NotTrustedException e) {
+    		trust = null;
+    	}
+    	addTrustFields(sfs, trust, suffix);
+    }
+    
     /**
      * Adds fields (currently only one) describing the trust value from the given truster to the given trustee:
      * 
@@ -435,13 +432,20 @@ public final class FCPInterface implements FredPluginFCP {
      * 
      * @param suffix Added as descriptor for possibly multiple identities.
      */
-    private void addTrustFields(SimpleFieldSet sfs, Identity truster, Identity trustee, String suffix) {
-        try {
-            final Trust trust = mWoT.getTrust(truster, trustee);
-            sfs.putOverwrite("Trust" + suffix, Byte.toString(trust.getValue()));
-        } catch (final NotTrustedException e1) {
-            sfs.putOverwrite("Trust" + suffix, "null");
-        }
+    private SimpleFieldSet addTrustFields(final SimpleFieldSet sfs, final Trust trust, final String suffix) {
+    	if(trust == null) {
+        	sfs.putOverwrite("Value" + suffix, "Inexistent");
+            sfs.putOverwrite("Trust" + suffix, "null"); // Legacy as of 2013-10-08. TODO: Remove after some time.
+            return sfs;
+    	}
+    	
+    	sfs.putOverwrite("Truster" + suffix, trust.getTruster().getID());
+    	sfs.putOverwrite("Trustee" + suffix, trust.getTrustee().getID());
+    	sfs.putOverwrite("Value" + suffix, Byte.toString(trust.getValue()));
+    	sfs.putOverwrite("Trust" + suffix, Byte.toString(trust.getValue())); // Legacy as of 2013-10-08. TODO: Remove after some time.
+    	sfs.putOverwrite("Comment" + suffix, trust.getComment());
+    	
+    	return sfs;
     }
     
     /**
@@ -546,7 +550,7 @@ public final class FCPInterface implements FredPluginFCP {
         synchronized(mWoT) {
         	int i = 0;
 			for(final Trust trust : mWoT.getAllTrusts()) {
-				handleGetTrust(sfs, trust, Integer.toString(i));
+				addTrustFields(sfs, trust, Integer.toString(i));
 				++i;
 			}
         	sfs.put("Amount", i);
@@ -991,8 +995,8 @@ public final class FCPInterface implements FredPluginFCP {
      * @see SubscriptionManager.TrustChangedNotification
      */
     public void sendTrustChangedNotification(String fcpID, final TrustChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
-    	final SimpleFieldSet oldTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getOldObject(), "0");
-    	final SimpleFieldSet newTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getNewObject(), "0");
+    	final SimpleFieldSet oldTrust = addTrustFields(new SimpleFieldSet(true), (Trust)notification.getOldObject(), "0");
+    	final SimpleFieldSet newTrust = addTrustFields(new SimpleFieldSet(true), (Trust)notification.getNewObject(), "0");
 
     	sendChangeNotification(fcpID, "TrustChangedNotification", oldTrust, newTrust);
     }
