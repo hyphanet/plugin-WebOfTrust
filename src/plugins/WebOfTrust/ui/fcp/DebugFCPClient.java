@@ -25,7 +25,6 @@ import freenet.support.Logger.LogLevel;
  * - It will store ALL {@link Identity}, {@link Trust} and {@link Score} objects received via FCP.
  * - At shutdown, it will compare the final state of what it has received against whats stored in the regular WOT database
  * - If both datasets match, the test has succeeded.
- * FIXME: Document this in developer-documentation/Debugging.txt
  * 
  * @author xor (xor@freenetproject.org)
  */
