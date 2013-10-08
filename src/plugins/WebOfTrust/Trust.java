@@ -327,6 +327,16 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 	}
 	
 	/**
+	 * ATTENTION: Only use this when you need to construct arbitrary Trust objects - for example when writing an FCP parser.
+	 * It won't guarantee semantic integrity of the Trust object because the edition can mismatch the actual edition of the Truster.
+	 * Use {@link #trusterEditionUpdated()} instead.
+	 */
+	public void forceSetTrusterEdition(final long trusterEdition) {
+		checkedActivate(1);
+		mTrusterTrustListEdition = trusterEdition;
+	}
+	
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override

@@ -675,8 +675,12 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			final String trusteeID = sfs.get("Trustee" + suffix);
 			final byte value = sfs.getByte("Value" + suffix);
 			final String comment = sfs.get("Comment" + suffix);
+			final long trusterEdition = sfs.getLong("TrusterEdition" + suffix);
 			
-			return new Trust(mWoT, mIdentities.get(trusterID), mIdentities.get(trusteeID), value, comment);
+			final Trust trust = new Trust(mWoT, mIdentities.get(trusterID), mIdentities.get(trusteeID), value, comment);
+			trust.forceSetTrusterEdition(trusterEdition);
+			
+			return trust;
 		}
 		
 	}
