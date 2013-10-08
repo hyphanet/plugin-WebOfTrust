@@ -321,7 +321,7 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 		mTrusterTrustListEdition = getTruster().getEdition();
 	}
 	
-	protected synchronized long getTrusterEdition() {
+	public synchronized long getTrusterEdition() {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		return mTrusterTrustListEdition;
 	}

@@ -225,6 +225,7 @@ public final class FCPInterface implements FredPluginFCP {
 		sfs.putOverwrite("Trustee" + suffix, trust.getTrustee().getID());
 		sfs.putOverwrite("Value" + suffix, Byte.toString(trust.getValue()));
 		sfs.putOverwrite("Comment" + suffix, trust.getComment());
+		sfs.put("TrusterEdition" + suffix, trust.getTrusterEdition());
 		return sfs;
     }
     
