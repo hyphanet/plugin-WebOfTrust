@@ -203,7 +203,8 @@ public final class FCPInterface implements FredPluginFCP {
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	synchronized(mWoT) {
-    		addTrustFields(sfs, trusterID, trusteeID, "0");
+    		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
+    		addTrustFields(sfs, mWoT.getTrust(mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID)), "0");
     	}
     	sfs.putOverwrite("Message", "Trust");
     	return sfs;
@@ -412,14 +413,6 @@ public final class FCPInterface implements FredPluginFCP {
         
         sfs.put("Contexts" + suffix + ".Amount", contextCounter);
         sfs.put("Properties" + suffix + ".Amount", propertyCounter);
-    }
-    
-    /**
-     * Calls {@link #addTrustFields(SimpleFieldSet, Identity, Identity, String)}.
-     */
-    private void addTrustFields(final SimpleFieldSet sfs, final String trusterID, final String trusteeID, final String suffix) throws UnknownIdentityException {
-		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
-		addTrustFields(sfs, mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID), "0");
     }
     
     /**
