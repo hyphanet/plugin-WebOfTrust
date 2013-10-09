@@ -139,7 +139,8 @@ public final class FCPInterface implements FredPluginFCP {
         						e instanceof NotInTrustTreeException ||
         						e instanceof NotTrustedException ||
         						e instanceof UnknownIdentityException ||
-        						e instanceof UnknownPuzzleException;
+        						e instanceof UnknownPuzzleException || 
+        						e instanceof SubscriptionExistsAlreadyException;
         	
         	if(!dontLog)
         		Logger.error(this, "FCP error", e);
