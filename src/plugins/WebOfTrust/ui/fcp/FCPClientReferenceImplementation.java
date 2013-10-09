@@ -382,8 +382,14 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 
 		if(logMINOR) Logger.minor(this, "Handling message '" + messageString + "' with " + handler + " ...");
-		handler.handle(params, data);
-		if(logMINOR) Logger.minor(this, "Handling message finished.");
+		try {
+			handler.handle(params, data);
+		} catch(ProcessingFailedException e) {
+			Logger.error(FCPClientReferenceImplementation.this, "Message handler failed and requested throwing to WOT, doing so: " + handler, e);
+			throw new RuntimeException(e);
+		} finally {
+			if(logMINOR) Logger.minor(this, "Handling message finished.");
+		}
 	}
 	
 	private interface FCPMessageHandler {
@@ -392,7 +398,24 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		 */
 		public String getMessageName();
 		
-		public void handle(final SimpleFieldSet sfs, final Bucket data);
+		/**
+		 * @throws ProcessingFailedException May be thrown if you want {@link FCPClientReferenceImplementation#onReply(String, String, SimpleFieldSet, Bucket)}
+		 * to signal to WOT that processing failed. This only is suitable for handlers of event-notifications:
+		 * WOT will send the event-notifications synchronously and therefore notice if they failed. It will resend them for a certain amount
+		 * of retries then.
+		 */
+		public void handle(final SimpleFieldSet sfs, final Bucket data) throws ProcessingFailedException;
+	}
+	
+	/**
+	 * @see FCPMessageHandler#handle(SimpleFieldSet, Bucket)
+	 */
+	public final class ProcessingFailedException extends Exception {
+		public ProcessingFailedException(Throwable t) {
+			super(t);
+		}
+
+		private static final long serialVersionUID = 1L;
 	}
 	
 	private final class PongHandler implements FCPMessageHandler {
@@ -453,16 +476,15 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * In that case we need to gracefully tell WOT about that: In case of {@link Subscription}'s event {@link Notification}s, it will re-send them then. 
 	 */
 	private abstract class MaybeFailingFCPMessageHandler implements FCPMessageHandler {
-		public void handle(final SimpleFieldSet sfs, final Bucket data) {
+		public void handle(final SimpleFieldSet sfs, final Bucket data) throws ProcessingFailedException {
 			try {	
 				handle_MaybeFailing(sfs, data);
-			} catch(Exception e) {
-				Logger.error(FCPClientReferenceImplementation.this, "Message handler failed: " + this, e);
-				// FIXME: Pass it through to WOT (so it can re-send the events in case of event-notifications) 
+			} catch(Throwable t) {
+				throw new ProcessingFailedException(t); 
 			}
 		}
 		
-		abstract void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws Exception;
+		abstract void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws Throwable;
 	}
 	
 	private final class IdentitiesSynchronizationHandler extends MaybeFailingFCPMessageHandler {
