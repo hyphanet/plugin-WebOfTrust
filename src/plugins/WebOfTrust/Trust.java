@@ -395,10 +395,11 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 	
 	public Trust clone() {
 		try {
+			activateFully();
 			Trust clone = new Trust(mWebOfTrust, getTruster().clone(), getTrustee().clone(), getValue(), getComment());
 			clone.setCreationDate(getCreationDate());
 			clone.mLastChangedDate = (Date)getDateOfLastChange().clone();
-			clone.mTrusterTrustListEdition = getTrusterEdition();
+			clone.mTrusterTrustListEdition = mTrusterTrustListEdition; // Don't use the getter since it will re-query it from the actual Identity object which might have changed
 			return clone;
 		} catch (InvalidParameterException e) {
 			throw new RuntimeException(e);
