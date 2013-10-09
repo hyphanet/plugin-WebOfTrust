@@ -80,6 +80,15 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	private static final int WOT_PING_TIMEOUT_DELAY = 2*WOT_PING_DELAY;
 	
 	/**
+	 * The amount of milliseconds between filing each subscription. This delay is necessary for being able to release the lock on this
+	 * object to give the {@link IdentitiesSynchronizationHandler} an opportunity to execute before we file the Subscriptions to Trusts/Scores:
+	 * {@link Trust}/{@link Score} objects reference {@link Identity} objects and therefore cannot be created if the {@link Identity} object is not known yet.
+	 * @see SubscriptionType
+	 * @see #subscribe(SubscriptionType)
+	 */
+	private static final int WOT_SUBSCRIBE_DELAY = 1 * 1000;
+	
+	/**
 	 * The implementing child class provides this Map. It is used for obtaining the {@link Identity} objects which are used for
 	 * constructing {@link Trust} and {@link Score} objects which are passed to its handlers.
 	 */
@@ -103,7 +112,12 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/** The value of {@link CurrentTimeUTC#get()} when we last sent a ping to the Web Of Trust plugin. */
 	private long mLastPingSentDate = 0;
 	
-	/** All types of {@link Subscription}. The names match the FCP messages literally and are used for lookup, please do not change them.*/
+	/**
+	 * All types of {@link Subscription}. The names match the FCP messages literally and are used for lookup, please do not change them.
+	 * Further, the subscriptions are filed in the order which they appear hear: {@link Trust}/{@link Score} objects reference {@link Identity}
+	 * objects and therefore cannot be created if the {@link Identity} object is not known yet. This would be the case if
+	 * Trusts/Scores subscriptions were filed before the Identities subscription. 
+	 */
 	public enum SubscriptionType {
 		/** @see IdentitiesSubscription */
 		Identities,
@@ -222,12 +236,20 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
     	
 		scheduleKeepaliveLoopExecution();
 	}
-	
+
 	/**
-	 * Schedules execution of {@link #run()} via {@link #mTicker}
+	 * Schedules execution of {@link #run()} via {@link #mTicker} after a delay:
+	 * If connected to WOT, the delay will be randomized and roughly equal to {@link #WOT_PING_DELAY}.
+	 * If not connected, it will be WOT_RECONNECT_DELAY.
 	 */
 	private void scheduleKeepaliveLoopExecution() {
-		final long sleepTime = mConnection != null ? (WOT_PING_DELAY/2 + mRandom.nextInt(WOT_PING_DELAY)) : WOT_RECONNECT_DELAY;
+		scheduleKeepaliveLoopExecution(mConnection != null ? (WOT_PING_DELAY/2 + mRandom.nextInt(WOT_PING_DELAY)) : WOT_RECONNECT_DELAY);
+	}
+	
+	/**
+	 * Schedules execution of {@link #run()} via {@link #mTicker} after a delay.
+	 */
+	private void scheduleKeepaliveLoopExecution(long sleepTime) {
 		mTicker.queueTimedJob(this, "WOT " + this.getClass().getSimpleName(), sleepTime, false, true);
 		
 		if(logMINOR) Logger.minor(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
@@ -338,6 +360,19 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			final boolean isSubscribed = mSubscriptionIDs.get(type) != null;
 			if(shouldSubscribe && !isSubscribed) {
 				fcp_Subscribe(type);
+				
+				scheduleKeepaliveLoopExecution(WOT_SUBSCRIBE_DELAY);
+				
+				// Only subscribe one at a time: If we subscribe to Scores/Trusts, we need to subscribe to Identities first: Otherwise
+				// the Identity objects won't exist. Score/Trust objects reference Identity objects so they cannot be created if we didn't 
+				// receive the identities yet. 
+				// The scheduling of the keepalive loop will guarantee that the other subscriptions are filed soon.
+				// The SubscriptionType enum is ordered to contain subscriptions which need to be filed first at the beginning so it is
+				// safe to just break.
+				// Also, if the IdentitiesSynchronizationHandler doesn't receive the identities before the scheduled execution, this function
+				// will just try to subscribe to the identities again and abort again: The isSubscribed boolean will only be true
+				// after the event handler has received the identities. WOT also prevents duplicat subscriptions so nothing bad can happen.
+				break;
 			} else if(!shouldSubscribe && isSubscribed) {
 				fcp_Unsubscribe(type);
 			}
