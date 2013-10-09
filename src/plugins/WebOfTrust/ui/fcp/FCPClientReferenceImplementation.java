@@ -219,6 +219,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * - {@link #handleTrustChangedNotification(Trust, Trust)}
 	 * - {@link #handleScoresSynchronization(Collection)}
 	 * - {@link #handleScoreChangedNotification(Score, Score)}
+	 * 
+	 * ATTENTION: If you subscribe to multiple {@link SubscriptionType}s, you must call this function in the same order as they appear in the
+	 * enum: For example {@link Trust} objects which you will receive from {@link SubscriptionType#Trusts} reference {@link Identity} objects
+	 * Therefore your event handler cannot create them if you don't subscribe to {@link SubscriptionType#Identities} first.
 	 */
 	public synchronized void subscribe(final SubscriptionType type) {
 		mSubscribeTo.add(type);
