@@ -1050,6 +1050,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				subscription.deleteWithoutCommit(this);
+				
+				final Client client = subscription.getClient();
+				if(getSubscriptions(client).size() == 0) {
+					Logger.normal(this, "Last subscription of client removed, deleting it: " + client);
+					client.deleteWithoutCommit();
+				}
+				
 				Persistent.checkedCommit(mDB, this);
 				Logger.normal(this, "Unsubscribed: " + subscription);
 			} catch(RuntimeException e) {
