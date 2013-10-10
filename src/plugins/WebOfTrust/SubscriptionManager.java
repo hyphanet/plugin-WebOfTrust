@@ -84,7 +84,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		public static enum Type {
 			FCP,
-			Callback
+			Callback /** Not implemented yet. */
 		};
 		
 		/**
@@ -116,7 +116,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/**
 		 * If deploying the {@link Notification} queue fails, for example due to connectivity issues, this is incremented.
-		 * After a certain limit of retries, the client will be disconnected.
+		 * After a retry limit of {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT}, the client will be disconnected.
 		 */
 		private byte mSendNotificationsFailureCount = 0;
 		
@@ -146,6 +146,9 @@ public final class SubscriptionManager implements PrioRunnable {
 				throw new IllegalStateException("mSendNotificationsFailureCount==" + mSendNotificationsFailureCount);
 		}
 		
+		/**
+		 * @throws UnsupportedOperationException Always because it is not implemented.
+		 */
 		@Override
 		public final String getID() {
 			throw new UnsupportedOperationException("Not implemented.");
@@ -159,7 +162,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 				
 		/**
-		 * @return The {@link Type} of this Subscription.
+		 * @return The {@link Type} of this Client.
 		 * @see #mType
 		 */
 		public final Type getType() {
@@ -180,10 +183,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 		
 		/**
-		 * Returns the next free index for a {@link Notification} in the queue of this Subscription
-		 * and stores this Subscription object without committing the transaction.
+		 * Returns the next free index for a {@link Notification} in the queue of this Client.
 		 * 
-		 * Schedules processing of the Notifications of the SubscriptionManger.
+		 * Stores this Client object without committing the transaction.
+		 * Schedules processing of the Notifications of the SubscriptionManger via {@link SubscriptionManager#scheduleNotificationProcessing()}.
 		 */
 		protected final long takeFreeNotificationIndexWithoutCommit() {
 			checkedActivate(1);
