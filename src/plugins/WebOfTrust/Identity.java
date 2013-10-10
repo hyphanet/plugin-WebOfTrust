@@ -391,6 +391,16 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	}
 	
 	/**
+	 * ATTENTION: Only use this when you need to construct arbitrary Identity objects - for example when writing an FCP parser.
+	 * It won't guarantee semantic integrity of the identity object, for example it allows lowering of the edition hint.
+	 * Instead, use {@link #setNewEditionHint(long)} whenever possible.
+	 */
+	public void forceSetNewEditionHint(long newLatestEditionHint) {
+		checkedActivate(1); // long is a db4o primitive type so 1 is enough
+		mLatestEditionHint = newLatestEditionHint;
+	}
+	
+	/**
 	 * Decrease the current edition by one. Used by {@link #markForRefetch()}.
 	 */
 	private final void decreaseEdition() {

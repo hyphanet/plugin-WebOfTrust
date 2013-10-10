@@ -76,8 +76,19 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	public void terminate() { 
 		super.terminate();
 		
+		Logger.normal(this, "terminate(): Amending edition hints...");
+		// Event-notifications does not propagate edition hints because that would cause a lot of traffic so we need to set them manually
+		final ObjectSet<Identity> allIdentities = mWebOfTrust.getAllIdentities();
+		for(final Identity identity : allIdentities) {
+			final Identity received = mReceivedIdentities.get(identity.getID());
+			if(received == null)
+				continue;
+			
+			received.forceSetNewEditionHint(identity.getLatestEditionHint());
+		}
+		
 		Logger.normal(this, "terminate(): Validating received data against WOT database...");
-		validateAgainstDatabase(mWebOfTrust.getAllIdentities(), mReceivedIdentities);
+		validateAgainstDatabase(allIdentities, mReceivedIdentities);
 		validateAgainstDatabase(mWebOfTrust.getAllTrusts(), mReceivedTrusts);
 		validateAgainstDatabase(mWebOfTrust.getAllScores(), mReceivedScores);
 		Logger.normal(this, "terminate() finished.");
