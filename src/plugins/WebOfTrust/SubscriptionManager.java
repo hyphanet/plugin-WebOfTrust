@@ -768,7 +768,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static final class TrustsSubscription extends Subscription<TrustChangedNotification> {
 
 		/**
-		 * @param fcpID See {@link Subscription#getFCP_ID()}. 
+		 * @param myClient The {@link Client} which created this Subscription. 
 		 */
 		protected TrustsSubscription(final Client myClient) {
 			super(myClient);
@@ -792,7 +792,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
 		/**
-		 * Stores a {@link TrustChangedNotification} to the {@link Notification} queue of this {@link Subscription}.
+		 * Stores a {@link TrustChangedNotification} to the {@link Notification} queue of this {@link Client}.
 		 * 
 		 * @param oldTrust The version of the {@link Trust} before the change. Null if it was newly created.
 		 * @param newTrust The version of the {@link Trust} after the change. Null if it was deleted.
