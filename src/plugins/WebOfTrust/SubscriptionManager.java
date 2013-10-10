@@ -1025,7 +1025,6 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * The client is notified when a trust value changes, is created or removed.
-	 * The client is NOT notified when the comment on a trust value changes.
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
 	 * @return The {@link TrustsSubscription} which is created by this function.
