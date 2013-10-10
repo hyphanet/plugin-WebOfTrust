@@ -721,7 +721,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static final class IdentitiesSubscription extends Subscription<IdentityChangedNotification> {
 
 		/**
-		 * @param fcpID See {@link Subscription#getFCP_ID()}. 
+		 * @param myClient The {@link Client} which created this Subscription. 
 		 */
 		protected IdentitiesSubscription(final Client myClient) {
 			super(myClient);
@@ -745,7 +745,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
 		/**
-		 * Stores a {@link IdentityChangedNotification} to the {@link Notification} queue of this {@link Subscription}.
+		 * Stores a {@link IdentityChangedNotification} to the {@link Notification} queue of this {@link Client}.
 		 * 
 		 * @param oldIdentity The version of the {@link Identity} before the change. Null if it was newly created.
 		 * @param newIdentity The version of the {@link Identity} after the change. Null if it was deleted.
