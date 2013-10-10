@@ -815,7 +815,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static final class ScoresSubscription extends Subscription<ScoreChangedNotification> {
 
 		/**
-		 * @param fcpID See {@link Subscription#getFCP_ID()}. 
+		 * @param myClient The {@link Client} which created this Subscription.
 		 */
 		protected ScoresSubscription(final Client myClient) {
 			super(myClient);
@@ -839,7 +839,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
 		/**
-		 * Stores a {@link ScoreChangedNotification} to the {@link Notification} queue of this {@link Subscription}.
+		 * Stores a {@link ScoreChangedNotification} to the {@link Notification} queue of this {@link Client}.
 		 * 
 		 * @param oldScore The version of the {@link Score} before the change. Null if it was newly created.
 		 * @param newScore The version of the {@link Score} after the change. Null if it was deleted.
