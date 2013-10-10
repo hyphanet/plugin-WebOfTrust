@@ -556,7 +556,11 @@ public final class SubscriptionManager implements PrioRunnable {
 		public void startupDatabaseIntegrityTest() throws Exception {
 			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
 			
-			IfNull.thenThrow(mSubscription);
+			IfNull.thenThrow(mClient, "mClient");
+			IfNull.thenThrow(mSubscription, "mSubscription");
+			
+			if(mClient != getSubscription().getClient())
+				throw new IllegalStateException("mClient does not match client of mSubscription");
 			
 			if(mIndex < 0)
 				throw new IllegalStateException("mIndex==" + mIndex);
