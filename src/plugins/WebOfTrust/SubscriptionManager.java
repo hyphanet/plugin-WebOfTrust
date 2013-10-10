@@ -861,7 +861,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	private static final long PROCESS_NOTIFICATIONS_DELAY = 60 * 1000;
 	
 	/**
-	 * If {@link Subscription#sendNotifications(SubscriptionManager)} fails, the failure counter of the subscription is incremented.
+	 * If {@link Client#sendNotifications(SubscriptionManager)} fails, the failure counter of the subscription is incremented.
 	 * If the counter reaches this value, the client is disconnected.
 	 */
 	private static final byte DISCONNECT_CLIENT_AFTER_FAILURE_COUNT = 5;
@@ -873,7 +873,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	private final WebOfTrust mWoT;
 
 	/**
-	 * The database in which to store {@link Subscription} and {@link Notification} objects.
+	 * The database in which to store {@link Client}, {@link Subscription} and {@link Notification} objects.
 	 * Same as <code>mWoT.getDatabase();</code>
 	 */
 	private final ExtObjectContainer mDB;
@@ -911,7 +911,7 @@ public final class SubscriptionManager implements PrioRunnable {
 
 	
 	/**
-	 * Thrown when a single client tries to file a {@link Subscription} of the same class of event {@link Notification} and the same {@link Subscription.Type} of notification deployment.
+	 * Thrown when a single {@link Client} tries to file a {@link Subscription} of the same class of event {@link Notification}.
 	 * 
 	 * @see #throwIfSimilarSubscriptionExists
 	 */
@@ -953,10 +953,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Throws when a single client tries to file a {@link Subscription} which matches the attributes of the given Subscription:
-	 * - The class of the Subscription and thereby the same class of event {@link Notification}
-	 * - The {@link Subscription.Type} of notification deployment.
-	 * - For FCP connections, the ID of the FCP connection. See {@link Subscription#getID()}.
+	 * Throws when a single {@link Client} tries to file a {@link Subscription} which has the same class as the given Subscription and thereby the same class of event {@link Notification}.
 	 * 
 	 * Used to ensure that each client can only subscribe once to each type of event.
 	 * 
