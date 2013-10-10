@@ -298,9 +298,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * A subscription stores the information which client is subscribed to which content and how it is supposed
 	 * to be notified about updates.
-	 * Subscriptions are stored one per {@link Notification}-type and per way of notification:
-	 * Because we want the notification queue to block on error, a single subscription does not support
-	 * multiple ways of notifying the client.
+	 * For each {@link Client}, one subscription is stored one per {@link Notification}-type.
+	 * A {@link Client} cannot have multiple subscriptions of the same type.
 	 * 
 	 * Notice: Even though this is an abstract class, it contains code specific <b>all</>b> types of subscription clients such as FCP and callback.
 	 * At first glance, this looks like a violation of abstraction principles. But it is not:
@@ -313,6 +312,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	@SuppressWarnings("serial")
 	public static abstract class Subscription<NotificationType extends Notification> extends Persistent {
 		
+		/**
+		 * The {@link Client} which created this {@link Subscription}.
+		 */
 		private final Client mClient;
 		
 		/**
@@ -354,6 +356,10 @@ public final class SubscriptionManager implements PrioRunnable {
 			return mWebOfTrust.getSubscriptionManager();
 		}
 		
+		/**
+		 * Gets the {@link Client} which created this {@link Subscription}
+		 * @see #mClient
+		 */
 		protected final Client getClient() {
 			checkedActivate(1);
 			mClient.initializeTransient(mWebOfTrust);
@@ -416,6 +422,11 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * For being able to only send a diff, the subscriber must know what the <i>initial</i> state of the database was.
 		 * And thats the purpose of this function: To send the full initial state of the database to the client.
 		 * 
+		 * The implementation MUST throw a {@link FCPCallFailedException} if the client did not signal that the processing was successful:
+		 * This will allow the client to use failing database transactions in the event handlers and just rollback and throw if the transaction fails. 
+		 * The implementation MUST use synchronous FCP communication to allow the client to signal an error.
+		 * Also, synchronous communication is necessary for guaranteeing the notifications to arrive after the synchronization at the client.
+		 * 
 		 * For example, if a client subscribes to the list of identities, it must always receive a full list of all existing identities at first.
 		 * As new identities appear afterwards, the client can be kept up to date by sending each single new identity as it appears. 
 		 * 
@@ -423,16 +434,19 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * This must be called with synchronization upon the {@link WebOfTrust} and the SubscriptionManager.
 		 * Therefore it may perform database queries on the WebOfTrust to obtain the dataset.
 		 * 
-		 * @throws PluginNotFoundException If the FCP client has disconnected. The SubscriptionManager then won't retry deploying this Notification, the {@link Subscription} will be terminated.
-		 * @throws FCPCallFailedException If processing failed at the client.
+		 * @throws PluginNotFoundException If the FCP client has disconnected. Subscribing must fail if this happens.
+		 * @throws FCPCallFailedException If processing failed at the client. Subscribing must fail if this happens.
 		 */
 		protected abstract void synchronizeSubscriberByFCP() throws FCPCallFailedException, PluginNotFoundException;
 
 		/**
 		 * Called by this Subscription when the type of it is FCP and a {@link Notification} shall be sent via FCP. 
-		 * The implementation MUST throw a {@link RuntimeException} if the FCP message was not sent successfully: 
-		 * Subscriptions are supposed to be reliable, if transmitting a {@link Notification} fails it shall
-		 * be resent.
+		 * The implementation MUST throw a {@link FCPCallFailedException} if the client did not signal that the processing was successful:
+		 * Not only shall the {@link Notification} be resent if transmission fails but also if the client fails processing it. This
+		 * will allow the client to use failing database transactions in the event handlers and just rollback and throw if the transaction
+		 * fails. 
+		 * The implementation MUST use synchronous FCP communication to allow the client to signal an error.
+		 * Also, synchronous communication is necessary for guaranteeing the notifications to arrive in proper order at the client.
 		 * 
 		 * <b>Thread synchronization:</b>
 		 * This must be called with synchronization upon the SubscriptionManager.
