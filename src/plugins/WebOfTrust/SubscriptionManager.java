@@ -496,7 +496,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		private final Subscription<? extends Notification> mSubscription;
 		
 		/**
-		 * The index of this Notification in the queue of its {@link Subscription}:
+		 * The index of this Notification in the queue of its {@link Client}:
 		 * Notifications are supposed to be sent out in proper sequence, therefore we use incremental indices.
 		 */
 		@IndexedField
@@ -530,7 +530,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Only one of oldObject or newObject may be null.
 		 * If both are non-null, their {@link Persistent#getID()} must be equal.
 		 * 
-		 * @param mySubscription The {@link Subscription} to whose Notification queue this Notification belongs.
+		 * @param mySubscription The {@link Subscription} which requested this type of Notification.
 		 * @param oldObject The version of the changed {@link Persistent} object before the change.
 		 * @param newObject The version of the changed {@link Persistent} object after the change.
 		 */
@@ -586,6 +586,9 @@ public final class SubscriptionManager implements PrioRunnable {
 			throw new UnsupportedOperationException();
 		}
 		
+		/**
+		 * @return The {@link Subscription} which requested this type of Notification.
+		 */
 		public Subscription<? extends Notification> getSubscription() {
 			checkedActivate(1);
 			mSubscription.initializeTransient(mWebOfTrust);
