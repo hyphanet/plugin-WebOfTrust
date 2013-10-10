@@ -141,6 +141,9 @@ public final class SubscriptionManager implements PrioRunnable {
 			
 			if(mNextNotificationIndex < 0)
 				throw new IllegalStateException("mNextNotificationIndex==" + mNextNotificationIndex);
+			
+			if(mSendNotificationsFailureCount < 0 || mSendNotificationsFailureCount > SubscriptionManager.DISCONNECT_CLIENT_AFTER_FAILURE_COUNT)
+				throw new IllegalStateException("mSendNotificationsFailureCount==" + mSendNotificationsFailureCount);
 		}
 		
 		@Override
