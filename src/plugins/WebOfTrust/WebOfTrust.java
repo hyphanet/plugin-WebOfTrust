@@ -2253,12 +2253,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			final Trust oldTrust = trust.clone();
 			trust.trusterEditionUpdated();
 			trust.setComment(newComment);
-			trust.storeWithoutCommit();
-
-			if(trust.getValue() != newValue) {
+			final boolean valueChanged = trust.getValue() != newValue; 
+			
+			if(valueChanged)
 				trust.setValue(newValue);
-				trust.storeWithoutCommit();
+			
+			trust.storeWithoutCommit();
+			
+			if(!trust.equals(oldTrust))
 				mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(oldTrust, trust);
+			
+			if(valueChanged) {
 				if(logDEBUG) Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
 				updateScoresWithoutCommit(oldTrust, trust);
 			}
