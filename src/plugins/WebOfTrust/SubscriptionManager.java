@@ -1418,11 +1418,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 
 	/**
-	 * Deletes all old subscriptions and enables subscription processing. 
+	 * Deletes all old {@link Client}s, {@link Subscription}s and {@link Notification}s and enables subscription processing. 
 	 * 
 	 * You must call this before any subscriptions are created, so for example before FCP is available.
 	 * 
-	 * Does NOT work in unit tests - you must manually trigger subscription processing by calling {@link #run()} there.
+	 * ATTENTION: Does NOT work in unit tests - you must manually trigger subscription processing by calling {@link #run()} there.
 	 */
 	protected synchronized void start() {
 		Logger.normal(this, "start()...");
@@ -1439,8 +1439,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Shuts down this SubscriptionManager by aborting all queued notification processing and waiting for running
-	 * processing to finish.
+	 * Shuts down this SubscriptionManager by aborting all queued notification processing and waiting for running processing to finish.
 	 */
 	protected synchronized void stop() {
 		Logger.normal(this, "stop()...");
