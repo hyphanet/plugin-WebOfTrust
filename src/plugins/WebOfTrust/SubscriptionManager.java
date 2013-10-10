@@ -474,8 +474,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * - A version of it before the change via {@link Notification#getOldObject()}
 	 * - A version of it after the change via {@link Notification#getNewObject()}
 	 * 
-	 * If one of the before/after getters throws {@link NoSuchElementException}, this is because the object was added/deleted.
-	 * If both do not throw, the object was modified.
+	 * If one of the before/after getters returns null, this is because the object was added/deleted.
+	 * If both do return an non-null object, the object was modified.
 	 * NOTICE: Modification can also mean that its class has changed!
 	 * 
 	 * NOTICE: Both Persistent objects are not stored in the database and must not be stored there to prevent duplicates!
