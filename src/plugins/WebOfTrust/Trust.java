@@ -342,6 +342,8 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 	protected void activateFully() {
 		// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 		checkedActivate(1);
+		mTruster.initializeTransient(mWebOfTrust);
+		mTrustee.initializeTransient(mWebOfTrust);
 	}
 	
 	protected void storeWithoutCommit() {
