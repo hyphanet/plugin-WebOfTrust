@@ -210,9 +210,8 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 
 	@Override
 	public synchronized String toString() {
-		return "[Trust " + super.toString() + ": truster: " + getTruster().getNickname() + "@" + getTruster().getID() +
-			"; trustee: " + getTrustee().getNickname() + "@" + getTrustee().getID()  +
-		 	"; value:" + getValue() + "; comment: \"" + getComment() + "\"; truster edition: " + getTrusterEdition() + " ]";
+		return "[Trust " + super.toString() + ": ID: " + getID() + "; value:" + getValue() + "; comment: \"" 
+				+ getComment() + "\"; truster edition: " + getTrusterEdition() + " ]";
 	}
 
 	/** @return The Identity that gives this trust. */
