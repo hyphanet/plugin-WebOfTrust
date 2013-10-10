@@ -1444,8 +1444,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	protected synchronized void stop() {
 		Logger.normal(this, "stop()...");
 		
-		if(mTicker != null)
+		if(mTicker != null) {
 			mTicker.shutdown();
+			mTicker = null;
+		}
 		
 		Logger.normal(this, "stop() finished.");
 	}
