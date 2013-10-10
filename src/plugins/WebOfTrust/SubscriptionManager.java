@@ -999,7 +999,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * The client is notified when an identity is added, changed or deleted.
+	 * The {@link Client} is notified when an {@link Identity} or {@link OwnIdentity} is added, changed or deleted.
 	 * 
 	 * Some of the changes which result in a notification:
 	 * - Fetching of a new edition of an identity and all changes which result upon the {@link Identity} object because of that.
@@ -1011,7 +1011,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * - New edition hint for an identity. Edition hints are only useful to WOT, this shouldn't matter to clients. Also, edition hints are
 	 *   created by other identities, not by the identity which is their subject. The identity itself did not change. 
 	 * 
-	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
+	 * @param fcpID The identifier of the FCP connection of the {@link Client}. Must be unique among all FCP connections!
 	 * @return The {@link IdentitiesSubscription} which is created by this function.
 	 * @see IdentityChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
@@ -1024,9 +1024,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * The client is notified when a trust value changes, is created or removed.
+	 * The {@link Client} is notified when a {@link Trust} changes, is created or removed.
 	 * 
-	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
+	 * @param fcpID The identifier of the FCP connection of the {@link Client}. Must be unique among all FCP connections!
 	 * @return The {@link TrustsSubscription} which is created by this function.
 	 * @see TrustChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
@@ -1039,9 +1039,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * The client is notified when a score value changes, is created or removed.
+	 * The {@link Client} is notified when a {@link Score} changes, is created or removed.
 	 * 
-	 * @param fcpID The identifier of the FCP connection of the client. Must be unique among all FCP connections!
+	 * @param fcpID The identifier of the FCP connection of the {@link Client}. Must be unique among all FCP connections!
 	 * @return The {@link ScoresSubscription} which is created by this function.
 	 * @see ScoreChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
@@ -1095,6 +1095,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		return new Persistent.InitializingObjectSet<Client>(mWoT, q);
 	}
 	
+	/**
+	 * @see Client#getFCP_ID()
+	 */
 	private Client getClient(final String fcpID) throws UnknownClientException {
 		final Query q = mDB.query();
 		q.constrain(Client.class);
@@ -1108,6 +1111,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 	}
 	
+	/**
+	 * Gets the {@link Client} with the given FCP ID, see {@link Client#getFCP_ID()}. If none exists, it is created.
+	 * It will NOT be stored to the database if it was created.
+	 */
 	private Client getOrCreateClient(final String fcpID) {
 		try {
 			return getClient(fcpID);
@@ -1127,6 +1134,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
 	}
 	
+	/**
+	 * @return All subscriptions of the given {@link Client}.
+	 */
 	private ObjectSet<Subscription<? extends Notification>> getSubscriptions(final Client client) {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
@@ -1170,14 +1180,14 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * Gets a  {@link Subscription} which matches the given parameters:
 	 * - the given class of Subscription and thereby event {@link Notification}
-	 * - the given FCP identificator, see {@link Subscription#getFCP_ID()}.
+	 * - the given {@link Client}
 	 * 
-	 * Only one {@link Subscription} which matches both of these can exist: Each FCP client can only subscribe once to a type of event.
+	 * Only one {@link Subscription} which matches both of these can exist: Each {@link Client} can only subscribe once to a type of event.
 	 * 
 	 * Typically used by {@link #throwIfSimilarSubscriptionExists(Subscription)}.
 	 * 
-	 * @param clazz The class of the Subscription.
-	 * @param fcpID The identificator of the FCP connection. See {@link Subscription#getFCP_ID()}.
+	 * @param clazz The class of the {@link Subscription}.
+	 * @param client The {@link Client} which has created the {@link Subscription}.
 	 * @return See description.
 	 * @throws UnknownSubscriptionException If no matching {@link Subscription} exists.
 	 */
