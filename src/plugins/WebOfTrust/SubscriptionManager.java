@@ -1283,7 +1283,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Interface for the core of WOT to deploy an {@link IdentityChangedNotification} to clients. 
+	 * Interface for the core of WOT to queue an {@link IdentityChangedNotification} to be deployed to all {@link Client}s subscribed to that type of notification. 
 	 * 
 	 * Typically called when a {@link Identity} or {@link OwnIdentity} is added, deleted or its attributes are modified.
 	 * See {@link #subscribeToIdentities(String)} for a list of the changes which do or do not trigger a notification.
@@ -1310,7 +1310,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Interface for the core of WOT to deploy a {@link TrustChangedNotification} to clients. 
+	 * Interface for the core of WOT to queue a {@link TrustChangedNotification} to be deployed to all {@link Client}s subscribed to that type of notification. 
 	 * 
 	 * Typically called when a {@link Trust} is added, deleted or its attributes are modified.
 	 * 
@@ -1336,7 +1336,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Interface for the core of WOT to deploy a {@link ScoreChangedNotification} to clients. 
+	 * Interface for the core of WOT to queue a {@link ScoreChangedNotification} to be deployed to all {@link Client}s subscribed to that type of notification. 
 	 * 
 	 * Typically called when a {@link Score} is added, deleted or its attributes are modified.
 	 * 
@@ -1362,15 +1362,15 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 
 	/**
-	 * Sends out the {@link Notification} queue of each {@link Subscription} to its clients.
+	 * Sends out the {@link Notification} queue of each {@link Client}.
 	 * 
 	 * Typically called by the Ticker {@link #mTicker} on a separate thread. This is triggered by {@link #scheduleNotificationProcessing()}
 	 * - the scheduling function should be called whenever a {@link Notification} is stored to the database.
 	 *  
-	 * If deploying the notifications for a subscription fails, this function is scheduled to be run again after some time.
-	 * If deploying for a certain subscription fails N times, the Subscription is deleted.
+	 * If deploying the notifications for a {@link Client} fails, this function is scheduled to be run again after some time.
+	 * If deploying for a certain {@link Client} fails more than {@link #DISCONNECT_CLIENT_AFTER_FAILURE_COUNT} times, the {@link Client} is deleted.
 	 * 
-	 * @see Subscription#sendNotifications(SubscriptionManager) This function is called on each subscription to deploy the {@link Notification} queue.
+	 * @see Client#sendNotifications(SubscriptionManager) This function is called on each {@link Client} to deploy the {@link Notification} queue.
 	 */
 	public void run() {
 		if(logMINOR) Logger.minor(this, "run()...");
