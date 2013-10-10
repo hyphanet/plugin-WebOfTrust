@@ -31,24 +31,19 @@ import freenet.support.io.NativeThread;
  * which do a callback within the WoT plugin or maybe even via OSGI.
  * 
  * The class/object model is as following:
- * - There is exactly one SubscriptionManager object running in the WOT plugin. It is the interface for clients.
+ * - There is exactly one SubscriptionManager object running in the WOT plugin. It is the interface for {@link Client}s.
  * - Subscribing to something yields a {@link Subscription} object which is stored by the SubscriptionManager in the database. Clients do not need to keep track of it. They only need to know its ID.
  * - When an event happens, a {@link Notification} object is created for each {@link Subscription} which matches the type of event. The Notification is stored in the database.
  * - After a delay, the SubscriptionManager deploys the notifications to the clients.
  * 
- * The {@link Notification}s are deployed strictly sequential per {@link Subscription}.
- * If a single Notification cannot be deployed, the processing of the Notifications for that Subscription is halted until the failed
- * Notification can be deployed successfully.
- * This especially applies to the FCP-client-interface and all other client interfaces: If a client returns "ERROR!" from the callback it has received,
- * the notification queue is halted and the previous notification is re-sent a few times until it can be imported successfully by the client
- * or the connection is dropped due to too many failures.
+ * The {@link Notification}s are deployed strictly sequential per {@link Client}.
+ * If a single Notification cannot be deployed, the processing of the Notifications for that Client is halted until the failed Notification can
+ * be deployed successfully. There will be {@link #DISCONNECT_CLIENT_AFTER_FAILURE_COUNT} retries, then the Client is disconnected.
  * 
- * Further, at each deployment run, the order of deployment is guaranteed to be:
- * 1. {@link IdentityChangedNotification}
- * 2. {@link TrustChangedNotification}
- * 3. {@link ScoreChangedNotification}
- * This allows you to assume that any identity IDs (see {@link Identity#getID()}} you receive in trust / score notifications are valid when you receive them:
- * If a new identity is created, you will receive the notification about its creation before you receive any trust / score notifications about it.
+ * Further, at each deployment run, the order of deployment is guaranteed to "make sense":
+ * A {@link TrustChangedNotification} which creates a {@link Trust} will not deployed before the {@link IdentityChangedNotification} which creates
+ * the identities which are referenced by the trust.
+ * This allows you to assume that any identity IDs (see {@link Identity#getID()}} you receive in trust / score notifications are valid when you receive them.
  * 
  * This is a very important principle which makes client design easy: You do not need transaction-safety when caching things such as score values
  * incrementally. For example your client might need to do mandatory actions due to a score-value change, such as deleting messages from identities
@@ -56,7 +51,6 @@ import freenet.support.io.NativeThread;
  * (and maybe even keep your score-cache as is) - you will continue to receive the notification about the changed score value for which the import failed,
  * you will not receive change-notifications after that. This ensures that your consistency is not destroyed: There will be no missing slot
  * in the incremental change chain.
- * FIXME: AFAIK the FCP-client does not support the above yet, this is a MUST-have feature needed by Freetalk, check whether it works.
  * 
  * <b>Synchronization:</b>
  * The locking order must be:
