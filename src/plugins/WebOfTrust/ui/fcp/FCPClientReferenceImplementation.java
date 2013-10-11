@@ -344,7 +344,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		return (CurrentTimeUTC.getInMillis() - mLastPingSentDate) > WOT_PING_TIMEOUT_DELAY;
 	}
 	
-	
+	/**
+	 * Sends a "Ping" FCP message to WOT. It will reply with a "Pong" message which is then handled by the {@link PongHandler}.
+	 * Used for checking whether the connection to WOT is alive.
+	 */
 	private synchronized void fcp_Ping() {
 		if(logMINOR) Logger.minor(this, "fcp_Ping()");
 		
@@ -354,6 +357,9 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		mLastPingSentDate = CurrentTimeUTC.getInMillis();
 	}
 	
+	/**
+	 * Iterates over the {@link SubscriptionType} enum values. Checks whether the client has requested to subscribe / unsubscribe any of them and does so. 
+	 */
 	private synchronized void checkSubscriptions() {
 		for(SubscriptionType type : SubscriptionType.values()) {
 			final boolean shouldSubscribe = mSubscribeTo.contains(type);
@@ -377,6 +383,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 	
+	/**
+	 * Sends a "Subscribe" FCP message to WOT. It will reply with:
+	 * - A synchronization message, which is handled by {@link IdentitiesSynchronizationHandler} / {@link TrustsSynchronizationHandler} / {@link ScoresSynchronizationHandler} - depending on the {@link SubscriptionType}.
+	 * - A "Subscribed" message, which is handled by {@link SubscriptionSucceededHandler}.
+	 * 
+	 * @param type The {@link SubscriptionType} to which you want to subscribe.
+	 */
 	private void fcp_Subscribe(final SubscriptionType type) {
 		Logger.normal(this, "fcp_Subscribe(): " + type);
 		
@@ -386,6 +399,11 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		mConnection.send(sfs, null);
 	}
 	
+	/**
+	 * Sends a "Unsubscribe" FCP message to WOT. It will reply with an "Unsubscribed" message which is handled by {@link SubscriptionTerminatedHandler}.
+	 * 
+	 * @param type The {@link SubscriptionType} which you want to unsubscribe. {@link #mSubscriptionIDs} must contain an ID for this type. 
+	 */
 	private void fcp_Unsubscribe(final SubscriptionType type) {
 		Logger.normal(this, "fcp_Unsubscribe(): " + type);
 		
