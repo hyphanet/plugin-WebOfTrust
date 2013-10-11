@@ -979,23 +979,23 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Takes care of all required synchronization.
 	 * Shall be used as back-end for all front-end functions for creating subscriptions.
 	 * 
+	 * You have to synchronize on mWoT and this SubscriptionManager before calling this function!
+	 * You don't have to commit the transaction after calling this function.
+	 * 
 	 * @throws SubscriptionExistsAlreadyException Thrown if a subscription of the same type for the same client exists already. See {@link #throwIfSimilarSubscriptionExists(Subscription)}
 	 */
 	private void storeNewSubscriptionAndCommit(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
 		subscription.initializeTransient(mWoT);
-		synchronized(mWoT) { // For synchronizeSubscriberByFCP()
-		synchronized(this) {
-			throwIfSimilarSubscriptionExists(subscription);
-	
-			try {
-				subscription.synchronizeSubscriberByFCP();
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-			subscription.storeAndCommit();
-			Logger.normal(this, "Subscribed: " + subscription);
+
+		throwIfSimilarSubscriptionExists(subscription);
+
+		try {
+			subscription.synchronizeSubscriberByFCP(); // Needs the lock on mWoT which the JavaDoc requests
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
-		}
+		subscription.storeAndCommit();
+		Logger.normal(this, "Subscribed: " + subscription);
 	}
 	
 	/**
@@ -1015,12 +1015,16 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return The {@link IdentitiesSubscription} which is created by this function.
 	 * @see IdentityChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
-	public synchronized IdentitiesSubscription subscribeToIdentities(String fcpID) throws SubscriptionExistsAlreadyException {
-		// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
-		// Storage will happen in storeNewSubscriptionAndCommit()
-		final IdentitiesSubscription subscription = new IdentitiesSubscription(getOrCreateClient(fcpID));
-		storeNewSubscriptionAndCommit(subscription);
-		return subscription;
+	public IdentitiesSubscription subscribeToIdentities(String fcpID) throws SubscriptionExistsAlreadyException {
+		synchronized(mWoT) {
+		synchronized(this) {
+			// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
+			// Storage will happen in storeNewSubscriptionAndCommit()
+			final IdentitiesSubscription subscription = new IdentitiesSubscription(getOrCreateClient(fcpID));
+			storeNewSubscriptionAndCommit(subscription);
+			return subscription;
+		}
+		}
 	}
 	
 	/**
@@ -1030,12 +1034,16 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return The {@link TrustsSubscription} which is created by this function.
 	 * @see TrustChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
-	public synchronized TrustsSubscription subscribeToTrusts(String fcpID) throws SubscriptionExistsAlreadyException {
-		// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
-		// Storage will happen in storeNewSubscriptionAndCommit()
-		final TrustsSubscription subscription = new TrustsSubscription(getOrCreateClient(fcpID));
-		storeNewSubscriptionAndCommit(subscription);
-		return subscription;
+	public TrustsSubscription subscribeToTrusts(String fcpID) throws SubscriptionExistsAlreadyException {
+		synchronized(mWoT) {
+		synchronized(this) {
+			// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
+			// Storage will happen in storeNewSubscriptionAndCommit()
+			final TrustsSubscription subscription = new TrustsSubscription(getOrCreateClient(fcpID));
+			storeNewSubscriptionAndCommit(subscription);
+			return subscription;
+		}
+		}
 	}
 	
 	/**
@@ -1045,12 +1053,16 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return The {@link ScoresSubscription} which is created by this function.
 	 * @see ScoreChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
-	public synchronized ScoresSubscription subscribeToScores(String fcpID) throws SubscriptionExistsAlreadyException {
-		// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
-		// Storage will happen in storeNewSubscriptionAndCommit()
-		final ScoresSubscription subscription = new ScoresSubscription(getOrCreateClient(fcpID));
-		storeNewSubscriptionAndCommit(subscription);
-		return subscription;
+	public ScoresSubscription subscribeToScores(String fcpID) throws SubscriptionExistsAlreadyException {
+		synchronized(mWoT) {
+		synchronized(this) {
+			// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
+			// Storage will happen in storeNewSubscriptionAndCommit()
+			final ScoresSubscription subscription = new ScoresSubscription(getOrCreateClient(fcpID));
+			storeNewSubscriptionAndCommit(subscription);
+			return subscription;
+		}
+		}
 	}
 	
 	/**
