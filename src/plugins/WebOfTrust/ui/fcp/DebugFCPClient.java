@@ -96,12 +96,12 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	
 	private <T extends Persistent> void validateAgainstDatabase(final ObjectSet<T> expectedSet, final HashMap<String, T> actualSet) {
 		if(actualSet.size() != expectedSet.size())
-			Logger.error(this, "Size mismatch for " + actualSet + ": " + actualSet.size() + " != " + expectedSet.size());
+			Logger.error(this, "Size mismatch for " + actualSet + ": actual size " + actualSet.size() + " != expected size " + expectedSet.size());
 		
 		for(final T expected : expectedSet) {
 			final T actual = actualSet.get(expected.getID());
 			if(actual == null || !actual.equals(expected))
-				Logger.error(this, "Mismatch: " + actual + " not equals() to " + expected);
+				Logger.error(this, "Mismatch: actual " + actual + " not equals() to expected " + expected);
 		}
 	}
 
@@ -145,14 +145,14 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 			Logger.normal(this, "Received additional synchronization, validating existing data against it...");
 
 			if(source.size() != target.size())
-				Logger.error(this, "Size mismatch: " + source.size() + " != " + target.size());
+				Logger.error(this, "Size mismatch: received size " + source.size() + " != existing size " + target.size());
 			else {
 				for(final T expected : source) {
 					final T existing = target.get(expected);
 					if(existing == null)
-						Logger.error(this, "Not found: " + expected);
+						Logger.error(this, "Not found: expected " + expected);
 					else if(!existing.equals(expected))
-						Logger.error(this, "Not equals: " + expected + " to " + existing);
+						Logger.error(this, "Not equals: expected " + expected + " to existing " + existing);
 				}
 			}
 			target.clear();
@@ -186,7 +186,7 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 		if(changeSet.beforeChange != null) {
 			final T currentBeforeChange = target.get(changeSet.beforeChange.getID());
 			if(!currentBeforeChange.equals(changeSet.beforeChange))
-				Logger.error(this, "Existing data is not equals() to changeSet.beforeChange: " + currentBeforeChange + "; " + changeSet);
+				Logger.error(this, "Existing data is not equals() to changeSet.beforeChange: currentBeforeChange=" + currentBeforeChange + "; changeSet=" + changeSet);
 			
 			if(changeSet.afterChange != null && currentBeforeChange.equals(changeSet.afterChange)) {
 				if(!changeSet.beforeChange.equals(changeSet.afterChange))
@@ -196,8 +196,8 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 			}
 		} else {
 			if(target.containsKey(changeSet.afterChange.getID()))
-				Logger.error(this, "ChangeSet claims to create the target but we already have it: "  
-					+ target.get(changeSet.afterChange.getID()) + "; " + changeSet);
+				Logger.error(this, "ChangeSet claims to create the object but we already have it: existing="  
+					+ target.get(changeSet.afterChange.getID()) + "; changeSet=" + changeSet);
 		}
 		
 		if(changeSet.afterChange != null) {
