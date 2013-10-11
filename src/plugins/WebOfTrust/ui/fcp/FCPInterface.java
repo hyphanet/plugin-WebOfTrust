@@ -139,8 +139,7 @@ public final class FCPInterface implements FredPluginFCP {
         						e instanceof NotInTrustTreeException ||
         						e instanceof NotTrustedException ||
         						e instanceof UnknownIdentityException ||
-        						e instanceof UnknownPuzzleException || 
-        						e instanceof SubscriptionExistsAlreadyException;
+        						e instanceof UnknownPuzzleException;
         	
         	if(!dontLog)
         		Logger.error(this, "FCP error", e);
@@ -901,7 +900,7 @@ public final class FCPInterface implements FredPluginFCP {
      * @see SubscriptionManager#subscribeToScores(String)
      * @see SubscriptionManager#subscribeToTrusts(String)
      */
-    private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException, SubscriptionExistsAlreadyException {
+    private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException {
     	final String to = getMandatoryParameter(params, "To");
     	
     	// - We not only use the Identifier which the plugin provided but also the hashCode of the replySender:
@@ -927,20 +926,28 @@ public final class FCPInterface implements FredPluginFCP {
     	}
     	
     	Subscription<? extends Notification> subscription;
+    	SimpleFieldSet sfs;
     	
-    	if(to.equals("Identities")) {
-    		subscription = mSubscriptionManager.subscribeToIdentities(fcpID);
-    	} else if(to.equals("Trusts")) {
-    		subscription = mSubscriptionManager.subscribeToTrusts(fcpID);
-    	} else if(to.equals("Scores")) {
-    		subscription = mSubscriptionManager.subscribeToScores(fcpID);
-    	} else
-    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
-    		
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-    	sfs.putOverwrite("Message", "Subscribed");
-    	sfs.putOverwrite("SubscriptionID", subscription.getID());
-    	sfs.putOverwrite("To", to);
+    	try {
+	    	if(to.equals("Identities")) {
+	    		subscription = mSubscriptionManager.subscribeToIdentities(fcpID);
+	    	} else if(to.equals("Trusts")) {
+	    		subscription = mSubscriptionManager.subscribeToTrusts(fcpID);
+	    	} else if(to.equals("Scores")) {
+	    		subscription = mSubscriptionManager.subscribeToScores(fcpID);
+	    	} else
+	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
+	    	
+	    	sfs = new SimpleFieldSet(true);
+	    	sfs.putOverwrite("Message", "Subscribed");
+	    	sfs.putOverwrite("SubscriptionID", subscription.getID());
+	    	sfs.putOverwrite("To", to);
+    	} catch(SubscriptionExistsAlreadyException e) {
+	    	sfs = errorMessageFCP("Subscribe", e);
+	    	sfs.putOverwrite("SubscriptionID", e.existingSubscription.getID());
+	    	sfs.putOverwrite("To", to);
+    	}
+    	
     	return sfs;
     }
     
