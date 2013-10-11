@@ -416,7 +416,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		final FCPMessageHandler handler = mFCPMessageHandlers.get(messageString);
 		
 		if(handler == null) {
-			Logger.warning(this, "Unknown message type: " + messageString);
+			Logger.warning(this, "Unknown message type: " + messageString + "; SimpleFieldSet: " + params);
 			return;
 		}
 
