@@ -226,11 +226,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 */
 	public synchronized void unsubscribe(final SubscriptionType type) {
 		mSubscribeTo.remove(type);
-		
-		if(mSubscriptionIDs.containsKey(type))
-			fcp_Unsubscribe(type);
-    	
-		scheduleKeepaliveLoopExecution();
+
+		scheduleKeepaliveLoopExecution(0);
 	}
 
 	/**
@@ -306,7 +303,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 		if(mConnection != null) {
 			for(SubscriptionType type : mSubscriptionIDs.keySet()) {
-				unsubscribe(type);
+				fcp_Unsubscribe(type);
 				// The "Unsubscribed" message would normally trigger the removal from the mSubscriptionIDs array but we cannot
 				// receive it anymore after we are disconnected so we remove the ID ourselves
 				// FIXME: Check whether it still arrives at onReply() anyway. If it does so, it will trigger error logging -
