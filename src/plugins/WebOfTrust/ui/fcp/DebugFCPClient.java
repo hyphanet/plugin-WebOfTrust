@@ -66,10 +66,10 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	
 	@Override
 	public void start() {
+		super.start();
 		subscribe(SubscriptionType.Identities);
 		subscribe(SubscriptionType.Trusts);
 		subscribe(SubscriptionType.Scores);
-		super.start();
 	}
 	
 	@Override
