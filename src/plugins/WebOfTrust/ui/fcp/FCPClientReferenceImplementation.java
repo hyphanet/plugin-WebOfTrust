@@ -218,7 +218,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 */
 	public synchronized void subscribe(final SubscriptionType type) {
 		mSubscribeTo.add(type);
-		scheduleKeepaliveLoopExecution();
+		scheduleKeepaliveLoopExecution(0);
 	}
 	
 	/**
