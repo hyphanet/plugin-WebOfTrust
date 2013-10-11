@@ -298,6 +298,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 	
+	/**
+	 * Nulls the connection to WOT.
+	 * Unsubscribes all existing {@link Subscription}s so WOT does not not maintain them anymore. Does NOT remove them from {@link #mSubscribeTo}:
+	 * The purpose of this is to make connections transparent to the child event handler. Once it has requested to be subscribed, it does
+	 * not have to care about whether a connection exists or not. This class will automatically reconnect if the connection is lost and
+	 * file the subscriptions again.
+	 */
 	private synchronized void disconnect() {
 		Logger.normal(this, "disconnect()");
 		
