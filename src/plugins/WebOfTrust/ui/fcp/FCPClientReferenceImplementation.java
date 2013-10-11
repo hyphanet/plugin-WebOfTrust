@@ -80,15 +80,6 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	private static final int WOT_PING_TIMEOUT_DELAY = 2*WOT_PING_DELAY;
 	
 	/**
-	 * The amount of milliseconds between filing each subscription. This delay is necessary for being able to release the lock on this
-	 * object to give the {@link IdentitiesSynchronizationHandler} an opportunity to execute before we file the Subscriptions to Trusts/Scores:
-	 * {@link Trust}/{@link Score} objects reference {@link Identity} objects and therefore cannot be created if the {@link Identity} object is not known yet.
-	 * @see SubscriptionType
-	 * @see #subscribe(SubscriptionType)
-	 */
-	private static final int WOT_SUBSCRIBE_DELAY = 1 * 1000;
-	
-	/**
 	 * The implementing child class provides this Map. It is used for obtaining the {@link Identity} objects which are used for
 	 * constructing {@link Trust} and {@link Score} objects which are passed to its handlers.
 	 */
@@ -116,7 +107,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * All types of {@link Subscription}. The names match the FCP messages literally and are used for lookup, please do not change them.
 	 * Further, the subscriptions are filed in the order which they appear hear: {@link Trust}/{@link Score} objects reference {@link Identity}
 	 * objects and therefore cannot be created if the {@link Identity} object is not known yet. This would be the case if
-	 * Trusts/Scores subscriptions were filed before the Identities subscription. 
+	 * Trusts/Scores subscriptions were filed before the Identities subscription.
 	 */
 	public enum SubscriptionType {
 		/** @see IdentitiesSubscription */
@@ -177,12 +168,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 				new PongHandler(),
 				new SubscriptionSucceededHandler(),
 				new SubscriptionTerminatedHandler(),
+				new ErrorHandler(),
 				new IdentitiesSynchronizationHandler(),
 				new TrustsSynchronizationHandler(),
 				new ScoresSynchronizationHandler(),
 				new IdentityChangedNotificationHandler(),
 				new TrustChangedNotificationHandler(),
-				new ScoreChangedNotificationHandler() 
+				new ScoreChangedNotificationHandler()
 		};
 		
 		for(FCPMessageHandler handler : handlers)
@@ -364,18 +356,16 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			final boolean isSubscribed = mSubscriptionIDs.get(type) != null;
 			if(shouldSubscribe && !isSubscribed) {
 				fcp_Subscribe(type);
-				
-				scheduleKeepaliveLoopExecution(WOT_SUBSCRIBE_DELAY);
-				
 				// Only subscribe one at a time: If we subscribe to Scores/Trusts, we need to subscribe to Identities first: Otherwise
 				// the Identity objects won't exist. Score/Trust objects reference Identity objects so they cannot be created if we didn't 
 				// receive the identities yet. 
-				// The scheduling of the keepalive loop will guarantee that the other subscriptions are filed soon.
 				// The SubscriptionType enum is ordered to contain subscriptions which need to be filed first at the beginning so it is
 				// safe to just break.
-				// Also, if the IdentitiesSynchronizationHandler doesn't receive the identities before the scheduled execution, this function
+				// Also, if the SubscriptionSucceededHandler is not triggered before the next scheduled execution, this function
 				// will just try to subscribe to the identities again and abort again: The isSubscribed boolean will only be true
-				// after the event handler has received the identities. WOT also prevents duplicat subscriptions so nothing bad can happen.
+				// after the event handler has received the identities. WOT also prevents duplicate subscriptions so nothing bad can happen.
+				// NOTICE: The SubscriptionSucceededHandler will immediately schedule the next execution of the loop which calls this 
+				// function, so it is guaranteed that subscriptions are filed quickly.
 				break;
 			} else if(!shouldSubscribe && isSubscribed) {
 				fcp_Unsubscribe(type);
@@ -487,6 +477,11 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	    	final SubscriptionType type = SubscriptionType.valueOf(to);
 	    	assert !mSubscriptionIDs.containsKey(type) : "Subscription should not exist already";
 	    	mSubscriptionIDs.put(type, id);
+	    	
+	    	// checkSubscriptions() only files one subscription at a time (see its code for an explanation).
+	    	// Therefore, after subscription has succeeded, we need to schedule the KeepaliveLoop (which is run()) to be executed again
+	    	// soon so it calls checkSubscriptions() to file the following subscriptions.
+	    	scheduleKeepaliveLoopExecution(0);
 		}
 	}
 	
@@ -509,6 +504,31 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	    	mSubscriptionIDs.remove(type);
 		}
 	}
+	
+	private final class ErrorHandler implements FCPMessageHandler {
+		@Override
+		public String getMessageName() {
+			return "Error";
+		}
+
+		@Override
+		public void handle(SimpleFieldSet sfs, Bucket data) throws ProcessingFailedException {
+			final String description = sfs.get("Description");
+			
+			if(description.equals("plugins.WebOfTrust.SubscriptionManager$SubscriptionExistsAlreadyException")) {
+		    	// checkSubscriptions() only files one subscription at a time to guarantee proper order of synchronization:
+		    	// Trust objects reference identity objects, so we cannot create them if we didn't get to know the identities first.
+		    	// So because it only files one at a time, after subscription has succeeded, the KeepAliveLoop will be scheduled for
+				// execution to file the next one.
+				// If subscribing succeed early enough and the KeepAliveLoop executes due to its normal period, it will try to file
+				// the subscription a second time and this condition happens:
+				Logger.warning(this, "Subscription exists already: To=" + sfs.get("To") + "; SubscriptionID=" + sfs.get("SubscriptionID"));
+			} else {
+				Logger.error(this, "Unknown FCP error: " + description);
+			}
+		}
+	}
+	
 	
 	/**
 	 * Since we let the implementing child class of the abstract FCPClientReferenceImplementation handle the events, the handler might throw.
