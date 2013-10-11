@@ -186,7 +186,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	/**
-	 * Tells the client to start connecting to WOT and filing the requested subscriptions.
+	 * Tells the client to start connecting to WOT.
 	 * 
 	 * Must be called after your child class is ready to process messages in the event handlers:
 	 * - {@link #handleConnectionEstablished()}
