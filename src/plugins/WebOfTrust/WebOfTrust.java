@@ -1591,7 +1591,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		try {
 			if(mDebugFCPClient != null) {
 				mSubscriptionManager.run(); // Make sure that pending notifications are deployed.
-				mDebugFCPClient.terminate();
+				mDebugFCPClient.stop();
 			}
 		} catch(Exception e) {
 			Logger.error(this, "Error during termination.", e);

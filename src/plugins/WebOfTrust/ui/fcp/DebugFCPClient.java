@@ -73,8 +73,8 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	}
 	
 	@Override
-	public void terminate() { 
-		super.terminate();
+	public void stop() { 
+		super.stop();
 		
 		Logger.normal(this, "terminate(): Amending edition hints...");
 		// Event-notifications does not propagate edition hints because that would cause a lot of traffic so we need to set them manually
