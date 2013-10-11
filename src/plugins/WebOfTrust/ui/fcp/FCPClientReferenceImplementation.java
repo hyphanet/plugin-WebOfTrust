@@ -553,6 +553,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 	
+	/**
+	 * Handles the "Error" message which we receive when a FCP message which we sent triggered an error.
+	 * Logs it as ERROR to the Freenet log file.
+	 *
+	 * There is one type of Error which is not severe and therefore logged as WARNING: If we tried to subscribed twice because of high latency.
+	 * An explanation is in the source code of the function.
+	 */
 	private final class ErrorHandler implements FCPMessageHandler {
 		@Override
 		public String getMessageName() {
@@ -594,6 +601,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		abstract void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws Throwable;
 	}
 	
+	/**
+	 * Handles the "Identities" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}
+	 * with {@link SubscriptionType#Identities}.
+	 * 
+	 * Parses the contained set of all WOT {@link Identity}s & passes it to the event handler 
+	 * {@link FCPClientReferenceImplementation#handleIdentitiesSynchronization(Collection)}.
+	 */
 	private final class IdentitiesSynchronizationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
@@ -605,7 +619,14 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			handleIdentitiesSynchronization(mIdentityParser.parseSynchronization(sfs));
 		}
 	}
-	
+
+	/**
+	 * Handles the "Trusts" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}
+	 * with {@link SubscriptionType#Trusts}.
+	 * 
+	 * Parses the contained set of all WOT {@link Trust}s & passes it to the event handler 
+	 * {@link FCPClientReferenceImplementation#handleTrustsSynchronization(Collection)}.
+	 */
 	private final class TrustsSynchronizationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
@@ -617,7 +638,14 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			handleTrustsSynchronization(mTrustParser.parseSynchronization(sfs));
 		}
 	}
-	
+
+	/**
+	 * Handles the "Scores" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}
+	 * with {@link SubscriptionType#Scores}.
+	 * 
+	 * Parses the contained set of all WOT {@link Score}s & passes it to the event handler 
+	 * {@link FCPClientReferenceImplementation#handleScoresSynchronization(Collection)}.
+	 */
 	private final class ScoresSynchronizationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
