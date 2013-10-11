@@ -7,6 +7,9 @@ import java.util.Map;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
+import plugins.WebOfTrust.SubscriptionManager.IdentitiesSubscription;
+import plugins.WebOfTrust.SubscriptionManager.ScoresSubscription;
+import plugins.WebOfTrust.SubscriptionManager.TrustsSubscription;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 
@@ -32,10 +35,22 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 
 	private final WebOfTrust mWebOfTrust;
 	
+	/**
+	 * Stores the {@link Identity} objects which we have received via FCP as part of the {@link IdentitiesSubscription}.
+	 * Key = {@link Identity#getID()}.
+	 */
 	private HashMap<String, Identity> mReceivedIdentities = null; // Cannot be constructed here because the super constructor needs it
 	
+	/**
+	 * Stores the {@link Trust} objects which we have received via FCP as part of the {@link TrustsSubscription}.
+	 * Key = {@link Trust#getID()}.
+	 */
 	private final HashMap<String, Trust> mReceivedTrusts = new HashMap<String, Trust>();
 	
+	/**
+	 * Stores the {@link Score} objects which we have received via FCP as part of the {@link ScoresSubscription}.
+	 * Key = {@link Score#getID()}.
+	 */
 	private final HashMap<String, Score> mReceivedScores = new HashMap<String, Score>();
 	
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
