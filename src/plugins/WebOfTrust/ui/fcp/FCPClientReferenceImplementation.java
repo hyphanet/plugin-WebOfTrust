@@ -413,6 +413,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		mConnection.send(sfs, null);
 	}
 
+	/**
+	 * Called by Freenet when it receives a FCP message from WOT.
+	 * These can be both replies to something we have sent as well as event-{@link Notification}s.
+	 * 
+	 * The function will determine which {@link FCPMessageHandler} is responsible for the message type and call its
+	 * {@link FCPMessageHandler#handle(SimpleFieldSet, Bucket).
+	 */
 	@Override
 	public synchronized final void onReply(final String pluginname, final String indentifier, final SimpleFieldSet params, final Bucket data) {
 		if(!WOT_FCP_NAME.equals(pluginname))
@@ -443,6 +450,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 	
+	/**
+	 * Each FCP message sent by WOT contains a "Message" field in its {@link SimpleFieldSet}. For each value of "Message",
+	 * a {@link FCPMessageHandler} implementation must exist.
+	 * 
+	 * Upon reception of a message, {@link FCPClientReferenceImplementation#onReply(String, String, SimpleFieldSet, Bucket) calls
+	 * {@link FCPMessageHandler#handle(SimpleFieldSet, Bucket)} of the {@link FCPMessageHandler} which is responsible for it. 
+	 */
 	private interface FCPMessageHandler {
 		/**
 		 * This function shall the value of the {@link SimpleFieldSet} "Message" field this handler belongs to with.
@@ -469,6 +483,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		private static final long serialVersionUID = 1L;
 	}
 	
+	/**
+	 * Handles the "Pong" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Ping()}.
+	 * Reception of this message indicates that the connection to WOT is alive.
+	 */
 	private final class PongHandler implements FCPMessageHandler {
 		@Override
 		public String getMessageName() {
@@ -482,6 +500,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 	
+	/**
+	 * Handles the "Subscribed" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}.
+	 * Reception of this message indicates that we successfully subscribed to the requested {@link SubscriptionType}.
+	 */
 	private final class SubscriptionSucceededHandler implements FCPMessageHandler {
 		@Override
 		public String getMessageName() {
@@ -507,6 +529,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 	
+	/**
+	 * Handles the "Unsubscribed" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Unsubscribe(SubscriptionType)}.
+	 * Reception of this message indicates that we successfully unsubscribed from the requested {@link SubscriptionType}.
+	 */
 	private final class SubscriptionTerminatedHandler implements FCPMessageHandler {
 		@Override
 		public String getMessageName() {
