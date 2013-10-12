@@ -186,7 +186,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 	
 	/**
-	 * Tells the client to start connecting to WOT.
+	 * Tells the client to start connecting to WOT. Must be called at startup of your plugin.
+	 * ATTENTION: If you override this, you must call <code>super.start()</code>.
 	 * 
 	 * Must be called after your child class is ready to process messages in the event handlers:
 	 * - {@link #handleConnectionEstablished()}
@@ -985,7 +986,8 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	abstract void handleScoreChangedNotification(ChangeSet<Score> changeSet);
 	
 	/**
-	 * Must be called at shutdown of your plugin. 
+	 * Must be called at shutdown of your plugin.
+	 * ATTENTION: If you override this, you must call <code>super.stop()</code>!
 	 */
 	public synchronized void stop() {
 		Logger.normal(this, "Terminating ...");
