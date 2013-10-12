@@ -673,8 +673,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			final ChangeSet<Identity> changeSet = mIdentityParser.parseNotification(sfs);
-			handleIdentityChangedNotification(changeSet.beforeChange, changeSet.afterChange);
+			handleIdentityChangedNotification(mIdentityParser.parseNotification(sfs));
 		}
 	}
 	
@@ -693,8 +692,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			final ChangeSet<Trust> changeSet = mTrustParser.parseNotification(sfs);
-			handleTrustChangedNotification(changeSet.beforeChange, changeSet.afterChange);
+			handleTrustChangedNotification(mTrustParser.parseNotification(sfs));
 		}
 	}
 
@@ -713,8 +711,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			final ChangeSet<Score> changeSet = mScoreParser.parseNotification(sfs);
-			handleScoreChangedNotification(changeSet.beforeChange, changeSet.afterChange);
+			handleScoreChangedNotification(mScoreParser.parseNotification(sfs));
 		}
 	}
 
@@ -918,11 +915,11 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	
 	abstract void handleScoresSynchronization(Collection<Score> allScores);
 	
-	abstract void handleIdentityChangedNotification(Identity oldIdentity, Identity newIdentity);
+	abstract void handleIdentityChangedNotification(ChangeSet<Identity> changeSet);
 	
-	abstract void handleTrustChangedNotification(Trust oldTrust, Trust newTrust);
+	abstract void handleTrustChangedNotification(ChangeSet<Trust> changeSet);
 	
-	abstract void handleScoreChangedNotification(Score oldScore, Score newScore);
+	abstract void handleScoreChangedNotification(ChangeSet<Score> changeSet);
 	
 	/**
 	 * Must be called at shutdown of your plugin. 

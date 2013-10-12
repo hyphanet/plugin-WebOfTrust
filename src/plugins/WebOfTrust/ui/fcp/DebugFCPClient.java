@@ -179,21 +179,21 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	}
 
 	@Override
-	void handleIdentityChangedNotification(Identity oldIdentity, Identity newIdentity) {
-		if(logMINOR) Logger.minor(this, "handleIdentityChangedNotification(): old=" + oldIdentity + "; new=" + newIdentity);
-		putNotification(new ChangeSet<Identity>(oldIdentity, newIdentity), mReceivedIdentities);
+	void handleIdentityChangedNotification(final ChangeSet<Identity> changeSet) {
+		if(logMINOR) Logger.minor(this, "handleIdentityChangedNotification(): " + changeSet);
+		putNotification(changeSet, mReceivedIdentities);
 	}
 
 	@Override
-	void handleTrustChangedNotification(Trust oldTrust, Trust newTrust) {
-		if(logMINOR) Logger.minor(this, "handleTrustChangedNotification(): old=" + oldTrust + "; new=" + newTrust);
-		putNotification(new ChangeSet<Trust>(oldTrust, newTrust), mReceivedTrusts);
+	void handleTrustChangedNotification(final ChangeSet<Trust> changeSet) {
+		if(logMINOR) Logger.minor(this, "handleTrustChangedNotification(): " + changeSet);
+		putNotification(changeSet, mReceivedTrusts);
 	}
 
 	@Override
-	void handleScoreChangedNotification(Score oldScore, Score newScore) {
-		if(logMINOR) Logger.minor(this, "handleScoreChangedNotification(): old=" + oldScore + "; new=" + newScore);
-		putNotification(new ChangeSet<Score>(oldScore, newScore), mReceivedScores);
+	void handleScoreChangedNotification(final ChangeSet<Score> changeSet) {
+		if(logMINOR) Logger.minor(this, "handleScoreChangedNotification(): " + changeSet);
+		putNotification(changeSet, mReceivedScores);
 	}
 	
 	<T extends Persistent> void putNotification(final ChangeSet<T> changeSet, final HashMap<String, T> target) {
