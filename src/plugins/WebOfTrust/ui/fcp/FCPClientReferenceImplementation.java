@@ -927,10 +927,40 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 */
 	abstract void handleConnectionLost();
 	
+	/**
+	 * Called after you have subscribed to {@link SubscriptionType#Identities} via {@link #subscribe(SubscriptionType)}.
+	 * The passed {@link Collection} contains ALL {@link Identity} and {@link OwnIdentity} objects in the WOT database.
+	 * You should store any of them which you need.
+	 * 
+	 * WOT sends all {@link Identity}s to this handler because this will cut down future traffic very much: If an {@link Identity} changes,
+	 * WOT will only have to send the new version of it for allowing you to make your database completely up-to-date again.
+	 * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
+	 * {@link #handleIdentityChangedNotification(ChangeSet)} instead.
+	 */
 	abstract void handleIdentitiesSynchronization(Collection<Identity> allIdentities);
-	
+
+	/**
+	 * Called after you have subscribed to {@link SubscriptionType#Trusts} via {@link #subscribe(SubscriptionType)}.
+	 * The passed {@link Collection} contains ALL {@link Trust} objects in the WOT database.
+	 * You should store any of them which you need.
+	 * 
+	 * WOT sends all {@link Trust}s to this handler because this will cut down future traffic very much: If a {@link Trust} changes,
+	 * WOT will only have to send the new version of it for allowing you to make your database completely up-to-date again.
+	 * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
+	 * {@link #handleTrustChangedNotification(ChangeSet)} instead.
+	 */
 	abstract void handleTrustsSynchronization(Collection<Trust> allTrusts);
 	
+	/**
+	 * Called after you have subscribed to {@link SubscriptionType#Scores} via {@link #subscribe(SubscriptionType)}.
+	 * The passed {@link Collection} contains ALL {@link Score} objects in the WOT database.
+	 * You should store any of them which you need.
+	 * 
+	 * WOT sends all {@link Score}s to this handler because this will cut down future traffic very much: If a {@link Score} changes,
+	 * WOT will only have to send the new version of it for allowing you to make your database completely up-to-date again.
+	 * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
+	 * {@link #handleScoreChangedNotification(ChangeSet)} instead.
+	 */
 	abstract void handleScoresSynchronization(Collection<Score> allScores);
 	
 	abstract void handleIdentityChangedNotification(ChangeSet<Identity> changeSet);
