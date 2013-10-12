@@ -963,10 +963,25 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 */
 	abstract void handleScoresSynchronization(Collection<Score> allScores);
 	
+	/**
+	 * Called if your have subscribed to {@link SubscriptionType#Identities} via {@link #subscribe(SubscriptionType)} and an {@link Identity} was changed/added/deleted.
+	 * The passed {@link ChangeSet} contains the version of the {@link Identity} or {@link OwnIdentity} before the change and after the change.
+	 * 
+	 * ATTENTION: The type of an {@link Identity} can change from {@link OwnIdentity} to {@link Identity} or vice versa. This will trigger
+	 * a call to this event handler.
+	 */
 	abstract void handleIdentityChangedNotification(ChangeSet<Identity> changeSet);
 	
+	/**
+	 * Called if you have subscribed to {@link SubscriptionType#Trusts} via {@link #subscribe(SubscriptionType)} and a {@link Trust} was changed/added/deleted.
+	 * The passed {@link ChangeSet} contains the version of the {@link Trust} before the change and after the change.
+	 */
 	abstract void handleTrustChangedNotification(ChangeSet<Trust> changeSet);
-	
+
+	/**
+	 * Called if you have subscribed to {@link SubscriptionType#Scores} via {@link #subscribe(SubscriptionType)} and a {@link Score} was changed/added/deleted.
+	 * The passed {@link ChangeSet} contains the version of the {@link Score} before the change and after the change.
+	 */
 	abstract void handleScoreChangedNotification(ChangeSet<Score> changeSet);
 	
 	/**
