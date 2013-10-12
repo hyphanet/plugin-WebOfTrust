@@ -217,7 +217,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * enum: For example {@link Trust} objects which you will receive from {@link SubscriptionType#Trusts} reference {@link Identity} objects
 	 * Therefore your event handler cannot create them if you don't subscribe to {@link SubscriptionType#Identities} first.
 	 */
-	public synchronized void subscribe(final SubscriptionType type) {
+	public final synchronized void subscribe(final SubscriptionType type) {
 		mSubscribeTo.add(type);
 		scheduleKeepaliveLoopExecution(0);
 	}
@@ -225,7 +225,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/**
 	 * Call this to cancel a {@link Subscription}.
 	 */
-	public synchronized void unsubscribe(final SubscriptionType type) {
+	public final synchronized void unsubscribe(final SubscriptionType type) {
 		mSubscribeTo.remove(type);
 
 		scheduleKeepaliveLoopExecution(0);
@@ -258,7 +258,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * - Every {@link #WOT_PING_DELAY} if we have a connection to WOT 
 	 */
 	@Override
-	public synchronized void run() { 
+	public final synchronized void run() { 
 		if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
 
 		try {
@@ -328,7 +328,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/**
 	 * @return True if we are connected to WOT, false if not. Does NOT tell whether the Subscriptions were filed yet.
 	 */
-	public boolean connected()  {
+	public final boolean connected()  {
 		return mConnection != null;
 	}
 	
