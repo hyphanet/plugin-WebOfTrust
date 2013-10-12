@@ -748,7 +748,16 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			return "ChangeSet { beforeChange: " + beforeChange + "; afterChange: " + afterChange + "}"; 
 		}
 	}
-	
+
+	/**
+	 * Baseclass for parsing synchronization and notification messages which WOT sends:
+	 * - Synchronization messages are at the beginning of a {@link Subscription} and contain all data in the WOT database of the subscribed
+	 * type such as all {@link Identity}s / all {@link Trust}s / all {@link Score}s.
+	 * - {@link Notification} messages are sent if an {@link Identity} etc. has changed and contain the old / new version of it.
+	 * 
+	 * The implementing child classes only have to implement parsing of a single Identity/Trust/Score object. The format of the 
+	 * messages which contain multiple of them is a superset so the single-element parser can be used.
+	 */
 	public static abstract class FCPParser<T extends Persistent> {
 		
 		protected final WebOfTrust mWoT;
@@ -777,6 +786,9 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	
 	}
 	
+	/**
+	 * Parser for FCP messages which describe an {@link Identity} or {@link OwnIdentity} object.
+	 */
 	public static final class IdentityParser extends FCPParser<Identity> {
 
 		public IdentityParser(final WebOfTrust myWebOfTrust) {
@@ -832,6 +844,9 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 	}
 
+	/**
+	 * Parser for FCP messages which describe a {@link Trust} object.
+	 */
 	public static final class TrustParser extends FCPParser<Trust> {
 
 		private final Map<String, Identity> mIdentities;
@@ -861,7 +876,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 		
 	}
-	
+
+	/**
+	 * Parser for FCP messages which describe a {@link Score} object.
+	 */
 	public static final class ScoreParser extends FCPParser<Score> {
 		
 		private final Map<String, Identity> mIdentities;
