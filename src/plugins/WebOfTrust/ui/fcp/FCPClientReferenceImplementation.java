@@ -430,9 +430,12 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			throw new RuntimeException("Plugin is not supposed to talk to us: " + pluginname);
 		
 		if(mConnection == null || !mConnectionIdentifier.equals(indentifier)) {
-			Logger.error(this, "Received out of band message, maybe because we reconnected and the old server is still alive? Identifier: " + indentifier + "; SimpleFieldSet: " + params);
-			// FIXME: Do something which makes WOT cancel maybe-existing subscriptions so it doesn't keep collecting data for them.
-			return;
+			final String state = "connected==" + (mConnection!=null) + "; identifier==" + indentifier;
+			Logger.error(this, "Received out of band message, maybe because we reconnected and the old server is still alive? " + state);
+			// There might be a dangling subscription for which we are still receiving event notifications.
+			// WOT terminates subscriptions automatically once their failure counter reaches a certain limit.
+			// For allowing WOT to notice the failure, we must throw a RuntimeException().
+			throw new RuntimeException("Out of band message: You are not connected or your identifier mismatches: " + state);
 		}
 
 		final String messageString = params.get("Message");
