@@ -997,8 +997,12 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		Logger.normal(this, "Terminated.");
 	}
 	
+	/**
+	 * Determines the priority of the loop which checks the connection to WOT.
+	 * It is chosen to be {@link NativeThread.PriorityLevel#MIN_PRIORITY} as the loop is not latency-critical.
+	 */
 	@Override
-	public int getPriority() {
+	public final int getPriority() {
 		return NativeThread.PriorityLevel.MIN_PRIORITY.value;
 	}
 
