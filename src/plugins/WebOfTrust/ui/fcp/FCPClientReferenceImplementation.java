@@ -937,9 +937,9 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		Logger.normal(this, "Terminated.");
 	}
 	
+	@Override
 	public int getPriority() {
 		return NativeThread.MIN_PRIORITY;
 	}
-
 
 }
