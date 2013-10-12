@@ -94,8 +94,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/** For randomizing the delay between periodic execution of {@link #run()} */
 	private final Random mRandom;
 
-	/** The connection to the Web Of Trust plugin. Null if we are disconnected.  */
-	private PluginTalker mConnection = null;
+	/**
+	 * The connection to the Web Of Trust plugin. Null if we are disconnected.
+	 * volatile because {@link #connected()} uses it without synchronization. */
+	private volatile PluginTalker mConnection = null;
 	
 	/** A random {@link UUID} which identifies the connection to the Web Of Trust plugin. Randomized upon every reconnect. */
 	private String mConnectionIdentifier = null;
