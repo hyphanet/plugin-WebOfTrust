@@ -999,7 +999,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	
 	@Override
 	public int getPriority() {
-		return NativeThread.MIN_PRIORITY;
+		return NativeThread.PriorityLevel.MIN_PRIORITY.value;
 	}
 
 }
