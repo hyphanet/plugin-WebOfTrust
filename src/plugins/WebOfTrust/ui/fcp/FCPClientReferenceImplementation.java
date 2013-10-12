@@ -293,6 +293,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		try {
 			mConnectionIdentifier = UUID.randomUUID().toString();
 			mConnection = mPluginRespirator.getPluginTalker(this, WOT_FCP_NAME, mConnectionIdentifier);
+			mSubscriptionIDs.clear();
 			Logger.normal(this, "Connected to WOT, identifier: " + mConnectionIdentifier);
 			handleConnectionEstablished();
 		} catch(PluginNotFoundException e) {
