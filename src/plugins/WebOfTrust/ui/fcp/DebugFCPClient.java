@@ -155,6 +155,9 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 		if(logMINOR) Logger.minor(this, "handleScoresSynchronization() finished.");
 	}
 
+	/**
+	 * Fill our existing "database" (the {@link HashMap} target) with the synchronization of ALL data which we have received from WOT.
+	 */
 	<T extends Persistent> void putSynchronization(final Collection<T> source, final HashMap<String, T> target) {
 		if(target.size() > 0) {
 			Logger.normal(this, "Received additional synchronization, validating existing data against it...");
@@ -196,6 +199,12 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 		putNotification(changeSet, mReceivedScores);
 	}
 	
+	/**
+	 * Update our existing "database" (the {@link HashMap} target) with the changed data which we have received from WOT.
+	 * 
+	 * It does more than that though: It checks whether the contents of the {@link FCPClientReferenceImplementation.ChangeSet} make sense.
+	 * For example our existing data in the HashMap should match the {@link FCPClientReferenceImplementation.ChangeSet#beforeChange}. 
+	 */
 	<T extends Persistent> void putNotification(final ChangeSet<T> changeSet, final HashMap<String, T> target) {
 		// Check validity of existing data
 		if(changeSet.beforeChange != null) {
@@ -215,6 +224,7 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 					+ target.get(changeSet.afterChange.getID()) + "; changeSet=" + changeSet);
 		}
 		
+		// Update our "database" HashMap
 		if(changeSet.afterChange != null) {
 			/* Checked in changeSet already */
 			// assert(changeSet.beforeChange.getID(), changeSet.afterChange.getID()); 
