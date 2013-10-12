@@ -658,7 +658,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 
-
+	/**
+	 * Handles the "IdentityChangedNotification" message which WOT sends when an {@link Identity} or {@link OwnIdentity} was changed, added or deleted.
+	 * This will be send if we are subscribed to {@link SubscriptionType#Identities}.
+	 * 
+	 * Parses the contained {@link Identity} & passes it to the event handler 
+	 * {@link FCPClientReferenceImplementation#handleIdentityChangedNotification(Identity, Identity)}.
+	 */
 	private final class IdentityChangedNotificationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
@@ -672,6 +678,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 	
+	/**
+	 * Handles the "TrustChangedNotification" message which WOT sends when a {@link Trust} was changed, added or deleted.
+	 * This will be send if we are subscribed to {@link SubscriptionType#Trusts}.
+	 * 
+	 * Parses the contained {@link Trust} & passes it to the event handler 
+	 * {@link FCPClientReferenceImplementation#handleTrustChangedNotification(Trust, Trust)}.
+	 */
 	private final class TrustChangedNotificationHandler extends MaybeFailingFCPMessageHandler  {
 		@Override
 		public String getMessageName() {
@@ -684,7 +697,14 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			handleTrustChangedNotification(changeSet.beforeChange, changeSet.afterChange);
 		}
 	}
-	
+
+	/**
+	 * Handles the "ScoreChangedNotification" message which WOT sends when a {@link Score} was changed, added or deleted.
+	 * This will be send if we are subscribed to {@link SubscriptionType#Scores}.
+	 * 
+	 * Parses the contained {@link Score} & passes it to the event handler 
+	 * {@link FCPClientReferenceImplementation#handleScoreChangedNotification(Score, Score)}.
+	 */
 	private final class ScoreChangedNotificationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
