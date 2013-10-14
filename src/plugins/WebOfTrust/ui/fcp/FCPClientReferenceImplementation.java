@@ -239,14 +239,16 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * If not connected, it will be WOT_RECONNECT_DELAY.
 	 */
 	private void scheduleKeepaliveLoopExecution() {
-		scheduleKeepaliveLoopExecution(mConnection != null ? (WOT_PING_DELAY/2 + mRandom.nextInt(WOT_PING_DELAY)) : WOT_RECONNECT_DELAY);
+		final long sleepTime = mConnection != null ? (WOT_PING_DELAY/2 + mRandom.nextInt(WOT_PING_DELAY)) : WOT_RECONNECT_DELAY;
+		mTicker.queueTimedJob(this, "WOT " + this.getClass().getSimpleName(), sleepTime, false, true);
 	}
 	
 	/**
 	 * Schedules execution of {@link #run()} via {@link #mTicker} after a delay.
 	 */
 	private void scheduleKeepaliveLoopExecution(long sleepTime) {
-		mTicker.queueTimedJob(this, "WOT " + this.getClass().getSimpleName(), sleepTime, false, true);
+		// Re-schedule because subscribe/unsubscribe need it to happen immediately.
+		mTicker.rescheduleTimedJob(this, "WOT " + this.getClass().getSimpleName(), sleepTime);
 		
 		if(logMINOR) Logger.minor(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
 	}
