@@ -115,8 +115,11 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 		
 		for(final T expected : expectedSet) {
 			final T actual = actualSet.get(expected.getID());
-			if(actual == null || !actual.equals(expected))
+			if(actual == null || !actual.equals(expected)) {
 				Logger.error(this, "Mismatch: actual " + actual + " not equals() to expected " + expected);
+				if(actual != null)
+					actual.equals(expected); // For being able to step inside of it with the debugger if you set a breakpoint at the previous line.
+			}
 		}
 	}
 
@@ -169,8 +172,10 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 					final T existing = target.get(expected);
 					if(existing == null)
 						Logger.error(this, "Not found: expected " + expected);
-					else if(!existing.equals(expected))
+					else if(!existing.equals(expected)) {
 						Logger.error(this, "Not equals: expected " + expected + " to existing " + existing);
+						existing.equals(expected); // For being able to step inside of it with the debugger if you set a breakpoint at the previous line.
+					}
 				}
 			}
 			target.clear();
