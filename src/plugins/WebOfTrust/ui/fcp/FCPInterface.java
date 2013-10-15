@@ -109,7 +109,7 @@ public final class FCPInterface implements FredPluginFCP {
 		}
 		
 		@Override public boolean equals(Object other) {
-			return id.equals(other);
+			return id.equals(((ClientID)other).id);
 		}
 	}
 	
@@ -1080,7 +1080,7 @@ public final class FCPInterface implements FredPluginFCP {
     		type = "Scores";
     	else
     		throw new IllegalStateException("Unknown subscription type: " + clazz);
-    	
+
     	// TODO: We don't urgently need to clean up mClientTrackerDaemon: If the client discards its PluginTalker,
     	// the WeakReference<PluginReplySender> which ClientTrackerDaemon keeps track of will get nulled and the ClientTrackerDaemon
     	// will notice because it watches the ReferenceQueue of the WeakReference.
