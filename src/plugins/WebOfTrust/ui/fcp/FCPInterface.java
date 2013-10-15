@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.fcp;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -41,10 +43,12 @@ import freenet.node.fcp.FCPCallFailedException;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
+import freenet.support.io.NativeThread;
 
 /**
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
@@ -55,16 +59,148 @@ public final class FCPInterface implements FredPluginFCP {
     
     private final SubscriptionManager mSubscriptionManager;
     
-    /**
-     * Contains all clients which ever subscribed to content.
-     * Key = replySender.getPluginName() + ";" + replySender.getIdentifier()
-     * FIXME: We should have a proper disconnection mechanism instead of using WeakReferences.
-     */
-    private final HashMap<String, WeakReference<PluginReplySender>> mClients = new HashMap<String, WeakReference<PluginReplySender>>();
-
+    private final ClientTrackerDaemon mClientTrackerDaemon;
+    
     public FCPInterface(final WebOfTrust myWoT) {
         mWoT = myWoT;
         mSubscriptionManager = mWoT.getSubscriptionManager();
+        mClientTrackerDaemon = new ClientTrackerDaemon();
+    }
+    
+    public void start() {
+    	mClientTrackerDaemon.start();
+    }
+    
+    public void stop() {
+    	mClientTrackerDaemon.terminate();
+    }
+    
+    /**
+     * Uniquely identifies a {@link PluginReplySender}.
+     */
+	public static final class ClientID {
+		private final String id;
+		
+		public ClientID(PluginReplySender replySender) {
+	    	// - We not only use the Identifier which the plugin provided but also the hashCode of the replySender:
+	    	// We need the ID to NOT randomly match the ID of a plugin before it was restarted.
+	    	// This is necessary because subscribe functions will throw SubscriptionExistsAlreadyException
+	    	// if a similar subscription with the same fcpID exists.
+	    	// 
+	    	// - We use System.identityHashCode() to prevent PluginReplySender implementations from overriding hashCode() with a hashCode
+	    	// implementation which merely hashes the getPluginName() and getIdentifier() as we have already decided that they are not enough.
+	    	// 
+	    	// -We cannot just use a random ID because then a client could subscribe multiple times to the same type of subscription:
+	    	// The throwing of SubscriptionExistsAlready exception is there to prevent that.
+	    	// 
+	    	id = replySender.getPluginName() + ";" + replySender.getIdentifier() + ";" + System.identityHashCode(replySender);
+		}
+		
+		public ClientID(String id) {
+			this.id = id;
+		}
+
+		@Override public String toString() {
+			return id;
+		}
+		
+		@Override public int hashCode() {
+			return id.hashCode();
+		}
+		
+		@Override public boolean equals(Object other) {
+			return id.equals(other);
+		}
+	}
+	
+	/**
+     * Stores all PluginReplySender which ever subscribed to content as WeakReference. 
+     * This allows us to send back event {@link Notification}s without creating a fresh PluginTalker to talk to the client.
+     * Also, it allows unit tests of event-notifications: 
+     * {@link PluginRespirator#getPluginTalker(freenet.pluginmanager.FredPluginTalker, String, String)} won't work in unit tests.
+     * However, we CAN store the PluginReplySender which the unit test supplied.
+	 */
+    private final class ClientTrackerDaemon extends NativeThread {
+    	
+    	private volatile boolean enabled = true;
+    	
+        /**
+         * The main table: Allows {@link #get(String)} to look up a {@link PluginReplySender} by a supplied {@link ClientID}.
+         */
+        private final HashMap<ClientID, WeakReference<PluginReplySender>> mClientsByID = new HashMap<ClientID, WeakReference<PluginReplySender>>();
+        
+        /**
+         * Index of {@link #mClientsByID} to allow removing entries when monitoring the reference queue in {@link #realRun()}
+         */
+        private final HashMap<WeakReference<PluginReplySender>, ClientID> mClientsByRef = new HashMap<WeakReference<PluginReplySender>, ClientID>();
+
+        /**
+         * Queue which monitors removed items of {@link #mClientsByID}. Monitored in {@link #realRun()}.
+         */
+		private final ReferenceQueue<PluginReplySender> mDisconnectedQueue = new ReferenceQueue<PluginReplySender>();
+
+    	public ClientTrackerDaemon() {
+			super("WOT FCP ClientTrackerDaemon", NativeThread.PriorityLevel.MIN_PRIORITY.value, true);
+			setDaemon(true);
+		}
+
+    	public synchronized ClientID put(final PluginReplySender pluginReplySender) {
+    		// Don't check for existing entry: 
+    		// - PluginTalker always uses the same PluginReplySender
+    		// - The hasCode in the ID makes it very unlikely for two IDs of different PluginTalkers to collide
+    		// - What could guarantee to prevent collisions even if the hashCode collides is that clients are allowed to uniquely
+    		//   chose replySender.getIdentifier() - if client authors do not implement a unique identifier its their fault if stuff breaks.
+    		final ClientID id = new ClientID(pluginReplySender);
+    		
+    		final WeakReference<PluginReplySender> ref = new WeakReference<PluginReplySender>(pluginReplySender, mDisconnectedQueue);
+    		final WeakReference<PluginReplySender> oldRef = mClientsByID.put(id, ref);
+    		if(oldRef != null) mClientsByRef.remove(oldRef);
+    		mClientsByRef.put(ref, id);
+    		
+    		return id;
+    	}
+    	
+    	public synchronized PluginReplySender get(final String clientID) throws PluginNotFoundException {
+    		final WeakReference<PluginReplySender> ref = mClientsByID.get(new ClientID(clientID));
+    		final PluginReplySender sender = ref != null ? ref.get() : null;
+    		
+    		if(sender == null)
+    			throw new PluginNotFoundException();
+    		
+    		return sender;
+    	}
+        
+        public void realRun() {
+        	// No termination mechanism is needed because we called setDaemon(true).
+        	while(enabled) {
+	        	try {
+	        		final Reference<? extends PluginReplySender> sender = mDisconnectedQueue.remove();
+	        		synchronized(this) {
+	        			final ClientID removedID = mClientsByRef.remove(sender);
+	        			final WeakReference<PluginReplySender> removedClient = mClientsByID.remove(removedID);
+	        			assert(removedID != null);
+	        			assert(removedClient != null);
+	        			Logger.normal(this, "GCing client with ID " + removedID);
+	        		}
+	        	} catch(InterruptedException e) {
+	        		Thread.interrupted();
+	        	} catch(Throwable t) {
+	        		Logger.error(this, "Error in ClientTrackerDaemon loop", t);
+	        	}
+        	}
+        }
+        
+        public void terminate() {
+        	enabled = false;
+        	do {
+        		interrupt();
+        		try {
+        			join(100);
+        		} catch(InterruptedException e) {
+        			Thread.interrupted();
+        		}
+        	} while(isAlive());
+        }
     }
 
     public void handle(final PluginReplySender replysender, final SimpleFieldSet params, final Bucket data, final int accesstype) {
@@ -902,39 +1038,19 @@ public final class FCPInterface implements FredPluginFCP {
      */
     private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException {
     	final String to = getMandatoryParameter(params, "To");
-    	
-    	// - We not only use the Identifier which the plugin provided but also the hashCode of the replySender:
-    	// We need the ID to NOT randomly match the ID of a plugin before it was restarted.
-    	// This is necessary because subscribe functions will throw SubscriptionExistsAlreadyException
-    	// if a similar subscription with the same fcpID exists.
-    	// 
-    	// - We use System.identityHashCode() to prevent PluginReplySender implementations from overriding hashCode() with a hashCode
-    	// implementation which merely hashes the getPluginName() and getIdentifier() as we have already decided that they are not enough.
-    	// 
-    	// -We cannot just use a random ID because then a client could subscribe multiple times to the same type of subscription:
-    	// The throwing of SubscriptionExistsAlready exception is there to prevent that.
-    	// 
-    	final String fcpID = replySender.getPluginName() + ";" + replySender.getIdentifier() + ";" + System.identityHashCode(replySender);
 
-    	synchronized(mClients) {
-    		// Don't check for existing entry: 
-    		// - PluginTalker always uses the same PluginReplySender
-    		// - The hasCode in the ID makes it very unlikely for two IDs of different PluginTalkers to collide
-    		// - What could guarantee to prevent collisions even if the hashCode collides is that clients are allowed to uniquely
-    		//   chose replySender.getIdentifier() - if client authors do not implement a unique identifier its their fault if stuff breaks.
-    		mClients.put(fcpID, new WeakReference<PluginReplySender>(replySender));
-    	}
+    	final ClientID clientID = mClientTrackerDaemon.put(replySender);
     	
     	Subscription<? extends Notification> subscription;
     	SimpleFieldSet sfs;
     	
     	try {
 	    	if(to.equals("Identities")) {
-	    		subscription = mSubscriptionManager.subscribeToIdentities(fcpID);
+	    		subscription = mSubscriptionManager.subscribeToIdentities(clientID.toString());
 	    	} else if(to.equals("Trusts")) {
-	    		subscription = mSubscriptionManager.subscribeToTrusts(fcpID);
+	    		subscription = mSubscriptionManager.subscribeToTrusts(clientID.toString());
 	    	} else if(to.equals("Scores")) {
-	    		subscription = mSubscriptionManager.subscribeToScores(fcpID);
+	    		subscription = mSubscriptionManager.subscribeToScores(clientID.toString());
 	    	} else
 	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
 	    	
@@ -965,7 +1081,9 @@ public final class FCPInterface implements FredPluginFCP {
     	else
     		throw new IllegalStateException("Unknown subscription type: " + clazz);
     	
-    	// FIXME: What about mClients?
+    	// We don't need to clean up mClientTrackerDaemon: If the client discards its PluginTalker, the WeakReference<PluginReplySender>
+    	// which ClientTrackerDaemon keeps track of will get nulled and the ClientTrackerDaemon will notice because it watches the
+    	// ReferenceQueue of the WeakReference.
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Unsubscribed");
@@ -974,26 +1092,16 @@ public final class FCPInterface implements FredPluginFCP {
     	return sfs;
     }
     
-    private PluginReplySender getReplySender(String fcpID) throws PluginNotFoundException {
-    	WeakReference<PluginReplySender> ref = mClients.get(fcpID);
-    	PluginReplySender sender =  ref!= null ? ref.get() : null;
-    	
-    	if(sender == null)
-    		throw new PluginNotFoundException();
-    	
-    	return sender;
-    }
-    
     public void sendAllIdentities(String fcpID) throws FCPCallFailedException, PluginNotFoundException {
-    	getReplySender(fcpID).sendSynchronous(handleGetIdentities(null), null);
+    	mClientTrackerDaemon.get(fcpID).sendSynchronous(handleGetIdentities(null), null);
     }
     
     public void sendAllTrustValues(String fcpID) throws FCPCallFailedException, PluginNotFoundException {
-    	getReplySender(fcpID).sendSynchronous(handleGetTrusts(null), null);
+    	mClientTrackerDaemon.get(fcpID).sendSynchronous(handleGetTrusts(null), null);
     }
     
     public void sendAllScoreValues(String fcpID) throws FCPCallFailedException, PluginNotFoundException{
-    	getReplySender(fcpID).sendSynchronous(handleGetScores(null), null);
+    	mClientTrackerDaemon.get(fcpID).sendSynchronous(handleGetScores(null), null);
     }
     
     /**
@@ -1032,7 +1140,7 @@ public final class FCPInterface implements FredPluginFCP {
     	sfs.put("BeforeChange", beforeChange);
     	sfs.put("AfterChange", afterChange);
     	
-    	getReplySender(fcpID).sendSynchronous(sfs, null);
+    	mClientTrackerDaemon.get(fcpID).sendSynchronous(sfs, null);
     }
     
     private SimpleFieldSet handlePing() {

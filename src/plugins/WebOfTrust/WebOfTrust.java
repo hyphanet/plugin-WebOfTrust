@@ -282,6 +282,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 			mWebInterface = new WebInterface(this, SELF_URI);
 			mFCPInterface = new FCPInterface(this);
+			mFCPInterface.start();
 			
 			if(Logger.shouldLog(LogLevel.DEBUG, DebugFCPClient.class)) {
 				mDebugFCPClient = DebugFCPClient.construct(this);
@@ -1540,6 +1541,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		/* We use single try/catch blocks so that failure of termination of one service does not prevent termination of the others */
 
+		try {
+			if(mFCPInterface != null)
+				mFCPInterface.stop();
+		} catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+		
 		try {
 			if(mWebInterface != null)
 				this.mWebInterface.unload();
