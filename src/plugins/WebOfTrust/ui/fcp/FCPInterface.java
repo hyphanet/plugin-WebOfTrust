@@ -1081,10 +1081,13 @@ public final class FCPInterface implements FredPluginFCP {
     	else
     		throw new IllegalStateException("Unknown subscription type: " + clazz);
     	
-    	// We don't need to clean up mClientTrackerDaemon: If the client discards its PluginTalker, the WeakReference<PluginReplySender>
-    	// which ClientTrackerDaemon keeps track of will get nulled and the ClientTrackerDaemon will notice because it watches the
-    	// ReferenceQueue of the WeakReference.
-    	
+    	// TODO: We don't urgently need to clean up mClientTrackerDaemon: If the client discards its PluginTalker,
+    	// the WeakReference<PluginReplySender> which ClientTrackerDaemon keeps track of will get nulled and the ClientTrackerDaemon
+    	// will notice because it watches the ReferenceQueue of the WeakReference.
+    	// However, it might be the case that certain clients keep a PluginTalker for a long time while only being subscribed for a
+    	// short time. For those cases, it might make sense to keep track of how many subscriptions a client has, and if it has none,
+    	// purge it from mclientTrackerDaemon.
+
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "Unsubscribed");
     	sfs.putOverwrite("SubscriptionID", subscriptionID);
