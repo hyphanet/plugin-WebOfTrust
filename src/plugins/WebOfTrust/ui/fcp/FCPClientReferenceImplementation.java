@@ -277,70 +277,69 @@ public abstract class FCPClientReferenceImplementation {
 	}
 
 	private final class KeepaliveLoop implements PrioRunnable {
-	/**
-	 * Schedules execution of {@link #run()} via {@link #mTicker} after a delay:
-	 * If connected to WOT, the delay will be randomized and roughly equal to {@link #WOT_PING_DELAY}.
-	 * If not connected, it will be WOT_RECONNECT_DELAY.
-	 */
-	private void scheduleKeepaliveLoopExecution() {
-		final long sleepTime = mConnection != null ? (WOT_PING_DELAY/2 + mRandom.nextInt(WOT_PING_DELAY)) : WOT_RECONNECT_DELAY;
-		mTicker.queueTimedJob(this, "WOT " + this.getClass().getSimpleName(), sleepTime, false, true);
-	}
-	
-	/**
-	 * Schedules execution of {@link #run()} via {@link #mTicker} after a delay.
-	 */
-	private void scheduleKeepaliveLoopExecution(long sleepTime) {
-		// Re-schedule because subscribe/unsubscribe need it to happen immediately.
-		mTicker.rescheduleTimedJob(this, "WOT " + this.getClass().getSimpleName(), sleepTime);
-		
-		if(logMINOR) Logger.minor(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
-	}
-
-	/**
-	 * "Keepalive Loop": Checks whether we are connected to WOT. Connects to it if the connection is lost or did not exist yet.
-	 * Then files all {@link Subscription}s.
-	 * 
-	 * Executed by {@link #mTicker} as scheduled periodically:
-	 * - Every {@link #WOT_RECONNECT_DELAY} seconds if we have no connection to WOT
-	 * - Every {@link #WOT_PING_DELAY} if we have a connection to WOT 
-	 */
-	@Override
-	public final synchronized void run() { 
-		if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
-		
-		if(mClientState != ClientState.Started) {
-			Logger.error(this, "Connection-checking loop executed in wrong ClientState: " + mClientState);
-			return;
+		/**
+		 * Schedules execution of {@link #run()} via {@link #mTicker} after a delay:
+		 * If connected to WOT, the delay will be randomized and roughly equal to {@link #WOT_PING_DELAY}.
+		 * If not connected, it will be WOT_RECONNECT_DELAY.
+		 */
+		private void scheduleKeepaliveLoopExecution() {
+			final long sleepTime = mConnection != null ? (WOT_PING_DELAY/2 + mRandom.nextInt(WOT_PING_DELAY)) : WOT_RECONNECT_DELAY;
+			mTicker.queueTimedJob(this, "WOT " + this.getClass().getSimpleName(), sleepTime, false, true);
 		}
 
-		try {
-			if(!connected() || pingTimedOut())
-				connect();
-			
-			if(connected()) {
-				fcp_Ping();
-				checkSubscriptions();
+		/**
+		 * Schedules execution of {@link #run()} via {@link #mTicker} after a delay.
+		 */
+		private void scheduleKeepaliveLoopExecution(long sleepTime) {
+			// Re-schedule because subscribe/unsubscribe need it to happen immediately.
+			mTicker.rescheduleTimedJob(this, "WOT " + this.getClass().getSimpleName(), sleepTime);
+
+			if(logMINOR) Logger.minor(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
+		}
+
+		/**
+		 * "Keepalive Loop": Checks whether we are connected to WOT. Connects to it if the connection is lost or did not exist yet.
+		 * Then files all {@link Subscription}s.
+		 * 
+		 * Executed by {@link #mTicker} as scheduled periodically:
+		 * - Every {@link #WOT_RECONNECT_DELAY} seconds if we have no connection to WOT
+		 * - Every {@link #WOT_PING_DELAY} if we have a connection to WOT 
+		 */
+		@Override
+		public final synchronized void run() { 
+			if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
+
+			if(mClientState != ClientState.Started) {
+				Logger.error(this, "Connection-checking loop executed in wrong ClientState: " + mClientState);
+				return;
 			}
-		} catch (Exception e) {
-			Logger.error(this, "Error in connection-checking loop!", e);
-			force_disconnect();
-		} finally {
-			scheduleKeepaliveLoopExecution();
-		}
-		
-		if(logMINOR) Logger.minor(this, "Connection-checking finished.");
-	}
-		
-	/**
-	 * Determines the priority of the thread running {@link #run()}
-	 * It is chosen to be {@link NativeThread.PriorityLevel#MIN_PRIORITY} as the loop is not latency-critical.
-	 */
-	@Override
-	public final int getPriority() {
-		return NativeThread.PriorityLevel.MIN_PRIORITY.value;
-	}
 
+			try {
+				if(!connected() || pingTimedOut())
+					connect();
+
+				if(connected()) {
+					fcp_Ping();
+					checkSubscriptions();
+				}
+			} catch (Exception e) {
+				Logger.error(this, "Error in connection-checking loop!", e);
+				force_disconnect();
+			} finally {
+				scheduleKeepaliveLoopExecution();
+			}
+
+			if(logMINOR) Logger.minor(this, "Connection-checking finished.");
+		}
+
+		/**
+		 * Determines the priority of the thread running {@link #run()}
+		 * It is chosen to be {@link NativeThread.PriorityLevel#MIN_PRIORITY} as the loop is not latency-critical.
+		 */
+		@Override
+		public final int getPriority() {
+			return NativeThread.PriorityLevel.MIN_PRIORITY.value;
+		}
 	}
 
 	/**
