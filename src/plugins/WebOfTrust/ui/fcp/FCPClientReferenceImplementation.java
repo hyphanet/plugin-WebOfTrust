@@ -589,7 +589,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	private final class SubscriptionTerminatedHandler implements FCPMessageHandler {
 		@Override
 		public String getMessageName() {
-			return "Unubscribed";
+			return "Unsubscribed";
 		}
 
 		@Override
