@@ -467,50 +467,50 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 	 * - As events happen via event-{@link Notification}s
 	 */
 	private class FCPMessageReceiver implements FredPluginTalker {
-	/**
-	 * Called by Freenet when it receives a FCP message from WOT.
-	 * 
-	 * The function will determine which {@link FCPMessageHandler} is responsible for the message type and call its
-	 * {@link FCPMessageHandler#handle(SimpleFieldSet, Bucket).
-	 */
-	@Override
-	public synchronized final void onReply(final String pluginname, final String indentifier, final SimpleFieldSet params, final Bucket data) {
-		if(!WOT_FCP_NAME.equals(pluginname))
-			throw new RuntimeException("Plugin is not supposed to talk to us: " + pluginname);
-		
-		// Check whether we are actually connected. If we are not connected, we must not handle FCP messages.
-		// We must also check whether the identifier of the connection matches. If it does not, the message belongs to an old connection.
-		// We do NOT have to check mClientState: mConnection must only be non-null in states where it is acceptable.
-		if(mConnection == null || !mConnectionIdentifier.equals(indentifier)) {
-			final String state = "connected==" + (mConnection!=null) + "; identifier==" + indentifier
-					+ "ClientState==" + mClientState + "; SimpleFieldSet: " + params;
-			
-			Logger.error(this, "Received out of band message, maybe because we reconnected and the old server is still alive? " + state);
-			// There might be a dangling subscription for which we are still receiving event notifications.
-			// WOT terminates subscriptions automatically once their failure counter reaches a certain limit.
-			// For allowing WOT to notice the failure, we must throw a RuntimeException().
-			throw new RuntimeException("Out of band message: You are not connected or your identifier mismatches: " + state);
+		/**
+		 * Called by Freenet when it receives a FCP message from WOT.
+		 * 
+		 * The function will determine which {@link FCPMessageHandler} is responsible for the message type and call its
+		 * {@link FCPMessageHandler#handle(SimpleFieldSet, Bucket).
+		 */
+		@Override
+		public synchronized final void onReply(final String pluginname, final String indentifier, final SimpleFieldSet params, final Bucket data) {
+			if(!WOT_FCP_NAME.equals(pluginname))
+				throw new RuntimeException("Plugin is not supposed to talk to us: " + pluginname);
+
+			// Check whether we are actually connected. If we are not connected, we must not handle FCP messages.
+			// We must also check whether the identifier of the connection matches. If it does not, the message belongs to an old connection.
+			// We do NOT have to check mClientState: mConnection must only be non-null in states where it is acceptable.
+			if(mConnection == null || !mConnectionIdentifier.equals(indentifier)) {
+				final String state = "connected==" + (mConnection!=null) + "; identifier==" + indentifier
+						+ "ClientState==" + mClientState + "; SimpleFieldSet: " + params;
+
+				Logger.error(this, "Received out of band message, maybe because we reconnected and the old server is still alive? " + state);
+				// There might be a dangling subscription for which we are still receiving event notifications.
+				// WOT terminates subscriptions automatically once their failure counter reaches a certain limit.
+				// For allowing WOT to notice the failure, we must throw a RuntimeException().
+				throw new RuntimeException("Out of band message: You are not connected or your identifier mismatches: " + state);
+			}
+
+			final String messageString = params.get("Message");
+			final FCPMessageHandler handler = mFCPMessageHandlers.get(messageString);
+
+			if(handler == null) {
+				Logger.warning(this, "Unknown message type: " + messageString + "; SimpleFieldSet: " + params);
+				return;
+			}
+
+			if(logMINOR) Logger.minor(this, "Handling message '" + messageString + "' with " + handler + " ...");
+			try {
+				handler.handle(params, data);
+			} catch(ProcessingFailedException e) {
+				Logger.error(FCPClientReferenceImplementation.this, "Message handler failed and requested throwing to WOT, doing so: " + handler, e);
+				throw new RuntimeException(e);
+			} finally {
+				if(logMINOR) Logger.minor(this, "Handling message finished.");
+			}
 		}
 
-		final String messageString = params.get("Message");
-		final FCPMessageHandler handler = mFCPMessageHandlers.get(messageString);
-		
-		if(handler == null) {
-			Logger.warning(this, "Unknown message type: " + messageString + "; SimpleFieldSet: " + params);
-			return;
-		}
-
-		if(logMINOR) Logger.minor(this, "Handling message '" + messageString + "' with " + handler + " ...");
-		try {
-			handler.handle(params, data);
-		} catch(ProcessingFailedException e) {
-			Logger.error(FCPClientReferenceImplementation.this, "Message handler failed and requested throwing to WOT, doing so: " + handler, e);
-			throw new RuntimeException(e);
-		} finally {
-			if(logMINOR) Logger.minor(this, "Handling message finished.");
-		}
-	}
-	
 	}
 	/**
 	 * Each FCP message sent by WOT contains a "Message" field in its {@link SimpleFieldSet}. For each value of "Message",
