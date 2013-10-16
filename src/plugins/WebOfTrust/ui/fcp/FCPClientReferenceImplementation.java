@@ -65,7 +65,7 @@ import freenet.support.io.NativeThread;
  * @see SubscriptionManager The foundation of event-notifications and therefore the backend of all FCP traffic which this class does.
  * @author xor (xor@freenetproject.org)
  */
-public abstract class FCPClientReferenceImplementation implements PrioRunnable {
+public abstract class FCPClientReferenceImplementation {
 	
 	/** This is the core class name of the Web Of Trust plugin. Used to connect to it via FCP */
 	private static final String WOT_FCP_NAME = "plugins.WebOfTrust.WebOfTrust";
@@ -91,10 +91,14 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 	/** The interface for creating connections to WOT via FCP. Provided by the Freenet node */
 	private final PluginRespirator mPluginRespirator;
 	
-	/** For scheduling threaded execution of {@link #run()}. */
+	/** The function {@link KeepaliveLoop#run()} is periodically executed by {@link #mTicker}.
+	 *  It sends a Ping to WOT and checks whether the existing subscriptions are OK. */
+	private final KeepaliveLoop mKeepAliveLoop = new KeepaliveLoop();
+	
+	/** For scheduling threaded execution of {@link KeepaliveLoop#run()} on {@link #mKeepAliveLoop}. */
 	private final TrivialTicker mTicker;
 	
-	/** For randomizing the delay between periodic execution of {@link #run()} */
+	/** For randomizing the delay between periodic execution of {@link KeepaliveLoop#run()} on {@link #mKeepAliveLoop} */
 	private final Random mRandom;
 	
 	/**
@@ -232,7 +236,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 			throw new IllegalStateException(mClientState.toString());
 		
 		mClientState = ClientState.Started;
-		scheduleKeepaliveLoopExecution();
+		mKeepAliveLoop.scheduleKeepaliveLoopExecution();
 
 		Logger.normal(this, "Started.");
 	}
@@ -257,7 +261,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 		
 		mSubscribeTo.add(type);
 		
-		scheduleKeepaliveLoopExecution(0);
+		mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
 	}
 	
 	/**
@@ -269,9 +273,10 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 		
 		mSubscribeTo.remove(type);
 
-		scheduleKeepaliveLoopExecution(0);
+		mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
 	}
 
+	private final class KeepaliveLoop implements PrioRunnable {
 	/**
 	 * Schedules execution of {@link #run()} via {@link #mTicker} after a delay:
 	 * If connected to WOT, the delay will be randomized and roughly equal to {@link #WOT_PING_DELAY}.
@@ -325,6 +330,17 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 		}
 		
 		if(logMINOR) Logger.minor(this, "Connection-checking finished.");
+	}
+		
+	/**
+	 * Determines the priority of the thread running {@link #run()}
+	 * It is chosen to be {@link NativeThread.PriorityLevel#MIN_PRIORITY} as the loop is not latency-critical.
+	 */
+	@Override
+	public final int getPriority() {
+		return NativeThread.PriorityLevel.MIN_PRIORITY.value;
+	}
+
 	}
 
 	/**
@@ -587,7 +603,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 	    	// checkSubscriptions() only files one subscription at a time (see its code for an explanation).
 	    	// Therefore, after subscription has succeeded, we need to schedule the KeepaliveLoop (which is run()) to be executed again
 	    	// soon so it calls checkSubscriptions() to file the following subscriptions.
-	    	scheduleKeepaliveLoopExecution(0);
+	    	mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
 		}
 	}
 	
@@ -1100,15 +1116,6 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 		mClientState = ClientState.Stopped;
 		
 		Logger.normal(this, "stop() finished.");
-	}
-	
-	/**
-	 * Determines the priority of the loop which checks the connection to WOT.
-	 * It is chosen to be {@link NativeThread.PriorityLevel#MIN_PRIORITY} as the loop is not latency-critical.
-	 */
-	@Override
-	public final int getPriority() {
-		return NativeThread.PriorityLevel.MIN_PRIORITY.value;
 	}
 
 }
