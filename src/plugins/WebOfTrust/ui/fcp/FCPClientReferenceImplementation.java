@@ -79,6 +79,9 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	/** The amount of milliseconds after which assume the connection to WOT to be dead and try to reconnect */
 	private static final int WOT_PING_TIMEOUT_DELAY = 2*WOT_PING_DELAY;
 	
+	/** The amount of milliseconds for waiting for "Unsubscribed" messages to arrive in {@link #stop()} */
+	private static final int SHUTDOWN_UNSUBSCRIBE_TIMEOUT = 3*1000;
+	
 	/**
 	 * The implementing child class provides this Map. It is used for obtaining the {@link Identity} objects which are used for
 	 * constructing {@link Trust} and {@link Score} objects which are passed to its handlers.
@@ -93,10 +96,32 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	
 	/** For randomizing the delay between periodic execution of {@link #run()} */
 	private final Random mRandom;
-
+	
 	/**
-	 * The connection to the Web Of Trust plugin. Null if we are disconnected.
-	 * volatile because {@link #connected()} uses it without synchronization. */
+	 * FCPClientReferenceImplementation can be in one of these states.
+	 */
+	private enum ClientState {
+		/** {@link #start()} has not been called yet */
+		NotStarted, 
+		/** {@link #start()} has been called */
+		Started, 
+		/** {@link #stop()} has been called and is waiting for shutdown to complete. */
+		StopRequested,
+		/** {@link #stop()} has finished. */
+		Stopped
+	};
+	
+	/**
+	 * Any public functions in this class which "change stuff" MUST check whether they should be allowed to execute in this {@link ClientState}.
+	 * Examples:
+	 * - Subscriptions MUST NOT be filed if this state is not {@link ClientState#Started}.
+	 * - A connection to Web Of Trust MUST NOT be created if this state is not {@link ClientState#Started}. 
+	 */
+	private ClientState mClientState = ClientState.NotStarted;
+
+	/** The connection to the Web Of Trust plugin. Null if we are disconnected.
+	 * volatile because {@link #connected()} uses it without synchronization. 
+	 * MUST only be non-null if {@link #mClientState} equals {@link ClientState#Started} or {@link ClientState#StopRequested} */
 	private volatile PluginTalker mConnection = null;
 	
 	/** A random {@link UUID} which identifies the connection to the Web Of Trust plugin. Randomized upon every reconnect. */
@@ -197,9 +222,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * 
 	 * You will not receive any event callbacks before start was called.
 	 */
-	public void start() {
+	public synchronized void start() {
 		Logger.normal(this, "Starting...");
 		
+		if(mClientState != ClientState.NotStarted)
+			throw new IllegalStateException(mClientState.toString());
+		
+		mClientState = ClientState.Started;
 		scheduleKeepaliveLoopExecution();
 
 		Logger.normal(this, "Started.");
@@ -220,7 +249,11 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * Therefore your event handler cannot create them if you don't subscribe to {@link SubscriptionType#Identities} first.
 	 */
 	public final synchronized void subscribe(final SubscriptionType type) {
+		if(mClientState != ClientState.Started)
+			throw new IllegalStateException(mClientState.toString());
+		
 		mSubscribeTo.add(type);
+		
 		scheduleKeepaliveLoopExecution(0);
 	}
 	
@@ -228,6 +261,9 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * Call this to cancel a {@link Subscription}.
 	 */
 	public final synchronized void unsubscribe(final SubscriptionType type) {
+		if(mClientState != ClientState.Started)
+			throw new IllegalStateException(mClientState.toString());
+		
 		mSubscribeTo.remove(type);
 
 		scheduleKeepaliveLoopExecution(0);
@@ -264,6 +300,11 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	@Override
 	public final synchronized void run() { 
 		if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
+		
+		if(mClientState != ClientState.Started) {
+			Logger.error(this, "Connection-checking loop executed in wrong ClientState: " + mClientState);
+			return;
+		}
 
 		try {
 			if(!connected() || pingTimedOut())
@@ -275,7 +316,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 			}
 		} catch (Exception e) {
 			Logger.error(this, "Error in connection-checking loop!", e);
-			disconnect();
+			force_disconnect();
 		} finally {
 			scheduleKeepaliveLoopExecution();
 		}
@@ -288,7 +329,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * Safe to be called if a connection already exists - it will be replaced with a new one then.
 	 */
 	private synchronized void connect() {
-		disconnect();
+		force_disconnect();
 		
 		Logger.normal(this, "connect()");
 		
@@ -311,16 +352,14 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * not have to care about whether a connection exists or not. This class will automatically reconnect if the connection is lost and
 	 * file the subscriptions again.
 	 */
-	private synchronized void disconnect() {
-		Logger.normal(this, "disconnect()");
+	private synchronized void force_disconnect() {
+		Logger.normal(this, "force_disconnect()");
 		
 		if(mConnection != null) {
 			for(SubscriptionType type : mSubscriptionIDs.keySet()) {
 				fcp_Unsubscribe(type);
 				// The "Unsubscribed" message would normally trigger the removal from the mSubscriptionIDs array but we cannot
 				// receive it anymore after we are disconnected so we remove the ID ourselves
-				// FIXME: Check whether it still arrives at onReply() anyway. If it does so, it will trigger error logging -
-				// we then should find a way to prevent that.
 				mSubscriptionIDs.remove(type);
 			}
 		}
@@ -431,8 +470,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		if(!WOT_FCP_NAME.equals(pluginname))
 			throw new RuntimeException("Plugin is not supposed to talk to us: " + pluginname);
 		
+		// Check whether we are actually connected. If we are not connected, we must not handle FCP messages.
+		// We must also check whether the identifier of the connection matches. If it does not, the message belongs to an old connection.
+		// We do NOT have to check mClientState: mConnection must only be non-null in states where it is acceptable.
 		if(mConnection == null || !mConnectionIdentifier.equals(indentifier)) {
-			final String state = "connected==" + (mConnection!=null) + "; identifier==" + indentifier + "; SimpleFieldSet: " + params;
+			final String state = "connected==" + (mConnection!=null) + "; identifier==" + indentifier
+					+ "ClientState==" + mClientState + "; SimpleFieldSet: " + params;
+			
 			Logger.error(this, "Received out of band message, maybe because we reconnected and the old server is still alive? " + state);
 			// There might be a dangling subscription for which we are still receiving event notifications.
 			// WOT terminates subscriptions automatically once their failure counter reaches a certain limit.
@@ -559,6 +603,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	    	final SubscriptionType type = SubscriptionType.valueOf(from);
 	    	assert mSubscriptionIDs.containsKey(type) : "Subscription should exist";
 	    	mSubscriptionIDs.remove(type);
+
+    		// The purpose of the StopRequested state is to to give pending "Unsuscribed" messages time to arrive.
+    		// After we have received all of them, we must:
+    		// - Update the mClientState
+    		// - Notify the stop() function that shutdown is finished.
+	    	if(mClientState == ClientState.StopRequested && mSubscriptionIDs.isEmpty())
+	    		notifyAll();
 		}
 	}
 	
@@ -998,13 +1049,48 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * ATTENTION: If you override this, you must call <code>super.stop()</code>!
 	 */
 	public synchronized void stop() {
-		Logger.normal(this, "Terminating ...");
+		Logger.normal(this, "stop() ...");
 		
-		// This will wait for run() to exit.
+		if(mClientState != ClientState.Started) {
+			Logger.warning(this, "stop(): Not even started, current state = " + mClientState);
+			return;
+		}
+		
+		// The purpose of having this state is so we can wait for the confirmations of fcp_Unsubscribe() to arrive from WOT.
+		mClientState = ClientState.StopRequested;
+		
+		// Prevent run() from executing again. It cannot be running right now because this function is synchronized
 		mTicker.shutdown();
-		disconnect();
 		
-		Logger.normal(this, "Terminated.");
+		// Call fcp_Unsubscribe() on any remaining subscriptions and wait() for the "Unsubscribe" messages to arrive
+		if(!mSubscriptionIDs.isEmpty() && mConnection != null) {
+			for(SubscriptionType type : mSubscriptionIDs.keySet()) {
+				fcp_Unsubscribe(type);
+				// The handler for "Unsubscribed" messages will notifyAll() once there are no more subscriptions 
+			}
+
+			Logger.normal(this, "stop(): Waiting for fcp_Unsubscribe() calls to be confirmed...");
+			try {
+				// Releases the lock on this object - which is why we needed to set mClientState = ClientState.StopRequested:
+				// To prevent new subscriptions from happening in between
+				wait(SHUTDOWN_UNSUBSCRIBE_TIMEOUT);
+			} catch (InterruptedException e) {
+				Thread.interrupted();
+			}			
+		}
+		
+		if(!mSubscriptionIDs.isEmpty()) {
+			Logger.warning(this, "stop(): Waiting for fcp_Unsubscribe() calls timed out, now forcing disconnect."
+					+ " If log messages about out-of-band messages follow, you can ignore them.");
+		}
+		
+		// We call force_disconnect() even if shutdown worked properly because there is no non-forced function and it won't force
+		// anything if all subscriptions have been terminated properly before.
+		force_disconnect();
+		
+		mClientState = ClientState.Stopped;
+		
+		Logger.normal(this, "stop() finished.");
 	}
 	
 	/**
