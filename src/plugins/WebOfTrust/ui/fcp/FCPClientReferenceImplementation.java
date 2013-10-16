@@ -276,6 +276,10 @@ public abstract class FCPClientReferenceImplementation {
 		mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
 	}
 
+	/**
+	 * The function {@link KeepaliveLoop#run()} is periodically executed by {@link FCPClientReferenceImplementation#mTicker}.
+	 * It sends a Ping to WOT and checks whether the existing subscriptions are OK.
+	 */
 	private final class KeepaliveLoop implements PrioRunnable {
 		/**
 		 * Schedules execution of {@link #run()} via {@link #mTicker} after a delay:
