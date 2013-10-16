@@ -65,7 +65,7 @@ import freenet.support.io.NativeThread;
  * @see SubscriptionManager The foundation of event-notifications and therefore the backend of all FCP traffic which this class does.
  * @author xor (xor@freenetproject.org)
  */
-public abstract class FCPClientReferenceImplementation implements PrioRunnable, FredPluginTalker {
+public abstract class FCPClientReferenceImplementation implements PrioRunnable {
 	
 	/** This is the core class name of the Web Of Trust plugin. Used to connect to it via FCP */
 	private static final String WOT_FCP_NAME = "plugins.WebOfTrust.WebOfTrust";
@@ -154,6 +154,9 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	 * @see SubscriptionManager.Subscription#getID()
 	 */
 	private EnumMap<SubscriptionType, String> mSubscriptionIDs = new EnumMap<SubscriptionType, String>(SubscriptionType.class);
+	
+	/** Implements interface {@link FredPluginTalker}: Receives messages from WOT in a callback. */
+	private final FCPMessageReceiver mFCPMessageReceiver = new FCPMessageReceiver();
 	
 	/** Maps the String name of WOT FCP messages to the handler which shall deal with them */
 	private HashMap<String, FCPMessageHandler> mFCPMessageHandlers = new HashMap<String, FCPMessageHandler>();
@@ -335,7 +338,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		
 		try {
 			mConnectionIdentifier = UUID.randomUUID().toString();
-			mConnection = mPluginRespirator.getPluginTalker(this, WOT_FCP_NAME, mConnectionIdentifier);
+			mConnection = mPluginRespirator.getPluginTalker(mFCPMessageReceiver, WOT_FCP_NAME, mConnectionIdentifier);
 			mSubscriptionIDs.clear();
 			Logger.normal(this, "Connected to WOT, identifier: " + mConnectionIdentifier);
 			handleConnectionEstablished();
@@ -459,8 +462,13 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 	}
 
 	/**
+	 * Receives FCP messages from WOT:
+	 * - In reply to messages sent to it via {@link PluginTalker}
+	 * - As events happen via event-{@link Notification}s
+	 */
+	private class FCPMessageReceiver implements FredPluginTalker {
+	/**
 	 * Called by Freenet when it receives a FCP message from WOT.
-	 * These can be both replies to something we have sent as well as event-{@link Notification}s.
 	 * 
 	 * The function will determine which {@link FCPMessageHandler} is responsible for the message type and call its
 	 * {@link FCPMessageHandler#handle(SimpleFieldSet, Bucket).
@@ -503,6 +511,7 @@ public abstract class FCPClientReferenceImplementation implements PrioRunnable, 
 		}
 	}
 	
+	}
 	/**
 	 * Each FCP message sent by WOT contains a "Message" field in its {@link SimpleFieldSet}. For each value of "Message",
 	 * a {@link FCPMessageHandler} implementation must exist.
