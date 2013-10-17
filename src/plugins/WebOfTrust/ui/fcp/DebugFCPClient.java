@@ -12,6 +12,9 @@ import plugins.WebOfTrust.SubscriptionManager.ScoresSubscription;
 import plugins.WebOfTrust.SubscriptionManager.TrustsSubscription;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscribedObjectChangedHandler;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionSynchronizationHandler;
 
 import com.db4o.ObjectSet;
 
@@ -31,9 +34,11 @@ import freenet.support.Logger.LogLevel;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public final class DebugFCPClient extends FCPClientReferenceImplementation {
-
+public final class DebugFCPClient implements FCPClientReferenceImplementation.ConnectionStatusChangedHandler {
+	
 	private final WebOfTrust mWebOfTrust;
+	
+	private FCPClientReferenceImplementation mClient;
 	
 	/**
 	 * Stores the {@link Identity} objects which we have received via FCP as part of the {@link IdentitiesSubscription}.
@@ -68,7 +73,7 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 
 	
 	private DebugFCPClient(final WebOfTrust myWebOfTrust, final Executor myExecutor, Map<String, Identity> identityStorage) {
-		super(myWebOfTrust, identityStorage, myWebOfTrust.getPluginRespirator(), myExecutor);
+		mClient = new FCPClientReferenceImplementation(myWebOfTrust, identityStorage, myWebOfTrust.getPluginRespirator(), myExecutor, this);
 		mWebOfTrust = myWebOfTrust;
 	}
 	
@@ -79,17 +84,23 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 		return client;
 	}
 	
-	@Override
 	public void start() {
-		super.start();
-		subscribe(SubscriptionType.Identities);
-		subscribe(SubscriptionType.Trusts);
-		subscribe(SubscriptionType.Scores);
+		mClient.start();
+		mClient.subscribe(Identity.class, 
+				new SubscriptionSynchronizationHandlerImpl<Identity>(mReceivedIdentities),
+				new SubscribedObjectChangedHandlerImpl<Identity>(mReceivedIdentities));
+		
+		mClient.subscribe(Trust.class, 
+				new SubscriptionSynchronizationHandlerImpl<Trust>(mReceivedTrusts),
+				new SubscribedObjectChangedHandlerImpl<Trust>(mReceivedTrusts));
+		
+		mClient.subscribe(Score.class, 
+				new SubscriptionSynchronizationHandlerImpl<Score>(mReceivedScores),
+				new SubscribedObjectChangedHandlerImpl<Score>(mReceivedScores));
 	}
 	
-	@Override
 	public void stop() { 
-		super.stop();
+		mClient.stop();
 		
 		Logger.normal(this, "terminate(): Amending edition hints...");
 		// Event-notifications does not propagate edition hints because that would cause a lot of traffic so we need to set them manually
@@ -124,44 +135,28 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 	}
 
 	@Override
-	void handleConnectionEstablished() {
-		if(logMINOR) Logger.minor(this, "handleConnectionEstablished()");
-	}
-
-	@Override
-	void handleConnectionLost() {
-		if(logMINOR) Logger.minor(this, "handleConnectionLost()");
+	public void handleConnectionStatusChanged(final boolean connected) {
+		if(logMINOR) Logger.minor(this, "handleConnectionStatusChanged(" + connected + ")");
 		
-		mReceivedIdentities.clear();
-		mReceivedTrusts.clear();
-		mReceivedScores.clear();
+		if(!connected) {
+			mReceivedIdentities.clear();
+			mReceivedTrusts.clear();
+			mReceivedScores.clear();
+		}
 	}
 
-	@Override
-	void handleIdentitiesSynchronization(Collection<Identity> allIdentities) {
-		if(logMINOR) Logger.minor(this, "handleIdentitiesSynchronization()...");
-		putSynchronization(allIdentities, mReceivedIdentities);
-		if(logMINOR) Logger.minor(this, "handleIdentitiesSynchronization() finished.");
-	}
-
-	@Override
-	void handleTrustsSynchronization(Collection<Trust> allTrusts) {
-		if(logMINOR) Logger.minor(this, "handleTrustsSynchronization()...");
-		putSynchronization(allTrusts, mReceivedTrusts);
-		if(logMINOR) Logger.minor(this, "handleTrustsSynchronization() finished.");
-	}
-
-	@Override
-	void handleScoresSynchronization(Collection<Score> allScores) {
-		if(logMINOR) Logger.minor(this, "handleScoresSynchronization()...");
-		putSynchronization(allScores, mReceivedScores);
-		if(logMINOR) Logger.minor(this, "handleScoresSynchronization() finished.");
-	}
-
+	private class SubscriptionSynchronizationHandlerImpl<T extends Persistent> implements SubscriptionSynchronizationHandler<T> {
+		final HashMap<String, T> target;
+		
+		public SubscriptionSynchronizationHandlerImpl(final HashMap<String, T> myTarget) {
+			target = myTarget;
+		}
 	/**
 	 * Fill our existing "database" (the {@link HashMap} target) with the synchronization of ALL data which we have received from WOT.
 	 */
-	<T extends Persistent> void putSynchronization(final Collection<T> source, final HashMap<String, T> target) {
+	public void handleSubscriptionSynchronization(final Collection<T> source) {
+		if(logMINOR) Logger.minor(this, "handleSubscriptionSynchronization() to " + target);
+		
 		if(target.size() > 0) {
 			Logger.normal(this, "Received additional synchronization, validating existing data against it...");
 
@@ -184,33 +179,26 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 		for(final T p : source) {
 			target.put(p.getID(), p);
 		}
+		
+		if(logMINOR) Logger.minor(this, "handleSubscriptionSynchronization() finished.");
+	}
 	}
 
-	@Override
-	void handleIdentityChangedNotification(final ChangeSet<Identity> changeSet) {
-		if(logMINOR) Logger.minor(this, "handleIdentityChangedNotification(): " + changeSet);
-		putNotification(changeSet, mReceivedIdentities);
-	}
-
-	@Override
-	void handleTrustChangedNotification(final ChangeSet<Trust> changeSet) {
-		if(logMINOR) Logger.minor(this, "handleTrustChangedNotification(): " + changeSet);
-		putNotification(changeSet, mReceivedTrusts);
-	}
-
-	@Override
-	void handleScoreChangedNotification(final ChangeSet<Score> changeSet) {
-		if(logMINOR) Logger.minor(this, "handleScoreChangedNotification(): " + changeSet);
-		putNotification(changeSet, mReceivedScores);
-	}
-	
+	private class SubscribedObjectChangedHandlerImpl<T extends Persistent> implements SubscribedObjectChangedHandler<T> {
+		final HashMap<String, T> target;
+		
+		public SubscribedObjectChangedHandlerImpl(final HashMap<String, T> myTarget) {
+			target = myTarget;
+		}
 	/**
 	 * Update our existing "database" (the {@link HashMap} target) with the changed data which we have received from WOT.
 	 * 
 	 * It does more than that though: It checks whether the contents of the {@link FCPClientReferenceImplementation.ChangeSet} make sense.
 	 * For example our existing data in the HashMap should match the {@link FCPClientReferenceImplementation.ChangeSet#beforeChange}. 
 	 */
-	<T extends Persistent> void putNotification(final ChangeSet<T> changeSet, final HashMap<String, T> target) {
+	public void handleSubscribedObjectChanged(final ChangeSet<T> changeSet) {
+		if(logMINOR) Logger.minor(this, "handleSubscribedObjectChanged(): " + changeSet);
+		
 		// Check validity of existing data
 		if(changeSet.beforeChange != null) {
 			final T currentBeforeChange = target.get(changeSet.beforeChange.getID());
@@ -236,6 +224,8 @@ public final class DebugFCPClient extends FCPClientReferenceImplementation {
 			target.put(changeSet.afterChange.getID(), changeSet.afterChange);
 		} else
 			target.remove(changeSet.beforeChange.getID());
+		
+		if(logMINOR) Logger.minor(this, "handleSubscribedObjectChanged finished.");
 	}
-
+	}
 }
