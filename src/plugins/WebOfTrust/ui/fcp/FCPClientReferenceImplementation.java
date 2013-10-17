@@ -419,11 +419,14 @@ public final class FCPClientReferenceImplementation {
 			}
 		} catch(PluginNotFoundException e) {
 			Logger.warning(this, "Cannot connect to WOT!");
+			// force_disconnect() does this for us.
+			/*
 			try {
 				mConnectionStatusChangedHandler.handleConnectionStatusChanged(false);
 			} catch(Throwable t) {
 				Logger.warning(this, "ConnectionStatusChangedHandler.handleConnectionStatusChanged() threw up, please fix your handler!", t);
 			}
+			*/
 		}
 	}
 	
@@ -443,6 +446,12 @@ public final class FCPClientReferenceImplementation {
 				// The "Unsubscribed" message would normally trigger the removal from the mSubscriptionIDs array but we cannot
 				// receive it anymore after we are disconnected so we remove the ID ourselves
 				mSubscriptionIDs.remove(type);
+			}
+			
+			try {
+				mConnectionStatusChangedHandler.handleConnectionStatusChanged(false);
+			} catch(Throwable t) {
+				Logger.warning(this, "ConnectionStatusChangedHandler.handleConnectionStatusChanged() threw up, please fix your handler!", t);
 			}
 		}
 		
