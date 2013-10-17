@@ -173,11 +173,27 @@ public abstract class FCPClientReferenceImplementation {
 	private EnumSet<SubscriptionType> mSubscribeTo = EnumSet.noneOf(SubscriptionType.class);
 
 	/**
+	 * Each of these handlers is called at the begin of a subscription. The "synchronization" contains all objects in the WOT
+	 * database of the type to which we subscribed.
+	 * @see SubscriptionSynchronizationHandler
+	 */
+	private final EnumMap<SubscriptionType, SubscriptionSynchronizationHandler<? extends Persistent>> mSubscriptionSynchronizationHandlers
+		= new EnumMap<SubscriptionType, SubscriptionSynchronizationHandler<? extends Persistent>>(SubscriptionType.class);
+	
+	/**
+	 * Each of these handlers is called when an object changes to whose type the client is subscribed.
+	 * @see SubscribedObjectChangedHandler
+	 */
+	private final EnumMap<SubscriptionType, SubscribedObjectChangedHandler<? extends Persistent>> mSubscribedObjectChangedHandlers 
+		= new EnumMap<SubscriptionType, SubscribedObjectChangedHandler<? extends Persistent>>(SubscriptionType.class);
+	
+	/**
 	 * The values are the IDs of the current subscriptions of the {@link SubscriptionType} which the key specifies.
 	 * Null if the subscription for that type has not yet been filed.
 	 * @see SubscriptionManager.Subscription#getID()
 	 */
 	private EnumMap<SubscriptionType, String> mSubscriptionIDs = new EnumMap<SubscriptionType, String>(SubscriptionType.class);
+
 	
 	/** Implements interface {@link FredPluginTalker}: Receives messages from WOT in a callback. */
 	private final FCPMessageReceiver mFCPMessageReceiver = new FCPMessageReceiver();
@@ -277,7 +293,17 @@ public abstract class FCPClientReferenceImplementation {
 		if(mClientState != ClientState.Started)
 			throw new IllegalStateException(mClientState.toString());
 		
+		final SubscriptionType realType = SubscriptionType.fromClass(type);
+		if(mSubscribeTo.contains(realType))
+			throw new IllegalStateException("Subscription for that type exists already!");
+		
 		mSubscribeTo.add(SubscriptionType.fromClass(type));
+		
+		IfNull.thenThrow(synchronizationHandler);
+		IfNull.thenThrow(objectChangedHandler);
+		
+		mSubscriptionSynchronizationHandlers.put(realType, synchronizationHandler);
+		mSubscribedObjectChangedHandlers.put(realType, objectChangedHandler);
 		
 		mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
 	}
@@ -722,7 +748,8 @@ public abstract class FCPClientReferenceImplementation {
 		
 		@Override
 		public void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			handleIdentitiesSynchronization(mIdentityParser.parseSynchronization(sfs));
+			((IdentitiesSynchronizationEventHandler) mSubscriptionSynchronizationHandlers.get(SubscriptionType.Identities))
+				.handle(mIdentityParser.parseSynchronization(sfs));
 		}
 	}
 
@@ -741,7 +768,8 @@ public abstract class FCPClientReferenceImplementation {
 
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			handleTrustsSynchronization(mTrustParser.parseSynchronization(sfs));
+			((TrustsSynchronizationEventHandler) mSubscriptionSynchronizationHandlers.get(SubscriptionType.Trusts))
+					.handle(mTrustParser.parseSynchronization(sfs));
 		}
 	}
 
@@ -760,7 +788,8 @@ public abstract class FCPClientReferenceImplementation {
 
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			handleScoresSynchronization(mScoreParser.parseSynchronization(sfs));
+			((ScoresSynchronizationEventHandler) mSubscriptionSynchronizationHandlers.get(SubscriptionType.Scores))
+				.handle(mScoreParser.parseSynchronization(sfs));
 		}
 	}
 
@@ -779,7 +808,8 @@ public abstract class FCPClientReferenceImplementation {
 		
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			handleIdentityChangedNotification(mIdentityParser.parseNotification(sfs));
+			((IdentityChangedEventHandler) mSubscribedObjectChangedHandlers.get(SubscriptionType.Identities))
+				.handle(mIdentityParser.parseNotification(sfs));
 		}
 	}
 	
@@ -798,7 +828,8 @@ public abstract class FCPClientReferenceImplementation {
 		
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			handleTrustChangedNotification(mTrustParser.parseNotification(sfs));
+			((TrustChangedEventHandler) mSubscribedObjectChangedHandlers.get(SubscriptionType.Trusts))
+				.handle(mTrustParser.parseNotification(sfs));
 		}
 	}
 
@@ -817,7 +848,8 @@ public abstract class FCPClientReferenceImplementation {
 		
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			handleScoreChangedNotification(mScoreParser.parseNotification(sfs));
+			((ScoreChangedEventHandler) mSubscribedObjectChangedHandlers.get(SubscriptionType.Scores))
+				.handle(mScoreParser.parseNotification(sfs));
 		}
 	}
 
