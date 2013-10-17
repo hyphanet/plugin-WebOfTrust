@@ -41,6 +41,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
+import freenet.support.codeshortification.IfNull;
 import freenet.support.io.NativeThread;
 
 /**
