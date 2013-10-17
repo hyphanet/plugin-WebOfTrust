@@ -1044,30 +1044,30 @@ public abstract class FCPClientReferenceImplementation {
 	}
 
 	public interface ConnectionEstablishedEventHandler {
-	/**
-	 * Called when the client has connected to WOT successfully. 
-	 * This handler should update your user interface to remove the "Please install the Web Of Trust plugin!" warning - which you should 
-	 * display by default until this handler was called. 
-	 * 
-	 * ATTENTION: You do NOT have to call {@link #subscribe(SubscriptionType)} in this handler! Subscriptions will be filed automatically by
-	 * the client whenever the connection is established. It will also automatically reconnect if the connection is lost.
-	 * 
-	 * @see #handleConnectionLost()
-	 */
-	void handleConnectionEstablished();
+		/**
+		 * Called when the client has connected to WOT successfully. 
+		 * This handler should update your user interface to remove the "Please install the Web Of Trust plugin!" warning - which you should 
+		 * display by default until this handler was called. 
+		 * 
+		 * ATTENTION: You do NOT have to call {@link #subscribe(SubscriptionType)} in this handler! Subscriptions will be filed automatically by
+		 * the client whenever the connection is established. It will also automatically reconnect if the connection is lost.
+		 * 
+		 * @see #handleConnectionLost()
+		 */
+		void handleConnectionEstablished();
 	}
 	
 	public interface ConnectionLostEventHandler {
-	/**
-	 * Called when the client has lost the connection to WOT. 
-	 * This handler should update your user interface to display a "Please install the Web Of Trust plugin!" warning - which you should 
-	 * display by default until {@link #handleConnectionEstablished()} was called.. 
-	 * 
-	 * ATTENTION: The client will automatically try to reconnect, you do NOT have to call {@link #start()} or anything else in this handler! 
-	 * 
-	 * @see #handleConnectionEstablished()
-	 */
-	abstract void handleConnectionLost();
+		/**
+		 * Called when the client has lost the connection to WOT. 
+		 * This handler should update your user interface to display a "Please install the Web Of Trust plugin!" warning - which you should 
+		 * display by default until {@link #handleConnectionEstablished()} was called.. 
+		 * 
+		 * ATTENTION: The client will automatically try to reconnect, you do NOT have to call {@link #start()} or anything else in this handler! 
+		 * 
+		 * @see #handleConnectionEstablished()
+		 */
+		abstract void handleConnectionLost();
 	}
 	
 	public interface SubscriptionSynchronizationHandler<T extends Persistent> {
