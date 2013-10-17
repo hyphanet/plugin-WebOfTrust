@@ -236,16 +236,16 @@ public abstract class FCPClientReferenceImplementation {
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
 		
 		final FCPMessageHandler[] handlers = {
-				new PongHandler(),
-				new SubscriptionSucceededHandler(),
-				new SubscriptionTerminatedHandler(),
-				new ErrorHandler(),
-				new IdentitiesSynchronizationHandler(),
-				new TrustsSynchronizationHandler(),
-				new ScoresSynchronizationHandler(),
-				new IdentityChangedNotificationHandler(),
-				new TrustChangedNotificationHandler(),
-				new ScoreChangedNotificationHandler()
+				new FCPPongHandler(),
+				new FCPSubscriptionSucceededHandler(),
+				new FCPSubscriptionTerminatedHandler(),
+				new FCPErrorHandler(),
+				new FCPIdentitiesSynchronizationHandler(),
+				new FCPTrustsSynchronizationHandler(),
+				new FCPScoresSynchronizationHandler(),
+				new FCPIdentityChangedNotificationHandler(),
+				new FCPTrustChangedNotificationHandler(),
+				new FCPScoreChangedNotificationHandler()
 		};
 		
 		for(FCPMessageHandler handler : handlers)
@@ -457,7 +457,7 @@ public abstract class FCPClientReferenceImplementation {
 	}
 	
 	/**
-	 * Sends a "Ping" FCP message to WOT. It will reply with a "Pong" message which is then handled by the {@link PongHandler}.
+	 * Sends a "Ping" FCP message to WOT. It will reply with a "Pong" message which is then handled by the {@link FCPPongHandler}.
 	 * Used for checking whether the connection to WOT is alive.
 	 */
 	private synchronized void fcp_Ping() {
@@ -497,8 +497,8 @@ public abstract class FCPClientReferenceImplementation {
 	
 	/**
 	 * Sends a "Subscribe" FCP message to WOT. It will reply with:
-	 * - A synchronization message, which is handled by {@link IdentitiesSynchronizationHandler} / {@link TrustsSynchronizationHandler} / {@link ScoresSynchronizationHandler} - depending on the {@link SubscriptionType}.
-	 * - A "Subscribed" message, which is handled by {@link SubscriptionSucceededHandler}.
+	 * - A synchronization message, which is handled by {@link FCPIdentitiesSynchronizationHandler} / {@link FCPTrustsSynchronizationHandler} / {@link FCPScoresSynchronizationHandler} - depending on the {@link SubscriptionType}.
+	 * - A "Subscribed" message, which is handled by {@link FCPSubscriptionSucceededHandler}.
 	 * 
 	 * @param type The {@link SubscriptionType} to which you want to subscribe.
 	 */
@@ -512,7 +512,7 @@ public abstract class FCPClientReferenceImplementation {
 	}
 	
 	/**
-	 * Sends a "Unsubscribe" FCP message to WOT. It will reply with an "Unsubscribed" message which is handled by {@link SubscriptionTerminatedHandler}.
+	 * Sends a "Unsubscribe" FCP message to WOT. It will reply with an "Unsubscribed" message which is handled by {@link FCPSubscriptionTerminatedHandler}.
 	 * 
 	 * @param type The {@link SubscriptionType} which you want to unsubscribe. {@link #mSubscriptionIDs} must contain an ID for this type. 
 	 */
@@ -613,7 +613,7 @@ public abstract class FCPClientReferenceImplementation {
 	 * Handles the "Pong" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Ping()}.
 	 * Reception of this message indicates that the connection to WOT is alive.
 	 */
-	private final class PongHandler implements FCPMessageHandler {
+	private final class FCPPongHandler implements FCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "Pong";
@@ -630,7 +630,7 @@ public abstract class FCPClientReferenceImplementation {
 	 * Handles the "Subscribed" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}.
 	 * Reception of this message indicates that we successfully subscribed to the requested {@link SubscriptionType}.
 	 */
-	private final class SubscriptionSucceededHandler implements FCPMessageHandler {
+	private final class FCPSubscriptionSucceededHandler implements FCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "Subscribed";
@@ -659,7 +659,7 @@ public abstract class FCPClientReferenceImplementation {
 	 * Handles the "Unsubscribed" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Unsubscribe(SubscriptionType)}.
 	 * Reception of this message indicates that we successfully unsubscribed from the requested {@link SubscriptionType}.
 	 */
-	private final class SubscriptionTerminatedHandler implements FCPMessageHandler {
+	private final class FCPSubscriptionTerminatedHandler implements FCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "Unsubscribed";
@@ -693,7 +693,7 @@ public abstract class FCPClientReferenceImplementation {
 	 * There is one type of Error which is not severe and therefore logged as WARNING: If we tried to subscribed twice because of high latency.
 	 * An explanation is in the source code of the function.
 	 */
-	private final class ErrorHandler implements FCPMessageHandler {
+	private final class FCPErrorHandler implements FCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "Error";
@@ -741,7 +741,7 @@ public abstract class FCPClientReferenceImplementation {
 	 * Parses the contained set of all WOT {@link Identity}s & passes it to the event handler 
 	 * {@link FCPClientReferenceImplementation#handleIdentitiesSynchronization(Collection)}.
 	 */
-	private final class IdentitiesSynchronizationHandler extends MaybeFailingFCPMessageHandler {
+	private final class FCPIdentitiesSynchronizationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "Identities";
@@ -761,7 +761,7 @@ public abstract class FCPClientReferenceImplementation {
 	 * Parses the contained set of all WOT {@link Trust}s & passes it to the event handler 
 	 * {@link FCPClientReferenceImplementation#handleTrustsSynchronization(Collection)}.
 	 */
-	private final class TrustsSynchronizationHandler extends MaybeFailingFCPMessageHandler {
+	private final class FCPTrustsSynchronizationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "Trusts";
@@ -781,7 +781,7 @@ public abstract class FCPClientReferenceImplementation {
 	 * Parses the contained set of all WOT {@link Score}s & passes it to the event handler 
 	 * {@link FCPClientReferenceImplementation#handleScoresSynchronization(Collection)}.
 	 */
-	private final class ScoresSynchronizationHandler extends MaybeFailingFCPMessageHandler {
+	private final class FCPScoresSynchronizationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "Scores";
@@ -801,7 +801,7 @@ public abstract class FCPClientReferenceImplementation {
 	 * Parses the contained {@link Identity} & passes it to the event handler 
 	 * {@link FCPClientReferenceImplementation#handleIdentityChangedNotification(Identity, Identity)}.
 	 */
-	private final class IdentityChangedNotificationHandler extends MaybeFailingFCPMessageHandler {
+	private final class FCPIdentityChangedNotificationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "IdentityChangedNotification";
@@ -821,7 +821,7 @@ public abstract class FCPClientReferenceImplementation {
 	 * Parses the contained {@link Trust} & passes it to the event handler 
 	 * {@link FCPClientReferenceImplementation#handleTrustChangedNotification(Trust, Trust)}.
 	 */
-	private final class TrustChangedNotificationHandler extends MaybeFailingFCPMessageHandler  {
+	private final class FCPTrustChangedNotificationHandler extends MaybeFailingFCPMessageHandler  {
 		@Override
 		public String getMessageName() {
 			return "TrustChangedNotification";
@@ -841,7 +841,7 @@ public abstract class FCPClientReferenceImplementation {
 	 * Parses the contained {@link Score} & passes it to the event handler 
 	 * {@link FCPClientReferenceImplementation#handleScoreChangedNotification(Score, Score)}.
 	 */
-	private final class ScoreChangedNotificationHandler extends MaybeFailingFCPMessageHandler {
+	private final class FCPScoreChangedNotificationHandler extends MaybeFailingFCPMessageHandler {
 		@Override
 		public String getMessageName() {
 			return "ScoreChangedNotification";
