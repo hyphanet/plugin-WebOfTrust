@@ -4,6 +4,11 @@
 package plugins.WebOfTrust;
 
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation;
+import plugins.WebOfTrust.ui.fcp.FCPInterface;
+
+import com.db4o.ext.ExtObjectContainer;
+
+import freenet.pluginmanager.PluginRespirator;
 
 /**
  * This is a minimal interface needed by constructors and functions of the core classes which represent a WOT:
@@ -18,6 +23,14 @@ import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public interface WebOfTrustInterface {
+public abstract class WebOfTrustInterface {
+
+	abstract protected PluginRespirator getPluginRespirator();
+	
+	abstract protected ExtObjectContainer getDatabase();
+
+	abstract protected SubscriptionManager getSubscriptionManager();
+
+	abstract protected FCPInterface getFCPInterface();
 
 }
