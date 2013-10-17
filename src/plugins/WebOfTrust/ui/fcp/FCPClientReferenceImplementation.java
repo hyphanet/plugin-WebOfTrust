@@ -132,6 +132,9 @@ public abstract class FCPClientReferenceImplementation {
 	/** A random {@link UUID} which identifies the connection to the Web Of Trust plugin. Randomized upon every reconnect. */
 	private String mConnectionIdentifier = null;
 	
+	/** Called when the connection to WOT is established or lost. Shall be used by the UI to display a "Please install Web Of Trust" warning. */
+	private final ConnectionStatusChangedHandler mConnectionStatusChangedHandler;
+	
 	/** The value of {@link CurrentTimeUTC#get()} when we last sent a ping to the Web Of Trust plugin. */
 	private long mLastPingSentDate = 0;
 	
@@ -229,11 +232,15 @@ public abstract class FCPClientReferenceImplementation {
 	 * We merely need it for feeding {@link Persistent#initializeTransient(WebOfTrust)} (indirectly through constructors of Identity/Trust/Score).
 	 * We could deal with this by implementing a class MockWebOfTrust which only provides whats needed for initializeTransient to work.
 	 */
-	public FCPClientReferenceImplementation(final WebOfTrust myMockWebOfTrust, Map<String, Identity> myIdentityStorage, final PluginRespirator myPluginRespirator, final Executor myExecutor) {
+	public FCPClientReferenceImplementation(final WebOfTrust myMockWebOfTrust, Map<String, Identity> myIdentityStorage,
+			final PluginRespirator myPluginRespirator, final Executor myExecutor,
+			final ConnectionStatusChangedHandler myConnectionStatusChangedHandler) {
 		mIdentityStorage = myIdentityStorage;
 		mPluginRespirator = myPluginRespirator;
 		mTicker = new TrivialTicker(myExecutor);
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
+		
+		mConnectionStatusChangedHandler = myConnectionStatusChangedHandler;
 		
 		final FCPMessageHandler[] handlers = {
 				new FCPPongHandler(),
@@ -405,10 +412,10 @@ public abstract class FCPClientReferenceImplementation {
 			mConnection = mPluginRespirator.getPluginTalker(mFCPMessageReceiver, WOT_FCP_NAME, mConnectionIdentifier);
 			mSubscriptionIDs.clear();
 			Logger.normal(this, "Connected to WOT, identifier: " + mConnectionIdentifier);
-			handleConnectionEstablished();
+			mConnectionStatusChangedHandler.handle(true);
 		} catch(PluginNotFoundException e) {
 			Logger.warning(this, "Cannot connect to WOT!");
-			handleConnectionLost();
+			mConnectionStatusChangedHandler.handle(false);
 		}
 	}
 	
