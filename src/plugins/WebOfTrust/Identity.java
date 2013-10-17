@@ -215,14 +215,14 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 * @throws MalformedURLException if newRequestURI isn't a valid request URI
 	 */
-	protected Identity(WebOfTrust myWoT, FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException, MalformedURLException {
+	protected Identity(WebOfTrustInterface myWoT, FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException, MalformedURLException {
 		initializeTransient(myWoT);
 		
 		if (!newRequestURI.isUSK() && !newRequestURI.isSSK())
 			throw new IllegalArgumentException("Identity URI keytype not supported: " + newRequestURI);
 		
 		//  We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
-		mRequestURI = newRequestURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(0).setMetaString(null);
+		mRequestURI = newRequestURI.setKeyType("USK").setDocName(WebOfTrustInterface.WOT_NAME).setSuggestedEdition(0).setMetaString(null);
 		
 		//Check that mRequestURI really is a request URI
 		USK.create(mRequestURI);
@@ -262,7 +262,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 * @throws MalformedURLException if the supplied requestURI isn't a valid request URI
 	 */
-	public Identity(WebOfTrust myWoT, String newRequestURI, String newNickname, boolean doesPublishTrustList)
+	public Identity(WebOfTrustInterface myWoT, String newRequestURI, String newNickname, boolean doesPublishTrustList)
 		throws InvalidParameterException, MalformedURLException {
 		
 		this(myWoT, new FreenetURI(newRequestURI), newNickname, doesPublishTrustList);
