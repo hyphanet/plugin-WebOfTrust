@@ -1079,20 +1079,23 @@ public final class FCPClientReferenceImplementation {
 		 * This handler should update your user interface remove or show a "Please install the Web Of Trust plugin!" warning.
 		 * If this handler was not called yet, you should assume that there is no connection and display the warning as well. 
 		 * 
-		 * ATTENTION: You do NOT have to call {@link #subscribe(SubscriptionType)} in this handler! Subscriptions will be filed automatically by
-		 * the client whenever the connection is established. It will also automatically reconnect if the connection is lost.
-		 * ATTENTION: The client will automatically try to reconnect, you do NOT have to call {@link #start()} or anything else in this handler!
+		 * ATTENTION: You do NOT have to call {@link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}
+		 * in this handler! Subscriptions will be filed automatically by the client whenever the connection is established.
+		 * It will also automatically reconnect if the connection is lost.
+		 * ATTENTION: The client will automatically try to reconnect, you do NOT have to call {@link FCPClientReferenceImplementation#start()}
+		 * or anything else in this handler!
 		 */
 		void handleConnectionStatusChanged(boolean connected);
 	}
 	
 	public interface SubscriptionSynchronizationHandler<T extends Persistent> {
 		/**
-		 * Called very soon after you have subscribed via {@link #subscribe(SubscriptionType)}.
-		 * The passed {@link Collection} contains ALL objects in the WOT database of whose type you have subscribed to:
-		 * - For {@link SubscriptionType#Identities}, all {@link Identity} and {@link OwnIdentity} objects in the WOT database.
-		 * - For {@link SubscriptionType#Trusts}, all {@link Trust} objects in the WOT database.
-		 * - For {@link SubscriptionType#Scores}, all {@link Score} objects in the WOT database.
+		 * Called very soon after you have subscribed via {@link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}
+		 * The type T matches the Class parameter of the above subscribe function.
+		 * The passed {@link Collection} contains ALL objects in the WOT database of whose type T you have subscribed to:
+		 * - For {@link Identity}, all {@link Identity} and {@link OwnIdentity} objects in the WOT database.
+		 * - For {@link Trust}, all {@link Trust} objects in the WOT database.
+		 * - For {@link Score}, all {@link Score} objects in the WOT database.
 		 * You should store any of them which you need.
 		 * 
 		 * WOT sends ALL objects to this handler because this will cut down future traffic very much: For example, if an {@link Identity}
@@ -1105,11 +1108,12 @@ public final class FCPClientReferenceImplementation {
 	
 	public interface SubscribedObjectChangedHandler<T extends Persistent> {
 		/**
-		 * Called if an object is changed/added/deleted to whose type you subscribed to via {@link #subscribe(SubscriptionType)}.
-		 * The type T can be:
-		 * - {@link Identity} and {@link OwnIdentity} for {@link SubscriptionType#Identities}.
-		 * - {@link Trust} for {@link SubscriptionType#Trusts}.
-		 * - {@link Score} for {@link SubscriptionType#Scores}
+		 * Called if an object is changed/added/deleted to whose class you subscribed to via @link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}.
+		 * The type T matches the Class parameter of the above subscribe function.
+		 * You will receive notifications about changed objects for the given values of T:
+		 * - For {@link Identity}, changed {@link Identity} and {@link OwnIdentity} objects in the WOT database.
+		 * - For {@link Trust}, changed {@link Trust} objects in the WOT database.
+		 * - For {@link Score}, changed {@link Score} objects in the WOT database.
 		 * The passed {@link ChangeSet} contains the version of the object  before the change and after the change.
 		 * 
 		 * ATTENTION: The type of an {@link Identity} can change from {@link OwnIdentity} to {@link Identity} or vice versa.
