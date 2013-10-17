@@ -154,6 +154,8 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 
 			if(target.size() > 0) {
 				Logger.normal(this, "Received additional synchronization, validating existing data against it...");
+				// ATTENTION: This can happen when the connection to WOT is lost temporarily. Therefore, in a real client, you should
+				// update your existing dataset WITHOUT complaining about mismatches.
 
 				if(source.size() != target.size())
 					Logger.error(this, "Size mismatch: received size " + source.size() + " != existing size " + target.size());
