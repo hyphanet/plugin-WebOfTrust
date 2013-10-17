@@ -992,6 +992,7 @@ public abstract class FCPClientReferenceImplementation {
 		
 	}
 
+	public interface ConnectionEstablishedEventHandler {
 	/**
 	 * Called when the client has connected to WOT successfully. 
 	 * This handler should update your user interface to remove the "Please install the Web Of Trust plugin!" warning - which you should 
@@ -1002,8 +1003,10 @@ public abstract class FCPClientReferenceImplementation {
 	 * 
 	 * @see #handleConnectionLost()
 	 */
-	abstract void handleConnectionEstablished();
-
+	void handleConnectionEstablished();
+	}
+	
+	public interface ConnectionLostEventHandler {
 	/**
 	 * Called when the client has lost the connection to WOT. 
 	 * This handler should update your user interface to display a "Please install the Web Of Trust plugin!" warning - which you should 
@@ -1014,63 +1017,53 @@ public abstract class FCPClientReferenceImplementation {
 	 * @see #handleConnectionEstablished()
 	 */
 	abstract void handleConnectionLost();
+	}
+	
+	public interface SubscriptionSynchronizationHandler<T extends Persistent> {
+		/**
+		 * Called very soon after you have subscribed via {@link #subscribe(SubscriptionType)}.
+		 * The passed {@link Collection} contains ALL objects in the WOT database of whose type you have subscribed to:
+		 * - For {@link SubscriptionType#Identities}, all {@link Identity} and {@link OwnIdentity} objects in the WOT database.
+		 * - For {@link SubscriptionType#Trusts}, all {@link Trust} objects in the WOT database.
+		 * - For {@link SubscriptionType#Scores}, all {@link Score} objects in the WOT database.
+		 * You should store any of them which you need.
+		 * 
+		 * WOT sends ALL objects to this handler because this will cut down future traffic very much: For example, if an {@link Identity}
+		 * changes, WOT will only have to send the new version of it for allowing you to make your database completely up-to-date again.
+		 * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
+		 * a {@link SubscribedObjectChangedHandler} instead.
+		 */
+		void handle(Collection<T> allObjects);
+	}
+	
+	public interface IdentitiesSynchronizationEventHandler extends SubscriptionSynchronizationHandler<Identity> {}
+	
+	public interface TrustsSynchronizationEventHandler extends SubscriptionSynchronizationHandler<Trust> {}
+	
+	public interface ScoresSynchronizationEventHandler extends SubscriptionSynchronizationHandler<Score> {}
+	
+	
+	public interface SubscribedObjectChangedHandler<T extends Persistent> {
+		/**
+		 * Called if an object is changed/added/deleted to whose type you subscribed to via {@link #subscribe(SubscriptionType)}.
+		 * The type T can be:
+		 * - {@link Identity} and {@link OwnIdentity} for {@link SubscriptionType#Identities}.
+		 * - {@link Trust} for {@link SubscriptionType#Trusts}.
+		 * - {@link Score} for {@link SubscriptionType#Scores}
+		 * The passed {@link ChangeSet} contains the version of the object  before the change and after the change.
+		 */
+		 void handle(ChangeSet<T> changeSet);
+	}
 	
 	/**
-	 * Called after you have subscribed to {@link SubscriptionType#Identities} via {@link #subscribe(SubscriptionType)}.
-	 * The passed {@link Collection} contains ALL {@link Identity} and {@link OwnIdentity} objects in the WOT database.
-	 * You should store any of them which you need.
-	 * 
-	 * WOT sends all {@link Identity}s to this handler because this will cut down future traffic very much: If an {@link Identity} changes,
-	 * WOT will only have to send the new version of it for allowing you to make your database completely up-to-date again.
-	 * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
-	 * {@link #handleIdentityChangedNotification(ChangeSet)} instead.
+	 * ATTENTION: The type of an {@link Identity} can change from {@link OwnIdentity} to {@link Identity} or vice versa.
+	 * This will also trigger a call to this event handler.
 	 */
-	abstract void handleIdentitiesSynchronization(Collection<Identity> allIdentities);
+	public interface IdentityChangedEventHandler extends SubscribedObjectChangedHandler<Identity> {}
+	
+	public interface TrustChangedEventHandler extends SubscribedObjectChangedHandler<Trust> {}
 
-	/**
-	 * Called after you have subscribed to {@link SubscriptionType#Trusts} via {@link #subscribe(SubscriptionType)}.
-	 * The passed {@link Collection} contains ALL {@link Trust} objects in the WOT database.
-	 * You should store any of them which you need.
-	 * 
-	 * WOT sends all {@link Trust}s to this handler because this will cut down future traffic very much: If a {@link Trust} changes,
-	 * WOT will only have to send the new version of it for allowing you to make your database completely up-to-date again.
-	 * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
-	 * {@link #handleTrustChangedNotification(ChangeSet)} instead.
-	 */
-	abstract void handleTrustsSynchronization(Collection<Trust> allTrusts);
-	
-	/**
-	 * Called after you have subscribed to {@link SubscriptionType#Scores} via {@link #subscribe(SubscriptionType)}.
-	 * The passed {@link Collection} contains ALL {@link Score} objects in the WOT database.
-	 * You should store any of them which you need.
-	 * 
-	 * WOT sends all {@link Score}s to this handler because this will cut down future traffic very much: If a {@link Score} changes,
-	 * WOT will only have to send the new version of it for allowing you to make your database completely up-to-date again.
-	 * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
-	 * {@link #handleScoreChangedNotification(ChangeSet)} instead.
-	 */
-	abstract void handleScoresSynchronization(Collection<Score> allScores);
-	
-	/**
-	 * Called if your have subscribed to {@link SubscriptionType#Identities} via {@link #subscribe(SubscriptionType)} and an {@link Identity} was changed/added/deleted.
-	 * The passed {@link ChangeSet} contains the version of the {@link Identity} or {@link OwnIdentity} before the change and after the change.
-	 * 
-	 * ATTENTION: The type of an {@link Identity} can change from {@link OwnIdentity} to {@link Identity} or vice versa. This will trigger
-	 * a call to this event handler.
-	 */
-	abstract void handleIdentityChangedNotification(ChangeSet<Identity> changeSet);
-	
-	/**
-	 * Called if you have subscribed to {@link SubscriptionType#Trusts} via {@link #subscribe(SubscriptionType)} and a {@link Trust} was changed/added/deleted.
-	 * The passed {@link ChangeSet} contains the version of the {@link Trust} before the change and after the change.
-	 */
-	abstract void handleTrustChangedNotification(ChangeSet<Trust> changeSet);
-
-	/**
-	 * Called if you have subscribed to {@link SubscriptionType#Scores} via {@link #subscribe(SubscriptionType)} and a {@link Score} was changed/added/deleted.
-	 * The passed {@link ChangeSet} contains the version of the {@link Score} before the change and after the change.
-	 */
-	abstract void handleScoreChangedNotification(ChangeSet<Score> changeSet);
+	public interface ScoreChangedEventHandler extends SubscribedObjectChangedHandler<Score> {}
 	
 	/**
 	 * Must be called at shutdown of your plugin.
