@@ -623,7 +623,8 @@ public final class FCPClientReferenceImplementation {
 	}
 	
 	/**
-	 * @see FCPMessageHandler#handle(SimpleFieldSet, Bucket)
+	 * @see SubscriptionSynchronizationHandler
+	 * @see SubscribedObjectChangedHandler
 	 */
 	public final class ProcessingFailedException extends Exception {
 		public ProcessingFailedException(Throwable t) {
@@ -773,7 +774,7 @@ public final class FCPClientReferenceImplementation {
 		
 		@SuppressWarnings("unchecked")
 		@Override
-		public void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
+		public void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
 			((SubscriptionSynchronizationHandler<Identity>)mSubscriptionSynchronizationHandlers.get(SubscriptionType.Identities))
 				.handleSubscriptionSynchronization(mIdentityParser.parseSynchronization(sfs));
 		}
@@ -794,7 +795,7 @@ public final class FCPClientReferenceImplementation {
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
+		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
 			((SubscriptionSynchronizationHandler<Trust>)mSubscriptionSynchronizationHandlers.get(SubscriptionType.Trusts))
 					.handleSubscriptionSynchronization(mTrustParser.parseSynchronization(sfs));
 		}
@@ -815,7 +816,7 @@ public final class FCPClientReferenceImplementation {
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
+		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
 			((SubscriptionSynchronizationHandler<Score>)mSubscriptionSynchronizationHandlers.get(SubscriptionType.Scores))
 				.handleSubscriptionSynchronization(mScoreParser.parseSynchronization(sfs));
 		}
@@ -836,7 +837,7 @@ public final class FCPClientReferenceImplementation {
 		
 		@SuppressWarnings("unchecked")
 		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
+		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
 			((SubscribedObjectChangedHandler<Identity>)mSubscribedObjectChangedHandlers.get(SubscriptionType.Identities))
 				.handleSubscribedObjectChanged(mIdentityParser.parseNotification(sfs));
 		}
@@ -857,7 +858,7 @@ public final class FCPClientReferenceImplementation {
 		
 		@SuppressWarnings("unchecked")
 		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
+		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
 			((SubscribedObjectChangedHandler<Trust>)mSubscribedObjectChangedHandlers.get(SubscriptionType.Trusts))
 				.handleSubscribedObjectChanged(mTrustParser.parseNotification(sfs));
 		}
@@ -878,7 +879,7 @@ public final class FCPClientReferenceImplementation {
 		
 		@SuppressWarnings("unchecked")
 		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
+		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
 			((SubscribedObjectChangedHandler<Score>)mSubscribedObjectChangedHandlers.get(SubscriptionType.Scores))
 				.handleSubscribedObjectChanged(mScoreParser.parseNotification(sfs));
 		}
@@ -1102,8 +1103,14 @@ public final class FCPClientReferenceImplementation {
 		 * changes, WOT will only have to send the new version of it for allowing you to make your database completely up-to-date again.
 		 * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
 		 * a {@link SubscribedObjectChangedHandler} instead.
+		 * 
+		 * @throws ProcessingFailedException You are free to throw this. The failure of the handler will be signaled to WOT. It will cause the
+		 * subscription to fail. The client will automatically retry subscribing after a typical delay of roughly
+		 * {@link FCPClientReferenceImplementation#WOT_PING_DELAY}. You can use this mechanism for programming your client in a transactional
+		 * style: If anything in the transaction which processes this handler fails, roll it back and make the handler throw.
+		 * You can then expect to receive the same call again after the delay and hope that the transaction will succeed the next time.
 		 */
-		void handleSubscriptionSynchronization(Collection<T> allObjects);
+		void handleSubscriptionSynchronization(Collection<T> allObjects) throws ProcessingFailedException;
 	}
 	
 	public interface SubscribedObjectChangedHandler<T extends Persistent> {
@@ -1118,8 +1125,14 @@ public final class FCPClientReferenceImplementation {
 		 * 
 		 * ATTENTION: The type of an {@link Identity} can change from {@link OwnIdentity} to {@link Identity} or vice versa.
 		 * This will also trigger a call to this event handler.
+		 * 
+		 * @throws ProcessingFailedException You are free to throw this. The failure of the handler will be signaled to WOT. It will cause the
+		 * same notification to be re-sent after a delay of roughly {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}.
+		 * You can use this mechanism for programming your client in a transactional style: If anything in the transaction which processes 
+		 * this handler fails, roll it back and make the handler throw. You can then expect to receive the same call again after the delay
+		 * and hope that the transaction will succeed the next time.
 		 */
-		 void handleSubscribedObjectChanged(ChangeSet<T> changeSet);
+		 void handleSubscribedObjectChanged(ChangeSet<T> changeSet) throws ProcessingFailedException;
 	}
 	
 	/**

@@ -864,9 +864,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * After a {@link Notification} command is stored, we wait this amount of time before processing it.
 	 * This is to allow some coalescing when multiple notifications happen in a short interval.
-	 * This is usually the case as the import of trust lists often causes multiple changes. 
+	 * This is usually the case as the import of trust lists often causes multiple changes.
+	 * 
+	 * Further, if deploying a {@link Notification} fails and its resend-counter is not exhausted, it will be resent after this delay.
 	 */
-	private static final long PROCESS_NOTIFICATIONS_DELAY = 60 * 1000;
+	public static final long PROCESS_NOTIFICATIONS_DELAY = 60 * 1000;
 	
 	/**
 	 * If {@link Client#sendNotifications(SubscriptionManager)} fails, the failure counter of the subscription is incremented.
