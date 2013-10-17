@@ -147,7 +147,7 @@ public final class FCPClientReferenceImplementation {
 	 * ATTENTION: The mandatory order which is documented here should as well be specified in
 	 * {@link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)
 	 */
-	public enum SubscriptionType {
+	private enum SubscriptionType {
 		/** @see IdentitiesSubscription */
 		Identities(Identity.class),
 		/** @see TrustsSubscription */
@@ -463,7 +463,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * @return True if we are connected to WOT, false if not. Does NOT tell whether the Subscriptions were filed yet.
 	 */
-	public final boolean connected()  {
+	private final boolean connected()  {
 		return mConnection != null;
 	}
 	
