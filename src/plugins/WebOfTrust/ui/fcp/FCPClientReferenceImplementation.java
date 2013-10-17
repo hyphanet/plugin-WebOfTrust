@@ -66,7 +66,7 @@ import freenet.support.io.NativeThread;
  * @see SubscriptionManager The foundation of event-notifications and therefore the backend of all FCP traffic which this class does.
  * @author xor (xor@freenetproject.org)
  */
-public abstract class FCPClientReferenceImplementation {
+public final class FCPClientReferenceImplementation {
 	
 	/** This is the core class name of the Web Of Trust plugin. Used to connect to it via FCP */
 	private static final String WOT_FCP_NAME = "plugins.WebOfTrust.WebOfTrust";
