@@ -137,12 +137,6 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	@Override
 	public void handleConnectionStatusChanged(final boolean connected) {
 		if(logMINOR) Logger.minor(this, "handleConnectionStatusChanged(" + connected + ")");
-		
-		if(!connected) {
-			mReceivedIdentities.clear();
-			mReceivedTrusts.clear();
-			mReceivedScores.clear();
-		}
 	}
 
 	private final class SubscriptionSynchronizationHandlerImpl<T extends Persistent> implements SubscriptionSynchronizationHandler<T> {
