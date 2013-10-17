@@ -180,7 +180,7 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 	 * @param comment A comment to explain the numeric trust value
 	 * @throws InvalidParameterException if the trust value is not between -100 and +100
 	 */
-	public Trust(WebOfTrust myWoT, Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
+	public Trust(WebOfTrustInterface myWoT, Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
 		initializeTransient(myWoT);
 		
 		if(truster == null)
