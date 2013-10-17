@@ -46,9 +46,9 @@ public abstract class Persistent implements Serializable {
 	private static transient final long serialVersionUID = 1L;
 
 	/**
-	 * A reference to the {@link WebOfTrust} object with which this Persistent object is associated.
+	 * A reference to the {@link WebOfTrustInterface} object with which this Persistent object is associated.
 	 */
-	protected transient WebOfTrust mWebOfTrust;
+	protected transient WebOfTrustInterface mWebOfTrust;
 	
 	/**
 	 * A reference to the database in which this Persistent object resists.
@@ -107,7 +107,7 @@ public abstract class Persistent implements Serializable {
 	/**
 	 * This function can be used for debugging, it is executed before and after store(), delete() and commit().
 	 */
-	public static void testDatabaseIntegrity(WebOfTrust mWebOfTrust, ExtObjectContainer db) {
+	public static void testDatabaseIntegrity(WebOfTrustInterface mWebOfTrust, ExtObjectContainer db) {
 
 	}
 	
@@ -136,7 +136,7 @@ public abstract class Persistent implements Serializable {
 	 * and before calling storeWithoutCommit / deleteWithoutCommit.
 	 * Transient fields are NOT stored in the database. They are references to objects such as the IdentityManager.
 	 */
-	public final void initializeTransient(final WebOfTrust myWebOfTrust) {
+	public final void initializeTransient(final WebOfTrustInterface myWebOfTrust) {
 		mWebOfTrust = myWebOfTrust;
 		mDB = mWebOfTrust.getDatabase();
 	}
@@ -145,7 +145,7 @@ public abstract class Persistent implements Serializable {
 	 * @deprecated Only for being used when dealing with objects which are from a different object container than the passed Freetalk uses.
 	 */
 	@Deprecated
-	public final void initializeTransient(final WebOfTrust myWebOfTrust, final ExtObjectContainer db) {
+	public final void initializeTransient(final WebOfTrustInterface myWebOfTrust, final ExtObjectContainer db) {
 		mWebOfTrust = myWebOfTrust;
 		mDB = db;
 	}
@@ -485,16 +485,16 @@ public abstract class Persistent implements Serializable {
 	 */
 	public static final class InitializingObjectSet<Type extends Persistent> implements ObjectSet<Type> {
 		
-		private final WebOfTrust mWebOfTrust;
+		private final WebOfTrustInterface mWebOfTrust;
 		private final ObjectSet<Type> mObjectSet;
 		
 		@SuppressWarnings("unchecked") 	// "ObjectSet<Type> myObjectSet" won't compile against db4o-7.12 so we use the Suppress trick
-		public InitializingObjectSet(final WebOfTrust myWebOfTrust, @SuppressWarnings("rawtypes") final ObjectSet myObjectSet) {
+		public InitializingObjectSet(final WebOfTrustInterface myWebOfTrust, @SuppressWarnings("rawtypes") final ObjectSet myObjectSet) {
 			mWebOfTrust = myWebOfTrust;
 			mObjectSet = (ObjectSet<Type>)myObjectSet;
 		}
 		
-		public InitializingObjectSet(final WebOfTrust myWebOfTrust, final Query myQuery) {
+		public InitializingObjectSet(final WebOfTrustInterface myWebOfTrust, final Query myQuery) {
 			this(myWebOfTrust, myQuery.execute());
 		}
 	
@@ -700,7 +700,7 @@ public abstract class Persistent implements Serializable {
 	 * serialize() will store all members and their members. If they are not activated, this will fail.
 	 * After that, it must call {@link ObjectOutputStream#defaultWriteObject()}.
 	 * 
-	 * @see Persistent#deserialize(WebOfTrust, byte[]) The inverse function.
+	 * @see Persistent#deserialize(WebOfTrustInterface, byte[]) The inverse function.
 	 */
 	final byte[] serialize() {
 		ByteArrayOutputStream bos = null;
@@ -721,7 +721,7 @@ public abstract class Persistent implements Serializable {
 	}
 	
 	/** Inverse function of {@link #serialize()}. */
-	static final Persistent deserialize(final WebOfTrust wot, final byte[] data) {
+	static final Persistent deserialize(final WebOfTrustInterface wot, final byte[] data) {
 		ByteArrayInputStream bis = null;
 		ObjectInputStream ois = null;
 		
