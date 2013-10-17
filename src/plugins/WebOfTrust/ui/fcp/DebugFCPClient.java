@@ -151,37 +151,38 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		public SubscriptionSynchronizationHandlerImpl(final HashMap<String, T> myTarget) {
 			target = myTarget;
 		}
-	/**
-	 * Fill our existing "database" (the {@link HashMap} target) with the synchronization of ALL data which we have received from WOT.
-	 */
-	public void handleSubscriptionSynchronization(final Collection<T> source) {
-		if(logMINOR) Logger.minor(this, "handleSubscriptionSynchronization() to " + target);
 		
-		if(target.size() > 0) {
-			Logger.normal(this, "Received additional synchronization, validating existing data against it...");
+		/**
+		 * Fill our existing "database" (the {@link HashMap} target) with the synchronization of ALL data which we have received from WOT.
+		 */
+		public void handleSubscriptionSynchronization(final Collection<T> source) {
+			if(logMINOR) Logger.minor(this, "handleSubscriptionSynchronization() to " + target);
 
-			if(source.size() != target.size())
-				Logger.error(this, "Size mismatch: received size " + source.size() + " != existing size " + target.size());
-			else {
-				for(final T expected : source) {
-					final T existing = target.get(expected);
-					if(existing == null)
-						Logger.error(this, "Not found: expected " + expected);
-					else if(!existing.equals(expected)) {
-						Logger.error(this, "Not equals: expected " + expected + " to existing " + existing);
-						existing.equals(expected); // For being able to step inside of it with the debugger if you set a breakpoint at the previous line.
+			if(target.size() > 0) {
+				Logger.normal(this, "Received additional synchronization, validating existing data against it...");
+
+				if(source.size() != target.size())
+					Logger.error(this, "Size mismatch: received size " + source.size() + " != existing size " + target.size());
+				else {
+					for(final T expected : source) {
+						final T existing = target.get(expected);
+						if(existing == null)
+							Logger.error(this, "Not found: expected " + expected);
+						else if(!existing.equals(expected)) {
+							Logger.error(this, "Not equals: expected " + expected + " to existing " + existing);
+							existing.equals(expected); // For being able to step inside of it with the debugger if you set a breakpoint at the previous line.
+						}
 					}
 				}
+				target.clear();
 			}
-			target.clear();
-		}
 
-		for(final T p : source) {
-			target.put(p.getID(), p);
+			for(final T p : source) {
+				target.put(p.getID(), p);
+			}
+
+			if(logMINOR) Logger.minor(this, "handleSubscriptionSynchronization() finished.");
 		}
-		
-		if(logMINOR) Logger.minor(this, "handleSubscriptionSynchronization() finished.");
-	}
 	}
 
 	private class SubscribedObjectChangedHandlerImpl<T extends Persistent> implements SubscribedObjectChangedHandler<T> {
@@ -190,42 +191,43 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		public SubscribedObjectChangedHandlerImpl(final HashMap<String, T> myTarget) {
 			target = myTarget;
 		}
-	/**
-	 * Update our existing "database" (the {@link HashMap} target) with the changed data which we have received from WOT.
-	 * 
-	 * It does more than that though: It checks whether the contents of the {@link FCPClientReferenceImplementation.ChangeSet} make sense.
-	 * For example our existing data in the HashMap should match the {@link FCPClientReferenceImplementation.ChangeSet#beforeChange}. 
-	 */
-	public void handleSubscribedObjectChanged(final ChangeSet<T> changeSet) {
-		if(logMINOR) Logger.minor(this, "handleSubscribedObjectChanged(): " + changeSet);
 		
-		// Check validity of existing data
-		if(changeSet.beforeChange != null) {
-			final T currentBeforeChange = target.get(changeSet.beforeChange.getID());
-			if(!currentBeforeChange.equals(changeSet.beforeChange))
-				Logger.error(this, "Existing data is not equals() to changeSet.beforeChange: currentBeforeChange=" + currentBeforeChange + "; changeSet=" + changeSet);
-			
-			if(changeSet.afterChange != null && currentBeforeChange.equals(changeSet.afterChange)) {
-				if(!changeSet.beforeChange.equals(changeSet.afterChange))
-					Logger.warning(this, "Received useless notification, we already have this data: " + changeSet);
-				else
-					Logger.warning(this, "Received notification which changed nothing: " + changeSet);
+		/**
+		 * Update our existing "database" (the {@link HashMap} target) with the changed data which we have received from WOT.
+		 * 
+		 * It does more than that though: It checks whether the contents of the {@link FCPClientReferenceImplementation.ChangeSet} make sense.
+		 * For example our existing data in the HashMap should match the {@link FCPClientReferenceImplementation.ChangeSet#beforeChange}. 
+		 */
+		public void handleSubscribedObjectChanged(final ChangeSet<T> changeSet) {
+			if(logMINOR) Logger.minor(this, "handleSubscribedObjectChanged(): " + changeSet);
+
+			// Check validity of existing data
+			if(changeSet.beforeChange != null) {
+				final T currentBeforeChange = target.get(changeSet.beforeChange.getID());
+				if(!currentBeforeChange.equals(changeSet.beforeChange))
+					Logger.error(this, "Existing data is not equals() to changeSet.beforeChange: currentBeforeChange=" + currentBeforeChange + "; changeSet=" + changeSet);
+
+				if(changeSet.afterChange != null && currentBeforeChange.equals(changeSet.afterChange)) {
+					if(!changeSet.beforeChange.equals(changeSet.afterChange))
+						Logger.warning(this, "Received useless notification, we already have this data: " + changeSet);
+					else
+						Logger.warning(this, "Received notification which changed nothing: " + changeSet);
+				}
+			} else {
+				if(target.containsKey(changeSet.afterChange.getID()))
+					Logger.error(this, "ChangeSet claims to create the object but we already have it: existing="  
+							+ target.get(changeSet.afterChange.getID()) + "; changeSet=" + changeSet);
 			}
-		} else {
-			if(target.containsKey(changeSet.afterChange.getID()))
-				Logger.error(this, "ChangeSet claims to create the object but we already have it: existing="  
-					+ target.get(changeSet.afterChange.getID()) + "; changeSet=" + changeSet);
+
+			// Update our "database" HashMap
+			if(changeSet.afterChange != null) {
+				/* Checked in changeSet already */
+				// assert(changeSet.beforeChange.getID(), changeSet.afterChange.getID()); 
+				target.put(changeSet.afterChange.getID(), changeSet.afterChange);
+			} else
+				target.remove(changeSet.beforeChange.getID());
+
+			if(logMINOR) Logger.minor(this, "handleSubscribedObjectChanged finished.");
 		}
-		
-		// Update our "database" HashMap
-		if(changeSet.afterChange != null) {
-			/* Checked in changeSet already */
-			// assert(changeSet.beforeChange.getID(), changeSet.afterChange.getID()); 
-			target.put(changeSet.afterChange.getID(), changeSet.afterChange);
-		} else
-			target.remove(changeSet.beforeChange.getID());
-		
-		if(logMINOR) Logger.minor(this, "handleSubscribedObjectChanged finished.");
-	}
 	}
 }
