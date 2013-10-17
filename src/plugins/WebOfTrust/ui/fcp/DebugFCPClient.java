@@ -145,8 +145,8 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		}
 	}
 
-	private class SubscriptionSynchronizationHandlerImpl<T extends Persistent> implements SubscriptionSynchronizationHandler<T> {
-		final HashMap<String, T> target;
+	private final class SubscriptionSynchronizationHandlerImpl<T extends Persistent> implements SubscriptionSynchronizationHandler<T> {
+		private final HashMap<String, T> target;
 		
 		public SubscriptionSynchronizationHandlerImpl(final HashMap<String, T> myTarget) {
 			target = myTarget;
@@ -185,8 +185,8 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		}
 	}
 
-	private class SubscribedObjectChangedHandlerImpl<T extends Persistent> implements SubscribedObjectChangedHandler<T> {
-		final HashMap<String, T> target;
+	private final class SubscribedObjectChangedHandlerImpl<T extends Persistent> implements SubscribedObjectChangedHandler<T> {
+		private final HashMap<String, T> target;
 		
 		public SubscribedObjectChangedHandlerImpl(final HashMap<String, T> myTarget) {
 			target = myTarget;
