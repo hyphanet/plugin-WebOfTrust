@@ -1067,7 +1067,7 @@ public abstract class FCPClientReferenceImplementation {
 		 * 
 		 * @see #handleConnectionEstablished()
 		 */
-		abstract void handleConnectionLost();
+		void handleConnectionLost();
 	}
 	
 	public interface SubscriptionSynchronizationHandler<T extends Persistent> {
