@@ -756,7 +756,7 @@ public final class FCPClientReferenceImplementation {
 		
 		@Override
 		public void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			((IdentitiesSynchronizationEventHandler) mSubscriptionSynchronizationHandlers.get(SubscriptionType.Identities))
+			((IdentitiesSubscriptionSynchronizationHandler) mSubscriptionSynchronizationHandlers.get(SubscriptionType.Identities))
 				.handleSubscriptionSynchronization(mIdentityParser.parseSynchronization(sfs));
 		}
 	}
@@ -776,7 +776,7 @@ public final class FCPClientReferenceImplementation {
 
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			((TrustsSynchronizationEventHandler) mSubscriptionSynchronizationHandlers.get(SubscriptionType.Trusts))
+			((TrustsSubscriptionSynchronizationHandler) mSubscriptionSynchronizationHandlers.get(SubscriptionType.Trusts))
 					.handleSubscriptionSynchronization(mTrustParser.parseSynchronization(sfs));
 		}
 	}
@@ -796,7 +796,7 @@ public final class FCPClientReferenceImplementation {
 
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			((ScoresSynchronizationEventHandler) mSubscriptionSynchronizationHandlers.get(SubscriptionType.Scores))
+			((ScoresSubscriptionSynchronizationHandler) mSubscriptionSynchronizationHandlers.get(SubscriptionType.Scores))
 				.handleSubscriptionSynchronization(mScoreParser.parseSynchronization(sfs));
 		}
 	}
@@ -816,7 +816,7 @@ public final class FCPClientReferenceImplementation {
 		
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			((IdentityChangedEventHandler) mSubscribedObjectChangedHandlers.get(SubscriptionType.Identities))
+			((IdentityChangedHandler) mSubscribedObjectChangedHandlers.get(SubscriptionType.Identities))
 				.handleSubscribedObjectChanged(mIdentityParser.parseNotification(sfs));
 		}
 	}
@@ -836,7 +836,7 @@ public final class FCPClientReferenceImplementation {
 		
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			((TrustChangedEventHandler) mSubscribedObjectChangedHandlers.get(SubscriptionType.Trusts))
+			((TrustChangedHandler) mSubscribedObjectChangedHandlers.get(SubscriptionType.Trusts))
 				.handleSubscribedObjectChanged(mTrustParser.parseNotification(sfs));
 		}
 	}
@@ -856,7 +856,7 @@ public final class FCPClientReferenceImplementation {
 		
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
-			((ScoreChangedEventHandler) mSubscribedObjectChangedHandlers.get(SubscriptionType.Scores))
+			((ScoreChangedHandler) mSubscribedObjectChangedHandlers.get(SubscriptionType.Scores))
 				.handleSubscribedObjectChanged(mScoreParser.parseNotification(sfs));
 		}
 	}
@@ -1080,11 +1080,11 @@ public final class FCPClientReferenceImplementation {
 		void handleSubscriptionSynchronization(Collection<T> allObjects);
 	}
 	
-	public interface IdentitiesSynchronizationEventHandler extends SubscriptionSynchronizationHandler<Identity> {}
+	public interface IdentitiesSubscriptionSynchronizationHandler extends SubscriptionSynchronizationHandler<Identity> {}
 	
-	public interface TrustsSynchronizationEventHandler extends SubscriptionSynchronizationHandler<Trust> {}
+	public interface TrustsSubscriptionSynchronizationHandler extends SubscriptionSynchronizationHandler<Trust> {}
 	
-	public interface ScoresSynchronizationEventHandler extends SubscriptionSynchronizationHandler<Score> {}
+	public interface ScoresSubscriptionSynchronizationHandler extends SubscriptionSynchronizationHandler<Score> {}
 	
 	
 	public interface SubscribedObjectChangedHandler<T extends Persistent> {
@@ -1103,11 +1103,11 @@ public final class FCPClientReferenceImplementation {
 	 * ATTENTION: The type of an {@link Identity} can change from {@link OwnIdentity} to {@link Identity} or vice versa.
 	 * This will also trigger a call to this event handler.
 	 */
-	public interface IdentityChangedEventHandler extends SubscribedObjectChangedHandler<Identity> {}
+	public interface IdentityChangedHandler extends SubscribedObjectChangedHandler<Identity> {}
 	
-	public interface TrustChangedEventHandler extends SubscribedObjectChangedHandler<Trust> {}
+	public interface TrustChangedHandler extends SubscribedObjectChangedHandler<Trust> {}
 
-	public interface ScoreChangedEventHandler extends SubscribedObjectChangedHandler<Score> {}
+	public interface ScoreChangedHandler extends SubscribedObjectChangedHandler<Score> {}
 	
 	/**
 	 * Must be called at shutdown of your plugin.
