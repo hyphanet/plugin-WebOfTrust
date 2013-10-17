@@ -39,14 +39,14 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 * @throws InvalidParameterException If a given parameter is invalid
 	 * @throws MalformedURLException If insertURI isn't a valid insert URI.
 	 */
-	public OwnIdentity (WebOfTrust myWoT, FreenetURI insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {	
+	public OwnIdentity (WebOfTrustInterface myWoT, FreenetURI insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {	
 		super(myWoT,
 				// If we don't set a document name, we will get "java.net.MalformedURLException: SSK URIs must have a document name (to avoid ambiguity)"
 				// when calling  FreenetURI.deriveRequestURIFromInsertURI().
 				// To make sure the code works, I have copypasted the URI normalization code which we have been using anyway instead of only 
 				// adding a .setDocName() - I remember that it was tricky to get code which properly normalizes ALL existing URIs which
 				// people shove into WOT
-				insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setMetaString(null).deriveRequestURIFromInsertURI(),
+				insertURI.setKeyType("USK").setDocName(WebOfTrustInterface.WOT_NAME).setMetaString(null).deriveRequestURIFromInsertURI(),
 				nickName, publishTrustList);
 		// This is already done by super()
 		// setEdition(0);
@@ -55,7 +55,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 			throw new InvalidParameterException("Identity URI keytype not supported: " + insertURI);
 		
 		// initializeTransient() was not called yet so we must use mRequestURI.getEdition() instead of this.getEdition()
-		mInsertURI = insertURI.setKeyType("USK").setDocName(WebOfTrust.WOT_NAME).setSuggestedEdition(mRequestURI.getEdition()).setMetaString(null);
+		mInsertURI = insertURI.setKeyType("USK").setDocName(WebOfTrustInterface.WOT_NAME).setSuggestedEdition(mRequestURI.getEdition()).setMetaString(null);
 		
 		// Notice: Check that mInsertURI really is a insert URI is NOT necessary, FreenetURI.deriveRequestURIFromInsertURI() did that already for us.
 		// InsertableUSK.createInsertable(mInsertURI, false);
@@ -80,7 +80,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 * @throws InvalidParameterException If a given parameter is invalid
 	 * @throws MalformedURLException If insertURI is not a valid FreenetURI or a request URI instead of an insert URI.
 	 */
-	public OwnIdentity(WebOfTrust myWoT, String insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
+	public OwnIdentity(WebOfTrustInterface myWoT, String insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
 		this(myWoT, new FreenetURI(insertURI), nickName, publishTrustList);
 	}
 	
