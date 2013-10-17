@@ -139,14 +139,34 @@ public abstract class FCPClientReferenceImplementation {
 	 * Further, the subscriptions are filed in the order which they appear hear: {@link Trust}/{@link Score} objects reference {@link Identity}
 	 * objects and therefore cannot be created if the {@link Identity} object is not known yet. This would be the case if
 	 * Trusts/Scores subscriptions were filed before the Identities subscription.
+	 * 
+	 * ATTENTION: The mandatory order which is documented here should as well be specified in
+	 * {@link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)
 	 */
 	public enum SubscriptionType {
 		/** @see IdentitiesSubscription */
-		Identities,
+		Identities(Identity.class),
 		/** @see TrustsSubscription */
-		Trusts,
+		Trusts(Trust.class),
 		/** @see ScoresSubscription */
-		Scores
+		Scores(Score.class);
+		
+		public Class<? extends Persistent> subscribedObjectType;
+		
+		SubscriptionType(Class<? extends Persistent> mySubscribedObjectType) {
+			subscribedObjectType = mySubscribedObjectType;
+		}
+		
+		public static SubscriptionType fromClass(Class<? extends Persistent> clazz) {
+			if(clazz == Identity.class)
+				return Identities;
+			else if(clazz == Trust.class)
+				return Trusts;
+			else if(clazz == Score.class)
+				return Scores;
+			else
+				throw new IllegalArgumentException("Not a valid SubscriptionType: " + clazz);
+		}
 	};
 	
 	/** Contains the {@link SubscriptionType}s the client wants to subscribe to. */
@@ -243,23 +263,21 @@ public abstract class FCPClientReferenceImplementation {
 	
 	/**
 	 * Call this to file a {@link Subscription}.
-	 * You will receive the following callbacks while being subscribed - depending on the {@link SubscriptionType}:
-	 * - {@link #handleIdentitiesSynchronization(Collection)}
-	 * - {@link #handleIdentityChangedNotification(Identity, Identity)}
-	 * - {@link #handleTrustsSynchronization(Collection)}
-	 * - {@link #handleTrustChangedNotification(Trust, Trust)}
-	 * - {@link #handleScoresSynchronization(Collection)}
-	 * - {@link #handleScoreChangedNotification(Score, Score)}
+	 * The type may be one of {@link Identity}.class, {@link Trust}.class, {@link Score}.class
 	 * 
-	 * ATTENTION: If you subscribe to multiple {@link SubscriptionType}s, you must call this function in the same order as they appear in the
-	 * enum: For example {@link Trust} objects which you will receive from {@link SubscriptionType#Trusts} reference {@link Identity} objects
-	 * Therefore your event handler cannot create them if you don't subscribe to {@link SubscriptionType#Identities} first.
+	 * ATTENTION: If you subscribe to multiple types, you must do so in the following order:
+	 * - {@link Identity}.class
+	 * - {@link Trust}.class
+	 * - {@link Score}.class
+	 * This is because {@link Trust}/{@link Score} objects hold references to {@link Identity} objects and therefore your database won't
+	 * make sense if you don't know which the reference {@link Identity} objects are.
 	 */
-	public final synchronized void subscribe(final SubscriptionType type) {
+	public final synchronized <T extends Persistent> void subscribe(final Class<T> type,
+			final SubscriptionSynchronizationHandler<T> synchronizationHandler, SubscribedObjectChangedHandler<T> objectChangedHandler) {
 		if(mClientState != ClientState.Started)
 			throw new IllegalStateException(mClientState.toString());
 		
-		mSubscribeTo.add(type);
+		mSubscribeTo.add(SubscriptionType.fromClass(type));
 		
 		mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
 	}
@@ -267,11 +285,11 @@ public abstract class FCPClientReferenceImplementation {
 	/**
 	 * Call this to cancel a {@link Subscription}.
 	 */
-	public final synchronized void unsubscribe(final SubscriptionType type) {
+	public final synchronized <T extends Persistent> void unsubscribe(final Class<T> type) {
 		if(mClientState != ClientState.Started)
 			throw new IllegalStateException(mClientState.toString());
 		
-		mSubscribeTo.remove(type);
+		mSubscribeTo.remove(SubscriptionType.fromClass(type));
 
 		mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
 	}
