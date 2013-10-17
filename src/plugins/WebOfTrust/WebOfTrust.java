@@ -81,14 +81,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 
 	/** Package-private method to allow unit tests to bypass some assert()s */
 	
-	/**
-	 * The "name" of this web of trust. It is included in the document name of identity URIs. For an example, see the SEED_IDENTITIES
-	 * constant below. The purpose of this constant is to allow anyone to create his own custom web of trust which is completely disconnected
-	 * from the "official" web of trust of the Freenet project. It is also used as the session cookie namespace.
-	 */
-	public static final String WOT_NAME = "WebOfTrust";
-	
-	public static final String DATABASE_FILENAME =  WOT_NAME + ".db4o"; 
+	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
 	public static final int DATABASE_FORMAT_VERSION = 2; 
 	
 	/**
