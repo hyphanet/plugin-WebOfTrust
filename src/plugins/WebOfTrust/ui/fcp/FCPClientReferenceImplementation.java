@@ -412,10 +412,18 @@ public final class FCPClientReferenceImplementation {
 			mConnection = mPluginRespirator.getPluginTalker(mFCPMessageReceiver, WOT_FCP_NAME, mConnectionIdentifier);
 			mSubscriptionIDs.clear();
 			Logger.normal(this, "Connected to WOT, identifier: " + mConnectionIdentifier);
-			mConnectionStatusChangedHandler.handleConnectionStatusChanged(true);
+			try {
+				mConnectionStatusChangedHandler.handleConnectionStatusChanged(true);
+			} catch(Throwable t) {
+				Logger.warning(this, "ConnectionStatusChangedHandler.handleConnectionStatusChanged() threw up, please fix your handler!", t);
+			}
 		} catch(PluginNotFoundException e) {
 			Logger.warning(this, "Cannot connect to WOT!");
-			mConnectionStatusChangedHandler.handleConnectionStatusChanged(false);
+			try {
+				mConnectionStatusChangedHandler.handleConnectionStatusChanged(false);
+			} catch(Throwable t) {
+				Logger.warning(this, "ConnectionStatusChangedHandler.handleConnectionStatusChanged() threw up, please fix your handler!", t);
+			}
 		}
 	}
 	
