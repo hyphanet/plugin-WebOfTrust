@@ -412,10 +412,10 @@ public final class FCPClientReferenceImplementation {
 			mConnection = mPluginRespirator.getPluginTalker(mFCPMessageReceiver, WOT_FCP_NAME, mConnectionIdentifier);
 			mSubscriptionIDs.clear();
 			Logger.normal(this, "Connected to WOT, identifier: " + mConnectionIdentifier);
-			mConnectionStatusChangedHandler.handle(true);
+			mConnectionStatusChangedHandler.handleConnectionStatusChanged(true);
 		} catch(PluginNotFoundException e) {
 			Logger.warning(this, "Cannot connect to WOT!");
-			mConnectionStatusChangedHandler.handle(false);
+			mConnectionStatusChangedHandler.handleConnectionStatusChanged(false);
 		}
 	}
 	
@@ -757,7 +757,7 @@ public final class FCPClientReferenceImplementation {
 		@Override
 		public void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
 			((IdentitiesSynchronizationEventHandler) mSubscriptionSynchronizationHandlers.get(SubscriptionType.Identities))
-				.handle(mIdentityParser.parseSynchronization(sfs));
+				.handleSubscriptionSynchronization(mIdentityParser.parseSynchronization(sfs));
 		}
 	}
 
@@ -777,7 +777,7 @@ public final class FCPClientReferenceImplementation {
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
 			((TrustsSynchronizationEventHandler) mSubscriptionSynchronizationHandlers.get(SubscriptionType.Trusts))
-					.handle(mTrustParser.parseSynchronization(sfs));
+					.handleSubscriptionSynchronization(mTrustParser.parseSynchronization(sfs));
 		}
 	}
 
@@ -797,7 +797,7 @@ public final class FCPClientReferenceImplementation {
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
 			((ScoresSynchronizationEventHandler) mSubscriptionSynchronizationHandlers.get(SubscriptionType.Scores))
-				.handle(mScoreParser.parseSynchronization(sfs));
+				.handleSubscriptionSynchronization(mScoreParser.parseSynchronization(sfs));
 		}
 	}
 
@@ -817,7 +817,7 @@ public final class FCPClientReferenceImplementation {
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
 			((IdentityChangedEventHandler) mSubscribedObjectChangedHandlers.get(SubscriptionType.Identities))
-				.handle(mIdentityParser.parseNotification(sfs));
+				.handleSubscribedObjectChanged(mIdentityParser.parseNotification(sfs));
 		}
 	}
 	
@@ -837,7 +837,7 @@ public final class FCPClientReferenceImplementation {
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
 			((TrustChangedEventHandler) mSubscribedObjectChangedHandlers.get(SubscriptionType.Trusts))
-				.handle(mTrustParser.parseNotification(sfs));
+				.handleSubscribedObjectChanged(mTrustParser.parseNotification(sfs));
 		}
 	}
 
@@ -857,7 +857,7 @@ public final class FCPClientReferenceImplementation {
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException {
 			((ScoreChangedEventHandler) mSubscribedObjectChangedHandlers.get(SubscriptionType.Scores))
-				.handle(mScoreParser.parseNotification(sfs));
+				.handleSubscribedObjectChanged(mScoreParser.parseNotification(sfs));
 		}
 	}
 
@@ -1060,7 +1060,7 @@ public final class FCPClientReferenceImplementation {
 		 * the client whenever the connection is established. It will also automatically reconnect if the connection is lost.
 		 * ATTENTION: The client will automatically try to reconnect, you do NOT have to call {@link #start()} or anything else in this handler!
 		 */
-		void handle(boolean connected);
+		void handleConnectionStatusChanged(boolean connected);
 	}
 	
 	public interface SubscriptionSynchronizationHandler<T extends Persistent> {
@@ -1077,7 +1077,7 @@ public final class FCPClientReferenceImplementation {
 		 * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
 		 * a {@link SubscribedObjectChangedHandler} instead.
 		 */
-		void handle(Collection<T> allObjects);
+		void handleSubscriptionSynchronization(Collection<T> allObjects);
 	}
 	
 	public interface IdentitiesSynchronizationEventHandler extends SubscriptionSynchronizationHandler<Identity> {}
@@ -1096,7 +1096,7 @@ public final class FCPClientReferenceImplementation {
 		 * - {@link Score} for {@link SubscriptionType#Scores}
 		 * The passed {@link ChangeSet} contains the version of the object  before the change and after the change.
 		 */
-		 void handle(ChangeSet<T> changeSet);
+		 void handleSubscribedObjectChanged(ChangeSet<T> changeSet);
 	}
 	
 	/**
