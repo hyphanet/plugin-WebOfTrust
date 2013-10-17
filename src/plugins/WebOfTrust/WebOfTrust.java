@@ -69,7 +69,7 @@ import freenet.support.io.FileUtil;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
+public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
 	FredPluginL10n, FredPluginBaseL10n {
 	
 	/* Constants */
