@@ -73,7 +73,7 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 
 	
 	private DebugFCPClient(final WebOfTrust myWebOfTrust, final Executor myExecutor, Map<String, Identity> identityStorage) {
-		mClient = new FCPClientReferenceImplementation(myWebOfTrust, identityStorage, myWebOfTrust.getPluginRespirator(), myExecutor, this);
+		mClient = new FCPClientReferenceImplementation(identityStorage, myWebOfTrust.getPluginRespirator(), myExecutor, this);
 		mWebOfTrust = myWebOfTrust;
 	}
 	
