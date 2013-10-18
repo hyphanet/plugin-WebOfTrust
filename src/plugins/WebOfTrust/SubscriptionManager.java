@@ -132,7 +132,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
-			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
+			activateFully();
 			
 			IfNull.thenThrow(mType, "mType");
 			
@@ -296,7 +296,14 @@ public final class SubscriptionManager implements PrioRunnable {
 			}
 			super.deleteWithoutCommit();
 		}
-		
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override protected void activateFully() {
+			checkedActivate(1);
+		}
+
 		@Override
 		public String toString() {
 			return super.toString() + " { Type=" + getType() + "; FCP ID=" + getFCP_ID() + " }"; 
