@@ -21,6 +21,7 @@ import freenet.pluginmanager.PluginRespirator;
  * class {@link WebOfTrust}.
  * This will be necessary when copy-pasting the reference implementation of a WOT client {@link FCPClientReferenceImplementation}.
  * 
+ * @see MockWebOfTrust A minimal implementor of this interface. Copy-paste this as well.
  * @author xor (xor@freenetproject.org)
  */
 public abstract class WebOfTrustInterface {
