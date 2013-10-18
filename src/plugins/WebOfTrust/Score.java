@@ -152,7 +152,7 @@ public final class Score extends Persistent implements Cloneable, Serializable {
 	 * @param myRank How far the Identity is from the tree's root. 
 	 * @param myCapacity How much point the trusted Identity can add to its trustees score.
 	 */
-	public Score(WebOfTrust myWoT, OwnIdentity myTruster, Identity myTrustee, int myValue, int myRank, int myCapacity) {
+	public Score(WebOfTrustInterface myWoT, OwnIdentity myTruster, Identity myTrustee, int myValue, int myRank, int myCapacity) {
 		initializeTransient(myWoT);
 		
 		if(myTruster == null)
