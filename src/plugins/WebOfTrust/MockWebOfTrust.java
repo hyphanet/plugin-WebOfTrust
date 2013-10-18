@@ -307,7 +307,8 @@ public final class MockWebOfTrust extends WebOfTrustInterface {
 		
 		@Override
 		public void deactivate(Object arg0) {
-			throw new UnsupportedOperationException("Not implemented.");
+			// Used by Identity.activateProperties()
+			// It is safe to do nothing: Objects which are not stored in a real ObjectContainer are always active
 		}
 		
 		@Override
