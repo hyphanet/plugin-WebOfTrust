@@ -236,7 +236,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		protected boolean sendNotifications(SubscriptionManager manager) {
 			if(SubscriptionManager.logMINOR) Logger.minor(manager, "sendNotifications() for " + this);
 			
-			switch(mType) {
+			switch(getType()) {
 				case FCP:
 					for(final Notification notification : manager.getNotifications(this)) {
 						if(SubscriptionManager.logDEBUG) Logger.debug(manager, "Sending notification via FCP: " + notification);
@@ -279,7 +279,7 @@ public final class SubscriptionManager implements PrioRunnable {
 					}
 					break;
 				default:
-					throw new UnsupportedOperationException("Unknown Type: " + mType);
+					throw new UnsupportedOperationException("Unknown Type: " + getType());
 			}
 			
 			return true;
