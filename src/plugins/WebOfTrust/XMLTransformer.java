@@ -153,7 +153,7 @@ public final class XMLTransformer {
 	public void exportOwnIdentity(OwnIdentity identity, OutputStream os) throws TransformerException {
 		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway 
-			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
+			xmlDoc = mDOM.createDocument(null, WebOfTrustInterface.WOT_NAME, null);
 		}
 		
 		// 1.0 does not support all Unicode characters which the String class supports. To prevent us from having to filter all Strings, we use 1.1
@@ -539,7 +539,7 @@ public final class XMLTransformer {
 	public void exportIntroduction(OwnIdentity identity, OutputStream os) throws TransformerException {
 		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
+			xmlDoc = mDOM.createDocument(null, WebOfTrustInterface.WOT_NAME, null);
 		}
 		
 		// 1.0 does not support all Unicode characters which the String class supports. To prevent us from having to filter all Strings, we use 1.1
@@ -664,7 +664,7 @@ public final class XMLTransformer {
 		
 		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-			xmlDoc = mDOM.createDocument(null, WebOfTrust.WOT_NAME, null);
+			xmlDoc = mDOM.createDocument(null, WebOfTrustInterface.WOT_NAME, null);
 		}
 		
 		// 1.0 does not support all Unicode characters which the String class supports. To prevent us from having to filter all Strings, we use 1.1
