@@ -356,7 +356,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
-			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
+			activateFully();
 			
 			IfNull.thenThrow(mClient);
 			
@@ -474,6 +474,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @throws FCPCallFailedException If processing failed at the client.
 		 */
 		protected abstract void notifySubscriberByFCP(Notification notification) throws FCPCallFailedException, PluginNotFoundException;
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override protected void activateFully() {
+			checkedActivate(1);
+		}
 
 		@Override
 		public String toString() {
