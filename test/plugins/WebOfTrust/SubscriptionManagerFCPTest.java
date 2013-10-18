@@ -139,12 +139,6 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		sfs.putOverwrite("SubscriptionID", id);
 		fcpCall(sfs);
 		
-		// Final reply message is the full set of all objects of the type the client was interested in so the client can validated whether
-		// event-notifications has sent him everything properly.
-		final SimpleFieldSet synchronization = mReplyReceiver.getNextResult();
-		assertEquals(type, synchronization.get("Message"));
-		assertEquals("0", synchronization.get("Amount")); // No identities/trusts/scores stored yet		
-
 		// Second reply message is the confirmation of the unsubscription
 		final SimpleFieldSet subscription = mReplyReceiver.getNextResult();
 		assertEquals("Unsubscribed", subscription.get("Message"));
