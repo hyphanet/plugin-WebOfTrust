@@ -12,7 +12,7 @@ import java.util.TimeZone;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
-import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.WebOfTrustInterface;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
@@ -117,7 +117,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	 * @param newType
 	 * @param newData
 	 */
-	public IntroductionPuzzle(WebOfTrust myWebOfTrust, Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData,
+	public IntroductionPuzzle(WebOfTrustInterface myWebOfTrust, Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData,
 			Date myDateOfInsertion, Date myExpirationDate, int myIndex) {
 		
 		initializeTransient(myWebOfTrust);
@@ -186,7 +186,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 			dayOfInsertion = mDateFormat.format(dateOfInsertion);
 		}
 		FreenetURI baseURI = inserter.getRequestURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WebOfTrust.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index);
+		baseURI = baseURI.setDocName(WebOfTrustInterface.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index);
 		return baseURI.setMetaString(null);
 	}
 	
@@ -328,7 +328,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		if(mSolution == null)
 			throw new IllegalStateException("The puzzle is not solved.");
 		
-		return new FreenetURI("KSK",	WebOfTrust.WOT_NAME + "|" +
+		return new FreenetURI("KSK",	WebOfTrustInterface.WOT_NAME + "|" +
 										INTRODUCTION_CONTEXT + "|" +
 										mID + "|" +
 										mSolution);
