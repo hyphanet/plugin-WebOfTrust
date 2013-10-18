@@ -15,6 +15,7 @@ import java.util.UUID;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.FetchState;
+import plugins.WebOfTrust.MockWebOfTrust;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
@@ -25,7 +26,7 @@ import plugins.WebOfTrust.SubscriptionManager.ScoresSubscription;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.SubscriptionManager.TrustsSubscription;
 import plugins.WebOfTrust.Trust;
-import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.WebOfTrustInterface;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
@@ -227,12 +228,8 @@ public final class FCPClientReferenceImplementation {
 		Logger.registerClass(FCPClientReferenceImplementation.class);
 	}
 
-	/**
-	 * FIXME: Don't require a WebOfTrust because the client which copypastes this class won't have one.
-	 * We merely need it for feeding {@link Persistent#initializeTransient(WebOfTrust)} (indirectly through constructors of Identity/Trust/Score).
-	 * We could deal with this by implementing a class MockWebOfTrust which only provides whats needed for initializeTransient to work.
-	 */
-	public FCPClientReferenceImplementation(final WebOfTrust myMockWebOfTrust, Map<String, Identity> myIdentityStorage,
+
+	public FCPClientReferenceImplementation(Map<String, Identity> myIdentityStorage,
 			final PluginRespirator myPluginRespirator, final Executor myExecutor,
 			final ConnectionStatusChangedHandler myConnectionStatusChangedHandler) {
 		mIdentityStorage = myIdentityStorage;
@@ -258,9 +255,12 @@ public final class FCPClientReferenceImplementation {
 		for(FCPMessageHandler handler : handlers)
 			mFCPMessageHandlers.put(handler.getMessageName(), handler);
 		
-		mIdentityParser = new IdentityParser(myMockWebOfTrust);
-		mTrustParser = new TrustParser(myMockWebOfTrust, mIdentityStorage);
-		mScoreParser = new ScoreParser(myMockWebOfTrust, mIdentityStorage);
+		// To prevent client-plugins which copy-paste this reference implementation from having to copy-paste the WebOfTrust class,
+		// we use MockWebOfTrust as a replacement.
+		final MockWebOfTrust wot = new MockWebOfTrust();
+		mIdentityParser = new IdentityParser(wot);
+		mTrustParser = new TrustParser(wot, mIdentityStorage);
+		mScoreParser = new ScoreParser(wot, mIdentityStorage);
 	}
 	
 	/**
@@ -927,9 +927,9 @@ public final class FCPClientReferenceImplementation {
 	 */
 	public static abstract class FCPParser<T extends Persistent> {
 		
-		protected final WebOfTrust mWoT;
+		protected final WebOfTrustInterface mWoT;
 		
-		public FCPParser(final WebOfTrust myWebOfTrust) {
+		public FCPParser(final WebOfTrustInterface myWebOfTrust) {
 			mWoT = myWebOfTrust;
 		}
 		
@@ -958,7 +958,7 @@ public final class FCPClientReferenceImplementation {
 	 */
 	public static final class IdentityParser extends FCPParser<Identity> {
 
-		public IdentityParser(final WebOfTrust myWebOfTrust) {
+		public IdentityParser(final WebOfTrustInterface myWebOfTrust) {
 			super(myWebOfTrust);
 		}
 		
@@ -1018,7 +1018,7 @@ public final class FCPClientReferenceImplementation {
 
 		private final Map<String, Identity> mIdentities;
 		
-		public TrustParser(final WebOfTrust myWebOfTrust, final Map<String, Identity> myIdentities) {
+		public TrustParser(final WebOfTrustInterface myWebOfTrust, final Map<String, Identity> myIdentities) {
 			super(myWebOfTrust);
 			mIdentities = myIdentities;
 		}
@@ -1051,7 +1051,7 @@ public final class FCPClientReferenceImplementation {
 		
 		private final Map<String, Identity> mIdentities;
 		
-		public ScoreParser(final WebOfTrust myWebOfTrust, final Map<String, Identity> myIdentities) {
+		public ScoreParser(final WebOfTrustInterface myWebOfTrust, final Map<String, Identity> myIdentities) {
 			super(myWebOfTrust);
 			mIdentities = myIdentities;
 		}
