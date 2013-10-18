@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.WebOfTrustInterface;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
@@ -16,7 +16,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	/**
 	 * For construction of a puzzle which is meant to be inserted.
 	 */
-	public OwnIntroductionPuzzle(WebOfTrust myWoT, OwnIdentity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
+	public OwnIntroductionPuzzle(WebOfTrustInterface myWoT, OwnIdentity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
 			Date newDateOfInsertion, int myIndex) {
 		this(myWoT, newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newSolution, newDateOfInsertion, myIndex);
 	}
@@ -24,7 +24,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	/**
 	 * Clone() needs to set the ID.
 	 */
-	private OwnIntroductionPuzzle(WebOfTrust myWoT, OwnIdentity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
+	private OwnIntroductionPuzzle(WebOfTrustInterface myWoT, OwnIdentity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
 			Date newDateOfInsertion, int myIndex) {
 		super(myWoT, newInserter, newID, newType, newMimeType, newData, newDateOfInsertion,
 				new Date(TimeUtil.setTimeToZero(newDateOfInsertion).getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000), 
@@ -41,7 +41,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	
 	/**
 	 * Get the URI at which to insert this puzzle.
-	 * SSK@asdfasdf...|WebOfTrust.WOT_NAME|IntroductionPuzzle.INTRODUCTION_CONTEXT|yyyy-MM-dd|#
+	 * SSK@asdfasdf...|WebOfTrustInterface.WOT_NAME|IntroductionPuzzle.INTRODUCTION_CONTEXT|yyyy-MM-dd|#
 	 * 
 	 * # = index of the puzzle.
 	 */
@@ -53,7 +53,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 			dayOfInsertion = mDateFormat.format(getDateOfInsertion());
 		}
 		FreenetURI baseURI = ((OwnIdentity)getInserter()).getInsertURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WebOfTrust.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + getIndex());
+		baseURI = baseURI.setDocName(WebOfTrustInterface.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + getIndex());
 		return baseURI.setMetaString(null);
 	}
 	
