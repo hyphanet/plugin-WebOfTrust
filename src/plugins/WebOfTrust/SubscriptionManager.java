@@ -622,7 +622,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @see #mOldObject The backend member variable of this getter.
 		 */
 		public final Persistent getOldObject() throws NoSuchElementException {
-			checkedActivate(1);
+			checkedActivate(1); // byte[] is a db4o primitive type so 1 is enough
 			return mOldObject != null ? Persistent.deserialize(mWebOfTrust, mOldObject) : null;
 		}
 		
@@ -631,7 +631,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @see #mNewObject The backend member variable of this getter.
 		 */
 		public final Persistent getNewObject() throws NoSuchElementException {
-			checkedActivate(1);
+			checkedActivate(1); // byte[] is a db4o primitive type so 1 is enough
 			return mNewObject != null ? Persistent.deserialize(mWebOfTrust, mNewObject) : null;
 		}
 
