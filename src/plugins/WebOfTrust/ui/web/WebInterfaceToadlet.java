@@ -8,7 +8,7 @@ import java.util.NoSuchElementException;
 import javax.naming.SizeLimitExceededException;
 
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.WebOfTrustInterface;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.web.WebInterface.LogOutWebInterfaceToadlet;
 import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
@@ -34,7 +34,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	protected WebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 		super(client);
 		this.pageTitle = pageTitle;
-		this.sessionManager = wi.getWoT().getPluginRespirator().getSessionManager(WebOfTrust.WOT_NAME);
+		this.sessionManager = wi.getWoT().getPluginRespirator().getSessionManager(WebOfTrustInterface.WOT_NAME);
 		this.webInterface = wi;
 		this.core = core;
 	}

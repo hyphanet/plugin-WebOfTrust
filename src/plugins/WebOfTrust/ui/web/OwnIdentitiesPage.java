@@ -9,6 +9,7 @@ import java.util.TimeZone;
 
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.WebOfTrustInterface;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
@@ -50,7 +51,7 @@ public class OwnIdentitiesPage extends WebPageImpl {
 
 		final WebOfTrust wot = toadlet.webInterface.getWoT();
 
-		SessionManager.Session session = wot.getPluginRespirator().getSessionManager(WebOfTrust.WOT_NAME).useSession(context);
+		SessionManager.Session session = wot.getPluginRespirator().getSessionManager(WebOfTrustInterface.WOT_NAME).useSession(context);
 		OwnIdentity identity = null;
 		if (session != null) {
 			try {

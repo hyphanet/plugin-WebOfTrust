@@ -3,7 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
-import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.WebOfTrustInterface;
 import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
 import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
 import plugins.WebOfTrust.util.RandomName;
@@ -67,7 +67,7 @@ public class CreateIdentityPage extends WebPageImpl {
 	 */
 	private void makeCreateForm() {
 		HTMLNode boxContent = addContentBox(l10n().getString("CreateIdentityPage.CreateIdentityBox.Header"));
-		FreenetURI[] keypair = wot.getPluginRespirator().getHLSimpleClient().generateKeyPair(WebOfTrust.WOT_NAME);
+		FreenetURI[] keypair = wot.getPluginRespirator().getHLSimpleClient().generateKeyPair(WebOfTrustInterface.WOT_NAME);
 		
 		HTMLNode createForm = pr.addFormChild(boxContent, uri.toString(), "CreateIdentity");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "CreateIdentity" });
