@@ -127,9 +127,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			assert(mFCP_ID != null && mFCP_ID.length() > 0);
 		}
 		
-		/**
-		 * {@inheritDoc}
-		 */
+		/** {@inheritDoc} */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
 			activateFully();
@@ -297,9 +295,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			super.deleteWithoutCommit();
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
+		/** {@inheritDoc} */
 		@Override protected void activateFully() {
 			checkedActivate(1);
 		}
@@ -351,9 +347,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			assert(mClient != null);
 		}
 		
-		/**
-		 * {@inheritDoc}
-		 */
+		/** {@inheritDoc} */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
 			activateFully();
@@ -475,9 +469,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		protected abstract void notifySubscriberByFCP(Notification notification) throws FCPCallFailedException, PluginNotFoundException;
 
-		/**
-		 * {@inheritDoc}
-		 */
+		/** {@inheritDoc} */
 		@Override protected void activateFully() {
 			checkedActivate(1);
 		}
@@ -571,9 +563,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			mNewObject = (newObject != null ? newObject.serialize() : null);
 		}
 		
-		/**
-		 * {@inheritDoc}
-		 */
+		/** {@inheritDoc} */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
 			activateFully();
@@ -635,9 +625,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			return mNewObject != null ? Persistent.deserialize(mWebOfTrust, mNewObject) : null;
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
+		/** {@inheritDoc} */
 		@Override protected void activateFully() {
 			checkedActivate(1);
 		}
@@ -756,17 +744,13 @@ public final class SubscriptionManager implements PrioRunnable {
 			super(myClient);
 		}
 
-		/**
-		 * {@inheritDoc} 
-		 */
+		/** {@inheritDoc} */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws FCPCallFailedException, PluginNotFoundException {
 			mWebOfTrust.getFCPInterface().sendAllIdentities(getClient().getFCP_ID());
 		}
 		
-		/**
-		 * {@inheritDoc}
-		 */
+		/** {@inheritDoc} */
 		@Override
 		protected void notifySubscriberByFCP(Notification notification) throws FCPCallFailedException, PluginNotFoundException {
 			assert(notification instanceof IdentityChangedNotification);
@@ -803,17 +787,13 @@ public final class SubscriptionManager implements PrioRunnable {
 			super(myClient);
 		}
 		
-		/**
-		 * {@inheritDoc} 
-		 */
+		/** {@inheritDoc} */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws FCPCallFailedException, PluginNotFoundException {
 			mWebOfTrust.getFCPInterface().sendAllTrustValues(getClient().getFCP_ID());
 		}
 		
-		/**
-		 * {@inheritDoc} 
-		 */
+		/** {@inheritDoc} */
 		@Override
 		protected void notifySubscriberByFCP(final Notification notification) throws FCPCallFailedException, PluginNotFoundException {
 			assert(notification instanceof TrustChangedNotification);
@@ -850,17 +830,13 @@ public final class SubscriptionManager implements PrioRunnable {
 			super(myClient);
 		}
 		
-		/**
-		 * {@inheritDoc}
-		 */
+		/** {@inheritDoc} */
 		@Override
 		protected void synchronizeSubscriberByFCP() throws FCPCallFailedException, PluginNotFoundException {
 			mWebOfTrust.getFCPInterface().sendAllScoreValues(getClient().getFCP_ID());
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
+		/** {@inheritDoc} */
 		@Override
 		protected void notifySubscriberByFCP(final Notification notification) throws FCPCallFailedException, PluginNotFoundException {
 			assert(notification instanceof ScoreChangedNotification);
@@ -1453,9 +1429,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		if(logMINOR) Logger.minor(this, "run() finished.");
 	}
 	
-	/**
-	 * {@inheritDoc}
-	 */
+	/** {@inheritDoc} */
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
