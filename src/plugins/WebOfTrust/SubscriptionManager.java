@@ -576,7 +576,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
-			checkedActivate(1); // 1 is the maximum needed depth of all stuff we use in this function
+			activateFully();
 			
 			IfNull.thenThrow(mClient, "mClient");
 			IfNull.thenThrow(mSubscription, "mSubscription");
@@ -633,6 +633,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		public final Persistent getNewObject() throws NoSuchElementException {
 			checkedActivate(1); // byte[] is a db4o primitive type so 1 is enough
 			return mNewObject != null ? Persistent.deserialize(mWebOfTrust, mNewObject) : null;
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override protected void activateFully() {
+			checkedActivate(1);
 		}
 
 		@Override
