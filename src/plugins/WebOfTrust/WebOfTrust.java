@@ -323,7 +323,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	}
 	
 	private File getUserDataDirectory() {
-        final File wotDirectory = new File(mPR.getNode().getUserDir(), WOT_NAME);
+        final File wotDirectory = new File(mPR.getNode().getUserDir(), WebOfTrustInterface.WOT_NAME);
         
         if(!wotDirectory.exists() && !wotDirectory.mkdir())
         	throw new RuntimeException("Unable to create directory " + wotDirectory);
@@ -2852,7 +2852,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	public OwnIdentity createOwnIdentity(String nickName, boolean publishTrustList, String context)
 		throws MalformedURLException, InvalidParameterException {
 		
-		FreenetURI[] keypair = getPluginRespirator().getHLSimpleClient().generateKeyPair(WOT_NAME);
+		FreenetURI[] keypair = getPluginRespirator().getHLSimpleClient().generateKeyPair(WebOfTrustInterface.WOT_NAME);
 		return createOwnIdentity(keypair[0], nickName, publishTrustList, context);
 	}
 
