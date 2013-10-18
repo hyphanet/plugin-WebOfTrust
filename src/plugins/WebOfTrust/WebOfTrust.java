@@ -84,19 +84,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
 	public static final int DATABASE_FORMAT_VERSION = 2; 
 	
-	/**
-	 * The official seed identities of the WoT plugin: If a newbie wants to download the whole offficial web of trust, he needs at least one
-	 * trust list from an identity which is well-connected to the web of trust. To prevent newbies from having to add this identity manually,
-	 * the Freenet development team provides a list of seed identities - each of them is one of the developers.
-	 */
-	private static final String[] SEED_IDENTITIES = new String[] { 
-		"USK@QeTBVWTwBldfI-lrF~xf0nqFVDdQoSUghT~PvhyJ1NE,OjEywGD063La2H-IihD7iYtZm3rC0BP6UTvvwyF5Zh4,AQACAAE/WebOfTrust/1344", // xor
-		"USK@z9dv7wqsxIBCiFLW7VijMGXD9Gl-EXAqBAwzQ4aq26s,4Uvc~Fjw3i9toGeQuBkDARUV5mF7OTKoAhqOA9LpNdo,AQACAAE/WebOfTrust/1270", // Toad
-		"USK@o2~q8EMoBkCNEgzLUL97hLPdddco9ix1oAnEa~VzZtg,X~vTpL2LSyKvwQoYBx~eleI2RF6QzYJpzuenfcKDKBM,AQACAAE/WebOfTrust/9379", // Bombe
-		// "USK@cI~w2hrvvyUa1E6PhJ9j5cCoG1xmxSooi7Nez4V2Gd4,A3ArC3rrJBHgAJV~LlwY9kgxM8kUR2pVYXbhGFtid78,AQACAAE/WebOfTrust/19", // TheSeeker. Disabled because he is using LCWoT and it does not support identity introduction ATM.
-		"USK@D3MrAR-AVMqKJRjXnpKW2guW9z1mw5GZ9BB15mYVkVc,xgddjFHx2S~5U6PeFkwqO5V~1gZngFLoM-xaoMKSBI8,AQACAAE/WebOfTrust/4959", // zidel
-		"USK@s88mAwLB3OW6mYlZ43XaHDM1K6QXosZ4QTt2UX-hq6s,555tpw1TUReXUixAMDQD3RcD6gUKwOBCDQ6Dot2v6qg,AQACAAE/WebOfTrust/5", // operhiem1
-	};
+	
 
 	/* References from the node */
 	
@@ -1487,7 +1475,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	
 	private synchronized void createSeedIdentities() {
 		synchronized(mSubscriptionManager) {
-		for(String seedURI : SEED_IDENTITIES) {
+		for(String seedURI : WebOfTrustInterface.SEED_IDENTITIES) {
 			synchronized(Persistent.transactionLock(mDB)) {
 			try { 
 				final Identity existingSeed = getIdentityByURI(seedURI);
@@ -2893,7 +2881,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 					// Incremental score computation has proven to be very very slow when creating identities so we just schedule a full computation.
 					mFullScoreComputationNeeded = true;
 					
-					for(String seedURI : SEED_IDENTITIES) {
+					for(String seedURI : WebOfTrustInterface.SEED_IDENTITIES) {
 						try {
 							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "Automatically assigned trust to a seed identity.");
 						} catch(UnknownIdentityException e) {
