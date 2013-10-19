@@ -323,6 +323,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * The {@link Client} which created this {@link Subscription}.
 		 */
+		@IndexedField
 		private final Client mClient;
 		
 		/**
