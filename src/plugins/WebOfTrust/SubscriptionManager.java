@@ -578,6 +578,9 @@ public final class SubscriptionManager implements PrioRunnable {
 			if(mOldObject == null && mNewObject == null)
 				throw new NullPointerException("Only one of mOldObject and mNewObject may be null!");
 
+			// mOldObject / mNewObject are serialized copies of Persistent objects.
+			// Because they are serialized, the startupDatabaseIntegrityTest() won't be called automatically on them by WOT
+			// - we have to do it manually.
 			if(mOldObject != null)
 				getOldObject().startupDatabaseIntegrityTest();
 			
