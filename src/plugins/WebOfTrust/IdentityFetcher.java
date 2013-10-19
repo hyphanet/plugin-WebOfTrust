@@ -525,17 +525,16 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			
 			synchronized(mWoT) { // Preserve the locking order: importIdentity() will synchronize on the WOT and then on this IdentityFetcher
 			synchronized(this) {
-			if(!mRequests.containsKey(identityID)) {
-				Logger.warning(this, "Received Identity XML even though there is no request for it - maybe we are terminated already?"
-						+ "identity ID: " + identityID);
-				return;
-			}
-			
-			final long startTime = System.nanoTime();
-			mWoT.getXMLTransformer().importIdentity(realURI, inputStream);
-			final long endTime = System.nanoTime();
-			
-			
+				if(!mRequests.containsKey(identityID)) {
+					Logger.warning(this, "Received Identity XML even though there is no request for it - maybe we are terminated already?"
+							+ "identity ID: " + identityID);
+					return;
+				}
+
+				final long startTime = System.nanoTime();
+				mWoT.getXMLTransformer().importIdentity(realURI, inputStream);
+				final long endTime = System.nanoTime();
+
 				++mFetchedCount;
 				mIdentityImportNanoseconds +=  endTime - startTime;
 			}
