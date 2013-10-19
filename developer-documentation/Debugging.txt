@@ -37,6 +37,13 @@ Those are:
 	  should show up in the log files. You can also set a breakpoint on those exceptions in Eclipse.
   Usually you should do an assertion test run whenever you modify the score computation algorithms since they are heavily
   guarded by assertions.
-  
+
+Useful breakpoints during debug test runs:
+- AssertionError: Will hit on failure of Java assert() statements. There are many useful of those in the WOT code.
+- AssertionFailedError: Will hit on failure of JUnit tests.
+- NullPointerException: Dereferencing of a pointer which is null shouldn't happen in normal code.
+- UnsupportedOperationException: This exception is typically thrown in WOT-functions which are NOT implemented. Therefore, those functions
+  should not be used. If this is thrown it indicates that they ARE being used even though they shouldn't.
+
 Other stuff useful for developers:
 - The constant "WebOfTrust.FAST_DEBUG_MODE" which reduces the execution delays of the IntroductionServer / IntroductionClient.
