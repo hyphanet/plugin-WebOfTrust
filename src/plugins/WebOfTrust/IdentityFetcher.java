@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 
 import plugins.WebOfTrust.Identity.FetchState;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
@@ -521,10 +522,11 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * Called when an identity is successfully fetched.
 	 */
 	public void onFound(USK origUSK, long edition, FetchResult result) {
-		FreenetURI realURI = origUSK.getURI().setSuggestedEdition(edition);
+		final FreenetURI realURI = origUSK.getURI().setSuggestedEdition(edition);
+		final String identityID = IdentityID.constructAndValidateFromURI(realURI).toString();
 		
 		if(logDEBUG) Logger.debug(this, "Fetched identity: " + realURI);
-
+		
 		Bucket bucket = null;
 		InputStream inputStream = null;
 		
@@ -532,13 +534,21 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
 			
-			final long startTime = System.nanoTime();
-			mWoT.getXMLTransformer().importIdentity(realURI, inputStream);
-			final long endTime = System.nanoTime();
-			
+			synchronized(mWoT) { // Preserve the locking order: importIdentity() will synchronize on the WOT and then on this IdentityFetcher
 			synchronized(this) {
+				if(!mRequests.containsKey(identityID)) {
+					Logger.warning(this, "Received Identity XML even though there is no request for it - maybe we are terminated already?"
+							+ "identity ID: " + identityID);
+					return;
+				}
+
+				final long startTime = System.nanoTime();
+				mWoT.getXMLTransformer().importIdentity(realURI, inputStream);
+				final long endTime = System.nanoTime();
+
 				++mFetchedCount;
 				mIdentityImportNanoseconds +=  endTime - startTime;
+			}
 			}
 		}
 		catch(Exception e) {
