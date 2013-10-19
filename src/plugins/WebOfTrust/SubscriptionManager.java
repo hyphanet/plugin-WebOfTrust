@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust;
 
-import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
