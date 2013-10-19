@@ -74,10 +74,8 @@ import freenet.support.io.NativeThread;
  */
 public final class SubscriptionManager implements PrioRunnable {
 	
+	@SuppressWarnings("serial")
 	public static final class Client extends Persistent {
-		
-		/** @see Serializable */
-		private static final long serialVersionUID = 1L;
 
 		/**
 		 * The way of notifying a client
