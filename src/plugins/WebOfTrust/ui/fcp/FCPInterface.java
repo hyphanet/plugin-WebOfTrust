@@ -1117,6 +1117,15 @@ public final class FCPInterface implements FredPluginFCP {
     private SimpleFieldSet handleUnsubscribe(final SimpleFieldSet params) throws InvalidParameterException, UnknownSubscriptionException {
     	final String subscriptionID = getMandatoryParameter(params, "SubscriptionID");
     	final Class<Subscription<? extends Notification>> clazz = mSubscriptionManager.unsubscribe(subscriptionID);
+    	return handleUnsubscribe(clazz, subscriptionID);
+    }
+    
+    public void sendUnsubscribedMessage(final String fcpID,
+    		final Class<Subscription<? extends Notification>> clazz, final String subscriptionID) throws PluginNotFoundException {
+    	mClientTrackerDaemon.get(fcpID).send(handleUnsubscribe(clazz, subscriptionID));
+    }
+    
+    private SimpleFieldSet handleUnsubscribe(final Class<Subscription<? extends Notification>> clazz, final String subscriptionID) {
     	final String type;
     	
     	if(clazz.equals(IdentitiesSubscription.class)) 
