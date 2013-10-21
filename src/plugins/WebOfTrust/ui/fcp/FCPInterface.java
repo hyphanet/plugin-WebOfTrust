@@ -11,11 +11,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
+import plugins.WebOfTrust.SubscriptionManager.Client;
 import plugins.WebOfTrust.SubscriptionManager.IdentitiesSubscription;
 import plugins.WebOfTrust.SubscriptionManager.IdentityChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.Notification;
@@ -1032,9 +1034,54 @@ public final class FCPInterface implements FredPluginFCP {
     }
     
     /**
-     * @see SubscriptionManager#subscribeToIdentities(String)
-     * @see SubscriptionManager#subscribeToScores(String)
-     * @see SubscriptionManager#subscribeToTrusts(String)
+     * Processes the "Subscribe" FCP message, filing a {@link Subscription} to event-{@link Notification}s via {@link SubscriptionManager}.
+     * <b>Required fields:</b>
+     * "To" = "Identities" | "Trusts" | "Scores" - chooses among {@link IdentitiesSubscription} / {@link TrustsSubscription} / 
+     * {@link ScoresSubscription}.
+     * 
+     * <b>Reply:</b>
+     * The reply consists of two separate FCP messages:
+     * The first message is "Message" = "Identities" | "Trusts" | "Scores".
+     * It contains the full dataset of the type you have subscribed to. For the format of the message contents, see
+     * {@link #sendAllIdentities(String)} / {@link #sendAllTrustValues(String)} / {@link #sendAllScoreValues(String)}.
+     * By storing this dataset, your client is completely synchronized with WOT. Upon changes of anything, WOT will only have to send
+     * the single {@link Identity}/{@link Trust}/{@link Score} object which has changed for your client to be fully synchronized again.
+     * 
+     * This message is send via the <b>synchronous</b> FCP-API: You can signal that processing it failed by returning an error
+     * in the FCP message processor. This allows your client to be programmed in a transactional style: If part of the transaction which
+     * stores the dataset fails, you can just roll it back and signal the error to WOT. It will rollback the subscription then and
+     * send an "Error" message, indicating that subscribing failed. You must file another subscription attempt then.
+     * 
+     * The second message is formatted as:
+     * "Message" = "Subscribed"
+     * "SubscriptionID" = Random {@link UUID} of the Subscription.
+     * "To" = Same as the "To" field of your original message.
+     * 
+     * <b>Errors</b>:
+     * If you are already subscribed to the selected type, you will only receive a message:
+     * "Message" = "Error"
+     * "Description" = "plugins.WebOfTrust.SubscriptionManager$SubscriptionExistsAlreadyException"
+     * "SubscriptionID" = Same as in the original "Subscribed" message
+     * "To" = Same as you requested
+     * "OriginalMessage" = "Subscribe"
+     * 
+     * <b>{@link Notification}s:</b>
+     * Further  messages will be sent at any time in the future if an {@link Identity} / {@link Trust} / {@link Score}
+     * object has changed. They will contain the version of the object before the change and after the change. For the format, see:
+     * {@link #sendIdentityChangedNotification(String, IdentityChangedNotification)} / 
+     * {@link #sendTrustChangedNotification(String, TrustChangedNotification)} /
+     * {@link #sendScoreChangedNotification(String, ScoreChangedNotification)}.
+     * These messages are also send with the <b>synchronous</b> FCP API. In opposite to the initial synchronization message, by replying with
+     * failure to the synchronous FCP call, you can signal that you want to receive the same notification again.
+     * After a typical delay of {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}, it will be re-sent.
+     * There is a maximal amount of {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT} failures per FCP-Client.
+     * If you exceed this limit, your subscriptions will be terminated. There will be no notification about this (this might be changed in
+     * the future, see https://bugs.freenetproject.org/view.php?id=6112).
+     * The fact that you can request a notification to be re-sent may also be used to program your client in a transactional style-
+     * 
+     * @see SubscriptionManager#subscribeToIdentities(String) The underlying implementation for "To" = "Identities"
+     * @see SubscriptionManager#subscribeToScores(String) The underyling implementation for "To" = "Trusts"
+     * @see SubscriptionManager#subscribeToTrusts(String) The underlying implementation for "To" = "Scores"
      */
     private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException {
     	final String to = getMandatoryParameter(params, "To");

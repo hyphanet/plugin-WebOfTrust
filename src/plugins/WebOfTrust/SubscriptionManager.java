@@ -872,7 +872,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * If {@link Client#sendNotifications(SubscriptionManager)} fails, the failure counter of the subscription is incremented.
 	 * If the counter reaches this value, the client is disconnected.
 	 */
-	private static final byte DISCONNECT_CLIENT_AFTER_FAILURE_COUNT = 5;
+	public static final byte DISCONNECT_CLIENT_AFTER_FAILURE_COUNT = 5;
 	
 	
 	/**
