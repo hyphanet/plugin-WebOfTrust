@@ -281,13 +281,44 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 		
 		/**
+		 * Sends a message to the client which indicates that a {@link Subscription} has been forcefully terminated.
+		 * This can happen if the client exceeds the limit of {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT} failures
+		 * to process a {@link Notification}.
+		 * 
+		 * Any {@link Throwable}s which happen if sending the message fails are swallowed.
+		 */
+		@SuppressWarnings("unchecked")
+		private void notifyClientAboutDeletion(final Subscription<? extends Notification> deletedSubscriptoin) {			
+			try {
+				Logger.warning(getSubscriptionManager(), "notifyClientAboutDeletion() for " + deletedSubscriptoin);
+				
+				switch(getType()) {
+					case FCP:
+						mWebOfTrust.getFCPInterface().sendUnsubscribedMessage(getFCP_ID(),
+								(Class<Subscription<? extends Notification>>) deletedSubscriptoin.getClass(),
+								deletedSubscriptoin.getID());
+						break;
+					default:
+						throw new UnsupportedOperationException("Unknown Type: " + getType());
+				}
+			} catch(Throwable t) {
+				Logger.error(getSubscriptionManager(), "notifyClientAboutDeletion() failed!", t);
+			}
+		}
+		
+		/**
 		 * Deletes this Client and also deletes all {@link Subscription} and {@link Notification} objects belonging to it.
+		 * Attempts to notify the {@link Client} about the deletion of each subscription so it can re-subscribe.
+		 * 
+		 * Typically used to forcefully disconnect a client if it exceeds {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT}
+		 * failures when processing a {@link Notification}.
 		 * 
 		 * @param subscriptionManager The {@link SubscriptionManager} to which this Client belongs.
 		 */
 		protected void deleteWithoutCommit(final SubscriptionManager subscriptionManager) {
 			for(final Subscription<? extends Notification> subscription : subscriptionManager.getSubscriptions(this)) {
 				subscription.deleteWithoutCommit(subscriptionManager);
+				notifyClientAboutDeletion(subscription);
 			}
 			super.deleteWithoutCommit();
 		}

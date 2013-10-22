@@ -1075,8 +1075,8 @@ public final class FCPInterface implements FredPluginFCP {
      * failure to the synchronous FCP call, you can signal that you want to receive the same notification again.
      * After a typical delay of {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}, it will be re-sent.
      * There is a maximal amount of {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT} failures per FCP-Client.
-     * If you exceed this limit, your subscriptions will be terminated. There will be no notification about this (this might be changed in
-     * the future, see https://bugs.freenetproject.org/view.php?id=6112).
+     * If you exceed this limit, your subscriptions will be terminated. You will receive an "Unsubscribed" message then as long as
+     * your client has not terminated the FCP connection. See {@link #handleUnsubscribe(SimpleFieldSet)}.
      * The fact that you can request a notification to be re-sent may also be used to program your client in a transactional style-
      * 
      * @see SubscriptionManager#subscribeToIdentities(String) The underlying implementation for "To" = "Identities"
