@@ -245,21 +245,21 @@ public final class SubscriptionManager implements PrioRunnable {
 								final byte failureCount = incrementSendNotificationsFailureCountWithoutCommit();
 								Persistent.checkedCommit(mDB, this);
 								
-								boolean deleteSubscription = false;
+								boolean doNotDeleteClient = true;
 								
 								if(e instanceof PluginNotFoundException) {
 									Logger.warning(manager, "sendNotifications() failed, client has disconnected, failure count: " + failureCount, e);
-									deleteSubscription = true;
+									doNotDeleteClient = false;
 								} else  {
 									Logger.error(manager, "sendNotifications() failed, failure count: " + failureCount, e);
 									if(failureCount >= DISCONNECT_CLIENT_AFTER_FAILURE_COUNT) 
-										deleteSubscription = true;
+										doNotDeleteClient = false;
 								}
 								
-								if(!deleteSubscription)
+								if(doNotDeleteClient)
 									manager.scheduleNotificationProcessing();
 								
-								return deleteSubscription;
+								return doNotDeleteClient;
 								
 							}
 							// If processing of a single notification fails, we do not want the previous notifications
