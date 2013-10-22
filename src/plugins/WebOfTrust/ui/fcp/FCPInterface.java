@@ -1114,6 +1114,16 @@ public final class FCPInterface implements FredPluginFCP {
     	return sfs;
     }
     
+    /**
+     * Handles the "Unsubscribe" message, the inverse operation to the "Subscribe". See {@link #handleSubscribe(PluginReplySender, SimpleFieldSet)}.
+     * <b>Required fields:</b>
+     * "SubscriptionID" = Must be equal to the value of the same field which you received in reply to the "Subscribe" message.
+     * 
+     * <b>Reply:</b>
+     * "Message" = "Unsubscribed"
+     * "From" = "Identities" | "Trusts" | "Scores" - indicates the type of the original subscription.
+     * "SubscriptionID" = Same as requested
+     */
     private SimpleFieldSet handleUnsubscribe(final SimpleFieldSet params) throws InvalidParameterException, UnknownSubscriptionException {
     	final String subscriptionID = getMandatoryParameter(params, "SubscriptionID");
     	final Class<Subscription<? extends Notification>> clazz = mSubscriptionManager.unsubscribe(subscriptionID);
