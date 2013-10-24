@@ -361,12 +361,14 @@ public final class FCPInterface implements FredPluginFCP {
     		return sfs;
     	}
     	
-    	sfs.putOverwrite(prefix + "Amount", "1");
 		sfs.putOverwrite(prefix + "Truster", trust.getTruster().getID());
 		sfs.putOverwrite(prefix + "Trustee", trust.getTrustee().getID());
 		sfs.putOverwrite(prefix + "Value", Byte.toString(trust.getValue()));
 		sfs.putOverwrite(prefix + "Comment", trust.getComment());
 		sfs.put(prefix + "TrusterEdition", trust.getTrusterEdition());
+		
+    	sfs.putOverwrite("Trusts.Amount", "1");
+    	
 		return sfs;
     }
     
@@ -397,12 +399,14 @@ public final class FCPInterface implements FredPluginFCP {
     		return sfs;
     	}
     	
-    	sfs.putOverwrite(prefix + "Amount", "1");
 		sfs.putOverwrite(prefix + "Truster", score.getTruster().getID());
 		sfs.putOverwrite(prefix + "Trustee", score.getTrustee().getID());
 		sfs.putOverwrite(prefix + "Capacity", Integer.toString(score.getCapacity()));
 		sfs.putOverwrite(prefix + "Rank", Integer.toString(score.getRank()));
 		sfs.putOverwrite(prefix + "Value", Integer.toString(score.getScore()));
+		
+    	sfs.putOverwrite("Scores.Amount", "1");
+    	
 		return sfs;
     }
 
