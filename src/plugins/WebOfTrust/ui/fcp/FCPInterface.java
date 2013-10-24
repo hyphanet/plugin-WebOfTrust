@@ -17,7 +17,6 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
-import plugins.WebOfTrust.SubscriptionManager.Client;
 import plugins.WebOfTrust.SubscriptionManager.IdentitiesSubscription;
 import plugins.WebOfTrust.SubscriptionManager.IdentityChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.Notification;
@@ -490,10 +489,11 @@ public final class FCPInterface implements FredPluginFCP {
     private SimpleFieldSet handleGetIdentity(final Identity identity, final OwnIdentity truster) {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     		
-    		addIdentityFields(sfs, identity, "0");
-    		// TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
-            addIdentityFields(sfs, identity, "");
+    		addIdentityFields(sfs, identity,"", "0"); // TODO: As of 2013-10-24, this is legacy code to support old FCP clients. Remove it after some time.
+            addIdentityFields(sfs, identity,"", ""); // TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
 
+            addIdentityFields(sfs, identity, "Identities.0.", "");
+            
     		if(truster != null) {
             	addTrustFields(sfs, truster, identity, "0");
             	addScoreFields(sfs, truster, identity, "0");
@@ -510,81 +510,110 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * Add fields describing the given identity:
      * 
-     * TypeSUFFIX = type of the identity,  "Inexistent", "OwnIdentity" or "Identity".
+     * All following field names are prefixed with the given prefix and suffixed with the given suffix:
+     * 
+     * Type = type of the identity,  "Inexistent", "OwnIdentity" or "Identity".
      * If the Type is  "Inexistent", the identity does not exist anymore and no other fields will be present.
      * 
-     * NicknameSUFFIX = nickname of the identity
-     * RequestURISUFFIX = request URI of the identity
-     * InsertURISUFFIX = insert URI of the identity. Only present if Type is OwnIdentity
-     * IdentitySUFFIX = ID of the identity (deprecated)
-     * IDSUFFIX = ID of the identity
-     * PublishesTrustListSUFFIX = true/false if the identity does publish a trust list or not 
+     * Nickname = nickname of the identity
+     * RequestURI = request URI of the identity
+     * InsertURI = insert URI of the identity. Only present if Type is OwnIdentity
+     * Identity = ID of the identity (deprecated)
+     * ID = ID of the identity
+     * PublishesTrustList = true/false if the identity does publish a trust list or not 
      * CurrentEditionFetchState = See {@link Identity#getCurrentEditionFetchState()} 
      *  
-     * If suffix.isEmpty() is true:
-     * ContextX = name of context with index X
-     * PropertyX.Name = name of property with index X
-     * PropertyX.Value = value of property with index X
+     * All following field names are NOT prefixed/suffixed unless "PREFIX"/"SUFFIX" is explicitely contained:
      * 
-     * If suffix.isEmpty() is false:
-     * ContextsSUFFIX.ContextX = name of context with index X
-     * PropertiesSUFFIX.PropertyX.Name = name of property X
-     * PropertiesSUFFIX.PropertyX.Value = value of property X
+     * If suffix.isEmpty() is true (those are legacy, do not use them in new parsers):
+     * PREFIXContextX = name of context with index X
+     * PREFIXPropertyX.Name = name of property with index X
+     * PREFIXPropertyX.Value = value of property with index X
+     * 
+     * If suffix.isEmpty() is false (those are legacy, do not use them in new parsers):
+     * PREFIXContextsSUFFIX.ContextX = name of context with index X
+     * PREFIXPropertiesSUFFIX.PropertyX.Name = name of property X
+     * PREFIXPropertiesSUFFIX.PropertyX.Value = value of property X
      * 
      * Always:
-     * ContextsSUFFIX.Amount = number of contexts
-     * PropertiesSUFFIX.Amount = number of properties
+     * Identities.Amount = "1". Overwrite this if you add more identities to the SFS.
+     * 
+     * PREFIXContextsSUFFIX.Amount = number of contexts
+     * PREFIXPropertiesSUFFIX.Amount = number of properties
+     * 
+     * PREFIXContexts.X.Name = name of context with index X
+     * PREFIXProperties.X.Name = name of property X
+     * PREFIXProperties.X.Value = value of property X
      * 
      * @param sfs The {@link SimpleFieldSet} to add fields to.
      * @param identity The {@link Identity} to describe. Can be null to signal that the identity does not exist anymore.
+     * @param prefix Added as descriptor for possibly multiple identities. Empty string is special case as explained in the function description.
      * @param suffix Added as descriptor for possibly multiple identities. Empty string is special case as explained in the function description.
      */
-    private void addIdentityFields(SimpleFieldSet sfs, Identity identity, String suffix) {
+    private void addIdentityFields(SimpleFieldSet sfs, Identity identity, final String prefix, String suffix) {
     	if(identity == null) {
-    		sfs.putOverwrite("Type" + suffix, "Inexistent");
+    		sfs.putOverwrite(prefix + "Type" + suffix, "Inexistent");
     		return;
     	}
     	
-    	sfs.putOverwrite("Type" + suffix, (identity instanceof OwnIdentity) ? "OwnIdentity" : "Identity");
-        sfs.putOverwrite("Nickname" + suffix, identity.getNickname());
-        sfs.putOverwrite("RequestURI" + suffix, identity.getRequestURI().toString());
-        sfs.putOverwrite("Identity" + suffix, identity.getID()); // TODO: As of 2013-09-11, this is legacy code to support old FCP clients. Remove it after some time.
- 		sfs.putOverwrite("ID" + suffix, identity.getID()); 
-        sfs.put("PublishesTrustList" + suffix, identity.doesPublishTrustList());
+    	sfs.putOverwrite(prefix + "Type" + suffix, (identity instanceof OwnIdentity) ? "OwnIdentity" : "Identity");
+        sfs.putOverwrite(prefix + "Nickname" + suffix, identity.getNickname());
+        sfs.putOverwrite(prefix + "RequestURI" + suffix, identity.getRequestURI().toString());
+        sfs.putOverwrite(prefix + "Identity" + suffix, identity.getID()); // TODO: As of 2013-09-11, this is legacy code to support old FCP clients. Remove it after some time.
+ 		sfs.putOverwrite(prefix + "ID" + suffix, identity.getID()); 
+        sfs.put(prefix + "PublishesTrustList" + suffix, identity.doesPublishTrustList());
 
  		if(identity instanceof OwnIdentity) {
  			OwnIdentity ownId = (OwnIdentity)identity;
- 			sfs.putOverwrite("InsertURI" + suffix, ownId.getInsertURI().toString());
+ 			sfs.putOverwrite(prefix + "InsertURI" + suffix, ownId.getInsertURI().toString());
  		}
-        sfs.putOverwrite("CurrentEditionFetchState" + suffix, identity.getCurrentEditionFetchState().toString());
+        sfs.putOverwrite(prefix + "CurrentEditionFetchState" + suffix, identity.getCurrentEditionFetchState().toString());
         
  		final ArrayList<String> contexts = identity.getContexts();
  		final HashMap<String, String> properties = identity.getProperties();
- 		int contextCounter = 0;
- 		int propertyCounter = 0;
  		
-        if (suffix.isEmpty()) {	
+        if (suffix.isEmpty()) {	 // Legacy
+     		int contextCounter = 0;
+     		int propertyCounter = 0;
+     		
             for(String context : contexts) {
-                sfs.putOverwrite("Context" + contextCounter++, context);
+                sfs.putOverwrite(prefix + "Context" + contextCounter++, context);
             }
             
             for (Entry<String, String> property : properties.entrySet()) {
-                sfs.putOverwrite("Property" + propertyCounter + ".Name", property.getKey());
-                sfs.putOverwrite("Property" + propertyCounter++ + ".Value", property.getValue());
+                sfs.putOverwrite(prefix + "Property" + propertyCounter + ".Name", property.getKey());
+                sfs.putOverwrite(prefix + "Property" + propertyCounter++ + ".Value", property.getValue());
             }
-        } else {        	
+        } else { // Legacy
+     		int contextCounter = 0;
+     		int propertyCounter = 0;
+     		
         	for(String context : contexts) {
-                sfs.putOverwrite("Contexts" + suffix + ".Context" + contextCounter++, context);
+                sfs.putOverwrite(prefix + "Contexts" + suffix + ".Context" + contextCounter++, context);
             }
             
             for (Entry<String, String> property : properties.entrySet()) {
-                sfs.putOverwrite("Properties" + suffix + ".Property" + propertyCounter + ".Name", property.getKey());
-                sfs.putOverwrite("Properties" + suffix + ".Property" + propertyCounter++ + ".Value", property.getValue());
+                sfs.putOverwrite(prefix + "Properties" + suffix + ".Property" + propertyCounter + ".Name", property.getKey());
+                sfs.putOverwrite(prefix + "Properties" + suffix + ".Property" + propertyCounter++ + ".Value", property.getValue());
             }
         }
         
-        sfs.put("Contexts" + suffix + ".Amount", contextCounter);
-        sfs.put("Properties" + suffix + ".Amount", propertyCounter);
+ 		int contextCounter = 0;
+ 		int propertyCounter = 0;
+        
+    	for(String context : contexts) { // Non-legacy
+            sfs.putOverwrite(prefix + "Contexts." + contextCounter++ + ".Name", context);
+        }
+        
+        for (Entry<String, String> property : properties.entrySet()) { // Non-legacy
+            sfs.putOverwrite(prefix + "Properties." + propertyCounter + ".Name", property.getKey());
+            sfs.putOverwrite(prefix + "Properties." + propertyCounter++ + ".Value", property.getValue());
+        }
+        
+        sfs.put(prefix + "Contexts" + suffix + ".Amount", contextCounter);
+        sfs.put(prefix + "Properties" + suffix + ".Amount", propertyCounter);
+        
+        sfs.putOverwrite("Identities.Amount", "1");
     }
     
     /**
@@ -686,12 +715,12 @@ public final class FCPInterface implements FredPluginFCP {
 			for(final Identity identity : mWoT.getAllIdentities()) {
 				if(getAll || identity.hasContext(context)) {
 					// TODO: Allow the client to select what data he wants
-					addIdentityFields(sfs, identity, Integer.toString(i));
+					addIdentityFields(sfs, identity, "Identities." + Integer.toString(i) + ".", "");
 					
 					++i;
 				}
 			}
-			sfs.put("Amount", i);
+			sfs.putOverwrite("Identities.Amount", Integer.toString(i));
 		}
 		
 		return sfs;
@@ -761,7 +790,8 @@ public final class FCPInterface implements FredPluginFCP {
 					final Identity identity = score.getTrustee();
 					final String suffix = Integer.toString(i);
 					
-					addIdentityFields(sfs, identity, suffix);
+					addIdentityFields(sfs, identity, "", suffix); // TODO: As of 2013-10-24, this is legacy code to support old FCP clients. Remove it after some time. 
+					addIdentityFields(sfs, identity, "Identities." + suffix + ".", "");				
 					addScoreFields(sfs, score, suffix);
 					
 					if(includeTrustValue)

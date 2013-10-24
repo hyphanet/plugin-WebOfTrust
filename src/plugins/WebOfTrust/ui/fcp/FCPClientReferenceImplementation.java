@@ -972,19 +972,19 @@ public final class FCPClientReferenceImplementation {
 		}
 		
 		@Override
-		protected Identity parseSingle(final SimpleFieldSet sfs, final int index) throws FSParseException, MalformedURLException, InvalidParameterException {
-			final String suffix = Integer.toString(index);
+		protected Identity parseSingle(final SimpleFieldSet wholeSfs, final int index) throws FSParseException, MalformedURLException, InvalidParameterException {
+			final SimpleFieldSet sfs = wholeSfs.getSubset(Integer.toString(index));
 			
-			final String type = sfs.get("Type" + suffix);
+			final String type = sfs.get("Type");
 	    	
 			if(type.equals("Inexistent"))
 	    		return null;
 	    	
-	        final String nickname = sfs.get("Nickname" + suffix);
-	        final String requestURI = sfs.get("RequestURI" + suffix);
-	    	final String insertURI = sfs.get("InsertURI" + suffix);
-	    	final boolean doesPublishTrustList = sfs.getBoolean("PublishesTrustList" + suffix);
-	        final String id = sfs.get("ID" + suffix); 
+	        final String nickname = sfs.get("Nickname");
+	        final String requestURI = sfs.get("RequestURI");
+	    	final String insertURI = sfs.get("InsertURI");
+	    	final boolean doesPublishTrustList = sfs.getBoolean("PublishesTrustList");
+	        final String id = sfs.get("ID"); 
 	 	
 	 		final Identity identity;
 	 		
@@ -1001,19 +1001,19 @@ public final class FCPClientReferenceImplementation {
 	 		assert(insertURI == null || new FreenetURI(requestURI).getEdition() == new FreenetURI(insertURI).getEdition());
 	 		identity.forceSetEdition(new FreenetURI(requestURI).getEdition());
 	 		
-	 		final int contextAmount = sfs.getInt("Contexts" + suffix + ".Amount");
-	        final int propertyAmount = sfs.getInt("Properties" + suffix + ".Amount");
+	 		final int contextAmount = sfs.getInt("Contexts.Amount");
+	        final int propertyAmount = sfs.getInt("Properties.Amount");
 	 		
 	        for(int i=0; i < contextAmount; ++i) {
-	        	identity.addContext(sfs.get("Contexts" + suffix + ".Context" + i));
+	        	identity.addContext(sfs.get("Contexts." + i + ".Name"));
 	        }
 
 	        for(int i=0; i < propertyAmount; ++i)  {
-	            identity.setProperty(sfs.get("Properties" + suffix + ".Property" + i + ".Name"),
-	            		sfs.get("Properties" + suffix + ".Property" + i + ".Value"));
+	            identity.setProperty(sfs.get("Properties." + i + ".Name"),
+	            		sfs.get("Properties." + i + ".Value"));
 	        }
 	        
-	    	identity.forceSetCurrentEditionFetchState(FetchState.valueOf(sfs.get("CurrentEditionFetchState" + suffix)));
+	    	identity.forceSetCurrentEditionFetchState(FetchState.valueOf(sfs.get("CurrentEditionFetchState")));
 
 	        return identity;
 		}
