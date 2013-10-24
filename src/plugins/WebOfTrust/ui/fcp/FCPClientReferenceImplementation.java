@@ -950,7 +950,7 @@ public final class FCPClientReferenceImplementation {
 			return new ChangeSet<T>(parseSingle(beforeChange, 0), parseSingle(afterChange, 0));
 		}
 		
-		/** For example if this was an IdentitiesParser, if the input contained "Identities.*", it would return all * fields without the prefix. */
+		/** For example if this was an {@link IdentityParser}, if the input contained "Identities.*", it would return all * fields without the prefix. */
 		abstract protected SimpleFieldSet getOwnSubset(final SimpleFieldSet sfs) throws FSParseException;
 		
 		abstract protected T parseSingle(SimpleFieldSet sfs, int index) throws FSParseException, MalformedURLException, InvalidParameterException;
