@@ -495,12 +495,25 @@ public final class FCPInterface implements FredPluginFCP {
             addIdentityFields(sfs, identity, "Identities.0.", "");
             
     		if(truster != null) {
-            	addTrustFields(sfs, truster, identity, "0");
-            	addScoreFields(sfs, truster, identity, "0");
+    			Trust trust = null;
+    			Score score = null;
+    			
+    			try {
+    				trust = mWoT.getTrust(truster, identity);
+    			} catch(NotTrustedException e) {}
+    			
+    			try {
+    				score = mWoT.getScore(truster, identity);
+    			} catch(NotInTrustTreeException e) {}
+    			
+    			handleGetTrust(sfs, trust, "0");
+    			handleGetScore(sfs, score, "0");
+    			
+            	addTrustFields(sfs, trust, "0"); // TODO: As of 2013-10-25, this is legacy code to support old FCP clients. Remove it after some time.
+            	addScoreFields(sfs, score, "0"); // TODO: As of 2013-10-25, this is legacy code to support old FCP clients. Remove it after some time.
             
-    			// TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
-            	addTrustFields(sfs, truster, identity, "");
-            	addScoreFields(sfs, truster, identity, "");
+            	addTrustFields(sfs, trust, "");	// TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
+            	addScoreFields(sfs, score, ""); // TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
     		}
     	
 		return sfs;
@@ -622,44 +635,34 @@ public final class FCPInterface implements FredPluginFCP {
      * TrustSUFFIX = Value of trust, from -100 to +100. "null" if no such trust exists.
      * 
      * @param suffix Added as descriptor for possibly multiple identities.
+     * @deprecated Use handleGetTrust instead.
      */
-    private void addTrustFields(SimpleFieldSet sfs, Identity truster, Identity trustee, String suffix) {
-        try {
-            final Trust trust = mWoT.getTrust(truster, trustee);
+    @Deprecated
+    private void addTrustFields(SimpleFieldSet sfs, final Trust trust, String suffix) {
+        if(trust != null)
             sfs.putOverwrite("Trust" + suffix, Byte.toString(trust.getValue()));
-        } catch (final NotTrustedException e1) {
+        else
             sfs.putOverwrite("Trust" + suffix, "null");
-        }
     }
     
     /**
      * Adds field describing the given score value
      * 
-     * ScoreSUFFIX = Integer value of the Score
-     * RankSUFFIX = Integer value of the rank of the score.
+     * ScoreSUFFIX = Integer value of the Score. "null" if score is null.
+     * RankSUFFIX = Integer value of the rank of the score. "null" if score is null. 
      * 
      * @param suffix Added as descriptor for possibly multiple identities.
+     * @deprecated Use handleGetScore() instead
      */
+    @Deprecated
     private void addScoreFields(SimpleFieldSet sfs, Score score, String suffix) {
-        sfs.putOverwrite("Score" + suffix, Integer.toString(score.getScore()));
-        sfs.putOverwrite("Rank" + suffix, Integer.toString(score.getRank()));
-    }
-    
-    /**
-     * Adds field describing the score value from the given truster to the given trustee.
-     * 
-     * ScoreSUFFIX = Integer value of the Score. "null" if no such score exists.
-     * RankSUFFIX = Integer value of the rank of the score. "null" if no such score exists.
-     * @param suffix Added as descriptor for possibly multiple identities.
-     */
-    private void addScoreFields(SimpleFieldSet sfs, OwnIdentity truster, Identity trustee, String suffix) {
-        try {
-            addScoreFields(sfs, mWoT.getScore(truster, trustee), suffix);
-        } catch (final NotInTrustTreeException e) {
+    	if(score != null) {
+            sfs.putOverwrite("Score" + suffix, Integer.toString(score.getScore()));
+            sfs.putOverwrite("Rank" + suffix, Integer.toString(score.getRank()));
+    	} else {
             sfs.putOverwrite("Score" + suffix, "null");
             sfs.putOverwrite("Rank" + suffix, "null");
-        }
-
+    	}
     }
 
     private SimpleFieldSet handleGetOwnIdentities(final SimpleFieldSet params) {
@@ -791,13 +794,22 @@ public final class FCPInterface implements FredPluginFCP {
 					final String suffix = Integer.toString(i);
 					
 					addIdentityFields(sfs, identity, "", suffix); // TODO: As of 2013-10-24, this is legacy code to support old FCP clients. Remove it after some time. 
-					addIdentityFields(sfs, identity, "Identities." + suffix + ".", "");				
-					addScoreFields(sfs, score, suffix);
+					addIdentityFields(sfs, identity, "Identities." + suffix + ".", "");		
 					
-					if(includeTrustValue)
-						addTrustFields(sfs, scoreOwner, identity, suffix);
+					addScoreFields(sfs, score, suffix); // TODO: As of 2013-10-25, this is legacy code to support old FCP clients. Remove it after some time.
+					handleGetScore(sfs, score, suffix);
 					
-					if(truster == null)
+					if(includeTrustValue) {
+			            Trust trust = null;
+						try {
+							trust = mWoT.getTrust(scoreOwner, identity);
+						} catch(NotTrustedException e) {}
+						
+						addTrustFields(sfs, trust, suffix); // TODO: As of 2013-10-25, this is legacy code to support old FCP clients. Remove it after some time.
+						handleGetTrust(sfs, trust, suffix);
+					}
+					
+					if(truster == null) // TODO: As of 2013-10-25, this is legacy code to support old FCP clients. Remove it after some time.
 		    			sfs.putOverwrite("ScoreOwner" + i, scoreOwner.getID());
 					
 					++i;
