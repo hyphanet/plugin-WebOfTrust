@@ -933,7 +933,8 @@ public final class FCPClientReferenceImplementation {
 			mWoT = myWebOfTrust;
 		}
 		
-		public ArrayList<T> parseSynchronization(final SimpleFieldSet sfs) throws FSParseException, MalformedURLException, InvalidParameterException {
+		public ArrayList<T> parseSynchronization(final SimpleFieldSet wholeSfs) throws FSParseException, MalformedURLException, InvalidParameterException {
+			final SimpleFieldSet sfs = getOwnSubset(wholeSfs);
 			final int amount = sfs.getInt("Amount");
 			final ArrayList<T> result = new ArrayList<T>(amount+1);
 			for(int i=0; i < amount; ++i) {
@@ -943,11 +944,14 @@ public final class FCPClientReferenceImplementation {
 		}
 
 		public ChangeSet<T> parseNotification(final SimpleFieldSet notification) throws MalformedURLException, FSParseException, InvalidParameterException {
-			final SimpleFieldSet beforeChange = notification.subset("BeforeChange");
-			final SimpleFieldSet afterChange = notification.subset("AfterChange");
+			final SimpleFieldSet beforeChange = getOwnSubset(notification.subset("BeforeChange"));
+			final SimpleFieldSet afterChange = getOwnSubset(notification.subset("AfterChange"));
 			
 			return new ChangeSet<T>(parseSingle(beforeChange, 0), parseSingle(afterChange, 0));
 		}
+		
+		/** For example if this was an IdentitiesParser, if the input contained "Identities.*", it would return all * fields without the prefix. */
+		abstract protected SimpleFieldSet getOwnSubset(final SimpleFieldSet sfs) throws FSParseException;
 		
 		abstract protected T parseSingle(SimpleFieldSet sfs, int index) throws FSParseException, MalformedURLException, InvalidParameterException;
 	
@@ -960,6 +964,11 @@ public final class FCPClientReferenceImplementation {
 
 		public IdentityParser(final WebOfTrustInterface myWebOfTrust) {
 			super(myWebOfTrust);
+		}
+		
+		@Override
+		protected SimpleFieldSet getOwnSubset(SimpleFieldSet sfs) throws FSParseException {
+			return sfs.getSubset("Identities");
 		}
 		
 		@Override
@@ -1008,7 +1017,6 @@ public final class FCPClientReferenceImplementation {
 
 	        return identity;
 		}
-		
 	}
 
 	/**
@@ -1022,19 +1030,24 @@ public final class FCPClientReferenceImplementation {
 			super(myWebOfTrust);
 			mIdentities = myIdentities;
 		}
-		
+
 		@Override
-		protected Trust parseSingle(final SimpleFieldSet sfs, final int index) throws FSParseException, InvalidParameterException {
-			final String suffix = Integer.toString(index);
+		protected SimpleFieldSet getOwnSubset(SimpleFieldSet sfs) throws FSParseException {
+			return sfs.getSubset("Trusts");
+		}
+
+		@Override
+		protected Trust parseSingle(final SimpleFieldSet wholeSfs, final int index) throws FSParseException, InvalidParameterException {
+			final SimpleFieldSet sfs = wholeSfs.getSubset(Integer.toString(index));
 			
-	    	if(sfs.get("Value" + suffix).equals("Inexistent"))
+	    	if(sfs.get("Value").equals("Inexistent"))
 	    		return null;
 	    	
-			final String trusterID = sfs.get("Truster" + suffix);
-			final String trusteeID = sfs.get("Trustee" + suffix);
-			final byte value = sfs.getByte("Value" + suffix);
-			final String comment = sfs.get("Comment" + suffix);
-			final long trusterEdition = sfs.getLong("TrusterEdition" + suffix);
+			final String trusterID = sfs.get("Truster");
+			final String trusteeID = sfs.get("Trustee");
+			final byte value = sfs.getByte("Value");
+			final String comment = sfs.get("Comment");
+			final long trusterEdition = sfs.getLong("TrusterEdition");
 			
 			final Trust trust = new Trust(mWoT, mIdentities.get(trusterID), mIdentities.get(trusteeID), value, comment);
 			trust.forceSetTrusterEdition(trusterEdition);
@@ -1055,19 +1068,24 @@ public final class FCPClientReferenceImplementation {
 			super(myWebOfTrust);
 			mIdentities = myIdentities;
 		}
-		
+
 		@Override
-		protected Score parseSingle(final SimpleFieldSet sfs, final int index) throws FSParseException {
-			final String suffix = Integer.toString(index);
+		protected SimpleFieldSet getOwnSubset(SimpleFieldSet sfs) throws FSParseException {
+			return sfs.getSubset("Scores");
+		}
+
+		@Override
+		protected Score parseSingle(final SimpleFieldSet wholeSfs, final int index) throws FSParseException {
+			final SimpleFieldSet sfs = wholeSfs.getSubset(Integer.toString(index));
 			
-	    	if(sfs.get("Value" + suffix).equals("Inexistent"))
+	    	if(sfs.get("Value").equals("Inexistent"))
 	    		return null;
 	    	
-			final String trusterID = sfs.get("Truster" + suffix);
-			final String trusteeID = sfs.get("Trustee" + suffix);
-			final int capacity = sfs.getInt("Capacity" + suffix);
-			final int rank = sfs.getInt("Rank" + suffix);
-			final int value = sfs.getInt("Value" + suffix);
+			final String trusterID = sfs.get("Truster");
+			final String trusteeID = sfs.get("Trustee");
+			final int capacity = sfs.getInt("Capacity");
+			final int rank = sfs.getInt("Rank");
+			final int value = sfs.getInt("Value");
 			
 			return new Score(mWoT, (OwnIdentity)mIdentities.get(trusterID), mIdentities.get(trusteeID), value, rank, capacity);
 		}

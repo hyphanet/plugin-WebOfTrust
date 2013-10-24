@@ -156,8 +156,8 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		// First reply message is the full set of all objects of the type we are interested in so the client can synchronize its database
 		final SimpleFieldSet synchronization = mReplyReceiver.getNextResult();
 		assertEquals(type, synchronization.get("Message"));
-		assertEquals("0", synchronization.get("Amount")); // No identities/trusts/scores stored yet
-		
+		assertEquals("0", synchronization.get(type + ".Amount")); // No identities/trusts/scores stored yet
+
 		// Second reply message is the confirmation of the subscription
 		final SimpleFieldSet subscription = mReplyReceiver.getNextResult();
 		assertEquals("Subscribed", subscription.get("Message"));

@@ -354,16 +354,19 @@ public final class FCPInterface implements FredPluginFCP {
     }
     
     private SimpleFieldSet handleGetTrust(final SimpleFieldSet sfs, final Trust trust, String suffix) {
+    	final String prefix = "Trusts." + suffix + ".";
+    	
     	if(trust == null) {
-    		sfs.putOverwrite("Value" + suffix, "Inexistent");
+    		sfs.putOverwrite(prefix + "Value", "Inexistent");
     		return sfs;
     	}
     	
-		sfs.putOverwrite("Truster" + suffix, trust.getTruster().getID());
-		sfs.putOverwrite("Trustee" + suffix, trust.getTrustee().getID());
-		sfs.putOverwrite("Value" + suffix, Byte.toString(trust.getValue()));
-		sfs.putOverwrite("Comment" + suffix, trust.getComment());
-		sfs.put("TrusterEdition" + suffix, trust.getTrusterEdition());
+    	sfs.putOverwrite(prefix + "Amount", "1");
+		sfs.putOverwrite(prefix + "Truster", trust.getTruster().getID());
+		sfs.putOverwrite(prefix + "Trustee", trust.getTrustee().getID());
+		sfs.putOverwrite(prefix + "Value", Byte.toString(trust.getValue()));
+		sfs.putOverwrite(prefix + "Comment", trust.getComment());
+		sfs.put(prefix + "TrusterEdition", trust.getTrusterEdition());
 		return sfs;
     }
     
@@ -386,17 +389,20 @@ public final class FCPInterface implements FredPluginFCP {
 		return sfs;
     }
     
-    private SimpleFieldSet handleGetScore(final SimpleFieldSet sfs, final Score score, final String suffix) {    	
+    private SimpleFieldSet handleGetScore(final SimpleFieldSet sfs, final Score score, final String suffix) {
+    	final String prefix = "Scores." + suffix + ".";
+    	
     	if(score == null) {
-    		sfs.putOverwrite("Value" + suffix, "Inexistent");
+    		sfs.putOverwrite(prefix + "Value", "Inexistent");
     		return sfs;
     	}
     	
-		sfs.putOverwrite("Truster" + suffix, score.getTruster().getID());
-		sfs.putOverwrite("Trustee" + suffix, score.getTrustee().getID());
-		sfs.putOverwrite("Capacity" + suffix, Integer.toString(score.getCapacity()));
-		sfs.putOverwrite("Rank" + suffix, Integer.toString(score.getRank()));
-		sfs.putOverwrite("Value" + suffix, Integer.toString(score.getScore()));
+    	sfs.putOverwrite(prefix + "Amount", "1");
+		sfs.putOverwrite(prefix + "Truster", score.getTruster().getID());
+		sfs.putOverwrite(prefix + "Trustee", score.getTrustee().getID());
+		sfs.putOverwrite(prefix + "Capacity", Integer.toString(score.getCapacity()));
+		sfs.putOverwrite(prefix + "Rank", Integer.toString(score.getRank()));
+		sfs.putOverwrite(prefix + "Value", Integer.toString(score.getScore()));
 		return sfs;
     }
 
@@ -698,7 +704,7 @@ public final class FCPInterface implements FredPluginFCP {
 				handleGetTrust(sfs, trust, Integer.toString(i));
 				++i;
 			}
-        	sfs.put("Amount", i);
+        	sfs.putOverwrite("Trusts.Amount", Integer.toString(i)); // Need to use Overwrite because handleGetTrust() sets it to 1
         }
         
         return sfs;
@@ -716,7 +722,7 @@ public final class FCPInterface implements FredPluginFCP {
 				
 				++i;
 			}
-			sfs.put("Amount", i);
+			sfs.putOverwrite("Scores.Amount", Integer.toString(i)); // Need to use Overwrite because handleGetScore() sets it to 1
         }
         
         return sfs;
