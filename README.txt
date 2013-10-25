@@ -39,8 +39,18 @@ In the Load Plugin box, enter: /path/to/wot.jar and click the Load button.
 
 Then click the Visit button.
 
+UNDERSTANDING
+=============
+
+See https://wiki.freenetproject.org/Web_of_Trust
+
 
 DEVELOPMENT
 ===========
 
 See the files in the "developer-documentation" folder.
+
+Also, see the following pages in the Freenet wiki:
+https://wiki.freenetproject.org/Web_of_Trust
+https://wiki.freenetproject.org/Web_Of_Trust_development
+https://wiki.freenetproject.org/Plugin_development_tutorial
