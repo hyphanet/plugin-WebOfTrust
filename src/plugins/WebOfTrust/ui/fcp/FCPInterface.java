@@ -723,7 +723,7 @@ public final class FCPInterface implements FredPluginFCP {
 					++i;
 				}
 			}
-			sfs.putOverwrite("Identities.Amount", Integer.toString(i));
+			sfs.putOverwrite("Identities.Amount", Integer.toString(i)); // Need to use Overwrite because addIdentityFields() sets it to 1
 		}
 		
 		return sfs;
