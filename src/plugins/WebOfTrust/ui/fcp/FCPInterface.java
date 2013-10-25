@@ -1129,7 +1129,15 @@ public final class FCPInterface implements FredPluginFCP {
      * There is a maximal amount of {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT} failures per FCP-Client.
      * If you exceed this limit, your subscriptions will be terminated. You will receive an "Unsubscribed" message then as long as
      * your client has not terminated the FCP connection. See {@link #handleUnsubscribe(SimpleFieldSet)}.
-     * The fact that you can request a notification to be re-sent may also be used to program your client in a transactional style-
+     * The fact that you can request a notification to be re-sent may also be used to program your client in a transactional style:
+     * If the transaction which processes an event-notification fails, you can indicate failure to the synchronous FCP sender and
+     * WOT will then re-send the notification, causing the transaction to be retried.
+     * 
+     * If your client is shutting down or not interested in the subscription anymore, you should send an "Unsubscribe" message.
+     * See {@link #handleUnsubscribe(SimpleFieldSet)}. This will make sure that WOT stops gathering data for your subscription,
+     * which would be expensive to do if its not even needed. But if you cannot send the message anymore due to a dropped connection,
+     * the subscription will be terminated automatically after some time due to notification-deployment failing. Nevertheless,
+     * please always unsubscribe when possible.
      * 
      * @see SubscriptionManager#subscribeToIdentities(String) The underlying implementation for "To" = "Identities"
      * @see SubscriptionManager#subscribeToScores(String) The underyling implementation for "To" = "Trusts"
