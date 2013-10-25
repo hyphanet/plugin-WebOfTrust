@@ -3,9 +3,14 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.fcp;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -227,6 +232,19 @@ public final class FCPClientReferenceImplementation {
 		// Necessary for automatic setting of logDEBUG and logMINOR
 		Logger.registerClass(FCPClientReferenceImplementation.class);
 	}
+	
+	/**
+	 * Set this to true for debugging:
+	 * Will enable dumping of the {@link SimpleFieldSet} FCP traffic to a text file. The filename will be:
+	 * <code>this.getClass().getSimpleName() + " FCP dump.txt"</code>
+	 */
+	public final boolean mDumpFCPTraffic = false;
+	
+	/**
+	 * Used for dumping the {@link SimpleFieldSet} FCP traffic to a text file for debugging.
+	 * @see #mDumpFCPTraffic
+	 */
+	private final PrintWriter mFCPTrafficDump;
 
 
 	public FCPClientReferenceImplementation(Map<String, Identity> myIdentityStorage,
@@ -261,6 +279,19 @@ public final class FCPClientReferenceImplementation {
 		mIdentityParser = new IdentityParser(wot);
 		mTrustParser = new TrustParser(wot, mIdentityStorage);
 		mScoreParser = new ScoreParser(wot, mIdentityStorage);
+		
+		if(mDumpFCPTraffic) {
+			PrintWriter dump;
+			try {
+				dump = new PrintWriter(new BufferedWriter(new FileWriter(this.getClass().getSimpleName() + " FCP dump.txt")));
+			} catch (IOException e) {
+				Logger.error(this, "Failed to create debug FCP dump file",e);
+				dump = null;
+			}
+			mFCPTrafficDump = dump;
+		} else {
+			mFCPTrafficDump = null;
+		}
 	}
 	
 	/**
@@ -407,6 +438,10 @@ public final class FCPClientReferenceImplementation {
 		
 		Logger.normal(this, "connect()");
 		
+		if(mFCPTrafficDump != null) {
+			mFCPTrafficDump.println("---------------- " + new Date() + " Connected. ---------------- ");
+		}
+		
 		try {
 			mConnectionIdentifier = UUID.randomUUID().toString();
 			mConnection = mPluginRespirator.getPluginTalker(mFCPMessageReceiver, WOT_FCP_NAME, mConnectionIdentifier);
@@ -427,6 +462,20 @@ public final class FCPClientReferenceImplementation {
 				Logger.warning(this, "ConnectionStatusChangedHandler.handleConnectionStatusChanged() threw up, please fix your handler!", t);
 			}
 			*/
+		}
+	}
+	
+	/**
+	 * Sends the given {@link SimpleFieldSet} via {@link #mConnection}.
+	 * Attention: Does not synchronize, does not check whether {@link #mConnection} is null.
+	 * 
+	 * If {@link #mFCPTrafficDump} is non-null, the SFS is dumped to it.
+	 */
+	private void send(final SimpleFieldSet sfs) {
+		mConnection.send(sfs, null);
+		if(mFCPTrafficDump != null) {
+			mFCPTrafficDump.println("---------------- " + new Date() + " Sent: ---------------- ");
+			mFCPTrafficDump.println(sfs.toOrderedString());
 		}
 	}
 	
@@ -458,6 +507,11 @@ public final class FCPClientReferenceImplementation {
 		// Notice: PluginTalker has no disconnection mechanism, we can must drop references to existing connections and then they will be GCed
 		mConnection = null;
 		mConnectionIdentifier = null;
+		
+		if(mFCPTrafficDump != null) {
+			mFCPTrafficDump.println("---------------- " + new Date() + " Disconnected. ---------------- ");
+			mFCPTrafficDump.flush();
+		}
 	}
 	
 	/**
@@ -489,7 +543,7 @@ public final class FCPClientReferenceImplementation {
 		
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Ping");
-		mConnection.send(sfs, null);
+		send(sfs);
 		mLastPingSentDate = CurrentTimeUTC.getInMillis();
 	}
 	
@@ -532,7 +586,7 @@ public final class FCPClientReferenceImplementation {
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Subscribe");
 		sfs.putOverwrite("To", type.toString());
-		mConnection.send(sfs, null);
+		send(sfs);
 	}
 	
 	/**
@@ -546,7 +600,7 @@ public final class FCPClientReferenceImplementation {
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Unsubscribe");
 		sfs.putOverwrite("SubscriptionID", mSubscriptionIDs.get(type));
-		mConnection.send(sfs, null);
+		send(sfs);
 	}
 
 	/**
@@ -563,6 +617,11 @@ public final class FCPClientReferenceImplementation {
 		 */
 		@Override
 		public synchronized final void onReply(final String pluginname, final String indentifier, final SimpleFieldSet params, final Bucket data) {
+			if(mFCPTrafficDump != null) {
+				mFCPTrafficDump.println("---------------- " + new Date() + " Received: ---------------- ");
+				mFCPTrafficDump.println(params.toOrderedString());
+			}
+			
 			if(!WOT_FCP_NAME.equals(pluginname))
 				throw new RuntimeException("Plugin is not supposed to talk to us: " + pluginname);
 
