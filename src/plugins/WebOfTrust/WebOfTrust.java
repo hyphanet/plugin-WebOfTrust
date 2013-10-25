@@ -73,9 +73,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	FredPluginL10n, FredPluginBaseL10n {
 	
 	/* Constants */
-	
-	public static final boolean FAST_DEBUG_MODE = false;
-	
+
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/WebOfTrust";
 

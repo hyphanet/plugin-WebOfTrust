@@ -59,7 +59,7 @@ import freenet.support.io.NativeThread;
  */
 public final class IntroductionClient extends TransferThread  {
 	
-	private static final int STARTUP_DELAY = WebOfTrust.FAST_DEBUG_MODE ? (30 * 1000) : (3 * 60 * 1000);
+	private static final int STARTUP_DELAY = 3 * 60 * 1000;
 	private static final int THREAD_PERIOD = 1 * 60 * 60 * 1000; 
 	
 	/**

@@ -51,7 +51,7 @@ import freenet.support.io.NativeThread;
  */
 public final class IntroductionServer extends TransferThread {
 	
-	private static final int STARTUP_DELAY = WebOfTrust.FAST_DEBUG_MODE ? (10 * 1000) : (5 * 60 * 1000);
+	private static final int STARTUP_DELAY = 5 * 60 * 1000;
 	private static final int THREAD_PERIOD = 60 * 60 * 1000;
 
 	/** The name of the property we use to announce in identities how many puzzles they insert */
