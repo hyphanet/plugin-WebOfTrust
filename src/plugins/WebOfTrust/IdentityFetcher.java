@@ -443,21 +443,21 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	private void editionHintUpdated(String identityID) throws Exception {
 		try {
 			Identity identity = mWoT.getIdentityByID(identityID);
-				if(mRequests.get(identity.getID()) == null)
-					throw new UnknownIdentityException("updateEdtitionHint() called for an identity which is not being fetched: " + identityID);
+			if(mRequests.get(identity.getID()) == null)
+				throw new UnknownIdentityException("updateEdtitionHint() called for an identity which is not being fetched: " + identityID);
 
-				USK usk;
+			USK usk;
 
-				if(identity.getCurrentEditionFetchState() != FetchState.NotFetched) // Do not refetch if parsing failed!
-					usk = USK.create(identity.getRequestURI().setSuggestedEdition(identity.getEdition() + 1));
-				else
-					usk = USK.create(identity.getRequestURI());
-				
-				long editionHint = identity.getLatestEditionHint();
-				
-				if(logDEBUG) Logger.debug(this, "Updating edition hint to " + editionHint + " for " + identityID);
+			if(identity.getCurrentEditionFetchState() != FetchState.NotFetched) // Do not refetch if parsing failed!
+				usk = USK.create(identity.getRequestURI().setSuggestedEdition(identity.getEdition() + 1));
+			else
+				usk = USK.create(identity.getRequestURI());
 
-				mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
+			long editionHint = identity.getLatestEditionHint();
+
+			if(logDEBUG) Logger.debug(this, "Updating edition hint to " + editionHint + " for " + identityID);
+
+			mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
 		} catch (UnknownIdentityException e) {
 			Logger.normal(this, "Updating edition hint failed, the identity was deleted already.", e);
 		}
