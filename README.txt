@@ -38,3 +38,9 @@ Visit the plugins page ("http://127.0.0.1:8888/plugins/ by default) with your We
 In the Load Plugin box, enter: /path/to/wot.jar and click the Load button.
 
 Then click the Visit button.
+
+
+DEVELOPMENT
+===========
+
+See the files in the "developer-documentation" folder.
