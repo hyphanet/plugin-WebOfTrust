@@ -8,13 +8,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.security.SecureRandom;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.TimeZone;
 
 import javax.xml.XMLConstants;
@@ -104,6 +107,9 @@ public final class XMLTransformer {
 	/** Created by mDocumentBuilder, used for building the identity XML DOM when encoding identities */
 	private final DOMImplementation mDOM;
 	
+	/** Used for ensuring that the order of the output XML does not reveal private data of the user */
+	private final Random mFastWeakRandom;
+	
 	/* TODO: Check with a profiler how much memory this takes, do not cache it if it is too much */
 	/** Used for storing the XML DOM of encoded identities as physical XML text */
 	private final Transformer mSerializer;
@@ -128,6 +134,10 @@ public final class XMLTransformer {
 		mWoT = myWoT;
 		mSubscriptionManager = mWoT.getSubscriptionManager();
 		mDB = mWoT.getDatabase();
+		
+		// If we are not running inside a node, use a SecureRandom, not Random: Assume that the node's choice of "fastWeakRandom"
+		// would have been better than the standard java Random - otherwise it wouldn't have that field and use standard Random instead.
+		mFastWeakRandom = mWoT.getPluginRespirator() != null ? mWoT.getPluginRespirator().getNode().fastWeakRandom : new SecureRandom();
 		
 		try {
 			DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
@@ -194,14 +204,31 @@ public final class XMLTransformer {
 
 			if(identity.doesPublishTrustList()) {
 				Element trustListElement = xmlDoc.createElement("TrustList");
-
+				
+				final ArrayList<Trust> trusts = new ArrayList<Trust>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT + 1);
+				// We can only include a limited amount of trust values because the allowed size of a trust list must be finite to prevent DoS.
+				// So we chose the included trust values by sorting the trust list by last seen date of the trustee and cutting off
+				// the list after the size limit. This gives active identities who still publish a trust list a better chance than the ones
+				// who aren't in use anymore.
 				int trustCount = 0;
-				for(Trust trust : mWoT.getGivenTrustsSortedDescendingByLastSeen(identity)) {
+				for(Trust trustCandidate : mWoT.getGivenTrustsSortedDescendingByLastSeen(identity)) {
 					if(++trustCount > MAX_IDENTITY_XML_TRUSTEE_AMOUNT) {
 						Logger.normal(this, "Amount of trustees exceeded " + MAX_IDENTITY_XML_TRUSTEE_AMOUNT + ", not adding any more to trust list of " + identity);
 						break;
 					}
-					
+					trusts.add(trustCandidate);
+				}
+
+				// We cannot add the trusts like we queried them from the database: We have sorted the database query by last-seen date
+				// and that date reveals some information about the state of the WOT. This is a potential privacy leak.
+				// So we randomize the appearance of the trust values in the XML. We are OK to use a weak RNG:
+				// - The original sort order which we try to hide is not used for any computations, it is merely of statistical significance.
+				//   So RNG exploits cannot wreak any havoc by maliciously positioning stuff where it shouldn't be
+				// - The order in which the node fetches identities should already be softly randomized.
+				//   Randomizing it even more with a weak RNG will make it very random.
+				Collections.shuffle(trusts, mFastWeakRandom);
+				
+				for(Trust trust : trusts) {
 					/* We should make very sure that we do not reveal the other own identity's */
 					if(trust.getTruster() != identity) 
 						throw new RuntimeException("Error in WoT: It is trying to export trust values of someone else in the trust list " +
