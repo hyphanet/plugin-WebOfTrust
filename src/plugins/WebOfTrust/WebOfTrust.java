@@ -610,7 +610,61 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			// fixed to work with certain SSKs. So we need to make sure that we are actually running on a build which has the fix.
 			if(freenet.node.Version.buildNumber() < 1457)
 				throw new RuntimeException("You need at least Freenet build 1457 to use this WOT version!");
+
+			Logger.normal(this, "Upgrading database version " + databaseVersion);
 			
+			//synchronized(this) { // Already done at function level
+			//synchronized(mPuzzleStore) { // Normally would be needed for deleteWithoutCommit(Identity) but IntroductionClient/Server are not running yet
+			//synchronized(mFetcher) { // Normally would be needed for deleteWithoutCommit(Identity) but the IdentityFetcher is not running yet
+			//synchronized(mSubscriptionManager) { // Normally would be needed for deleteWithoutCommit(Identity) but the SubscriptionManager is not running yet
+				synchronized(Persistent.transactionLock(mDB)) {
+					try {
+						Logger.normal(this, "Searching for duplicate OwnIdentity objects...");
+						for(final Identity identity : getAllNonOwnIdentities()) {
+							final Query query = mDB.query();
+							query.constrain(OwnIdentity.class);
+							query.descend("mID").constrain(identity.getID());
+							final ObjectSet<OwnIdentity> duplicates = new Persistent.InitializingObjectSet<OwnIdentity>(this, query);
+							
+							FreenetURI insertURI = null;
+							try {
+								// We need to prevent computeAllScoresWithoutCommit from happening in deleteWithoutCommit(Identity):
+								// It might fail if duplicates exist and the user has enabled assertions.
+								// beginTrustListImport() would delay it until we call finishTrustListImport() after we got rid of the
+								// duplicates. But it also contains asserts which fail. So we emulate its behavior:
+								assert(!mTrustListImportInProgress);
+								mTrustListImportInProgress = true;
+								
+								for(final OwnIdentity duplicate : duplicates) {
+									Logger.warning(this, "Found duplicate OwnIdentity during database upgrade, deleting it:" + duplicate);
+									deleteWithoutCommit(duplicate);
+									assert (insertURI == null || insertURI.equalsKeypair(duplicate.getInsertURI()));
+									insertURI = duplicate.getInsertURI();
+								}
+								finishTrustListImport();
+							} catch(RuntimeException e) {
+								abortTrustListImport(e);
+								throw e;
+							}
+						
+							if(insertURI != null) {
+								Logger.warning(this, "Restoring a single OwnIdentity for the deleted duplicates...");
+								try {
+									restoreOwnIdentity(insertURI);
+								} catch (Exception e) {
+									throw new RuntimeException(e);
+								}
+							}
+						}
+						
+						mConfig.setDatabaseFormatVersion(++databaseVersion);
+						mConfig.storeAndCommit();
+						Logger.normal(this, "Upgraded database to version " + databaseVersion);
+					} catch(RuntimeException e) {
+						Persistent.checkedRollbackAndThrow(mDB, this, e);
+					}
+				}
+			//}
 		}
 
 		if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
