@@ -80,7 +80,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	/** Package-private method to allow unit tests to bypass some assert()s */
 	
 	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = 2; 
+	public static final int DATABASE_FORMAT_VERSION = 3; 
 	
 	
 
@@ -600,6 +600,17 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 					}
 				}
 			//}			
+		}
+		
+		// Issue https://bugs.freenetproject.org/view.php?id=6085 caused creation of OwnIdentity objects which duplicate a non-own
+		// version of them. This was caused by restoreOwnIdentity() not detecting that there is a non-own version of the identity.
+		// So we delete the OwnIdentity and use thew new restoreOwnIdentity() again.
+		if(databaseVersion == 2) {
+			// The fix of restoreOwnIdentity() actually happened in Freenet itself: FreenetURI.deriveRequestURIFromInsertURI() was
+			// fixed to work with certain SSKs. So we need to make sure that we are actually running on a build which has the fix.
+			if(freenet.node.Version.buildNumber() < 1457)
+				throw new RuntimeException("You need at least Freenet build 1457 to use this WOT version!");
+			
 		}
 
 		if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
