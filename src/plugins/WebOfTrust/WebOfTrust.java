@@ -617,9 +617,9 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			Logger.normal(this, "Upgrading database version " + databaseVersion);
 			
 			//synchronized(this) { // Already done at function level
-			synchronized(mPuzzleStore) { // For deleteWithoutCommit(Identity) / restoreOwnIdentity()
-			synchronized(mFetcher) { // For deleteWithoutCommit(Identity) / restoreOwnIdentity()
-			synchronized(mSubscriptionManager) { // For deleteWithoutCommit(Identity) / restoreOwnIdentity()
+			synchronized(mPuzzleStore) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
+			synchronized(mFetcher) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
+			synchronized(mSubscriptionManager) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
 				synchronized(Persistent.transactionLock(mDB)) {
 					try {
 						Logger.normal(this, "Searching for duplicate OwnIdentity objects...");
@@ -655,7 +655,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 						
 							Logger.warning(this, "Restoring a single OwnIdentity for the deleted duplicates...");
 							try {
-								restoreOwnIdentity(insertURI);
+								restoreOwnIdentityWithoutCommit(insertURI);
 							} catch (Exception e) {
 								throw new RuntimeException(e);
 							}
@@ -3150,16 +3150,24 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 
 	/**
 	 * NOTICE: When changing this function, please also take care of {@link OwnIdentity.isRestoreInProgress()}
+	 * 
+	 * This function does neither lock the database nor commit the transaction. You have to surround it with
+	 * <code>
+	 * synchronized(WebOfTrust.this) {
+	 * synchronized(mPuzzleStore) {
+	 * synchronized(mFetcher) {
+	 * synchronized(mSubscriptionManager) {
+	 * synchronized(Persistent.transactionLock(mDB)) {
+	 *     try { ... restoreOwnIdentityWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
+	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
+	 * }}}}
+	 * </code>
 	 */
-	public synchronized void restoreOwnIdentity(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
+	public void restoreOwnIdentityWithoutCommit(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
 		Logger.normal(this, "restoreOwnIdentity(): Starting... ");
 		
 		OwnIdentity identity;
-		
-		synchronized(mPuzzleStore) {
-		synchronized(mFetcher) {
-		synchronized(mSubscriptionManager) {
-		synchronized(Persistent.transactionLock(mDB)) {
+
 			try {
 				long edition = 0;
 				
@@ -3292,23 +3300,37 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 				// This function messes with the trust graph manually so it is a good idea to check whether it is intact afterwards.
 				assert(computeAllScoresWithoutCommit());
 				
-				Persistent.checkedCommit(mDB, this);
+				Logger.normal(this, "restoreOwnIdentity(): Finished.");
 			}
 			catch(RuntimeException e) {
 				if(mTrustListImportInProgress) { // We don't execute beginTrustListImport() in all code paths of this function
-					abortTrustListImport(e); // Does rollback for us
+					// Does rollback for us. The outside will do another duplicate rollback() because the JavaDoc tells it to.
+					// But thats acceptable to keep the transaction code pattern the same everywhere.
+					abortTrustListImport(e); 
 					throw e;
-				} else {
-					Persistent.checkedRollbackAndThrow(mDB, this, e);
 				}
+			}
+
+	}
+	
+	public synchronized void restoreOwnIdentity(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
+		synchronized(mPuzzleStore) {
+		synchronized(mFetcher) {
+		synchronized(mSubscriptionManager) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				restoreOwnIdentityWithoutCommit(insertFreenetURI);
+				Persistent.checkedCommit(mDB, this);
+			}
+			catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
 		}
 		}
 		}
-		
-		Logger.normal(this, "restoreOwnIdentity(): Finished.");
 	}
+
 
 	public synchronized void setTrust(String ownTrusterID, String trusteeID, byte value, String comment)
 		throws UnknownIdentityException, NumberFormatException, InvalidParameterException {
