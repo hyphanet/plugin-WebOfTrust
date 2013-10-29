@@ -192,13 +192,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			
 			mPuzzleStore = new IntroductionPuzzleStore(this);
 			
-			mFetcher = new IdentityFetcher(this, getPluginRespirator());
-			
-			// Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager while this is executing.
-			upgradeDB();
-			
-			mXMLTransformer = new XMLTransformer(this);
-			
+			// Queried by IdentityFetcher
 			mRequestClient = new RequestClient() {
 	
 				public boolean persistent() {
@@ -214,6 +208,14 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 				}
 				
 			};
+			
+			mFetcher = new IdentityFetcher(this, getPluginRespirator());
+			
+			// Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager while this is executing.
+			upgradeDB();
+			
+			mXMLTransformer = new XMLTransformer(this);
+
 			
 			mInserter = new IdentityInserter(this);
 					
