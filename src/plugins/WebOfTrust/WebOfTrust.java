@@ -617,9 +617,9 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			Logger.normal(this, "Upgrading database version " + databaseVersion);
 			
 			//synchronized(this) { // Already done at function level
-			//synchronized(mPuzzleStore) { // Normally would be needed for deleteWithoutCommit(Identity) but IntroductionClient/Server are not running yet
-			//synchronized(mFetcher) { // Normally would be needed for deleteWithoutCommit(Identity) but the IdentityFetcher is not running yet
-			//synchronized(mSubscriptionManager) { // Normally would be needed for deleteWithoutCommit(Identity) but the SubscriptionManager is not running yet
+			synchronized(mPuzzleStore) { // For deleteWithoutCommit(Identity) / restoreOwnIdentity()
+			synchronized(mFetcher) { // For deleteWithoutCommit(Identity) / restoreOwnIdentity()
+			synchronized(mSubscriptionManager) { // For deleteWithoutCommit(Identity) / restoreOwnIdentity()
 				synchronized(Persistent.transactionLock(mDB)) {
 					try {
 						Logger.normal(this, "Searching for duplicate OwnIdentity objects...");
@@ -668,7 +668,9 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 						Persistent.checkedRollbackAndThrow(mDB, this, e);
 					}
 				}
-			//}
+			}
+			}
+			}
 		}
 
 		if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
