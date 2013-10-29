@@ -192,6 +192,8 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			
 			mPuzzleStore = new IntroductionPuzzleStore(this);
 			
+			mFetcher = new IdentityFetcher(this, getPluginRespirator());
+			
 			// Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager while this is executing.
 			upgradeDB();
 			
@@ -214,7 +216,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			};
 			
 			mInserter = new IdentityInserter(this);
-			mFetcher = new IdentityFetcher(this, getPluginRespirator());		
+					
 			
 			// We only do this if debug logging is enabled since the integrity verification cannot repair anything anyway,
 			// if the user does not read his logs there is no need to check the integrity.
@@ -238,6 +240,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			Logger.normal(this, "Starting fetches of all identities...");
 			synchronized(this) {
 			synchronized(mFetcher) {
+				mFetcher.start();
 				for(Identity identity : getAllIdentities()) {
 					if(shouldFetchIdentity(identity)) {
 						try {

@@ -76,7 +76,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * if the WoT becomes large. We should instead ask the node whether we already have a request for the given SSK URI. So how to do that??? */
 	private final HashMap<String, USKRetriever> mRequests = new HashMap<String, USKRetriever>(128); /* TODO: profile & tweak */
 	
-	private final TrivialTicker mTicker;
+	private volatile TrivialTicker mTicker;
 	
 	/* Statistics */
 	
@@ -106,7 +106,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	
 	
 	/**
-	 * Creates a new IdentityFetcher.
+	 * Creates a new IdentityFetcher. You must call {@link #start()} before expecting any commands to have an effect.
 	 * 
 	 * @param myWoT A reference to a {@link WebOfTrust}
 	 */
@@ -119,19 +119,18 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			mUSKManager = respirator.getNode().clientCore.uskManager;
 			mClient = respirator.getHLSimpleClient();
 			mClientContext = respirator.getNode().clientCore.clientContext;
-			mTicker = new TrivialTicker(respirator.getNode().executor);
 		} else {
 			mUSKManager = null;
 			mClient = null;
 			mClientContext = null;
-			mTicker = null;
 		}
+		
+		// Initialized by start()
+		mTicker = null;
 		
 		mRequestClient = mWoT.getRequestClient();
 		
 		mStartupTimeMilliseconds = CurrentTimeUTC.getInMillis();
-		
-		deleteAllCommands();
 	}
 	
 	@SuppressWarnings("serial")
@@ -497,14 +496,29 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	}
 
+	
+	/**
+	 * Deletes all existing commands using {@link #deleteAllCommands()}. Enables usage of {@link #scheduleCommandProcessing()}.
+	 */
+	protected synchronized void start() {
+		if(mTicker != null)
+			throw new IllegalStateException("start() was already called!");
+		
+		deleteAllCommands();
+		
+		mTicker = new TrivialTicker(mWoT.getPluginRespirator().getNode().executor); 
+	}
+	
 	/**
 	 * Stops all running requests.
 	 */
 	protected synchronized void stop() {
 		if(logDEBUG) Logger.debug(this, "Trying to stop all requests");
 		
-		if(mTicker != null)
+		if(mTicker != null) {
 			mTicker.shutdown();
+			mTicker = null;
+		}
 		
 		USKRetriever[] retrievers = mRequests.values().toArray(new USKRetriever[mRequests.size()]);		
 		int counter = 0;		 
