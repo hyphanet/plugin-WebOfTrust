@@ -629,6 +629,9 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 							query.descend("mID").constrain(identity.getID());
 							final ObjectSet<OwnIdentity> duplicates = new Persistent.InitializingObjectSet<OwnIdentity>(this, query);
 							
+							if(duplicates.size() == 0)
+								continue;
+							
 							FreenetURI insertURI = null;
 							try {
 								// We need to prevent computeAllScoresWithoutCommit from happening in deleteWithoutCommit(Identity):
@@ -650,13 +653,11 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 								throw e;
 							}
 						
-							if(insertURI != null) {
-								Logger.warning(this, "Restoring a single OwnIdentity for the deleted duplicates...");
-								try {
-									restoreOwnIdentity(insertURI);
-								} catch (Exception e) {
-									throw new RuntimeException(e);
-								}
+							Logger.warning(this, "Restoring a single OwnIdentity for the deleted duplicates...");
+							try {
+								restoreOwnIdentity(insertURI);
+							} catch (Exception e) {
+								throw new RuntimeException(e);
 							}
 						}
 						
