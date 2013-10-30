@@ -819,6 +819,7 @@ public final class FCPInterface implements FredPluginFCP {
 			}
 			
 			sfs.put("Amount", i);
+			sfs.put("Identities.Amount", i);
 		}
 		
 		return sfs;
