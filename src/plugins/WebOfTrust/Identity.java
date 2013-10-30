@@ -249,8 +249,6 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		setPublishTrustList(doesPublishTrustList);
 		mContexts = new ArrayList<String>(4); /* Currently we have: Introduction, Freetalk */
 		mProperties = new HashMap<String, String>();
-		
-		if(logDEBUG) Logger.debug(this, "New identity: " + mNickname + ", URI: " + mRequestURI);
 	}	
 
 	/**

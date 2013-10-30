@@ -1090,12 +1090,12 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * Processes the "Subscribe" FCP message, filing a {@link Subscription} to event-{@link Notification}s via {@link SubscriptionManager}.
      * <b>Required fields:</b>
-     * "To" = "Identities" | "Trusts" | "Scores" - chooses among {@link IdentitiesSubscription} / {@link TrustsSubscription} / 
+     * "To" = "Identities" or "Trusts" or "Scores" - chooses among {@link IdentitiesSubscription} / {@link TrustsSubscription} / 
      * {@link ScoresSubscription}.
      * 
      * <b>Reply:</b>
      * The reply consists of two separate FCP messages:
-     * The first message is "Message" = "Identities" | "Trusts" | "Scores".
+     * The first message is "Message" = "Identities" or "Trusts" or "Scores".
      * It contains the full dataset of the type you have subscribed to. For the format of the message contents, see
      * {@link #sendAllIdentities(String)} / {@link #sendAllTrustValues(String)} / {@link #sendAllScoreValues(String)}.
      * By storing this dataset, your client is completely synchronized with WOT. Upon changes of anything, WOT will only have to send
@@ -1183,7 +1183,7 @@ public final class FCPInterface implements FredPluginFCP {
      * 
      * <b>Reply:</b>
      * "Message" = "Unsubscribed"
-     * "From" = "Identities" | "Trusts" | "Scores" - indicates the type of the original subscription.
+     * "From" = "Identities" or "Trusts" or "Scores" - indicates the type of the original subscription.
      * "SubscriptionID" = Same as requested
      */
     private SimpleFieldSet handleUnsubscribe(final SimpleFieldSet params) throws InvalidParameterException, UnknownSubscriptionException {
