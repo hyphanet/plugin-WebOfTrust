@@ -1501,6 +1501,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 					// We have to explicitly set the edition number because the constructor only considers the given edition as a hint.
 					newSeed.setEdition(new FreenetURI(seedURI).getEdition());
 					newSeed.storeWithoutCommit();
+					Logger.normal(this, "Created seed identity: " + newSeed);
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, newSeed);
 					Persistent.checkedCommit(mDB, this);
 				} catch (Exception e) {
@@ -2893,7 +2894,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 					if(mIntroductionClient != null)
 						mIntroductionClient.nextIteration(); // This will make it fetch more introduction puzzles.
 					
-					if(logDEBUG) Logger.debug(this, "Successfully created a new OwnIdentity (" + identity.getNickname() + ")");
+					Logger.normal(this, "Successfully created a new OwnIdentity: " + identity);
 					return identity;
 				}
 				catch(RuntimeException e) {

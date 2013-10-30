@@ -485,6 +485,7 @@ public final class XMLTransformer {
 										trustee = new Identity(mWoT, trusteeURI, null, false);
 										trustee.storeWithoutCommit();
 										mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, trustee);
+										Logger.normal(this, "New identity received via trust list: " + identity);
 									} catch(MalformedURLException urlEx) {
 										// Logging the exception does NOT log the actual malformed URL so we do it manually.
 										Logger.warning(this, "Received malformed identity URL: " + trusteeURI, urlEx);
