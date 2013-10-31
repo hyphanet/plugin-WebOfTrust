@@ -440,8 +440,6 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			return;
 		}
 		
-		final Random random = mPR.getNode().fastWeakRandom;
-		
 		// Open it first, because defrag will throw if it needs to upgrade the file.
 		{
 			final ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(), databaseFile.getAbsolutePath());
