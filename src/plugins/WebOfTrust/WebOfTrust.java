@@ -444,8 +444,8 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		final File backupFile = new File(databaseFile.getAbsolutePath() + ".backup");
 		
 		if(backupFile.exists()) {
-			if(!databaseFile.exists()) {
-				Logger.warning(this, "Backup file exists while main database file does not, maybe the node was shot during defrag. Restoring backup...");
+			if(!databaseFile.exists() || databaseFile.length() == 0) {
+				Logger.warning(this, "Backup file exists while main database file does not or is empty, maybe the node was shot during defrag. Restoring backup...");
 				restoreDatabaseBackup(databaseFile, backupFile);			
 			} else {
 				Logger.error(this, "Not defragmenting database: Backup AND main database exist, maybe the node was shot during defrag: " + backupFile.getAbsolutePath());
