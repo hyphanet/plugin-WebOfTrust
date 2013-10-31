@@ -440,6 +440,19 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			return;
 		}
 		
+
+		final File backupFile = new File(databaseFile.getAbsolutePath() + ".backup");
+		
+		if(backupFile.exists()) {
+			if(!databaseFile.exists()) {
+				Logger.warning(this, "Backup file exists while main database file does not, maybe the node was shot during defrag. Restoring backup...");
+				restoreDatabaseBackup(databaseFile, backupFile);			
+			} else {
+				Logger.error(this, "Not defragmenting database: Backup AND main database exist, maybe the node was shot during defrag: " + backupFile.getAbsolutePath());
+				return;
+			}
+		}	
+		
 		// Open it first, because defrag will throw if it needs to upgrade the file.
 		{
 			final ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(), databaseFile.getAbsolutePath());
@@ -460,13 +473,6 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 				return;
 			}
 		}
-
-		final File backupFile = new File(databaseFile.getAbsolutePath() + ".backup");
-		
-		if(backupFile.exists()) {
-			Logger.error(this, "Not defragmenting database: Backup file exists, maybe the node was shot during defrag: " + backupFile.getAbsolutePath());
-			return;
-		}	
 
 		final File tmpFile = new File(databaseFile.getAbsolutePath() + ".temp");
 		FileUtil.secureDelete(tmpFile);
