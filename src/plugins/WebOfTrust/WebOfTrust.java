@@ -10,7 +10,6 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Random;
 
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.Identity.IdentityID;
@@ -226,9 +225,11 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			if(logDEBUG)
 				verifyDatabaseIntegrity();
 			
+			checkForDatabaseLeaks();
+			
 			// TODO: Only do this once every few startups once we are certain that score computation does not have any serious bugs.
 			verifyAndCorrectStoredScores();
-			
+						
 			// Database is up now, integrity is checked. We can start to actually do stuff
 			
 			// TODO: This can be used for doing backups. Implement auto backup, maybe once a week or month
@@ -693,10 +694,10 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * - Then it checks for whether any objects still exist - those are leaks.
 	 */
 	private synchronized void checkForDatabaseLeaks() {
-		Logger.normal(this, "Checking for database leaks... This will delete all identities!");
+		Logger.normal(this, "checkForDatabaseLeaks(): Checking for database leaks... This will delete all identities!");
 		 
 		{
-			Logger.debug(this, "Checking FetchState leakage...");
+			Logger.debug(this, "checkForDatabaseLeaks(): Checking FetchState leakage...");
 			
 			final Query query = mDB.query();
 			query.constrain(FetchState.class);
@@ -704,7 +705,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			ObjectSet<FetchState> result = (ObjectSet<FetchState>)query.execute();
 			
 			for(FetchState state : result) {
-				Logger.debug(this, "Checking " + state);
+				Logger.debug(this, "checkForDatabaseLeaks(): Checking " + state);
 				
 				final Query query2 = mDB.query();
 				query2.constrain(Identity.class);
@@ -714,21 +715,21 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 				
 				switch(result2.size()) {
 					case 0:
-						Logger.error(this, "Found leaked FetchState!");
+						Logger.error(this, "checkForDatabaseLeaks(): Found leaked FetchState!");
 						break;
 					case 1:
 						break;
 					default:
-						Logger.error(this, "Found re-used FetchState, count: " + result2.size());
+						Logger.error(this, "checkForDatabaseLeaks(): Found re-used FetchState, count: " + result2.size());
 						break;
 				}
 			}
 			
-			Logger.debug(this, "Finished checking FetchState leakage, amount:" + result.size());
+			Logger.debug(this, "checkForDatabaseLeaks(): Finished checking FetchState leakage, amount:" + result.size());
 		}
 		
 		
-		Logger.normal(this, "Deleting ALL identities...");
+		Logger.normal(this, "checkForDatabaseLeaks(): Deleting all identities...");
 		synchronized(mPuzzleStore) {
 		synchronized(mFetcher) {
 		synchronized(mSubscriptionManager) {
@@ -750,18 +751,25 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		}
 		}
 		}
-		Logger.normal(this, "Deleting ALL identities finished.");
 		
+		Logger.normal(this, "checkForDatabaseLeaks(): Deleting all IdentityFetcher commands...");
+		mFetcher.deleteAllCommands();
+		
+		Logger.normal(this, "checkForDatabaseLeaks(): Deleting all SubscriptionManager clients...");
+		mSubscriptionManager.deleteAllClients();
+		
+		
+		Logger.normal(this, "checkForDatabaseLeaks(): Database should be empty now. Checking whether it really is...");
 		Query query = mDB.query();
 		query.constrain(Object.class);
 		@SuppressWarnings("unchecked")
 		ObjectSet<Object> result = query.execute();
 
 		for(Object leak : result) {
-			Logger.error(this, "Found leaked object: " + leak);
+			Logger.error(this, "checkForDatabaseLeaks(): Found leaked object: " + leak);
 		}
 		
-		Logger.warning(this, "Finished checking for database leaks. This database is empty now, delete it.");
+		Logger.warning(this, "checkForDatabaseLeaks(): Finished. Please delete the database now, it is destroyed.");
 	}
 	
 	private synchronized boolean verifyDatabaseIntegrity() {

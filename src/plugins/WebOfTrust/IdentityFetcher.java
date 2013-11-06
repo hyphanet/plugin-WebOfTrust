@@ -237,7 +237,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		return new Persistent.InitializingObjectSet<IdentityFetcher.IdentityFetcherCommand>(mWoT, q);
 	}
 	
-	private synchronized void deleteAllCommands() {
+	/**
+	 * ATTENTION: Outside classes should only use this for debugging purposes such as {@link WebOfTrust#checkForDatabaseLeaks()}.
+	 */
+	protected synchronized void deleteAllCommands() {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				if(logDEBUG) Logger.debug(this, "Deleting all identity fetcher commands ...");
