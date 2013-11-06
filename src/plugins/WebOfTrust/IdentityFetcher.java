@@ -384,7 +384,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		}
 	}
 	
-	protected void fetch(String identityID) throws Exception {
+	private void fetch(String identityID) throws Exception {
 		try {
 			synchronized(mWoT) {
 				Identity identity = mWoT.getIdentityByID(identityID);

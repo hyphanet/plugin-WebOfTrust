@@ -246,7 +246,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 				for(Identity identity : getAllIdentities()) {
 					if(shouldFetchIdentity(identity)) {
 						try {
-							mFetcher.fetch(identity.getID());
+							mFetcher.fetch(identity);
 						}
 						catch(Exception e) {
 							Logger.error(this, "Fetching identity failed!", e);
