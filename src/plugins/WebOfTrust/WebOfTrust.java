@@ -558,12 +558,12 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * (I didn't upgrade this function to do the locking because it would be much work to test the changes for little benefit)  
 	 */
 	private synchronized void upgradeDB() {
-		int databaseVersion = mConfig.getDatabaseFormatVersion();
+		int databaseFormatVersion = mConfig.getDatabaseFormatVersion();
 		
-		if(databaseVersion == WebOfTrust.DATABASE_FORMAT_VERSION)
+		if(databaseFormatVersion == WebOfTrust.DATABASE_FORMAT_VERSION)
 			return;
 	
-		Logger.normal(this, "Upgrading database version " + databaseVersion);
+		Logger.normal(this, "Upgrading database format version " + databaseFormatVersion);
 		
 		//synchronized(this) { // Already done at function level
 		synchronized(mPuzzleStore) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
@@ -571,16 +571,16 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		synchronized(mSubscriptionManager) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				switch(databaseVersion) {
-					case 1: upgradeDatabaseVersion1(); mConfig.setDatabaseFormatVersion(++databaseVersion);
-					case 2: upgradeDatabaseVersion2(); mConfig.setDatabaseFormatVersion(++databaseVersion);
+				switch(databaseFormatVersion) {
+					case 1: upgradedatabaseFormatVersion1(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 2: upgradedatabaseFormatVersion2(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 3: break;
 					default:
 						throw new UnsupportedOperationException("Your database is newer than this WOT version! Please upgrade WOT.");
 				}
 
 				mConfig.storeAndCommit();
-				Logger.normal(this, "Upgraded database to version " + databaseVersion);
+				Logger.normal(this, "Upgraded database to version " + databaseFormatVersion);
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
@@ -589,16 +589,16 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		}
 		}
 
-		if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
+		if(databaseFormatVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
 	}
 	
 	/**
-	 * Upgrades version 1 databases to version 2
+	 * Upgrades database format version 1 to version 2
 	 */
 	@SuppressWarnings("deprecation")
-	private void upgradeDatabaseVersion1() {
+	private void upgradedatabaseFormatVersion1() {
 		Logger.normal(this, "Generating Score IDs...");
 		for(Score score : getAllScores()) {
 			score.generateID();
@@ -628,13 +628,13 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	}
 
 	/**
-	 * Upgrades database version 2 to version 3
+	 * Upgrades database format version 2 to version 3
 	 * 
 	 * Issue https://bugs.freenetproject.org/view.php?id=6085 caused creation of OwnIdentity objects which duplicate a non-own
 	 * version of them. This was caused by restoreOwnIdentity() not detecting that there is a non-own version of the identity.
 	 * So we delete the OwnIdentity and use the new restoreOwnIdentity() again.
 	 */
-	private void upgradeDatabaseVersion2() {
+	private void upgradedatabaseFormatVersion2() {
 		// The fix of restoreOwnIdentity() actually happened in Freenet itself: FreenetURI.deriveRequestURIFromInsertURI() was
 		// fixed to work with certain SSKs. So we need to make sure that we are actually running on a build which has the fix.
 		if(freenet.node.Version.buildNumber() < 1457)
