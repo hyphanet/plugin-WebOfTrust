@@ -800,7 +800,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		ObjectSet<Object> result = query.execute();
 
 		for(Object leak : result) {
-			Logger.error(this, "checkForDatabaseLeaks(): Found leaked object: " + leak);
+			Logger.error(this, "checkForDatabaseLeaks(): Found leaked object, class: " + leak.getClass() + "; toString(): " + leak);
 		}
 		
 		Logger.warning(this, "checkForDatabaseLeaks(): Finished. Please delete the database now, it is destroyed.");
