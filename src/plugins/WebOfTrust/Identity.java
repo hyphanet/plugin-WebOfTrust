@@ -331,6 +331,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		}
 		
 		if (newEdition > currentEdition) {
+			mRequestURI.removeFrom(mDB);
 			mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
 			mCurrentEditionFetchState = FetchState.NotFetched;
 			if (newEdition > mLatestEditionHint) {
@@ -404,6 +405,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	private final void decreaseEdition() {
 		checkedActivate(1);
 		checkedActivate(mRequestURI, 2);
+		mRequestURI.removeFrom(mDB);
 		mRequestURI = mRequestURI.setSuggestedEdition(Math.max(mRequestURI.getEdition() - 1, 0));
 		// TODO: I decided that we should not decrease the edition hint here. Think about that again.
 	}
