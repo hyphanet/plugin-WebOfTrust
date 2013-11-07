@@ -563,31 +563,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		
 		if(databaseVersion == WebOfTrust.DATABASE_FORMAT_VERSION)
 			return;
-		
-		// Insert upgrade code here. See Freetalk.java for a skeleton.
-		
-		if(databaseVersion == 1) {
-			Logger.normal(this, "Upgrading database version " + databaseVersion);
-			
-			//synchronized(this) { // Already done at function level
-			//synchronized(mPuzzleStore) { // Normally would be needed for deleteWithoutCommit(Identity) but IntroductionClient/Server are not running yet
-			//synchronized(mFetcher) { // Normally would be needed for deleteWithoutCommit(Identity) but the IdentityFetcher is not running yet
-			//synchronized(mSubscriptionManager) { // Normally would be needed for deleteWithoutCommit(Identity) but the SubscriptionManager is not running yet
-				synchronized(Persistent.transactionLock(mDB)) {
-					try {
-						upgradeDatabaseVersion1();
-						
-						mConfig.setDatabaseFormatVersion(++databaseVersion);
-						mConfig.storeAndCommit();
-						Logger.normal(this, "Upgraded database to version " + databaseVersion);
-					} catch(RuntimeException e) {
-						Persistent.checkedRollbackAndThrow(mDB, this, e);
-					}
-				}
-			//}			
-		}
-		
-		if(databaseVersion == 2) {
+	
 			Logger.normal(this, "Upgrading database version " + databaseVersion);
 			
 			//synchronized(this) { // Already done at function level
@@ -596,9 +572,14 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			synchronized(mSubscriptionManager) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
 				synchronized(Persistent.transactionLock(mDB)) {
 					try {
-						upgradeDatabaseVersion2();
-						
-						mConfig.setDatabaseFormatVersion(++databaseVersion);
+						switch(databaseVersion) {
+							case 1: upgradeDatabaseVersion1(); mConfig.setDatabaseFormatVersion(++databaseVersion);
+							case 2: upgradeDatabaseVersion2(); mConfig.setDatabaseFormatVersion(++databaseVersion);
+							case 3: break;
+							default:
+								throw new UnsupportedOperationException("Your database is newer than this WOT version! Please upgrade WOT.");
+						}
+
 						mConfig.storeAndCommit();
 						Logger.normal(this, "Upgraded database to version " + databaseVersion);
 					} catch(RuntimeException e) {
@@ -608,7 +589,6 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			}
 			}
 			}
-		}
 
 		if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
