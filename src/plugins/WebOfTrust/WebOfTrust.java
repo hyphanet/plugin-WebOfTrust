@@ -575,32 +575,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			//synchronized(mSubscriptionManager) { // Normally would be needed for deleteWithoutCommit(Identity) but the SubscriptionManager is not running yet
 				synchronized(Persistent.transactionLock(mDB)) {
 					try {
-						Logger.normal(this, "Generating Score IDs...");
-						for(Score score : getAllScores()) {
-							score.generateID();
-							score.storeWithoutCommit();
-						}
-						
-						Logger.normal(this, "Generating Trust IDs...");
-						for(Trust trust : getAllTrusts()) {
-							trust.generateID();
-							trust.storeWithoutCommit();
-						}
-						
-						Logger.normal(this, "Searching for identities with mixed up insert/request URIs...");
-						for(Identity identity : getAllIdentities()) {
-							try {
-								USK.create(identity.getRequestURI());
-							} catch (MalformedURLException e) {
-								if(identity instanceof OwnIdentity) {
-									Logger.error(this, "Insert URI specified as request URI for OwnIdentity, not correcting the URIs as the insert URI" +
-											"might have been published by solving captchas - the identity could be compromised: " + identity);
-								} else {
-									Logger.error(this, "Insert URI specified as request URI for non-own Identity, deleting: " + identity);
-									deleteWithoutCommit(identity);
-								}								
-							}
-						}
+						upgradeDatabaseVersion1();
 						
 						mConfig.setDatabaseFormatVersion(++databaseVersion);
 						mConfig.storeAndCommit();
@@ -683,6 +658,39 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
+	}
+	
+	/**
+	 * Upgrades version 1 databases to version 2
+	 */
+	private void upgradeDatabaseVersion1() {
+		Logger.normal(this, "Generating Score IDs...");
+		for(Score score : getAllScores()) {
+			score.generateID();
+			score.storeWithoutCommit();
+		}
+		
+		Logger.normal(this, "Generating Trust IDs...");
+		for(Trust trust : getAllTrusts()) {
+			trust.generateID();
+			trust.storeWithoutCommit();
+		}
+		
+		Logger.normal(this, "Searching for identities with mixed up insert/request URIs...");
+		for(Identity identity : getAllIdentities()) {
+			try {
+				USK.create(identity.getRequestURI());
+			} catch (MalformedURLException e) {
+				if(identity instanceof OwnIdentity) {
+					Logger.error(this, "Insert URI specified as request URI for OwnIdentity, not correcting the URIs as the insert URI" +
+							"might have been published by solving captchas - the identity could be compromised: " + identity);
+				} else {
+					Logger.error(this, "Insert URI specified as request URI for non-own Identity, deleting: " + identity);
+					deleteWithoutCommit(identity);
+				}								
+			}
+		}
+		
 	}
 	
 	/**
