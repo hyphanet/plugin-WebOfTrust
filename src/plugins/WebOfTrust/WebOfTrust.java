@@ -687,9 +687,10 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * This deletes leaked FreenetURI objects. Leaked means that they are not being referenced by any objects which we actually use.
 	 * This was caused by a bug in class Identity, see https://bugs.freenetproject.org/view.php?id=5964
 	 * 
-	 * TODO FIXME: This will likely break if future code adds member variables of type FreenetURI to {@link Persistent} classes.
-	 * See https://bugs.freenetproject.org/view.php?id=6129
-	 * Therefore, it should be removed after we gave users some time to upgrade all their WOT-installations. It was implemented on 2013-11-07.
+	 * TODO FIXME: If future code adds member variables of type FreenetURI to {@link Persistent} classes, this function will null them
+	 * out if the developer forgets to adapt it. See https://bugs.freenetproject.org/view.php?id=6129
+	 * Therefore, support for upgrading version 3 databases should be removed after we gave users some time to upgrade all their
+	 * old WOT-installations. It was implemented on 2013-11-07.
 	 */
 	private void upgradedatabaseFormatVersion3() {
 		
