@@ -701,6 +701,9 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		// So we cannot use HashSet, we must use IdentityHashMap since it compares object identity instead of equals().
 		final IdentityHashMap<FreenetURI, Object> nonGarbageFreenetURIs = new IdentityHashMap<FreenetURI, Object>();
 		
+		// As of 2013-11-07, I've checked all Persistent classes for storage of FreenetURI. 
+		// The only relevant ones are classes Identity and OwnIdentity. All other classes do not contain FreenetURI as stored member fields.
+		
 		for(final Identity identity : getAllIdentities()) {
 			nonGarbageFreenetURIs.put(identity.getRequestURI(), null);
 			if(identity instanceof OwnIdentity)
