@@ -49,6 +49,13 @@ public final class Configuration extends Persistent {
 	}
 	
 	/**
+	 * {@inheritDoc}
+	 */
+	@Override public void activateFully() {
+		checkedActivate(4);
+	}
+	
+	/**
 	 * @deprecated Not implemented because we don't need it.
 	 */
 	@Deprecated()
@@ -74,6 +81,22 @@ public final class Configuration extends Persistent {
 			catch(RuntimeException e) {
 				checkedRollbackAndThrow(e);
 			}
+		}
+	}
+	
+	/**
+	 * ATTENTION: A WOT database should ALWAYS contain a Configuration object. This function is only for debugging purposes
+	 * - namely {@link WebOfTrust#checkForDatabaseLeaks()}
+	 */
+	protected void deleteWithoutCommit() {
+		try {
+			activateFully();
+			checkedDelete(mStringParams);
+			checkedDelete(mIntParams);
+			checkedDelete();
+		}
+		catch(RuntimeException e) {
+			checkedRollbackAndThrow(e);
 		}
 	}
 	
