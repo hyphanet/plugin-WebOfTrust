@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 
 import plugins.WebOfTrust.Identity.FetchState;
@@ -692,8 +693,27 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * Therefore, support for upgrading version 3 databases should be removed after we gave users some time to upgrade all their
 	 * old WOT-installations. It was implemented on 2013-11-07.
 	 */
+	@SuppressWarnings("unchecked")
 	private void upgradedatabaseFormatVersion3() {
+		// We want to stick all non-leak FreenetURI in a set. Then we want to check for every FreenetURI in the database whether
+		// it is contained in that set. If it is not, it is a leak.
+		// But FreenetURI.equals() does not compare object identity, it only compares semantic identity.
+		// So we cannot use HashSet, we must use IdentityHashMap since it compares object identity instead of equals().
+		final IdentityHashMap<FreenetURI, Object> nonGarbageFreenetURIs = new IdentityHashMap<FreenetURI, Object>();
 		
+		for(final Identity identity : getAllIdentities()) {
+			nonGarbageFreenetURIs.put(identity.getRequestURI(), null);
+			if(identity instanceof OwnIdentity)
+				nonGarbageFreenetURIs.put(((OwnIdentity)identity).getInsertURI(), null);
+		}
+		
+		final Query query = mDB.query();
+		query.constrain(FreenetURI.class);
+		
+		for(final FreenetURI uri : (ObjectSet<FreenetURI>)query.execute()) {
+			if(!nonGarbageFreenetURIs.containsKey(uri))
+				uri.removeFrom(mDB);
+		}
 	}
 	
 	/**
