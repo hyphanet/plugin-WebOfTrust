@@ -587,15 +587,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			//}			
 		}
 		
-		// Issue https://bugs.freenetproject.org/view.php?id=6085 caused creation of OwnIdentity objects which duplicate a non-own
-		// version of them. This was caused by restoreOwnIdentity() not detecting that there is a non-own version of the identity.
-		// So we delete the OwnIdentity and use thew new restoreOwnIdentity() again.
 		if(databaseVersion == 2) {
-			// The fix of restoreOwnIdentity() actually happened in Freenet itself: FreenetURI.deriveRequestURIFromInsertURI() was
-			// fixed to work with certain SSKs. So we need to make sure that we are actually running on a build which has the fix.
-			if(freenet.node.Version.buildNumber() < 1457)
-				throw new RuntimeException("You need at least Freenet build 1457 to use this WOT version!");
-
 			Logger.normal(this, "Upgrading database version " + databaseVersion);
 			
 			//synchronized(this) { // Already done at function level
@@ -604,44 +596,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			synchronized(mSubscriptionManager) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
 				synchronized(Persistent.transactionLock(mDB)) {
 					try {
-						Logger.normal(this, "Searching for duplicate OwnIdentity objects...");
-						for(final Identity identity : getAllNonOwnIdentities()) {
-							final Query query = mDB.query();
-							query.constrain(OwnIdentity.class);
-							query.descend("mID").constrain(identity.getID());
-							final ObjectSet<OwnIdentity> duplicates = new Persistent.InitializingObjectSet<OwnIdentity>(this, query);
-							
-							if(duplicates.size() == 0)
-								continue;
-							
-							FreenetURI insertURI = null;
-							try {
-								// We need to prevent computeAllScoresWithoutCommit from happening in deleteWithoutCommit(Identity):
-								// It might fail if duplicates exist and the user has enabled assertions.
-								// beginTrustListImport() would delay it until we call finishTrustListImport() after we got rid of the
-								// duplicates. But it also contains asserts which fail. So we emulate its behavior:
-								assert(!mTrustListImportInProgress);
-								mTrustListImportInProgress = true;
-								
-								for(final OwnIdentity duplicate : duplicates) {
-									Logger.warning(this, "Found duplicate OwnIdentity during database upgrade, deleting it:" + duplicate);
-									deleteWithoutCommit(duplicate);
-									assert (insertURI == null || insertURI.equalsKeypair(duplicate.getInsertURI()));
-									insertURI = duplicate.getInsertURI();
-								}
-								finishTrustListImport();
-							} catch(RuntimeException e) {
-								abortTrustListImport(e);
-								throw e;
-							}
-						
-							Logger.warning(this, "Restoring a single OwnIdentity for the deleted duplicates...");
-							try {
-								restoreOwnIdentityWithoutCommit(insertURI);
-							} catch (Exception e) {
-								throw new RuntimeException(e);
-							}
-						}
+						upgradeDatabaseVersion2();
 						
 						mConfig.setDatabaseFormatVersion(++databaseVersion);
 						mConfig.storeAndCommit();
@@ -690,7 +645,59 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 				}								
 			}
 		}
+	}
+
+	/**
+	 * Upgrades database version 2 to version 3
+	 * 
+	 * Issue https://bugs.freenetproject.org/view.php?id=6085 caused creation of OwnIdentity objects which duplicate a non-own
+	 * version of them. This was caused by restoreOwnIdentity() not detecting that there is a non-own version of the identity.
+	 * So we delete the OwnIdentity and use the new restoreOwnIdentity() again.
+	 */
+	private void upgradeDatabaseVersion2() {
+		// The fix of restoreOwnIdentity() actually happened in Freenet itself: FreenetURI.deriveRequestURIFromInsertURI() was
+		// fixed to work with certain SSKs. So we need to make sure that we are actually running on a build which has the fix.
+		if(freenet.node.Version.buildNumber() < 1457)
+			throw new RuntimeException("You need at least Freenet build 1457 to use this WOT version!");
+
+		Logger.normal(this, "Searching for duplicate OwnIdentity objects...");
+		for(final Identity identity : getAllNonOwnIdentities()) {
+			final Query query = mDB.query();
+			query.constrain(OwnIdentity.class);
+			query.descend("mID").constrain(identity.getID());
+			final ObjectSet<OwnIdentity> duplicates = new Persistent.InitializingObjectSet<OwnIdentity>(this, query);
+			
+			if(duplicates.size() == 0)
+				continue;
+			
+			FreenetURI insertURI = null;
+			try {
+				// We need to prevent computeAllScoresWithoutCommit from happening in deleteWithoutCommit(Identity):
+				// It might fail if duplicates exist and the user has enabled assertions.
+				// beginTrustListImport() would delay it until we call finishTrustListImport() after we got rid of the
+				// duplicates. But it also contains asserts which fail. So we emulate its behavior:
+				assert(!mTrustListImportInProgress);
+				mTrustListImportInProgress = true;
+				
+				for(final OwnIdentity duplicate : duplicates) {
+					Logger.warning(this, "Found duplicate OwnIdentity during database upgrade, deleting it:" + duplicate);
+					deleteWithoutCommit(duplicate);
+					assert (insertURI == null || insertURI.equalsKeypair(duplicate.getInsertURI()));
+					insertURI = duplicate.getInsertURI();
+				}
+				finishTrustListImport();
+			} catch(RuntimeException e) {
+				abortTrustListImport(e);
+				throw e;
+			}
 		
+			Logger.warning(this, "Restoring a single OwnIdentity for the deleted duplicates...");
+			try {
+				restoreOwnIdentityWithoutCommit(insertURI);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}		
 	}
 	
 	/**
