@@ -581,7 +581,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 				}
 
 				mConfig.storeAndCommit();
-				Logger.normal(this, "Upgraded database to version " + databaseFormatVersion);
+				Logger.normal(this, "Upgraded database to format version " + databaseFormatVersion);
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
