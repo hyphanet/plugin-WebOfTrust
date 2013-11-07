@@ -79,7 +79,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	/** Package-private method to allow unit tests to bypass some assert()s */
 	
 	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = 3; 
+	public static final int DATABASE_FORMAT_VERSION = 4;
 	
 	
 
@@ -574,7 +574,8 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 				switch(databaseFormatVersion) {
 					case 1: upgradedatabaseFormatVersion1(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 2: upgradedatabaseFormatVersion2(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
-					case 3: break;
+					case 3: upgradedatabaseFormatVersion3(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 4: break;
 					default:
 						throw new UnsupportedOperationException("Your database is newer than this WOT version! Please upgrade WOT.");
 				}
@@ -678,6 +679,16 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 				throw new RuntimeException(e);
 			}
 		}		
+	}
+	
+	/**
+	 * Upgrades database format version 3 to version 4
+	 * 
+	 * This deletes leaked FreenetURI objects. Leaked means that they are not being referenced by any objects which we actually use.
+	 * This was caused by a bug in class Identity, see https://bugs.freenetproject.org/view.php?id=5964
+	 */
+	private void upgradedatabaseFormatVersion3() {
+		
 	}
 	
 	/**
