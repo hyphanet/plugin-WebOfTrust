@@ -792,6 +792,15 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		Logger.normal(this, "checkForDatabaseLeaks(): Deleting all SubscriptionManager clients...");
 		mSubscriptionManager.deleteAllClients();
 		
+		Logger.normal(this, "checkForDatabaseLeaks(): Deleting Configuration...");
+		//synchronized(this) { // Done at function level
+			try {
+				getConfig().deleteWithoutCommit();
+				Persistent.checkedCommit(mDB, this);
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		//}
 		
 		Logger.normal(this, "checkForDatabaseLeaks(): Database should be empty now. Checking whether it really is...");
 		Query query = mDB.query();
