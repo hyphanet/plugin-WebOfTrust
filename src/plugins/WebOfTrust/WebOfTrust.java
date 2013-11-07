@@ -557,7 +557,6 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * It doesn't synchronize on the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager because it assumes that they are not being used yet.
 	 * (I didn't upgrade this function to do the locking because it would be much work to test the changes for little benefit)  
 	 */
-	@SuppressWarnings("deprecation")
 	private synchronized void upgradeDB() {
 		int databaseVersion = mConfig.getDatabaseFormatVersion();
 		
@@ -598,6 +597,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	/**
 	 * Upgrades version 1 databases to version 2
 	 */
+	@SuppressWarnings("deprecation")
 	private void upgradeDatabaseVersion1() {
 		Logger.normal(this, "Generating Score IDs...");
 		for(Score score : getAllScores()) {
