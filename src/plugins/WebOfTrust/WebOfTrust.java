@@ -728,7 +728,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * - Then it checks for whether any objects still exist - those are leaks.
 	 */
 	private synchronized void checkForDatabaseLeaks() {
-		Logger.normal(this, "checkForDatabaseLeaks(): Checking for database leaks... This will delete all identities!");
+		Logger.normal(this, "checkForDatabaseLeaks(): Checking for database leaks... This will delete the whole database content!");
 		 
 		{
 			Logger.debug(this, "checkForDatabaseLeaks(): Checking FetchState leakage...");
