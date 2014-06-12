@@ -713,10 +713,15 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		final Query query = mDB.query();
 		query.constrain(FreenetURI.class);
 		
+		int leakCounter = 0;
 		for(final FreenetURI uri : (ObjectSet<FreenetURI>)query.execute()) {
-			if(!nonGarbageFreenetURIs.containsKey(uri))
+			if(!nonGarbageFreenetURIs.containsKey(uri)) {
 				uri.removeFrom(mDB);
+				++leakCounter;
+			}
 		}
+		
+		Logger.normal(this, "upgradeDatabaseFormatVersion3(): Deleted " + leakCounter + " leaked FreenetURI.");
 	}
 	
 	/**
