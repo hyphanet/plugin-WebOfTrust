@@ -573,9 +573,9 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				switch(databaseFormatVersion) {
-					case 1: upgradedatabaseFormatVersion1(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
-					case 2: upgradedatabaseFormatVersion2(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
-					case 3: upgradedatabaseFormatVersion3(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 1: upgradeDatabaseFormatVersion1(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 2: upgradeDatabaseFormatVersion2(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 3: upgradeDatabaseFormatVersion3(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 4: break;
 					default:
 						throw new UnsupportedOperationException("Your database is newer than this WOT version! Please upgrade WOT.");
@@ -600,7 +600,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * Upgrades database format version 1 to version 2
 	 */
 	@SuppressWarnings("deprecation")
-	private void upgradedatabaseFormatVersion1() {
+	private void upgradeDatabaseFormatVersion1() {
 		Logger.normal(this, "Generating Score IDs...");
 		for(Score score : getAllScores()) {
 			score.generateID();
@@ -636,7 +636,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * version of them. This was caused by restoreOwnIdentity() not detecting that there is a non-own version of the identity.
 	 * So we delete the OwnIdentity and use the new restoreOwnIdentity() again.
 	 */
-	private void upgradedatabaseFormatVersion2() {
+	private void upgradeDatabaseFormatVersion2() {
 		// The fix of restoreOwnIdentity() actually happened in Freenet itself: FreenetURI.deriveRequestURIFromInsertURI() was
 		// fixed to work with certain SSKs. So we need to make sure that we are actually running on a build which has the fix.
 		if(freenet.node.Version.buildNumber() < 1457)
@@ -694,7 +694,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * old WOT-installations. It was implemented on 2013-11-07.
 	 */
 	@SuppressWarnings("unchecked")
-	private void upgradedatabaseFormatVersion3() {
+	private void upgradeDatabaseFormatVersion3() {
 		// We want to stick all non-leak FreenetURI in a set. Then we want to check for every FreenetURI in the database whether
 		// it is contained in that set. If it is not, it is a leak.
 		// But FreenetURI.equals() does not compare object identity, it only compares semantic identity.
