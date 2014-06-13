@@ -743,6 +743,8 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			@SuppressWarnings("unchecked")
 			ObjectSet<FetchState> result = (ObjectSet<FetchState>)query.execute();
 			
+			Logger.debug(this, "checkForDatabaseLeaks(): FetchState count: " + result.size());
+
 			for(FetchState state : result) {
 				Logger.debug(this, "checkForDatabaseLeaks(): Checking " + state);
 				
@@ -764,7 +766,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 				}
 			}
 			
-			Logger.debug(this, "checkForDatabaseLeaks(): Finished checking FetchState leakage, amount:" + result.size());
+			Logger.debug(this, "checkForDatabaseLeaks(): Finished checking FetchState leakage.");
 		}
 		
 		
