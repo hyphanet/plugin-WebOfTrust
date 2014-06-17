@@ -737,41 +737,6 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 */
 	private synchronized void checkForDatabaseLeaks() {
 		Logger.normal(this, "checkForDatabaseLeaks(): Checking for database leaks... This will delete the whole database content!");
-		 
-		{
-			Logger.debug(this, "checkForDatabaseLeaks(): Checking FetchState leakage...");
-			
-			final Query query = mDB.query();
-			query.constrain(FetchState.class);
-			@SuppressWarnings("unchecked")
-			ObjectSet<FetchState> result = (ObjectSet<FetchState>)query.execute();
-			
-			Logger.debug(this, "checkForDatabaseLeaks(): FetchState count: " + result.size());
-
-			for(FetchState state : result) {
-				Logger.debug(this, "checkForDatabaseLeaks(): Checking " + state);
-				
-				final Query query2 = mDB.query();
-				query2.constrain(Identity.class);
-				query.descend("mCurrentEditionFetchState").constrain(state).identity();
-				@SuppressWarnings("unchecked")
-				ObjectSet<FetchState> result2 = (ObjectSet<FetchState>)query.execute();
-				
-				switch(result2.size()) {
-					case 0:
-						Logger.error(this, "checkForDatabaseLeaks(): Found leaked FetchState!");
-						break;
-					case 1:
-						break;
-					default:
-						Logger.error(this, "checkForDatabaseLeaks(): Found re-used FetchState, count: " + result2.size());
-						break;
-				}
-			}
-			
-			Logger.debug(this, "checkForDatabaseLeaks(): Finished checking FetchState leakage.");
-		}
-		
 		
 		Logger.normal(this, "checkForDatabaseLeaks(): Deleting all identities...");
 		synchronized(mPuzzleStore) {
@@ -819,7 +784,14 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		ObjectSet<Object> result = query.execute();
 
 		for(Object leak : result) {
-			Logger.error(this, "checkForDatabaseLeaks(): Found leaked object, class: " + leak.getClass() + "; toString(): " + leak);
+			// For each value of an enum, Db4o will store an undeletable object in the database permanently. there will only be exactly one for each
+			// value, no matter how often the enum is referenced.
+			// See: http://community.versant.com/documentation/reference/db4o-8.0/java/reference/Content/implementation_strategies/type_handling/static_fields_and_enums/java_enumerations.htm
+			// (I've also manually tested this for db4o 7.4 which we currently use since the above link applies to 8.0 only and there is no such document for 7.4)
+			if(leak.getClass().isEnum())
+				Logger.normal(this, "checkForDatabaseLeaks(): Found leak candidate, it is an enum though, so its not a real leak. Class: " + leak.getClass() + "; toString(): " + leak);
+			else
+				Logger.error(this, "checkForDatabaseLeaks(): Found leaked object, class: " + leak.getClass() + "; toString(): " + leak);
 		}
 		
 		Logger.warning(this, "checkForDatabaseLeaks(): Finished. Please delete the database now, it is destroyed.");
