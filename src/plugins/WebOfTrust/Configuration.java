@@ -32,10 +32,20 @@ public final class Configuration extends Persistent {
 	private final HashMap<String, String> mStringParams;
 	
 	/**
+	 * @see Configuration#activateStringParams
+	 */
+	private transient boolean mStringParamsActivated = false;
+	
+	/**
 	 * The {@link HashMap} that contains all {@link Integer} configuration parameters
 	 */
 	private final HashMap<String, Integer> mIntParams;
 	
+	/**
+	 * @see Configuration#activateIntParams
+	 */
+	private transient boolean mIntParamsActivated = false;
+
 
 	/**
 	 * Creates a new Config object and stores the default values in it.
@@ -51,9 +61,59 @@ public final class Configuration extends Persistent {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override public void activateFully() {
+	@Override
+	protected void activateFully() {
+		// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 		checkedActivate(4);
+		// Workaround for db4o bug
+		activateStringParams();
+		activateIntParams();
 	}
+	
+	/**
+	 * Workaround function for db4o HashMap activation bug
+	 * 
+	 * TODO: As soon as the db4o bug is fixed, remove this workaround function & replace with:
+	 * checkedActivate(1);
+	 * checkedActivate(mStringParams, 3);
+	 */
+	private synchronized final void activateStringParams() {
+		// We must not deactivate the HashMaps if they were already modified by a setter so we need this guard
+		if(mStringParamsActivated)
+			return;
+
+		checkedActivate(1);
+		
+		if(mDB.isStored(mStringParams)) {
+			mDB.deactivate(mStringParams);
+			checkedActivate(mStringParams, 3);
+		}
+		
+		mStringParamsActivated = true;
+	}
+
+	/**
+	 * Workaround function for db4o HashMap activation bug
+	 * 
+	 * TODO: As soon as the db4o bug is fixed, remove this workaround function & replace with:
+	 * checkedActivate(1);
+	 * checkedActivate(mIntParams, 3);
+	 */
+	private synchronized final void activateIntParams() {
+		// We must not deactivate the HashMaps if they were already modified by a setter so we need this guard
+		if(mIntParamsActivated)
+			return;
+
+		checkedActivate(1);
+		
+		if(mDB.isStored(mIntParams)) {
+			mDB.deactivate(mIntParams);
+			checkedActivate(mIntParams, 3);
+		}
+		
+		mIntParamsActivated = true;
+	}
+	
 	
 	/**
 	 * @deprecated Not implemented because we don't need it.
@@ -70,7 +130,7 @@ public final class Configuration extends Persistent {
 	public synchronized void storeAndCommit() {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				checkedActivate(4);
+				activateFully();
 				
 				checkedStore(mStringParams);
 				checkedStore(mIntParams);
@@ -122,7 +182,7 @@ public final class Configuration extends Persistent {
 	public synchronized void set(String key, String value) {
 		IfNull.thenThrow(key, "Key");
 		IfNull.thenThrow(value, "Value");
-		checkedActivate(4);
+		activateStringParams();
 		mStringParams.put(key, value);
 	}
 	
@@ -134,7 +194,7 @@ public final class Configuration extends Persistent {
      */
     public synchronized void set(String key, boolean value) {
 		IfNull.thenThrow(key, "Key");
-    	checkedActivate(4);
+		activateStringParams();
         mStringParams.put(key, Boolean.toString(value));
     }
 	
@@ -146,7 +206,7 @@ public final class Configuration extends Persistent {
 	 */
 	public synchronized void set(String key, int value) {
 		IfNull.thenThrow(key, "Key");
-		checkedActivate(4);
+		activateIntParams();
 		mIntParams.put(key, value);
 	}
 
@@ -154,7 +214,7 @@ public final class Configuration extends Persistent {
 	 * Gets a String configuration parameter.
 	 */
 	public synchronized String getString(String key) {
-		checkedActivate(4);
+		activateStringParams();
 		return mStringParams.get(key);
 	}
 	
@@ -162,7 +222,7 @@ public final class Configuration extends Persistent {
 	 * Gets an Integer configuration parameter.
 	 */
 	public synchronized int getInt(String key) {
-		checkedActivate(4);
+		activateIntParams();
 		return mIntParams.get(key);
 	}
 
@@ -170,7 +230,7 @@ public final class Configuration extends Persistent {
      * Gets a boolean configuration parameter.
      */
     public synchronized boolean getBoolean(String key) {
-    	checkedActivate(4);
+    	activateStringParams();
         return Boolean.valueOf( mStringParams.get(key) );
     }
 
@@ -178,7 +238,7 @@ public final class Configuration extends Persistent {
 	 * Check wheter a String config parameter exists.
 	 */
 	public synchronized boolean containsString(String key) {
-		checkedActivate(4);
+		activateStringParams();
 		return mStringParams.containsKey(key);
 	}
 	
@@ -186,7 +246,7 @@ public final class Configuration extends Persistent {
 	 * Check wheter an Integer config parameter exists.
 	 */
 	public synchronized boolean containsInt(String key) {
-		checkedActivate(4);
+		activateIntParams();
 		return mIntParams.containsKey(key);
 	}
 
@@ -198,7 +258,7 @@ public final class Configuration extends Persistent {
 	 *         change the database.
 	 */
 	public synchronized String[] getAllStringKeys() {
-		checkedActivate(4);
+		activateStringParams();
 		/* We return a copy of the keySet. If we returned an iterator of the
 		 * keySet, modifications on the configuration HashMap would be reflected
 		 * in the iterator. This might lead to problems if the configuration is
@@ -220,7 +280,7 @@ public final class Configuration extends Persistent {
 	 *         change the database.
 	 */
 	public synchronized String[] getAllIntKeys() {
-		checkedActivate(4);
+		activateIntParams();
 		/* We return a copy of the keySet. If we returned an iterator of the
 		 * keySet, modifications on the configuration HashMap would be reflected
 		 * in the iterator. This might lead to problems if the configuration is
@@ -245,7 +305,7 @@ public final class Configuration extends Persistent {
 
 	@Override
 	public void startupDatabaseIntegrityTest() {
-		checkedActivate(4);
+		activateFully();
 		
 		if(mDatabaseFormatVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new IllegalStateException("FATAL: startupDatabaseIntegrityTest called with wrong database format version! is: " 
