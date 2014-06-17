@@ -556,7 +556,10 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	/**
 	 * ATTENTION: Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager while this is executing.
 	 * It doesn't synchronize on the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager because it assumes that they are not being used yet.
-	 * (I didn't upgrade this function to do the locking because it would be much work to test the changes for little benefit)  
+	 * (I didn't upgrade this function to do the locking because it would be much work to test the changes for little benefit)
+	 * 
+	 * ATTENTION: After having written upgrade code, it is a good idea to set the log level to DEBUG (see developer-documentation/Debugging.txt)
+	 * and check whether the startup database integrity test {@link #verifyDatabaseIntegrity()}y succeeds.
 	 */
 	private synchronized void upgradeDB() {
 		int databaseFormatVersion = mConfig.getDatabaseFormatVersion();
