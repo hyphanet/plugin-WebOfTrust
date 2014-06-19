@@ -97,7 +97,7 @@ public final class RandomGrabHashSetTest extends TestCase {
             final float actualOccurences = occurences[i];
             final float expectedOccurences = (float)grabs / elements;
             final float bias = Math.abs(actualOccurences - expectedOccurences) / expectedOccurences;
-            System.out.println("Occurences: " + actualOccurences  + "; Bias: " + bias);
+            //System.out.println("Occurences: " + actualOccurences  + "; Bias: " + bias);
             assertTrue(bias < 0.10);
         }
     }
