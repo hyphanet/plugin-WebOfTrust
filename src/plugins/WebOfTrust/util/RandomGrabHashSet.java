@@ -9,11 +9,9 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Random;
 
-import plugins.WebOfTrust.exceptions.DuplicateObjectException;
-
 /**
  * HashSet with the ability to return a random item.
- * All operations are armortised O(1).
+ * All operations are amortised O(1).
  * 
  * @author xor (xor@freenetproject.org)
  * @param E The type of the elements.
@@ -59,9 +57,12 @@ public final class RandomGrabHashSet<E> {
 		return true;
 	}
 	
+	/**
+	 * @throws IllegalArgumentException If the element is already contained in the set.
+	 */
 	public void add(final E item) {
 		if(contains(item))
-			throw new DuplicateObjectException(item.toString());
+			throw new IllegalArgumentException("Element exists already: " + item);
 		
 		mData.add(item);
 		mIndex.put(item, mData.size()-1);
