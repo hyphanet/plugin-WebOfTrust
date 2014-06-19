@@ -21,7 +21,7 @@ import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
-import freenet.support.RandomGrabHashSet;
+import plugins.WebOfTrust.util.RandomGrabHashSet;
 
 import com.db4o.ObjectSet;
 
