@@ -735,7 +735,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * - Deletes all identities in the database - This should delete ALL objects in the database.
 	 * - Then it checks for whether any objects still exist - those are leaks.
 	 */
-	private synchronized void checkForDatabaseLeaks() {
+	synchronized boolean checkForDatabaseLeaks() {
 		Logger.normal(this, "checkForDatabaseLeaks(): Checking for database leaks... This will delete the whole database content!");
 		
 		Logger.normal(this, "checkForDatabaseLeaks(): Deleting all identities...");
@@ -783,6 +783,8 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		@SuppressWarnings("unchecked")
 		ObjectSet<Object> result = query.execute();
 
+		boolean foundLeak = false;
+		
 		for(Object leak : result) {
 			// For each value of an enum, Db4o will store an undeletable object in the database permanently. there will only be exactly one for each
 			// value, no matter how often the enum is referenced.
@@ -790,11 +792,15 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			// (I've also manually tested this for db4o 7.4 which we currently use since the above link applies to 8.0 only and there is no such document for 7.4)
 			if(leak.getClass().isEnum())
 				Logger.normal(this, "checkForDatabaseLeaks(): Found leak candidate, it is an enum though, so its not a real leak. Class: " + leak.getClass() + "; toString(): " + leak);
-			else
+			else {
 				Logger.error(this, "checkForDatabaseLeaks(): Found leaked object, class: " + leak.getClass() + "; toString(): " + leak);
+				foundLeak = true;
+			}
 		}
 		
 		Logger.warning(this, "checkForDatabaseLeaks(): Finished. Please delete the database now, it is destroyed.");
+		
+		return foundLeak;
 	}
 	
 	private synchronized boolean verifyDatabaseIntegrity() {
