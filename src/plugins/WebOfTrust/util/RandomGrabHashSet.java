@@ -61,7 +61,7 @@ public final class RandomGrabHashSet<E> {
 	 * @throws IllegalArgumentException If the element is already contained in the set. We throw instead of just returning false
 	 * because WOT uses this class for unit tests in which double adding would be an error.
 	 */
-	public void add(final E item) {
+	public void addOrThrow(final E item) {
 		if(contains(item))
 			throw new IllegalArgumentException("Element exists already: " + item);
 		

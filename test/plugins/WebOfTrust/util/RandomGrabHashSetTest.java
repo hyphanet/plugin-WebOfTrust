@@ -33,9 +33,9 @@ public final class RandomGrabHashSetTest extends TestCase {
     }
 
     public final void testAdd() {
-        set.add(element1); assertTrue(set.indexIsValid());
+        set.addOrThrow(element1); assertTrue(set.indexIsValid());
         try {
-            set.add(element1);
+            set.addOrThrow(element1);
             fail("Should have thrown because element is contained already");
         } catch(IllegalArgumentException e) {
             assertTrue(set.indexIsValid());
@@ -45,7 +45,7 @@ public final class RandomGrabHashSetTest extends TestCase {
     public final void testContains() {
         assertFalse(set.contains(element1));    assertTrue(set.indexIsValid());
         assertFalse(set.contains(element2));    assertTrue(set.indexIsValid());
-        set.add(element1);                      assertTrue(set.indexIsValid());
+        set.addOrThrow(element1);               assertTrue(set.indexIsValid());
         assertTrue(set.contains(element1));     assertTrue(set.indexIsValid());
         assertFalse(set.contains(element2));    assertTrue(set.indexIsValid());
     }
@@ -53,8 +53,8 @@ public final class RandomGrabHashSetTest extends TestCase {
     public final void testRemove() {
         assertFalse(set.contains(element1));    assertTrue(set.indexIsValid());
         assertFalse(set.contains(element2));    assertTrue(set.indexIsValid());
-        set.add(element1);                      assertTrue(set.indexIsValid());
-        set.add(element2);                      assertTrue(set.indexIsValid());
+        set.addOrThrow(element1);              	assertTrue(set.indexIsValid());
+        set.addOrThrow(element2);               assertTrue(set.indexIsValid());
         set.remove(element1);                   assertTrue(set.indexIsValid());
         assertFalse(set.contains(element1));    assertTrue(set.indexIsValid());
         assertTrue(set.contains(element2));     assertTrue(set.indexIsValid());
@@ -66,7 +66,7 @@ public final class RandomGrabHashSetTest extends TestCase {
     public final void testSize() {
         for(int i=0; i < 10; ++i) {
             assertEquals(i, set.size());
-            set.add(i + 12345);
+            set.addOrThrow(i + 12345);
             assertEquals(i+1, set.size());
         }
         
@@ -86,7 +86,7 @@ public final class RandomGrabHashSetTest extends TestCase {
         final int grabs = 10000; 
                 
         for(int i=0; i < elements; ++i)
-            set.add(i);
+            set.addOrThrow(i);
         
         final int occurences[] = new int[elements];
         
@@ -114,7 +114,7 @@ public final class RandomGrabHashSetTest extends TestCase {
                 case 0:
                 case 1:
                     try {
-                        set.add(random.nextInt(operations));
+                        set.addOrThrow(random.nextInt(operations));
                     } catch(IllegalArgumentException e) {}
                     assertTrue(set.indexIsValid());
                     break;
