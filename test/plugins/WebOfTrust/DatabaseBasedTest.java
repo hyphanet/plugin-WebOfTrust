@@ -21,7 +21,7 @@ import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
-import freenet.support.RandomGrabHashSet;
+import plugins.WebOfTrust.util.RandomGrabHashSet;
 
 import com.db4o.ObjectSet;
 
@@ -258,13 +258,13 @@ public class DatabaseBasedTest extends TestCase {
 			
 			Randomizer() { 
 				for(Identity identity : mWoT.getAllIdentities())
-					allIdentities.add(identity.getID());
+					allIdentities.addOrThrow(identity.getID());
 				
 				for(OwnIdentity ownIdentity : mWoT.getAllOwnIdentities())
-					allOwnIdentities.add(ownIdentity.getID());
+					allOwnIdentities.addOrThrow(ownIdentity.getID());
 				
 				for(Trust trust : mWoT.getAllTrusts())
-					allTrusts.add(trust.getID());
+					allTrusts.addOrThrow(trust.getID());
 			}
 		}
 		final Randomizer randomizer = new Randomizer();
@@ -285,8 +285,8 @@ public class DatabaseBasedTest extends TestCase {
 									mRandom.nextBoolean(),
 									getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH)
 								);
-						randomizer.allIdentities.add(identity.getID());
-						randomizer.allOwnIdentities.add(identity.getID());
+						randomizer.allIdentities.addOrThrow(identity.getID());
+						randomizer.allOwnIdentities.addOrThrow(identity.getID());
 					}
 					break;
 				case 1: // WebOfTrust.deleteOwnIdentity()
@@ -298,7 +298,7 @@ public class DatabaseBasedTest extends TestCase {
 						// Dummy non-own identity which deleteOwnIdenity() has replaced it with.
 						final Identity surrogate = mWoT.getIdentityByID(original);
 						assertFalse(surrogate.getClass().equals(OwnIdentity.class));
-						randomizer.allIdentities.add(surrogate.getID());
+						randomizer.allIdentities.addOrThrow(surrogate.getID());
 					}
 					break;
 				case 2: // WebOfTrust.restoreOwnIdentity()
@@ -306,8 +306,8 @@ public class DatabaseBasedTest extends TestCase {
 						final FreenetURI[] keypair = getRandomSSKPair();
 						mWoT.restoreOwnIdentity(keypair[0]);
 						final String id = mWoT.getOwnIdentityByURI(keypair[1]).getID();
-						randomizer.allIdentities.add(id);
-						randomizer.allOwnIdentities.add(id);
+						randomizer.allIdentities.addOrThrow(id);
+						randomizer.allOwnIdentities.addOrThrow(id);
 					}
 					break;
 				case 3: // WebOfTrust.restoreOwnIdentity() with previously existing non-own version of it
@@ -316,12 +316,12 @@ public class DatabaseBasedTest extends TestCase {
 						mWoT.addIdentity(keypair[1].toString());
 						mWoT.restoreOwnIdentity(keypair[0]);
 						final String id = mWoT.getOwnIdentityByURI(keypair[1]).getID();
-						randomizer.allIdentities.add(id);
-						randomizer.allOwnIdentities.add(id);
+						randomizer.allIdentities.addOrThrow(id);
+						randomizer.allOwnIdentities.addOrThrow(id);
 					}
 					break;
 				case 4: // WebOfTrust.addIdentity()
-					randomizer.allIdentities.add(mWoT.addIdentity(getRandomRequestURI().toString()).getID());
+					randomizer.allIdentities.addOrThrow(mWoT.addIdentity(getRandomRequestURI().toString()).getID());
 					break;
 				case 5: // WebOfTrust.addContext() (adds context to identity)
 					{
@@ -364,7 +364,7 @@ public class DatabaseBasedTest extends TestCase {
 						
 						final String trustID = new TrustID(truster, trustee).toString();
 						if(!randomizer.allTrusts.contains(trustID)) // We selected the truster/trustee randomly so a value may have existed
-							randomizer.allTrusts.add(trustID); 
+							randomizer.allTrusts.addOrThrow(trustID); 
 					}
 					break;
 				case 14: // Remove trust value
