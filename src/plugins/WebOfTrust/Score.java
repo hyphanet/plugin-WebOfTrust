@@ -302,7 +302,7 @@ public final class Score extends Persistent implements Cloneable, Serializable {
 	 */
 	public synchronized Date getDateOfCreation() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		return mCreationDate;
+		return (Date)mCreationDate.clone();	// Clone it because date is mutable
 	}
 	
 	/**
@@ -310,7 +310,7 @@ public final class Score extends Persistent implements Cloneable, Serializable {
 	 */
 	public synchronized Date getDateOfLastChange() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		return mLastChangedDate;
+		return (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 	}
 	
 	/**
@@ -374,9 +374,10 @@ public final class Score extends Persistent implements Cloneable, Serializable {
 	}
 
 	public Score clone() {
+		activateFully();
 		final Score clone = new Score(mWebOfTrust, getTruster().clone(), getTrustee().clone(), getScore(), getRank(), getCapacity());
 		clone.setCreationDate(getCreationDate());
-		clone.mLastChangedDate = (Date)getDateOfLastChange().clone();
+		clone.mLastChangedDate = (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 		return clone;
 	}
 
