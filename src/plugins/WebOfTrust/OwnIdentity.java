@@ -195,7 +195,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		mCurrentEditionFetchState = FetchState.NotFetched;
 		
 		// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive */
-		mLastFetchedDate = fetchedDate != null ? (Date)fetchedDate.clone() : new Date(0);
+		mLastFetchedDate = fetchedDate != null ? (Date)fetchedDate.clone() : new Date(0);	// Clone it because date is mutable
 		
 		// This is not really necessary because needsInsert() returns false if mCurrentEditionFetchState == NotFetched
 		// However, we still do it because the user might have specified URIs with old edition numbers: Then the IdentityInserter would
@@ -209,7 +209,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 */
 	public final Date getLastInsertDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		return (Date)mLastInsertDate.clone();
+		return (Date)mLastInsertDate.clone();	// Clone it because date is mutable
 	}
 	
 	/**
@@ -262,8 +262,8 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 			clone.setNewEditionHint(getLatestEditionHint());
 			clone.setCreationDate(getCreationDate());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
-			clone.mLastChangedDate = (Date)getLastChangeDate().clone();
-			clone.mLastInsertDate = (Date)getLastInsertDate().clone();
+			clone.mLastChangedDate = (Date)mLastChangedDate.clone();	// Clone it because date is mutable
+			clone.mLastInsertDate = (Date)mLastInsertDate.clone();	// Clone it because date is mutable
 			clone.mLatestEditionHint = getLatestEditionHint(); // Don't use the setter since it won't lower the current edition hint.
 			clone.setContexts(getContexts());
 			clone.setProperties(getProperties());
