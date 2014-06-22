@@ -928,7 +928,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 			clone.setNewEditionHint(getLatestEditionHint());
 			clone.setCreationDate(getCreationDate());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
-			clone.mLastChangedDate = (Date)getLastChangeDate().clone();	// Clone it because date is mutable
+			clone.mLastChangedDate = (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 			clone.mLatestEditionHint = getLatestEditionHint(); // Don't use the setter since it won't lower the current edition hint.
 			clone.setContexts(getContexts());
 			clone.setProperties(getProperties());
