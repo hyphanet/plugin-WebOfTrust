@@ -237,7 +237,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		mCurrentEditionFetchState = FetchState.NotFetched;
 		
 		mLastFetchedDate = new Date(0);
-		mLastChangedDate = (Date)mCreationDate.clone(); // Don't re-use objects which are stored by db4o to prevent issues when they are being deleted.
+		mLastChangedDate = (Date)mCreationDate.clone(); // Clone it because date is mutable
 		
 		if(newNickname == null) {
 			mNickname = null;
@@ -430,7 +430,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 * @return The date when this identity was first seen in a trust list of someone.
 	 */
 	public final Date getAddedDate() {
-		return (Date)getCreationDate().clone();
+		return (Date)getCreationDate().clone();	// Clone it because date is mutable
 	}
 
 	/**
@@ -438,7 +438,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 */
 	public final Date getLastFetchedDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		return (Date)mLastFetchedDate.clone();
+		return (Date)mLastFetchedDate.clone();	// Clone it because date is mutable
 	}
 
 	/**
@@ -446,7 +446,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 */
 	public final Date getLastChangeDate() {
 		checkedActivate(1);  // Date is a db4o primitive type so 1 is enough
-		return (Date)mLastChangedDate.clone();
+		return (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 	}
 	
 	/**
@@ -468,7 +468,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		mCurrentEditionFetchState = FetchState.Fetched;
 		
 		// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive */
-		mLastFetchedDate = (Date)fetchDate.clone(); // Clone it to prevent duplicate usage of db4o-stored objects
+		mLastFetchedDate = (Date)fetchDate.clone();	// Clone it because date is mutable
 		
 		updated();
 	}
@@ -928,7 +928,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 			clone.setNewEditionHint(getLatestEditionHint());
 			clone.setCreationDate(getCreationDate());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
-			clone.mLastChangedDate = (Date)getLastChangeDate().clone();
+			clone.mLastChangedDate = (Date)getLastChangeDate().clone();	// Clone it because date is mutable
 			clone.mLatestEditionHint = getLatestEditionHint(); // Don't use the setter since it won't lower the current edition hint.
 			clone.setContexts(getContexts());
 			clone.setProperties(getProperties());
