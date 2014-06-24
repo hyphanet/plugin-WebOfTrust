@@ -23,7 +23,7 @@ import freenet.support.api.HTTPRequest;
 public class CreateIdentityPage extends WebPageImpl {
 
 	/**
-	 * Creates a new OwnIdentitiesPage.
+	 * Creates a new CreateIdentityPage.
 	 * 
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
