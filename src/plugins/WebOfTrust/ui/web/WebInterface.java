@@ -57,7 +57,7 @@ public class WebInterface {
 	private final PageMaker mPageMaker;
 
 	// Used by pages not listed in the menu. TODO: For what?
-	private final WebInterfaceToadlet ownIdentitiesToadlet;
+	private final WebInterfaceToadlet myIdentityToadlet;
 	private final WebInterfaceToadlet knownIdentitiesToadlet;
 
 	private final HashMap<Class<? extends WebInterfaceToadlet>, WebInterfaceToadlet> toadlets;
@@ -88,9 +88,9 @@ public class WebInterface {
 
 	}
 	
-	public class OwnIdentitiesWebInterfaceToadlet extends WebInterfaceToadlet {
+	public class MyIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		protected OwnIdentitiesWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+		protected MyIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
@@ -198,7 +198,7 @@ public class WebInterface {
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return ownIdentitiesToadlet;
+			return myIdentityToadlet;
 		}
 		
 		@Override
@@ -220,7 +220,7 @@ public class WebInterface {
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return ownIdentitiesToadlet;
+			return myIdentityToadlet;
 		}
 	}
 
@@ -237,7 +237,7 @@ public class WebInterface {
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return ownIdentitiesToadlet;
+			return myIdentityToadlet;
 		}
 	}
 
@@ -254,7 +254,7 @@ public class WebInterface {
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return ownIdentitiesToadlet;
+			return myIdentityToadlet;
 		}
 	}
 	
@@ -405,19 +405,19 @@ public class WebInterface {
 		 * Pages listed in the menu:
 		 */
 
-		ownIdentitiesToadlet = new OwnIdentitiesWebInterfaceToadlet(null, this, core, "OwnIdentities");
+		myIdentityToadlet = new MyIdentityWebInterfaceToadlet(null, this, core, "OwnIdentities");
 		knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, core, "KnownIdentities");
 
 		ArrayList<WebInterfaceToadlet> listed = new ArrayList<WebInterfaceToadlet>(Arrays.asList(
 			new LoginWebInterfaceToadlet(null, this, core, "LogIn"),
-			ownIdentitiesToadlet,
+			myIdentityToadlet,
 			knownIdentitiesToadlet,
 			new StatisticsWebInterfaceToadlet(null, this, core, "Statistics"),
 			new LogOutWebInterfaceToadlet(null, this, core, "LogOut")
 		));
 
 		// Register homepage at the root. This catches any otherwise unmatched request because it is registered first.
-		container.register(ownIdentitiesToadlet, null, mURI + "/", true, true);
+		container.register(myIdentityToadlet, null, mURI + "/", true, true);
 		
 		toadlets = new HashMap<Class<? extends WebInterfaceToadlet>, WebInterfaceToadlet>();
 
