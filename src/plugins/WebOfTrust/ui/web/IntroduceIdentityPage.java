@@ -39,7 +39,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		
 		mPuzzleURI = toadlet.webInterface.getURI() + "/GetPuzzle";
 		
-		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
+		mIdentity = wot.getOwnIdentityByID(mLoggedInOwnIdentityID);
 		mClient = wot.getIntroductionClient();
 		
 		if(request.isPartSet("Solve")) {
@@ -89,7 +89,6 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		if(puzzles.size() > 0 ) {
 			HTMLNode solveForm = _pr.addFormChild(boxContent, uri.toString(), "solvePuzzles");
 			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "SolvePuzzles" });
-			solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id", mIdentity.getID() });
 			
 			int counter = 0;
 			for(IntroductionPuzzle p : puzzles) {
