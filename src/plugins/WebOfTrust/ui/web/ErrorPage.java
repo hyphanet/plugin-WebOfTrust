@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
@@ -24,10 +25,14 @@ public class ErrorPage extends WebPageImpl {
 	public ErrorPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, Exception myError) throws RedirectException {
 		super(toadlet, myRequest, context, false);
 		mError = myError;
-		Logger.error(this, "Internval error, please report this", mError);
 	}
 
 	public void make() {
-		addErrorBox("Internal error, please report this", mError);
+		if(mError instanceof UnknownIdentityException) {
+			addErrorBox(l10n().getString("Common.UnknownIdentityExceptionTitle"), l10n().getString("Common.UnknownIdentityExceptionDescription"));
+		} else {
+			addErrorBox("Internal error, please report this", mError);
+			Logger.error(this, "Internval error, please report this", mError);
+		}
 	}
 }
