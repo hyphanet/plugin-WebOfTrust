@@ -150,7 +150,6 @@ public class MyIdentityPage extends WebPageImpl {
 				HTMLNode manageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 
 				HTMLNode deleteForm = pr.addFormChild(manageCell, deleteIdentityToadlet.getURI().toString(), deleteIdentityToadlet.pageTitle);
-				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "DeleteIdentity" });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.DeleteButton") });
 				
@@ -158,12 +157,10 @@ public class MyIdentityPage extends WebPageImpl {
 					manageCell.addChild("p", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.RestoreInProgress"));
 				} else {	
 					HTMLNode editForm = pr.addFormChild(manageCell, editIdentityToadlet.getURI().toString(), editIdentityToadlet.pageTitle);
-					editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EditIdentity" });
 					editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 					editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.EditButton") });
 				
 					HTMLNode introduceForm = pr.addFormChild(manageCell, introduceIdentityToadlet.getURI().toString(), introduceIdentityToadlet.pageTitle);
-					introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "IntroduceIdentity" });
 					introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.IntroduceButton") });
 				}
 
@@ -179,7 +176,6 @@ public class MyIdentityPage extends WebPageImpl {
 		restoreBoxContent.addChild("p", l10n().getString("MyIdentityPage.RestoreOwnIdentity.Text"));
 		
 		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, uri.toString(), "RestoreOwnIdentity");
-		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "RestoreOwnIdentity" });
 		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "InsertURI", "70", l10n().getString("MyIdentityPage.RestoreOwnIdentity.InsertURI") });
 		restoreForm.addChild("br");
 		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "RestoreOwnIdentity", l10n().getString("MyIdentityPage.RestoreOwnIdentity.RestoreButton") });

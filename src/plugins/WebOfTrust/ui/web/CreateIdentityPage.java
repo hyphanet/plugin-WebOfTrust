@@ -70,7 +70,6 @@ public class CreateIdentityPage extends WebPageImpl {
 		FreenetURI[] keypair = wot.getPluginRespirator().getHLSimpleClient().generateKeyPair(WebOfTrustInterface.WOT_NAME);
 		
 		HTMLNode createForm = pr.addFormChild(boxContent, uri.toString(), "CreateIdentity");
-		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "CreateIdentity" });
 		createForm.addChild("span", new String[] { "title", "style" }, 
 				new String[] { l10n().getString("CreateIdentityPage.CreateIdentityBox.Nickname.Tooltip"), "border-bottom: 1px dotted; cursor: help;"}, 
 		        l10n().getString("CreateIdentityPage.CreateIdentityBox.Nickname") + " : ");

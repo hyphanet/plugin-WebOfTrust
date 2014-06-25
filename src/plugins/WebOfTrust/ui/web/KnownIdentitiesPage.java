@@ -147,7 +147,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	
 		HTMLNode createForm = pr.addFormChild(addBoxContent, uri.toString(), "AddIdentity");
 
-		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "AddIdentity" });
 		createForm.addChild("span", new String[] {"title", "style"}, 
 				new String[] { 
 		            l10n().getString("KnownIdentitiesPage.AddIdentity.IdentityURI.Tooltip"), 

@@ -55,7 +55,6 @@ public class EditOwnIdentityPage extends WebPageImpl {
 			
 			HTMLNode createForm = pr.addFormChild(box, uri.toString(), "EditIdentity");
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", mIdentity.getID()});
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EditIdentity"});
 			
 			createForm.addChild("p", new String[] { "style" }, new String[] { "font-size: x-small" },
 					l10n().getString("EditOwnIdentityPage.EditIdentityBox.RequestUri") + ": " + mIdentity.getRequestURI().toString());

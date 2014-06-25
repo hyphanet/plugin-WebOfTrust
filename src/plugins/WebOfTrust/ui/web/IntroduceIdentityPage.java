@@ -88,7 +88,6 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		
 		if(puzzles.size() > 0 ) {
 			HTMLNode solveForm = _pr.addFormChild(boxContent, uri.toString(), "solvePuzzles");
-			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "SolvePuzzles" });
 			
 			int counter = 0;
 			for(IntroductionPuzzle p : puzzles) {
