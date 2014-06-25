@@ -82,87 +82,85 @@ public class MyIdentityPage extends WebPageImpl {
 	 */
 	private void makeLoggedInAs() {
 		HTMLNode boxContent = addContentBox(l10n().getString("MyIdentityPage.LogIn.Header"));
-		
 
+		HTMLNode identitiesTable = boxContent.addChild("table", "border", "0");
+		HTMLNode row = identitiesTable.addChild("tr");
+		row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Name"));
+		row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.LastChange"));
+		row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.LastInsert"));
+		row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.PublishesTrustlist"));
+		row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Trusters"));
+		row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Trustees"));
+		row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Manage"));
 
-			HTMLNode identitiesTable = boxContent.addChild("table", "border", "0");
-			HTMLNode row = identitiesTable.addChild("tr");
-			row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Name"));
-			row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.LastChange"));
-			row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.LastInsert"));
-			row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.PublishesTrustlist"));
-			row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Trusters"));
-			row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Trustees"));
-			row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Manage"));
-			
-				OwnIdentity id = mIdentity;
-				row = identitiesTable.addChild("tr");
-				
-				final boolean restoreInProgress = id.isRestoreInProgress();
-				
-				String nickname = id.getNickname();
-				if(nickname == null && restoreInProgress) {
-					nickname = l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.RestoreInProgress");
-				}
-				
-				row.addChild("td", new String[] {"title", "style", "align"},
-						new String[] {id.getRequestURI().toString(), "cursor: help;", "center"}, nickname);
-				
-				synchronized(mDateFormat) {
-					mDateFormat.setTimeZone(TimeZone.getDefault());
-					/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
-					row.addChild("td", mDateFormat.format(id.getLastChangeDate()));
-				}
-				
-				HTMLNode cell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-				if(id.getLastInsertDate().equals(new Date(0))) {
-					cell.addChild("p", l10n().getString("Common.Never"));
-				}
-				else {
-					synchronized(mDateFormat) {
-						mDateFormat.setTimeZone(TimeZone.getDefault());
-						/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
-						cell.addChild(new HTMLNode("a", "href", "/"+id.getRequestURI().toString(), mDateFormat.format(id.getLastInsertDate())));
-					}
-				}
-				row.addChild("td", new String[] { "align" }, new String[] { "center" }, 
-				        id.doesPublishTrustList() 
-				                ? l10n().getString("Common.Yes") 
-				                : l10n().getString("Common.No"));
-				
-				// TODO: Do a direct link to the received-trusts part of the linked page
-				HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-				String trustersString = Long.toString(wot.getReceivedTrusts(id).size());
-				if(restoreInProgress)
-					trustersCell.addChild("#", trustersString);
-				else
-					trustersCell.addChild(new HTMLNode("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString(), trustersString));
-				
-				// TODO: Do a direct link to the given-trusts part of the linked page
-				HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-				String trusteesString = Long.toString(wot.getGivenTrusts(id).size());
-				if(restoreInProgress)
-					trusteesCell.addChild("#", trusteesString);
-				else
-					trusteesCell.addChild(new HTMLNode("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString(),
-						trusteesString));
-				
-				HTMLNode manageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+		OwnIdentity id = mIdentity;
+		row = identitiesTable.addChild("tr");
 
-				HTMLNode deleteForm = pr.addFormChild(manageCell, deleteIdentityToadlet.getURI().toString(), deleteIdentityToadlet.pageTitle);
-				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
-				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.DeleteButton") });
-				
-				if(id.isRestoreInProgress()) {
-					manageCell.addChild("p", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.RestoreInProgress"));
-				} else {	
-					HTMLNode editForm = pr.addFormChild(manageCell, editIdentityToadlet.getURI().toString(), editIdentityToadlet.pageTitle);
-					editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
-					editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.EditButton") });
-				
-					HTMLNode introduceForm = pr.addFormChild(manageCell, introduceIdentityToadlet.getURI().toString(), introduceIdentityToadlet.pageTitle);
-					introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.IntroduceButton") });
-				}
+		final boolean restoreInProgress = id.isRestoreInProgress();
+
+		String nickname = id.getNickname();
+		if(nickname == null && restoreInProgress) {
+			nickname = l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.RestoreInProgress");
+		}
+
+		row.addChild("td", new String[] {"title", "style", "align"},
+				new String[] {id.getRequestURI().toString(), "cursor: help;", "center"}, nickname);
+
+		synchronized(mDateFormat) {
+			mDateFormat.setTimeZone(TimeZone.getDefault());
+			/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
+			row.addChild("td", mDateFormat.format(id.getLastChangeDate()));
+		}
+
+		HTMLNode cell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+		if(id.getLastInsertDate().equals(new Date(0))) {
+			cell.addChild("p", l10n().getString("Common.Never"));
+		}
+		else {
+			synchronized(mDateFormat) {
+				mDateFormat.setTimeZone(TimeZone.getDefault());
+				/* SimpleDateFormat.format(Date in UTC) does convert to the configured TimeZone. Interesting, eh? */
+				cell.addChild(new HTMLNode("a", "href", "/"+id.getRequestURI().toString(), mDateFormat.format(id.getLastInsertDate())));
+			}
+		}
+		row.addChild("td", new String[] { "align" }, new String[] { "center" }, 
+				id.doesPublishTrustList() 
+				? l10n().getString("Common.Yes") 
+						: l10n().getString("Common.No"));
+
+		// TODO: Do a direct link to the received-trusts part of the linked page
+		HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+		String trustersString = Long.toString(wot.getReceivedTrusts(id).size());
+		if(restoreInProgress)
+			trustersCell.addChild("#", trustersString);
+		else
+			trustersCell.addChild(new HTMLNode("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString(), trustersString));
+
+		// TODO: Do a direct link to the given-trusts part of the linked page
+		HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+		String trusteesString = Long.toString(wot.getGivenTrusts(id).size());
+		if(restoreInProgress)
+			trusteesCell.addChild("#", trusteesString);
+		else
+			trusteesCell.addChild(new HTMLNode("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString(),
+					trusteesString));
+
+		HTMLNode manageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+
+		HTMLNode deleteForm = pr.addFormChild(manageCell, deleteIdentityToadlet.getURI().toString(), deleteIdentityToadlet.pageTitle);
+		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
+		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.DeleteButton") });
+
+		if(id.isRestoreInProgress()) {
+			manageCell.addChild("p", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.RestoreInProgress"));
+		} else {	
+			HTMLNode editForm = pr.addFormChild(manageCell, editIdentityToadlet.getURI().toString(), editIdentityToadlet.pageTitle);
+			editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
+			editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.EditButton") });
+
+			HTMLNode introduceForm = pr.addFormChild(manageCell, introduceIdentityToadlet.getURI().toString(), introduceIdentityToadlet.pageTitle);
+			introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.IntroduceButton") });
+		}
 
 
 		CreateIdentityPage.addLinkToCreateIdentityPage(this);
