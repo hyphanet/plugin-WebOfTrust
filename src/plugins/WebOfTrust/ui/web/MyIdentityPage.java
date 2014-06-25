@@ -56,6 +56,7 @@ public class MyIdentityPage extends WebPageImpl {
 
 		String baseURI = toadlet.webInterface.getURI();
 		
+		// FIXME: toadlet.webInterface.getToadlet(ToadletType.class).getURI()
 		showIdentityURI = baseURI+"/ShowIdentity";
 		createIdentityURI = baseURI+"/CreateIdentity";
 		editIdentityURI = baseURI+"/EditOwnIdentity";
