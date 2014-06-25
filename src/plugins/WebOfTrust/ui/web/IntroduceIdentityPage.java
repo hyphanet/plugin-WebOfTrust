@@ -57,6 +57,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 							mClient.solvePuzzle(mIdentity, p, solution);
 						}
 						catch(Exception e) {
+							addErrorBox(l10n().getString("Common.InternalError"), e);
 							/* The identity or the puzzle might have been deleted here */
 							Logger.error(this, "insertPuzzleSolution() failed", e);
 						}
