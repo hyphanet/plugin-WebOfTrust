@@ -41,7 +41,6 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		
 		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
 		mClient = wot.getIntroductionClient();
-		/* TODO: Can we risk that the identity is being deleted? I don't think we should lock the whole wot */
 		
 		if(request.isPartSet("Solve")) {
 			int idx = 0;
@@ -54,6 +53,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 						p = wot.getIntroductionPuzzleStore().getByID(id);
 
 						try {
+							// It is safe to use this function without synchronization as it re-queries the identity from the database.
 							mClient.solvePuzzle(mIdentity, p, solution);
 						}
 						catch(Exception e) {
