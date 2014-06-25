@@ -38,7 +38,8 @@ public class MyIdentityPage extends WebPageImpl {
 	private final String editIdentityURI;
 	private final String deleteIdentityURI;
 	private final String introduceIdentityURI;
-	private final String nickname;
+	
+	private final OwnIdentity mIdentity;
 	
 	/**
 	 * Creates a new MyIdentityPage.
@@ -46,20 +47,12 @@ public class MyIdentityPage extends WebPageImpl {
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
 	 * @throws RedirectException If the {@link Session} has expired.
+	 * @throws UnknownIdentityException If the owner of the {@link Session} does not exist anymore.
 	 */
-	public MyIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
+	public MyIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException, UnknownIdentityException {
 		super(toadlet, myRequest, context, true);
 
-		final WebOfTrust wot = toadlet.webInterface.getWoT();
-
-		SessionManager.Session session = wot.getPluginRespirator().getSessionManager(WebOfTrustInterface.WOT_NAME).useSession(context);
-		OwnIdentity identity = null;
-		if (session != null) {
-			try {
-				identity = wot.getOwnIdentityByID(session.getUserID());
-			} catch (UnknownIdentityException e) {}
-		}
-		nickname = identity == null ? "" : identity.getNickname();
+		mIdentity = wot.getOwnIdentityByID(mLoggedInOwnIdentityID);
 
 		String baseURI = toadlet.webInterface.getURI();
 		
@@ -82,30 +75,24 @@ public class MyIdentityPage extends WebPageImpl {
 				addErrorBox(l10n().getString("MyIdentityPage.RestoreOwnIdentityFailed"), e);
 			}
 		}
-		if (!nickname.isEmpty()) {
-			makeLoggedInAs();
-		}
-		synchronized(wot) {
-			makeOwnIdentitiesList();
-		}
+		
+		makeLoggedInAs();
+		
 		makeRestoreOwnIdentityForm();
 	}
 
+	/**
+	 * This function was originally able to display a table of all {@link OwnIdentity}s in the WOT database. This did make sense back when the web-interface
+	 * did not allow the user to log in and instead always displayed everything. 
+	 * Since the web-interface was changed to log-in style, the code has been refactored to only display a single {@link OwnIdentity} - the currently logged in one.
+	 * This has been done by removing the loops which iterates over the identities. 
+	 * Conclusion: TODO: Change the layout of the function to be less loop-alike and take more advantage of the fact that there only is one identity.
+	 */
 	private void makeLoggedInAs() {
-		HTMLNode content = addContentBox(l10n().getString("MyIdentityPage.LogIn.Header"));
-		content.addChild("p", nickname);
-	}
-
-	private void makeOwnIdentitiesList() {
-
-		HTMLNode boxContent = addContentBox(l10n().getString("MyIdentityPage.OwnIdentities.Header"));
+		HTMLNode boxContent = addContentBox(l10n().getString("MyIdentityPage.LogIn.Header"));
 		
-		synchronized(wot) {
-		ObjectSet<OwnIdentity> ownIdentities = wot.getAllOwnIdentities();
-		if(ownIdentities.size() == 0) {
-			boxContent.addChild("p", l10n().getString("MyIdentityPage.OwnIdentities.NoOwnIdentity"));
-		}
-		else {
+
+
 			HTMLNode identitiesTable = boxContent.addChild("table", "border", "0");
 			HTMLNode row = identitiesTable.addChild("tr");
 			row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Name"));
@@ -116,8 +103,7 @@ public class MyIdentityPage extends WebPageImpl {
 			row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Trustees"));
 			row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Manage"));
 			
-			while(ownIdentities.hasNext()) {
-				OwnIdentity id = ownIdentities.next();
+				OwnIdentity id = mIdentity;
 				row = identitiesTable.addChild("tr");
 				
 				final boolean restoreInProgress = id.isRestoreInProgress();
@@ -189,9 +175,7 @@ public class MyIdentityPage extends WebPageImpl {
 					introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 					introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.IntroduceButton") });				
 				}
-			}
-		}
-		}
+
 
 		CreateIdentityPage.addLinkToCreateIdentityPage(this);
 	}
