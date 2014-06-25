@@ -8,14 +8,12 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.WebOfTrustInterface;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
-
-import com.db4o.ObjectSet;
-
+import plugins.WebOfTrust.ui.web.WebInterface.DeleteOwnIdentityWebInterfaceToadlet;
+import plugins.WebOfTrust.ui.web.WebInterface.EditOwnIdentityWebInterfaceToadlet;
+import plugins.WebOfTrust.ui.web.WebInterface.IdentityWebInterfaceToadlet;
+import plugins.WebOfTrust.ui.web.WebInterface.IntroduceIdentityWebInterfaceToadlet;
 import freenet.clients.http.RedirectException;
-import freenet.clients.http.SessionManager;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
@@ -33,11 +31,9 @@ public class MyIdentityPage extends WebPageImpl {
 
 	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
-	private final String showIdentityURI;
-	private final String createIdentityURI;
-	private final String editIdentityURI;
-	private final String deleteIdentityURI;
-	private final String introduceIdentityURI;
+	private final WebInterfaceToadlet editIdentityToadlet;
+	private final WebInterfaceToadlet deleteIdentityToadlet;
+	private final WebInterfaceToadlet introduceIdentityToadlet;
 	
 	private final OwnIdentity mIdentity;
 	
@@ -54,14 +50,9 @@ public class MyIdentityPage extends WebPageImpl {
 
 		mIdentity = wot.getOwnIdentityByID(mLoggedInOwnIdentityID);
 
-		String baseURI = mWebInterface.getURI();
-		
-		// FIXME: toadlet.webInterface.getToadlet(ToadletType.class).getURI()
-		showIdentityURI = baseURI+"/ShowIdentity";
-		createIdentityURI = baseURI+"/CreateIdentity";
-		editIdentityURI = baseURI+"/EditOwnIdentity";
-		deleteIdentityURI = baseURI+"/DeleteOwnIdentity";
-		introduceIdentityURI = baseURI+"/IntroduceIdentity";
+		editIdentityToadlet = mWebInterface.getToadlet(EditOwnIdentityWebInterfaceToadlet.class);
+		deleteIdentityToadlet = mWebInterface.getToadlet(DeleteOwnIdentityWebInterfaceToadlet.class);
+		introduceIdentityToadlet = mWebInterface.getToadlet(IntroduceIdentityWebInterfaceToadlet.class);
 	}
 
 	@Override
@@ -145,7 +136,7 @@ public class MyIdentityPage extends WebPageImpl {
 				if(restoreInProgress)
 					trustersCell.addChild("#", trustersString);
 				else
-					trustersCell.addChild(new HTMLNode("a", "href", showIdentityURI + "?id=" + id.getID(), trustersString));
+					trustersCell.addChild(new HTMLNode("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString(), trustersString));
 				
 				// TODO: Do a direct link to the given-trusts part of the linked page
 				HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
@@ -153,12 +144,12 @@ public class MyIdentityPage extends WebPageImpl {
 				if(restoreInProgress)
 					trusteesCell.addChild("#", trusteesString);
 				else
-					trusteesCell.addChild(new HTMLNode("a", "href", showIdentityURI + "?id=" + id.getID(),
+					trusteesCell.addChild(new HTMLNode("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString(),
 						trusteesString));
 				
 				HTMLNode manageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 
-				HTMLNode deleteForm = pr.addFormChild(manageCell, deleteIdentityURI, "DeleteIdentity");
+				HTMLNode deleteForm = pr.addFormChild(manageCell, deleteIdentityToadlet.getURI().toString(), deleteIdentityToadlet.pageTitle);
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "DeleteIdentity" });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.DeleteButton") });
@@ -166,12 +157,12 @@ public class MyIdentityPage extends WebPageImpl {
 				if(id.isRestoreInProgress()) {
 					manageCell.addChild("p", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.RestoreInProgress"));
 				} else {	
-					HTMLNode editForm = pr.addFormChild(manageCell, editIdentityURI, "EditIdentity");
+					HTMLNode editForm = pr.addFormChild(manageCell, editIdentityToadlet.getURI().toString(), editIdentityToadlet.pageTitle);
 					editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EditIdentity" });
 					editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 					editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.EditButton") });
 				
-					HTMLNode introduceForm = pr.addFormChild(manageCell, introduceIdentityURI, "IntroduceIdentity");
+					HTMLNode introduceForm = pr.addFormChild(manageCell, introduceIdentityToadlet.getURI().toString(), introduceIdentityToadlet.pageTitle);
 					introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "IntroduceIdentity" });
 					introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.IntroduceButton") });
 				}

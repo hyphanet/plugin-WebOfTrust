@@ -18,6 +18,8 @@
  */
 package plugins.WebOfTrust.ui.web;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
@@ -29,6 +31,7 @@ import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.ui.web.WebInterface.IdentityWebInterfaceToadlet;
 
 import com.db4o.ObjectSet;
 
@@ -228,5 +231,15 @@ public class IdentityPage extends WebPageImpl {
 		
 		box.addChild("p", l10n().getString("IdentityPage.StatisticsBox.Added") + ": " + addedString); 
 		box.addChild("p", l10n().getString("IdentityPage.StatisticsBox.LastFetched") + ": " + lastFetchedString);
+	}
+	
+	public static URI getURI(WebInterface webInterface, String identityID) {
+		final URI baseURI = webInterface.getToadlet(IdentityWebInterfaceToadlet.class).getURI();
+		try {
+			// The baseURI.getPath() parameter may not be null, otherwise its last directory is stripped.
+			return baseURI.resolve(new URI(null, null, baseURI.getPath(), "id=" + identityID, null));
+		} catch (URISyntaxException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
