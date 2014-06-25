@@ -56,8 +56,18 @@ public class WebInterface {
 	private final PluginRespirator mPluginRespirator;
 	private final PageMaker mPageMaker;
 
-	// Used by pages not listed in the menu. TODO: For what?
+	/**
+	 * Used by the {@link Toadlet#showAsToadlet()} implementations of:
+	 * - {@link CreateIdentityWebInterfaceToadlet}
+	 * - {@link DeleteOwnIdentityWebInterfaceToadlet}
+	 * - {@link EditOwnIdentityWebInterfaceToadlet}
+	 * - {@link IntroduceIdentityWebInterfaceToadlet}
+	 */
 	private final WebInterfaceToadlet myIdentityToadlet;
+	
+	/**
+	 * Used by the {@link Toadlet#showAsToadlet()} implementation of {@link IdentityWebInterfaceToadlet}.
+	 */
 	private final WebInterfaceToadlet knownIdentitiesToadlet;
 
 	private final HashMap<Class<? extends WebInterfaceToadlet>, WebInterfaceToadlet> toadlets;
