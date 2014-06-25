@@ -118,9 +118,7 @@ Trust.InvalidValue=Valore di fiducia non valido. I valori di fiducia devono esse
 WebInterface.WotMenuName=Comunità
 WebInterface.WotMenuItem.Configuration=Configurazione
 WebInterface.WotMenuItem.KnownIdentities=Identità anonime conosciute
-WebInterface.WotMenuItem.OwnIdentities=Proprie identità anonime
 WebInterface.WotMenuItem.Configuration.Tooltip=Configurare il plugin Web Of Trust (Rete di fiducia)
 WebInterface.WotMenuItem.KnownIdentities.Tooltip=Gestire le altre identità
-WebInterface.WotMenuItem.OwnIdentities.Tooltip=Gestire le proprie identità
 WebInterface.WotMenuName.Tooltip=Web of trust (Rete di fiducia), il filtro antispam collaborativo sottostante ai forum.
 End

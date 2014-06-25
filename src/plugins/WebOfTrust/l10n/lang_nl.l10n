@@ -118,9 +118,7 @@ Trust.InvalidValue=Ongeldige vertrouwenwaarde. Vertrouwenswaardes moeten tussen 
 WebInterface.WotMenuName=Gemeenschap
 WebInterface.WotMenuItem.Configuration=Instellingen
 WebInterface.WotMenuItem.KnownIdentities=Bekende pseudoniemen
-WebInterface.WotMenuItem.OwnIdentities=Persoonlijke pseudoniemen
 WebInterface.WotMenuItem.Configuration.Tooltip=Configureer de 'Web of Trust'-plugin
 WebInterface.WotMenuItem.KnownIdentities.Tooltip=Beheer de pseudoniemen van anderen
-WebInterface.WotMenuItem.OwnIdentities.Tooltip=Beheer je eigen pseudoniemen
 WebInterface.WotMenuName.Tooltip='Web of Trust', het collaboratieve spamfilter op de achtergrond werkt bij fora.
 End
