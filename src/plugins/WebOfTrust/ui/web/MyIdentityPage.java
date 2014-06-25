@@ -54,7 +54,7 @@ public class MyIdentityPage extends WebPageImpl {
 
 		mIdentity = wot.getOwnIdentityByID(mLoggedInOwnIdentityID);
 
-		String baseURI = toadlet.webInterface.getURI();
+		String baseURI = mWebInterface.getURI();
 		
 		// FIXME: toadlet.webInterface.getToadlet(ToadletType.class).getURI()
 		showIdentityURI = baseURI+"/ShowIdentity";
