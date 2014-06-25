@@ -38,7 +38,7 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 				wot.deleteOwnIdentity(mIdentity.getID());
 				mToadlet.logOut(mContext);
 				
-				/* TODO: Show the OwnIdentities page instead! Use the trick which Freetalk does for inlining pages */
+				/* TODO: Show the MyIdentityPage instead! Use the trick which Freetalk does for inlining pages */
 				HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Header"));
 				box.addChild("#", l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text"));
 				

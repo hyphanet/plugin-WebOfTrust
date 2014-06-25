@@ -415,7 +415,7 @@ public class WebInterface {
 		 * Pages listed in the menu:
 		 */
 
-		myIdentityToadlet = new MyIdentityWebInterfaceToadlet(null, this, core, "OwnIdentities");
+		myIdentityToadlet = new MyIdentityWebInterfaceToadlet(null, this, core, "MyIdentity");
 		knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, core, "KnownIdentities");
 
 		ArrayList<WebInterfaceToadlet> listed = new ArrayList<WebInterfaceToadlet>(Arrays.asList(
