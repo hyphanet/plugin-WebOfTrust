@@ -59,7 +59,6 @@ public abstract class WebPageImpl implements WebPage {
 	 * Creates a new WebPageImpl.
 	 * It is abstract because only a subclass can run the desired make() method to generate the content.
 	 * @param myRequest The request sent by the user.
-	 * @param _baseL10n TODO
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs. 
 	 * @param useSession If true, the timeout of the current {@link Session} is refreshed and {@link #mLoggedInOwnIdentityID} is initialized to the ID of the logged in identity.
 	 * @throws RedirectException If useSession was true and the {@link Session} was expired already. Then the user is redirected to the {@link LoginWebInterfaceToadlet}.
