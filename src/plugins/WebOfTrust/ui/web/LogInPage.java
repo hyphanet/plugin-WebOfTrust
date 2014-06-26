@@ -17,7 +17,6 @@ import freenet.support.api.HTTPRequest;
 
 public final class LogInPage extends WebPageImpl {
 
-	private final String path;
 	private final String target;
 
 	/**
@@ -31,8 +30,6 @@ public final class LogInPage extends WebPageImpl {
 	 */
 	public LogInPage(WebInterfaceToadlet toadlet, HTTPRequest request, ToadletContext context) throws RedirectException {
 		super(toadlet, request, context, false);
-		path = toadlet.path();
-
 		target = request.getParam("redirect-target", WebOfTrust.SELF_URI /* default */);
 	}
 
@@ -68,7 +65,7 @@ public final class LogInPage extends WebPageImpl {
 	private final void makeLoginBox(ObjectSet<OwnIdentity> ownIdentities) {
 		HTMLNode loginBox = addContentBox(l10n().getString("LoginPage.LogIn.Header"));
 
-		HTMLNode selectForm = pr.addFormChild(loginBox, path, "LogIn");
+		HTMLNode selectForm = pr.addFormChild(loginBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnIdentityID");
 		for(OwnIdentity ownIdentity : ownIdentities) {
 			// TODO: Freetalk has .getShortestUniqueName(), which should be moved to WoT and is preferable to full
