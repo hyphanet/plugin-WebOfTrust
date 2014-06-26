@@ -1012,20 +1012,10 @@ public final class FCPInterface implements FredPluginFCP {
     }
 
     private SimpleFieldSet handleRandomName(final SimpleFieldSet params) {
-        final String nameType = params.get("type");
-
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Message", "Name");
-	if ("Nickname".equals(nameType)) {
 	    sfs.putOverwrite("Name", RandomName.newNickname());
-	}
-	else if ("UnprotectedName".equals(nameType)) {
-	    sfs.putOverwrite("Name", RandomName.newUnprotectedName());
-	}
-	else {
-	    sfs.putOverwrite("Name", RandomName.newName());
-	}
-	return sfs;
+	    return sfs;
     }
 
     private SimpleFieldSet handleRemoveProperty(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {

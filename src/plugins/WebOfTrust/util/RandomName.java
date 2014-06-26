@@ -1127,16 +1127,9 @@ public class RandomName
             }
         return name.toString();
     };
-    /** Generate a Name. */
-    static public String newName() {
-        return newNameBase(" ");
-    };
     /** Generate a Nickname: No spaces. */
     static public String newNickname() {
         return newNameBase("_");
     };
-    /** Generate a new name without protected spaces. */
-    static public String newUnprotectedName() {
-        return newNameBase(" ");
-    };
+
 }
