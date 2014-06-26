@@ -1,13 +1,12 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package plugins.Freetalk.ui.web;
+package plugins.WebOfTrust.ui.web;
 
-import plugins.Freetalk.Freetalk;
-import plugins.Freetalk.WoT.WoTIdentity;
-import plugins.Freetalk.WoT.WoTOwnIdentity;
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager.Session;
+import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
-import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
