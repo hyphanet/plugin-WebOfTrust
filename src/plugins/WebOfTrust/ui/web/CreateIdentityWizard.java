@@ -33,8 +33,15 @@ public class CreateIdentityWizard extends WebPageImpl {
 	 */
 	/* private Boolean mIdentityPublishesPuzzles = null; */
 
-	public CreateIdentityWizard(WebInterface myWebInterface, HTTPRequest request, BaseL10n _baseL10n) {
-		super(myWebInterface, null, request, _baseL10n);
+
+	/**
+	 * See {@link WebPageImpl#WebPageImpl(WebInterfaceToadlet, HTTPRequest, ToadletContext, boolean)} for description of the parameters.
+	 * Calls that constructor with useSession=false, i.e. does not require any identity to be logged in so it is always possible to use the wizard for creating one.
+	 * 
+	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
+	 */
+	public CreateIdentityWizard(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
+		super(toadlet, myRequest, context, false);
 	}
 
 	public void make() {
