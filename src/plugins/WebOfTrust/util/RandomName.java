@@ -17,8 +17,8 @@
 package plugins.WebOfTrust.util;
 
 import java.util.Random;
-import java.util.Set;
-import java.lang.StringBuilder;
+
+import plugins.WebOfTrust.Identity;
 
 public class RandomName
 {
@@ -1107,8 +1107,12 @@ public class RandomName
         "zoologist", "Zöppritz", "Zoretti", "Zsigmondy", "Zuberbier",
         "Zuckermandel", "Zuhr", "Zülicke", "Zwicker", "اخوان",
         "الصفا", "الوفا", "وخلان"};
-    /** Generate a Name. */
-    static public String newNameBase(String seperator) {
+    
+    /**
+     * Generate a random nickname consisting of firstname, a possible middle part and a lastname. They are separated using the given separator.
+     * Does not respect length limitation of nicknames. You need to repeat calling this function until {@link Identity#isNicknameValid(String)} returns true.
+     */
+    static private String newNameBaseUnlimitedLength(String seperator) {
         StringBuilder name = new StringBuilder();
         Random rand = new Random();
         String nextpart = new String(firstnames[rand.nextInt(firstnames.length)]);
@@ -1127,6 +1131,18 @@ public class RandomName
             }
         return name.toString();
     };
+    
+    static private String newNameBase(String separator) {
+    	String name;
+    	byte iterations = 0;
+    	do {
+    		name = newNameBaseUnlimitedLength(separator);
+    		assert(++iterations < 10);
+    	} while(!Identity.isNicknameValid(name));
+    	
+    	return name;
+    }
+
     /** Generate a Nickname: No spaces. */
     static public String newNickname() {
         return newNameBase("_");
