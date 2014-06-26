@@ -87,7 +87,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 		}
 
 		if(mGenerateRandomSSK != null && mGenerateRandomSSK && mIdentityURI == null)
-			mIdentityURI = mFreetalk.getPluginRespirator().getHLSimpleClient().generateKeyPair("");
+			mIdentityURI = pr.getHLSimpleClient().generateKeyPair("");
 		
 		/* Parse the nickname specified in step 2 */
 		if(mRequest.isPartSet("Nickname")) {
