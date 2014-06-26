@@ -199,7 +199,7 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 		mComment = "";	// Simplify setComment
 		setComment(comment);
 		
-		mLastChangedDate = mCreationDate;
+		mLastChangedDate = (Date)mCreationDate.clone();	// Clone it because date is mutable
 		mTrusterTrustListEdition = truster.getEdition(); 
 	}
 	
@@ -303,12 +303,12 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 	
 	public synchronized Date getDateOfCreation() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		return mCreationDate;
+		return (Date)mCreationDate.clone();	// Clone it because date is mutable
 	}
 	
 	public synchronized Date getDateOfLastChange() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		return mLastChangedDate;
+		return (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 	}
 	
 	/**
@@ -399,7 +399,7 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 			activateFully();
 			Trust clone = new Trust(mWebOfTrust, getTruster().clone(), getTrustee().clone(), getValue(), getComment());
 			clone.setCreationDate(getCreationDate());
-			clone.mLastChangedDate = (Date)getDateOfLastChange().clone();
+			clone.mLastChangedDate = (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 			clone.mTrusterTrustListEdition = mTrusterTrustListEdition; // Don't use the getter since it will re-query it from the actual Identity object which might have changed
 			return clone;
 		} catch (InvalidParameterException e) {
