@@ -54,8 +54,8 @@ public class CreateIdentityWizard extends WebPageImpl {
 	 */
 	private void makeCreateIdentityBox() {
 		HTMLNode wizardBox = addContentBox(l10n().getString("CreateIdentityWizard.CreateIdentityBox.Header"));
-		HTMLNode backForm = addFormChild(wizardBox, Freetalk.PLUGIN_URI + "/CreateIdentity", "CreateIdentity");
-		HTMLNode createForm = addFormChild(wizardBox, Freetalk.PLUGIN_URI + "/CreateIdentity", "CreateIdentity");
+		HTMLNode backForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
+		HTMLNode createForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
 		
 		Exception requestURIproblem = null;
 		Exception insertURIproblem = null;
