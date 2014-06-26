@@ -95,9 +95,12 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		sessionManager.deleteSession(context);
 	}
 	
+	/**
+	 * @deprecated Use {@link #getURI()} instead.
+	 */
 	@Override
 	public String path() {
-		return webInterface.getURI() + "/" + pageTitle;
+		return getURI().toString();
 	}
 	
 	/**
