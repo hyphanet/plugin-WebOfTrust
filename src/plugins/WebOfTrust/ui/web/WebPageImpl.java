@@ -51,7 +51,7 @@ public abstract class WebPageImpl implements WebPage {
 	protected HTMLNode contentNode;
 
 	/** The request performed by the user */
-	protected final HTTPRequest request;
+	protected final HTTPRequest mRequest;
 
 	protected final BaseL10n baseL10n;
 	
@@ -77,7 +77,7 @@ public abstract class WebPageImpl implements WebPage {
 		PageNode page = pm.getPageNode("Web of Trust", ctx);
 		this.pageNode = page.outer;
 		this.contentNode = page.content;
-		this.request = myRequest;
+		this.mRequest = myRequest;
 		
 		mLoggedInOwnIdentityID = useSession ? mToadlet.getLoggedInUserID(ctx) : null;
 	}

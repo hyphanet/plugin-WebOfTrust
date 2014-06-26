@@ -66,7 +66,7 @@ public class IdentityPage extends WebPageImpl {
 	public IdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		identity = wot.getIdentityByID(request.getParam("id")); 
+		identity = wot.getIdentityByID(mRequest.getParam("id")); 
 	}
 
 	/**
@@ -123,13 +123,13 @@ public class IdentityPage extends WebPageImpl {
 	 */
 	private void makeAddTrustBox() {
 		//Change trust level if needed
-		if(request.isPartSet("SetTrust")) {
-			String trusterID = request.getPartAsStringFailsafe("OwnerID", 128);
-			String trusteeID = request.isPartSet("Trustee") ? request.getPartAsStringFailsafe("Trustee", 128) : null;
-			String value = request.getPartAsStringFailsafe("Value", 4).trim();
+		if(mRequest.isPartSet("SetTrust")) {
+			String trusterID = mRequest.getPartAsStringFailsafe("OwnerID", 128);
+			String trusteeID = mRequest.isPartSet("Trustee") ? mRequest.getPartAsStringFailsafe("Trustee", 128) : null;
+			String value = mRequest.getPartAsStringFailsafe("Value", 4).trim();
 			// TODO: getPartAsString() will return an empty String if the length is exceeded, it should rather return a too long string so that setTrust throws
 			// an exception. It's not a severe problem though since we limit the length of the text input field anyway.
-			String comment = request.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);
+			String comment = mRequest.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);
 
 			try {
 				if(value.equals(""))

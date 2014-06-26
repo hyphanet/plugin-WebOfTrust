@@ -57,9 +57,9 @@ public class MyIdentityPage extends WebPageImpl {
 
 	@Override
 	public void make() {
-		if(request.isPartSet("RestoreOwnIdentity")) {
+		if(mRequest.isPartSet("RestoreOwnIdentity")) {
 			try {
-				wot.restoreOwnIdentity(new FreenetURI(request.getPartAsString("InsertURI", 1024)));
+				wot.restoreOwnIdentity(new FreenetURI(mRequest.getPartAsString("InsertURI", 1024)));
 				HTMLNode restoreBox = addContentBox(l10n().getString("MyIdentityPage.RestoreOwnIdentityInProgress.Header"));
 				restoreBox.addChild("p", l10n().getString("MyIdentityPage.RestoreOwnIdentityInProgress.Text"));
 			}

@@ -29,11 +29,11 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
+		mIdentity = wot.getOwnIdentityByID(mRequest.getPartAsString("id", 128));
 	}
 
 	public void make() {
-		if(request.isPartSet("confirm")) {
+		if(mRequest.isPartSet("confirm")) {
 			try {
 				wot.deleteOwnIdentity(mIdentity.getID());
 				mToadlet.logOut(mContext);
@@ -43,7 +43,7 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 				box.addChild("#", l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text"));
 				
 				try {
-					mWebInterface.getToadlet(LoginWebInterfaceToadlet.class).makeWebPage(request, mContext).addToPage(this);
+					mWebInterface.getToadlet(LoginWebInterfaceToadlet.class).makeWebPage(mRequest, mContext).addToPage(this);
 				} catch (RedirectException e) {
 					throw new RuntimeException(e); // Shouldn't happen according to JavaDoc of constructor
 				}

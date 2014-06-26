@@ -64,11 +64,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	}
 
 	public void make() {
-		final boolean addIdentity = request.isPartSet("AddIdentity");
+		final boolean addIdentity = mRequest.isPartSet("AddIdentity");
 		
 		if(addIdentity) {
 			try {
-				wot.addIdentity(request.getPartAsStringFailsafe("IdentityURI", 1024));
+				wot.addIdentity(mRequest.getPartAsStringFailsafe("IdentityURI", 1024));
 				HTMLNode successBox = addContentBox(l10n().getString("KnownIdentitiesPage.AddIdentity.Success.Header"));
 				successBox.addChild("#", l10n().getString("KnownIdentitiesPage.AddIdentity.Success.Text"));
 			}
@@ -77,10 +77,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 		
-		if(request.isPartSet("SetTrust")) {
+		if(mRequest.isPartSet("SetTrust")) {
 			String trusterID = mLoggedInOwnIdentityID;
 		
-			for(String part : request.getParts()) {
+			for(String part : mRequest.getParts()) {
 				if(!part.startsWith("SetTrustOf"))
 					continue;
 
@@ -90,13 +90,13 @@ public class KnownIdentitiesPage extends WebPageImpl {
 
 				try { 
 					if(addIdentity) { // Add a single identity and set its trust value
-						trusteeID = IdentityID.constructAndValidateFromURI(new FreenetURI(request.getPartAsStringFailsafe("IdentityURI", 1024))).toString();
-						value = request.getPartAsStringFailsafe("Value", 4).trim();
-						comment = request.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);				 	
+						trusteeID = IdentityID.constructAndValidateFromURI(new FreenetURI(mRequest.getPartAsStringFailsafe("IdentityURI", 1024))).toString();
+						value = mRequest.getPartAsStringFailsafe("Value", 4).trim();
+						comment = mRequest.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);				 	
 					} else { // Change multiple trust values via the known-identities-list
-						trusteeID = request.getPartAsStringFailsafe(part, 128);
-						value = request.getPartAsStringFailsafe("Value" + trusteeID, 4).trim();
-						comment = request.getPartAsStringFailsafe("Comment" + trusteeID, Trust.MAX_TRUST_COMMENT_LENGTH + 1);
+						trusteeID = mRequest.getPartAsStringFailsafe(part, 128);
+						value = mRequest.getPartAsStringFailsafe("Value" + trusteeID, 4).trim();
+						comment = mRequest.getPartAsStringFailsafe("Comment" + trusteeID, Trust.MAX_TRUST_COMMENT_LENGTH + 1);
 					}
 
 					if(value.equals(""))
@@ -219,9 +219,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 */
 	private void makeKnownIdentitiesList() throws DuplicateScoreException, DuplicateTrustException {
 
-		String nickFilter = request.getPartAsStringFailsafe("nickfilter", 100).trim();
-		String sortBy = request.isPartSet("sortby") ? request.getPartAsStringFailsafe("sortby", 100).trim() : "Nickname";
-		String sortType = request.isPartSet("sorttype") ? request.getPartAsStringFailsafe("sorttype", 100).trim() : "Ascending";
+		String nickFilter = mRequest.getPartAsStringFailsafe("nickfilter", 100).trim();
+		String sortBy = mRequest.isPartSet("sortby") ? mRequest.getPartAsStringFailsafe("sortby", 100).trim() : "Nickname";
+		String sortType = mRequest.isPartSet("sorttype") ? mRequest.getPartAsStringFailsafe("sorttype", 100).trim() : "Ascending";
 		
 		
 		HTMLNode knownIdentitiesBox = addContentBox(l10n().getString("KnownIdentitiesPage.KnownIdentities.Header"));

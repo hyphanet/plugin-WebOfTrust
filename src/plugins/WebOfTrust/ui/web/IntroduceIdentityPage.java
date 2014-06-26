@@ -42,11 +42,11 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		mIdentity = wot.getOwnIdentityByID(mLoggedInOwnIdentityID);
 		mClient = wot.getIntroductionClient();
 		
-		if(request.isPartSet("Solve")) {
+		if(mRequest.isPartSet("Solve")) {
 			int idx = 0;
-			while(request.isPartSet("id" + idx)) {
-				String id = request.getPartAsString("id" + idx, 128);
-				String solution = request.getPartAsString("Solution" + id, IntroductionPuzzle.MAXIMAL_SOLUTION_LENGTH);
+			while(mRequest.isPartSet("id" + idx)) {
+				String id = mRequest.getPartAsString("id" + idx, 128);
+				String solution = mRequest.getPartAsString("Solution" + id, IntroductionPuzzle.MAXIMAL_SOLUTION_LENGTH);
 				if(!solution.trim().equals("")) {
 					IntroductionPuzzle p;
 					try {

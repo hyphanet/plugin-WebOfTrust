@@ -34,10 +34,10 @@ public class CreateIdentityPage extends WebPageImpl {
 	}
 
 	public void make() {
-		if(request.isPartSet("CreateIdentity")) {
+		if(mRequest.isPartSet("CreateIdentity")) {
 			try {
-				wot.createOwnIdentity(new FreenetURI(request.getPartAsString("InsertURI",1024)),
-										request.getPartAsString("Nickname", 1024), request.getPartAsString("PublishTrustList", 5).equals("true"),
+				wot.createOwnIdentity(new FreenetURI(mRequest.getPartAsString("InsertURI",1024)),
+										mRequest.getPartAsString("Nickname", 1024), mRequest.getPartAsString("PublishTrustList", 5).equals("true"),
 										null);
 				mToadlet.logOut(mContext);
 				
@@ -47,7 +47,7 @@ public class CreateIdentityPage extends WebPageImpl {
 				    .addChild("#", l10n().getString("CreateIdentityPage.IdentityCreated.Text"));
 				
 				try {
-					mWebInterface.getToadlet(LoginWebInterfaceToadlet.class).makeWebPage(request, mContext).addToPage(this);
+					mWebInterface.getToadlet(LoginWebInterfaceToadlet.class).makeWebPage(mRequest, mContext).addToPage(this);
 				} catch (RedirectException e) {
 					throw new RuntimeException(e); // Shouldn't happen according to JavaDoc of constructor
 				}

@@ -30,14 +30,14 @@ public class EditOwnIdentityPage extends WebPageImpl {
 	public EditOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
+		mIdentity = wot.getOwnIdentityByID(mRequest.getPartAsString("id", 128));
 	}
 	
 	public void make() {
 		synchronized(wot) {
-			if(request.isPartSet("Edit")) {
-				final boolean newPublishTrustList = request.getPartAsStringFailsafe("PublishTrustList", 4).equals("true");
-				final boolean newPublishPuzzles = request.getPartAsStringFailsafe("PublishPuzzles", 4).equals("true");
+			if(mRequest.isPartSet("Edit")) {
+				final boolean newPublishTrustList = mRequest.getPartAsStringFailsafe("PublishTrustList", 4).equals("true");
+				final boolean newPublishPuzzles = mRequest.getPartAsStringFailsafe("PublishPuzzles", 4).equals("true");
 				
 				try {
 					wot.setPublishTrustList(mIdentity.getID(), newPublishTrustList);
