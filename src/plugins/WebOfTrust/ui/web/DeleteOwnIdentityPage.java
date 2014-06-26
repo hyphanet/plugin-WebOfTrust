@@ -29,13 +29,13 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mIdentity = wot.getOwnIdentityByID(mRequest.getPartAsString("id", 128));
+		mIdentity = mWebOfTrust.getOwnIdentityByID(mRequest.getPartAsString("id", 128));
 	}
 
 	public void make() {
 		if(mRequest.isPartSet("confirm")) {
 			try {
-				wot.deleteOwnIdentity(mIdentity.getID());
+				mWebOfTrust.deleteOwnIdentity(mIdentity.getID());
 				mToadlet.logOut(mContext);
 				
 				/* TODO: Show the MyIdentityPage instead! Use the trick which Freetalk does for inlining pages */

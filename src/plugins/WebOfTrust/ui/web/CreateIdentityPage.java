@@ -36,7 +36,7 @@ public class CreateIdentityPage extends WebPageImpl {
 	public void make() {
 		if(mRequest.isPartSet("CreateIdentity")) {
 			try {
-				wot.createOwnIdentity(new FreenetURI(mRequest.getPartAsString("InsertURI",1024)),
+				mWebOfTrust.createOwnIdentity(new FreenetURI(mRequest.getPartAsString("InsertURI",1024)),
 										mRequest.getPartAsString("Nickname", 1024), mRequest.getPartAsString("PublishTrustList", 5).equals("true"),
 										null);
 				mToadlet.logOut(mContext);
@@ -67,7 +67,7 @@ public class CreateIdentityPage extends WebPageImpl {
 	 */
 	private void makeCreateForm() {
 		HTMLNode boxContent = addContentBox(l10n().getString("CreateIdentityPage.CreateIdentityBox.Header"));
-		FreenetURI[] keypair = wot.getPluginRespirator().getHLSimpleClient().generateKeyPair(WebOfTrustInterface.WOT_NAME);
+		FreenetURI[] keypair = mWebOfTrust.getPluginRespirator().getHLSimpleClient().generateKeyPair(WebOfTrustInterface.WOT_NAME);
 		
 		HTMLNode createForm = pr.addFormChild(boxContent, uri.toString(), "CreateIdentity");
 		createForm.addChild("span", new String[] { "title", "style" }, 

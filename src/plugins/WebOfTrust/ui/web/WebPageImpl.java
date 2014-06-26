@@ -31,7 +31,7 @@ public abstract class WebPageImpl implements WebPage {
 
 	protected final WebInterface mWebInterface;
 	
-	protected final WebOfTrust wot;
+	protected final WebOfTrust mWebOfTrust;
 	
 	protected final WebInterfaceToadlet mToadlet;
 	
@@ -68,11 +68,11 @@ public abstract class WebPageImpl implements WebPage {
 		mToadlet = toadlet;
 		mWebInterface = mToadlet.webInterface;
 		mContext = ctx;
-		wot = mWebInterface.getWoT();
+		mWebOfTrust = mWebInterface.getWoT();
 		uri = mToadlet.getURI();
 		baseL10n = mWebInterface.l10n();
 		
-		pr = wot.getPluginRespirator();
+		pr = mWebOfTrust.getPluginRespirator();
 		this.pm = mWebInterface.getPageMaker();
 		PageNode page = pm.getPageNode("Web of Trust", ctx);
 		this.pageNode = page.outer;

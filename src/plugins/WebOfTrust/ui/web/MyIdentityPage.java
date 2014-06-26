@@ -48,7 +48,7 @@ public class MyIdentityPage extends WebPageImpl {
 	public MyIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException, UnknownIdentityException {
 		super(toadlet, myRequest, context, true);
 
-		mIdentity = wot.getOwnIdentityByID(mLoggedInOwnIdentityID);
+		mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 
 		editIdentityToadlet = mWebInterface.getToadlet(EditOwnIdentityWebInterfaceToadlet.class);
 		deleteIdentityToadlet = mWebInterface.getToadlet(DeleteOwnIdentityWebInterfaceToadlet.class);
@@ -59,7 +59,7 @@ public class MyIdentityPage extends WebPageImpl {
 	public void make() {
 		if(mRequest.isPartSet("RestoreOwnIdentity")) {
 			try {
-				wot.restoreOwnIdentity(new FreenetURI(mRequest.getPartAsString("InsertURI", 1024)));
+				mWebOfTrust.restoreOwnIdentity(new FreenetURI(mRequest.getPartAsString("InsertURI", 1024)));
 				HTMLNode restoreBox = addContentBox(l10n().getString("MyIdentityPage.RestoreOwnIdentityInProgress.Header"));
 				restoreBox.addChild("p", l10n().getString("MyIdentityPage.RestoreOwnIdentityInProgress.Text"));
 			}
@@ -130,7 +130,7 @@ public class MyIdentityPage extends WebPageImpl {
 
 		// TODO: Do a direct link to the received-trusts part of the linked page
 		HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-		String trustersString = Long.toString(wot.getReceivedTrusts(id).size());
+		String trustersString = Long.toString(mWebOfTrust.getReceivedTrusts(id).size());
 		if(restoreInProgress)
 			trustersCell.addChild("#", trustersString);
 		else
@@ -138,7 +138,7 @@ public class MyIdentityPage extends WebPageImpl {
 
 		// TODO: Do a direct link to the given-trusts part of the linked page
 		HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-		String trusteesString = Long.toString(wot.getGivenTrusts(id).size());
+		String trusteesString = Long.toString(mWebOfTrust.getGivenTrusts(id).size());
 		if(restoreInProgress)
 			trusteesCell.addChild("#", trusteesString);
 		else

@@ -66,7 +66,7 @@ public class IdentityPage extends WebPageImpl {
 	public IdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		identity = wot.getIdentityByID(mRequest.getParam("id")); 
+		identity = mWebOfTrust.getIdentityByID(mRequest.getParam("id")); 
 	}
 
 	/**
@@ -75,7 +75,7 @@ public class IdentityPage extends WebPageImpl {
 	 * @see WebPage#make()
 	 */
 	public void make() {
-		synchronized(wot) {			
+		synchronized(mWebOfTrust) {			
 			makeURIBox();
 			makeServicesBox();
 			makeStatisticsBox();
@@ -97,7 +97,7 @@ public class IdentityPage extends WebPageImpl {
 			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Value"));
 			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Comment"));
 			
-			for (Trust trust : wot.getGivenTrusts(identity)) {
+			for (Trust trust : mWebOfTrust.getGivenTrusts(identity)) {
 				HTMLNode trustRow = trusteesTable.addChild("tr");
 				Identity trustee = trust.getTrustee();
 				trustRow.addChild("td").addChild("a", "href", "?ShowIdentity&id=" + trustee.getID(), trustee.getNickname());
@@ -106,7 +106,7 @@ public class IdentityPage extends WebPageImpl {
 				trustRow.addChild("td", trust.getComment());
 			}
 
-			for (Trust trust : wot.getReceivedTrusts(identity)) {
+			for (Trust trust : mWebOfTrust.getReceivedTrusts(identity)) {
 				HTMLNode trustRow = trustersTable.addChild("tr");
 				Identity truster = trust.getTruster();
 				trustRow.addChild("td").addChild("a", "href", "?ShowIdentity&id=" + truster.getID(), truster.getNickname());
@@ -133,9 +133,9 @@ public class IdentityPage extends WebPageImpl {
 
 			try {
 				if(value.equals(""))
-					wot.removeTrust(trusterID, trusteeID);
+					mWebOfTrust.removeTrust(trusterID, trusteeID);
 				else
-					wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
+					mWebOfTrust.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
 			} catch(NumberFormatException e) {
 				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), l10n().getString("Trust.InvalidValue"));
 			} catch(InvalidParameterException e) {
@@ -147,7 +147,7 @@ public class IdentityPage extends WebPageImpl {
 
 		HTMLNode boxContent = addContentBox(l10n().getString("IdentityPage.ChangeTrustBox.Header", "nickname", identity.getNickname()));
 
-		ObjectSet<OwnIdentity> ownId = wot.getAllOwnIdentities();
+		ObjectSet<OwnIdentity> ownId = mWebOfTrust.getAllOwnIdentities();
 
 		while(ownId.hasNext()) {
 			OwnIdentity treeOwner = ownId.next();
@@ -159,7 +159,7 @@ public class IdentityPage extends WebPageImpl {
 
 			try
 			{
-				Trust trust = wot.getTrust(treeOwner, identity);
+				Trust trust = mWebOfTrust.getTrust(treeOwner, identity);
 				trustValue = String.valueOf(trust.getValue());
 				trustComment = trust.getComment();
 			}

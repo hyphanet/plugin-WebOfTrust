@@ -41,16 +41,16 @@ public class StatisticsPage extends WebPageImpl {
 		HTMLNode box = addContentBox(l10n().getString("StatisticsPage.SummaryBox.Header"));
 		HTMLNode list = new HTMLNode("ul");
 		
-		synchronized(wot) {
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.OwnIdentities") + ": " + wot.getAllOwnIdentities().size()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.KnownIdentities") + ": " + wot.getAllNonOwnIdentities().size()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.TrustRelationships") + ": " + wot.getAllTrusts().size()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.ScoreRelationships") + ": " + wot.getAllScores().size()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputations") + ": " + wot.getNumberOfFullScoreRecomputations()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputationTime") + ": " + wot.getAverageFullScoreRecomputationTime()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalRecomputations") + ": " + wot.getNumberOfIncrementalScoreRecomputations()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalRecomputationTime") + ": " + wot.getAverageIncrementalScoreRecomputationTime()));
-		IntroductionPuzzleStore puzzleStore = wot.getIntroductionPuzzleStore();
+		synchronized(mWebOfTrust) {
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.OwnIdentities") + ": " + mWebOfTrust.getAllOwnIdentities().size()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.KnownIdentities") + ": " + mWebOfTrust.getAllNonOwnIdentities().size()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.TrustRelationships") + ": " + mWebOfTrust.getAllTrusts().size()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.ScoreRelationships") + ": " + mWebOfTrust.getAllScores().size()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputations") + ": " + mWebOfTrust.getNumberOfFullScoreRecomputations()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputationTime") + ": " + mWebOfTrust.getAverageFullScoreRecomputationTime()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalRecomputations") + ": " + mWebOfTrust.getNumberOfIncrementalScoreRecomputations()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalRecomputationTime") + ": " + mWebOfTrust.getAverageIncrementalScoreRecomputationTime()));
+		IntroductionPuzzleStore puzzleStore = mWebOfTrust.getIntroductionPuzzleStore();
 		synchronized(puzzleStore) {
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.UnsolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(false)));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.SolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(true)));
@@ -60,7 +60,7 @@ public class StatisticsPage extends WebPageImpl {
 		}
 		}
 		
-		IdentityFetcher fetcher = wot.getIdentityFetcher();
+		IdentityFetcher fetcher = mWebOfTrust.getIdentityFetcher();
 		synchronized(fetcher) {
 			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FetchedIdentities") + ": " + fetcher.getFetchedCount()));
 			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.AverageFetchedIdentitiesPerHour") + ": " + fetcher.getAverageFetchCountPerHour()));

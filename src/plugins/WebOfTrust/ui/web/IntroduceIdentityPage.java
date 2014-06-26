@@ -39,8 +39,8 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		
 		mPuzzleURI = toadlet.webInterface.getURI() + "/GetPuzzle";
 		
-		mIdentity = wot.getOwnIdentityByID(mLoggedInOwnIdentityID);
-		mClient = wot.getIntroductionClient();
+		mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
+		mClient = mWebOfTrust.getIntroductionClient();
 		
 		if(mRequest.isPartSet("Solve")) {
 			int idx = 0;
@@ -50,7 +50,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				if(!solution.trim().equals("")) {
 					IntroductionPuzzle p;
 					try {
-						p = wot.getIntroductionPuzzleStore().getByID(id);
+						p = mWebOfTrust.getIntroductionPuzzleStore().getByID(id);
 
 						try {
 							// It is safe to use this function without synchronization as it re-queries the identity from the database.
@@ -70,7 +70,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 
 	public void make() {
-		PluginRespirator _pr = wot.getPluginRespirator();
+		PluginRespirator _pr = mWebOfTrust.getPluginRespirator();
 		makeInfoBox(_pr);
 		makePuzzleBox(_pr);
 	}

@@ -60,7 +60,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException, UnknownIdentityException {
 		super(toadlet, myRequest, context, true);
 		identitiesPageURI = mWebInterface.getToadlet(IdentityWebInterfaceToadlet.class).getURI().toString();
-		treeOwner = wot.getOwnIdentityByID(mLoggedInOwnIdentityID);
+		treeOwner = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 	}
 
 	public void make() {
@@ -68,7 +68,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		if(addIdentity) {
 			try {
-				wot.addIdentity(mRequest.getPartAsStringFailsafe("IdentityURI", 1024));
+				mWebOfTrust.addIdentity(mRequest.getPartAsStringFailsafe("IdentityURI", 1024));
 				HTMLNode successBox = addContentBox(l10n().getString("KnownIdentitiesPage.AddIdentity.Success.Header"));
 				successBox.addChild("#", l10n().getString("KnownIdentitiesPage.AddIdentity.Success.Text"));
 			}
@@ -100,9 +100,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 					}
 
 					if(value.equals(""))
-						wot.removeTrust(trusterID, trusteeID);
+						mWebOfTrust.removeTrust(trusterID, trusteeID);
 					else
-						wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
+						mWebOfTrust.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
 					
 					if(addIdentity && (value.equals("") || Byte.parseByte(value) < 0)) {
 						addErrorBox(l10n().getString("KnownIdentitiesPage.AddIdentity.NoTrustWarning.Header"), 
@@ -274,8 +274,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		long editionSum = 0;
 
-		synchronized(wot) {
-		for(Identity id : wot.getAllIdentitiesFilteredAndSorted(treeOwner, nickFilter, sortInstruction)) {
+		synchronized(mWebOfTrust) {
+		for(Identity id : mWebOfTrust.getAllIdentitiesFilteredAndSorted(treeOwner, nickFilter, sortInstruction)) {
 			if(id == treeOwner) continue;
 
 			HTMLNode row=identitiesTable.addChild("tr");
@@ -307,7 +307,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			//Score
 			try {
-				final Score score = wot.getScore((OwnIdentity)treeOwner, id);
+				final Score score = mWebOfTrust.getScore((OwnIdentity)treeOwner, id);
 				final int scoreValue = score.getScore();
 				final int rank = score.getRank();
 				
@@ -330,12 +330,12 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			// Nb Trusters
 			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 			trustersCell.addChild(new HTMLNode("a", "href", identitiesPageURI + "?id="+id.getID(),
-					Long.toString(wot.getReceivedTrusts(id).size())));
+					Long.toString(mWebOfTrust.getReceivedTrusts(id).size())));
 			
 			// Nb Trustees
 			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 			trusteesCell.addChild(new HTMLNode("a", "href", identitiesPageURI + "?id="+id.getID(),
-					Long.toString(wot.getGivenTrusts(id).size())));
+					Long.toString(mWebOfTrust.getGivenTrusts(id).size())));
 			
 			// TODO: Show in advanced mode only once someone finally fixes the "Switch to advanced mode" link on FProxy to work on ALL pages.
 			
@@ -376,7 +376,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		Trust trust;
 		
 		try {
-			trust = wot.getTrust(truster, trustee);
+			trust = mWebOfTrust.getTrust(truster, trustee);
 			trustValue = String.valueOf(trust.getValue());
 			trustComment = trust.getComment();
 		}

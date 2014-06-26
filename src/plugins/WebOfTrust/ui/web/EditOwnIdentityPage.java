@@ -30,18 +30,18 @@ public class EditOwnIdentityPage extends WebPageImpl {
 	public EditOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mIdentity = wot.getOwnIdentityByID(mRequest.getPartAsString("id", 128));
+		mIdentity = mWebOfTrust.getOwnIdentityByID(mRequest.getPartAsString("id", 128));
 	}
 	
 	public void make() {
-		synchronized(wot) {
+		synchronized(mWebOfTrust) {
 			if(mRequest.isPartSet("Edit")) {
 				final boolean newPublishTrustList = mRequest.getPartAsStringFailsafe("PublishTrustList", 4).equals("true");
 				final boolean newPublishPuzzles = mRequest.getPartAsStringFailsafe("PublishPuzzles", 4).equals("true");
 				
 				try {
-					wot.setPublishTrustList(mIdentity.getID(), newPublishTrustList);
-					wot.setPublishIntroductionPuzzles(mIdentity.getID(), newPublishTrustList && newPublishPuzzles);
+					mWebOfTrust.setPublishTrustList(mIdentity.getID(), newPublishTrustList);
+					mWebOfTrust.setPublishIntroductionPuzzles(mIdentity.getID(), newPublishTrustList && newPublishPuzzles);
 					
 		            HTMLNode aBox = addContentBox(l10n().getString("EditOwnIdentityPage.SettingsSaved.Header"));
 		            aBox.addChild("p", l10n().getString("EditOwnIdentityPage.SettingsSaved.Text"));

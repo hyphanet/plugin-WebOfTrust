@@ -37,8 +37,8 @@ public final class LogInPage extends WebPageImpl {
 	public void make() {
 		makeWelcomeBox();
 		
-		synchronized (wot) {
-			final ObjectSet<OwnIdentity> ownIdentities = wot.getAllOwnIdentities();
+		synchronized (mWebOfTrust) {
+			final ObjectSet<OwnIdentity> ownIdentities = mWebOfTrust.getAllOwnIdentities();
 		
 			if (ownIdentities.hasNext()) {
 				makeLoginBox(ownIdentities);
