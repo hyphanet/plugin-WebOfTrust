@@ -5,6 +5,7 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
 
 import com.db4o.ObjectSet;
 
@@ -83,6 +84,14 @@ public final class LogInPage extends WebPageImpl {
 				new String[] { "type", "value" },
 				new String[] { "submit", l10n().getString("LoginPage.LogIn.Button") });
 		selectForm.addChild("p", l10n().getString("LoginPage.CookiesRequired.Text"));
+	}
+	
+	protected static final void addLoginButton(final WebPageImpl page, final HTMLNode contentNode, final OwnIdentity identity) {
+		final WebInterfaceToadlet logIn = page.mWebInterface.getToadlet(LoginWebInterfaceToadlet.class);
+		final HTMLNode logInForm = page.pr.addFormChild(contentNode, logIn.getURI().toString() , logIn.pageTitle);
+		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", identity.getID() });
+		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", page.l10n().getString("LoginPage.LogIn.Button") });
+		logInForm.addChild("p", page.l10n().getString("LoginPage.CookiesRequired.Text"));
 	}
 
 	private void makeCreateIdentityBox() {
