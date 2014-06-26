@@ -52,10 +52,16 @@ public final class LogInPage extends WebPageImpl {
 	}
 
 	private final void makeWelcomeBox() {
+	    final String[] l10nBoldSubstitutionInput = new String[] { "bold", "/bold" };
+	    final String[] l10nBoldSubstitutionOutput = new String[] { "<b>", "</b>" };
+	    HTMLNode paragraph;
 		HTMLNode welcomeBox = addContentBox(l10n().getString("LoginPage.Welcome.Header"));
-		welcomeBox.addChild("p", l10n().getString("LoginPage.Welcome.Text1"));
-		welcomeBox.addChild("p", l10n().getString("LoginPage.Welcome.Text2"));
-		welcomeBox.addChild("p", l10n().getString("LoginPage.Welcome.Text3"));
+		paragraph = welcomeBox.addChild("p");
+		l10n().addL10nSubstitution(paragraph, "LoginPage.Welcome.Text1", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		paragraph = welcomeBox.addChild("p");
+		l10n().addL10nSubstitution(paragraph, "LoginPage.Welcome.Text2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		paragraph = welcomeBox.addChild("p");
+		l10n().addL10nSubstitution(paragraph, "LoginPage.Welcome.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 	}
 
 	private final void makeLoginBox(ObjectSet<OwnIdentity> ownIdentities) {
