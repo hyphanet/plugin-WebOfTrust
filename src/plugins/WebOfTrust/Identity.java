@@ -500,20 +500,43 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 * 
 	 * IMPORTANT: This code is duplicated in plugins.Freetalk.WoT.WoTIdentity.validateNickname().
 	 * Please also modify it there if you modify it here.
+	 * 
+	 * TODO: L10n
 	
 	 * @throws InvalidParameterException Contains a message which describes what is wrong with the nickname.  
 	 */
 	public static void validateNickname(final String newNickname) throws InvalidParameterException {
-		if(!StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
-		|| !StringValidityChecker.containsNoInvalidCharacters(newNickname)
-		|| !StringValidityChecker.containsNoLinebreaks(newNickname)
-		|| !StringValidityChecker.containsNoControlCharacters(newNickname)
-		|| !StringValidityChecker.containsNoInvalidFormatting(newNickname)
-		|| newNickname.contains("@")) // Must not be allowed since we use it to generate "identity@public-key-hash" unique nicknames
-			throw new InvalidParameterException("Nickname contains invalid characters."); /* TODO: Tell the user which ones are invalid!!! */
+		if(newNickname.length() == 0)
+			throw new InvalidParameterException("Nickname cannot be empty.");
 		
-		if(newNickname.length() == 0) throw new InvalidParameterException("Nickname cannot be empty.");
-		if(newNickname.length() > MAX_NICKNAME_LENGTH) throw new InvalidParameterException("Nickname is too long, the limit is " + MAX_NICKNAME_LENGTH + " characters.");
+		if(newNickname.length() > MAX_NICKNAME_LENGTH)
+			throw new InvalidParameterException("Nickname is too long, the limit is " + MAX_NICKNAME_LENGTH + " characters.");
+	
+		class CharacterValidator  {
+			boolean isInvalid(String nickname) {
+				return !StringValidityChecker.containsNoIDNBlacklistCharacters(nickname)
+						|| !StringValidityChecker.containsNoInvalidCharacters(nickname)
+						|| !StringValidityChecker.containsNoLinebreaks(nickname)
+						|| !StringValidityChecker.containsNoControlCharacters(nickname)
+						|| !StringValidityChecker.containsNoInvalidFormatting(nickname)
+						|| nickname.contains("@"); // Must not be allowed since we use it to generate "identity@public-key-hash" unique nicknames
+			}
+		};
+		
+		CharacterValidator validator = new CharacterValidator();
+		
+		if(validator.isInvalid(newNickname)) 
+		{
+			for(Character c : newNickname.toCharArray()) {
+				if(validator.isInvalid(c.toString()))
+					throw new InvalidParameterException("Nickname contains invalid character: '" + c + "'");	
+			}
+			
+			// Unicode allows composite characters, i.e. characters which consist of multiple characters.
+			// I suspect that this could cause CharacterValidator.isInvalid() to accept an invalid String if we feed it one by one as above.
+			// To guard against that, we always throw here:
+			throw new InvalidParameterException("Nickname contains invalid unicode characters or formatting.");
+		}
 	}
 
 
