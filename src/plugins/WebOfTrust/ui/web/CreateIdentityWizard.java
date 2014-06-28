@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
@@ -93,9 +95,9 @@ public class CreateIdentityWizard extends WebPageImpl {
 		if(mRequest.isPartSet("Nickname")) {
 			try {
 				mIdentityNickname = mRequest.getPartAsStringFailsafe("Nickname", 256);
-				WoTIdentity.validateNickname(mIdentityNickname);
+				Identity.validateNickname(mIdentityNickname);
 			}
-			catch(Exception e) {
+			catch(InvalidParameterException e) {
 				nicknameProblem = e;
 				mIdentityNickname = null;
 			}
