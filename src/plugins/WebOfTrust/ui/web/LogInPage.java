@@ -92,6 +92,6 @@ public final class LogInPage extends WebPageImpl {
 	}
 
 	private void makeCreateIdentityBox() {
-		CreateIdentityPage.addLinkToCreateIdentityPage(this);
+		CreateIdentityWizard.addLinkToCreateIdentityWizard(this);
 	}
 }

@@ -4,7 +4,6 @@
 package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.WebOfTrustInterface;
-import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
 import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.clients.http.RedirectException;
@@ -82,16 +81,5 @@ public class CreateIdentityPage extends WebPageImpl {
 		createForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "PublishTrustList", "true", "checked"});
 		createForm.addChild("br");
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "CreateIdentity", l10n().getString("CreateIdentityPage.CreateIdentityBox.CreateButton") });
-	}
-	
-	public static void addLinkToCreateIdentityPage(WebPageImpl page) {
-		final String createIdentityURI = page.mWebInterface.getToadlet(CreateIdentityWebInterfaceToadlet.class).getURI().toString();
-		
-		HTMLNode createIdentityBox = page.addContentBox(page.l10n().getString("CreateIdentityPage.LinkToCreateIdentityPageBox.Header"));
-		page.l10n().addL10nSubstitution(
-		        createIdentityBox,
-		        "CreateIdentityPage.LinkToCreateIdentityPageBox.Text",
-		        new String[] { "link", "/link" },
-		        new HTMLNode[] { new HTMLNode("a", "href", createIdentityURI) });
 	}
 }

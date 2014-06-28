@@ -5,6 +5,7 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
@@ -356,5 +357,19 @@ public class CreateIdentityWizard extends WebPageImpl {
 											new String[] { "hidden", "PublishTrustList", mIdentityPublishesTrustList.toString() });
 			}
 		}
+	}
+
+	/**
+	 * FIXME TODO: Rename L10n strings
+	 */
+	public static void addLinkToCreateIdentityWizard(WebPageImpl page) {
+		final String createIdentityURI = page.mWebInterface.getToadlet(CreateIdentityWebInterfaceToadlet.class).getURI().toString();
+		
+		HTMLNode createIdentityBox = page.addContentBox(page.l10n().getString("CreateIdentityPage.LinkToCreateIdentityPageBox.Header"));
+		page.l10n().addL10nSubstitution(
+		        createIdentityBox,
+		        "CreateIdentityPage.LinkToCreateIdentityPageBox.Text",
+		        new String[] { "link", "/link" },
+		        new HTMLNode[] { new HTMLNode("a", "href", createIdentityURI) });
 	}
 }

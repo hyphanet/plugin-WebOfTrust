@@ -163,7 +163,7 @@ public class MyIdentityPage extends WebPageImpl {
 		}
 
 
-		CreateIdentityPage.addLinkToCreateIdentityPage(this);
+		CreateIdentityWizard.addLinkToCreateIdentityWizard(this);
 	}
 
 	/**
