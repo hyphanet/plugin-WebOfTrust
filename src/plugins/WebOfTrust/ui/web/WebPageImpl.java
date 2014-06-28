@@ -164,7 +164,16 @@ public abstract class WebPageImpl implements WebPage {
 		InfoboxNode infobox = pm.getInfobox(title);
 		return infobox;
 	}
-	
+
+	/**
+	 * Get a new {@link #InfoboxNode} with a style which indicates an error, but do not add it to the page.
+	 * Can be used for putting infoboxes inside infoboxes.
+	 * 
+	 * You must add your content to the {@link InfoboxNode#content}.
+	 * You then add the box to your page by adding {@link InfoboxNode#outer} to a HTMLNode.
+	 * 
+	 * @param title The title of the desired Infobox
+	 */
 	protected final InfoboxNode getAlertBox(String title) {
 		return pm.getInfobox("infobox-alert", title);
 	}
