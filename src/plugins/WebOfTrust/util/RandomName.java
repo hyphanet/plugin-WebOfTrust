@@ -19,6 +19,7 @@ package plugins.WebOfTrust.util;
 import java.util.Random;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
 
 public class RandomName
 {
@@ -1110,7 +1111,7 @@ public class RandomName
     
     /**
      * Generate a random nickname consisting of firstname, a possible middle part and a lastname. They are separated using the given separator.
-     * Does not respect length limitation of nicknames. You need to repeat calling this function until {@link Identity#isNicknameValid(String)} returns true.
+     * Does not respect length limitation of nicknames. You need to repeat calling this function until {@link Identity#validateNickname(String)} does not throw.
      */
     static private String newNameBaseUnlimitedLength(String seperator) {
         StringBuilder name = new StringBuilder();
@@ -1134,11 +1135,19 @@ public class RandomName
     
     static private String newNameBase(String separator) {
     	String name;
+		boolean invalidName = true;
+    	
     	byte iterations = 0;
+    	
     	do {
     		name = newNameBaseUnlimitedLength(separator);
+    		try {
+    			Identity.validateNickname(name);
+    			invalidName = false;
+    		} catch(InvalidParameterException e) {}
+    		
     		assert(++iterations < 10);
-    	} while(!Identity.isNicknameValid(name));
+    	} while(invalidName);
     	
     	return name;
     }
