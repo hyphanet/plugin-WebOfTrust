@@ -4,6 +4,8 @@
 package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
 import freenet.clients.http.InfoboxNode;
@@ -14,6 +16,11 @@ import freenet.keys.FreenetURI;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
+/**
+ * TODO FIXME: Remove mAutoSubscribe and maybe keep mDisplayImages. Also remove the UI part for those of course.
+ * 
+ * @author xor (xor@freenetproject.org)
+ */
 public class CreateIdentityWizard extends WebPageImpl {
 	
 	/* Step 1: Choose URI */
@@ -300,8 +307,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 			addHiddenFormData(createForm, requestedStep, requestedStep);
 			
 			try {
-				WoTOwnIdentity id = (WoTOwnIdentity)mFreetalk.getIdentityManager().createOwnIdentity(mIdentityNickname,
-						mIdentityPublishesTrustList, mIdentityPublishesTrustList, mAutoSubscribe, mDisplayImages, mIdentityURI[1], mIdentityURI[0]);
+				OwnIdentity id = mWebOfTrust.createOwnIdentity(mIdentityURI[0], mIdentityNickname, mIdentityPublishesTrustList, null);
 						
 				InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step4.Header"));
 				wizardBox.addChild(summaryInfoboxNode.outer);
