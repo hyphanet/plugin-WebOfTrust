@@ -165,6 +165,10 @@ public abstract class WebPageImpl implements WebPage {
 		return infobox;
 	}
 	
+	protected final InfoboxNode getAlertBox(String title) {
+		return pm.getInfobox("infobox-alert", title);
+	}
+	
 	
 	protected BaseL10n l10n() {
 	    return baseL10n;
