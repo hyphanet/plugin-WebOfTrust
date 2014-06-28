@@ -19,6 +19,15 @@ import freenet.support.api.HTTPRequest;
 /**
  * TODO FIXME: Remove mAutoSubscribe and maybe keep mDisplayImages. Also remove the UI part for those of course.
  * 
+ * TODO FIXME: When creating an OwnIdentity from URIs, WOT only needs the insert URI. The wizard also asks for the request URI. Remove that.
+ * 
+ * TODO FIXME: Provide the option to restore an existing identity. This is a *must* have because people are very likely to mix up restore/create
+ * 	- which results in broken identities. We need to have both options in one place and explain the difference in detail.
+ * 
+ * TODO FIXME: Allow other plugins to link to his.
+ * TODO FIXME: When another plugin links to this, allow it to specify a context.
+ * 	- The {@link WebOfTrust#createOwnIdentity(FreenetURI, String, boolean, String)} which we use allows specifying a context.
+ *
  * @author xor (xor@freenetproject.org)
  */
 public class CreateIdentityWizard extends WebPageImpl {
