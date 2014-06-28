@@ -6,6 +6,7 @@ package plugins.WebOfTrust.ui.web;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
+import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
@@ -138,8 +139,10 @@ public class CreateIdentityWizard extends WebPageImpl {
 		if(requestedStep == 1) {
 			addHiddenFormData(createForm, requestedStep, requestedStep + 1);
 			
-			HTMLNode chooseURIbox = getContentBox(l10n().getString("CreateIdentityWizard.Step1.Header"));
-			createForm.addChild(chooseURIbox);
+			InfoboxNode chooseURIInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step1.Header"));
+			createForm.addChild(chooseURIInfoboxNode.outer);
+			
+			HTMLNode chooseURIbox = chooseURIInfoboxNode.content;
 			chooseURIbox.addChild("p", l10n().getString("CreateIdentityWizard.Step1.Text"));
 			
 			HTMLNode randomRadio = chooseURIbox.addChild("p");
@@ -195,8 +198,10 @@ public class CreateIdentityWizard extends WebPageImpl {
 		else if(requestedStep == 2 ) {
 			addHiddenFormData(createForm, requestedStep, requestedStep + 1);
 			
-			HTMLNode chooseNameBox = getContentBox(l10n().getString("CreateIdentityWizard.Step2.Header"));
-			createForm.addChild(chooseNameBox);
+			InfoboxNode chooseNameInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step2.Header"));
+			createForm.addChild(chooseNameInfoboxNode.outer);
+			
+			HTMLNode chooseNameBox = chooseNameInfoboxNode.content;
 			chooseNameBox.addChild("p", l10n().getString("CreateIdentityWizard.Step2.Text"));
 			HTMLNode p = chooseNameBox.addChild("p");
 			
@@ -218,11 +223,15 @@ public class CreateIdentityWizard extends WebPageImpl {
 
 			addHiddenFormData(createForm, requestedStep, requestedStep + 1);
 			
-			HTMLNode choosePrefsBox = getContentBox(l10n().getString("CreateIdentityWizard.Step3.Header"));
-			createForm.addChild(choosePrefsBox);
+			InfoboxNode choosePrefsInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.Header"));
+			createForm.addChild(choosePrefsInfoboxNode.outer);
 			
-			HTMLNode tlBox = getContentBox(l10n().getString("CreateIdentityWizard.Step3.TrustList.Header"));
-			choosePrefsBox.addChild(tlBox);
+			HTMLNode choosePrefsBox = choosePrefsInfoboxNode.content;
+			
+			InfoboxNode tlInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.TrustList.Header"));
+			choosePrefsBox.addChild(tlInfoboxNode.outer);
+			
+			HTMLNode tlBox = tlInfoboxNode.content;
 			
 			HTMLNode p;
 
@@ -246,9 +255,11 @@ public class CreateIdentityWizard extends WebPageImpl {
 			p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.TrustList.PublishTrustListCheckbox"));
 			
 			
-			HTMLNode autoSubscribeBox = getContentBox(l10n().getString("CreateIdentityWizard.Step3.AutoSubscribe.Header"));
-			choosePrefsBox.addChild(autoSubscribeBox);
-	
+			InfoboxNode autoSubscribeInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.AutoSubscribe.Header"));
+			choosePrefsBox.addChild(autoSubscribeInfoboxNode.outer);
+			
+			HTMLNode autoSubscribeBox = autoSubscribeInfoboxNode.content;
+			
 			p = autoSubscribeBox.addChild("p");
 	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.AutoSubscribe.Text", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 
@@ -264,8 +275,10 @@ public class CreateIdentityWizard extends WebPageImpl {
 			p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.AutoSubscribe.AutoSubscribeCheckbox"));
 			
 			
-			HTMLNode displayImagesBox = getContentBox(l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Header"));
-			choosePrefsBox.addChild(displayImagesBox);
+			InfoboxNode displayImagesInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Header"));
+			choosePrefsBox.addChild(displayImagesInfoboxNode.outer);
+			
+			HTMLNode displayImagesBox = displayImagesInfoboxNode.content;
 	
 			p = displayImagesBox.addChild("p");
 	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.DisplayImages.Text", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
@@ -290,18 +303,20 @@ public class CreateIdentityWizard extends WebPageImpl {
 				WoTOwnIdentity id = (WoTOwnIdentity)mFreetalk.getIdentityManager().createOwnIdentity(mIdentityNickname,
 						mIdentityPublishesTrustList, mIdentityPublishesTrustList, mAutoSubscribe, mDisplayImages, mIdentityURI[1], mIdentityURI[0]);
 						
-				HTMLNode summaryBox = getContentBox(l10n().getString("CreateIdentityWizard.Step4.Header"));
-				wizardBox.addChild(summaryBox);
+				InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step4.Header"));
+				wizardBox.addChild(summaryInfoboxNode.outer);
 				
+				HTMLNode summaryBox = summaryInfoboxNode.content;
 				summaryBox.addChild("p", l10n().getString("CreateIdentityWizard.Step4.Success"));
 				LogInPage.addLoginButton(this, summaryBox, id, l10n());
 				
 				return;
 			}
 			catch(Exception e) {
-				HTMLNode errorBox = getAlertBox(l10n().getString("CreateIdentityWizard.Step4.Failure"));
-				createForm.addChild(errorBox);
+				InfoboxNode errorInfoboxNode = getAlertBox(l10n().getString("CreateIdentityWizard.Step4.Failure"));
+				createForm.addChild(errorInfoboxNode.outer);
 				
+				HTMLNode errorBox = errorInfoboxNode.content;
 				errorBox.addChild("p", e.getLocalizedMessage());
 			}
 		}
