@@ -494,18 +494,51 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mNickname;
 	}
-
-	/* IMPORTANT: This code is duplicated in plugins.Freetalk.WoT.WoTIdentity.validateNickname().
-	 * Please also modify it there if you modify it here */
-	public static final boolean isNicknameValid(String newNickname) {
-		return newNickname.length() > 0 && newNickname.length() <= MAX_NICKNAME_LENGTH 
-			&& StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
-			&& StringValidityChecker.containsNoInvalidCharacters(newNickname)
-			&& StringValidityChecker.containsNoLinebreaks(newNickname)
-			&& StringValidityChecker.containsNoControlCharacters(newNickname)
-			&& StringValidityChecker.containsNoInvalidFormatting(newNickname)
-			&& !newNickname.contains("@"); // Must not be allowed since we use it to generate "identity@public-key-hash" unique nicknames;
+	
+	/**
+	 * Throws if the nickname is given nickname is invalid.
+	 * 
+	 * IMPORTANT: This code is duplicated in plugins.Freetalk.WoT.WoTIdentity.validateNickname().
+	 * Please also modify it there if you modify it here.
+	 * 
+	 * TODO: L10n
+	
+	 * @throws InvalidParameterException Contains a message which describes what is wrong with the nickname.  
+	 */
+	public static void validateNickname(final String newNickname) throws InvalidParameterException {
+		if(newNickname.length() == 0)
+			throw new InvalidParameterException("Nickname cannot be empty.");
+		
+		if(newNickname.length() > MAX_NICKNAME_LENGTH)
+			throw new InvalidParameterException("Nickname is too long, the limit is " + MAX_NICKNAME_LENGTH + " characters.");
+	
+		class CharacterValidator  {
+			boolean isInvalid(String nickname) {
+				return !StringValidityChecker.containsNoIDNBlacklistCharacters(nickname)
+						|| !StringValidityChecker.containsNoInvalidCharacters(nickname)
+						|| !StringValidityChecker.containsNoLinebreaks(nickname)
+						|| !StringValidityChecker.containsNoControlCharacters(nickname)
+						|| !StringValidityChecker.containsNoInvalidFormatting(nickname)
+						|| nickname.contains("@"); // Must not be allowed since we use it to generate "identity@public-key-hash" unique nicknames
+			}
+		};
+		
+		CharacterValidator validator = new CharacterValidator();
+		
+		if(validator.isInvalid(newNickname)) 
+		{
+			for(Character c : newNickname.toCharArray()) {
+				if(validator.isInvalid(c.toString()))
+					throw new InvalidParameterException("Nickname contains invalid character: '" + c + "'");	
+			}
+			
+			// Unicode allows composite characters, i.e. characters which consist of multiple characters.
+			// I suspect that this could cause CharacterValidator.isInvalid() to accept an invalid String if we feed it one by one as above.
+			// To guard against that, we always throw here:
+			throw new InvalidParameterException("Nickname contains invalid unicode characters or formatting.");
+		}
 	}
+
 
 	/**
 	 * Sets the nickName of this Identity. 
@@ -514,23 +547,10 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 * @throws InvalidParameterException If the nickname contains invalid characters, is empty or longer than MAX_NICKNAME_LENGTH characters.
 	 */
 	public final void setNickname(String newNickname) throws InvalidParameterException {
-		if (newNickname == null) {
-			throw new NullPointerException("Nickname is null");
-		}
-		
+		IfNull.thenThrow("Nickname is null");		
 		newNickname = newNickname.trim();
 		
-		if(newNickname.length() == 0) {
-			throw new InvalidParameterException("Blank nickname");
-		}
-		
-		if(newNickname.length() > MAX_NICKNAME_LENGTH) {
-			throw new InvalidParameterException("Nickname is too long (" + MAX_NICKNAME_LENGTH + " chars max)");
-		}
-			
-		if(!isNicknameValid(newNickname)) {
-			throw new InvalidParameterException("Nickname contains illegal characters.");
-		}
+		validateNickname(newNickname);
 		
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		
@@ -1050,8 +1070,13 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		if(mLastChangedDate.after(CurrentTimeUTC.get()))
 			throw new IllegalStateException("mLastChangedDate is in the future: " + mLastChangedDate);
 		
-		if(mNickname != null && !isNicknameValid(mNickname))
-			throw new IllegalStateException("Invalid nickname: " + mNickname);
+		if(mNickname != null) {
+			try {
+				validateNickname(mNickname);
+			} catch(InvalidParameterException e) {
+				throw new IllegalStateException(e);
+			}
+		}
 		
 		if(mContexts == null)
 			throw new NullPointerException("mContexts==null");

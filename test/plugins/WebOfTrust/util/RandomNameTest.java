@@ -4,6 +4,7 @@
 package plugins.WebOfTrust.util;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import junit.framework.TestCase;
 
 /**
@@ -16,23 +17,27 @@ public class RandomNameTest extends TestCase {
 	 * Random name has two arrays of name tokens: {@link RandomName#firstnames} and {@link RandomName#lastnames}.
 	 * The random names are constructed from those tokens plus a separator.
 	 * 
-	 * This function tests whether the tokens are valid nicknames on their own according to {@link Identity#isNicknameValid(String)}.
+	 * This function tests whether the tokens are valid nicknames on their own according to {@link Identity#validateNickname(String)}.
 	 * - If the tokens are valid, a combination of them using a separator is probably also valid.
+	 * 
+	 * @throws InvalidParameterException If the test failed.
 	 */
-	public void testNameTokens() {
+	public void testNameTokens() throws InvalidParameterException {
 		for(String firstname : RandomName.firstnames)
-			assertTrue(Identity.isNicknameValid(firstname));
+			Identity.validateNickname(firstname);
 		
 		for(String lastname : RandomName.lastnames)
-			assertTrue(Identity.isNicknameValid(lastname));
+			Identity.validateNickname(lastname);
 	}
 
 	/**
 	 * Test whether the actual name generation function {@link RandomName#newNickname()} generates valid nicknames.
 	 * This is needed in addition to {@link #testNameTokens()} to ensure that the token separator used in the nickname is also valid.
+	 * 
+	 * @throws InvalidParameterException If the test failed.
 	 */
-    public void testNewNickname() {
-    	assertTrue(Identity.isNicknameValid(RandomName.newNickname()));
+    public void testNewNickname() throws InvalidParameterException {
+    	Identity.validateNickname(RandomName.newNickname());
     }
 
 }
