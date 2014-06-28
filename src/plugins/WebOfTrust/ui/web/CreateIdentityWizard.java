@@ -314,7 +314,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 				
 				HTMLNode summaryBox = summaryInfoboxNode.content;
 				summaryBox.addChild("p", l10n().getString("CreateIdentityWizard.Step4.Success"));
-				LogInPage.addLoginButton(this, summaryBox, id, l10n());
+				LogInPage.addLoginButton(this, summaryBox, id);
 				
 				return;
 			}
