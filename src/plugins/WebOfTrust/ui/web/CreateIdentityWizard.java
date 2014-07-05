@@ -34,7 +34,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 	
 	/* Step 1: Choose URI */
 	private Boolean mGenerateRandomSSK = null; 
-	private FreenetURI[] mIdentityURI = null; /* insert URI at index 0 and request URI at index 1 */
+	private FreenetURI mIdentityURI = null;
 
 	/* Step 2: Choose Nickname */
 	private String mIdentityNickname = null;
@@ -77,7 +77,6 @@ public class CreateIdentityWizard extends WebPageImpl {
 		HTMLNode backForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
 		HTMLNode createForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
 		
-		Exception requestURIproblem = null;
 		Exception insertURIproblem = null;
 		Exception nicknameProblem = null;
 		
@@ -90,24 +89,18 @@ public class CreateIdentityWizard extends WebPageImpl {
 			mGenerateRandomSSK = mRequest.getPartAsStringFailsafe("GenerateRandomSSK", 5).equals("true");
 
 		/* Parse the URI specified in step 1 */
-		if(mRequest.isPartSet("RequestURI") && mRequest.isPartSet("InsertURI")) {
-			mIdentityURI = new FreenetURI[2];
-
-			try { mIdentityURI[0] = new FreenetURI(mRequest.getPartAsStringFailsafe("InsertURI", 256)); }
-			catch(Exception e) { insertURIproblem = e; }
-
-			try { mIdentityURI[1] = new FreenetURI(mRequest.getPartAsStringFailsafe("RequestURI", 256)); }
-			catch(Exception e) { requestURIproblem = e; }
-
-			if(insertURIproblem != null || requestURIproblem != null)
+		if(mRequest.isPartSet("InsertURI")) {
+			try { 
+				mIdentityURI = new FreenetURI(mRequest.getPartAsStringFailsafe("InsertURI", 256));
+				OwnIdentity.testAndNormalizeInsertURI(mIdentityURI);
+			} catch(Exception e) {
+				insertURIproblem = e;
 				mIdentityURI = null;
-
-			/* TODO: Check whether the URI pair is correct, i.e. if the insert URI really is one, if the request URI really is one and
-			 * if the two belong together. How to do this? */
+			}
 		}
 
 		if(mGenerateRandomSSK != null && mGenerateRandomSSK && mIdentityURI == null)
-			mIdentityURI = pr.getHLSimpleClient().generateKeyPair("");
+			mIdentityURI = pr.getHLSimpleClient().generateKeyPair("")[0];
 		
 		/* Parse the nickname specified in step 2 */
 		if(mRequest.isPartSet("Nickname")) {
@@ -186,22 +179,11 @@ public class CreateIdentityWizard extends WebPageImpl {
 			if(mGenerateRandomSSK != null && mGenerateRandomSSK == false) {
 				HTMLNode enterParagraph = notRandomRadio.addChild("p", l10n().getString("CreateIdentityWizard.Step1.EnterKeyPair") + ":");
 				
-				if(requestURIproblem != null) {
-					enterParagraph.addChild("br");
-					enterParagraph.addChild("div", "style", "color: red;", 
-					        l10n().getString("CreateIdentityWizard.Step1.RequestUriError") + ": " + requestURIproblem.getLocalizedMessage());
-				}
-				
 				if(insertURIproblem != null) {
 					enterParagraph.addChild("br");
 					enterParagraph.addChild("div", "style", "color: red;", 
 					        l10n().getString("CreateIdentityWizard.Step1.InsertUriError") + ": " + insertURIproblem.getLocalizedMessage());
 				}
-			
-				enterParagraph.addChild("br");
-				enterParagraph.addChild("#", l10n().getString("CreateIdentityWizard.Step1.RequestUri") + ": ");
-				enterParagraph.addChild("input",	new String[] { "type", "name", "size", "value" },
-													new String[] { "text", "RequestURI", "70", mRequest.getPartAsString("RequestURI", 256) });
 
 				enterParagraph.addChild("br");
 				enterParagraph.addChild("#", l10n().getString("CreateIdentityWizard.Step1.InsertUri") + ": ");
@@ -316,7 +298,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 			addHiddenFormData(createForm, requestedStep, requestedStep);
 			
 			try {
-				OwnIdentity id = mWebOfTrust.createOwnIdentity(mIdentityURI[0], mIdentityNickname, mIdentityPublishesTrustList, null);
+				OwnIdentity id = mWebOfTrust.createOwnIdentity(mIdentityURI, mIdentityNickname, mIdentityPublishesTrustList, null);
 						
 				InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step4.Header"));
 				wizardBox.addChild(summaryInfoboxNode.outer);
@@ -369,9 +351,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 			
 			if(mIdentityURI != null) {
 				myForm.addChild("input",	new String[] { "type", "name", "value" },
-											new String[] { "hidden", "InsertURI", mIdentityURI[0].toString() });
-				myForm.addChild("input",	new String[] { "type", "name", "value" },
-											new String[] { "hidden", "RequestURI", mIdentityURI[1].toString() });
+											new String[] { "hidden", "InsertURI", mIdentityURI.toString() });
 			}
 		}
 
