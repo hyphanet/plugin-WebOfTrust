@@ -35,7 +35,7 @@ import freenet.support.api.HTTPRequest;
  */
 public class CreateIdentityWizard extends WebPageImpl {
 	
-	private int requestedStep = 1;
+	private int mRequestedStep = 1;
 	
 	/* Step 1: Choose URI */
 	private Boolean mGenerateRandomSSK = null; 
@@ -79,7 +79,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 	private void parseFormData() {
 		/* ======== Stage 1: Parse the passed form data ====================================================================================== */
 		
-		requestedStep = mRequest.isPartSet("Step") ? Integer.parseInt(mRequest.getPartAsStringFailsafe("Step", 1)) : 1;
+		mRequestedStep = mRequest.isPartSet("Step") ? Integer.parseInt(mRequest.getPartAsStringFailsafe("Step", 1)) : 1;
 		
 		/* Parse the "Generate random SSK?" boolean specified in step 1 */
 		if(mRequest.isPartSet("GenerateRandomSSK"))
@@ -119,7 +119,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 		}
 		
 		/* Parse the preferences specified in step 3 */
-		if(requestedStep > 3) { /* We cannot just use isPartSet("PublishTrustList") because it won't be set if the checkbox is unchecked */
+		if(mRequestedStep > 3) { /* We cannot just use isPartSet("PublishTrustList") because it won't be set if the checkbox is unchecked */
 			if(mRequest.isPartSet("PublishTrustList"))
 				mIdentityPublishesTrustList = mRequest.getPartAsStringFailsafe("PublishTrustList", 5).equals("true");
 			else
@@ -133,12 +133,12 @@ public class CreateIdentityWizard extends WebPageImpl {
 		
 		/* ======== Stage 2: Check for missing data and correct requestedStep  =============================================================== */
 		
-		if(requestedStep > 1 && mIdentityURI == null) {
-			requestedStep = 1;
-		} else if(requestedStep > 2 && mIdentityNickname == null) {
-			requestedStep = 2;
-		} else if(requestedStep > 3 && (mIdentityPublishesTrustList == null || mDisplayImages == null)) {
-			requestedStep = 3;
+		if(mRequestedStep > 1 && mIdentityURI == null) {
+			mRequestedStep = 1;
+		} else if(mRequestedStep > 2 && mIdentityNickname == null) {
+			mRequestedStep = 2;
+		} else if(mRequestedStep > 3 && (mIdentityPublishesTrustList == null || mDisplayImages == null)) {
+			mRequestedStep = 3;
 		}
 	}
 
@@ -154,8 +154,8 @@ public class CreateIdentityWizard extends WebPageImpl {
 		/* ======== Stage 3: Display the wizard stage at which we are ======================================================================== */
 		
 		/* Step 1: URI */
-		if(requestedStep == 1) {
-			addHiddenFormData(createForm, requestedStep, requestedStep + 1);
+		if(mRequestedStep == 1) {
+			addHiddenFormData(createForm, mRequestedStep, mRequestedStep + 1);
 			
 			InfoboxNode chooseURIInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step1.Header"));
 			createForm.addChild(chooseURIInfoboxNode.outer);
@@ -202,8 +202,8 @@ public class CreateIdentityWizard extends WebPageImpl {
 		}
 		
 		/* Step 2: Nickname */
-		else if(requestedStep == 2 ) {
-			addHiddenFormData(createForm, requestedStep, requestedStep + 1);
+		else if(mRequestedStep == 2 ) {
+			addHiddenFormData(createForm, mRequestedStep, mRequestedStep + 1);
 			
 			InfoboxNode chooseNameInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step2.Header"));
 			createForm.addChild(chooseNameInfoboxNode.outer);
@@ -224,11 +224,11 @@ public class CreateIdentityWizard extends WebPageImpl {
 		}
 		
 		/* Step 3: Preferences */
-		else if(requestedStep == 3) {
+		else if(mRequestedStep == 3) {
             final String[] l10nBoldSubstitutionInput = new String[] { "bold", "/bold" };
             final String[] l10nBoldSubstitutionOutput = new String[] { "<b>", "</b>" };
 
-			addHiddenFormData(createForm, requestedStep, requestedStep + 1);
+			addHiddenFormData(createForm, mRequestedStep, mRequestedStep + 1);
 			
 			InfoboxNode choosePrefsInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.Header"));
 			createForm.addChild(choosePrefsInfoboxNode.outer);
@@ -283,8 +283,8 @@ public class CreateIdentityWizard extends WebPageImpl {
 		}
 		
 		/* Step 4: Create the identity */
-		else if(requestedStep == 4 && mRequest.getMethod().equals("POST")) {
-			addHiddenFormData(createForm, requestedStep, requestedStep);
+		else if(mRequestedStep == 4 && mRequest.getMethod().equals("POST")) {
+			addHiddenFormData(createForm, mRequestedStep, mRequestedStep);
 			
 			try {
 				OwnIdentity id = mWebOfTrust.createOwnIdentity(mIdentityURI, mIdentityNickname, mIdentityPublishesTrustList, null);
@@ -310,12 +310,12 @@ public class CreateIdentityWizard extends WebPageImpl {
 		}
 
 
-		if(requestedStep > 1) { // Step 4 (create the identity) will return; if it was successful so also display "Back" for it
-			addHiddenFormData(backForm, requestedStep, requestedStep - 1);
+		if(mRequestedStep > 1) { // Step 4 (create the identity) will return; if it was successful so also display "Back" for it
+			addHiddenFormData(backForm, mRequestedStep, mRequestedStep - 1);
 			backForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("CreateIdentityWizard.BackButton") });
 		}
 		
-		if(requestedStep < 4)
+		if(mRequestedStep < 4)
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("CreateIdentityWizard.ContinueButton") });
 		else // There was an error creating the identity
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("CreateIdentityWizard.RetryButton") });
