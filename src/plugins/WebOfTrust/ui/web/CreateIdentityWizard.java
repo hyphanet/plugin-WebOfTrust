@@ -6,7 +6,6 @@ package plugins.WebOfTrust.ui.web;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.RedirectException;
@@ -91,7 +90,8 @@ public class CreateIdentityWizard extends WebPageImpl {
 		/* Parse the URI specified in step 1 */
 		if(mRequest.isPartSet("InsertURI")) {
 			try { 
-				mIdentityURI = new FreenetURI(mRequest.getPartAsStringFailsafe("InsertURI", 256));
+				// TODO: Once FreenetURI has a maximum size constant, use it here and elsewhere in this file.
+				mIdentityURI = new FreenetURI(mRequest.getPartAsStringThrowing("InsertURI", 256));
 				OwnIdentity.testAndNormalizeInsertURI(mIdentityURI);
 			} catch(Exception e) {
 				insertURIproblem = e;
@@ -105,10 +105,10 @@ public class CreateIdentityWizard extends WebPageImpl {
 		/* Parse the nickname specified in step 2 */
 		if(mRequest.isPartSet("Nickname")) {
 			try {
-				mIdentityNickname = mRequest.getPartAsStringFailsafe("Nickname", 256);
+				mIdentityNickname = mRequest.getPartAsStringThrowing("Nickname", Identity.MAX_NICKNAME_LENGTH);
 				Identity.validateNickname(mIdentityNickname);
 			}
-			catch(InvalidParameterException e) {
+			catch(Exception e) {
 				nicknameProblem = e;
 				mIdentityNickname = null;
 			}
@@ -183,7 +183,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 				enterParagraph.addChild("br");
 				enterParagraph.addChild("#", l10n().getString("CreateIdentityWizard.Step1.InsertUri") + ": ");
 				enterParagraph.addChild("input",	new String[] { "type", "name", "size", "value" },
-													new String[] { "text", "InsertURI", "70", mRequest.getPartAsString("InsertURI", 256) });
+													new String[] { "text", "InsertURI", "70", mRequest.getPartAsStringFailsafe("InsertURI", 256) });
 			}
 		}
 		
@@ -205,7 +205,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 			
 			p.addChild("#", l10n().getString("CreateIdentityWizard.Step2.Nickname") + ": ");
 			p.addChild("input",	new String[] { "type", "name", "size", "value" },
-								new String[] { "text", "Nickname", "50", mRequest.getPartAsString("Nickname", 50) });
+								new String[] { "text", "Nickname", "50", mRequest.getPartAsStringFailsafe("Nickname", Identity.MAX_NICKNAME_LENGTH) });
 
 		}
 		
