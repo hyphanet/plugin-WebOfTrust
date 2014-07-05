@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import javax.naming.SizeLimitExceededException;
+
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
@@ -93,6 +95,10 @@ public class CreateIdentityWizard extends WebPageImpl {
 				// TODO: Once FreenetURI has a maximum size constant, use it here and elsewhere in this file.
 				mIdentityURI = new FreenetURI(mRequest.getPartAsStringThrowing("InsertURI", 256));
 				OwnIdentity.testAndNormalizeInsertURI(mIdentityURI);
+			} catch(SizeLimitExceededException e) {
+				// TODO: Once FreenetURI has a maximum size constant, use it here and elsewhere in this file.
+				insertURIproblem = new Exception(l10n().getString("Common.SizeLimitExceededException", "limit", "256"));
+				mIdentityURI = null;
 			} catch(Exception e) {
 				insertURIproblem = e;
 				mIdentityURI = null;
@@ -107,8 +113,10 @@ public class CreateIdentityWizard extends WebPageImpl {
 			try {
 				mIdentityNickname = mRequest.getPartAsStringThrowing("Nickname", Identity.MAX_NICKNAME_LENGTH);
 				Identity.validateNickname(mIdentityNickname);
-			}
-			catch(Exception e) {
+			} catch(SizeLimitExceededException e) {
+				nicknameProblem = new Exception(l10n().getString("Common.SizeLimitExceededException", "limit", Integer.toString(Identity.MAX_NICKNAME_LENGTH)));
+				mIdentityNickname = null;
+			} catch(Exception e) {
 				nicknameProblem = e;
 				mIdentityNickname = null;
 			}
