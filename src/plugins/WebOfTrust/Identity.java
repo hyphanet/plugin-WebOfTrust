@@ -301,7 +301,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 			
 			return normalized;
 		} catch(RuntimeException e) {
-			throw new MalformedURLException("Invalid identity request URI: " + e.getMessage() + ", URI was: " + uri.toString());
+			throw new MalformedURLException("Invalid identity request URI: " + e + ", URI was: " + uri.toString());
 		}
 	}
 
