@@ -1062,7 +1062,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		
 		try {
 			if(!testAndNormalizeRequestURI(mRequestURI).equals(mRequestURI.setSuggestedEdition(0)))
-				throw new IllegalStateException("mRequest URI is not normalized: " + mRequestURI);
+				throw new IllegalStateException("mRequestURI is not normalized: " + mRequestURI);
 		} catch (MalformedURLException e) {
 			throw new IllegalStateException("mRequestURI is invalid: " + e);
 		}
