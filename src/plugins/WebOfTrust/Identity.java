@@ -218,18 +218,12 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	protected Identity(WebOfTrustInterface myWoT, FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException, MalformedURLException {
 		initializeTransient(myWoT);
 		
-		if (!newRequestURI.isUSK() && !newRequestURI.isSSK())
-			throw new IllegalArgumentException("Identity URI keytype not supported: " + newRequestURI);
-		
-		//  We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
-		mRequestURI = newRequestURI.setKeyType("USK").setDocName(WebOfTrustInterface.WOT_NAME).setSuggestedEdition(0).setMetaString(null);
-		
-		//Check that mRequestURI really is a request URI
-		USK.create(mRequestURI);
+		mRequestURI = testAndNormalizeRequestURI(newRequestURI); // Also takes care of setting the edition to 0 - see below for explanation
 		
 		mID = IdentityID.constructAndValidateFromURI(mRequestURI).toString();
 		
 		try {
+			// We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
 			mLatestEditionHint = Math.max(newRequestURI.getEdition(), 0);
 		} catch (IllegalStateException e) {
 			mLatestEditionHint = 0;
@@ -284,6 +278,31 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		checkedActivate(1);
 		checkedActivate(mRequestURI, 2);
 		return mRequestURI;
+	}
+	
+	/**
+	 * Checks whether the given URI is a valid identity request URI and throws if is not.
+	 * 
+	 * TODO: L10n
+	 * 
+	 * @return A normalized WOT Identity USK version of the URI with edition set to 0. We use 0 instead of the passed edition number to prevent
+	 *		attackers from spreading bogus very-high edition numbers. You should use received edition numbers as edition hints though, see
+	 *		{@link #setNewEditionHint(long)}.
+	 */
+	public static final FreenetURI testAndNormalizeRequestURI(final FreenetURI uri) throws MalformedURLException {
+		try {
+			if(!uri.isUSK() && !uri.isSSK())
+				throw new MalformedURLException("Invalid identity request URI, it is neither USK nor SSK: " + uri);
+			
+			final FreenetURI normalized = uri.setKeyType("USK").setDocName(WebOfTrustInterface.WOT_NAME).setSuggestedEdition(0).setMetaString(null);
+			
+			// Check that it really is a request URI
+			USK.create(normalized);
+			
+			return normalized;
+		} catch(RuntimeException e) {
+			throw new MalformedURLException("Invalid identity request URI: " + e + ", URI was: " + uri.toString());
+		}
 	}
 
 	/**
@@ -1042,6 +1061,13 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 
 		if(mRequestURI == null)
 			throw new NullPointerException("mRequestURI==null");
+		
+		try {
+			if(!testAndNormalizeRequestURI(mRequestURI).equals(mRequestURI.setSuggestedEdition(0)))
+				throw new IllegalStateException("mRequestURI is not normalized: " + mRequestURI);
+		} catch (MalformedURLException e) {
+			throw new IllegalStateException("mRequestURI is invalid: " + e);
+		}
 		
 		if(!mID.equals(IdentityID.constructAndValidateFromURI(mRequestURI).toString()))
 			throw new IllegalStateException("ID does not match request URI!");

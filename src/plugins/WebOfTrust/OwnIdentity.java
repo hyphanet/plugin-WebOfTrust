@@ -43,10 +43,9 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		super(myWoT,
 				// If we don't set a document name, we will get "java.net.MalformedURLException: SSK URIs must have a document name (to avoid ambiguity)"
 				// when calling  FreenetURI.deriveRequestURIFromInsertURI().
-				// To make sure the code works, I have copypasted the URI normalization code which we have been using anyway instead of only 
-				// adding a .setDocName() - I remember that it was tricky to get code which properly normalizes ALL existing URIs which
-				// people shove into WOT
-				insertURI.setKeyType("USK").setDocName(WebOfTrustInterface.WOT_NAME).setMetaString(null).deriveRequestURIFromInsertURI(),
+				// So to make sure that deriveRequestURIFromINsertURI() works, we just pass the URI through testAndNormalizeInsertURI() which
+				// ought to be robust against all kinds of URIs which people shove into WOT.
+				testAndNormalizeInsertURI(insertURI).deriveRequestURIFromInsertURI(),
 				nickName, publishTrustList);
 		// This is already done by super()
 		// setEdition(0);
@@ -54,11 +53,9 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		if(!insertURI.isUSK() && !insertURI.isSSK())
 			throw new InvalidParameterException("Identity URI keytype not supported: " + insertURI);
 		
+		mInsertURI = testAndNormalizeInsertURI(insertURI);
 		// initializeTransient() was not called yet so we must use mRequestURI.getEdition() instead of this.getEdition()
-		mInsertURI = insertURI.setKeyType("USK").setDocName(WebOfTrustInterface.WOT_NAME).setSuggestedEdition(mRequestURI.getEdition()).setMetaString(null);
-		
-		// Notice: Check that mInsertURI really is a insert URI is NOT necessary, FreenetURI.deriveRequestURIFromInsertURI() did that already for us.
-		// InsertableUSK.createInsertable(mInsertURI, false);
+		mInsertURI = mInsertURI.setSuggestedEdition(mRequestURI.getEdition());
 		
 		mLastInsertDate = new Date(0);
 
@@ -136,6 +133,26 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		checkedActivate(1);
 		checkedActivate(mInsertURI, 2);
 		return mInsertURI;
+	}
+	
+	/**
+	 * Checks whether the given URI is a valid identity insert URI and throws if is not.
+	 * 
+	 * TODO: L10n
+	 * 
+	 * @return A normalized WOT Identity USK version of the URI with edition set to 0
+	 */
+	public static final FreenetURI testAndNormalizeInsertURI(final FreenetURI uri) throws MalformedURLException {
+		try {
+			final FreenetURI normalized = uri.setKeyType("USK").setDocName(WebOfTrustInterface.WOT_NAME).setSuggestedEdition(0).setMetaString(null);
+			
+			// Make sure that it is an insert URI and not a request URI: If it isn't the following will throw.
+			normalized.deriveRequestURIFromInsertURI();
+			
+			return normalized;
+		} catch(RuntimeException e) {
+			throw new MalformedURLException("Invalid identity insert URI: " + e + ", URI was: " + uri.toString());
+		}
 	}
 	
 	
@@ -317,6 +334,13 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		
 		if(mInsertURI == null)
 			throw new NullPointerException("mInsertURI==null");
+		
+		try {
+			if(!testAndNormalizeInsertURI(mInsertURI).setSuggestedEdition(mInsertURI.getEdition()).equals(mInsertURI))
+				throw new IllegalStateException("mInsertURI is not normalized: " + mInsertURI);
+		} catch (MalformedURLException e) {
+			throw new IllegalStateException("mInsertURI is invalid: " + e);
+		}
 		
 		try {
 			if(!mInsertURI.deriveRequestURIFromInsertURI().equals(mRequestURI))
