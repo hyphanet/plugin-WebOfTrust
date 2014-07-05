@@ -4,22 +4,71 @@
 package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
-
-import freenet.support.CurrentTimeUTC;
+import java.util.ArrayList;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import freenet.keys.FreenetURI;
+import freenet.support.CurrentTimeUTC;
 
 /**
  * @author xor (xor@freenetproject.org)
  */
 public class OwnIdentityTest extends DatabaseBasedTest {
 	
+	private final String requestURIStringUSK = "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/23";
+	private final String requestURIStringUSKNonWOT = "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/Test/23";
+	private final String requestURIStringSSK = "SSK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust-23";
+	private final String requestURIStringSSKNonWOT = "SSK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/Test-23";
+	private final String requestURIStringSSKPlain = "SSK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/";
+	private final String insertURIStringUSK = "USK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/WebOfTrust/23";
+	private final String insertURIStringUSKNonWOT = "USK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/Test/23";
+	private final String insertURIStringSSK = "SSK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/WebOfTrust-23";
+	private final String insertURIStringSSKNonWOT = "SSK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/Test-23";
+	private final String insertURIStringSSKPlain = "SSK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/";
+
 	public void testConstructors() throws MalformedURLException, InvalidParameterException {
 		final OwnIdentity identity = new OwnIdentity(mWoT, "SSK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/",
 				getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH), true);
 		
 		assertEquals(0, identity.getEdition());
 		assertEquals(0, identity.getLatestEditionHint());
+	}
+
+	public void testConstructorURIProcessing() throws MalformedURLException, InvalidParameterException {
+		// Test: Constructors shouldn't accept request URIs
+		
+		String[] inacceptableURIs = new String[] {
+				requestURIStringUSK,
+				requestURIStringUSKNonWOT,
+				requestURIStringSSK,
+				requestURIStringSSKNonWOT,
+				requestURIStringSSKPlain
+		};
+		
+		for(String uri : inacceptableURIs) {
+			try {
+				new OwnIdentity(mWoT, uri, "test", true);
+				fail("OwnIdentity should only construct with insert URIs");
+			} catch(MalformedURLException e) {}
+		}
+		
+		// Test: Constructors should normalize all different kinds of insert URIs
+		
+		ArrayList<OwnIdentity> identities = new ArrayList<OwnIdentity>(5 + 1);
+		
+		identities.add(new OwnIdentity(mWoT, insertURIStringUSK, "test", true));
+		identities.add(new OwnIdentity(mWoT, insertURIStringUSKNonWOT, "test", true));
+		identities.add(new OwnIdentity(mWoT, insertURIStringSSK, "test", true));
+		identities.add(new OwnIdentity(mWoT, insertURIStringSSKNonWOT, "test", true));
+		identities.add(new OwnIdentity(mWoT, insertURIStringSSKPlain, "test", true));
+		
+		FreenetURI expectedInsertURI = new FreenetURI(insertURIStringUSK).setSuggestedEdition(0);
+		FreenetURI expectedRequestURI = new FreenetURI(requestURIStringUSK).setSuggestedEdition(0);
+		
+		for(OwnIdentity identity : identities) {
+			assertEquals(expectedInsertURI, identity.getInsertURI());
+			assertEquals(expectedRequestURI, identity.getRequestURI());
+		}
 	}
 
 	/**
