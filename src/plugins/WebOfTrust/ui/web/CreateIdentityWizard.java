@@ -46,7 +46,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 	/* Step 2: Choose Nickname */
 	private String mIdentityNickname = null;
 	
-	private Exception nicknameProblem = null;
+	private Exception mNicknameProblem = null;
 
 	/* Step 3: Set preferences */
 	private Boolean mIdentityPublishesTrustList = null;
@@ -110,10 +110,10 @@ public class CreateIdentityWizard extends WebPageImpl {
 				mIdentityNickname = mRequest.getPartAsStringThrowing("Nickname", Identity.MAX_NICKNAME_LENGTH);
 				Identity.validateNickname(mIdentityNickname);
 			} catch(SizeLimitExceededException e) {
-				nicknameProblem = new Exception(l10n().getString("Common.SizeLimitExceededException", "limit", Integer.toString(Identity.MAX_NICKNAME_LENGTH)));
+				mNicknameProblem = new Exception(l10n().getString("Common.SizeLimitExceededException", "limit", Integer.toString(Identity.MAX_NICKNAME_LENGTH)));
 				mIdentityNickname = null;
 			} catch(Exception e) {
-				nicknameProblem = e;
+				mNicknameProblem = e;
 				mIdentityNickname = null;
 			}
 		}
@@ -212,9 +212,9 @@ public class CreateIdentityWizard extends WebPageImpl {
 			chooseNameBox.addChild("p", l10n().getString("CreateIdentityWizard.Step2.Text"));
 			HTMLNode p = chooseNameBox.addChild("p");
 			
-			if(nicknameProblem != null) {
+			if(mNicknameProblem != null) {
 				p.addChild("p", "style", "color: red;").
-				addChild("#", l10n().getString("CreateIdentityWizard.Step2.NicknameError") + ": " + nicknameProblem.getLocalizedMessage());
+				addChild("#", l10n().getString("CreateIdentityWizard.Step2.NicknameError") + ": " + mNicknameProblem.getLocalizedMessage());
 			}
 			
 			p.addChild("#", l10n().getString("CreateIdentityWizard.Step2.Nickname") + ": ");
