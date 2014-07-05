@@ -35,12 +35,18 @@ import freenet.support.api.HTTPRequest;
  */
 public class CreateIdentityWizard extends WebPageImpl {
 	
+	private int requestedStep = 1;
+	
 	/* Step 1: Choose URI */
 	private Boolean mGenerateRandomSSK = null; 
 	private FreenetURI mIdentityURI = null;
+	
+	private Exception insertURIproblem = null;
 
 	/* Step 2: Choose Nickname */
 	private String mIdentityNickname = null;
+	
+	private Exception nicknameProblem = null;
 
 	/* Step 3: Set preferences */
 	private Boolean mIdentityPublishesTrustList = null;
@@ -66,24 +72,14 @@ public class CreateIdentityWizard extends WebPageImpl {
 	}
 
 	public void make() {
+		parseFormData();
 		makeCreateIdentityBox();
 	}
-
-	/*
-	 * TODO: In the future this function should maybe be cleaned up to be more
-	 * readable: Maybe separate it into several functions
-	 */
-	private void makeCreateIdentityBox() {
-		HTMLNode wizardBox = addContentBox(l10n().getString("CreateIdentityWizard.CreateIdentityBox.Header"));
-		HTMLNode backForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
-		HTMLNode createForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
-		
-		Exception insertURIproblem = null;
-		Exception nicknameProblem = null;
-		
+	
+	private void parseFormData() {
 		/* ======== Stage 1: Parse the passed form data ====================================================================================== */
 		
-		int requestedStep = mRequest.isPartSet("Step") ? Integer.parseInt(mRequest.getPartAsStringFailsafe("Step", 1)) : 1;
+		requestedStep = mRequest.isPartSet("Step") ? Integer.parseInt(mRequest.getPartAsStringFailsafe("Step", 1)) : 1;
 		
 		/* Parse the "Generate random SSK?" boolean specified in step 1 */
 		if(mRequest.isPartSet("GenerateRandomSSK"))
@@ -144,6 +140,16 @@ public class CreateIdentityWizard extends WebPageImpl {
 		} else if(requestedStep > 3 && (mIdentityPublishesTrustList == null || mDisplayImages == null)) {
 			requestedStep = 3;
 		}
+	}
+
+	/*
+	 * TODO: In the future this function should maybe be cleaned up to be more
+	 * readable: Maybe separate it into several functions
+	 */
+	private void makeCreateIdentityBox() {
+		HTMLNode wizardBox = addContentBox(l10n().getString("CreateIdentityWizard.CreateIdentityBox.Header"));
+		HTMLNode backForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
+		HTMLNode createForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
 		
 		/* ======== Stage 3: Display the wizard stage at which we are ======================================================================== */
 		
