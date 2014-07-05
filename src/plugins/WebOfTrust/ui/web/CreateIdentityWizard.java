@@ -41,7 +41,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 	private Boolean mGenerateRandomSSK = null; 
 	private FreenetURI mIdentityURI = null;
 	
-	private Exception insertURIproblem = null;
+	private Exception mInsertURIProblem = null;
 
 	/* Step 2: Choose Nickname */
 	private String mIdentityNickname = null;
@@ -93,10 +93,10 @@ public class CreateIdentityWizard extends WebPageImpl {
 				OwnIdentity.testAndNormalizeInsertURI(mIdentityURI);
 			} catch(SizeLimitExceededException e) {
 				// TODO: Once FreenetURI has a maximum size constant, use it here and elsewhere in this file.
-				insertURIproblem = new Exception(l10n().getString("Common.SizeLimitExceededException", "limit", "256"));
+				mInsertURIProblem = new Exception(l10n().getString("Common.SizeLimitExceededException", "limit", "256"));
 				mIdentityURI = null;
 			} catch(Exception e) {
-				insertURIproblem = e;
+				mInsertURIProblem = e;
 				mIdentityURI = null;
 			}
 		}
@@ -188,10 +188,10 @@ public class CreateIdentityWizard extends WebPageImpl {
 			if(mGenerateRandomSSK != null && mGenerateRandomSSK == false) {
 				HTMLNode enterParagraph = notRandomRadio.addChild("p", l10n().getString("CreateIdentityWizard.Step1.EnterKeyPair") + ":");
 				
-				if(insertURIproblem != null) {
+				if(mInsertURIProblem != null) {
 					enterParagraph.addChild("br");
 					enterParagraph.addChild("div", "style", "color: red;", 
-					        l10n().getString("CreateIdentityWizard.Step1.InsertUriError") + ": " + insertURIproblem.getLocalizedMessage());
+					        l10n().getString("CreateIdentityWizard.Step1.InsertUriError") + ": " + mInsertURIProblem.getLocalizedMessage());
 				}
 
 				enterParagraph.addChild("br");
