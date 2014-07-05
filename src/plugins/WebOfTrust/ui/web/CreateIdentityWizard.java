@@ -17,7 +17,8 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
- * TODO FIXME: Remove mAutoSubscribe and maybe keep mDisplayImages. Also remove the UI part for those of course.
+ * TODO FIXME: Comment out mDisplayImages as WOT cannot display images yet but might display avatars at some point in the future.
+ * 	Make sure to create a bugtracker entry for re-enabling it once we support images.
  * 
  * TODO FIXME: Provide the option to restore an existing identity. This is a *must* have because people are very likely to mix up restore/create
  * 	- which results in broken identities. We need to have both options in one place and explain the difference in detail.
@@ -42,8 +43,6 @@ public class CreateIdentityWizard extends WebPageImpl {
 
 	/* Step 3: Set preferences */
 	private Boolean mIdentityPublishesTrustList = null;
-	
-	private Boolean mAutoSubscribe = null;
 	
 	private Boolean mDisplayImages = null;
 
@@ -122,11 +121,6 @@ public class CreateIdentityWizard extends WebPageImpl {
 			else
 				mIdentityPublishesTrustList = false;
 			
-			if(mRequest.isPartSet("AutoSubscribe"))
-				mAutoSubscribe = mRequest.getPartAsStringFailsafe("AutoSubscribe", 5).equals("true");
-			else
-				mAutoSubscribe = false;
-			
 			if(mRequest.isPartSet("DisplayImages"))
 				mDisplayImages = mRequest.getPartAsStringFailsafe("DisplayImages", 5).equals("true");
 			else
@@ -139,7 +133,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 			requestedStep = 1;
 		} else if(requestedStep > 2 && mIdentityNickname == null) {
 			requestedStep = 2;
-		} else if(requestedStep > 3 && (mIdentityPublishesTrustList == null || mAutoSubscribe == null || mDisplayImages == null)) {
+		} else if(requestedStep > 3 && (mIdentityPublishesTrustList == null || mDisplayImages == null)) {
 			requestedStep = 3;
 		}
 		
@@ -254,26 +248,6 @@ public class CreateIdentityWizard extends WebPageImpl {
 			p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.TrustList.PublishTrustListCheckbox"));
 			
 			
-			InfoboxNode autoSubscribeInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.AutoSubscribe.Header"));
-			choosePrefsBox.addChild(autoSubscribeInfoboxNode.outer);
-			
-			HTMLNode autoSubscribeBox = autoSubscribeInfoboxNode.content;
-			
-			p = autoSubscribeBox.addChild("p");
-	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.AutoSubscribe.Text", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
-
-			
-			p = autoSubscribeBox.addChild("p");
-			if(mAutoSubscribe != null && mAutoSubscribe) {
-				p.addChild("input",	new String[] { "type", "name", "value", "checked" },
-									new String[] { "checkbox", "AutoSubscribe", "true", "checked"});
-			} else {
-				p.addChild("input",	new String[] { "type", "name", "value" },
-									new String[] { "checkbox", "AutoSubscribe", "true" });				
-			}
-			p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.AutoSubscribe.AutoSubscribeCheckbox"));
-			
-			
 			InfoboxNode displayImagesInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Header"));
 			choosePrefsBox.addChild(displayImagesInfoboxNode.outer);
 			
@@ -301,6 +275,8 @@ public class CreateIdentityWizard extends WebPageImpl {
 			try {
 				OwnIdentity id = mWebOfTrust.createOwnIdentity(mIdentityURI, mIdentityNickname, mIdentityPublishesTrustList, null);
 						
+				// FIXME TODO: Add storage for mDisplayImages
+				
 				InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step4.Header"));
 				wizardBox.addChild(summaryInfoboxNode.outer);
 				
