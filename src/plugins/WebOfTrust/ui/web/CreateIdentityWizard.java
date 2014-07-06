@@ -85,15 +85,18 @@ public class CreateIdentityWizard extends WebPageImpl {
 		HTMLNode backForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
 		HTMLNode createForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
 		
+		boolean finished = false;
+		
 		switch(mRequestedStep) {
 			case ChooseURI: makeChooseURIStep(wizardBox, backForm, createForm); break;
 			case ChooseNickname: makeChooseNicknameStep(wizardBox, backForm, createForm); break;
 			case ChoosePreferences: makeChoosePreferencesStep(wizardBox, backForm, createForm); break;
-			case CreateIdentity: makeCreateIdentityStep(wizardBox, backForm, createForm); break;
+			case CreateIdentity: finished = makeCreateIdentityStep(wizardBox, backForm, createForm); break;
 			default: throw new IllegalStateException();
 		}
 		
-		makeBackAndContinueButtons(wizardBox, backForm, createForm);
+		if(!finished)
+			makeBackAndContinueButtons(wizardBox, backForm, createForm);
 	}
 	
 	/**
@@ -295,7 +298,10 @@ public class CreateIdentityWizard extends WebPageImpl {
 			p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Checkbox"));
 	}
 	
-	private void makeCreateIdentityStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
+	/**
+	 * @return True if the identity was created successfully, false upon error.
+	 */
+	private boolean makeCreateIdentityStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
 		if(mRequest.getMethod().equals("POST")) { // TODO: Why check for POST?
 			addHiddenFormData(createForm, mRequestedStep.ordinal(), mRequestedStep.ordinal());
 			
@@ -311,7 +317,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 				summaryBox.addChild("p", l10n().getString("CreateIdentityWizard.Step4.Success"));
 				LogInPage.addLoginButton(this, summaryBox, id);
 				
-				return;
+				return true;
 			}
 			catch(Exception e) {
 				InfoboxNode errorInfoboxNode = getAlertBox(l10n().getString("CreateIdentityWizard.Step4.Failure"));
@@ -321,10 +327,12 @@ public class CreateIdentityWizard extends WebPageImpl {
 				errorBox.addChild("p", e.getLocalizedMessage());
 			}
 		}
+		
+		return false;
 	}
 
 	private void makeBackAndContinueButtons(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
-		if(mRequestedStep.ordinal() > 0) { // Step 4 (create the identity) will return; if it was successful so also display "Back" for it
+		if(mRequestedStep.ordinal() > 0) {
 			addHiddenFormData(backForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() - 1);
 			backForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("CreateIdentityWizard.BackButton") });
 		}
