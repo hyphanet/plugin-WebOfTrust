@@ -76,9 +76,12 @@ public class CreateIdentityWizard extends WebPageImpl {
 		makeCreateIdentityBox();
 	}
 	
+	/**
+	 * Parses the form data for all steps of the wizard so it persists across usage of pressing Back/Continue.
+	 */
 	private void parseFormData() {
 		/* ======== Stage 1: Parse the passed form data ====================================================================================== */
-		
+
 		mRequestedStep = mRequest.isPartSet("Step") ? Integer.parseInt(mRequest.getPartAsStringFailsafe("Step", 1)) : 1;
 		
 		/* Parse the "Generate random SSK?" boolean specified in step 1 */
@@ -131,7 +134,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 				mDisplayImages = false;
 		}
 		
-		/* ======== Stage 2: Check for missing data and correct requestedStep  =============================================================== */
+		/* ======== Stage 2: Check for missing data and correct mRequestedStep  =============================================================== */
 		
 		if(mRequestedStep > 1 && mIdentityURI == null) {
 			mRequestedStep = 1;
@@ -142,7 +145,9 @@ public class CreateIdentityWizard extends WebPageImpl {
 		}
 	}
 
-	/*
+	/**
+	 * Renders the actual wizard page.
+	 * 
 	 * TODO: In the future this function should maybe be cleaned up to be more
 	 * readable: Maybe separate it into several functions
 	 */
@@ -150,8 +155,6 @@ public class CreateIdentityWizard extends WebPageImpl {
 		HTMLNode wizardBox = addContentBox(l10n().getString("CreateIdentityWizard.CreateIdentityBox.Header"));
 		HTMLNode backForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
 		HTMLNode createForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
-		
-		/* ======== Stage 3: Display the wizard stage at which we are ======================================================================== */
 		
 		/* Step 1: URI */
 		if(mRequestedStep == 1) {
