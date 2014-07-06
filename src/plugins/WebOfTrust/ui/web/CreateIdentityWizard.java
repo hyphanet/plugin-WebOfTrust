@@ -73,7 +73,20 @@ public class CreateIdentityWizard extends WebPageImpl {
 
 	public void make() {
 		parseFormData();
-		makeCreateIdentityBox();
+		
+		HTMLNode wizardBox = addContentBox(l10n().getString("CreateIdentityWizard.CreateIdentityBox.Header"));
+		HTMLNode backForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
+		HTMLNode createForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
+		
+		switch(mRequestedStep) {
+			case 1: makeChooseURIStep(wizardBox, backForm, createForm); break;
+			case 2: makeChooseNicknameStep(wizardBox, backForm, createForm); break;
+			case 3: makeChoosePreferencesStep(wizardBox, backForm, createForm); break;
+			case 4: makeCreateIdentityStep(wizardBox, backForm, createForm); break;
+			default: throw new IllegalStateException();
+		}
+		
+		makeBackAndContinueButtons(wizardBox, backForm, createForm);
 	}
 	
 	/**
@@ -145,19 +158,8 @@ public class CreateIdentityWizard extends WebPageImpl {
 		}
 	}
 
-	/**
-	 * Renders the actual wizard page.
-	 * 
-	 * TODO: In the future this function should maybe be cleaned up to be more
-	 * readable: Maybe separate it into several functions
-	 */
-	private void makeCreateIdentityBox() {
-		HTMLNode wizardBox = addContentBox(l10n().getString("CreateIdentityWizard.CreateIdentityBox.Header"));
-		HTMLNode backForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
-		HTMLNode createForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
-		
-		/* Step 1: URI */
-		if(mRequestedStep == 1) {
+	private void makeChooseURIStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
+
 			addHiddenFormData(createForm, mRequestedStep, mRequestedStep + 1);
 			
 			InfoboxNode chooseURIInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step1.Header"));
@@ -202,10 +204,9 @@ public class CreateIdentityWizard extends WebPageImpl {
 				enterParagraph.addChild("input",	new String[] { "type", "name", "size", "value" },
 													new String[] { "text", "InsertURI", "70", mRequest.getPartAsStringFailsafe("InsertURI", 256) });
 			}
-		}
-		
-		/* Step 2: Nickname */
-		else if(mRequestedStep == 2 ) {
+	}
+	
+	private void makeChooseNicknameStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
 			addHiddenFormData(createForm, mRequestedStep, mRequestedStep + 1);
 			
 			InfoboxNode chooseNameInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step2.Header"));
@@ -224,10 +225,9 @@ public class CreateIdentityWizard extends WebPageImpl {
 			p.addChild("input",	new String[] { "type", "name", "size", "value" },
 								new String[] { "text", "Nickname", "50", mRequest.getPartAsStringFailsafe("Nickname", Identity.MAX_NICKNAME_LENGTH) });
 
-		}
-		
-		/* Step 3: Preferences */
-		else if(mRequestedStep == 3) {
+	}
+
+	private void makeChoosePreferencesStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
             final String[] l10nBoldSubstitutionInput = new String[] { "bold", "/bold" };
             final String[] l10nBoldSubstitutionOutput = new String[] { "<b>", "</b>" };
 
@@ -283,10 +283,10 @@ public class CreateIdentityWizard extends WebPageImpl {
 									new String[] { "checkbox", "DisplayImages", "true" });				
 			}
 			p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Checkbox"));
-		}
-		
-		/* Step 4: Create the identity */
-		else if(mRequestedStep == 4 && mRequest.getMethod().equals("POST")) {
+	}
+	
+	private void makeCreateIdentityStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
+		if(mRequest.getMethod().equals("POST")) { // TODO: Why check for POST?
 			addHiddenFormData(createForm, mRequestedStep, mRequestedStep);
 			
 			try {
@@ -311,8 +311,9 @@ public class CreateIdentityWizard extends WebPageImpl {
 				errorBox.addChild("p", e.getLocalizedMessage());
 			}
 		}
+	}
 
-
+	private void makeBackAndContinueButtons(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
 		if(mRequestedStep > 1) { // Step 4 (create the identity) will return; if it was successful so also display "Back" for it
 			addHiddenFormData(backForm, mRequestedStep, mRequestedStep - 1);
 			backForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("CreateIdentityWizard.BackButton") });
