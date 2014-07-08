@@ -320,17 +320,17 @@ public final class CreateIdentityWizard extends WebPageImpl {
 						
 				// FIXME TODO: Add storage for mDisplayImages
 				
-				InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step4.Header"));
+				InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.CreateIdentity.Header"));
 				wizardBox.addChild(summaryInfoboxNode.outer);
 				
 				HTMLNode summaryBox = summaryInfoboxNode.content;
-				summaryBox.addChild("p", l10n().getString("CreateIdentityWizard.Step4.Success"));
+				summaryBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.CreateIdentity.Success"));
 				LogInPage.addLoginButton(this, summaryBox, id);
 				
 				return true;
 			}
 			catch(Exception e) {
-				InfoboxNode errorInfoboxNode = getAlertBox(l10n().getString("CreateIdentityWizard.Step4.Failure"));
+				InfoboxNode errorInfoboxNode = getAlertBox(l10n().getString("CreateIdentityWizard.Step.CreateIdentity.Failure"));
 				createForm.addChild(errorInfoboxNode.outer);
 				
 				HTMLNode errorBox = errorInfoboxNode.content;
