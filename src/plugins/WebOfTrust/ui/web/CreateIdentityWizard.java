@@ -300,7 +300,10 @@ public final class CreateIdentityWizard extends WebPageImpl {
 				wizardBox.addChild(summaryInfoboxNode.outer);
 				
 				HTMLNode summaryBox = summaryInfoboxNode.content;
-				summaryBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.CreateIdentity.Success"));
+				
+				l10n().addL10nSubstitution(summaryBox.addChild("p"), "CreateIdentityWizard.Step.CreateIdentity.Success", 
+					new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+				
 				LogInPage.addLoginButton(this, summaryBox, id);
 				
 				return true;
