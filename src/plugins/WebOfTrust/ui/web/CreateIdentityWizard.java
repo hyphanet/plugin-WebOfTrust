@@ -33,7 +33,7 @@ import freenet.support.api.HTTPRequest;
  *
  * @author xor (xor@freenetproject.org)
  */
-public class CreateIdentityWizard extends WebPageImpl {
+public final class CreateIdentityWizard extends WebPageImpl {
 	
 	/**
 	 * The wizard consists of these stages. A stage is a view of the wizard separated by Back/Continue buttons from the other stages.
