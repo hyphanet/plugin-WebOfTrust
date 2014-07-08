@@ -17,20 +17,27 @@ import freenet.support.api.HTTPRequest;
 
 public final class LogInPage extends WebPageImpl {
 
+	/**
+	 * To which URI to redirect the client browser after log in. Can be used to allow third-party plugins to use the session management of WOT.
+	 */
 	private final String target;
+	
+	/**
+	 * Default value of {@link #target}.
+	 */
+	private static final String DEFAULT_REDIRECT_TARGET_AFTER_LOGIN = WebOfTrust.SELF_URI;
 
 	/**
 	 * @param request
 	 *                   Checked for "redirect-target", a node-relative target that the user is redirected to after
 	 *                   logging in. This can include a path, query, and fragment,
 	 *                   but any scheme, host, or port will be ignored. If this parameter is empty or not specified it
-	 *                   redirects to "/WebOfTrust".
-	 * @see WebOfTrust#SELF_URI
+	 *                   redirects to {@link #DEFAULT_REDIRECT_TARGET_AFTER_LOGIN}.
 	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
 	 */
 	public LogInPage(WebInterfaceToadlet toadlet, HTTPRequest request, ToadletContext context) throws RedirectException {
 		super(toadlet, request, context, false);
-		target = request.getParam("redirect-target", WebOfTrust.SELF_URI /* default */);
+		target = request.getParam("redirect-target", DEFAULT_REDIRECT_TARGET_AFTER_LOGIN);
 	}
 
 	@Override
@@ -87,6 +94,7 @@ public final class LogInPage extends WebPageImpl {
 		final WebInterfaceToadlet logIn = page.mWebInterface.getToadlet(LoginWebInterfaceToadlet.class);
 		final HTMLNode logInForm = page.pr.addFormChild(contentNode, logIn.getURI().toString() , logIn.pageTitle);
 		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", identity.getID() });
+		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "redirect-target", DEFAULT_REDIRECT_TARGET_AFTER_LOGIN });
 		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", page.l10n().getString("LoginPage.LogIn.Button") });
 		logInForm.addChild("p", page.l10n().getString("LoginPage.CookiesRequired.Text"));
 	}
