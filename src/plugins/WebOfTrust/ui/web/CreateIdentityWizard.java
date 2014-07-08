@@ -242,8 +242,8 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	}
 
 	private void makeChoosePreferencesStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
-		final String[] l10nBoldSubstitutionInput = new String[] { "bold", "/bold" };
-		final String[] l10nBoldSubstitutionOutput = new String[] { "<b>", "</b>" };
+		final String[] l10nBoldSubstitutionInput = new String[] { "bold" };
+		final HTMLNode[] l10nBoldSubstitutionOutput = new HTMLNode[] { HTMLNode.STRONG };
 
 		addHiddenFormData(createForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
 
