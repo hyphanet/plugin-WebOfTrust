@@ -256,12 +256,12 @@ public final class CreateIdentityWizard extends WebPageImpl {
 
 		addHiddenFormData(createForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
 
-		InfoboxNode choosePrefsInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.Header"));
+		InfoboxNode choosePrefsInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.Header"));
 		createForm.addChild(choosePrefsInfoboxNode.outer);
 
 		HTMLNode choosePrefsBox = choosePrefsInfoboxNode.content;
 
-		InfoboxNode tlInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.TrustList.Header"));
+		InfoboxNode tlInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.TrustList.Header"));
 		choosePrefsBox.addChild(tlInfoboxNode.outer);
 
 		HTMLNode tlBox = tlInfoboxNode.content;
@@ -269,13 +269,13 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		HTMLNode p;
 
 		p = tlBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text1", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text1", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 		p = tlBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 		p = tlBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 		p = tlBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text4", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text4", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 
 		p = tlBox.addChild("p");
 		if(mIdentityPublishesTrustList == null || mIdentityPublishesTrustList == true) {
@@ -285,16 +285,16 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			p.addChild("input",	new String[] { "type", "name", "value" },
 					new String[] { "checkbox", "PublishTrustList", "true" });
 		}
-		p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.TrustList.PublishTrustListCheckbox"));
+		p.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.TrustList.PublishTrustListCheckbox"));
 
 
-		InfoboxNode displayImagesInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Header"));
+		InfoboxNode displayImagesInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.DisplayImages.Header"));
 		choosePrefsBox.addChild(displayImagesInfoboxNode.outer);
 
 		HTMLNode displayImagesBox = displayImagesInfoboxNode.content;
 
 		p = displayImagesBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.DisplayImages.Text", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.DisplayImages.Text", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 
 
 		p = displayImagesBox.addChild("p");
@@ -305,7 +305,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			p.addChild("input",	new String[] { "type", "name", "value" },
 					new String[] { "checkbox", "DisplayImages", "true" });				
 		}
-		p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Checkbox"));
+		p.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.DisplayImages.Checkbox"));
 	}
 	
 	/**
