@@ -172,130 +172,128 @@ public class CreateIdentityWizard extends WebPageImpl {
 	}
 
 	private void makeChooseURIStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
+		addHiddenFormData(createForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
 
-			addHiddenFormData(createForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
-			
-			InfoboxNode chooseURIInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step1.Header"));
-			createForm.addChild(chooseURIInfoboxNode.outer);
-			
-			HTMLNode chooseURIbox = chooseURIInfoboxNode.content;
-			chooseURIbox.addChild("p", l10n().getString("CreateIdentityWizard.Step1.Text"));
-			
-			HTMLNode randomRadio = chooseURIbox.addChild("p");
-			HTMLNode notRandomRadio = chooseURIbox.addChild("p");
-			
-		
-			if(mGenerateRandomSSK == null || mGenerateRandomSSK == true) {
-				randomRadio.addChild("input", 	new String[] { "type", "name", "value" , "checked"},
-												new String[] { "radio", "GenerateRandomSSK" , "true", "checked"});
-								
-				notRandomRadio.addChild("input",	new String[] { "type", "name", "value" },
-													new String[] { "radio", "GenerateRandomSSK" , "false"});
-			} else {
+		InfoboxNode chooseURIInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step1.Header"));
+		createForm.addChild(chooseURIInfoboxNode.outer);
 
-				randomRadio.addChild("input", 	new String[] { "type", "name", "value"},
-												new String[] { "radio", "GenerateRandomSSK" , "true",});
-				
-				notRandomRadio.addChild("input",	new String[] { "type", "name", "value", "checked"},
-													new String[] { "radio", "GenerateRandomSSK" , "false", "checked"});
-			}
-			
-			randomRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step1.GenerateNewKeyPairRadio"));
-			notRandomRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step1.UseExistingKeyPairRadio"));
+		HTMLNode chooseURIbox = chooseURIInfoboxNode.content;
+		chooseURIbox.addChild("p", l10n().getString("CreateIdentityWizard.Step1.Text"));
 
-			if(mGenerateRandomSSK != null && mGenerateRandomSSK == false) {
-				HTMLNode enterParagraph = notRandomRadio.addChild("p", l10n().getString("CreateIdentityWizard.Step1.EnterKeyPair") + ":");
-				
-				if(mInsertURIProblem != null) {
-					enterParagraph.addChild("br");
-					enterParagraph.addChild("div", "style", "color: red;", 
-					        l10n().getString("CreateIdentityWizard.Step1.InsertUriError") + ": " + mInsertURIProblem.getLocalizedMessage());
-				}
+		HTMLNode randomRadio = chooseURIbox.addChild("p");
+		HTMLNode notRandomRadio = chooseURIbox.addChild("p");
 
+
+		if(mGenerateRandomSSK == null || mGenerateRandomSSK == true) {
+			randomRadio.addChild("input", 	new String[] { "type", "name", "value" , "checked"},
+					new String[] { "radio", "GenerateRandomSSK" , "true", "checked"});
+
+			notRandomRadio.addChild("input",	new String[] { "type", "name", "value" },
+					new String[] { "radio", "GenerateRandomSSK" , "false"});
+		} else {
+
+			randomRadio.addChild("input", 	new String[] { "type", "name", "value"},
+					new String[] { "radio", "GenerateRandomSSK" , "true",});
+
+			notRandomRadio.addChild("input",	new String[] { "type", "name", "value", "checked"},
+					new String[] { "radio", "GenerateRandomSSK" , "false", "checked"});
+		}
+
+		randomRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step1.GenerateNewKeyPairRadio"));
+		notRandomRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step1.UseExistingKeyPairRadio"));
+
+		if(mGenerateRandomSSK != null && mGenerateRandomSSK == false) {
+			HTMLNode enterParagraph = notRandomRadio.addChild("p", l10n().getString("CreateIdentityWizard.Step1.EnterKeyPair") + ":");
+
+			if(mInsertURIProblem != null) {
 				enterParagraph.addChild("br");
-				enterParagraph.addChild("#", l10n().getString("CreateIdentityWizard.Step1.InsertUri") + ": ");
-				enterParagraph.addChild("input",	new String[] { "type", "name", "size", "value" },
-													new String[] { "text", "InsertURI", "70", mRequest.getPartAsStringFailsafe("InsertURI", 256) });
+				enterParagraph.addChild("div", "style", "color: red;", 
+						l10n().getString("CreateIdentityWizard.Step1.InsertUriError") + ": " + mInsertURIProblem.getLocalizedMessage());
 			}
+
+			enterParagraph.addChild("br");
+			enterParagraph.addChild("#", l10n().getString("CreateIdentityWizard.Step1.InsertUri") + ": ");
+			enterParagraph.addChild("input",	new String[] { "type", "name", "size", "value" },
+					new String[] { "text", "InsertURI", "70", mRequest.getPartAsStringFailsafe("InsertURI", 256) });
+		}
 	}
 	
 	private void makeChooseNicknameStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
-			addHiddenFormData(createForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
-			
-			InfoboxNode chooseNameInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step2.Header"));
-			createForm.addChild(chooseNameInfoboxNode.outer);
-			
-			HTMLNode chooseNameBox = chooseNameInfoboxNode.content;
-			chooseNameBox.addChild("p", l10n().getString("CreateIdentityWizard.Step2.Text"));
-			HTMLNode p = chooseNameBox.addChild("p");
-			
-			if(mNicknameProblem != null) {
-				p.addChild("p", "style", "color: red;").
-				addChild("#", l10n().getString("CreateIdentityWizard.Step2.NicknameError") + ": " + mNicknameProblem.getLocalizedMessage());
-			}
-			
-			p.addChild("#", l10n().getString("CreateIdentityWizard.Step2.Nickname") + ": ");
-			p.addChild("input",	new String[] { "type", "name", "size", "value" },
-								new String[] { "text", "Nickname", "50", mRequest.getPartAsStringFailsafe("Nickname", Identity.MAX_NICKNAME_LENGTH) });
+		addHiddenFormData(createForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
 
+		InfoboxNode chooseNameInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step2.Header"));
+		createForm.addChild(chooseNameInfoboxNode.outer);
+
+		HTMLNode chooseNameBox = chooseNameInfoboxNode.content;
+		chooseNameBox.addChild("p", l10n().getString("CreateIdentityWizard.Step2.Text"));
+		HTMLNode p = chooseNameBox.addChild("p");
+
+		if(mNicknameProblem != null) {
+			p.addChild("p", "style", "color: red;").
+			addChild("#", l10n().getString("CreateIdentityWizard.Step2.NicknameError") + ": " + mNicknameProblem.getLocalizedMessage());
+		}
+
+		p.addChild("#", l10n().getString("CreateIdentityWizard.Step2.Nickname") + ": ");
+		p.addChild("input",	new String[] { "type", "name", "size", "value" },
+				new String[] { "text", "Nickname", "50", mRequest.getPartAsStringFailsafe("Nickname", Identity.MAX_NICKNAME_LENGTH) });
 	}
 
 	private void makeChoosePreferencesStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
-            final String[] l10nBoldSubstitutionInput = new String[] { "bold", "/bold" };
-            final String[] l10nBoldSubstitutionOutput = new String[] { "<b>", "</b>" };
+		final String[] l10nBoldSubstitutionInput = new String[] { "bold", "/bold" };
+		final String[] l10nBoldSubstitutionOutput = new String[] { "<b>", "</b>" };
 
-            addHiddenFormData(createForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
-			
-			InfoboxNode choosePrefsInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.Header"));
-			createForm.addChild(choosePrefsInfoboxNode.outer);
-			
-			HTMLNode choosePrefsBox = choosePrefsInfoboxNode.content;
-			
-			InfoboxNode tlInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.TrustList.Header"));
-			choosePrefsBox.addChild(tlInfoboxNode.outer);
-			
-			HTMLNode tlBox = tlInfoboxNode.content;
-			
-			HTMLNode p;
+		addHiddenFormData(createForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
 
-			p = tlBox.addChild("p");
-	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text1", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
-	        p = tlBox.addChild("p");
-	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
-	        p = tlBox.addChild("p");
-	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
-	        p = tlBox.addChild("p");
-	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text4", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
-			
-			p = tlBox.addChild("p");
-			if(mIdentityPublishesTrustList == null || mIdentityPublishesTrustList == true) {
-				p.addChild("input",	new String[] { "type", "name", "value", "checked" },
-									new String[] { "checkbox", "PublishTrustList", "true", "checked"});
-			} else {
-				p.addChild("input",	new String[] { "type", "name", "value" },
-									new String[] { "checkbox", "PublishTrustList", "true" });
-			}
-			p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.TrustList.PublishTrustListCheckbox"));
-			
-			
-			InfoboxNode displayImagesInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Header"));
-			choosePrefsBox.addChild(displayImagesInfoboxNode.outer);
-			
-			HTMLNode displayImagesBox = displayImagesInfoboxNode.content;
-	
-			p = displayImagesBox.addChild("p");
-	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.DisplayImages.Text", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		InfoboxNode choosePrefsInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.Header"));
+		createForm.addChild(choosePrefsInfoboxNode.outer);
 
-			
-			p = displayImagesBox.addChild("p");
-			if(mDisplayImages != null && mDisplayImages) {
-				p.addChild("input",	new String[] { "type", "name", "value", "checked" },
-									new String[] { "checkbox", "DisplayImages", "true", "checked"});
-			} else {
-				p.addChild("input",	new String[] { "type", "name", "value" },
-									new String[] { "checkbox", "DisplayImages", "true" });				
-			}
-			p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Checkbox"));
+		HTMLNode choosePrefsBox = choosePrefsInfoboxNode.content;
+
+		InfoboxNode tlInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.TrustList.Header"));
+		choosePrefsBox.addChild(tlInfoboxNode.outer);
+
+		HTMLNode tlBox = tlInfoboxNode.content;
+
+		HTMLNode p;
+
+		p = tlBox.addChild("p");
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text1", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		p = tlBox.addChild("p");
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		p = tlBox.addChild("p");
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		p = tlBox.addChild("p");
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text4", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+
+		p = tlBox.addChild("p");
+		if(mIdentityPublishesTrustList == null || mIdentityPublishesTrustList == true) {
+			p.addChild("input",	new String[] { "type", "name", "value", "checked" },
+					new String[] { "checkbox", "PublishTrustList", "true", "checked"});
+		} else {
+			p.addChild("input",	new String[] { "type", "name", "value" },
+					new String[] { "checkbox", "PublishTrustList", "true" });
+		}
+		p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.TrustList.PublishTrustListCheckbox"));
+
+
+		InfoboxNode displayImagesInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Header"));
+		choosePrefsBox.addChild(displayImagesInfoboxNode.outer);
+
+		HTMLNode displayImagesBox = displayImagesInfoboxNode.content;
+
+		p = displayImagesBox.addChild("p");
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.DisplayImages.Text", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+
+
+		p = displayImagesBox.addChild("p");
+		if(mDisplayImages != null && mDisplayImages) {
+			p.addChild("input",	new String[] { "type", "name", "value", "checked" },
+					new String[] { "checkbox", "DisplayImages", "true", "checked"});
+		} else {
+			p.addChild("input",	new String[] { "type", "name", "value" },
+					new String[] { "checkbox", "DisplayImages", "true" });				
+		}
+		p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Checkbox"));
 	}
 	
 	/**
