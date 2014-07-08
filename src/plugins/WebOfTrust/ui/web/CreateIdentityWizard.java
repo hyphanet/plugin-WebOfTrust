@@ -18,6 +18,8 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
+ * TODO FIXME: Generate a random nickname by default.
+ * 
  * TODO FIXME: Provide the option to restore an existing identity. This is a *must* have because people are very likely to mix up restore/create
  * 	- which results in broken identities. We need to have both options in one place and explain the difference in detail.
  * 
