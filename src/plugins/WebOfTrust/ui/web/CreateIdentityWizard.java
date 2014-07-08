@@ -186,11 +186,11 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	private void makeChooseURIStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
 		addHiddenFormData(createForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
 
-		InfoboxNode chooseURIInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step1.Header"));
+		InfoboxNode chooseURIInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChooseURI.Header"));
 		createForm.addChild(chooseURIInfoboxNode.outer);
 
 		HTMLNode chooseURIbox = chooseURIInfoboxNode.content;
-		chooseURIbox.addChild("p", l10n().getString("CreateIdentityWizard.Step1.Text"));
+		chooseURIbox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseURI.Text"));
 
 		HTMLNode randomRadio = chooseURIbox.addChild("p");
 		HTMLNode notRandomRadio = chooseURIbox.addChild("p");
@@ -211,20 +211,20 @@ public final class CreateIdentityWizard extends WebPageImpl {
 					new String[] { "radio", "GenerateRandomSSK" , "false", "checked"});
 		}
 
-		randomRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step1.GenerateNewKeyPairRadio"));
-		notRandomRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step1.UseExistingKeyPairRadio"));
+		randomRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseURI.GenerateNewKeyPairRadio"));
+		notRandomRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseURI.UseExistingKeyPairRadio"));
 
 		if(mGenerateRandomSSK != null && mGenerateRandomSSK == false) {
-			HTMLNode enterParagraph = notRandomRadio.addChild("p", l10n().getString("CreateIdentityWizard.Step1.EnterKeyPair") + ":");
+			HTMLNode enterParagraph = notRandomRadio.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseURI.EnterKeyPair") + ":");
 
 			if(mInsertURIProblem != null) {
 				enterParagraph.addChild("br");
 				enterParagraph.addChild("div", "style", "color: red;", 
-						l10n().getString("CreateIdentityWizard.Step1.InsertUriError") + ": " + mInsertURIProblem.getLocalizedMessage());
+						l10n().getString("CreateIdentityWizard.Step.ChooseURI.InsertUriError") + ": " + mInsertURIProblem.getLocalizedMessage());
 			}
 
 			enterParagraph.addChild("br");
-			enterParagraph.addChild("#", l10n().getString("CreateIdentityWizard.Step1.InsertUri") + ": ");
+			enterParagraph.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseURI.InsertUri") + ": ");
 			enterParagraph.addChild("input",	new String[] { "type", "name", "size", "value" },
 					new String[] { "text", "InsertURI", "70", mRequest.getPartAsStringFailsafe("InsertURI", 256) });
 		}
