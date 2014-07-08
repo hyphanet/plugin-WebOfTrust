@@ -43,10 +43,18 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		ChooseURI,
 		ChooseNickname,
 		ChoosePreferences,
-		CreateIdentity
+		CreateIdentity;
+		
+		static Step first() {
+			return ChooseURI;
+		}
+		
+		static Step last() {
+			return CreateIdentity;
+		}
 	};
 	
-	private Step mRequestedStep = Step.values()[0];
+	private Step mRequestedStep = Step.first();
 	
 	/* Step 1: Choose URI */
 	private Boolean mGenerateRandomSSK = null; 
@@ -112,7 +120,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		if(mRequest.isPartSet("Step"))
 			mRequestedStep = Step.values()[Integer.parseInt(mRequest.getPartAsStringFailsafe("Step", 1))];
 		else
-			mRequestedStep = Step.values()[0];
+			mRequestedStep = Step.first();
 		
 		/* Parse the "Generate random SSK?" boolean specified in step 1 */
 		if(mRequest.isPartSet("GenerateRandomSSK"))
@@ -334,12 +342,12 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	}
 
 	private void makeBackAndContinueButtons(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
-		if(mRequestedStep.ordinal() > 0) {
+		if(mRequestedStep.ordinal() > Step.first().ordinal()) {
 			addHiddenFormData(backForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() - 1);
 			backForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("CreateIdentityWizard.BackButton") });
 		}
 		
-		if(mRequestedStep.ordinal() < Step.CreateIdentity.ordinal())
+		if(mRequestedStep.ordinal() < Step.last().ordinal())
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("CreateIdentityWizard.ContinueButton") });
 		else // There was an error creating the identity
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("CreateIdentityWizard.RetryButton") });
