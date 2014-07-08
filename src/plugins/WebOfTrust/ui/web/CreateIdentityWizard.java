@@ -312,7 +312,12 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	 * @return True if the identity was created successfully, false upon error.
 	 */
 	private boolean makeCreateIdentityStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
-		if(mRequest.getMethod().equals("POST")) { // TODO: Why check for POST?
+		// It was unclear why whe check for POST when I ported this code from Freetalk.
+		// After some investigation, it seems like the reason is to ensure that higher-level code has validated the formPassword
+		// - it only does so for POST, not for GET.
+		// See: https://bugs.freenetproject.org/view.php?id=6210
+		// TODO: It might make sense to get rid of the formPasssword mechanism and replace it with session cookies as suggested in the bugtracker entry above.
+		if(mRequest.getMethod().equals("POST")) {
 			addHiddenFormData(createForm, mRequestedStep.ordinal(), mRequestedStep.ordinal());
 			
 			try {
