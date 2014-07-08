@@ -370,16 +370,13 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		}
 	}
 
-	/**
-	 * FIXME TODO: Rename L10n strings
-	 */
 	public static void addLinkToCreateIdentityWizard(WebPageImpl page) {
 		final String createIdentityURI = page.mWebInterface.getToadlet(CreateIdentityWebInterfaceToadlet.class).getURI().toString();
 		
-		HTMLNode createIdentityBox = page.addContentBox(page.l10n().getString("CreateIdentityPage.LinkToCreateIdentityPageBox.Header"));
+		HTMLNode createIdentityBox = page.addContentBox(page.l10n().getString("CreateIdentityWizard.LinkToCreateIdentityWizardBox.Header"));
 		page.l10n().addL10nSubstitution(
 		        createIdentityBox,
-		        "CreateIdentityPage.LinkToCreateIdentityPageBox.Text",
+		        "CreateIdentityWizard.LinkToCreateIdentityWizardBox.Text",
 		        new String[] { "link", "/link" },
 		        new HTMLNode[] { new HTMLNode("a", "href", createIdentityURI) });
 	}
