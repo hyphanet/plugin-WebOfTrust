@@ -294,6 +294,8 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			try {
 				OwnIdentity id = mWebOfTrust.createOwnIdentity(mIdentityURI, mIdentityNickname, mIdentityPublishesTrustList, null);
 				
+				mToadlet.logOut(mContext); // Log out the current identity in case the user created a second one.
+				
 				InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.CreateIdentity.Header"));
 				wizardBox.addChild(summaryInfoboxNode.outer);
 				
