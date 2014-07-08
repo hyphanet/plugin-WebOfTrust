@@ -233,19 +233,19 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	private void makeChooseNicknameStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
 		addHiddenFormData(createForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
 
-		InfoboxNode chooseNameInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step2.Header"));
+		InfoboxNode chooseNameInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Header"));
 		createForm.addChild(chooseNameInfoboxNode.outer);
 
 		HTMLNode chooseNameBox = chooseNameInfoboxNode.content;
-		chooseNameBox.addChild("p", l10n().getString("CreateIdentityWizard.Step2.Text"));
+		chooseNameBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Text"));
 		HTMLNode p = chooseNameBox.addChild("p");
 
 		if(mNicknameProblem != null) {
 			p.addChild("p", "style", "color: red;").
-			addChild("#", l10n().getString("CreateIdentityWizard.Step2.NicknameError") + ": " + mNicknameProblem.getLocalizedMessage());
+			addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.NicknameError") + ": " + mNicknameProblem.getLocalizedMessage());
 		}
 
-		p.addChild("#", l10n().getString("CreateIdentityWizard.Step2.Nickname") + ": ");
+		p.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Nickname") + ": ");
 		p.addChild("input",	new String[] { "type", "name", "size", "value" },
 				new String[] { "text", "Nickname", "50", mRequest.getPartAsStringFailsafe("Nickname", Identity.MAX_NICKNAME_LENGTH) });
 	}
