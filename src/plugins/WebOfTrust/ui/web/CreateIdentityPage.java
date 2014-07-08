@@ -14,6 +14,8 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
+ * FIXME: Review for whether all features of this have been ported to CreateIdentityWizard, then delete this class.
+ * 
  * The page the user can create an OwnIdentity.
  * 
  * @author xor (xor@freenetproject.org)
