@@ -18,9 +18,6 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
- * TODO FIXME: Comment out mDisplayImages as WOT cannot display images yet but might display avatars at some point in the future.
- * 	Make sure to create a bugtracker entry for re-enabling it once we support images.
- * 
  * TODO FIXME: Provide the option to restore an existing identity. This is a *must* have because people are very likely to mix up restore/create
  * 	- which results in broken identities. We need to have both options in one place and explain the difference in detail.
  * 
@@ -70,7 +67,6 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	/* Step 3: Set preferences */
 	private Boolean mIdentityPublishesTrustList = null;
 	
-	private Boolean mDisplayImages = null;
 
 	/*
 	 * TODO: Evaluate whether we need to ask the user whether he wants to
@@ -165,11 +161,6 @@ public final class CreateIdentityWizard extends WebPageImpl {
 				mIdentityPublishesTrustList = mRequest.getPartAsStringFailsafe("PublishTrustList", 5).equals("true");
 			else
 				mIdentityPublishesTrustList = false;
-			
-			if(mRequest.isPartSet("DisplayImages"))
-				mDisplayImages = mRequest.getPartAsStringFailsafe("DisplayImages", 5).equals("true");
-			else
-				mDisplayImages = false;
 		}
 		
 		/* ======== Stage 2: Check for missing data and correct mRequestedStep  =============================================================== */
@@ -178,7 +169,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			mRequestedStep = Step.ChooseURI;
 		} else if(mRequestedStep.ordinal() > Step.ChooseNickname.ordinal() && mIdentityNickname == null) {
 			mRequestedStep = Step.ChooseNickname;
-		} else if(mRequestedStep.ordinal() > Step.ChoosePreferences.ordinal() && (mIdentityPublishesTrustList == null || mDisplayImages == null)) {
+		} else if(mRequestedStep.ordinal() > Step.ChoosePreferences.ordinal() && mIdentityPublishesTrustList == null) {
 			mRequestedStep = Step.ChoosePreferences;
 		}
 	}
@@ -286,26 +277,6 @@ public final class CreateIdentityWizard extends WebPageImpl {
 					new String[] { "checkbox", "PublishTrustList", "true" });
 		}
 		p.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.TrustList.PublishTrustListCheckbox"));
-
-
-		InfoboxNode displayImagesInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.DisplayImages.Header"));
-		choosePrefsBox.addChild(displayImagesInfoboxNode.outer);
-
-		HTMLNode displayImagesBox = displayImagesInfoboxNode.content;
-
-		p = displayImagesBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.DisplayImages.Text", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
-
-
-		p = displayImagesBox.addChild("p");
-		if(mDisplayImages != null && mDisplayImages) {
-			p.addChild("input",	new String[] { "type", "name", "value", "checked" },
-					new String[] { "checkbox", "DisplayImages", "true", "checked"});
-		} else {
-			p.addChild("input",	new String[] { "type", "name", "value" },
-					new String[] { "checkbox", "DisplayImages", "true" });				
-		}
-		p.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.DisplayImages.Checkbox"));
 	}
 	
 	/**
@@ -322,8 +293,6 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			
 			try {
 				OwnIdentity id = mWebOfTrust.createOwnIdentity(mIdentityURI, mIdentityNickname, mIdentityPublishesTrustList, null);
-						
-				// FIXME TODO: Add storage for mDisplayImages
 				
 				InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.CreateIdentity.Header"));
 				wizardBox.addChild(summaryInfoboxNode.outer);
@@ -395,7 +364,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 											new String[] { "hidden", "PublishTrustList", mIdentityPublishesTrustList.toString() });
 			}
 			
-			// FIXME TODO: Why don't we add mAutoSubscribe / mDisplayImages?
+			// FIXME TODO: Why don't we add mAutoSubscribe?
 		}
 	}
 
