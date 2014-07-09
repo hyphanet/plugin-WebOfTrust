@@ -132,7 +132,11 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			mGenerateRandomSSK = mRequest.getPartAsStringFailsafe("GenerateRandomSSK", 5).equals("true");
 
 		/* Parse the URI specified in step 1 */
-		if(mRequest.isPartSet("InsertURI")) {
+		if(mGenerateRandomSSK != null && mGenerateRandomSSK == true) {
+			// Set a dummy URI so the code which checks whether the user specified an URI is satisfied
+			// We don't generate the random URI ourself because that shouldn't be done in the UI. Instead we later on let WebOfTrust.createOwnIdentity() do it.
+			mIdentityURI = FreenetURI.EMPTY_CHK_URI;
+		} else if(mRequest.isPartSet("InsertURI")) {
 			try { 
 				// TODO: Once FreenetURI has a maximum size constant, use it here and elsewhere in this file.
 				mIdentityURI = new FreenetURI(mRequest.getPartAsStringThrowing("InsertURI", 256));
@@ -146,9 +150,6 @@ public final class CreateIdentityWizard extends WebPageImpl {
 				mIdentityURI = null;
 			}
 		}
-
-		if(mGenerateRandomSSK != null && mGenerateRandomSSK && mIdentityURI == null)
-			mIdentityURI = pr.getHLSimpleClient().generateKeyPair("")[0];
 		
 		/* Parse the nickname specified in step 2 */
 		if(mRequest.isPartSet("Nickname")) {
@@ -171,7 +172,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		
 		/* ======== Stage 2: Check for missing data and correct mRequestedStep  =============================================================== */
 		
-		if(mCurrentStep.ordinal() > Step.ChooseURI.ordinal() && mIdentityURI == null) {
+		if(mCurrentStep.ordinal() > Step.ChooseURI.ordinal() && (mGenerateRandomSSK == null || mIdentityURI == null)) {
 			mCurrentStep = Step.ChooseURI;
 		} else if(mCurrentStep.ordinal() > Step.ChooseNickname.ordinal() && mIdentityNickname == null) {
 			mCurrentStep = Step.ChooseNickname;
@@ -304,7 +305,9 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		// TODO: It might make sense to get rid of the formPasssword mechanism and replace it with session cookies as suggested in the bugtracker entry above.
 		if(mRequest.getMethod().equals("POST")) {
 			try {
-				OwnIdentity id = mWebOfTrust.createOwnIdentity(mIdentityURI, mIdentityNickname, mIdentityPublishesTrustList, null);
+				final OwnIdentity id = mGenerateRandomSSK ? 
+						mWebOfTrust.createOwnIdentity(mIdentityNickname, mIdentityPublishesTrustList, null)
+					: mWebOfTrust.createOwnIdentity(mIdentityURI, mIdentityNickname, mIdentityPublishesTrustList, null);
 				
 				mToadlet.logOut(mContext); // Log out the current identity in case the user created a second one.
 				
