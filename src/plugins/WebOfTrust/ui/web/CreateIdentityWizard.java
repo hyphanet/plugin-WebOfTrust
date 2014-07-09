@@ -25,9 +25,6 @@ import freenet.support.api.HTTPRequest;
  * TODO FIXME: Allow other plugins to link to his.
  * TODO FIXME: When another plugin links to this, allow it to specify a context.
  * 	- The {@link WebOfTrust#createOwnIdentity(FreenetURI, String, boolean, String)} which we use allows specifying a context.
- * 
- * TODO FIXME: L10n: Instead of "Insert" / "Request" URI, use "public"/"private". Keep "Insert"/"Request" in brackets because we use that a lot
- * 	in Freenet L10n. Explain that the private URI shouldn't be given to anyone. Also explain public-private crypto a bit. 
  *
  * @author xor (xor@freenetproject.org)
  */
