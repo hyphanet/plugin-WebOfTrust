@@ -96,16 +96,16 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		boolean finished = false;
 		
 		switch(mRequestedStep) {
-			case ChooseURI: makeChooseURIStep(wizardBox, form); break;
-			case ChooseNickname: makeChooseNicknameStep(wizardBox, form); break;
-			case ChoosePreferences: makeChoosePreferencesStep(wizardBox, form); break;
+			case ChooseURI: makeChooseURIStep(form); break;
+			case ChooseNickname: makeChooseNicknameStep(form); break;
+			case ChoosePreferences: makeChoosePreferencesStep(form); break;
 			case CreateIdentity: finished = makeCreateIdentityStep(wizardBox, form); break;
 			default: throw new IllegalStateException();
 		}
 		
 		if(!finished) {
 			addHiddenFormData(form);
-			makeBackAndContinueButtons(wizardBox, form);
+			makeBackAndContinueButtons(form);
 		}
 	}
 	
@@ -180,7 +180,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		}
 	}
 
-	private void makeChooseURIStep(HTMLNode wizardBox, HTMLNode form) {
+	private void makeChooseURIStep(HTMLNode form) {
 		InfoboxNode chooseURIInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChooseURI.Header"));
 		form.addChild(chooseURIInfoboxNode.outer);
 
@@ -225,7 +225,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		}
 	}
 	
-	private void makeChooseNicknameStep(HTMLNode wizardBox, HTMLNode form) {
+	private void makeChooseNicknameStep(HTMLNode form) {
 		InfoboxNode chooseNameInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Header"));
 		form.addChild(chooseNameInfoboxNode.outer);
 
@@ -249,7 +249,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 				new String[] { "text", "Nickname", "50", nickname });
 	}
 
-	private void makeChoosePreferencesStep(HTMLNode wizardBox, HTMLNode form) {
+	private void makeChoosePreferencesStep(HTMLNode form) {
 		final String[] l10nBoldSubstitutionInput = new String[] { "bold" };
 		final HTMLNode[] l10nBoldSubstitutionOutput = new HTMLNode[] { HTMLNode.STRONG };
 
@@ -309,6 +309,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 				mToadlet.logOut(mContext); // Log out the current identity in case the user created a second one.
 				
 				InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.CreateIdentity.Header"));
+				 // Add it to wizardBox instead of form because we want to add a "Log in" button to it which is a different form.
 				wizardBox.addChild(summaryInfoboxNode.outer);
 				
 				HTMLNode summaryBox = summaryInfoboxNode.content;
@@ -332,7 +333,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		return false;
 	}
 
-	private void makeBackAndContinueButtons(HTMLNode wizardBox, HTMLNode form) {
+	private void makeBackAndContinueButtons(HTMLNode form) {
 		if(mRequestedStep.ordinal() > Step.first().ordinal()) {
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "PreviousStepButton", l10n().getString("CreateIdentityWizard.BackButton") });
 		}
