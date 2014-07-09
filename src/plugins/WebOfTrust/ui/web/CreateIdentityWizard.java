@@ -9,6 +9,7 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
+import plugins.WebOfTrust.util.RandomName;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
@@ -230,7 +231,8 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		createForm.addChild(chooseNameInfoboxNode.outer);
 
 		HTMLNode chooseNameBox = chooseNameInfoboxNode.content;
-		chooseNameBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Text"));
+		chooseNameBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Text.1"));
+		chooseNameBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Text.2"));
 		HTMLNode p = chooseNameBox.addChild("p");
 
 		if(mNicknameProblem != null) {
@@ -238,9 +240,14 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.NicknameError") + ": " + mNicknameProblem.getLocalizedMessage());
 		}
 
+		String nickname = mRequest.getPartAsStringFailsafe("Nickname", Identity.MAX_NICKNAME_LENGTH);
+		
+		if(nickname.length() == 0)
+			nickname = RandomName.newNickname();
+		
 		p.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Nickname") + ": ");
 		p.addChild("input",	new String[] { "type", "name", "size", "value" },
-				new String[] { "text", "Nickname", "50", mRequest.getPartAsStringFailsafe("Nickname", Identity.MAX_NICKNAME_LENGTH) });
+				new String[] { "text", "Nickname", "50", nickname });
 	}
 
 	private void makeChoosePreferencesStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode createForm) {
