@@ -375,8 +375,6 @@ public final class CreateIdentityWizard extends WebPageImpl {
 				myForm.addChild("input",	new String[] { "type", "name", "value" },
 											new String[] { "hidden", "PublishTrustList", mIdentityPublishesTrustList.toString() });
 			}
-			
-			// FIXME TODO: Why don't we add mAutoSubscribe?
 		}
 	}
 
