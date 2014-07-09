@@ -52,7 +52,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		}
 	};
 	
-	private Step mRequestedStep = Step.first();
+	private Step mCurrentStep = Step.first();
 	
 	/* Step 1: Choose URI */
 	private Boolean mGenerateRandomSSK = null; 
@@ -95,7 +95,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		
 		boolean finished = false;
 		
-		switch(mRequestedStep) {
+		switch(mCurrentStep) {
 			case ChooseURI: makeChooseURIStep(form); break;
 			case ChooseNickname: makeChooseNicknameStep(form); break;
 			case ChoosePreferences: makeChoosePreferencesStep(form); break;
@@ -117,15 +117,15 @@ public final class CreateIdentityWizard extends WebPageImpl {
 
 		if(mRequest.isPartSet("PreviousStep")) {
 			int previousStep = Integer.parseInt(mRequest.getPartAsStringFailsafe("PreviousStep", 1));
-			int requestedStep = mRequest.isPartSet("NextStepButton") ? previousStep+1 : previousStep-1;
+			int currentStep = mRequest.isPartSet("NextStepButton") ? previousStep+1 : previousStep-1;
 			
-			requestedStep = Math.max(Step.first().ordinal(), requestedStep);
-			requestedStep = Math.min(Step.last().ordinal(), requestedStep);
+			currentStep = Math.max(Step.first().ordinal(), currentStep);
+			currentStep = Math.min(Step.last().ordinal(), currentStep);
 			
-			mRequestedStep = Step.values()[requestedStep];
+			mCurrentStep = Step.values()[currentStep];
 				
 		} else
-			mRequestedStep = Step.first();
+			mCurrentStep = Step.first();
 		
 		/* Parse the "Generate random SSK?" boolean specified in step 1 */
 		if(mRequest.isPartSet("GenerateRandomSSK"))
@@ -171,12 +171,12 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		
 		/* ======== Stage 2: Check for missing data and correct mRequestedStep  =============================================================== */
 		
-		if(mRequestedStep.ordinal() > Step.ChooseURI.ordinal() && mIdentityURI == null) {
-			mRequestedStep = Step.ChooseURI;
-		} else if(mRequestedStep.ordinal() > Step.ChooseNickname.ordinal() && mIdentityNickname == null) {
-			mRequestedStep = Step.ChooseNickname;
-		} else if(mRequestedStep.ordinal() > Step.ChoosePreferences.ordinal() && mIdentityPublishesTrustList == null) {
-			mRequestedStep = Step.ChoosePreferences;
+		if(mCurrentStep.ordinal() > Step.ChooseURI.ordinal() && mIdentityURI == null) {
+			mCurrentStep = Step.ChooseURI;
+		} else if(mCurrentStep.ordinal() > Step.ChooseNickname.ordinal() && mIdentityNickname == null) {
+			mCurrentStep = Step.ChooseNickname;
+		} else if(mCurrentStep.ordinal() > Step.ChoosePreferences.ordinal() && mIdentityPublishesTrustList == null) {
+			mCurrentStep = Step.ChoosePreferences;
 		}
 	}
 
@@ -334,11 +334,11 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	}
 
 	private void makeBackAndContinueButtons(HTMLNode form) {
-		if(mRequestedStep.ordinal() > Step.first().ordinal()) {
+		if(mCurrentStep.ordinal() > Step.first().ordinal()) {
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "PreviousStepButton", l10n().getString("CreateIdentityWizard.BackButton") });
 		}
 		
-		if(mRequestedStep.ordinal() < Step.last().ordinal())
+		if(mCurrentStep.ordinal() < Step.last().ordinal())
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "NextStepButton", l10n().getString("CreateIdentityWizard.ContinueButton") });
 		else // There was an error creating the identity
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "NextStepButton", l10n().getString("CreateIdentityWizard.RetryButton") });
@@ -353,9 +353,9 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	 */
 	private void addHiddenFormData(HTMLNode myForm) {
 		myForm.addChild("input", new String[] { "type", "name", "value" },
-								 new String[] { "hidden", "PreviousStep", Integer.toString(mRequestedStep.ordinal())});
+								 new String[] { "hidden", "PreviousStep", Integer.toString(mCurrentStep.ordinal())});
 		
-		if(mRequestedStep != Step.ChooseURI) { // Do not overwrite the visible fields with hidden fields. 
+		if(mCurrentStep != Step.ChooseURI) { // Do not overwrite the visible fields with hidden fields. 
 			if(mGenerateRandomSSK != null) {
 				myForm.addChild("input",	new String[] { "type", "name", "value" },
 											new String[] { "hidden", "GenerateRandomSSK", mGenerateRandomSSK.toString() });
@@ -367,13 +367,13 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			}
 		}
 
-		if(mRequestedStep != Step.ChooseNickname) { // Do not overwrite the visible fields with hidden fields
+		if(mCurrentStep != Step.ChooseNickname) { // Do not overwrite the visible fields with hidden fields
 			if(mIdentityNickname != null) {
 				myForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Nickname", mIdentityNickname });
 			}
 		}
 
-		if(mRequestedStep != Step.ChoosePreferences) { // Do not overwrite the visible fields with hidden fields
+		if(mCurrentStep != Step.ChoosePreferences) { // Do not overwrite the visible fields with hidden fields
 			if(mIdentityPublishesTrustList != null) {
 				myForm.addChild("input",	new String[] { "type", "name", "value" },
 											new String[] { "hidden", "PublishTrustList", mIdentityPublishesTrustList.toString() });
