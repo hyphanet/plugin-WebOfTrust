@@ -91,21 +91,22 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		parseFormData();
 		
 		HTMLNode wizardBox = addContentBox(l10n().getString("CreateIdentityWizard.CreateIdentityBox.Header"));
-		HTMLNode backForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
-		HTMLNode continueForm = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
+		HTMLNode form = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
 		
 		boolean finished = false;
 		
 		switch(mRequestedStep) {
-			case ChooseURI: makeChooseURIStep(wizardBox, backForm, continueForm); break;
-			case ChooseNickname: makeChooseNicknameStep(wizardBox, backForm, continueForm); break;
-			case ChoosePreferences: makeChoosePreferencesStep(wizardBox, backForm, continueForm); break;
-			case CreateIdentity: finished = makeCreateIdentityStep(wizardBox, backForm, continueForm); break;
+			case ChooseURI: makeChooseURIStep(wizardBox, form); break;
+			case ChooseNickname: makeChooseNicknameStep(wizardBox, form); break;
+			case ChoosePreferences: makeChoosePreferencesStep(wizardBox, form); break;
+			case CreateIdentity: finished = makeCreateIdentityStep(wizardBox, form); break;
 			default: throw new IllegalStateException();
 		}
 		
-		if(!finished)
-			makeBackAndContinueButtons(wizardBox, backForm, continueForm);
+		if(!finished) {
+			addHiddenFormData(form);
+			makeBackAndContinueButtons(wizardBox, form);
+		}
 	}
 	
 	/**
@@ -114,9 +115,16 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	private void parseFormData() {
 		/* ======== Stage 1: Parse the passed form data ====================================================================================== */
 
-		if(mRequest.isPartSet("Step"))
-			mRequestedStep = Step.values()[Integer.parseInt(mRequest.getPartAsStringFailsafe("Step", 1))];
-		else
+		if(mRequest.isPartSet("PreviousStep")) {
+			int previousStep = Integer.parseInt(mRequest.getPartAsStringFailsafe("PreviousStep", 1));
+			int requestedStep = mRequest.isPartSet("NextStepButton") ? previousStep+1 : previousStep-1;
+			
+			requestedStep = Math.max(Step.first().ordinal(), requestedStep);
+			requestedStep = Math.min(Step.last().ordinal(), requestedStep);
+			
+			mRequestedStep = Step.values()[requestedStep];
+				
+		} else
 			mRequestedStep = Step.first();
 		
 		/* Parse the "Generate random SSK?" boolean specified in step 1 */
@@ -157,11 +165,8 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		}
 		
 		/* Parse the preferences specified in step 3 */
-		if(mRequestedStep.ordinal() > Step.ChoosePreferences.ordinal()) { /* We cannot just use isPartSet("PublishTrustList") because it won't be set if the checkbox is unchecked */
-			if(mRequest.isPartSet("PublishTrustList"))
-				mIdentityPublishesTrustList = mRequest.getPartAsStringFailsafe("PublishTrustList", 5).equals("true");
-			else
-				mIdentityPublishesTrustList = false;
+		if(mRequest.isPartSet("PublishTrustList")) {
+			mIdentityPublishesTrustList = mRequest.getPartAsStringFailsafe("PublishTrustList", 5).equals("true");
 		}
 		
 		/* ======== Stage 2: Check for missing data and correct mRequestedStep  =============================================================== */
@@ -175,11 +180,9 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		}
 	}
 
-	private void makeChooseURIStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode continueForm) {
-		addHiddenFormData(continueForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
-
+	private void makeChooseURIStep(HTMLNode wizardBox, HTMLNode form) {
 		InfoboxNode chooseURIInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChooseURI.Header"));
-		continueForm.addChild(chooseURIInfoboxNode.outer);
+		form.addChild(chooseURIInfoboxNode.outer);
 
 		HTMLNode chooseURIbox = chooseURIInfoboxNode.content;
 		chooseURIbox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseURI.Text"));
@@ -222,11 +225,9 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		}
 	}
 	
-	private void makeChooseNicknameStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode continueForm) {
-		addHiddenFormData(continueForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
-
+	private void makeChooseNicknameStep(HTMLNode wizardBox, HTMLNode form) {
 		InfoboxNode chooseNameInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Header"));
-		continueForm.addChild(chooseNameInfoboxNode.outer);
+		form.addChild(chooseNameInfoboxNode.outer);
 
 		HTMLNode chooseNameBox = chooseNameInfoboxNode.content;
 		chooseNameBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Text.1"));
@@ -248,14 +249,12 @@ public final class CreateIdentityWizard extends WebPageImpl {
 				new String[] { "text", "Nickname", "50", nickname });
 	}
 
-	private void makeChoosePreferencesStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode continueForm) {
+	private void makeChoosePreferencesStep(HTMLNode wizardBox, HTMLNode form) {
 		final String[] l10nBoldSubstitutionInput = new String[] { "bold" };
 		final HTMLNode[] l10nBoldSubstitutionOutput = new HTMLNode[] { HTMLNode.STRONG };
 
-		addHiddenFormData(continueForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() + 1);
-
 		InfoboxNode choosePrefsInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.Header"));
-		continueForm.addChild(choosePrefsInfoboxNode.outer);
+		form.addChild(choosePrefsInfoboxNode.outer);
 
 		HTMLNode choosePrefsBox = choosePrefsInfoboxNode.content;
 
@@ -276,6 +275,14 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text4", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 
 		p = tlBox.addChild("p");
+		
+		// The browser won't submit anything under the name a checkbox if it is not checked.
+		// We need "PublishTrustList"=false to be specified though if the checkbox is not checked: The formdata parsing code needs to know that we were at this
+		// step already so it doesn't resort to the default value.
+		// To get the browser to submit the "false" in case of the checkbox not being checked, we add a hidden input right before the checkbox.
+		// If the checkbox is checked, it will overwrite the hidden field. If it is not checked, the hidden field is submitted.
+		p.addChild("input",	new String[] { "type", "name", "value" }, new String[] { "hidden", "PublishTrustList", "false" });
+		
 		if(mIdentityPublishesTrustList == null || mIdentityPublishesTrustList == true) {
 			p.addChild("input",	new String[] { "type", "name", "value", "checked" },
 					new String[] { "checkbox", "PublishTrustList", "true", "checked"});
@@ -289,15 +296,13 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	/**
 	 * @return True if the identity was created successfully, false upon error.
 	 */
-	private boolean makeCreateIdentityStep(HTMLNode wizardBox, HTMLNode backForm, HTMLNode continueForm) {
+	private boolean makeCreateIdentityStep(HTMLNode wizardBox, HTMLNode form) {
 		// It was unclear why whe check for POST when I ported this code from Freetalk.
 		// After some investigation, it seems like the reason is to ensure that higher-level code has validated the formPassword
 		// - it only does so for POST, not for GET.
 		// See: https://bugs.freenetproject.org/view.php?id=6210
 		// TODO: It might make sense to get rid of the formPasssword mechanism and replace it with session cookies as suggested in the bugtracker entry above.
 		if(mRequest.getMethod().equals("POST")) {
-			addHiddenFormData(continueForm, mRequestedStep.ordinal(), mRequestedStep.ordinal());
-			
 			try {
 				OwnIdentity id = mWebOfTrust.createOwnIdentity(mIdentityURI, mIdentityNickname, mIdentityPublishesTrustList, null);
 				
@@ -317,7 +322,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			}
 			catch(Exception e) {
 				InfoboxNode errorInfoboxNode = getAlertBox(l10n().getString("CreateIdentityWizard.Step.CreateIdentity.Failure"));
-				continueForm.addChild(errorInfoboxNode.outer);
+				form.addChild(errorInfoboxNode.outer);
 				
 				HTMLNode errorBox = errorInfoboxNode.content;
 				errorBox.addChild("p", e.getLocalizedMessage());
@@ -327,16 +332,15 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		return false;
 	}
 
-	private void makeBackAndContinueButtons(HTMLNode wizardBox, HTMLNode backForm, HTMLNode continueForm) {
+	private void makeBackAndContinueButtons(HTMLNode wizardBox, HTMLNode form) {
 		if(mRequestedStep.ordinal() > Step.first().ordinal()) {
-			addHiddenFormData(backForm, mRequestedStep.ordinal(), mRequestedStep.ordinal() - 1);
-			backForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("CreateIdentityWizard.BackButton") });
+			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "PreviousStepButton", l10n().getString("CreateIdentityWizard.BackButton") });
 		}
 		
 		if(mRequestedStep.ordinal() < Step.last().ordinal())
-			continueForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("CreateIdentityWizard.ContinueButton") });
+			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "NextStepButton", l10n().getString("CreateIdentityWizard.ContinueButton") });
 		else // There was an error creating the identity
-			continueForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("CreateIdentityWizard.RetryButton") });
+			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "NextStepButton", l10n().getString("CreateIdentityWizard.RetryButton") });
 	}
 
 	/**
@@ -346,13 +350,11 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	 * @param myForm
 	 *            The HTMLNode of the parent form.
 	 */
-	private void addHiddenFormData(HTMLNode myForm, int currentStep, int nextStep) {
+	private void addHiddenFormData(HTMLNode myForm) {
 		myForm.addChild("input", new String[] { "type", "name", "value" },
-								 new String[] { "hidden", "Step", Integer.toString(nextStep)});
+								 new String[] { "hidden", "PreviousStep", Integer.toString(mRequestedStep.ordinal())});
 		
-		boolean backStep = nextStep < currentStep;
-		
-		if(backStep || Step.values()[currentStep] != Step.ChooseURI) { // Do not overwrite the visible fields with hidden fields.
+		if(mRequestedStep != Step.ChooseURI) { // Do not overwrite the visible fields with hidden fields. 
 			if(mGenerateRandomSSK != null) {
 				myForm.addChild("input",	new String[] { "type", "name", "value" },
 											new String[] { "hidden", "GenerateRandomSSK", mGenerateRandomSSK.toString() });
@@ -364,13 +366,13 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			}
 		}
 
-		if(backStep || Step.values()[currentStep] != Step.ChooseNickname) { // Do not overwrite the visible fields with hidden fields
+		if(mRequestedStep != Step.ChooseNickname) { // Do not overwrite the visible fields with hidden fields
 			if(mIdentityNickname != null) {
 				myForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Nickname", mIdentityNickname });
 			}
 		}
 
-		if(backStep || Step.values()[currentStep] != Step.ChoosePreferences) { // Do not overwrite the visible fields with hidden fields
+		if(mRequestedStep != Step.ChoosePreferences) { // Do not overwrite the visible fields with hidden fields
 			if(mIdentityPublishesTrustList != null) {
 				myForm.addChild("input",	new String[] { "type", "name", "value" },
 											new String[] { "hidden", "PublishTrustList", mIdentityPublishesTrustList.toString() });
