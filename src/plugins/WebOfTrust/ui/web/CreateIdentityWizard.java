@@ -191,9 +191,15 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		// First we simulate walking through every step up to and excluding previous one:
 		// For each of them, check whether the user specified all data using validateStepData()
 		// If this returns false, we found the earliest incomplete Step and the user must repeat it.
-		for(Step walk = Step.first(); walk != previousStep; walk = computeNextStep(walk, true)) {
+		for(Step walk = Step.first(); walk != previousStep; ) {
 			if(!validateStepData(walk))
 				return walk;
+			
+			Step nextStep = computeNextStep(walk, true);
+			if(nextStep == walk) // Prevent infinite loop
+				return nextStep;
+			else
+				walk = nextStep;
 		}
 		
 		// Now we are sure that the data of all Steps excluding previousStep is complete.
