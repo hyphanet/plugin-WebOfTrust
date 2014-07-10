@@ -511,6 +511,13 @@ public final class CreateIdentityWizard extends WebPageImpl {
 											new String[] { "hidden", "InsertURI", mIdentityURI.toString() });
 			}
 		}
+		
+		if(mCurrentStep != Step.ChooseCreateOrRestore) { // Do not overwrite the visible fields with hidden fields.
+			if(mRestoreIdentity != null) {
+				myForm.addChild("input", new String[] { "type", "name", "value" },
+				                         new String[] { "hidden", "RestoreIdentity", mRestoreIdentity.toString() });
+			}
+		}
 
 		if(mCurrentStep != Step.ChooseNickname) { // Do not overwrite the visible fields with hidden fields
 			if(mIdentityNickname != null) {
