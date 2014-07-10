@@ -33,6 +33,8 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	/**
 	 * The wizard consists of these stages. A stage is a view of the wizard separated by Back/Continue buttons from the other stages.
 	 * Depending on the choice of the user, some stages might be skipped.
+	 * 
+	 * ATTENTION: If you reorder these, you must review the whole class {@link CreateIdentityWizard} because it uses {@link Step#ordinal()}.
 	 */
 	enum Step {
 		ChooseURI,
