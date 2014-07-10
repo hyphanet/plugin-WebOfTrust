@@ -38,6 +38,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	 */
 	enum Step {
 		ChooseURI,
+		ChooseCreateOrRestore,
 		ChooseNickname,
 		ChoosePreferences,
 		CreateIdentity;
@@ -58,13 +59,17 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	private FreenetURI mIdentityURI = null;
 	
 	private Exception mInsertURIProblem = null;
+	
+	/* Step 2: Choose create or restore */
+	
+	private Boolean mRestoreIdentity = null;
 
-	/* Step 2: Choose Nickname */
+	/* Step 3: Choose Nickname */
 	private String mIdentityNickname = null;
 	
 	private Exception mNicknameProblem = null;
 
-	/* Step 3: Set preferences */
+	/* Step 4: Set preferences */
 	private Boolean mIdentityPublishesTrustList = null;
 	
 
