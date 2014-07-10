@@ -101,6 +101,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		
 		switch(mCurrentStep) {
 			case ChooseURI: makeChooseURIStep(form); break;
+			case ChooseCreateOrRestore: makeChooseCreateOrRestoreStep(form); break;
 			case ChooseNickname: makeChooseNicknameStep(form); break;
 			case ChoosePreferences: makeChoosePreferencesStep(form); break;
 			case CreateIdentity: finished = makeCreateIdentityStep(wizardBox, form); break;
@@ -228,6 +229,36 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			enterParagraph.addChild("input",	new String[] { "type", "name", "size", "value" },
 					new String[] { "text", "InsertURI", "70", mRequest.getPartAsStringFailsafe("InsertURI", 256) });
 		}
+	}
+	
+	private void makeChooseCreateOrRestoreStep(HTMLNode form) {
+		InfoboxNode chooseCreateOrRestoreInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChooseCreateOrRestore.Header"));
+		form.addChild(chooseCreateOrRestoreInfoboxNode.outer);
+
+		HTMLNode chooseCreateOrRestoreBox = chooseCreateOrRestoreInfoboxNode.content;
+		chooseCreateOrRestoreBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseCreateOrRestore.Text"));
+
+		HTMLNode restoreRadio = chooseCreateOrRestoreBox.addChild("p");
+		HTMLNode createRadio = chooseCreateOrRestoreBox.addChild("p");
+
+
+		if(mRestoreIdentity == null || mRestoreIdentity == true) {
+			restoreRadio.addChild("input", 	new String[] { "type", "name", "value" , "checked"},
+					new String[] { "radio", "RestoreIdentity" , "true", "checked"});
+
+			createRadio.addChild("input",	new String[] { "type", "name", "value" },
+					new String[] { "radio", "RestoreIdentity" , "false"});
+		} else {
+
+			restoreRadio.addChild("input", 	new String[] { "type", "name", "value"},
+					new String[] { "radio", "RestoreIdentity" , "true",});
+
+			createRadio.addChild("input",	new String[] { "type", "name", "value", "checked"},
+					new String[] { "radio", "RestoreIdentity" , "false", "checked"});
+		}
+
+		restoreRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseCreateOrRestore.RestoreRadio"));
+		createRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseCreateOrRestore.CreateRadio"));
 	}
 	
 	private void makeChooseNicknameStep(HTMLNode form) {
