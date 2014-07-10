@@ -118,28 +118,15 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	 * Parses the form data for all steps of the wizard so it persists across usage of pressing Back/Continue.
 	 */
 	private void parseFormData() {
-		/* ======== Stage 1: Parse the passed form data ====================================================================================== */
-
-		if(mRequest.isPartSet("PreviousStep")) {
-			int previousStep = Integer.parseInt(mRequest.getPartAsStringFailsafe("PreviousStep", 1));
-			int currentStep = mRequest.isPartSet("NextStepButton") ? previousStep+1 : previousStep-1;
-			
-			currentStep = Math.max(Step.first().ordinal(), currentStep);
-			currentStep = Math.min(Step.last().ordinal(), currentStep);
-			
-			mCurrentStep = Step.values()[currentStep];
-				
-		} else
-			mCurrentStep = Step.first();
-		
-		/* Parse the "Generate random SSK?" boolean specified in step 1 */
+		/* Parse data from makeChooseURIStep(): Radio button which selects whether to generate a random URI or specify one  */
 		if(mRequest.isPartSet("GenerateRandomSSK"))
 			mGenerateRandomSSK = mRequest.getPartAsStringFailsafe("GenerateRandomSSK", 5).equals("true");
 
-		/* Parse the URI specified in step 1 */
-		if(mGenerateRandomSSK != null && mGenerateRandomSSK == true) {
+		/* Parse data from makeChooseURIStep(): Textbox to specify an URI */
+		if(mGenerateRandomSSK != null && mGenerateRandomSSK == true) { // Radio button choice was to generate a random URI, so the text box was not present
 			// Set a dummy URI so the code which checks whether the user specified an URI is satisfied
-			// We don't generate the random URI ourself because that shouldn't be done in the UI. Instead we later on let WebOfTrust.createOwnIdentity() do it.
+			// We don't generate the random URI ourself because that shouldn't be done in the UI.
+			// Instead we later on let WebOfTrust.createOwnIdentity() do it.
 			mIdentityURI = FreenetURI.EMPTY_CHK_URI;
 		} else if(mRequest.isPartSet("InsertURI")) {
 			try { 
@@ -155,8 +142,12 @@ public final class CreateIdentityWizard extends WebPageImpl {
 				mIdentityURI = null;
 			}
 		}
+	
+		/* Parse data from makeChooseCreateOrRestoreStep: Radio button to select whether to restore an existing identity or create a new one*/
+		if(mRequest.isPartSet("RestoreIdentity"))
+			mRestoreIdentity = mRequest.getPartAsStringFailsafe("RestoreIdentity", 5).equals("true");
 		
-		/* Parse the nickname specified in step 2 */
+		/* Parse data from makeChooseNicknameStep(): Textbox to choose a nickname*/
 		if(mRequest.isPartSet("Nickname")) {
 			try {
 				mIdentityNickname = mRequest.getPartAsStringThrowing("Nickname", Identity.MAX_NICKNAME_LENGTH);
@@ -170,19 +161,135 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			}
 		}
 		
-		/* Parse the preferences specified in step 3 */
+		/* Parse data from makeChoosePreferencesStep(): Checkbox to select whether to publish the trust list */ 
 		if(mRequest.isPartSet("PublishTrustList")) {
 			mIdentityPublishesTrustList = mRequest.getPartAsStringFailsafe("PublishTrustList", 5).equals("true");
 		}
 		
-		/* ======== Stage 2: Check for missing data and correct mRequestedStep  =============================================================== */
+		// We now have the data from all visible UI elements parsed. This is now validated for completeness and the next step is computed depending on
+		// which the step the user was at, whether he pressed Continue or Back and whether data is missing.
+		mCurrentStep = parsePreviousAndComputeCurrentStep();
+	}
+
+	private Step parsePreviousAndComputeCurrentStep() {
+		// The "PreviousStep" POST part specifies the integer value of the ordinal() of the Step which the user completed when submitting the POST request
+		// If it is not set, we are at the first step.
+		if(!mRequest.isPartSet("PreviousStep"))
+			return Step.first();
 		
-		if(mCurrentStep.ordinal() > Step.ChooseURI.ordinal() && (mGenerateRandomSSK == null || mIdentityURI == null)) {
-			mCurrentStep = Step.ChooseURI;
-		} else if(mCurrentStep.ordinal() > Step.ChooseNickname.ordinal() && mIdentityNickname == null) {
-			mCurrentStep = Step.ChooseNickname;
-		} else if(mCurrentStep.ordinal() > Step.ChoosePreferences.ordinal() && mIdentityPublishesTrustList == null) {
-			mCurrentStep = Step.ChoosePreferences;
+		int previous = Integer.parseInt(mRequest.getPartAsStringFailsafe("PreviousStep", 1));
+		// Prevent malicious out-of-bounds ordinals.
+		previous = Math.max(Step.first().ordinal(), previous);
+		previous = Math.min(Step.last().ordinal(), previous);
+		
+		final Step previousStep = Step.values()[previous];
+		
+		// If the user pressed "Continue", the NextStepButton part will be specified. If he pressed back, it is not specified.
+		final boolean forward = mRequest.isPartSet("NextStepButton");
+		
+		// First we simulate walking through every step up to and excluding previous one:
+		// For each of them, check whether the user specified all data using validateStepData()
+		// If this returns false, we found the earliest incomplete Step and the user must repeat it.
+		for(Step walk = Step.first(); walk != previousStep; walk = computeNextStep(walk, true)) {
+			if(!validateStepData(walk))
+				return walk;
+		}
+		
+		// Now we are sure that the data of all Steps excluding previousStep is complete.
+		
+		if(forward) {
+			// To go forward, the data of the previous step must have been valid.	
+			if(validateStepData(previousStep))
+				return computeNextStep(previousStep, true);
+			else
+				return previousStep;
+		} else {
+			// To go backward, we do not have to validate the data of the previousStep as the user might not have entered anything yet
+			return computeNextStep(previousStep, false);
+		}
+			
+	}
+
+	/**
+	 * Validates whether we successfully parsed the form data which is entered in the UI of the given {@link Step}.
+	 * Does NOT check the steps before that.
+	 */
+	private boolean validateStepData(Step step) {
+		switch(step) {
+			case ChooseURI: return mGenerateRandomSSK != null && mIdentityURI != null;
+			case ChooseCreateOrRestore: return mRestoreIdentity != null;
+			case ChooseNickname: return mIdentityNickname != null;
+			case ChoosePreferences: return mIdentityPublishesTrustList != null;
+			case CreateIdentity: return true;
+			default: throw new UnsupportedOperationException();
+		}
+	}
+
+	/**
+	 * Computes the next step using the form data which has already been parsed to the member variables.
+	 * 
+	 * If forward is true, computes the Step following the given one. In this case, you MUST first check whether {@link #validateStepData(Step)} for all Steps
+	 * before and including the given one has returned true.
+	 * 
+	 * If forward is false, computes the Step preceding the given one. In this case, you MUST first check whether {@link #validateStepData(Step)} for all Steps
+	 * before and excluding the given one has returned true.
+	 */
+	private Step computeNextStep(Step step, boolean forward) {
+		// The following helps when understanding this function:
+		// - In the first step Step.ChooseURI, the user is asked whether to generate a fresh, random URI for the identity or whether he wants to enter
+		//   an existing URI of his own. This allows the user to use the URI of his Freesite for example so people can validate that the owner of
+		//   the Freesite and the WOT identity are the same.
+		//   BUT it is also possible that the user had already created an identity from that URI in the past. In that case, we don't want to create a new one.
+		//   Instead, we want to download the data of the identity from the network.
+		// - Because it is difficult to implement code which detects whether there already is an identity existent at that given URI, there is the second
+		//   step Step.ChooseCreateOrRestore in which we ask the user explicitly whether to create a fresh identity or restore an existing one.
+		// So the conclusions for what this function computes as the next step are:
+		// - Step.ChooseCreateOrRestore shall only be the next step if the user specified an URI in the first step
+		// - Step.ChooseNickname shall not be the next step if the user chose to restore an identity in Step.ChooseCreateOrRestore.
+		//   This is because we can download the nickname from the network when restoring an identity
+		// - Step.ChoosePreferences also shall not be the next step when restoring an identity because preferences can also be downloaded from the network.
+		if(forward) {
+			switch(step) {
+				case ChooseURI: 
+					if(mGenerateRandomSSK)
+						return Step.ChooseNickname;
+					else
+						return Step.ChooseCreateOrRestore;
+				case ChooseCreateOrRestore:
+					if(!mRestoreIdentity)
+						return Step.ChooseNickname;
+					else
+						return Step.CreateIdentity;
+				case ChooseNickname: 
+					return Step.ChoosePreferences;
+				case ChoosePreferences:
+					return Step.CreateIdentity;
+				case CreateIdentity:
+					return Step.CreateIdentity; // Allow repeating it if identity creation has failed.
+				default:
+					throw new UnsupportedOperationException();
+			}
+		} else { // Backward
+			switch(step) {
+				case ChooseURI: 
+					throw new UnsupportedOperationException();
+				case ChooseCreateOrRestore:
+					return Step.ChooseURI;
+				case ChooseNickname:
+					if(!mGenerateRandomSSK)
+						return Step.ChooseCreateOrRestore;
+					else
+						return Step.ChooseURI;
+				case ChoosePreferences:
+					return Step.ChooseNickname;
+				case CreateIdentity:
+					if(!mGenerateRandomSSK && mRestoreIdentity)  // Check mGenerateRandomSSK first because mRestoreIdentity will be null if it is true
+						return Step.ChooseCreateOrRestore;
+					else
+						return Step.ChoosePreferences;
+				default:
+					throw new UnsupportedOperationException();
+			}
 		}
 	}
 
