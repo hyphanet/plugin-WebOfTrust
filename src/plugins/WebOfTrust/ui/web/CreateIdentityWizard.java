@@ -19,7 +19,8 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
- * TODO FIXME: Provide the option to restore an existing identity. This is a *must* have because people are very likely to mix up restore/create
+ * TODO FIXME: Fish Step.ChooseCreateOrRestore by adding l10n and fixing WebOfTrust.restoreOwnIdenitity() to return the OwnIdentity object. 
+ *  This is a *must* have because people are very likely to mix up restore/create
  * 	- which results in broken identities. We need to have both options in one place and explain the difference in detail.
  * 
  * TODO FIXME: Allow other plugins to link to his.
@@ -447,9 +448,14 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		// TODO: It might make sense to get rid of the formPasssword mechanism and replace it with session cookies as suggested in the bugtracker entry above.
 		if(mRequest.getMethod().equals("POST")) {
 			try {
-				final OwnIdentity id = mGenerateRandomSSK ? 
-						mWebOfTrust.createOwnIdentity(mIdentityNickname, mIdentityPublishesTrustList, null)
-					: mWebOfTrust.createOwnIdentity(mIdentityURI, mIdentityNickname, mIdentityPublishesTrustList, null);
+				final OwnIdentity id;
+				
+				if(mGenerateRandomSSK) 
+					id = mWebOfTrust.createOwnIdentity(mIdentityNickname, mIdentityPublishesTrustList, null);
+				else if(!mRestoreIdentity)
+					id = mWebOfTrust.createOwnIdentity(mIdentityURI, mIdentityNickname, mIdentityPublishesTrustList, null);
+				else
+					id = mWebOfTrust.restoreOwnIdentity(mIdentityURI);
 				
 				mToadlet.logOut(mContext); // Log out the current identity in case the user created a second one.
 				
