@@ -478,7 +478,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	 * @return True if the identity was created successfully, false upon error.
 	 */
 	private boolean makeCreateIdentityStep(HTMLNode wizardBox, HTMLNode form) {
-		// It was unclear why whe check for POST when I ported this code from Freetalk.
+		// It was unclear why we check for POST when I ported this code from Freetalk.
 		// After some investigation, it seems like the reason is to ensure that higher-level code has validated the formPassword
 		// - it only does so for POST, not for GET.
 		// See: https://bugs.freenetproject.org/view.php?id=6210
