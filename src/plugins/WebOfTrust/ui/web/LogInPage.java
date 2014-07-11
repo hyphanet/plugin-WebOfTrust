@@ -5,16 +5,28 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.ui.web.WebInterface.LogOutWebInterfaceToadlet;
 import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
 
 import com.db4o.ObjectSet;
 
 import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
+/**
+ * Can be used by third-party plugins by specifying a HTTPRequest param <code>redirect-target</code> in the URI such as:
+ * <p><code>http://127.0.0.1:8888/WebOfTrust/LogIn?redirect-target=/my-plugin</code></p>
+ * This would redirect the user to <code>http://127.0.0.1:8888/my-plugin</code> after log in.
+ * 
+ * <p>To use the log-in session cookie to obtain the logged in {@link OwnIdentity}, you would then use {@link SessionManager}.</p>
+ * <p>For examples of its usage, see {@link LoginWebInterfaceToadlet}, {@link LogOutWebInterfaceToadlet} and  {@link MyIdentityPage}.</p>
+ * 
+ * TODO: Improve this documentation. To do so, ask operhiem1 how his plugin uses the session management.
+ */
 public final class LogInPage extends WebPageImpl {
 
 	/**
@@ -28,11 +40,10 @@ public final class LogInPage extends WebPageImpl {
 	private static final String DEFAULT_REDIRECT_TARGET_AFTER_LOGIN = WebOfTrust.SELF_URI;
 
 	/**
-	 * @param request
-	 *                   Checked for "redirect-target", a node-relative target that the user is redirected to after
-	 *                   logging in. This can include a path, query, and fragment,
-	 *                   but any scheme, host, or port will be ignored. If this parameter is empty or not specified it
-	 *                   redirects to {@link #DEFAULT_REDIRECT_TARGET_AFTER_LOGIN}.
+	 * @param request Checked for param "redirect-target", a node-relative target that the user is redirected to after logging in. This can include a path,
+	 *                query, and fragment, but any scheme, host, or port will be ignored. If this parameter is empty or not specified it redirects to
+	 *                {@link #DEFAULT_REDIRECT_TARGET_AFTER_LOGIN}. 
+	 *                This allows third party plugins to use the session-management of WOT.
 	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
 	 */
 	public LogInPage(WebInterfaceToadlet toadlet, HTTPRequest request, ToadletContext context) throws RedirectException {
