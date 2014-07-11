@@ -189,7 +189,8 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 				mIdentityNickname = null;
 			} catch(Exception e) {
 				mNicknameProblem = e;
-				mIdentityNickname = null;
+				// Don't set it to null so invalid nicknames are remembered when the user presses the Back button before having been told that it is invalid
+				/* mIdentityNickname = null; */
 			}
 		}
 		
@@ -256,7 +257,7 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 		switch(step) {
 			case ChooseURI: return mGenerateRandomSSK != null && mIdentityURI != null;
 			case ChooseCreateOrRestore: return mRestoreIdentity != null;
-			case ChooseNickname: return mIdentityNickname != null;
+			case ChooseNickname: return mIdentityNickname != null && mNicknameProblem == null;
 			case ChoosePreferences: return mIdentityPublishesTrustList != null;
 			case CreateIdentity: return true;
 			default: throw new UnsupportedOperationException();
