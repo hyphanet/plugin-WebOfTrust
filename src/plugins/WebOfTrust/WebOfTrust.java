@@ -3209,7 +3209,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * }}}}
 	 * </code>
 	 */
-	public void restoreOwnIdentityWithoutCommit(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
+	public OwnIdentity restoreOwnIdentityWithoutCommit(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
 		Logger.normal(this, "restoreOwnIdentity(): Starting... ");
 		
 		OwnIdentity identity;
@@ -3347,29 +3347,37 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 				assert(computeAllScoresWithoutCommit());
 				
 				Logger.normal(this, "restoreOwnIdentity(): Finished.");
+				return identity;
 			}
 			catch(RuntimeException e) {
 				if(mTrustListImportInProgress) { // We don't execute beginTrustListImport() in all code paths of this function
 					// Does rollback for us. The outside will do another duplicate rollback() because the JavaDoc tells it to.
 					// But thats acceptable to keep the transaction code pattern the same everywhere.
 					abortTrustListImport(e); 
-					throw e;
 				}
+				// The callers of this function are obliged to do Persistent.checkedRollbackAndThrow() for us, so we can and must throw the exception out.
+				throw e;
 			}
 
 	}
 	
-	public synchronized void restoreOwnIdentity(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
+	/**
+	 * @return An {@link OwnIdentity#clone()} of the restored identity. By cloning, the object is decoupled from the database and you can keep it in memory
+	 *     to do with it whatever you like.
+	 */
+	public synchronized OwnIdentity restoreOwnIdentity(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
 		synchronized(mPuzzleStore) {
 		synchronized(mFetcher) {
 		synchronized(mSubscriptionManager) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				restoreOwnIdentityWithoutCommit(insertFreenetURI);
+				final OwnIdentity identity = restoreOwnIdentityWithoutCommit(insertFreenetURI);
 				Persistent.checkedCommit(mDB, this);
+				return identity.clone();
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
+				throw e; // The compiler doesn't know that the above function throws, so it would complain about a missing return statement without this.
 			}
 		}
 		}
