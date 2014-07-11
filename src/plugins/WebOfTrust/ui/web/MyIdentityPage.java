@@ -57,20 +57,7 @@ public class MyIdentityPage extends WebPageImpl {
 
 	@Override
 	public void make() {
-		if(mRequest.isPartSet("RestoreOwnIdentity")) {
-			try {
-				mWebOfTrust.restoreOwnIdentity(new FreenetURI(mRequest.getPartAsString("InsertURI", 1024)));
-				HTMLNode restoreBox = addContentBox(l10n().getString("MyIdentityPage.RestoreOwnIdentityInProgress.Header"));
-				restoreBox.addChild("p", l10n().getString("MyIdentityPage.RestoreOwnIdentityInProgress.Text"));
-			}
-			catch(Exception e) {
-				addErrorBox(l10n().getString("MyIdentityPage.RestoreOwnIdentityFailed"), e);
-			}
-		}
-		
 		makeLoggedInAs();
-		
-		makeRestoreOwnIdentityForm();
 	}
 
 	/**
@@ -166,16 +153,4 @@ public class MyIdentityPage extends WebPageImpl {
 		CreateIdentityWizard.addLinkToCreateIdentityWizard(this);
 	}
 
-	/**
-	 * Makes the form used to restore an OwnIdentity from Freenet.
-	 */
-	private void makeRestoreOwnIdentityForm() {
-		HTMLNode restoreBoxContent = addContentBox(l10n().getString("MyIdentityPage.RestoreOwnIdentity.Header"));
-		restoreBoxContent.addChild("p", l10n().getString("MyIdentityPage.RestoreOwnIdentity.Text"));
-		
-		HTMLNode restoreForm = pr.addFormChild(restoreBoxContent, uri.toString(), "RestoreOwnIdentity");
-		restoreForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "InsertURI", "70", l10n().getString("MyIdentityPage.RestoreOwnIdentity.InsertURI") });
-		restoreForm.addChild("br");
-		restoreForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "RestoreOwnIdentity", l10n().getString("MyIdentityPage.RestoreOwnIdentity.RestoreButton") });
-	}
 }
