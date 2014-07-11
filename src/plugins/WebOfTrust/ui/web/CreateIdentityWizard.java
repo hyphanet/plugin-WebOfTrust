@@ -82,6 +82,10 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	 * problems with that. Does anyone else have an idea?
 	 */
 	/* private Boolean mIdentityPublishesPuzzles = null; */
+	
+	
+	final static String[] mL10nBoldSubstitutionInput = new String[] { "bold" };
+	final static HTMLNode[] mL10nBoldSubstitutionOutput = new HTMLNode[] { HTMLNode.STRONG };
 
 
 	/**
@@ -402,9 +406,6 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	}
 
 	private void makeChoosePreferencesStep(HTMLNode form) {
-		final String[] l10nBoldSubstitutionInput = new String[] { "bold" };
-		final HTMLNode[] l10nBoldSubstitutionOutput = new HTMLNode[] { HTMLNode.STRONG };
-
 		InfoboxNode choosePrefsInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.Header"));
 		form.addChild(choosePrefsInfoboxNode.outer);
 
@@ -418,13 +419,13 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		HTMLNode p;
 
 		p = tlBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text1", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text1", mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 		p = tlBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text2", mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 		p = tlBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text3", mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 		p = tlBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text4", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text4", mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 
 		p = tlBox.addChild("p");
 		
@@ -474,7 +475,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 				HTMLNode summaryBox = summaryInfoboxNode.content;
 				
 				l10n().addL10nSubstitution(summaryBox.addChild("p"), "CreateIdentityWizard.Step.CreateIdentity.Success", 
-					new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+					mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 				
 				LogInPage.addLoginButton(this, summaryBox, id);
 				
