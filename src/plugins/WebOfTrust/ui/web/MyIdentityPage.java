@@ -11,12 +11,10 @@ import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.web.WebInterface.DeleteOwnIdentityWebInterfaceToadlet;
 import plugins.WebOfTrust.ui.web.WebInterface.EditOwnIdentityWebInterfaceToadlet;
-import plugins.WebOfTrust.ui.web.WebInterface.IdentityWebInterfaceToadlet;
 import plugins.WebOfTrust.ui.web.WebInterface.IntroduceIdentityWebInterfaceToadlet;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
-import freenet.keys.FreenetURI;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
