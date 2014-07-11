@@ -26,6 +26,8 @@ import freenet.support.api.HTTPRequest;
  * TODO FIXME: Allow other plugins to link to his.
  * TODO FIXME: When another plugin links to this, allow it to specify a context.
  * 	- The {@link WebOfTrust#createOwnIdentity(FreenetURI, String, boolean, String)} which we use allows specifying a context.
+ * 
+ * TODO: The which handles each {@link CreateIdentityWizard.Step} should probably moved into a member class. If you add more steps, please consider doing this.
  *
  * @author xor (xor@freenetproject.org)
  */
