@@ -24,7 +24,6 @@ import freenet.support.api.HTTPRequest;
 /**
  * A wizard for creating an {@link OwnIdentity}. Can be used by other plugins indirectly by them linking to {@link LogInPage} - see its JavaDoc.
  * 
- * TODO FIXME: Allow other plugins to link to his.
  * TODO FIXME: When another plugin links to this, allow it to specify a context.
  * 	- The {@link WebOfTrust#createOwnIdentity(FreenetURI, String, boolean, String)} which we use allows specifying a context.
  * 
