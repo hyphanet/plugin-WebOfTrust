@@ -255,7 +255,7 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 	 */
 	private boolean validateStepData(Step step) {
 		switch(step) {
-			case ChooseURI: return mGenerateRandomSSK != null && mIdentityURI != null;
+			case ChooseURI: return mGenerateRandomSSK != null && mIdentityURI != null && mInsertURIProblem == null;
 			case ChooseCreateOrRestore: return mRestoreIdentity != null;
 			case ChooseNickname: return mIdentityNickname != null && mNicknameProblem == null;
 			case ChoosePreferences: return mIdentityPublishesTrustList != null;
