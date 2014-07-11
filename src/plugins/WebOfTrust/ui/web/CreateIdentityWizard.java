@@ -10,7 +10,6 @@ import javax.naming.SizeLimitExceededException;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.clients.http.InfoboxNode;
@@ -24,8 +23,12 @@ import freenet.support.api.HTTPRequest;
 /**
  * A wizard for creating an {@link OwnIdentity}. Can be used by other plugins indirectly by them linking to {@link LogInPage} - see its JavaDoc.
  * 
- * TODO FIXME: When another plugin links to this, allow it to specify a context.
- * 	- The {@link WebOfTrust#createOwnIdentity(FreenetURI, String, boolean, String)} which we use allows specifying a context.
+ * Notice: We do not allow other plugins to specify a context for being added to the created identity. This is not implemented because the user can choose
+ * to restore an identity instead of creating a new one. The identity cannot be modified then until it has been restored from the network which can take a
+ * long time. Therefore, adding a context would not be possible in this case.
+ * This should not be an issue: Third-party plugins should only add their context to an identity if the user has actually used the plugin to publish content
+ * with the given identity. This is probably not the case right after the first log in, so the code for adding the context is better placed in the codepath
+ * of the third-party plugin which is used to publish content.
  * 
  * TODO: Please deal with this when adding new steps: The code which handles each {@link CreateIdentityWizard.Step} should probably moved to member classes.
  *     Also, {@link #computeNextStep(Step, boolean)} and the functions which it uses could probably be split up among member classes or go to its own as  well.
