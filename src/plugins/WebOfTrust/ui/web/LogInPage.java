@@ -62,7 +62,7 @@ public final class LogInPage extends WebPageImpl {
 				makeLoginBox(ownIdentities);
 				makeCreateIdentityBox();
 			} else {
-				makeCreateIdentityBox(); // TODO: We should show the CreateIdentityWizard here once it has been ported from Freetalk
+				makeCreateIdentityBox(); // TODO: We should show the CreateOwnIdentityWizardPage here once it has been ported from Freetalk
 			}
 		}
 	}
@@ -114,6 +114,6 @@ public final class LogInPage extends WebPageImpl {
 	}
 
 	private void makeCreateIdentityBox() {
-		CreateIdentityWizard.addLinkToCreateIdentityWizard(this, target);
+		CreateOwnIdentityWizardPage.addLinkToCreateOwnIdentityWizard(this, target);
 	}
 }

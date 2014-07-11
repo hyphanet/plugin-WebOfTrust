@@ -30,18 +30,18 @@ import freenet.support.api.HTTPRequest;
  * with the given identity. This is probably not the case right after the first log in, so the code for adding the context is better placed in the codepath
  * of the third-party plugin which is used to publish content.
  * 
- * TODO: Please deal with this when adding new steps: The code which handles each {@link CreateIdentityWizard.Step} should probably moved to member classes.
+ * TODO: Please deal with this when adding new steps: The code which handles each {@link CreateOwnIdentityWizardPage.Step} should probably moved to member classes.
  *     Also, {@link #computeNextStep(Step, boolean)} and the functions which it uses could probably be split up among member classes or go to its own as  well.
  *
  * @author xor (xor@freenetproject.org)
  */
-public final class CreateIdentityWizard extends WebPageImpl {
+public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 	
 	/**
 	 * The wizard consists of these stages. A stage is a view of the wizard separated by Back/Continue buttons from the other stages.
 	 * Depending on the choice of the user, some stages might be skipped.
 	 * 
-	 * ATTENTION: If you reorder these, you must review the whole class {@link CreateIdentityWizard} because it uses {@link Step#ordinal()}.
+	 * ATTENTION: If you reorder these, you must review the whole class {@link CreateOwnIdentityWizardPage} because it uses {@link Step#ordinal()}.
 	 */
 	enum Step {
 		ChooseURI,
@@ -108,14 +108,14 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	 *                  Typically specified by {@link LogInPage} to allow third party plugins to use it.
 	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
 	 */
-	public CreateIdentityWizard(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
+	public CreateOwnIdentityWizardPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
 		super(toadlet, myRequest, context, false);
 	}
 
 	public void make() {
 		parseFormData();
 		
-		HTMLNode wizardBox = addContentBox(l10n().getString("CreateIdentityWizard.CreateIdentityBox.Header"));
+		HTMLNode wizardBox = addContentBox(l10n().getString("CreateOwnIdentityWizardPage.CreateIdentityBox.Header"));
 		HTMLNode form = pr.addFormChild(wizardBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
 		
 		boolean finished = false;
@@ -332,11 +332,11 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	}
 
 	private void makeChooseURIStep(HTMLNode form) {
-		InfoboxNode chooseURIInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChooseURI.Header"));
+		InfoboxNode chooseURIInfoboxNode = getContentBox(l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseURI.Header"));
 		form.addChild(chooseURIInfoboxNode.outer);
 
 		HTMLNode chooseURIbox = chooseURIInfoboxNode.content;
-		chooseURIbox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseURI.Text"));
+		chooseURIbox.addChild("p", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseURI.Text"));
 
 		HTMLNode randomRadio = chooseURIbox.addChild("p");
 		HTMLNode notRandomRadio = chooseURIbox.addChild("p");
@@ -357,31 +357,31 @@ public final class CreateIdentityWizard extends WebPageImpl {
 					new String[] { "radio", "GenerateRandomSSK" , "false", "checked"});
 		}
 
-		randomRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseURI.GenerateNewKeyPairRadio"));
-		notRandomRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseURI.UseExistingKeyPairRadio"));
+		randomRadio.addChild("#", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseURI.GenerateNewKeyPairRadio"));
+		notRandomRadio.addChild("#", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseURI.UseExistingKeyPairRadio"));
 
 		if(mGenerateRandomSSK != null && mGenerateRandomSSK == false) {
-			HTMLNode enterParagraph = notRandomRadio.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseURI.EnterKeyPair") + ":");
+			HTMLNode enterParagraph = notRandomRadio.addChild("p", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseURI.EnterKeyPair") + ":");
 
 			if(mInsertURIProblem != null) {
 				enterParagraph.addChild("br");
 				enterParagraph.addChild("div", "style", "color: red;", 
-						l10n().getString("CreateIdentityWizard.Step.ChooseURI.InsertUriError") + ": " + mInsertURIProblem.getLocalizedMessage());
+						l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseURI.InsertUriError") + ": " + mInsertURIProblem.getLocalizedMessage());
 			}
 
 			enterParagraph.addChild("br");
-			enterParagraph.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseURI.InsertUri") + ": ");
+			enterParagraph.addChild("#", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseURI.InsertUri") + ": ");
 			enterParagraph.addChild("input",	new String[] { "type", "name", "size", "value" },
 					new String[] { "text", "InsertURI", "70", mRequest.getPartAsStringFailsafe("InsertURI", 256) });
 		}
 	}
 	
 	private void makeChooseCreateOrRestoreStep(HTMLNode form) {
-		InfoboxNode chooseCreateOrRestoreInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChooseCreateOrRestore.Header"));
+		InfoboxNode chooseCreateOrRestoreInfoboxNode = getContentBox(l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseCreateOrRestore.Header"));
 		form.addChild(chooseCreateOrRestoreInfoboxNode.outer);
 
 		HTMLNode chooseCreateOrRestoreBox = chooseCreateOrRestoreInfoboxNode.content;
-		chooseCreateOrRestoreBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseCreateOrRestore.Text.1"));
+		chooseCreateOrRestoreBox.addChild("p", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseCreateOrRestore.Text.1"));
 
 		HTMLNode restoreRadio = chooseCreateOrRestoreBox.addChild("p");
 		HTMLNode createRadio = chooseCreateOrRestoreBox.addChild("p");
@@ -403,26 +403,26 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		}
 
 
-		restoreRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseCreateOrRestore.RestoreRadio"));
-		l10n().addL10nSubstitution(createRadio.addChild("#"), "CreateIdentityWizard.Step.ChooseCreateOrRestore.CreateRadio", 
+		restoreRadio.addChild("#", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseCreateOrRestore.RestoreRadio"));
+		l10n().addL10nSubstitution(createRadio.addChild("#"), "CreateOwnIdentityWizardPage.Step.ChooseCreateOrRestore.CreateRadio", 
 				mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 		
-		l10n().addL10nSubstitution(chooseCreateOrRestoreBox.addChild("p"), "CreateIdentityWizard.Step.ChooseCreateOrRestore.Text.2", 
+		l10n().addL10nSubstitution(chooseCreateOrRestoreBox.addChild("p"), "CreateOwnIdentityWizardPage.Step.ChooseCreateOrRestore.Text.2", 
 				mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 	}
 	
 	private void makeChooseNicknameStep(HTMLNode form) {
-		InfoboxNode chooseNameInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Header"));
+		InfoboxNode chooseNameInfoboxNode = getContentBox(l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseNickname.Header"));
 		form.addChild(chooseNameInfoboxNode.outer);
 
 		HTMLNode chooseNameBox = chooseNameInfoboxNode.content;
-		chooseNameBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Text.1"));
-		chooseNameBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Text.2"));
+		chooseNameBox.addChild("p", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseNickname.Text.1"));
+		chooseNameBox.addChild("p", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseNickname.Text.2"));
 		HTMLNode p = chooseNameBox.addChild("p");
 
 		if(mNicknameProblem != null) {
 			p.addChild("p", "style", "color: red;").
-			addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.NicknameError") + ": " + mNicknameProblem.getLocalizedMessage());
+			addChild("#", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseNickname.NicknameError") + ": " + mNicknameProblem.getLocalizedMessage());
 		}
 
 		String nickname = mRequest.getPartAsStringFailsafe("Nickname", Identity.MAX_NICKNAME_LENGTH);
@@ -430,18 +430,18 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		if(nickname.length() == 0)
 			nickname = RandomName.newNickname();
 		
-		p.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseNickname.Nickname") + ": ");
+		p.addChild("#", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseNickname.Nickname") + ": ");
 		p.addChild("input",	new String[] { "type", "name", "size", "value" },
 				new String[] { "text", "Nickname", "50", nickname });
 	}
 
 	private void makeChoosePreferencesStep(HTMLNode form) {
-		InfoboxNode choosePrefsInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.Header"));
+		InfoboxNode choosePrefsInfoboxNode = getContentBox(l10n().getString("CreateOwnIdentityWizardPage.Step.ChoosePreferences.Header"));
 		form.addChild(choosePrefsInfoboxNode.outer);
 
 		HTMLNode choosePrefsBox = choosePrefsInfoboxNode.content;
 
-		InfoboxNode tlInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.TrustList.Header"));
+		InfoboxNode tlInfoboxNode = getContentBox(l10n().getString("CreateOwnIdentityWizardPage.Step.ChoosePreferences.TrustList.Header"));
 		choosePrefsBox.addChild(tlInfoboxNode.outer);
 
 		HTMLNode tlBox = tlInfoboxNode.content;
@@ -449,13 +449,13 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		HTMLNode p;
 
 		p = tlBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text1", mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateOwnIdentityWizardPage.Step.ChoosePreferences.TrustList.Text1", mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 		p = tlBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text2", mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateOwnIdentityWizardPage.Step.ChoosePreferences.TrustList.Text2", mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 		p = tlBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text3", mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateOwnIdentityWizardPage.Step.ChoosePreferences.TrustList.Text3", mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 		p = tlBox.addChild("p");
-		l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step.ChoosePreferences.TrustList.Text4", mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
+		l10n().addL10nSubstitution(p, "CreateOwnIdentityWizardPage.Step.ChoosePreferences.TrustList.Text4", mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 
 		p = tlBox.addChild("p");
 		
@@ -473,7 +473,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 			p.addChild("input",	new String[] { "type", "name", "value" },
 					new String[] { "checkbox", "PublishTrustList", "true" });
 		}
-		p.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChoosePreferences.TrustList.PublishTrustListCheckbox"));
+		p.addChild("#", l10n().getString("CreateOwnIdentityWizardPage.Step.ChoosePreferences.TrustList.PublishTrustListCheckbox"));
 	}
 	
 	/**
@@ -498,13 +498,13 @@ public final class CreateIdentityWizard extends WebPageImpl {
 				
 				mToadlet.logOut(mContext); // Log out the current identity in case the user created a second one.
 				
-				InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateIdentityWizard.Step.CreateIdentity.Header"));
+				InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateOwnIdentityWizardPage.Step.CreateIdentity.Header"));
 				 // Add it to wizardBox instead of form because we want to add a "Log in" button to it which is a different form.
 				wizardBox.addChild(summaryInfoboxNode.outer);
 				
 				HTMLNode summaryBox = summaryInfoboxNode.content;
 				
-				l10n().addL10nSubstitution(summaryBox.addChild("p"), "CreateIdentityWizard.Step.CreateIdentity.Success", 
+				l10n().addL10nSubstitution(summaryBox.addChild("p"), "CreateOwnIdentityWizardPage.Step.CreateIdentity.Success", 
 					mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 				
 				LogInPage.addLoginButton(this, summaryBox, id, mRedirectTarget);
@@ -512,7 +512,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 				return true;
 			}
 			catch(Exception e) {
-				InfoboxNode errorInfoboxNode = getAlertBox(l10n().getString("CreateIdentityWizard.Step.CreateIdentity.Failure"));
+				InfoboxNode errorInfoboxNode = getAlertBox(l10n().getString("CreateOwnIdentityWizardPage.Step.CreateIdentity.Failure"));
 				form.addChild(errorInfoboxNode.outer);
 				
 				HTMLNode errorBox = errorInfoboxNode.content;
@@ -525,13 +525,13 @@ public final class CreateIdentityWizard extends WebPageImpl {
 
 	private void makeBackAndContinueButtons(HTMLNode form) {
 		if(mCurrentStep.ordinal() > Step.first().ordinal()) {
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "PreviousStepButton", l10n().getString("CreateIdentityWizard.BackButton") });
+			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "PreviousStepButton", l10n().getString("CreateOwnIdentityWizardPage.BackButton") });
 		}
 		
 		if(mCurrentStep.ordinal() < Step.last().ordinal())
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "NextStepButton", l10n().getString("CreateIdentityWizard.ContinueButton") });
+			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "NextStepButton", l10n().getString("CreateOwnIdentityWizardPage.ContinueButton") });
 		else // There was an error creating the identity
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "NextStepButton", l10n().getString("CreateIdentityWizard.RetryButton") });
+			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "NextStepButton", l10n().getString("CreateOwnIdentityWizardPage.RetryButton") });
 	}
 
 	/**
@@ -582,7 +582,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	}
 
 	/**
-	 * @param redirectTarget See {@link #CreateIdentityWizard(WebInterfaceToadlet, HTTPRequest, ToadletContext)} and {@link #mRedirectTarget}.
+	 * @param redirectTarget See {@link #CreateOwnIdentityWizardPage(WebInterfaceToadlet, HTTPRequest, ToadletContext)} and {@link #mRedirectTarget}.
 	 */
 	private static URI getURI(WebInterface webInterface, String redirectTarget) {
 		final URI baseURI = webInterface.getToadlet(CreateIdentityWebInterfaceToadlet.class).getURI();
@@ -596,23 +596,23 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	}
 	
 	/**
-	 * @param redirectTarget See {@link #CreateIdentityWizard(WebInterfaceToadlet, HTTPRequest, ToadletContext)} and {@link #mRedirectTarget}.
+	 * @param redirectTarget See {@link #CreateOwnIdentityWizardPage(WebInterfaceToadlet, HTTPRequest, ToadletContext)} and {@link #mRedirectTarget}.
 	 */
-	public static void addLinkToCreateIdentityWizard(WebPageImpl page, String redirectTarget) {
+	public static void addLinkToCreateOwnIdentityWizard(WebPageImpl page, String redirectTarget) {
 		final String createIdentityURI = getURI(page.mWebInterface, redirectTarget).toString();
 		
-		HTMLNode createIdentityBox = page.addContentBox(page.l10n().getString("CreateIdentityWizard.LinkToCreateIdentityWizardBox.Header"));
+		HTMLNode createIdentityBox = page.addContentBox(page.l10n().getString("CreateOwnIdentityWizardPage.LinkToCreateOwnIdentityWizardBox.Header"));
 		page.l10n().addL10nSubstitution(
 		        createIdentityBox,
-		        "CreateIdentityWizard.LinkToCreateIdentityWizardBox.Text",
+		        "CreateOwnIdentityWizardPage.LinkToCreateOwnIdentityWizardBox.Text",
 		        new String[] { "link", "/link" },
 		        new HTMLNode[] { new HTMLNode("a", "href", createIdentityURI) });
 	}
 	
 	/**
-	 * Calls {@link #addLinkToCreateIdentityWizard(WebPageImpl, String)} with redirectTarget={@link #DEFAULT_REDIRECT_TARGET_AFTER_LOGIN}.
+	 * Calls {@link #addLinkToCreateOwnIdentityWizard(WebPageImpl, String)} with redirectTarget={@link #DEFAULT_REDIRECT_TARGET_AFTER_LOGIN}.
 	 */
-	public static void addLinkToCreateIdentityWizard(WebPageImpl page) {
-		addLinkToCreateIdentityWizard(page, DEFAULT_REDIRECT_TARGET_AFTER_LOGIN);
+	public static void addLinkToCreateOwnIdentityWizard(WebPageImpl page) {
+		addLinkToCreateOwnIdentityWizard(page, DEFAULT_REDIRECT_TARGET_AFTER_LOGIN);
 	}
 }

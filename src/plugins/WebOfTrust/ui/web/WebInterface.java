@@ -203,7 +203,7 @@ public class WebInterface {
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
-			return new CreateIdentityWizard(this, req, context);
+			return new CreateOwnIdentityWizardPage(this, req, context);
 		}
 		
 		@Override

@@ -56,7 +56,7 @@ public class MyIdentityPage extends WebPageImpl {
 	@Override
 	public void make() {
 		makeLoggedInAs();
-		CreateIdentityWizard.addLinkToCreateIdentityWizard(this);
+		CreateOwnIdentityWizardPage.addLinkToCreateOwnIdentityWizard(this);
 	}
 
 	/**
