@@ -601,10 +601,10 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 	public static void addLinkToCreateOwnIdentityWizard(WebPageImpl page, String redirectTarget) {
 		final String createIdentityURI = getURI(page.mWebInterface, redirectTarget).toString();
 		
-		HTMLNode createIdentityBox = page.addContentBox(page.l10n().getString("CreateOwnIdentityWizardPage.LinkToCreateOwnIdentityWizardBox.Header"));
+		HTMLNode createIdentityBox = page.addContentBox(page.l10n().getString("CreateOwnIdentityWizardPage.LinkToCreateOwnIdentityWizardPageBox.Header"));
 		page.l10n().addL10nSubstitution(
 		        createIdentityBox,
-		        "CreateOwnIdentityWizardPage.LinkToCreateOwnIdentityWizardBox.Text",
+		        "CreateOwnIdentityWizardPage.LinkToCreateOwnIdentityWizardPageBox.Text",
 		        new String[] { "link", "/link" },
 		        new HTMLNode[] { new HTMLNode("a", "href", createIdentityURI) });
 	}
