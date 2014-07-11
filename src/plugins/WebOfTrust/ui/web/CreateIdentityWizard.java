@@ -71,15 +71,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 
 	/* Step 4: Set preferences */
 	private Boolean mIdentityPublishesTrustList = null;
-	
 
-	/*
-	 * TODO: Evaluate whether we need to ask the user whether he wants to
-	 * publish puzzles during identity creation. I cannot think of any privacy
-	 * problems with that. Does anyone else have an idea?
-	 */
-	/* private Boolean mIdentityPublishesPuzzles = null; */
-	
 	
 	final static String[] mL10nBoldSubstitutionInput = new String[] { "bold" };
 	final static HTMLNode[] mL10nBoldSubstitutionOutput = new HTMLNode[] { HTMLNode.STRONG };
