@@ -235,7 +235,7 @@ public class IdentityPage extends WebPageImpl {
 	public static URI getURI(WebInterface webInterface, String identityID) {
 		final URI baseURI = webInterface.getToadlet(IdentityWebInterfaceToadlet.class).getURI();
 		try {
-			// The baseURI.getPath() parameter may not be null, otherwise its last directory is stripped.
+			// The parameter which is baseURI.getPath() may not be null, otherwise the last directory is stripped.
 			return baseURI.resolve(new URI(null, null, baseURI.getPath(), "id=" + identityID, null));
 		} catch (URISyntaxException e) {
 			throw new RuntimeException(e);
