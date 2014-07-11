@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import javax.naming.SizeLimitExceededException;
 
 import plugins.WebOfTrust.Identity;
@@ -19,6 +22,8 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
+ * A wizard for creating an {@link OwnIdentity}. Can be used by other plugins indirectly by them linking to {@link LogInPage} - see its JavaDoc.
+ * 
  * TODO FIXME: Allow other plugins to link to his.
  * TODO FIXME: When another plugin links to this, allow it to specify a context.
  * 	- The {@link WebOfTrust#createOwnIdentity(FreenetURI, String, boolean, String)} which we use allows specifying a context.
@@ -73,6 +78,20 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	private Boolean mIdentityPublishesTrustList = null;
 
 	
+	/**
+	 * Not part of the UI.
+	 * Tells to which URI to redirect the client browser after creating the identity & logging it in.
+	 * Can be used to allow third-party plugins to use the wizard: It allows to redirect the user back to the 3rd-party plugin after creating an identity.
+	 */
+	private String mRedirectTarget = DEFAULT_REDIRECT_TARGET_AFTER_LOGIN;
+	
+	/**
+	 * Default value of {@link #mRedirectTarget}.
+	 */
+	private static final String DEFAULT_REDIRECT_TARGET_AFTER_LOGIN = LogInPage.DEFAULT_REDIRECT_TARGET_AFTER_LOGIN;
+
+	
+	
 	final static String[] mL10nBoldSubstitutionInput = new String[] { "bold" };
 	final static HTMLNode[] mL10nBoldSubstitutionOutput = new HTMLNode[] { HTMLNode.STRONG };
 
@@ -81,6 +100,10 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	 * See {@link WebPageImpl#WebPageImpl(WebInterfaceToadlet, HTTPRequest, ToadletContext, boolean)} for description of the parameters.
 	 * Calls that constructor with useSession=false, i.e. does not require any identity to be logged in so it is always possible to use the wizard for creating one.
 	 * 
+	 * @param myRequest Checked for param "redirect-target", a node-relative target that the user is redirected to after logging in. This can include a path,
+	 *                  query, and fragment, but any scheme, host, or port will be ignored. If this parameter is empty or not specified it redirects to
+	 *                  {@link #DEFAULT_REDIRECT_TARGET_AFTER_LOGIN}.
+	 *                  Typically specified by {@link LogInPage} to allow third party plugins to use it.
 	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
 	 */
 	public CreateIdentityWizard(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
@@ -114,6 +137,17 @@ public final class CreateIdentityWizard extends WebPageImpl {
 	 * Parses the form data for all steps of the wizard so it persists across usage of pressing Back/Continue.
 	 */
 	private void parseFormData() {
+		// Remote plugins specify the redirect-target via GET-data, the wizard itself uses POST-data.
+		// Therefore, we first check for GET via getParam(), then for POST via getPartAsStringThrowing().
+		mRedirectTarget = mRequest.getParam("redirect-target", null);
+		if(mRedirectTarget == null) {
+			try {
+				mRedirectTarget = mRequest.getPartAsStringThrowing("redirect-target", 256);
+			} catch(Exception e) {
+				mRedirectTarget = DEFAULT_REDIRECT_TARGET_AFTER_LOGIN;
+			}
+		}
+		
 		/* Parse data from makeChooseURIStep(): Radio button which selects whether to generate a random URI or specify one  */
 		if(mRequest.isPartSet("GenerateRandomSSK"))
 			mGenerateRandomSSK = mRequest.getPartAsStringFailsafe("GenerateRandomSSK", 5).equals("true");
@@ -471,7 +505,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 				l10n().addL10nSubstitution(summaryBox.addChild("p"), "CreateIdentityWizard.Step.CreateIdentity.Success", 
 					mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 				
-				LogInPage.addLoginButton(this, summaryBox, id);
+				LogInPage.addLoginButton(this, summaryBox, id, mRedirectTarget);
 				
 				return true;
 			}
@@ -509,6 +543,9 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		myForm.addChild("input", new String[] { "type", "name", "value" },
 								 new String[] { "hidden", "PreviousStep", Integer.toString(mCurrentStep.ordinal())});
 		
+		myForm.addChild("input", new String[] { "type", "name", "value" },
+		                         new String[] { "hidden", "redirect-target", mRedirectTarget});
+		
 		if(mCurrentStep != Step.ChooseURI) { // Do not overwrite the visible fields with hidden fields. 
 			if(mGenerateRandomSSK != null) {
 				myForm.addChild("input",	new String[] { "type", "name", "value" },
@@ -542,8 +579,25 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		}
 	}
 
-	public static void addLinkToCreateIdentityWizard(WebPageImpl page) {
-		final String createIdentityURI = page.mWebInterface.getToadlet(CreateIdentityWebInterfaceToadlet.class).getURI().toString();
+	/**
+	 * @param redirectTarget See {@link #CreateIdentityWizard(WebInterfaceToadlet, HTTPRequest, ToadletContext)} and {@link #mRedirectTarget}.
+	 */
+	private static URI getURI(WebInterface webInterface, String redirectTarget) {
+		final URI baseURI = webInterface.getToadlet(CreateIdentityWebInterfaceToadlet.class).getURI();
+
+		try {
+			// The parameter which is baseURI.getPath() may not be null, otherwise the last directory is stripped.
+			return baseURI.resolve(new URI(null, null, baseURI.getPath(), "redirect-target=" + redirectTarget, null));
+		} catch (URISyntaxException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * @param redirectTarget See {@link #CreateIdentityWizard(WebInterfaceToadlet, HTTPRequest, ToadletContext)} and {@link #mRedirectTarget}.
+	 */
+	public static void addLinkToCreateIdentityWizard(WebPageImpl page, String redirectTarget) {
+		final String createIdentityURI = getURI(page.mWebInterface, redirectTarget).toString();
 		
 		HTMLNode createIdentityBox = page.addContentBox(page.l10n().getString("CreateIdentityWizard.LinkToCreateIdentityWizardBox.Header"));
 		page.l10n().addL10nSubstitution(
@@ -551,5 +605,12 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		        "CreateIdentityWizard.LinkToCreateIdentityWizardBox.Text",
 		        new String[] { "link", "/link" },
 		        new HTMLNode[] { new HTMLNode("a", "href", createIdentityURI) });
+	}
+	
+	/**
+	 * Calls {@link #addLinkToCreateIdentityWizard(WebPageImpl, String)} with redirectTarget={@link #DEFAULT_REDIRECT_TARGET_AFTER_LOGIN}.
+	 */
+	public static void addLinkToCreateIdentityWizard(WebPageImpl page) {
+		addLinkToCreateIdentityWizard(page, DEFAULT_REDIRECT_TARGET_AFTER_LOGIN);
 	}
 }

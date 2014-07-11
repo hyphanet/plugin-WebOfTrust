@@ -37,7 +37,7 @@ public final class LogInPage extends WebPageImpl {
 	/**
 	 * Default value of {@link #target}.
 	 */
-	private static final String DEFAULT_REDIRECT_TARGET_AFTER_LOGIN = WebOfTrust.SELF_URI;
+	public static final String DEFAULT_REDIRECT_TARGET_AFTER_LOGIN = WebOfTrust.SELF_URI;
 
 	/**
 	 * @param request Checked for param "redirect-target", a node-relative target that the user is redirected to after logging in. This can include a path,
@@ -101,16 +101,19 @@ public final class LogInPage extends WebPageImpl {
 		selectForm.addChild("p", l10n().getString("LoginPage.CookiesRequired.Text"));
 	}
 	
-	protected static final void addLoginButton(final WebPageImpl page, final HTMLNode contentNode, final OwnIdentity identity) {
+	/**
+	 * @param redirectTarget See {@link LogInPage} and {@link #target}.
+	 */
+	protected static final void addLoginButton(final WebPageImpl page, final HTMLNode contentNode, final OwnIdentity identity, final String redirectTarget) {
 		final WebInterfaceToadlet logIn = page.mWebInterface.getToadlet(LoginWebInterfaceToadlet.class);
 		final HTMLNode logInForm = page.pr.addFormChild(contentNode, logIn.getURI().toString() , logIn.pageTitle);
 		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", identity.getID() });
-		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "redirect-target", DEFAULT_REDIRECT_TARGET_AFTER_LOGIN });
+		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "redirect-target", redirectTarget });
 		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", page.l10n().getString("LoginPage.LogIn.Button") });
 		logInForm.addChild("p", page.l10n().getString("LoginPage.CookiesRequired.Text"));
 	}
 
 	private void makeCreateIdentityBox() {
-		CreateIdentityWizard.addLinkToCreateIdentityWizard(this);
+		CreateIdentityWizard.addLinkToCreateIdentityWizard(this, target);
 	}
 }
