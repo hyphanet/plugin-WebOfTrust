@@ -3314,8 +3314,9 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 					// Does rollback for us. The outside will do another duplicate rollback() because the JavaDoc tells it to.
 					// But thats acceptable to keep the transaction code pattern the same everywhere.
 					abortTrustListImport(e); 
-					throw e;
 				}
+				// The callers of this function are obliged to do Persistent.checkedRollbackAndThrow() for us, so we can and must throw the exception out.
+				throw e;
 			}
 
 	}
