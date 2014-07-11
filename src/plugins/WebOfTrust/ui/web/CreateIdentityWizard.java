@@ -19,10 +19,6 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
- * TODO FIXME: Fish Step.ChooseCreateOrRestore by adding l10n and fixing WebOfTrust.restoreOwnIdenitity() to return the OwnIdentity object. 
- *  This is a *must* have because people are very likely to mix up restore/create
- * 	- which results in broken identities. We need to have both options in one place and explain the difference in detail.
- * 
  * TODO FIXME: Allow other plugins to link to his.
  * TODO FIXME: When another plugin links to this, allow it to specify a context.
  * 	- The {@link WebOfTrust#createOwnIdentity(FreenetURI, String, boolean, String)} which we use allows specifying a context.
@@ -357,7 +353,7 @@ public final class CreateIdentityWizard extends WebPageImpl {
 		form.addChild(chooseCreateOrRestoreInfoboxNode.outer);
 
 		HTMLNode chooseCreateOrRestoreBox = chooseCreateOrRestoreInfoboxNode.content;
-		chooseCreateOrRestoreBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseCreateOrRestore.Text"));
+		chooseCreateOrRestoreBox.addChild("p", l10n().getString("CreateIdentityWizard.Step.ChooseCreateOrRestore.Text.1"));
 
 		HTMLNode restoreRadio = chooseCreateOrRestoreBox.addChild("p");
 		HTMLNode createRadio = chooseCreateOrRestoreBox.addChild("p");
@@ -378,8 +374,13 @@ public final class CreateIdentityWizard extends WebPageImpl {
 					new String[] { "radio", "RestoreIdentity" , "false", "checked"});
 		}
 
+
 		restoreRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseCreateOrRestore.RestoreRadio"));
-		createRadio.addChild("#", l10n().getString("CreateIdentityWizard.Step.ChooseCreateOrRestore.CreateRadio"));
+		l10n().addL10nSubstitution(createRadio.addChild("#"), "CreateIdentityWizard.Step.ChooseCreateOrRestore.CreateRadio", 
+				mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
+		
+		l10n().addL10nSubstitution(chooseCreateOrRestoreBox.addChild("p"), "CreateIdentityWizard.Step.ChooseCreateOrRestore.Text.2", 
+				mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 	}
 	
 	private void makeChooseNicknameStep(HTMLNode form) {
