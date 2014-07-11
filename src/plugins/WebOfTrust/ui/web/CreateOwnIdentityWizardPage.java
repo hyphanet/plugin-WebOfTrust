@@ -65,7 +65,7 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 	private Boolean mGenerateRandomSSK = null; 
 	private FreenetURI mIdentityURI = null;
 	
-	private Exception mInsertURIProblem = null;
+	private Exception mIdentityURIProblem = null;
 	
 	/* Step 2: Choose create or restore */
 	
@@ -167,10 +167,10 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 				OwnIdentity.testAndNormalizeInsertURI(mIdentityURI);
 			} catch(SizeLimitExceededException e) {
 				// TODO: Once FreenetURI has a maximum size constant, use it here and elsewhere in this file.
-				mInsertURIProblem = new Exception(l10n().getString("Common.SizeLimitExceededException", "limit", "256"));
+				mIdentityURIProblem = new Exception(l10n().getString("Common.SizeLimitExceededException", "limit", "256"));
 				mIdentityURI = null;
 			} catch(Exception e) {
-				mInsertURIProblem = e;
+				mIdentityURIProblem = e;
 				mIdentityURI = null;
 			}
 		}
@@ -255,7 +255,7 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 	 */
 	private boolean validateStepData(Step step) {
 		switch(step) {
-			case ChooseURI: return mGenerateRandomSSK != null && mIdentityURI != null && mInsertURIProblem == null;
+			case ChooseURI: return mGenerateRandomSSK != null && mIdentityURI != null && mIdentityURIProblem == null;
 			case ChooseCreateOrRestore: return mRestoreIdentity != null;
 			case ChooseNickname: return mIdentityNickname != null && mNicknameProblem == null;
 			case ChoosePreferences: return mIdentityPublishesTrustList != null;
@@ -364,10 +364,10 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 		if(mGenerateRandomSSK != null && mGenerateRandomSSK == false) {
 			HTMLNode enterParagraph = notRandomRadio.addChild("p", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseURI.EnterKeyPair") + ":");
 
-			if(mInsertURIProblem != null) {
+			if(mIdentityURIProblem != null) {
 				enterParagraph.addChild("br");
 				enterParagraph.addChild("div", "style", "color: red;", 
-						l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseURI.InsertUriError") + ": " + mInsertURIProblem.getLocalizedMessage());
+						l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseURI.InsertUriError") + ": " + mIdentityURIProblem.getLocalizedMessage());
 			}
 
 			enterParagraph.addChild("br");
