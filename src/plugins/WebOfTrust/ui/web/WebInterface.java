@@ -58,7 +58,7 @@ public class WebInterface {
 
 	/**
 	 * Used by the {@link Toadlet#showAsToadlet()} implementations of:
-	 * - {@link CreateIdentityWebInterfaceToadlet}
+	 * - {@link CreateOwnIdentityWebInterfaceToadlet}
 	 * - {@link DeleteOwnIdentityWebInterfaceToadlet}
 	 * - {@link EditOwnIdentityWebInterfaceToadlet}
 	 * - {@link IntroduceIdentityWebInterfaceToadlet}
@@ -195,9 +195,9 @@ public class WebInterface {
 		
 	}
 
-	public class CreateIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
+	public class CreateOwnIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		protected CreateIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+		protected CreateOwnIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
@@ -439,7 +439,7 @@ public class WebInterface {
 		// Pages not listed in the menu:
 
 		ArrayList<WebInterfaceToadlet> unlisted = new ArrayList<WebInterfaceToadlet>(Arrays.asList(
-			new CreateIdentityWebInterfaceToadlet(null, this, core, "CreateIdentity"),
+			new CreateOwnIdentityWebInterfaceToadlet(null, this, core, "CreateOwnIdentity"),
 			new DeleteOwnIdentityWebInterfaceToadlet(null, this, core, "DeleteOwnIdentity"),
 			new EditOwnIdentityWebInterfaceToadlet(null, this, core, "EditOwnIdentity"),
 			new IntroduceIdentityWebInterfaceToadlet(null, this, core, "IntroduceIdentity"),

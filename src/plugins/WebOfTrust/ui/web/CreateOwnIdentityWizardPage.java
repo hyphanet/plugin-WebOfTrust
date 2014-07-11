@@ -10,7 +10,7 @@ import javax.naming.SizeLimitExceededException;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.ui.web.WebInterface.CreateIdentityWebInterfaceToadlet;
+import plugins.WebOfTrust.ui.web.WebInterface.CreateOwnIdentityWebInterfaceToadlet;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.RedirectException;
@@ -585,7 +585,7 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 	 * @param redirectTarget See {@link #CreateOwnIdentityWizardPage(WebInterfaceToadlet, HTTPRequest, ToadletContext)} and {@link #mRedirectTarget}.
 	 */
 	private static URI getURI(WebInterface webInterface, String redirectTarget) {
-		final URI baseURI = webInterface.getToadlet(CreateIdentityWebInterfaceToadlet.class).getURI();
+		final URI baseURI = webInterface.getToadlet(CreateOwnIdentityWebInterfaceToadlet.class).getURI();
 
 		try {
 			// The parameter which is baseURI.getPath() may not be null, otherwise the last directory is stripped.
