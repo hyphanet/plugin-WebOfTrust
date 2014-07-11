@@ -58,6 +58,7 @@ public class MyIdentityPage extends WebPageImpl {
 	@Override
 	public void make() {
 		makeLoggedInAs();
+		CreateIdentityWizard.addLinkToCreateIdentityWizard(this);
 	}
 
 	/**
@@ -148,9 +149,6 @@ public class MyIdentityPage extends WebPageImpl {
 			HTMLNode introduceForm = pr.addFormChild(manageCell, introduceIdentityToadlet.getURI().toString(), introduceIdentityToadlet.pageTitle);
 			introduceForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "introduce", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.IntroduceButton") });
 		}
-
-
-		CreateIdentityWizard.addLinkToCreateIdentityWizard(this);
 	}
 
 }
