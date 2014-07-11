@@ -1,6 +1,8 @@
 Common.SizeLimitExceededException=Das Limit für die Länge von ${limit} wurde überschritten.
 CreateOwnIdentityWizardPage.BackButton=Zurück
 CreateOwnIdentityWizardPage.ContinueButton=Weiter
+CreateOwnIdentityWizardPage.LinkToCreateOwnIdentityWizardPageBox.Header=Eine Identität erzeugen
+CreateOwnIdentityWizardPage.LinkToCreateOwnIdentityWizardPageBox.Text=${link}Sie können sich hier eine neue Identität erzeugen.${/link}
 CreateOwnIdentityWizardPage.RetryButton=Erneut versuchen, die Identität zu erstellen
 CreateOwnIdentityWizardPage.CreateIdentityBox.Header=Ihre eigene Identität erstellen
 CreateOwnIdentityWizardPage.Step.ChooseCreateOrRestore.CreateRadio=Ich have die URI ${bold}noch nie${/bold} mit Web Of Trust benutzt. Bitte eine neue Identität erzeugen.
