@@ -6,7 +6,6 @@ package plugins.WebOfTrust.ui.web;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
-import plugins.WebOfTrust.introduction.IntroductionServer;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
@@ -15,7 +14,7 @@ import freenet.support.api.HTTPRequest;
 
 
 /**
- * The page where users can edit their own identities.
+ * The page where users can edit the currently logged in {@link OwnIdentity}.
  * 
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
@@ -30,7 +29,7 @@ public class EditOwnIdentityPage extends WebPageImpl {
 	public EditOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mIdentity = mWebOfTrust.getOwnIdentityByID(mRequest.getPartAsString("id", 128));
+		mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 	}
 	
 	public void make() {
@@ -54,7 +53,6 @@ public class EditOwnIdentityPage extends WebPageImpl {
 			HTMLNode box = addContentBox(l10n().getString("EditOwnIdentityPage.EditIdentityBox.Header", "nickname", mIdentity.getNickname()));
 			
 			HTMLNode createForm = pr.addFormChild(box, uri.toString(), "EditIdentity");
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", mIdentity.getID()});
 			
 			createForm.addChild("p", new String[] { "style" }, new String[] { "font-size: x-small" },
 					l10n().getString("EditOwnIdentityPage.EditIdentityBox.RequestUri") + ": " + mIdentity.getRequestURI().toString());

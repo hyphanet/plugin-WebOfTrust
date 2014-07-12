@@ -140,7 +140,6 @@ public class MyIdentityPage extends WebPageImpl {
 			manageCell.addChild("p", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.RestoreInProgress"));
 		} else {	
 			HTMLNode editForm = pr.addFormChild(manageCell, editIdentityToadlet.getURI().toString(), editIdentityToadlet.pageTitle);
-			editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 			editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "edit", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.EditButton") });
 
 			HTMLNode introduceForm = pr.addFormChild(manageCell, introduceIdentityToadlet.getURI().toString(), introduceIdentityToadlet.pageTitle);
