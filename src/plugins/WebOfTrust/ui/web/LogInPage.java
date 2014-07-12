@@ -5,6 +5,7 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.web.WebInterface.CreateOwnIdentityWebInterfaceToadlet;
 import plugins.WebOfTrust.ui.web.WebInterface.LogOutWebInterfaceToadlet;
 import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
@@ -64,8 +65,10 @@ public final class LogInPage extends WebPageImpl {
 				makeCreateIdentityBox();
 			} else {
 				try {
-					new CreateOwnIdentityWizardPage(mWebInterface.getToadlet(CreateOwnIdentityWebInterfaceToadlet.class), mRequest, mContext).addToPage(this);
-				} catch (RedirectException e) { // Should never be thrown according to the constructor JavaDoc
+					mWebInterface.getToadlet(CreateOwnIdentityWebInterfaceToadlet.class).makeWebPage(mRequest, mContext).addToPage(this);
+				} catch(UnknownIdentityException e) { // Should not happen as the CreateOwnIdentityWizardPage does not require a logged in identity.
+					throw new RuntimeException(e);
+				} catch (RedirectException e) { // Should not happen as the CreateOwnIdentityWizardPage constructor states that it will not actually throw it.
 					throw new RuntimeException(e);
 				}
 			}
