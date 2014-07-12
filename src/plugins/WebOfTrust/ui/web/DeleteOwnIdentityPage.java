@@ -46,7 +46,7 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 				((LoginWebInterfaceToadlet)mWebInterface.getToadlet(LoginWebInterfaceToadlet.class))
 					.makeWebPage(mRequest, mContext).addToPage(this);
 			} catch (UnknownIdentityException e) {
-				addErrorBox(l10n().getString("Common.UnknownIdentityExceptionTitle"), l10n().getString("Common.UnknownIdentityExceptionDescription"));
+				new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
 			}
 		}
 		else
