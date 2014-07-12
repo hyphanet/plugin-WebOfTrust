@@ -5,16 +5,13 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.web.WebInterface.CreateOwnIdentityWebInterfaceToadlet;
 import plugins.WebOfTrust.ui.web.WebInterface.LogOutWebInterfaceToadlet;
 import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
 
 import com.db4o.ObjectSet;
 
-import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager;
-import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;

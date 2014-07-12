@@ -27,7 +27,6 @@ import freenet.keys.FreenetURI;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 

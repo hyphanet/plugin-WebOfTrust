@@ -16,7 +16,6 @@ import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 public class IntroduceIdentityPage extends WebPageImpl {
