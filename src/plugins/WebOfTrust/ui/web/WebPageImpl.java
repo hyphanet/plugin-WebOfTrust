@@ -137,7 +137,7 @@ public abstract class WebPageImpl implements WebPage {
 		
 		HTMLNode p = errorInner.addChild("p", message);
 		
-		p = errorInner.addChild("p", "Stack trace:");
+		p = errorInner.addChild("p", "Exception " + error.getClass() + ", stack trace:");
 		for(StackTraceElement element : error.getStackTrace()) {
 			p.addChild("br"); p.addChild("#", element.toString());
 		}
