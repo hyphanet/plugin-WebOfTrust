@@ -47,7 +47,7 @@ public class EditOwnIdentityPage extends WebPageImpl {
 		            aBox.addChild("p", l10n().getString("EditOwnIdentityPage.SettingsSaved.Text"));
 				}
 				catch(Exception e) {
-					addErrorBox(l10n().getString("EditOwnIdentityPage.SettingsSaveFailed"), e);
+					new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
 				}
 			}
 

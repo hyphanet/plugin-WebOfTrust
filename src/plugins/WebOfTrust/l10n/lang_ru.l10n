@@ -12,7 +12,6 @@ DeleteOwnIdentityPage.DeleteIdentityBox.Text1=Вы собираетесь уда
 DeleteOwnIdentityPage.DeleteIdentityBox.Text2=Возможно, вы хотите сделать резервную копию ключей для использования в дальнейшем!
 DeleteOwnIdentityPage.IdentityDeleted.Header=Успешно
 DeleteOwnIdentityPage.IdentityDeleted.Text=Идентичность была удалена.
-EditOwnIdentityPage.SettingsSaveFailed=Ошибка при сохранение изменений
 EditOwnIdentityPage.EditIdentityBox.Contexts=Связи
 EditOwnIdentityPage.EditIdentityBox.Header=Редактировать идентичность '${nickname}'
 EditOwnIdentityPage.EditIdentityBox.InsertUri=Вставить ссылку (ХРАНИТЕ В СЕКРЕТЕ!)

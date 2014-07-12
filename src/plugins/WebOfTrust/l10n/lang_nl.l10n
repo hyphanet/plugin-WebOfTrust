@@ -12,7 +12,6 @@ DeleteOwnIdentityPage.DeleteIdentityBox.Text1=Je staat op het punt om het pseudo
 DeleteOwnIdentityPage.DeleteIdentityBox.Text2=Het is aan te raden om de encryptiesleutels op een veilige plaats op te slaan!
 DeleteOwnIdentityPage.IdentityDeleted.Header=Geslaagd
 DeleteOwnIdentityPage.IdentityDeleted.Text=Het pseudoniem is verwijderd.
-EditOwnIdentityPage.SettingsSaveFailed=Opslaan wijzigingen is mislukt
 EditOwnIdentityPage.EditIdentityBox.Contexts=Contexten
 EditOwnIdentityPage.EditIdentityBox.Header=Bewerk pseudoniem '${nickname}'
 EditOwnIdentityPage.EditIdentityBox.InsertUri=Insert URI (Houdt deze geheim!)
