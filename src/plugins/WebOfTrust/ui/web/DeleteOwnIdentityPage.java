@@ -14,7 +14,7 @@ import freenet.support.api.HTTPRequest;
 
 
 /**
- * The web interface of the WoT plugin.
+ * Deletes the currently logged in {@link OwnIdentity}.
  * 
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
