@@ -30,7 +30,7 @@ public class ErrorPage extends WebPageImpl {
 			final String id = ((UnknownIdentityException)mError).getIdentityID();
 			addErrorBox(l10n().getString("Common.UnknownIdentityExceptionTitle"), l10n().getString("Common.UnknownIdentityExceptionDescription", "identityID", id));
 		} else {
-			addErrorBox("Internal error, please report this", mError);
+			addErrorBox(l10n().getString("ErrorPage.InternalError.Header"), mError);
 			Logger.error(this, "Internval error, please report this", mError);
 		}
 	}

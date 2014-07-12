@@ -59,6 +59,7 @@ EditOwnIdentityPage.EditIdentityBox.PublishIntroductionPuzzles=Publish introduct
 EditOwnIdentityPage.EditIdentityBox.SaveButton=Save changes
 EditOwnIdentityPage.SettingsSaved.Header=Settings saved
 EditOwnIdentityPage.SettingsSaved.Text=The settings were successfully saved.
+ErrorPage.InternalError.Header=Internal error, please report this
 StatisticsPage.SummaryBox.Header=Summary
 StatisticsPage.SummaryBox.OwnIdentities=Own Identities
 StatisticsPage.SummaryBox.KnownIdentities=Known Identities

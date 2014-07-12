@@ -31,3 +31,4 @@ CreateOwnIdentityWizardPage.Step.ChoosePreferences.TrustList.Text3=Hier können 
 CreateOwnIdentityWizardPage.Step.ChoosePreferences.TrustList.Text4=${bold}Warnung:${/bold} Es ist möglich, dass Sie aufgrund von Gesetzen in Ihrem Staat gezwungen werden könnten, illegale Inhalte zu entfernen, falls Sie die technische Möglichkeit dazu haben. Diese Gesetze können zu Stafen führen, wenn Sie nicht eine Vertrauensliste veröffentlichen, in der Sie Verbreiter von illegalen Inhalten durch negative Bewertung zensieren. Wir empfehlen Ihnen deshalb niemandem im echten Leben zu erzählen, welche Identitäten ihnen gehören.
 CreateOwnIdentityWizardPage.Step.CreateIdentity.Failure=Es tut uns Leid - es gab ein Problem beim Erstellen Ihrer Identität
 CreateOwnIdentityWizardPage.Step.CreateIdentity.Header=Identität erstellt
+ErrorPage.InternalError.Header=Interner Fehler, bitte melden Sie das
