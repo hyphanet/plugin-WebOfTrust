@@ -186,12 +186,8 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		} catch (UnknownIdentityException e) {
 			Logger.warning(this, "Session is invalid, the own identity was deleted already.", e);
 			sessionManager.deleteSession(ctx);
-			
-			try {
-				page = new ErrorPage(this, request, ctx, e);
-			} catch(Exception doubleFault) {
-				ret = doubleFault.toString();
-			}
+
+			page = new ErrorPage(this, request, ctx, e);
 		}
 		
 		if(page != null) {

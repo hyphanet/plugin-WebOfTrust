@@ -106,10 +106,9 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 	 *                  query, and fragment, but any scheme, host, or port will be ignored. If this parameter is empty or not specified it redirects to
 	 *                  {@link #DEFAULT_REDIRECT_TARGET_AFTER_LOGIN}.
 	 *                  Typically specified by {@link LogInPage} to allow third party plugins to use it.
-	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
 	 */
-	public CreateOwnIdentityWizardPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
-		super(toadlet, myRequest, context, false);
+	public CreateOwnIdentityWizardPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) {
+		super(toadlet, myRequest, context);
 	}
 
 	public void make() {

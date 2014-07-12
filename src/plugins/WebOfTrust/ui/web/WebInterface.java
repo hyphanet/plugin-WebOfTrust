@@ -129,7 +129,7 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			return new LogInPage(this, req, context);
 		}
 
@@ -202,7 +202,7 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			return new CreateOwnIdentityWizardPage(this, req, context);
 		}
 		

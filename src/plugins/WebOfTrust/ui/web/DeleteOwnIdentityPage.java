@@ -42,12 +42,9 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 				HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Header"));
 				box.addChild("#", l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text"));
 				
-				try {
-					mWebInterface.getToadlet(LoginWebInterfaceToadlet.class).makeWebPage(mRequest, mContext).addToPage(this);
-				} catch (RedirectException e) {
-					throw new RuntimeException(e); // Shouldn't happen according to JavaDoc of constructor
-				}
-				
+				// Cast because the casted version does not throw RedirectException.
+				((LoginWebInterfaceToadlet)mWebInterface.getToadlet(LoginWebInterfaceToadlet.class))
+					.makeWebPage(mRequest, mContext).addToPage(this);
 			} catch (UnknownIdentityException e) {
 				addErrorBox(l10n().getString("Common.UnknownIdentityExceptionTitle"), l10n().getString("Common.UnknownIdentityExceptionDescription"));
 			}

@@ -46,10 +46,9 @@ public final class LogInPage extends WebPageImpl {
 	 *                query, and fragment, but any scheme, host, or port will be ignored. If this parameter is empty or not specified it redirects to
 	 *                {@link #DEFAULT_REDIRECT_TARGET_AFTER_LOGIN}. 
 	 *                This allows third party plugins to use the session-management of WOT.
-	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
 	 */
-	public LogInPage(WebInterfaceToadlet toadlet, HTTPRequest request, ToadletContext context) throws RedirectException {
-		super(toadlet, request, context, false);
+	public LogInPage(WebInterfaceToadlet toadlet, HTTPRequest request, ToadletContext context) {
+		super(toadlet, request, context);
 		target = request.getParam("redirect-target", DEFAULT_REDIRECT_TARGET_AFTER_LOGIN);
 	}
 
@@ -64,13 +63,9 @@ public final class LogInPage extends WebPageImpl {
 				makeLoginBox(ownIdentities);
 				makeCreateIdentityBox();
 			} else {
-				try {
-					mWebInterface.getToadlet(CreateOwnIdentityWebInterfaceToadlet.class).makeWebPage(mRequest, mContext).addToPage(this);
-				} catch(UnknownIdentityException e) { // Should not happen as the CreateOwnIdentityWizardPage does not require a logged in identity.
-					throw new RuntimeException(e);
-				} catch (RedirectException e) { // Should not happen as the CreateOwnIdentityWizardPage constructor states that it will not actually throw it.
-					throw new RuntimeException(e);
-				}
+				// Cast because the casted version does not throw RedirectException.
+				((CreateOwnIdentityWebInterfaceToadlet)mWebInterface.getToadlet(CreateOwnIdentityWebInterfaceToadlet.class))
+					.makeWebPage(mRequest, mContext).addToPage(this);
 			}
 		}
 	}

@@ -24,6 +24,7 @@ import freenet.support.api.HTTPRequest;
  * Basic implementation of the WebPage interface.<p>
  * It contains common features for every WebPages.
  * 
+ * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public abstract class WebPageImpl implements WebPage {
@@ -61,10 +62,28 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
 	 * @param ctx Similar to myRequest, this is also request-specific data. Don't ask me why we have two types to store it.
-	 * @param useSession If true, the timeout of the current {@link Session} is refreshed and {@link #mLoggedInOwnIdentityID} is initialized to the ID of the logged in identity.
+	 * @param useSession If true, the timeout of the current {@link Session} is refreshed and {@link #mLoggedInOwnIdentityID} is initialized to the ID of the
+	 *                   logged in identity.
+	 *                   Instead of setting this to false, use the constructor {@link #WebPageImpl(WebInterfaceToadlet, HTTPRequest, ToadletContext)}. It has
+	 *                   the advantage of not possibly throwing a {@link RedirectException}.
 	 * @throws RedirectException If useSession was true and the {@link Session} was expired already. Then the user is redirected to the {@link LoginWebInterfaceToadlet}.
 	 */
 	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx, boolean useSession) throws RedirectException {
+		this(toadlet, myRequest, ctx, useSession ? toadlet.getLoggedInUserID(ctx) : null);
+	}
+	
+	/**
+	 * Same as {@link #WebPageImpl(WebInterfaceToadlet, HTTPRequest, ToadletContext, boolean)} with useSession == false.
+	 */
+	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx) {
+		this(toadlet, myRequest, ctx, null);
+	}
+
+	/**
+	 * @see #WebPageImpl(WebInterfaceToadlet, HTTPRequest, ToadletContext, boolean) Frontend to this.
+	 * @see #WebPageImpl(WebInterfaceToadlet, HTTPRequest, ToadletContext) Frontend to this.
+	 */
+	private WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx, String loggedInOwnIdentityID) {
 		mToadlet = toadlet;
 		mWebInterface = mToadlet.webInterface;
 		mContext = ctx;
@@ -79,7 +98,7 @@ public abstract class WebPageImpl implements WebPage {
 		this.contentNode = page.content;
 		this.mRequest = myRequest;
 		
-		mLoggedInOwnIdentityID = useSession ? mToadlet.getLoggedInUserID(ctx) : null;
+		mLoggedInOwnIdentityID = loggedInOwnIdentityID;
 	}
 	
 	/**
