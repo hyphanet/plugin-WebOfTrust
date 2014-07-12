@@ -127,7 +127,13 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param title The title of the desired ErrorBox
 	 * @param error The error message that will be displayed
 	 * @return The content node of the ErrorBox
+	 * @deprecated Use {@link ErrorPage} instead. TODO: Move this function to ErrorPage and make it private there. The remaining users of this function
+	 *             should then do new ErrorPage(...).addToPage(this). However to do this we first need some changes to the WOT core to make the functions
+	 *             there throw more specific exceptions so the ErrorPage can display them as non-internal errors and as such without a stack trace.
+	 *             For example WebOfTrust.setTrust() currently will throw InvalidParameterException for invalid trust values even though it is declared to
+	 *             throw NumberFormatException.
 	 */
+	@Deprecated
 	public HTMLNode addErrorBox(String title, Exception error) {
 		HTMLNode errorInner = addErrorBox(title);
 		

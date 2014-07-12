@@ -1,4 +1,3 @@
-Common.InternalError=Internal error
 Common.SizeLimitExceededException=The length limit of ${limit} was exceeded.
 Common.Never=Never
 Common.Yes=Yes

@@ -128,8 +128,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		try {
 			makeKnownIdentitiesList();
 		} catch (Exception e) {
-			Logger.error(this, "Error", e);
-			addErrorBox("Error", e);
+			new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
 		}
 	}
 	
