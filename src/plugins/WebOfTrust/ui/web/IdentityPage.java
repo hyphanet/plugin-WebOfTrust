@@ -145,33 +145,33 @@ public class IdentityPage extends WebPageImpl {
 
 		HTMLNode boxContent = addContentBox(l10n().getString("IdentityPage.ChangeTrustBox.Header", "nickname", identity.getNickname()));
 
-			String trustValue = "";
-			String trustComment = "";
+		String trustValue = "";
+		String trustComment = "";
 
-			try
-			{
-				Trust trust = mWebOfTrust.getTrust(mLoggedInOwnIdentity, identity);
-				trustValue = String.valueOf(trust.getValue());
-				trustComment = trust.getComment();
-			}
-			catch(NotTrustedException e){
-			}
-			//Adds a caption
-			boxContent.addChild("div").addChild("strong", l10n().getString("IdentityPage.ChangeTrustBox.FromOwnIdentity","nickname", mLoggedInOwnIdentity.getNickname()));
-			HTMLNode trustForm = pr.addFormChild(boxContent, getURI(mWebInterface, identity.getID()).toString(), "SetTrust");
-			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Trustee", identity.getID() });
+		try
+		{
+			Trust trust = mWebOfTrust.getTrust(mLoggedInOwnIdentity, identity);
+			trustValue = String.valueOf(trust.getValue());
+			trustComment = trust.getComment();
+		}
+		catch(NotTrustedException e){
+		}
+		//Adds a caption
+		boxContent.addChild("div").addChild("strong", l10n().getString("IdentityPage.ChangeTrustBox.FromOwnIdentity","nickname", mLoggedInOwnIdentity.getNickname()));
+		HTMLNode trustForm = pr.addFormChild(boxContent, getURI(mWebInterface, identity.getID()).toString(), "SetTrust");
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Trustee", identity.getID() });
 
-			// Trust value input field
-			trustForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ");
-			trustForm.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" },
-					new String[] { "text", "Value", "4", "4", trustValue });
+		// Trust value input field
+		trustForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ");
+		trustForm.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" },
+				new String[] { "text", "Value", "4", "4", trustValue });
 
-			// Trust comment input field
-			trustForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Comment") + ": ");
-			trustForm.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" },
-					new String[] { "text", "Comment", "50", Integer.toString(Trust.MAX_TRUST_COMMENT_LENGTH), trustComment });
+		// Trust comment input field
+		trustForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Comment") + ": ");
+		trustForm.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" },
+				new String[] { "text", "Comment", "50", Integer.toString(Trust.MAX_TRUST_COMMENT_LENGTH), trustComment });
 
-			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SetTrust", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton") });
+		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SetTrust", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton") });
 	}
         
 	private void makeURIBox() {
