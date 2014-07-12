@@ -18,7 +18,6 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
-import plugins.WebOfTrust.ui.web.WebInterface.IdentityWebInterfaceToadlet;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
@@ -40,8 +39,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 
 	private final OwnIdentity treeOwner;
 	
-	private final String identitiesPageURI;
-	
 	private static enum SortBy {
 		Nickname,
 		Score,
@@ -58,7 +55,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 */
 	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException, UnknownIdentityException {
 		super(toadlet, myRequest, context, true);
-		identitiesPageURI = mWebInterface.getToadlet(IdentityWebInterfaceToadlet.class).getURI().toString();
 		treeOwner = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 	}
 
@@ -280,7 +276,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			// NickName
 			HTMLNode nameLink = row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"})
-				.addChild("a", "href", identitiesPageURI+"?id=" + id.getID());
+				.addChild("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString());
 			
 			String nickName = id.getNickname();
 			
@@ -327,12 +323,12 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			// Nb Trusters
 			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-			trustersCell.addChild(new HTMLNode("a", "href", identitiesPageURI + "?id="+id.getID(),
+			trustersCell.addChild(new HTMLNode("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString(),
 					Long.toString(mWebOfTrust.getReceivedTrusts(id).size())));
 			
 			// Nb Trustees
 			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-			trusteesCell.addChild(new HTMLNode("a", "href", identitiesPageURI + "?id="+id.getID(),
+			trusteesCell.addChild(new HTMLNode("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString(),
 					Long.toString(mWebOfTrust.getGivenTrusts(id).size())));
 			
 			// TODO: Show in advanced mode only once someone finally fixes the "Switch to advanced mode" link on FProxy to work on ALL pages.

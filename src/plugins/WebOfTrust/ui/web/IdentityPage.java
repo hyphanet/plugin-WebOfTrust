@@ -100,7 +100,7 @@ public class IdentityPage extends WebPageImpl {
 			for (Trust trust : mWebOfTrust.getGivenTrusts(identity)) {
 				HTMLNode trustRow = trusteesTable.addChild("tr");
 				Identity trustee = trust.getTrustee();
-				trustRow.addChild("td").addChild("a", "href", "?ShowIdentity&id=" + trustee.getID(), trustee.getNickname());
+				trustRow.addChild("td").addChild("a", "href", getURI(mWebInterface, trustee.getID()).toString(), trustee.getNickname());
 				trustRow.addChild("td", trustee.getID());
 				trustRow.addChild("td", new String[]{"align", "style"}, new String[]{"right", "background-color:" + KnownIdentitiesPage.getTrustColor(trust.getValue()) + ";"}, Byte.toString(trust.getValue()));
 				trustRow.addChild("td", trust.getComment());
@@ -109,7 +109,7 @@ public class IdentityPage extends WebPageImpl {
 			for (Trust trust : mWebOfTrust.getReceivedTrusts(identity)) {
 				HTMLNode trustRow = trustersTable.addChild("tr");
 				Identity truster = trust.getTruster();
-				trustRow.addChild("td").addChild("a", "href", "?ShowIdentity&id=" + truster.getID(), truster.getNickname());
+				trustRow.addChild("td").addChild("a", "href", getURI(mWebInterface, truster.getID()).toString(), truster.getNickname());
 				trustRow.addChild("td", truster.getID());
 				trustRow.addChild("td", new String[]{"align", "style"}, new String[]{"right", "background-color:" + KnownIdentitiesPage.getTrustColor(trust.getValue()) + ";"}, Byte.toString(trust.getValue()));
 				trustRow.addChild("td", trust.getComment());
@@ -158,7 +158,7 @@ public class IdentityPage extends WebPageImpl {
 			}
 			//Adds a caption
 			boxContent.addChild("div").addChild("strong", l10n().getString("IdentityPage.ChangeTrustBox.FromOwnIdentity","nickname", mLoggedInOwnIdentity.getNickname()));
-			HTMLNode trustForm = pr.addFormChild(boxContent, uri+"?id="+identity.getID(), "SetTrust");
+			HTMLNode trustForm = pr.addFormChild(boxContent, getURI(mWebInterface, identity.getID()).toString(), "SetTrust");
 			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Trustee", identity.getID() });
 
 			// Trust value input field
