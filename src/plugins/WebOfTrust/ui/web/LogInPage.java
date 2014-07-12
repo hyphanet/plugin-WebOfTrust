@@ -91,10 +91,8 @@ public final class LogInPage extends WebPageImpl {
 		HTMLNode selectForm = pr.addFormChild(loginBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnIdentityID");
 		for(OwnIdentity ownIdentity : ownIdentities) {
-			// TODO: Freetalk has .getShortestUniqueName(), which should be moved to WoT and is preferable to full
-			// nickname and ID.
 			selectBox.addChild("option", "value", ownIdentity.getID(),
-			    ownIdentity.getNickname() + "@" + ownIdentity.getID());
+			    ownIdentity.getShortestUniqueNickname());
 		}
 		// HTMLNode escapes the target value.
 		selectForm.addChild("input",
