@@ -36,7 +36,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	public IntroduceIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mPuzzleURI = toadlet.webInterface.getURI() + "/GetPuzzle";
+		mPuzzleURI = toadlet.webInterface.getURI() + "/GetPuzzle"; // TODO: Don't hardcode, implement and use a getURI()
 		
 		mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 		mClient = mWebOfTrust.getIntroductionClient();
@@ -92,7 +92,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				// Display as much puzzles per row as fitting in the browser-window via "inline-block" style. Nice, eh?
 				HTMLNode cell = solveForm.addChild("div", new String[] { "align" , "style"}, new String[] { "center" , "display: inline-block"});
 				cell.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id" + counter, p.getID() });
-				cell.addChild("img", "src", mPuzzleURI + "?PuzzleID=" + p.getID() ); 
+				cell.addChild("img", "src", mPuzzleURI + "?PuzzleID=" + p.getID() ); // TODO: Don't hardcode, implement and use a getURI()
 				cell.addChild("br");
 				cell.addChild("input", new String[] { "type", "name", "size", "maxlength"},
 						new String[] { "text", "Solution" + p.getID(), Integer.toString(IntroductionPuzzle.MINIMAL_SOLUTION_LENGTH+1),
