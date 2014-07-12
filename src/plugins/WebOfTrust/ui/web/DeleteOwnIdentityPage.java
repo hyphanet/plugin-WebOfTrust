@@ -59,7 +59,7 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 	private void makeConfirmation() {
 		HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Header"));
 
-		box.addChild(new HTMLNode("p", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text1", "nickname", mIdentity.getNickname())));
+		box.addChild(new HTMLNode("p", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text1", "nickname", mIdentity.getShortestUniqueNickname())));
 		box.addChild(new HTMLNode("p", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text2")));
 
 		HTMLNode confirmForm = pr.addFormChild(box, uri.toString(), "DeleteIdentity");
