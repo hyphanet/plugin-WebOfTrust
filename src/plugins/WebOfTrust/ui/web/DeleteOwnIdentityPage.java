@@ -29,7 +29,7 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mIdentity = mWebOfTrust.getOwnIdentityByID(mRequest.getPartAsString("id", 128));
+		mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 	}
 
 	public void make() {
@@ -64,7 +64,6 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 
 		HTMLNode confirmForm = pr.addFormChild(box, uri.toString(), "DeleteIdentity");
 
-		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", mIdentity.getID()});
 		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.ConfirmButton") });
 	}
 }

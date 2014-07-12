@@ -134,7 +134,6 @@ public class MyIdentityPage extends WebPageImpl {
 		HTMLNode manageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 
 		HTMLNode deleteForm = pr.addFormChild(manageCell, deleteIdentityToadlet.getURI().toString(), deleteIdentityToadlet.pageTitle);
-		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", id.getID() });
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTable.DeleteButton") });
 
 		if(id.isRestoreInProgress()) {
