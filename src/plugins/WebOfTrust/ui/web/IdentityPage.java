@@ -32,9 +32,6 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.web.WebInterface.IdentityWebInterfaceToadlet;
-
-import com.db4o.ObjectSet;
-
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
@@ -51,6 +48,8 @@ public class IdentityPage extends WebPageImpl {
 	
 	private final static SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+	private final OwnIdentity mLoggedInOwnIdentity;
+	
 	/** The identity to show trust relationships of. */
 	private final Identity identity;
 
@@ -60,12 +59,13 @@ public class IdentityPage extends WebPageImpl {
 	 * 
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
-	 * @throws UnknownIdentityException 
+	 * @throws UnknownIdentityException If the logged-in {@link OwnIdentity} or the {@link Identity} to display does not exist anymore. 
 	 * @throws RedirectException If the {@link Session} has expired. 
 	 */
 	public IdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
+		mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 		identity = mWebOfTrust.getIdentityByID(mRequest.getParam("id")); 
 	}
 
@@ -124,7 +124,6 @@ public class IdentityPage extends WebPageImpl {
 	private void makeAddTrustBox() {
 		//Change trust level if needed
 		if(mRequest.isPartSet("SetTrust")) {
-			String trusterID = mRequest.getPartAsStringFailsafe("OwnerID", 128);
 			String trusteeID = mRequest.isPartSet("Trustee") ? mRequest.getPartAsStringFailsafe("Trustee", 128) : null;
 			String value = mRequest.getPartAsStringFailsafe("Value", 4).trim();
 			// Set length limit 1 too much to ensure that setTrust() throws if the user entered too much. We need it to throw so we display an error message.
@@ -132,9 +131,9 @@ public class IdentityPage extends WebPageImpl {
 
 			try {
 				if(value.equals(""))
-					mWebOfTrust.removeTrust(trusterID, trusteeID);
+					mWebOfTrust.removeTrust(mLoggedInOwnIdentityID, trusteeID);
 				else
-					mWebOfTrust.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
+					mWebOfTrust.setTrust(mLoggedInOwnIdentityID, trusteeID, Byte.parseByte(value), comment);
 			} catch(NumberFormatException e) {
 				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), l10n().getString("Trust.InvalidValue"));
 			} catch(InvalidParameterException e) {
@@ -146,28 +145,20 @@ public class IdentityPage extends WebPageImpl {
 
 		HTMLNode boxContent = addContentBox(l10n().getString("IdentityPage.ChangeTrustBox.Header", "nickname", identity.getNickname()));
 
-		ObjectSet<OwnIdentity> ownId = mWebOfTrust.getAllOwnIdentities();
-
-		while(ownId.hasNext()) {
-			OwnIdentity treeOwner = ownId.next();
-			//Create a block
-			// HTMLNode boxContent = addContentBox(l10n().getString("IdentityPage.ChangeTrustBox.Header", "nickname", identity.getNickname()));
-
 			String trustValue = "";
 			String trustComment = "";
 
 			try
 			{
-				Trust trust = mWebOfTrust.getTrust(treeOwner, identity);
+				Trust trust = mWebOfTrust.getTrust(mLoggedInOwnIdentity, identity);
 				trustValue = String.valueOf(trust.getValue());
 				trustComment = trust.getComment();
 			}
 			catch(NotTrustedException e){
 			}
 			//Adds a caption
-			boxContent.addChild("div").addChild("strong", l10n().getString("IdentityPage.ChangeTrustBox.FromOwnIdentity","nickname",treeOwner.getNickname()));
+			boxContent.addChild("div").addChild("strong", l10n().getString("IdentityPage.ChangeTrustBox.FromOwnIdentity","nickname", mLoggedInOwnIdentity.getNickname()));
 			HTMLNode trustForm = pr.addFormChild(boxContent, uri+"?id="+identity.getID(), "SetTrust");
-			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID() });
 			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Trustee", identity.getID() });
 
 			// Trust value input field
@@ -181,7 +172,6 @@ public class IdentityPage extends WebPageImpl {
 					new String[] { "text", "Comment", "50", Integer.toString(Trust.MAX_TRUST_COMMENT_LENGTH), trustComment });
 
 			trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SetTrust", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton") });
-		}
 	}
         
 	private void makeURIBox() {
