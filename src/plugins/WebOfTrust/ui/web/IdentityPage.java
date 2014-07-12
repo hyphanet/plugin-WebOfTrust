@@ -127,8 +127,7 @@ public class IdentityPage extends WebPageImpl {
 			String trusterID = mRequest.getPartAsStringFailsafe("OwnerID", 128);
 			String trusteeID = mRequest.isPartSet("Trustee") ? mRequest.getPartAsStringFailsafe("Trustee", 128) : null;
 			String value = mRequest.getPartAsStringFailsafe("Value", 4).trim();
-			// TODO: getPartAsString() will return an empty String if the length is exceeded, it should rather return a too long string so that setTrust throws
-			// an exception. It's not a severe problem though since we limit the length of the text input field anyway.
+			// Set length limit 1 too much to ensure that setTrust() throws if the user entered too much. We need it to throw so we display an error message.
 			String comment = mRequest.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);
 
 			try {
