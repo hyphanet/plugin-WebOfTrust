@@ -292,6 +292,17 @@ public class WebInterface {
 			super(client, wi, core, pageTitle);
 		}
 
+		public URI getURI(String puzzleID) {
+			final URI baseURI = getURI();
+			
+			try {
+				// The parameter which is baseURI.getPath() may not be null, otherwise the last directory is stripped.
+				return baseURI.resolve(new URI(null, null, baseURI.getPath(), "PuzzleID=" + puzzleID, null));
+			} catch (URISyntaxException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
 		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 
 			// ATTENTION: The same code is used in Freetalk's WebInterface.java. Please synchronize any changes which happen there.

@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import java.net.URI;
 import java.util.List;
 
 import plugins.WebOfTrust.OwnIdentity;
@@ -11,6 +12,7 @@ import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionClient;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.ui.web.WebInterface.GetPuzzleWebInterfaceToadlet;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
@@ -21,8 +23,6 @@ import freenet.support.api.HTTPRequest;
 public class IntroduceIdentityPage extends WebPageImpl {
 	
 	protected static int PUZZLE_DISPLAY_COUNT = 16;
-	
-	protected final String mPuzzleURI;
 	
 	protected final IntroductionClient mClient;
 	protected final OwnIdentity mLoggedInOwnIdentity;
@@ -35,8 +35,6 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	 */
 	public IntroduceIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
-		
-		mPuzzleURI = toadlet.webInterface.getURI() + "/GetPuzzle"; // TODO: Don't hardcode, implement and use a getURI()
 		
 		mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 		mClient = mWebOfTrust.getIntroductionClient();
@@ -92,7 +90,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				// Display as much puzzles per row as fitting in the browser-window via "inline-block" style. Nice, eh?
 				HTMLNode cell = solveForm.addChild("div", new String[] { "align" , "style"}, new String[] { "center" , "display: inline-block"});
 				cell.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "id" + counter, p.getID() });
-				cell.addChild("img", "src", mPuzzleURI + "?PuzzleID=" + p.getID() ); // TODO: Don't hardcode, implement and use a getURI()
+				cell.addChild("img", "src", getPuzzleImageURI(p.getID()).toString() );
 				cell.addChild("br");
 				cell.addChild("input", new String[] { "type", "name", "size", "maxlength"},
 						new String[] { "text", "Solution" + p.getID(), Integer.toString(IntroductionPuzzle.MINIMAL_SOLUTION_LENGTH+1),
@@ -107,4 +105,10 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		}
 		//}
 	}
+
+	private URI getPuzzleImageURI(String puzzleID) {
+		return ((GetPuzzleWebInterfaceToadlet)mWebInterface.getToadlet(GetPuzzleWebInterfaceToadlet.class))
+		         .getURI(puzzleID);
+	}
+
 }
