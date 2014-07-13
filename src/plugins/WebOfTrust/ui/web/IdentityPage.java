@@ -124,16 +124,15 @@ public class IdentityPage extends WebPageImpl {
 	private void makeAddTrustBox() {
 		//Change trust level if needed
 		if(mRequest.isPartSet("SetTrust")) {
-			String trusteeID = mRequest.isPartSet("Trustee") ? mRequest.getPartAsStringFailsafe("Trustee", 128) : null;
 			String value = mRequest.getPartAsStringFailsafe("Value", 4).trim();
 			// Set length limit 1 too much to ensure that setTrust() throws if the user entered too much. We need it to throw so we display an error message.
 			String comment = mRequest.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);
 
 			try {
 				if(value.equals(""))
-					mWebOfTrust.removeTrust(mLoggedInOwnIdentityID, trusteeID);
+					mWebOfTrust.removeTrust(mLoggedInOwnIdentityID, identity.getID());
 				else
-					mWebOfTrust.setTrust(mLoggedInOwnIdentityID, trusteeID, Byte.parseByte(value), comment);
+					mWebOfTrust.setTrust(mLoggedInOwnIdentityID, identity.getID(), Byte.parseByte(value), comment);
 			} catch(NumberFormatException e) {
 				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), l10n().getString("Trust.InvalidValue"));
 			} catch(InvalidParameterException e) {
@@ -156,10 +155,10 @@ public class IdentityPage extends WebPageImpl {
 		}
 		catch(NotTrustedException e){
 		}
+		
 		//Adds a caption
 		boxContent.addChild("div").addChild("strong", l10n().getString("IdentityPage.ChangeTrustBox.FromOwnIdentity","nickname", mLoggedInOwnIdentity.getNickname()));
 		HTMLNode trustForm = pr.addFormChild(boxContent, getURI(mWebInterface, identity.getID()).toString(), "SetTrust");
-		trustForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Trustee", identity.getID() });
 
 		// Trust value input field
 		trustForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ");
