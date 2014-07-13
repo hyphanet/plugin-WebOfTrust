@@ -25,7 +25,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	protected final String mPuzzleURI;
 	
 	protected final IntroductionClient mClient;
-	protected final OwnIdentity mIdentity;
+	protected final OwnIdentity mLoggedInOwnIdentity;
 
 	/**
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
@@ -38,7 +38,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		
 		mPuzzleURI = toadlet.webInterface.getURI() + "/GetPuzzle"; // TODO: Don't hardcode, implement and use a getURI()
 		
-		mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
+		mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 		mClient = mWebOfTrust.getIntroductionClient();
 		
 		if(mRequest.isPartSet("Solve")) {
@@ -53,7 +53,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 
 						try {
 							// It is safe to use this function without synchronization as it re-queries the identity from the database.
-							mClient.solvePuzzle(mIdentity, p, solution);
+							mClient.solvePuzzle(mLoggedInOwnIdentity, p, solution);
 						}
 						catch(Exception e) {
 							/* The identity or the puzzle might have been deleted here */
@@ -74,7 +74,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 
 	private void makeInfoBox(PluginRespirator _pr) {
-		HTMLNode boxContent = addContentBox(l10n().getString("IntroduceIdentityPage.InfoBox.Header", "nickname", mIdentity.getNickname()));
+		HTMLNode boxContent = addContentBox(l10n().getString("IntroduceIdentityPage.InfoBox.Header", "nickname", mLoggedInOwnIdentity.getNickname()));
 		boxContent.addChild("p", l10n().getString("IntroduceIdentityPage.InfoBox.Text")); /* TODO: add more information */
 	}
 	
@@ -82,7 +82,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		HTMLNode boxContent = addContentBox(l10n().getString("IntroduceIdentityPage.PuzzleBox.Header"));
 		
 		// synchronized(mClient) { /* The client returns an ArrayList, not the ObjectContainer, so this should be safe */
-		List<IntroductionPuzzle> puzzles = mClient.getPuzzles(mIdentity, PuzzleType.Captcha, PUZZLE_DISPLAY_COUNT);
+		List<IntroductionPuzzle> puzzles = mClient.getPuzzles(mLoggedInOwnIdentity, PuzzleType.Captcha, PUZZLE_DISPLAY_COUNT);
 		
 		if(puzzles.size() > 0 ) {
 			HTMLNode solveForm = _pr.addFormChild(boxContent, uri.toString(), "solvePuzzles");
