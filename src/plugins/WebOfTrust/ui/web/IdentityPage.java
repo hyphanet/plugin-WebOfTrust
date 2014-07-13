@@ -32,6 +32,9 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.web.WebInterface.IdentityWebInterfaceToadlet;
+
+import com.db4o.ObjectSet;
+
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
@@ -80,40 +83,8 @@ public class IdentityPage extends WebPageImpl {
 			makeServicesBox();
 			makeStatisticsBox();
 			makeAddTrustBox();
-			
-			HTMLNode trusteeTrustsNode = addContentBox(l10n().getString("IdentityPage.TrusteeTrustsBox.Header", "nickname", identity.getNickname()));
-			HTMLNode trusteesTable = trusteeTrustsNode.addChild("table");
-			HTMLNode trusteesTableHeader = trusteesTable.addChild("tr");
-			trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Nickname"));
-			trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Identity"));
-			trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Value"));
-			trusteesTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Comment"));
-
-			HTMLNode trusterTrustsNode = addContentBox(l10n().getString("IdentityPage.TrusterTrustsBox.Header", "nickname", identity.getNickname()));
-			HTMLNode trustersTable = trusterTrustsNode.addChild("table");
-			HTMLNode trustersTableHeader = trustersTable.addChild("tr");
-			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Nickname"));
-			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Identity"));
-			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Value"));
-			trustersTableHeader.addChild("th", l10n().getString("IdentityPage.TableHeader.Comment"));
-			
-			for (Trust trust : mWebOfTrust.getGivenTrusts(identity)) {
-				HTMLNode trustRow = trusteesTable.addChild("tr");
-				Identity trustee = trust.getTrustee();
-				trustRow.addChild("td").addChild("a", "href", getURI(mWebInterface, trustee.getID()).toString(), trustee.getNickname());
-				trustRow.addChild("td", trustee.getID());
-				trustRow.addChild("td", new String[]{"align", "style"}, new String[]{"right", "background-color:" + KnownIdentitiesPage.getTrustColor(trust.getValue()) + ";"}, Byte.toString(trust.getValue()));
-				trustRow.addChild("td", trust.getComment());
-			}
-
-			for (Trust trust : mWebOfTrust.getReceivedTrusts(identity)) {
-				HTMLNode trustRow = trustersTable.addChild("tr");
-				Identity truster = trust.getTruster();
-				trustRow.addChild("td").addChild("a", "href", getURI(mWebInterface, truster.getID()).toString(), truster.getNickname());
-				trustRow.addChild("td", truster.getID());
-				trustRow.addChild("td", new String[]{"align", "style"}, new String[]{"right", "background-color:" + KnownIdentitiesPage.getTrustColor(trust.getValue()) + ";"}, Byte.toString(trust.getValue()));
-				trustRow.addChild("td", trust.getComment());
-			}
+			makeTrustsBox(mWebOfTrust.getGivenTrusts(identity), true);
+			makeTrustsBox(mWebOfTrust.getReceivedTrusts(identity), false);
 		}
 	}
 	
@@ -218,6 +189,29 @@ public class IdentityPage extends WebPageImpl {
 		
 		box.addChild("p", l10n().getString("IdentityPage.StatisticsBox.Added") + ": " + addedString); 
 		box.addChild("p", l10n().getString("IdentityPage.StatisticsBox.LastFetched") + ": " + lastFetchedString);
+	}
+	
+	/**
+	 * @param showTrustee If true, show the trustee of the trust in the table. If false, show the truster.
+	 */
+	private void makeTrustsBox(ObjectSet<Trust> trusts, boolean showTrustee) {
+		String l10n = showTrustee ? "IdentityPage.TrusteeTrustsBox.Header" : "IdentityPage.TrusterTrustsBox.Header";
+		HTMLNode trustsBox = addContentBox(l10n().getString(l10n, "nickname", identity.getNickname()));
+		HTMLNode trustsTable = trustsBox.addChild("table");
+		HTMLNode trustsTableHEader = trustsTable.addChild("tr");
+		trustsTableHEader.addChild("th", l10n().getString("IdentityPage.TableHeader.Nickname"));
+		trustsTableHEader.addChild("th", l10n().getString("IdentityPage.TableHeader.Identity"));
+		trustsTableHEader.addChild("th", l10n().getString("IdentityPage.TableHeader.Value"));
+		trustsTableHEader.addChild("th", l10n().getString("IdentityPage.TableHeader.Comment"));
+		
+		for(Trust trust : trusts) {
+			HTMLNode trustRow = trustsTable.addChild("tr");
+			Identity involvedIdentity = showTrustee ? trust.getTrustee() : trust.getTruster(); 
+			trustRow.addChild("td").addChild("a", "href", getURI(mWebInterface, involvedIdentity.getID()).toString(), involvedIdentity.getNickname());
+			trustRow.addChild("td", involvedIdentity.getID());
+			trustRow.addChild("td", new String[]{"align", "style"}, new String[]{"right", "background-color:" + KnownIdentitiesPage.getTrustColor(trust.getValue()) + ";"}, Byte.toString(trust.getValue()));
+			trustRow.addChild("td", trust.getComment());
+		}
 	}
 	
 	public static URI getURI(WebInterface webInterface, String identityID) {
