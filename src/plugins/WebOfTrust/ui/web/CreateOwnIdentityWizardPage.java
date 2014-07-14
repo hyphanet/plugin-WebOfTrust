@@ -431,8 +431,9 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 			nickname = RandomName.newNickname();
 		
 		p.addChild("#", l10n().getString("CreateOwnIdentityWizardPage.Step.ChooseNickname.Nickname") + ": ");
-		p.addChild("input",	new String[] { "type", "name", "size", "value" },
-				new String[] { "text", "Nickname", "50", nickname });
+		p.addChild("input", new String[] { "type", "name", "size", "maxlength", "value" },
+		                    new String[] { "text", "Nickname", Integer.toString(Identity.MAX_NICKNAME_LENGTH+1), Integer.toString(Identity.MAX_NICKNAME_LENGTH),
+		                    nickname });
 	}
 
 	private void makeChoosePreferencesStep(HTMLNode form) {
