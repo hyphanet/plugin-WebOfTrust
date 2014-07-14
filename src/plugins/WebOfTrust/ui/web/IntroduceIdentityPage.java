@@ -37,7 +37,15 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		
 		mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 		mClient = mWebOfTrust.getIntroductionClient();
-		
+	}
+
+	public void make() {
+		parseSolutions();
+		makeInfoBox();
+		makePuzzleBox();
+	}
+	
+	private void parseSolutions() {
 		if(mRequest.isPartSet("Solve")) {
 			int idx = 0;
 			while(mRequest.isPartSet("id" + idx)) {
@@ -62,11 +70,6 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				++idx;
 			}
 		}
-	}
-
-	public void make() {
-		makeInfoBox();
-		makePuzzleBox();
 	}
 
 	private void makeInfoBox() {
