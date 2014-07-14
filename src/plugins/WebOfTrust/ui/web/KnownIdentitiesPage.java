@@ -73,8 +73,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		}
 		
 		if(mRequest.isPartSet("SetTrust")) {
-			String trusterID = mLoggedInOwnIdentityID;
-		
 			for(String part : mRequest.getParts()) {
 				if(!part.startsWith("SetTrustOf"))
 					continue;
@@ -95,9 +93,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 					}
 
 					if(value.equals(""))
-						mWebOfTrust.removeTrust(trusterID, trusteeID);
+						mWebOfTrust.removeTrust(mLoggedInOwnIdentityID, trusteeID);
 					else
-						mWebOfTrust.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
+						mWebOfTrust.setTrust(mLoggedInOwnIdentityID, trusteeID, Byte.parseByte(value), comment);
 					
 					if(addIdentity && (value.equals("") || Byte.parseByte(value) < 0)) {
 						addErrorBox(l10n().getString("KnownIdentitiesPage.AddIdentity.NoTrustWarning.Header"), 
