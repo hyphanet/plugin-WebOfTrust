@@ -352,8 +352,7 @@ public class WebInterface {
 		}
 		
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			// Not expected to make it here...
-			return new StatisticsPage(this, req, context);
+			return new ErrorPage(this, req, context, new RuntimeException("This Toadlet does not offer HTML."));
 		}
 	}
 
@@ -406,7 +405,7 @@ public class WebInterface {
 		 */
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return null;
+			return new ErrorPage(this, req, context, new RuntimeException("This Toadlet does not offer HTML."));
 		}
 
 	}
