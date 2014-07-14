@@ -313,11 +313,13 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			row.addChild(getSetTrustCell(id));
 			
 			// Nb Trusters
+			// TODO: Do a direct link to the received-trusts part of the linked page
 			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 			trustersCell.addChild(new HTMLNode("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString(),
 					Long.toString(mWebOfTrust.getReceivedTrusts(id).size())));
 			
 			// Nb Trustees
+			// TODO: Do a direct link to the given-trusts part of the linked page
 			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 			trusteesCell.addChild(new HTMLNode("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString(),
 					Long.toString(mWebOfTrust.getGivenTrusts(id).size())));
