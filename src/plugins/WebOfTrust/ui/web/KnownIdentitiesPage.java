@@ -59,6 +59,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	}
 
 	public void make() {
+		if(mLoggedInOwnIdentity.isRestoreInProgress()) {
+			makeRestoreInProgressWarning();
+			return;
+		}
+		
 		final boolean addIdentity = mRequest.isPartSet("AddIdentity");
 		
 		if(addIdentity) {
@@ -111,11 +116,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 
-		if(mLoggedInOwnIdentity.isRestoreInProgress()) {
-			makeRestoreInProgressWarning();
-			return;
-		}
-			
 		makeAddIdentityForm();
 
 		try {
