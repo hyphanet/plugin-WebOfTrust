@@ -60,6 +60,8 @@ public class IntroduceIdentityPage extends WebPageImpl {
 
 					// It is safe to use this function without synchronization as it re-queries the identity from the database.
 					mClient.solvePuzzle(mLoggedInOwnIdentity, p, solution);
+				} else {
+					// We don't break the processing loop here because users might intentionally not solve puzzles which are too difficult.
 				}
 				++idx;
 
