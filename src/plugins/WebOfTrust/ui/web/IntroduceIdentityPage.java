@@ -41,7 +41,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		if(mRequest.isPartSet("Solve")) {
 			int idx = 0;
 			while(mRequest.isPartSet("id" + idx)) {
-				String id = mRequest.getPartAsString("id" + idx, 128);
+				String id = mRequest.getPartAsString("id" + idx, IntroductionPuzzle.MAXIMAL_ID_LENGTH);
 				String solution = mRequest.getPartAsString("Solution" + id, IntroductionPuzzle.MAXIMAL_SOLUTION_LENGTH);
 				if(!solution.trim().equals("")) {
 					IntroductionPuzzle p;
