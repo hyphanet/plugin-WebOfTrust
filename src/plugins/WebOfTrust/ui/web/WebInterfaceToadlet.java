@@ -157,13 +157,28 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	    if(!checkIsEnabled(ctx))
 	    	return;
 		
+		if(checkAntiCSRFToken(request, ctx))
+			return;
+		
+		handleRequest(uri, request, ctx);
+	}
+	
+	/**
+	 * Checks the anti-CSRF token of the request. See {@link NodeClientCore#formPassword} for an explanation.
+	 * You must call this when processing requests which change the server state, for example anything in the WOT database.
+	 * Such requests must always be POST, GET should never change anything.
+	 * 
+	 * If it returns false, you must stop processing and NOT modify the server state. 
+	 * Then you must also not output anything: This function will already output an HTML page which says that access was denied. 
+	 */
+	protected boolean checkAntiCSRFToken(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String pass = request.getPartAsStringFailsafe("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
 			writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
-			return;
+			return false;
 		}
-
-		handleRequest(uri, request, ctx);
+		
+		return true;
 	}
 	
 	/**

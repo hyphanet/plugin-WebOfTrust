@@ -143,11 +143,8 @@ public class WebInterface {
 			if(!ctx.checkFullAccess(this))
 				return;
 
-			String pass = request.getPartAsStringFailsafe("formPassword", 32);
-			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
-				writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
+			if(!checkAntiCSRFToken(request, ctx))
 				return;
-			}
 
 			final String ID = request.getPartAsStringThrowing("OwnIdentityID", IdentityID.LENGTH);
 			assert ID.length() == IdentityID.LENGTH;
