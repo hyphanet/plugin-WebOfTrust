@@ -46,7 +46,9 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 	
 	private void parseSolutions() {
-		if(mRequest.isPartSet("Solve")) {
+		if(!mRequest.isPartSet("Solve"))
+			return;
+		
 			int idx = 0;
 			while(mRequest.isPartSet("id" + idx)) {
 				try {
@@ -65,7 +67,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 					new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
 				}
 			}
-		}
+
 	}
 
 	private void makeInfoBox() {
