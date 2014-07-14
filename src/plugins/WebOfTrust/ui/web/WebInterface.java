@@ -210,6 +210,10 @@ public class WebInterface {
 		
 		@Override
 		public Toadlet showAsToadlet() {
+			// TODO: The myIdentityToadlet won't be visible if no OwnIdentity is logged in. Is it a good idea to return it then? Probably not.
+			// Then we should instead use the LogInWebInterfaceToadlet as a menu entry (= return value) because when nobody is logged in, that is
+			// the way to access this CreateOwnIdentityWebInterfaceToadlet.
+			// However, it is not possible to check whether someone is logged in in this function because it does not get a ToadletContext.
 			return myIdentityToadlet;
 		}
 		
