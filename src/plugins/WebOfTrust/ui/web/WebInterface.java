@@ -158,6 +158,7 @@ public class WebInterface {
 			} catch(UnknownIdentityException e) {
 				Logger.error(this.getClass(), "Attempted to log in to unknown identity. Was it deleted?", e);
 				writeTemporaryRedirect(ctx, "Unknown identity", path());
+				return;
 			}
 
 			try {
