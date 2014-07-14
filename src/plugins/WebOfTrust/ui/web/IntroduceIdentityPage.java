@@ -16,7 +16,6 @@ import plugins.WebOfTrust.ui.web.WebInterface.GetPuzzleWebInterfaceToadlet;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
-import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -66,24 +65,23 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 
 	public void make() {
-		PluginRespirator _pr = mWebOfTrust.getPluginRespirator();
-		makeInfoBox(_pr);
-		makePuzzleBox(_pr);
+		makeInfoBox();
+		makePuzzleBox();
 	}
 
-	private void makeInfoBox(PluginRespirator _pr) {
+	private void makeInfoBox() {
 		HTMLNode boxContent = addContentBox(l10n().getString("IntroduceIdentityPage.InfoBox.Header", "nickname", mLoggedInOwnIdentity.getNickname()));
 		boxContent.addChild("p", l10n().getString("IntroduceIdentityPage.InfoBox.Text")); /* TODO: add more information */
 	}
 	
-	private void makePuzzleBox(PluginRespirator _pr) {
+	private void makePuzzleBox() {
 		HTMLNode boxContent = addContentBox(l10n().getString("IntroduceIdentityPage.PuzzleBox.Header"));
 		
 		// synchronized(mClient) { /* The client returns an ArrayList, not the ObjectContainer, so this should be safe */
 		List<IntroductionPuzzle> puzzles = mClient.getPuzzles(mLoggedInOwnIdentity, PuzzleType.Captcha, PUZZLE_DISPLAY_COUNT);
 		
 		if(puzzles.size() > 0 ) {
-			HTMLNode solveForm = _pr.addFormChild(boxContent, uri.toString(), "solvePuzzles");
+			HTMLNode solveForm = pr.addFormChild(boxContent, uri.toString(), "solvePuzzles");
 			
 			int counter = 0;
 			for(IntroductionPuzzle p : puzzles) {
