@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.WebOfTrustInterface;
@@ -31,6 +32,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	public static transient final String INTRODUCTION_CONTEXT = "Introduction";
 	public static transient final int MINIMAL_SOLUTION_LENGTH = 5;
 	public static transient final int MAXIMAL_SOLUTION_LENGTH = 10;
+	public static transient final int MAXIMAL_ID_LENGTH = 36 /* UUID length */ + 1 /* "@" character */ + IdentityID.LENGTH;
 	
 	protected static transient final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	
@@ -130,6 +132,9 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		
 		if(newID == null)
 			throw new NullPointerException("No puzzle ID specified");
+		
+		if(newID.length() > MAXIMAL_ID_LENGTH)
+			throw new IllegalArgumentException("Puzzle ID is too long:" + newID.length());
 
 		if(!newID.endsWith(newInserter.getID()))
 			throw new IllegalArgumentException("Invalid puzzle ID, does not end with inserter ID: " + newID);
