@@ -92,10 +92,14 @@ public class WebInterface {
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			return new StatisticsPage(this, req, context);
 		}
 
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return true;
+		}
 	}
 	
 	public class MyIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -347,7 +351,7 @@ public class WebInterface {
 			}
 		}
 		
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			// Not expected to make it here...
 			return new StatisticsPage(this, req, context);
 		}
