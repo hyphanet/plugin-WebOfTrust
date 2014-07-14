@@ -49,25 +49,24 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		if(!mRequest.isPartSet("Solve"))
 			return;
 		
-			int idx = 0;
-			while(mRequest.isPartSet("id" + idx)) {
-				try {
+		int idx = 0;
+		while(mRequest.isPartSet("id" + idx)) {
+			try {
 				String id = mRequest.getPartAsStringThrowing("id" + idx, IntroductionPuzzle.MAXIMAL_ID_LENGTH);
 				String solution = mRequest.getPartAsStringThrowing("Solution" + id, IntroductionPuzzle.MAXIMAL_SOLUTION_LENGTH);
 				if(!solution.trim().equals("")) {
 					IntroductionPuzzle p;
-						p = mWebOfTrust.getIntroductionPuzzleStore().getByID(id);
+					p = mWebOfTrust.getIntroductionPuzzleStore().getByID(id);
 
-							// It is safe to use this function without synchronization as it re-queries the identity from the database.
-							mClient.solvePuzzle(mLoggedInOwnIdentity, p, solution);
+					// It is safe to use this function without synchronization as it re-queries the identity from the database.
+					mClient.solvePuzzle(mLoggedInOwnIdentity, p, solution);
 				}
 				++idx;
-				
-				} catch(Exception e) {
-					new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
-				}
-			}
 
+			} catch(Exception e) {
+				new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
+			}
+		}
 	}
 
 	private void makeInfoBox() {
