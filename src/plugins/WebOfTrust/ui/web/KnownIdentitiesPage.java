@@ -127,9 +127,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	
 	/**
 	 * Makes a form where the user can enter the requestURI of an Identity he knows.
-	 * 
-	 * @param pr a reference to the {@link PluginRespirator}
-	 * @param mLoggedInOwnIdentity The owner of the known identity list. Not used for adding the identity but for showing the known identity list properly after adding.
 	 */
 	private void makeAddIdentityForm() {
 		
@@ -204,10 +201,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	
 	/**
 	 * Makes the list of Identities known by the tree owner.
-	 * 
-	 * @param db a reference to the database 
-	 * @param _pr a reference to the {@link PluginRespirator}
-	 * @param mLoggedInOwnIdentity owner of the trust tree we want to display 
 	 */
 	private void makeKnownIdentitiesList() throws DuplicateScoreException, DuplicateTrustException {
 
