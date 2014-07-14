@@ -8,7 +8,6 @@ import java.util.List;
 
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
-import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionClient;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
