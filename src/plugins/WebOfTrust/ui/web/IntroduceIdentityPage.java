@@ -49,25 +49,21 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		if(mRequest.isPartSet("Solve")) {
 			int idx = 0;
 			while(mRequest.isPartSet("id" + idx)) {
-				String id = mRequest.getPartAsString("id" + idx, IntroductionPuzzle.MAXIMAL_ID_LENGTH);
-				String solution = mRequest.getPartAsString("Solution" + id, IntroductionPuzzle.MAXIMAL_SOLUTION_LENGTH);
+				try {
+				String id = mRequest.getPartAsStringThrowing("id" + idx, IntroductionPuzzle.MAXIMAL_ID_LENGTH);
+				String solution = mRequest.getPartAsStringThrowing("Solution" + id, IntroductionPuzzle.MAXIMAL_SOLUTION_LENGTH);
 				if(!solution.trim().equals("")) {
 					IntroductionPuzzle p;
-					try {
 						p = mWebOfTrust.getIntroductionPuzzleStore().getByID(id);
 
-						try {
 							// It is safe to use this function without synchronization as it re-queries the identity from the database.
 							mClient.solvePuzzle(mLoggedInOwnIdentity, p, solution);
-						}
-						catch(Exception e) {
-							/* The identity or the puzzle might have been deleted here */
-							new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
-						}
-					} catch (UnknownPuzzleException e1) {
-					}
 				}
 				++idx;
+				
+				} catch(Exception e) {
+					new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
+				}
 			}
 		}
 	}
