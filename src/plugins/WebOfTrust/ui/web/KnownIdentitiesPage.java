@@ -37,7 +37,7 @@ import freenet.support.api.HTTPRequest;
  */
 public class KnownIdentitiesPage extends WebPageImpl {
 
-	private final OwnIdentity treeOwner;
+	private final OwnIdentity mLoggedInOwnIdentity;
 	
 	private static enum SortBy {
 		Nickname,
@@ -55,7 +55,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 */
 	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException, UnknownIdentityException {
 		super(toadlet, myRequest, context, true);
-		treeOwner = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
+		mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 	}
 
 	public void make() {
@@ -111,7 +111,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 
-		if(treeOwner.isRestoreInProgress()) {
+		if(mLoggedInOwnIdentity.isRestoreInProgress()) {
 			makeRestoreInProgressWarning();
 			return;
 		}
@@ -129,7 +129,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * Makes a form where the user can enter the requestURI of an Identity he knows.
 	 * 
 	 * @param pr a reference to the {@link PluginRespirator}
-	 * @param treeOwner The owner of the known identity list. Not used for adding the identity but for showing the known identity list properly after adding.
+	 * @param mLoggedInOwnIdentity The owner of the known identity list. Not used for adding the identity but for showing the known identity list properly after adding.
 	 */
 	private void makeAddIdentityForm() {
 		
@@ -207,7 +207,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * 
 	 * @param db a reference to the database 
 	 * @param _pr a reference to the {@link PluginRespirator}
-	 * @param treeOwner owner of the trust tree we want to display 
+	 * @param mLoggedInOwnIdentity owner of the trust tree we want to display 
 	 */
 	private void makeKnownIdentitiesList() throws DuplicateScoreException, DuplicateTrustException {
 
@@ -267,8 +267,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		long editionSum = 0;
 
 		synchronized(mWebOfTrust) {
-		for(Identity id : mWebOfTrust.getAllIdentitiesFilteredAndSorted(treeOwner, nickFilter, sortInstruction)) {
-			if(id == treeOwner) continue;
+		for(Identity id : mWebOfTrust.getAllIdentitiesFilteredAndSorted(mLoggedInOwnIdentity, nickFilter, sortInstruction)) {
+			if(id == mLoggedInOwnIdentity) continue;
 
 			HTMLNode row=identitiesTable.addChild("tr");
 			
@@ -299,7 +299,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			//Score
 			try {
-				final Score score = mWebOfTrust.getScore((OwnIdentity)treeOwner, id);
+				final Score score = mWebOfTrust.getScore((OwnIdentity)mLoggedInOwnIdentity, id);
 				final int scoreValue = score.getScore();
 				final int rank = score.getRank();
 				
@@ -314,7 +314,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 			
 			// Own Trust
-			row.addChild(getReceivedTrustCell(treeOwner, id));
+			row.addChild(getReceivedTrustCell(mLoggedInOwnIdentity, id));
 			
 			// Checkbox
 			row.addChild(getSetTrustCell(id));
