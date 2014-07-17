@@ -38,14 +38,15 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		mClient = mWebOfTrust.getIntroductionClient();
 	}
 
-	public void make() {
-		parseSolutions();
+	@Override
+	public void make(final boolean mayWrite) {
+		parseSolutions(mayWrite);
 		makeInfoBox();
 		makePuzzleBox();
 	}
 	
-	private void parseSolutions() {
-		if(!mRequest.isPartSet("Solve"))
+	private void parseSolutions(final boolean mayWrite) {
+		if(!mayWrite || !mRequest.isPartSet("Solve"))
 			return;
 		
 		int idx = 0;
