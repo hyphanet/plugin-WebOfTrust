@@ -49,8 +49,17 @@ public final class LogInPage extends WebPageImpl {
 		target = request.getParam("redirect-target", DEFAULT_REDIRECT_TARGET_AFTER_LOGIN);
 	}
 
+	/**
+	 * This does NOT handle the actual login request: When you press the log in button, the {@link LoginWebInterfaceToadlet} deals with processing
+	 * the request.
+	 * 
+	 * The reason for this is that we need to send a HTTP redirect to the page which shall be visible after login.
+	 * WebPage is not able to do this.
+	 * 
+	 * @param mayWrite Is ignored because as said in the description this function does not handle the form submission, {@link LoginWebInterfaceToadlet} does.
+	 */
 	@Override
-	public void make() {
+	public void make(final boolean mayWrite) {
 		makeWelcomeBox();
 		
 		synchronized (mWebOfTrust) {
