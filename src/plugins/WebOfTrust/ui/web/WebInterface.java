@@ -190,7 +190,8 @@ public class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			// TODO: Secure log out against malicious links (by using POST with form password instead of GET)
-			// At the moment it is just a link and unsecured i.e. no form password check etc.
+			//       At the moment it is just a link and unsecured i.e. no form password check etc.
+			//       Bugtracker entry for this: https://bugs.freenetproject.org/view.php?id=6238
 			logOut(context);
 			throw new RedirectException(getToadlet(LoginWebInterfaceToadlet.class).getURI());
 		}
