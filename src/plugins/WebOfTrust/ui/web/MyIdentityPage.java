@@ -53,8 +53,11 @@ public class MyIdentityPage extends WebPageImpl {
 		introduceIdentityToadlet = mWebInterface.getToadlet(IntroduceIdentityWebInterfaceToadlet.class);
 	}
 
+	/**
+	 * @param mayWrite Is ignored because the buttons on this page are all handled by other pages.
+	 */
 	@Override
-	public void make() {
+	public void make(final boolean mayWrite) {
 		makeLoggedInAs();
 		CreateOwnIdentityWizardPage.addLinkToCreateOwnIdentityWizard(this);
 	}
