@@ -175,7 +175,7 @@ public abstract class WebPageImpl implements WebPage {
 	public final void addToPage(WebPageImpl other) {
 		pageNode = other.pageNode;
 		contentNode = other.contentNode;
-		make();
+		make(false);
 	}
 	
 	/**
