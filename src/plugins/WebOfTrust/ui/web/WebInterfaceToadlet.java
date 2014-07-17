@@ -157,7 +157,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	    if(!checkIsEnabled(ctx))
 	    	return;
 		
-		if(checkAntiCSRFToken(request, ctx))
+		if(!checkAntiCSRFToken(request, ctx))
 			return;
 		
 		handleRequest(uri, request, ctx);
