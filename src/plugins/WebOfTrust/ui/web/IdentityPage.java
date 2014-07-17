@@ -77,12 +77,13 @@ public class IdentityPage extends WebPageImpl {
 	 * 
 	 * @see WebPage#make()
 	 */
-	public void make() {
+	@Override
+	public void make(final boolean mayWrite) {
 		synchronized(mWebOfTrust) {			
 			makeURIBox();
 			makeServicesBox();
 			makeStatisticsBox();
-			makeAddTrustBox();
+			makeAddTrustBox(mayWrite);
 			makeTrustsBox(mWebOfTrust.getGivenTrusts(identity), true);
 			makeTrustsBox(mWebOfTrust.getReceivedTrusts(identity), false);
 		}
@@ -92,9 +93,9 @@ public class IdentityPage extends WebPageImpl {
 	 * @author ShadowW4lk3r (ShadowW4lk3r@ye~rQ4m~pu2Iu3O2TH-GOLBbSeKoQ~QR~vC6tJbKmDg.freetalkrc2) - Most of the code
 	 * @author xor (xor@freenetproject.org)	- Minor improvements only
 	 */
-	private void makeAddTrustBox() {
+	private void makeAddTrustBox(final boolean mayWrite) {
 		//Change trust level if needed
-		if(mRequest.isPartSet("SetTrust")) {
+		if(mayWrite && mRequest.isPartSet("SetTrust")) {
 			String value = mRequest.getPartAsStringFailsafe("Value", 4).trim();
 			// Set length limit 1 too much to ensure that setTrust() throws if the user entered too much. We need it to throw so we display an error message.
 			String comment = mRequest.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);
