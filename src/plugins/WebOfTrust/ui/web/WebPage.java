@@ -13,8 +13,12 @@ public interface WebPage {
 
 	/**
 	 * Actually generates the page's content.
+	 * 
+	 * @param mayWrite If this is false, you MUST NOT do any changes to the server state, for example changing the WOT database.
+	 *                 Technically, this is an anti-CSRF mechanism.
+	 *                 See {@link WebInterfaceToadlet#checkAntiCSRFToken(freenet.support.api.HTTPRequest, freenet.clients.http.ToadletContext)}.
 	 */
-	public void make();
+	public void make(boolean mayWrite);
 	
 	/**
 	 * @return the HTML code of this WebPage.

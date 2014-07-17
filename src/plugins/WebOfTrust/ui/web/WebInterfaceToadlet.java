@@ -147,7 +147,8 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	    if(!checkIsEnabled(ctx))
 	    	return;
 		
-	    handleRequest(uri, req, ctx);
+	    // mayWrite is false because GET is not qualified for an anti-CSRF (cross-site request-forgery) mechanism.
+	    handleRequest(uri, req, ctx, false);
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException, SizeLimitExceededException, NoSuchElementException {
@@ -160,7 +161,8 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		if(!checkAntiCSRFToken(request, ctx))
 			return;
 		
-		handleRequest(uri, request, ctx);
+		// mayWrite is true because we are POST and checked the anti-CSRF (cross-site request-forgery) token.
+		handleRequest(uri, request, ctx, true);
 	}
 	
 	/**
@@ -182,9 +184,14 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	}
 	
 	/**
-	 * Handler for POST/GET. Does not do any access control. You have to check that the user is authorized before calling this! 
+	 * Handler for POST/GET. Does not do any access control. You have to check that the user is authorized before calling this!
+	 * Produces a {@link WebPage} via {@link #makeWebPage(HTTPRequest, ToadletContext)} and calls its handlers for the request. 
+	 * 
+	 * @param mayWrite This indicates whether the resulting {@link WebPage} is allowed to change the server state, for example write to the WOT database.
+	 *                 Must be false for GET-requests. You MUST only set this to true if {@link #checkAntiCSRFToken(HTTPRequest, ToadletContext)} returned true.
 	 */
-	private void handleRequest(final URI uri, final HTTPRequest request, final ToadletContext ctx) throws RedirectException, ToadletContextClosedException, IOException {
+	private void handleRequest(final URI uri, final HTTPRequest request, final ToadletContext ctx, final boolean mayWrite)
+			throws RedirectException, ToadletContextClosedException, IOException {
 		String ret = "";
 		WebPage page = null;
 		try {
@@ -206,7 +213,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		}
 		
 		if(page != null) {
-			page.make();
+			page.make(mayWrite);
 			ret = page.toHTML();
 		}
 		
