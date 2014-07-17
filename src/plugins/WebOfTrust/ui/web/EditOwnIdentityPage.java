@@ -32,9 +32,10 @@ public class EditOwnIdentityPage extends WebPageImpl {
 		mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 	}
 	
-	public void make() {
+	@Override
+	public void make(final boolean mayWrite) {
 		synchronized(mWebOfTrust) {
-			if(mRequest.isPartSet("Edit")) {
+			if(mayWrite && mRequest.isPartSet("Edit")) {
 				final boolean newPublishTrustList = mRequest.getPartAsStringFailsafe("PublishTrustList", 4).equals("true");
 				final boolean newPublishPuzzles = mRequest.getPartAsStringFailsafe("PublishPuzzles", 4).equals("true");
 				
