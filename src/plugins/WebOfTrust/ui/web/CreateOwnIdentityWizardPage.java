@@ -485,40 +485,40 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 		if(!mayWrite)
 			return false;
 		
-			try {
-				final OwnIdentity id;
-				
-				if(mGenerateRandomSSK) 
-					id = mWebOfTrust.createOwnIdentity(mIdentityNickname, mIdentityPublishesTrustList, null);
-				else if(!mRestoreIdentity)
-					id = mWebOfTrust.createOwnIdentity(mIdentityURI, mIdentityNickname, mIdentityPublishesTrustList, null);
-				else
-					id = mWebOfTrust.restoreOwnIdentity(mIdentityURI);
-				
-				mToadlet.logOut(mContext); // Log out the current identity in case the user created a second one.
-				
-				InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateOwnIdentityWizardPage.Step.CreateIdentity.Header"));
-				 // Add it to wizardBox instead of form because we want to add a "Log in" button to it which is a different form.
-				wizardBox.addChild(summaryInfoboxNode.outer);
-				
-				HTMLNode summaryBox = summaryInfoboxNode.content;
-				
-				l10n().addL10nSubstitution(summaryBox.addChild("p"), "CreateOwnIdentityWizardPage.Step.CreateIdentity.Success", 
+		try {
+			final OwnIdentity id;
+
+			if(mGenerateRandomSSK) 
+				id = mWebOfTrust.createOwnIdentity(mIdentityNickname, mIdentityPublishesTrustList, null);
+			else if(!mRestoreIdentity)
+				id = mWebOfTrust.createOwnIdentity(mIdentityURI, mIdentityNickname, mIdentityPublishesTrustList, null);
+			else
+				id = mWebOfTrust.restoreOwnIdentity(mIdentityURI);
+
+			mToadlet.logOut(mContext); // Log out the current identity in case the user created a second one.
+
+			InfoboxNode summaryInfoboxNode = getContentBox(l10n().getString("CreateOwnIdentityWizardPage.Step.CreateIdentity.Header"));
+			// Add it to wizardBox instead of form because we want to add a "Log in" button to it which is a different form.
+			wizardBox.addChild(summaryInfoboxNode.outer);
+
+			HTMLNode summaryBox = summaryInfoboxNode.content;
+
+			l10n().addL10nSubstitution(summaryBox.addChild("p"), "CreateOwnIdentityWizardPage.Step.CreateIdentity.Success", 
 					mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
-				
-				LogInPage.addLoginButton(this, summaryBox, id, mRedirectTarget);
-				
-				return true;
-			}
-			catch(Exception e) {
-				InfoboxNode errorInfoboxNode = getAlertBox(l10n().getString("CreateOwnIdentityWizardPage.Step.CreateIdentity.Failure"));
-				form.addChild(errorInfoboxNode.outer);
-				
-				HTMLNode errorBox = errorInfoboxNode.content;
-				errorBox.addChild("p", e.getLocalizedMessage());
-				
-				return false;
-			}
+
+			LogInPage.addLoginButton(this, summaryBox, id, mRedirectTarget);
+
+			return true;
+		}
+		catch(Exception e) {
+			InfoboxNode errorInfoboxNode = getAlertBox(l10n().getString("CreateOwnIdentityWizardPage.Step.CreateIdentity.Failure"));
+			form.addChild(errorInfoboxNode.outer);
+
+			HTMLNode errorBox = errorInfoboxNode.content;
+			errorBox.addChild("p", e.getLocalizedMessage());
+
+			return false;
+		}
 	}
 
 	private void makeBackAndContinueButtons(HTMLNode form) {
