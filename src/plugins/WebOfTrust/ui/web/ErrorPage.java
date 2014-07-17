@@ -25,7 +25,8 @@ public class ErrorPage extends WebPageImpl {
 		mError = myError;
 	}
 
-	public void make() {
+	@Override
+	public void make(final boolean mayWrite) {
 		if(mError instanceof UnknownIdentityException) {
 			final String id = ((UnknownIdentityException)mError).getIdentityID();
 			addErrorBox(l10n().getString("Common.UnknownIdentityExceptionTitle"), l10n().getString("Common.UnknownIdentityExceptionDescription", "identityID", id));
