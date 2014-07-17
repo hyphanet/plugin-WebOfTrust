@@ -58,7 +58,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 	}
 
-	public void make() {
+	@Override
+	public void make(final boolean mayWrite) {
 		if(mLoggedInOwnIdentity.isRestoreInProgress()) {
 			makeRestoreInProgressWarning();
 			return;
@@ -66,7 +67,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		final boolean addIdentity = mRequest.isPartSet("AddIdentity");
 		
-		if(addIdentity) {
+		if(mayWrite && addIdentity) {
 			try {
 				mWebOfTrust.addIdentity(mRequest.getPartAsStringFailsafe("IdentityURI", 1024));
 				HTMLNode successBox = addContentBox(l10n().getString("KnownIdentitiesPage.AddIdentity.Success.Header"));
@@ -77,7 +78,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 		
-		if(mRequest.isPartSet("SetTrust")) {
+		if(mayWrite && mRequest.isPartSet("SetTrust")) {
 			for(String part : mRequest.getParts()) {
 				if(!part.startsWith("SetTrustOf"))
 					continue;
