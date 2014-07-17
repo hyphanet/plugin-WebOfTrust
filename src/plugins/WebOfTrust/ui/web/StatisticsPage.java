@@ -27,7 +27,8 @@ public class StatisticsPage extends WebPageImpl {
 		super(toadlet, myRequest, context);
 	}
 
-	public void make() {
+	@Override
+	public void make(final boolean mayWrite) {
 		makeSummary();
 	}
 
