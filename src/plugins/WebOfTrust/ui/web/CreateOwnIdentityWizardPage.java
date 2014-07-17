@@ -111,7 +111,8 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 		super(toadlet, myRequest, context);
 	}
 
-	public void make() {
+	@Override
+	public void make(final boolean mayWrite) {
 		parseFormData();
 		
 		HTMLNode wizardBox = addContentBox(l10n().getString("CreateOwnIdentityWizardPage.CreateIdentityBox.Header"));
@@ -124,7 +125,7 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 			case ChooseCreateOrRestore: makeChooseCreateOrRestoreStep(form); break;
 			case ChooseNickname: makeChooseNicknameStep(form); break;
 			case ChoosePreferences: makeChoosePreferencesStep(form); break;
-			case CreateIdentity: finished = makeCreateIdentityStep(wizardBox, form); break;
+			case CreateIdentity: finished = makeCreateIdentityStep(wizardBox, form, mayWrite); break;
 			default: throw new IllegalStateException();
 		}
 		
@@ -480,13 +481,10 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 	/**
 	 * @return True if the identity was created successfully, false upon error.
 	 */
-	private boolean makeCreateIdentityStep(HTMLNode wizardBox, HTMLNode form) {
-		// It was unclear why we check for POST when I ported this code from Freetalk.
-		// After some investigation, it seems like the reason is to ensure that higher-level code has validated the formPassword
-		// - it only does so for POST, not for GET.
-		// See: https://bugs.freenetproject.org/view.php?id=6210
-		// TODO: It might make sense to get rid of the formPasssword mechanism and replace it with session cookies as suggested in the bugtracker entry above.
-		if(mRequest.getMethod().equals("POST")) {
+	private boolean makeCreateIdentityStep(HTMLNode wizardBox, HTMLNode form, boolean mayWrite) {
+		if(!mayWrite)
+			return false;
+		
 			try {
 				final OwnIdentity id;
 				
@@ -518,10 +516,9 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 				
 				HTMLNode errorBox = errorInfoboxNode.content;
 				errorBox.addChild("p", e.getLocalizedMessage());
+				
+				return false;
 			}
-		}
-		
-		return false;
 	}
 
 	private void makeBackAndContinueButtons(HTMLNode form) {
