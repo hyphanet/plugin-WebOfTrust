@@ -32,8 +32,9 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 		mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 	}
 
-	public void make() {
-		if(mRequest.isPartSet("confirm")) {
+	@Override
+	public void make(final boolean mayWrite) {
+		if(mayWrite && mRequest.isPartSet("confirm")) {
 			try {
 				mWebOfTrust.deleteOwnIdentity(mIdentity.getID());
 				mToadlet.logOut(mContext);
