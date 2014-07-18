@@ -208,7 +208,15 @@ public class IdentityPage extends WebPageImpl {
 		for(Trust trust : trusts) {
 			HTMLNode trustRow = trustsTable.addChild("tr");
 			Identity involvedIdentity = showTrustee ? trust.getTrustee() : trust.getTruster(); 
-			trustRow.addChild("td").addChild("a", "href", getURI(mWebInterface, involvedIdentity.getID()).toString(), involvedIdentity.getNickname());
+			
+			String nickname = involvedIdentity.getNickname();
+			HTMLNode nicknameNode;
+			if(nickname == null)
+				nicknameNode = new HTMLNode("span", "class", "alert-error").addChild("#", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.NicknameNotDownloadedYet"));
+			else
+				nicknameNode = new HTMLNode("#", nickname);
+			
+			trustRow.addChild("td").addChild("a", "href", getURI(mWebInterface, involvedIdentity.getID()).toString()).addChild(nicknameNode);
 			trustRow.addChild("td", involvedIdentity.getID());
 			trustRow.addChild("td", new String[]{"align", "style"}, new String[]{"right", "background-color:" + KnownIdentitiesPage.getTrustColor(trust.getValue()) + ";"}, Byte.toString(trust.getValue()));
 			trustRow.addChild("td", trust.getComment());
