@@ -122,13 +122,13 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 
-		makeAddIdentityForm();
-
 		try {
 			makeKnownIdentitiesList();
 		} catch (Exception e) {
 			new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
 		}
+		
+		makeAddIdentityForm(); // Put this after makeKnownIdentitiesList() so clicking through pages of the known identities list doesn't involve scrolling.
 	}
 	
 	/**
