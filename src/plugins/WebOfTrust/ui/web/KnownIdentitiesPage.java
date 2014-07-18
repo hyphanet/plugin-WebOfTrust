@@ -4,6 +4,7 @@
 package plugins.WebOfTrust.ui.web;
 
 import java.util.Date;
+import java.util.Iterator;
 import java.util.TreeMap;
 
 import plugins.WebOfTrust.Identity;
@@ -18,12 +19,14 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+
+import com.db4o.ObjectSet;
+
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
-import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -36,6 +39,8 @@ import freenet.support.api.HTTPRequest;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class KnownIdentitiesPage extends WebPageImpl {
+	
+	public static final int IDENTITIES_PER_PAGE = 15;
 
 	private final OwnIdentity mLoggedInOwnIdentity;
 	
@@ -209,6 +214,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		String sortBy = mRequest.isPartSet("sortby") ? mRequest.getPartAsStringFailsafe("sortby", 100).trim() : "Nickname";
 		String sortType = mRequest.isPartSet("sorttype") ? mRequest.getPartAsStringFailsafe("sorttype", 100).trim() : "Ascending";
 		
+		int page = mRequest.isPartSet("page") ? Integer.parseInt(mRequest.getPartAsStringFailsafe("page", Integer.toString(Integer.MAX_VALUE).length())) : 0;
+		page = page - 1; // What we get passed is the user-friendly page number counting from 1, not 0.
+		page = Math.max(0, page); // In case no page part was set, it would be -1
 		
 		HTMLNode knownIdentitiesBox = addContentBox(l10n().getString("KnownIdentitiesPage.KnownIdentities.Header"));
 		knownIdentitiesBox = pr.addFormChild(knownIdentitiesBox, uri.toString(), "Filters").addChild("p");
@@ -259,9 +267,16 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		long currentTime = CurrentTimeUTC.getInMillis();
 		
 		long editionSum = 0;
+		
+		final int indexOfFirstIdentity = page * IDENTITIES_PER_PAGE;
+		final ObjectSet<Identity> allIdentities = mWebOfTrust.getAllIdentitiesFilteredAndSorted(mLoggedInOwnIdentity, nickFilter, sortInstruction);
+		final Iterator<Identity> identities = allIdentities.listIterator(indexOfFirstIdentity);
+		
 
 		synchronized(mWebOfTrust) {
-		for(Identity id : mWebOfTrust.getAllIdentitiesFilteredAndSorted(mLoggedInOwnIdentity, nickFilter, sortInstruction)) {
+		for(int displayed = 0; displayed < IDENTITIES_PER_PAGE && identities.hasNext(); ++displayed) {
+			final Identity id = identities.next();
+			
 			if(id == mLoggedInOwnIdentity) continue;
 
 			HTMLNode row=identitiesTable.addChild("tr");
@@ -336,6 +351,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		}
 		
 		identitiesTable.addChild(getKnownIdentitiesListTableHeader());
+		knownIdentitiesBox.addChild(getKnownIdentitiesListPageLinks(page, allIdentities.size()));
 		
 		knownIdentitiesBox.addChild("#", l10n().getString("KnownIdentitiesPage.KnownIdentities.FetchProgress", "editionCount", Long.toString(editionSum)));
 	}
@@ -355,6 +371,82 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		row.addChild("th", l10n().getString("KnownIdentitiesPage.KnownIdentities.TableHeader.EditionHint"));
 		
 		return row;
+	}
+	
+	/**
+	 * Gets a list of links to the pages of the known identities list. Will look like this:
+	 * 1 to 5... currentPage-5 to currentPage+5 ... lastPage-5 to lastPage
+	 * 
+	 * @param currentPage The currently displayed page, counting from 0.
+	 * @param identityCount Total amount of identities in the result set. This is used to compute the page count. TODO: Optimization: When using lazy database
+	 *                      query evaluation, the amount of identities will not be computed until we have processed the whole database query. So the 
+	 *                      computation of this parameter is expensive then and we should get rid of it. The link to the last page should be "Last" instead of
+	 *                      a numeric label then. Bugtracker entry: https://bugs.freenetproject.org/view.php?id=6245
+	 */
+	private HTMLNode getKnownIdentitiesListPageLinks(final int currentPage, final int identityCount) {
+		final int pageCount = identityCount / IDENTITIES_PER_PAGE + ((identityCount % IDENTITIES_PER_PAGE > 0) ? 1 : 0);
+		final int lastPage = pageCount-1;
+		
+		HTMLNode div = new HTMLNode("div");
+		
+		if(pageCount == 1)
+			return div;
+		
+		int lastDisplayedLink = -1;
+		
+		// Display links to first 5 pages excluding the current page.
+		for(int i = 0; i < currentPage; ) {
+			div.addChild(getSingleKnownIdentitiesListPageLink(currentPage, i));
+			lastDisplayedLink = i;
+			
+			++i; 
+			
+			if(i >= 5) { // Display 5 links at most
+				if(i < currentPage-5) // The next loop displays links starting from currentPage-5. If our next link wouldn't fall into that range, add dots.
+					div.addChild("#", "...");
+				break;
+			}
+		}
+		
+		// Display 5 links before and after current page, excluding last page.
+		for(int i = Math.max(currentPage-5, lastDisplayedLink+1); i < lastPage; ) {
+			div.addChild(getSingleKnownIdentitiesListPageLink(currentPage, i));
+			lastDisplayedLink = i;
+			
+			++i;
+			
+			if(i > currentPage+5) {
+				if(i != lastPage) // If the next link would not have been the lastPage, add "..." for the missing pages in between
+					div.addChild("#", "...");
+				break;
+			}
+		}
+		
+		// Display last page
+		if(lastDisplayedLink != lastPage)
+			div.addChild(getSingleKnownIdentitiesListPageLink(currentPage, lastPage));
+
+		return div;
+	}
+	
+	/**
+	 * Get a single entry in the link list to the pages of the known identities list.
+	 * 
+	 * TODO: This currently returns a button, not an actual link. We need a button instead of a link because it must submit the "Filters" form. Use CSS
+	 *       or Javascript to make it look like a link to follow the style convention of having the page list being links, not buttons.
+	 * 
+	 * @param currentPage The currently displayed page, counting from 0. Used to decide whether the link should really be a link or just a bold number,
+	 *                    which indicates which page the user is on
+	 * @param desiredPage The page to which the link shall point.
+	 */
+	private HTMLNode getSingleKnownIdentitiesListPageLink(final int currentPage, int desiredPage) {
+		final String desiredPageString = Integer.toString(desiredPage + 1);
+		
+		if(currentPage != desiredPage)
+			return new HTMLNode("input", new String[]{ "type", "name", "value" },
+			                             new String[]{ "submit", "page", desiredPageString });
+		else
+			return new HTMLNode("b", desiredPageString);
 	}
 	
 	private HTMLNode getReceivedTrustCell (OwnIdentity truster, Identity trustee) throws DuplicateTrustException {
