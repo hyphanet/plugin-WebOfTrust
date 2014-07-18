@@ -3,7 +3,9 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
@@ -42,6 +44,7 @@ public class StatisticsPage extends WebPageImpl {
 		synchronized(mWebOfTrust) {
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.OwnIdentities") + ": " + mWebOfTrust.getAllOwnIdentities().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.KnownIdentities") + ": " + mWebOfTrust.getAllNonOwnIdentities().size()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FetchProgress", "editionCount", Long.toString(getEditionSum()))));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.TrustRelationships") + ": " + mWebOfTrust.getAllTrusts().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.ScoreRelationships") + ": " + mWebOfTrust.getAllScores().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputations") + ": " + mWebOfTrust.getNumberOfFullScoreRecomputations()));
@@ -66,5 +69,16 @@ public class StatisticsPage extends WebPageImpl {
 		}
 		
 		box.addChild(list);
+	}
+
+	/**
+	 * TODO: Move to class {@link WebOfTrust}
+	 */
+	private long getEditionSum() {
+		long editionSum = 0;
+		for(Identity identity : mWebOfTrust.getAllIdentities()) {
+			editionSum += identity.getEdition();
+		}
+		return editionSum;
 	}
 }

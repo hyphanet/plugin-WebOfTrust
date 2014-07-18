@@ -262,8 +262,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		long currentTime = CurrentTimeUTC.getInMillis();
 		
-		long editionSum = 0;
-		
 		final int indexOfFirstIdentity = page * IDENTITIES_PER_PAGE;
 		final ObjectSet<Identity> allIdentities = mWebOfTrust.getAllIdentitiesFilteredAndSorted(mLoggedInOwnIdentity, nickFilter, sortInstruction);
 		final Iterator<Identity> identities = allIdentities.listIterator(indexOfFirstIdentity);
@@ -338,9 +336,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			// TODO: Show in advanced mode only once someone finally fixes the "Switch to advanced mode" link on FProxy to work on ALL pages.
 			
-			final long edition = id.getEdition();
-			editionSum += edition;
-			row.addChild("td", "align", "center", Long.toString(edition));
+			row.addChild("td", "align", "center", Long.toString(id.getEdition()));
 			
 			row.addChild("td", "align", "center", Long.toString(id.getLatestEditionHint()));
 		}
@@ -348,8 +344,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		identitiesTable.addChild(getKnownIdentitiesListTableHeader());
 		knownIdentitiesBox.addChild(getKnownIdentitiesListPageLinks(page, allIdentities.size()));
-		
-		knownIdentitiesBox.addChild("#", l10n().getString("KnownIdentitiesPage.KnownIdentities.FetchProgress", "editionCount", Long.toString(editionSum)));
 	}
 	
 	private HTMLNode getKnownIdentitiesListTableHeader() {

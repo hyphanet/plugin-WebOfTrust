@@ -32,3 +32,4 @@ CreateOwnIdentityWizardPage.Step.ChoosePreferences.TrustList.Text4=${bold}Warnun
 CreateOwnIdentityWizardPage.Step.CreateIdentity.Failure=Es tut uns Leid - es gab ein Problem beim Erstellen Ihrer Identität
 CreateOwnIdentityWizardPage.Step.CreateIdentity.Header=Identität erstellt
 ErrorPage.InternalError.Header=Interner Fehler, bitte melden Sie das
+StatisticsPage.SummaryBox.FetchProgress=Summe aller Editionen: ${editionCount}
