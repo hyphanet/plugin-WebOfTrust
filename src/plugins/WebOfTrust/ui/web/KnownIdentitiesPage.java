@@ -122,12 +122,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 
-		try {
-			makeKnownIdentitiesList();
-		} catch (Exception e) {
-			new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
-		}
 		
+		makeKnownIdentitiesList();
 		makeAddIdentityForm(); // Put this after makeKnownIdentitiesList() so clicking through pages of the known identities list doesn't involve scrolling.
 	}
 	
@@ -208,7 +204,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	/**
 	 * Makes the list of Identities known by the tree owner.
 	 */
-	private void makeKnownIdentitiesList() throws DuplicateScoreException, DuplicateTrustException {
+	private void makeKnownIdentitiesList() {
 
 		String nickFilter = mRequest.getPartAsStringFailsafe("nickfilter", 100).trim();
 		String sortBy = mRequest.isPartSet("sortby") ? mRequest.getPartAsStringFailsafe("sortby", 100).trim() : "Nickname";
