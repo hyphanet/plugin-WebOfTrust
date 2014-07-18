@@ -3,10 +3,10 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
-import freenet.clients.http.RedirectException;
-import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -24,13 +24,13 @@ public class StatisticsPage extends WebPageImpl {
 	 * 
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
-	 * @throws RedirectException If the {@link Session} has expired.
 	 */
-	public StatisticsPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException {
-		super(toadlet, myRequest, context, true);
+	public StatisticsPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) {
+		super(toadlet, myRequest, context);
 	}
 
-	public void make() {
+	@Override
+	public void make(final boolean mayWrite) {
 		makeSummary();
 	}
 
@@ -41,16 +41,17 @@ public class StatisticsPage extends WebPageImpl {
 		HTMLNode box = addContentBox(l10n().getString("StatisticsPage.SummaryBox.Header"));
 		HTMLNode list = new HTMLNode("ul");
 		
-		synchronized(wot) {
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.OwnIdentities") + ": " + wot.getAllOwnIdentities().size()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.KnownIdentities") + ": " + wot.getAllNonOwnIdentities().size()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.TrustRelationships") + ": " + wot.getAllTrusts().size()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.ScoreRelationships") + ": " + wot.getAllScores().size()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputations") + ": " + wot.getNumberOfFullScoreRecomputations()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputationTime") + ": " + wot.getAverageFullScoreRecomputationTime()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalRecomputations") + ": " + wot.getNumberOfIncrementalScoreRecomputations()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalRecomputationTime") + ": " + wot.getAverageIncrementalScoreRecomputationTime()));
-		IntroductionPuzzleStore puzzleStore = wot.getIntroductionPuzzleStore();
+		synchronized(mWebOfTrust) {
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.OwnIdentities") + ": " + mWebOfTrust.getAllOwnIdentities().size()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.KnownIdentities") + ": " + mWebOfTrust.getAllNonOwnIdentities().size()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FetchProgress", "editionCount", Long.toString(getEditionSum()))));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.TrustRelationships") + ": " + mWebOfTrust.getAllTrusts().size()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.ScoreRelationships") + ": " + mWebOfTrust.getAllScores().size()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputations") + ": " + mWebOfTrust.getNumberOfFullScoreRecomputations()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputationTime") + ": " + mWebOfTrust.getAverageFullScoreRecomputationTime()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalRecomputations") + ": " + mWebOfTrust.getNumberOfIncrementalScoreRecomputations()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalRecomputationTime") + ": " + mWebOfTrust.getAverageIncrementalScoreRecomputationTime()));
+		IntroductionPuzzleStore puzzleStore = mWebOfTrust.getIntroductionPuzzleStore();
 		synchronized(puzzleStore) {
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.UnsolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(false)));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.SolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(true)));
@@ -60,7 +61,7 @@ public class StatisticsPage extends WebPageImpl {
 		}
 		}
 		
-		IdentityFetcher fetcher = wot.getIdentityFetcher();
+		IdentityFetcher fetcher = mWebOfTrust.getIdentityFetcher();
 		synchronized(fetcher) {
 			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FetchedIdentities") + ": " + fetcher.getFetchedCount()));
 			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.AverageFetchedIdentitiesPerHour") + ": " + fetcher.getAverageFetchCountPerHour()));
@@ -68,5 +69,16 @@ public class StatisticsPage extends WebPageImpl {
 		}
 		
 		box.addChild(list);
+	}
+
+	/**
+	 * TODO: Move to class {@link WebOfTrust}
+	 */
+	private long getEditionSum() {
+		long editionSum = 0;
+		for(Identity identity : mWebOfTrust.getAllIdentities()) {
+			editionSum += identity.getEdition();
+		}
+		return editionSum;
 	}
 }

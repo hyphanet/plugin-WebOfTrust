@@ -6,7 +6,6 @@ package plugins.WebOfTrust.ui.web;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
-import plugins.WebOfTrust.introduction.IntroductionServer;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
@@ -15,7 +14,7 @@ import freenet.support.api.HTTPRequest;
 
 
 /**
- * The page where users can edit their own identities.
+ * The page where users can edit the currently logged in {@link OwnIdentity}.
  * 
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
@@ -30,32 +29,31 @@ public class EditOwnIdentityPage extends WebPageImpl {
 	public EditOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
+		mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 	}
 	
-	public void make() {
-		synchronized(wot) {
-			if(request.isPartSet("Edit")) {
-				final boolean newPublishTrustList = request.getPartAsStringFailsafe("PublishTrustList", 4).equals("true");
-				final boolean newPublishPuzzles = request.getPartAsStringFailsafe("PublishPuzzles", 4).equals("true");
+	@Override
+	public void make(final boolean mayWrite) {
+		synchronized(mWebOfTrust) {
+			if(mayWrite && mRequest.isPartSet("Edit")) {
+				final boolean newPublishTrustList = mRequest.getPartAsStringFailsafe("PublishTrustList", 4).equals("true");
+				final boolean newPublishPuzzles = mRequest.getPartAsStringFailsafe("PublishPuzzles", 4).equals("true");
 				
 				try {
-					wot.setPublishTrustList(mIdentity.getID(), newPublishTrustList);
-					wot.setPublishIntroductionPuzzles(mIdentity.getID(), newPublishTrustList && newPublishPuzzles);
+					mWebOfTrust.setPublishTrustList(mIdentity.getID(), newPublishTrustList);
+					mWebOfTrust.setPublishIntroductionPuzzles(mIdentity.getID(), newPublishTrustList && newPublishPuzzles);
 					
 		            HTMLNode aBox = addContentBox(l10n().getString("EditOwnIdentityPage.SettingsSaved.Header"));
 		            aBox.addChild("p", l10n().getString("EditOwnIdentityPage.SettingsSaved.Text"));
 				}
 				catch(Exception e) {
-					addErrorBox(l10n().getString("EditOwnIdentityPage.SettingsSaveFailed"), e);
+					new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
 				}
 			}
 
 			HTMLNode box = addContentBox(l10n().getString("EditOwnIdentityPage.EditIdentityBox.Header", "nickname", mIdentity.getNickname()));
 			
 			HTMLNode createForm = pr.addFormChild(box, uri.toString(), "EditIdentity");
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", mIdentity.getID()});
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EditIdentity"});
 			
 			createForm.addChild("p", new String[] { "style" }, new String[] { "font-size: x-small" },
 					l10n().getString("EditOwnIdentityPage.EditIdentityBox.RequestUri") + ": " + mIdentity.getRequestURI().toString());

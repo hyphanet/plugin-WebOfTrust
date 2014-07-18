@@ -516,6 +516,16 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		return mNickname;
 	}
 	
+	/** 
+	 * @return The nickname suffixed with "@" and part of {@link #getID()}. The length of the part of the ID is chosen as short as possible so that the
+	 *         resulting nickname is unique among all identities currently known to WOT.
+	 *         TODO: We currently just suffix the full ID, implement actual shortest unique nickname computation.
+	 *         Relevant bugtracker entry is https://bugs.freenetproject.org/view.php?id=6072 
+	 */
+	public final String getShortestUniqueNickname(){
+		return getNickname() + "@" + getID();
+	}
+	
 	/**
 	 * Throws if the nickname is given nickname is invalid.
 	 * 

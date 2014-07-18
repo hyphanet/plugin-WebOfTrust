@@ -3,14 +3,16 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
-import freenet.clients.http.RedirectException;
-import freenet.clients.http.SessionManager.Session;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import freenet.clients.http.ToadletContext;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 /**
- * Shown when a severe internal Exception occurs in WoT
+ * Use this for displaying typical WOT exceptions such as {@link UnknownIdentityException}. Usually you want to use it like this:
+ * <p><code>try {...} catch (UnknownIdentityException e) {
+				new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
+			}</p></code> 
  * 
  * @author xor (xor@freenetproject.org)
  */
@@ -18,16 +20,19 @@ public class ErrorPage extends WebPageImpl {
 	
 	private final Exception mError;
 
-	/**
-	 * @throws RedirectException Should never be thrown since no {@link Session} is used.
-	 */
-	public ErrorPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, Exception myError) throws RedirectException {
-		super(toadlet, myRequest, context, false);
+	public ErrorPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, Exception myError) {
+		super(toadlet, myRequest, context);
 		mError = myError;
-		Logger.error(this, "Internval error, please report this", mError);
 	}
 
-	public void make() {
-		addErrorBox("Internal error, please report this", mError);
+	@Override
+	public void make(final boolean mayWrite) {
+		if(mError instanceof UnknownIdentityException) {
+			final String id = ((UnknownIdentityException)mError).getIdentityID();
+			addErrorBox(l10n().getString("Common.UnknownIdentityExceptionTitle"), l10n().getString("Common.UnknownIdentityExceptionDescription", "identityID", id));
+		} else {
+			addErrorBox(l10n().getString("ErrorPage.InternalError.Header"), mError);
+			Logger.error(this, "Internval error, please report this", mError);
+		}
 	}
 }

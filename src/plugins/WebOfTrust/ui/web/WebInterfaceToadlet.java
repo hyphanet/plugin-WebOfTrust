@@ -95,9 +95,12 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		sessionManager.deleteSession(context);
 	}
 	
+	/**
+	 * @deprecated Use {@link #getURI()} instead.
+	 */
 	@Override
 	public String path() {
-		return webInterface.getURI() + "/" + pageTitle;
+		return getURI().toString();
 	}
 	
 	/**
@@ -144,7 +147,8 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	    if(!checkIsEnabled(ctx))
 	    	return;
 		
-	    handleRequest(uri, req, ctx);
+	    // mayWrite is false because GET is not qualified for an anti-CSRF (cross-site request-forgery) mechanism.
+	    handleRequest(uri, req, ctx, false);
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException, SizeLimitExceededException, NoSuchElementException {
@@ -154,19 +158,40 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	    if(!checkIsEnabled(ctx))
 	    	return;
 		
-		String pass = request.getPartAsStringFailsafe("formPassword", 32);
-		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
-			writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
+		if(!checkAntiCSRFToken(request, ctx))
 			return;
-		}
-
-		handleRequest(uri, request, ctx);
+		
+		// mayWrite is true because we are POST and checked the anti-CSRF (cross-site request-forgery) token.
+		handleRequest(uri, request, ctx, true);
 	}
 	
 	/**
-	 * Handler for POST/GET. Does not do any access control. You have to check that the user is authorized before calling this! 
+	 * Checks the anti-CSRF token of the request. See {@link NodeClientCore#formPassword} for an explanation.
+	 * You must call this when processing requests which change the server state, for example anything in the WOT database.
+	 * Such requests must always be POST, GET should never change anything.
+	 * 
+	 * If it returns false, you must stop processing and NOT modify the server state. 
+	 * Then you must also not output anything: This function will already output an HTML page which says that access was denied. 
 	 */
-	private void handleRequest(final URI uri, final HTTPRequest request, final ToadletContext ctx) throws RedirectException, ToadletContextClosedException, IOException {
+	protected boolean checkAntiCSRFToken(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		String pass = request.getPartAsStringFailsafe("formPassword", 32);
+		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
+			writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
+			return false;
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Handler for POST/GET. Does not do any access control. You have to check that the user is authorized before calling this!
+	 * Produces a {@link WebPage} via {@link #makeWebPage(HTTPRequest, ToadletContext)} and calls its handlers for the request. 
+	 * 
+	 * @param mayWrite This indicates whether the resulting {@link WebPage} is allowed to change the server state, for example write to the WOT database.
+	 *                 Must be false for GET-requests. You MUST only set this to true if {@link #checkAntiCSRFToken(HTTPRequest, ToadletContext)} returned true.
+	 */
+	private void handleRequest(final URI uri, final HTTPRequest request, final ToadletContext ctx, final boolean mayWrite)
+			throws RedirectException, ToadletContextClosedException, IOException {
 		String ret = "";
 		WebPage page = null;
 		try {
@@ -183,16 +208,12 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		} catch (UnknownIdentityException e) {
 			Logger.warning(this, "Session is invalid, the own identity was deleted already.", e);
 			sessionManager.deleteSession(ctx);
-			
-			try {
-				page = new ErrorPage(this, request, ctx, e);
-			} catch(Exception doubleFault) {
-				ret = doubleFault.toString();
-			}
+
+			page = new ErrorPage(this, request, ctx, e);
 		}
 		
 		if(page != null) {
-			page.make();
+			page.make(mayWrite);
 			ret = page.toHTML();
 		}
 		

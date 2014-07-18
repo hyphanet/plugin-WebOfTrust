@@ -14,7 +14,7 @@ import freenet.support.api.HTTPRequest;
 
 
 /**
- * The web interface of the WoT plugin.
+ * Deletes the currently logged in {@link OwnIdentity}.
  * 
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
@@ -29,27 +29,24 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
+		mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
 	}
 
-	public void make() {
-		if(request.isPartSet("confirm")) {
+	@Override
+	public void make(final boolean mayWrite) {
+		if(mayWrite && mRequest.isPartSet("confirm")) {
 			try {
-				wot.deleteOwnIdentity(mIdentity.getID());
+				mWebOfTrust.deleteOwnIdentity(mIdentity.getID());
 				mToadlet.logOut(mContext);
 				
-				/* TODO: Show the OwnIdentities page instead! Use the trick which Freetalk does for inlining pages */
 				HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Header"));
 				box.addChild("#", l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text"));
 				
-				try {
-					mWebInterface.getToadlet(LoginWebInterfaceToadlet.class).makeWebPage(request, mContext).addToPage(this);
-				} catch (RedirectException e) {
-					throw new RuntimeException(e); // Shouldn't happen according to JavaDoc of constructor
-				}
-				
+				// Cast because the casted version does not throw RedirectException.
+				((LoginWebInterfaceToadlet)mWebInterface.getToadlet(LoginWebInterfaceToadlet.class))
+					.makeWebPage(mRequest, mContext).addToPage(this);
 			} catch (UnknownIdentityException e) {
-				addErrorBox(l10n().getString("Common.UnknownIdentityExceptionTitle"), l10n().getString("Common.UnknownIdentityExceptionDescription"));
+				new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
 			}
 		}
 		else
@@ -59,13 +56,11 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 	private void makeConfirmation() {
 		HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Header"));
 
-		box.addChild(new HTMLNode("p", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text1", "nickname", mIdentity.getNickname())));
+		box.addChild(new HTMLNode("p", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text1", "nickname", mIdentity.getShortestUniqueNickname())));
 		box.addChild(new HTMLNode("p", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text2")));
 
 		HTMLNode confirmForm = pr.addFormChild(box, uri.toString(), "DeleteIdentity");
 
-		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "DeleteIdentity" });
-		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", mIdentity.getID()});
 		confirmForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.ConfirmButton") });
 	}
 }
