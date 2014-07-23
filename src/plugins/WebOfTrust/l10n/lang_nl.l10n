@@ -22,7 +22,6 @@ EditOwnIdentityPage.EditIdentityBox.RequestUri=Opvraag URI
 EditOwnIdentityPage.EditIdentityBox.SaveButton=Wijzigingen opslaan
 EditOwnIdentityPage.SettingsSaved.Header=Instellingen opgeslagen
 EditOwnIdentityPage.SettingsSaved.Text=Het is gelukt de instellingen op te slaan.
-IdentityPage.ChangeTrustBox.FromOwnIdentity=Vertrouwen van jouw pseudoniem '${nickname}'
 IdentityPage.ChangeTrustBox.Header=Verander het vertrouwen van '${nickname}'
 IdentityPage.IdentityUriBox.Header=Verwijzing van pseudoniem '${nickname}'
 IdentityPage.IdentityUriBox.Text=De volgende Freenet sleutel is een verwijzing naar deze pseudoniem. Geef deze sleutel als je anderen dit pseudoniem wilt geven.
