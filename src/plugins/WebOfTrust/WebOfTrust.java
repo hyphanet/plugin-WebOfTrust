@@ -335,6 +335,14 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
         // The shutdown hook does auto-commit. We do NOT want auto-commit: if a transaction hasn't commit()ed, it's not safe to commit it.
         cfg.automaticShutDown(false);
         
+        // Bugfix options
+        
+        /* Raise database size limit from 2GB to 16GB.
+         * Toad has already ran into DatabaseMaximumSizeReachedException with the old 2GB limit: https://bugs.freenetproject.org/view.php?id=6135
+         * The value of 8 is a good idea according to db4o documentation: "A very good choice for this value is 8 bytes, because that corresponds to the slot
+         *  length of the pointers (address + length) that db4o internally uses." */
+        cfg.blockSize(8);
+        
         // Performance config options:
         cfg.callbacks(false); // We don't use callbacks yet. TODO: Investigate whether we might want to use them
         cfg.classActivationDepthConfigurable(false);
