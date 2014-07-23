@@ -22,7 +22,6 @@ EditOwnIdentityPage.EditIdentityBox.RequestUri=Запросить ссылку
 EditOwnIdentityPage.EditIdentityBox.SaveButton=Сохранить изменения
 EditOwnIdentityPage.SettingsSaved.Header=Настройки сохранены
 EditOwnIdentityPage.SettingsSaved.Text=Настройки были успешно сохранены.
-IdentityPage.ChangeTrustBox.FromOwnIdentity=Доверие вашей идентичности '${nickname}'
 IdentityPage.ChangeTrustBox.Header=Изменить доверие идентичности '${nickname}'
 IdentityPage.IdentityUriBox.Header=Ссылка на идентичность '${nickname}'
 IdentityPage.IdentityUriBox.Text=Следующая Фринет ссылка - ссылка на эту идентичность. Если вы желаете рассказать другим людям об этой идентичности, дайте им ссылку.
