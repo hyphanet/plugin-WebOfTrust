@@ -557,7 +557,8 @@ public final class XMLTransformer {
 					Logger.normal(this, "Parsing identity XML failed gracefully for " + identityURI, e);
 				}
 				catch(UnknownIdentityException uie) {
-					Logger.error(this, "Fetched an unknown identity: " + identityURI);
+					Logger.error(this, "Parsing identity XML failed and marking the edition as ParsingFailed also did not work - UnknownIdentityException for: "
+							+ identityURI, e);
 				}	
 			}
 			}
