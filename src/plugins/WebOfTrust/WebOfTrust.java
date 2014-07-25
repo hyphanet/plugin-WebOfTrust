@@ -225,9 +225,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			// TODO: Do this once every few startups and notify the user in the web ui if errors are found.
 			if(logDEBUG)
 				verifyDatabaseIntegrity();
-			
-			checkForDatabaseLeaks(); // FIXME XXX: This needs to be removed when merging the branch as it destroys the database.
-			
+
 			// TODO: Only do this once every few startups once we are certain that score computation does not have any serious bugs.
 			verifyAndCorrectStoredScores();
 						
