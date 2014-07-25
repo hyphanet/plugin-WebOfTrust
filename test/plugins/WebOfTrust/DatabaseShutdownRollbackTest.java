@@ -3,22 +3,33 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.File;
 import java.util.HashMap;
 
+import com.db4o.Db4o;
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectServer;
+import com.db4o.ext.DatabaseClosedException;
 import com.db4o.ext.ExtObjectContainer;
 
 /**
- * Db4o has the weird convention of committing the transaction upon shutdown which can cause incomplete transactions being
- * committed - this should NEVER happen in a database system because databases normally guarantee ACID.
+ * <p>TODO FIXME: This test is designed to always fail to ensure that the following issue is fixed before we release a new WOT version:
+ * <p><a href="https://bugs.freenetproject.org/view.php?id=6247">0006247: The way we use ObjectContainer.rollback() is fundamentally wrong</a></p>
+ * After the issue is fixed, please remove this test.</p> 
+ * <br>
+ * <p>During shutdown, WOT does a manual {@link ObjectContainer#rollback()} before {@link ObjectContainer#close()}, with the intention of aborting any pending
+ * transactions. But this will now work:
+ * {@link ObjectContainer#close()} will do {@link ObjectContainer#commit()} implicitly. This is documented intended behavior of db4o and cannot be disabled.
+ * This test's {@link #test_WillAlwaysFail()} shows that this can cause leaks which are similar to a leak bug which I was unable to find the source of yet:
+ * <p><a href="https://bugs.freenetproject.org/view.php?id=6187">0006187: Database leaks objects of type HashMap and com.db4o.config.Entry</a></p>
+ * It might also apply to <p><a href="https://bugs.freenetproject.org/view.php?id=5964">0005964: Class Identity leaks FreenetURI</a></p>
+ * </<p>
  * 
- * This behavior can be disabled in the db4o configuration which WOT has been doing for a long time.
+ * <p>It can be fixed by using {@link Db4o#openServer(com.db4o.config.Configuration, String, int)} instead of 
+ * {@link Db4o#openFile(com.db4o.config.Configuration, String)}. Then each transaction receives an own container via {@link ObjectServer#openClient()}.
+ * If we do {@link ObjectServer#close()}, impartial transactions are NOT committed.
+ * This is demonstrated at {@link #test_WillNotFail()}
  * 
- * But unfortunately testing has shown that db4o ignores this setting. This test demonstrates this issue.
- * TODO FIXME:
- * 	A fix shall be committed soon which should make WOT rollback() upon re-opening the database.
- * 	It is NOT enough to rollback() upon shutdown as {@link WebOfTrust#terminate()} already does that and the issue
- *  did happen anyway. I don't know why yet - maybe fred force-terminates WOT if WOT's terminate() takes too long
- *  which causes db.close() to happen?
  * 
  * @author xor (xor@freenetproject.org)
  */
@@ -39,15 +50,70 @@ public class DatabaseShutdownRollbackTest extends DatabaseBasedTest {
 		}
 	}
 	
-	public void testShutdownRollback() {
+	/**
+	 * Will always fail, not an error: Db4o is designed that way.
+	 */
+	public void test_WillAlwaysFail() {
 		ExtObjectContainer db = mWoT.getDatabase();
 		db.store(new Leak());
-		// Db4o out to rollback the transaction when we close the database now because WOT explicitly configures it to do so.
 		db.close();
 		
 		mWoT = new WebOfTrust(getDatabaseFilename());
-		// However this test shows that it WON'T rollback and cause the Leak object to exist after opening the database again.
+		// This test shows that close() does implicit commit() and cause the Leak object to exist after opening the database again.
 		assertFalse(mWoT.checkForDatabaseLeaks());
+	}
+	
+	
+	
+	protected File secondaryDatabaseFile = null;
+	
+	@Override
+	protected void setUp() throws Exception {
+		super.setUp();
+		
+		File file = new File(getName() + getRandomLatinString(24) + ".db4o");
+		if(file.exists())
+			file.delete();
+		assertFalse(file.exists());
+			
+		file.deleteOnExit();
+		
+		secondaryDatabaseFile = file;
+	}
+
+	static final class Thing {
+		int stuff = 1;
+	}
+	
+	/**
+	 * The proper way to use db4o 7.4. Shouldn't be used with 8.x, there ObjectContainer.openSession() should be used for each transaction. 
+	 */
+	public void test_WillNotFail() {
+		ObjectServer server = Db4o.openServer(Db4o.newConfiguration(), secondaryDatabaseFile.toString(), 0);		
+		
+		ObjectContainer transaction = server.openClient();
+		Thing thing = new Thing();
+		transaction.store(thing);
+		transaction.commit();
+		transaction.close();
+		
+		transaction = server.openClient();
+		thing.stuff = 2;
+		transaction.store(thing);
+		
+		server.close();
+		
+		try {
+			transaction.commit();
+			fail("commit() should not work anymore because the server is closed");
+		} catch(DatabaseClosedException e) {}
+		transaction.close();
+		
+		server = Db4o.openServer(Db4o.newConfiguration(), secondaryDatabaseFile.toString(), 0);
+		
+		for(Thing queriedThing : server.openClient().query(Thing.class)) {
+			assertEquals(1, queriedThing.stuff);
+		}
 	}
 
 }
