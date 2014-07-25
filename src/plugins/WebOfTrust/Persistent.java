@@ -108,8 +108,7 @@ public abstract class Persistent implements Serializable {
 	 * This function can be used for debugging, it is executed before and after store(), delete() and commit().
 	 */
 	public static void testDatabaseIntegrity(WebOfTrustInterface mWebOfTrust, ExtObjectContainer db) {
-		// FIXME TODO: Remove after fixing issue https://bugs.freenetproject.org/view.php?id=6187 if this breaks unit tests
-		assert(Thread.holdsLock(mTransactionLock));
+
 	}
 	
 	/**
