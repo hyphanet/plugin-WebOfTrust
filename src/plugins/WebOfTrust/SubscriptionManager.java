@@ -1272,8 +1272,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * As a consequence, all {@link Subscription} and {@link Notification} objects associated with the clients become useless and are also deleted.
 	 * 
 	 * Typically used at {@link #start()} - we lose connection to all clients when restarting so their subscriptions are worthless.
+	 * 
+	 * ATTENTION: Outside classes should only use this for debugging purposes such as {@link WebOfTrust#checkForDatabaseLeaks()}.
 	 */
-	private synchronized final void deleteAllClients() {
+	protected synchronized final void deleteAllClients() {
 		Logger.normal(this, "Deleting all clients...");
 		
 		synchronized(Persistent.transactionLock(mDB)) {

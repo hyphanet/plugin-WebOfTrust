@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 
 import plugins.WebOfTrust.Identity.FetchState;
@@ -79,7 +80,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	/** Package-private method to allow unit tests to bypass some assert()s */
 	
 	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = 3; 
+	public static final int DATABASE_FORMAT_VERSION = 4;
 	
 	
 
@@ -224,10 +225,10 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			// TODO: Do this once every few startups and notify the user in the web ui if errors are found.
 			if(logDEBUG)
 				verifyDatabaseIntegrity();
-			
+
 			// TODO: Only do this once every few startups once we are certain that score computation does not have any serious bugs.
 			verifyAndCorrectStoredScores();
-			
+						
 			// Database is up now, integrity is checked. We can start to actually do stuff
 			
 			// TODO: This can be used for doing backups. Implement auto backup, maybe once a week or month
@@ -553,134 +554,175 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	/**
 	 * ATTENTION: Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager while this is executing.
 	 * It doesn't synchronize on the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager because it assumes that they are not being used yet.
-	 * (I didn't upgrade this function to do the locking because it would be much work to test the changes for little benefit)  
+	 * (I didn't upgrade this function to do the locking because it would be much work to test the changes for little benefit)
+	 * 
+	 * ATTENTION: After having written upgrade code, it is a good idea to set the log level to DEBUG (see developer-documentation/Debugging.txt)
+	 * and check whether the startup database integrity test {@link #verifyDatabaseIntegrity()}y succeeds.
 	 */
-	@SuppressWarnings("deprecation")
 	private synchronized void upgradeDB() {
-		int databaseVersion = mConfig.getDatabaseFormatVersion();
+		int databaseFormatVersion = mConfig.getDatabaseFormatVersion();
 		
-		if(databaseVersion == WebOfTrust.DATABASE_FORMAT_VERSION)
+		if(databaseFormatVersion == WebOfTrust.DATABASE_FORMAT_VERSION)
 			return;
+	
+		Logger.normal(this, "Upgrading database format version " + databaseFormatVersion);
 		
-		// Insert upgrade code here. See Freetalk.java for a skeleton.
-		
-		if(databaseVersion == 1) {
-			Logger.normal(this, "Upgrading database version " + databaseVersion);
-			
-			//synchronized(this) { // Already done at function level
-			//synchronized(mPuzzleStore) { // Normally would be needed for deleteWithoutCommit(Identity) but IntroductionClient/Server are not running yet
-			//synchronized(mFetcher) { // Normally would be needed for deleteWithoutCommit(Identity) but the IdentityFetcher is not running yet
-			//synchronized(mSubscriptionManager) { // Normally would be needed for deleteWithoutCommit(Identity) but the SubscriptionManager is not running yet
-				synchronized(Persistent.transactionLock(mDB)) {
-					try {
-						Logger.normal(this, "Generating Score IDs...");
-						for(Score score : getAllScores()) {
-							score.generateID();
-							score.storeWithoutCommit();
-						}
-						
-						Logger.normal(this, "Generating Trust IDs...");
-						for(Trust trust : getAllTrusts()) {
-							trust.generateID();
-							trust.storeWithoutCommit();
-						}
-						
-						Logger.normal(this, "Searching for identities with mixed up insert/request URIs...");
-						for(Identity identity : getAllIdentities()) {
-							try {
-								USK.create(identity.getRequestURI());
-							} catch (MalformedURLException e) {
-								if(identity instanceof OwnIdentity) {
-									Logger.error(this, "Insert URI specified as request URI for OwnIdentity, not correcting the URIs as the insert URI" +
-											"might have been published by solving captchas - the identity could be compromised: " + identity);
-								} else {
-									Logger.error(this, "Insert URI specified as request URI for non-own Identity, deleting: " + identity);
-									deleteWithoutCommit(identity);
-								}								
-							}
-						}
-						
-						mConfig.setDatabaseFormatVersion(++databaseVersion);
-						mConfig.storeAndCommit();
-						Logger.normal(this, "Upgraded database to version " + databaseVersion);
-					} catch(RuntimeException e) {
-						Persistent.checkedRollbackAndThrow(mDB, this, e);
-					}
+		//synchronized(this) { // Already done at function level
+		synchronized(mPuzzleStore) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
+		synchronized(mFetcher) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
+		synchronized(mSubscriptionManager) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				switch(databaseFormatVersion) {
+					case 1: upgradeDatabaseFormatVersion1(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 2: upgradeDatabaseFormatVersion2(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 3: upgradeDatabaseFormatVersion3(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 4: break;
+					default:
+						throw new UnsupportedOperationException("Your database is newer than this WOT version! Please upgrade WOT.");
 				}
-			//}			
-		}
-		
-		// Issue https://bugs.freenetproject.org/view.php?id=6085 caused creation of OwnIdentity objects which duplicate a non-own
-		// version of them. This was caused by restoreOwnIdentity() not detecting that there is a non-own version of the identity.
-		// So we delete the OwnIdentity and use thew new restoreOwnIdentity() again.
-		if(databaseVersion == 2) {
-			// The fix of restoreOwnIdentity() actually happened in Freenet itself: FreenetURI.deriveRequestURIFromInsertURI() was
-			// fixed to work with certain SSKs. So we need to make sure that we are actually running on a build which has the fix.
-			if(freenet.node.Version.buildNumber() < 1457)
-				throw new RuntimeException("You need at least Freenet build 1457 to use this WOT version!");
 
-			Logger.normal(this, "Upgrading database version " + databaseVersion);
-			
-			//synchronized(this) { // Already done at function level
-			synchronized(mPuzzleStore) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
-			synchronized(mFetcher) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
-			synchronized(mSubscriptionManager) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
-				synchronized(Persistent.transactionLock(mDB)) {
-					try {
-						Logger.normal(this, "Searching for duplicate OwnIdentity objects...");
-						for(final Identity identity : getAllNonOwnIdentities()) {
-							final Query query = mDB.query();
-							query.constrain(OwnIdentity.class);
-							query.descend("mID").constrain(identity.getID());
-							final ObjectSet<OwnIdentity> duplicates = new Persistent.InitializingObjectSet<OwnIdentity>(this, query);
-							
-							if(duplicates.size() == 0)
-								continue;
-							
-							FreenetURI insertURI = null;
-							try {
-								// We need to prevent computeAllScoresWithoutCommit from happening in deleteWithoutCommit(Identity):
-								// It might fail if duplicates exist and the user has enabled assertions.
-								// beginTrustListImport() would delay it until we call finishTrustListImport() after we got rid of the
-								// duplicates. But it also contains asserts which fail. So we emulate its behavior:
-								assert(!mTrustListImportInProgress);
-								mTrustListImportInProgress = true;
-								
-								for(final OwnIdentity duplicate : duplicates) {
-									Logger.warning(this, "Found duplicate OwnIdentity during database upgrade, deleting it:" + duplicate);
-									deleteWithoutCommit(duplicate);
-									assert (insertURI == null || insertURI.equalsKeypair(duplicate.getInsertURI()));
-									insertURI = duplicate.getInsertURI();
-								}
-								finishTrustListImport();
-							} catch(RuntimeException e) {
-								abortTrustListImport(e);
-								throw e;
-							}
-						
-							Logger.warning(this, "Restoring a single OwnIdentity for the deleted duplicates...");
-							try {
-								restoreOwnIdentityWithoutCommit(insertURI);
-							} catch (Exception e) {
-								throw new RuntimeException(e);
-							}
-						}
-						
-						mConfig.setDatabaseFormatVersion(++databaseVersion);
-						mConfig.storeAndCommit();
-						Logger.normal(this, "Upgraded database to version " + databaseVersion);
-					} catch(RuntimeException e) {
-						Persistent.checkedRollbackAndThrow(mDB, this, e);
-					}
-				}
-			}
-			}
+				mConfig.storeAndCommit();
+				Logger.normal(this, "Upgraded database to format version " + databaseFormatVersion);
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
+		}
+		}
+		}
 
-		if(databaseVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
+		if(databaseFormatVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
+	}
+	
+	/**
+	 * Upgrades database format version 1 to version 2
+	 */
+	@SuppressWarnings("deprecation")
+	private void upgradeDatabaseFormatVersion1() {
+		Logger.normal(this, "Generating Score IDs...");
+		for(Score score : getAllScores()) {
+			score.generateID();
+			score.storeWithoutCommit();
+		}
+		
+		Logger.normal(this, "Generating Trust IDs...");
+		for(Trust trust : getAllTrusts()) {
+			trust.generateID();
+			trust.storeWithoutCommit();
+		}
+		
+		Logger.normal(this, "Searching for identities with mixed up insert/request URIs...");
+		for(Identity identity : getAllIdentities()) {
+			try {
+				USK.create(identity.getRequestURI());
+			} catch (MalformedURLException e) {
+				if(identity instanceof OwnIdentity) {
+					Logger.error(this, "Insert URI specified as request URI for OwnIdentity, not correcting the URIs as the insert URI" +
+							"might have been published by solving captchas - the identity could be compromised: " + identity);
+				} else {
+					Logger.error(this, "Insert URI specified as request URI for non-own Identity, deleting: " + identity);
+					deleteWithoutCommit(identity);
+				}								
+			}
+		}
+	}
+
+	/**
+	 * Upgrades database format version 2 to version 3
+	 * 
+	 * Issue https://bugs.freenetproject.org/view.php?id=6085 caused creation of OwnIdentity objects which duplicate a non-own
+	 * version of them. This was caused by restoreOwnIdentity() not detecting that there is a non-own version of the identity.
+	 * So we delete the OwnIdentity and use the new restoreOwnIdentity() again.
+	 */
+	private void upgradeDatabaseFormatVersion2() {
+		// The fix of restoreOwnIdentity() actually happened in Freenet itself: FreenetURI.deriveRequestURIFromInsertURI() was
+		// fixed to work with certain SSKs. So we need to make sure that we are actually running on a build which has the fix.
+		if(freenet.node.Version.buildNumber() < 1457)
+			throw new RuntimeException("You need at least Freenet build 1457 to use this WOT version!");
+
+		Logger.normal(this, "Searching for duplicate OwnIdentity objects...");
+		for(final Identity identity : getAllNonOwnIdentities()) {
+			final Query query = mDB.query();
+			query.constrain(OwnIdentity.class);
+			query.descend("mID").constrain(identity.getID());
+			final ObjectSet<OwnIdentity> duplicates = new Persistent.InitializingObjectSet<OwnIdentity>(this, query);
+			
+			if(duplicates.size() == 0)
+				continue;
+			
+			FreenetURI insertURI = null;
+			try {
+				// We need to prevent computeAllScoresWithoutCommit from happening in deleteWithoutCommit(Identity):
+				// It might fail if duplicates exist and the user has enabled assertions.
+				// beginTrustListImport() would delay it until we call finishTrustListImport() after we got rid of the
+				// duplicates. But it also contains asserts which fail. So we emulate its behavior:
+				assert(!mTrustListImportInProgress);
+				mTrustListImportInProgress = true;
+				
+				for(final OwnIdentity duplicate : duplicates) {
+					Logger.warning(this, "Found duplicate OwnIdentity during database upgrade, deleting it:" + duplicate);
+					deleteWithoutCommit(duplicate);
+					assert (insertURI == null || insertURI.equalsKeypair(duplicate.getInsertURI()));
+					insertURI = duplicate.getInsertURI();
+				}
+				finishTrustListImport();
+			} catch(RuntimeException e) {
+				abortTrustListImport(e);
+				throw e;
+			}
+		
+			Logger.warning(this, "Restoring a single OwnIdentity for the deleted duplicates...");
+			try {
+				restoreOwnIdentityWithoutCommit(insertURI);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}		
+	}
+	
+	/**
+	 * Upgrades database format version 3 to version 4
+	 * 
+	 * This deletes leaked FreenetURI objects. Leaked means that they are not being referenced by any objects which we actually use.
+	 * This was caused by a bug in class Identity, see https://bugs.freenetproject.org/view.php?id=5964
+	 * 
+	 * TODO FIXME: If future code adds member variables of type FreenetURI to {@link Persistent} classes, this function will null them
+	 * out if the developer forgets to adapt it. See https://bugs.freenetproject.org/view.php?id=6129
+	 * Therefore, support for upgrading version 3 databases should be removed after we gave users some time to upgrade all their
+	 * old WOT-installations. It was implemented on 2013-11-07.
+	 */
+	@SuppressWarnings("unchecked")
+	private void upgradeDatabaseFormatVersion3() {
+		// We want to stick all non-leak FreenetURI in a set. Then we want to check for every FreenetURI in the database whether
+		// it is contained in that set. If it is not, it is a leak.
+		// But FreenetURI.equals() does not compare object identity, it only compares semantic identity.
+		// So we cannot use HashSet, we must use IdentityHashMap since it compares object identity instead of equals().
+		final IdentityHashMap<FreenetURI, Object> nonGarbageFreenetURIs = new IdentityHashMap<FreenetURI, Object>();
+		
+		// As of 2013-11-07, I've checked all Persistent classes for storage of FreenetURI. 
+		// The only relevant ones are classes Identity and OwnIdentity. All other classes do not contain FreenetURI as stored member fields.
+		
+		for(final Identity identity : getAllIdentities()) {
+			nonGarbageFreenetURIs.put(identity.getRequestURI(), null);
+			if(identity instanceof OwnIdentity)
+				nonGarbageFreenetURIs.put(((OwnIdentity)identity).getInsertURI(), null);
+		}
+		
+		final Query query = mDB.query();
+		query.constrain(FreenetURI.class);
+		
+		int leakCounter = 0;
+		for(final FreenetURI uri : (ObjectSet<FreenetURI>)query.execute()) {
+			if(!nonGarbageFreenetURIs.containsKey(uri)) {
+				uri.removeFrom(mDB);
+				++leakCounter;
+			}
+		}
+		
+		Logger.normal(this, "upgradeDatabaseFormatVersion3(): Deleted " + leakCounter + " leaked FreenetURI.");
 	}
 	
 	/**
@@ -691,43 +733,10 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * - Deletes all identities in the database - This should delete ALL objects in the database.
 	 * - Then it checks for whether any objects still exist - those are leaks.
 	 */
-	private synchronized void checkForDatabaseLeaks() {
-		Logger.normal(this, "Checking for database leaks... This will delete all identities!");
-		 
-		{
-			Logger.debug(this, "Checking FetchState leakage...");
-			
-			final Query query = mDB.query();
-			query.constrain(FetchState.class);
-			@SuppressWarnings("unchecked")
-			ObjectSet<FetchState> result = (ObjectSet<FetchState>)query.execute();
-			
-			for(FetchState state : result) {
-				Logger.debug(this, "Checking " + state);
-				
-				final Query query2 = mDB.query();
-				query2.constrain(Identity.class);
-				query.descend("mCurrentEditionFetchState").constrain(state).identity();
-				@SuppressWarnings("unchecked")
-				ObjectSet<FetchState> result2 = (ObjectSet<FetchState>)query.execute();
-				
-				switch(result2.size()) {
-					case 0:
-						Logger.error(this, "Found leaked FetchState!");
-						break;
-					case 1:
-						break;
-					default:
-						Logger.error(this, "Found re-used FetchState, count: " + result2.size());
-						break;
-				}
-			}
-			
-			Logger.debug(this, "Finished checking FetchState leakage, amount:" + result.size());
-		}
+	synchronized boolean checkForDatabaseLeaks() {
+		Logger.normal(this, "checkForDatabaseLeaks(): Checking for database leaks... This will delete the whole database content!");
 		
-		
-		Logger.normal(this, "Deleting ALL identities...");
+		Logger.normal(this, "checkForDatabaseLeaks(): Deleting all identities...");
 		synchronized(mPuzzleStore) {
 		synchronized(mFetcher) {
 		synchronized(mSubscriptionManager) {
@@ -749,18 +758,47 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		}
 		}
 		}
-		Logger.normal(this, "Deleting ALL identities finished.");
 		
+		Logger.normal(this, "checkForDatabaseLeaks(): Deleting all IdentityFetcher commands...");
+		mFetcher.deleteAllCommands();
+		
+		Logger.normal(this, "checkForDatabaseLeaks(): Deleting all SubscriptionManager clients...");
+		mSubscriptionManager.deleteAllClients();
+		
+		Logger.normal(this, "checkForDatabaseLeaks(): Deleting Configuration...");
+		//synchronized(this) { // Done at function level
+			try {
+				getConfig().deleteWithoutCommit();
+				Persistent.checkedCommit(mDB, this);
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		//}
+		
+		Logger.normal(this, "checkForDatabaseLeaks(): Database should be empty now. Checking whether it really is...");
 		Query query = mDB.query();
 		query.constrain(Object.class);
 		@SuppressWarnings("unchecked")
 		ObjectSet<Object> result = query.execute();
 
+		boolean foundLeak = false;
+		
 		for(Object leak : result) {
-			Logger.error(this, "Found leaked object: " + leak);
+			// For each value of an enum, Db4o will store an undeletable object in the database permanently. there will only be exactly one for each
+			// value, no matter how often the enum is referenced.
+			// See: http://community.versant.com/documentation/reference/db4o-8.0/java/reference/Content/implementation_strategies/type_handling/static_fields_and_enums/java_enumerations.htm
+			// (I've also manually tested this for db4o 7.4 which we currently use since the above link applies to 8.0 only and there is no such document for 7.4)
+			if(leak.getClass().isEnum())
+				Logger.normal(this, "checkForDatabaseLeaks(): Found leak candidate, it is an enum though, so its not a real leak. Class: " + leak.getClass() + "; toString(): " + leak);
+			else {
+				Logger.error(this, "checkForDatabaseLeaks(): Found leaked object, class: " + leak.getClass() + "; toString(): " + leak);
+				foundLeak = true;
+			}
 		}
 		
-		Logger.warning(this, "Finished checking for database leaks. This database is empty now, delete it.");
+		Logger.warning(this, "checkForDatabaseLeaks(): Finished. Please delete the database now, it is destroyed.");
+		
+		return foundLeak;
 	}
 	
 	private synchronized boolean verifyDatabaseIntegrity() {

@@ -167,6 +167,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		checkedActivate(mInsertURI, 2);
 		
 		if(edition > mInsertURI.getEdition()) {
+			mInsertURI.removeFrom(mDB);
 			mInsertURI = mInsertURI.setSuggestedEdition(edition);
 			updated();
 		}

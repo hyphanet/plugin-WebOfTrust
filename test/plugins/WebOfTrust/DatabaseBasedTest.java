@@ -68,6 +68,7 @@ public class DatabaseBasedTest extends TestCase {
 		if(databaseFile.exists())
 			databaseFile.delete();
 		assertFalse(databaseFile.exists());;
+		databaseFile.deleteOnExit();
 		
 		mWoT = new WebOfTrust(getDatabaseFilename());
 		
