@@ -47,7 +47,34 @@ public class WoTTest extends DatabaseBasedTest {
 		
 		assertEquals(cloneOfOriginal, mWoT.getOwnIdentityByID(cloneOfOriginal.getID()));
 	}
+	
+	/**
+	 * Test whether {@link WebOfTrust#createOwnIdentity(FreenetURI, String, boolean, String)} disallows creating an {@link OwnIdentity} with the same URI as an
+	 * existing {@link OwnIdentity}.
+	 */
+	public void testCreateOwnIdentity_Duplicate1() throws MalformedURLException, InvalidParameterException {
+		mWoT.createOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(1), "nickname1", true, "context1");
+		
+		// Don't reuse URI to ensure that duplicate check doesn't just check object identity. Also make all parameters as different as possible to ensure
+		// that only the URI being equal is enough for detection to hit. 
+		try {
+			mWoT.createOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(10), "nickname2", false, "context2");
+			fail("It should not be possible to create two OwnIdentitys with the same URI!");
+		} catch(InvalidParameterException e) {}
+	}
 
+	/**
+	 * Test whether {@link WebOfTrust#createOwnIdentity(FreenetURI, String, boolean, String)} disallows creating an {@link OwnIdentity} with the same URI as an
+	 * existing {@link Identity}.
+	 */
+	public void testCreateOwnIdentity_Duplicate2() throws MalformedURLException, InvalidParameterException {
+		mWoT.addIdentity(requestUriO);
+		
+		try {
+			mWoT.createOwnIdentity(new FreenetURI(insertUriO), "nickname", true, "context");
+			fail("It should not be possible to create an OwnIdentity with the same URI as an existing Identity!");
+		} catch(InvalidParameterException e) {}
+	}
 	
 	/**
 	 * NOTICE: When changing this function, please also update the following functions as they contain similar code:
