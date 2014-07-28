@@ -2980,45 +2980,45 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			
 			OwnIdentity identity = new OwnIdentity(this, insertURI, nickName, publishTrustList);
 				
-				if(context != null)
-					identity.addContext(context);
-				
-				if(publishTrustList) {
-					identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); /* TODO: make configureable */
-					identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
-				}
-				
-				try {
-					identity.storeWithoutCommit();
-					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
-					initTrustTreeWithoutCommit(identity);
-					
-					beginTrustListImport();
+			if(context != null)
+				identity.addContext(context);
 
-					// Incremental score computation has proven to be very very slow when creating identities so we just schedule a full computation.
-					mFullScoreComputationNeeded = true;
-					
-					for(String seedURI : WebOfTrustInterface.SEED_IDENTITIES) {
-						try {
-							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "Automatically assigned trust to a seed identity.");
-						} catch(UnknownIdentityException e) {
-							Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e);
-						}
+			if(publishTrustList) {
+				identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); /* TODO: make configureable */
+				identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
+			}
+
+			try {
+				identity.storeWithoutCommit();
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
+				initTrustTreeWithoutCommit(identity);
+
+				beginTrustListImport();
+
+				// Incremental score computation has proven to be very very slow when creating identities so we just schedule a full computation.
+				mFullScoreComputationNeeded = true;
+
+				for(String seedURI : WebOfTrustInterface.SEED_IDENTITIES) {
+					try {
+						setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "Automatically assigned trust to a seed identity.");
+					} catch(UnknownIdentityException e) {
+						Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e);
 					}
-					
-					finishTrustListImport();
-					Persistent.checkedCommit(mDB, this);
-					
-					if(mIntroductionClient != null)
-						mIntroductionClient.nextIteration(); // This will make it fetch more introduction puzzles.
-					
-					Logger.normal(this, "Successfully created a new OwnIdentity: " + identity);
-					return identity;
 				}
-				catch(RuntimeException e) {
-					abortTrustListImport(e); // Rolls back for us
-					throw e; // Satisfy the compiler
-				}
+
+				finishTrustListImport();
+				Persistent.checkedCommit(mDB, this);
+
+				if(mIntroductionClient != null)
+					mIntroductionClient.nextIteration(); // This will make it fetch more introduction puzzles.
+
+				Logger.normal(this, "Successfully created a new OwnIdentity: " + identity);
+				return identity;
+			}
+			catch(RuntimeException e) {
+				abortTrustListImport(e); // Rolls back for us
+				throw e; // Satisfy the compiler
+			}
 		}
 		}
 		}
