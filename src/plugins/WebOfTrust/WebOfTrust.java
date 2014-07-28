@@ -2971,7 +2971,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			try {
 				identity = getOwnIdentityByURI(insertURI);
 				throw new InvalidParameterException("The URI you specified is already used by the own identity " +
-						identity.getNickname() + ".");
+						identity.getShortestUniqueNickname() + ".");
 			}
 			catch(UnknownIdentityException uie) {
 				identity = new OwnIdentity(this, insertURI, nickName, publishTrustList);
