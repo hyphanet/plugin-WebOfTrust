@@ -2966,15 +2966,19 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		synchronized(mFetcher) { // For beginTrustListImport()/setTrustWithoutCommit()
 		synchronized(mSubscriptionManager) { // For beginTrustListImport()/setTrustWithoutCommit()/storeIdentityChangedNotificationWithoutCommit()
 		synchronized(Persistent.transactionLock(mDB)) {
-			OwnIdentity identity;
-			
 			try {
-				identity = getOwnIdentityByURI(insertURI);
-				throw new InvalidParameterException("The URI you specified is already used by the own identity " +
-						identity.getShortestUniqueNickname() + ".");
-			}
-			catch(UnknownIdentityException uie) {
-				identity = new OwnIdentity(this, insertURI, nickName, publishTrustList);
+				OwnIdentity identity = getOwnIdentityByURI(insertURI);
+				throw new InvalidParameterException("The URI you specified is already used by your identity " +
+						identity.getShortestUniqueNickname() + ". You don't have to create it again: You should be able to log in with the existing identity.");
+			} catch(UnknownIdentityException uie) {}
+
+			try {
+				Identity identity = getIdentityByURI(insertURI);
+				throw new InvalidParameterException("The URI you specified is already used by the identity " +
+						identity.getShortestUniqueNickname() + ". Use the feature for restoring an identity instead of trying to create it again.");
+			} catch(UnknownIdentityException uie) {}
+			
+			OwnIdentity identity = new OwnIdentity(this, insertURI, nickName, publishTrustList);
 				
 				if(context != null)
 					identity.addContext(context);
@@ -3015,7 +3019,6 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 					abortTrustListImport(e); // Rolls back for us
 					throw e; // Satisfy the compiler
 				}
-			}
 		}
 		}
 		}
