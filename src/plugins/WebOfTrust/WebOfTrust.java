@@ -80,7 +80,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	/** Package-private method to allow unit tests to bypass some assert()s */
 	
 	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = 4;
+	public static final int DATABASE_FORMAT_VERSION = 5;
 	
 	
 
@@ -577,7 +577,8 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 					case 1: upgradeDatabaseFormatVersion1(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 2: upgradeDatabaseFormatVersion2(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 3: upgradeDatabaseFormatVersion3(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
-					case 4: break;
+					case 4: upgradeDatabaseFormatVersion4(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 5: break;
 					default:
 						throw new UnsupportedOperationException("Your database is newer than this WOT version! Please upgrade WOT.");
 				}
@@ -636,6 +637,8 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * Issue https://bugs.freenetproject.org/view.php?id=6085 caused creation of OwnIdentity objects which duplicate a non-own
 	 * version of them. This was caused by restoreOwnIdentity() not detecting that there is a non-own version of the identity.
 	 * So we delete the OwnIdentity and use the new restoreOwnIdentity() again.
+	 * 
+	 * ATTENTION: When changing this, make sure that the changes do not break {@link #upgradeDatabaseFormatVersion4()} - it uses this function internally.
 	 */
 	private void upgradeDatabaseFormatVersion2() {
 		// The fix of restoreOwnIdentity() actually happened in Freenet itself: FreenetURI.deriveRequestURIFromInsertURI() was
@@ -723,6 +726,21 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		}
 		
 		Logger.normal(this, "upgradeDatabaseFormatVersion3(): Deleted " + leakCounter + " leaked FreenetURI.");
+	}
+	
+	/**
+	 * Upgrades database format version 4 to version 5.
+	 * 
+	 * This deletes {@link Identity} objects which duplicate {@link OwnIdentity} objects.
+	 * These could be caused to exist by a bug in {@link #createOwnIdentity(FreenetURI, String, boolean, String)}: It would not properly check whether
+	 * a matching {@link Identity} object already exists when creating an {@link OwnIdentity} object from a certain {@link FreenetURI}.
+	 * See <a href="https://bugs.freenetproject.org/view.php?id=6207">the relevant bugtracker entry</a>.
+	 * 
+	 * Internally, this just calls {@link #upgradeDatabaseFormatVersion2()}: That upgrade function served to fix the aftermath of a bug with the same symptoms,
+	 * so we can just re-use it.
+	 */
+	private void upgradeDatabaseFormatVersion4() {
+		upgradeDatabaseFormatVersion2();
 	}
 	
 	/**
@@ -2966,55 +2984,58 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		synchronized(mFetcher) { // For beginTrustListImport()/setTrustWithoutCommit()
 		synchronized(mSubscriptionManager) { // For beginTrustListImport()/setTrustWithoutCommit()/storeIdentityChangedNotificationWithoutCommit()
 		synchronized(Persistent.transactionLock(mDB)) {
-			OwnIdentity identity;
-			
 			try {
-				identity = getOwnIdentityByURI(insertURI);
-				throw new InvalidParameterException("The URI you specified is already used by the own identity " +
-						identity.getNickname() + ".");
-			}
-			catch(UnknownIdentityException uie) {
-				identity = new OwnIdentity(this, insertURI, nickName, publishTrustList);
-				
-				if(context != null)
-					identity.addContext(context);
-				
-				if(publishTrustList) {
-					identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); /* TODO: make configureable */
-					identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
-				}
-				
-				try {
-					identity.storeWithoutCommit();
-					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
-					initTrustTreeWithoutCommit(identity);
-					
-					beginTrustListImport();
+				OwnIdentity identity = getOwnIdentityByURI(insertURI);
+				throw new InvalidParameterException("The URI you specified is already used by your identity " +
+						identity.getShortestUniqueNickname() + ". You don't have to create it again: You should be able to log in with the existing identity.");
+			} catch(UnknownIdentityException uie) {}
 
-					// Incremental score computation has proven to be very very slow when creating identities so we just schedule a full computation.
-					mFullScoreComputationNeeded = true;
-					
-					for(String seedURI : WebOfTrustInterface.SEED_IDENTITIES) {
-						try {
-							setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "Automatically assigned trust to a seed identity.");
-						} catch(UnknownIdentityException e) {
-							Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e);
-						}
+			try {
+				Identity identity = getIdentityByURI(insertURI);
+				throw new InvalidParameterException("The URI you specified is already used by the identity " +
+						identity.getShortestUniqueNickname() + ". Use the feature for restoring an identity instead of trying to create it again.");
+			} catch(UnknownIdentityException uie) {}
+			
+			OwnIdentity identity = new OwnIdentity(this, insertURI, nickName, publishTrustList);
+				
+			if(context != null)
+				identity.addContext(context);
+
+			if(publishTrustList) {
+				identity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT); /* TODO: make configureable */
+				identity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
+			}
+
+			try {
+				identity.storeWithoutCommit();
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
+				initTrustTreeWithoutCommit(identity);
+
+				beginTrustListImport();
+
+				// Incremental score computation has proven to be very very slow when creating identities so we just schedule a full computation.
+				mFullScoreComputationNeeded = true;
+
+				for(String seedURI : WebOfTrustInterface.SEED_IDENTITIES) {
+					try {
+						setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "Automatically assigned trust to a seed identity.");
+					} catch(UnknownIdentityException e) {
+						Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e);
 					}
-					
-					finishTrustListImport();
-					Persistent.checkedCommit(mDB, this);
-					
-					if(mIntroductionClient != null)
-						mIntroductionClient.nextIteration(); // This will make it fetch more introduction puzzles.
-					
-					Logger.normal(this, "Successfully created a new OwnIdentity: " + identity);
-					return identity;
 				}
-				catch(RuntimeException e) {
-					abortTrustListImport(e); // Rolls back for us
-					throw e; // Satisfy the compiler
-				}
+
+				finishTrustListImport();
+				Persistent.checkedCommit(mDB, this);
+
+				if(mIntroductionClient != null)
+					mIntroductionClient.nextIteration(); // This will make it fetch more introduction puzzles.
+
+				Logger.normal(this, "Successfully created a new OwnIdentity: " + identity);
+				return identity;
+			}
+			catch(RuntimeException e) {
+				abortTrustListImport(e); // Rolls back for us
+				throw e; // Satisfy the compiler
 			}
 		}
 		}
