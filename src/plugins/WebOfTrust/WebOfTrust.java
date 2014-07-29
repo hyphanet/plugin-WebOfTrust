@@ -2986,14 +2986,20 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				OwnIdentity identity = getOwnIdentityByURI(insertURI);
-				throw new InvalidParameterException("The URI you specified is already used by your identity " +
-						identity.getShortestUniqueNickname() + ". You don't have to create it again: You should be able to log in with the existing identity.");
+				throw new InvalidParameterException(
+				    getBaseL10n().getString("Exceptions.WebOfTrust.createOwnIdentity.IllegalParameterException.OwnIdentityExistsAlready", 
+				        "nickname", identity.getShortestUniqueNickname()
+				    )
+				);
 			} catch(UnknownIdentityException uie) {}
 
 			try {
 				Identity identity = getIdentityByURI(insertURI);
-				throw new InvalidParameterException("The URI you specified is already used by the identity " +
-						identity.getShortestUniqueNickname() + ". Use the feature for restoring an identity instead of trying to create it again.");
+				throw new InvalidParameterException(
+					getBaseL10n().getString("Exceptions.WebOfTrust.createOwnIdentity.IllegalParameterException.NonOwnIdentityExistsAlready",
+				        "nickname", identity.getShortestUniqueNickname()
+			        )
+				);
 			} catch(UnknownIdentityException uie) {}
 			
 			OwnIdentity identity = new OwnIdentity(this, insertURI, nickName, publishTrustList);
