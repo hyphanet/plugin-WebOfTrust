@@ -3251,8 +3251,13 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 				try { // Try replacing an existing non-own version of the identity with an OwnIdentity
 					Identity oldIdentity = getIdentityByURI(insertFreenetURI);
 					
-					if(oldIdentity instanceof OwnIdentity)
-						throw new InvalidParameterException("There is already an own identity with the given URI pair.");
+					if(oldIdentity instanceof OwnIdentity) {
+						throw new InvalidParameterException(
+						    getBaseL10n().getString("Exceptions.WebOfTrust.restoreOwnIdentityWithoutCommit.IllegalParameterException.OwnIdentityExistsAlready",
+						        "nickname", oldIdentity.getShortestUniqueNickname()
+						    )
+						);
+					}
 					
 					Logger.normal(this, "Restoring an already known identity from Freenet: " + oldIdentity);
 					

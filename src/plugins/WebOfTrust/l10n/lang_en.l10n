@@ -61,6 +61,7 @@ EditOwnIdentityPage.SettingsSaved.Text=The settings were successfully saved.
 ErrorPage.InternalError.Header=Internal error, please report this
 Exceptions.WebOfTrust.createOwnIdentity.IllegalParameterException.NonOwnIdentityExistsAlready=The URI you specified is already used by the identity ${nickname}. Use the feature for restoring an identity instead of trying to create it again.
 Exceptions.WebOfTrust.createOwnIdentity.IllegalParameterException.OwnIdentityExistsAlready=The URI you specified is already used by your identity ${nickname}. You don't have to create it again: You should be able to log in with the existing identity.
+Exceptions.WebOfTrust.restoreOwnIdentityWithoutCommit.IllegalParameterException.OwnIdentityExistsAlready=The URI you specified is already used by your identity ${nickname}. You don't have to restore it again: You should be able to log in with the existing identity.
 IdentityPage.ChangeTrustBox.FromOwnIdentity=Trust given by your identity '${nickname}'
 IdentityPage.ChangeTrustBox.Header=Change trust of identity '${nickname}'
 IdentityPage.IdentityUriBox.Header=Reference of identity '${nickname}'
