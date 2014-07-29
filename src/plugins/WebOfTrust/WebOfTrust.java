@@ -80,7 +80,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	/** Package-private method to allow unit tests to bypass some assert()s */
 	
 	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = 4;
+	public static final int DATABASE_FORMAT_VERSION = 5;
 	
 	
 
@@ -577,7 +577,8 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 					case 1: upgradeDatabaseFormatVersion1(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 2: upgradeDatabaseFormatVersion2(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 3: upgradeDatabaseFormatVersion3(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
-					case 4: break;
+					case 4: upgradeDatabaseFormatVersion4(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 5: break;
 					default:
 						throw new UnsupportedOperationException("Your database is newer than this WOT version! Please upgrade WOT.");
 				}
@@ -636,6 +637,8 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * Issue https://bugs.freenetproject.org/view.php?id=6085 caused creation of OwnIdentity objects which duplicate a non-own
 	 * version of them. This was caused by restoreOwnIdentity() not detecting that there is a non-own version of the identity.
 	 * So we delete the OwnIdentity and use the new restoreOwnIdentity() again.
+	 * 
+	 * ATTENTION: When changing this, make sure that the changes do not break {@link #upgradeDatabaseFormatVersion4()} - it uses this function internally.
 	 */
 	private void upgradeDatabaseFormatVersion2() {
 		// The fix of restoreOwnIdentity() actually happened in Freenet itself: FreenetURI.deriveRequestURIFromInsertURI() was
@@ -723,6 +726,21 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		}
 		
 		Logger.normal(this, "upgradeDatabaseFormatVersion3(): Deleted " + leakCounter + " leaked FreenetURI.");
+	}
+	
+	/**
+	 * Upgrades database format version 4 to version 5.
+	 * 
+	 * This deletes {@link Identity} objects which duplicate {@link OwnIdentity} objects.
+	 * These could be caused to exist by a bug in {@link #createOwnIdentity(FreenetURI, String, boolean, String)}: It would not properly check whether
+	 * a matching {@link Identity} object already exists when creating an {@link OwnIdentity} object from a certain {@link FreenetURI}.
+	 * See <a href="https://bugs.freenetproject.org/view.php?id=6207">the relevant bugtracker entry</a>.
+	 * 
+	 * Internally, this just calls {@link #upgradeDatabaseFormatVersion2()}: That upgrade function served to fix the aftermath of a bug with the same symptoms,
+	 * so we can just re-use it.
+	 */
+	private void upgradeDatabaseFormatVersion4() {
+		upgradeDatabaseFormatVersion2();
 	}
 	
 	/**
