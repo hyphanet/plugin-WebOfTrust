@@ -183,7 +183,7 @@ public final class FCPInterface implements FredPluginFCP {
 	        			final WeakReference<PluginReplySender> removedClient = mClientsByID.remove(removedID);
 	        			assert(removedID != null);
 	        			assert(removedClient != null);
-	        			Logger.normal(this, "GCing client with ID " + removedID);
+	        			Logger.normal(this, "Garbe-collecting disconnected client: remaining clients = " + mClientsByID.size() + "; client ID = " + removedID);
 	        		}
 	        	} catch(InterruptedException e) {
 	        		Thread.interrupted();
