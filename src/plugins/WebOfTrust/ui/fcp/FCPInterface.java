@@ -129,11 +129,15 @@ public final class FCPInterface implements FredPluginFCP {
     	
         /**
          * The main table: Allows {@link #get(String)} to look up a {@link PluginReplySender} by a supplied {@link ClientID}.
+         * 
+         * TODO: Optimization: If we serve huge amounts of clients, the internal array of the map will grow but never shrink down. A TreeMap might make sense.
          */
         private final HashMap<ClientID, WeakReference<PluginReplySender>> mClientsByID = new HashMap<ClientID, WeakReference<PluginReplySender>>();
         
         /**
          * Index of {@link #mClientsByID} to allow removing entries when monitoring the reference queue in {@link #realRun()}
+         * 
+         * TODO: Optimization: If we serve huge amounts of clients, the internal array of the map will grow but never shrink down. A TreeMap might make sense.
          */
         private final HashMap<WeakReference<PluginReplySender>, ClientID> mClientsByRef = new HashMap<WeakReference<PluginReplySender>, ClientID>();
 
