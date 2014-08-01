@@ -311,6 +311,8 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		mFetcher = new IdentityFetcher(this, null);
 		
 		mFCPInterface = new FCPInterface(this);
+		
+		setLanguage(LANGUAGE.getDefault()); // Even without UI, WOT will use l10n for Exceptions, so we need a language. Normally the node calls this for us.
 	}
 	
 	private File getUserDataDirectory() {
