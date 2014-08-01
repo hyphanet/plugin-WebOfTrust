@@ -78,23 +78,15 @@ public final class FCPInterface implements FredPluginFCP {
     
     /**
      * Uniquely identifies a {@link PluginReplySender}.
+     * 
+     * TODO: Simplification: This class was introduced when there was no {@link PluginReplySender#getConnectionIdentifier()}. Now that it is just a wrapper
+     *       for the String returned by that function, we could remove it.
      */
 	public static final class ClientID {
 		private final String id;
 		
 		public ClientID(PluginReplySender replySender) {
-	    	// - We not only use the Identifier which the plugin provided but also the hashCode of the replySender:
-	    	// We need the ID to NOT randomly match the ID of a plugin before it was restarted.
-	    	// This is necessary because subscribe functions will throw SubscriptionExistsAlreadyException
-	    	// if a similar subscription with the same fcpID exists.
-	    	// 
-	    	// - We use System.identityHashCode() to prevent PluginReplySender implementations from overriding hashCode() with a hashCode
-	    	// implementation which merely hashes the getPluginName() and getIdentifier() as we have already decided that they are not enough.
-	    	// 
-	    	// -We cannot just use a random ID because then a client could subscribe multiple times to the same type of subscription:
-	    	// The throwing of SubscriptionExistsAlready exception is there to prevent that.
-	    	// 
-	    	id = replySender.getPluginName() + ";" + replySender.getIdentifier() + ";" + System.identityHashCode(replySender);
+	    	id = replySender.getConnectionIdentifier();
 		}
 		
 		public ClientID(String id) {

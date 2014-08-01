@@ -25,8 +25,6 @@ import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ScoreParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.TrustParser;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import freenet.node.FSParseException;
-import freenet.node.fcp.FCPCallFailedException;
-import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -46,7 +44,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		LinkedList<SimpleFieldSet> results = new LinkedList<SimpleFieldSet>();
 		
 		public ReplyReceiver() {
-			super("SubscriptionManagerTest", "SubscriptionManagerTest");
+			super("SubscriptionManagerTest", "SubscriptionManagerTest", "SubscriptionManagerTest");
 		}
 
 		/**
