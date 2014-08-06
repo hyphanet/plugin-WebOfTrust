@@ -13,6 +13,25 @@ Those are:
   at least: Set "Detailed priority thresholds" to begin with "plugins.WebOfTrust:WARNING" (this includes ERROR as it is above WARNING.
   Add the classes for which you want to enable debug logging separated by "," after that.
   
+  You should know for which purposes WOT uses the Freenet log levels:
+	- ERROR is only used when something is *definitely* broken. After every test run, you *must* search the logs for ERROR messages.
+
+	- WARNING is used for conditions which are unwanted but can occur due to things which we cannot control. Being a P2P network, the perfect example is that 
+	  we received data which is out of the bounds of what is allowed - that can always happen when remote people are allowed to send stuff to you. 
+	  For example the nickname of a WOT identity might contain disallowed characters.
+	  Having a separate log level for this is nice because monitoring significant WARNING logging is critical to detecting excessive amounts of invalid data,
+      which might indicate DoS or a bug in the code which checks validity.
+
+	- NORMAL is major internal or external events. They occur with low frequency so the computation of the log strings is not heavy even if NORMAL logging is
+	  Examples are creating an identity in the WOT web interface, solving a CAPTCHA, or downloading a remote identity's XML. 
+
+	- MINOR is data for debugging purposes. It occurs with high frequency and therefore has an "if(logMINOR)" guard to prevent computation of the log strings
+	  if the MINOR logging is disabled. It can be heavy amounts of logging but enabling MINOR logging should NOT change the behavior of the surrounding program.
+
+	- DEBUG logging is the same as MINOR with the primary difference that DEBUG can enable additional code paths which would not normally be executed.
+	  Those code paths typically solely exist to compute data for the logging. For WOT for example this means that it will run an additional integrity test upon
+	  the database during startup.
+
 - The class "DebugFCPClient": It is a FCP client which runs inside WOT itself. You can enable it by setting its loglevel to DEBUG,
   either explicitly via "plugins.WebOfTrust.ui.fcp.DebugFCPClient:DEBUG" by or by setting the global loglevel of WOT to DEBUG.
   It will connect to WOT's own FCP interface and subscribe to all types of event-notifications. It will store all identities,
