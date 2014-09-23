@@ -53,6 +53,21 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 /**
+ * ATTENTION: There is a deprecation mechanism for getting rid of old SimpleFieldSet keys (fields)
+ * in FCP messages sent by WOT:<br>
+ * - If a {@link FCPPluginMessage} sent by WOT contains a list "DeprecatedFields" in the
+ *   {@link FCPPluginMessage#parameters}, then you should not write new client code to use the
+ *   fields of the {@link FCPPluginMessage#parameters} which are listed at "DeprecatedFields".<br>
+ * - If you want to change WOT to deprecate a certain field, use:<br>
+ *   <code>aSimpleFieldSet.putAppend("DeprecatedFields", "NameOfTheField");</code><br>
+ * - Notice that this is included in the actual on-network messages to ensure that client authors
+ *   read and follow i. Also, it makes large messages which contain a lot of duplicate fields due
+ *   to deprecation easier to understand. The data overhead is considered as acceptable because it
+ *   will be a constant amount independent of the size of the actual data which is being sent;
+ *   because deprecated fields shall only exist temporarily anyway; and because FCP as a text mode
+ *   protocol aims to be easy to read to humans, not space-efficient.<br>
+ * FIXME: Review the whole class for fields which are deprecated but not listed at DeprecatedFields
+ * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
 public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSideFCPMessageHandler {
