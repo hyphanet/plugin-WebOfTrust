@@ -167,6 +167,7 @@ public final class FCPInterface implements FredPluginFCP {
     		return sender;
     	}
         
+        @Override
         public void realRun() {
         	// No termination mechanism is needed because we called setDaemon(true).
         	while(enabled) {
@@ -200,6 +201,7 @@ public final class FCPInterface implements FredPluginFCP {
         }
     }
 
+    @Override
     public void handle(final PluginReplySender replysender, final SimpleFieldSet params, final Bucket data, final int accesstype) {
 
         try {
