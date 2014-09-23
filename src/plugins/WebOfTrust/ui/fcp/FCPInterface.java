@@ -198,6 +198,7 @@ public final class FCPInterface implements FredPluginFCP {
         		try {
         			join(100);
         		} catch(InterruptedException e) {
+                    // FIXME: This is wrong, see https://bugs.freenetproject.org/view.php?id=6290
         			Thread.interrupted();
         		}
         	} while(isAlive());
