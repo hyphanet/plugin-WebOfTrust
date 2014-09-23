@@ -234,6 +234,14 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
                 null, null);
         } catch (final Exception e) {
         	// TODO: This might miss some stuff which are errors. Find a better way of detecting which exceptions are okay.
+            // A good solution would be to have the message handling functions return a valid
+            // FCPPluginMessage with a proper errorCode field for errors which they know can happen
+            // regularly such as the below ones. Then they wouldn't throw for those regular
+            // errors, and this code path would not get hit.
+            // This will require chaning the message handling functions to return FCPPluginMessage
+            // instead of SimpleFieldSet though.
+            // FIXME: We should probably do the above soon because we now have an errorCode field
+            // at fred-level in FCPPluginMessage
         	boolean dontLog = e instanceof NoSuchContextException ||
         						e instanceof NotInTrustTreeException ||
         						e instanceof NotTrustedException ||
@@ -1230,12 +1238,43 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	return sfs;
     }
 
-    private SimpleFieldSet errorMessageFCP(final String originalMessage, final Exception e) {
-        final SimpleFieldSet sfs = new SimpleFieldSet(true);
-        sfs.putOverwrite("Message", "Error");
-        sfs.putOverwrite("OriginalMessage", originalMessage);
-        sfs.putOverwrite("Description", e.toString());
-        return sfs;
+    /**
+     * ATTENTION: This does cause the {@link FCPPluginMessage#errorCode} field to be "InternalError"
+     * which complicates error handling at the client. Therefore, only use this for Exception types
+     * which you do not know. If you know what a certain Exception type means, use
+     * {@link #errorMessageFCP(freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage,
+     * String, String))} to set a proper errorCode (and errorMessage).<br>
+     * Well-defined errorCode values should also be specified at the JavaDoc of the FCP message
+     * handler which will return them upon error.
+     */
+    private FCPPluginMessage errorMessageFCP(final FCPPluginMessage originalMessage,
+            final Exception e) {
+        
+        // "InternalError" and e.toString() are  suggested by the FCPPluginMessage JavaDoc.
+        return errorMessageFCP(originalMessage, "InternalError", e.toString());
     }
-  
+
+    /**
+     * TODO: Optimization: Remove the deprecated fields after some time. They were added 2014-09-23
+     */
+    private FCPPluginMessage errorMessageFCP(final FCPPluginMessage originalFCPMessage,
+           final String errorCode, final String errorMessage) {
+        
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("OriginalMessage", originalFCPMessage.parameters.get("Message"));
+        
+        sfs.putOverwrite("Message", "Error");
+        // Deprecated because there is FCPPluginMessage.success now to indicate that a message is
+        // an error message.
+        sfs.putAppend("DeprecatedFields", "Error");
+        
+        sfs.putOverwrite("Description", errorMessage);
+        // Deprecated because there is FCPPluginMessage.errorMessage now
+        sfs.putAppend("DeprecatedFields", "Description");
+        
+        return FCPPluginMessage.constructReplyMessage(originalFCPMessage, sfs, null, false,
+            errorCode, errorMessage);
+        
+    }
+
 }
