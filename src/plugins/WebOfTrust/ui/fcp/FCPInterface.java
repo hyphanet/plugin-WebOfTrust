@@ -76,37 +76,7 @@ public final class FCPInterface implements FredPluginFCP {
     public void stop() {
     	mClientTrackerDaemon.terminate();
     }
-    
-    /**
-     * Uniquely identifies a {@link PluginReplySender}.
-     * 
-     * TODO: Simplification: This class was introduced when there was no {@link PluginReplySender#getConnectionIdentifier()}. Now that it is just a wrapper
-     *       for the String returned by that function, we could remove it.
-     */
-	public static final class ClientID {
-		private final String id;
-		
-		public ClientID(PluginReplySender replySender) {
-	    	id = replySender.getConnectionIdentifier();
-		}
-		
-		public ClientID(String id) {
-			this.id = id;
-		}
 
-		@Override public String toString() {
-			return id;
-		}
-		
-		@Override public int hashCode() {
-			return id.hashCode();
-		}
-		
-		@Override public boolean equals(Object other) {
-			return id.equals(((ClientID)other).id);
-		}
-	}
-	
 	/**
 	 * FIXME: This JavaDoc does not apply anymore, adapt it if this class is not removed due to the
 	 * other FIXMEs:
@@ -1092,7 +1062,7 @@ public final class FCPInterface implements FredPluginFCP {
     private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException {
     	final String to = getMandatoryParameter(params, "To");
 
-    	final ClientID clientID = mClientTrackerDaemon.put(replySender);
+        final UUID clientID = mClientTrackerDaemon.put(replySender);
     	
     	Subscription<? extends Notification> subscription;
     	SimpleFieldSet sfs;
