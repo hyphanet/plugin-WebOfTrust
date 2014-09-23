@@ -3,7 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.fcp;
 
-import java.lang.ref.Reference;
+import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
@@ -40,7 +40,7 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
-import freenet.node.fcp.FCPCallFailedException;
+import freenet.node.fcp.FCPPluginClient;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
@@ -49,7 +49,6 @@ import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import freenet.support.io.NativeThread;
 
 /**
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
@@ -58,12 +57,15 @@ public final class FCPInterface implements FredPluginFCP {
 
     private final WebOfTrust mWoT;
     
+    private final PluginRespirator mPluginRespirator;
+    
     private final SubscriptionManager mSubscriptionManager;
     
     private final ClientTrackerDaemon mClientTrackerDaemon;
     
     public FCPInterface(final WebOfTrust myWoT) {
         mWoT = myWoT;
+        mPluginRespirator = mWoT.getPluginRespirator();
         mSubscriptionManager = mWoT.getSubscriptionManager();
         mClientTrackerDaemon = new ClientTrackerDaemon();
     }
@@ -106,62 +108,31 @@ public final class FCPInterface implements FredPluginFCP {
 	}
 	
 	/**
+	 * FIXME: This JavaDoc does not apply anymore, adapt it if this class is not removed due to the
+	 * other FIXMEs:
+	 * 
      * Stores all PluginReplySender which ever subscribed to content as WeakReference.
      * This allows us to send back event {@link Notification}s without creating a fresh PluginTalker to talk to the client.
      * Also, it allows unit tests of event-notifications:
      * {@link PluginRespirator#getPluginTalker(freenet.pluginmanager.FredPluginTalker, String, String)} won't work in unit tests.
      * However, we CAN store the PluginReplySender which the unit test supplied.
      * 
-     * FIXME: This should be replaced with {@link PluginRespirator#getPluginClientByID(UUID)} of
-     * the fred branch plugin-fcp-rewrite.
+     * FIXME: Once the internal FIXMEs of this class have been resolved, remove it and inline its
+     * code into the callers. (Its complexity has reduced a lot because fred now provides API for
+     * what its internals were previously, so they are now small enough to be inlined).
 	 */
     private final class ClientTrackerDaemon {
-    	
-        /**
-         * The main table: Allows {@link #get(String)} to look up a {@link PluginReplySender} by a supplied {@link ClientID}.
-         * 
-         * TODO: Optimization: If we serve huge amounts of clients, the internal array of the map will grow but never shrink down. A TreeMap might make sense.
-         */
-        private final HashMap<ClientID, WeakReference<PluginReplySender>> mClientsByID = new HashMap<ClientID, WeakReference<PluginReplySender>>();
-        
-        /**
-         * Index of {@link #mClientsByID} to allow removing entries when monitoring the reference queue in {@link #realRun()}
-         * 
-         * TODO: Optimization: If we serve huge amounts of clients, the internal array of the map will grow but never shrink down. A TreeMap might make sense.
-         */
-        private final HashMap<WeakReference<PluginReplySender>, ClientID> mClientsByRef = new HashMap<WeakReference<PluginReplySender>, ClientID>();
 
-        /**
-         * Queue which monitors removed items of {@link #mClientsByID}. Monitored in {@link #realRun()}.
-         */
-		private final ReferenceQueue<PluginReplySender> mDisconnectedQueue = new ReferenceQueue<PluginReplySender>();
+        public synchronized UUID put(final FCPPluginClient client) {
+            // FIXME: Check whether the get() code which uses fred can be made to work in unit
+            // tests. If it does, we do not need to provide storage anymore and can always use the
+            // fred code. Then remove this function.
+            throw new UnsupportedOperationException("Not implemented");
+        }
 
-
-    	public synchronized ClientID put(final PluginReplySender pluginReplySender) {
-    		// Don't check for existing entry:
-    		// - PluginTalker always uses the same PluginReplySender
-    		// - The hasCode in the ID makes it very unlikely for two IDs of different PluginTalkers to collide
-    		// - What could guarantee to prevent collisions even if the hashCode collides is that clients are allowed to uniquely
-    		//   chose replySender.getIdentifier() - if client authors do not implement a unique identifier its their fault if stuff breaks.
-    		final ClientID id = new ClientID(pluginReplySender);
-    		
-    		final WeakReference<PluginReplySender> ref = new WeakReference<PluginReplySender>(pluginReplySender, mDisconnectedQueue);
-    		final WeakReference<PluginReplySender> oldRef = mClientsByID.put(id, ref);
-    		if(oldRef != null) mClientsByRef.remove(oldRef);
-    		mClientsByRef.put(ref, id);
-    		
-    		return id;
-    	}
-    	
-    	public synchronized PluginReplySender get(final String clientID) throws PluginNotFoundException {
-    		final WeakReference<PluginReplySender> ref = mClientsByID.get(new ClientID(clientID));
-    		final PluginReplySender sender = ref != null ? ref.get() : null;
-    		
-    		if(sender == null)
-    			throw new PluginNotFoundException();
-    		
-    		return sender;
-    	}
+        public synchronized FCPPluginClient get(final UUID id) throws IOException {
+            return mPluginRespirator.getPluginClientByID(id);
+        }
 
         public void terminate() {
             // Shutdown is not needed anymore as this doesn't run a thread.
