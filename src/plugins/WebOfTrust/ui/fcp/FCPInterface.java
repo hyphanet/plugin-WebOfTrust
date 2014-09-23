@@ -112,6 +112,9 @@ public final class FCPInterface implements FredPluginFCP {
      * Also, it allows unit tests of event-notifications:
      * {@link PluginRespirator#getPluginTalker(freenet.pluginmanager.FredPluginTalker, String, String)} won't work in unit tests.
      * However, we CAN store the PluginReplySender which the unit test supplied.
+     * 
+     * FIXME: This should be replaced with {@link PluginRespirator#getPluginClientByID(UUID)} of
+     * the fred branch plugin-fcp-rewrite.
 	 */
     private final class ClientTrackerDaemon extends NativeThread {
     	
