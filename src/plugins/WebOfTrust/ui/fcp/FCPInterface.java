@@ -77,10 +77,10 @@ public final class FCPInterface implements FredPluginFCP {
     	mClientTrackerDaemon.terminate();
     }
 
-	/**
-	 * FIXME: This JavaDoc does not apply anymore, adapt it if this class is not removed due to the
-	 * other FIXMEs:
-	 * 
+    /**
+     * FIXME: This JavaDoc does not apply anymore, adapt it if this class is not removed due to the
+     * other FIXMEs:
+     * 
      * Stores all PluginReplySender which ever subscribed to content as WeakReference.
      * This allows us to send back event {@link Notification}s without creating a fresh PluginTalker to talk to the client.
      * Also, it allows unit tests of event-notifications:
