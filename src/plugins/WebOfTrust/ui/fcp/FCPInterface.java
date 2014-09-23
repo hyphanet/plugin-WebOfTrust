@@ -68,9 +68,8 @@ public final class FCPInterface implements FredPluginFCP {
         mClientTrackerDaemon = new ClientTrackerDaemon();
     }
     
-    public void start() {
-    	mClientTrackerDaemon.start();
-    }
+    /** TODO: Could be removed, is empty. */
+    public void start() {}
     
     public void stop() {
     	mClientTrackerDaemon.terminate();
@@ -116,9 +115,7 @@ public final class FCPInterface implements FredPluginFCP {
      * FIXME: This should be replaced with {@link PluginRespirator#getPluginClientByID(UUID)} of
      * the fred branch plugin-fcp-rewrite.
 	 */
-    private final class ClientTrackerDaemon extends NativeThread {
-    	
-    	private volatile boolean enabled = true;
+    private final class ClientTrackerDaemon {
     	
         /**
          * The main table: Allows {@link #get(String)} to look up a {@link PluginReplySender} by a supplied {@link ClientID}.
@@ -139,10 +136,6 @@ public final class FCPInterface implements FredPluginFCP {
          */
 		private final ReferenceQueue<PluginReplySender> mDisconnectedQueue = new ReferenceQueue<PluginReplySender>();
 
-    	public ClientTrackerDaemon() {
-			super("WOT FCP ClientTrackerDaemon", NativeThread.PriorityLevel.MIN_PRIORITY.value, true);
-			setDaemon(true);
-		}
 
     	public synchronized ClientID put(final PluginReplySender pluginReplySender) {
     		// Don't check for existing entry:
@@ -169,29 +162,17 @@ public final class FCPInterface implements FredPluginFCP {
     		
     		return sender;
     	}
-        
-        @Override
-        public void realRun() {
-        	// No termination mechanism is needed because we called setDaemon(true).
-        	while(enabled) {
-	        	try {
-	        		final Reference<? extends PluginReplySender> sender = mDisconnectedQueue.remove();
-	        		synchronized(this) {
-	        			final ClientID removedID = mClientsByRef.remove(sender);
-	        			final WeakReference<PluginReplySender> removedClient = mClientsByID.remove(removedID);
-	        			assert(removedID != null);
-	        			assert(removedClient != null);
-	        			Logger.normal(this, "Garbage-collecting disconnected client: remaining clients = " + mClientsByID.size() + "; client ID = " + removedID);
-	        		}
-	        	} catch(InterruptedException e) {
-	        		Thread.interrupted();
-	        	} catch(Throwable t) {
-	        		Logger.error(this, "Error in ClientTrackerDaemon loop", t);
-	        	}
-        	}
-        }
-        
+
         public void terminate() {
+            // Shutdown is not needed anymore as this doesn't run a thread.
+            // FIXME: Check whether we need to Thread.interrupt() eventually existing
+            // FCPPluginClient.sendSynchronous() threads. If not, remove this commented out code,
+            // this function, and probably also the callers.
+            // Also, if we do need it, this probably should be placed in a different class than
+            // ClientTrackerDaemon. I am keeping it here because the interrupt loop might be
+            // useful for the sendSynchronous() stuff and I'm too lazy to save it elsewhere.
+            
+            /*
         	enabled = false;
         	do {
         		interrupt();
@@ -202,6 +183,7 @@ public final class FCPInterface implements FredPluginFCP {
         			Thread.interrupted();
         		}
         	} while(isAlive());
+            */
         }
     }
 
