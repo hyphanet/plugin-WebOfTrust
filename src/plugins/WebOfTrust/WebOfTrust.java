@@ -47,21 +47,19 @@ import freenet.l10n.BaseL10n;
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.l10n.PluginL10n;
 import freenet.node.RequestClient;
+import freenet.node.fcp.FCPPluginClient;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginBaseL10n;
-import freenet.pluginmanager.FredPluginFCP;
+import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
-import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
-import freenet.support.api.Bucket;
 import freenet.support.io.FileUtil;
 
 /**
@@ -73,7 +71,7 @@ public final class WebOfTrust extends WebOfTrustInterface
     implements
         FredPlugin,
         FredPluginThreadless,
-        FredPluginFCP,
+        FredPluginFCPMessageHandler.ServerSideFCPMessageHandler,
         FredPluginVersioned,
         FredPluginRealVersioned,
         FredPluginL10n,
@@ -1747,12 +1745,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 		Logger.normal(this, "Web Of Trust plugin terminated.");
 	}
 
-	/**
-	 * Inherited event handler from FredPluginFCP, handled in <code>class FCPInterface</code>.
-	 */
-	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
-		mFCPInterface.handle(replysender, params, data, accesstype);
-	}
+    /**
+     * Handles FCP messages.<br>
+     * Actually implemented at class {@link FCPInterface} at
+     * {@link FCPInterface#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
+     */
+    @Override
+    public FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message)
+    {
+        return mFCPInterface.handlePluginFCPMessage(client, message);
+    }
 
 	/**
 	 * Loads an own or normal identity from the database, querying on its ID.
