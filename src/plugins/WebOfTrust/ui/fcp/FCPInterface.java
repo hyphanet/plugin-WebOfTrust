@@ -40,8 +40,10 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
+import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FCPPluginClient;
 import freenet.pluginmanager.FredPluginFCP;
+import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
@@ -53,7 +55,7 @@ import freenet.support.api.Bucket;
 /**
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class FCPInterface implements FredPluginFCP {
+public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSideFCPMessageHandler {
 
     private final WebOfTrust mWoT;
     
@@ -128,8 +130,20 @@ public final class FCPInterface implements FredPluginFCP {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
-    public void handle(final PluginReplySender replysender, final SimpleFieldSet params, final Bucket data, final int accesstype) {
+    public FCPPluginMessage handlePluginFCPMessage(
+            FCPPluginClient client, FCPPluginMessage fcpMessage) {
+        
+        if(fcpMessage.isReplyMessage()) {
+            Logger.warning(this, "Received an unexpected reply message: WOT currently should only"
+                + " use FCPPluginClient.sendSynchronous() for anything which is replied to by the"
+                + "client. Thus, all replies should be delivered to sendSynchronous() instead of the"
+                + "asynchronous message handler. Maybe the"
+                + "sendSynchronous() thread timed out already? Reply message = " + fcpMessage);
+            return null;
+        }
+        
 
         try {
             final String message = params.get("Message");
