@@ -145,70 +145,78 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         }
         
 
+        final SimpleFieldSet params = fcpMessage.parameters;
+        final SimpleFieldSet result = null;
+        final FCPPluginMessage reply;
+        
         try {
             final String message = params.get("Message");
-            
             // TODO: Optimization: This should use a HashMap<String, HandleInterface> instead of zillions of equals()
             
             if (message.equals("GetTrust")) {
-                replysender.send(handleGetTrust(params), data);
+                result = handleGetTrust(params);
             } else if(message.equals("GetScore")) {
-            	replysender.send(handleGetScore(params), data);
+                result = handleGetScore(params);
             }else if (message.equals("CreateIdentity")) {
-                replysender.send(handleCreateIdentity(params), data);
+                result = handleCreateIdentity(params);
             } else if (message.equals("SetTrust")) {
-                replysender.send(handleSetTrust(params), data);
+                result = handleSetTrust(params);
             } else if (message.equals("RemoveTrust")) {
-            	  replysender.send(handleRemoveTrust(params), data);
+                result = handleRemoveTrust(params);
             } else if (message.equals("AddIdentity")) {
-                replysender.send(handleAddIdentity(params), data);
+                result = handleAddIdentity(params);
             } else if (message.equals("GetIdentity")) {
-                replysender.send(handleGetIdentity(params), data);
+                result = handleGetIdentity(params);
             } else if (message.equals("GetOwnIdentities")) {
-                replysender.send(handleGetOwnIdentities(params), data);
+                result = handleGetOwnIdentities(params);
             } else if (message.equals("GetIdentities")) {
-            	replysender.send(handleGetIdentities(params), data);
+                result = handleGetIdentities(params);
             } else if (message.equals("GetTrusts")) {
-            	replysender.send(handleGetTrusts(params), data);
+                result = handleGetTrusts(params);
             } else if (message.equals("GetScores")) {
-            	replysender.send(handleGetScores(params), data);
+                result = handleGetScores(params);
             } else if (message.equals("GetIdentitiesByScore")) {
-                replysender.send(handleGetIdentitiesByScore(params), data);
+                result = handleGetIdentitiesByScore(params);
             } else if (message.equals("GetTrusters")) {
-                replysender.send(handleGetTrusters(params), data);
+                result = handleGetTrusters(params);
             } else if (message.equals("GetTrustersCount")) {
-            	replysender.send(handleGetTrustersCount(params), data);
+                result = handleGetTrustersCount(params);
             } else if (message.equals("GetTrustees")) {
-                replysender.send(handleGetTrustees(params), data);
+                result = handleGetTrustees(params);
             } else if (message.equals("GetTrusteesCount")) {
-            	replysender.send(handleGetTrusteesCount(params), data);
+                result = handleGetTrusteesCount(params);
             } else if (message.equals("AddContext")) {
-                replysender.send(handleAddContext(params), data);
+                result = handleAddContext(params);
             } else if (message.equals("RemoveContext")) {
-                replysender.send(handleRemoveContext(params), data);
+                result = handleRemoveContext(params);
             } else if (message.equals("SetProperty")) {
-                replysender.send(handleSetProperty(params), data);
+                result = handleSetProperty(params);
             } else if (message.equals("GetProperty")) {
-                replysender.send(handleGetProperty(params), data);
+                result = handleGetProperty(params);
             } else if (message.equals("RemoveProperty")) {
-                replysender.send(handleRemoveProperty(params), data);
+                result = handleRemoveProperty(params);
             } else if (message.equals("GetIntroductionPuzzles")) {
-            	replysender.send(handleGetIntroductionPuzzles(params), data);
+                result = handleGetIntroductionPuzzles(params);
             } else if (message.equals("GetIntroductionPuzzle")) {
-            	replysender.send(handleGetIntroductionPuzzle(params), data);
+                result = handleGetIntroductionPuzzle(params);
             } else if (message.equals("SolveIntroductionPuzzle")) {
-            	replysender.send(handleSolveIntroductionPuzzle(params), data);
+                result = handleSolveIntroductionPuzzle(params);
             } else if (message.equals("Subscribe")) {
-            	replysender.send(handleSubscribe(replysender, params), data);
+                result = handleSubscribe(client, params);
             } else if (message.equals("Unsubscribe")) {
-            	replysender.send(handleUnsubscribe(params), data);
+                result = handleUnsubscribe(params);
             } else if (message.equals("Ping")) {
-            	replysender.send(handlePing(), data);
+                result = handlePing();
             } else if (message.equals("RandomName")) {
-            	replysender.send(handleRandomName(params), data);
+                result = handleRandomName(params);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
+            
+            reply = FCPPluginMessage.constructReplyMessage(
+                fcpMessage, result, null,
+                true /* All handlers will throw upon error, so success should be true here */,
+                null, null);
         } catch (final Exception e) {
         	// TODO: This might miss some stuff which are errors. Find a better way of detecting which exceptions are okay.
         	boolean dontLog = e instanceof NoSuchContextException ||
@@ -220,12 +228,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         	if(!dontLog)
         		Logger.error(this, "FCP error", e);
         	
-            try {
-                replysender.send(errorMessageFCP(params.get("Message"), e), data);
-            } catch (final PluginNotFoundException e1) {
-                Logger.normal(this, "Connection to request sender lost", e1);
-            }
+        	
+            reply = errorMessageFCP(fcpMessage, e);
         }
+        
+        return reply;
     }
     
     private String getMandatoryParameter(final SimpleFieldSet sfs, final String name) throws InvalidParameterException {
