@@ -114,7 +114,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             // FIXME: Check whether the get() code which uses fred can be made to work in unit
             // tests. If it does, we do not need to provide storage anymore and can always use the
             // fred code. Then remove this function.
-            throw new UnsupportedOperationException("Not implemented");
+            Logger.error(this, "Not implemented!", new UnsupportedOperationException());
+            
+            return client.getID();
         }
 
         public synchronized FCPPluginClient get(final UUID id) throws IOException {
@@ -161,8 +163,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
 
         final SimpleFieldSet params = fcpMessage.parameters;
-        final SimpleFieldSet result;
-        final FCPPluginMessage reply;
+        SimpleFieldSet result = null;
+        FCPPluginMessage reply = null;
         
         try {
             final String message = params.get("Message");
@@ -217,7 +219,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             } else if (message.equals("SolveIntroductionPuzzle")) {
                 result = handleSolveIntroductionPuzzle(params);
             } else if (message.equals("Subscribe")) {
-                result = handleSubscribe(client, params);
+                reply = handleSubscribe(client, fcpMessage);
             } else if (message.equals("Unsubscribe")) {
                 result = handleUnsubscribe(params);
             } else if (message.equals("Ping")) {
@@ -228,10 +230,17 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
                 throw new Exception("Unknown message (" + message + ")");
             }
             
-            reply = FCPPluginMessage.constructReplyMessage(
-                fcpMessage, result, null,
-                true /* All handlers will throw upon error, so success should be true here */,
-                null, null);
+            // All handlers throw upon error, so at this point, the call has succeeded and the
+            // FCPPluginMessage reply should be available.
+            // But some of the handlers still return the SimpleFieldSet result instead of a
+            // FCPPluginMessage, so we must check whether the FCPPluginMessage reply was constructed
+            // yet and construct it if not.
+            if(reply == null) {
+                reply = FCPPluginMessage.constructReplyMessage(
+                    fcpMessage, result, null,
+                    true,
+                    null, null);
+            }
         } catch (final Exception e) {
         	// TODO: This might miss some stuff which are errors. Find a better way of detecting which exceptions are okay.
             // A good solution would be to have the message handling functions return a valid
@@ -1131,15 +1140,18 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * @see SubscriptionManager#subscribeToScores(String) The underyling implementation for "To" = "Trusts"
      * @see SubscriptionManager#subscribeToTrusts(String) The underlying implementation for "To" = "Scores"
      */
-    private SimpleFieldSet handleSubscribe(final PluginReplySender replySender, final SimpleFieldSet params) throws InvalidParameterException {
-    	final String to = getMandatoryParameter(params, "To");
+    private FCPPluginMessage handleSubscribe(final FCPPluginClient client, final FCPPluginMessage message) throws InvalidParameterException {
+        final String to = getMandatoryParameter(message.parameters, "To");
 
-        final UUID clientID = mClientTrackerDaemon.put(replySender);
+        final UUID clientID = mClientTrackerDaemon.put(client);
     	
     	Subscription<? extends Notification> subscription;
-    	SimpleFieldSet sfs;
+
     	
     	try {
+            FCPPluginMessage reply = FCPPluginMessage.constructSuccessReply(message);
+            SimpleFieldSet sfs = reply.parameters;
+            
 	    	if(to.equals("Identities")) {
 	    		subscription = mSubscriptionManager.subscribeToIdentities(clientID.toString());
 	    	} else if(to.equals("Trusts")) {
@@ -1153,13 +1165,20 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 	    	sfs.putOverwrite("Message", "Subscribed");
 	    	sfs.putOverwrite("SubscriptionID", subscription.getID());
 	    	sfs.putOverwrite("To", to);
+            
+            return reply;
     	} catch(SubscriptionExistsAlreadyException e) {
-	    	sfs = errorMessageFCP("Subscribe", e);
-	    	sfs.putOverwrite("SubscriptionID", e.existingSubscription.getID());
-	    	sfs.putOverwrite("To", to);
+            // FIXME: Use the errorMessage() which allows setting a proper errorCode.
+            // When doing that, make sure to check stuff such as FCPClientRefrenceImplementation and
+            // the unit tests which rely upon the old format error message of using the Exception
+            // class name as "Description", instead of an FCPPluginMessage.errorCode (the errorCode
+            // field was only recently introduced in fred's branch plugin-fcp-rewrite). Also, fix
+            // the function level JavaDoc of this function to mention the errorCode then.
+            FCPPluginMessage errorMessage = errorMessageFCP(message, e);
+            errorMessage.parameters.putOverwrite("SubscriptionID", e.existingSubscription.getID());
+            errorMessage.parameters.putOverwrite("To", to);
+            return errorMessage;
     	}
-    	
-    	return sfs;
     }
     
     /**
