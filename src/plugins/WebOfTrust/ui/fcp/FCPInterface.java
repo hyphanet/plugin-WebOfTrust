@@ -1202,7 +1202,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         mClientTrackerDaemon.get(clientID).send(handleUnsubscribe(clazz, subscriptionID));
     }
     
-    private SimpleFieldSet handleUnsubscribe(final Class<Subscription<? extends Notification>> clazz, final String subscriptionID) {
+    private FCPPluginMessage handleUnsubscribe(
+        final Class<Subscription<? extends Notification>> clazz, final String subscriptionID) {
+        
+        FCPPluginMessage result = FCPPluginMessage.construct();
+        
     	final String type;
     	
     	if(clazz.equals(IdentitiesSubscription.class))
@@ -1214,11 +1218,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	else
     		throw new IllegalStateException("Unknown subscription type: " + clazz);
 
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-    	sfs.putOverwrite("Message", "Unsubscribed");
-    	sfs.putOverwrite("SubscriptionID", subscriptionID);
-    	sfs.putOverwrite("From", type);
-    	return sfs;
+        result.parameters.putOverwrite("Message", "Unsubscribed");
+        result.parameters.putOverwrite("SubscriptionID", subscriptionID);
+        result.parameters.putOverwrite("From", type);
+        
+        return result;
     }
     
     public void sendAllIdentities(UUID clientID) throws FCPCallFailedException, PluginNotFoundException {
