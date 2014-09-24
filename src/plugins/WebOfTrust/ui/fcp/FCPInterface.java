@@ -57,8 +57,8 @@ import freenet.support.api.Bucket;
  * ATTENTION: There is a deprecation mechanism for getting rid of old SimpleFieldSet keys (fields)
  * in FCP messages sent by WOT:<br>
  * - If a {@link FCPPluginMessage} sent by WOT contains a list "DeprecatedFields" in the
- *   {@link FCPPluginMessage#parameters}, then you should not write new client code to use the
- *   fields of the {@link FCPPluginMessage#parameters} which are listed at "DeprecatedFields".<br>
+ *   {@link FCPPluginMessage#params}, then you should not write new client code to use the
+ *   fields of the {@link FCPPluginMessage#params} which are listed at "DeprecatedFields".<br>
  * - If you want to change WOT to deprecate a certain field, use:<br>
  *   <code>aSimpleFieldSet.putAppend("DeprecatedFields", "NameOfTheField");</code><br>
  * - Notice that this is included in the actual on-network messages to ensure that client authors
@@ -163,7 +163,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         }
         
 
-        final SimpleFieldSet params = fcpMessage.parameters;
+        final SimpleFieldSet params = fcpMessage.params;
         SimpleFieldSet result = null;
         FCPPluginMessage reply = null;
         
@@ -1142,7 +1142,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * @see SubscriptionManager#subscribeToTrusts(String) The underlying implementation for "To" = "Scores"
      */
     private FCPPluginMessage handleSubscribe(final FCPPluginClient client, final FCPPluginMessage message) throws InvalidParameterException {
-        final String to = getMandatoryParameter(message.parameters, "To");
+        final String to = getMandatoryParameter(message.params, "To");
 
         final UUID clientID = mClientTrackerDaemon.put(client);
     	
@@ -1151,7 +1151,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	
     	try {
             FCPPluginMessage reply = FCPPluginMessage.constructSuccessReply(message);
-            SimpleFieldSet sfs = reply.parameters;
+            SimpleFieldSet sfs = reply.params;
             
 	    	if(to.equals("Identities")) {
 	    		subscription = mSubscriptionManager.subscribeToIdentities(clientID.toString());
@@ -1176,8 +1176,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             // field was only recently introduced in fred's branch plugin-fcp-rewrite). Also, fix
             // the function level JavaDoc of this function to mention the errorCode then.
             FCPPluginMessage errorMessage = errorMessageFCP(message, e);
-            errorMessage.parameters.putOverwrite("SubscriptionID", e.existingSubscription.getID());
-            errorMessage.parameters.putOverwrite("To", to);
+            errorMessage.params.putOverwrite("SubscriptionID", e.existingSubscription.getID());
+            errorMessage.params.putOverwrite("To", to);
             return errorMessage;
     	}
     }
@@ -1224,9 +1224,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	else
     		throw new IllegalStateException("Unknown subscription type: " + clazz);
 
-        result.parameters.putOverwrite("Message", "Unsubscribed");
-        result.parameters.putOverwrite("SubscriptionID", subscriptionID);
-        result.parameters.putOverwrite("From", type);
+        result.params.putOverwrite("Message", "Unsubscribed");
+        result.params.putOverwrite("SubscriptionID", subscriptionID);
+        result.params.putOverwrite("From", type);
         
         return result;
     }
@@ -1313,9 +1313,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         FCPPluginMessage reply = FCPPluginMessage.constructErrorReply(
             originalFCPMessage, errorCode, errorMessage);
         
-        final SimpleFieldSet sfs = reply.parameters;
+        final SimpleFieldSet sfs = reply.params;
         
-        sfs.putOverwrite("OriginalMessage", originalFCPMessage.parameters.get("Message"));
+        sfs.putOverwrite("OriginalMessage", originalFCPMessage.params.get("Message"));
         
         sfs.putOverwrite("Message", "Error");
         // Deprecated because there is FCPPluginMessage.success now to indicate that a message is
