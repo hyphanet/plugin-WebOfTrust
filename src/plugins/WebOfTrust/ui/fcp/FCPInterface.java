@@ -1051,20 +1051,48 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * "To" = "Identities" or "Trusts" or "Scores" - chooses among {@link IdentitiesSubscription} / {@link TrustsSubscription} /
      * {@link ScoresSubscription}.
      * 
+     * FIXME: The following JavaDoc already mentions how this function will work when being
+     * adapted to fred plugin-fcp-rewrite, but the function itself was not changed yet. Please
+     * implement what the JavaDoc says.
+     * 
      * <b>Reply:</b>
      * The reply consists of two separate FCP messages:
-     * The first message is "Message" = "Identities" or "Trusts" or "Scores".
-     * It contains the full dataset of the type you have subscribed to. For the format of the message contents, see
-     * {@link #sendAllIdentities(String)} / {@link #sendAllTrustValues(String)} / {@link #sendAllScoreValues(String)}.
-     * By storing this dataset, your client is completely synchronized with WOT. Upon changes of anything, WOT will only have to send
-     * the single {@link Identity}/{@link Trust}/{@link Score} object which has changed for your client to be fully synchronized again.
+     * The first message is "Message" = "Identities" or "Trusts" or "Scores". It is referenced
+     * as "synchronization message" in the following text.<br>
+     * Its {@link FCPPluginMessage#identifier} will <b>not</b> match the identifier of the original
+     * "Subscribe" message you sent, i.e. not be a reply to it. (The reply to the original message
+     * will be the second message which WOT will send.)<br><br>
      * 
-     * This message is send via the <b>synchronous</b> FCP-API: You can signal that processing it failed by returning an error
-     * in the FCP message processor. This allows your client to be programmed in a transactional style: If part of the transaction which
-     * stores the dataset fails, you can just roll it back and signal the error to WOT. It will rollback the subscription then and
-     * send an "Error" message, indicating that subscribing failed. You must file another subscription attempt then.
+     * The synchronization message contains the full dataset of the type you have subscribed to.
+     * For the format of the message contents, see {@link #sendAllIdentities(String)} /
+     * {@link #sendAllTrustValues(String)} / {@link #sendAllScoreValues(String)}.<br>
+     * By storing this dataset, your client is completely synchronized with WOT. Upon changes of
+     * anything, WOT will only have to send the single {@link Identity}/{@link Trust}/{@link Score}
+     * object which has changed for your client to be fully synchronized again.<br><br>
      * 
-     * The second message is formatted as:
+     * You must indicate whether processing of the synchronization message succeeded or failed by 
+     * replying with a {@link FCPPluginMessage} with {@link FCPPluginMessage#success} set
+     * appropriately.<br>
+     * This reply shall use the same {@link FCPPluginMessage#identifier} as the synchronization
+     * message of WOT, or in other words be constructed as a reply to it using
+     * {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket,
+     * boolean, String, String)} (or one of its shortcuts).
+     * <br>This allows your client to be programmed in a transactional style: If part of the
+     * transaction which stores the dataset fails, you can just roll it back and signal the error
+     * to WOT by returning a success = false reply.<br><br>
+     * 
+     * After you have sent a reply to the synchronization message, WOT will send the second
+     * message. This will have the same {@link FCPPluginMessage#identifier} as the
+     * original "Subscribe" message which you first sent to subscribe, or in other words be the
+     * reply to the original "Subscribe" message.<br>
+     * If you indicated failure in the reply to the synchronization message, this message will also
+     * indicate failure by {@link FCPPluginMessage#success} = false and
+     * {@link FCPPluginMessage#errorCode} = FIXME. <br>
+     * The subscription will <b>not</b> be filed then, you must retry on your own.<br><br>
+     * 
+     * If you indicated success in the synchronization message, the second message may indicate
+     * success = true, which means that the subscription is active, and will be formatted as:
+     * <br>
      * "Message" = "Subscribed"
      * "SubscriptionID" = Random {@link UUID} of the Subscription.
      * "To" = Same as the "To" field of your original message.
