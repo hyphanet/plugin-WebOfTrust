@@ -4,8 +4,6 @@
 package plugins.WebOfTrust.ui.fcp;
 
 import java.io.IOException;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,10 +38,8 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
-import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FCPPluginClient;
 import freenet.node.fcp.FCPPluginClient.SendDirection;
-import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
