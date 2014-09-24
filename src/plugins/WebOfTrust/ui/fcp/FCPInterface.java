@@ -726,22 +726,24 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         return reply;
     }
     
-    private SimpleFieldSet handleGetScores(final SimpleFieldSet params) {
-        final SimpleFieldSet sfs = new SimpleFieldSet(true);
-        sfs.putOverwrite("Message", "Scores");
+    private FCPPluginMessage handleGetScores(final SimpleFieldSet params) {
+        final FCPPluginMessage reply = FCPPluginMessage.construct();
+        reply.params.putOverwrite("Message", "Scores");
    
 		// TODO: Optimization: Remove this lock if it works without it.
         synchronized(mWoT) {
         	int i = 0;
 			for(final Score score: mWoT.getAllScores()) {
-				handleGetScore(sfs, score, Integer.toString(i));
+                handleGetScore(reply.params, score, Integer.toString(i));
 				
 				++i;
 			}
-			sfs.putOverwrite("Scores.Amount", Integer.toString(i)); // Need to use Overwrite because handleGetScore() sets it to 1
+            
+            // Need to use Overwrite because handleGetScore() sets it to 1
+            reply.params.putOverwrite("Scores.Amount", Integer.toString(i));
         }
         
-        return sfs;
+        return reply;
     }
 
     private SimpleFieldSet handleGetIdentitiesByScore(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException, FSParseException {
