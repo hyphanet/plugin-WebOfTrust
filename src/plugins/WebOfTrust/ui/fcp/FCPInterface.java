@@ -1260,7 +1260,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     private FCPPluginMessage errorMessageFCP(final FCPPluginMessage originalFCPMessage,
            final String errorCode, final String errorMessage) {
         
-        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        FCPPluginMessage reply = FCPPluginMessage.constructErrorReply(
+            originalFCPMessage, errorCode, errorMessage);
+        
+        final SimpleFieldSet sfs = reply.parameters;
+        
         sfs.putOverwrite("OriginalMessage", originalFCPMessage.parameters.get("Message"));
         
         sfs.putOverwrite("Message", "Error");
@@ -1272,8 +1276,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         // Deprecated because there is FCPPluginMessage.errorMessage now
         sfs.putAppend("DeprecatedFields", "Description");
         
-        return FCPPluginMessage.constructReplyMessage(originalFCPMessage, sfs, null, false,
-            errorCode, errorMessage);
+        return reply;
         
     }
 
