@@ -42,6 +42,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FCPPluginClient;
+import freenet.node.fcp.FCPPluginClient.SendDirection;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -1198,8 +1199,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     }
     
     public void sendUnsubscribedMessage(final UUID clientID,
-    		final Class<Subscription<? extends Notification>> clazz, final String subscriptionID) throws PluginNotFoundException {
-        mClientTrackerDaemon.get(clientID).send(handleUnsubscribe(clazz, subscriptionID));
+            final Class<Subscription<? extends Notification>> clazz, final String subscriptionID)
+                throws IOException {
+        
+        mClientTrackerDaemon.get(clientID).send(SendDirection.ToClient,
+            handleUnsubscribe(clazz, subscriptionID));
     }
     
     private FCPPluginMessage handleUnsubscribe(
