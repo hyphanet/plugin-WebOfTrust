@@ -1197,7 +1197,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	return handleUnsubscribe(clazz, subscriptionID);
     }
     
-    public void sendUnsubscribedMessage(final String fcpID,
+    public void sendUnsubscribedMessage(final UUID fcpID,
     		final Class<Subscription<? extends Notification>> clazz, final String subscriptionID) throws PluginNotFoundException {
     	mClientTrackerDaemon.get(fcpID).send(handleUnsubscribe(clazz, subscriptionID));
     }
@@ -1228,22 +1228,22 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	return sfs;
     }
     
-    public void sendAllIdentities(String fcpID) throws FCPCallFailedException, PluginNotFoundException {
+    public void sendAllIdentities(UUID fcpID) throws FCPCallFailedException, PluginNotFoundException {
     	mClientTrackerDaemon.get(fcpID).sendSynchronous(handleGetIdentities(null), null);
     }
     
-    public void sendAllTrustValues(String fcpID) throws FCPCallFailedException, PluginNotFoundException {
+    public void sendAllTrustValues(UUID fcpID) throws FCPCallFailedException, PluginNotFoundException {
     	mClientTrackerDaemon.get(fcpID).sendSynchronous(handleGetTrusts(null), null);
     }
     
-    public void sendAllScoreValues(String fcpID) throws FCPCallFailedException, PluginNotFoundException{
+    public void sendAllScoreValues(UUID fcpID) throws FCPCallFailedException, PluginNotFoundException{
     	mClientTrackerDaemon.get(fcpID).sendSynchronous(handleGetScores(null), null);
     }
     
     /**
      * @see SubscriptionManager.IdentityChangedNotification
      */
-    public void sendIdentityChangedNotification(final String fcpID, final IdentityChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
+    public void sendIdentityChangedNotification(final UUID fcpID, final IdentityChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
     	final SimpleFieldSet oldIdentity = handleGetIdentity((Identity)notification.getOldObject(), null);
     	final SimpleFieldSet newIdentity = handleGetIdentity((Identity)notification.getNewObject(), null);
     	
@@ -1253,7 +1253,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * @see SubscriptionManager.TrustChangedNotification
      */
-    public void sendTrustChangedNotification(String fcpID, final TrustChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
+    public void sendTrustChangedNotification(UUID fcpID, final TrustChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
     	final SimpleFieldSet oldTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getOldObject(), "0");
     	final SimpleFieldSet newTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getNewObject(), "0");
 
@@ -1263,14 +1263,14 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * @see SubscriptionManager.ScoreChangedNotification
      */
-    public void sendScoreChangedNotification(String fcpID, final ScoreChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
+    public void sendScoreChangedNotification(UUID fcpID, final ScoreChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
     	final SimpleFieldSet oldScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getOldObject(), "0");
     	final SimpleFieldSet newScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getNewObject(), "0");
 
     	sendChangeNotification(fcpID, "ScoreChangedNotification", oldScore, newScore);
     }
     
-    private void sendChangeNotification(final String fcpID, final String message, final SimpleFieldSet beforeChange, final SimpleFieldSet afterChange) throws FCPCallFailedException, PluginNotFoundException {
+    private void sendChangeNotification(final UUID fcpID, final String message, final SimpleFieldSet beforeChange, final SimpleFieldSet afterChange) throws FCPCallFailedException, PluginNotFoundException {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", message);;
     	sfs.put("BeforeChange", beforeChange);
