@@ -184,7 +184,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             } else if (message.equals("GetOwnIdentities")) {
                 result = handleGetOwnIdentities(params);
             } else if (message.equals("GetIdentities")) {
-                result = handleGetIdentities(params);
+                reply = handleGetIdentities(params);
             } else if (message.equals("GetTrusts")) {
                 result = handleGetTrusts(params);
             } else if (message.equals("GetScores")) {
@@ -673,7 +673,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		return sfs;
     }
     
-    private SimpleFieldSet handleGetIdentities(final SimpleFieldSet params) {
+    private FCPPluginMessage handleGetIdentities(final SimpleFieldSet params) {
         final String context;
         
         if(params!= null) {
@@ -682,8 +682,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         	context = null;
         }
 
-		final SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.putOverwrite("Message", "Identities");
+        final FCPPluginMessage result = FCPPluginMessage.construct();
+        result.params.putOverwrite("Message", "Identities");
 		
 		// TODO: Optimization: Remove this lock if it works without it.
 		synchronized(mWoT) {
@@ -693,15 +693,18 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 			for(final Identity identity : mWoT.getAllIdentities()) {
 				if(getAll || identity.hasContext(context)) {
 					// TODO: Allow the client to select what data he wants
-					addIdentityFields(sfs, identity, "Identities." + Integer.toString(i) + ".", "");
+                    addIdentityFields(result.params, identity,
+                        "Identities." + Integer.toString(i) + ".", "");
 					
 					++i;
 				}
 			}
-			sfs.putOverwrite("Identities.Amount", Integer.toString(i)); // Need to use Overwrite because addIdentityFields() sets it to 1
+            
+            // Need to use Overwrite because addIdentityFields() sets it to 1
+            result.params.putOverwrite("Identities.Amount", Integer.toString(i));
 		}
 		
-		return sfs;
+        return result;
     }
     
     private SimpleFieldSet handleGetTrusts(final SimpleFieldSet params) {
