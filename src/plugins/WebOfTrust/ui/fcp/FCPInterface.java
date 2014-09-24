@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
@@ -1234,16 +1235,40 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         return reply;
     }
     
-    public void sendAllIdentities(UUID clientID) throws FCPCallFailedException, PluginNotFoundException {
-        mClientTrackerDaemon.get(clientID).sendSynchronous(handleGetIdentities(null), null);
+    public void sendAllIdentities(UUID clientID) throws IOException, InterruptedException {
+        mClientTrackerDaemon.get(clientID).sendSynchronous(SendDirection.ToClient,
+            handleGetIdentities(null),
+            /* Large timeout since we possibly send _everything_.
+             * Notice that a client can at maximum subscribe to Identities, Trusts and Scores in
+             * parallel so there can be a maximum of 3 threads blocked in this large timeout
+             * per client - sendAllIdentites(), sendAllTrustValues(), sendAllScoreValues().
+             * That is an acceptable amount of threads per client, given that it only happens once
+             * at the beginning of a connection. */
+            TimeUnit.MINUTES.toNanos(5));
     }
     
-    public void sendAllTrustValues(UUID clientID) throws FCPCallFailedException, PluginNotFoundException {
-        mClientTrackerDaemon.get(clientID).sendSynchronous(handleGetTrusts(null), null);
+    public void sendAllTrustValues(UUID clientID) throws IOException, InterruptedException {
+        mClientTrackerDaemon.get(clientID).sendSynchronous(SendDirection.ToClient,
+            handleGetTrusts(null),
+            /* Large timeout since we possibly send _everything_.
+             * Notice that a client can at maximum subscribe to Identities, Trusts and Scores in
+             * parallel so there can be a maximum of 3 threads blocked in this large timeout
+             * per client - sendAllIdentites(), sendAllTrustValues(), sendAllScoreValues().
+             * That is an acceptable amount of threads per client, given that it only happens once
+             * at the beginning of a connection. */
+            TimeUnit.MINUTES.toNanos(5));
     }
     
-    public void sendAllScoreValues(UUID clientID) throws FCPCallFailedException, PluginNotFoundException{
-        mClientTrackerDaemon.get(clientID).sendSynchronous(handleGetScores(null), null);
+    public void sendAllScoreValues(UUID clientID) throws IOException, InterruptedException {
+        mClientTrackerDaemon.get(clientID).sendSynchronous(SendDirection.ToClient,
+            handleGetScores(null),
+            /* Large timeout since we possibly send _everything_.
+             * Notice that a client can at maximum subscribe to Identities, Trusts and Scores in
+             * parallel so there can be a maximum of 3 threads blocked in this large timeout
+             * per client - sendAllIdentites(), sendAllTrustValues(), sendAllScoreValues().
+             * That is an acceptable amount of threads per client, given that it only happens once
+             * at the beginning of a connection. */
+            TimeUnit.MINUTES.toNanos(5));
     }
     
     /**
