@@ -682,8 +682,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         	context = null;
         }
 
-        final FCPPluginMessage result = FCPPluginMessage.construct();
-        result.params.putOverwrite("Message", "Identities");
+        final FCPPluginMessage reply = FCPPluginMessage.construct();
+        reply.params.putOverwrite("Message", "Identities");
 		
 		// TODO: Optimization: Remove this lock if it works without it.
 		synchronized(mWoT) {
@@ -693,7 +693,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 			for(final Identity identity : mWoT.getAllIdentities()) {
 				if(getAll || identity.hasContext(context)) {
 					// TODO: Allow the client to select what data he wants
-                    addIdentityFields(result.params, identity,
+                    addIdentityFields(reply.params, identity,
                         "Identities." + Integer.toString(i) + ".", "");
 					
 					++i;
@@ -701,10 +701,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 			}
             
             // Need to use Overwrite because addIdentityFields() sets it to 1
-            result.params.putOverwrite("Identities.Amount", Integer.toString(i));
+            reply.params.putOverwrite("Identities.Amount", Integer.toString(i));
 		}
 		
-        return result;
+        return reply;
     }
     
     private SimpleFieldSet handleGetTrusts(final SimpleFieldSet params) {
@@ -1210,7 +1210,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     private FCPPluginMessage handleUnsubscribe(
         final Class<Subscription<? extends Notification>> clazz, final String subscriptionID) {
         
-        FCPPluginMessage result = FCPPluginMessage.construct();
+        FCPPluginMessage reply = FCPPluginMessage.construct();
         
     	final String type;
     	
@@ -1223,11 +1223,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	else
     		throw new IllegalStateException("Unknown subscription type: " + clazz);
 
-        result.params.putOverwrite("Message", "Unsubscribed");
-        result.params.putOverwrite("SubscriptionID", subscriptionID);
-        result.params.putOverwrite("From", type);
+        reply.params.putOverwrite("Message", "Unsubscribed");
+        reply.params.putOverwrite("SubscriptionID", subscriptionID);
+        reply.params.putOverwrite("From", type);
         
-        return result;
+        return reply;
     }
     
     public void sendAllIdentities(UUID clientID) throws FCPCallFailedException, PluginNotFoundException {
