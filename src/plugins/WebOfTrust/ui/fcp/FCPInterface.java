@@ -186,7 +186,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             } else if (message.equals("GetIdentities")) {
                 reply = handleGetIdentities(params);
             } else if (message.equals("GetTrusts")) {
-                result = handleGetTrusts(params);
+                reply = handleGetTrusts(params);
             } else if (message.equals("GetScores")) {
                 result = handleGetScores(params);
             } else if (message.equals("GetIdentitiesByScore")) {
@@ -707,21 +707,23 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         return reply;
     }
     
-    private SimpleFieldSet handleGetTrusts(final SimpleFieldSet params) {
-        final SimpleFieldSet sfs = new SimpleFieldSet(true);
-        sfs.putOverwrite("Message", "Trusts");
+    private FCPPluginMessage handleGetTrusts(final SimpleFieldSet params) {
+        final FCPPluginMessage reply = FCPPluginMessage.construct();
+        reply.params.putOverwrite("Message", "Trusts");
    
 		// TODO: Optimization: Remove this lock if it works without it.
         synchronized(mWoT) {
         	int i = 0;
 			for(final Trust trust : mWoT.getAllTrusts()) {
-				handleGetTrust(sfs, trust, Integer.toString(i));
+                handleGetTrust(reply.params, trust, Integer.toString(i));
 				++i;
 			}
-        	sfs.putOverwrite("Trusts.Amount", Integer.toString(i)); // Need to use Overwrite because handleGetTrust() sets it to 1
+            
+            // Need to use Overwrite because handleGetTrust() sets it to 1
+            reply.params.putOverwrite("Trusts.Amount", Integer.toString(i));
         }
         
-        return sfs;
+        return reply;
     }
     
     private SimpleFieldSet handleGetScores(final SimpleFieldSet params) {
