@@ -222,7 +222,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             } else if (message.equals("Subscribe")) {
                 reply = handleSubscribe(client, fcpMessage);
             } else if (message.equals("Unsubscribe")) {
-                result = handleUnsubscribe(params);
+                reply = handleUnsubscribe(params);
             } else if (message.equals("Ping")) {
                 result = handlePing();
             } else if (message.equals("RandomName")) {
@@ -1192,7 +1192,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * "From" = "Identities" or "Trusts" or "Scores" - indicates the type of the original subscription.
      * "SubscriptionID" = Same as requested
      */
-    private SimpleFieldSet handleUnsubscribe(final SimpleFieldSet params) throws InvalidParameterException, UnknownSubscriptionException {
+    private FCPPluginMessage handleUnsubscribe(final SimpleFieldSet params)
+            throws InvalidParameterException, UnknownSubscriptionException {
+        
     	final String subscriptionID = getMandatoryParameter(params, "SubscriptionID");
     	final Class<Subscription<? extends Notification>> clazz = mSubscriptionManager.unsubscribe(subscriptionID);
     	return handleUnsubscribe(clazz, subscriptionID);
