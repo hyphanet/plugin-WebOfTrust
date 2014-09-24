@@ -161,7 +161,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
 
         final SimpleFieldSet params = fcpMessage.parameters;
-        final SimpleFieldSet result = null;
+        final SimpleFieldSet result;
         final FCPPluginMessage reply;
         
         try {
