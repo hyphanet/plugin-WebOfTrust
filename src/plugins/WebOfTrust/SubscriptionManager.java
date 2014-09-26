@@ -482,10 +482,16 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * 
          * @throws IOException
          *             If the FCP client has disconnected. Subscribing must fail if this happens.
+         * @throws InterruptedException
+         *             If an external thread requested the current thread to terminate via
+         *             {@link Thread#interrupt()} while the data was being transfered to the client.
+         *             <br>This is a necessary shutdown mechanism as clients can be attached by
+         *             network and thus transfers can take a long time. Please honor it by 
+         *             terminating the thread so WOT can shutdown quickly.
 		 * @throws FCPCallFailedException If processing failed at the client. Subscribing must fail if this happens.
 		 */
         protected abstract void synchronizeSubscriberByFCP()
-            throws FCPCallFailedException, IOException;
+            throws FCPCallFailedException, IOException, InterruptedException;
 
 		/**
 		 * Called by this Subscription when the type of it is FCP and a {@link Notification} shall be sent via FCP. 
@@ -506,10 +512,16 @@ public final class SubscriptionManager implements PrioRunnable {
          * @throws IOException
          *             If the FCP client has disconnected. The SubscriptionManager then won't retry
          *             deploying this Notification, the {@link Subscription} will be terminated.
+         * @throws InterruptedException
+         *             If an external thread requested the current thread to terminate via
+         *             {@link Thread#interrupt()} while the data was being transfered to the client.
+         *             <br>This is a necessary shutdown mechanism as clients can be attached by
+         *             network and thus transfers can take a long time. Please honor it by 
+         *             terminating the thread so WOT can shutdown quickly.
 		 * @throws FCPCallFailedException If processing failed at the client.
 		 */
         protected abstract void notifySubscriberByFCP(Notification notification)
-            throws FCPCallFailedException, IOException;
+            throws FCPCallFailedException, IOException, InterruptedException;
 
 		/** {@inheritDoc} */
 		@Override protected void activateFully() {
@@ -791,14 +803,16 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		/** {@inheritDoc} */
 		@Override
-        protected void synchronizeSubscriberByFCP() throws FCPCallFailedException, IOException {
+        protected void synchronizeSubscriberByFCP()
+                throws FCPCallFailedException, IOException, InterruptedException {
+		    
 			mWebOfTrust.getFCPInterface().sendAllIdentities(getClient().getFCP_ID());
 		}
 		
 		/** {@inheritDoc} */
 		@Override
         protected void notifySubscriberByFCP(Notification notification)
-                throws FCPCallFailedException, IOException {
+                throws FCPCallFailedException, IOException, InterruptedException {
 
 			assert(notification instanceof IdentityChangedNotification);
 			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getClient().getFCP_ID(), (IdentityChangedNotification)notification);
@@ -837,7 +851,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		/** {@inheritDoc} */
 		@Override
         protected void synchronizeSubscriberByFCP()
-                throws FCPCallFailedException, IOException {
+                throws FCPCallFailedException, IOException, InterruptedException {
 
 			mWebOfTrust.getFCPInterface().sendAllTrustValues(getClient().getFCP_ID());
 		}
@@ -845,7 +859,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		/** {@inheritDoc} */
 		@Override
         protected void notifySubscriberByFCP(final Notification notification)
-                throws FCPCallFailedException, IOException {
+                throws FCPCallFailedException, IOException, InterruptedException {
 
 			assert(notification instanceof TrustChangedNotification);
 			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getClient().getFCP_ID(), (TrustChangedNotification)notification);
@@ -884,7 +898,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		/** {@inheritDoc} */
 		@Override
         protected void synchronizeSubscriberByFCP()
-                throws FCPCallFailedException, IOException {
+                throws FCPCallFailedException, IOException, InterruptedException {
 
 			mWebOfTrust.getFCPInterface().sendAllScoreValues(getClient().getFCP_ID());
 		}
@@ -892,7 +906,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		/** {@inheritDoc} */
 		@Override
         protected void notifySubscriberByFCP(final Notification notification)
-                throws FCPCallFailedException, IOException {
+                throws FCPCallFailedException, IOException, InterruptedException {
 
 			assert(notification instanceof ScoreChangedNotification);
 			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getClient().getFCP_ID(), (ScoreChangedNotification)notification);
