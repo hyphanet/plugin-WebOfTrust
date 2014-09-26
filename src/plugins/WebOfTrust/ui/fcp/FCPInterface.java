@@ -688,11 +688,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         	context = null;
         }
 
-        final FCPPluginMessage reply =
+        final FCPPluginMessage result =
             request != null ? FCPPluginMessage.constructSuccessReply(request) :
                               FCPPluginMessage.construct();
         
-        reply.params.putOverwrite("Message", "Identities");
+        result.params.putOverwrite("Message", "Identities");
 		
 		// TODO: Optimization: Remove this lock if it works without it.
 		synchronized(mWoT) {
@@ -702,7 +702,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 			for(final Identity identity : mWoT.getAllIdentities()) {
 				if(getAll || identity.hasContext(context)) {
 					// TODO: Allow the client to select what data he wants
-                    addIdentityFields(reply.params, identity,
+                    addIdentityFields(result.params, identity,
                         "Identities." + Integer.toString(i) + ".", "");
 					
 					++i;
@@ -710,10 +710,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 			}
             
             // Need to use Overwrite because addIdentityFields() sets it to 1
-            reply.params.putOverwrite("Identities.Amount", Integer.toString(i));
+            result.params.putOverwrite("Identities.Amount", Integer.toString(i));
 		}
 		
-        return reply;
+        return result;
     }
     
     private FCPPluginMessage handleGetTrusts(final SimpleFieldSet params) {
