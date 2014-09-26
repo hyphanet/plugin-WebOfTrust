@@ -185,7 +185,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             } else if (message.equals("GetOwnIdentities")) {
                 result = handleGetOwnIdentities(params);
             } else if (message.equals("GetIdentities")) {
-                reply = handleGetIdentities(params);
+                reply = handleGetIdentities(fcpMessage);
             } else if (message.equals("GetTrusts")) {
                 reply = handleGetTrusts(params);
             } else if (message.equals("GetScores")) {
@@ -674,16 +674,24 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		return sfs;
     }
     
-    private FCPPluginMessage handleGetIdentities(final SimpleFieldSet params) {
+    /**
+     * @param request
+     *            Can be null if you use this to send out identities due to an event, not due to
+     *            an original client message.
+     */
+    private FCPPluginMessage handleGetIdentities(final FCPPluginMessage request) {
         final String context;
         
-        if(params!= null) {
-        	context = params.get("Context");
+        if(request != null) {
+        	context = request.params.get("Context");
         } else {
         	context = null;
         }
 
-        final FCPPluginMessage reply = FCPPluginMessage.construct();
+        final FCPPluginMessage reply =
+            request != null ? FCPPluginMessage.constructSuccessReply(request) :
+                              FCPPluginMessage.construct();
+        
         reply.params.putOverwrite("Message", "Identities");
 		
 		// TODO: Optimization: Remove this lock if it works without it.
