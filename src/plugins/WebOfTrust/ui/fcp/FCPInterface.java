@@ -187,7 +187,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             } else if (message.equals("GetIdentities")) {
                 reply = handleGetIdentities(fcpMessage);
             } else if (message.equals("GetTrusts")) {
-                reply = handleGetTrusts(params);
+                reply = handleGetTrusts(fcpMessage);
             } else if (message.equals("GetScores")) {
                 result = handleGetScores(params);
             } else if (message.equals("GetIdentitiesByScore")) {
@@ -715,9 +715,17 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		
         return result;
     }
-    
-    private FCPPluginMessage handleGetTrusts(final SimpleFieldSet params) {
-        final FCPPluginMessage reply = FCPPluginMessage.construct();
+
+    /**
+     * @param request
+     *            Can be null if you use this to send out Trusts due to an event, not due to
+     *            an original client message.
+     */
+    private FCPPluginMessage handleGetTrusts(final FCPPluginMessage request) {
+        final FCPPluginMessage reply =
+            request != null ? FCPPluginMessage.constructSuccessReply(request) :
+                              FCPPluginMessage.construct();
+        
         reply.params.putOverwrite("Message", "Trusts");
    
 		// TODO: Optimization: Remove this lock if it works without it.
