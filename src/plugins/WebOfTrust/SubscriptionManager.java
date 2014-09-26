@@ -3,18 +3,18 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
+import plugins.WebOfTrust.ui.fcp.FCPInterface.FCPCallFailedException;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.node.PrioRunnable;
-import freenet.node.fcp.FCPCallFailedException;
-import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -249,7 +249,7 @@ public final class SubscriptionManager implements PrioRunnable {
 								
 								boolean doNotDeleteClient = true;
 								
-								if(e instanceof PluginNotFoundException) {
+                                if(e instanceof IOException) {
 									Logger.warning(manager, "sendNotifications() failed, client has disconnected, failure count: " + failureCount, e);
 									doNotDeleteClient = false;
 								} else  {
@@ -474,10 +474,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * This must be called with synchronization upon the {@link WebOfTrust} and the SubscriptionManager.
 		 * Therefore it may perform database queries on the WebOfTrust to obtain the dataset.
 		 * 
-		 * @throws PluginNotFoundException If the FCP client has disconnected. Subscribing must fail if this happens.
+         * @throws IOException
+         *             If the FCP client has disconnected. Subscribing must fail if this happens.
 		 * @throws FCPCallFailedException If processing failed at the client. Subscribing must fail if this happens.
 		 */
-		protected abstract void synchronizeSubscriberByFCP() throws FCPCallFailedException, PluginNotFoundException;
+        protected abstract void synchronizeSubscriberByFCP()
+            throws FCPCallFailedException, IOException;
 
 		/**
 		 * Called by this Subscription when the type of it is FCP and a {@link Notification} shall be sent via FCP. 
@@ -495,10 +497,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Therefore, the notifications are self-contained and this function should and must NOT call any database query functions of the WebOfTrust. 
 		 * 
 		 * @param notification The {@link Notification} to send out via FCP. Must be cast-able to NotificationType.
-		 * @throws PluginNotFoundException If the FCP client has disconnected. The SubscriptionManager then won't retry deploying this Notification, the {@link Subscription} will be terminated.
+         * @throws IOException
+         *             If the FCP client has disconnected. The SubscriptionManager then won't retry
+         *             deploying this Notification, the {@link Subscription} will be terminated.
 		 * @throws FCPCallFailedException If processing failed at the client.
 		 */
-		protected abstract void notifySubscriberByFCP(Notification notification) throws FCPCallFailedException, PluginNotFoundException;
+        protected abstract void notifySubscriberByFCP(Notification notification)
+            throws FCPCallFailedException, IOException;
 
 		/** {@inheritDoc} */
 		@Override protected void activateFully() {
@@ -780,13 +785,15 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		/** {@inheritDoc} */
 		@Override
-		protected void synchronizeSubscriberByFCP() throws FCPCallFailedException, PluginNotFoundException {
+        protected void synchronizeSubscriberByFCP() throws FCPCallFailedException, IOException {
 			mWebOfTrust.getFCPInterface().sendAllIdentities(getClient().getFCP_ID());
 		}
 		
 		/** {@inheritDoc} */
 		@Override
-		protected void notifySubscriberByFCP(Notification notification) throws FCPCallFailedException, PluginNotFoundException {
+        protected void notifySubscriberByFCP(Notification notification)
+                throws FCPCallFailedException, IOException {
+
 			assert(notification instanceof IdentityChangedNotification);
 			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getClient().getFCP_ID(), (IdentityChangedNotification)notification);
 		}
@@ -823,13 +830,17 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/** {@inheritDoc} */
 		@Override
-		protected void synchronizeSubscriberByFCP() throws FCPCallFailedException, PluginNotFoundException {
+        protected void synchronizeSubscriberByFCP()
+                throws FCPCallFailedException, IOException {
+
 			mWebOfTrust.getFCPInterface().sendAllTrustValues(getClient().getFCP_ID());
 		}
 		
 		/** {@inheritDoc} */
 		@Override
-		protected void notifySubscriberByFCP(final Notification notification) throws FCPCallFailedException, PluginNotFoundException {
+        protected void notifySubscriberByFCP(final Notification notification)
+                throws FCPCallFailedException, IOException {
+
 			assert(notification instanceof TrustChangedNotification);
 			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getClient().getFCP_ID(), (TrustChangedNotification)notification);
 		}
@@ -866,13 +877,17 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/** {@inheritDoc} */
 		@Override
-		protected void synchronizeSubscriberByFCP() throws FCPCallFailedException, PluginNotFoundException {
+        protected void synchronizeSubscriberByFCP()
+                throws FCPCallFailedException, IOException {
+
 			mWebOfTrust.getFCPInterface().sendAllScoreValues(getClient().getFCP_ID());
 		}
 
 		/** {@inheritDoc} */
 		@Override
-		protected void notifySubscriberByFCP(final Notification notification) throws FCPCallFailedException, PluginNotFoundException {
+        protected void notifySubscriberByFCP(final Notification notification)
+                throws FCPCallFailedException, IOException {
+
 			assert(notification instanceof ScoreChangedNotification);
 			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getClient().getFCP_ID(), (ScoreChangedNotification)notification);
 		}
