@@ -1324,7 +1324,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         return result;
     }
     
-    public void sendAllIdentities(UUID clientID) throws IOException, InterruptedException {
+    public void sendAllIdentities(UUID clientID)
+            throws FCPCallFailedException, IOException, InterruptedException {
+        
         FCPPluginMessage reply = mClientTrackerDaemon.get(clientID).sendSynchronous(
             SendDirection.ToClient,
             handleGetIdentities(null),
@@ -1336,10 +1338,13 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
              * at the beginning of a connection. */
             TimeUnit.MINUTES.toNanos(SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES));
         
-        throwIfClientReplyIndicatesError(reply);
+        if(reply.success == false)
+            throw new FCPCallFailedException(reply);
     }
     
-    public void sendAllTrustValues(UUID clientID) throws IOException, InterruptedException {
+    public void sendAllTrustValues(UUID clientID)
+            throws FCPCallFailedException, IOException, InterruptedException {
+        
         FCPPluginMessage reply = mClientTrackerDaemon.get(clientID).sendSynchronous(
             SendDirection.ToClient,
             handleGetTrusts(null),
@@ -1351,10 +1356,14 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
              * at the beginning of a connection. */
             TimeUnit.MINUTES.toNanos(SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES));
         
-        throwIfClientReplyIndicatesError(reply);
+        if(reply.success == false)
+            throw new FCPCallFailedException(reply);
     }
     
-    public void sendAllScoreValues(UUID clientID) throws IOException, InterruptedException {
+    public void sendAllScoreValues(UUID clientID)
+            throws FCPCallFailedException, IOException, InterruptedException {
+        
+    
         FCPPluginMessage reply = mClientTrackerDaemon.get(clientID).sendSynchronous(
             SendDirection.ToClient,
             handleGetScores(null),
@@ -1366,7 +1375,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
              * at the beginning of a connection. */
             TimeUnit.MINUTES.toNanos(SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES));
         
-        throwIfClientReplyIndicatesError(reply);
+        if(reply.success == false)
+            throw new FCPCallFailedException(reply);
     }
     
     /**
@@ -1374,7 +1384,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      */
     public void sendIdentityChangedNotification(final UUID clientID,
             final IdentityChangedNotification notification)
-                throws IOException, InterruptedException {
+                throws FCPCallFailedException, IOException, InterruptedException {
         
     	final SimpleFieldSet oldIdentity = handleGetIdentity((Identity)notification.getOldObject(), null);
     	final SimpleFieldSet newIdentity = handleGetIdentity((Identity)notification.getNewObject(), null);
@@ -1387,7 +1397,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      */
     public void sendTrustChangedNotification(final UUID clientID,
             final TrustChangedNotification notification)
-                throws IOException, InterruptedException {
+                throws FCPCallFailedException, IOException, InterruptedException {
         
     	final SimpleFieldSet oldTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getOldObject(), "0");
     	final SimpleFieldSet newTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getNewObject(), "0");
@@ -1400,7 +1410,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      */
     public void sendScoreChangedNotification(final UUID clientID,
             final ScoreChangedNotification notification)
-                throws IOException, InterruptedException {
+                throws FCPCallFailedException, IOException, InterruptedException {
         
     	final SimpleFieldSet oldScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getOldObject(), "0");
     	final SimpleFieldSet newScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getNewObject(), "0");
@@ -1410,7 +1420,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     
     private void sendChangeNotification(final UUID clientID, final String message,
             final SimpleFieldSet beforeChange, final SimpleFieldSet afterChange)
-                throws IOException, InterruptedException {
+                throws FCPCallFailedException, IOException, InterruptedException {
         
         // Not a reply to an existing message since it is sent due to an event, not a client message
         final FCPPluginMessage fcpMessage = FCPPluginMessage.construct();
@@ -1424,7 +1434,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             fcpMessage,
             TimeUnit.MINUTES.toNanos(SUBSCRIPTION_NOTIFICATION_TIMEOUT_MINUTES));
         
-        throwIfClientReplyIndicatesError(reply);
+        if(reply.success == false)
+            throw new FCPCallFailedException(reply);
     }
     
     private SimpleFieldSet handlePing() {
@@ -1474,24 +1485,24 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         return reply;
         
     }
-
+    
+    
     /**
-     * Used to signal error if a client signaled that processing a message from WOT failed
-     * using {@link FCPPluginMessage#success} == false.
-     * 
-     * @throws IOException
-     *             To be coherent with what typical Java send() functions throw.<br>
-     *             No specific Exception is used because the {@link SubscriptionManager} does not
-     *             care why the message did not arrive at the client, it only needs to know
-     *             whether it has to re-send it due to an error.
+     * Thrown if delivery of a message to the client succeeded but the client indicated that the
+     * processing of the message did not succeed (via {@link FCPPluginMessage#success} == false).
+     * <br>In opposite to {@link IOException}, which should result in assuming the connection to the
+     * client to be closed, this may be used to trigger re-sending of a certain message over the
+     * same connection.
      */
-    private void throwIfClientReplyIndicatesError(FCPPluginMessage clientReply)
-            throws IOException {
+    public static final class FCPCallFailedException extends Exception {
+        private static final long serialVersionUID = 1L;
         
-        if(clientReply.success == false) {
-            throw new IOException("The client indicated failure of processing the message."
+        public FCPCallFailedException(FCPPluginMessage clientReply) {
+            super("The client indicated failure of processing the message."
                 + " errorCode: " + clientReply.errorCode
                 + "; errorMessage: " + clientReply.errorMessage);
+            
+            assert(clientReply.success == false);
         }
     }
 
