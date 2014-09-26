@@ -1406,11 +1406,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             fcpMessage,
             TimeUnit.MINUTES.toNanos(SUBSCRIPTION_NOTIFICATION_TIMEOUT_MINUTES));
         
-        if(reply.success == false) {
-            throw new IOException("The client indicated failure of processing the Notification."
-                + " errorCode: " + reply.errorCode
-                + "; errorMessage: " + reply.errorMessage);
-        }
+        throwIfClientReplyIndicatesError(reply);
     }
     
     private SimpleFieldSet handlePing() {
@@ -1459,6 +1455,26 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         return reply;
         
+    }
+
+    /**
+     * Used to signal error if a client signaled that processing a message from WOT failed
+     * using {@link FCPPluginMessage#success} == false.
+     * 
+     * @throws IOException
+     *             To be coherent with what typical Java send() functions throw.<br>
+     *             No specific Exception is used because the {@link SubscriptionManager} does not
+     *             care why the message did not arrive at the client, it only needs to know
+     *             whether it has to re-send it due to an error.
+     */
+    private void throwIfClientReplyIndicatesError(FCPPluginMessage clientReply)
+            throws IOException {
+        
+        if(clientReply.success == false) {
+            throw new IOException("The client indicated failure of processing the message."
+                + " errorCode: " + clientReply.errorCode
+                + "; errorMessage: " + clientReply.errorMessage);
+        }
     }
 
 }
