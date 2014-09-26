@@ -15,6 +15,7 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.node.PrioRunnable;
+import freenet.node.fcp.FCPPluginClient;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -94,7 +95,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		private final Type mType;
 		
 		/**
-		 * An ID which associates this client with a FCP connection if the type is FCP.
+		 * An ID which associates this client with a FCP connection if the type is FCP.<br><br>
+		 * 
+		 * Must be a valid {@link UUID}, see {@link FCPPluginClient#getID()}.<br>
+		 * (Stored as String so it is a db4o native type and doesn't require explicit management). 
 		 * 
 		 * @see #getFCP_ID()
 		 */
@@ -123,7 +127,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			mType = Type.FCP;
 			mFCP_ID = myFCP_ID;
 			
-			assert(mFCP_ID != null && mFCP_ID.length() > 0);
+			assert(UUID.fromString(mFCP_ID) != null);
 		}
 		
 		/** {@inheritDoc} */
@@ -133,8 +137,10 @@ public final class SubscriptionManager implements PrioRunnable {
 			
 			IfNull.thenThrow(mType, "mType");
 			
-			if(mType == Type.FCP)
+			if(mType == Type.FCP) {
 				IfNull.thenThrow(mFCP_ID, "mFCP_ID");
+				UUID.fromString(mFCP_ID); // Throws if invalid.
+			}
 			
 			if(mNextNotificationIndex < 0)
 				throw new IllegalStateException("mNextNotificationIndex==" + mNextNotificationIndex);
@@ -171,12 +177,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @return An ID which associates this Client with a FCP connection if the type is FCP.
 		 * @see #mFCP_ID
 		 */
-		public final String getFCP_ID() {
+		public final UUID getFCP_ID() {
 			if(getType() != Type.FCP)
 				throw new UnsupportedOperationException("Type is not FCP:" + getType());
 			
 			checkedActivate(1);
-			return mFCP_ID;
+			return UUID.fromString(mFCP_ID);
 		}
 		
 		/**
