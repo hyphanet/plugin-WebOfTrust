@@ -70,6 +70,17 @@ import freenet.support.api.Bucket;
  */
 public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSideFCPMessageHandler {
 
+    /**
+     * Timeout when sending a synchronization of a {@link SubscriptionManager.Subscription} to a
+     * client. For an explanation of what a synchronization is, see
+     * {@link #handleSubscribe(FCPPluginClient, FCPPluginMessage)}<br>
+     * When this expires, deploying of the synchronization is considered as failed, and the
+     * {@link SubscriptionManager} is notified about that. It then may re-sent it or terminate the
+     * {@link Subscription} upon repeated failure. (The current implementation immediately
+     * terminates the {@link Subscription}.<br><br>
+     */
+    public static final int SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES = 5;
+
     private final WebOfTrust mWoT;
     
     private final PluginRespirator mPluginRespirator;
@@ -1280,7 +1291,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
              * per client - sendAllIdentites(), sendAllTrustValues(), sendAllScoreValues().
              * That is an acceptable amount of threads per client, given that it only happens once
              * at the beginning of a connection. */
-            TimeUnit.MINUTES.toNanos(5));
+            TimeUnit.MINUTES.toNanos(SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES));
     }
     
     public void sendAllTrustValues(UUID clientID) throws IOException, InterruptedException {
@@ -1292,7 +1303,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
              * per client - sendAllIdentites(), sendAllTrustValues(), sendAllScoreValues().
              * That is an acceptable amount of threads per client, given that it only happens once
              * at the beginning of a connection. */
-            TimeUnit.MINUTES.toNanos(5));
+            TimeUnit.MINUTES.toNanos(SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES));
     }
     
     public void sendAllScoreValues(UUID clientID) throws IOException, InterruptedException {
@@ -1304,7 +1315,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
              * per client - sendAllIdentites(), sendAllTrustValues(), sendAllScoreValues().
              * That is an acceptable amount of threads per client, given that it only happens once
              * at the beginning of a connection. */
-            TimeUnit.MINUTES.toNanos(5));
+            TimeUnit.MINUTES.toNanos(SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES));
     }
     
     /**
