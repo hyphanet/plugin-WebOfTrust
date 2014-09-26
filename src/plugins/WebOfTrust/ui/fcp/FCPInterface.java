@@ -189,7 +189,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             } else if (message.equals("GetTrusts")) {
                 reply = handleGetTrusts(fcpMessage);
             } else if (message.equals("GetScores")) {
-                result = handleGetScores(params);
+                reply = handleGetScores(params);
             } else if (message.equals("GetIdentitiesByScore")) {
                 result = handleGetIdentitiesByScore(params);
             } else if (message.equals("GetTrusters")) {
