@@ -115,6 +115,14 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      */
     public static final int SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES = 5;
 
+    /**
+     * Timeout when sending an {@link SubscriptionManager.Notification} to a client.<br>
+     * When this expired, deploying of the notification is considered as failed, and the
+     * {@link SubscriptionManager} is notified about that. It then may re-sent it or terminate the
+     * {@link Subscription} upon repeated failure.
+     */
+    public static final int SUBSCRIPTION_NOTIFICATION_TIMEOUT_MINUTES = 1;
+
     private final WebOfTrust mWoT;
     
     private final PluginRespirator mPluginRespirator;
@@ -1382,13 +1390,27 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         sendChangeNotification(clientID, "ScoreChangedNotification", oldScore, newScore);
     }
     
-    private void sendChangeNotification(final UUID clientID, final String message, final SimpleFieldSet beforeChange, final SimpleFieldSet afterChange) throws FCPCallFailedException, PluginNotFoundException {
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-    	sfs.putOverwrite("Message", message);;
-    	sfs.put("BeforeChange", beforeChange);
-    	sfs.put("AfterChange", afterChange);
-    	
-        mClientTrackerDaemon.get(clientID).sendSynchronous(sfs, null);
+    private void sendChangeNotification(final UUID clientID, final String message,
+            final SimpleFieldSet beforeChange, final SimpleFieldSet afterChange)
+                throws IOException, InterruptedException {
+        
+        // Not a reply to an existing message since it is sent due to an event, not a client message
+        final FCPPluginMessage fcpMessage = FCPPluginMessage.construct();
+        
+        fcpMessage.params.putOverwrite("Message", message);
+        fcpMessage.params.put("BeforeChange", beforeChange);
+        fcpMessage.params.put("AfterChange", afterChange);
+        
+        final FCPPluginMessage reply = mClientTrackerDaemon.get(clientID).sendSynchronous(
+            SendDirection.ToClient,
+            fcpMessage,
+            TimeUnit.MINUTES.toNanos(SUBSCRIPTION_NOTIFICATION_TIMEOUT_MINUTES));
+        
+        if(reply.success == false) {
+            throw new IOException("The client indicated failure of processing the Notification."
+                + " errorCode: " + reply.errorCode
+                + "; errorMessage: " + reply.errorMessage);
+        }
     }
     
     private SimpleFieldSet handlePing() {
