@@ -219,7 +219,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             } else if (message.equals("Subscribe")) {
                 reply = handleSubscribe(client, fcpMessage);
             } else if (message.equals("Unsubscribe")) {
-                reply = handleUnsubscribe(params);
+                reply = handleUnsubscribe(fcpMessage);
             } else if (message.equals("Ping")) {
                 result = handlePing();
             } else if (message.equals("RandomName")) {
@@ -1154,13 +1154,15 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * After a typical delay of {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}, it will be re-sent.
      * There is a maximal amount of {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT} failures per FCP-Client.
      * If you exceed this limit, your subscriptions will be terminated. You will receive an "Unsubscribed" message then as long as
-     * your client has not terminated the FCP connection. See {@link #handleUnsubscribe(SimpleFieldSet)}.
+     * your client has not terminated the FCP connection. See
+     * {@link #handleUnsubscribe(FCPPluginMessage)}.
      * The fact that you can request a notification to be re-sent may also be used to program your client in a transactional style:
      * If the transaction which processes an event-notification fails, you can indicate failure to the synchronous FCP sender and
      * WOT will then re-send the notification, causing the transaction to be retried.
      * 
      * If your client is shutting down or not interested in the subscription anymore, you should send an "Unsubscribe" message.
-     * See {@link #handleUnsubscribe(SimpleFieldSet)}. This will make sure that WOT stops gathering data for your subscription,
+     * See {@link #handleUnsubscribe(FCPPluginMessage)}. This will make sure that WOT stops
+     * gathering data for your subscription,
      * which would be expensive to do if its not even needed. But if you cannot send the message anymore due to a dropped connection,
      * the subscription will be terminated automatically after some time due to notification-deployment failing. Nevertheless,
      * please always unsubscribe when possible.
@@ -1220,12 +1222,12 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * "From" = "Identities" or "Trusts" or "Scores" - indicates the type of the original subscription.
      * "SubscriptionID" = Same as requested
      */
-    private FCPPluginMessage handleUnsubscribe(final SimpleFieldSet params)
+    private FCPPluginMessage handleUnsubscribe(final FCPPluginMessage request)
             throws InvalidParameterException, UnknownSubscriptionException {
         
-    	final String subscriptionID = getMandatoryParameter(params, "SubscriptionID");
+        final String subscriptionID = getMandatoryParameter(request.params, "SubscriptionID");
     	final Class<Subscription<? extends Notification>> clazz = mSubscriptionManager.unsubscribe(subscriptionID);
-    	return handleUnsubscribe(clazz, subscriptionID);
+        return handleUnsubscribe(request, clazz, subscriptionID);
     }
     
     public void sendUnsubscribedMessage(final UUID clientID,
@@ -1233,13 +1235,23 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
                 throws IOException {
         
         mClientTrackerDaemon.get(clientID).send(SendDirection.ToClient,
-            handleUnsubscribe(clazz, subscriptionID));
+            handleUnsubscribe(null, clazz, subscriptionID));
     }
     
-    private FCPPluginMessage handleUnsubscribe(
+    /**
+     * @param request
+     *            Is only used for constructing the reply {@link FCPPluginMessage} as a reply to the
+     *            given request. The parameters of the request are not parsed, you must parse
+     *            them yourself and specify them via the other parameters.
+     *            Can be null if you use this to terminate the subscription due to an event, not
+     *            due to an original client message.
+     */
+    private FCPPluginMessage handleUnsubscribe(final FCPPluginMessage request,
         final Class<Subscription<? extends Notification>> clazz, final String subscriptionID) {
         
-        FCPPluginMessage reply = FCPPluginMessage.construct();
+        final FCPPluginMessage reply =
+            request != null ? FCPPluginMessage.constructSuccessReply(request) :
+                              FCPPluginMessage.construct();
         
     	final String type;
     	
