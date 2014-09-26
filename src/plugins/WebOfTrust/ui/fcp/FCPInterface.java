@@ -1249,7 +1249,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     private FCPPluginMessage handleUnsubscribe(final FCPPluginMessage request,
         final Class<Subscription<? extends Notification>> clazz, final String subscriptionID) {
         
-        final FCPPluginMessage reply =
+        final FCPPluginMessage result =
             request != null ? FCPPluginMessage.constructSuccessReply(request) :
                               FCPPluginMessage.construct();
         
@@ -1264,11 +1264,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	else
     		throw new IllegalStateException("Unknown subscription type: " + clazz);
 
-        reply.params.putOverwrite("Message", "Unsubscribed");
-        reply.params.putOverwrite("SubscriptionID", subscriptionID);
-        reply.params.putOverwrite("From", type);
+        result.params.putOverwrite("Message", "Unsubscribed");
+        result.params.putOverwrite("SubscriptionID", subscriptionID);
+        result.params.putOverwrite("From", type);
         
-        return reply;
+        return result;
     }
     
     public void sendAllIdentities(UUID clientID) throws IOException, InterruptedException {
