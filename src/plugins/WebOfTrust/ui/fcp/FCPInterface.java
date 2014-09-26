@@ -1237,11 +1237,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             SimpleFieldSet sfs = reply.params;
             
 	    	if(to.equals("Identities")) {
-	    		subscription = mSubscriptionManager.subscribeToIdentities(clientID.toString());
+	    		subscription = mSubscriptionManager.subscribeToIdentities(clientID);
 	    	} else if(to.equals("Trusts")) {
-	    		subscription = mSubscriptionManager.subscribeToTrusts(clientID.toString());
+	    		subscription = mSubscriptionManager.subscribeToTrusts(clientID);
 	    	} else if(to.equals("Scores")) {
-	    		subscription = mSubscriptionManager.subscribeToScores(clientID.toString());
+	    		subscription = mSubscriptionManager.subscribeToScores(clientID);
 	    	} else
 	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
 	    	

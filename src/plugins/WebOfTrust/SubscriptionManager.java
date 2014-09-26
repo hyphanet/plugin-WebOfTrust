@@ -123,11 +123,11 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		private byte mSendNotificationsFailureCount = 0;
 		
-		public Client(final String myFCP_ID) {
+		public Client(final UUID myFCP_ID) {
+            assert(myFCP_ID != null);
+            
 			mType = Type.FCP;
-			mFCP_ID = myFCP_ID;
-			
-			assert(UUID.fromString(mFCP_ID) != null);
+			mFCP_ID = myFCP_ID.toString();
 		}
 		
 		/** {@inheritDoc} */
@@ -1088,7 +1088,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return The {@link IdentitiesSubscription} which is created by this function.
 	 * @see IdentityChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
-	public IdentitiesSubscription subscribeToIdentities(String fcpID) throws SubscriptionExistsAlreadyException {
+    public IdentitiesSubscription subscribeToIdentities(UUID fcpID)
+        throws SubscriptionExistsAlreadyException {
+
 		synchronized(mWoT) {
 		synchronized(this) {
 			// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
@@ -1107,7 +1109,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return The {@link TrustsSubscription} which is created by this function.
 	 * @see TrustChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
-	public TrustsSubscription subscribeToTrusts(String fcpID) throws SubscriptionExistsAlreadyException {
+	public TrustsSubscription subscribeToTrusts(UUID fcpID)
+	        throws SubscriptionExistsAlreadyException {
+	    
 		synchronized(mWoT) {
 		synchronized(this) {
 			// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
@@ -1126,7 +1130,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return The {@link ScoresSubscription} which is created by this function.
 	 * @see ScoreChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
-	public ScoresSubscription subscribeToScores(String fcpID) throws SubscriptionExistsAlreadyException {
+	public ScoresSubscription subscribeToScores(UUID fcpID)
+	        throws SubscriptionExistsAlreadyException {
+	    
 		synchronized(mWoT) {
 		synchronized(this) {
 			// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
@@ -1183,16 +1189,16 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * @see Client#getFCP_ID()
 	 */
-	private Client getClient(final String fcpID) throws UnknownClientException {
+	private Client getClient(final UUID fcpID) throws UnknownClientException {
 		final Query q = mDB.query();
 		q.constrain(Client.class);
-		q.descend("mFCP_ID").constrain(fcpID);
+		q.descend("mFCP_ID").constrain(fcpID.toString());
 		final ObjectSet<Client> result = new Persistent.InitializingObjectSet<Client>(mWoT, q);
 		
 		switch(result.size()) {
 			case 1: return result.next();
-			case 0: throw new UnknownClientException(fcpID);
-			default: throw new DuplicateObjectException(fcpID);
+			case 0: throw new UnknownClientException(fcpID.toString());
+			default: throw new DuplicateObjectException(fcpID.toString());
 		}
 	}
 	
@@ -1200,7 +1206,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Gets the {@link Client} with the given FCP ID, see {@link Client#getFCP_ID()}. If none exists, it is created.
 	 * It will NOT be stored to the database if it was created.
 	 */
-	private Client getOrCreateClient(final String fcpID) {
+	private Client getOrCreateClient(final UUID fcpID) {
 		try {
 			return getClient(fcpID);
 		} catch(UnknownClientException e) {
