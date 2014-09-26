@@ -722,25 +722,25 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      *            an original client message.
      */
     private FCPPluginMessage handleGetTrusts(final FCPPluginMessage request) {
-        final FCPPluginMessage reply =
+        final FCPPluginMessage result =
             request != null ? FCPPluginMessage.constructSuccessReply(request) :
                               FCPPluginMessage.construct();
         
-        reply.params.putOverwrite("Message", "Trusts");
+        result.params.putOverwrite("Message", "Trusts");
    
 		// TODO: Optimization: Remove this lock if it works without it.
         synchronized(mWoT) {
         	int i = 0;
 			for(final Trust trust : mWoT.getAllTrusts()) {
-                handleGetTrust(reply.params, trust, Integer.toString(i));
+                handleGetTrust(result.params, trust, Integer.toString(i));
 				++i;
 			}
             
             // Need to use Overwrite because handleGetTrust() sets it to 1
-            reply.params.putOverwrite("Trusts.Amount", Integer.toString(i));
+            result.params.putOverwrite("Trusts.Amount", Integer.toString(i));
         }
         
-        return reply;
+        return result;
     }
     
     private FCPPluginMessage handleGetScores(final SimpleFieldSet params) {
