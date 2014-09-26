@@ -1372,7 +1372,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * @see SubscriptionManager.IdentityChangedNotification
      */
-    public void sendIdentityChangedNotification(final UUID clientID, final IdentityChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
+    public void sendIdentityChangedNotification(final UUID clientID,
+            final IdentityChangedNotification notification)
+                throws IOException, InterruptedException {
+        
     	final SimpleFieldSet oldIdentity = handleGetIdentity((Identity)notification.getOldObject(), null);
     	final SimpleFieldSet newIdentity = handleGetIdentity((Identity)notification.getNewObject(), null);
     	
@@ -1382,7 +1385,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * @see SubscriptionManager.TrustChangedNotification
      */
-    public void sendTrustChangedNotification(UUID clientID, final TrustChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
+    public void sendTrustChangedNotification(final UUID clientID,
+            final TrustChangedNotification notification)
+                throws IOException, InterruptedException {
+        
     	final SimpleFieldSet oldTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getOldObject(), "0");
     	final SimpleFieldSet newTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getNewObject(), "0");
 
@@ -1392,7 +1398,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * @see SubscriptionManager.ScoreChangedNotification
      */
-    public void sendScoreChangedNotification(UUID clientID, final ScoreChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
+    public void sendScoreChangedNotification(final UUID clientID,
+            final ScoreChangedNotification notification)
+                throws IOException, InterruptedException {
+        
     	final SimpleFieldSet oldScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getOldObject(), "0");
     	final SimpleFieldSet newScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getNewObject(), "0");
 
