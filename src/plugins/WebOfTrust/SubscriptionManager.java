@@ -1059,8 +1059,17 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * You don't have to commit the transaction after calling this function.
 	 * 
 	 * @throws SubscriptionExistsAlreadyException Thrown if a subscription of the same type for the same client exists already. See {@link #throwIfSimilarSubscriptionExists(Subscription)}
+     * @throws InterruptedException
+     *             If an external thread requested the current thread to terminate via
+     *             {@link Thread#interrupt()} while the data was being transfered to the client.
+     *             <br>This is a necessary shutdown mechanism as synchronization of a Subscription
+     *             transfers possibly the whole WOT database to the client and therefore can take
+     *             a very long time. Please honor it by terminating the thread so WOT can shutdown
+     *             quickly. 
 	 */
-	private void storeNewSubscriptionAndCommit(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
+	private void storeNewSubscriptionAndCommit(final Subscription<? extends Notification> subscription)
+	        throws InterruptedException, SubscriptionExistsAlreadyException {
+	    
 		subscription.initializeTransient(mWoT);
 
 		throwIfSimilarSubscriptionExists(subscription);
@@ -1076,11 +1085,22 @@ public final class SubscriptionManager implements PrioRunnable {
 				throw new RuntimeException("Failed to send pending notifications to the client. Cannot file a new Subscription!");
 		}
 		
+		
 		try {
-			subscription.synchronizeSubscriberByFCP(); // Needs the lock on mWoT which the JavaDoc requests
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+		    subscription.synchronizeSubscriberByFCP(); // Needs the lock on mWoT which the JavaDoc requests
+		} catch(FCPCallFailedException e) {
+		    throw new RuntimeException("Subscriber indicated that he failed to process the"
+		        + " synchronization of the Subscription. Terminating the Subscription.", e);
+		} catch(IOException e) {
+		    throw new RuntimeException("Subscriber disconnected during synchronzation of the"
+		        + " Subscription or the transfer timed out. Terminating the Subscription.", e);
+		} catch(InterruptedException e) {
+		   throw e;
+		} catch(RuntimeException e) {
+		    throw new RuntimeException("Unexpected RuntimeException in synchronizeSubscriberByFCP()"
+		        + ". Terminating the Subscription.", e);
 		}
+
 		subscription.storeAndCommit();
 		Logger.normal(this, "Subscribed: " + subscription);
 	}
@@ -1100,10 +1120,17 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the {@link Client}. Must be unique among all FCP connections!
 	 * @return The {@link IdentitiesSubscription} which is created by this function.
+	 * @throws InterruptedException
+	 *             If an external thread requested the current thread to terminate via
+	 *             {@link Thread#interrupt()} while the data was being transfered to the client.
+	 *             <br>This is a necessary shutdown mechanism as synchronization of a Subscription
+	 *             transfers possibly the whole WOT database to the client and therefore can take
+	 *             a very long time. Please honor it by terminating the thread so WOT can shutdown
+	 *             quickly. 
 	 * @see IdentityChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
     public IdentitiesSubscription subscribeToIdentities(UUID fcpID)
-        throws SubscriptionExistsAlreadyException {
+            throws InterruptedException, SubscriptionExistsAlreadyException {
 
 		synchronized(mWoT) {
 		synchronized(this) {
@@ -1121,10 +1148,17 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the {@link Client}. Must be unique among all FCP connections!
 	 * @return The {@link TrustsSubscription} which is created by this function.
+     * @throws InterruptedException
+     *             If an external thread requested the current thread to terminate via
+     *             {@link Thread#interrupt()} while the data was being transfered to the client.
+     *             <br>This is a necessary shutdown mechanism as synchronization of a Subscription
+     *             transfers possibly the whole WOT database to the client and therefore can take
+     *             a very long time. Please honor it by terminating the thread so WOT can shutdown
+     *             quickly. 
 	 * @see TrustChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
 	public TrustsSubscription subscribeToTrusts(UUID fcpID)
-	        throws SubscriptionExistsAlreadyException {
+	    throws InterruptedException, SubscriptionExistsAlreadyException {
 	    
 		synchronized(mWoT) {
 		synchronized(this) {
@@ -1142,10 +1176,17 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the {@link Client}. Must be unique among all FCP connections!
 	 * @return The {@link ScoresSubscription} which is created by this function.
+     * @throws InterruptedException
+     *             If an external thread requested the current thread to terminate via
+     *             {@link Thread#interrupt()} while the data was being transfered to the client.
+     *             <br>This is a necessary shutdown mechanism as synchronization of a Subscription
+     *             transfers possibly the whole WOT database to the client and therefore can take
+     *             a very long time. Please honor it by terminating the thread so WOT can shutdown
+     *             quickly. 
 	 * @see ScoreChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
 	public ScoresSubscription subscribeToScores(UUID fcpID)
-	        throws SubscriptionExistsAlreadyException {
+	        throws InterruptedException, SubscriptionExistsAlreadyException {
 	    
 		synchronized(mWoT) {
 		synchronized(this) {
