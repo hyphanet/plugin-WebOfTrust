@@ -247,7 +247,7 @@ public final class SubscriptionManager implements PrioRunnable {
 							try {
 								notification.getSubscription().notifySubscriberByFCP(notification);
 								notification.deleteWithoutCommit();
-							} catch(Exception e) {
+							} catch(FCPCallFailedException | IOException | RuntimeException e) {
 								Persistent.checkedRollback(mDB, this, e, LogLevel.WARNING);
 								
 								final byte failureCount = incrementSendNotificationsFailureCountWithoutCommit();
