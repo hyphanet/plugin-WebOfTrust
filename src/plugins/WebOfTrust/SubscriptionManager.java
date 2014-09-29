@@ -1562,7 +1562,11 @@ public final class SubscriptionManager implements PrioRunnable {
 						client.deleteWithoutCommit(this);
 						Persistent.checkedCommit(mDB, this);
 					}
-				} catch(Exception e) {
+				} catch(InterruptedException e) {
+				    Logger.normal(this, "run(): Got InterruptedException, exiting thread.", e);
+				    // Rollback is already done by sendNotifications().
+				    return;
+				} catch(RuntimeException e) {
 					Persistent.checkedRollback(mDB, this, e);
 				}
 			}
