@@ -1553,6 +1553,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Therefore, we don't have to take the WebOfTrust lock and can execute in parallel to threads which need to lock the WebOfTrust.*/
 		// synchronized(mWoT) {
 		synchronized(this) {
+		    // TODO: Optimization: We should investigate whether we can deploy notifications in
+		    // a thread for each client instead of one thread which iterates over all clients:
+		    // This will prevent a single slow client from causing all others to starve.
 			for(Client client : getAllClients()) {
 				try {
 					if(client.sendNotifications(this)) {
