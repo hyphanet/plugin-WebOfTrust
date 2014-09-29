@@ -70,8 +70,6 @@ import freenet.support.io.NativeThread;
  * 
  * TODO: This should be used for powering the IntroductionClient/IntroductionServer.
  * 
- * FIXME: Handle InterruptedException thrown by FCPInterface instead of swallowing it.
- * 
  * @author xor (xor@freenetproject.org)
  */
 public final class SubscriptionManager implements PrioRunnable {
