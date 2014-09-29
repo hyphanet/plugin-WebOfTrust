@@ -255,11 +255,21 @@ public final class SubscriptionManager implements PrioRunnable {
 								
 								boolean doNotDeleteClient = true;
 								
+								// Check whether the client has disconnected. If so, we must delete
+								// it immediately. If not, we must only delete it after the failure
+								// counter has passed the limit.
                                 if(e instanceof IOException) {
 									Logger.warning(manager, "sendNotifications() failed, client has disconnected, failure count: " + failureCount, e);
 									doNotDeleteClient = false;
-								} else  {
-									Logger.error(manager, "sendNotifications() failed, failure count: " + failureCount, e);
+								} else {
+								    if(e instanceof FCPCallFailedException) {
+								        Logger.warning(manager, "sendNotifications() failed because"
+								            + " the client indicated failure at its side."
+								            + " Failure count: " + failureCount, e);
+								    } else {
+								        assert(e instanceof RuntimeException);
+                                        Logger.error(manager, "Bug in sendNotifications()!", e);
+								    }
 									if(failureCount >= DISCONNECT_CLIENT_AFTER_FAILURE_COUNT) 
 										doNotDeleteClient = false;
 								}
