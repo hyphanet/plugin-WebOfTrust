@@ -235,8 +235,17 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * 
 		 * @param manager The {@link SubscriptionManager} from which to query the {@link Notification}s of this Client.
 		 * @return False if this Client should be deleted.
+         * @throws InterruptedException
+         *             If an external thread requested the current thread to terminate via
+         *             {@link Thread#interrupt()} while the data was being transfered to the client.
+         *             <br>This is a necessary shutdown mechanism as clients can be attached by
+         *             network and thus transfers can take a long time. Please honor it by 
+         *             terminating the thread so WOT can shutdown quickly.<br>
+         *             You do not have to rollback the transaction if this happens.
 		 */
-		protected boolean sendNotifications(SubscriptionManager manager) {
+		protected boolean sendNotifications(SubscriptionManager manager)
+		        throws InterruptedException {
+		    
 			if(SubscriptionManager.logMINOR) Logger.minor(manager, "sendNotifications() for " + this);
 			
 			switch(getType()) {
@@ -278,8 +287,14 @@ public final class SubscriptionManager implements PrioRunnable {
 									manager.scheduleNotificationProcessing();
 								
 								return doNotDeleteClient;
-								
+							} catch(InterruptedException e) {
+							    // Shutdown of WOT was requested. This is normal mode of operation,
+							    // and not the fault of the client, so we do not increment its
+							    // failure counter.
+							    Persistent.checkedRollback(mDB, this, e, LogLevel.NORMAL);
+							    throw e;
 							}
+							
 							// If processing of a single notification fails, we do not want the previous notifications
 							// to be sent again when the failed notification is retried. Therefore, we commit after
 							// each processed notification but do not catch RuntimeExceptions here
