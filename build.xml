@@ -136,7 +136,7 @@
 			<batchtest fork="yes">
 				<fileset dir="${build-test}">
 					<include name="**/*.class"/>
-					<exclude name="**/Benchmark*.class" unless="benchmark" />
+					<exclude name="**/*Benchmark*.class" unless="benchmark" />
 				</fileset>
 			</batchtest>
 			
