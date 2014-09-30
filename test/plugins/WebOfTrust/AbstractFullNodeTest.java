@@ -4,6 +4,7 @@
 package plugins.WebOfTrust;
 
 import org.junit.Before;
+import org.junit.Test;
 
 import freenet.pluginmanager.PluginRespirator;
 
@@ -24,10 +25,15 @@ import freenet.pluginmanager.PluginRespirator;
  * 
  * @author xor (xor@freenetproject.org
  */
-abstract class AbstractFullNodeTest {
+public class AbstractFullNodeTest {
     
-    @Before void setUp() {
+    
+    @Before public void setUp() {
         // FIXME: Use NodeStarter.createTestNode() to create a node and load WOT.
+    }
+    
+    @Test public void testSelf() {
+        // FIXME: Implement
     }
 
 }
