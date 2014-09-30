@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Ignore;
 
@@ -26,10 +28,10 @@ import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.TrustParser;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import freenet.node.FSParseException;
 import freenet.node.fcp.FCPPluginClient;
+import freenet.node.fcp.FCPPluginClient.SendDirection;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
-import freenet.pluginmanager.PluginReplySender;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.support.SimpleFieldSet;
-import freenet.support.api.Bucket;
 
 /**
  * @see FCPClientReferenceImplementation This class can do an online test which is similar to this unit test.
@@ -78,14 +80,16 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	}
 	
 	FCPInterface mFCPInterface;
+	FCPPluginClient mClient;
 	ReplyReceiver mReplyReceiver;
 	
 	/**
 	 * Sends the given {@link SimpleFieldSet} to the FCP interface of {@link DatabaseBasedTest#mWoT}
 	 * You can obtain the result(s) by <code>mReplySender.getNextResult();</code>
 	 */
-	void fcpCall(final SimpleFieldSet params) {
-		mFCPInterface.handle(mReplyReceiver, params, null, 0);
+	void fcpCall(final SimpleFieldSet params) throws IOException, InterruptedException {
+	    mClient.sendSynchronous(SendDirection.ToServer,
+	        FCPPluginMessage.construct(params, null), TimeUnit.SECONDS.toNanos(10));
 	}
 
 	/**
@@ -117,19 +121,24 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		super.setUp();
 		mFCPInterface = mWoT.getFCPInterface();
 		mReplyReceiver = new ReplyReceiver();
+		mClient = FCPPluginClient.constructForUnitTest(mFCPInterface, mReplyReceiver);
 		
 		mReceivedIdentities = new HashMap<String, Identity>();
 		mReceivedTrusts = new HashMap<String, Trust>();
 		mReceivedScores = new HashMap<String, Score>();
 	}
 	
-	public void testSubscribeUnsubscribe() throws FSParseException {
+	public void testSubscribeUnsubscribe()
+	        throws FSParseException, IOException, InterruptedException {
+	    
 		testSubscribeUnsubscribe("Identities");
 		testSubscribeUnsubscribe("Trusts");
 		testSubscribeUnsubscribe("Scores");
 	}
 	
-	void testSubscribeUnsubscribe(String type) throws FSParseException {
+	void testSubscribeUnsubscribe(String type)
+	        throws FSParseException, IOException, InterruptedException {
+	    
 		final String id = testSubscribeTo(type); // We are subscribed now.
 		
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
@@ -145,7 +154,9 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		assertFalse(mReplyReceiver.hasNextResult());
 	}
 	
-	String testSubscribeTo(String type) throws FSParseException {
+	String testSubscribeTo(String type)
+	        throws FSParseException, IOException, InterruptedException {
+	    
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Subscribe");
 		sfs.putOverwrite("To", type);
@@ -182,7 +193,10 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		return id;
 	}
 
-	public void testAllRandomized() throws MalformedURLException, InvalidParameterException, FSParseException, DuplicateTrustException, NotTrustedException, UnknownIdentityException {
+	public void testAllRandomized()
+	        throws InvalidParameterException, FSParseException, DuplicateTrustException,
+	        NotTrustedException, UnknownIdentityException, IOException, InterruptedException {
+	    
 		final int initialOwnIdentityCount = 1;
 		final int initialIdentityCount = 100;
 		final int initialTrustCount = (initialIdentityCount*initialIdentityCount) / 10; // A complete graph would be identityCount² trust values.
@@ -215,7 +229,9 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		
 	}
 	
-	void subscribeAndSynchronize(final String type) throws FSParseException, MalformedURLException, InvalidParameterException {
+	void subscribeAndSynchronize(final String type)
+	        throws FSParseException, InvalidParameterException, IOException, InterruptedException {
+	    
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Subscribe");
 		sfs.putOverwrite("To", type);
@@ -229,7 +245,9 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 		assertFalse(mReplyReceiver.hasNextResult());
 	}
 	
-	void importSynchronization(final String type, SimpleFieldSet synchronization) throws FSParseException, MalformedURLException, InvalidParameterException {
+	void importSynchronization(final String type, SimpleFieldSet synchronization)
+	        throws FSParseException, MalformedURLException, InvalidParameterException {
+	    
 		assertEquals(type, synchronization.get("Message"));
 		if(type.equals("Identities")) {
 			putSynchronization(new IdentityParser(mWoT).parseSynchronization(synchronization), mReceivedIdentities);
