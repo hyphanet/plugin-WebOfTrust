@@ -88,8 +88,13 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	 * You can obtain the result(s) by <code>mReplySender.getNextResult();</code>
 	 */
 	void fcpCall(final SimpleFieldSet params) throws IOException, InterruptedException {
-	    mClient.sendSynchronous(SendDirection.ToServer,
+	    FCPPluginMessage reply = mClient.sendSynchronous(SendDirection.ToServer,
 	        FCPPluginMessage.construct(params, null), TimeUnit.SECONDS.toNanos(10));
+	    
+	    // In opposite to send(), the reply to sendSynchronous() is NOT passed to the
+	    // FredPluginFCPMessageHandler, so the mReplyReceiver won't have received it, and we have to
+	    // add it manually to its list.
+	    mReplyReceiver.results.addLast(reply.params);
 	}
 
 	/**
