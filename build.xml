@@ -154,6 +154,7 @@
 			</batchtest>
 			
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
+			<jvmarg value="-Djava.awt.headless=true"/>
 			<!-- Pass the name of the JAR to the tests so they can load it into a fred instance -->
 			<jvmarg value="-DWOT_test_jar=${build-test-jar}"/>
 		</junit>
