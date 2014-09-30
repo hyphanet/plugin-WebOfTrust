@@ -25,6 +25,8 @@ import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ScoreParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.TrustParser;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import freenet.node.FSParseException;
+import freenet.node.fcp.FCPPluginClient;
+import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -36,32 +38,30 @@ import freenet.support.api.Bucket;
 public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 
 	/**
-	 * From the perspective of this unit test, this does NOT send replies and therefore is called "ReplyRECEIVER" instead of ReplySENDER.
+	 * This test acts as a client to the WOT FCP server subscription code.
+	 * Thus, the class ReplyReceiver here implements the client-side FCP message handler and stores
+	 * the messages received from the WOT FCP server. 
 	 */
 	@Ignore
-	static class ReplyReceiver extends PluginReplySender {
+	static class ReplyReceiver implements FredPluginFCPMessageHandler.ClientSideFCPMessageHandler {
 
 		LinkedList<SimpleFieldSet> results = new LinkedList<SimpleFieldSet>();
-		
-		public ReplyReceiver() {
-			super("SubscriptionManagerTest", "SubscriptionManagerTest", "SubscriptionManagerTest");
-		}
 
 		/**
-		 * @see #sendSynchronous(SimpleFieldSet, Bucket)
+		 * Called by fred to handle messages from WOT's FCP server.
 		 */
 		@Override
-		public void send(SimpleFieldSet params, Bucket bucket) {
-			sendSynchronous(params, bucket);
-		}
-		
-		/**
-		 * This is called by the FCP interface to deploy the reply to the sender of the original message.
-		 * So in our case this function actually means "receive()", not send: We are the sender of the original message.
-		 */
-		@Override
-		public void sendSynchronous(SimpleFieldSet params, Bucket bucket) {
-			results.addLast(params);
+        public FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client,
+                FCPPluginMessage message) {
+
+		    // FIXME: Store the actual {@link FCPPluginMessage} and amend the tests to validate
+		    // the bonus of information it has in addition to the simple filed set. Notable are:
+		    // - boolean success
+		    // - String errorCode
+			results.addLast(message.params);
+			
+			return message.isReplyMessage() ? null 
+			    : FCPPluginMessage.constructSuccessReply(message);
 		}
 		
 		/**
