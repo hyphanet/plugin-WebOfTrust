@@ -286,7 +286,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             // But some of the handlers still return the SimpleFieldSet result instead of a
             // FCPPluginMessage, so we must check whether the FCPPluginMessage reply was constructed
             // yet and construct it if not.
-            if(reply == null) {
+            if(reply == null && result != null) {
                 reply = FCPPluginMessage.constructReplyMessage(
                     fcpMessage, result, null,
                     true,
@@ -1262,7 +1262,30 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             errorMessage.params.putOverwrite("SubscriptionID", e.existingSubscription.getID());
             errorMessage.params.putOverwrite("To", to);
             return errorMessage;
-    	}
+    	} catch (InterruptedException e) {
+    	    // Shutdown of WOT was requested. We must NOT send a message here:
+    	    // - Returning a success message would be a lie. It would be very bad to leave the
+    	    //   client with the false assumption that he is properly connected to WOT because
+    	    //   that could be even displayed to the user, and as a result cause him to be
+    	    //   disappointed because the UI won't show any WOT data since there is none but also
+    	    //   not display any error message about not being connected to WOT.
+    	    // Indicating that subscribing failed here would also be a bad idea because if we did,
+    	    // this could happen:
+    	    // - The client tries to re-subscribe because clients will rely heavily upon
+    	    //   subscriptions.
+    	    // - The client was implemented poorly though and has no delay before retrying, the 
+    	    //   retry happens immediately.
+    	    // - Because InterruptedException is only sent once to each thread, it doesn't happen
+    	    //   on the retry, so the retry gets through (to executing this function here again)
+    	    //   and causes the Subscription to be filed. 
+    	    // - Creation of a Subscription is a very heavy operation because the synchronization
+    	    //   of a Subscription requires a snapshot of the whole WOT database to be made
+    	    //   (see the JavaDoc of this function).
+    	    // - Thus, the retry takes a long time during which shutdown is blocked.
+    	    // Thus, we exit silently without a reply here to ensure that the client's code which
+    	    // waits for a success/failure message has to time out before it can retry.
+    	    return null;
+        }
     }
     
     /**
