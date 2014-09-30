@@ -1,4 +1,4 @@
-/* This code is part of WoT, a plugin for Freenet. It is distributed 
+/* This code is part of WoT, a plugin for Freenet. It is distributed
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.fcp;
@@ -107,9 +107,9 @@ public final class FCPInterface implements FredPluginFCP {
 	}
 	
 	/**
-     * Stores all PluginReplySender which ever subscribed to content as WeakReference. 
+     * Stores all PluginReplySender which ever subscribed to content as WeakReference.
      * This allows us to send back event {@link Notification}s without creating a fresh PluginTalker to talk to the client.
-     * Also, it allows unit tests of event-notifications: 
+     * Also, it allows unit tests of event-notifications:
      * {@link PluginRespirator#getPluginTalker(freenet.pluginmanager.FredPluginTalker, String, String)} won't work in unit tests.
      * However, we CAN store the PluginReplySender which the unit test supplied.
 	 */
@@ -142,7 +142,7 @@ public final class FCPInterface implements FredPluginFCP {
 		}
 
     	public synchronized ClientID put(final PluginReplySender pluginReplySender) {
-    		// Don't check for existing entry: 
+    		// Don't check for existing entry:
     		// - PluginTalker always uses the same PluginReplySender
     		// - The hasCode in the ID makes it very unlikely for two IDs of different PluginTalkers to collide
     		// - What could guarantee to prevent collisions even if the hashCode collides is that clients are allowed to uniquely
@@ -167,6 +167,7 @@ public final class FCPInterface implements FredPluginFCP {
     		return sender;
     	}
         
+        @Override
         public void realRun() {
         	// No termination mechanism is needed because we called setDaemon(true).
         	while(enabled) {
@@ -200,6 +201,7 @@ public final class FCPInterface implements FredPluginFCP {
         }
     }
 
+    @Override
     public void handle(final PluginReplySender replysender, final SimpleFieldSet params, final Bucket data, final int accesstype) {
 
         try {
@@ -461,7 +463,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Used for handling the "GetIdentity" FCP message.
      */
     private SimpleFieldSet handleGetIdentity(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
-    	final String trusterID = params.get("Truster"); 
+    	final String trusterID = params.get("Truster");
     	final String identityID = getMandatoryParameter(params, "Identity");
 
     	final SimpleFieldSet sfs;
@@ -480,7 +482,7 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * Used as backend for:
      * - {@link #handleGetIdentity(SimpleFieldSet)}
-     * - {@link #sendIdentityChangedNotification(String, IdentityChangedNotification)} 
+     * - {@link #sendIdentityChangedNotification(String, IdentityChangedNotification)}
      */
     private SimpleFieldSet handleGetIdentity(final Identity identity, final OwnIdentity truster) {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
@@ -529,9 +531,9 @@ public final class FCPInterface implements FredPluginFCP {
      * InsertURI = insert URI of the identity. Only present if Type is OwnIdentity
      * Identity = ID of the identity (deprecated)
      * ID = ID of the identity
-     * PublishesTrustList = true/false if the identity does publish a trust list or not 
-     * CurrentEditionFetchState = See {@link Identity#getCurrentEditionFetchState()} 
-     *  
+     * PublishesTrustList = true/false if the identity does publish a trust list or not
+     * CurrentEditionFetchState = See {@link Identity#getCurrentEditionFetchState()}
+     * 
      * All following field names are NOT prefixed/suffixed unless "PREFIX"/"SUFFIX" is explicitely contained:
      * 
      * If suffix.isEmpty() is true (those are legacy, do not use them in new parsers):
@@ -569,7 +571,7 @@ public final class FCPInterface implements FredPluginFCP {
         sfs.putOverwrite(prefix + "Nickname" + suffix, identity.getNickname());
         sfs.putOverwrite(prefix + "RequestURI" + suffix, identity.getRequestURI().toString());
         sfs.putOverwrite(prefix + "Identity" + suffix, identity.getID()); // TODO: As of 2013-09-11, this is legacy code to support old FCP clients. Remove it after some time.
- 		sfs.putOverwrite(prefix + "ID" + suffix, identity.getID()); 
+ 		sfs.putOverwrite(prefix + "ID" + suffix, identity.getID());
         sfs.put(prefix + "PublishesTrustList" + suffix, identity.doesPublishTrustList());
 
  		if(identity instanceof OwnIdentity) {
@@ -645,7 +647,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Adds field describing the given score value
      * 
      * ScoreSUFFIX = Integer value of the Score. "null" if score is null.
-     * RankSUFFIX = Integer value of the rank of the score. "null" if score is null. 
+     * RankSUFFIX = Integer value of the rank of the score. "null" if score is null.
      * 
      * @param suffix Added as descriptor for possibly multiple identities.
      * @deprecated Use handleGetScore() instead
@@ -789,8 +791,8 @@ public final class FCPInterface implements FredPluginFCP {
 					final Identity identity = score.getTrustee();
 					final String suffix = Integer.toString(i);
 					
-					addIdentityFields(sfs, identity, "", suffix); // TODO: As of 2013-10-24, this is legacy code to support old FCP clients. Remove it after some time. 
-					addIdentityFields(sfs, identity, "Identities." + suffix + ".", "");		
+					addIdentityFields(sfs, identity, "", suffix); // TODO: As of 2013-10-24, this is legacy code to support old FCP clients. Remove it after some time.
+					addIdentityFields(sfs, identity, "Identities." + suffix + ".", "");
 					
 					addScoreFields(sfs, score, suffix); // TODO: As of 2013-10-25, this is legacy code to support old FCP clients. Remove it after some time.
 					handleGetScore(sfs, score, suffix);
@@ -829,7 +831,7 @@ public final class FCPInterface implements FredPluginFCP {
         final boolean getAll = context.equals("");
         
         synchronized(mWoT) {
-        	int i = 0; 
+        	int i = 0;
 			for(final Trust trust : mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID))) {
 				if(getAll || trust.getTruster().hasContext(params.get("Context"))) {
 					sfs.putOverwrite("Identity" + i, trust.getTruster().getID());
@@ -1030,13 +1032,13 @@ public final class FCPInterface implements FredPluginFCP {
     	
     	List<IntroductionPuzzle> puzzles = mWoT.getIntroductionClient().getPuzzles(mWoT.getOwnIdentityByID(identityID), PuzzleType.valueOf(type), amount);
     	
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);  	
+    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "IntroductionPuzzles");
     	
     	int index = 0;
     	
     	for(IntroductionPuzzle puzzle : puzzles) {
-    		sfs.putOverwrite("Puzzle" + index, puzzle.getID());    		
+    		sfs.putOverwrite("Puzzle" + index, puzzle.getID());
     		++index;
     	}
     	
@@ -1075,7 +1077,7 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * Processes the "Subscribe" FCP message, filing a {@link Subscription} to event-{@link Notification}s via {@link SubscriptionManager}.
      * <b>Required fields:</b>
-     * "To" = "Identities" or "Trusts" or "Scores" - chooses among {@link IdentitiesSubscription} / {@link TrustsSubscription} / 
+     * "To" = "Identities" or "Trusts" or "Scores" - chooses among {@link IdentitiesSubscription} / {@link TrustsSubscription} /
      * {@link ScoresSubscription}.
      * 
      * <b>Reply:</b>
@@ -1107,7 +1109,7 @@ public final class FCPInterface implements FredPluginFCP {
      * <b>{@link Notification}s:</b>
      * Further  messages will be sent at any time in the future if an {@link Identity} / {@link Trust} / {@link Score}
      * object has changed. They will contain the version of the object before the change and after the change. For the format, see:
-     * {@link #sendIdentityChangedNotification(String, IdentityChangedNotification)} / 
+     * {@link #sendIdentityChangedNotification(String, IdentityChangedNotification)} /
      * {@link #sendTrustChangedNotification(String, TrustChangedNotification)} /
      * {@link #sendScoreChangedNotification(String, ScoreChangedNotification)}.
      * These messages are also send with the <b>synchronous</b> FCP API. In opposite to the initial synchronization message, by replying with
@@ -1185,7 +1187,7 @@ public final class FCPInterface implements FredPluginFCP {
     private SimpleFieldSet handleUnsubscribe(final Class<Subscription<? extends Notification>> clazz, final String subscriptionID) {
     	final String type;
     	
-    	if(clazz.equals(IdentitiesSubscription.class)) 
+    	if(clazz.equals(IdentitiesSubscription.class))
     		type = "Identities";
     	else if(clazz.equals(TrustsSubscription.class))
     		type = "Trusts";
@@ -1240,7 +1242,7 @@ public final class FCPInterface implements FredPluginFCP {
     	sendChangeNotification(fcpID, "TrustChangedNotification", oldTrust, newTrust);
     }
     
-    /** 
+    /**
      * @see SubscriptionManager.ScoreChangedNotification
      */
     public void sendScoreChangedNotification(String fcpID, final ScoreChangedNotification notification) throws FCPCallFailedException, PluginNotFoundException {
