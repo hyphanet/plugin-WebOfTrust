@@ -6,6 +6,8 @@ package plugins.WebOfTrust;
 import java.io.File;
 import java.util.HashMap;
 
+import org.junit.Ignore;
+
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectServer;
@@ -35,6 +37,7 @@ import com.db4o.ext.ExtObjectContainer;
  */
 public class DatabaseShutdownRollbackTest extends DatabaseBasedTest {
 
+	@Ignore
 	private static final class Leak {
 		/**
 		 * The issue has originally appeared to cause leakage of:
@@ -81,6 +84,7 @@ public class DatabaseShutdownRollbackTest extends DatabaseBasedTest {
 		secondaryDatabaseFile = file;
 	}
 
+	@Ignore
 	static final class Thing {
 		int stuff = 1;
 	}
