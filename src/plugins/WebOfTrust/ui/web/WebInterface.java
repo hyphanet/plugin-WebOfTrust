@@ -413,6 +413,19 @@ public class WebInterface {
 
 	}
 
+	/**
+	 * @return Null if the Freenet web interface is disabled, a valid WOT WebInterface otherwise.
+	 */
+	public static WebInterface constructIfEnabled(WebOfTrust myWoT, String uri) {
+	    if(myWoT.getPluginRespirator().getNode().config
+	        .get("fproxy").getBoolean("enabled") == false) {
+	        
+	        return null;
+	    }
+	    
+	    return new WebInterface(myWoT, uri);
+	}
+
 	public WebInterface(WebOfTrust myWoT, String uri) {
 		mWoT = myWoT;
 		mURI = uri;

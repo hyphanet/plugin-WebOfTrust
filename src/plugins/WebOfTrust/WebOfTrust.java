@@ -269,7 +269,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 			mIntroductionClient = new IntroductionClient(this);
 			mIntroductionClient.start();
 
-			mWebInterface = new WebInterface(this, SELF_URI);
+			mWebInterface = WebInterface.constructIfEnabled(this, SELF_URI);
+
 			mFCPInterface = new FCPInterface(this);
 			mFCPInterface.start();
 			
