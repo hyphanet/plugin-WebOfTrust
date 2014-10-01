@@ -5,6 +5,8 @@ package plugins.WebOfTrust;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -44,6 +46,8 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
     /** TestName construction won't work in {@link #setUp()}, so we do it here. */
     @Rule public final TestName mTestName = new TestName();
     
+    protected File dataDirectory;
+    
     protected Node mNode; 
     
     protected WebOfTrust mWebOfTrust;
@@ -68,7 +72,9 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         TestNodeParameters params = new TestNodeParameters();
         params.port = random.nextInt((65535 - 1024) + 1) + 1024;
         params.opennetPort = random.nextInt((65535 - 1024) + 1) + 1024;
-        params.testName = testName;
+        // params.baseDirectory defaults to a random UUID, which is fine for unit tests.
+        // Save it so we can delete it after the test.
+        dataDirectory = params.baseDirectory;
         params.disableProbabilisticHTLs = true;
         params.maxHTL = 18;
         params.dropProb = 0;
@@ -91,16 +97,15 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         params.ipAddressOverride = null;
         params.enableFCP = true;
         
-        mNode = NodeStarter.createTestNode(params);
-        
         // Even though the test should delete the directory at tearDown(), we nevertheless have
         // to check whether it exists for safety: A previous test run might have been
         // force-terminated before it had a chance to run tearDown().
-        // We check whether it is empty instead of whether it exists so it won't fail if the
-        // node creates the directory already during its construction.
-        assertEquals("Data directory should not persist test restarts: " + mNode.getUserDir(),
-            0, mNode.getUserDir().listFiles().length);
-        
+        assertFalse("Data directory should not persist test restarts: " + dataDirectory,
+            dataDirectory.exists());
+
+
+        mNode = NodeStarter.createTestNode(params);
+
         String wotFilename = System.getProperty("WOT_test_jar");
         
         assertNotNull("Please specify the name of the WOT unit test JAR to the JVM via "
@@ -122,8 +127,8 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         // FIXME: Check how to delete the data directory properly, i.e. whether the node offers
         // any function for safely deleting.
         
-        assertFalse("Data directory should not persist test restarts: " + mNode.getUserDir(),
-            mNode.getUserDir().exists());
+        assertFalse("Data directory should not persist test restarts: " + dataDirectory,
+            dataDirectory.exists());
     }
     
     @Test public void testSelf() {
