@@ -56,6 +56,9 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         String testName = mTestName.getMethodName();
         
         // NodeStarter.createTestNode() will throw if we do not do this before
+        // FIXME: Since fred plugin-fcp-rewrite 94c2d9f2c3a682381884a9535859b65c09b02906, it is
+        // possible to pass a custom RandomSource to this. Use this to specify a DummyRandomSource
+        // for speed and so we can print out the seed.
         RandomSource random
             = NodeStarter.globalTestInit(testName, false, LogLevel.WARNING, "", true);
         
