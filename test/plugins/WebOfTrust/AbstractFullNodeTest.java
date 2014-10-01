@@ -6,7 +6,6 @@ package plugins.WebOfTrust;
 import static org.junit.Assert.*;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -94,6 +93,14 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         
         mNode = NodeStarter.createTestNode(params);
         
+        // Even though the test should delete the directory at tearDown(), we nevertheless have
+        // to check whether it exists for safety: A previous test run might have been
+        // force-terminated before it had a chance to run tearDown().
+        // We check whether it is empty instead of whether it exists so it won't fail if the
+        // node creates the directory already during its construction.
+        assertEquals("Data directory should not persist test restarts: " + mNode.getUserDir(),
+            0, mNode.getUserDir().listFiles().length);
+        
         String wotFilename = System.getProperty("WOT_test_jar");
         
         assertNotNull("Please specify the name of the WOT unit test JAR to the JVM via "
@@ -106,18 +113,21 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
     }
     
     @After public void tearDown() {
-        // FIXME: Check whether the test node creates any files which we have to cleanup.
+        // We cannot use exit because then JUnit will complain "Forked Java VM exited abnormally.".
+        /* mNode.exit("JUnit tearDown()"); */
+        
+        // ... So instead, we use what exit() does internally before it terminates the VM.
+        mNode.park();
+        
+        // FIXME: Check how to delete the data directory properly, i.e. whether the node offers
+        // any function for safely deleting.
+        
+        assertFalse("Data directory should not persist test restarts: " + mNode.getUserDir(),
+            mNode.getUserDir().exists());
     }
     
     @Test public void testSelf() {
-        assertEquals("Database should not persist test restarts",
-            0, mWebOfTrust.getAllIdentities().size());
         
-        assertEquals("Database should not persist test restarts",
-            0, mWebOfTrust.getAllTrusts().size());
-        
-        assertEquals("Database should not persist test restarts",
-            0, mWebOfTrust.getAllScores().size());
     }
 
 }
