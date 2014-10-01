@@ -105,6 +105,7 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
 
 
         mNode = NodeStarter.createTestNode(params);
+        mNode.start(!params.enableSwapping);
 
         String wotFilename = System.getProperty("WOT_test_jar");
         
