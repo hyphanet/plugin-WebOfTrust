@@ -132,7 +132,9 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
     }
     
     @Test public void testSelf() {
-        
+        // This empty function exists so JUnit runs the implicit test of doing setUp() and
+        // tearDown() at least once which will cause tearDown() to check whether deleting the
+        // Freenet data directory works.
     }
 
 }
