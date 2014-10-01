@@ -100,7 +100,7 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         // Even though the test should delete the directory at tearDown(), we nevertheless have
         // to check whether it exists for safety: A previous test run might have been
         // force-terminated before it had a chance to run tearDown().
-        assertFalse("Data directory should not persist test restarts: " + dataDirectory,
+        assertFalse("Data directory should not persist across test restarts: " + dataDirectory,
             dataDirectory.exists());
 
 
@@ -127,7 +127,7 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         // FIXME: Check how to delete the data directory properly, i.e. whether the node offers
         // any function for safely deleting.
         
-        assertFalse("Data directory should not persist test restarts: " + dataDirectory,
+        assertFalse("Data directory should not persist across test restarts: " + dataDirectory,
             dataDirectory.exists());
     }
     
