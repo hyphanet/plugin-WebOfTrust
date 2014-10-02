@@ -107,9 +107,5 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         // ... So instead, we use what exit() does internally before it terminates the VM.
         mNode.park();
     }
-    
-    @Test public void testSelf() {
-
-    }
 
 }
