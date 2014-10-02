@@ -13,7 +13,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
-import freenet.crypt.RandomSource;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
@@ -41,7 +40,8 @@ import freenet.support.PooledExecutor;
  * 
  * @author xor (xor@freenetproject.org
  */
-public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNodeTest {
+public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNodeTest
+        extends AbstractJUnit4BaseTest {
     
     /** TestName construction won't work in {@link #setUp()}, so we do it here. */
     @Rule public final TestName mTestName = new TestName();
@@ -56,15 +56,7 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         String testName = mTestName.getMethodName();
         
         // NodeStarter.createTestNode() will throw if we do not do this before
-        // FIXME: Since fred plugin-fcp-rewrite 94c2d9f2c3a682381884a9535859b65c09b02906, it is
-        // possible to pass a custom RandomSource to this. Use this to specify a DummyRandomSource
-        // for speed and so we can print out the seed.
-        RandomSource random
-            = NodeStarter.globalTestInit(testName, false, LogLevel.WARNING, "", true);
-        
-        // TODO: The returned RNG is used by the NodeStarter before it is returned already, so
-        // we cannot properly set a seed. We should set a seed, and print it to stdout, so we
-        // can have reproducible test runs.
+        mRandom = NodeStarter.globalTestInit(testName, false, LogLevel.WARNING, "", true, mRandom);
         
         // TODO: As of 2014-09-30, TestNodeParameters does not provide any defaults, so we have to
         // set all of its values to something reasonable. Please check back whether it supports
@@ -73,15 +65,15 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         // so the test runs as fast as possible, even if it might break stuff.
         // The exception is FCP since WOT has FCP tests.
         TestNodeParameters params = new TestNodeParameters();
-        params.port = random.nextInt((65535 - 1024) + 1) + 1024;
-        params.opennetPort = random.nextInt((65535 - 1024) + 1) + 1024;
+        params.port = mRandom.nextInt((65535 - 1024) + 1) + 1024;
+        params.opennetPort = mRandom.nextInt((65535 - 1024) + 1) + 1024;
         // params.baseDirectory defaults to a random UUID, which is fine for unit tests.
         // Save it so we can delete it after the test.
         dataDirectory = params.baseDirectory;
         params.disableProbabilisticHTLs = true;
         params.maxHTL = 18;
         params.dropProb = 0;
-        params.random = random;
+        params.random = mRandom;
         params.executor = new PooledExecutor();
         params.threadLimit = 256;
         params.storeSize = 16 * 1024 * 1024;
