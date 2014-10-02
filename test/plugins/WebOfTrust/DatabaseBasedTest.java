@@ -180,7 +180,11 @@ public class DatabaseBasedTest extends TestCase {
 	
 	/**
 	 * Generates a random SSK request URI, suitable for being used when creating identities.
+	 * 
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#getRandomRequestURI()} instead, which is a
+	 *             copypaste of this.
 	 */
+	@Deprecated
 	protected FreenetURI getRandomRequestURI() {
 		return InsertableClientSSK.createRandom(mRandom, "").getURI();
 	}

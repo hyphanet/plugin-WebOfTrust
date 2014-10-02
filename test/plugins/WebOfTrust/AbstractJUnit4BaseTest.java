@@ -14,6 +14,8 @@ import org.junit.rules.TemporaryFolder;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
+import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 
 /**
  * The base class for all JUnit4 tests in WOT.<br>
@@ -40,4 +42,10 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractJUnit4B
         assertNotNull(mRandom);
     }
 
+    /**
+     * Generates a random SSK request URI, suitable for being used when creating identities.
+     */
+    protected FreenetURI getRandomRequestURI() {
+        return InsertableClientSSK.createRandom(mRandom, "").getURI();
+    }
 }
