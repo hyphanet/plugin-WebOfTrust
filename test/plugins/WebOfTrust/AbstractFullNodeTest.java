@@ -11,6 +11,7 @@ import java.io.IOException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import freenet.node.Node;
 import freenet.node.NodeInitException;
@@ -39,7 +40,9 @@ import freenet.support.PooledExecutor;
  * 
  * @author xor (xor@freenetproject.org
  */
-public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNodeTest
+@Ignore("Is ignored so it can be abstract. If you need to add self-tests, use member classes, "
+    +   "they likely won't be ignored. But then also check that to make sure.")
+public abstract class AbstractFullNodeTest
         extends AbstractJUnit4BaseTest {
 
     protected Node mNode; 

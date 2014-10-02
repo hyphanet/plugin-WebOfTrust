@@ -8,8 +8,8 @@ import static org.junit.Assert.*;
 import java.util.Random;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import freenet.crypt.DummyRandomSource;
@@ -23,7 +23,9 @@ import freenet.keys.InsertableClientSSK;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public /* abstract (Not used so JUnit doesn't complain) */ class AbstractJUnit4BaseTest {
+@Ignore("Is ignored so it can be abstract. If you need to add self-tests, use member classes, "
+    +   "they likely won't be ignored. But then also check that to make sure.")
+public abstract class AbstractJUnit4BaseTest {
 
     protected RandomSource mRandom;
     
@@ -37,10 +39,7 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractJUnit4B
         mRandom = new DummyRandomSource(seed);
         System.out.println(this + " Random seed: " + seed);
     }
-    
-    @Test public void testSelf() {
-        assertNotNull(mRandom);
-    }
+
 
     /**
      * Generates a random SSK request URI, suitable for being used when creating identities.
