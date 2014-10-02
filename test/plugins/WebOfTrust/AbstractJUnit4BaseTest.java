@@ -8,7 +8,9 @@ import static org.junit.Assert.*;
 import java.util.Random;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
@@ -22,6 +24,10 @@ import freenet.crypt.RandomSource;
 public /* abstract (Not used so JUnit doesn't complain) */ class AbstractJUnit4BaseTest {
 
     protected RandomSource mRandom;
+    
+    @Rule
+    protected final TemporaryFolder mTempFolder = new TemporaryFolder();
+    
     
     @Before public void setupRandomNumberGenerator() {
         Random seedGenerator = new Random();

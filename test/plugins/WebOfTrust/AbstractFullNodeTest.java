@@ -6,12 +6,11 @@ package plugins.WebOfTrust;
 import static org.junit.Assert.*;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 
 import freenet.node.Node;
 import freenet.node.NodeInitException;
@@ -43,13 +42,13 @@ import freenet.support.PooledExecutor;
 public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNodeTest
         extends AbstractJUnit4BaseTest {
 
-    protected File dataDirectory;
-    
     protected Node mNode; 
     
     protected WebOfTrust mWebOfTrust;
     
-    @Before public void setUp() throws NodeInitException, InvalidThresholdException {
+    @Before public void setUp() throws NodeInitException, InvalidThresholdException, IOException {
+        File nodeFolder = mTempFolder.newFolder();
+
         // TODO: As of 2014-09-30, TestNodeParameters does not provide any defaults, so we have to
         // set all of its values to something reasonable. Please check back whether it supports
         // defaults in the future and use them.
@@ -59,9 +58,7 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         TestNodeParameters params = new TestNodeParameters();
         params.port = mRandom.nextInt((65535 - 1024) + 1) + 1024;
         params.opennetPort = mRandom.nextInt((65535 - 1024) + 1) + 1024;
-        // params.baseDirectory defaults to a random UUID, which is fine for unit tests.
-        // Save it so we can delete it after the test.
-        dataDirectory = params.baseDirectory;
+        params.baseDirectory = nodeFolder;
         params.disableProbabilisticHTLs = true;
         params.maxHTL = 18;
         params.dropProb = 0;
@@ -83,16 +80,11 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         params.useSlashdotCache = false;
         params.ipAddressOverride = null;
         params.enableFCP = true;
-        
-        // Even though the test should delete the directory at tearDown(), we nevertheless have
-        // to check whether it exists for safety: A previous test run might have been
-        // force-terminated before it had a chance to run tearDown().
-        assertFalse("Data directory should not persist across test restarts: " + dataDirectory,
-            dataDirectory.exists());
+
         
         // NodeStarter.createTestNode() will throw if we do not do this before
         mRandom
-            = NodeStarter.globalTestInit(dataDirectory, false, LogLevel.WARNING, "", true, mRandom);
+            = NodeStarter.globalTestInit(nodeFolder, false, LogLevel.WARNING, "", true, mRandom);
 
         mNode = NodeStarter.createTestNode(params);
         mNode.start(!params.enableSwapping);
@@ -114,18 +106,10 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         
         // ... So instead, we use what exit() does internally before it terminates the VM.
         mNode.park();
-        
-        // FIXME: Check how to delete the data directory properly, i.e. whether the node offers
-        // any function for safely deleting.
-        
-        assertFalse("Data directory should not persist across test restarts: " + dataDirectory,
-            dataDirectory.exists());
     }
     
     @Test public void testSelf() {
-        // This empty function exists so JUnit runs the implicit test of doing setUp() and
-        // tearDown() at least once which will cause tearDown() to check whether deleting the
-        // Freenet data directory works.
+
     }
 
 }

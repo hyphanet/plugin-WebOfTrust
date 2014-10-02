@@ -15,6 +15,7 @@ import java.util.Random;
 import junit.framework.TestCase;
 
 import org.junit.Ignore;
+import org.junit.rules.TemporaryFolder;
 
 import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
@@ -53,6 +54,10 @@ public class DatabaseBasedTest extends TestCase {
 	protected RandomSource mRandom;
 
 	/**
+	 * TODO: Code quality: When migrating this code to {@link AbstractJUnit4BaseTest}, use
+	 * JUnit's {@link TemporaryFolder} instead. It will both ensure that the file does not exist
+	 * and that it is deleted at shutdown.
+	 *  
 	 * @return Returns the filename of the database. This is the name of the current test function plus ".db4o".
 	 */
 	public String getDatabaseFilename() {
