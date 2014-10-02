@@ -216,17 +216,27 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		subscribeAndSynchronize("Trusts");
 		subscribeAndSynchronize("Scores");
 		
-		assertEquals(new HashSet<Identity>(mWoT.getAllIdentities()), new HashSet<Identity>(mReceivedIdentities.values()));
-		assertEquals(new HashSet<Trust>(mWoT.getAllTrusts()), new HashSet<Trust>(mReceivedTrusts.values()));
-		assertEquals(new HashSet<Score>(mWoT.getAllScores()), new HashSet<Score>(mReceivedScores.values()));
+		assertEquals(new HashSet<Identity>(mWebOfTrust.getAllIdentities()),
+		             new HashSet<Identity>(mReceivedIdentities.values()));
+		
+		assertEquals(new HashSet<Trust>(mWebOfTrust.getAllTrusts()),
+		             new HashSet<Trust>(mReceivedTrusts.values()));
+
+		assertEquals(new HashSet<Score>(mWebOfTrust.getAllScores()),
+		             new HashSet<Score>(mReceivedScores.values()));
 		
 		doRandomChangesToWOT(eventCount);
-		mWoT.getSubscriptionManager().run(); // It has no Ticker so we need to run() it manually
+		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
 		importNotifications();
 
-		assertEquals(new HashSet<Identity>(mWoT.getAllIdentities()), new HashSet<Identity>(mReceivedIdentities.values()));
-		assertEquals(new HashSet<Trust>(mWoT.getAllTrusts()), new HashSet<Trust>(mReceivedTrusts.values()));
-		assertEquals(new HashSet<Score>(mWoT.getAllScores()), new HashSet<Score>(mReceivedScores.values()));
+		assertEquals(new HashSet<Identity>(mWebOfTrust.getAllIdentities()),
+		             new HashSet<Identity>(mReceivedIdentities.values()));
+		
+		assertEquals(new HashSet<Trust>(mWebOfTrust.getAllTrusts()),
+		             new HashSet<Trust>(mReceivedTrusts.values()));
+		
+		assertEquals(new HashSet<Score>(mWebOfTrust.getAllScores()),
+		             new HashSet<Score>(mReceivedScores.values()));
 		
 	}
 	
@@ -251,11 +261,19 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	    
 		assertEquals(type, synchronization.get("Message"));
 		if(type.equals("Identities")) {
-			putSynchronization(new IdentityParser(mWoT).parseSynchronization(synchronization), mReceivedIdentities);
+			putSynchronization(
+			    new IdentityParser(mWebOfTrust).parseSynchronization(synchronization),
+			    mReceivedIdentities);
 		} else if(type.equals("Trusts")) {
-			putSynchronization(new TrustParser(mWoT, mReceivedIdentities).parseSynchronization(synchronization), mReceivedTrusts);
+			putSynchronization(
+			    new TrustParser(mWebOfTrust, mReceivedIdentities)
+			        .parseSynchronization(synchronization),
+			    mReceivedTrusts);
 		} else if(type.equals("Scores")) {
-			putSynchronization(new ScoreParser(mWoT, mReceivedIdentities).parseSynchronization(synchronization), mReceivedScores);
+			putSynchronization(
+			    new ScoreParser(mWebOfTrust, mReceivedIdentities)
+			        .parseSynchronization(synchronization),
+			    mReceivedScores);
 		}
 	}
 	
@@ -274,11 +292,19 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 			final SimpleFieldSet notification = mReplyReceiver.getNextResult();
 			final String message = notification.get("Message");
 			if(message.equals("IdentityChangedNotification")) {
-				putNotification(new IdentityParser(mWoT).parseNotification(notification), mReceivedIdentities);
+				putNotification(
+				    new IdentityParser(mWebOfTrust).parseNotification(notification),
+				    mReceivedIdentities);
 			} else if(message.equals("TrustChangedNotification")) {
-				putNotification(new TrustParser(mWoT, mReceivedIdentities).parseNotification(notification), mReceivedTrusts);
+				putNotification(
+				    new TrustParser(mWebOfTrust, mReceivedIdentities)
+				        .parseNotification(notification),
+				    mReceivedTrusts);
 			} else if(message.equals("ScoreChangedNotification")) {
-				putNotification(new ScoreParser(mWoT, mReceivedIdentities).parseNotification(notification), mReceivedScores);
+				putNotification(
+				    new ScoreParser(mWebOfTrust, mReceivedIdentities)
+				        .parseNotification(notification),
+				    mReceivedScores);
 			} else {
 				fail("Unknown message type: " + message);
 			}
