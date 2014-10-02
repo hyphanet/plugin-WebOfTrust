@@ -42,10 +42,7 @@ import freenet.support.PooledExecutor;
  */
 public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNodeTest
         extends AbstractJUnit4BaseTest {
-    
-    /** TestName construction won't work in {@link #setUp()}, so we do it here. */
-    @Rule public final TestName mTestName = new TestName();
-    
+
     protected File dataDirectory;
     
     protected Node mNode; 
@@ -53,11 +50,6 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
     protected WebOfTrust mWebOfTrust;
     
     @Before public void setUp() throws NodeInitException, InvalidThresholdException {
-        String testName = mTestName.getMethodName();
-        
-        // NodeStarter.createTestNode() will throw if we do not do this before
-        mRandom = NodeStarter.globalTestInit(testName, false, LogLevel.WARNING, "", true, mRandom);
-        
         // TODO: As of 2014-09-30, TestNodeParameters does not provide any defaults, so we have to
         // set all of its values to something reasonable. Please check back whether it supports
         // defaults in the future and use them.
@@ -97,7 +89,10 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractFullNod
         // force-terminated before it had a chance to run tearDown().
         assertFalse("Data directory should not persist across test restarts: " + dataDirectory,
             dataDirectory.exists());
-
+        
+        // NodeStarter.createTestNode() will throw if we do not do this before
+        mRandom
+            = NodeStarter.globalTestInit(dataDirectory, false, LogLevel.WARNING, "", true, mRandom);
 
         mNode = NodeStarter.createTestNode(params);
         mNode.start(!params.enableSwapping);
