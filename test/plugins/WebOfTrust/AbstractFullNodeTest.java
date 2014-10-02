@@ -10,7 +10,6 @@ import java.io.IOException;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.Ignore;
 
 import freenet.node.Node;
@@ -109,6 +108,11 @@ public abstract class AbstractFullNodeTest
         
         // ... So instead, we use what exit() does internally before it terminates the VM.
         mNode.park();
+    }
+
+    @Override
+    protected WebOfTrust getWebOfTrust() {
+        return mWebOfTrust;
     }
 
 }

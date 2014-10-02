@@ -197,7 +197,10 @@ public class DatabaseBasedTest extends TestCase {
 	 * 
 	 * @param count Amount of identities to add
 	 * @return An {@link ArrayList} which contains all added identities.
+     * @deprecated Use {@link AbstractJUnit4BaseTest#addRandomIdentities(int)} instead, which is a
+     *             copypaste of this.
 	 */
+	@Deprecated
 	protected ArrayList<Identity> addRandomIdentities(int count) {
 		ArrayList<Identity> result = new ArrayList<Identity>(count+1);
 		
