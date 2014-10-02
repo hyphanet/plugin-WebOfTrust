@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -14,6 +16,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 import org.junit.Ignore;
 
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
@@ -25,7 +28,6 @@ import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.IdentityParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ScoreParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.TrustParser;
-import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import freenet.node.FSParseException;
 import freenet.node.fcp.FCPPluginClient;
 import freenet.node.fcp.FCPPluginClient.SendDirection;
@@ -37,7 +39,7 @@ import freenet.support.SimpleFieldSet;
  * @see FCPClientReferenceImplementation This class can do an online test which is similar to this unit test.
  * @author xor (xor@freenetproject.org)
  */
-public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
+public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 
 	/**
 	 * This test acts as a client to the WOT FCP server subscription code.
@@ -79,10 +81,16 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 
 	}
 	
-	FCPInterface mFCPInterface;
-	FCPPluginClient mClient;
-	ReplyReceiver mReplyReceiver;
+	ReplyReceiver mReplyReceiver = new ReplyReceiver();
 	
+	FCPPluginClient mClient;
+
+    @Before
+    public void setUpClient() throws Exception {
+        mClient = mWebOfTrust.getPluginRespirator()
+            .connecToOtherPlugin(FCPClientReferenceImplementation.WOT_FCP_NAME, mReplyReceiver);
+    }
+
 	/**
 	 * Sends the given {@link SimpleFieldSet} to the FCP interface of {@link DatabaseBasedTest#mWoT}
 	 * You can obtain the result(s) by <code>mReplySender.getNextResult();</code>
@@ -103,7 +111,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	 * 
 	 * Key = {@link Identity#getID()} 
 	 */
-	HashMap<String, Identity> mReceivedIdentities;
+	HashMap<String, Identity> mReceivedIdentities = new HashMap<String, Identity>();
 	
 	/**
 	 * The set of all {@link Trust}s as we have received them from the {@link SubscriptionManager.TrustsSubscription}.
@@ -111,7 +119,7 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	 * 
 	 * Key = {@link Trust#getID()} 
 	 */
-	HashMap<String, Trust> mReceivedTrusts;
+	HashMap<String, Trust> mReceivedTrusts = new HashMap<String, Trust>();
 	
 	/**
 	 * The set of all {@link Score}s as we have received them from the {@link SubscriptionManager.ScoresSubscription}.
@@ -119,20 +127,8 @@ public class SubscriptionManagerFCPTest extends DatabaseBasedTest {
 	 * 
 	 * Key = {@link Score#getID()} 
 	 */
-	HashMap<String, Score> mReceivedScores;
+	HashMap<String, Score> mReceivedScores = new HashMap<String, Score>();
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
-		mFCPInterface = mWoT.getFCPInterface();
-		mReplyReceiver = new ReplyReceiver();
-		mClient = FCPPluginClient.constructForUnitTest(mFCPInterface, mReplyReceiver);
-		
-		mReceivedIdentities = new HashMap<String, Identity>();
-		mReceivedTrusts = new HashMap<String, Trust>();
-		mReceivedScores = new HashMap<String, Score>();
-	}
-	
 	public void testSubscribeUnsubscribe()
 	        throws FSParseException, IOException, InterruptedException {
 	    

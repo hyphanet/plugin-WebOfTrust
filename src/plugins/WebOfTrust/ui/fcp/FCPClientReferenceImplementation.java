@@ -75,7 +75,7 @@ import freenet.support.io.NativeThread;
 public final class FCPClientReferenceImplementation {
 	
 	/** This is the core class name of the Web Of Trust plugin. Used to connect to it via FCP */
-	private static final String WOT_FCP_NAME = "plugins.WebOfTrust.WebOfTrust";
+	public static final String WOT_FCP_NAME = "plugins.WebOfTrust.WebOfTrust";
 
 	/** The amount of milliseconds between each attempt to connect to the WoT plugin */
 	private static final int WOT_RECONNECT_DELAY = 1 * 1000;
