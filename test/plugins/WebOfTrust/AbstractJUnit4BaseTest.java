@@ -26,7 +26,7 @@ public /* abstract (Not used so JUnit doesn't complain) */ class AbstractJUnit4B
     protected RandomSource mRandom;
     
     @Rule
-    protected final TemporaryFolder mTempFolder = new TemporaryFolder();
+    public final TemporaryFolder mTempFolder = new TemporaryFolder();
     
     
     @Before public void setupRandomNumberGenerator() {
