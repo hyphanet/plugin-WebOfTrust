@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static org.junit.Assert.*;
+
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Random;
@@ -150,6 +152,8 @@ public abstract class AbstractJUnit4BaseTest {
     }
 
     protected void doRandomChangesToWOT(int eventCount) throws DuplicateTrustException, NotTrustedException, InvalidParameterException, UnknownIdentityException, MalformedURLException {
+        final WebOfTrust mWoT = getWebOfTrust();
+            
         @Ignore
         class Randomizer {
             final RandomGrabHashSet<String> allOwnIdentities = new RandomGrabHashSet<String>(mRandom);
@@ -180,7 +184,7 @@ public abstract class AbstractJUnit4BaseTest {
                 case 0: // WebOfTrust.createOwnIdentity()
                     {
                         final OwnIdentity identity = mWoT.createOwnIdentity(
-                                    getRandomSSKPair()[0], 
+                                    getRandomInsertURI(), 
                                     getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), 
                                     mRandom.nextBoolean(),
                                     getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH)
@@ -203,19 +207,21 @@ public abstract class AbstractJUnit4BaseTest {
                     break;
                 case 2: // WebOfTrust.restoreOwnIdentity()
                     {
-                        final FreenetURI[] keypair = getRandomSSKPair();
-                        mWoT.restoreOwnIdentity(keypair[0]);
-                        final String id = mWoT.getOwnIdentityByURI(keypair[1]).getID();
+                        final InsertableClientSSK keypair 
+                            = InsertableClientSSK.createRandom(mRandom, "");
+                        mWoT.restoreOwnIdentity(keypair.getInsertURI());
+                        final String id = mWoT.getOwnIdentityByURI(keypair.getURI()).getID();
                         randomizer.allIdentities.addOrThrow(id);
                         randomizer.allOwnIdentities.addOrThrow(id);
                     }
                     break;
                 case 3: // WebOfTrust.restoreOwnIdentity() with previously existing non-own version of it
                     {
-                        final FreenetURI[] keypair = getRandomSSKPair();
-                        mWoT.addIdentity(keypair[1].toString());
-                        mWoT.restoreOwnIdentity(keypair[0]);
-                        final String id = mWoT.getOwnIdentityByURI(keypair[1]).getID();
+                        final InsertableClientSSK keypair 
+                            = InsertableClientSSK.createRandom(mRandom, "");
+                        mWoT.addIdentity(keypair.getURI().toString());
+                        mWoT.restoreOwnIdentity(keypair.getInsertURI());
+                        final String id = mWoT.getOwnIdentityByURI(keypair.getURI()).getID();
                         randomizer.allIdentities.addOrThrow(id);
                         randomizer.allOwnIdentities.addOrThrow(id);
                     }
