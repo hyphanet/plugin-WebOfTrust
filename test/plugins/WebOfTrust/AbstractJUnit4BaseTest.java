@@ -215,7 +215,7 @@ public abstract class AbstractJUnit4BaseTest {
                         randomizer.allOwnIdentities.addOrThrow(id);
                     }
                     break;
-                case 3: // WebOfTrust.restoreOwnIdentity() with previously existing non-own version of it
+                case 3: // WebOfTrust.restoreOwnIdentity() with existing colliding non-own Identity
                     {
                         final InsertableClientSSK keypair 
                             = InsertableClientSSK.createRandom(mRandom, "");
