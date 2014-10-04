@@ -12,8 +12,12 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
+import plugins.WebOfTrust.Trust.TrustID;
+import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.util.RandomGrabHashSet;
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
@@ -144,7 +148,150 @@ public abstract class AbstractJUnit4BaseTest {
         getWebOfTrust().finishTrustListImport();
         Persistent.checkedCommit(getWebOfTrust().getDatabase(), this);
     }
-    
+
+    protected void doRandomChangesToWOT(int eventCount) throws DuplicateTrustException, NotTrustedException, InvalidParameterException, UnknownIdentityException, MalformedURLException {
+        @Ignore
+        class Randomizer {
+            final RandomGrabHashSet<String> allOwnIdentities = new RandomGrabHashSet<String>(mRandom);
+            final RandomGrabHashSet<String> allIdentities = new RandomGrabHashSet<String>(mRandom);
+            final RandomGrabHashSet<String> allTrusts = new RandomGrabHashSet<String>(mRandom);
+            
+            Randomizer() { 
+                for(Identity identity : mWoT.getAllIdentities())
+                    allIdentities.addOrThrow(identity.getID());
+                
+                for(OwnIdentity ownIdentity : mWoT.getAllOwnIdentities())
+                    allOwnIdentities.addOrThrow(ownIdentity.getID());
+                
+                for(Trust trust : mWoT.getAllTrusts())
+                    allTrusts.addOrThrow(trust.getID());
+            }
+        }
+        final Randomizer randomizer = new Randomizer();
+        
+        final int eventTypeCount = 15;
+        final long[] eventDurations = new long[eventTypeCount];
+        final int[] eventIterations = new int[eventTypeCount];
+        
+        for(int i=0; i < eventCount; ++i) {
+            final int type = mRandom.nextInt(eventTypeCount);
+            final long startTime = System.nanoTime();
+            switch(type) {
+                case 0: // WebOfTrust.createOwnIdentity()
+                    {
+                        final OwnIdentity identity = mWoT.createOwnIdentity(
+                                    getRandomSSKPair()[0], 
+                                    getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), 
+                                    mRandom.nextBoolean(),
+                                    getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH)
+                                );
+                        randomizer.allIdentities.addOrThrow(identity.getID());
+                        randomizer.allOwnIdentities.addOrThrow(identity.getID());
+                    }
+                    break;
+                case 1: // WebOfTrust.deleteOwnIdentity()
+                    {
+                        final String original = randomizer.allOwnIdentities.getRandom();
+                        mWoT.deleteOwnIdentity(original);
+                        randomizer.allIdentities.remove(original);
+                        randomizer.allOwnIdentities.remove(original);
+                        // Dummy non-own identity which deleteOwnIdenity() has replaced it with.
+                        final Identity surrogate = mWoT.getIdentityByID(original);
+                        assertFalse(surrogate.getClass().equals(OwnIdentity.class));
+                        randomizer.allIdentities.addOrThrow(surrogate.getID());
+                    }
+                    break;
+                case 2: // WebOfTrust.restoreOwnIdentity()
+                    {
+                        final FreenetURI[] keypair = getRandomSSKPair();
+                        mWoT.restoreOwnIdentity(keypair[0]);
+                        final String id = mWoT.getOwnIdentityByURI(keypair[1]).getID();
+                        randomizer.allIdentities.addOrThrow(id);
+                        randomizer.allOwnIdentities.addOrThrow(id);
+                    }
+                    break;
+                case 3: // WebOfTrust.restoreOwnIdentity() with previously existing non-own version of it
+                    {
+                        final FreenetURI[] keypair = getRandomSSKPair();
+                        mWoT.addIdentity(keypair[1].toString());
+                        mWoT.restoreOwnIdentity(keypair[0]);
+                        final String id = mWoT.getOwnIdentityByURI(keypair[1]).getID();
+                        randomizer.allIdentities.addOrThrow(id);
+                        randomizer.allOwnIdentities.addOrThrow(id);
+                    }
+                    break;
+                case 4: // WebOfTrust.addIdentity()
+                    randomizer.allIdentities.addOrThrow(mWoT.addIdentity(getRandomRequestURI().toString()).getID());
+                    break;
+                case 5: // WebOfTrust.addContext() (adds context to identity)
+                    {
+                        final String ownIdentityID = randomizer.allOwnIdentities.getRandom();
+                        final String context = getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH);
+                        mWoT.addContext(ownIdentityID, context);
+                        if(mRandom.nextBoolean())
+                            mWoT.removeContext(ownIdentityID, context);
+                    }
+                    break;
+                case 6: // WebOfTrust.setProperty (adds property to identity)
+                    {
+                        final String ownIdentityID = randomizer.allOwnIdentities.getRandom();
+                        final String propertyName = getRandomLatinString(Identity.MAX_PROPERTY_NAME_LENGTH);
+                        final String propertyValue = getRandomLatinString(Identity.MAX_PROPERTY_VALUE_LENGTH);
+                        mWoT.setProperty(ownIdentityID, propertyName, propertyValue);
+                        if(mRandom.nextBoolean())
+                            mWoT.removeProperty(ownIdentityID, propertyName);
+                    }
+                    break;
+                case 7: // Add/change trust value. Higher probability because trust values are the most changes which will happen on the real network
+                case 8:
+                case 9:
+                case 10:
+                case 11:
+                case 12:
+                case 13:
+                    {
+                        Identity truster;
+                        Identity trustee;
+                        do {
+                            truster = mWoT.getIdentityByID(randomizer.allIdentities.getRandom());
+                            trustee = mWoT.getIdentityByID(randomizer.allIdentities.getRandom());
+                        } while(truster == trustee);
+                        
+                        mWoT.beginTrustListImport();
+                        mWoT.setTrustWithoutCommit(truster, trustee, getRandomTrustValue(), getRandomLatinString(Trust.MAX_TRUST_COMMENT_LENGTH));
+                        mWoT.finishTrustListImport();
+                        Persistent.checkedCommit(mWoT.getDatabase(), this);
+                        
+                        final String trustID = new TrustID(truster, trustee).toString();
+                        if(!randomizer.allTrusts.contains(trustID)) // We selected the truster/trustee randomly so a value may have existed
+                            randomizer.allTrusts.addOrThrow(trustID); 
+                    }
+                    break;
+                case 14: // Remove trust value
+                    {
+                        mWoT.beginTrustListImport();
+                        final Trust trust = mWoT.getTrust(randomizer.allTrusts.getRandom());
+                        mWoT.removeTrustWithoutCommit(trust);
+                        mWoT.finishTrustListImport();
+                        Persistent.checkedCommit(mWoT.getDatabase(), this);
+                        
+                        randomizer.allTrusts.remove(trust.getID());
+                    }
+                    break;
+                default:
+                    throw new RuntimeException("Please adapt eventTypeCount above!");
+            }
+            final long endTime = System.nanoTime();
+            eventDurations[type] += (endTime-startTime);
+            ++eventIterations[type];
+        }
+        
+        for(int i=0; i < eventTypeCount; ++i) {
+            System.out.println("Event type " + i + ": Happend " + eventIterations[i] + " times; "
+                    + "avg. seconds: " + (((double)eventDurations[i])/eventIterations[i]) / (1000*1000*1000));
+        }
+    }
+
     /**
      * Returns a normally distributed value with a bias towards positive trust values.
      * TODO: Remove this bias once trust computation is equally fast for negative values;

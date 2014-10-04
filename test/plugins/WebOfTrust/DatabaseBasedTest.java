@@ -289,6 +289,10 @@ public class DatabaseBasedTest extends TestCase {
 		Persistent.checkedCommit(mWoT.getDatabase(), this);
 	}
 	
+	/**
+     * @deprecated Use {@link AbstractJUnit4BaseTest#doRandomChangesToWOT(int)} instead, which is
+     *             a copypaste of this.
+	 */
 	protected void doRandomChangesToWOT(int eventCount) throws DuplicateTrustException, NotTrustedException, InvalidParameterException, UnknownIdentityException, MalformedURLException {
 		@Ignore
 		class Randomizer {
