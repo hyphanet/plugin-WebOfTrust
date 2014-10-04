@@ -70,6 +70,13 @@ public abstract class AbstractJUnit4BaseTest {
     }
 
     /**
+     * Generates a random SSK insert URI, for being used when creating {@link OwnIdentity}s.
+     */
+    protected FreenetURI getRandomInsertURI() {
+        return InsertableClientSSK.createRandom(mRandom, "").getInsertURI();
+    }
+
+    /**
      * Generates a random SSK request URI, suitable for being used when creating identities.
      */
     protected FreenetURI getRandomRequestURI() {

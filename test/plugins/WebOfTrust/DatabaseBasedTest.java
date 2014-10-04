@@ -172,7 +172,14 @@ public class DatabaseBasedTest extends TestCase {
 	/**
 	 * Generates a random SSK request-/insert-keypair, suitable for being used when creating identities.
 	 * @return An array where slot 0 is the insert URI and slot 1 is the request URI
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#getRandomInsertURI()} instead. Notice that
+	 *             even though in opposite to this function it only generates the insert URI, not
+	 *             the request URI, it will probably be sufficient: {@link OwnIdentity} creation has
+	 *             been adapted some time ago to only require the insert URI, not the full keypair.
+	 *             If it turns out to be not sufficient, please copy this function to
+	 *             {@link AbstractJUnit4BaseTest}.  
 	 */
+	@Deprecated
 	protected FreenetURI[] getRandomSSKPair() {
 		InsertableClientSSK ssk = InsertableClientSSK.createRandom(mRandom, "");
 		return new FreenetURI[]{ ssk.getInsertURI(), ssk.getURI() };
