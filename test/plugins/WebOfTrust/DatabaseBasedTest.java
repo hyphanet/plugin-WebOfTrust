@@ -225,6 +225,13 @@ public class DatabaseBasedTest extends TestCase {
 		return result;
 	}
 	
+	/**
+     * @param count Amount of identities to add
+     * @return An {@link ArrayList} which contains all added identities.
+     * @deprecated Use {@link AbstractJUnit4BaseTest#addRandomOwnIdentities(int)} instead, which is
+     *             a copypaste of this.
+	 */
+	@Deprecated
 	protected ArrayList<OwnIdentity> addRandomOwnIdentities(int count) throws MalformedURLException, InvalidParameterException {
 		ArrayList<OwnIdentity> result = new ArrayList<OwnIdentity>(count+1);
 		

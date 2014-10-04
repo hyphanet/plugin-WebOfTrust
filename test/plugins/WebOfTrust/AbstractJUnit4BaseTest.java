@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -11,6 +12,7 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
@@ -67,6 +69,37 @@ public abstract class AbstractJUnit4BaseTest {
         }
         
         return result;
+    }
+
+    /**
+     * Generates {@link OwnIdentity}s with:<br>
+     * - a valid random insert URI and request URI.<br>
+     * - a valid a random Latin nickname with length of {@link Identity#MAX_NICKNAME_LENGTH}.<br>
+     * - a random setting for {@link Identity#doesPublishTrustList()}.<br>
+     * - a random context with length {@link Identity#MAX_CONTEXT_NAME_LENGTH}.<br><br>
+     * 
+     * The OwnIdentitys are stored in the WOT database, and the original (= non-cloned) objects are
+     * returned in an {@link ArrayList}.
+     * 
+     * @throws MalformedURLException
+     *             Should never happen.
+     * @throws InvalidParameterException
+     *             Should never happen.
+     */
+    protected ArrayList<OwnIdentity> addRandomOwnIdentities(int count)
+            throws MalformedURLException, InvalidParameterException {
+        
+        ArrayList<OwnIdentity> result = new ArrayList<OwnIdentity>(count+1);
+        
+        while(count-- > 0) {
+            final OwnIdentity ownIdentity = getWebOfTrust().createOwnIdentity(getRandomInsertURI(),
+                getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), mRandom.nextBoolean(),
+                getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH));
+            result.add(ownIdentity); 
+        }
+        
+        return result;
+        
     }
 
     /**
