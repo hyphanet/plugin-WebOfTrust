@@ -156,9 +156,9 @@ public abstract class AbstractJUnit4BaseTest {
             
         @Ignore
         class Randomizer {
-            final RandomGrabHashSet<String> allOwnIdentities = new RandomGrabHashSet<String>(mRandom);
-            final RandomGrabHashSet<String> allIdentities = new RandomGrabHashSet<String>(mRandom);
-            final RandomGrabHashSet<String> allTrusts = new RandomGrabHashSet<String>(mRandom);
+            final RandomGrabHashSet<String> allOwnIdentities = new RandomGrabHashSet<>(mRandom);
+            final RandomGrabHashSet<String> allIdentities = new RandomGrabHashSet<>(mRandom);
+            final RandomGrabHashSet<String> allTrusts = new RandomGrabHashSet<>(mRandom);
             
             Randomizer() { 
                 for(Identity identity : mWoT.getAllIdentities())
