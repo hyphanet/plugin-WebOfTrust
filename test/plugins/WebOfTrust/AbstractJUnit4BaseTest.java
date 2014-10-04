@@ -101,6 +101,20 @@ public abstract class AbstractJUnit4BaseTest {
         return result;
         
     }
+    
+    /**
+     * Returns a normally distributed value with a bias towards positive trust values.
+     * TODO: Remove this bias once trust computation is equally fast for negative values;
+     */
+    private byte getRandomTrustValue() {
+        final double trustRange = Trust.MAX_TRUST_VALUE - Trust.MIN_TRUST_VALUE + 1;
+        long result;
+        do {
+            result = Math.round(mRandom.nextGaussian()*(trustRange/2) + (trustRange/3));
+        } while(result < Trust.MIN_TRUST_VALUE || result > Trust.MAX_TRUST_VALUE);
+        
+        return (byte)result;
+    }
 
     /**
      * Generates a random SSK insert URI, for being used when creating {@link OwnIdentity}s.
