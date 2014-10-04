@@ -13,6 +13,7 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
@@ -100,6 +101,48 @@ public abstract class AbstractJUnit4BaseTest {
         
         return result;
         
+    }
+    
+    /**
+     * ATTENTION: Its impossible to store more trust values than the amount of identities squared:
+     * There can only be a single trust value between each pair of identities. The amount of such
+     * pairs is identities². If you specify a trustCount which is higher than this value then this
+     * function will run into an infinite loop.
+     * 
+     * TODO: Adapt this to respect {@link Identity#doesPublishTrustList()}. First you need to adapt
+     * the callers of this function to actually use identities which have set this to true - most
+     * callers generate identities with the default value which is false.
+     */
+    protected void addRandomTrustValues(final ArrayList<Identity> identities, final int trustCount)
+            throws InvalidParameterException {
+        
+        final int identityCount = identities.size();
+        
+        getWebOfTrust().beginTrustListImport();
+        for(int i=0; i < trustCount; ++i) {
+            Identity truster = identities.get(mRandom.nextInt(identityCount));
+            Identity trustee = identities.get(mRandom.nextInt(identityCount));
+            
+            if(truster == trustee) { // You cannot assign trust to yourself
+                --i;
+                continue;
+            }
+            
+            try {
+                // Only one trust value can exist between a given pair of identities:
+                // We are bound to generate an amount of trustCount values,
+                // so we have to check whether this pair of identities already has a trust.
+                getWebOfTrust().getTrust(truster, trustee);
+                --i;
+                continue;
+            } catch(NotTrustedException e) {}
+            
+            
+            getWebOfTrust().setTrustWithoutCommit(truster, trustee, getRandomTrustValue(),
+                getRandomLatinString(mRandom.nextInt(Trust.MAX_TRUST_COMMENT_LENGTH+1)));
+        }
+        getWebOfTrust().finishTrustListImport();
+        Persistent.checkedCommit(getWebOfTrust().getDatabase(), this);
     }
     
     /**

@@ -255,7 +255,11 @@ public class DatabaseBasedTest extends TestCase {
 	 * 
 	 * TODO: Adapt this to respect {@link Identity#doesPublishTrustList()}. First you need to adapt the callers of this function to actually
 	 * use identities which have set this to true - most callers generate identities with the default value which is false.
+	 * 
+     * @deprecated Use {@link AbstractJUnit4BaseTest#addRandomTrustValues(ArrayList, int)} instead,
+     *             which is a copypaste of this.
 	 */
+	@Deprecated
 	protected void addRandomTrustValues(final ArrayList<Identity> identities, final int trustCount) throws InvalidParameterException {
 		final int identityCount = identities.size();
 		
