@@ -147,7 +147,10 @@ public class DatabaseBasedTest extends TestCase {
 	/**
 	 * Generates a String containing random characters of the lowercase Latin alphabet.
 	 * @param The length of the returned string.
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#getRandomLatinString(int)} instead, which is a
+     *             copypaste of this.
 	 */
+	@Deprecated
 	protected String getRandomLatinString(int length) {
 		char[] s = new char[length];
 		for(int i=0; i<length; ++i)

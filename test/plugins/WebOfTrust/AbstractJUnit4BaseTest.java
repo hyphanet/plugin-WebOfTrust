@@ -82,4 +82,15 @@ public abstract class AbstractJUnit4BaseTest {
     protected FreenetURI getRandomRequestURI() {
         return InsertableClientSSK.createRandom(mRandom, "").getURI();
     }
+    
+    /**
+     * Generates a String containing random characters of the lowercase Latin alphabet.
+     * @param The length of the returned string.
+     */
+    protected String getRandomLatinString(int length) {
+        char[] s = new char[length];
+        for(int i=0; i<length; ++i)
+            s[i] = (char)('a' + mRandom.nextInt(26));
+        return new String(s);
+    }
 }
