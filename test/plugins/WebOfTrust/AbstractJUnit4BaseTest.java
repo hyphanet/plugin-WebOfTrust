@@ -151,7 +151,10 @@ public abstract class AbstractJUnit4BaseTest {
         Persistent.checkedCommit(getWebOfTrust().getDatabase(), this);
     }
 
-    protected void doRandomChangesToWOT(int eventCount) throws DuplicateTrustException, NotTrustedException, InvalidParameterException, UnknownIdentityException, MalformedURLException {
+    protected void doRandomChangesToWOT(int eventCount)
+            throws DuplicateTrustException, NotTrustedException, InvalidParameterException,
+            UnknownIdentityException, MalformedURLException {
+
         final WebOfTrust mWoT = getWebOfTrust();
             
         @Ignore
@@ -227,12 +230,15 @@ public abstract class AbstractJUnit4BaseTest {
                     }
                     break;
                 case 4: // WebOfTrust.addIdentity()
-                    randomizer.allIdentities.addOrThrow(mWoT.addIdentity(getRandomRequestURI().toString()).getID());
+                    randomizer.allIdentities.addOrThrow(
+                        mWoT.addIdentity(getRandomRequestURI().toString()).getID());
                     break;
                 case 5: // WebOfTrust.addContext() (adds context to identity)
                     {
                         final String ownIdentityID = randomizer.allOwnIdentities.getRandom();
-                        final String context = getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH);
+                        final String context
+                            = getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH);
+                        
                         mWoT.addContext(ownIdentityID, context);
                         if(mRandom.nextBoolean())
                             mWoT.removeContext(ownIdentityID, context);
@@ -241,14 +247,19 @@ public abstract class AbstractJUnit4BaseTest {
                 case 6: // WebOfTrust.setProperty (adds property to identity)
                     {
                         final String ownIdentityID = randomizer.allOwnIdentities.getRandom();
-                        final String propertyName = getRandomLatinString(Identity.MAX_PROPERTY_NAME_LENGTH);
-                        final String propertyValue = getRandomLatinString(Identity.MAX_PROPERTY_VALUE_LENGTH);
+                        final String propertyName
+                            = getRandomLatinString(Identity.MAX_PROPERTY_NAME_LENGTH);
+                        final String propertyValue
+                            = getRandomLatinString(Identity.MAX_PROPERTY_VALUE_LENGTH);
+                        
                         mWoT.setProperty(ownIdentityID, propertyName, propertyValue);
                         if(mRandom.nextBoolean())
                             mWoT.removeProperty(ownIdentityID, propertyName);
                     }
                     break;
-                case 7: // Add/change trust value. Higher probability because trust values are the most changes which will happen on the real network
+                // Add/change trust value. Higher probability because trust values are the most
+                // changes which will happen on the real network
+                case 7: 
                 case 8:
                 case 9:
                 case 10:
@@ -264,12 +275,14 @@ public abstract class AbstractJUnit4BaseTest {
                         } while(truster == trustee);
                         
                         mWoT.beginTrustListImport();
-                        mWoT.setTrustWithoutCommit(truster, trustee, getRandomTrustValue(), getRandomLatinString(Trust.MAX_TRUST_COMMENT_LENGTH));
+                        mWoT.setTrustWithoutCommit(truster, trustee, getRandomTrustValue(),
+                            getRandomLatinString(Trust.MAX_TRUST_COMMENT_LENGTH));
                         mWoT.finishTrustListImport();
                         Persistent.checkedCommit(mWoT.getDatabase(), this);
                         
                         final String trustID = new TrustID(truster, trustee).toString();
-                        if(!randomizer.allTrusts.contains(trustID)) // We selected the truster/trustee randomly so a value may have existed
+                        // We selected the truster/trustee randomly so a value may have existed
+                        if(!randomizer.allTrusts.contains(trustID))
                             randomizer.allTrusts.addOrThrow(trustID); 
                     }
                     break;
@@ -294,7 +307,8 @@ public abstract class AbstractJUnit4BaseTest {
         
         for(int i=0; i < eventTypeCount; ++i) {
             System.out.println("Event type " + i + ": Happend " + eventIterations[i] + " times; "
-                    + "avg. seconds: " + (((double)eventDurations[i])/eventIterations[i]) / (1000*1000*1000));
+                    + "avg. seconds: "
+                    + (((double)eventDurations[i])/eventIterations[i]) / (1000*1000*1000));
         }
     }
 
