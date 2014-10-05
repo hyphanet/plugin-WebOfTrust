@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Test;
 
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -129,7 +130,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	 */
 	HashMap<String, Score> mReceivedScores = new HashMap<String, Score>();
 
-	public void testSubscribeUnsubscribe()
+	@Test public void testSubscribeUnsubscribe()
 	        throws FSParseException, IOException, InterruptedException {
 	    
 		testSubscribeUnsubscribe("Identities");
@@ -194,7 +195,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		return id;
 	}
 
-	public void testAllRandomized()
+	@Test public void testAllRandomized()
 	        throws InvalidParameterException, FSParseException, DuplicateTrustException,
 	        NotTrustedException, UnknownIdentityException, IOException, InterruptedException {
 	    
