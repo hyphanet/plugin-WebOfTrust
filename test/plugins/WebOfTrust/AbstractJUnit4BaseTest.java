@@ -117,10 +117,10 @@ public abstract class AbstractJUnit4BaseTest {
     protected void addRandomTrustValues(final ArrayList<Identity> identities, final int trustCount)
             throws InvalidParameterException {
         
-        assert(trustCount < identities.size()*identities.size())
+        assert(trustCount < identities.size()*(identities.size()-1))
             : "There can only be a single trust value between each pair of identities. The amount"
-            + " of such pairs is identities². If you could use a trustCount which is higher than"
-            + " this value then this function would run into an infinite loop.";
+            + " of such pairs is identities * (identities-1). If you could use a trustCount which is"
+            + " higher than this value then this function would run into an infinite loop.";
         
         final int identityCount = identities.size();
         
