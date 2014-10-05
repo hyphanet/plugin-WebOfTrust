@@ -152,6 +152,26 @@ public abstract class AbstractJUnit4BaseTest {
     }
 
     /**
+     * General purpose stress test: Attempts to hit all primary WOT codepaths by doing the given
+     * amount of events selected from the following operations:<br>
+     * - {@link WebOfTrust#createOwnIdentity(FreenetURI, String, boolean, String)}.<br>
+     * - {@link WebOfTrust#deleteOwnIdentity(String)}.<br>
+     * - {@link WebOfTrust#restoreOwnIdentity(FreenetURI)}.<br>
+     * - {@link WebOfTrust#restoreOwnIdentity(FreenetURI)} with existing colliding non-own Identity.
+     *   This is interesting because restoreOwnIdentity() then ought to properly delete the non-own
+     *   version of the identity first to prevent duplication.<br>
+     * - {@link WebOfTrust#addIdentity(String)}.<br>
+     * - {@link WebOfTrust#addContext(String, String)}.<br>
+     * - {@link WebOfTrust#setProperty(String, String, String)}.<br>
+     * - {@link WebOfTrust#setTrustWithoutCommit(Identity, Identity, byte, String)}.<br>
+     * - {@link WebOfTrust#removeTrustWithoutCommit(Trust)}.<br><br>
+     * 
+     * This can be used for testing client interfaces such as {@link SubscriptionManager}:<br>
+     * Doing most operations which WOT can do in a random manner should also cause this operations
+     * to be propagated to the client properly. By doing a snapshot of the WOT database after
+     * calling this function, and comparing it with what has been received at the client, you can
+     * validate that the client interface properly passed everything to the client.  
+     * 
      * @throws DuplicateTrustException      Upon test failure. Don't catch this, let it hit JUnit.
      * @throws NotTrustedException          Upon test failure. Don't catch this, let it hit JUnit.
      * @throws InvalidParameterException    Upon test failure. Don't catch this, let it hit JUnit.
