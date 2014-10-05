@@ -43,10 +43,15 @@ import freenet.support.PooledExecutor;
     +   "they likely won't be ignored. But then also check that to make sure.")
 public abstract class AbstractFullNodeTest
         extends AbstractJUnit4BaseTest {
+    
+    /** Needed for calling {@link NodeStarter#globalTestInit(File, boolean, LogLevel, String,
+     *  boolean, RandomSource) only once per VM as it requires that. */
+    private static boolean sGlobalTestInitDone = false;
 
     protected Node mNode; 
     
     protected WebOfTrust mWebOfTrust;
+    
     
     @Before public void setUp() throws NodeInitException, InvalidThresholdException, IOException {
         File nodeFolder = mTempFolder.newFolder();
@@ -83,9 +88,11 @@ public abstract class AbstractFullNodeTest
         params.ipAddressOverride = null;
         params.enableFCP = true;
 
-        
-        // NodeStarter.createTestNode() will throw if we do not do this before
-        NodeStarter.globalTestInit(nodeFolder, false, LogLevel.WARNING, "", true, mRandom);
+        if(!sGlobalTestInitDone) {
+            // NodeStarter.createTestNode() will throw if we do not do this before
+            NodeStarter.globalTestInit(nodeFolder, false, LogLevel.WARNING, "", true, mRandom);
+            sGlobalTestInitDone = true;
+        }
 
         mNode = NodeStarter.createTestNode(params);
         mNode.start(!params.enableSwapping);
