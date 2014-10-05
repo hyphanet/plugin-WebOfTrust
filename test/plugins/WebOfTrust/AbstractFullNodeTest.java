@@ -53,7 +53,9 @@ public abstract class AbstractFullNodeTest
     protected WebOfTrust mWebOfTrust;
     
     
-    @Before public void setUp() throws NodeInitException, InvalidThresholdException, IOException {
+    @Before public final void setUpNode()
+            throws NodeInitException, InvalidThresholdException, IOException {
+        
         File nodeFolder = mTempFolder.newFolder();
 
         // TODO: As of 2014-09-30, TestNodeParameters does not provide any defaults, so we have to
@@ -108,7 +110,7 @@ public abstract class AbstractFullNodeTest
         mWebOfTrust = (WebOfTrust) wotWrapper.getPlugin();
     }
     
-    @After public void tearDown() {
+    @After public final void tearDownNode() {
         // We cannot use exit because then JUnit will complain "Forked Java VM exited abnormally.".
         /* mNode.exit("JUnit tearDown()"); */
         
@@ -117,7 +119,7 @@ public abstract class AbstractFullNodeTest
     }
 
     @Override
-    protected WebOfTrust getWebOfTrust() {
+    protected final WebOfTrust getWebOfTrust() {
         return mWebOfTrust;
     }
 
