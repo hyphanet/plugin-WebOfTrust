@@ -110,17 +110,17 @@ public abstract class AbstractJUnit4BaseTest {
     }
     
     /**
-     * ATTENTION: Its impossible to store more trust values than the amount of identities squared:
-     * There can only be a single trust value between each pair of identities. The amount of such
-     * pairs is identities². If you specify a trustCount which is higher than this value then this
-     * function will run into an infinite loop.
-     * 
      * TODO: Adapt this to respect {@link Identity#doesPublishTrustList()}. First you need to adapt
      * the callers of this function to actually use identities which have set this to true - most
      * callers generate identities with the default value which is false.
      */
     protected void addRandomTrustValues(final ArrayList<Identity> identities, final int trustCount)
             throws InvalidParameterException {
+        
+        assert(trustCount < identities.size()*identities.size())
+            : "There can only be a single trust value between each pair of identities. The amount"
+            + " of such pairs is identities². If you could use a trustCount which is higher than"
+            + " this value then this function would run into an infinite loop.";
         
         final int identityCount = identities.size();
         
