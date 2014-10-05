@@ -129,6 +129,11 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	 * Key = {@link Score#getID()} 
 	 */
 	HashMap<String, Score> mReceivedScores = new HashMap<String, Score>();
+	
+	@Before public void setUpWOT() throws UnknownIdentityException, MalformedURLException {
+	    // Delete the seed identities since the test assumes the WOT database to be empty.
+	    deleteSeedIdentities();
+	}
 
 	@Test public void testSubscribeUnsubscribe()
 	        throws FSParseException, IOException, InterruptedException {
