@@ -88,10 +88,8 @@ public abstract class AbstractJUnit4BaseTest {
      * The OwnIdentitys are stored in the WOT database, and the original (= non-cloned) objects are
      * returned in an {@link ArrayList}.
      * 
-     * @throws MalformedURLException
-     *             Should never happen.
-     * @throws InvalidParameterException
-     *             Should never happen.
+     * @throws MalformedURLException        Upon test failure. Don't catch this, let it hit JUnit.
+     * @throws InvalidParameterException    Upon test failure. Don't catch this, let it hit JUnit.
      */
     protected ArrayList<OwnIdentity> addRandomOwnIdentities(int count)
             throws MalformedURLException, InvalidParameterException {
@@ -113,6 +111,8 @@ public abstract class AbstractJUnit4BaseTest {
      * TODO: Adapt this to respect {@link Identity#doesPublishTrustList()}. First you need to adapt
      * the callers of this function to actually use identities which have set this to true - most
      * callers generate identities with the default value which is false.
+     *
+     * @throws InvalidParameterException    Upon test failure. Don't catch this, let it hit JUnit.
      */
     protected void addRandomTrustValues(final ArrayList<Identity> identities, final int trustCount)
             throws InvalidParameterException {
@@ -151,6 +151,13 @@ public abstract class AbstractJUnit4BaseTest {
         Persistent.checkedCommit(getWebOfTrust().getDatabase(), this);
     }
 
+    /**
+     * @throws DuplicateTrustException      Upon test failure. Don't catch this, let it hit JUnit.
+     * @throws NotTrustedException          Upon test failure. Don't catch this, let it hit JUnit.
+     * @throws InvalidParameterException    Upon test failure. Don't catch this, let it hit JUnit.
+     * @throws UnknownIdentityException     Upon test failure. Don't catch this, let it hit JUnit.
+     * @throws MalformedURLException        Upon test failure. Don't catch this, let it hit JUnit.
+     */
     protected void doRandomChangesToWOT(int eventCount)
             throws DuplicateTrustException, NotTrustedException, InvalidParameterException,
             UnknownIdentityException, MalformedURLException {
