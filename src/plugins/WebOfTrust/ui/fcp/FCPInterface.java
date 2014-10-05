@@ -1234,7 +1234,6 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	
     	try {
             FCPPluginMessage reply = FCPPluginMessage.constructSuccessReply(message);
-            SimpleFieldSet sfs = reply.params;
             
 	    	if(to.equals("Identities")) {
 	    		subscription = mSubscriptionManager.subscribeToIdentities(clientID);
@@ -1245,7 +1244,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 	    	} else
 	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
 	    	
-	    	sfs = new SimpleFieldSet(true);
+	    	SimpleFieldSet sfs = reply.params;
 	    	sfs.putOverwrite("Message", "Subscribed");
 	    	sfs.putOverwrite("SubscriptionID", subscription.getID());
 	    	sfs.putOverwrite("To", to);
