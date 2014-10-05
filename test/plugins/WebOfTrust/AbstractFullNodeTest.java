@@ -85,8 +85,7 @@ public abstract class AbstractFullNodeTest
 
         
         // NodeStarter.createTestNode() will throw if we do not do this before
-        mRandom
-            = NodeStarter.globalTestInit(nodeFolder, false, LogLevel.WARNING, "", true, mRandom);
+        NodeStarter.globalTestInit(nodeFolder, false, LogLevel.WARNING, "", true, mRandom);
 
         mNode = NodeStarter.createTestNode(params);
         mNode.start(!params.enableSwapping);
