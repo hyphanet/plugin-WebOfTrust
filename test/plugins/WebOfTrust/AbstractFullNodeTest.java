@@ -7,11 +7,15 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import freenet.crypt.RandomSource;
+import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
@@ -123,4 +127,36 @@ public abstract class AbstractFullNodeTest
         return mWebOfTrust;
     }
 
+    /**
+     * {@link AbstractJUnit4BaseTest} loads WOT as a real plugin just as if it was running in
+     * a regular node. This will cause WOT to create the seed identities.<br>
+     * If you need to do a test upon a really empty database, use this function to delete them.
+     * 
+     * @throws UnknownIdentityException
+     *             If the seeds did not exist. This is usually an error, don't catch it, let it hit
+     *             JUnit.
+     * @throws MalformedURLException
+     *             Upon internal failure. Don't catch this, let it hit JUnit.
+     */
+    protected final void deleteSeedIdentities()
+            throws UnknownIdentityException, MalformedURLException {
+        
+        assertEquals(WebOfTrust.SEED_IDENTITIES.length, mWebOfTrust.getAllIdentities().size());
+        
+        // The function for deleting identities deleteWithoutCommit() is mostly a debug function
+        // and thus shouldn't be used upon complex databases. See its JavaDoc.
+        assertEquals(
+              "This function might have side effects upon databases which contain more than"
+            + " just the seed identities, so please do not use it upon such databases.",
+            0, mWebOfTrust.getAllTrusts().size() + mWebOfTrust.getAllScores().size());
+        
+        mWebOfTrust.beginTrustListImport();
+        for(String seedURI : WebOfTrust.SEED_IDENTITIES) {
+            mWebOfTrust.deleteWithoutCommit(mWebOfTrust.getIdentityByURI(new FreenetURI(seedURI)));
+        }
+        mWebOfTrust.finishTrustListImport();
+        Persistent.checkedCommit(mWebOfTrust.getDatabase(), mWebOfTrust);
+        
+        assertEquals(0, mWebOfTrust.getAllIdentities().size());
+    }
 }

@@ -1978,7 +1978,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * You have to lock the WebOfTrust, the IntroductionPuzzleStore, the IdentityFetcher and the SubscriptionManager before calling this function.
 	 */
-	private void deleteWithoutCommit(Identity identity) {
+	void deleteWithoutCommit(Identity identity) {
 		// We want to use beginTrustListImport, finishTrustListImport / abortTrustListImport.
 		// If the caller already handles that for us though, we should not call those function again.
 		// So we check whether the caller already started an import.
