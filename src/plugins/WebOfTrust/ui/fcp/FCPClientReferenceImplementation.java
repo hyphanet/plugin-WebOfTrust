@@ -16,7 +16,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.UUID;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.FetchState;
@@ -37,7 +36,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
 import freenet.node.PrioRunnable;
 import freenet.node.fcp.FCPPluginClient;
-import freenet.pluginmanager.FredPluginTalker;
+import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.pluginmanager.PluginTalker;
@@ -203,7 +202,8 @@ public final class FCPClientReferenceImplementation {
 	private EnumMap<SubscriptionType, String> mSubscriptionIDs = new EnumMap<SubscriptionType, String>(SubscriptionType.class);
 
 	
-	/** Implements interface {@link FredPluginTalker}: Receives messages from WOT in a callback. */
+	/** Implements interface {@link FredPluginFCPMessageHandler.ClientSideFCPMessageHandler}:
+	 *  Receives messages from WOT in a callback. */
 	private final FCPMessageReceiver mFCPMessageReceiver = new FCPMessageReceiver();
 	
 	/** Maps the String name of WOT FCP messages to the handler which shall deal with them */
@@ -441,10 +441,9 @@ public final class FCPClientReferenceImplementation {
 		}
 		
 		try {
-			mConnectionIdentifier = UUID.randomUUID().toString();
-			mConnection = mPluginRespirator.getPluginTalker(mFCPMessageReceiver, WOT_FCP_NAME, mConnectionIdentifier);
+			mConnection = mPluginRespirator.connecToOtherPlugin(WOT_FCP_NAME, mFCPMessageReceiver);
 			mSubscriptionIDs.clear();
-			Logger.normal(this, "Connected to WOT, identifier: " + mConnectionIdentifier);
+			Logger.normal(this, "Connected to WOT, connection: " + mConnection);
 			try {
 				mConnectionStatusChangedHandler.handleConnectionStatusChanged(true);
 			} catch(Throwable t) {
@@ -606,7 +605,9 @@ public final class FCPClientReferenceImplementation {
 	 * - In reply to messages sent to it via {@link PluginTalker}
 	 * - As events happen via event-{@link Notification}s
 	 */
-	private class FCPMessageReceiver implements FredPluginTalker {
+	private class FCPMessageReceiver
+	    implements FredPluginFCPMessageHandler.ClientSideFCPMessageHandler {
+	    
 		/**
 		 * Called by Freenet when it receives a FCP message from WOT.
 		 * 
