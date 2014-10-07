@@ -671,7 +671,7 @@ public final class FCPClientReferenceImplementation {
             
 			if(mFCPTrafficDump != null) {
 				mFCPTrafficDump.println("---------------- " + new Date() + " Received: ---------------- ");
-				mFCPTrafficDump.println(params.toOrderedString());
+				mFCPTrafficDump.println(message.params.toOrderedString());
 			}
 			
 			if(!WOT_FCP_NAME.equals(pluginname))
