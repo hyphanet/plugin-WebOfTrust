@@ -70,6 +70,10 @@ import freenet.support.io.NativeThread;
  * NOTICE: This class was based upon class SubscriptionManagerFCPTest, which you can find in the unit tests. Please backport improvements.
  * [Its not possible to link it in the JavaDoc because the unit tests are not within the classpath.] 
  * 
+ * FIXME: This class has recently been adapted to fred fcp-plugin-rewrite. Review the whole of it to
+ * check whether JavaDoc and its general behavior are correct. Also, do a full
+ * {@link DebugFCPClient} test run to ensure that this class here works properly.
+ * 
  * @see FCPInterface The "server" to which a FCP client connects.
  * @see SubscriptionManager The foundation of event-notifications and therefore the backend of all FCP traffic which this class does.
  * @author xor (xor@freenetproject.org)
@@ -655,6 +659,9 @@ public final class FCPClientReferenceImplementation {
 	 * Receives FCP messages from WOT:
 	 * - In reply to messages sent to it via {@link PluginTalker}
 	 * - As events happen via event-{@link Notification}s
+	 * 
+	 * FIXME: Test whether Logger will log messages of this class if only logging is enabled for
+	 * {@link FCPClientReferenceImplementation}.
 	 */
 	private class FCPMessageReceiver
 	    implements FredPluginFCPMessageHandler.ClientSideFCPMessageHandler {
@@ -706,15 +713,23 @@ public final class FCPClientReferenceImplementation {
 			                           "; full message: " + message;
 			    
 			    Logger.warning(this, errorMessage);
-				return;
+			    return !message.isReplyMessage() ? FCPPluginMessage.constructErrorReply(
+			                message , "InternalError", errorMessage)
+			           : null;
 			}
 
 			if(logMINOR) Logger.minor(this, "Handling message '" + messageString + "' with " + handler + " ...");
 			try {
 				handler.handle(message.params, message.data);
+				return !message.isReplyMessage() ? FCPPluginMessage.constructSuccessReply(message)
+				       : null;
 			} catch(ProcessingFailedException e) {
-				Logger.error(FCPClientReferenceImplementation.this, "Message handler failed and requested throwing to WOT, doing so: " + handler, e);
-				throw new RuntimeException(e);
+			    String errorMessage = "Message handler failed and requested passing the error to"
+			                        + " WOT, doing so: " + handler;
+				Logger.error(this, errorMessage, e);
+				return !message.isReplyMessage() ? FCPPluginMessage.constructErrorReply(
+				           message, "InternalError", errorMessage)
+				       : null;
 			} finally {
 				if(logMINOR) Logger.minor(this, "Handling message finished.");
 			}
