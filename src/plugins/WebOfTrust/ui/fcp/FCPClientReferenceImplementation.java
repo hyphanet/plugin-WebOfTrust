@@ -581,8 +581,10 @@ public final class FCPClientReferenceImplementation {
 	
 	/**
 	 * Iterates over the {@link SubscriptionType} enum values. Checks whether the client has requested to subscribe / unsubscribe any of them and does so. 
+	 * @throws IOException See {@link #fcp_Subscribe(SubscriptionType)} and
+	 *                     {@link #fcp_Unsubscribe(SubscriptionType)}.
 	 */
-	private synchronized void checkSubscriptions() {
+	private synchronized void checkSubscriptions() throws IOException {
 		for(SubscriptionType type : SubscriptionType.values()) {
 			final boolean shouldSubscribe = mSubscribeTo.contains(type);
 			final boolean isSubscribed = mSubscriptionIDs.get(type) != null;
