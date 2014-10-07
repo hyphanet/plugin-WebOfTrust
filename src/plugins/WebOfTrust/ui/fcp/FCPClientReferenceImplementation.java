@@ -514,12 +514,19 @@ public final class FCPClientReferenceImplementation {
 		Logger.normal(this, "force_disconnect()");
 		
 		if(mConnection != null) {
-			for(SubscriptionType type : mSubscriptionIDs.keySet()) {
-				fcp_Unsubscribe(type);
-				// The "Unsubscribed" message would normally trigger the removal from the mSubscriptionIDs array but we cannot
-				// receive it anymore after we are disconnected so we remove the ID ourselves
-				mSubscriptionIDs.remove(type);
-			}
+		    try {
+		        for(SubscriptionType type : mSubscriptionIDs.keySet())
+		            fcp_Unsubscribe(type);
+		    } catch (IOException e) {
+		        // The connection is dead already, so we cannot unsubscribe and don't have to.
+		        Logger.normal(this, "force_disconnect(): Disconnected already, not unsubscribing.");
+		    }
+		    
+            // The "Unsubscribed" message would normally trigger the removal from the 
+            // mSubscriptionIDs array but we cannot receive it anymore after we are
+            // disconnected so we remove the ID ourselves
+            for(SubscriptionType type : mSubscriptionIDs.keySet())
+                mSubscriptionIDs.remove(type);
 			
 			try {
 				mConnectionStatusChangedHandler.handleConnectionStatusChanged(false);
