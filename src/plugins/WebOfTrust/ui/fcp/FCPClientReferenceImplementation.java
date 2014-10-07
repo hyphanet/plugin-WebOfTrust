@@ -682,12 +682,21 @@ public final class FCPClientReferenceImplementation {
 				                   + "; Passed client: " + client
 				                   + "; Passed FCPPluginMessage ==" + message;
 
-				Logger.error(this, "Received unexpected message, maybe because we reconnected and"
-				                 + " the old server is still alive? " + state);
-				// There might be a dangling subscription for which we are still receiving event notifications.
+				final String errorMessage =
+				    "Received unexpected message, maybe because we reconnected and"
+                  + " the old server is still alive? " + state;
+				
+				Logger.error(this, errorMessage);
+				
+				// There might be a dangling subscription at the side of the remote WOT for which we
+				// are still receiving event notifications.
 				// WOT terminates subscriptions automatically once their failure counter reaches a certain limit.
-				// For allowing WOT to notice the failure, we must throw a RuntimeException().
-				throw new RuntimeException("Out of band message: You are not connected or your identifier mismatches: " + state);
+				// For allowing WOT to notice the failure, we must reply with an error reply (as 
+				// long as the message wasn't a reply - Replying to replies is not allowed.) 
+                if(!message.isReplyMessage()) { // 
+                    return FCPPluginMessage.constructErrorReply(
+                        message, "InternalError", errorMessage);
+                }
 			}
 
 			final String messageString = params.get("Message");
