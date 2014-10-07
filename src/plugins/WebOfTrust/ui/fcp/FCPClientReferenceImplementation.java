@@ -568,7 +568,7 @@ public final class FCPClientReferenceImplementation {
 	 * {@link PluginRespirator#connectToOtherPlugin(String,
 	 * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} for an explanation.
 	 * 
-	 * @throws IOException See {@link FCPPluginClient#send(SendDirection, FCPPluginMessage)}.
+	 * @throws IOException See {@link #send(SimpleFieldSet)}.
 	 */
 	private synchronized void fcp_Ping() throws IOException {
 		if(logMINOR) Logger.minor(this, "fcp_Ping()");
