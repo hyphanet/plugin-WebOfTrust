@@ -36,6 +36,7 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
 import freenet.node.PrioRunnable;
+import freenet.node.fcp.FCPPluginClient;
 import freenet.pluginmanager.FredPluginTalker;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
@@ -133,10 +134,7 @@ public final class FCPClientReferenceImplementation {
 	/** The connection to the Web Of Trust plugin. Null if we are disconnected.
 	 * volatile because {@link #connected()} uses it without synchronization. 
 	 * MUST only be non-null if {@link #mClientState} equals {@link ClientState#Started} or {@link ClientState#StopRequested} */
-	private volatile PluginTalker mConnection = null;
-	
-	/** A random {@link UUID} which identifies the connection to the Web Of Trust plugin. Randomized upon every reconnect. */
-	private String mConnectionIdentifier = null;
+	private volatile FCPPluginClient mConnection = null;
 	
 	/** Called when the connection to WOT is established or lost. Shall be used by the UI to display a "Please install Web Of Trust" warning. */
 	private final ConnectionStatusChangedHandler mConnectionStatusChangedHandler;
