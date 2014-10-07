@@ -626,8 +626,9 @@ public final class FCPClientReferenceImplementation {
 	 * Sends a "Unsubscribe" FCP message to WOT. It will reply with an "Unsubscribed" message which is handled by {@link FCPSubscriptionTerminatedHandler}.
 	 * 
 	 * @param type The {@link SubscriptionType} which you want to unsubscribe. {@link #mSubscriptionIDs} must contain an ID for this type. 
+	 * @throws IOException See {@link #send(SimpleFieldSet)}.
 	 */
-	private void fcp_Unsubscribe(final SubscriptionType type) {
+	private void fcp_Unsubscribe(final SubscriptionType type) throws IOException {
 		Logger.normal(this, "fcp_Unsubscribe(): " + type);
 		
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
