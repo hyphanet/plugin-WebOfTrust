@@ -405,15 +405,17 @@ public final class FCPClientReferenceImplementation {
 				if(!connected() || pingTimedOut())
 					connect();
 
-				if(connected()) {
-				    try {
-				        fcp_Ping();
-	                    checkSubscriptions();
-				    } catch(IOException e) {
-				        Logger.normal(this, "Connetion lost in connection-checking loop.", e);
-				        force_disconnect();
-				        return;
-				    }
+				// The above connection attempt failed so we return and wait for the next execution.
+				if(!connected())
+				    return;
+				
+				try {
+				    fcp_Ping();
+				    checkSubscriptions();
+				} catch(IOException e) {
+				    Logger.normal(this, "Connetion lost in connection-checking loop.", e);
+				    force_disconnect();
+				    return;
 				}
 			} catch (Exception e) {
 				Logger.error(this, "Error in connection-checking loop!", e);
