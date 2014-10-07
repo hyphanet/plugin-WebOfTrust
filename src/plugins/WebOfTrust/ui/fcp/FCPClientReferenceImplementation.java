@@ -692,11 +692,10 @@ public final class FCPClientReferenceImplementation {
 				// are still receiving event notifications.
 				// WOT terminates subscriptions automatically once their failure counter reaches a certain limit.
 				// For allowing WOT to notice the failure, we must reply with an error reply (as 
-				// long as the message wasn't a reply - Replying to replies is not allowed.) 
-                if(!message.isReplyMessage()) { // 
-                    return FCPPluginMessage.constructErrorReply(
-                        message, "InternalError", errorMessage);
-                }
+				// long as the message wasn't a reply - Replying to replies is not allowed.)
+                return !message.isReplyMessage() ? FCPPluginMessage.constructErrorReply(
+                            message, "InternalError", errorMessage)
+                       : null;
 			}
 
 			final String messageString = message.params.get("Message");
