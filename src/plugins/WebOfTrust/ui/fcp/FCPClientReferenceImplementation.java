@@ -416,7 +416,14 @@ public final class FCPClientReferenceImplementation {
 				    force_disconnect();
 				    return; // finally{} block schedules fast reconnecting.
 				}
-			} catch (Exception e) {
+			} catch (RuntimeException | Error e) {
+			    // This catches every non-declare-able Exception to ensure that the thread doesn't
+			    // die because of them: Keeping the connection alive is important so this thread
+			    // must stay alive.
+			    // We catch "RuntimeException | Error" instead of "Throwable" to exclude
+			    // declare-able Exceptions to ensure that people are noticed by the compiler if
+			    // they add code which forgets handling them.
+			    
 				Logger.error(this, "Error in connection-checking loop!", e);
 				force_disconnect();
 			} finally {
