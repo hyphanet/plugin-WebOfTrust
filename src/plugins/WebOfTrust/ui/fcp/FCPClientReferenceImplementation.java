@@ -441,7 +441,7 @@ public final class FCPClientReferenceImplementation {
 		}
 		
 		try {
-			mConnection = mPluginRespirator.connecToOtherPlugin(WOT_FCP_NAME, mFCPMessageReceiver);
+			mConnection = mPluginRespirator.connectToOtherPlugin(WOT_FCP_NAME, mFCPMessageReceiver);
 			mSubscriptionIDs.clear();
 			Logger.normal(this, "Connected to WOT, connection: " + mConnection);
 			try {

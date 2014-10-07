@@ -89,7 +89,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
     @Before
     public void setUpClient() throws Exception {
         mClient = mWebOfTrust.getPluginRespirator()
-            .connecToOtherPlugin(FCPClientReferenceImplementation.WOT_FCP_NAME, mReplyReceiver);
+            .connectToOtherPlugin(FCPClientReferenceImplementation.WOT_FCP_NAME, mReplyReceiver);
     }
 
 	/**
