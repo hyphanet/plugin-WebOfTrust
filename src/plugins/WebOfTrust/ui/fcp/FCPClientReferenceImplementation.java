@@ -406,17 +406,22 @@ public final class FCPClientReferenceImplementation {
 					connect();
 
 				if(connected()) {
-					fcp_Ping();
-					checkSubscriptions();
+				    try {
+				        fcp_Ping();
+	                    checkSubscriptions();
+				    } catch(IOException e) {
+				        Logger.normal(this, "Connetion lost in connection-checking loop.", e);
+				        force_disconnect();
+				        return;
+				    }
 				}
 			} catch (Exception e) {
 				Logger.error(this, "Error in connection-checking loop!", e);
 				force_disconnect();
 			} finally {
 				scheduleKeepaliveLoopExecution();
+	            if(logMINOR) Logger.minor(this, "Connection-checking finished.");
 			}
-
-			if(logMINOR) Logger.minor(this, "Connection-checking finished.");
 		}
 
 		/**
@@ -544,9 +549,16 @@ public final class FCPClientReferenceImplementation {
 	
 	/**
 	 * Sends a "Ping" FCP message to WOT. It will reply with a "Pong" message which is then handled by the {@link FCPPongHandler}.
-	 * Used for checking whether the connection to WOT is alive.
+	 * Used for checking whether the connection to WOT is alive.<br><br>
+	 * 
+	 * TODO: Code quality: This is a good candidate for using
+	 * {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage, long)}. See
+	 * {@link PluginRespirator#connectToOtherPlugin(String,
+	 * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} for an explanation.
+	 * 
+	 * @throws IOException See {@link FCPPluginClient#send(SendDirection, FCPPluginMessage)}.
 	 */
-	private synchronized void fcp_Ping() {
+	private synchronized void fcp_Ping() throws IOException {
 		if(logMINOR) Logger.minor(this, "fcp_Ping()");
 		
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
