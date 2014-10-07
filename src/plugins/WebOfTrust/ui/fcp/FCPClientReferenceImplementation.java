@@ -1282,6 +1282,7 @@ public final class FCPClientReferenceImplementation {
 		
 		// Call fcp_Unsubscribe() on any remaining subscriptions and wait() for the "Unsubscribe" messages to arrive
 		if(!mSubscriptionIDs.isEmpty() && mConnection != null) {
+		    try {
 			for(SubscriptionType type : mSubscriptionIDs.keySet()) {
 				fcp_Unsubscribe(type);
 				// The handler for "Unsubscribed" messages will notifyAll() once there are no more subscriptions 
@@ -1295,6 +1296,12 @@ public final class FCPClientReferenceImplementation {
 			} catch (InterruptedException e) {
 				Thread.interrupted();
 			}			
+	        } catch(IOException e) {
+	            // We catch this here instead of closer to the fcp_Unsubscribe() call to ensure that
+	            // we don't enter the wait(): Waiting for replies to confirm the unsubscription
+	            // does not make any sense if the connection is closed - replies won't arrive then.
+	            Logger.normal(this, "stop(): Disconnected during fcp_Unsubscribe().");
+	        }
 		}
 		
 		if(!mSubscriptionIDs.isEmpty()) {
