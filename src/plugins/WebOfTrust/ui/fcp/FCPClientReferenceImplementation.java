@@ -665,8 +665,10 @@ public final class FCPClientReferenceImplementation {
 		 * The function will determine which {@link FCPMessageHandler} is responsible for the message type and call its
 		 * {@link FCPMessageHandler#handle(SimpleFieldSet, Bucket).
 		 */
-		@Override
-		public synchronized final void onReply(final String pluginname, final String indentifier, final SimpleFieldSet params, final Bucket data) {
+        @Override
+        public final synchronized FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client,
+                FCPPluginMessage message) {
+            
 			if(mFCPTrafficDump != null) {
 				mFCPTrafficDump.println("---------------- " + new Date() + " Received: ---------------- ");
 				mFCPTrafficDump.println(params.toOrderedString());
