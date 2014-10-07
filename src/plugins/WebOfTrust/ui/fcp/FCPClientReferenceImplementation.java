@@ -405,9 +405,8 @@ public final class FCPClientReferenceImplementation {
 				if(!connected() || pingTimedOut())
 					connect();
 
-				// The above connection attempt failed so we return and wait for the next execution.
 				if(!connected())
-				    return;
+				    return; // finally{} block schedules fast reconnecting.
 				
 				try {
 				    fcp_Ping();
@@ -415,12 +414,15 @@ public final class FCPClientReferenceImplementation {
 				} catch(IOException e) {
 				    Logger.normal(this, "Connetion lost in connection-checking loop.", e);
 				    force_disconnect();
-				    return;
+				    return; // finally{} block schedules fast reconnecting.
 				}
 			} catch (Exception e) {
 				Logger.error(this, "Error in connection-checking loop!", e);
 				force_disconnect();
 			} finally {
+			    // Will schedule this function to be executed again.
+			    // The delay is long if mConnection is alive and we are just waiting for a ping.
+			    // The delay is short if mConnection == null and we need to reconnection.
 				scheduleKeepaliveLoopExecution();
 	            if(logMINOR) Logger.minor(this, "Connection-checking finished.");
 			}
