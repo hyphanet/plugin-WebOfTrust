@@ -673,16 +673,14 @@ public final class FCPClientReferenceImplementation {
 				mFCPTrafficDump.println("---------------- " + new Date() + " Received: ---------------- ");
 				mFCPTrafficDump.println(message.params.toOrderedString());
 			}
-			
-			if(!WOT_FCP_NAME.equals(pluginname))
-				throw new RuntimeException("Plugin is not supposed to talk to us: " + pluginname);
 
 			// Check whether we are actually connected. If we are not connected, we must not handle FCP messages.
-			// We must also check whether the identifier of the connection matches. If it does not, the message belongs to an old connection.
 			// We do NOT have to check mClientState: mConnection must only be non-null in states where it is acceptable.
-			if(mConnection == null || !mConnectionIdentifier.equals(indentifier)) {
-				final String state = "connected==" + (mConnection!=null) + "; identifier==" + indentifier
-						+ "ClientState==" + mClientState + "; SimpleFieldSet: " + params;
+			if(mConnection == null || client != mConnection) {
+				final String state = "My client: " + mConnection
+				                   + "; My ClientState:" + mClientState
+				                   + "; Passed client: " + client
+				                   + "; Passed FCPPluginMessage ==" + message;
 
 				Logger.error(this, "Received out of band message, maybe because we reconnected and the old server is still alive? " + state);
 				// There might be a dangling subscription for which we are still receiving event notifications.
