@@ -1283,19 +1283,21 @@ public final class FCPClientReferenceImplementation {
 		// Call fcp_Unsubscribe() on any remaining subscriptions and wait() for the "Unsubscribe" messages to arrive
 		if(!mSubscriptionIDs.isEmpty() && mConnection != null) {
 		    try {
-			for(SubscriptionType type : mSubscriptionIDs.keySet()) {
-				fcp_Unsubscribe(type);
-				// The handler for "Unsubscribed" messages will notifyAll() once there are no more subscriptions 
-			}
+		        for(SubscriptionType type : mSubscriptionIDs.keySet()) {
+		            fcp_Unsubscribe(type);
+		            // The handler for "Unsubscribed" messages will notifyAll() once there are no
+		            // more subscriptions 
+		        }
 
-			Logger.normal(this, "stop(): Waiting for fcp_Unsubscribe() calls to be confirmed...");
-			try {
-				// Releases the lock on this object - which is why we needed to set mClientState = ClientState.StopRequested:
-				// To prevent new subscriptions from happening in between
-				wait(SHUTDOWN_UNSUBSCRIBE_TIMEOUT);
-			} catch (InterruptedException e) {
-				Thread.interrupted();
-			}			
+		        Logger.normal(this, "stop(): Waiting for replies to fcp_Unsubscribe() calls...");
+		        try {
+		            // Releases the lock on this object - which is why we needed to set
+		            // mClientState = ClientState.StopRequested:
+		            // To prevent new subscriptions from happening in between
+		            wait(SHUTDOWN_UNSUBSCRIBE_TIMEOUT);
+		        } catch (InterruptedException e) {
+		            Thread.interrupted();
+		        }			
 	        } catch(IOException e) {
 	            // We catch this here instead of closer to the fcp_Unsubscribe() call to ensure that
 	            // we don't enter the wait(): Waiting for replies to confirm the unsubscription
