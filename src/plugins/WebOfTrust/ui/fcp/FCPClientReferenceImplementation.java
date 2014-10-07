@@ -699,17 +699,20 @@ public final class FCPClientReferenceImplementation {
                 }
 			}
 
-			final String messageString = params.get("Message");
+			final String messageString = message.params.get("Message");
 			final FCPMessageHandler handler = mFCPMessageHandlers.get(messageString);
 
 			if(handler == null) {
-				Logger.warning(this, "Unknown message type: " + messageString + "; SimpleFieldSet: " + params);
+			    String errorMessage =  "Unknown message type: " + messageString +
+			                           "; full message: " + message;
+			    
+			    Logger.warning(this, errorMessage);
 				return;
 			}
 
 			if(logMINOR) Logger.minor(this, "Handling message '" + messageString + "' with " + handler + " ...");
 			try {
-				handler.handle(params, data);
+				handler.handle(message.params, message.data);
 			} catch(ProcessingFailedException e) {
 				Logger.error(FCPClientReferenceImplementation.this, "Message handler failed and requested throwing to WOT, doing so: " + handler, e);
 				throw new RuntimeException(e);
