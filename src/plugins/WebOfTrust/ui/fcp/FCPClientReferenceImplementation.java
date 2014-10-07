@@ -393,15 +393,16 @@ public final class FCPClientReferenceImplementation {
 		 * - Every {@link #WOT_PING_DELAY} if we have a connection to WOT 
 		 */
 		@Override
-		public final synchronized void run() { 
-			if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
+		public final synchronized void run() {
+		    try {
+		        if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
 
-			if(mClientState != ClientState.Started) {
-				Logger.error(this, "Connection-checking loop executed in wrong ClientState: " + mClientState);
-				return;
-			}
+		        if(mClientState != ClientState.Started) {
+		            Logger.error(this, "Connection-checking loop executed in wrong ClientState: "
+		                + mClientState);
+		            return;
+		        }
 
-			try {
 				if(!connected() || pingTimedOut())
 					connect();
 
