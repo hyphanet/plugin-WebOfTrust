@@ -501,9 +501,10 @@ public final class FCPClientReferenceImplementation {
 			}
 		}
 		
-		// Notice: PluginTalker has no disconnection mechanism, we can must drop references to existing connections and then they will be GCed
+		// Notice: FCPPluginClient has explicit no disconnection mechanism. The JavaDoc of
+		// PluginRespirator.connectToOtherPlugin() instructs us that can and must drop all strong
+		// references to the FCPPluginClient to it to cause disconnection implicitly.
 		mConnection = null;
-		mConnectionIdentifier = null;
 		
 		if(mFCPTrafficDump != null) {
 			mFCPTrafficDump.println("---------------- " + new Date() + " Disconnected. ---------------- ");
