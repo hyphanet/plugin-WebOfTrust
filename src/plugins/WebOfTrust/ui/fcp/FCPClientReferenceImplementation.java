@@ -36,7 +36,9 @@ import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
 import freenet.node.PrioRunnable;
 import freenet.node.fcp.FCPPluginClient;
+import freenet.node.fcp.FCPPluginClient.SendDirection;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
+import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.pluginmanager.PluginTalker;
@@ -463,13 +465,21 @@ public final class FCPClientReferenceImplementation {
 	}
 	
 	/**
-	 * Sends the given {@link SimpleFieldSet} via {@link #mConnection}.
-	 * Attention: Does not synchronize, does not check whether {@link #mConnection} is null.
+	 * Sends the given {@link SimpleFieldSet} via {@link #mConnection} by boxing it into a
+	 * {@link FCPPluginMessage}.<br><br>
+	 * 
+	 * ATTENTION: This sends a <b>non-reply</b> {@link FCPPluginMessage}. You <b>must not</b> use
+	 * this to send reply messages.<br>
+	 * See {@link FCPPluginMessage#construct(SimpleFieldSet, Bucket)}.<br><br>
+	 * 
+	 * ATTENTION: Does not synchronize, does not check whether {@link #mConnection} is null.<br><br>
 	 * 
 	 * If {@link #mFCPTrafficDump} is non-null, the SFS is dumped to it.
+	 * 
+	 * @throws IOException See {@link FCPPluginClient#send(SendDirection, FCPPluginMessage)}.
 	 */
-	private void send(final SimpleFieldSet sfs) {
-		mConnection.send(sfs, null);
+	private void send(final SimpleFieldSet sfs) throws IOException {
+		mConnection.send(SendDirection.ToServer, FCPPluginMessage.construct(sfs, null));
 		if(mFCPTrafficDump != null) {
 			mFCPTrafficDump.println("---------------- " + new Date() + " Sent: ---------------- ");
 			mFCPTrafficDump.println(sfs.toOrderedString());
