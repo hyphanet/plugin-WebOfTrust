@@ -235,13 +235,18 @@ public final class FCPClientReferenceImplementation {
 	
 	/**
 	 * Set this to true for debugging:
-	 * Will enable dumping of the {@link SimpleFieldSet} FCP traffic to a text file. The filename will be:
+	 * Will enable dumping of the FCP traffic to a text file. The filename will be:
 	 * <code>this.getClass().getSimpleName() + " FCP dump.txt"</code>
 	 */
 	public final boolean mDumpFCPTraffic = false;
 	
 	/**
-	 * Used for dumping the {@link SimpleFieldSet} FCP traffic to a text file for debugging.
+	 * Used for dumping the FCP traffic to a text file for debugging.
+	 * FIXME: Change callers to not only log the SimpleFieldSet, but the full FCPPluginMessage:
+	 * It contains additional infomration which *is* used by WOT, namely the fields
+	 * {@link FCPPluginMessage#success}, {@link FCPPluginMessage#errorCode} and
+	 * {@link FCPPluginMessage#errorMessage}.
+	 * 
 	 * @see #mDumpFCPTraffic
 	 */
 	private final PrintWriter mFCPTrafficDump;
