@@ -611,8 +611,9 @@ public final class FCPClientReferenceImplementation {
 	 * - A "Subscribed" message, which is handled by {@link FCPSubscriptionSucceededHandler}.
 	 * 
 	 * @param type The {@link SubscriptionType} to which you want to subscribe.
+	 * @throws IOException See {@link #send(SimpleFieldSet)}.
 	 */
-	private void fcp_Subscribe(final SubscriptionType type) {
+	private void fcp_Subscribe(final SubscriptionType type) throws IOException {
 		Logger.normal(this, "fcp_Subscribe(): " + type);
 		
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
