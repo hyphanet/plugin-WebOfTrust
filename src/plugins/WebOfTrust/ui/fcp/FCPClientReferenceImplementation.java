@@ -393,7 +393,8 @@ public final class FCPClientReferenceImplementation {
 		 * - Every {@link #WOT_PING_DELAY} if we have a connection to WOT 
 		 */
 		@Override
-		public final synchronized void run() { 
+		public final void run() { 
+			synchronized(FCPClientReferenceImplementation.this) {
 			if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
 
 			if(mClientState != ClientState.Started) {
@@ -417,6 +418,7 @@ public final class FCPClientReferenceImplementation {
 			}
 
 			if(logMINOR) Logger.minor(this, "Connection-checking finished.");
+			}
 		}
 
 		/**
@@ -616,7 +618,8 @@ public final class FCPClientReferenceImplementation {
 		 * {@link FCPMessageHandler#handle(SimpleFieldSet, Bucket).
 		 */
 		@Override
-		public synchronized final void onReply(final String pluginname, final String indentifier, final SimpleFieldSet params, final Bucket data) {
+		public final void onReply(final String pluginname, final String indentifier, final SimpleFieldSet params, final Bucket data) {
+			synchronized(FCPClientReferenceImplementation.this) {
 			if(mFCPTrafficDump != null) {
 				mFCPTrafficDump.println("---------------- " + new Date() + " Received: ---------------- ");
 				mFCPTrafficDump.println(params.toOrderedString());
@@ -655,6 +658,7 @@ public final class FCPClientReferenceImplementation {
 				throw new RuntimeException(e);
 			} finally {
 				if(logMINOR) Logger.minor(this, "Handling message finished.");
+			}
 			}
 		}
 
@@ -766,7 +770,7 @@ public final class FCPClientReferenceImplementation {
     		// - Update the mClientState
     		// - Notify the stop() function that shutdown is finished.
 	    	if(mClientState == ClientState.StopRequested && mSubscriptionIDs.isEmpty())
-	    		notifyAll();
+	    		FCPClientReferenceImplementation.this.notifyAll();
 		}
 	}
 	
