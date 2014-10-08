@@ -402,8 +402,9 @@ public final class FCPClientReferenceImplementation {
 		 * - Every {@link #WOT_PING_DELAY} if we have a connection to WOT 
 		 */
 		@Override
-		public final synchronized void run() {
-		    try {
+		public final void run() { 
+			synchronized(FCPClientReferenceImplementation.this) {
+			try {
 		        if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
 
 		        if(mClientState != ClientState.Started) {
@@ -442,6 +443,7 @@ public final class FCPClientReferenceImplementation {
 			    // The delay is short if mConnection == null and we need to reconnection.
 				scheduleKeepaliveLoopExecution();
 	            if(logMINOR) Logger.minor(this, "Connection-checking finished.");
+			}
 			}
 		}
 
@@ -673,8 +675,9 @@ public final class FCPClientReferenceImplementation {
 		 * {@link FCPMessageHandler#handle(SimpleFieldSet, Bucket).
 		 */
         @Override
-        public final synchronized FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client,
+        public final FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client,
                 FCPPluginMessage message) {
+			synchronized(FCPClientReferenceImplementation.this) {
             
 			if(mFCPTrafficDump != null) {
 				mFCPTrafficDump.println("---------------- " + new Date() + " Received: ---------------- ");
@@ -732,6 +735,7 @@ public final class FCPClientReferenceImplementation {
 				       : null;
 			} finally {
 				if(logMINOR) Logger.minor(this, "Handling message finished.");
+			}
 			}
 		}
 
@@ -843,7 +847,7 @@ public final class FCPClientReferenceImplementation {
     		// - Update the mClientState
     		// - Notify the stop() function that shutdown is finished.
 	    	if(mClientState == ClientState.StopRequested && mSubscriptionIDs.isEmpty())
-	    		notifyAll();
+	    		FCPClientReferenceImplementation.this.notifyAll();
 		}
 	}
 	
