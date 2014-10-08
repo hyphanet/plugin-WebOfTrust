@@ -128,74 +128,37 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     private final PluginRespirator mPluginRespirator;
     
     private final SubscriptionManager mSubscriptionManager;
-    
-    private final ClientTrackerDaemon mClientTrackerDaemon;
+
     
     public FCPInterface(final WebOfTrust myWoT) {
         mWoT = myWoT;
         mPluginRespirator = mWoT.getPluginRespirator();
         mSubscriptionManager = mWoT.getSubscriptionManager();
-        mClientTrackerDaemon = new ClientTrackerDaemon();
     }
     
     /** TODO: Could be removed, is empty. */
     public void start() {}
     
     public void stop() {
-    	mClientTrackerDaemon.terminate();
-    }
-
-    /**
-     * FIXME: This JavaDoc does not apply anymore, adapt it if this class is not removed due to the
-     * other FIXMEs:
-     * 
-     * Stores all PluginReplySender which ever subscribed to content as WeakReference.
-     * This allows us to send back event {@link Notification}s without creating a fresh PluginTalker to talk to the client.
-     * Also, it allows unit tests of event-notifications:
-     * {@link PluginRespirator#getPluginTalker(freenet.pluginmanager.FredPluginTalker, String, String)} won't work in unit tests.
-     * However, we CAN store the PluginReplySender which the unit test supplied.
-     * 
-     * FIXME: Once the internal FIXMEs of this class have been resolved, remove it and inline its
-     * code into the callers. (Its complexity has reduced a lot because fred now provides API for
-     * what its internals were previously, so they are now small enough to be inlined).
-	 */
-    private final class ClientTrackerDaemon {
-
-        public synchronized UUID put(final FCPPluginClient client) {
-            // FIXME: Check whether the get() code which uses fred can be made to work in unit
-            // tests. If it does, we do not need to provide storage anymore and can always use the
-            // fred code. Then remove this function.
-            Logger.error(this, "Not implemented!", new UnsupportedOperationException());
-            
-            return client.getID();
-        }
-
-        public synchronized FCPPluginClient get(final UUID id) throws IOException {
-            return mPluginRespirator.getPluginClientByID(id);
-        }
-
-        public void terminate() {
-            // Shutdown is not needed anymore as this doesn't run a thread.
-            // FIXME: Check whether we need to Thread.interrupt() eventually existing
-            // FCPPluginClient.sendSynchronous() threads. If not, remove this commented out code,
-            // this function, and probably also the callers.
-            // Also, if we do need it, this probably should be placed in a different class than
-            // ClientTrackerDaemon. I am keeping it here because the interrupt loop might be
-            // useful for the sendSynchronous() stuff and I'm too lazy to save it elsewhere.
-            
-            /*
-        	enabled = false;
-        	do {
-        		interrupt();
-        		try {
-        			join(100);
-        		} catch(InterruptedException e) {
-                    // FIXME: This is wrong, see https://bugs.freenetproject.org/view.php?id=6290
-        			Thread.interrupted();
-        		}
-        	} while(isAlive());
-            */
-        }
+        // FIXME: Check whether we need to Thread.interrupt() eventually existing
+        // FCPPluginClient.sendSynchronous() threads. If not, remove this commented out code,
+        // this function, and probably also the callers.
+        // Also, if we do need it, this probably should be placed in a different class than
+        // ClientTrackerDaemon. I am keeping it here because the interrupt loop might be
+        // useful for the sendSynchronous() stuff and I'm too lazy to save it elsewhere.
+        
+        /*
+        enabled = false;
+        do {
+            for(all sendSynchronous threads) thread.interrupt();
+            try {
+                join(all sendSynchronous threads);
+            } catch(InterruptedException e) {
+                // FIXME: This is wrong, see https://bugs.freenetproject.org/view.php?id=6290
+                Thread.interrupted();
+            }
+        } while(there are sendSynchronous threads);
+        */
     }
 
     /** {@inheritDoc} */
@@ -1227,20 +1190,17 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     private FCPPluginMessage handleSubscribe(final FCPPluginClient client, final FCPPluginMessage message) throws InvalidParameterException {
         final String to = getMandatoryParameter(message.params, "To");
 
-        final UUID clientID = mClientTrackerDaemon.put(client);
-    	
-    	Subscription<? extends Notification> subscription;
-
     	
     	try {
             FCPPluginMessage reply = FCPPluginMessage.constructSuccessReply(message);
+            Subscription<? extends Notification> subscription;
             
 	    	if(to.equals("Identities")) {
-	    		subscription = mSubscriptionManager.subscribeToIdentities(clientID);
+	    		subscription = mSubscriptionManager.subscribeToIdentities(client.getID());
 	    	} else if(to.equals("Trusts")) {
-	    		subscription = mSubscriptionManager.subscribeToTrusts(clientID);
+	    		subscription = mSubscriptionManager.subscribeToTrusts(client.getID());
 	    	} else if(to.equals("Scores")) {
-	    		subscription = mSubscriptionManager.subscribeToScores(clientID);
+	    		subscription = mSubscriptionManager.subscribeToScores(client.getID());
 	    	} else
 	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
 	    	
@@ -1309,7 +1269,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             final Class<Subscription<? extends Notification>> clazz, final String subscriptionID)
                 throws IOException {
         
-        mClientTrackerDaemon.get(clientID).send(SendDirection.ToClient,
+        mPluginRespirator.getPluginClientByID(clientID).send(SendDirection.ToClient,
             handleUnsubscribe(null, clazz, subscriptionID));
     }
     
@@ -1349,7 +1309,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     public void sendAllIdentities(UUID clientID)
             throws FCPCallFailedException, IOException, InterruptedException {
         
-        FCPPluginMessage reply = mClientTrackerDaemon.get(clientID).sendSynchronous(
+        FCPPluginMessage reply = mPluginRespirator.getPluginClientByID(clientID).sendSynchronous(
             SendDirection.ToClient,
             handleGetIdentities(null),
             /* Large timeout since we possibly send _everything_.
@@ -1367,7 +1327,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     public void sendAllTrustValues(UUID clientID)
             throws FCPCallFailedException, IOException, InterruptedException {
         
-        FCPPluginMessage reply = mClientTrackerDaemon.get(clientID).sendSynchronous(
+        FCPPluginMessage reply = mPluginRespirator.getPluginClientByID(clientID).sendSynchronous(
             SendDirection.ToClient,
             handleGetTrusts(null),
             /* Large timeout since we possibly send _everything_.
@@ -1386,7 +1346,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             throws FCPCallFailedException, IOException, InterruptedException {
         
     
-        FCPPluginMessage reply = mClientTrackerDaemon.get(clientID).sendSynchronous(
+        FCPPluginMessage reply = mPluginRespirator.getPluginClientByID(clientID).sendSynchronous(
             SendDirection.ToClient,
             handleGetScores(null),
             /* Large timeout since we possibly send _everything_.
@@ -1451,10 +1411,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         fcpMessage.params.put("BeforeChange", beforeChange);
         fcpMessage.params.put("AfterChange", afterChange);
         
-        final FCPPluginMessage reply = mClientTrackerDaemon.get(clientID).sendSynchronous(
-            SendDirection.ToClient,
-            fcpMessage,
-            TimeUnit.MINUTES.toNanos(SUBSCRIPTION_NOTIFICATION_TIMEOUT_MINUTES));
+        final FCPPluginMessage reply = mPluginRespirator.getPluginClientByID(clientID)
+            .sendSynchronous(
+                SendDirection.ToClient,
+                fcpMessage,
+                TimeUnit.MINUTES.toNanos(SUBSCRIPTION_NOTIFICATION_TIMEOUT_MINUTES));
         
         if(reply.success == false)
             throw new FCPCallFailedException(reply);
