@@ -404,46 +404,46 @@ public final class FCPClientReferenceImplementation {
 		@Override
 		public final void run() { 
 			synchronized(FCPClientReferenceImplementation.this) {
-			try {
-		        if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
+			    try {
+			        if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
 
-		        if(mClientState != ClientState.Started) {
-		            Logger.error(this, "Connection-checking loop executed in wrong ClientState: "
-		                + mClientState);
-		            return;
-		        }
+			        if(mClientState != ClientState.Started) {
+			            Logger.error(this, "Connection-checking loop executed in wrong "
+			                + " ClientState: " + mClientState);
+			            return;
+			        }
 
-				if(!connected() || pingTimedOut())
-					connect();
+			        if(!connected() || pingTimedOut())
+			            connect();
 
-				if(!connected())
-				    return; // finally{} block schedules fast reconnecting.
-				
-				try {
-				    fcp_Ping();
-				    checkSubscriptions();
-				} catch(IOException e) {
-				    Logger.normal(this, "Connetion lost in connection-checking loop.", e);
-				    force_disconnect();
-				    return; // finally{} block schedules fast reconnecting.
-				}
-			} catch (RuntimeException | Error e) {
-			    // This catches every non-declare-able Exception to ensure that the thread doesn't
-			    // die because of them: Keeping the connection alive is important so this thread
-			    // must stay alive.
-			    // We catch "RuntimeException | Error" instead of "Throwable" to exclude
-			    // declare-able Exceptions to ensure that people are noticed by the compiler if
-			    // they add code which forgets handling them.
-			    
-				Logger.error(this, "Error in connection-checking loop!", e);
-				force_disconnect();
-			} finally {
-			    // Will schedule this function to be executed again.
-			    // The delay is long if mConnection is alive and we are just waiting for a ping.
-			    // The delay is short if mConnection == null and we need to reconnection.
-				scheduleKeepaliveLoopExecution();
-	            if(logMINOR) Logger.minor(this, "Connection-checking finished.");
-			}
+			        if(!connected())
+			            return; // finally{} block schedules fast reconnecting.
+
+			        try {
+			            fcp_Ping();
+			            checkSubscriptions();
+			        } catch(IOException e) {
+			            Logger.normal(this, "Connetion lost in connection-checking loop.", e);
+			            force_disconnect();
+			            return; // finally{} block schedules fast reconnecting.
+			        }
+			    } catch (RuntimeException | Error e) {
+			        // This catches every non-declare-able Exception to ensure that the thread
+			        // doesn't die because of them: Keeping the connection alive is important so
+			        // this thread must stay alive.
+			        // We catch "RuntimeException | Error" instead of "Throwable" to exclude
+			        // declare-able Exceptions to ensure that people are noticed by the compiler if
+			        // they add code which forgets handling them.
+
+			        Logger.error(this, "Error in connection-checking loop!", e);
+			        force_disconnect();
+			    } finally {
+			        // Will schedule this function to be executed again.
+			        // The delay is long if mConnection is alive and we are just waiting for a ping.
+			        // The delay is short if mConnection == null and we need to reconnection.
+			        scheduleKeepaliveLoopExecution();
+			        if(logMINOR) Logger.minor(this, "Connection-checking finished.");
+			    }
 			}
 		}
 
@@ -736,7 +736,8 @@ public final class FCPClientReferenceImplementation {
 			} finally {
 				if(logMINOR) Logger.minor(this, "Handling message finished.");
 			}
-			}
+			
+			} // synchronized(FCPClientReferenceImplementation.this) {
 		}
 
 	}
