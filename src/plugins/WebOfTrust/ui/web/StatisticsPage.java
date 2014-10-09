@@ -5,6 +5,7 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
+import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import freenet.clients.http.ToadletContext;
@@ -66,6 +67,16 @@ public class StatisticsPage extends WebPageImpl {
 			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FetchedIdentities") + ": " + fetcher.getFetchedCount()));
 			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.AverageFetchedIdentitiesPerHour") + ": " + fetcher.getAverageFetchCountPerHour()));
 			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.AverageIdentityImportTime") + ": " + fetcher.getAverageXMLImportTime()));
+		}
+		
+		SubscriptionManager sm = mWebOfTrust.getSubscriptionManager();
+		synchronized(sm) {
+		    list.addChild(new HTMLNode("li",
+		        l10n().getString("StatisticsPage.SummaryBox.EventNotifications.Pending", "amount",
+		            Integer.toString(sm.getPendingNotificationAmount()))));
+		    list.addChild(new HTMLNode("li",
+		        l10n().getString("StatisticsPage.SummaryBox.EventNotifications.Total", "amount",
+		            Long.toString(sm.getTotalNotificationsAmountForCurrentClients()))));
 		}
 		
 		box.addChild(list);
