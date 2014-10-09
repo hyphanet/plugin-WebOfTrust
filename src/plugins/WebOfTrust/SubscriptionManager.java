@@ -1627,4 +1627,28 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		Logger.normal(this, "stop() finished.");
 	}
+
+
+    // Public getters for statistics
+
+    /**
+     * @return The total amount of all {@link Notification}s which are queued for sending.
+     */
+    public synchronized int getPendingNotificationAmount() {
+        return getAllNotifications().size();
+    }
+
+    /**
+     * @return The total amount of all {@link Notification}s which have been created, including
+     *         unsent ones.<br>
+     *         ATTENTION: This excludes Notifications of already disconnected {@link Client}s!
+     */
+    public synchronized long getTotalNotificationsAmountForCurrentClients() {
+        long amount = 0;
+        for(Client client : getAllClients()) {
+            amount += client.mNextNotificationIndex;
+        }
+        return amount;
+    }
+
 }
