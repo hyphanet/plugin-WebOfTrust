@@ -870,6 +870,10 @@ public final class FCPClientReferenceImplementation {
 			final String description = sfs.get("Description");
 			
 			if(description.equals("plugins.WebOfTrust.SubscriptionManager$SubscriptionExistsAlreadyException")) {
+			    // FIXME: We might want to update our member variables from this, otherwise the
+			    // client might stay broken for ever if the original "Subscribed" message was not
+			    // processed successfully.
+			    
 		    	// checkSubscriptions() only files one subscription at a time to guarantee proper order of synchronization:
 		    	// Trust objects reference identity objects, so we cannot create them if we didn't get to know the identities first.
 		    	// So because it only files one at a time, after subscription has succeeded, the KeepAliveLoop will be scheduled for
