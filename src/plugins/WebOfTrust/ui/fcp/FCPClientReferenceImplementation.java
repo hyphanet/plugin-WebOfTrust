@@ -661,9 +661,6 @@ public final class FCPClientReferenceImplementation {
 	 * Receives FCP messages from WOT:
 	 * - In reply to messages sent to it via {@link PluginTalker}
 	 * - As events happen via event-{@link Notification}s
-	 * 
-	 * FIXME: Test whether Logger will log messages of this class if only logging is enabled for
-	 * {@link FCPClientReferenceImplementation}.
 	 */
 	private class FCPMessageReceiver
 	    implements FredPluginFCPMessageHandler.ClientSideFCPMessageHandler {
