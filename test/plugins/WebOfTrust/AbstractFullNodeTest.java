@@ -112,6 +112,14 @@ public abstract class AbstractFullNodeTest
             mNode.getPluginManager().startPluginFile(wotFilename, false);
         
         mWebOfTrust = (WebOfTrust) wotWrapper.getPlugin();
+        
+        // Prevent unit tests from having to do thread synchronization by terminating all WOT
+        // subsystems which run their own thread.
+        mWebOfTrust.getIntroductionClient().terminate();
+        mWebOfTrust.getIntroductionServer().terminate();
+        mWebOfTrust.getIdentityInserter().terminate();
+        mWebOfTrust.getIdentityFetcher().stop();
+        mWebOfTrust.getSubscriptionManager().stop();
     }
     
     @After public final void tearDownNode() {

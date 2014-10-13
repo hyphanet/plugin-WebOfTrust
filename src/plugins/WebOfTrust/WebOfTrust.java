@@ -1656,6 +1656,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 	}
 
+	/**
+	 * ATTENTION: If you add new code which terminates threads, you must make sure that they are
+	 * terminated in {@link AbstractFullNodeTest#setUpNode()} as well.
+	 */
 	public void terminate() {
 		Logger.normal(this, "Web Of Trust plugin terminating ...");
 		
@@ -3667,6 +3671,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return mFetcher;
 	}
 
+    public IdentityInserter getIdentityInserter() {
+        return mInserter;
+    }
+
 	public XMLTransformer getXMLTransformer() {
 		return mXMLTransformer;
 	}
@@ -3678,7 +3686,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 	public IntroductionClient getIntroductionClient() {
 		return mIntroductionClient;
 	}
-	
+
+    public IntroductionServer getIntroductionServer() {
+        return mIntroductionServer;
+    }
+
 	protected FCPInterface getFCPInterface() {
 		return mFCPInterface;
 	}
