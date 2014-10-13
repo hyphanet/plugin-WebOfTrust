@@ -3,14 +3,10 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.fcp;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -236,24 +232,6 @@ public final class FCPClientReferenceImplementation {
 		// Necessary for automatic setting of logDEBUG and logMINOR
 		Logger.registerClass(FCPClientReferenceImplementation.class);
 	}
-	
-	/**
-	 * Set this to true for debugging:
-	 * Will enable dumping of the FCP traffic to a text file. The filename will be:
-	 * <code>this.getClass().getSimpleName() + " FCP dump.txt"</code>
-	 */
-	public final boolean mDumpFCPTraffic = false;
-	
-	/**
-	 * Used for dumping the FCP traffic to a text file for debugging.
-	 * FIXME: Change callers to not only log the SimpleFieldSet, but the full FCPPluginMessage:
-	 * It contains additional infomration which *is* used by WOT, namely the fields
-	 * {@link FCPPluginMessage#success}, {@link FCPPluginMessage#errorCode} and
-	 * {@link FCPPluginMessage#errorMessage}.
-	 * 
-	 * @see #mDumpFCPTraffic
-	 */
-	private final PrintWriter mFCPTrafficDump;
 
 
 	public FCPClientReferenceImplementation(Map<String, Identity> myIdentityStorage,
@@ -288,19 +266,6 @@ public final class FCPClientReferenceImplementation {
 		mIdentityParser = new IdentityParser(wot);
 		mTrustParser = new TrustParser(wot, mIdentityStorage);
 		mScoreParser = new ScoreParser(wot, mIdentityStorage);
-		
-		if(mDumpFCPTraffic) {
-			PrintWriter dump;
-			try {
-				dump = new PrintWriter(new BufferedWriter(new FileWriter(this.getClass().getSimpleName() + " FCP dump.txt")));
-			} catch (IOException e) {
-				Logger.error(this, "Failed to create debug FCP dump file",e);
-				dump = null;
-			}
-			mFCPTrafficDump = dump;
-		} else {
-			mFCPTrafficDump = null;
-		}
 	}
 	
 	/**
@@ -465,11 +430,7 @@ public final class FCPClientReferenceImplementation {
 		force_disconnect();
 		
 		Logger.normal(this, "connect()");
-		
-		if(mFCPTrafficDump != null) {
-			mFCPTrafficDump.println("---------------- " + new Date() + " Connected. ---------------- ");
-		}
-		
+
 		try {
 			mConnection = mPluginRespirator.connectToOtherPlugin(WOT_FCP_NAME, mFCPMessageReceiver);
 			mSubscriptionIDs.clear();
@@ -502,16 +463,10 @@ public final class FCPClientReferenceImplementation {
 	 * 
 	 * ATTENTION: Does not synchronize, does not check whether {@link #mConnection} is null.<br><br>
 	 * 
-	 * If {@link #mFCPTrafficDump} is non-null, the SFS is dumped to it.
-	 * 
 	 * @throws IOException See {@link FCPPluginClient#send(SendDirection, FCPPluginMessage)}.
 	 */
 	private void send(final SimpleFieldSet sfs) throws IOException {
 		mConnection.send(SendDirection.ToServer, FCPPluginMessage.construct(sfs, null));
-		if(mFCPTrafficDump != null) {
-			mFCPTrafficDump.println("---------------- " + new Date() + " Sent: ---------------- ");
-			mFCPTrafficDump.println(sfs.toOrderedString());
-		}
 	}
 	
 	/**
@@ -550,11 +505,6 @@ public final class FCPClientReferenceImplementation {
 		// PluginRespirator.connectToOtherPlugin() instructs us that can and must drop all strong
 		// references to the FCPPluginClient to it to cause disconnection implicitly.
 		mConnection = null;
-		
-		if(mFCPTrafficDump != null) {
-			mFCPTrafficDump.println("---------------- " + new Date() + " Disconnected. ---------------- ");
-			mFCPTrafficDump.flush();
-		}
 	}
 	
 	/**
@@ -675,11 +625,6 @@ public final class FCPClientReferenceImplementation {
         public final FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client,
                 FCPPluginMessage message) {
 			synchronized(FCPClientReferenceImplementation.this) {
-            
-			if(mFCPTrafficDump != null) {
-				mFCPTrafficDump.println("---------------- " + new Date() + " Received: ---------------- ");
-				mFCPTrafficDump.println(message.params.toOrderedString());
-			}
 
 			// Check whether we are actually connected. If we are not connected, we must not handle FCP messages.
 			// We do NOT have to check mClientState: mConnection must only be non-null in states where it is acceptable.
