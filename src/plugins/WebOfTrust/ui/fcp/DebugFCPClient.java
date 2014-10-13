@@ -87,15 +87,18 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	public void start() {
 		mClient.start();
 		mClient.subscribe(Identity.class, 
-				new SubscriptionSynchronizationHandlerImpl<Identity>(mReceivedIdentities),
+				new SubscriptionSynchronizationHandlerImpl<Identity>(Identity.class,
+				    mReceivedIdentities),
 				new SubscribedObjectChangedHandlerImpl<Identity>(mReceivedIdentities));
 		
 		mClient.subscribe(Trust.class, 
-				new SubscriptionSynchronizationHandlerImpl<Trust>(mReceivedTrusts),
+				new SubscriptionSynchronizationHandlerImpl<Trust>(Trust.class,
+				    mReceivedTrusts),
 				new SubscribedObjectChangedHandlerImpl<Trust>(mReceivedTrusts));
 		
 		mClient.subscribe(Score.class, 
-				new SubscriptionSynchronizationHandlerImpl<Score>(mReceivedScores),
+				new SubscriptionSynchronizationHandlerImpl<Score>(Score.class,
+				    mReceivedScores),
 				new SubscribedObjectChangedHandlerImpl<Score>(mReceivedScores));
 	}
 	
@@ -140,9 +143,12 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	}
 
 	private final class SubscriptionSynchronizationHandlerImpl<T extends Persistent> implements SubscriptionSynchronizationHandler<T> {
+		private final Class<T> mClass;
 		private final HashMap<String, T> target;
 		
-		public SubscriptionSynchronizationHandlerImpl(final HashMap<String, T> myTarget) {
+		public SubscriptionSynchronizationHandlerImpl(final Class<T> myClass,
+				final HashMap<String, T> myTarget) {
+			mClass = myClass;
 			target = myTarget;
 		}
 		
@@ -150,7 +156,10 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		 * Fill our existing "database" (the {@link HashMap} target) with the synchronization of ALL data which we have received from WOT.
 		 */
 		public void handleSubscriptionSynchronization(final Collection<T> source) {
-			if(logMINOR) Logger.minor(this, "handleSubscriptionSynchronization() to " + target);
+            if(logMINOR) {
+                Logger.minor(this, "handleSubscriptionSynchronization() for subscription type: "
+                    + mClass);
+            }
 
 			if(target.size() > 0) {
 				Logger.normal(this, "Received additional synchronization, validating existing data against it...");
