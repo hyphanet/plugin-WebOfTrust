@@ -2633,11 +2633,28 @@ public final class WebOfTrust extends WebOfTrustInterface
 	protected void beginTrustListImport() {
 		if(logMINOR) Logger.minor(this, "beginTrustListImport()");
 		
+		// Callers should not call this twice, so mTrustListImportInProgress should
+		// nerver be true here.
 		if(mTrustListImportInProgress) {
-			abortTrustListImport(new RuntimeException("There was already a trust list import in progress!"));
+			// If this happens, it is probably a severe problem, so we schedule a full
+			// Score recomputation hoping that it fixes eventual breakage.
+			// (We cannot execute it right here because we have to rollback the transaction
+			// and throw, see below.)
 			mFullScoreComputationNeeded = true;
-			computeAllScoresWithoutCommit();
-			assert(mFullScoreComputationNeeded == false);
+			
+			// Because we are in a unclear error situation, its better to abort the
+			// current trust list import and rollback the current transaction.
+			// The rollback is done implicitly by abortTrustListImport().
+			RuntimeException e
+				= new RuntimeException("There was already a trust list import in progress!");
+			abortTrustListImport(e);
+			
+			// We MUST throw here: We have rolled back the current transaction already,
+			// and the caller might have done part of it before calling this function
+			// and could continue to do part of it after calling this function.
+			// So if we did not throw, the half-rolled-back transaction might be continued
+			// by the caller and then be committed in its half-complete state.
+			throw e;
 		}
 		
 		mTrustListImportInProgress = true;
