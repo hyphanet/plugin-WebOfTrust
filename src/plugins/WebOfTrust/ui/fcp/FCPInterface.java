@@ -1217,6 +1217,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             // class name as "Description", instead of an FCPPluginMessage.errorCode (the errorCode
             // field was only recently introduced in fred's branch plugin-fcp-rewrite). Also, fix
             // the function level JavaDoc of this function to mention the errorCode then.
+    	    // Further, update SubscriptionManagerFCPTest to validate the errorCode at least.
             FCPPluginMessage errorMessage = errorMessageFCP(message, e);
             errorMessage.params.putOverwrite("SubscriptionID", e.existingSubscription.getID());
             errorMessage.params.putOverwrite("To", to);

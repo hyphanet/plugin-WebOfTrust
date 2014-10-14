@@ -50,7 +50,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	@Ignore
 	static class ReplyReceiver implements FredPluginFCPMessageHandler.ClientSideFCPMessageHandler {
 
-		LinkedList<SimpleFieldSet> results = new LinkedList<SimpleFieldSet>();
+		LinkedList<FCPPluginMessage> results = new LinkedList<FCPPluginMessage>();
 
 		/**
 		 * Called by fred to handle messages from WOT's FCP server.
@@ -58,13 +58,11 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		@Override
         public FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client,
                 FCPPluginMessage message) {
+		    
+		    results.addLast(message);
 
-		    // FIXME: Store the actual {@link FCPPluginMessage} and amend the tests to validate
-		    // the bonus of information it has in addition to the simple filed set. Notable are:
-		    // - boolean success
-		    // - String errorCode
-			results.addLast(message.params);
-			
+		    // The fred code which calls this handler expects a reply to be returned to indicate
+		    // success so the sendSynchronous() calls in WOT can return.
 			return message.isReplyMessage() ? null 
 			    : FCPPluginMessage.constructSuccessReply(message);
 		}
@@ -72,7 +70,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		/**
 		 * @throws NoSuchElementException If no result is available
 		 */
-		public SimpleFieldSet getNextResult() {
+		public FCPPluginMessage getNextResult() {
 			return results.removeFirst();
 		}
 		
@@ -103,7 +101,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	    // In opposite to send(), the reply to sendSynchronous() is NOT passed to the
 	    // FredPluginFCPMessageHandler, so the mReplyReceiver won't have received it, and we have to
 	    // add it manually to its list.
-	    mReplyReceiver.results.addLast(reply.params);
+	    mReplyReceiver.results.addLast(reply);
 	}
 
 	/**
@@ -154,10 +152,11 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		fcpCall(sfs);
 		
 		// Second reply message is the confirmation of the unsubscription
-		final SimpleFieldSet subscription = mReplyReceiver.getNextResult();
-		assertEquals("Unsubscribed", subscription.get("Message"));
-		assertEquals(type, subscription.get("From"));
-		assertEquals(id, subscription.get("SubscriptionID"));
+		final FCPPluginMessage result = mReplyReceiver.getNextResult();
+		assertEquals(true, result.success);
+		assertEquals("Unsubscribed", result.params.get("Message"));
+		assertEquals(type, result.params.get("From"));
+		assertEquals(id, result.params.get("SubscriptionID"));
 		assertFalse(mReplyReceiver.hasNextResult());
 	}
 	
@@ -170,15 +169,22 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		fcpCall(sfs);
 		
 		// First reply message is the full set of all objects of the type we are interested in so the client can synchronize its database
-		final SimpleFieldSet synchronization = mReplyReceiver.getNextResult();
-		assertEquals(type, synchronization.get("Message"));
-		assertEquals("0", synchronization.get(type + ".Amount")); // No identities/trusts/scores stored yet
+		final FCPPluginMessage synchronization = mReplyReceiver.getNextResult();
+		// The first "reply" message is not an actual reply message. See the JavaDoc of
+		// FCPInterface.handleSubscribe()).
+		// So we don't have to check the synchronization.success / errorCode / errorMessage as they
+		// will be null for non-reply messages.
+		assertEquals(false, synchronization.isReplyMessage());
+		assertEquals(type, synchronization.params.get("Message"));
+		assertEquals("No identities/trusts/scores stored yet",
+		    "0", synchronization.params.get(type + ".Amount"));
 
 		// Second reply message is the confirmation of the subscription
-		final SimpleFieldSet subscription = mReplyReceiver.getNextResult();
-		assertEquals("Subscribed", subscription.get("Message"));
-		assertEquals(type, subscription.get("To"));
-		final String id = subscription.get("SubscriptionID");
+		final FCPPluginMessage subscription = mReplyReceiver.getNextResult();
+		assertEquals(true, subscription.success);
+		assertEquals("Subscribed", subscription.params.get("Message"));
+		assertEquals(type, subscription.params.get("To"));
+		final String id = subscription.params.get("SubscriptionID");
 		try {
 			UUID.fromString(id);
 		} catch(IllegalArgumentException e) {
@@ -190,10 +196,12 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		
 		// Try to file the same subscription again - should fail because we already are subscribed
 		fcpCall(sfs);
-		final SimpleFieldSet duplicateSubscriptionMessage = mReplyReceiver.getNextResult();
-		assertEquals("Error", duplicateSubscriptionMessage.get("Message"));
-		assertEquals("Subscribe", duplicateSubscriptionMessage.get("OriginalMessage"));
-		assertEquals("plugins.WebOfTrust.SubscriptionManager$SubscriptionExistsAlreadyException", duplicateSubscriptionMessage.get("Description"));
+		final FCPPluginMessage duplicateSubscriptionMessage = mReplyReceiver.getNextResult();
+		assertEquals(false, duplicateSubscriptionMessage.success);
+		assertEquals("Error", duplicateSubscriptionMessage.params.get("Message"));
+		assertEquals("Subscribe", duplicateSubscriptionMessage.params.get("OriginalMessage"));
+		assertEquals("plugins.WebOfTrust.SubscriptionManager$SubscriptionExistsAlreadyException",
+		    duplicateSubscriptionMessage.params.get("Description"));
 
 		assertFalse(mReplyReceiver.hasNextResult());
 		
@@ -255,10 +263,10 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		fcpCall(sfs);
 		
 		// First reply message is the full set of all objects of the type we are interested in so the client can synchronize its database
-		importSynchronization(type, mReplyReceiver.getNextResult());
+		importSynchronization(type, mReplyReceiver.getNextResult().params);
 		
 		// Second reply message is the confirmation of the subscription
-		assertEquals("Subscribed", mReplyReceiver.getNextResult().get("Message"));
+		assertEquals("Subscribed", mReplyReceiver.getNextResult().params.get("Message"));
 		assertFalse(mReplyReceiver.hasNextResult());
 	}
 	
@@ -295,7 +303,14 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 
 	
 		while(mReplyReceiver.hasNextResult()) {
-			final SimpleFieldSet notification = mReplyReceiver.getNextResult();
+		    final FCPPluginMessage notificationMessage = mReplyReceiver.getNextResult();
+		    
+		    assertEquals("Notifications should not be sent as reply messages.",
+		        false, notificationMessage.isReplyMessage());		    
+		    // We don't have to check the notificationMessage.success / errorCode / errorMessage as
+		    // they will be null for non-reply messages.
+		    
+			final SimpleFieldSet notification = notificationMessage.params;
 			final String message = notification.get("Message");
 			if(message.equals("IdentityChangedNotification")) {
 				putNotification(
