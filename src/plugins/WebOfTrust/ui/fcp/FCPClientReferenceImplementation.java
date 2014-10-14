@@ -49,19 +49,30 @@ import freenet.support.codeshortification.IfNull;
 import freenet.support.io.NativeThread;
 
 /**
- * This is a reference implementation of how a FCP client application should interact with Web Of Trust via event-notifications.
- * The foundation of event-notifications is class {@link SubscriptionManager}, you should read the JavaDoc of it to understand them.
+ * This is a reference implementation of how a FCP client application should interact with
+ * Web Of Trust via event-notifications.<br>
+ * The foundation of event-notifications is class {@link SubscriptionManager}, you should read the
+ * JavaDoc of it to understand them.<br><br>
  * 
- * You can use this class in your client like this:
- * - Copy-paste this abstract base class. Make sure to specify the hash of the commit which your copy is based on!
- * - Do NOT modify it. Instead, implement a child class which implements the abstract functions.
- * - Any improvements you have to the abstract base class should be backported to WOT!
- * - It should periodically be checked if all client applications use the most up to date version of this class.
- * - To simplify checking whether a client copy of this class is outdated, the hash of the commit which the copy was based on helps very much.
- *   Thats why we want to stress that you should include the hash in your copypasta!
+ * You can use this class in your client like this:<br>
+ * - Copy-paste this class. Make sure to specify the hash of the commit which your copy is based on!
+ *   <br>
+ * - Do NOT modify it. Instead, implement a separate class which implements the required interfaces
+ *   {@link ConnectionStatusChangedHandler}, {@link SubscriptionSynchronizationHandler} and
+ *   {@link SubscribedObjectChangedHandler}. In your separate class, create an object of this class
+ *   here, and use its public functions to pass your handler implementations to it.<br>
+ * - If you do need to modify this class for improvements, please ensure that they are backported
+ *   to WOT.<br>
+ * - It should periodically be checked if all client applications use the most up to date version
+ *   of this class.<br>
+ * - To simplify checking whether a client copy of this class is outdated, the hash of the commit
+ *   which the copy was based on helps very much. Thats why we want to stress that you should
+ *   include the hash in your copypasta!<br><br>
  * 
- * For understanding how to implement a child class of this, plese just read the class. I tried to sort it by order of execution and
- * provide full JavaDoc - so I hope it will be easy to understand.
+ * For understanding how to implement a user of this class, please just read the JavaDoc of the
+ * public functions and interfaces. I tried to sort all function by order of execution and provide
+ * full JavaDoc, so I hope the whole private internals of this class will be easy to understand as
+ * well.<br><br>
  * 
  * NOTICE: This class was based upon class SubscriptionManagerFCPTest, which you can find in the unit tests. Please backport improvements.
  * [Its not possible to link it in the JavaDoc because the unit tests are not within the classpath.] 
