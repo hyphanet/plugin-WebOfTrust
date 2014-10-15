@@ -91,7 +91,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
     }
 
 	/**
-	 * Sends the given {@link SimpleFieldSet} to the FCP interface of {@link DatabaseBasedTest#mWoT}
+	 * Sends the given {@link SimpleFieldSet} to the FCP interface of {@link AbstractJUnit3BaseTest#mWoT}
 	 * You can obtain the result(s) by <code>mReplySender.getNextResult();</code>
 	 */
 	void fcpCall(final SimpleFieldSet params) throws IOException, InterruptedException {

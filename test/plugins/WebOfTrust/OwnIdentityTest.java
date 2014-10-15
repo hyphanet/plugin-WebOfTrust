@@ -13,7 +13,7 @@ import freenet.support.CurrentTimeUTC;
 /**
  * @author xor (xor@freenetproject.org)
  */
-public class OwnIdentityTest extends DatabaseBasedTest {
+public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 	
 	private final String requestURIStringUSK = "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/23";
 	private final String requestURIStringUSKNonWOT = "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/Test/23";
@@ -75,7 +75,7 @@ public class OwnIdentityTest extends DatabaseBasedTest {
 	 * Tests whether {@link OwnIdentity.clone()} returns an OwnIdentity:
 	 * - which {@link equals()} the original.
 	 * - which is not the same object.
-	 * - which meets the requirements of {@link DatabaseBasedTest#testClone(Class, Object, Object)}
+	 * - which meets the requirements of {@link AbstractJUnit3BaseTest#testClone(Class, Object, Object)}
 	 */
 	public void testClone() throws MalformedURLException, InvalidParameterException, InterruptedException, IllegalArgumentException, IllegalAccessException {
 		final OwnIdentity original = new OwnIdentity(mWoT, getRandomSSKPair()[0], getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH), true);

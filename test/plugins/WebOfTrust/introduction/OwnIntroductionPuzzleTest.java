@@ -10,7 +10,7 @@ import java.net.MalformedURLException;
 import org.junit.Before;
 import org.junit.Test;
 
-import plugins.WebOfTrust.DatabaseBasedTest;
+import plugins.WebOfTrust.AbstractJUnit3BaseTest;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -21,7 +21,7 @@ import freenet.support.CurrentTimeUTC;
 /**
  * @author xor (xor@freenetproject.org)
  */
-public final class OwnIntroductionPuzzleTest extends DatabaseBasedTest {
+public final class OwnIntroductionPuzzleTest extends AbstractJUnit3BaseTest {
 
 	private IntroductionPuzzleStore mPuzzleStore;
 	private IntroductionPuzzleFactory mPuzzleFactory;

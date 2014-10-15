@@ -41,13 +41,11 @@ import freenet.keys.InsertableClientSSK;
  * 
  * You have to call super.setUp() and super.tearDown() if you override one of those methods.
  * 
- * FIXME: Rename to "AbstractJUnit3BaseTest".
- * 
  * @author xor (xor@freenetproject.org)
  * @deprecated Use {@link AbstractJUnit4BaseTest} instead.
  */
 @Deprecated
-public class DatabaseBasedTest extends TestCase {
+public class AbstractJUnit3BaseTest extends TestCase {
 
 	protected WebOfTrust mWoT;
 	

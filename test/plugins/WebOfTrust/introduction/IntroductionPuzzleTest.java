@@ -11,7 +11,7 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 
-import plugins.WebOfTrust.DatabaseBasedTest;
+import plugins.WebOfTrust.AbstractJUnit3BaseTest;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -22,7 +22,7 @@ import freenet.support.CurrentTimeUTC;
 /**
  * @author xor (xor@freenetproject.org)
  */
-public class IntroductionPuzzleTest extends DatabaseBasedTest {
+public class IntroductionPuzzleTest extends AbstractJUnit3BaseTest {
 
 	private IntroductionPuzzleStore mPuzzleStore;
 	

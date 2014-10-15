@@ -22,7 +22,7 @@ import freenet.keys.FreenetURI;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public class XMLTransformerTest extends DatabaseBasedTest {
+public class XMLTransformerTest extends AbstractJUnit3BaseTest {
 
 	private XMLTransformer mTransformer;
 	

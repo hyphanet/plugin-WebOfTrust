@@ -28,7 +28,7 @@ import freenet.support.PooledExecutor;
 
 /**
  * A base class for WOT unit tests.<br>
- * As opposed to regular WOT unit tests based upon {@link DatabaseBasedTest}, this test runs the
+ * As opposed to regular WOT unit tests based upon {@link AbstractJUnit3BaseTest}, this test runs the
  * unit tests inside a full Freenet node:<br>
  * WOT is loaded as a regular plugin instead of executing the tests directly without Freenet.<br>
  * <br>
@@ -38,7 +38,7 @@ import freenet.support.PooledExecutor;
  * - FCP can be used.<br><br>
  * 
  * The price is that it is much more heavy to initialize and thus has a higher execution time.<br>
- * Thus, please only use it as a base class if what {@link DatabaseBasedTest} provides is not
+ * Thus, please only use it as a base class if what {@link AbstractJUnit3BaseTest} provides is not
  * sufficient.<br>
  * 
  * @author xor (xor@freenetproject.org

@@ -12,7 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
-import plugins.WebOfTrust.DatabaseBasedTest;
+import plugins.WebOfTrust.AbstractJUnit3BaseTest;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.DuplicatePuzzleException;
@@ -26,7 +26,7 @@ import freenet.support.CurrentTimeUTC;
 /**
  * @author xor (xor@freenetproject.org)
  */
-public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
+public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 
 	private IntroductionPuzzleStore mPuzzleStore;
 	private List<IntroductionPuzzleFactory> mPuzzleFactories;
