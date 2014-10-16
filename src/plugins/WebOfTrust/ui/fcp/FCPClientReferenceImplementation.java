@@ -823,9 +823,7 @@ public final class FCPClientReferenceImplementation {
 
 		@Override
 		public void handle(final FCPPluginMessage message) throws ProcessingFailedException {
-			final String description = message.params.get("Description");
-			
-			if(description.equals("plugins.WebOfTrust.SubscriptionManager$SubscriptionExistsAlreadyException")) {
+			if(message.errorCode.equals("SubscriptionExistsAlready")) {
 			    // FIXME: We might want to update our member variables from this, otherwise the
 			    // client might stay broken for ever if the original "Subscribed" message was not
 			    // processed successfully.
@@ -839,7 +837,7 @@ public final class FCPClientReferenceImplementation {
 				Logger.warning(this, "Subscription exists already: To=" + message.params.get("To")
 				    + "; SubscriptionID=" + message.params.get("SubscriptionID"));
 			} else {
-				Logger.error(this, "Unknown FCP error: " + description);
+				Logger.error(this, "Unknown FCP error message: " + message);
 			}
 		}
 	}

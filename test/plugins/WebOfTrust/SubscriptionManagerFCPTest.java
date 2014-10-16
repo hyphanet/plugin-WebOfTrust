@@ -200,9 +200,10 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		assertEquals(false, duplicateSubscriptionMessage.success);
 		assertEquals("Error", duplicateSubscriptionMessage.params.get("Message"));
 		assertEquals("Subscribe", duplicateSubscriptionMessage.params.get("OriginalMessage"));
-		assertEquals("plugins.WebOfTrust.SubscriptionManager$SubscriptionExistsAlreadyException",
-		    duplicateSubscriptionMessage.params.get("Description"));
-
+		assertEquals("SubscriptionExistsAlready", duplicateSubscriptionMessage.errorCode);
+		assert duplicateSubscriptionMessage.errorMessage == null
+		    : "errorMessage does not have to be set by WOT because the Subscribe FCP "
+            + "function is not something which is typically used by UI.";
 		assertFalse(mReplyReceiver.hasNextResult());
 		
 		return id;

@@ -1153,11 +1153,13 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * 
      * <b>Errors</b>:
      * If you are already subscribed to the selected type, you will only receive a message:
-     * "Message" = "Error"
-     * "Description" = "plugins.WebOfTrust.SubscriptionManager$SubscriptionExistsAlreadyException"
-     * "SubscriptionID" = Same as in the original "Subscribed" message
-     * "To" = Same as you requested
-     * "OriginalMessage" = "Subscribe"
+     * {@link FCPPluginMessage#success} = false<br>
+     * {@link FCPPluginMessage#errorCode} = "SubscriptionExistsAlready"<br>
+     * {@link FCPPluginMessage#params}:<br>
+     * "Message" = "Error"<br>
+     * "SubscriptionID" = Same as in the original "Subscribed" message<br>
+     * "To" = Same as you requested<br>
+     * "OriginalMessage" = "Subscribe"<br>
      * 
      * <b>{@link Notification}s:</b>
      * Further  messages will be sent at any time in the future if an {@link Identity} / {@link Trust} / {@link Score}
@@ -1211,14 +1213,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             
             return reply;
     	} catch(SubscriptionExistsAlreadyException e) {
-            // FIXME: Use the errorMessage() which allows setting a proper errorCode.
-            // When doing that, make sure to check stuff such as FCPClientRefrenceImplementation and
-            // the unit tests which rely upon the old format error message of using the Exception
-            // class name as "Description", instead of an FCPPluginMessage.errorCode (the errorCode
-            // field was only recently introduced in fred's branch plugin-fcp-rewrite). Also, fix
-            // the function level JavaDoc of this function to mention the errorCode then.
-    	    // Further, update SubscriptionManagerFCPTest to validate the errorCode at least.
-            FCPPluginMessage errorMessage = errorMessageFCP(message, e);
+            FCPPluginMessage errorMessage = 
+                errorMessageFCP(message, "SubscriptionExistsAlready",
+                    null /* No error message since this API likely will not be used by UI */);
             errorMessage.params.putOverwrite("SubscriptionID", e.existingSubscription.getID());
             errorMessage.params.putOverwrite("To", to);
             return errorMessage;
