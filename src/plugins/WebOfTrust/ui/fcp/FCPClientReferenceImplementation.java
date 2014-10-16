@@ -529,7 +529,7 @@ public final class FCPClientReferenceImplementation {
 	 * @return True if the last ping didn't receive a reply within 2*{@link #WOT_PING_DELAY} milliseconds.
 	 */
 	private synchronized boolean pingTimedOut() {
-		// This is set to 0 by the onReply() handler (which receives the ping reply) when:
+		// This is set to 0 by the FCPPongHandler (which receives the ping reply) when:
 		// - we never sent a ping yet. Obviously we can't blame timeout on the client then
 		// - whenever we received a pong which marked the ping as successful
 		if(mLastPingSentDate == 0)
