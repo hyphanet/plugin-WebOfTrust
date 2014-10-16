@@ -698,8 +698,9 @@ public final class FCPClientReferenceImplementation {
 	 * Each FCP message sent by WOT contains a "Message" field in its {@link SimpleFieldSet}. For each value of "Message",
 	 * a {@link FCPMessageHandler} implementation must exist.
 	 * 
-	 * Upon reception of a message, {@link FCPClientReferenceImplementation#onReply(String, String, SimpleFieldSet, Bucket) calls
-	 * {@link FCPMessageHandler#handle(SimpleFieldSet, Bucket)} of the {@link FCPMessageHandler} which is responsible for it. 
+	 * Upon reception of a message, {@link FCPMessageReceiver#handlePluginFCPMessage(
+	 * FCPPluginClient, FCPPluginMessage)} calls {@link FCPMessageHandler#handle(SimpleFieldSet,
+	 * Bucket)} of the {@link FCPMessageHandler} which is responsible for it. 
 	 */
 	private interface FCPMessageHandler {
 		/**
@@ -708,10 +709,12 @@ public final class FCPClientReferenceImplementation {
 		public String getMessageName();
 		
 		/**
-		 * @throws ProcessingFailedException May be thrown if you want {@link FCPClientReferenceImplementation#onReply(String, String, SimpleFieldSet, Bucket)}
-		 * to signal to WOT that processing failed. This only is suitable for handlers of event-notifications:
-		 * WOT will send the event-notifications synchronously and therefore notice if they failed. It will resend them for a certain amount
-		 * of retries then.
+		 * @throws ProcessingFailedException
+		 *             May be thrown if you want {@link FCPMessageReceiver#handlePluginFCPMessage(
+		 *             FCPPluginClient, FCPPluginMessage)} to signal to WOT that processing failed.
+		 *             This only is suitable for handlers of event-notifications:<br>
+		 *             WOT will send the event-notifications synchronously and therefore notice if
+		 *             they failed. It will resend them for a certain amount of retries then.
 		 */
 		public void handle(final SimpleFieldSet sfs, final Bucket data) throws ProcessingFailedException;
 	}
