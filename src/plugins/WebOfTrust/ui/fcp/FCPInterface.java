@@ -1458,9 +1458,14 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         sfs.putOverwrite("OriginalMessage", originalFCPMessage.params.get("Message"));
         
         sfs.putOverwrite("Message", "Error");
-        // Deprecated because there is FCPPluginMessage.success now to indicate that a message is
-        // an error message.
-        sfs.putAppend("DeprecatedFields", "Message");
+        // NOT deprecated even though there is FCPPluginMessage.success already to indicate that a
+        // message is an error message:
+        // All other WOT FCP messages contain a "Message" field, which makes it likely that client
+        // implementations are centered around switching on that field. See our own
+        // FCPPluginClientReferenceImplementation for example.
+        // It would complicate their code to have the exception of error messages not containing
+        // the "Message" field.
+        /* sfs.putAppend("DeprecatedFields", "Message"); */
         
         sfs.putOverwrite("Description", errorMessage);
         // Deprecated because there is FCPPluginMessage.errorMessage now
