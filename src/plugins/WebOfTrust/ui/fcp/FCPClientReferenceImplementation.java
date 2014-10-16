@@ -676,7 +676,7 @@ public final class FCPClientReferenceImplementation {
 
 			if(logMINOR) Logger.minor(this, "Handling message '" + messageString + "' with " + handler + " ...");
 			try {
-				handler.handle(message.params, message.data);
+				handler.handle(message);
 				return !message.isReplyMessage() ? FCPPluginMessage.constructSuccessReply(message)
 				       : null;
 			} catch(ProcessingFailedException e) {
@@ -699,8 +699,8 @@ public final class FCPClientReferenceImplementation {
 	 * a {@link FCPMessageHandler} implementation must exist.
 	 * 
 	 * Upon reception of a message, {@link FCPMessageReceiver#handlePluginFCPMessage(
-	 * FCPPluginClient, FCPPluginMessage)} calls {@link FCPMessageHandler#handle(SimpleFieldSet,
-	 * Bucket)} of the {@link FCPMessageHandler} which is responsible for it. 
+	 * FCPPluginClient, FCPPluginMessage)} calls {@link FCPMessageHandler#handle(FCPPluginMessage)}
+	 * of the {@link FCPMessageHandler} which is responsible for it. 
 	 */
 	private interface FCPMessageHandler {
 		/**
@@ -716,7 +716,7 @@ public final class FCPClientReferenceImplementation {
 		 *             WOT will send the event-notifications synchronously and therefore notice if
 		 *             they failed. It will resend them for a certain amount of retries then.
 		 */
-		public void handle(final SimpleFieldSet sfs, final Bucket data) throws ProcessingFailedException;
+		public void handle(final FCPPluginMessage message) throws ProcessingFailedException;
 	}
 	
 	/**
@@ -742,7 +742,7 @@ public final class FCPClientReferenceImplementation {
 		}
 		
 		@Override
-		public void handle(final SimpleFieldSet sfs, final Bucket data) {
+		public void handle(final FCPPluginMessage message) {
 			if((CurrentTimeUTC.getInMillis() - mLastPingSentDate) <= WOT_PING_TIMEOUT_DELAY)
 				mLastPingSentDate = 0; // Mark the ping as successful.
 		}
@@ -759,9 +759,9 @@ public final class FCPClientReferenceImplementation {
 		}
 
 		@Override
-		public void handle(SimpleFieldSet sfs, Bucket data) {
-	    	final String id = sfs.get("SubscriptionID");
-	    	final String to = sfs.get("To");
+		public void handle(final FCPPluginMessage message) {
+	    	final String id = message.params.get("SubscriptionID");
+	    	final String to = message.params.get("To");
 	    	
 	    	assert(id != null && id.length() > 0);
 	    	assert(to != null);
@@ -788,9 +788,9 @@ public final class FCPClientReferenceImplementation {
 		}
 
 		@Override
-		public void handle(SimpleFieldSet sfs, Bucket data) {
-	    	final String id = sfs.get("SubscriptionID");
-	    	final String from = sfs.get("From");
+		public void handle(final FCPPluginMessage message) {
+	    	final String id = message.params.get("SubscriptionID");
+	    	final String from = message.params.get("From");
 	    	
 	    	assert(id != null && id.length() > 0);
 	    	assert(from != null);
@@ -822,8 +822,8 @@ public final class FCPClientReferenceImplementation {
 		}
 
 		@Override
-		public void handle(SimpleFieldSet sfs, Bucket data) throws ProcessingFailedException {
-			final String description = sfs.get("Description");
+		public void handle(final FCPPluginMessage message) throws ProcessingFailedException {
+			final String description = message.params.get("Description");
 			
 			if(description.equals("plugins.WebOfTrust.SubscriptionManager$SubscriptionExistsAlreadyException")) {
 			    // FIXME: We might want to update our member variables from this, otherwise the
@@ -836,7 +836,8 @@ public final class FCPClientReferenceImplementation {
 				// execution to file the next one.
 				// If subscribing succeed early enough and the KeepAliveLoop executes due to its normal period, it will try to file
 				// the subscription a second time and this condition happens:
-				Logger.warning(this, "Subscription exists already: To=" + sfs.get("To") + "; SubscriptionID=" + sfs.get("SubscriptionID"));
+				Logger.warning(this, "Subscription exists already: To=" + message.params.get("To")
+				    + "; SubscriptionID=" + message.params.get("SubscriptionID"));
 			} else {
 				Logger.error(this, "Unknown FCP error: " + description);
 			}
@@ -849,9 +850,9 @@ public final class FCPClientReferenceImplementation {
 	 * In that case we need to gracefully tell WOT about that: In case of {@link Subscription}'s event {@link Notification}s, it will re-send them then. 
 	 */
 	private abstract class MaybeFailingFCPMessageHandler implements FCPMessageHandler {
-		public void handle(final SimpleFieldSet sfs, final Bucket data) throws ProcessingFailedException {
+		public void handle(final FCPPluginMessage message) throws ProcessingFailedException {
 			try {	
-				handle_MaybeFailing(sfs, data);
+				handle_MaybeFailing(message.params, message.data);
 			} catch(Throwable t) {
 				throw new ProcessingFailedException(t); 
 			}
