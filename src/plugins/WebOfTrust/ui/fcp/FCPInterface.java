@@ -1110,7 +1110,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * implement what the JavaDoc says.
      * 
      * <b>Reply:</b>
-     * The reply consists of two separate FCP messages:
+     * The reply consists of two separate FCP messages:<br>
      * The first message is "Message" = "Identities" or "Trusts" or "Scores". It is referenced
      * as "synchronization message" in the following text.<br>
      * Its {@link FCPPluginMessage#identifier} will <b>not</b> match the identifier of the original
@@ -1147,11 +1147,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * If you indicated success in the synchronization message, the second message may indicate
      * success = true, which means that the subscription is active, and will be formatted as:
      * <br>
-     * "Message" = "Subscribed"
-     * "SubscriptionID" = Random {@link UUID} of the Subscription.
-     * "To" = Same as the "To" field of your original message.
+     * "Message" = "Subscribed"<br>
+     * "SubscriptionID" = Random {@link UUID} of the Subscription.<br>
+     * "To" = Same as the "To" field of your original message.<br><br>
      * 
-     * <b>Errors</b>:
+     * <b>Errors</b>:<br>
      * If you are already subscribed to the selected type, you will only receive a message:
      * {@link FCPPluginMessage#success} = false<br>
      * {@link FCPPluginMessage#errorCode} = "SubscriptionExistsAlready"<br>
@@ -1159,7 +1159,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * "Message" = "Error"<br>
      * "SubscriptionID" = Same as in the original "Subscribed" message<br>
      * "To" = Same as you requested<br>
-     * "OriginalMessage" = "Subscribe"<br>
+     * "OriginalMessage" = "Subscribe"<br><br>
      * 
      * <b>{@link Notification}s:</b>
      * Further  messages will be sent at any time in the future if an {@link Identity} / {@link Trust} / {@link Score}
