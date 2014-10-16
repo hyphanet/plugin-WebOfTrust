@@ -1139,10 +1139,6 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * message. This will have the same {@link FCPPluginMessage#identifier} as the
      * original "Subscribe" message which you first sent to subscribe, or in other words be the
      * reply to the original "Subscribe" message.<br>
-     * If you indicated failure in the reply to the synchronization message, this message will also
-     * indicate failure by {@link FCPPluginMessage#success} = false and
-     * {@link FCPPluginMessage#errorCode} = FIXME. <br>
-     * The subscription will <b>not</b> be filed then, you must retry on your own.<br><br>
      * 
      * If you indicated success in the synchronization message, the second message may indicate
      * success = true, which means that the subscription is active, and will be formatted as:
@@ -1152,7 +1148,18 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * "To" = Same as the "To" field of your original message.<br><br>
      * 
      * <b>Errors</b>:<br>
-     * If you are already subscribed to the selected type, you will only receive a message:
+     * If you indicated failure in the reply to the synchronization message by setting
+     * {@link FCPPluginMessage#success}=false, the subscription is <b>not</b> filed. You will
+     * receive the second message formatted as:<br>
+     * {@link FCPPluginMessage#identifier} = same as of your "Subscribe" message<br>
+     * {@link FCPPluginMessage#success} = false<br>
+     * {@link FCPPluginMessage#errorCode} = "InternalError"<br>
+     * {@link FCPPluginMessage#params}:<br>
+     * "Message" = "Error"<br>
+     * "OriginalMessage" = "Subscribe"<br><br>
+     * 
+     * If you are already subscribed to the selected type, you will only receive a single message:
+     * {@link FCPPluginMessage#identifier} = same as of your "Subscribe" message<br>
      * {@link FCPPluginMessage#success} = false<br>
      * {@link FCPPluginMessage#errorCode} = "SubscriptionExistsAlready"<br>
      * {@link FCPPluginMessage#params}:<br>
