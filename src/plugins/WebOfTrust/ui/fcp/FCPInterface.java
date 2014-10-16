@@ -1460,7 +1460,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         sfs.putOverwrite("Message", "Error");
         // Deprecated because there is FCPPluginMessage.success now to indicate that a message is
         // an error message.
-        sfs.putAppend("DeprecatedFields", "Error");
+        sfs.putAppend("DeprecatedFields", "Message");
         
         sfs.putOverwrite("Description", errorMessage);
         // Deprecated because there is FCPPluginMessage.errorMessage now
