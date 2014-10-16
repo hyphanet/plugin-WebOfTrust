@@ -260,7 +260,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             // A good solution would be to have the message handling functions return a valid
             // FCPPluginMessage with a proper errorCode field for errors which they know can happen
             // regularly such as the below ones. Then they wouldn't throw for those regular
-            // errors, and this code path would not get hit.
+            // errors, and this dontLog flag could be removed.
             // This will require changing the message handling functions to return FCPPluginMessage
             // instead of SimpleFieldSet though.
         	boolean dontLog = e instanceof NoSuchContextException ||
