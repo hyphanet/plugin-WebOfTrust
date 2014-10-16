@@ -225,6 +225,11 @@ public abstract class AbstractJUnit4BaseTest {
                     break;
                 case 1: // WebOfTrust.deleteOwnIdentity()
                     {
+                        if(randomizer.allOwnIdentities.size() < 1) {
+                            --i;
+                            continue;
+                        }
+
                         final String original = randomizer.allOwnIdentities.getRandom();
                         mWoT.deleteOwnIdentity(original);
                         randomizer.allIdentities.remove(original);
@@ -262,6 +267,11 @@ public abstract class AbstractJUnit4BaseTest {
                     break;
                 case 5: // WebOfTrust.addContext() (adds context to identity)
                     {
+                        if(randomizer.allOwnIdentities.size() < 1) {
+                            --i;
+                            continue;
+                        }
+                        
                         final String ownIdentityID = randomizer.allOwnIdentities.getRandom();
                         final String context
                             = getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH);
@@ -273,6 +283,11 @@ public abstract class AbstractJUnit4BaseTest {
                     break;
                 case 6: // WebOfTrust.setProperty (adds property to identity)
                     {
+                        if(randomizer.allOwnIdentities.size() < 1) {
+                            --i;
+                            continue;
+                        }
+                        
                         final String ownIdentityID = randomizer.allOwnIdentities.getRandom();
                         final String propertyName
                             = getRandomLatinString(Identity.MAX_PROPERTY_NAME_LENGTH);
@@ -294,6 +309,11 @@ public abstract class AbstractJUnit4BaseTest {
                 case 12:
                 case 13:
                     {
+                        if(randomizer.allIdentities.size() < 2) {
+                            --i;
+                            continue;
+                        }
+                        
                         Identity truster;
                         Identity trustee;
                         do {
@@ -315,6 +335,11 @@ public abstract class AbstractJUnit4BaseTest {
                     break;
                 case 14: // Remove trust value
                     {
+                        if(randomizer.allTrusts.size() < 1) {
+                            --i;
+                            continue;
+                        }
+                        
                         mWoT.beginTrustListImport();
                         final Trust trust = mWoT.getTrust(randomizer.allTrusts.getRandom());
                         mWoT.removeTrustWithoutCommit(trust);
