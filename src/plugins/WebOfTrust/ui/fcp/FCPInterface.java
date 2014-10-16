@@ -261,10 +261,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             // FCPPluginMessage with a proper errorCode field for errors which they know can happen
             // regularly such as the below ones. Then they wouldn't throw for those regular
             // errors, and this code path would not get hit.
-            // This will require chaning the message handling functions to return FCPPluginMessage
+            // This will require changing the message handling functions to return FCPPluginMessage
             // instead of SimpleFieldSet though.
-            // FIXME: We should probably do the above soon because we now have an errorCode field
-            // at fred-level in FCPPluginMessage
         	boolean dontLog = e instanceof NoSuchContextException ||
         						e instanceof NotInTrustTreeException ||
         						e instanceof NotTrustedException ||
