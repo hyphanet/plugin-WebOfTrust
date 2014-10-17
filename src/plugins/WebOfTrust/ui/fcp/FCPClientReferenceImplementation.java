@@ -824,18 +824,46 @@ public final class FCPClientReferenceImplementation {
 		@Override
 		public void handle(final FCPPluginMessage message) throws ProcessingFailedException {
 			if(message.errorCode.equals("SubscriptionExistsAlready")) {
-			    // FIXME: We might want to update our member variables from this, otherwise the
-			    // client might stay broken for ever if the original "Subscribed" message was not
-			    // processed successfully.
+			    // Subscription filing works like this:
+			    // 1) The KeepAliveLoop executes periodically every few seconds, and checks whether
+			    //    the user of the client has requested subscribing but there is no active
+			    //    subscription.
+			    // 2) If there is a user request to subscribe, a "Subscribe" message is sent to WOT.
+			    //    The subscription is NOT marked active in our active subscriptions table.
+			    // 3) Once WOT sends back a "Subscribed" message, the SubscriptionSucceededHandler
+			    //    will mark the subscription as active.
+			    // This implies that the following error condition can happen:
+			    // - We are in stage 2), i.e. we sent a "Subscribe" request, but it has not been
+			    //   confirmed by a "Subscribed" message yet, and thus the subscription table says
+			    //   we are not subscribed.
+			    // - WOT does not reply with a "Subscribed" message fast enough before the sleep
+			    //   period of the KeepAliveLoop expires. Thus, the KeepAliveLoop executes and sees
+			    //   that there is a subscription request but we are not subscribed, and tries to
+			    //   file the subscription again with another "Subscribe" message.
+			    // - WOT will reply to the second request with the "SubscriptionExistsAlready" error
+			    //   which we are handling here, because it has received the same subscription
+			    //   request twice.
+			    //
+			    // As a conclusion, we handle this error like a regular "Subscribed" message by
+			    // passing it to a FCPSubscriptionSucceeded handler.
+			    // (Of course we could just assume that the original "Subcribed" message from WOT
+			    // will also arrive at some point in time, and thus ignore the error message. But
+			    // that would be less robust: If the "Subscribed" message was lost somehow, for
+			    // example due to a parser error at our side, we would be caught in an infinite
+			    // loop of "Subscribe" messages being sent by us, and "SubscriptionExistsAlready"
+			    // being replied.
+			    // Additionally, it is likely that we want to change the WOT implementation in the
+			    // future to allow subscriptions to be persistent across restarts of WOT. Then the
+			    // client would probably would receive a SubscriptionExistsAlready regularly at
+			    // every restart.)
 			    
-		    	// checkSubscriptions() only files one subscription at a time to guarantee proper order of synchronization:
-		    	// Trust objects reference identity objects, so we cannot create them if we didn't get to know the identities first.
-		    	// So because it only files one at a time, after subscription has succeeded, the KeepAliveLoop will be scheduled for
-				// execution to file the next one.
-				// If subscribing succeed early enough and the KeepAliveLoop executes due to its normal period, it will try to file
-				// the subscription a second time and this condition happens:
-				Logger.warning(this, "Subscription exists already: To=" + message.params.get("To")
-				    + "; SubscriptionID=" + message.params.get("SubscriptionID"));
+				Logger.warning(this, "Received SubscriptionExistsAlready error message, marking "
+				                   + "subscription as active: To=" + message.params.get("To")
+				                   + "; SubscriptionID=" + message.params.get("SubscriptionID"));
+				
+				// The format of the message is the same as of the subscription succeed message,
+				// so we can pass it to the FCPSubscriptionSucceededHandler without modification.
+				new FCPSubscriptionSucceededHandler().handle(message);
 			} else {
 				Logger.error(this, "Unknown FCP error message: " + message);
 			}
