@@ -853,9 +853,13 @@ public final class FCPClientReferenceImplementation {
 			    // loop of "Subscribe" messages being sent by us, and "SubscriptionExistsAlready"
 			    // being replied.
 			    // Additionally, it is likely that we want to change the WOT implementation in the
-			    // future to allow subscriptions to be persistent across restarts of WOT. Then the
-			    // client would probably would receive a SubscriptionExistsAlready regularly at
-			    // every restart.)
+			    // future to allow subscriptions to be persistent across restarts of WOT, up to a
+			    // certain time limit of a week or so. Then the client probably would receive a
+			    // SubscriptionExistsAlready regularly at every restart: The client could not know
+			    // whether the uptime of WOT was a lot higher than its own meanwhile, resulting in
+			    // the expiration of the persistent subscription. Thus it would have to try to
+			    // re-subscribe at every restart, resulting in a SubscriptionExistsAlready most 
+			    // of the time.)
 			    
 				Logger.warning(this, "Received SubscriptionExistsAlready error message, marking "
 				                   + "subscription as active: To=" + message.params.get("To")
