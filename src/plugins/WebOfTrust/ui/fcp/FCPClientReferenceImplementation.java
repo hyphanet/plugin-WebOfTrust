@@ -1319,7 +1319,30 @@ public final class FCPClientReferenceImplementation {
 		            // To prevent new subscriptions from happening in between
 		            wait(SHUTDOWN_UNSUBSCRIBE_TIMEOUT);
 		        } catch (InterruptedException e) {
-		            Thread.interrupted();
+		            Logger.error(this, "stop(): Received InterruptedException while waiting for "
+		                             + "replies to fcp_Unsubscribe(). The shutdown thread should "
+		                             + "not be interrupted: Requesting the shutdown thread to "
+		                             + "shutdown does not make any sense!", e);
+		            
+		            // We partly honor the shutdown request by:
+		            // - not calling the wait(SHUTDOWN_UNSUBSCRIBE_TIMEOUT) again
+		            // - Saving the state of the Thread being interrupted in case something outside
+                    //   is expecting it, by calling interrupt() below.
+		            Thread.currentThread().interrupt(); 
+		            
+		            // We do NOT honor the shutdown request by an immediate "return;" though:
+		            // As stated in the above Logger.warning(), the InterruptedException which
+		            // requests this the stop() thread to stop() is nonsense: The purpose of stop() 
+		            // is stopping the client, so requesting it to stop is redundant. So a middle
+		            // path in dealing with it while still doing clean shutdown is respecting the
+		            // aborted wait(), which is what would have taken the longest of this function,
+		            // but at least continuing to do the remaining cleanup which this function would
+		            // do after the wait() - it should be fast anyway. Notice that the wait()
+		            // could have timed out (= returned before the data has arrived) in regular
+		            // operation, so it is OK if we accept the interruption of it: The below code
+		            // must be able to deal with not having the data yet anyway.
+		            
+		            /* return; */
 		        }			
 	        } catch(IOException e) {
 	            // We catch this here instead of closer to the fcp_Unsubscribe() call to ensure that
