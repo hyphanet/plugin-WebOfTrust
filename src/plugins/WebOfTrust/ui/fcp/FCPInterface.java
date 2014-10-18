@@ -860,11 +860,22 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 					final Identity identity = score.getTrustee();
 					final String suffix = Integer.toString(i);
 					
-					addIdentityFields(sfs, identity, "", suffix); // TODO: As of 2013-10-24, this is deprecated code to support old FCP clients. Remove it after some time.
-					addIdentityFields(sfs, identity, "Identities." + suffix + ".", "");
+					// TODO: As of 2013-10-24, this is deprecated code to support old FCP clients.
+					// Remove it after some time. Make sure to update all DeprecatedFields entries
+					// which this function adds.
+					addIdentityFields(sfs, identity, "", suffix);
+					// The above has no prefix, so we set it as deprecated as a whole, and then
+					// whitelist other stuff by setting DeprecatedField=false:
+					sfs.put("*.DeprecatedField", true);
 					
+					addIdentityFields(sfs, identity, "Identities." + suffix + ".", "");
+					sfs.put("Identities." + suffix + ".*.DeprecatedField", false);
+					
+					// Adds DeprecatedField entries on its own.
 					addScoreFields(sfs, score, suffix); // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
+					
 					handleGetScore(sfs, score, suffix);
+					sfs.put("Scores.*.DeprecatedField", false);
 					
 					if(includeTrustValue) {
 			            Trust trust = null;
@@ -872,12 +883,17 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 							trust = mWoT.getTrust(scoreOwner, identity);
 						} catch(NotTrustedException e) {}
 						
+		                // Adds DeprecatedField entries on its own.
 						addTrustFields(sfs, trust, suffix); // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
+						
 						handleGetTrust(sfs, trust, suffix);
+						sfs.put("Trusts.*.DeprecatedField", false);
 					}
 					
-					if(truster == null) // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
+					if(truster == null) { // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
 		    			sfs.putOverwrite("ScoreOwner" + i, scoreOwner.getID());
+		    			sfs.put("ScoreOwner" + i + ".DeprecatedField", true); 
+					}
 					
 					++i;
 				}
