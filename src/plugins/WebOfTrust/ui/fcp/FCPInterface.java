@@ -907,6 +907,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		return sfs;
     }
 
+    /**
+     * TODO: Unify message layout to be same as in {@link #handleGetIdentities(FCPPluginMessage)}
+     */
     private SimpleFieldSet handleGetTrusters(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
     	final String identityID = getMandatoryParameter(params, "Identity");
     	final String context = getMandatoryParameter(params, "Context");
@@ -977,6 +980,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         return sfs;
     }
 
+    /**
+     * TODO: Unify message layout to be same as in {@link #handleGetIdentities(FCPPluginMessage)}
+     */
     private SimpleFieldSet handleGetTrustees(final SimpleFieldSet params) throws InvalidParameterException, UnknownIdentityException {
     	final String identityID = getMandatoryParameter(params, "Identity");
     	final String context = getMandatoryParameter(params, "Context");
