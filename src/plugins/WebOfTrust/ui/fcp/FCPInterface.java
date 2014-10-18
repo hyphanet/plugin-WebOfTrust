@@ -478,9 +478,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     private SimpleFieldSet handleGetIdentity(final Identity identity, final OwnIdentity truster) {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     		
-    		addIdentityFields(sfs, identity,"", "0"); // TODO: As of 2013-10-24, this is legacy code to support old FCP clients. Remove it after some time.
-            addIdentityFields(sfs, identity,"", ""); // TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
-
+    		addIdentityFields(sfs, identity,"", "0"); // TODO: As of 2013-10-24, this is deprecated code to support old FCP clients. Remove it after some time.
+            addIdentityFields(sfs, identity,"", ""); // TODO: As of 2013-08-02, this is deprecated code to support old FCP clients. Remove it after some time.
+            
             addIdentityFields(sfs, identity, "Identities.0.", "");
             
     		if(truster != null) {
@@ -498,11 +498,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     			handleGetTrust(sfs, trust, "0");
     			handleGetScore(sfs, score, "0");
     			
-            	addTrustFields(sfs, trust, "0"); // TODO: As of 2013-10-25, this is legacy code to support old FCP clients. Remove it after some time.
-            	addScoreFields(sfs, score, "0"); // TODO: As of 2013-10-25, this is legacy code to support old FCP clients. Remove it after some time.
+            	addTrustFields(sfs, trust, "0"); // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
+            	addScoreFields(sfs, score, "0"); // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
             
-            	addTrustFields(sfs, trust, "");	// TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
-            	addScoreFields(sfs, score, ""); // TODO: As of 2013-08-02, this is legacy code to support old FCP clients. Remove it after some time.
+            	addTrustFields(sfs, trust, "");	// TODO: As of 2013-08-02, this is deprecated code to support old FCP clients. Remove it after some time.
+            	addScoreFields(sfs, score, ""); // TODO: As of 2013-08-02, this is deprecated code to support old FCP clients. Remove it after some time.
     		}
     	
 		return sfs;
@@ -527,12 +527,12 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * 
      * All following field names are NOT prefixed/suffixed unless "PREFIX"/"SUFFIX" is explicitely contained:
      * 
-     * If suffix.isEmpty() is true (those are legacy, do not use them in new parsers):
+     * If suffix.isEmpty() is true (those are deprecated, do not use them in new parsers):
      * PREFIXContextX = name of context with index X
      * PREFIXPropertyX.Name = name of property with index X
      * PREFIXPropertyX.Value = value of property with index X
      * 
-     * If suffix.isEmpty() is false (those are legacy, do not use them in new parsers):
+     * If suffix.isEmpty() is false (those are deprecated, do not use them in new parsers):
      * PREFIXContextsSUFFIX.ContextX = name of context with index X
      * PREFIXPropertiesSUFFIX.PropertyX.Name = name of property X
      * PREFIXPropertiesSUFFIX.PropertyX.Value = value of property X
@@ -574,7 +574,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
  		final ArrayList<String> contexts = identity.getContexts();
  		final HashMap<String, String> properties = identity.getProperties();
  		
-        if (suffix.isEmpty()) {	 // Legacy
+        if (suffix.isEmpty()) {	 // Deprecated
      		int contextCounter = 0;
      		int propertyCounter = 0;
      		
@@ -586,7 +586,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
                 sfs.putOverwrite(prefix + "Property" + propertyCounter + ".Name", property.getKey());
                 sfs.putOverwrite(prefix + "Property" + propertyCounter++ + ".Value", property.getValue());
             }
-        } else { // Legacy
+        } else { // Deprecated
      		int contextCounter = 0;
      		int propertyCounter = 0;
      		
@@ -603,11 +603,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
  		int contextCounter = 0;
  		int propertyCounter = 0;
         
-    	for(String context : contexts) { // Non-legacy
+    	for(String context : contexts) { // Non-deprecated
             sfs.putOverwrite(prefix + "Contexts." + contextCounter++ + ".Name", context);
         }
         
-        for (Entry<String, String> property : properties.entrySet()) { // Non-legacy
+        for (Entry<String, String> property : properties.entrySet()) { // Non-deprecated
             sfs.putOverwrite(prefix + "Properties." + propertyCounter + ".Name", property.getKey());
             sfs.putOverwrite(prefix + "Properties." + propertyCounter++ + ".Value", property.getValue());
         }
@@ -813,10 +813,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 					final Identity identity = score.getTrustee();
 					final String suffix = Integer.toString(i);
 					
-					addIdentityFields(sfs, identity, "", suffix); // TODO: As of 2013-10-24, this is legacy code to support old FCP clients. Remove it after some time.
+					addIdentityFields(sfs, identity, "", suffix); // TODO: As of 2013-10-24, this is deprecated code to support old FCP clients. Remove it after some time.
 					addIdentityFields(sfs, identity, "Identities." + suffix + ".", "");
 					
-					addScoreFields(sfs, score, suffix); // TODO: As of 2013-10-25, this is legacy code to support old FCP clients. Remove it after some time.
+					addScoreFields(sfs, score, suffix); // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
 					handleGetScore(sfs, score, suffix);
 					
 					if(includeTrustValue) {
@@ -825,11 +825,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 							trust = mWoT.getTrust(scoreOwner, identity);
 						} catch(NotTrustedException e) {}
 						
-						addTrustFields(sfs, trust, suffix); // TODO: As of 2013-10-25, this is legacy code to support old FCP clients. Remove it after some time.
+						addTrustFields(sfs, trust, suffix); // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
 						handleGetTrust(sfs, trust, suffix);
 					}
 					
-					if(truster == null) // TODO: As of 2013-10-25, this is legacy code to support old FCP clients. Remove it after some time.
+					if(truster == null) // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
 		    			sfs.putOverwrite("ScoreOwner" + i, scoreOwner.getID());
 					
 					++i;
