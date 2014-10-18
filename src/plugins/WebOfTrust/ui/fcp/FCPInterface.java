@@ -42,7 +42,6 @@ import freenet.node.FSParseException;
 import freenet.node.fcp.FCPPluginClient;
 import freenet.node.fcp.FCPPluginClient.SendDirection;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
-import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Base64;
