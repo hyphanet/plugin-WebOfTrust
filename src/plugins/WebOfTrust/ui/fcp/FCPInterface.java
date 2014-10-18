@@ -65,7 +65,8 @@ import freenet.support.api.Bucket;
  *   read and follow it. Also, it makes large messages which contain a lot of duplicate fields due
  *   to deprecation easier to understand. The data overhead is considered as acceptable because
  *   deprecated fields shall only exist temporarily anyway; and because FCP as a text mode
- *   protocol aims to be easy to read to humans, not space-efficient.<br>
+ *   protocol aims to be easy to read to humans, not space-efficient.
+ *   TODO: Optimization: Only send the DeprecatedFields if logMINOR is enabled.<br>
  * FIXME: Review the whole class for fields which are deprecated but not listed at DeprecatedFields
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
