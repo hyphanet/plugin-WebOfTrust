@@ -667,6 +667,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             sfs.putOverwrite("Trust" + suffix, Byte.toString(trust.getValue()));
         else
             sfs.putOverwrite("Trust" + suffix, "null");
+        
+        sfs.put("Trust" + suffix + ".DeprecatedField", true);
     }
     
     /**
