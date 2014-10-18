@@ -54,7 +54,11 @@ import freenet.support.api.Bucket;
  * in FCP messages sent by WOT:<br>
  * - If a {@link FCPPluginMessage} sent by WOT contains a value of "SomeField.DeprecatedField=true"
  *   in the {@link FCPPluginMessage#params}, then you should not write new client code to use the
- *   field "SomeField".
+ *   field "SomeField". A wildcard of "*" to match any characters can also be valid in the key name.
+ *   <br>
+ * - A value of "SomeField.DeprecatedField=false" can be used to exclude a field from the
+ *   deprecation list if a wildcard "*" in "abc*abc.DeprecatedField=true matches more than desired.
+ *   <br>
  * - If you want to change WOT to deprecate a certain field, use:<br>
  *   <code>aSimpleFieldSet.put("SomeField.DeprecatedField", true);</code><br>
  * - Notice that this is included in the actual on-network messages to ensure that client authors
@@ -477,10 +481,27 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     private SimpleFieldSet handleGetIdentity(final Identity identity, final OwnIdentity truster) {
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     		
-    		addIdentityFields(sfs, identity,"", "0"); // TODO: As of 2013-10-24, this is deprecated code to support old FCP clients. Remove it after some time.
-            addIdentityFields(sfs, identity,"", ""); // TODO: As of 2013-08-02, this is deprecated code to support old FCP clients. Remove it after some time.
+           	// TODO: As of 2013-10-24, this is deprecated code to support old FCP clients.
+    	    // Remove it after some time. Also do not forget to remove the appropriate
+    	    // Stuff.DeprecatedField=true and Stuff.DeprecatedField=false in the rest of this
+    	    // function then.
+    		addIdentityFields(sfs, identity,"", "0");
+
+            // TODO: As of 2013-10-24, this is deprecated code to support old FCP clients.
+            // Remove it after some time. Also do not forget to remove the appropriate
+            // Stuff.DeprecatedField=true and Stuff.DeprecatedField=false in the rest of this
+            // function then.
+            addIdentityFields(sfs, identity,"", "");
+            
+            // The above two have both an empty prefix, and all non-deprecated stuff which this
+            // function adds has a well-defined prefix, so we can use "*.DeprecatedField" to mark
+            // the above two as deprecated by whitelisting the non-deprecated stuff with
+            // "WellDefinedPrefix.DeprecatedField=false"
+            sfs.put("*.DeprecatedField", true);
             
             addIdentityFields(sfs, identity, "Identities.0.", "");
+            // Don't include the "0": The addIdentityFields will add a field Identities.Amount
+            sfs.put("Identities.*.DeprecatedField", false);
             
     		if(truster != null) {
     			Trust trust = null;
@@ -495,7 +516,13 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     			} catch(NotInTrustTreeException e) {}
     			
     			handleGetTrust(sfs, trust, "0");
+    			sfs.put("Trusts.*.DeprecatedField", false);
+    			
     			handleGetScore(sfs, score, "0");
+    			sfs.put("Scores.*.DeprecatedField", false);
+    			
+    			// No "DeprecatedField" entries needed for the following four, they all add them
+    			// on their own already.
     			
             	addTrustFields(sfs, trust, "0"); // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
             	addScoreFields(sfs, score, "0"); // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
