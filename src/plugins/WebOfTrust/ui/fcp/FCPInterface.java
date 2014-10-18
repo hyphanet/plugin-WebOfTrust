@@ -587,7 +587,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	sfs.putOverwrite(prefix + "Type" + suffix, (identity instanceof OwnIdentity) ? "OwnIdentity" : "Identity");
         sfs.putOverwrite(prefix + "Nickname" + suffix, identity.getNickname());
         sfs.putOverwrite(prefix + "RequestURI" + suffix, identity.getRequestURI().toString());
+        
         sfs.putOverwrite(prefix + "Identity" + suffix, identity.getID()); // TODO: As of 2013-09-11, this is legacy code to support old FCP clients. Remove it after some time.
+        sfs.put(prefix + "Identity" + suffix + ".DeprecatedField", true);
+        
  		sfs.putOverwrite(prefix + "ID" + suffix, identity.getID());
         sfs.put(prefix + "PublishesTrustList" + suffix, identity.doesPublishTrustList());
 
@@ -607,11 +610,13 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             for(String context : contexts) {
                 sfs.putOverwrite(prefix + "Context" + contextCounter++, context);
             }
+            sfs.put(prefix + "Context*.DeprecatedField", true);
             
             for (Entry<String, String> property : properties.entrySet()) {
                 sfs.putOverwrite(prefix + "Property" + propertyCounter + ".Name", property.getKey());
                 sfs.putOverwrite(prefix + "Property" + propertyCounter++ + ".Value", property.getValue());
             }
+            sfs.put(prefix + "Property*.*.DeprecatedField", true);
         } else { // Deprecated
      		int contextCounter = 0;
      		int propertyCounter = 0;
@@ -619,11 +624,15 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         	for(String context : contexts) {
                 sfs.putOverwrite(prefix + "Contexts" + suffix + ".Context" + contextCounter++, context);
             }
+        	
+        	sfs.put(prefix + "Contexts" + suffix + ".Context*.DeprecatedField", true);
             
             for (Entry<String, String> property : properties.entrySet()) {
                 sfs.putOverwrite(prefix + "Properties" + suffix + ".Property" + propertyCounter + ".Name", property.getKey());
                 sfs.putOverwrite(prefix + "Properties" + suffix + ".Property" + propertyCounter++ + ".Value", property.getValue());
             }
+            
+            sfs.put(prefix + "Properties" + suffix + ".Property*.*.DeprecatedField", true);
         }
         
  		int contextCounter = 0;
