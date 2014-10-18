@@ -701,7 +701,12 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		synchronized(mWoT) {
 			int i = 0;
 			for(final OwnIdentity oid : mWoT.getAllOwnIdentities()) {
-				sfs.putOverwrite("Identity" + i, oid.getID());
+			    // TODO: Unify the layout of this message to conform to the standard which is being
+			    // used in most other messages: It should be Identity.X.Nickname=... instead of
+			    // NicknameX=..., etc.
+			    // See addIdentityFields() for example.
+			    
+				sfs.putOverwrite("Identity" + i, oid.getID()); // TODO: This should be "ID"
 				sfs.putOverwrite("RequestURI" + i, oid.getRequestURI().toString());
 				sfs.putOverwrite("InsertURI" + i, oid.getInsertURI().toString());
 				sfs.putOverwrite("Nickname" + i, oid.getNickname());
@@ -709,11 +714,13 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 
 				int contextCounter = 0;
 				for (String context : oid.getContexts()) {
+				    // TODO: Unify to be same as in addIdentityFields()
 					sfs.putOverwrite("Contexts" + i + ".Context" + contextCounter++, context);
 				}
 
 				int propertiesCounter = 0;
 				for (Entry<String, String> property : oid.getProperties().entrySet()) {
+                    // TODO: Unify to be same as in addIdentityFields()
 					sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter + ".Name", property.getKey());
 					sfs.putOverwrite("Properties" + i + ".Property" + propertiesCounter++ + ".Value", property.getValue());
 				}
