@@ -689,6 +689,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             sfs.putOverwrite("Score" + suffix, "null");
             sfs.putOverwrite("Rank" + suffix, "null");
     	}
+    	
+        sfs.put("Score" + suffix + ".DeprecatedField", true);
+        sfs.put("Rank" + suffix + ".DeprecatedField", true);
     }
 
     private SimpleFieldSet handleGetOwnIdentities(final SimpleFieldSet params) {
