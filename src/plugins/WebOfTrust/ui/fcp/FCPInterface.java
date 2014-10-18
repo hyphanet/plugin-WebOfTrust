@@ -67,7 +67,6 @@ import freenet.support.api.Bucket;
  *   deprecated fields shall only exist temporarily anyway; and because FCP as a text mode
  *   protocol aims to be easy to read to humans, not space-efficient.
  *   TODO: Optimization: Only send the DeprecatedFields if logMINOR is enabled.<br>
- * FIXME: Review the whole class for fields which are deprecated but not listed at DeprecatedFields
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
