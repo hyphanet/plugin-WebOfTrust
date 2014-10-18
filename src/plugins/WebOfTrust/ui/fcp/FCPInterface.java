@@ -55,11 +55,13 @@ import freenet.support.api.Bucket;
  * in FCP messages sent by WOT:<br>
  * - If a {@link FCPPluginMessage} sent by WOT contains a list "DeprecatedFields" in the
  *   {@link FCPPluginMessage#params}, then you should not write new client code to use the
- *   fields of the {@link FCPPluginMessage#params} which are listed at "DeprecatedFields".<br>
+ *   fields of the {@link FCPPluginMessage#params} which are listed at "DeprecatedFields".
+ *   The names can contain the wildcard "*", which shall have the common meaning of "any amount
+ *   of any characters.".<br>
  * - If you want to change WOT to deprecate a certain field, use:<br>
  *   <code>aSimpleFieldSet.putAppend("DeprecatedFields", "NameOfTheField");</code><br>
  * - Notice that this is included in the actual on-network messages to ensure that client authors
- *   read and follow i. Also, it makes large messages which contain a lot of duplicate fields due
+ *   read and follow it. Also, it makes large messages which contain a lot of duplicate fields due
  *   to deprecation easier to understand. The data overhead is considered as acceptable because it
  *   will be a constant amount independent of the size of the actual data which is being sent;
  *   because deprecated fields shall only exist temporarily anyway; and because FCP as a text mode
