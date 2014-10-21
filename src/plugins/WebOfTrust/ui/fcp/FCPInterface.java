@@ -47,11 +47,13 @@ import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 /**
  * ATTENTION: There is a deprecation mechanism for getting rid of old SimpleFieldSet keys (fields)
- * in FCP messages sent by WOT:<br>
+ * in FCP messages sent by WOT - which can be enabled by setting the {@link Logger.LogLevel} to
+ * {@link LogLevel#MINOR} for this class:<br>
  * - If a {@link FCPPluginMessage} sent by WOT contains a value of "SomeField.DeprecatedField=true"
  *   in the {@link FCPPluginMessage#params}, then you should not write new client code to use the
  *   field "SomeField". A wildcard of "*" to match any characters can also be valid in the key name.
@@ -60,13 +62,7 @@ import freenet.support.api.Bucket;
  *   deprecation list if a wildcard "*" in "abc*abc.DeprecatedField=true matches more than desired.
  *   <br>
  * - If you want to change WOT to deprecate a certain field, use:<br>
- *   <code>aSimpleFieldSet.put("SomeField.DeprecatedField", true);</code><br>
- * - Notice that this is included in the actual on-network messages to ensure that client authors
- *   read and follow it. Also, it makes large messages which contain a lot of duplicate fields due
- *   to deprecation easier to understand. The data overhead is considered as acceptable because
- *   deprecated fields shall only exist temporarily anyway; and because FCP as a text mode
- *   protocol aims to be easy to read to humans, not space-efficient.
- *   TODO: Optimization: Only send the DeprecatedFields if logMINOR is enabled.<br>
+ *   <code>if(logMINOR) aSimpleFieldSet.put("SomeField.DeprecatedField", true);</code><br>
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
@@ -131,7 +127,18 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     
     private final SubscriptionManager mSubscriptionManager;
 
-    
+    /** Automatically set to true by {@link Logger} if the log level is set to
+     *  {@link LogLevel#MINOR} for this class.<br>
+     *  Used as performance optimization to prevent construction of the log strings if it is not
+     *  necessary. */
+    private static transient volatile boolean logMINOR = false;
+
+    static {
+        // Necessary for automatic setting of logDEBUG and logMINOR
+        Logger.registerClass(FCPInterface.class);
+    }
+
+
     public FCPInterface(final WebOfTrust myWoT) {
         mWoT = myWoT;
         mPluginRespirator = mWoT.getPluginRespirator();
@@ -497,11 +504,13 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             // function adds has a well-defined prefix, so we can use "*.DeprecatedField" to mark
             // the above two as deprecated by whitelisting the non-deprecated stuff with
             // "WellDefinedPrefix.DeprecatedField=false"
-            sfs.put("*.DeprecatedField", true);
+            if(logMINOR)
+                sfs.put("*.DeprecatedField", true);
             
             addIdentityFields(sfs, identity, "Identities.0.", "");
             // Don't include the "0": The addIdentityFields will add a field Identities.Amount
-            sfs.put("Identities.*.DeprecatedField", false);
+            if(logMINOR)
+                sfs.put("Identities.*.DeprecatedField", false);
             
     		if(truster != null) {
     			Trust trust = null;
@@ -516,10 +525,12 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     			} catch(NotInTrustTreeException e) {}
     			
     			handleGetTrust(sfs, trust, "0");
-    			sfs.put("Trusts.*.DeprecatedField", false);
+    			if(logMINOR)
+    			    sfs.put("Trusts.*.DeprecatedField", false);
     			
     			handleGetScore(sfs, score, "0");
-    			sfs.put("Scores.*.DeprecatedField", false);
+    			if(logMINOR)
+    			    sfs.put("Scores.*.DeprecatedField", false);
     			
     			// No "DeprecatedField" entries needed for the following four, they all add them
     			// on their own already.
@@ -589,7 +600,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         sfs.putOverwrite(prefix + "RequestURI" + suffix, identity.getRequestURI().toString());
         
         sfs.putOverwrite(prefix + "Identity" + suffix, identity.getID()); // TODO: As of 2013-09-11, this is legacy code to support old FCP clients. Remove it after some time.
-        sfs.put(prefix + "Identity" + suffix + ".DeprecatedField", true);
+        if(logMINOR)
+            sfs.put(prefix + "Identity" + suffix + ".DeprecatedField", true);
         
  		sfs.putOverwrite(prefix + "ID" + suffix, identity.getID());
         sfs.put(prefix + "PublishesTrustList" + suffix, identity.doesPublishTrustList());
@@ -610,13 +622,15 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             for(String context : contexts) {
                 sfs.putOverwrite(prefix + "Context" + contextCounter++, context);
             }
-            sfs.put(prefix + "Context*.DeprecatedField", true);
+            if(logMINOR)
+                sfs.put(prefix + "Context*.DeprecatedField", true);
             
             for (Entry<String, String> property : properties.entrySet()) {
                 sfs.putOverwrite(prefix + "Property" + propertyCounter + ".Name", property.getKey());
                 sfs.putOverwrite(prefix + "Property" + propertyCounter++ + ".Value", property.getValue());
             }
-            sfs.put(prefix + "Property*.*.DeprecatedField", true);
+            if(logMINOR)
+                sfs.put(prefix + "Property*.*.DeprecatedField", true);
         } else { // Deprecated
      		int contextCounter = 0;
      		int propertyCounter = 0;
@@ -625,14 +639,16 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
                 sfs.putOverwrite(prefix + "Contexts" + suffix + ".Context" + contextCounter++, context);
             }
         	
-        	sfs.put(prefix + "Contexts" + suffix + ".Context*.DeprecatedField", true);
+        	if(logMINOR)
+        	    sfs.put(prefix + "Contexts" + suffix + ".Context*.DeprecatedField", true);
             
             for (Entry<String, String> property : properties.entrySet()) {
                 sfs.putOverwrite(prefix + "Properties" + suffix + ".Property" + propertyCounter + ".Name", property.getKey());
                 sfs.putOverwrite(prefix + "Properties" + suffix + ".Property" + propertyCounter++ + ".Value", property.getValue());
             }
             
-            sfs.put(prefix + "Properties" + suffix + ".Property*.*.DeprecatedField", true);
+            if(logMINOR)
+                sfs.put(prefix + "Properties" + suffix + ".Property*.*.DeprecatedField", true);
         }
         
  		int contextCounter = 0;
@@ -668,7 +684,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         else
             sfs.putOverwrite("Trust" + suffix, "null");
         
-        sfs.put("Trust" + suffix + ".DeprecatedField", true);
+        if(logMINOR)
+            sfs.put("Trust" + suffix + ".DeprecatedField", true);
     }
     
     /**
@@ -690,8 +707,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             sfs.putOverwrite("Rank" + suffix, "null");
     	}
     	
-        sfs.put("Score" + suffix + ".DeprecatedField", true);
-        sfs.put("Rank" + suffix + ".DeprecatedField", true);
+    	if(logMINOR) {
+    	    sfs.put("Score" + suffix + ".DeprecatedField", true);
+    	    sfs.put("Rank" + suffix + ".DeprecatedField", true);
+    	}
     }
 
     private SimpleFieldSet handleGetOwnIdentities(final SimpleFieldSet params) {
@@ -866,16 +885,19 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 					addIdentityFields(sfs, identity, "", suffix);
 					// The above has no prefix, so we set it as deprecated as a whole, and then
 					// whitelist other stuff by setting DeprecatedField=false:
-					sfs.put("*.DeprecatedField", true);
+					if(logMINOR)
+					    sfs.put("*.DeprecatedField", true);
 					
 					addIdentityFields(sfs, identity, "Identities." + suffix + ".", "");
-					sfs.put("Identities." + suffix + ".*.DeprecatedField", false);
+					if(logMINOR)
+					    sfs.put("Identities." + suffix + ".*.DeprecatedField", false);
 					
 					// Adds DeprecatedField entries on its own.
 					addScoreFields(sfs, score, suffix); // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
 					
 					handleGetScore(sfs, score, suffix);
-					sfs.put("Scores.*.DeprecatedField", false);
+					if(logMINOR)
+					    sfs.put("Scores.*.DeprecatedField", false);
 					
 					if(includeTrustValue) {
 			            Trust trust = null;
@@ -887,12 +909,14 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 						addTrustFields(sfs, trust, suffix); // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
 						
 						handleGetTrust(sfs, trust, suffix);
-						sfs.put("Trusts.*.DeprecatedField", false);
+						if(logMINOR)
+						    sfs.put("Trusts.*.DeprecatedField", false);
 					}
 					
 					if(truster == null) { // TODO: As of 2013-10-25, this is deprecated code to support old FCP clients. Remove it after some time.
 		    			sfs.putOverwrite("ScoreOwner" + i, scoreOwner.getID());
-		    			sfs.put("ScoreOwner" + i + ".DeprecatedField", true); 
+		    			if(logMINOR)
+		    			    sfs.put("ScoreOwner" + i + ".DeprecatedField", true); 
 					}
 					
 					++i;
@@ -1535,11 +1559,12 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         // FCPPluginClientReferenceImplementation for example.
         // It would complicate their code to have the exception of error messages not containing
         // the "Message" field.
-        /* sfs.put("Message.DeprecatedField", true); */
+        /* if(logMINOR) sfs.put("Message.DeprecatedField", true); */
         
         sfs.putOverwrite("Description", errorMessage);
         // Deprecated because there is FCPPluginMessage.errorMessage now
-        sfs.put("Description.DeprecatedField", true);
+        if(logMINOR)
+            sfs.put("Description.DeprecatedField", true);
         
         return reply;
         
