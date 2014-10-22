@@ -1075,7 +1075,6 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * Calls {@link Subscription#synchronizeSubscriberByFCP()} on the Subscription, stores it and commits the transaction.
 	 * 
-	 * Takes care of all required synchronization.
 	 * Shall be used as back-end for all front-end functions for creating subscriptions.
 	 * 
 	 * You have to synchronize on mWoT and this SubscriptionManager before calling this function!
