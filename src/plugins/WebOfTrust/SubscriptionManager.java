@@ -483,35 +483,70 @@ public final class SubscriptionManager implements PrioRunnable {
 			}
 		}
 		
-		
 		/**
 		 * Called by the {@link SubscriptionManager} before storing a new Subscription.
+		 * <br><br>
 		 * 
 		 * When real events happen, we only want to send a "diff" between the last state of the database before the event happened and the new state.
 		 * For being able to only send a diff, the subscriber must know what the <i>initial</i> state of the database was.
-		 * And thats the purpose of this function: To send the full initial state of the database to the client.
+		 * <br><br>
 		 * 
-		 * The implementation MUST throw a {@link FCPCallFailedException} if the client did not signal that the processing was successful:
-		 * This will allow the client to use failing database transactions in the event handlers and just rollback and throw if the transaction fails. 
-		 * The implementation MUST use synchronous FCP communication to allow the client to signal an error.
-		 * Also, synchronous communication is necessary for guaranteeing the notifications to arrive after the synchronization at the client.
-		 * 
-		 * For example, if a client subscribes to the list of identities, it must always receive a full list of all existing identities at first.
-		 * As new identities appear afterwards, the client can be kept up to date by sending each single new identity as it appears. 
+         * For example, if a client subscribes to the list of identities, it must always receive a full list of all existing identities at first.
+         * As new identities appear afterwards, the client can be kept up to date by sending each single new identity as it appears.
+         * <br><br>
+         * 
+		 * The job of this function is to store the initial state of the WOT database in this
+		 * Subscription, as a clone of all relevant objects, serialized into a byte[].<br>
+		 * The actual deployment of the data to the client will happen in the future, as part of
+		 * regular {@link Notification} deployment: The synchronization can be large in size, and
+		 * thus sending it over the network can take a long time. Therefore, it would be bad if we
+		 * sent it directly from the main {@link WebOfTrust} database since that would require us
+		 * to take the main {@link WebOfTrust} lock during the whole time.<br>
+		 * By separating the part of copying the data from the {@link WebOfTrust} into a local
+		 * operation, we can keep the time we have to take the main lock as short as possible.<br>
+		 * <br>
 		 * 
 		 * Thread synchronization:
 		 * This must be called with synchronization upon the {@link WebOfTrust} and the SubscriptionManager.
 		 * Therefore it may perform database queries on the WebOfTrust to obtain the dataset.
+		 */
+		protected abstract void storeSynchronization();
+		
+		/**
+		 * Sends out the synchronization stored by {@link #storeSynchronization()}. See the JavaDoc
+		 * of that function for an explanation what "synchronization" means here.<br><br>
 		 * 
+         * The implementation MUST throw a {@link FCPCallFailedException} if the client did not signal that the processing was successful:
+         * This will allow the client to use failing database transactions in the event handlers and just rollback and throw if the transaction fails. 
+         * The implementation MUST use synchronous FCP communication to allow the client to signal an error.
+         * Also, synchronous communication is necessary for guaranteeing the notifications to arrive after the synchronization at the client.
+         * <br><br>
+         * 
+         * If this function fails, the caller MUST NOT proceed to deploy {@link Notification}s to
+         * the client. Instead, it must retry calling this function until it succeeds or the
+         * retry limit is exceeded.<br><br>.
+         * 
+         * Thread synchronization:
+         * This must be called with synchronization upon the SubscriptionManager and the database
+         * transaction lock.<br><br>
+         * 
          * @throws IOException
-         *             If the FCP client has disconnected. Subscribing must fail if this happens.
+         *             If the FCP client has disconnected.<br>
+         *             You should call
+         *             {@link Client#incrementSendNotificationsFailureCountWithoutCommit()} upon
+         *             {@link #mClient} then, and retry calling this function at the next
+         *             iteration of the notification sending thread - until the limit is reached.
          * @throws InterruptedException
          *             If an external thread requested the current thread to terminate via
          *             {@link Thread#interrupt()} while the data was being transfered to the client.
          *             <br>This is a necessary shutdown mechanism as clients can be attached by
          *             network and thus transfers can take a long time. Please honor it by 
          *             terminating the thread so WOT can shutdown quickly.
-		 * @throws FCPCallFailedException If processing failed at the client. Subscribing must fail if this happens.
+         * @throws FCPCallFailedException If processing failed at the client.<br>
+         *             You should call
+         *             {@link Client#incrementSendNotificationsFailureCountWithoutCommit()} upon
+         *             {@link #mClient} then, and retry calling this function at the next
+         *             iteration of the notification sending thread - until the limit is reached.
 		 */
         protected abstract void synchronizeSubscriberByFCP()
             throws FCPCallFailedException, IOException, InterruptedException;
