@@ -531,6 +531,11 @@ public final class SubscriptionManager implements PrioRunnable {
          * This must be called with synchronization upon the SubscriptionManager and the database
          * transaction lock.<br><br>
          * 
+         * @param notification
+         *             The {@link Notification#getNewObject()} must be an instance of
+         *             {@link SynchronizationContainer}.<br>
+         *             The type parameter of that {@link SynchronizationContainer} must be the same
+         *             type as the Notification is about - {@link Identity}, {@link Trust} or {@link Score}.
          * @throws IOException
          *             If the FCP client has disconnected.<br>
          *             You should call
@@ -549,7 +554,7 @@ public final class SubscriptionManager implements PrioRunnable {
          *             {@link #mClient} then, and retry calling this function at the next
          *             iteration of the notification sending thread - until the limit is reached.
 		 */
-        protected abstract void synchronizeSubscriberByFCP()
+        protected abstract void synchronizeSubscriberByFCP(NotificationType notification)
             throws FCPCallFailedException, IOException, InterruptedException;
 
 		/**
@@ -780,6 +785,10 @@ public final class SubscriptionManager implements PrioRunnable {
                 "FIXME: This should probably be the ID of a Freenet Bucket which stores the actual "
               + "data so we don't store it in the database since it is huge");
         }
+        
+        ObjectSet<T> getSynchronization() {
+            throw new UnsupportedOperationException("FIXME: Read it from the Bucket");
+        }
 
         @Override
         public void startupDatabaseIntegrityTest() throws Exception {
@@ -918,10 +927,20 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		/** {@inheritDoc} */
 		@Override
-        protected void synchronizeSubscriberByFCP()
+        protected void synchronizeSubscriberByFCP(IdentityChangedNotification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
 		    
-			mWebOfTrust.getFCPInterface().sendAllIdentities(getClient().getFCP_ID());
+		    @SuppressWarnings("unchecked")
+            SynchronizationContainer<Identity> synchronization
+                = (SynchronizationContainer<Identity>) notification.getNewObject();
+            
+            for(Identity identity : synchronization.getSynchronization()) {
+                throw new UnsupportedOperationException(
+                    "FIXME: Implement similar to the below, but send it out as a Bucket so memory "
+                  + "is not exhaused.");
+		    
+			    // mWebOfTrust.getFCPInterface().sendAllIdentities(getClient().getFCP_ID());
+            }
 		}
 		
 		/** {@inheritDoc} */
@@ -930,7 +949,15 @@ public final class SubscriptionManager implements PrioRunnable {
                 throws FCPCallFailedException, IOException, InterruptedException {
 
 			assert(notification instanceof IdentityChangedNotification);
-			mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(getClient().getFCP_ID(), (IdentityChangedNotification)notification);
+			IdentityChangedNotification identityChangedNotification = 
+			    (IdentityChangedNotification)notification;
+			
+			if(notification.getNewObject() instanceof SynchronizationContainer) {
+			    synchronizeSubscriberByFCP(identityChangedNotification);
+			} else {
+			    mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(
+			        getClient().getFCP_ID(), identityChangedNotification);
+			}
 		}
 
 		/**
@@ -965,10 +992,20 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/** {@inheritDoc} */
 		@Override
-        protected void synchronizeSubscriberByFCP()
+        protected void synchronizeSubscriberByFCP(TrustChangedNotification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
-
-			mWebOfTrust.getFCPInterface().sendAllTrustValues(getClient().getFCP_ID());
+		    
+            @SuppressWarnings("unchecked")
+            SynchronizationContainer<Trust> synchronization
+                = (SynchronizationContainer<Trust>) notification.getNewObject();
+            
+            for(Trust trust : synchronization.getSynchronization()) {
+                throw new UnsupportedOperationException(
+                    "FIXME: Implement similar to the below, but send it out as a Bucket so memory "
+                  + "is not exhaused.");
+            
+                // mWebOfTrust.getFCPInterface().sendAllTrustValues(getClient().getFCP_ID());
+            }
 		}
 		
 		/** {@inheritDoc} */
@@ -977,7 +1014,15 @@ public final class SubscriptionManager implements PrioRunnable {
                 throws FCPCallFailedException, IOException, InterruptedException {
 
 			assert(notification instanceof TrustChangedNotification);
-			mWebOfTrust.getFCPInterface().sendTrustChangedNotification(getClient().getFCP_ID(), (TrustChangedNotification)notification);
+			TrustChangedNotification trustChangedNotification = 
+			    (TrustChangedNotification)notification;
+
+			if(notification.getNewObject() instanceof SynchronizationContainer) {
+			    synchronizeSubscriberByFCP(trustChangedNotification);
+			} else {
+			    mWebOfTrust.getFCPInterface().sendTrustChangedNotification(
+			        getClient().getFCP_ID(), trustChangedNotification);
+			}
 		}
 
 		/**
@@ -1012,19 +1057,37 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/** {@inheritDoc} */
 		@Override
-        protected void synchronizeSubscriberByFCP()
+        protected void synchronizeSubscriberByFCP(ScoreChangedNotification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
 
-			mWebOfTrust.getFCPInterface().sendAllScoreValues(getClient().getFCP_ID());
+            @SuppressWarnings("unchecked")
+            SynchronizationContainer<Score> synchronization
+                = (SynchronizationContainer<Score>) notification.getNewObject();
+            
+            for(Score score : synchronization.getSynchronization()) {
+                throw new UnsupportedOperationException(
+                    "FIXME: Implement similar to the below, but send it out as a Bucket so memory "
+                  + "is not exhaused.");
+            
+                // mWebOfTrust.getFCPInterface().sendAllScoreValues(getClient().getFCP_ID());
+            }
 		}
 
 		/** {@inheritDoc} */
 		@Override
         protected void notifySubscriberByFCP(final Notification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
+		    
+            assert(notification instanceof ScoreChangedNotification);
+            ScoreChangedNotification scoreChangedNotification = 
+                (ScoreChangedNotification)notification;
 
-			assert(notification instanceof ScoreChangedNotification);
-			mWebOfTrust.getFCPInterface().sendScoreChangedNotification(getClient().getFCP_ID(), (ScoreChangedNotification)notification);
+            if(notification.getNewObject() instanceof SynchronizationContainer) {
+                synchronizeSubscriberByFCP(scoreChangedNotification);
+            } else {
+                mWebOfTrust.getFCPInterface().sendScoreChangedNotification(
+                    getClient().getFCP_ID(), scoreChangedNotification);
+            }
 		}
 
 		/**
