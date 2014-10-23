@@ -2357,6 +2357,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * @return An {@link ObjectSet} containing all {@link Trust} the passed Identity has received.
 	 */
+	@Override
 	public ObjectSet<Trust> getAllTrusts() {
 		final Query query = mDB.query();
 		query.constrain(Trust.class);

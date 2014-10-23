@@ -51,6 +51,8 @@ public abstract class WebOfTrustInterface {
 	
 	abstract public List<Identity> getAllIdentities();
 	
+	abstract public List<Trust> getAllTrusts();
+	
 
 	abstract protected PluginRespirator getPluginRespirator();
 	
