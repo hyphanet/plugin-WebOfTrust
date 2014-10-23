@@ -20,6 +20,7 @@ import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.TrivialTicker;
+import freenet.support.api.Bucket;
 import freenet.support.codeshortification.IfNull;
 import freenet.support.io.NativeThread;
 
@@ -749,6 +750,62 @@ public final class SubscriptionManager implements PrioRunnable {
 		public String toString() {
 			return super.toString() + " { oldObject=" + getOldObject() + "; newObject=" + getNewObject() + " }";
 		}
+	}
+	
+	/**
+	 * Shall store a synchronization of the client database. See
+	 * {@link Subscription#storeSynchronization()} for a description what "synchronization" means
+	 * here.<br><br>
+	 * 
+	 * It does so by writing a serialized copy of all objects of the synchronization into a
+	 * {@link Bucket} and merely storing an identifier of the {@link Bucket} in this class.<br><br>
+	 * 
+	 * It can be passed to {@link Notification#Notification(Subscription, Persistent, Persistent)}
+	 * as the "newObject" parameter. This allows storing an object of this class inside a regular
+	 * {@link Notification} without introducing a separate codepath in {@link Notification} for
+	 * storing synchronizations.
+	 */
+	@SuppressWarnings("serial")
+    public static class SynchronizationContainer<T extends Persistent> extends Persistent {
+	    public SynchronizationContainer(ObjectSet<T> synchronization) {
+	        for(T object : synchronization) {
+	            throw new UnsupportedOperationException(
+	                "FIXME: Store them in a Bucket, and store the ID of the Bucket in this class.");
+	        }
+	    }
+	    
+        @Override
+        public String getID() {
+            throw new UnsupportedOperationException(
+                "FIXME: This should probably be the ID of a Freenet Bucket which stores the actual "
+              + "data so we don't store it in the database since it is huge");
+        }
+
+        @Override
+        public void startupDatabaseIntegrityTest() throws Exception {
+            throwBecauseClassShouldNotBeUsedWithRealDatabase();
+        }
+
+        @Override
+        protected void storeWithoutCommit(int activationDepth) {
+            throwBecauseClassShouldNotBeUsedWithRealDatabase();
+        }
+
+        @Override
+        protected void storeWithoutCommit() {
+            throwBecauseClassShouldNotBeUsedWithRealDatabase();
+        }
+        
+        /**
+         * This class merely is a wrapper for allowing to be stored as a serialized object in the
+         * {@link Notification} byte[].<br>
+         * Thus, this function can be used to throw an  {@link UnsupportedOperationException} in
+         * functions which would store the object in the real WOT database.
+         */
+        private void throwBecauseClassShouldNotBeUsedWithRealDatabase() {
+            throw new UnsupportedOperationException("Objects of this class shall not be stored as "
+                + "real database objects but only as byte[] obtained by Persistent.serialize()");
+        }
 	}
 	
 	/**
