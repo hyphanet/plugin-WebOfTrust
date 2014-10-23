@@ -53,6 +53,8 @@ public abstract class WebOfTrustInterface {
 	
 	abstract public List<Trust> getAllTrusts();
 	
+	abstract public List<Score> getAllScores();
+	
 
 	abstract protected PluginRespirator getPluginRespirator();
 	

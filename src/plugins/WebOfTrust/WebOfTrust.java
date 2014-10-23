@@ -2148,6 +2148,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Get all scores in the database.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 */
+	@Override
 	public ObjectSet<Score> getAllScores() {
 		final Query query = mDB.query();
 		query.constrain(Score.class);
