@@ -772,7 +772,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	@SuppressWarnings("serial")
     public static class SynchronizationContainer<T extends Persistent> extends Persistent {
-	    public SynchronizationContainer(ObjectSet<T> synchronization) {
+	    public SynchronizationContainer(List<T> synchronization) {
 	        for(T object : synchronization) {
 	            throw new UnsupportedOperationException(
 	                "FIXME: Store them in a Bucket, and store the ID of the Bucket in this class.");
