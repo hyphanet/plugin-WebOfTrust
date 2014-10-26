@@ -1312,6 +1312,7 @@ public final class SubscriptionManager implements PrioRunnable {
 				throw new RuntimeException("Failed to send pending notifications to the client. Cannot file a new Subscription!");
 		}
 		
+		subscription.storeSynchronizationWithoutCommit();
 		
 		try {
 		    subscription.synchronizeSubscriberByFCP(); // Needs the lock on mWoT which the JavaDoc requests
