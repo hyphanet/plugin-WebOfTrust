@@ -20,7 +20,7 @@ import freenet.support.StringValidityChecker;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Trust extends Persistent implements Cloneable, EventSource, Serializable {
+public final class Trust extends Persistent implements Cloneable, EventSource {
 	
 	/** @see Serializable */
 	private static transient final long serialVersionUID = 1L;
