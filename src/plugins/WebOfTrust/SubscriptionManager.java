@@ -788,7 +788,7 @@ public final class SubscriptionManager implements PrioRunnable {
               + "data so we don't store it in the database since it is huge");
         }
         
-        ObjectSet<T> getSynchronization() {
+        List<T> getSynchronization() {
             throw new UnsupportedOperationException("FIXME: Read it from the Bucket");
         }
 
