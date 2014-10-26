@@ -944,6 +944,16 @@ public final class SubscriptionManager implements PrioRunnable {
 			super(myClient);
 		}
 
+        /** {@inheritDoc} */
+        @Override protected void storeSynchronization() {
+            final SynchronizationContainer<Identity> synchronization
+                = new SynchronizationContainer<>(mWebOfTrust.getAllIdentities());
+            final IdentityChangedNotification notification
+                = new IdentityChangedNotification(this, synchronization);
+            notification.initializeTransient(mWebOfTrust);
+            notification.storeWithoutCommit();
+        }
+
 		/** {@inheritDoc} */
 		@Override
         protected void synchronizeSubscriberByFCP(IdentityChangedNotification notification)
@@ -1008,7 +1018,17 @@ public final class SubscriptionManager implements PrioRunnable {
 		protected TrustsSubscription(final Client myClient) {
 			super(myClient);
 		}
-		
+
+        /** {@inheritDoc} */
+        @Override protected void storeSynchronization() {
+            final SynchronizationContainer<Trust> synchronization
+                = new SynchronizationContainer<>(mWebOfTrust.getAllTrusts());
+            final TrustChangedNotification notification
+                = new TrustChangedNotification(this, synchronization);
+            notification.initializeTransient(mWebOfTrust);
+            notification.storeWithoutCommit();
+        }
+
 		/** {@inheritDoc} */
 		@Override
         protected void synchronizeSubscriberByFCP(TrustChangedNotification notification)
@@ -1073,6 +1093,16 @@ public final class SubscriptionManager implements PrioRunnable {
 		protected ScoresSubscription(final Client myClient) {
 			super(myClient);
 		}
+
+        /** {@inheritDoc} */
+        @Override protected void storeSynchronization() {
+            final SynchronizationContainer<Score> synchronization
+                = new SynchronizationContainer<>(mWebOfTrust.getAllScores());
+            final ScoreChangedNotification notification
+                = new ScoreChangedNotification(this, synchronization);
+            notification.initializeTransient(mWebOfTrust);
+            notification.storeWithoutCommit();
+        }
 		
 		/** {@inheritDoc} */
 		@Override
