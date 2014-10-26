@@ -512,11 +512,12 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * This must be called with synchronization upon the {@link WebOfTrust} and the SubscriptionManager.
 		 * Therefore it may perform database queries on the WebOfTrust to obtain the dataset.
 		 */
-		protected abstract void storeSynchronization();
+		protected abstract void storeSynchronizationWithoutCommit();
 		
 		/**
-		 * Sends out the synchronization stored by {@link #storeSynchronization()}. See the JavaDoc
-		 * of that function for an explanation what "synchronization" means here.<br><br>
+		 * Sends out the synchronization stored by {@link #storeSynchronizationWithoutCommit()}. See
+		 * the JavaDoc of that function for an explanation what "synchronization" means here.<br>
+		 * <br>
 		 * 
          * The implementation MUST throw a {@link FCPCallFailedException} if the client did not signal that the processing was successful:
          * This will allow the client to use failing database transactions in the event handlers and just rollback and throw if the transaction fails. 
@@ -760,8 +761,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * Shall store a synchronization of the client database. See
-	 * {@link Subscription#storeSynchronization()} for a description what "synchronization" means
-	 * here.<br><br>
+	 * {@link Subscription#storeSynchronizationWithoutCommit()} for a description what
+	 * "synchronization" means here.<br><br>
 	 * 
 	 * It does so by writing a serialized copy of all objects of the synchronization into a
 	 * {@link Bucket} and merely storing an identifier of the {@link Bucket} in this class.<br><br>
@@ -945,7 +946,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
         /** {@inheritDoc} */
-        @Override protected void storeSynchronization() {
+        @Override protected void storeSynchronizationWithoutCommit() {
             final SynchronizationContainer<Identity> synchronization
                 = new SynchronizationContainer<>(mWebOfTrust.getAllIdentities());
             final IdentityChangedNotification notification
@@ -1020,7 +1021,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
         /** {@inheritDoc} */
-        @Override protected void storeSynchronization() {
+        @Override protected void storeSynchronizationWithoutCommit() {
             final SynchronizationContainer<Trust> synchronization
                 = new SynchronizationContainer<>(mWebOfTrust.getAllTrusts());
             final TrustChangedNotification notification
@@ -1095,7 +1096,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
         /** {@inheritDoc} */
-        @Override protected void storeSynchronization() {
+        @Override protected void storeSynchronizationWithoutCommit() {
             final SynchronizationContainer<Score> synchronization
                 = new SynchronizationContainer<>(mWebOfTrust.getAllScores());
             final ScoreChangedNotification notification
