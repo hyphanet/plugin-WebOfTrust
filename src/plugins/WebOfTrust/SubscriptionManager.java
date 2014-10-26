@@ -835,6 +835,12 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	@SuppressWarnings("serial")
 	public static class IdentityChangedNotification extends Notification {
+        /** @see SynchronizationContainer */
+        protected IdentityChangedNotification(
+                final Subscription<IdentityChangedNotification> mySubscription, 
+                final SynchronizationContainer<Identity> synchronization) {
+            super(mySubscription, null, synchronization);
+        }
 
 		/**
 		 * Only one of oldIentity and newIdentity may be null. If both are non-null, their {@link Identity#getID()} must match.
@@ -865,7 +871,13 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	@SuppressWarnings("serial")
 	public static final class TrustChangedNotification extends Notification {
-		
+        /** @see SynchronizationContainer */
+        protected TrustChangedNotification(
+                final Subscription<TrustChangedNotification> mySubscription, 
+                final SynchronizationContainer<Trust> synchronization) {
+            super(mySubscription, null, synchronization);
+        }
+
 		/**
 		 * Only one of oldTrust and newTrust may be null. If both are non-null, their {@link Trust#getID()} must match.
 		 * 
@@ -895,6 +907,12 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	@SuppressWarnings("serial")
 	public static final class ScoreChangedNotification extends Notification {
+        /** @see SynchronizationContainer */
+        protected ScoreChangedNotification(
+                final Subscription<ScoreChangedNotification> mySubscription,
+                final SynchronizationContainer<Score> synchronization) {
+            super(mySubscription, null, synchronization);
+        }
 
 		/**
 		 * Only one of oldScore and newScore may be null. If both are non-null, their {@link Score#getID()} must match.
