@@ -32,7 +32,7 @@ import freenet.support.codeshortification.IfNull;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class Identity extends Persistent implements Cloneable, Serializable {
+public class Identity extends Persistent implements Cloneable, EventSource, Serializable {
 
 	/** @see Serializable */
 	private static transient final long serialVersionUID = 1L;

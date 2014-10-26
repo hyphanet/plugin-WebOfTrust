@@ -21,7 +21,7 @@ import freenet.support.CurrentTimeUTC;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Score extends Persistent implements Cloneable, Serializable {
+public final class Score extends Persistent implements Cloneable, EventSource, Serializable {
 	
 	/** @see Serializable */
 	private static transient final long serialVersionUID = 1L;
