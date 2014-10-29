@@ -321,14 +321,17 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Any {@link Throwable}s which happen if sending the message fails are swallowed.
 		 */
 		@SuppressWarnings("unchecked")
-		private void notifyClientAboutDeletion(final Subscription<? extends Notification> deletedSubscriptoin) {			
+		private void notifyClientAboutDeletion(
+		        final Subscription<? extends EventSource> deletedSubscriptoin) {
+		    
 			try {
 				Logger.warning(getSubscriptionManager(), "notifyClientAboutDeletion() for " + deletedSubscriptoin);
 				
 				switch(getType()) {
 					case FCP:
 						mWebOfTrust.getFCPInterface().sendUnsubscribedMessage(getFCP_ID(),
-								(Class<Subscription<? extends Notification>>) deletedSubscriptoin.getClass(),
+								(Class<Subscription<? extends EventSource>>) deletedSubscriptoin
+								    .getClass(),
 								deletedSubscriptoin.getID());
 						break;
 					default:
@@ -349,7 +352,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param subscriptionManager The {@link SubscriptionManager} to which this Client belongs.
 		 */
 		protected void deleteWithoutCommit(final SubscriptionManager subscriptionManager) {
-			for(final Subscription<? extends Notification> subscription : subscriptionManager.getSubscriptions(this)) {
+			for(final Subscription<? extends EventSource> subscription
+			        : subscriptionManager.getSubscriptions(this)) {
+			    
 				subscription.deleteWithoutCommit(subscriptionManager);
 				notifyClientAboutDeletion(subscription);
 			}
@@ -370,19 +375,20 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * A subscription stores the information which client is subscribed to which content and how it is supposed
 	 * to be notified about updates.
-	 * For each {@link Client}, one subscription is stored one per {@link Notification}-type.
+	 * For each {@link Client}, one subscription is stored one per {@link EventSource}-type.
 	 * A {@link Client} cannot have multiple subscriptions of the same type.
 	 * 
 	 * Notice: Even though this is an abstract class, it contains code specific <b>all</>b> types of subscription clients such as FCP and callback.
 	 * At first glance, this looks like a violation of abstraction principles. But it is not:
 	 * Subclasses of this class shall NOT be created for different types of clients such as FCP and callbacks.
-	 * Subclasses are created for different types of content to which the subscriber is subscribed: There is a subclass for subscriptions to the
-	 * list of {@link Identity}s, the list of {@link Trust}s, and so on. Each subclass has to implement the code for notifying <b>all</b> types
-	 * of clients (FCP, callback, etc.).
+	 * Subclasses are created for different types of EventSource to which the subscriber is
+	 * subscribed: There is a subclass for subscriptions to the list of {@link Identity}s, the list
+	 * of {@link Trust}s, and so on. Each subclass has to implement the code for notifying
+	 * <b>all</b> types of clients (FCP, callback, etc.).
 	 * Therefore, this base class also contains code for <b>all</b> kinds of clients.
 	 */
 	@SuppressWarnings("serial")
-	public static abstract class Subscription<NotificationType extends Notification> extends Persistent {
+	public static abstract class Subscription<EventType extends EventSource> extends Persistent {
 		
 		/**
 		 * The {@link Client} which created this {@link Subscription}.
@@ -556,7 +562,7 @@ public final class SubscriptionManager implements PrioRunnable {
          *             {@link #mClient} then, and retry calling this function at the next
          *             iteration of the notification sending thread - until the limit is reached.
 		 */
-        protected abstract void synchronizeSubscriberByFCP(NotificationType notification)
+        protected abstract void synchronizeSubscriberByFCP(Notification notification)
             throws FCPCallFailedException, IOException, InterruptedException;
 
 		/**
@@ -627,7 +633,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * The {@link Subscription} to which this Notification belongs
 		 */
 		@IndexedField
-		private final Subscription<? extends Notification> mSubscription;
+		private final Subscription<? extends EventSource> mSubscription;
 		
 		/**
 		 * The index of this Notification in the queue of its {@link Client}:
@@ -668,7 +674,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param oldObject The version of the changed {@link Persistent} object before the change.
 		 * @param newObject The version of the changed {@link Persistent} object after the change.
 		 */
-		protected Notification(final Subscription<? extends Notification> mySubscription,
+		protected Notification(final Subscription<? extends EventSource> mySubscription,
 				final Persistent oldObject, final Persistent newObject) {
 			mSubscription = mySubscription;
 			mClient = mSubscription.getClient();
@@ -724,7 +730,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * @return The {@link Subscription} which requested this type of Notification.
 		 */
-		public Subscription<? extends Notification> getSubscription() {
+		public Subscription<? extends EventSource> getSubscription() {
 			checkedActivate(1);
 			mSubscription.initializeTransient(mWebOfTrust);
 			return mSubscription;
@@ -838,7 +844,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static class IdentityChangedNotification extends Notification {
         /** @see SynchronizationContainer */
         protected IdentityChangedNotification(
-                final Subscription<IdentityChangedNotification> mySubscription, 
+                final Subscription<Identity> mySubscription, 
                 final SynchronizationContainer<Identity> synchronization) {
             super(mySubscription, null, synchronization);
         }
@@ -850,7 +856,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param oldIdentity The version of the {@link Identity} before the change.
 		 * @param newIdentity The version of the {@link Identity} after the change.
 		 */
-		protected IdentityChangedNotification(final Subscription<? extends IdentityChangedNotification> mySubscription, 
+		protected IdentityChangedNotification(final Subscription<Identity> mySubscription, 
 				final Identity oldIdentity, final Identity newIdentity) {
 			super(mySubscription, oldIdentity, newIdentity);
 		}
@@ -874,7 +880,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static final class TrustChangedNotification extends Notification {
         /** @see SynchronizationContainer */
         protected TrustChangedNotification(
-                final Subscription<TrustChangedNotification> mySubscription, 
+                final Subscription<Trust> mySubscription, 
                 final SynchronizationContainer<Trust> synchronization) {
             super(mySubscription, null, synchronization);
         }
@@ -886,7 +892,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param oldTrust The version of the {@link Trust} before the change.
 		 * @param newTrust The version of the {@link Trust} after the change.
 		 */
-		protected TrustChangedNotification(final Subscription<TrustChangedNotification> mySubscription, 
+		protected TrustChangedNotification(final Subscription<Trust> mySubscription, 
 				final Trust oldTrust, final Trust newTrust) {
 			super(mySubscription, oldTrust, newTrust);
 		}
@@ -910,7 +916,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	public static final class ScoreChangedNotification extends Notification {
         /** @see SynchronizationContainer */
         protected ScoreChangedNotification(
-                final Subscription<ScoreChangedNotification> mySubscription,
+                final Subscription<Score> mySubscription,
                 final SynchronizationContainer<Score> synchronization) {
             super(mySubscription, null, synchronization);
         }
@@ -922,7 +928,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param oldScore The version of the {@link Score} before the change.
 		 * @param newScore The version of the {@link Score} after the change.
 		 */
-		protected ScoreChangedNotification(final Subscription<ScoreChangedNotification> mySubscription,
+		protected ScoreChangedNotification(final Subscription<Score> mySubscription,
 				final Score oldScore, final Score newScore) {
 			super(mySubscription, oldScore, newScore);
 		}
@@ -936,7 +942,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see IdentityChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
 	@SuppressWarnings("serial")
-	public static final class IdentitiesSubscription extends Subscription<IdentityChangedNotification> {
+	public static final class IdentitiesSubscription extends Subscription<Identity> {
 
 		/**
 		 * @param myClient The {@link Client} which created this Subscription. 
@@ -957,7 +963,7 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		/** {@inheritDoc} */
 		@Override
-        protected void synchronizeSubscriberByFCP(IdentityChangedNotification notification)
+        protected void synchronizeSubscriberByFCP(Notification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
 		    
 		    @SuppressWarnings("unchecked")
@@ -1011,7 +1017,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see TrustChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
 	@SuppressWarnings("serial")
-	public static final class TrustsSubscription extends Subscription<TrustChangedNotification> {
+	public static final class TrustsSubscription extends Subscription<Trust> {
 
 		/**
 		 * @param myClient The {@link Client} which created this Subscription. 
@@ -1032,7 +1038,7 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		/** {@inheritDoc} */
 		@Override
-        protected void synchronizeSubscriberByFCP(TrustChangedNotification notification)
+        protected void synchronizeSubscriberByFCP(Notification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
 		    
             @SuppressWarnings("unchecked")
@@ -1086,7 +1092,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see ScoreChangedNotification The type of {@link Notification} which is deployed by this subscription.
 	 */
 	@SuppressWarnings("serial")
-	public static final class ScoresSubscription extends Subscription<ScoreChangedNotification> {
+	public static final class ScoresSubscription extends Subscription<Score> {
 
 		/**
 		 * @param myClient The {@link Client} which created this Subscription.
@@ -1107,7 +1113,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		/** {@inheritDoc} */
 		@Override
-        protected void synchronizeSubscriberByFCP(ScoreChangedNotification notification)
+        protected void synchronizeSubscriberByFCP(Notification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
 
             @SuppressWarnings("unchecked")
@@ -1215,15 +1221,18 @@ public final class SubscriptionManager implements PrioRunnable {
 
 	
 	/**
-	 * Thrown when a single {@link Client} tries to file a {@link Subscription} of the same class of event {@link Notification}.
+	 * Thrown when a single {@link Client} tries to file a {@link Subscription} of the same class of
+	 * {@link EventSource}.
 	 * 
 	 * @see #throwIfSimilarSubscriptionExists
 	 */
 	@SuppressWarnings("serial")
 	public static final class SubscriptionExistsAlreadyException extends Exception {
-		public final Subscription<? extends Notification> existingSubscription;
+		public final Subscription<? extends EventSource> existingSubscription;
 		
-		public SubscriptionExistsAlreadyException(Subscription<? extends Notification> existingSubscription) {
+		public SubscriptionExistsAlreadyException(
+		        Subscription<? extends EventSource> existingSubscription) {
+		    
 			this.existingSubscription = existingSubscription;
 		}
 	}
@@ -1257,7 +1266,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * Throws when a single {@link Client} tries to file a {@link Subscription} which has the same class as the given Subscription and thereby the same class of event {@link Notification}.
+	 * Throws when a single {@link Client} tries to file a {@link Subscription} which has the same
+	 * class as the given Subscription (= the same class of {@link EventSource} as type parameter).
 	 * 
 	 * Used to ensure that each client can only subscribe once to each type of event.
 	 * 
@@ -1265,12 +1275,19 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @throws SubscriptionExistsAlreadyException If a {@link Subscription} exists which matches the attributes of the given Subscription as specified in the description of the function.
 	 */
 	@SuppressWarnings("unchecked")
-	private synchronized void throwIfSimilarSubscriptionExists(final Subscription<? extends Notification> subscription) throws SubscriptionExistsAlreadyException {
+	private synchronized void throwIfSimilarSubscriptionExists(
+	        final Subscription<? extends EventSource> subscription)
+	            throws SubscriptionExistsAlreadyException {
+	    
 		try {
 			final Client client = subscription.getClient();
 			if(!mDB.isStored(client))
 				return; // The client was newly created just for this subscription so there cannot be any similar subscriptions on it. 
-			final Subscription<? extends Notification> existing = getSubscription((Class<? extends Subscription<? extends Notification>>) subscription.getClass(), client);
+			final Subscription<? extends EventSource> existing
+			    = getSubscription(
+			        (Class<? extends Subscription<? extends EventSource>>) subscription.getClass()
+			        , client
+			      );
 			throw new SubscriptionExistsAlreadyException(existing);
 		} catch (UnknownSubscriptionException e) {
 			return;
@@ -1294,8 +1311,9 @@ public final class SubscriptionManager implements PrioRunnable {
      *             a very long time. Please honor it by terminating the thread so WOT can shutdown
      *             quickly. 
 	 */
-	private void storeNewSubscriptionAndCommit(final Subscription<? extends Notification> subscription)
-	        throws InterruptedException, SubscriptionExistsAlreadyException {
+	private void storeNewSubscriptionAndCommit(
+	        final Subscription<? extends EventSource> subscription)
+	            throws InterruptedException, SubscriptionExistsAlreadyException {
 	    
 		subscription.initializeTransient(mWoT);
 
@@ -1435,9 +1453,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @throws UnknownSubscriptionException If no subscription with the given ID exists.
 	 */
 	@SuppressWarnings("unchecked")
-	public Class<Subscription<? extends Notification>> unsubscribe(String subscriptionID) throws UnknownSubscriptionException {
+	public Class<Subscription<? extends EventSource>> unsubscribe(String subscriptionID)
+	        throws UnknownSubscriptionException {
+	    
 		synchronized(this) {
-		final Subscription<? extends Notification> subscription = getSubscription(subscriptionID);
+		final Subscription<? extends EventSource> subscription = getSubscription(subscriptionID);
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				subscription.deleteWithoutCommit(this);
@@ -1454,7 +1474,7 @@ public final class SubscriptionManager implements PrioRunnable {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
-		return (Class<Subscription<? extends Notification>>) subscription.getClass();
+		return (Class<Subscription<? extends EventSource>>) subscription.getClass();
 		}
 	}
 	
@@ -1502,35 +1522,39 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @return All existing {@link Subscription}s.
 	 */
-	private ObjectSet<Subscription<? extends Notification>> getAllSubscriptions() {
+	private ObjectSet<Subscription<? extends EventSource>> getAllSubscriptions() {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
-		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
+		return new Persistent.InitializingObjectSet<Subscription<? extends EventSource>>(mWoT, q);
 	}
 	
 	/**
 	 * @return All subscriptions of the given {@link Client}.
 	 */
-	private ObjectSet<Subscription<? extends Notification>> getSubscriptions(final Client client) {
+	private ObjectSet<Subscription<? extends EventSource>> getSubscriptions(final Client client) {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
 		q.descend("mClient").constrain(client).identity();
-		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
+		return new Persistent.InitializingObjectSet<Subscription<? extends EventSource>>(mWoT, q);
 	}
 	
 	/**
-	 * Get all {@link Subscription}s to a certain {@link Notification} type.
+	 * Get all {@link Subscription}s to a certain {@link EventSource} type.
 	 * 
-	 * Typically used by the functions store*NotificationWithoutCommit() for storing the given {@link Notification} to the queues of all Subscriptions
-	 * which are subscribed to the type of the given notification.
+	 * Typically used by the functions store*NotificationWithoutCommit() for storing a type of
+	 * {@link Notification} which fits the given the {@link EventSource} type; and those
+	 * Notifications are there stored to the queues of all Subscriptions which are subscribed to
+	 * the given {@link EventSource} type.
 	 * 
-	 * @param clazz The type of {@link Notification} to filter by.
-	 * @return Get all {@link Subscription}s to a certain {@link Notification} type.
+	 * @param clazz The type of {@link EventSource} to filter by.
+	 * @return Get all {@link Subscription}s to a certain {@link EventSource} type.
 	 */
-	private ObjectSet<? extends Subscription<? extends Notification>> getSubscriptions(final Class<? extends Subscription<? extends Notification>> clazz) {
+	private ObjectSet<? extends Subscription<? extends EventSource>> getSubscriptions(
+	        final Class<? extends Subscription<? extends EventSource>> clazz) {
+	    
 		final Query q = mDB.query();
 		q.constrain(clazz);
-		return new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
+		return new Persistent.InitializingObjectSet<Subscription<? extends EventSource>>(mWoT, q);
 	}
 	
 	/**
@@ -1538,11 +1562,14 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return The {@link Subscription} with the given ID. Only one Subscription can exist for a single ID.
 	 * @throws UnknownSubscriptionException If no {@link Subscription} exists with the given ID.
 	 */
-	private Subscription<? extends Notification> getSubscription(final String id) throws UnknownSubscriptionException {
+	private Subscription<? extends EventSource> getSubscription(final String id)
+	        throws UnknownSubscriptionException {
+	    
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
 		q.descend("mID").constrain(id);	
-		ObjectSet<Subscription<? extends Notification>> result = new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
+		ObjectSet<Subscription<? extends EventSource>> result
+		    = new Persistent.InitializingObjectSet<Subscription<? extends EventSource>>(mWoT, q);
 		
 		switch(result.size()) {
 			case 1: return result.next();
@@ -1553,10 +1580,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * Gets a  {@link Subscription} which matches the given parameters:
-	 * - the given class of Subscription and thereby event {@link Notification}
+	 * - the given class of Subscription and thereby class of its generic param {@link EventSource}.
 	 * - the given {@link Client}
 	 * 
-	 * Only one {@link Subscription} which matches both of these can exist: Each {@link Client} can only subscribe once to a type of event.
+	 * Only one {@link Subscription} which matches both of these can exist: Each {@link Client} can
+	 * only subscribe once to a type of {@link EventSource}.
 	 * 
 	 * Typically used by {@link #throwIfSimilarSubscriptionExists(Subscription)}.
 	 * 
@@ -1565,11 +1593,15 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return See description.
 	 * @throws UnknownSubscriptionException If no matching {@link Subscription} exists.
 	 */
-	private Subscription<? extends Notification> getSubscription(final Class<? extends Subscription<? extends Notification>> clazz, final Client client) throws UnknownSubscriptionException {
+	private Subscription<? extends EventSource> getSubscription(
+	        final Class<? extends Subscription<? extends EventSource>> clazz, final Client client)
+	            throws UnknownSubscriptionException {
+	    
 		final Query q = mDB.query();
 		q.constrain(clazz);
 		q.descend("mClient").constrain(client).identity();		
-		ObjectSet<Subscription<? extends Notification>> result = new Persistent.InitializingObjectSet<Subscription<? extends Notification>>(mWoT, q);
+		ObjectSet<Subscription<? extends EventSource>> result
+		    = new Persistent.InitializingObjectSet<Subscription<? extends EventSource>>(mWoT, q);
 		
 		switch(result.size()) {
 			case 1: return result.next();
@@ -1596,7 +1628,7 @@ public final class SubscriptionManager implements PrioRunnable {
 					n.deleteWithoutCommit();
 				}
 				
-				for(Subscription<? extends Notification> s : getAllSubscriptions()) {
+				for(Subscription<? extends EventSource> s : getAllSubscriptions()) {
 					s.deleteWithoutCommit();
 				}
 				
@@ -1632,7 +1664,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @param subscription The {@link Subscription} of whose queue to return notifications from.
 	 * @return All {@link Notification}s on the queue of the subscription.
 	 */
-	private ObjectSet<? extends Notification> getNotifications(final Subscription<? extends Notification> subscription) {
+	private ObjectSet<? extends Notification> getNotifications(
+	        final Subscription<? extends EventSource> subscription) {
+	    
 		final Query q = mDB.query();
 		q.constrain(Notification.class);
 		q.descend("mSubscription").constrain(subscription).identity();

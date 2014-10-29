@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import plugins.WebOfTrust.EventSource;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
@@ -1292,7 +1293,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	
     	try {
             FCPPluginMessage reply = FCPPluginMessage.constructSuccessReply(message);
-            Subscription<? extends Notification> subscription;
+            Subscription<? extends EventSource> subscription;
             
 	    	if(to.equals("Identities")) {
 	    		subscription = mSubscriptionManager.subscribeToIdentities(client.getID());
@@ -1356,12 +1357,13 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             throws InvalidParameterException, UnknownSubscriptionException {
         
         final String subscriptionID = getMandatoryParameter(request.params, "SubscriptionID");
-    	final Class<Subscription<? extends Notification>> clazz = mSubscriptionManager.unsubscribe(subscriptionID);
+    	final Class<Subscription<? extends EventSource>> clazz
+    	    = mSubscriptionManager.unsubscribe(subscriptionID);
         return handleUnsubscribe(request, clazz, subscriptionID);
     }
     
     public void sendUnsubscribedMessage(final UUID clientID,
-            final Class<Subscription<? extends Notification>> clazz, final String subscriptionID)
+            final Class<Subscription<? extends EventSource>> clazz, final String subscriptionID)
                 throws IOException {
         
         mPluginRespirator.getPluginClientByID(clientID).send(SendDirection.ToClient,
@@ -1377,13 +1379,18 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      *            due to an original client message.
      */
     private FCPPluginMessage handleUnsubscribe(final FCPPluginMessage request,
-        final Class<Subscription<? extends Notification>> clazz, final String subscriptionID) {
+        final Class<Subscription<? extends EventSource>> clazz, final String subscriptionID) {
         
         final FCPPluginMessage result =
             request != null ? FCPPluginMessage.constructSuccessReply(request) :
                               FCPPluginMessage.construct();
         
     	final String type;
+    	
+    	// FIXME: Read out the type-parameter ? extends EventSource via reflection:
+    	// It will be class Identity, Trust, or Score.
+    	// This will then allow you to get rid of the wrapper classes IdentitiesSubscription,
+    	// TrustsSubscription, ScoresSubscription.
     	
     	if(clazz.equals(IdentitiesSubscription.class))
     		type = "Identities";
