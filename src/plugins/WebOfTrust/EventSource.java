@@ -4,7 +4,10 @@
 package plugins.WebOfTrust;
 
 import java.io.Serializable;
+import java.util.UUID;
 
+import plugins.WebOfTrust.SubscriptionManager.Client;
+import plugins.WebOfTrust.SubscriptionManager.Notification;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
 
 
@@ -24,5 +27,23 @@ import plugins.WebOfTrust.SubscriptionManager.Subscription;
  * is about.
  */
 public interface EventSource extends Serializable {
-
+    /**
+     * When a {@link Notification} about an {@link EventSource} is being deployed to a
+     * {@link Client} by the {@link SubscriptionManager}, the {@link SubscriptionManager} will use
+     * this function to assign a version to the {@link EventSource} before sending a copy of the
+     * {@link EventSource} to the client.<br>
+     * The client shall then obtain the version ID via {@link #getVersionID(UUID)}, and store it
+     * in its database as part of the copy of the {@link EventSource}.<br>
+     * This will allow the {@link SubscriptionManager} to instruct the {@link Client} to delete
+     * all copies of an {@link EventSource} older than the most recent version ID, in a
+     * "mark-and-sweep" garbage collection fashion. This is necessary as part of efficient
+     * synchronization; see {@link SubscriptionManager} for an explanation of what "synchronization"
+     * means in terms of events. 
+     */
+    public void setVersionID(final UUID versionID);
+    
+    /**
+     * @see #setVersionID(UUID)
+     */
+    public void getVersionID(final UUID versionID);
 }
