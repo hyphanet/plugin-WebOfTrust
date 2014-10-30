@@ -658,6 +658,23 @@ public final class SubscriptionManager implements PrioRunnable {
             if(mIndex < 0)
                 throw new IllegalStateException("mIndex==" + mIndex);
         }
+
+        /**
+         * @deprecated Not implemented because we don't need it.
+         */
+        @Deprecated()
+        public String getID() {
+            throw new UnsupportedOperationException();
+        }
+        
+        /**
+         * @return The {@link Subscription} which requested this type of Notification.
+         */
+        public Subscription<? extends EventSource> getSubscription() {
+            checkedActivate(1);
+            mSubscription.initializeTransient(mWebOfTrust);
+            return mSubscription;
+        }
 	}
 	
 	/**
@@ -738,23 +755,6 @@ public final class SubscriptionManager implements PrioRunnable {
 
 			if(mOldObject != null && mNewObject != null && !getOldObject().getID().equals(getNewObject().getID()))
 				throw new IllegalStateException("The ID of mOldObject and mNewObject must match!");
-		}
-		
-		/**
-		 * @deprecated Not implemented because we don't need it.
-		 */
-		@Deprecated()
-		public String getID() {
-			throw new UnsupportedOperationException();
-		}
-		
-		/**
-		 * @return The {@link Subscription} which requested this type of Notification.
-		 */
-		public Subscription<? extends EventSource> getSubscription() {
-			checkedActivate(1);
-			mSubscription.initializeTransient(mWebOfTrust);
-			return mSubscription;
 		}
 
 		/**
