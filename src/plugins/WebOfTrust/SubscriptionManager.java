@@ -632,6 +632,18 @@ public final class SubscriptionManager implements PrioRunnable {
 		@IndexedField
 		private final long mIndex;
 	
+        /**
+         * Constructs a Notification in the queue of the given Client.<br>
+         * Takes a free Notification index from it with
+         * {@link Client#takeFreeNotificationIndexWithoutCommit}.
+         * 
+         * @param mySubscription The {@link Subscription} which requested this type of Notification.
+         */
+        Notification(final Subscription<? extends EventSource> mySubscription) {
+            mSubscription = mySubscription;
+            mClient = mSubscription.getClient();
+            mIndex = mClient.takeFreeNotificationIndexWithoutCommit();
+        }
 	}
 	
 	/**
@@ -669,21 +681,18 @@ public final class SubscriptionManager implements PrioRunnable {
 		private final byte[] mNewObject;
 		
 		/**
-		 * Constructs a Notification in the queue of the given Client.
-		 * Takes a free notification index from it with {@link Client#takeFreeNotificationIndexWithoutCommit}
-		 * 
 		 * Only one of oldObject or newObject may be null.
 		 * If both are non-null, their {@link Persistent#getID()} must be equal.
 		 * 
 		 * @param mySubscription The {@link Subscription} which requested this type of Notification.
 		 * @param oldObject The version of the changed {@link Persistent} object before the change.
 		 * @param newObject The version of the changed {@link Persistent} object after the change.
+		 * @see Notification#Notification(Subscription) This parent constructor is also called.
 		 */
-		protected Notification(final Subscription<? extends EventSource> mySubscription,
-				final Persistent oldObject, final Persistent newObject) {
-			mSubscription = mySubscription;
-			mClient = mSubscription.getClient();
-			mIndex = mClient.takeFreeNotificationIndexWithoutCommit();
+		ObjectChangedNotification(final Subscription<? extends EventSource> mySubscription,
+		        final Persistent oldObject, final Persistent newObject) {
+		    
+			super(mySubscription);
 			
 			assert	(
 						(oldObject == null ^ newObject == null) ||
