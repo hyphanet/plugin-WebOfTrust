@@ -557,7 +557,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Must return all objects of a given EventType which form a valid synchronization.<br>
 		 * This is all objects of the EventType stored in the {@link WebOfTrust}.<br><br>
 		 * 
-         * Thread safety:<br>
+         * <b>Thread safety:</b><br>
          * This must be called while locking upon the {@link WebOfTrust}.<br>
          * Therefore it may perform database queries on the WebOfTrust to obtain the dataset.<br>
          * 
@@ -583,9 +583,9 @@ public final class SubscriptionManager implements PrioRunnable {
          * the client. Instead, it must retry calling this function until it succeeds or the
          * retry limit is exceeded.<br><br>.
          * 
-         * Thread synchronization:
-         * This must be called with synchronization upon the SubscriptionManager and the database
-         * transaction lock.<br><br>
+         * <b>Thread safety:</b><br>
+         * This must be called while locking upon the SubscriptionManager and the
+         * {@link Persistent#transactionLock(ExtObjectContainer)}.<br>
          * 
          * @param notification
          *             The {@link Notification#getNewObject()} must be an instance of
@@ -634,8 +634,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * The implementation MUST use synchronous FCP communication to allow the client to signal an error.
 		 * Also, synchronous communication is necessary for guaranteeing the notifications to arrive in proper order at the client.
 		 * 
-		 * <b>Thread synchronization:</b>
-		 * This must be called with synchronization upon the SubscriptionManager.
+         * <b>Thread safety:</b><br>
+         * This must be called while locking upon the SubscriptionManager.<br>
 		 * The {@link WebOfTrust} object shall NOT be locked:
 		 * The {@link Notification} objects which this function receives contain serialized clones of the objects from WebOfTrust.
 		 * Therefore, the notifications are self-contained and this function should and must NOT call any database query functions of the WebOfTrust. 
