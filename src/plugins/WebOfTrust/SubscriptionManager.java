@@ -816,7 +816,10 @@ public final class SubscriptionManager implements PrioRunnable {
          * synchronization: After having received the end-marker
          * {@link EndSynchronizationNotification}, any object whose
          * {@link EventSource#getVersionID(UUID)} does not match the version ID of the current
-         * synchronization is an obsolete object and must be deleted.
+         * synchronization is an obsolete object and must be deleted.<br><br>
+         * 
+         * (The {@link UUID} is stored as {@link String} for simplifying usage of db4o: Strings are
+         * native objects and thus do not have to be manually deleted.)
          */
 	    private final String mVersionID = UUID.randomUUID().toString();
 	    
