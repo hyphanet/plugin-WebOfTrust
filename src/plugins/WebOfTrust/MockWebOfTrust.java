@@ -4,6 +4,7 @@ package plugins.WebOfTrust;
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 import java.util.Comparator;
+import java.util.List;
 
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
@@ -53,6 +54,18 @@ import freenet.pluginmanager.PluginRespirator;
 public final class MockWebOfTrust extends WebOfTrustInterface {
 
 	private final MockExtObjectContainer mDatabase = new MockExtObjectContainer();
+	
+    @Override public List<Identity> getAllIdentities() {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
+
+    @Override public List<Trust> getAllTrusts() {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
+
+    @Override public List<Score> getAllScores() {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
 	
 	@Override
 	protected PluginRespirator getPluginRespirator() {
