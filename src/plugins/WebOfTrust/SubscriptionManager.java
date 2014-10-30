@@ -801,7 +801,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * All {@link ObjectChangedNotification}s following this marker notification shall be considered
 	 * as part of the synchronization, up to the end marker of type
-	 * {@link EndSynchronizationNotification}.
+	 * {@link EndSynchronizationNotification}.<br><br>
+	 * 
+	 * Attention: The {@link EndSynchronizationNotification} is a child class of this, not a
+	 * different class. Make sure to avoid accidentally matching it by 
+	 * "instanceof BeginSynchronizationNotification".
 	 */
 	@SuppressWarnings("serial")
     public static class BeginSynchronizationNotification<EventType extends EventSource>
@@ -821,11 +825,18 @@ public final class SubscriptionManager implements PrioRunnable {
          * (The {@link UUID} is stored as {@link String} for simplifying usage of db4o: Strings are
          * native objects and thus do not have to be manually deleted.)
          */
-	    private final String mVersionID = UUID.randomUUID().toString();
+	    private final String mVersionID;
 	    
 	    
         BeginSynchronizationNotification(Subscription<EventType> mySubscription) {
             super(mySubscription);
+            mVersionID = UUID.randomUUID().toString();
+        }
+        
+        /** Only for being used by {@link EndSynchronizationNotification}. */
+        BeginSynchronizationNotification(Subscription<EventType> mySubscription, String versionID) {
+            super(mySubscription);
+            mVersionID = versionID;
         }
 
         /** @see #mVersionID */
@@ -846,6 +857,21 @@ public final class SubscriptionManager implements PrioRunnable {
             return super.toString() + " { mVersionID=" + getID() + " }";
         }
 	}
+
+	/**
+	 * @see BeginSynchronizationNotification
+	 */
+    @SuppressWarnings("serial")
+    public static class EndSynchronizationNotification<EventType extends EventSource>
+            extends BeginSynchronizationNotification<EventType> {
+        
+        @SuppressWarnings("unchecked")
+        EndSynchronizationNotification(BeginSynchronizationNotification<EventType> begin) {
+            super((Subscription<EventType>) begin.getSubscription(), begin.getID());
+            
+            assert !(begin instanceof EndSynchronizationNotification);
+        }
+    }
 	
 	/**
 	 * This notification is issued when an {@link Identity} is added/deleted or its attributes change.
