@@ -675,6 +675,11 @@ public final class SubscriptionManager implements PrioRunnable {
             mSubscription.initializeTransient(mWebOfTrust);
             return mSubscription;
         }
+        
+        /** {@inheritDoc} */
+        @Override protected void activateFully() {
+            checkedActivate(1);
+        }
 	}
 	
 	/**
@@ -777,7 +782,10 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		/** {@inheritDoc} */
 		@Override protected void activateFully() {
-			checkedActivate(1);
+		    super.activateFully();
+		    // super.activateFully() will probably always activate to at least level 1, as
+		    // activating to level 0 does not make any sense. So we don't have to do this twice.
+			/* checkedActivate(1); */
 		}
 
 		@Override
