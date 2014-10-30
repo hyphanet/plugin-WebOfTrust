@@ -16,6 +16,11 @@ import plugins.WebOfTrust.SubscriptionManager.Subscription;
  * Classes which implement it are those whose objects are what is actually being monitored
  * by the client, i.e. they are the data of interest.<br><br>
  * 
+ * {@link Cloneable} is implemented to ensure that modifications as part of
+ * {@link #setVersionID(UUID)} do not get stored in the main {@link WebOfTrust} database:<br>
+ * {@link SubscriptionManager} will first obtain a clone of the {@link EventSource} and call
+ * {@link #setVersionID(UUID)} upon that.<br><br>
+ * 
  * {@link Serializable} is implemented because once a object implementing EventSource generates an
  * event (by being changed), a serialized copy of it shall be stored in the database. The fact that
  * the serialized version is stored instead of the actual object allows storing "foreign" objects in
@@ -26,7 +31,11 @@ import plugins.WebOfTrust.SubscriptionManager.Subscription;
  * of storing events out of the database as bare files - and bare files are what serialization
  * is about.
  */
-public interface EventSource extends Serializable {
+public interface EventSource extends Cloneable, Serializable {
+    
+    /** {@inheritDoc} */
+    public EventSource clone(); // Override because it is not public in class Object.
+    
     /**
      * When a {@link Notification} about an {@link EventSource} is being deployed to a
      * {@link Client} by the {@link SubscriptionManager}, the {@link SubscriptionManager} will use
