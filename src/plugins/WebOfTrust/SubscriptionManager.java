@@ -980,12 +980,37 @@ public final class SubscriptionManager implements PrioRunnable {
 
         /** {@inheritDoc} */
         @Override protected void storeSynchronizationWithoutCommit() {
-            final SynchronizationContainer<Identity> synchronization
-                = new SynchronizationContainer<>(mWebOfTrust.getAllIdentities());
-            final IdentityChangedNotification notification
-                = new IdentityChangedNotification(this, synchronization);
-            notification.initializeTransient(mWebOfTrust);
-            notification.storeWithoutCommit();
+            final BeginSynchronizationNotification<Identity> beginMarker
+                = new BeginSynchronizationNotification<>(this);
+                
+            beginMarker.initializeTransient(mWebOfTrust);
+            beginMarker.storeWithoutCommit();
+            
+            // All objects part of a synchronization need to be called EventSource.setVersionID()
+            // with the version ID of the BeginSynchronizationNotification beginMarker.
+            // See JavaDoc of EventSource.setVersionID() and BeginSynchronizationNotification.
+            final UUID synchronizationID
+                = UUID.fromString(beginMarker.getID());
+                
+            for(Identity identity : mWebOfTrust.getAllIdentities()) {
+                // We need to call setVersionID() on the Identity, but we must not modify the main
+                // Identity object stored in the mWebOfTrust. Thus, we clone() the Identity before
+                // calling the setter upon it.
+                Identity identityWithProperVersionID = identity.clone();
+                identityWithProperVersionID.setVersionID(synchronizationID);
+                
+                IdentityChangedNotification notification
+                    = new IdentityChangedNotification(this, null, identityWithProperVersionID);
+                
+                notification.initializeTransient(mWebOfTrust);
+                notification.storeWithoutCommit();
+            }
+            
+            final EndSynchronizationNotification<Identity> endMarker
+                = new EndSynchronizationNotification<>(beginMarker);
+            
+            endMarker.initializeTransient(mWebOfTrust);
+            endMarker.storeWithoutCommit();
         }
 
 		/** {@inheritDoc} */
