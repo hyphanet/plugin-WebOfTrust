@@ -564,6 +564,18 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
         protected abstract void synchronizeSubscriberByFCP(Notification notification)
             throws FCPCallFailedException, IOException, InterruptedException;
+        
+        /**
+         * Shall store a {@link ObjectChangedNotification} constructed via
+         * {@link ObjectChangedNotification#ObjectChangedNotification(Subscription, Persistent,
+         * Persistent)} with parameters oldObject = oldEventSource, newObject = newEventSource.<br>
+         * <br> 
+         * 
+         * The type parameter of the {@link ObjectChangedNotification} shall match the type
+         * parameter EventType extends EventSource of this {@link Subscription}.
+         */
+        abstract void storeNotificationWithoutCommit(
+            final EventType oldEventSource, final EventType newEventSource);
 
 		/**
 		 * Called by this Subscription when the type of it is FCP and a {@link Notification} shall be sent via FCP. 
@@ -1054,7 +1066,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param oldIdentity The version of the {@link Identity} before the change. Null if it was newly created.
 		 * @param newIdentity The version of the {@link Identity} after the change. Null if it was deleted.
 		 */
-		private void storeNotificationWithoutCommit(Identity oldIdentity, Identity newIdentity) {
+		@Override void storeNotificationWithoutCommit(
+		        final Identity oldIdentity, final Identity newIdentity) {
+		    
 			final IdentityChangedNotification notification = new IdentityChangedNotification(this, oldIdentity, newIdentity);
 			notification.initializeTransient(mWebOfTrust);
 			notification.storeWithoutCommit();
@@ -1129,7 +1143,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param oldTrust The version of the {@link Trust} before the change. Null if it was newly created.
 		 * @param newTrust The version of the {@link Trust} after the change. Null if it was deleted.
 		 */
-		public void storeNotificationWithoutCommit(final Trust oldTrust, final Trust newTrust) {
+		@Override void storeNotificationWithoutCommit(final Trust oldTrust, final Trust newTrust) {
 			final TrustChangedNotification notification = new TrustChangedNotification(this, oldTrust, newTrust);
 			notification.initializeTransient(mWebOfTrust);
 			notification.storeWithoutCommit();
@@ -1204,7 +1218,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param oldScore The version of the {@link Score} before the change. Null if it was newly created.
 		 * @param newScore The version of the {@link Score} after the change. Null if it was deleted.
 		 */
-		public void storeNotificationWithoutCommit(final Score oldScore, final Score newScore) {
+		@Override void storeNotificationWithoutCommit(final Score oldScore, final Score newScore) {
 			final ScoreChangedNotification notification = new ScoreChangedNotification(this, oldScore, newScore);
 			notification.initializeTransient(mWebOfTrust);
 			notification.storeWithoutCommit();
