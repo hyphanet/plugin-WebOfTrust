@@ -870,7 +870,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see IdentitiesSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	@SuppressWarnings("serial")
-	public static class IdentityChangedNotification extends Notification {
+	public static class IdentityChangedNotification extends ObjectChangedNotification {
         /** @see SynchronizationContainer */
         protected IdentityChangedNotification(
                 final Subscription<Identity> mySubscription, 
@@ -906,7 +906,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see TrustsSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	@SuppressWarnings("serial")
-	public static final class TrustChangedNotification extends Notification {
+	public static final class TrustChangedNotification extends ObjectChangedNotification {
         /** @see SynchronizationContainer */
         protected TrustChangedNotification(
                 final Subscription<Trust> mySubscription, 
@@ -942,7 +942,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see ScoresSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	@SuppressWarnings("serial")
-	public static final class ScoreChangedNotification extends Notification {
+	public static final class ScoreChangedNotification extends ObjectChangedNotification {
         /** @see SynchronizationContainer */
         protected ScoreChangedNotification(
                 final Subscription<Score> mySubscription,
