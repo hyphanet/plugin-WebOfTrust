@@ -518,8 +518,55 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * This must be called with synchronization upon the {@link WebOfTrust} and the SubscriptionManager.
 		 * Therefore it may perform database queries on the WebOfTrust to obtain the dataset.
 		 */
-		protected abstract void storeSynchronizationWithoutCommit();
+		protected final void storeSynchronizationWithoutCommit() {
+            final BeginSynchronizationNotification<EventType> beginMarker
+                = new BeginSynchronizationNotification<>(this);
+                
+            beginMarker.initializeTransient(mWebOfTrust);
+            beginMarker.storeWithoutCommit();
+            
+            // All objects part of a synchronization need to receive a call to
+            // EventSource.setVersionID() with the version ID of the
+            // BeginSynchronizationNotification beginMarker. See JavaDoc of
+            // EventSource.setVersionID() and BeginSynchronizationNotification.
+            final UUID synchronizationID
+                = UUID.fromString(beginMarker.getID());
+            
+            // We require thread locking upon the WebOfTrust per JavaDoc, so we may now call
+            // getSynchronization().
+            for(EventType eventSource : getSynchronization()) {
+                // We need to call setVersionID() on the EventSource, but we must not modify the
+                // main EventSource object stored in the mWebOfTrust. Thus, we clone() the
+                // EventSource and call the setter upon the temporary clone.
+                @SuppressWarnings("unchecked")
+                EventType eventSourceWithProperVersionID = (EventType) eventSource.clone();
+                eventSourceWithProperVersionID.setVersionID(synchronizationID);
+                
+                storeNotificationWithoutCommit(null, eventSourceWithProperVersionID);
+            }
+            
+            final EndSynchronizationNotification<EventType> endMarker
+                = new EndSynchronizationNotification<>(beginMarker);
+            
+            endMarker.initializeTransient(mWebOfTrust);
+            endMarker.storeWithoutCommit();
+        }
 		
+		/**
+		 * Must return all objects of a given EventType which form a valid synchronization.<br>
+		 * This is all objects of the EventType stored in the {@link WebOfTrust}.<br><br>
+		 * 
+         * Thread safety:<br>
+         * This must be called while locking upon the {@link WebOfTrust}.<br>
+         * Therefore it may perform database queries on the WebOfTrust to obtain the dataset.<br>
+         * 
+         * @see #storeSynchronizationWithoutCommit()
+         *         storeSynchronizationWithoutCommit() will use this function to obtain the dataset
+         *         of this function. Its JavaDoc also explains what a "synchronization" is in more
+         *         detail.
+		 */
+		abstract List<EventType> getSynchronization();
+
 		/**
 		 * Sends out the synchronization stored by {@link #storeSynchronizationWithoutCommit()}. See
 		 * the JavaDoc of that function for an explanation what "synchronization" means here.<br>
@@ -990,39 +1037,10 @@ public final class SubscriptionManager implements PrioRunnable {
 			super(myClient);
 		}
 
-        /** {@inheritDoc} */
-        @Override protected void storeSynchronizationWithoutCommit() {
-            final BeginSynchronizationNotification<Identity> beginMarker
-                = new BeginSynchronizationNotification<>(this);
-                
-            beginMarker.initializeTransient(mWebOfTrust);
-            beginMarker.storeWithoutCommit();
-            
-            // All objects part of a synchronization need to be called EventSource.setVersionID()
-            // with the version ID of the BeginSynchronizationNotification beginMarker.
-            // See JavaDoc of EventSource.setVersionID() and BeginSynchronizationNotification.
-            final UUID synchronizationID
-                = UUID.fromString(beginMarker.getID());
-                
-            for(Identity identity : mWebOfTrust.getAllIdentities()) {
-                // We need to call setVersionID() on the Identity, but we must not modify the main
-                // Identity object stored in the mWebOfTrust. Thus, we clone() the Identity before
-                // calling the setter upon it.
-                Identity identityWithProperVersionID = identity.clone();
-                identityWithProperVersionID.setVersionID(synchronizationID);
-                
-                IdentityChangedNotification notification
-                    = new IdentityChangedNotification(this, null, identityWithProperVersionID);
-                
-                notification.initializeTransient(mWebOfTrust);
-                notification.storeWithoutCommit();
-            }
-            
-            final EndSynchronizationNotification<Identity> endMarker
-                = new EndSynchronizationNotification<>(beginMarker);
-            
-            endMarker.initializeTransient(mWebOfTrust);
-            endMarker.storeWithoutCommit();
+
+		/** {@inheritDoc} */
+        @Override List<Identity> getSynchronization() {
+            return mWebOfTrust.getAllIdentities();
         }
 
 		/** {@inheritDoc} */
