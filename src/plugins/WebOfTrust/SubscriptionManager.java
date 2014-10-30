@@ -609,16 +609,6 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * An object of type Notification is stored when an event happens to which a client is possibly subscribed.
 	 * The SubscriptionManager will wake up some time after that, pull all notifications from the database and process them.
-	 * 
-	 * It provides two clones of the {@link Persistent} object about whose change the client shall be notified:
-	 * - A version of it before the change via {@link Notification#getOldObject()}
-	 * - A version of it after the change via {@link Notification#getNewObject()}
-	 * 
-	 * If one of the before/after getters returns null, this is because the object was added/deleted.
-	 * If both do return an non-null object, the object was modified.
-	 * NOTICE: Modification can also mean that its class has changed!
-	 * 
-	 * NOTICE: Both Persistent objects are not stored in the database and must not be stored there to prevent duplicates!
 	 */
 	@SuppressWarnings("serial")
 	public static abstract class Notification extends Persistent {
@@ -641,7 +631,22 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		@IndexedField
 		private final long mIndex;
-		
+	
+	}
+	
+	/**
+     * It provides two clones of the {@link Persistent} object about whose change the client shall be notified:
+     * - A version of it before the change via {@link Notification#getOldObject()}
+     * - A version of it after the change via {@link Notification#getNewObject()}
+     * 
+     * If one of the before/after getters returns null, this is because the object was added/deleted.
+     * If both do return an non-null object, the object was modified.
+     * NOTICE: Modification can also mean that its class has changed!
+     * 
+     * NOTICE: Both Persistent objects are not stored in the database and must not be stored there to prevent duplicates!
+	 */
+	@SuppressWarnings("serial")
+	public static abstract class ObjectChangedNotification extends Notification {
 		
 		/**
 		 * A serialized copy of the changed {@link Persistent} object before the change.
