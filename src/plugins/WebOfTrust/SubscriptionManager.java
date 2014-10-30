@@ -514,8 +514,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * operation, we can keep the time we have to take the main lock as short as possible.<br>
 		 * <br>
 		 * 
-		 * Thread synchronization:
-		 * This must be called with synchronization upon the {@link WebOfTrust} and the SubscriptionManager.
+         * <b>Thread safety:</b><br>
+		 * This must be called while locking upon the {@link WebOfTrust}, the SubscriptionManager
+		 * and the {@link Persistent#transactionLock(ExtObjectContainer)}.<br>
 		 * Therefore it may perform database queries on the WebOfTrust to obtain the dataset.
 		 */
 		protected final void storeSynchronizationWithoutCommit() {
