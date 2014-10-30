@@ -644,6 +644,20 @@ public final class SubscriptionManager implements PrioRunnable {
             mClient = mSubscription.getClient();
             mIndex = mClient.takeFreeNotificationIndexWithoutCommit();
         }
+        
+        /** {@inheritDoc} */
+        @Override public void startupDatabaseIntegrityTest() throws Exception {
+            activateFully();
+            
+            IfNull.thenThrow(mClient, "mClient");
+            IfNull.thenThrow(mSubscription, "mSubscription");
+            
+            if(mClient != getSubscription().getClient())
+                throw new IllegalStateException("mClient does not match client of mSubscription");
+            
+            if(mIndex < 0)
+                throw new IllegalStateException("mIndex==" + mIndex);
+        }
 	}
 	
 	/**
@@ -706,16 +720,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		/** {@inheritDoc} */
 		@Override
 		public void startupDatabaseIntegrityTest() throws Exception {
+			super.startupDatabaseIntegrityTest();
+			
 			activateFully();
-			
-			IfNull.thenThrow(mClient, "mClient");
-			IfNull.thenThrow(mSubscription, "mSubscription");
-			
-			if(mClient != getSubscription().getClient())
-				throw new IllegalStateException("mClient does not match client of mSubscription");
-			
-			if(mIndex < 0)
-				throw new IllegalStateException("mIndex==" + mIndex);
 			
 			if(mOldObject == null && mNewObject == null)
 				throw new NullPointerException("Only one of mOldObject and mNewObject may be null!");
