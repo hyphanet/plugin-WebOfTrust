@@ -1182,15 +1182,10 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
         /** {@inheritDoc} */
-        @Override protected void storeSynchronizationWithoutCommit() {
-            final SynchronizationContainer<Score> synchronization
-                = new SynchronizationContainer<>(mWebOfTrust.getAllScores());
-            final ScoreChangedNotification notification
-                = new ScoreChangedNotification(this, synchronization);
-            notification.initializeTransient(mWebOfTrust);
-            notification.storeWithoutCommit();
+        @Override List<Score> getSynchronization() {
+            return mWebOfTrust.getAllScores();
         }
-		
+
 		/** {@inheritDoc} */
 		@Override
         protected void synchronizeSubscriberByFCP(Notification notification)
