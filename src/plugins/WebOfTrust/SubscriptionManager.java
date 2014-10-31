@@ -1112,13 +1112,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
         /** {@inheritDoc} */
-        @Override protected void storeSynchronizationWithoutCommit() {
-            final SynchronizationContainer<Trust> synchronization
-                = new SynchronizationContainer<>(mWebOfTrust.getAllTrusts());
-            final TrustChangedNotification notification
-                = new TrustChangedNotification(this, synchronization);
-            notification.initializeTransient(mWebOfTrust);
-            notification.storeWithoutCommit();
+        @Override List<Trust> getSynchronization() {
+            return mWebOfTrust.getAllTrusts();
         }
 
 		/** {@inheritDoc} */
