@@ -17,6 +17,8 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
+import plugins.WebOfTrust.SubscriptionManager.BeginSynchronizationNotification;
+import plugins.WebOfTrust.SubscriptionManager.EndSynchronizationNotification;
 import plugins.WebOfTrust.SubscriptionManager.IdentitiesSubscription;
 import plugins.WebOfTrust.SubscriptionManager.IdentityChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.Notification;
@@ -1462,7 +1464,48 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         if(reply.success == false)
             throw new FCPCallFailedException(reply);
     }
-    
+
+    /**
+     * {@link EndSynchronizationNotification} is a subclass of
+     * {@link BeginSynchronizationNotification}, so this function can deal with both.
+     */
+    @SuppressWarnings("unchecked")
+    public void sendBeginOrEndSynchronizationNotification(final UUID clientID,
+            final BeginSynchronizationNotification<?> notification)
+                throws FCPCallFailedException, IOException, InterruptedException {
+        
+        // Not a reply to an existing message since it is sent due to an event, not a client message
+        final FCPPluginMessage fcpMessage = FCPPluginMessage.construct();
+        
+        fcpMessage.params.putOverwrite("Message", 
+             notification instanceof EndSynchronizationNotification 
+                 ? "EndSynchronizationNotification" : "BeginSynchronizationNotification");
+        
+        String to;
+        
+        if((BeginSynchronizationNotification<Identity>)notification!= null)
+            to = "Identities";
+        else if ((BeginSynchronizationNotification<Trust>)notification != null)
+            to = "Trusts"; // FIXME: Compiler says this is dead code. Is it?
+        else if ((BeginSynchronizationNotification<Score>)notification != null)
+            to = "Scores"; // FIXME: Compiler says this is dead code. Is it?
+        else
+            throw new UnsupportedOperationException("Unknown notification type: " + notification);
+        
+        // "To" because thats what we also use in handleSubscribe()
+        fcpMessage.params.putOverwrite("To", to);
+        fcpMessage.params.putOverwrite("VersionID", notification.getID());
+        
+        final FCPPluginMessage reply = mPluginRespirator.getPluginClientByID(clientID)
+            .sendSynchronous(
+                SendDirection.ToClient,
+                fcpMessage,
+                TimeUnit.MINUTES.toNanos(SUBSCRIPTION_NOTIFICATION_TIMEOUT_MINUTES));
+        
+        if(reply.success == false)
+            throw new FCPCallFailedException(reply);
+    }
+
     /**
      * @see SubscriptionManager.IdentityChangedNotification
      */
