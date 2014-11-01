@@ -762,20 +762,12 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      *            an original client message.
      */
     private FCPPluginMessage handleGetIdentities(final FCPPluginMessage request) {
-        final String context;
-        
-        if(request != null) {
-        	context = request.params.get("Context");
-        } else {
-        	context = null;
-        }
-
-        final FCPPluginMessage result =
-            request != null ? FCPPluginMessage.constructSuccessReply(request) :
-                              FCPPluginMessage.construct();
+        final FCPPluginMessage result = FCPPluginMessage.constructSuccessReply(request);
         
         result.params.putOverwrite("Message", "Identities");
 		
+        final String context = request.params.get("Context");
+        
 		// TODO: Optimization: Remove this lock if it works without it.
 		synchronized(mWoT) {
 			final boolean getAll = context == null || context.equals("");
@@ -1408,24 +1400,6 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         result.params.putOverwrite("From", type);
         
         return result;
-    }
-    
-    public void sendAllIdentities(UUID clientID)
-            throws FCPCallFailedException, IOException, InterruptedException {
-        
-        FCPPluginMessage reply = mPluginRespirator.getPluginClientByID(clientID).sendSynchronous(
-            SendDirection.ToClient,
-            handleGetIdentities(null),
-            /* Large timeout since we possibly send _everything_.
-             * Notice that a client can at maximum subscribe to Identities, Trusts and Scores in
-             * parallel so there can be a maximum of 3 threads blocked in this large timeout
-             * per client - sendAllIdentites(), sendAllTrustValues(), sendAllScoreValues().
-             * That is an acceptable amount of threads per client, given that it only happens once
-             * at the beginning of a connection. */
-            TimeUnit.MINUTES.toNanos(SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES));
-        
-        if(reply.success == false)
-            throw new FCPCallFailedException(reply);
     }
     
     public void sendAllTrustValues(UUID clientID)
