@@ -568,51 +568,6 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		abstract List<EventType> getSynchronization();
 
-		/**
-		 * Sends out the synchronization stored by {@link #storeSynchronizationWithoutCommit()}. See
-		 * the JavaDoc of that function for an explanation what "synchronization" means here.<br>
-		 * <br>
-		 * 
-         * The implementation MUST throw a {@link FCPCallFailedException} if the client did not signal that the processing was successful:
-         * This will allow the client to use failing database transactions in the event handlers and just rollback and throw if the transaction fails. 
-         * The implementation MUST use synchronous FCP communication to allow the client to signal an error.
-         * Also, synchronous communication is necessary for guaranteeing the notifications to arrive after the synchronization at the client.
-         * <br><br>
-         * 
-         * If this function fails, the caller MUST NOT proceed to deploy {@link Notification}s to
-         * the client. Instead, it must retry calling this function until it succeeds or the
-         * retry limit is exceeded.<br><br>.
-         * 
-         * <b>Thread safety:</b><br>
-         * This must be called while locking upon the SubscriptionManager and the
-         * {@link Persistent#transactionLock(ExtObjectContainer)}.<br>
-         * 
-         * @param notification
-         *             The {@link Notification#getNewObject()} must be an instance of
-         *             {@link SynchronizationContainer}.<br>
-         *             The type parameter of that {@link SynchronizationContainer} must be the same
-         *             type as the Notification is about - {@link Identity}, {@link Trust} or {@link Score}.
-         * @throws IOException
-         *             If the FCP client has disconnected.<br>
-         *             You should call
-         *             {@link Client#incrementSendNotificationsFailureCountWithoutCommit()} upon
-         *             {@link #mClient} then, and retry calling this function at the next
-         *             iteration of the notification sending thread - until the limit is reached.
-         * @throws InterruptedException
-         *             If an external thread requested the current thread to terminate via
-         *             {@link Thread#interrupt()} while the data was being transfered to the client.
-         *             <br>This is a necessary shutdown mechanism as clients can be attached by
-         *             network and thus transfers can take a long time. Please honor it by 
-         *             terminating the thread so WOT can shutdown quickly.
-         * @throws FCPCallFailedException If processing failed at the client.<br>
-         *             You should call
-         *             {@link Client#incrementSendNotificationsFailureCountWithoutCommit()} upon
-         *             {@link #mClient} then, and retry calling this function at the next
-         *             iteration of the notification sending thread - until the limit is reached.
-		 */
-        protected abstract void synchronizeSubscriberByFCP(Notification notification)
-            throws FCPCallFailedException, IOException, InterruptedException;
-        
         /**
          * Shall store a {@link ObjectChangedNotification} constructed via
          * {@link ObjectChangedNotification#ObjectChangedNotification(Subscription, Persistent,
@@ -633,6 +588,15 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * fails. 
 		 * The implementation MUST use synchronous FCP communication to allow the client to signal an error.
 		 * Also, synchronous communication is necessary for guaranteeing the notifications to arrive in proper order at the client.
+		 * <br><br>
+		 * 
+         * If this function fails by an exception, the caller MUST NOT proceed to deploy subsequent
+         * {@link Notification}s to the client. Instead, it must retry calling this function upon
+         * the same Notification until it succeeds or the retry limit is exceeded.<br>
+         * This is necessary because Notifications must be deployed in proper order to guarantee
+         * that they make sense to the client.<br>
+         * Notice that the above does not apply to all types of exceptions. See the JavaDoc of
+         * the various thrown exceptions for details.<br><br>
 		 * 
          * <b>Thread safety:</b><br>
          * This must be called while locking upon the SubscriptionManager.<br>
@@ -640,17 +604,32 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * The {@link Notification} objects which this function receives contain serialized clones of the objects from WebOfTrust.
 		 * Therefore, the notifications are self-contained and this function should and must NOT call any database query functions of the WebOfTrust. 
 		 * 
-		 * @param notification The {@link Notification} to send out via FCP. Must be cast-able to NotificationType.
+		 * @param notification 
+		 *             The {@link Notification} to send out via FCP. Must be cast-able to one of:
+		 *             <br>
+		 *             - {@link ObjectChangedNotification} containing objects matching the type
+		 *               of the type parameter EventType of this Subscription.<br>
+		 *             - {@link BeginSynchronizationNotification} with type parameter matching the
+         *               type of the type parameter EventType of this Subscription.<br>
+		 *             - {@link EndSynchronizationNotification} with type parameter matching the
+         *               type of the type parameter EventType of this Subscription.<br>
          * @throws IOException
-         *             If the FCP client has disconnected. The SubscriptionManager then won't retry
-         *             deploying this Notification, the {@link Subscription} will be terminated.
+         *             If the FCP client has disconnected. The SubscriptionManager then should not
+         *             retry deploying this Notification, the {@link Subscription} should be
+         *             terminated instead.
          * @throws InterruptedException
          *             If an external thread requested the current thread to terminate via
          *             {@link Thread#interrupt()} while the data was being transfered to the client.
          *             <br>This is a necessary shutdown mechanism as clients can be attached by
          *             network and thus transfers can take a long time. Please honor it by 
          *             terminating the thread so WOT can shutdown quickly.
-		 * @throws FCPCallFailedException If processing failed at the client.
+		 * @throws FCPCallFailedException
+		 *             If processing failed at the client.<br>
+         *             The SubscriptionManager should call
+         *             {@link Client#incrementSendNotificationsFailureCountWithoutCommit()} upon
+         *             {@link #mClient} then, and retry calling this function upon the same
+         *             Notification at the next iteration of the notification sending thread
+         *             - until the limit is reached.
 		 */
         protected abstract void notifySubscriberByFCP(Notification notification)
             throws FCPCallFailedException, IOException, InterruptedException;
@@ -1046,24 +1025,6 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		/** {@inheritDoc} */
 		@Override
-        protected void synchronizeSubscriberByFCP(Notification notification)
-                throws FCPCallFailedException, IOException, InterruptedException {
-		    
-		    @SuppressWarnings("unchecked")
-            SynchronizationContainer<Identity> synchronization
-                = (SynchronizationContainer<Identity>) notification.getNewObject();
-            
-            for(Identity identity : synchronization.getSynchronization()) {
-                throw new UnsupportedOperationException(
-                    "FIXME: Implement similar to the below, but send it out as a Bucket so memory "
-                  + "is not exhaused.");
-		    
-			    // mWebOfTrust.getFCPInterface().sendAllIdentities(getClient().getFCP_ID());
-            }
-		}
-		
-		/** {@inheritDoc} */
-		@Override
         protected void notifySubscriberByFCP(Notification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
 
@@ -1118,24 +1079,6 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		/** {@inheritDoc} */
 		@Override
-        protected void synchronizeSubscriberByFCP(Notification notification)
-                throws FCPCallFailedException, IOException, InterruptedException {
-		    
-            @SuppressWarnings("unchecked")
-            SynchronizationContainer<Trust> synchronization
-                = (SynchronizationContainer<Trust>) notification.getNewObject();
-            
-            for(Trust trust : synchronization.getSynchronization()) {
-                throw new UnsupportedOperationException(
-                    "FIXME: Implement similar to the below, but send it out as a Bucket so memory "
-                  + "is not exhaused.");
-            
-                // mWebOfTrust.getFCPInterface().sendAllTrustValues(getClient().getFCP_ID());
-            }
-		}
-		
-		/** {@inheritDoc} */
-		@Override
         protected void notifySubscriberByFCP(final Notification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
 
@@ -1185,24 +1128,6 @@ public final class SubscriptionManager implements PrioRunnable {
         @Override List<Score> getSynchronization() {
             return mWebOfTrust.getAllScores();
         }
-
-		/** {@inheritDoc} */
-		@Override
-        protected void synchronizeSubscriberByFCP(Notification notification)
-                throws FCPCallFailedException, IOException, InterruptedException {
-
-            @SuppressWarnings("unchecked")
-            SynchronizationContainer<Score> synchronization
-                = (SynchronizationContainer<Score>) notification.getNewObject();
-            
-            for(Score score : synchronization.getSynchronization()) {
-                throw new UnsupportedOperationException(
-                    "FIXME: Implement similar to the below, but send it out as a Bucket so memory "
-                  + "is not exhaused.");
-            
-                // mWebOfTrust.getFCPInterface().sendAllScoreValues(getClient().getFCP_ID());
-            }
-		}
 
 		/** {@inheritDoc} */
 		@Override
@@ -1405,23 +1330,9 @@ public final class SubscriptionManager implements PrioRunnable {
 				throw new RuntimeException("Failed to send pending notifications to the client. Cannot file a new Subscription!");
 		}
 		
+		// Needs the lock on mWoT which the JavaDoc requests
 		subscription.storeSynchronizationWithoutCommit();
 		
-		try {
-		    subscription.synchronizeSubscriberByFCP(); // Needs the lock on mWoT which the JavaDoc requests
-		} catch(FCPCallFailedException e) {
-		    throw new RuntimeException("Subscriber indicated that he failed to process the"
-		        + " synchronization of the Subscription. Terminating the Subscription.", e);
-		} catch(IOException e) {
-		    throw new RuntimeException("Subscriber disconnected during synchronzation of the"
-		        + " Subscription or the transfer timed out. Terminating the Subscription.", e);
-		} catch(InterruptedException e) {
-		   throw e;
-		} catch(RuntimeException e) {
-		    throw new RuntimeException("Unexpected RuntimeException in synchronizeSubscriberByFCP()"
-		        + ". Terminating the Subscription.", e);
-		}
-
 		subscription.storeAndCommit();
 		Logger.normal(this, "Subscribed: " + subscription);
 	}
