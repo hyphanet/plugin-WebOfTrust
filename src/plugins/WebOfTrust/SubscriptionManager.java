@@ -477,21 +477,6 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
 		/**
-		 * Takes the database lock to begin a transaction, stores this object and commits the transaction.
-		 * You must synchronize on the {@link SubscriptionManager} while calling this function.
-		 */
-		protected void storeAndCommit() {
-			synchronized(Persistent.transactionLock(mDB)) {
-				try {
-					storeWithoutCommit();
-					checkedCommit(this);
-				} catch(RuntimeException e) {
-					Persistent.checkedRollbackAndThrow(mDB, this, e);
-				}
-			}
-		}
-		
-		/**
 		 * Called by the {@link SubscriptionManager} before storing a new Subscription.
 		 * <br><br>
 		 * 
@@ -1299,8 +1284,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * Shall be used as back-end for all front-end functions for creating subscriptions.
 	 * 
-	 * You have to synchronize on mWoT and this SubscriptionManager before calling this function!
-	 * You don't have to commit the transaction after calling this function.
+	 * <b>Thread safety:</b><br>
+	 * This must be called while locking upon the {@link WebOfTrust}, the SubscriptionManager
+	 * and the {@link Persistent#transactionLock(ExtObjectContainer)}.<br>
+	 * You must take care of transaction management.<br>
 	 * 
 	 * @throws SubscriptionExistsAlreadyException Thrown if a subscription of the same type for the same client exists already. See {@link #throwIfSimilarSubscriptionExists(Subscription)}
      * @throws InterruptedException
@@ -1311,7 +1298,7 @@ public final class SubscriptionManager implements PrioRunnable {
      *             a very long time. Please honor it by terminating the thread so WOT can shutdown
      *             quickly. 
 	 */
-	private void storeNewSubscriptionAndCommit(
+	private void storeNewSubscriptionWithoutCommit(
 	        final Subscription<? extends EventSource> subscription)
 	            throws InterruptedException, SubscriptionExistsAlreadyException {
 	    
@@ -1333,7 +1320,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		// Needs the lock on mWoT which the JavaDoc requests
 		subscription.storeSynchronizationWithoutCommit();
 		
-		subscription.storeAndCommit();
+		subscription.storeWithoutCommit();
 		Logger.normal(this, "Subscribed: " + subscription);
 	}
 	
@@ -1366,11 +1353,18 @@ public final class SubscriptionManager implements PrioRunnable {
 
 		synchronized(mWoT) {
 		synchronized(this) {
-			// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
-			// Storage will happen in storeNewSubscriptionAndCommit()
-			final IdentitiesSubscription subscription = new IdentitiesSubscription(getOrCreateClient(fcpID));
-			storeNewSubscriptionAndCommit(subscription);
-			return subscription;
+		synchronized(Persistent.transactionLock(mDB)) {
+		    try {
+    			final IdentitiesSubscription subscription
+    			    = new IdentitiesSubscription(getOrCreateClient(fcpID));
+    			storeNewSubscriptionWithoutCommit(subscription);
+    			subscription.checkedCommit(this);
+    			return subscription;
+		    } catch(RuntimeException e) {
+		        Persistent.checkedRollbackAndThrow(mDB, this, e);
+		        throw e; // Satisfy the compiler: Without, it would complain about missing return.
+		    }
+		}
 		}
 		}
 	}
@@ -1394,11 +1388,18 @@ public final class SubscriptionManager implements PrioRunnable {
 	    
 		synchronized(mWoT) {
 		synchronized(this) {
-			// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
-			// Storage will happen in storeNewSubscriptionAndCommit()
-			final TrustsSubscription subscription = new TrustsSubscription(getOrCreateClient(fcpID));
-			storeNewSubscriptionAndCommit(subscription);
-			return subscription;
+		synchronized(Persistent.transactionLock(mDB)) {
+	        try {
+    			final TrustsSubscription subscription
+    			    = new TrustsSubscription(getOrCreateClient(fcpID));
+    			storeNewSubscriptionWithoutCommit(subscription);
+    			subscription.checkedCommit(this);
+    			return subscription;
+	        } catch(RuntimeException e) {
+                Persistent.checkedRollbackAndThrow(mDB, this, e);
+                throw e; // Satisfy the compiler: Without, it would complain about missing return.
+            }
+		}
 		}
 		}
 	}
@@ -1422,11 +1423,18 @@ public final class SubscriptionManager implements PrioRunnable {
 	    
 		synchronized(mWoT) {
 		synchronized(this) {
-			// We don't have to take the database lock because getOrCreateClient won't store it to the database yet
-			// Storage will happen in storeNewSubscriptionAndCommit()
-			final ScoresSubscription subscription = new ScoresSubscription(getOrCreateClient(fcpID));
-			storeNewSubscriptionAndCommit(subscription);
-			return subscription;
+	    synchronized(Persistent.transactionLock(mDB)) {
+	        try {
+	            final ScoresSubscription subscription
+	                = new ScoresSubscription(getOrCreateClient(fcpID));
+	            storeNewSubscriptionWithoutCommit(subscription);
+	            subscription.checkedCommit(this);
+	            return subscription;
+	        } catch(RuntimeException e) {
+	            Persistent.checkedRollbackAndThrow(mDB, this, e);
+	            throw e; // Satisfy the compiler: Without, it would complain about missing return.
+	        }
+	    }
 		}
 		}
 	}
