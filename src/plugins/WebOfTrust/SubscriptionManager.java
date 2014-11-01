@@ -1014,17 +1014,20 @@ public final class SubscriptionManager implements PrioRunnable {
         protected void notifySubscriberByFCP(Notification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
 
+		    final UUID clientID = getClient().getFCP_ID();
+		    
 			if(notification instanceof IdentityChangedNotification) {
 			    mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(
-			        getClient().getFCP_ID(), (IdentityChangedNotification)notification);
-			} else if(notification instanceof EndSynchronizationNotification<?>) {
-			    assert((EndSynchronizationNotification<Identity>)notification != null);
-			    
-			    throw new UnsupportedOperationException("FIXME: Implement");
+			        clientID, (IdentityChangedNotification)notification);
 			} else if(notification instanceof BeginSynchronizationNotification<?>) {
-			    assert((BeginSynchronizationNotification<Identity>)notification != null);
+			    // EndSynchronizationNotification is a child of BeginSynchronizationNotification.
 			    
-	             throw new UnsupportedOperationException("FIXME: Implement");
+			    assert((BeginSynchronizationNotification<Identity>)notification != null)
+			        : "The IdentitiesSubscription should only receive Identity notifications";
+	             
+			    mWebOfTrust.getFCPInterface().sendBeginOrEndSynchronizationNotification(
+			        clientID,
+			        (BeginSynchronizationNotification<Identity>)notification);
 			} else {
 			    throw new UnsupportedOperationException("Unknown notification type: "
 			        + notification);
