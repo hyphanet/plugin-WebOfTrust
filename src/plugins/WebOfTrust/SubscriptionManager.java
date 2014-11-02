@@ -1072,20 +1072,29 @@ public final class SubscriptionManager implements PrioRunnable {
         }
 
 		/** {@inheritDoc} */
-		@Override
+		@SuppressWarnings("unchecked")
+        @Override
         protected void notifySubscriberByFCP(final Notification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
 
-			assert(notification instanceof TrustChangedNotification);
-			TrustChangedNotification trustChangedNotification = 
-			    (TrustChangedNotification)notification;
-
-			if(notification.getNewObject() instanceof SynchronizationContainer) {
-			    synchronizeSubscriberByFCP(trustChangedNotification);
-			} else {
-			    mWebOfTrust.getFCPInterface().sendTrustChangedNotification(
-			        getClient().getFCP_ID(), trustChangedNotification);
-			}
+            final UUID clientID = getClient().getFCP_ID();
+            
+            if(notification instanceof TrustChangedNotification) {
+                mWebOfTrust.getFCPInterface().sendTrustChangedNotification(
+                    clientID, (TrustChangedNotification)notification);
+            } else if(notification instanceof BeginSynchronizationNotification<?>) {
+                // EndSynchronizationNotification is a child of BeginSynchronizationNotification.
+                
+                assert((BeginSynchronizationNotification<Trust>)notification != null)
+                    : "The TrustsSubscription should only receive Trust notifications";
+                 
+                mWebOfTrust.getFCPInterface().sendBeginOrEndSynchronizationNotification(
+                    clientID,
+                    (BeginSynchronizationNotification<Trust>)notification);
+            } else {
+                throw new UnsupportedOperationException("Unknown notification type: "
+                    + notification);
+            }
 		}
 
 		/**
