@@ -796,9 +796,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      *            an original client message.
      */
     private FCPPluginMessage handleGetTrusts(final FCPPluginMessage request) {
-        final FCPPluginMessage result =
-            request != null ? FCPPluginMessage.constructSuccessReply(request) :
-                              FCPPluginMessage.construct();
+        final FCPPluginMessage result = FCPPluginMessage.constructSuccessReply(request);
         
         result.params.putOverwrite("Message", "Trusts");
    
@@ -1401,25 +1399,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         return result;
     }
-    
-    public void sendAllTrustValues(UUID clientID)
-            throws FCPCallFailedException, IOException, InterruptedException {
-        
-        FCPPluginMessage reply = mPluginRespirator.getPluginClientByID(clientID).sendSynchronous(
-            SendDirection.ToClient,
-            handleGetTrusts(null),
-            /* Large timeout since we possibly send _everything_.
-             * Notice that a client can at maximum subscribe to Identities, Trusts and Scores in
-             * parallel so there can be a maximum of 3 threads blocked in this large timeout
-             * per client - sendAllIdentites(), sendAllTrustValues(), sendAllScoreValues().
-             * That is an acceptable amount of threads per client, given that it only happens once
-             * at the beginning of a connection. */
-            TimeUnit.MINUTES.toNanos(SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES));
-        
-        if(reply.success == false)
-            throw new FCPCallFailedException(reply);
-    }
-    
+
     public void sendAllScoreValues(UUID clientID)
             throws FCPCallFailedException, IOException, InterruptedException {
         
