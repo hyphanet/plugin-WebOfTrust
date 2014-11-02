@@ -1008,6 +1008,9 @@ public final class SubscriptionManager implements PrioRunnable {
             return mWebOfTrust.getAllIdentities();
         }
 
+        // TODO: Code quality: This function is almost the same in TrustsSubscription and
+        // ScoresSubscription. Add a type parameter <T extends EventSource> to Notification and use
+        // it to move this function upwards to the Subscription base class.
 		/** {@inheritDoc} */
 		@SuppressWarnings("unchecked")
         @Override
