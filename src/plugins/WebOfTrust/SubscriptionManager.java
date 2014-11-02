@@ -21,7 +21,6 @@ import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.TrivialTicker;
-import freenet.support.api.Bucket;
 import freenet.support.codeshortification.IfNull;
 import freenet.support.io.NativeThread;
 
