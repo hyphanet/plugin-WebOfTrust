@@ -54,5 +54,5 @@ public interface EventSource extends Cloneable, Serializable {
     /**
      * @see #setVersionID(UUID)
      */
-    public void getVersionID(final UUID versionID);
+    public UUID getVersionID();
 }
