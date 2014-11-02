@@ -1133,19 +1133,28 @@ public final class SubscriptionManager implements PrioRunnable {
         }
 
 		/** {@inheritDoc} */
-		@Override
+		@SuppressWarnings("unchecked")
+        @Override
         protected void notifySubscriberByFCP(final Notification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
-		    
-            assert(notification instanceof ScoreChangedNotification);
-            ScoreChangedNotification scoreChangedNotification = 
-                (ScoreChangedNotification)notification;
 
-            if(notification.getNewObject() instanceof SynchronizationContainer) {
-                synchronizeSubscriberByFCP(scoreChangedNotification);
-            } else {
+            final UUID clientID = getClient().getFCP_ID();
+            
+            if(notification instanceof ScoreChangedNotification) {
                 mWebOfTrust.getFCPInterface().sendScoreChangedNotification(
-                    getClient().getFCP_ID(), scoreChangedNotification);
+                    clientID, (ScoreChangedNotification)notification);
+            } else if(notification instanceof BeginSynchronizationNotification<?>) {
+                // EndSynchronizationNotification is a child of BeginSynchronizationNotification.
+                
+                assert((BeginSynchronizationNotification<Score>)notification != null)
+                    : "The ScoresSubscription should only receive Score notifications";
+                 
+                mWebOfTrust.getFCPInterface().sendBeginOrEndSynchronizationNotification(
+                    clientID,
+                    (BeginSynchronizationNotification<Score>)notification);
+            } else {
+                throw new UnsupportedOperationException("Unknown notification type: "
+                    + notification);
             }
 		}
 
