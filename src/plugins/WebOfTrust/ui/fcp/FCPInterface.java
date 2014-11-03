@@ -1376,12 +1376,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
                               FCPPluginMessage.construct();
         
     	final String type;
-    	
-    	// FIXME: Read out the type-parameter ? extends EventSource via reflection:
-    	// It will be class Identity, Trust, or Score.
-    	// This will then allow you to get rid of the wrapper classes IdentitiesSubscription,
-    	// TrustsSubscription, ScoresSubscription.
-    	
+
     	if(clazz.equals(IdentitiesSubscription.class))
     		type = "Identities";
     	else if(clazz.equals(TrustsSubscription.class))
@@ -1402,7 +1397,6 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * {@link EndSynchronizationNotification} is a subclass of
      * {@link BeginSynchronizationNotification}, so this function can deal with both.
      */
-    @SuppressWarnings("unchecked")
     public void sendBeginOrEndSynchronizationNotification(final UUID clientID,
             final BeginSynchronizationNotification<?> notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
@@ -1414,16 +1408,23 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
              notification instanceof EndSynchronizationNotification 
                  ? "EndSynchronizationNotification" : "BeginSynchronizationNotification");
         
+        Subscription<? extends EventSource> subscription = notification.getSubscription();
         String to;
         
-        if((BeginSynchronizationNotification<Identity>)notification!= null)
+        // The type parameter of the BeginSynchronizationNotification<T> is not known at runtime
+        // due to the way Java is implemented. Thus, we must use the hack of checking the
+        // class of the Subscription to which the Notification belongs:
+        // Subscription is not parameterized, so we can check its class.
+        if(subscription instanceof IdentitiesSubscription)
             to = "Identities";
-        else if ((BeginSynchronizationNotification<Trust>)notification != null)
-            to = "Trusts"; // FIXME: Compiler says this is dead code. Is it?
-        else if ((BeginSynchronizationNotification<Score>)notification != null)
-            to = "Scores"; // FIXME: Compiler says this is dead code. Is it?
-        else
-            throw new UnsupportedOperationException("Unknown notification type: " + notification);
+        else if (subscription instanceof TrustsSubscription)
+            to = "Trusts";
+        else if (subscription instanceof ScoresSubscription)
+            to = "Scores";
+        else  {
+            throw new UnsupportedOperationException(
+                "BeginSynchronizationNotification for unknown Subscription type: " + subscription);
+        }
         
         // "To" because thats what we also use in handleSubscribe()
         fcpMessage.params.putOverwrite("To", to);
