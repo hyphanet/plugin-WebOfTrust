@@ -167,19 +167,8 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		sfs.putOverwrite("Message", "Subscribe");
 		sfs.putOverwrite("To", type);
 		fcpCall(sfs);
-		
-		// First reply message is the full set of all objects of the type we are interested in so the client can synchronize its database
-		final FCPPluginMessage synchronization = mReplyReceiver.getNextResult();
-		// The first "reply" message is not an actual reply message. See the JavaDoc of
-		// FCPInterface.handleSubscribe()).
-		// So we don't have to check the synchronization.success / errorCode / errorMessage as they
-		// will be null for non-reply messages.
-		assertEquals(false, synchronization.isReplyMessage());
-		assertEquals(type, synchronization.params.get("Message"));
-		assertEquals("No identities/trusts/scores stored yet",
-		    "0", synchronization.params.get(type + ".Amount"));
 
-		// Second reply message is the confirmation of the subscription
+		// First message from WOT is the confirmation of the subscription
 		final FCPPluginMessage subscription = mReplyReceiver.getNextResult();
 		assertEquals(true, subscription.success);
 		assertEquals("Subscribed", subscription.params.get("Message"));
@@ -192,6 +181,31 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 			throw e;
 		}
 		
+		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
+		
+	    // Second message is the "BeginSynchronizationNotification"
+        final FCPPluginMessage beginSync = mReplyReceiver.getNextResult();
+        // Validate the expected case of it not being a reply message so we don't have to check the
+        // beginSync.success / errorCode / errorMessage as they will be null for non-reply messages.
+        assertEquals(false, beginSync.isReplyMessage());
+        assertEquals("BeginSynchronizationNotification", beginSync.params.get("Message"));
+        assertEquals(type, beginSync.params.get("To"));
+        final UUID versionID = UUID.fromString(beginSync.params.get("VersionID"));
+        
+        // Third and following messages in theory would be IdentityChangedNotification /
+        // TrustChangedNotification / ScoreChangedNotification as containers for the
+        // synchronization.
+        // But as no Identitys/Trusts/Scores are stored yet, there shoudln't be any Notifications
+        // between the BeginSynchronizationNotification and the EndSynchronizationNotification.
+        // So the third message will be the "EndSynchronizationNotification" already.
+        
+        final FCPPluginMessage endSync = mReplyReceiver.getNextResult();
+        assertEquals(false, endSync.isReplyMessage());
+        assertEquals("EndSynchronizationNotification", endSync.params.get("Message"));
+        assertEquals(type, endSync.params.get("To"));
+        assertEquals(versionID.toString(), endSync.params.get("VersionID"));
+        
+        // No further messages should arrive by now.
 		assertFalse(mReplyReceiver.hasNextResult());
 		
 		// Try to file the same subscription again - should fail because we already are subscribed
