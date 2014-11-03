@@ -1011,7 +1011,6 @@ public final class SubscriptionManager implements PrioRunnable {
         // ScoresSubscription. Add a type parameter <T extends EventSource> to Notification and use
         // it to move this function upwards to the Subscription base class.
 		/** {@inheritDoc} */
-		@SuppressWarnings("unchecked")
         @Override
         protected void notifySubscriberByFCP(Notification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
@@ -1024,12 +1023,14 @@ public final class SubscriptionManager implements PrioRunnable {
 			} else if(notification instanceof BeginSynchronizationNotification<?>) {
 			    // EndSynchronizationNotification is a child of BeginSynchronizationNotification.
 			    
-			    assert((BeginSynchronizationNotification<Identity>)notification != null)
-			        : "The IdentitiesSubscription should only receive Identity notifications";
+			    // Would be a false positive:
+			    // The type parameter is not known at runtime due to the way Java is implemented.
+			    /* assert((BeginSynchronizationNotification<Identity>)notification != null)
+			        : "The IdentitiesSubscription should only receive Identity notifications"; */
 	             
 			    mWebOfTrust.getFCPInterface().sendBeginOrEndSynchronizationNotification(
 			        clientID,
-			        (BeginSynchronizationNotification<Identity>)notification);
+			        (BeginSynchronizationNotification<?>)notification);
 			} else {
 			    throw new UnsupportedOperationException("Unknown notification type: "
 			        + notification);
@@ -1074,7 +1075,6 @@ public final class SubscriptionManager implements PrioRunnable {
         }
 
 		/** {@inheritDoc} */
-		@SuppressWarnings("unchecked")
         @Override
         protected void notifySubscriberByFCP(final Notification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
@@ -1087,12 +1087,14 @@ public final class SubscriptionManager implements PrioRunnable {
             } else if(notification instanceof BeginSynchronizationNotification<?>) {
                 // EndSynchronizationNotification is a child of BeginSynchronizationNotification.
                 
-                assert((BeginSynchronizationNotification<Trust>)notification != null)
-                    : "The TrustsSubscription should only receive Trust notifications";
-                 
+                // Would be a false positive:
+                // The type parameter is not known at runtime due to the way Java is implemented.
+                /* assert((BeginSynchronizationNotification<Trust>)notification != null)
+                    : "The TrustsSubscription should only receive Trust notifications"; */
+                
                 mWebOfTrust.getFCPInterface().sendBeginOrEndSynchronizationNotification(
                     clientID,
-                    (BeginSynchronizationNotification<Trust>)notification);
+                    (BeginSynchronizationNotification<?>)notification);
             } else {
                 throw new UnsupportedOperationException("Unknown notification type: "
                     + notification);
@@ -1135,7 +1137,6 @@ public final class SubscriptionManager implements PrioRunnable {
         }
 
 		/** {@inheritDoc} */
-		@SuppressWarnings("unchecked")
         @Override
         protected void notifySubscriberByFCP(final Notification notification)
                 throws FCPCallFailedException, IOException, InterruptedException {
@@ -1148,12 +1149,14 @@ public final class SubscriptionManager implements PrioRunnable {
             } else if(notification instanceof BeginSynchronizationNotification<?>) {
                 // EndSynchronizationNotification is a child of BeginSynchronizationNotification.
                 
-                assert((BeginSynchronizationNotification<Score>)notification != null)
-                    : "The ScoresSubscription should only receive Score notifications";
+                // Would be a false positive:
+                // The type parameter is not known at runtime due to the way Java is implemented.
+                /* assert((BeginSynchronizationNotification<Score>)notification != null)
+                    : "The ScoresSubscription should only receive Score notifications"; */
                  
                 mWebOfTrust.getFCPInterface().sendBeginOrEndSynchronizationNotification(
                     clientID,
-                    (BeginSynchronizationNotification<Score>)notification);
+                    (BeginSynchronizationNotification<?>)notification);
             } else {
                 throw new UnsupportedOperationException("Unknown notification type: "
                     + notification);
