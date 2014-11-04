@@ -74,6 +74,10 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 			return results.removeFirst();
 		}
 		
+		public void restoreNextResult(FCPPluginMessage message) {
+		    results.addFirst(message);
+		}
+		
 		public boolean hasNextResult() {
 			return !results.isEmpty();
 		}
@@ -257,6 +261,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		doRandomChangesToWOT(eventCount);
 		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
 		importNotifications();
+        assertFalse(mReplyReceiver.hasNextResult());
 
 		assertEquals(new HashSet<Identity>(mWebOfTrust.getAllIdentities()),
 		             new HashSet<Identity>(mReceivedIdentities.values()));
@@ -277,12 +282,49 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		sfs.putOverwrite("To", type);
 		fcpCall(sfs);
 		
-		// First reply message is the full set of all objects of the type we are interested in so the client can synchronize its database
-		importSynchronization(type, mReplyReceiver.getNextResult().params);
-		
-		// Second reply message is the confirmation of the subscription
-		assertEquals("Subscribed", mReplyReceiver.getNextResult().params.get("Message"));
-		assertFalse(mReplyReceiver.hasNextResult());
+        // First message from WOT is the confirmation of the subscription
+        final FCPPluginMessage subscription = mReplyReceiver.getNextResult();
+        assertEquals(true, subscription.success);
+        assertEquals("Subscribed", subscription.params.get("Message"));
+        assertEquals(type, subscription.params.get("To"));
+        final String id = subscription.params.get("SubscriptionID");
+        try {
+            UUID.fromString(id);
+        } catch(IllegalArgumentException e) {
+            fail("SubscriptionID is invalid!");
+            throw e;
+        }
+        
+        mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
+        
+        // Second message is the "BeginSynchronizationNotification"
+        final FCPPluginMessage beginSync = mReplyReceiver.getNextResult();
+        // Validate the expected case of it not being a reply message so we don't have to check the
+        // beginSync.success / errorCode / errorMessage as they will be null for non-reply messages.
+        assertEquals(false, beginSync.isReplyMessage());
+        assertEquals("BeginSynchronizationNotification", beginSync.params.get("Message"));
+        assertEquals(type, beginSync.params.get("To"));
+        final UUID versionID = UUID.fromString(beginSync.params.get("VersionID"));
+        
+        // Following messages are the full set of all objects of the type we are interested in so
+        // the client can synchronize its database.
+        // They are wrapped in regular IdentityChangedNotification / TrustChangedNotification
+        // / ScoreChangedNotification as containers. Thus, we can just use importNotifications().
+        // FIXME: Adapt importSynchronization() to work with the FCP format and use it here. Over
+        // importNotifications(), it should have the advantage of checking the Notifications for
+        // matching versionID.
+        importNotifications();
+        
+        // Final message is "EndSynchronizationNotification".
+        
+        final FCPPluginMessage endSync = mReplyReceiver.getNextResult();
+        assertEquals(false, endSync.isReplyMessage());
+        assertEquals("EndSynchronizationNotification", endSync.params.get("Message"));
+        assertEquals(type, endSync.params.get("To"));
+        assertEquals(versionID.toString(), endSync.params.get("VersionID"));
+        
+        // No further messages should arrive by now.
+        assertFalse(mReplyReceiver.hasNextResult());
 	}
 	
 	void importSynchronization(final String type, SimpleFieldSet synchronization)
@@ -341,8 +383,13 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 				    new ScoreParser(mWebOfTrust, mReceivedIdentities)
 				        .parseNotification(notification),
 				    mReceivedScores);
+			} else if(message.equals("EndSynchronizationNotification")) {
+			    // We're not interested in processing the EndSynchronizationNotification here, so we
+			    // push it back and let the caller deal with it.
+			    mReplyReceiver.restoreNextResult(notificationMessage);
+			    return;
 			} else {
-				fail("Unknown message type: " + message);
+			    fail("Unknown message type: " + message);
 			}
 		}
 	}
