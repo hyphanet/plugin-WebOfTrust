@@ -55,4 +55,19 @@ public interface EventSource extends Cloneable, Serializable {
      * @see #setVersionID(UUID)
      */
     public UUID getVersionID();
+
+    /**
+     * Returns an unique identifier of this object.<br>
+     * For any given class, only one object may exist in the database which has a certain ID.<br>
+     * <br>
+     * 
+     * As opposed to the {@link #getVersionID()}, this identifier is permanent for a given
+     * {@link EventSource} object across its lifetime.<br>
+     * In other words: The version ID will change for every event {@link Notification}, the ID
+     * returned by this function will not change across events. 
+     * 
+     * @see Persistent#getID()
+     *          The requirements are specified in more detail at {@link Persistent#getID()}.
+     */
+    public String getID();
 }
