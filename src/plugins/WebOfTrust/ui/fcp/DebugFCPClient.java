@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import plugins.WebOfTrust.EventSource;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
@@ -142,7 +143,9 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		if(logMINOR) Logger.minor(this, "handleConnectionStatusChanged(" + connected + ")");
 	}
 
-	private final class SubscriptionSynchronizationHandlerImpl<T extends Persistent> implements SubscriptionSynchronizationHandler<T> {
+	private final class SubscriptionSynchronizationHandlerImpl<T extends EventSource>
+	        implements SubscriptionSynchronizationHandler<T> {
+	    
 		private final Class<T> mClass;
 		private final HashMap<String, T> mTarget;
 		
@@ -190,7 +193,9 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		}
 	}
 
-	private final class SubscribedObjectChangedHandlerImpl<T extends Persistent> implements SubscribedObjectChangedHandler<T> {
+	private final class SubscribedObjectChangedHandlerImpl<T extends EventSource>
+	        implements SubscribedObjectChangedHandler<T> {
+	    
 		private final HashMap<String, T> mTarget;
 		
 		public SubscribedObjectChangedHandlerImpl(final HashMap<String, T> myTarget) {
