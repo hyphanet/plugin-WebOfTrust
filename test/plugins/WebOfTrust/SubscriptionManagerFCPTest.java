@@ -371,17 +371,17 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 			final String message = notification.get("Message");
 			if(message.equals("IdentityChangedNotification")) {
 				putNotification(
-				    new IdentityParser(mWebOfTrust).parseNotification(notification),
+				    new IdentityParser(mWebOfTrust).parseObjectChangedNotification(notification),
 				    mReceivedIdentities);
 			} else if(message.equals("TrustChangedNotification")) {
 				putNotification(
 				    new TrustParser(mWebOfTrust, mReceivedIdentities)
-				        .parseNotification(notification),
+				        .parseObjectChangedNotification(notification),
 				    mReceivedTrusts);
 			} else if(message.equals("ScoreChangedNotification")) {
 				putNotification(
 				    new ScoreParser(mWebOfTrust, mReceivedIdentities)
-				        .parseNotification(notification),
+				        .parseObjectChangedNotification(notification),
 				    mReceivedScores);
 			} else if(message.equals("EndSynchronizationNotification")) {
 			    // We're not interested in processing the EndSynchronizationNotification here, so we

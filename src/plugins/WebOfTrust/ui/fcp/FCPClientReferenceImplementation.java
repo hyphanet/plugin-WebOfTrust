@@ -973,7 +973,7 @@ public final class FCPClientReferenceImplementation {
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
 			((SubscribedObjectChangedHandler<Identity>)mSubscribedObjectChangedHandlers.get(SubscriptionType.Identities))
-				.handleSubscribedObjectChanged(mIdentityParser.parseNotification(sfs));
+				.handleSubscribedObjectChanged(mIdentityParser.parseObjectChangedNotification(sfs));
 		}
 	}
 	
@@ -994,7 +994,7 @@ public final class FCPClientReferenceImplementation {
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
 			((SubscribedObjectChangedHandler<Trust>)mSubscribedObjectChangedHandlers.get(SubscriptionType.Trusts))
-				.handleSubscribedObjectChanged(mTrustParser.parseNotification(sfs));
+				.handleSubscribedObjectChanged(mTrustParser.parseObjectChangedNotification(sfs));
 		}
 	}
 
@@ -1015,7 +1015,7 @@ public final class FCPClientReferenceImplementation {
 		@Override
 		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
 			((SubscribedObjectChangedHandler<Score>)mSubscribedObjectChangedHandlers.get(SubscriptionType.Scores))
-				.handleSubscribedObjectChanged(mScoreParser.parseNotification(sfs));
+				.handleSubscribedObjectChanged(mScoreParser.parseObjectChangedNotification(sfs));
 		}
 	}
 
@@ -1077,7 +1077,9 @@ public final class FCPClientReferenceImplementation {
 			return result;
 		}
 
-		public ChangeSet<T> parseNotification(final SimpleFieldSet notification) throws MalformedURLException, FSParseException, InvalidParameterException {
+		public ChangeSet<T> parseObjectChangedNotification(final SimpleFieldSet notification)
+		        throws MalformedURLException, FSParseException, InvalidParameterException {
+		    
 			final SimpleFieldSet beforeChange = getOwnSubset(notification.subset("BeforeChange"));
 			final SimpleFieldSet afterChange = getOwnSubset(notification.subset("AfterChange"));
 			
