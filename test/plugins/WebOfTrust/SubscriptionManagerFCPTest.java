@@ -394,7 +394,9 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		}
 	}
 	
-	<T extends Persistent> void putNotification(final ChangeSet<T> changeSet, final HashMap<String, T> target) {
+	<T extends EventSource> void putNotification(
+	        final ChangeSet<T> changeSet, final HashMap<String, T> target) {
+	    
 		if(changeSet.beforeChange != null) {
 			final T currentBeforeChange = target.get(changeSet.beforeChange.getID());
 			assertEquals(currentBeforeChange, changeSet.beforeChange);
