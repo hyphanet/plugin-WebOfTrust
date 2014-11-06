@@ -13,11 +13,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import plugins.WebOfTrust.EventSource;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.MockWebOfTrust;
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.SubscriptionManager.IdentitiesSubscription;
@@ -171,13 +171,13 @@ public final class FCPClientReferenceImplementation {
 		/** @see ScoresSubscription */
 		Scores(Score.class);
 		
-		public Class<? extends Persistent> subscribedObjectType;
+		public Class<? extends EventSource> subscribedObjectType;
 		
-		SubscriptionType(Class<? extends Persistent> mySubscribedObjectType) {
+		SubscriptionType(Class<? extends EventSource> mySubscribedObjectType) {
 			subscribedObjectType = mySubscribedObjectType;
 		}
 		
-		public static SubscriptionType fromClass(Class<? extends Persistent> clazz) {
+		public static SubscriptionType fromClass(Class<? extends EventSource> clazz) {
 			if(clazz == Identity.class)
 				return Identities;
 			else if(clazz == Trust.class)
@@ -197,15 +197,17 @@ public final class FCPClientReferenceImplementation {
 	 * database of the type to which we subscribed.
 	 * @see SubscriptionSynchronizationHandler
 	 */
-	private final EnumMap<SubscriptionType, SubscriptionSynchronizationHandler<? extends Persistent>> mSubscriptionSynchronizationHandlers
-		= new EnumMap<SubscriptionType, SubscriptionSynchronizationHandler<? extends Persistent>>(SubscriptionType.class);
+	private final EnumMap
+	    <SubscriptionType, SubscriptionSynchronizationHandler<? extends EventSource>>
+	        mSubscriptionSynchronizationHandlers = new EnumMap<>(SubscriptionType.class);
 	
 	/**
 	 * Each of these handlers is called when an object changes to whose type the client is subscribed.
 	 * @see SubscribedObjectChangedHandler
 	 */
-	private final EnumMap<SubscriptionType, SubscribedObjectChangedHandler<? extends Persistent>> mSubscribedObjectChangedHandlers 
-		= new EnumMap<SubscriptionType, SubscribedObjectChangedHandler<? extends Persistent>>(SubscriptionType.class);
+	private final EnumMap
+	    <SubscriptionType, SubscribedObjectChangedHandler<? extends EventSource>>
+	        mSubscribedObjectChangedHandlers = new EnumMap<>(SubscriptionType.class);
 	
 	/**
 	 * The values are the IDs of the current subscriptions of the {@link SubscriptionType} which the key specifies.
@@ -312,7 +314,7 @@ public final class FCPClientReferenceImplementation {
 	 * This is because {@link Trust}/{@link Score} objects hold references to {@link Identity} objects and therefore your database won't
 	 * make sense if you don't know which the reference {@link Identity} objects are.
 	 */
-	public final synchronized <T extends Persistent> void subscribe(final Class<T> type,
+	public final synchronized <T extends EventSource> void subscribe(final Class<T> type,
 			final SubscriptionSynchronizationHandler<T> synchronizationHandler, SubscribedObjectChangedHandler<T> objectChangedHandler) {
 		if(mClientState != ClientState.Started)
 			throw new IllegalStateException(mClientState.toString());
@@ -335,7 +337,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Call this to cancel a {@link Subscription}.
 	 */
-	public final synchronized <T extends Persistent> void unsubscribe(final Class<T> type) {
+	public final synchronized <T extends EventSource> void unsubscribe(final Class<T> type) {
 		if(mClientState != ClientState.Started)
 			throw new IllegalStateException(mClientState.toString());
 		
@@ -1020,7 +1022,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Represents the data of a {@link SubscriptionManager.Notification}
 	 */
-	public static final class ChangeSet<CT extends Persistent> {
+	public static final class ChangeSet<CT extends EventSource> {
 		/**
 		 * @see SubscriptionManager.Notification#getOldObject()
 		 */
@@ -1057,7 +1059,7 @@ public final class FCPClientReferenceImplementation {
 	 * The implementing child classes only have to implement parsing of a single Identity/Trust/Score object. The format of the 
 	 * messages which contain multiple of them is a superset so the single-element parser can be used.
 	 */
-	public static abstract class FCPParser<T extends Persistent> {
+	public static abstract class FCPParser<T extends EventSource> {
 		
 		protected final WebOfTrustInterface mWoT;
 		
@@ -1239,7 +1241,7 @@ public final class FCPClientReferenceImplementation {
 		void handleConnectionStatusChanged(boolean connected);
 	}
 	
-	public interface SubscriptionSynchronizationHandler<T extends Persistent> {
+	public interface SubscriptionSynchronizationHandler<T extends EventSource> {
 		/**
 		 * Called very soon after you have subscribed via {@link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}
 		 * The type T matches the Class parameter of the above subscribe function.
@@ -1263,7 +1265,7 @@ public final class FCPClientReferenceImplementation {
 		void handleSubscriptionSynchronization(Collection<T> allObjects) throws ProcessingFailedException;
 	}
 	
-	public interface SubscribedObjectChangedHandler<T extends Persistent> {
+	public interface SubscribedObjectChangedHandler<T extends EventSource> {
 		/**
 		 * Called if an object is changed/added/deleted to whose class you subscribed to via @link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}.
 		 * The type T matches the Class parameter of the above subscribe function.
