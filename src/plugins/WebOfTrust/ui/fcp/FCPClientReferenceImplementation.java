@@ -304,6 +304,8 @@ public final class FCPClientReferenceImplementation {
 				new FCPIdentitiesSynchronizationHandler(),
 				new FCPTrustsSynchronizationHandler(),
 				new FCPScoresSynchronizationHandler(),
+				new FCPBeginSynchronizationNotificationHandler(),
+				new FCPEndSynchronizationNotificationHandler(),
 				new FCPIdentityChangedNotificationHandler(),
 				new FCPTrustChangedNotificationHandler(),
 				new FCPScoreChangedNotificationHandler()
