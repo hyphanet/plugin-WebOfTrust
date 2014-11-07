@@ -996,7 +996,7 @@ public final class FCPClientReferenceImplementation {
 	}
 
 	/** @see SubscriptionManager.BeginSynchronizationNotification */
-	private final class FCPBeginSynchronizationNotificationHandler
+	private class FCPBeginSynchronizationNotificationHandler
 	        extends MaybeFailingFCPMessageHandler {
 
 	    @Override public String getMessageName() {
@@ -1004,20 +1004,30 @@ public final class FCPClientReferenceImplementation {
 	    }
 
 	    @Override void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) {
-	        throw new UnsupportedOperationException("FIXME: Implement");
+	        mBeginSubscriptionSynchronizationHandlers.get(parseSubscriptionType(sfs))
+	            .handleBeginSubscriptionSynchronization(parseVersionID(sfs));
 	    }
+        
+        final SubscriptionType parseSubscriptionType(final SimpleFieldSet sfs) {
+            return SubscriptionType.valueOf(sfs.get("To"));
+        }
+        
+        final UUID parseVersionID(final SimpleFieldSet sfs) {
+            return UUID.fromString(sfs.get("VersionID"));
+        }
 	}
 
 	/** @see SubscriptionManager.EndSynchronizationNotification */
 	private final class FCPEndSynchronizationNotificationHandler
-	        extends MaybeFailingFCPMessageHandler {
+	        extends FCPBeginSynchronizationNotificationHandler {
 
 	    @Override public String getMessageName() {
 	        return "EndSynchronizationNotification";
 	    }
 
 	    @Override void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) {
-	        throw new UnsupportedOperationException("FIXME: Implement");
+            mEndSubscriptionSynchronizationHandlers.get(parseSubscriptionType(sfs))
+                .handleEndSubscriptionSynchronization(parseVersionID(sfs));
 	    }
 	}
 
