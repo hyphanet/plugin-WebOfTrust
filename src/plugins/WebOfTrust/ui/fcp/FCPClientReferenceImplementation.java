@@ -21,8 +21,11 @@ import plugins.WebOfTrust.MockWebOfTrust;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
+import plugins.WebOfTrust.SubscriptionManager.BeginSynchronizationNotification;
+import plugins.WebOfTrust.SubscriptionManager.EndSynchronizationNotification;
 import plugins.WebOfTrust.SubscriptionManager.IdentitiesSubscription;
 import plugins.WebOfTrust.SubscriptionManager.Notification;
+import plugins.WebOfTrust.SubscriptionManager.ObjectChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.ScoresSubscription;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.SubscriptionManager.TrustsSubscription;
@@ -196,12 +199,47 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Each of these handlers is called at the begin of a subscription. The "synchronization" contains all objects in the WOT
 	 * database of the type to which we subscribed.
+	 * FIXME: Replaced by {@link BeginSubscriptionSynchronizationHandler} and
+	 * {@link EndSubscriptionSynchronizationHandler}, remove once its not used by any code.
 	 * @see SubscriptionSynchronizationHandler
 	 */
 	private final EnumMap
 	    <SubscriptionType, SubscriptionSynchronizationHandler<? extends EventSource>>
 	        mSubscriptionSynchronizationHandlers = new EnumMap<>(SubscriptionType.class);
-	
+
+    /**
+     * Each is of these handlers called at the begin of a Subscription to indicate that a series of
+     * {@link ObjectChangedNotification} will follow which contain the full state of the WOT
+     * database of the type to which we subscribed. After that, the appropriate
+     * {@link EndSubscriptionSynchronizationHandler} is called, to signal to the client that it
+     * shall delete all objects from its database which were not contained in the synchronization.
+     * @see BeginSynchronizationNotification
+     *          The SubscriptionManager.BeginSynchronizationNotification is the underlying
+     *          source of this event.
+     * @see #mEndSubscriptionSynchronizationHandlers
+     *          The mEndSubscriptionSynchronizationHandlers table contains the said handlers for
+     *          marking the end of the synchronization series.
+     */
+	private final EnumMap
+	    <SubscriptionType, BeginSubscriptionSynchronizationHandler<? extends EventSource>>
+	        mBeginSubscriptionSynchronizationHandlers = new EnumMap<>(SubscriptionType.class);
+
+    /**
+     * Each is of these handlers at the end of a Subscription to indicate that the series of
+     * {@link ObjectChangedNotification} which formed the initial state synchronization has ended.
+     * Once the client receives the call of this handler, it shall delete all objects from its
+     * database which were not contained in the synchronization.
+     * @see EndSynchronizationNotification
+     *          The SubscriptionManager.EndSynchronizationNotification is the underlying
+     *          source of this event.
+     * @see #mBeginSubscriptionSynchronizationHandlers
+     *          The mBeginSubscriptionSynchronizationHandlers table contains the handlers which
+     *          mark the begin of the synchronization series.
+     */
+	private final EnumMap
+	    <SubscriptionType, EndSubscriptionSynchronizationHandler<? extends EventSource>>
+	        mEndSubscriptionSynchronizationHandlers = new EnumMap<>(SubscriptionType.class);
+
 	/**
 	 * Each of these handlers is called when an object changes to whose type the client is subscribed.
 	 * @see SubscribedObjectChangedHandler
