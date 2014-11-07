@@ -1136,11 +1136,11 @@ public final class FCPClientReferenceImplementation {
 	 * The implementing child classes only have to implement parsing of a single Identity/Trust/Score object. The format of the 
 	 * messages which contain multiple of them is a superset so the single-element parser can be used.
 	 */
-	public static abstract class FCPParser<T extends EventSource> {
+	public static abstract class FCPObjectChangedNotificationParser<T extends EventSource> {
 		
 		protected final WebOfTrustInterface mWoT;
 		
-		public FCPParser(final WebOfTrustInterface myWebOfTrust) {
+		public FCPObjectChangedNotificationParser(final WebOfTrustInterface myWebOfTrust) {
 			mWoT = myWebOfTrust;
 		}
 		
@@ -1173,7 +1173,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Parser for FCP messages which describe an {@link Identity} or {@link OwnIdentity} object.
 	 */
-	public static final class IdentityParser extends FCPParser<Identity> {
+	public static final class IdentityParser extends FCPObjectChangedNotificationParser<Identity> {
 
 		public IdentityParser(final WebOfTrustInterface myWebOfTrust) {
 			super(myWebOfTrust);
@@ -1235,7 +1235,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Parser for FCP messages which describe a {@link Trust} object.
 	 */
-	public static final class TrustParser extends FCPParser<Trust> {
+	public static final class TrustParser extends FCPObjectChangedNotificationParser<Trust> {
 
 		private final Map<String, Identity> mIdentities;
 		
@@ -1273,7 +1273,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Parser for FCP messages which describe a {@link Score} object.
 	 */
-	public static final class ScoreParser extends FCPParser<Score> {
+	public static final class ScoreParser extends FCPObjectChangedNotificationParser<Score> {
 		
 		private final Map<String, Identity> mIdentities;
 		
