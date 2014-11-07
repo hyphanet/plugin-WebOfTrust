@@ -1486,6 +1486,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         // Not a reply to an existing message since it is sent due to an event, not a client message
         final FCPPluginMessage fcpMessage = FCPPluginMessage.construct();
         
+        // FIXME: Always have Message = "ObjectChangedNotification" instead of
+        // IdentityChangedNotification / TrustChangedNotification / ScoreChangedNotification to
+        // match the class name FCPObjectChangedNotificationParser in
+        // FCPClientReferenceImplementation. This will probably allow eliminating or simplifying the
+        // classes FCPIdentityChangedNotificationHandler et al.
         fcpMessage.params.putOverwrite("Message", message);
         fcpMessage.params.put("BeforeChange", beforeChange);
         fcpMessage.params.put("AfterChange", afterChange);
