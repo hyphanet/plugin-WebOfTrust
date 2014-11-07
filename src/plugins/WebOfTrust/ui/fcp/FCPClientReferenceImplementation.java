@@ -970,6 +970,19 @@ public final class FCPClientReferenceImplementation {
 	    }
 	}
 
+	/** @see SubscriptionManager.EndSynchronizationNotification */
+	private final class FCPEndSynchronizationNotificationHandler
+	        extends MaybeFailingFCPMessageHandler {
+
+	    @Override public String getMessageName() {
+	        return "EndSynchronizationNotification";
+	    }
+
+	    @Override void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) {
+	        throw new UnsupportedOperationException("FIXME: Implement");
+	    }
+	}
+
 	/**
 	 * Handles the "IdentityChangedNotification" message which WOT sends when an {@link Identity} or {@link OwnIdentity} was changed, added or deleted.
 	 * This will be send if we are subscribed to {@link SubscriptionType#Identities}.
