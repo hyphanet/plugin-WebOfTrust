@@ -12,6 +12,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 import plugins.WebOfTrust.EventSource;
 import plugins.WebOfTrust.Identity;
@@ -1266,7 +1267,17 @@ public final class FCPClientReferenceImplementation {
 		 */
 		void handleSubscriptionSynchronization(Collection<T> allObjects) throws ProcessingFailedException;
 	}
-	
+
+	public interface BeginSubscriptionSynchronizationHandler<T extends EventSource>  {
+	    /** FIXME: Recycle JavaDoc of SubscriptionSynchronizationHandler */
+	    void handleBeginSubscriptionSynchronization(final UUID versionID);
+	}
+
+	public interface EndSubscriptionSynchronizationHandler<T extends EventSource>  {
+	    /** FIXME: Recycle JavaDoc of SubscriptionSynchronizationHandler */
+	    void handleEndSubscriptionSynchronization(final UUID versionID);
+	}
+
 	public interface SubscribedObjectChangedHandler<T extends EventSource> {
 		/**
 		 * Called if an object is changed/added/deleted to whose class you subscribed to via @link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}.
