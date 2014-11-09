@@ -107,23 +107,23 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		mClient.start();
 		mClient.subscribe(Identity.class, 
 		    new BeginSubscriptionSynchronizationHandlerImpl<Identity>(
-		        Identity.class, mReceivedIdentities.values()),
+		        Identity.class, mReceivedIdentities),
 		    new EndSubscriptionSynchronizationHandlerImpl<Identity>(
-		        Identity.class, mReceivedIdentities.values()),
+		        Identity.class, mReceivedIdentities),
 		    new SubscribedObjectChangedHandlerImpl<Identity>(mReceivedIdentities));
 		
 		mClient.subscribe(Trust.class, 
 		    new BeginSubscriptionSynchronizationHandlerImpl<Trust>(
-		        Trust.class, mReceivedTrusts.values()),
+		        Trust.class, mReceivedTrusts),
 		    new EndSubscriptionSynchronizationHandlerImpl<Trust>(
-		        Trust.class, mReceivedTrusts.values()),
+		        Trust.class, mReceivedTrusts),
 		    new SubscribedObjectChangedHandlerImpl<Trust>(mReceivedTrusts));
 		
 		mClient.subscribe(Score.class, 
 		    new BeginSubscriptionSynchronizationHandlerImpl<Score>(
-		        Score.class, mReceivedScores.values()),
+		        Score.class, mReceivedScores),
 		    new EndSubscriptionSynchronizationHandlerImpl<Score>(
-		        Score.class, mReceivedScores.values()),
+		        Score.class, mReceivedScores),
 		    new SubscribedObjectChangedHandlerImpl<Score>(mReceivedScores));
 	}
 	
@@ -221,9 +221,10 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	        implements BeginSubscriptionSynchronizationHandler<T> {
 	    
         private final Class<T> mClass;
-        private final Collection<T> mDatabase;
+        /** Key = {@link EventSource#getID()} */
+        private final Map<String, T> mDatabase;
 	    
-	    BeginSubscriptionSynchronizationHandlerImpl(Class<T> myClass, Collection<T> myDatabase) {
+	    BeginSubscriptionSynchronizationHandlerImpl(Class<T> myClass, Map<String, T> myDatabase) {
             mClass = myClass;
             mDatabase = myDatabase;
 	    }
@@ -244,7 +245,9 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
                 // Therefore, in a real client, you should update your existing dataset WITHOUT
                 // complaining about mismatches.
                 
-                if(getEventSourcesWithMatchingVersionID(mDatabase, versionID).size() != 0) {
+                if(getEventSourcesWithMatchingVersionID(mDatabase.values(), versionID)
+                        .size() != 0) {
+                    
                     Logger.error(this, "Objects for the new versionID exist even though they "
                                      + "should not: " + versionID);
                 }
@@ -262,9 +265,10 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
             implements EndSubscriptionSynchronizationHandler<T> {
         
         private final Class<T> mClass;
-        private final Collection<T> mDatabase;
+        /** Key = {@link EventSource#getID()} */
+        private final Map<String, T> mDatabase;
         
-        EndSubscriptionSynchronizationHandlerImpl(Class<T> myClass, Collection<T> myDatabase) {
+        EndSubscriptionSynchronizationHandlerImpl(Class<T> myClass, Map<String, T> myDatabase) {
             mClass = myClass;
             mDatabase = myDatabase;
         }
