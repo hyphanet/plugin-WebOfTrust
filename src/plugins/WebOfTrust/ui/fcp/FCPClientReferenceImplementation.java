@@ -165,7 +165,9 @@ public final class FCPClientReferenceImplementation {
 	 * Trusts/Scores subscriptions were filed before the Identities subscription.
 	 * 
 	 * ATTENTION: The mandatory order which is documented here should as well be specified in
-	 * {@link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)
+	 * {@link FCPClientReferenceImplementation#subscribe(Class,
+	 * BeginSubscriptionSynchronizationHandler, EndSubscriptionSynchronizationHandler,
+	 * SubscribedObjectChangedHandler)}.
 	 */
 	private enum SubscriptionType {
 		/** @see IdentitiesSubscription */
@@ -356,7 +358,10 @@ public final class FCPClientReferenceImplementation {
 	 * make sense if you don't know which the reference {@link Identity} objects are.
 	 */
 	public final synchronized <T extends EventSource> void subscribe(final Class<T> type,
-			final SubscriptionSynchronizationHandler<T> synchronizationHandler, SubscribedObjectChangedHandler<T> objectChangedHandler) {
+			final BeginSubscriptionSynchronizationHandler<T> beginSyncHandler,
+			final EndSubscriptionSynchronizationHandler<T> endSyncHandler,
+			final SubscribedObjectChangedHandler<T> objectChangedHandler) {
+	    
 		if(mClientState != ClientState.Started)
 			throw new IllegalStateException(mClientState.toString());
 		
@@ -366,10 +371,12 @@ public final class FCPClientReferenceImplementation {
 		
 		mSubscribeTo.add(SubscriptionType.fromClass(type));
 		
-		IfNull.thenThrow(synchronizationHandler);
+		IfNull.thenThrow(beginSyncHandler);
+		IfNull.thenThrow(endSyncHandler);
 		IfNull.thenThrow(objectChangedHandler);
 		
-		mSubscriptionSynchronizationHandlers.put(realType, synchronizationHandler);
+		mBeginSubscriptionSynchronizationHandlers.put(realType, beginSyncHandler);
+		mEndSubscriptionSynchronizationHandlers.put(realType, endSyncHandler);
 		mSubscribedObjectChangedHandlers.put(realType, objectChangedHandler);
 		
 		mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
@@ -1311,8 +1318,11 @@ public final class FCPClientReferenceImplementation {
 		 * This handler should update your user interface remove or show a "Please install the Web Of Trust plugin!" warning.
 		 * If this handler was not called yet, you should assume that there is no connection and display the warning as well. 
 		 * 
-		 * ATTENTION: You do NOT have to call {@link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}
-		 * in this handler! Subscriptions will be filed automatically by the client whenever the connection is established.
+		 * ATTENTION: You do NOT have to call {@link FCPClientReferenceImplementation#
+		 * subscribe(Class, BeginSubscriptionSynchronizationHandler,
+		 * EndSubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)} in this handler!
+		 * Subscriptions will be filed automatically by the client whenever the connection is
+		 * established.
 		 * It will also automatically reconnect if the connection is lost.
 		 * ATTENTION: The client will automatically try to reconnect, you do NOT have to call {@link FCPClientReferenceImplementation#start()}
 		 * or anything else in this handler!
@@ -1322,7 +1332,9 @@ public final class FCPClientReferenceImplementation {
 	
 	public interface SubscriptionSynchronizationHandler<T extends EventSource> {
 		/**
-		 * Called very soon after you have subscribed via {@link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}
+		 * Called very soon after you have subscribed via {@link FCPClientReferenceImplementation#
+		 * subscribe(Class, BeginSubscriptionSynchronizationHandler,
+		 * EndSubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}.
 		 * The type T matches the Class parameter of the above subscribe function.
 		 * The passed {@link Collection} contains ALL objects in the WOT database of whose type T you have subscribed to:
 		 * - For {@link Identity}, all {@link Identity} and {@link OwnIdentity} objects in the WOT database.
@@ -1356,7 +1368,10 @@ public final class FCPClientReferenceImplementation {
 
 	public interface SubscribedObjectChangedHandler<T extends EventSource> {
 		/**
-		 * Called if an object is changed/added/deleted to whose class you subscribed to via @link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}.
+		 * Called if an object is changed/added/deleted to whose class you subscribed to via
+		 * {@link FCPClientReferenceImplementation#subscribe(Class,
+		 * BeginSubscriptionSynchronizationHandler, EndSubscriptionSynchronizationHandler,
+		 * SubscribedObjectChangedHandler)}.
 		 * The type T matches the Class parameter of the above subscribe function.
 		 * You will receive notifications about changed objects for the given values of T:
 		 * - For {@link Identity}, changed {@link Identity} and {@link OwnIdentity} objects in the WOT database.
