@@ -62,6 +62,16 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	 */
 	private final HashMap<String, Score> mReceivedScores = new HashMap<String, Score>();
 	
+	/**
+	 * For each of the classes Identity / Trust / Score, is true if
+	 * {@link BeginSubscriptionSynchronizationHandlerImpl#
+	 * handleBeginSubscriptionSynchronization(UUID)} was called, but
+	 * {@link EndSubscriptionSynchronizationHandlerImpl#handleEndSubscriptionSynchronization(UUID)}
+	 * was not called yet.
+	 */
+	private final HashMap<Class<? extends EventSource>, Boolean> mSynchronizationInProgress
+	    = new HashMap<>();
+	
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
 	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
 	private static transient volatile boolean logDEBUG = false;
@@ -79,6 +89,10 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	private DebugFCPClient(final WebOfTrust myWebOfTrust, final Executor myExecutor, Map<String, Identity> identityStorage) {
 		mClient = new FCPClientReferenceImplementation(identityStorage, myWebOfTrust.getPluginRespirator(), myExecutor, this);
 		mWebOfTrust = myWebOfTrust;
+		
+		mSynchronizationInProgress.put(Identity.class, false);
+		mSynchronizationInProgress.put(Trust.class, false);
+		mSynchronizationInProgress.put(Score.class, false);
 	}
 	
 	public static DebugFCPClient construct(final WebOfTrust myWebOfTrust) {
@@ -217,6 +231,11 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
             Logger.minor(this, "handleBeginSubscriptionSynchronization() for subscription type: "
                 + mClass);
             
+            if(mSynchronizationInProgress.get(mClass) != false)
+                Logger.error(this, "handleBeginSubscriptionSynchronization() called twice!");
+            
+            mSynchronizationInProgress.put(mClass, true);
+            
             throw new UnsupportedOperationException("FIXME: Implement");
             
             Logger.minor(this, "handleBeginSubscriptionSynchronization() finished.");
@@ -237,6 +256,13 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
         @Override public void handleEndSubscriptionSynchronization(final UUID versionID) {
             Logger.minor(this, "handleEndSubscriptionSynchronization() for subscription type: "
                 + mClass);
+            
+            if(mSynchronizationInProgress.get(mClass) != true) {
+                Logger.error(this, "handleEndSubscriptionSynchronization() called without "
+                                 + "prior call to handleBeginSubscriptionSynchronization()!");
+            }
+            
+            mSynchronizationInProgress.put(mClass, false);
             
             throw new UnsupportedOperationException("FIXME: Implement");
             
