@@ -3,6 +3,7 @@ package plugins.WebOfTrust.ui.fcp;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import plugins.WebOfTrust.EventSource;
 import plugins.WebOfTrust.Identity;
@@ -13,7 +14,9 @@ import plugins.WebOfTrust.SubscriptionManager.ScoresSubscription;
 import plugins.WebOfTrust.SubscriptionManager.TrustsSubscription;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.BeginSubscriptionSynchronizationHandler;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.EndSubscriptionSynchronizationHandler;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscribedObjectChangedHandler;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionSynchronizationHandler;
 
@@ -88,18 +91,18 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	public void start() {
 		mClient.start();
 		mClient.subscribe(Identity.class, 
-				new SubscriptionSynchronizationHandlerImpl<Identity>(Identity.class,
-				    mReceivedIdentities),
+				new BeginSubscriptionSynchronizationHandlerImpl<Identity>(),
+				new EndSubscriptionSynchronizationHandlerImpl<Identity>(),
 				new SubscribedObjectChangedHandlerImpl<Identity>(mReceivedIdentities));
 		
 		mClient.subscribe(Trust.class, 
-				new SubscriptionSynchronizationHandlerImpl<Trust>(Trust.class,
-				    mReceivedTrusts),
+				new BeginSubscriptionSynchronizationHandlerImpl<Trust>(),
+				new EndSubscriptionSynchronizationHandlerImpl<Trust>(),
 				new SubscribedObjectChangedHandlerImpl<Trust>(mReceivedTrusts));
 		
 		mClient.subscribe(Score.class, 
-				new SubscriptionSynchronizationHandlerImpl<Score>(Score.class,
-				    mReceivedScores),
+    		    new BeginSubscriptionSynchronizationHandlerImpl<Score>(),
+    		    new EndSubscriptionSynchronizationHandlerImpl<Score>(),
 				new SubscribedObjectChangedHandlerImpl<Score>(mReceivedScores));
 	}
 	
@@ -192,6 +195,23 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 			if(logMINOR) Logger.minor(this, "handleSubscriptionSynchronization() finished.");
 		}
 	}
+
+	private final class BeginSubscriptionSynchronizationHandlerImpl<T extends EventSource>
+	        implements BeginSubscriptionSynchronizationHandler<T> {
+
+        @Override public void handleBeginSubscriptionSynchronization(final UUID versionID) {
+            throw new UnsupportedOperationException("FIXME: Implement");
+        }
+
+	}
+
+    private final class EndSubscriptionSynchronizationHandlerImpl<T extends EventSource>
+            implements EndSubscriptionSynchronizationHandler<T> {
+
+        @Override public void handleEndSubscriptionSynchronization(final UUID versionID) {
+            throw new UnsupportedOperationException("FIXME: Implement");
+        }
+    }
 
 	private final class SubscribedObjectChangedHandlerImpl<T extends EventSource>
 	        implements SubscribedObjectChangedHandler<T> {
