@@ -2,6 +2,7 @@ package plugins.WebOfTrust.ui.fcp;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
 
@@ -316,5 +317,49 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 
 			if(logMINOR) Logger.minor(this, "handleSubscribedObjectChanged finished.");
 		}
+	}
+	
+	/**
+	 * ATTENTION: This is merely a convenience function for keeping the class easy to understand
+	 * at the cost of being slow.<br>
+	 * It iterates over all elements of the source Collection, and thus is O(N) where N is the
+	 * total number of elements in the Collection.<br>
+	 * Do not use this in real WOT client applications as the N is possibly much larger than the
+	 * amount of matching UUIDs which we need. Instead, store the EventSources in a datastructure
+	 * or even database which supports fast queries by their UUID versionID natively.<br><br>
+	 */
+	private <T extends EventSource> Collection<T> getEventSourcesWithMatchingVersionID(
+	        Collection<T> database, UUID versionID) {
+
+	    LinkedList<T> result = new LinkedList<>();
+
+	    for(T eventSource : database) {
+	        if(eventSource.getVersionID().equals(versionID))
+	            result.add(eventSource);
+	    }
+
+	    return result;
+	}
+
+	/**
+	 * ATTENTION: This is merely a convenience function for keeping the class easy to understand
+	 * at the cost of being slow.<br>
+	 * It iterates over all elements of the source Collection, and thus is O(N) where N is the
+	 * total number of elements in the Collection.<br>
+	 * Do not use this in real WOT client applications as the N is possibly much larger than the
+	 * amount of matching UUIDs which we need. Instead, store the EventSources in a datastructure
+	 * or even database which supports fast queries by their UUID versionID natively.<br><br>
+	 */
+	private <T extends EventSource> Collection<T> getEventSourcesWithDifferentVersionID(
+	        Collection<T> database, UUID versionID) {
+
+	    LinkedList<T> result = new LinkedList<>();
+
+	    for(T eventSource : database) {
+	        if(!eventSource.getVersionID().equals(versionID))
+	            result.add(eventSource);
+	    }
+
+	    return result;
 	}
 }
