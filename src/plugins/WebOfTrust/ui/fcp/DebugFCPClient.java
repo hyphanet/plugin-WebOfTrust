@@ -91,18 +91,24 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	public void start() {
 		mClient.start();
 		mClient.subscribe(Identity.class, 
-		    new BeginSubscriptionSynchronizationHandlerImpl<Identity>(mReceivedIdentities.values()),
-		    new EndSubscriptionSynchronizationHandlerImpl<Identity>(mReceivedIdentities.values()),
+		    new BeginSubscriptionSynchronizationHandlerImpl<Identity>(
+		        Identity.class, mReceivedIdentities.values()),
+		    new EndSubscriptionSynchronizationHandlerImpl<Identity>(
+		        Identity.class, mReceivedIdentities.values()),
 		    new SubscribedObjectChangedHandlerImpl<Identity>(mReceivedIdentities));
 		
 		mClient.subscribe(Trust.class, 
-		    new BeginSubscriptionSynchronizationHandlerImpl<Trust>(mReceivedTrusts.values()),
-		    new EndSubscriptionSynchronizationHandlerImpl<Trust>(mReceivedTrusts.values()),
+		    new BeginSubscriptionSynchronizationHandlerImpl<Trust>(
+		        Trust.class, mReceivedTrusts.values()),
+		    new EndSubscriptionSynchronizationHandlerImpl<Trust>(
+		        Trust.class, mReceivedTrusts.values()),
 		    new SubscribedObjectChangedHandlerImpl<Trust>(mReceivedTrusts));
 		
 		mClient.subscribe(Score.class, 
-		    new BeginSubscriptionSynchronizationHandlerImpl<Score>(mReceivedScores.values()),
-		    new EndSubscriptionSynchronizationHandlerImpl<Score>(mReceivedScores.values()),
+		    new BeginSubscriptionSynchronizationHandlerImpl<Score>(
+		        Score.class, mReceivedScores.values()),
+		    new EndSubscriptionSynchronizationHandlerImpl<Score>(
+		        Score.class, mReceivedScores.values()),
 		    new SubscribedObjectChangedHandlerImpl<Score>(mReceivedScores));
 	}
 	
@@ -199,28 +205,42 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	private final class BeginSubscriptionSynchronizationHandlerImpl<T extends EventSource>
 	        implements BeginSubscriptionSynchronizationHandler<T> {
 	    
-	    private final Collection<T> mDatabase;
+        private final Class<T> mClass;
+        private final Collection<T> mDatabase;
 	    
-	    BeginSubscriptionSynchronizationHandlerImpl(Collection<T> database) {
-	        mDatabase = database;
+	    BeginSubscriptionSynchronizationHandlerImpl(Class<T> myClass, Collection<T> myDatabase) {
+            mClass = myClass;
+            mDatabase = myDatabase;
 	    }
 
         @Override public void handleBeginSubscriptionSynchronization(final UUID versionID) {
+            Logger.minor(this, "handleBeginSubscriptionSynchronization() for subscription type: "
+                + mClass);
+            
             throw new UnsupportedOperationException("FIXME: Implement");
+            
+            Logger.minor(this, "handleBeginSubscriptionSynchronization() finished.");
         }
 	}
 
     private final class EndSubscriptionSynchronizationHandlerImpl<T extends EventSource>
             implements EndSubscriptionSynchronizationHandler<T> {
         
+        private final Class<T> mClass;
         private final Collection<T> mDatabase;
         
-        EndSubscriptionSynchronizationHandlerImpl(Collection<T> database) {
-            mDatabase = database;
+        EndSubscriptionSynchronizationHandlerImpl(Class<T> myClass, Collection<T> myDatabase) {
+            mClass = myClass;
+            mDatabase = myDatabase;
         }
 
         @Override public void handleEndSubscriptionSynchronization(final UUID versionID) {
+            Logger.minor(this, "handleEndSubscriptionSynchronization() for subscription type: "
+                + mClass);
+            
             throw new UnsupportedOperationException("FIXME: Implement");
+            
+            Logger.minor(this, "handleEndSubscriptionSynchronization() finished.");
         }
     }
 
