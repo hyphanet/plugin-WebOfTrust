@@ -356,6 +356,15 @@ public final class FCPClientReferenceImplementation {
 	 * - {@link Score}.class
 	 * This is because {@link Trust}/{@link Score} objects hold references to {@link Identity} objects and therefore your database won't
 	 * make sense if you don't know which the reference {@link Identity} objects are.
+	 * <br><br>
+	 * 
+	 * ATTENTION: The passed handlers will be hard-referenced by this object even after
+	 * {@link #unsubscribe(Class)} has been called. This is because unsubscribing is processed
+	 * asynchronously: FCP messages might be received from WOT after you have called unsubscribe()
+	 * but before the unsubscription has finished. In that case, this object might have to pass
+	 * the messages to your handlers, so they must not be null. If you need the handlers to be
+	 * garbage-collected, you should re-subscribe with different handlers, or throw away the whole
+	 * client.
 	 */
 	public final synchronized <T extends EventSource> void subscribe(final Class<T> type,
 			final BeginSubscriptionSynchronizationHandler<T> beginSyncHandler,
