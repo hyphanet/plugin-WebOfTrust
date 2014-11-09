@@ -237,7 +237,22 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
             
             mSynchronizationInProgress.put(mClass, true);
             
-            throw new UnsupportedOperationException("FIXME: Implement");
+            if(mDatabase.size() > 0) {
+                Logger.normal(this, "Received additional synchronization, validating existing data "
+                                  + "against it...");
+                // ATTENTION: This can happen when the connection to WOT is lost temporarily.
+                // Therefore, in a real client, you should update your existing dataset WITHOUT
+                // complaining about mismatches.
+                
+                if(getEventSourcesWithMatchingVersionID(mDatabase, versionID).size() != 0) {
+                    Logger.error(this, "Objects for the new versionID exist even though they "
+                                     + "should not: " + versionID);
+                }
+                
+                // The actual validation will happen in SubscribedObjectChangedHandlerImpl as this
+                // handler does not receive the actual dataset from WOT yet. It is only a
+                // notification that the dataset will follow.
+            }
             
             Logger.minor(this, "handleBeginSubscriptionSynchronization() finished.");
         }
@@ -285,6 +300,9 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		 * 
 		 * It does more than that though: It checks whether the contents of the {@link FCPClientReferenceImplementation.ChangeSet} make sense.
 		 * For example our existing data in the HashMap should match the {@link FCPClientReferenceImplementation.ChangeSet#beforeChange}. 
+		 * 
+		 * FIXME: Adapt to test subscription synchronization by using
+		 * {@link DebugFCPClient#mSynchronizationInProgress}.
 		 */
 		public void handleSubscribedObjectChanged(final ChangeSet<T> changeSet) {
 			if(logMINOR) Logger.minor(this, "handleSubscribedObjectChanged(): " + changeSet);
