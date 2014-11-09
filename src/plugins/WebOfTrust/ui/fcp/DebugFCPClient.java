@@ -91,19 +91,19 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	public void start() {
 		mClient.start();
 		mClient.subscribe(Identity.class, 
-				new BeginSubscriptionSynchronizationHandlerImpl<Identity>(),
-				new EndSubscriptionSynchronizationHandlerImpl<Identity>(),
-				new SubscribedObjectChangedHandlerImpl<Identity>(mReceivedIdentities));
+		    new BeginSubscriptionSynchronizationHandlerImpl<Identity>(mReceivedIdentities.values()),
+		    new EndSubscriptionSynchronizationHandlerImpl<Identity>(mReceivedIdentities.values()),
+		    new SubscribedObjectChangedHandlerImpl<Identity>(mReceivedIdentities));
 		
 		mClient.subscribe(Trust.class, 
-				new BeginSubscriptionSynchronizationHandlerImpl<Trust>(),
-				new EndSubscriptionSynchronizationHandlerImpl<Trust>(),
-				new SubscribedObjectChangedHandlerImpl<Trust>(mReceivedTrusts));
+		    new BeginSubscriptionSynchronizationHandlerImpl<Trust>(mReceivedTrusts.values()),
+		    new EndSubscriptionSynchronizationHandlerImpl<Trust>(mReceivedTrusts.values()),
+		    new SubscribedObjectChangedHandlerImpl<Trust>(mReceivedTrusts));
 		
 		mClient.subscribe(Score.class, 
-    		    new BeginSubscriptionSynchronizationHandlerImpl<Score>(),
-    		    new EndSubscriptionSynchronizationHandlerImpl<Score>(),
-				new SubscribedObjectChangedHandlerImpl<Score>(mReceivedScores));
+		    new BeginSubscriptionSynchronizationHandlerImpl<Score>(mReceivedScores.values()),
+		    new EndSubscriptionSynchronizationHandlerImpl<Score>(mReceivedScores.values()),
+		    new SubscribedObjectChangedHandlerImpl<Score>(mReceivedScores));
 	}
 	
 	public void stop() { 
@@ -198,15 +198,26 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 
 	private final class BeginSubscriptionSynchronizationHandlerImpl<T extends EventSource>
 	        implements BeginSubscriptionSynchronizationHandler<T> {
+	    
+	    private final Collection<T> mDatabase;
+	    
+	    BeginSubscriptionSynchronizationHandlerImpl(Collection<T> database) {
+	        mDatabase = database;
+	    }
 
         @Override public void handleBeginSubscriptionSynchronization(final UUID versionID) {
             throw new UnsupportedOperationException("FIXME: Implement");
         }
-
 	}
 
     private final class EndSubscriptionSynchronizationHandlerImpl<T extends EventSource>
             implements EndSubscriptionSynchronizationHandler<T> {
+        
+        private final Collection<T> mDatabase;
+        
+        EndSubscriptionSynchronizationHandlerImpl(Collection<T> database) {
+            mDatabase = database;
+        }
 
         @Override public void handleEndSubscriptionSynchronization(final UUID versionID) {
             throw new UnsupportedOperationException("FIXME: Implement");
