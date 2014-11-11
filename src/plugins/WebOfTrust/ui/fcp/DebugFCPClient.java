@@ -284,7 +284,21 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
             
             mSynchronizationInProgress.put(mClass, false);
             
-            throw new UnsupportedOperationException("FIXME: Implement");
+            for(EventSource eventSource : 
+                    getEventSourcesWithDifferentVersionID(mDatabase.values(), versionID)) {
+                
+                // EventSources are stored across restarts of WOT, and the purpose of the version
+                // ID is that we can delete the ones from the previous connection which have been
+                // deleted by WOT while our client was not connected to WOT. The version ID allows
+                // that because we can just delete all EventSources with a version ID different
+                // than the one of the current synchronization: The object which were included in
+                // the current sync will all have the versionID of the current sync (and that
+                // versionID is passed to this handler).
+                // So we do sort of a mark-and-sweep garbage collection mechanism in this loop:
+                // Delete all the objects from our database whose versionID is not the current one.
+                
+                mDatabase.remove(eventSource.getID());
+            }
             
             Logger.minor(this, "handleEndSubscriptionSynchronization() finished.");
         }
