@@ -1217,7 +1217,8 @@ public final class FCPClientReferenceImplementation {
 	        final String requestURI = sfs.get("RequestURI");
 	    	final String insertURI = sfs.get("InsertURI");
 	    	final boolean doesPublishTrustList = sfs.getBoolean("PublishesTrustList");
-	        final String id = sfs.get("ID"); 
+	        final String id = sfs.get("ID");
+	        final UUID versionID = UUID.fromString(sfs.get("VersionID"));
 	 	
 	 		final Identity identity;
 	 		
@@ -1247,6 +1248,8 @@ public final class FCPClientReferenceImplementation {
 	        }
 	        
 	    	identity.forceSetCurrentEditionFetchState(FetchState.valueOf(sfs.get("CurrentEditionFetchState")));
+	    	
+	    	identity.setVersionID(versionID);
 
 	        return identity;
 		}
@@ -1281,9 +1284,11 @@ public final class FCPClientReferenceImplementation {
 			final byte value = sfs.getByte("Value");
 			final String comment = sfs.get("Comment");
 			final long trusterEdition = sfs.getLong("TrusterEdition");
+			final UUID versionID = UUID.fromString(sfs.get("VersionID"));
 			
 			final Trust trust = new Trust(mWoT, mIdentities.get(trusterID), mIdentities.get(trusteeID), value, comment);
 			trust.forceSetTrusterEdition(trusterEdition);
+			trust.setVersionID(versionID);
 			
 			return trust;
 		}
@@ -1319,8 +1324,14 @@ public final class FCPClientReferenceImplementation {
 			final int capacity = sfs.getInt("Capacity");
 			final int rank = sfs.getInt("Rank");
 			final int value = sfs.getInt("Value");
+			final UUID versionID = UUID.fromString(sfs.get("VersionID"));
 			
-			return new Score(mWoT, (OwnIdentity)mIdentities.get(trusterID), mIdentities.get(trusteeID), value, rank, capacity);
+			final OwnIdentity truster = (OwnIdentity)mIdentities.get(trusterID);
+			final Identity trustee = mIdentities.get(trusteeID);
+			final Score score = new Score(mWoT, truster, trustee, value, rank, capacity);
+			score.setVersionID(versionID);
+			
+			return score;
 		}
 		
 	}
