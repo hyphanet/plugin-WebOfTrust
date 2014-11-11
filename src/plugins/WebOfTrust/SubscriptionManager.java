@@ -1337,17 +1337,6 @@ public final class SubscriptionManager implements PrioRunnable {
 		subscription.initializeTransient(mWoT);
 
 		throwIfSimilarSubscriptionExists(subscription);
-
-		final Client client = subscription.getClient();
-		if(mDB.isStored(client)) {
-			// If there is already a client, we must make sure that it has received all notifications before we call
-			// subscription.synchronizeSubscriberByFCP(): The pending notifications might create Identity objects upon whose existence
-			// the synchronization of Trust/Score values depends.
-			final int oldFailureCount = client.getSendNotificationsFailureCount();
-			client.sendNotifications(this);
-			if(client.getSendNotificationsFailureCount() != oldFailureCount)
-				throw new RuntimeException("Failed to send pending notifications to the client. Cannot file a new Subscription!");
-		}
 		
 		// Needs the lock on mWoT which the JavaDoc requests
 		subscription.storeSynchronizationWithoutCommit();
