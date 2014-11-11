@@ -110,21 +110,24 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		        Identity.class, mReceivedIdentities),
 		    new EndSubscriptionSynchronizationHandlerImpl<Identity>(
 		        Identity.class, mReceivedIdentities),
-		    new SubscribedObjectChangedHandlerImpl<Identity>(mReceivedIdentities));
+		    new SubscribedObjectChangedHandlerImpl<Identity>(
+		        Identity.class, mReceivedIdentities));
 		
 		mClient.subscribe(Trust.class, 
 		    new BeginSubscriptionSynchronizationHandlerImpl<Trust>(
 		        Trust.class, mReceivedTrusts),
 		    new EndSubscriptionSynchronizationHandlerImpl<Trust>(
 		        Trust.class, mReceivedTrusts),
-		    new SubscribedObjectChangedHandlerImpl<Trust>(mReceivedTrusts));
+		    new SubscribedObjectChangedHandlerImpl<Trust>(
+		        Trust.class, mReceivedTrusts));
 		
 		mClient.subscribe(Score.class, 
 		    new BeginSubscriptionSynchronizationHandlerImpl<Score>(
 		        Score.class, mReceivedScores),
 		    new EndSubscriptionSynchronizationHandlerImpl<Score>(
 		        Score.class, mReceivedScores),
-		    new SubscribedObjectChangedHandlerImpl<Score>(mReceivedScores));
+		    new SubscribedObjectChangedHandlerImpl<Score>(
+		        Score.class, mReceivedScores));
 	}
 	
 	public void stop() { 
@@ -307,9 +310,12 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	private final class SubscribedObjectChangedHandlerImpl<T extends EventSource>
 	        implements SubscribedObjectChangedHandler<T> {
 	    
+	    private final Class<T> mClass;
 		private final HashMap<String, T> mTarget;
 		
-		public SubscribedObjectChangedHandlerImpl(final HashMap<String, T> myTarget) {
+		public SubscribedObjectChangedHandlerImpl(
+		        final Class<T> myClass, final HashMap<String, T> myTarget) {
+		    mClass = myClass;
 			mTarget = myTarget;
 		}
 		
