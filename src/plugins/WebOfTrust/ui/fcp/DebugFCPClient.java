@@ -299,7 +299,10 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
                 // versionID is passed to this handler).
                 // So we do sort of a mark-and-sweep garbage collection mechanism in this loop:
                 // Delete all the objects from our database whose versionID is not the current one.
-                
+                if(logMINOR) {
+                    Logger.minor(this, "Deleting pre-existing object, was not contained in "
+                                     + "re-synchronization: " + eventSource);
+                }
                 mDatabase.remove(eventSource.getID());
             }
             
