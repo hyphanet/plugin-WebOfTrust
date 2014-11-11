@@ -324,9 +324,6 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		 * 
 		 * It does more than that though: It checks whether the contents of the {@link FCPClientReferenceImplementation.ChangeSet} make sense.
 		 * For example our existing data in the HashMap should match the {@link FCPClientReferenceImplementation.ChangeSet#beforeChange}. 
-		 * 
-		 * FIXME: Adapt to test subscription synchronization by using
-		 * {@link DebugFCPClient#mSynchronizationInProgress}.
 		 */
 		public void handleSubscribedObjectChanged(final ChangeSet<T> changeSet) {
 			if(logMINOR) Logger.minor(this, "handleSubscribedObjectChanged(): " + changeSet);
@@ -343,10 +340,35 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 					else
 						Logger.warning(this, "Received notification which changed nothing: " + changeSet);
 				}
-			} else {
-				if(mTarget.containsKey(changeSet.afterChange.getID()))
-					Logger.error(this, "ChangeSet claims to create the object but we already have it: existing="  
-							+ mTarget.get(changeSet.afterChange.getID()) + "; changeSet=" + changeSet);
+			} else { // ChangeSet.beforeChange == null
+			    T existing = mTarget.get(changeSet.afterChange.getID());
+				if(existing != null) {
+				    // A synchronization will always send a ChangeSet with beforeChange == null,
+				    // even if the object had existed for a long time before. So we might have
+				    // a local existing copy of it from a previous connection, and receive a new
+				    // copy of it in the synchronization. Thus, the current code branch of 
+				    // ChangeSet.beforeChange == null && existing != null is not an error if a sync,
+				    // so we check that in the following if:
+				    if(mSynchronizationInProgress.get(mClass) == false) {
+				        Logger.error(this, "ChangeSet claims to create the object but we already "
+				                         + "have it: existing="  + existing 
+				                         + "; changeSet=" + changeSet);
+				    } else { // synchronization is in progress.
+				        // A re-synchronization is in progress: We have an existing object, and
+				        // we are receiving a new copy as part of a re-synchronization.
+				        // In a real client application, the existing object can mismatch the
+				        // object in the synchronization as re-synchronization typically happens
+				        // due to connection loss, and its primary purpose is to fix the mismatches.
+				        // But In this *debug* client, the connection should not be lost, so 
+				        // e-synchronization should always produce matching data.
+				        if(!existing.equals(changeSet.afterChange)) {
+				            Logger.warning(this, "Mismatch during re-synchronization - maybe"
+				                               + "the connection was lost? "
+				                               + "existing: " + existing
+				                               + "; new: " + changeSet.afterChange);
+				        }
+				    }
+				}
 			}
 
 			// Update our "database" HashMap
