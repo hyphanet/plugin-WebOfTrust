@@ -826,7 +826,11 @@ public final class FCPClientReferenceImplementation {
 	    	assert(to != null);
 	    	
 	    	final SubscriptionType type = SubscriptionType.valueOf(to);
-	    	assert !mSubscriptionIDs.containsKey(type) : "Subscription should not exist already";
+	    	
+	    	assert (!mSubscriptionIDs.containsKey(type) 
+	    	    && !"SubscriptionExistsAlready".equals(message.errorCode)) // See FCPErrorHandler
+	    	    : "Subscription should not exist already";
+	    	
 	    	mSubscriptionIDs.put(type, id);
 	    	
 	    	// checkSubscriptions() only files one subscription at a time (see its code for an explanation).
