@@ -367,6 +367,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		sfs.putOverwrite(prefix + "Value", Byte.toString(trust.getValue()));
 		sfs.putOverwrite(prefix + "Comment", trust.getComment());
 		sfs.put(prefix + "TrusterEdition", trust.getTrusterEdition());
+		sfs.putOverwrite(prefix + "VersionID", trust.getVersionID().toString());
 		
     	sfs.putOverwrite("Trusts.Amount", "1");
     	
@@ -405,6 +406,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		sfs.putOverwrite(prefix + "Capacity", Integer.toString(score.getCapacity()));
 		sfs.putOverwrite(prefix + "Rank", Integer.toString(score.getRank()));
 		sfs.putOverwrite(prefix + "Value", Integer.toString(score.getScore()));
+		sfs.putOverwrite(prefix + "VersionID", score.getVersionID().toString());
 		
     	sfs.putOverwrite("Scores.Amount", "1");
     	
@@ -607,6 +609,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             sfs.put(prefix + "Identity" + suffix + ".DeprecatedField", true);
         
  		sfs.putOverwrite(prefix + "ID" + suffix, identity.getID());
+ 		sfs.putOverwrite(prefix + "VersionID" + suffix, identity.getVersionID().toString());
+ 		
         sfs.put(prefix + "PublishesTrustList" + suffix, identity.doesPublishTrustList());
 
  		if(identity instanceof OwnIdentity) {
