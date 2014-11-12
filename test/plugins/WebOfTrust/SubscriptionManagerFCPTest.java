@@ -26,6 +26,7 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.FCPObjectChangedNotificationParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.IdentityParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ScoreParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionType;
@@ -309,12 +310,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
         
         // Following messages are the full set of all objects of the type we are interested in so
         // the client can synchronize its database.
-        // They are wrapped in regular IdentityChangedNotification / TrustChangedNotification
-        // / ScoreChangedNotification as containers. Thus, we can just use importNotifications().
-        // FIXME: Adapt importSynchronization() to work with the FCP format and use it here. Over
-        // importNotifications(), it should have the advantage of checking the Notifications for
-        // matching versionID.
-        importNotifications();
+        importSynchronization(SubscriptionType.valueOf(type), versionID);
         
         // Final message is "EndSynchronizationNotification".
         
@@ -328,24 +324,53 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
         assertFalse(mReplyReceiver.hasNextResult());
 	}
 	
-	void importSynchronization(final String type, SimpleFieldSet synchronization)
-	        throws FSParseException, MalformedURLException, InvalidParameterException {
+    @SuppressWarnings("unchecked")
+    void importSynchronization(final SubscriptionType type, final UUID versionID)
+	        throws MalformedURLException, FSParseException, InvalidParameterException {
 	    
-		assertEquals(type, synchronization.get("Message"));
-		if(type.equals("Identities")) {
-			putSynchronization(
-			    new IdentityParser(mWebOfTrust).parseSynchronization(synchronization),
-			    mReceivedIdentities);
-		} else if(type.equals("Trusts")) {
-			putSynchronization(
-			    new TrustParser(mWebOfTrust, mReceivedIdentities)
-			        .parseSynchronization(synchronization),
-			    mReceivedTrusts);
-		} else if(type.equals("Scores")) {
-			putSynchronization(
-			    new ScoreParser(mWebOfTrust, mReceivedIdentities)
-			        .parseSynchronization(synchronization),
-			    mReceivedScores);
+	    final FCPObjectChangedNotificationParser<? extends EventSource> parser;
+	    final List<? extends EventSource> result = new LinkedList<>();
+	    final List<EventSource> resultCasted = (LinkedList<EventSource>)result;
+	    
+	    switch(type) {
+            case Identities: parser = new IdentityParser(mWebOfTrust); break;
+            case Trusts:     parser = new TrustParser(mWebOfTrust, mReceivedIdentities); break;
+            case Scores:     parser = new ScoreParser(mWebOfTrust, mReceivedIdentities); break;
+            default: throw new UnsupportedOperationException("Unknown SubscriptionType: " + type);
+	    }
+
+	    do {
+	        assertTrue(mReplyReceiver.hasNextResult());
+	        
+	        final FCPPluginMessage notificationMessage = mReplyReceiver.getNextResult();
+            assertEquals("Notifications should not be sent as reply messages.",
+                false, notificationMessage.isReplyMessage());      
+            
+            final SimpleFieldSet notification = notificationMessage.params;
+            final String message = notification.get("Message");
+            
+            if(message.equals("EndSynchronizationNotification")) {
+                mReplyReceiver.restoreNextResult(notificationMessage);
+                break;
+            }
+            
+            assertEquals("ObjectChangedEventNotification", message);
+            assertEquals(type.name(), notification.get("SubscriptionType"));
+            
+            ChangeSet<? extends EventSource> changeSet
+                = parser.parseObjectChangedNotification(notification);
+            
+            assertEquals(null, changeSet.beforeChange);
+            assertEquals(versionID, changeSet.afterChange.getVersionID());
+            
+            resultCasted.add(changeSet.afterChange);
+	    } while(true);
+	    
+		switch(type) {
+            case Identities: putSynchronization((List<Identity>)result, mReceivedIdentities); break;
+            case Trusts:     putSynchronization((List<Trust>)result, mReceivedTrusts); break;
+            case Scores:     putSynchronization((List<Score>)result, mReceivedScores); break;
+            default: throw new UnsupportedOperationException("Unknown SubscriptionType: " + type);
 		}
 	}
 	
