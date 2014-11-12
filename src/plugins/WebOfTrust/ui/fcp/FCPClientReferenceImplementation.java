@@ -307,7 +307,6 @@ public final class FCPClientReferenceImplementation {
 				new FCPSubscriptionSucceededHandler(),
 				new FCPSubscriptionTerminatedHandler(),
 				new FCPErrorHandler(),
-				new FCPTrustsSynchronizationHandler(),
 				new FCPScoresSynchronizationHandler(),
 				new FCPBeginSynchronizationNotificationHandler(),
 				new FCPEndSynchronizationNotificationHandler(),
@@ -957,27 +956,6 @@ public final class FCPClientReferenceImplementation {
 		}
 		
 		abstract void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws Throwable;
-	}
-
-	/**
-	 * Handles the "Trusts" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}
-	 * with {@link SubscriptionType#Trusts}.
-	 * 
-	 * Parses the contained set of all WOT {@link Trust}s & passes it to the event handler 
-	 * {@link FCPClientReferenceImplementation#handleTrustsSynchronization(Collection)}.
-	 */
-	private final class FCPTrustsSynchronizationHandler extends MaybeFailingFCPMessageHandler {
-		@Override
-		public String getMessageName() {
-			return "Trusts";
-		}
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
-			((SubscriptionSynchronizationHandler<Trust>)mSubscriptionSynchronizationHandlers.get(SubscriptionType.Trusts))
-					.handleSubscriptionSynchronization(mTrustParser.parseSynchronization(sfs));
-		}
 	}
 
 	/**
