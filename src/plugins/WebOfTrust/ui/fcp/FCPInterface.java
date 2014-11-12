@@ -1190,59 +1190,16 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * "To" = "Identities" or "Trusts" or "Scores" - chooses among {@link IdentitiesSubscription} / {@link TrustsSubscription} /
      * {@link ScoresSubscription}.
      * 
-     * FIXME: The following JavaDoc already mentions how this function will work when being
-     * adapted to fred plugin-fcp-rewrite, but the function itself was not changed yet. Please
-     * implement what the JavaDoc says.
-     * 
      * <b>Reply:</b>
-     * The reply consists of two separate FCP messages:<br>
-     * The first message is "Message" = "Identities" or "Trusts" or "Scores". It is referenced
-     * as "synchronization message" in the following text.<br>
-     * Its {@link FCPPluginMessage#identifier} will <b>not</b> match the identifier of the original
-     * "Subscribe" message you sent, i.e. not be a reply to it. (The reply to the original message
-     * will be the second message which WOT will send.)<br><br>
-     * 
-     * The synchronization message contains the full dataset of the type you have subscribed to.
-     * For the format of the message contents, see {@link #sendAllIdentities(String)} /
-     * {@link #sendAllTrustValues(String)} / {@link #sendAllScoreValues(String)}.<br>
-     * By storing this dataset, your client is completely synchronized with WOT. Upon changes of
-     * anything, WOT will only have to send the single {@link Identity}/{@link Trust}/{@link Score}
-     * object which has changed for your client to be fully synchronized again.<br><br>
-     * 
-     * You must indicate whether processing of the synchronization message succeeded or failed by 
-     * replying with a {@link FCPPluginMessage} with {@link FCPPluginMessage#success} set
-     * appropriately.<br>
-     * This reply shall use the same {@link FCPPluginMessage#identifier} as the synchronization
-     * message of WOT, or in other words be constructed as a reply to it using
-     * {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket,
-     * boolean, String, String)} (or one of its shortcuts).
-     * <br>This allows your client to be programmed in a transactional style: If part of the
-     * transaction which stores the dataset fails, you can just roll it back and signal the error
-     * to WOT by returning a success = false reply.<br><br>
-     * 
-     * After you have sent a reply to the synchronization message, WOT will send the second
-     * message. This will have the same {@link FCPPluginMessage#identifier} as the
+     * The reply will have the same {@link FCPPluginMessage#identifier} as the
      * original "Subscribe" message which you first sent to subscribe, or in other words be the
-     * reply to the original "Subscribe" message.<br>
-     * 
-     * If you indicated success in the synchronization message, the second message may indicate
-     * success = true, which means that the subscription is active, and will be formatted as:
-     * <br>
+     * reply to the original "Subscribe" message. It means that the subscription is active, and will
+     * be formatted as: <br>
      * "Message" = "Subscribed"<br>
      * "SubscriptionID" = Random {@link UUID} of the Subscription.<br>
      * "To" = Same as the "To" field of your original message.<br><br>
-     * 
+     *     
      * <b>Errors</b>:<br>
-     * If you indicated failure in the reply to the synchronization message by setting
-     * {@link FCPPluginMessage#success}=false, the subscription is <b>not</b> filed. You will
-     * receive the second message formatted as:<br>
-     * {@link FCPPluginMessage#identifier} = same as of your "Subscribe" message<br>
-     * {@link FCPPluginMessage#success} = false<br>
-     * {@link FCPPluginMessage#errorCode} = "InternalError"<br>
-     * {@link FCPPluginMessage#params}:<br>
-     * "Message" = "Error"<br>
-     * "OriginalMessage" = "Subscribe"<br><br>
-     * 
      * If you are already subscribed to the selected type, you will only receive a single message:
      * {@link FCPPluginMessage#identifier} = same as of your "Subscribe" message<br>
      * {@link FCPPluginMessage#success} = false<br>
@@ -1254,8 +1211,16 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * "OriginalMessage" = "Subscribe"<br><br>
      * 
      * <b>{@link Notification}s:</b>
-     * Further  messages will be sent at any time in the future if an {@link Identity} / {@link Trust} / {@link Score}
-     * object has changed. They will contain the version of the object before the change and after the change. For the format, see:
+     * A message of type "BeginSynchronizationEvent" will follow, followed by a series
+     * of "ObjectChangedEvent" messages (see below), followed by a message of type
+     * "EndSynchronizationEvent" message. See {@link BeginSynchronizationNotification} and
+     * {@link EndSynchronizationNotification} for an explanation of their purpose.<br><br>
+     * 
+     * <b>{@link Notification}s:</b>
+     * Further "ObjectChangedEvent" messages will be sent at any time in the future if
+     * an {@link Identity} / {@link Trust} / {@link Score} object has changed.
+     * They will contain the version of the object before the change and after the change.
+     * For the format, see:
      * {@link #sendIdentityChangedNotification(String, IdentityChangedNotification)} /
      * {@link #sendTrustChangedNotification(String, TrustChangedNotification)} /
      * {@link #sendScoreChangedNotification(String, ScoreChangedNotification)}.
@@ -1276,6 +1241,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * which would be expensive to do if its not even needed. But if you cannot send the message anymore due to a dropped connection,
      * the subscription will be terminated automatically after some time due to notification-deployment failing. Nevertheless,
      * please always unsubscribe when possible.
+     * 
+     * TODO: Code quality: Review & improve this JavaDoc.
      * 
      * @see SubscriptionManager#subscribeToIdentities(String) The underlying implementation for "To" = "Identities"
      * @see SubscriptionManager#subscribeToScores(String) The underyling implementation for "To" = "Trusts"
