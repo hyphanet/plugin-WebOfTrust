@@ -41,7 +41,6 @@ import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.pluginmanager.PluginTalker;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -680,7 +679,7 @@ public final class FCPClientReferenceImplementation {
 
 	/**
 	 * Receives FCP messages from WOT:
-	 * - In reply to messages sent to it via {@link PluginTalker}
+	 * - In reply to messages sent to it via {@link FCPPluginClient}
 	 * - As events happen via event-{@link Notification}s
 	 */
 	private class FCPMessageReceiver
