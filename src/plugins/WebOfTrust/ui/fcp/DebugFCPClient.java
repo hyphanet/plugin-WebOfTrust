@@ -242,11 +242,14 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
             mSynchronizationInProgress.put(mClass, true);
             
             if(mDatabase.size() > 0) {
-                Logger.normal(this, "Received additional synchronization, validating existing data "
-                                  + "against it...");
-                // ATTENTION: This can happen when the connection to WOT is lost temporarily.
-                // Therefore, in a real client, you should update your existing dataset WITHOUT
-                // complaining about mismatches.
+                Logger.warning(this, "Received additional synchronization, "
+                                   + "maybe the connection was lost?");
+                
+                // In a real client, connection loss can happen normally if WOT is reloaded due to
+                // an update for example. Here, it is unexpected.
+                // We nevertheless update our database as if we were a real client so we can
+                // test connection loss with the DebugFCPClient as well.
+                // TODO: Implement random connection less so this code is actually used. 
                 
                 if(getEventSourcesWithMatchingVersionID(mDatabase.values(), versionID)
                         .size() != 0) {
@@ -255,7 +258,7 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
                                      + "should not: " + versionID);
                 }
                 
-                // The actual validation will happen in SubscribedObjectChangedHandlerImpl as this
+                // The actual data import will happen in SubscribedObjectChangedHandlerImpl as this
                 // handler does not receive the actual dataset from WOT yet. It is only a
                 // notification that the dataset will follow.
             }
