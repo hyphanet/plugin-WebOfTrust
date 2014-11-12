@@ -636,11 +636,9 @@ public final class FCPClientReferenceImplementation {
 	}
 	
 	/**
-	 * Sends a "Subscribe" FCP message to WOT. It will reply with:
-	 * - A begin and end synchronization message, which is handled by
-	 *   {@link FCPBeginSynchronizationNotificationHandler} and
-	 *   {@link FCPEndSynchronizationNotificationHandler}.<br>
-	 * - A "Subscribed" message, which is handled by {@link FCPSubscriptionSucceededHandler}.
+	 * Sends a "Subscribe" FCP message to WOT.<br>
+	 * It will reply with a "Subscribed" message, which is handled by
+	 * {@link FCPSubscriptionSucceededHandler}.
 	 * 
 	 * @param type The {@link SubscriptionType} to which you want to subscribe.
 	 * @throws IOException See {@link #send(SimpleFieldSet)}.
