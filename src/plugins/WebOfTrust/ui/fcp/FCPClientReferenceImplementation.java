@@ -147,9 +147,15 @@ public final class FCPClientReferenceImplementation {
 	 */
 	private ClientState mClientState = ClientState.NotStarted;
 
-	/** The connection to the Web Of Trust plugin. Null if we are disconnected.
-	 * volatile because {@link #connected()} uses it without synchronization. 
-	 * MUST only be non-null if {@link #mClientState} equals {@link ClientState#Started} or {@link ClientState#StopRequested} */
+	/**
+	 * The connection to the Web Of Trust plugin. Null if we are disconnected.<br>
+	 * MUST only be non-null if {@link #mClientState} equals {@link ClientState#Started} or
+	 * {@link ClientState#StopRequested}.<br><br>
+	 * 
+	 * volatile because {@link #connected()} uses it without synchronization.<br>
+	 * TODO: Optimization: I don't think it needs to be volatile anymore, I think we synchronize
+	 * in all places which uses this. Validate that and remove the volatile if yes.
+	 */
 	private volatile FCPPluginClient mConnection = null;
 	
 	/** Called when the connection to WOT is established or lost. Shall be used by the UI to display a "Please install Web Of Trust" warning. */
