@@ -50,9 +50,8 @@ import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Base64;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
-import freenet.support.api.Bucket;
+import freenet.support.SimpleFieldSet;
 
 /**
  * ATTENTION: There is a deprecation mechanism for getting rid of old SimpleFieldSet keys (fields)
@@ -1411,7 +1410,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         fcpMessage.params.putOverwrite("Message", 
              notification instanceof EndSynchronizationNotification 
-                 ? "EndSynchronizationNotification" : "BeginSynchronizationNotification");
+                 ? "EndSynchronizationEvent" : "BeginSynchronizationEvent");
         
         Subscription<? extends EventSource> subscription = notification.getSubscription();
         String to;

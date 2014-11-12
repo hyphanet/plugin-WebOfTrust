@@ -298,8 +298,8 @@ public final class FCPClientReferenceImplementation {
 				new FCPSubscriptionSucceededHandler(),
 				new FCPSubscriptionTerminatedHandler(),
 				new FCPErrorHandler(),
-				new FCPBeginSynchronizationNotificationHandler(),
-				new FCPEndSynchronizationNotificationHandler(),
+				new FCPBeginSynchronizationEventHandler(),
+				new FCPEndSynchronizationEventHandler(),
 				new FCPObjectChangedEventNotificationHandler()
 		};
 		
@@ -947,15 +947,15 @@ public final class FCPClientReferenceImplementation {
 	}
 
 	/**
-     * Handles the "BeginSynchronizationNotificationMessage" message which we receive in reply to
+     * Handles the "BeginSynchronizationEvent" message which we receive in reply to
      * {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}.
      * 
 	 * @see SubscriptionManager.BeginSynchronizationNotification */
-	private class FCPBeginSynchronizationNotificationHandler
+	private class FCPBeginSynchronizationEventHandler
 	        extends MaybeFailingFCPMessageHandler {
 
 	    @Override public String getMessageName() {
-	        return "BeginSynchronizationNotification";
+	        return "BeginSynchronizationEvent";
 	    }
 
 	    @Override void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data)
@@ -975,11 +975,11 @@ public final class FCPClientReferenceImplementation {
 	}
 
 	/** @see SubscriptionManager.EndSynchronizationNotification */
-	private final class FCPEndSynchronizationNotificationHandler
-	        extends FCPBeginSynchronizationNotificationHandler {
+	private final class FCPEndSynchronizationEventHandler
+	        extends FCPBeginSynchronizationEventHandler {
 
 	    @Override public String getMessageName() {
-	        return "EndSynchronizationNotification";
+	        return "EndSynchronizationEvent";
 	    }
 
 	    @Override void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data)

@@ -189,12 +189,12 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		
 		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
 		
-	    // Second message is the "BeginSynchronizationNotification"
+	    // Second message is the "BeginSynchronizationEvent"
         final FCPPluginMessage beginSync = mReplyReceiver.getNextResult();
         // Validate the expected case of it not being a reply message so we don't have to check the
         // beginSync.success / errorCode / errorMessage as they will be null for non-reply messages.
         assertEquals(false, beginSync.isReplyMessage());
-        assertEquals("BeginSynchronizationNotification", beginSync.params.get("Message"));
+        assertEquals("BeginSynchronizationEvent", beginSync.params.get("Message"));
         assertEquals(type, beginSync.params.get("To"));
         final UUID versionID = UUID.fromString(beginSync.params.get("VersionID"));
         
@@ -202,12 +202,12 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
         // TrustChangedNotification / ScoreChangedNotification as containers for the
         // synchronization.
         // But as no Identitys/Trusts/Scores are stored yet, there shoudln't be any Notifications
-        // between the BeginSynchronizationNotification and the EndSynchronizationNotification.
-        // So the third message will be the "EndSynchronizationNotification" already.
+        // between the BeginSynchronizationEvent and the EndSynchronizationEvent.
+        // So the third message will be the "EndSynchronizationEvent" already.
         
         final FCPPluginMessage endSync = mReplyReceiver.getNextResult();
         assertEquals(false, endSync.isReplyMessage());
-        assertEquals("EndSynchronizationNotification", endSync.params.get("Message"));
+        assertEquals("EndSynchronizationEvent", endSync.params.get("Message"));
         assertEquals(type, endSync.params.get("To"));
         assertEquals(versionID.toString(), endSync.params.get("VersionID"));
         
@@ -299,12 +299,12 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
         
         mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
         
-        // Second message is the "BeginSynchronizationNotification"
+        // Second message is the "BeginSynchronizationEvent"
         final FCPPluginMessage beginSync = mReplyReceiver.getNextResult();
         // Validate the expected case of it not being a reply message so we don't have to check the
         // beginSync.success / errorCode / errorMessage as they will be null for non-reply messages.
         assertEquals(false, beginSync.isReplyMessage());
-        assertEquals("BeginSynchronizationNotification", beginSync.params.get("Message"));
+        assertEquals("BeginSynchronizationEvent", beginSync.params.get("Message"));
         assertEquals(type, beginSync.params.get("To"));
         final UUID versionID = UUID.fromString(beginSync.params.get("VersionID"));
         
@@ -312,11 +312,11 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
         // the client can synchronize its database.
         importSynchronization(SubscriptionType.valueOf(type), versionID);
         
-        // Final message is "EndSynchronizationNotification".
+        // Final message is "EndSynchronizationEvent".
         
         final FCPPluginMessage endSync = mReplyReceiver.getNextResult();
         assertEquals(false, endSync.isReplyMessage());
-        assertEquals("EndSynchronizationNotification", endSync.params.get("Message"));
+        assertEquals("EndSynchronizationEvent", endSync.params.get("Message"));
         assertEquals(type, endSync.params.get("To"));
         assertEquals(versionID.toString(), endSync.params.get("VersionID"));
         
@@ -349,8 +349,8 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
             final SimpleFieldSet notification = notificationMessage.params;
             final String message = notification.get("Message");
             
-            if(message.equals("EndSynchronizationNotification")) {
-                // We're not interested in processing the EndSynchronizationNotification here, so we
+            if(message.equals("EndSynchronizationEvent")) {
+                // We're not interested in processing the EndSynchronizationEvent here, so we
                 // push it back and let the caller deal with it.
                 mReplyReceiver.restoreNextResult(notificationMessage);
                 break;
