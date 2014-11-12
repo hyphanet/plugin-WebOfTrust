@@ -26,8 +26,10 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.FCPEventSourceContainerParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.IdentityParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ScoreParser;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionType;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.TrustParser;
 import freenet.node.FSParseException;
 import freenet.node.fcp.FCPPluginClient;
@@ -72,6 +74,10 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		 */
 		public FCPPluginMessage getNextResult() {
 			return results.removeFirst();
+		}
+		
+		public void restoreNextResult(FCPPluginMessage message) {
+		    results.addFirst(message);
 		}
 		
 		public boolean hasNextResult() {
@@ -167,19 +173,8 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		sfs.putOverwrite("Message", "Subscribe");
 		sfs.putOverwrite("To", type);
 		fcpCall(sfs);
-		
-		// First reply message is the full set of all objects of the type we are interested in so the client can synchronize its database
-		final FCPPluginMessage synchronization = mReplyReceiver.getNextResult();
-		// The first "reply" message is not an actual reply message. See the JavaDoc of
-		// FCPInterface.handleSubscribe()).
-		// So we don't have to check the synchronization.success / errorCode / errorMessage as they
-		// will be null for non-reply messages.
-		assertEquals(false, synchronization.isReplyMessage());
-		assertEquals(type, synchronization.params.get("Message"));
-		assertEquals("No identities/trusts/scores stored yet",
-		    "0", synchronization.params.get(type + ".Amount"));
 
-		// Second reply message is the confirmation of the subscription
+		// First message from WOT is the confirmation of the subscription
 		final FCPPluginMessage subscription = mReplyReceiver.getNextResult();
 		assertEquals(true, subscription.success);
 		assertEquals("Subscribed", subscription.params.get("Message"));
@@ -192,6 +187,30 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 			throw e;
 		}
 		
+		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
+		
+	    // Second message is the "BeginSynchronizationEvent"
+        final FCPPluginMessage beginSync = mReplyReceiver.getNextResult();
+        // Validate the expected case of it not being a reply message so we don't have to check the
+        // beginSync.success / errorCode / errorMessage as they will be null for non-reply messages.
+        assertEquals(false, beginSync.isReplyMessage());
+        assertEquals("BeginSynchronizationEvent", beginSync.params.get("Message"));
+        assertEquals(type, beginSync.params.get("To"));
+        final UUID versionID = UUID.fromString(beginSync.params.get("VersionID"));
+        
+        // Third and following messages in theory would be ObjectChangedEvents as containers for the
+        // synchronization.
+        // But as no Identitys/Trusts/Scores are stored yet, there shoudln't be any
+        // ObjectChangedEvent between the BeginSynchronizationEvent and the EndSynchronizationEvent.
+        // So the third message will be the "EndSynchronizationEvent" already.
+        
+        final FCPPluginMessage endSync = mReplyReceiver.getNextResult();
+        assertEquals(false, endSync.isReplyMessage());
+        assertEquals("EndSynchronizationEvent", endSync.params.get("Message"));
+        assertEquals(type, endSync.params.get("To"));
+        assertEquals(versionID.toString(), endSync.params.get("VersionID"));
+        
+        // No further messages should arrive by now.
 		assertFalse(mReplyReceiver.hasNextResult());
 		
 		// Try to file the same subscription again - should fail because we already are subscribed
@@ -242,7 +261,8 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		
 		doRandomChangesToWOT(eventCount);
 		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
-		importNotifications();
+		importObjectChangedEvents();
+        assertFalse(mReplyReceiver.hasNextResult());
 
 		assertEquals(new HashSet<Identity>(mWebOfTrust.getAllIdentities()),
 		             new HashSet<Identity>(mReceivedIdentities.values()));
@@ -263,77 +283,149 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		sfs.putOverwrite("To", type);
 		fcpCall(sfs);
 		
-		// First reply message is the full set of all objects of the type we are interested in so the client can synchronize its database
-		importSynchronization(type, mReplyReceiver.getNextResult().params);
-		
-		// Second reply message is the confirmation of the subscription
-		assertEquals("Subscribed", mReplyReceiver.getNextResult().params.get("Message"));
-		assertFalse(mReplyReceiver.hasNextResult());
+        // First message from WOT is the confirmation of the subscription
+        final FCPPluginMessage subscription = mReplyReceiver.getNextResult();
+        assertEquals(true, subscription.success);
+        assertEquals("Subscribed", subscription.params.get("Message"));
+        assertEquals(type, subscription.params.get("To"));
+        final String id = subscription.params.get("SubscriptionID");
+        try {
+            UUID.fromString(id);
+        } catch(IllegalArgumentException e) {
+            fail("SubscriptionID is invalid!");
+            throw e;
+        }
+        
+        mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
+        
+        // Second message is the "BeginSynchronizationEvent"
+        final FCPPluginMessage beginSync = mReplyReceiver.getNextResult();
+        // Validate the expected case of it not being a reply message so we don't have to check the
+        // beginSync.success / errorCode / errorMessage as they will be null for non-reply messages.
+        assertEquals(false, beginSync.isReplyMessage());
+        assertEquals("BeginSynchronizationEvent", beginSync.params.get("Message"));
+        assertEquals(type, beginSync.params.get("To"));
+        final UUID versionID = UUID.fromString(beginSync.params.get("VersionID"));
+        
+        // Following messages are the full set of all objects of the type we are interested in so
+        // the client can synchronize its database.
+        importSynchronization(SubscriptionType.valueOf(type), versionID);
+        
+        // Final message is "EndSynchronizationEvent".
+        
+        final FCPPluginMessage endSync = mReplyReceiver.getNextResult();
+        assertEquals(false, endSync.isReplyMessage());
+        assertEquals("EndSynchronizationEvent", endSync.params.get("Message"));
+        assertEquals(type, endSync.params.get("To"));
+        assertEquals(versionID.toString(), endSync.params.get("VersionID"));
+        
+        // No further messages should arrive by now.
+        assertFalse(mReplyReceiver.hasNextResult());
 	}
 	
-	void importSynchronization(final String type, SimpleFieldSet synchronization)
-	        throws FSParseException, MalformedURLException, InvalidParameterException {
+    @SuppressWarnings("unchecked")
+    void importSynchronization(final SubscriptionType type, final UUID versionID)
+	        throws MalformedURLException, FSParseException, InvalidParameterException {
 	    
-		assertEquals(type, synchronization.get("Message"));
-		if(type.equals("Identities")) {
-			putSynchronization(
-			    new IdentityParser(mWebOfTrust).parseSynchronization(synchronization),
-			    mReceivedIdentities);
-		} else if(type.equals("Trusts")) {
-			putSynchronization(
-			    new TrustParser(mWebOfTrust, mReceivedIdentities)
-			        .parseSynchronization(synchronization),
-			    mReceivedTrusts);
-		} else if(type.equals("Scores")) {
-			putSynchronization(
-			    new ScoreParser(mWebOfTrust, mReceivedIdentities)
-			        .parseSynchronization(synchronization),
-			    mReceivedScores);
+	    final FCPEventSourceContainerParser<? extends EventSource> parser;
+	    final List<? extends EventSource> result = new LinkedList<>();
+	    final List<EventSource> resultCasted = (LinkedList<EventSource>)result;
+	    
+	    switch(type) {
+            case Identities: parser = new IdentityParser(mWebOfTrust); break;
+            case Trusts:     parser = new TrustParser(mWebOfTrust, mReceivedIdentities); break;
+            case Scores:     parser = new ScoreParser(mWebOfTrust, mReceivedIdentities); break;
+            default: throw new UnsupportedOperationException("Unknown SubscriptionType: " + type);
+	    }
+
+	    do {
+	        assertTrue(mReplyReceiver.hasNextResult());
+	        
+	        final FCPPluginMessage notificationMessage = mReplyReceiver.getNextResult();
+            assertEquals("Notifications should not be sent as reply messages.",
+                false, notificationMessage.isReplyMessage());      
+            
+            final SimpleFieldSet notification = notificationMessage.params;
+            final String message = notification.get("Message");
+            
+            if(message.equals("EndSynchronizationEvent")) {
+                // We're not interested in processing the EndSynchronizationEvent here, so we
+                // push it back and let the caller deal with it.
+                mReplyReceiver.restoreNextResult(notificationMessage);
+                break;
+            }
+            
+            assertEquals("ObjectChangedEvent", message);
+            assertEquals(type.name(), notification.get("SubscriptionType"));
+            
+            ChangeSet<? extends EventSource> changeSet
+                = parser.parseObjectChangedEvent(notification);
+            
+            assertEquals(null, changeSet.beforeChange);
+            assertEquals(versionID, changeSet.afterChange.getVersionID());
+            
+            resultCasted.add(changeSet.afterChange);
+	    } while(true);
+	    
+		switch(type) {
+            case Identities: putSynchronization((List<Identity>)result, mReceivedIdentities); break;
+            case Trusts:     putSynchronization((List<Trust>)result, mReceivedTrusts); break;
+            case Scores:     putSynchronization((List<Score>)result, mReceivedScores); break;
+            default: throw new UnsupportedOperationException("Unknown SubscriptionType: " + type);
 		}
 	}
 	
 	<T extends Persistent> void putSynchronization(final List<T> source, final HashMap<String, T> target) {
 		assertEquals(0, target.size());
 		for(final T p : source) {
-			assertFalse(target.containsKey(p.getID()));
-			target.put(p.getID(), p);
+			final T previous = target.put(p.getID(), p);
+			assertEquals(null, previous);
 		}
 	}
 
-	void importNotifications() throws MalformedURLException, FSParseException, InvalidParameterException {
-
-	
+	void importObjectChangedEvents()
+	        throws MalformedURLException, FSParseException, InvalidParameterException {
+	    
 		while(mReplyReceiver.hasNextResult()) {
-		    final FCPPluginMessage notificationMessage = mReplyReceiver.getNextResult();
+		    final FCPPluginMessage eventMessage = mReplyReceiver.getNextResult();
 		    
 		    assertEquals("Notifications should not be sent as reply messages.",
-		        false, notificationMessage.isReplyMessage());		    
+		        false, eventMessage.isReplyMessage());
 		    // We don't have to check the notificationMessage.success / errorCode / errorMessage as
 		    // they will be null for non-reply messages.
 		    
-			final SimpleFieldSet notification = notificationMessage.params;
-			final String message = notification.get("Message");
-			if(message.equals("IdentityChangedNotification")) {
-				putNotification(
-				    new IdentityParser(mWebOfTrust).parseNotification(notification),
-				    mReceivedIdentities);
-			} else if(message.equals("TrustChangedNotification")) {
-				putNotification(
-				    new TrustParser(mWebOfTrust, mReceivedIdentities)
-				        .parseNotification(notification),
-				    mReceivedTrusts);
-			} else if(message.equals("ScoreChangedNotification")) {
-				putNotification(
-				    new ScoreParser(mWebOfTrust, mReceivedIdentities)
-				        .parseNotification(notification),
-				    mReceivedScores);
-			} else {
-				fail("Unknown message type: " + message);
-			}
+			final SimpleFieldSet event = eventMessage.params;
+			final String message = event.get("Message");
+			assertEquals("ObjectChangedEvent", message);
+			
+		    SubscriptionType type
+		        = SubscriptionType.valueOf(event.get("SubscriptionType"));
+		    
+		    switch(type) {
+                case Identities:
+                    putObjectChangedEvent(
+                        new IdentityParser(mWebOfTrust)
+                            .parseObjectChangedEvent(event), mReceivedIdentities);
+                    break;
+                case Trusts:
+                    putObjectChangedEvent(
+                        new TrustParser(mWebOfTrust, mReceivedIdentities)
+                            .parseObjectChangedEvent(event), mReceivedTrusts);
+                    break;
+                case Scores:
+                    putObjectChangedEvent(
+                        new ScoreParser(mWebOfTrust, mReceivedIdentities)
+                            .parseObjectChangedEvent(event), mReceivedScores);
+                    break;
+                default:
+                    fail("Unknown SubscriptionType: " + type);
+		    }
 		}
 	}
 	
-	<T extends Persistent> void putNotification(final ChangeSet<T> changeSet, final HashMap<String, T> target) {
+	<T extends EventSource> void putObjectChangedEvent(
+	        final ChangeSet<T> changeSet, final HashMap<String, T> target) {
+	    
 		if(changeSet.beforeChange != null) {
 			final T currentBeforeChange = target.get(changeSet.beforeChange.getID());
 			assertEquals(currentBeforeChange, changeSet.beforeChange);

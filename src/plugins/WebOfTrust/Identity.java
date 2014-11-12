@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
@@ -32,7 +33,7 @@ import freenet.support.codeshortification.IfNull;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class Identity extends Persistent implements Cloneable, Serializable {
+public class Identity extends Persistent implements Cloneable, EventSource {
 
 	/** @see Serializable */
 	private static transient final long serialVersionUID = 1L;
@@ -89,7 +90,12 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 * @see Identity#activateProperties()
 	 */
 	private transient boolean mPropertiesActivated;
-	
+
+	/** An {@link UUID} set by {@link EventSource#setVersionID(UUID)}. See its JavaDoc for an
+	 *  explanation of the purpose.<br>
+	 *  Stored as String to reduce db4o maintenance overhead. */
+	private String mVersionID = null;
+
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
@@ -1136,4 +1142,18 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		activateFully();
 		stream.defaultWriteObject();
 	}
+
+	/** {@inheritDoc} */
+    @Override public void setVersionID(UUID versionID) { 
+        checkedActivate(1);
+        // No need to delete the old value from db4o: Its a String, and thus a native db4o value.
+        mVersionID = versionID.toString();
+    }
+
+    /** {@inheritDoc} */
+    @Override public UUID getVersionID() {
+        checkedActivate(1);
+        // FIXME: Validate whether this yields proper results using an event-notifications FCP dump
+        return mVersionID != null ? UUID.fromString(mVersionID) : UUID.randomUUID();
+    }
 }

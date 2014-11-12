@@ -12,10 +12,13 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import plugins.WebOfTrust.EventSource;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
+import plugins.WebOfTrust.SubscriptionManager.BeginSynchronizationNotification;
+import plugins.WebOfTrust.SubscriptionManager.EndSynchronizationNotification;
 import plugins.WebOfTrust.SubscriptionManager.IdentitiesSubscription;
 import plugins.WebOfTrust.SubscriptionManager.IdentityChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.Notification;
@@ -36,6 +39,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionType;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
@@ -46,9 +50,8 @@ import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Base64;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
-import freenet.support.api.Bucket;
+import freenet.support.SimpleFieldSet;
 
 /**
  * ATTENTION: There is a deprecation mechanism for getting rid of old SimpleFieldSet keys (fields)
@@ -67,51 +70,6 @@ import freenet.support.api.Bucket;
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
 public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSideFCPMessageHandler {
-
-    /**
-     * Timeout when sending a synchronization of a {@link SubscriptionManager.Subscription} to a
-     * client. For an explanation of what a synchronization is, see
-     * {@link #handleSubscribe(FCPPluginClient, FCPPluginMessage)}<br>
-     * When this expires, deploying of the synchronization is considered as failed, and the
-     * {@link SubscriptionManager} is notified about that. It then may re-sent it or terminate the
-     * {@link Subscription} upon repeated failure. (The current implementation immediately
-     * terminates the {@link Subscription}.<br><br>
-     * 
-     * FIXME: Optimization: To reduce this constant, the following can be done:<br>
-     * The current implementation does not store the synchronization as a {@link Notification} but
-     * rather sends it out immediately in
-     * {@link #handleSubscribe(FCPPluginClient, FCPPluginMessage)}. This has the following bad
-     * impact upon performance:<br>
-     * - A synchronization possibly contains the whole database of Identity/Trust/Score, so it
-     *   takes a long time to send it over the network.<br>
-     * - The sending thread only returns *after* the client has processed it and sent a reply,
-     *   which itself can take a long time since things such as Freetalk can have to do huge
-     *   database restructuring such as deleting all messages of deleted Identitys.<br>
-     * - The serialization of the Identity/Trust/Score objects into SimpleFieldSet happens in the
-     *   sending thread as well, so it is added to the blocking time of the sending thread.<br>
-     * - The lock upon the WOT is taken during the whole time it takes to send the message. So
-     *   this will block everything else, including the web interface, during the sum of the time
-     *   of the above three things.<br>
-     * <br>
-     * Instead, rewrite {@link SubscriptionManager} to store the synchronization as a
-     * {@link Notification} object: Notification objects contain the event data as a copy of the
-     * WOT objects serialized into a byte[], the event data is <b>not</b> read from the
-     * {@link WebOfTrust} during the sending. They are send out later in a separate thread than the
-     * one which read out the data from the {@link WebOfTrust}.<br> 
-     * This will effectively allow us to split the aforementioned three bad effects (time to
-     * serialize, time to send, time it takes for the client to process) into at last two stages:
-     * <br>
-     * - Generation of the {@link Notification}, which locks the {@link WebOfTrust}.<br>
-     * - Sending of the {@link Notification}, which only locks the SubscriptionManager, not the
-     *   {@link WebOfTrust}, and therefore not the user interface.<br> 
-     * When fixing this make sure to adapt the JavaDoc at {@link #handleSubscribe(FCPPluginClient,
-     * FCPPluginMessage)} afterwards.<br>
-     * Notice that it will also have the bonus of allowing us to re-send a failed synchronization
-     * instead of terminating the Subscription. If you implement this, be sure to change the JavaDoc
-     * of this constant at the beginning to remove the part which says that a timeout results in
-     * termination of the subscription.
-     */
-    public static final int SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES = 5;
 
     /**
      * Timeout when sending an {@link SubscriptionManager.Notification} to a client.<br>
@@ -364,6 +322,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		sfs.putOverwrite(prefix + "Value", Byte.toString(trust.getValue()));
 		sfs.putOverwrite(prefix + "Comment", trust.getComment());
 		sfs.put(prefix + "TrusterEdition", trust.getTrusterEdition());
+		sfs.putOverwrite(prefix + "VersionID", trust.getVersionID().toString());
 		
     	sfs.putOverwrite("Trusts.Amount", "1");
     	
@@ -402,6 +361,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		sfs.putOverwrite(prefix + "Capacity", Integer.toString(score.getCapacity()));
 		sfs.putOverwrite(prefix + "Rank", Integer.toString(score.getRank()));
 		sfs.putOverwrite(prefix + "Value", Integer.toString(score.getScore()));
+		sfs.putOverwrite(prefix + "VersionID", score.getVersionID().toString());
 		
     	sfs.putOverwrite("Scores.Amount", "1");
     	
@@ -604,6 +564,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             sfs.put(prefix + "Identity" + suffix + ".DeprecatedField", true);
         
  		sfs.putOverwrite(prefix + "ID" + suffix, identity.getID());
+ 		sfs.putOverwrite(prefix + "VersionID" + suffix, identity.getVersionID().toString());
+ 		
         sfs.put(prefix + "PublishesTrustList" + suffix, identity.doesPublishTrustList());
 
  		if(identity instanceof OwnIdentity) {
@@ -759,20 +721,12 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      *            an original client message.
      */
     private FCPPluginMessage handleGetIdentities(final FCPPluginMessage request) {
-        final String context;
-        
-        if(request != null) {
-        	context = request.params.get("Context");
-        } else {
-        	context = null;
-        }
-
-        final FCPPluginMessage result =
-            request != null ? FCPPluginMessage.constructSuccessReply(request) :
-                              FCPPluginMessage.construct();
+        final FCPPluginMessage result = FCPPluginMessage.constructSuccessReply(request);
         
         result.params.putOverwrite("Message", "Identities");
 		
+        final String context = request.params.get("Context");
+        
 		// TODO: Optimization: Remove this lock if it works without it.
 		synchronized(mWoT) {
 			final boolean getAll = context == null || context.equals("");
@@ -801,9 +755,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      *            an original client message.
      */
     private FCPPluginMessage handleGetTrusts(final FCPPluginMessage request) {
-        final FCPPluginMessage result =
-            request != null ? FCPPluginMessage.constructSuccessReply(request) :
-                              FCPPluginMessage.construct();
+        final FCPPluginMessage result = FCPPluginMessage.constructSuccessReply(request);
         
         result.params.putOverwrite("Message", "Trusts");
    
@@ -828,10 +780,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      *            an original client message.
      */
     private FCPPluginMessage handleGetScores(final FCPPluginMessage request) {
-        final FCPPluginMessage result =
-            request != null ? FCPPluginMessage.constructSuccessReply(request) :
-                              FCPPluginMessage.construct();
-        
+        final FCPPluginMessage result = FCPPluginMessage.constructSuccessReply(request);
+       
         result.params.putOverwrite("Message", "Scores");
    
 		// TODO: Optimization: Remove this lock if it works without it.
@@ -1195,59 +1145,16 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * "To" = "Identities" or "Trusts" or "Scores" - chooses among {@link IdentitiesSubscription} / {@link TrustsSubscription} /
      * {@link ScoresSubscription}.
      * 
-     * FIXME: The following JavaDoc already mentions how this function will work when being
-     * adapted to fred plugin-fcp-rewrite, but the function itself was not changed yet. Please
-     * implement what the JavaDoc says.
-     * 
      * <b>Reply:</b>
-     * The reply consists of two separate FCP messages:<br>
-     * The first message is "Message" = "Identities" or "Trusts" or "Scores". It is referenced
-     * as "synchronization message" in the following text.<br>
-     * Its {@link FCPPluginMessage#identifier} will <b>not</b> match the identifier of the original
-     * "Subscribe" message you sent, i.e. not be a reply to it. (The reply to the original message
-     * will be the second message which WOT will send.)<br><br>
-     * 
-     * The synchronization message contains the full dataset of the type you have subscribed to.
-     * For the format of the message contents, see {@link #sendAllIdentities(String)} /
-     * {@link #sendAllTrustValues(String)} / {@link #sendAllScoreValues(String)}.<br>
-     * By storing this dataset, your client is completely synchronized with WOT. Upon changes of
-     * anything, WOT will only have to send the single {@link Identity}/{@link Trust}/{@link Score}
-     * object which has changed for your client to be fully synchronized again.<br><br>
-     * 
-     * You must indicate whether processing of the synchronization message succeeded or failed by 
-     * replying with a {@link FCPPluginMessage} with {@link FCPPluginMessage#success} set
-     * appropriately.<br>
-     * This reply shall use the same {@link FCPPluginMessage#identifier} as the synchronization
-     * message of WOT, or in other words be constructed as a reply to it using
-     * {@link FCPPluginMessage#constructReplyMessage(FCPPluginMessage, SimpleFieldSet, Bucket,
-     * boolean, String, String)} (or one of its shortcuts).
-     * <br>This allows your client to be programmed in a transactional style: If part of the
-     * transaction which stores the dataset fails, you can just roll it back and signal the error
-     * to WOT by returning a success = false reply.<br><br>
-     * 
-     * After you have sent a reply to the synchronization message, WOT will send the second
-     * message. This will have the same {@link FCPPluginMessage#identifier} as the
+     * The reply will have the same {@link FCPPluginMessage#identifier} as the
      * original "Subscribe" message which you first sent to subscribe, or in other words be the
-     * reply to the original "Subscribe" message.<br>
-     * 
-     * If you indicated success in the synchronization message, the second message may indicate
-     * success = true, which means that the subscription is active, and will be formatted as:
-     * <br>
+     * reply to the original "Subscribe" message. It means that the subscription is active, and will
+     * be formatted as: <br>
      * "Message" = "Subscribed"<br>
      * "SubscriptionID" = Random {@link UUID} of the Subscription.<br>
      * "To" = Same as the "To" field of your original message.<br><br>
-     * 
+     *     
      * <b>Errors</b>:<br>
-     * If you indicated failure in the reply to the synchronization message by setting
-     * {@link FCPPluginMessage#success}=false, the subscription is <b>not</b> filed. You will
-     * receive the second message formatted as:<br>
-     * {@link FCPPluginMessage#identifier} = same as of your "Subscribe" message<br>
-     * {@link FCPPluginMessage#success} = false<br>
-     * {@link FCPPluginMessage#errorCode} = "InternalError"<br>
-     * {@link FCPPluginMessage#params}:<br>
-     * "Message" = "Error"<br>
-     * "OriginalMessage" = "Subscribe"<br><br>
-     * 
      * If you are already subscribed to the selected type, you will only receive a single message:
      * {@link FCPPluginMessage#identifier} = same as of your "Subscribe" message<br>
      * {@link FCPPluginMessage#success} = false<br>
@@ -1259,8 +1166,16 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * "OriginalMessage" = "Subscribe"<br><br>
      * 
      * <b>{@link Notification}s:</b>
-     * Further  messages will be sent at any time in the future if an {@link Identity} / {@link Trust} / {@link Score}
-     * object has changed. They will contain the version of the object before the change and after the change. For the format, see:
+     * A message of type "BeginSynchronizationEvent" will follow, followed by a series
+     * of "ObjectChangedEvent" messages (see below), followed by a message of type
+     * "EndSynchronizationEvent" message. See {@link BeginSynchronizationNotification} and
+     * {@link EndSynchronizationNotification} for an explanation of their purpose.<br><br>
+     * 
+     * <b>{@link Notification}s:</b>
+     * Further "ObjectChangedEvent" messages will be sent at any time in the future if
+     * an {@link Identity} / {@link Trust} / {@link Score} object has changed.
+     * They will contain the version of the object before the change and after the change.
+     * For the format, see:
      * {@link #sendIdentityChangedNotification(String, IdentityChangedNotification)} /
      * {@link #sendTrustChangedNotification(String, TrustChangedNotification)} /
      * {@link #sendScoreChangedNotification(String, ScoreChangedNotification)}.
@@ -1282,6 +1197,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * the subscription will be terminated automatically after some time due to notification-deployment failing. Nevertheless,
      * please always unsubscribe when possible.
      * 
+     * TODO: Code quality: Review & improve this JavaDoc.
+     * 
      * @see SubscriptionManager#subscribeToIdentities(String) The underlying implementation for "To" = "Identities"
      * @see SubscriptionManager#subscribeToScores(String) The underyling implementation for "To" = "Trusts"
      * @see SubscriptionManager#subscribeToTrusts(String) The underlying implementation for "To" = "Scores"
@@ -1292,7 +1209,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	
     	try {
             FCPPluginMessage reply = FCPPluginMessage.constructSuccessReply(message);
-            Subscription<? extends Notification> subscription;
+            Subscription<? extends EventSource> subscription;
             
 	    	if(to.equals("Identities")) {
 	    		subscription = mSubscriptionManager.subscribeToIdentities(client.getID());
@@ -1356,12 +1273,13 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             throws InvalidParameterException, UnknownSubscriptionException {
         
         final String subscriptionID = getMandatoryParameter(request.params, "SubscriptionID");
-    	final Class<Subscription<? extends Notification>> clazz = mSubscriptionManager.unsubscribe(subscriptionID);
+    	final Class<Subscription<? extends EventSource>> clazz
+    	    = mSubscriptionManager.unsubscribe(subscriptionID);
         return handleUnsubscribe(request, clazz, subscriptionID);
     }
     
     public void sendUnsubscribedMessage(final UUID clientID,
-            final Class<Subscription<? extends Notification>> clazz, final String subscriptionID)
+            final Class<Subscription<? extends EventSource>> clazz, final String subscriptionID)
                 throws IOException {
         
         mPluginRespirator.getPluginClientByID(clientID).send(SendDirection.ToClient,
@@ -1377,14 +1295,14 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      *            due to an original client message.
      */
     private FCPPluginMessage handleUnsubscribe(final FCPPluginMessage request,
-        final Class<Subscription<? extends Notification>> clazz, final String subscriptionID) {
+        final Class<Subscription<? extends EventSource>> clazz, final String subscriptionID) {
         
         final FCPPluginMessage result =
             request != null ? FCPPluginMessage.constructSuccessReply(request) :
                               FCPPluginMessage.construct();
         
     	final String type;
-    	
+
     	if(clazz.equals(IdentitiesSubscription.class))
     		type = "Identities";
     	else if(clazz.equals(TrustsSubscription.class))
@@ -1400,62 +1318,54 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         return result;
     }
-    
-    public void sendAllIdentities(UUID clientID)
-            throws FCPCallFailedException, IOException, InterruptedException {
+
+    /**
+     * {@link EndSynchronizationNotification} is a subclass of
+     * {@link BeginSynchronizationNotification}, so this function can deal with both.
+     */
+    public void sendBeginOrEndSynchronizationNotification(final UUID clientID,
+            final BeginSynchronizationNotification<?> notification)
+                throws FCPCallFailedException, IOException, InterruptedException {
         
-        FCPPluginMessage reply = mPluginRespirator.getPluginClientByID(clientID).sendSynchronous(
-            SendDirection.ToClient,
-            handleGetIdentities(null),
-            /* Large timeout since we possibly send _everything_.
-             * Notice that a client can at maximum subscribe to Identities, Trusts and Scores in
-             * parallel so there can be a maximum of 3 threads blocked in this large timeout
-             * per client - sendAllIdentites(), sendAllTrustValues(), sendAllScoreValues().
-             * That is an acceptable amount of threads per client, given that it only happens once
-             * at the beginning of a connection. */
-            TimeUnit.MINUTES.toNanos(SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES));
+        // Not a reply to an existing message since it is sent due to an event, not a client message
+        final FCPPluginMessage fcpMessage = FCPPluginMessage.construct();
         
-        if(reply.success == false)
-            throw new FCPCallFailedException(reply);
-    }
-    
-    public void sendAllTrustValues(UUID clientID)
-            throws FCPCallFailedException, IOException, InterruptedException {
+        fcpMessage.params.putOverwrite("Message", 
+             notification instanceof EndSynchronizationNotification 
+                 ? "EndSynchronizationEvent" : "BeginSynchronizationEvent");
         
-        FCPPluginMessage reply = mPluginRespirator.getPluginClientByID(clientID).sendSynchronous(
-            SendDirection.ToClient,
-            handleGetTrusts(null),
-            /* Large timeout since we possibly send _everything_.
-             * Notice that a client can at maximum subscribe to Identities, Trusts and Scores in
-             * parallel so there can be a maximum of 3 threads blocked in this large timeout
-             * per client - sendAllIdentites(), sendAllTrustValues(), sendAllScoreValues().
-             * That is an acceptable amount of threads per client, given that it only happens once
-             * at the beginning of a connection. */
-            TimeUnit.MINUTES.toNanos(SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES));
+        Subscription<? extends EventSource> subscription = notification.getSubscription();
+        String to;
         
-        if(reply.success == false)
-            throw new FCPCallFailedException(reply);
-    }
-    
-    public void sendAllScoreValues(UUID clientID)
-            throws FCPCallFailedException, IOException, InterruptedException {
+        // The type parameter of the BeginSynchronizationNotification<T> is not known at runtime
+        // due to the way Java is implemented. Thus, we must use the hack of checking the
+        // class of the Subscription to which the Notification belongs:
+        // Subscription is not parameterized, so we can check its class.
+        if(subscription instanceof IdentitiesSubscription)
+            to = "Identities";
+        else if (subscription instanceof TrustsSubscription)
+            to = "Trusts";
+        else if (subscription instanceof ScoresSubscription)
+            to = "Scores";
+        else  {
+            throw new UnsupportedOperationException(
+                "BeginSynchronizationNotification for unknown Subscription type: " + subscription);
+        }
         
-    
-        FCPPluginMessage reply = mPluginRespirator.getPluginClientByID(clientID).sendSynchronous(
-            SendDirection.ToClient,
-            handleGetScores(null),
-            /* Large timeout since we possibly send _everything_.
-             * Notice that a client can at maximum subscribe to Identities, Trusts and Scores in
-             * parallel so there can be a maximum of 3 threads blocked in this large timeout
-             * per client - sendAllIdentites(), sendAllTrustValues(), sendAllScoreValues().
-             * That is an acceptable amount of threads per client, given that it only happens once
-             * at the beginning of a connection. */
-            TimeUnit.MINUTES.toNanos(SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES));
+        // "To" because thats what we also use in handleSubscribe()
+        fcpMessage.params.putOverwrite("To", to);
+        fcpMessage.params.putOverwrite("VersionID", notification.getID());
+        
+        final FCPPluginMessage reply = mPluginRespirator.getPluginClientByID(clientID)
+            .sendSynchronous(
+                SendDirection.ToClient,
+                fcpMessage,
+                TimeUnit.MINUTES.toNanos(SUBSCRIPTION_NOTIFICATION_TIMEOUT_MINUTES));
         
         if(reply.success == false)
             throw new FCPCallFailedException(reply);
     }
-    
+
     /**
      * @see SubscriptionManager.IdentityChangedNotification
      */
@@ -1466,7 +1376,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final SimpleFieldSet oldIdentity = handleGetIdentity((Identity)notification.getOldObject(), null);
     	final SimpleFieldSet newIdentity = handleGetIdentity((Identity)notification.getNewObject(), null);
     	
-        sendChangeNotification(clientID, "IdentityChangedNotification", oldIdentity, newIdentity);
+        sendChangeNotification(clientID, SubscriptionType.Identities, oldIdentity, newIdentity);
     }
     
     /**
@@ -1479,7 +1389,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final SimpleFieldSet oldTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getOldObject(), "0");
     	final SimpleFieldSet newTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getNewObject(), "0");
 
-        sendChangeNotification(clientID, "TrustChangedNotification", oldTrust, newTrust);
+        sendChangeNotification(clientID, SubscriptionType.Trusts, oldTrust, newTrust);
     }
     
     /**
@@ -1492,17 +1402,19 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final SimpleFieldSet oldScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getOldObject(), "0");
     	final SimpleFieldSet newScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getNewObject(), "0");
 
-        sendChangeNotification(clientID, "ScoreChangedNotification", oldScore, newScore);
+        sendChangeNotification(clientID, SubscriptionType.Scores, oldScore, newScore);
     }
     
-    private void sendChangeNotification(final UUID clientID, final String message,
+    private void sendChangeNotification(
+            final UUID clientID, final SubscriptionType subscriptionType,
             final SimpleFieldSet beforeChange, final SimpleFieldSet afterChange)
                 throws FCPCallFailedException, IOException, InterruptedException {
         
         // Not a reply to an existing message since it is sent due to an event, not a client message
         final FCPPluginMessage fcpMessage = FCPPluginMessage.construct();
         
-        fcpMessage.params.putOverwrite("Message", message);
+        fcpMessage.params.putOverwrite("Message", "ObjectChangedEvent");
+        fcpMessage.params.putOverwrite("SubscriptionType", subscriptionType.name());
         fcpMessage.params.put("BeforeChange", beforeChange);
         fcpMessage.params.put("AfterChange", afterChange);
         

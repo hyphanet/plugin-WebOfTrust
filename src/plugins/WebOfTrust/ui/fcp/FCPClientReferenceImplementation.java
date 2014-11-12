@@ -6,22 +6,25 @@ package plugins.WebOfTrust.ui.fcp;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
+import plugins.WebOfTrust.EventSource;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.MockWebOfTrust;
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
+import plugins.WebOfTrust.SubscriptionManager.BeginSynchronizationNotification;
+import plugins.WebOfTrust.SubscriptionManager.EndSynchronizationNotification;
 import plugins.WebOfTrust.SubscriptionManager.IdentitiesSubscription;
 import plugins.WebOfTrust.SubscriptionManager.Notification;
+import plugins.WebOfTrust.SubscriptionManager.ObjectChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.ScoresSubscription;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
 import plugins.WebOfTrust.SubscriptionManager.TrustsSubscription;
@@ -37,7 +40,6 @@ import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.pluginmanager.PluginTalker;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -58,9 +60,10 @@ import freenet.support.io.NativeThread;
  * - Copy-paste this class. Make sure to specify the hash of the commit which your copy is based on!
  *   <br>
  * - Do NOT modify it. Instead, implement a separate class which implements the required interfaces
- *   {@link ConnectionStatusChangedHandler}, {@link SubscriptionSynchronizationHandler} and
- *   {@link SubscribedObjectChangedHandler}. In your separate class, create an object of this class
- *   here, and use its public functions to pass your handler implementations to it.<br>
+ *   {@link ConnectionStatusChangedHandler}, {@link BeginSubscriptionSynchronizationHandler} and
+ *   {@link EndSubscriptionSynchronizationHandler}, {@link SubscribedObjectChangedHandler}.
+ *   In your separate class, create an object of this class here, and use its public functions to
+ *   pass your handler implementations to it.<br>
  * - If you do need to modify this class for improvements, please ensure that they are backported
  *   to WOT.<br>
  * - It should periodically be checked if all client applications use the most up to date version
@@ -143,9 +146,15 @@ public final class FCPClientReferenceImplementation {
 	 */
 	private ClientState mClientState = ClientState.NotStarted;
 
-	/** The connection to the Web Of Trust plugin. Null if we are disconnected.
-	 * volatile because {@link #connected()} uses it without synchronization. 
-	 * MUST only be non-null if {@link #mClientState} equals {@link ClientState#Started} or {@link ClientState#StopRequested} */
+	/**
+	 * The connection to the Web Of Trust plugin. Null if we are disconnected.<br>
+	 * MUST only be non-null if {@link #mClientState} equals {@link ClientState#Started} or
+	 * {@link ClientState#StopRequested}.<br><br>
+	 * 
+	 * volatile because {@link #connected()} uses it without synchronization.<br>
+	 * TODO: Optimization: I don't think it needs to be volatile anymore, I think we synchronize
+	 * in all places which uses this. Validate that and remove the volatile if yes.
+	 */
 	private volatile FCPPluginClient mConnection = null;
 	
 	/** Called when the connection to WOT is established or lost. Shall be used by the UI to display a "Please install Web Of Trust" warning. */
@@ -161,9 +170,11 @@ public final class FCPClientReferenceImplementation {
 	 * Trusts/Scores subscriptions were filed before the Identities subscription.
 	 * 
 	 * ATTENTION: The mandatory order which is documented here should as well be specified in
-	 * {@link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)
+	 * {@link FCPClientReferenceImplementation#subscribe(Class,
+	 * BeginSubscriptionSynchronizationHandler, EndSubscriptionSynchronizationHandler,
+	 * SubscribedObjectChangedHandler)}.
 	 */
-	private enum SubscriptionType {
+	public enum SubscriptionType {
 		/** @see IdentitiesSubscription */
 		Identities(Identity.class),
 		/** @see TrustsSubscription */
@@ -171,41 +182,65 @@ public final class FCPClientReferenceImplementation {
 		/** @see ScoresSubscription */
 		Scores(Score.class);
 		
-		public Class<? extends Persistent> subscribedObjectType;
+		public final Class<? extends EventSource> subscribedObjectType;
 		
-		SubscriptionType(Class<? extends Persistent> mySubscribedObjectType) {
+		SubscriptionType(Class<? extends EventSource> mySubscribedObjectType) {
 			subscribedObjectType = mySubscribedObjectType;
 		}
 		
-		public static SubscriptionType fromClass(Class<? extends Persistent> clazz) {
-			if(clazz == Identity.class)
-				return Identities;
-			else if(clazz == Trust.class)
-				return Trusts;
-			else if(clazz == Score.class)
-				return Scores;
-			else
-				throw new IllegalArgumentException("Not a valid SubscriptionType: " + clazz);
+		public static SubscriptionType fromClass(Class<? extends EventSource> clazz) {
+		    for(SubscriptionType type : values()) {
+		        if(type.subscribedObjectType == clazz)
+		            return type;
+		    }
+		    
+		    throw new IllegalArgumentException("Not a valid SubscriptionType: " + clazz);
 		}
 	};
 	
 	/** Contains the {@link SubscriptionType}s the client wants to subscribe to. */
 	private EnumSet<SubscriptionType> mSubscribeTo = EnumSet.noneOf(SubscriptionType.class);
 
-	/**
-	 * Each of these handlers is called at the begin of a subscription. The "synchronization" contains all objects in the WOT
-	 * database of the type to which we subscribed.
-	 * @see SubscriptionSynchronizationHandler
-	 */
-	private final EnumMap<SubscriptionType, SubscriptionSynchronizationHandler<? extends Persistent>> mSubscriptionSynchronizationHandlers
-		= new EnumMap<SubscriptionType, SubscriptionSynchronizationHandler<? extends Persistent>>(SubscriptionType.class);
-	
+    /**
+     * Each is of these handlers called at the begin of a Subscription to indicate that a series of
+     * {@link ObjectChangedNotification} will follow which contain the full state of the WOT
+     * database of the type to which we subscribed. After that, the appropriate
+     * {@link EndSubscriptionSynchronizationHandler} is called, to signal to the client that it
+     * shall delete all objects from its database which were not contained in the synchronization.
+     * @see BeginSynchronizationNotification
+     *          The SubscriptionManager.BeginSynchronizationNotification is the underlying
+     *          source of this event.
+     * @see #mEndSubscriptionSynchronizationHandlers
+     *          The mEndSubscriptionSynchronizationHandlers table contains the said handlers for
+     *          marking the end of the synchronization series.
+     */
+	private final EnumMap
+	    <SubscriptionType, BeginSubscriptionSynchronizationHandler<? extends EventSource>>
+	        mBeginSubscriptionSynchronizationHandlers = new EnumMap<>(SubscriptionType.class);
+
+    /**
+     * Each is of these handlers at the end of a Subscription to indicate that the series of
+     * {@link ObjectChangedNotification} which formed the initial state synchronization has ended.
+     * Once the client receives the call of this handler, it shall delete all objects from its
+     * database which were not contained in the synchronization.
+     * @see EndSynchronizationNotification
+     *          The SubscriptionManager.EndSynchronizationNotification is the underlying
+     *          source of this event.
+     * @see #mBeginSubscriptionSynchronizationHandlers
+     *          The mBeginSubscriptionSynchronizationHandlers table contains the handlers which
+     *          mark the begin of the synchronization series.
+     */
+	private final EnumMap
+	    <SubscriptionType, EndSubscriptionSynchronizationHandler<? extends EventSource>>
+	        mEndSubscriptionSynchronizationHandlers = new EnumMap<>(SubscriptionType.class);
+
 	/**
 	 * Each of these handlers is called when an object changes to whose type the client is subscribed.
 	 * @see SubscribedObjectChangedHandler
 	 */
-	private final EnumMap<SubscriptionType, SubscribedObjectChangedHandler<? extends Persistent>> mSubscribedObjectChangedHandlers 
-		= new EnumMap<SubscriptionType, SubscribedObjectChangedHandler<? extends Persistent>>(SubscriptionType.class);
+	private final EnumMap
+	    <SubscriptionType, SubscribedObjectChangedHandler<? extends EventSource>>
+	        mSubscribedObjectChangedHandlers = new EnumMap<>(SubscriptionType.class);
 	
 	/**
 	 * The values are the IDs of the current subscriptions of the {@link SubscriptionType} which the key specifies.
@@ -222,15 +257,18 @@ public final class FCPClientReferenceImplementation {
 	/** Maps the String name of WOT FCP messages to the handler which shall deal with them */
 	private HashMap<String, FCPMessageHandler> mFCPMessageHandlers = new HashMap<String, FCPMessageHandler>();
 	
-	/** Constructs {@link Identity} objects from {@link SimpleFieldSet} data received via FCP. */
-	private final IdentityParser mIdentityParser;
-	
-	/** Constructs {@link Trust} objects from {@link SimpleFieldSet} data received via FCP. */
-	private final TrustParser mTrustParser;
-	
-	/** Constructs {@link Score} objects from {@link SimpleFieldSet} data received via FCP. */
-	private final ScoreParser mScoreParser;
-	
+	/**
+	 * For each value of the enum {@link SubscriptionType}, contains a parser matching the class
+	 * value of the following field of the SubscriptionType:<br>
+	 * <code>Class{@literal <? extends EventSource>} {@link SubscriptionType#subscribedObjectType}
+	 * </code><br><br>
+	 * 
+	 * The construct objects of those classes from data received by FCP. 
+	 */
+    private final EnumMap
+	    <SubscriptionType, FCPEventSourceContainerParser<? extends EventSource>>
+	        mParsers = new EnumMap<>(SubscriptionType.class);
+
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
 	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
 	private static transient volatile boolean logDEBUG = false;
@@ -260,12 +298,9 @@ public final class FCPClientReferenceImplementation {
 				new FCPSubscriptionSucceededHandler(),
 				new FCPSubscriptionTerminatedHandler(),
 				new FCPErrorHandler(),
-				new FCPIdentitiesSynchronizationHandler(),
-				new FCPTrustsSynchronizationHandler(),
-				new FCPScoresSynchronizationHandler(),
-				new FCPIdentityChangedNotificationHandler(),
-				new FCPTrustChangedNotificationHandler(),
-				new FCPScoreChangedNotificationHandler()
+				new FCPBeginSynchronizationEventHandler(),
+				new FCPEndSynchronizationEventHandler(),
+				new FCPObjectChangedEventHandler()
 		};
 		
 		for(FCPMessageHandler handler : handlers)
@@ -274,9 +309,10 @@ public final class FCPClientReferenceImplementation {
 		// To prevent client-plugins which copy-paste this reference implementation from having to copy-paste the WebOfTrust class,
 		// we use MockWebOfTrust as a replacement.
 		final MockWebOfTrust wot = new MockWebOfTrust();
-		mIdentityParser = new IdentityParser(wot);
-		mTrustParser = new TrustParser(wot, mIdentityStorage);
-		mScoreParser = new ScoreParser(wot, mIdentityStorage);
+		
+		mParsers.put(SubscriptionType.Identities, new IdentityParser(wot));
+		mParsers.put(SubscriptionType.Trusts, new TrustParser(wot, mIdentityStorage));
+		mParsers.put(SubscriptionType.Scores, new ScoreParser(wot, mIdentityStorage));
 	}
 	
 	/**
@@ -311,9 +347,21 @@ public final class FCPClientReferenceImplementation {
 	 * - {@link Score}.class
 	 * This is because {@link Trust}/{@link Score} objects hold references to {@link Identity} objects and therefore your database won't
 	 * make sense if you don't know which the reference {@link Identity} objects are.
+	 * <br><br>
+	 * 
+	 * ATTENTION: The passed handlers will be hard-referenced by this object even after
+	 * {@link #unsubscribe(Class)} has been called. This is because unsubscribing is processed
+	 * asynchronously: FCP messages might be received from WOT after you have called unsubscribe()
+	 * but before the unsubscription has finished. In that case, this object might have to pass
+	 * the messages to your handlers, so they must not be null. If you need the handlers to be
+	 * garbage-collected, you should re-subscribe with different handlers, or throw away the whole
+	 * client.
 	 */
-	public final synchronized <T extends Persistent> void subscribe(final Class<T> type,
-			final SubscriptionSynchronizationHandler<T> synchronizationHandler, SubscribedObjectChangedHandler<T> objectChangedHandler) {
+	public final synchronized <T extends EventSource> void subscribe(final Class<T> type,
+			final BeginSubscriptionSynchronizationHandler<T> beginSyncHandler,
+			final EndSubscriptionSynchronizationHandler<T> endSyncHandler,
+			final SubscribedObjectChangedHandler<T> objectChangedHandler) {
+	    
 		if(mClientState != ClientState.Started)
 			throw new IllegalStateException(mClientState.toString());
 		
@@ -323,10 +371,12 @@ public final class FCPClientReferenceImplementation {
 		
 		mSubscribeTo.add(SubscriptionType.fromClass(type));
 		
-		IfNull.thenThrow(synchronizationHandler);
+		IfNull.thenThrow(beginSyncHandler);
+		IfNull.thenThrow(endSyncHandler);
 		IfNull.thenThrow(objectChangedHandler);
 		
-		mSubscriptionSynchronizationHandlers.put(realType, synchronizationHandler);
+		mBeginSubscriptionSynchronizationHandlers.put(realType, beginSyncHandler);
+		mEndSubscriptionSynchronizationHandlers.put(realType, endSyncHandler);
 		mSubscribedObjectChangedHandlers.put(realType, objectChangedHandler);
 		
 		mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
@@ -335,7 +385,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Call this to cancel a {@link Subscription}.
 	 */
-	public final synchronized <T extends Persistent> void unsubscribe(final Class<T> type) {
+	public final synchronized <T extends EventSource> void unsubscribe(final Class<T> type) {
 		if(mClientState != ClientState.Started)
 			throw new IllegalStateException(mClientState.toString());
 		
@@ -449,11 +499,12 @@ public final class FCPClientReferenceImplementation {
 			try {
 				mConnectionStatusChangedHandler.handleConnectionStatusChanged(true);
 			} catch(Throwable t) {
-				Logger.warning(this, "ConnectionStatusChangedHandler.handleConnectionStatusChanged() threw up, please fix your handler!", t);
+				Logger.error(this, "ConnectionStatusChangedHandler.handleConnectionStatusChanged() "
+				                 + "threw up, please fix your handler!", t);
 			}
 		} catch(PluginNotFoundException e) {
 			Logger.warning(this, "Cannot connect to WOT!");
-			// force_disconnect() does this for us.
+			// The force_disconnect() at the beginning of the function already did this for us.
 			/*
 			try {
 				mConnectionStatusChangedHandler.handleConnectionStatusChanged(false);
@@ -587,9 +638,9 @@ public final class FCPClientReferenceImplementation {
 	}
 	
 	/**
-	 * Sends a "Subscribe" FCP message to WOT. It will reply with:
-	 * - A synchronization message, which is handled by {@link FCPIdentitiesSynchronizationHandler} / {@link FCPTrustsSynchronizationHandler} / {@link FCPScoresSynchronizationHandler} - depending on the {@link SubscriptionType}.
-	 * - A "Subscribed" message, which is handled by {@link FCPSubscriptionSucceededHandler}.
+	 * Sends a "Subscribe" FCP message to WOT.<br>
+	 * It will reply with a "Subscribed" message, which is handled by
+	 * {@link FCPSubscriptionSucceededHandler}.
 	 * 
 	 * @param type The {@link SubscriptionType} to which you want to subscribe.
 	 * @throws IOException See {@link #send(SimpleFieldSet)}.
@@ -620,7 +671,7 @@ public final class FCPClientReferenceImplementation {
 
 	/**
 	 * Receives FCP messages from WOT:
-	 * - In reply to messages sent to it via {@link PluginTalker}
+	 * - In reply to messages sent to it via {@link FCPPluginClient}
 	 * - As events happen via event-{@link Notification}s
 	 */
 	private class FCPMessageReceiver
@@ -720,15 +771,15 @@ public final class FCPClientReferenceImplementation {
 	}
 	
 	/**
-	 * @see SubscriptionSynchronizationHandler
+	 * @see BeginSubscriptionSynchronizationHandler
+	 * @see EndSubscriptionSynchronizationHandler
 	 * @see SubscribedObjectChangedHandler
 	 */
-	public final class ProcessingFailedException extends Exception {
+	@SuppressWarnings("serial")
+    public final class ProcessingFailedException extends Exception {
 		public ProcessingFailedException(Throwable t) {
 			super(t);
 		}
-
-		private static final long serialVersionUID = 1L;
 	}
 	
 	/**
@@ -767,7 +818,11 @@ public final class FCPClientReferenceImplementation {
 	    	assert(to != null);
 	    	
 	    	final SubscriptionType type = SubscriptionType.valueOf(to);
-	    	assert !mSubscriptionIDs.containsKey(type) : "Subscription should not exist already";
+	    	
+	    	assert (!mSubscriptionIDs.containsKey(type) 
+	    	    || "SubscriptionExistsAlready".equals(message.errorCode)) // See FCPErrorHandler
+	    	    : "Subscription should not exist already";
+	    	
 	    	mSubscriptionIDs.put(type, id);
 	    	
 	    	// checkSubscriptions() only files one subscription at a time (see its code for an explanation).
@@ -890,137 +945,98 @@ public final class FCPClientReferenceImplementation {
 		
 		abstract void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws Throwable;
 	}
-	
+
 	/**
-	 * Handles the "Identities" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}
-	 * with {@link SubscriptionType#Identities}.
+     * Handles the "BeginSynchronizationEvent" message which we receive in reply to
+     * {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}.
+     * 
+	 * @see SubscriptionManager.BeginSynchronizationNotification */
+	private class FCPBeginSynchronizationEventHandler
+	        extends MaybeFailingFCPMessageHandler {
+
+	    @Override public String getMessageName() {
+	        return "BeginSynchronizationEvent";
+	    }
+
+	    @Override void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data)
+	            throws ProcessingFailedException {
+	        
+	        mBeginSubscriptionSynchronizationHandlers.get(parseSubscriptionType(sfs))
+	            .handleBeginSubscriptionSynchronization(parseVersionID(sfs));
+	    }
+        
+        final SubscriptionType parseSubscriptionType(final SimpleFieldSet sfs) {
+            return SubscriptionType.valueOf(sfs.get("To"));
+        }
+        
+        final UUID parseVersionID(final SimpleFieldSet sfs) {
+            return UUID.fromString(sfs.get("VersionID"));
+        }
+	}
+
+	/** @see SubscriptionManager.EndSynchronizationNotification */
+	private final class FCPEndSynchronizationEventHandler
+	        extends FCPBeginSynchronizationEventHandler {
+
+	    @Override public String getMessageName() {
+	        return "EndSynchronizationEvent";
+	    }
+
+	    @Override void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data)
+	            throws ProcessingFailedException {
+	        
+            mEndSubscriptionSynchronizationHandlers.get(parseSubscriptionType(sfs))
+                .handleEndSubscriptionSynchronization(parseVersionID(sfs));
+	    }
+	}
+
+	/**
+	 * Handles the "ObjectChangedEvent" message which WOT sends when an
+	 * {@link Identity}, {@link Trust} or {@link Score} was changed, added or deleted.
+	 * This will be send when we are subscribed to one of the above three classes.<br><br>
 	 * 
-	 * Parses the contained set of all WOT {@link Identity}s & passes it to the event handler 
-	 * {@link FCPClientReferenceImplementation#handleIdentitiesSynchronization(Collection)}.
+	 * Parses the contained {@link Identity} / {@link Trust} / {@link Score} and 
+	 * passes it to the event handler {@link SubscribedObjectChangedHandler} with the type parameter
+	 * matching Identity / Trust / Score.
 	 */
-	private final class FCPIdentitiesSynchronizationHandler extends MaybeFailingFCPMessageHandler {
+	private final class FCPObjectChangedEventHandler
+	        extends MaybeFailingFCPMessageHandler {
+	    
 		@Override
 		public String getMessageName() {
-			return "Identities";
+			return "ObjectChangedEvent";
 		}
 		
 		@SuppressWarnings("unchecked")
 		@Override
-		public void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
-			((SubscriptionSynchronizationHandler<Identity>)mSubscriptionSynchronizationHandlers.get(SubscriptionType.Identities))
-				.handleSubscriptionSynchronization(mIdentityParser.parseSynchronization(sfs));
-		}
-	}
+		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data)
+		        throws FSParseException, InvalidParameterException, MalformedURLException,
+		               ProcessingFailedException {
+		    
+		    final SubscriptionType subscriptionType = parseSubscriptionType(sfs);
+		    
+            final FCPEventSourceContainerParser<? extends EventSource> parser
+                = mParsers.get(subscriptionType);
+            
+		    final SubscribedObjectChangedHandler<EventSource> handler
+		        = (SubscribedObjectChangedHandler<EventSource>)
+		            mSubscribedObjectChangedHandlers.get(subscriptionType);
+		    
+		    final ChangeSet<EventSource> changeSet
+		        = (ChangeSet<EventSource>) parser.parseObjectChangedEvent(sfs);
 
-	/**
-	 * Handles the "Trusts" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}
-	 * with {@link SubscriptionType#Trusts}.
-	 * 
-	 * Parses the contained set of all WOT {@link Trust}s & passes it to the event handler 
-	 * {@link FCPClientReferenceImplementation#handleTrustsSynchronization(Collection)}.
-	 */
-	private final class FCPTrustsSynchronizationHandler extends MaybeFailingFCPMessageHandler {
-		@Override
-		public String getMessageName() {
-			return "Trusts";
-		}
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
-			((SubscriptionSynchronizationHandler<Trust>)mSubscriptionSynchronizationHandlers.get(SubscriptionType.Trusts))
-					.handleSubscriptionSynchronization(mTrustParser.parseSynchronization(sfs));
-		}
-	}
-
-	/**
-	 * Handles the "Scores" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}
-	 * with {@link SubscriptionType#Scores}.
-	 * 
-	 * Parses the contained set of all WOT {@link Score}s & passes it to the event handler 
-	 * {@link FCPClientReferenceImplementation#handleScoresSynchronization(Collection)}.
-	 */
-	private final class FCPScoresSynchronizationHandler extends MaybeFailingFCPMessageHandler {
-		@Override
-		public String getMessageName() {
-			return "Scores";
-		}
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
-			((SubscriptionSynchronizationHandler<Score>)mSubscriptionSynchronizationHandlers.get(SubscriptionType.Scores))
-				.handleSubscriptionSynchronization(mScoreParser.parseSynchronization(sfs));
-		}
-	}
-
-	/**
-	 * Handles the "IdentityChangedNotification" message which WOT sends when an {@link Identity} or {@link OwnIdentity} was changed, added or deleted.
-	 * This will be send if we are subscribed to {@link SubscriptionType#Identities}.
-	 * 
-	 * Parses the contained {@link Identity} & passes it to the event handler 
-	 * {@link FCPClientReferenceImplementation#handleIdentityChangedNotification(Identity, Identity)}.
-	 */
-	private final class FCPIdentityChangedNotificationHandler extends MaybeFailingFCPMessageHandler {
-		@Override
-		public String getMessageName() {
-			return "IdentityChangedNotification";
+			handler.handleSubscribedObjectChanged(changeSet);
 		}
 		
-		@SuppressWarnings("unchecked")
-		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
-			((SubscribedObjectChangedHandler<Identity>)mSubscribedObjectChangedHandlers.get(SubscriptionType.Identities))
-				.handleSubscribedObjectChanged(mIdentityParser.parseNotification(sfs));
-		}
-	}
-	
-	/**
-	 * Handles the "TrustChangedNotification" message which WOT sends when a {@link Trust} was changed, added or deleted.
-	 * This will be send if we are subscribed to {@link SubscriptionType#Trusts}.
-	 * 
-	 * Parses the contained {@link Trust} & passes it to the event handler 
-	 * {@link FCPClientReferenceImplementation#handleTrustChangedNotification(Trust, Trust)}.
-	 */
-	private final class FCPTrustChangedNotificationHandler extends MaybeFailingFCPMessageHandler  {
-		@Override
-		public String getMessageName() {
-			return "TrustChangedNotification";
-		}
-		
-		@SuppressWarnings("unchecked")
-		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
-			((SubscribedObjectChangedHandler<Trust>)mSubscribedObjectChangedHandlers.get(SubscriptionType.Trusts))
-				.handleSubscribedObjectChanged(mTrustParser.parseNotification(sfs));
-		}
-	}
-
-	/**
-	 * Handles the "ScoreChangedNotification" message which WOT sends when a {@link Score} was changed, added or deleted.
-	 * This will be send if we are subscribed to {@link SubscriptionType#Scores}.
-	 * 
-	 * Parses the contained {@link Score} & passes it to the event handler 
-	 * {@link FCPClientReferenceImplementation#handleScoreChangedNotification(Score, Score)}.
-	 */
-	private final class FCPScoreChangedNotificationHandler extends MaybeFailingFCPMessageHandler {
-		@Override
-		public String getMessageName() {
-			return "ScoreChangedNotification";
-		}
-		
-		@SuppressWarnings("unchecked")
-		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
-			((SubscribedObjectChangedHandler<Score>)mSubscribedObjectChangedHandlers.get(SubscriptionType.Scores))
-				.handleSubscribedObjectChanged(mScoreParser.parseNotification(sfs));
-		}
+        private final SubscriptionType parseSubscriptionType(final SimpleFieldSet sfs) {
+            return SubscriptionType.valueOf(sfs.get("SubscriptionType"));
+        }
 	}
 
 	/**
 	 * Represents the data of a {@link SubscriptionManager.Notification}
 	 */
-	public static final class ChangeSet<CT extends Persistent> {
+	public static final class ChangeSet<CT extends EventSource> {
 		/**
 		 * @see SubscriptionManager.Notification#getOldObject()
 		 */
@@ -1049,23 +1065,31 @@ public final class FCPClientReferenceImplementation {
 	}
 
 	/**
-	 * Baseclass for parsing synchronization and notification messages which WOT sends:
-	 * - Synchronization messages are at the beginning of a {@link Subscription} and contain all data in the WOT database of the subscribed
-	 * type such as all {@link Identity}s / all {@link Trust}s / all {@link Score}s.
-	 * - {@link Notification} messages are sent if an {@link Identity} etc. has changed and contain the old / new version of it.
+	 * Baseclass for parsing messages from WOT containing Identity/Trust/Score objects.<br>
+	 * This currently is limited to ObjectChangedEvent messages but might be more in
+	 * the future.<br><br>
 	 * 
 	 * The implementing child classes only have to implement parsing of a single Identity/Trust/Score object. The format of the 
 	 * messages which contain multiple of them is a superset so the single-element parser can be used.
 	 */
-	public static abstract class FCPParser<T extends Persistent> {
+	public static abstract class FCPEventSourceContainerParser<T extends EventSource> {
 		
 		protected final WebOfTrustInterface mWoT;
 		
-		public FCPParser(final WebOfTrustInterface myWebOfTrust) {
+		public FCPEventSourceContainerParser(final WebOfTrustInterface myWebOfTrust) {
 			mWoT = myWebOfTrust;
 		}
 		
-		public ArrayList<T> parseSynchronization(final SimpleFieldSet wholeSfs) throws FSParseException, MalformedURLException, InvalidParameterException {
+		/**
+		 * @Deprecated TODO: Currently unused. Could be put to use if we implement public functions
+		 * in {@link FCPClientReferenceImplementation} to allow the user to get multiple
+		 * objects from WOT by FCP when they are needed due to a current demand, not due to
+		 * event-notifications. For example "getIntroductionPuzzles()" maybe.
+		 */
+		@Deprecated
+		public ArrayList<T> parseMultiple(final SimpleFieldSet wholeSfs)
+		        throws FSParseException, MalformedURLException, InvalidParameterException {
+		    
 			final SimpleFieldSet sfs = getOwnSubset(wholeSfs);
 			final int amount = sfs.getInt("Amount");
 			final ArrayList<T> result = new ArrayList<T>(amount+1);
@@ -1075,7 +1099,9 @@ public final class FCPClientReferenceImplementation {
 			return result;
 		}
 
-		public ChangeSet<T> parseNotification(final SimpleFieldSet notification) throws MalformedURLException, FSParseException, InvalidParameterException {
+		public ChangeSet<T> parseObjectChangedEvent(final SimpleFieldSet notification)
+		        throws MalformedURLException, FSParseException, InvalidParameterException {
+		    
 			final SimpleFieldSet beforeChange = getOwnSubset(notification.subset("BeforeChange"));
 			final SimpleFieldSet afterChange = getOwnSubset(notification.subset("AfterChange"));
 			
@@ -1092,7 +1118,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Parser for FCP messages which describe an {@link Identity} or {@link OwnIdentity} object.
 	 */
-	public static final class IdentityParser extends FCPParser<Identity> {
+	public static final class IdentityParser extends FCPEventSourceContainerParser<Identity> {
 
 		public IdentityParser(final WebOfTrustInterface myWebOfTrust) {
 			super(myWebOfTrust);
@@ -1116,7 +1142,8 @@ public final class FCPClientReferenceImplementation {
 	        final String requestURI = sfs.get("RequestURI");
 	    	final String insertURI = sfs.get("InsertURI");
 	    	final boolean doesPublishTrustList = sfs.getBoolean("PublishesTrustList");
-	        final String id = sfs.get("ID"); 
+	        final String id = sfs.get("ID");
+	        final UUID versionID = UUID.fromString(sfs.get("VersionID"));
 	 	
 	 		final Identity identity;
 	 		
@@ -1146,6 +1173,8 @@ public final class FCPClientReferenceImplementation {
 	        }
 	        
 	    	identity.forceSetCurrentEditionFetchState(FetchState.valueOf(sfs.get("CurrentEditionFetchState")));
+	    	
+	    	identity.setVersionID(versionID);
 
 	        return identity;
 		}
@@ -1154,7 +1183,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Parser for FCP messages which describe a {@link Trust} object.
 	 */
-	public static final class TrustParser extends FCPParser<Trust> {
+	public static final class TrustParser extends FCPEventSourceContainerParser<Trust> {
 
 		private final Map<String, Identity> mIdentities;
 		
@@ -1180,9 +1209,11 @@ public final class FCPClientReferenceImplementation {
 			final byte value = sfs.getByte("Value");
 			final String comment = sfs.get("Comment");
 			final long trusterEdition = sfs.getLong("TrusterEdition");
+			final UUID versionID = UUID.fromString(sfs.get("VersionID"));
 			
 			final Trust trust = new Trust(mWoT, mIdentities.get(trusterID), mIdentities.get(trusteeID), value, comment);
 			trust.forceSetTrusterEdition(trusterEdition);
+			trust.setVersionID(versionID);
 			
 			return trust;
 		}
@@ -1192,7 +1223,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Parser for FCP messages which describe a {@link Score} object.
 	 */
-	public static final class ScoreParser extends FCPParser<Score> {
+	public static final class ScoreParser extends FCPEventSourceContainerParser<Score> {
 		
 		private final Map<String, Identity> mIdentities;
 		
@@ -1218,8 +1249,14 @@ public final class FCPClientReferenceImplementation {
 			final int capacity = sfs.getInt("Capacity");
 			final int rank = sfs.getInt("Rank");
 			final int value = sfs.getInt("Value");
+			final UUID versionID = UUID.fromString(sfs.get("VersionID"));
 			
-			return new Score(mWoT, (OwnIdentity)mIdentities.get(trusterID), mIdentities.get(trusteeID), value, rank, capacity);
+			final OwnIdentity truster = (OwnIdentity)mIdentities.get(trusterID);
+			final Identity trustee = mIdentities.get(trusteeID);
+			final Score score = new Score(mWoT, truster, trustee, value, rank, capacity);
+			score.setVersionID(versionID);
+			
+			return score;
 		}
 		
 	}
@@ -1230,42 +1267,81 @@ public final class FCPClientReferenceImplementation {
 		 * This handler should update your user interface remove or show a "Please install the Web Of Trust plugin!" warning.
 		 * If this handler was not called yet, you should assume that there is no connection and display the warning as well. 
 		 * 
-		 * ATTENTION: You do NOT have to call {@link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}
-		 * in this handler! Subscriptions will be filed automatically by the client whenever the connection is established.
-		 * It will also automatically reconnect if the connection is lost.
+		 * ATTENTION: You do NOT have to call {@link FCPClientReferenceImplementation#
+		 * subscribe(Class, BeginSubscriptionSynchronizationHandler,
+		 * EndSubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)} in this handler!
+		 * Subscriptions will be filed automatically by the client whenever the connection is
+		 * established.
+		 * It will also automatically reconnect if the connection is lost.<br><br>
+		 * 
 		 * ATTENTION: The client will automatically try to reconnect, you do NOT have to call {@link FCPClientReferenceImplementation#start()}
 		 * or anything else in this handler!
 		 */
 		void handleConnectionStatusChanged(boolean connected);
 	}
-	
-	public interface SubscriptionSynchronizationHandler<T extends Persistent> {
-		/**
-		 * Called very soon after you have subscribed via {@link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}
-		 * The type T matches the Class parameter of the above subscribe function.
-		 * The passed {@link Collection} contains ALL objects in the WOT database of whose type T you have subscribed to:
-		 * - For {@link Identity}, all {@link Identity} and {@link OwnIdentity} objects in the WOT database.
-		 * - For {@link Trust}, all {@link Trust} objects in the WOT database.
-		 * - For {@link Score}, all {@link Score} objects in the WOT database.
-		 * You should store any of them which you need.
-		 * 
-		 * WOT sends ALL objects to this handler because this will cut down future traffic very much: For example, if an {@link Identity}
-		 * changes, WOT will only have to send the new version of it for allowing you to make your database completely up-to-date again.
-		 * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
-		 * a {@link SubscribedObjectChangedHandler} instead.
-		 * 
-		 * @throws ProcessingFailedException You are free to throw this. The failure of the handler will be signaled to WOT. It will cause the
-		 * subscription to fail. The client will automatically retry subscribing after a typical delay of roughly
-		 * {@link FCPClientReferenceImplementation#WOT_PING_DELAY}. You can use this mechanism for programming your client in a transactional
-		 * style: If anything in the transaction which processes this handler fails, roll it back and make the handler throw.
-		 * You can then expect to receive the same call again after the delay and hope that the transaction will succeed the next time.
-		 */
-		void handleSubscriptionSynchronization(Collection<T> allObjects) throws ProcessingFailedException;
+
+	public interface BeginSubscriptionSynchronizationHandler<T extends EventSource>  {
+        /**
+         * Called very soon after you have subscribed via {@link FCPClientReferenceImplementation#
+         * subscribe(Class, BeginSubscriptionSynchronizationHandler,
+         * EndSubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}.
+         * The type T matches the Class parameter of the above subscribe function.
+         * 
+         * After this, a series of calls to your {@link SubscribedObjectChangedHandler} will follow,
+         * in total shipping ALL objects in the WOT database of whose type T you have subscribed to:
+         * - For {@link Identity}, all {@link Identity} and {@link OwnIdentity} objects in the WOT database.
+         * - For {@link Trust}, all {@link Trust} objects in the WOT database.
+         * - For {@link Score}, all {@link Score} objects in the WOT database.
+         * You should store any of them which you need.
+         * 
+         * WOT sends ALL objects at the beginning of a connection because this will cut down future traffic very much: For example, if an {@link Identity}
+         * changes, WOT will only have to send the new version of it for allowing you to make your database completely up-to-date again.
+         * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
+         * a {@link SubscribedObjectChangedHandler} instead.
+         * 
+         * @throws ProcessingFailedException You are free to throw this. The failure of the handler will be signaled to WOT. It will cause the
+         * same notification to be re-sent after a delay of roughly {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}.
+         * You can use this mechanism for programming your client in a transactional style: If anything in the transaction which processes 
+         * this handler fails, roll it back and make the handler throw. You can then expect to receive the same call again after the delay
+         * and hope that the transaction will succeed the next time.
+         */
+	    void handleBeginSubscriptionSynchronization(final UUID versionID)
+	            throws ProcessingFailedException;
 	}
-	
-	public interface SubscribedObjectChangedHandler<T extends Persistent> {
+
+	public interface EndSubscriptionSynchronizationHandler<T extends EventSource>  {
+	    /**
+	     * Marks the end of the series of {@link ObjectChangedNotification} started by
+	     * {@link BeginSubscriptionSynchronizationHandler#}. See its JavaDoc for the purpose of
+	     * this mechanism.<br><br>
+	     * 
+	     * Upon processing of this callback, you must delete all objects of the type T from your
+	     * database whose versionID does not match the passed versionID:<br>
+	     * Each of the objects passed during the series to your
+	     * {@link SubscribedObjectChangedHandler} had been specified with the same versionID. As
+	     * the subscription synchronization contains the FULL dataset of all objects of the type T
+	     * in the WOT database, anything which is only contained in your database from a previous
+	     * connection but was not contained in the synchronization is an obsolete object which
+	     * does not exist in the WOT database anymore.<br>
+	     * The versionID serves as a "mark-and-sweep" garbage collection mechanism to allow you to
+	     * determine which those obsolete objects are, and delete them.
+	     * 
+         * @throws ProcessingFailedException You are free to throw this. The failure of the handler will be signaled to WOT. It will cause the
+         * same notification to be re-sent after a delay of roughly {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}.
+         * You can use this mechanism for programming your client in a transactional style: If anything in the transaction which processes 
+         * this handler fails, roll it back and make the handler throw. You can then expect to receive the same call again after the delay
+         * and hope that the transaction will succeed the next time.
+	     */
+	    void handleEndSubscriptionSynchronization(final UUID versionID)
+	            throws ProcessingFailedException;
+	}
+
+	public interface SubscribedObjectChangedHandler<T extends EventSource> {
 		/**
-		 * Called if an object is changed/added/deleted to whose class you subscribed to via @link FCPClientReferenceImplementation#subscribe(Class, SubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}.
+		 * Called if an object is changed/added/deleted to whose class you subscribed to via
+		 * {@link FCPClientReferenceImplementation#subscribe(Class,
+		 * BeginSubscriptionSynchronizationHandler, EndSubscriptionSynchronizationHandler,
+		 * SubscribedObjectChangedHandler)}.
 		 * The type T matches the Class parameter of the above subscribe function.
 		 * You will receive notifications about changed objects for the given values of T:
 		 * - For {@link Identity}, changed {@link Identity} and {@link OwnIdentity} objects in the WOT database.
@@ -1274,7 +1350,16 @@ public final class FCPClientReferenceImplementation {
 		 * The passed {@link ChangeSet} contains the version of the object  before the change and after the change.
 		 * 
 		 * ATTENTION: The type of an {@link Identity} can change from {@link OwnIdentity} to {@link Identity} or vice versa.
-		 * This will also trigger a call to this event handler.
+		 * This will also trigger a call to this event handler.<br><br>
+		 * 
+		 * ATTENTION: If the notification is sent as part of series marked by
+		 * {@link BeginSubscriptionSynchronizationHandler} and
+		 * {@link EndSubscriptionSynchronizationHandler}, the {@link ChangeSet#beforeChange} will
+		 * always be null, even if the object had existed previously.<br>
+		 * This is because the purpose of the synchronization is to fix an unsynchronized state of
+		 * your client: Because WOT and the client are not in sync, WOT cannot know whether your
+		 * client already knew about the object before the synchronization. So it just sets it to
+		 * null.
 		 * 
 		 * @throws ProcessingFailedException You are free to throw this. The failure of the handler will be signaled to WOT. It will cause the
 		 * same notification to be re-sent after a delay of roughly {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}.

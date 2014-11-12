@@ -368,6 +368,9 @@ public final class WebOfTrust extends WebOfTrustInterface
         	SubscriptionManager.ScoresSubscription.class,
         	SubscriptionManager.TrustsSubscription.class,
         	SubscriptionManager.Notification.class,
+        	SubscriptionManager.ObjectChangedNotification.class,
+        	SubscriptionManager.BeginSynchronizationNotification.class,
+        	SubscriptionManager.EndSynchronizationNotification.class,
         	SubscriptionManager.IdentityChangedNotification.class,
         	SubscriptionManager.ScoreChangedNotification.class,
         	SubscriptionManager.TrustChangedNotification.class,
@@ -1856,6 +1859,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * @return An {@link ObjectSet} containing all identities present in the database 
 	 */
+	@Override
 	public ObjectSet<Identity> getAllIdentities() {
 		final Query query = mDB.query();
 		query.constrain(Identity.class);
@@ -2147,6 +2151,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Get all scores in the database.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 */
+	@Override
 	public ObjectSet<Score> getAllScores() {
 		final Query query = mDB.query();
 		query.constrain(Score.class);
@@ -2356,6 +2361,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * @return An {@link ObjectSet} containing all {@link Trust} the passed Identity has received.
 	 */
+	@Override
 	public ObjectSet<Trust> getAllTrusts() {
 		final Query query = mDB.query();
 		query.constrain(Trust.class);
