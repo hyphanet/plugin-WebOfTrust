@@ -202,17 +202,6 @@ public final class FCPClientReferenceImplementation {
 	/** Contains the {@link SubscriptionType}s the client wants to subscribe to. */
 	private EnumSet<SubscriptionType> mSubscribeTo = EnumSet.noneOf(SubscriptionType.class);
 
-	/**
-	 * Each of these handlers is called at the begin of a subscription. The "synchronization" contains all objects in the WOT
-	 * database of the type to which we subscribed.
-	 * FIXME: Replaced by {@link BeginSubscriptionSynchronizationHandler} and
-	 * {@link EndSubscriptionSynchronizationHandler}, remove once its not used by any code.
-	 * @see SubscriptionSynchronizationHandler
-	 */
-	private final EnumMap
-	    <SubscriptionType, SubscriptionSynchronizationHandler<? extends EventSource>>
-	        mSubscriptionSynchronizationHandlers = new EnumMap<>(SubscriptionType.class);
-
     /**
      * Each is of these handlers called at the begin of a Subscription to indicate that a series of
      * {@link ObjectChangedNotification} will follow which contain the full state of the WOT
