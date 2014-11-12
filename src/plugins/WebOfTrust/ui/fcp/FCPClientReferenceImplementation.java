@@ -307,7 +307,6 @@ public final class FCPClientReferenceImplementation {
 				new FCPSubscriptionSucceededHandler(),
 				new FCPSubscriptionTerminatedHandler(),
 				new FCPErrorHandler(),
-				new FCPIdentitiesSynchronizationHandler(),
 				new FCPTrustsSynchronizationHandler(),
 				new FCPScoresSynchronizationHandler(),
 				new FCPBeginSynchronizationNotificationHandler(),
@@ -651,7 +650,9 @@ public final class FCPClientReferenceImplementation {
 	
 	/**
 	 * Sends a "Subscribe" FCP message to WOT. It will reply with:
-	 * - A synchronization message, which is handled by {@link FCPIdentitiesSynchronizationHandler} / {@link FCPTrustsSynchronizationHandler} / {@link FCPScoresSynchronizationHandler} - depending on the {@link SubscriptionType}.
+	 * - A begin and end synchronization message, which is handled by
+	 *   {@link FCPBeginSynchronizationNotificationHandler} and
+	 *   {@link FCPEndSynchronizationNotificationHandler}.<br>
 	 * - A "Subscribed" message, which is handled by {@link FCPSubscriptionSucceededHandler}.
 	 * 
 	 * @param type The {@link SubscriptionType} to which you want to subscribe.
@@ -957,27 +958,6 @@ public final class FCPClientReferenceImplementation {
 		
 		abstract void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws Throwable;
 	}
-	
-	/**
-	 * Handles the "Identities" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}
-	 * with {@link SubscriptionType#Identities}.
-	 * 
-	 * Parses the contained set of all WOT {@link Identity}s & passes it to the event handler 
-	 * {@link FCPClientReferenceImplementation#handleIdentitiesSynchronization(Collection)}.
-	 */
-	private final class FCPIdentitiesSynchronizationHandler extends MaybeFailingFCPMessageHandler {
-		@Override
-		public String getMessageName() {
-			return "Identities";
-		}
-		
-		@SuppressWarnings("unchecked")
-		@Override
-		public void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
-			((SubscriptionSynchronizationHandler<Identity>)mSubscriptionSynchronizationHandlers.get(SubscriptionType.Identities))
-				.handleSubscriptionSynchronization(mIdentityParser.parseSynchronization(sfs));
-		}
-	}
 
 	/**
 	 * Handles the "Trusts" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}
@@ -1021,7 +1001,11 @@ public final class FCPClientReferenceImplementation {
 		}
 	}
 
-	/** @see SubscriptionManager.BeginSynchronizationNotification */
+	/**
+     * Handles the "BeginSynchronizationNotificationMessage" message which we receive in reply to
+     * {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}.
+     * 
+	 * @see SubscriptionManager.BeginSynchronizationNotification */
 	private class FCPBeginSynchronizationNotificationHandler
 	        extends MaybeFailingFCPMessageHandler {
 
