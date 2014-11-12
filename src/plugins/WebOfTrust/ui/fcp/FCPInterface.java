@@ -1491,7 +1491,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         // Not a reply to an existing message since it is sent due to an event, not a client message
         final FCPPluginMessage fcpMessage = FCPPluginMessage.construct();
         
-        fcpMessage.params.putOverwrite("Message", "ObjectChangedEventNotification");
+        fcpMessage.params.putOverwrite("Message", "ObjectChangedEvent");
         fcpMessage.params.putOverwrite("SubscriptionType", subscriptionType.name());
         fcpMessage.params.put("BeforeChange", beforeChange);
         fcpMessage.params.put("AfterChange", afterChange);

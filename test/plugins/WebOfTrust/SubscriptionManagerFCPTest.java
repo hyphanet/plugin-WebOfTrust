@@ -198,11 +198,10 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
         assertEquals(type, beginSync.params.get("To"));
         final UUID versionID = UUID.fromString(beginSync.params.get("VersionID"));
         
-        // Third and following messages in theory would be IdentityChangedNotification /
-        // TrustChangedNotification / ScoreChangedNotification as containers for the
+        // Third and following messages in theory would be ObjectChangedEvents as containers for the
         // synchronization.
-        // But as no Identitys/Trusts/Scores are stored yet, there shoudln't be any Notifications
-        // between the BeginSynchronizationEvent and the EndSynchronizationEvent.
+        // But as no Identitys/Trusts/Scores are stored yet, there shoudln't be any
+        // ObjectChangedEvent between the BeginSynchronizationEvent and the EndSynchronizationEvent.
         // So the third message will be the "EndSynchronizationEvent" already.
         
         final FCPPluginMessage endSync = mReplyReceiver.getNextResult();
@@ -262,7 +261,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		
 		doRandomChangesToWOT(eventCount);
 		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
-		importObjectChangedEventNotifications();
+		importObjectChangedEvents();
         assertFalse(mReplyReceiver.hasNextResult());
 
 		assertEquals(new HashSet<Identity>(mWebOfTrust.getAllIdentities()),
@@ -356,11 +355,11 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
                 break;
             }
             
-            assertEquals("ObjectChangedEventNotification", message);
+            assertEquals("ObjectChangedEvent", message);
             assertEquals(type.name(), notification.get("SubscriptionType"));
             
             ChangeSet<? extends EventSource> changeSet
-                = parser.parseObjectChangedNotification(notification);
+                = parser.parseObjectChangedEvent(notification);
             
             assertEquals(null, changeSet.beforeChange);
             assertEquals(versionID, changeSet.afterChange.getVersionID());
@@ -384,39 +383,39 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		}
 	}
 
-	void importObjectChangedEventNotifications()
+	void importObjectChangedEvents()
 	        throws MalformedURLException, FSParseException, InvalidParameterException {
 	    
 		while(mReplyReceiver.hasNextResult()) {
-		    final FCPPluginMessage notificationMessage = mReplyReceiver.getNextResult();
+		    final FCPPluginMessage eventMessage = mReplyReceiver.getNextResult();
 		    
 		    assertEquals("Notifications should not be sent as reply messages.",
-		        false, notificationMessage.isReplyMessage());		    
+		        false, eventMessage.isReplyMessage());
 		    // We don't have to check the notificationMessage.success / errorCode / errorMessage as
 		    // they will be null for non-reply messages.
 		    
-			final SimpleFieldSet notification = notificationMessage.params;
-			final String message = notification.get("Message");
-			assertEquals("ObjectChangedEventNotification", message);
+			final SimpleFieldSet event = eventMessage.params;
+			final String message = event.get("Message");
+			assertEquals("ObjectChangedEvent", message);
 			
 		    SubscriptionType type
-		        = SubscriptionType.valueOf(notification.get("SubscriptionType"));
+		        = SubscriptionType.valueOf(event.get("SubscriptionType"));
 		    
 		    switch(type) {
                 case Identities:
-                    putNotification(
+                    putObjectChangedEvent(
                         new IdentityParser(mWebOfTrust)
-                            .parseObjectChangedNotification(notification), mReceivedIdentities);
+                            .parseObjectChangedEvent(event), mReceivedIdentities);
                     break;
                 case Trusts:
-                    putNotification(
+                    putObjectChangedEvent(
                         new TrustParser(mWebOfTrust, mReceivedIdentities)
-                            .parseObjectChangedNotification(notification), mReceivedTrusts);
+                            .parseObjectChangedEvent(event), mReceivedTrusts);
                     break;
                 case Scores:
-                    putNotification(
+                    putObjectChangedEvent(
                         new ScoreParser(mWebOfTrust, mReceivedIdentities)
-                            .parseObjectChangedNotification(notification), mReceivedScores);
+                            .parseObjectChangedEvent(event), mReceivedScores);
                     break;
                 default:
                     fail("Unknown SubscriptionType: " + type);
@@ -424,7 +423,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		}
 	}
 	
-	<T extends EventSource> void putNotification(
+	<T extends EventSource> void putObjectChangedEvent(
 	        final ChangeSet<T> changeSet, final HashMap<String, T> target) {
 	    
 		if(changeSet.beforeChange != null) {

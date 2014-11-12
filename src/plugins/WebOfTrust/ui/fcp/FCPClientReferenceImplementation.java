@@ -300,7 +300,7 @@ public final class FCPClientReferenceImplementation {
 				new FCPErrorHandler(),
 				new FCPBeginSynchronizationEventHandler(),
 				new FCPEndSynchronizationEventHandler(),
-				new FCPObjectChangedEventNotificationHandler()
+				new FCPObjectChangedEventHandler()
 		};
 		
 		for(FCPMessageHandler handler : handlers)
@@ -991,7 +991,7 @@ public final class FCPClientReferenceImplementation {
 	}
 
 	/**
-	 * Handles the "ObjectChangedEventNotification" message which WOT sends when an
+	 * Handles the "ObjectChangedEvent" message which WOT sends when an
 	 * {@link Identity}, {@link Trust} or {@link Score} was changed, added or deleted.
 	 * This will be send when we are subscribed to one of the above three classes.<br><br>
 	 * 
@@ -999,12 +999,12 @@ public final class FCPClientReferenceImplementation {
 	 * passes it to the event handler {@link SubscribedObjectChangedHandler} with the type parameter
 	 * matching Identity / Trust / Score.
 	 */
-	private final class FCPObjectChangedEventNotificationHandler
+	private final class FCPObjectChangedEventHandler
 	        extends MaybeFailingFCPMessageHandler {
 	    
 		@Override
 		public String getMessageName() {
-			return "ObjectChangedEventNotification";
+			return "ObjectChangedEvent";
 		}
 		
 		@SuppressWarnings("unchecked")
@@ -1023,7 +1023,7 @@ public final class FCPClientReferenceImplementation {
 		            mSubscribedObjectChangedHandlers.get(subscriptionType);
 		    
 		    final ChangeSet<EventSource> changeSet
-		        = (ChangeSet<EventSource>) parser.parseObjectChangedNotification(sfs);
+		        = (ChangeSet<EventSource>) parser.parseObjectChangedEvent(sfs);
 
 			handler.handleSubscribedObjectChanged(changeSet);
 		}
@@ -1066,7 +1066,7 @@ public final class FCPClientReferenceImplementation {
 
 	/**
 	 * Baseclass for parsing messages from WOT containing Identity/Trust/Score objects.<br>
-	 * This currently is limited to ObjectChangedEventNotification messages but might be more in
+	 * This currently is limited to ObjectChangedEvent messages but might be more in
 	 * the future.<br><br>
 	 * 
 	 * The implementing child classes only have to implement parsing of a single Identity/Trust/Score object. The format of the 
@@ -1099,7 +1099,7 @@ public final class FCPClientReferenceImplementation {
 			return result;
 		}
 
-		public ChangeSet<T> parseObjectChangedNotification(final SimpleFieldSet notification)
+		public ChangeSet<T> parseObjectChangedEvent(final SimpleFieldSet notification)
 		        throws MalformedURLException, FSParseException, InvalidParameterException {
 		    
 			final SimpleFieldSet beforeChange = getOwnSubset(notification.subset("BeforeChange"));
