@@ -266,7 +266,7 @@ public final class FCPClientReferenceImplementation {
 	 * The construct objects of those classes from data received by FCP. 
 	 */
     private final EnumMap
-	    <SubscriptionType, FCPObjectChangedNotificationParser<? extends EventSource>>
+	    <SubscriptionType, FCPEventSourceContainerParser<? extends EventSource>>
 	        mParsers = new EnumMap<>(SubscriptionType.class);
 
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
@@ -1014,7 +1014,7 @@ public final class FCPClientReferenceImplementation {
 		    
 		    final SubscriptionType subscriptionType = parseSubscriptionType(sfs);
 		    
-            final FCPObjectChangedNotificationParser<? extends EventSource> parser
+            final FCPEventSourceContainerParser<? extends EventSource> parser
                 = mParsers.get(subscriptionType);
             
 		    final SubscribedObjectChangedHandler<EventSource> handler
@@ -1064,19 +1064,18 @@ public final class FCPClientReferenceImplementation {
 	}
 
 	/**
-	 * Baseclass for parsing synchronization and notification messages which WOT sends:
-	 * - Synchronization messages are at the beginning of a {@link Subscription} and contain all data in the WOT database of the subscribed
-	 * type such as all {@link Identity}s / all {@link Trust}s / all {@link Score}s.
-	 * - {@link Notification} messages are sent if an {@link Identity} etc. has changed and contain the old / new version of it.
+	 * Baseclass for parsing messages from WOT containing Identity/Trust/Score objects.<br>
+	 * This currently is limited to ObjectChangedEventNotification messages but might be more in
+	 * the future.<br><br>
 	 * 
 	 * The implementing child classes only have to implement parsing of a single Identity/Trust/Score object. The format of the 
 	 * messages which contain multiple of them is a superset so the single-element parser can be used.
 	 */
-	public static abstract class FCPObjectChangedNotificationParser<T extends EventSource> {
+	public static abstract class FCPEventSourceContainerParser<T extends EventSource> {
 		
 		protected final WebOfTrustInterface mWoT;
 		
-		public FCPObjectChangedNotificationParser(final WebOfTrustInterface myWebOfTrust) {
+		public FCPEventSourceContainerParser(final WebOfTrustInterface myWebOfTrust) {
 			mWoT = myWebOfTrust;
 		}
 		
@@ -1118,7 +1117,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Parser for FCP messages which describe an {@link Identity} or {@link OwnIdentity} object.
 	 */
-	public static final class IdentityParser extends FCPObjectChangedNotificationParser<Identity> {
+	public static final class IdentityParser extends FCPEventSourceContainerParser<Identity> {
 
 		public IdentityParser(final WebOfTrustInterface myWebOfTrust) {
 			super(myWebOfTrust);
@@ -1183,7 +1182,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Parser for FCP messages which describe a {@link Trust} object.
 	 */
-	public static final class TrustParser extends FCPObjectChangedNotificationParser<Trust> {
+	public static final class TrustParser extends FCPEventSourceContainerParser<Trust> {
 
 		private final Map<String, Identity> mIdentities;
 		
@@ -1223,7 +1222,7 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Parser for FCP messages which describe a {@link Score} object.
 	 */
-	public static final class ScoreParser extends FCPObjectChangedNotificationParser<Score> {
+	public static final class ScoreParser extends FCPEventSourceContainerParser<Score> {
 		
 		private final Map<String, Identity> mIdentities;
 		

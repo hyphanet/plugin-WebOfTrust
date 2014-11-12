@@ -26,7 +26,7 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
-import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.FCPObjectChangedNotificationParser;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.FCPEventSourceContainerParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.IdentityParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ScoreParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionType;
@@ -328,7 +328,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
     void importSynchronization(final SubscriptionType type, final UUID versionID)
 	        throws MalformedURLException, FSParseException, InvalidParameterException {
 	    
-	    final FCPObjectChangedNotificationParser<? extends EventSource> parser;
+	    final FCPEventSourceContainerParser<? extends EventSource> parser;
 	    final List<? extends EventSource> result = new LinkedList<>();
 	    final List<EventSource> resultCasted = (LinkedList<EventSource>)result;
 	    
