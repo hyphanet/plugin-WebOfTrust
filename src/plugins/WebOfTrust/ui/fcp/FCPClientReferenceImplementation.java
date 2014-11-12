@@ -175,7 +175,7 @@ public final class FCPClientReferenceImplementation {
 	 * BeginSubscriptionSynchronizationHandler, EndSubscriptionSynchronizationHandler,
 	 * SubscribedObjectChangedHandler)}.
 	 */
-	private enum SubscriptionType {
+	public enum SubscriptionType {
 		/** @see IdentitiesSubscription */
 		Identities(Identity.class),
 		/** @see TrustsSubscription */

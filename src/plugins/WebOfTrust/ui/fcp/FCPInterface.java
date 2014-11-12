@@ -39,6 +39,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionType;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
@@ -1454,7 +1455,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final SimpleFieldSet oldIdentity = handleGetIdentity((Identity)notification.getOldObject(), null);
     	final SimpleFieldSet newIdentity = handleGetIdentity((Identity)notification.getNewObject(), null);
     	
-        sendChangeNotification(clientID, "IdentityChangedNotification", oldIdentity, newIdentity);
+        sendChangeNotification(clientID, SubscriptionType.Identities, oldIdentity, newIdentity);
     }
     
     /**
@@ -1467,7 +1468,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final SimpleFieldSet oldTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getOldObject(), "0");
     	final SimpleFieldSet newTrust = handleGetTrust(new SimpleFieldSet(true), (Trust)notification.getNewObject(), "0");
 
-        sendChangeNotification(clientID, "TrustChangedNotification", oldTrust, newTrust);
+        sendChangeNotification(clientID, SubscriptionType.Trusts, oldTrust, newTrust);
     }
     
     /**
@@ -1480,22 +1481,19 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final SimpleFieldSet oldScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getOldObject(), "0");
     	final SimpleFieldSet newScore = handleGetScore(new SimpleFieldSet(true), (Score)notification.getNewObject(), "0");
 
-        sendChangeNotification(clientID, "ScoreChangedNotification", oldScore, newScore);
+        sendChangeNotification(clientID, SubscriptionType.Scores, oldScore, newScore);
     }
     
-    private void sendChangeNotification(final UUID clientID, final String message,
+    private void sendChangeNotification(
+            final UUID clientID, final SubscriptionType subscriptionType,
             final SimpleFieldSet beforeChange, final SimpleFieldSet afterChange)
                 throws FCPCallFailedException, IOException, InterruptedException {
         
         // Not a reply to an existing message since it is sent due to an event, not a client message
         final FCPPluginMessage fcpMessage = FCPPluginMessage.construct();
         
-        // FIXME: Always have Message = "ObjectChangedNotification" instead of
-        // IdentityChangedNotification / TrustChangedNotification / ScoreChangedNotification to
-        // match the class name FCPObjectChangedNotificationParser in
-        // FCPClientReferenceImplementation. This will probably allow eliminating or simplifying the
-        // classes FCPIdentityChangedNotificationHandler et al.
-        fcpMessage.params.putOverwrite("Message", message);
+        fcpMessage.params.putOverwrite("Message", "ObjectChangedEventNotification");
+        fcpMessage.params.putOverwrite("SubscriptionType", subscriptionType.name());
         fcpMessage.params.put("BeforeChange", beforeChange);
         fcpMessage.params.put("AfterChange", afterChange);
         
