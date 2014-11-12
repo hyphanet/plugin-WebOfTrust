@@ -1081,7 +1081,16 @@ public final class FCPClientReferenceImplementation {
 			mWoT = myWebOfTrust;
 		}
 		
-		public ArrayList<T> parseSynchronization(final SimpleFieldSet wholeSfs) throws FSParseException, MalformedURLException, InvalidParameterException {
+		/**
+		 * @Deprecated TODO: Currently unused. Could be put to use if we implement public functions
+		 * in {@link FCPClientReferenceImplementation} to allow the user to get multiple
+		 * objects from WOT by FCP when they are needed due to a current demand, not due to
+		 * event-notifications. For example "getIntroductionPuzzles()" maybe.
+		 */
+		@Deprecated
+		public ArrayList<T> parseMultiple(final SimpleFieldSet wholeSfs)
+		        throws FSParseException, MalformedURLException, InvalidParameterException {
+		    
 			final SimpleFieldSet sfs = getOwnSubset(wholeSfs);
 			final int amount = sfs.getInt("Amount");
 			final ArrayList<T> result = new ArrayList<T>(amount+1);
