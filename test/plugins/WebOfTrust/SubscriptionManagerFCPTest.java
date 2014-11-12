@@ -385,8 +385,6 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	}
 
 	void importNotifications() throws MalformedURLException, FSParseException, InvalidParameterException {
-
-	
 		while(mReplyReceiver.hasNextResult()) {
 		    final FCPPluginMessage notificationMessage = mReplyReceiver.getNextResult();
 		    
@@ -399,28 +397,28 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 			final String message = notification.get("Message");
 			assertEquals("ObjectChangedEventNotification", message);
 			
-			    SubscriptionType type
-			        = SubscriptionType.valueOf(notification.get("SubscriptionType"));
-			    
-			    switch(type) {
-                    case Identities:
-                        putNotification(
-                            new IdentityParser(mWebOfTrust)
-                                .parseObjectChangedNotification(notification), mReceivedIdentities);
-                        break;
-                    case Trusts:
-                        putNotification(
-                            new TrustParser(mWebOfTrust, mReceivedIdentities)
-                                .parseObjectChangedNotification(notification), mReceivedTrusts);
-                        break;
-                    case Scores:
-                        putNotification(
-                            new ScoreParser(mWebOfTrust, mReceivedIdentities)
-                                .parseObjectChangedNotification(notification), mReceivedScores);
-                        break;
-                    default:
-                        fail("Unknown SubscriptionType: " + type);
-			    }
+		    SubscriptionType type
+		        = SubscriptionType.valueOf(notification.get("SubscriptionType"));
+		    
+		    switch(type) {
+                case Identities:
+                    putNotification(
+                        new IdentityParser(mWebOfTrust)
+                            .parseObjectChangedNotification(notification), mReceivedIdentities);
+                    break;
+                case Trusts:
+                    putNotification(
+                        new TrustParser(mWebOfTrust, mReceivedIdentities)
+                            .parseObjectChangedNotification(notification), mReceivedTrusts);
+                    break;
+                case Scores:
+                    putNotification(
+                        new ScoreParser(mWebOfTrust, mReceivedIdentities)
+                            .parseObjectChangedNotification(notification), mReceivedScores);
+                    break;
+                default:
+                    fail("Unknown SubscriptionType: " + type);
+		    }
 		}
 	}
 	
