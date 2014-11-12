@@ -62,9 +62,10 @@ import freenet.support.io.NativeThread;
  * - Copy-paste this class. Make sure to specify the hash of the commit which your copy is based on!
  *   <br>
  * - Do NOT modify it. Instead, implement a separate class which implements the required interfaces
- *   {@link ConnectionStatusChangedHandler}, {@link SubscriptionSynchronizationHandler} and
- *   {@link SubscribedObjectChangedHandler}. In your separate class, create an object of this class
- *   here, and use its public functions to pass your handler implementations to it.<br>
+ *   {@link ConnectionStatusChangedHandler}, {@link BeginSubscriptionSynchronizationHandler} and
+ *   {@link EndSubscriptionSynchronizationHandler}, {@link SubscribedObjectChangedHandler}.
+ *   In your separate class, create an object of this class here, and use its public functions to
+ *   pass your handler implementations to it.<br>
  * - If you do need to modify this class for improvements, please ensure that they are backported
  *   to WOT.<br>
  * - It should periodically be checked if all client applications use the most up to date version
