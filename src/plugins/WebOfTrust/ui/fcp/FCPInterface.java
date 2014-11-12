@@ -72,51 +72,6 @@ import freenet.support.SimpleFieldSet;
 public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSideFCPMessageHandler {
 
     /**
-     * Timeout when sending a synchronization of a {@link SubscriptionManager.Subscription} to a
-     * client. For an explanation of what a synchronization is, see
-     * {@link #handleSubscribe(FCPPluginClient, FCPPluginMessage)}<br>
-     * When this expires, deploying of the synchronization is considered as failed, and the
-     * {@link SubscriptionManager} is notified about that. It then may re-sent it or terminate the
-     * {@link Subscription} upon repeated failure. (The current implementation immediately
-     * terminates the {@link Subscription}.<br><br>
-     * 
-     * FIXME: Optimization: To reduce this constant, the following can be done:<br>
-     * The current implementation does not store the synchronization as a {@link Notification} but
-     * rather sends it out immediately in
-     * {@link #handleSubscribe(FCPPluginClient, FCPPluginMessage)}. This has the following bad
-     * impact upon performance:<br>
-     * - A synchronization possibly contains the whole database of Identity/Trust/Score, so it
-     *   takes a long time to send it over the network.<br>
-     * - The sending thread only returns *after* the client has processed it and sent a reply,
-     *   which itself can take a long time since things such as Freetalk can have to do huge
-     *   database restructuring such as deleting all messages of deleted Identitys.<br>
-     * - The serialization of the Identity/Trust/Score objects into SimpleFieldSet happens in the
-     *   sending thread as well, so it is added to the blocking time of the sending thread.<br>
-     * - The lock upon the WOT is taken during the whole time it takes to send the message. So
-     *   this will block everything else, including the web interface, during the sum of the time
-     *   of the above three things.<br>
-     * <br>
-     * Instead, rewrite {@link SubscriptionManager} to store the synchronization as a
-     * {@link Notification} object: Notification objects contain the event data as a copy of the
-     * WOT objects serialized into a byte[], the event data is <b>not</b> read from the
-     * {@link WebOfTrust} during the sending. They are send out later in a separate thread than the
-     * one which read out the data from the {@link WebOfTrust}.<br> 
-     * This will effectively allow us to split the aforementioned three bad effects (time to
-     * serialize, time to send, time it takes for the client to process) into at last two stages:
-     * <br>
-     * - Generation of the {@link Notification}, which locks the {@link WebOfTrust}.<br>
-     * - Sending of the {@link Notification}, which only locks the SubscriptionManager, not the
-     *   {@link WebOfTrust}, and therefore not the user interface.<br> 
-     * When fixing this make sure to adapt the JavaDoc at {@link #handleSubscribe(FCPPluginClient,
-     * FCPPluginMessage)} afterwards.<br>
-     * Notice that it will also have the bonus of allowing us to re-send a failed synchronization
-     * instead of terminating the Subscription. If you implement this, be sure to change the JavaDoc
-     * of this constant at the beginning to remove the part which says that a timeout results in
-     * termination of the subscription.
-     */
-    public static final int SUBSCRIPTION_SYNCHRONIZATION_TIMEOUT_MINUTES = 5;
-
-    /**
      * Timeout when sending an {@link SubscriptionManager.Notification} to a client.<br>
      * When this expired, deploying of the notification is considered as failed, and the
      * {@link SubscriptionManager} is notified about that. It then may re-sent it or terminate the
