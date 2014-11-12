@@ -773,12 +773,11 @@ public final class FCPClientReferenceImplementation {
 	 * @see EndSubscriptionSynchronizationHandler
 	 * @see SubscribedObjectChangedHandler
 	 */
-	public final class ProcessingFailedException extends Exception {
+	@SuppressWarnings("serial")
+    public final class ProcessingFailedException extends Exception {
 		public ProcessingFailedException(Throwable t) {
 			super(t);
 		}
-
-		private static final long serialVersionUID = 1L;
 	}
 	
 	/**
