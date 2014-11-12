@@ -258,15 +258,18 @@ public final class FCPClientReferenceImplementation {
 	/** Maps the String name of WOT FCP messages to the handler which shall deal with them */
 	private HashMap<String, FCPMessageHandler> mFCPMessageHandlers = new HashMap<String, FCPMessageHandler>();
 	
-	/** Constructs {@link Identity} objects from {@link SimpleFieldSet} data received via FCP. */
-	private final IdentityParser mIdentityParser;
-	
-	/** Constructs {@link Trust} objects from {@link SimpleFieldSet} data received via FCP. */
-	private final TrustParser mTrustParser;
-	
-	/** Constructs {@link Score} objects from {@link SimpleFieldSet} data received via FCP. */
-	private final ScoreParser mScoreParser;
-	
+	/**
+	 * For each value of the enum {@link SubscriptionType}, contains a parser matching the class
+	 * value of the following field of the SubscriptionType:<br>
+	 * <code>Class{@literal <? extends EventSource>} {@link SubscriptionType#subscribedObjectType}
+	 * </code><br><br>
+	 * 
+	 * The construct objects of those classes from data received by FCP. 
+	 */
+    private final EnumMap
+	    <SubscriptionType, FCPObjectChangedNotificationParser<? extends EventSource>>
+	        mParsers = new EnumMap<>(SubscriptionType.class);
+
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
 	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
 	private static transient volatile boolean logDEBUG = false;
@@ -298,9 +301,7 @@ public final class FCPClientReferenceImplementation {
 				new FCPErrorHandler(),
 				new FCPBeginSynchronizationNotificationHandler(),
 				new FCPEndSynchronizationNotificationHandler(),
-				new FCPIdentityChangedNotificationHandler(),
-				new FCPTrustChangedNotificationHandler(),
-				new FCPScoreChangedNotificationHandler()
+				new FCPObjectChangedEventNotificationHandler()
 		};
 		
 		for(FCPMessageHandler handler : handlers)
@@ -309,9 +310,10 @@ public final class FCPClientReferenceImplementation {
 		// To prevent client-plugins which copy-paste this reference implementation from having to copy-paste the WebOfTrust class,
 		// we use MockWebOfTrust as a replacement.
 		final MockWebOfTrust wot = new MockWebOfTrust();
-		mIdentityParser = new IdentityParser(wot);
-		mTrustParser = new TrustParser(wot, mIdentityStorage);
-		mScoreParser = new ScoreParser(wot, mIdentityStorage);
+		
+		mParsers.put(SubscriptionType.Identities, new IdentityParser(wot));
+		mParsers.put(SubscriptionType.Trusts, new TrustParser(wot, mIdentityStorage));
+		mParsers.put(SubscriptionType.Scores, new ScoreParser(wot, mIdentityStorage));
 	}
 	
 	/**
@@ -989,66 +991,46 @@ public final class FCPClientReferenceImplementation {
 	}
 
 	/**
-	 * Handles the "IdentityChangedNotification" message which WOT sends when an {@link Identity} or {@link OwnIdentity} was changed, added or deleted.
-	 * This will be send if we are subscribed to {@link SubscriptionType#Identities}.
+	 * Handles the "ObjectChangedEventNotification" message which WOT sends when an
+	 * {@link Identity}, {@link Trust} or {@link Score} was changed, added or deleted.
+	 * This will be send when we are subscribed to one of the above three classes.<br><br>
 	 * 
-	 * Parses the contained {@link Identity} & passes it to the event handler 
-	 * {@link FCPClientReferenceImplementation#handleIdentityChangedNotification(Identity, Identity)}.
+	 * Parses the contained {@link Identity} / {@link Trust} / {@link Score} and 
+	 * passes it to the event handler {@link SubscribedObjectChangedHandler} with the type parameter
+	 * matching Identity / Trust / Score.
 	 */
-	private final class FCPIdentityChangedNotificationHandler extends MaybeFailingFCPMessageHandler {
+	private final class FCPObjectChangedEventNotificationHandler
+	        extends MaybeFailingFCPMessageHandler {
+	    
 		@Override
 		public String getMessageName() {
-			return "IdentityChangedNotification";
+			return "ObjectChangedEventNotification";
 		}
 		
 		@SuppressWarnings("unchecked")
 		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
-			((SubscribedObjectChangedHandler<Identity>)mSubscribedObjectChangedHandlers.get(SubscriptionType.Identities))
-				.handleSubscribedObjectChanged(mIdentityParser.parseObjectChangedNotification(sfs));
-		}
-	}
-	
-	/**
-	 * Handles the "TrustChangedNotification" message which WOT sends when a {@link Trust} was changed, added or deleted.
-	 * This will be send if we are subscribed to {@link SubscriptionType#Trusts}.
-	 * 
-	 * Parses the contained {@link Trust} & passes it to the event handler 
-	 * {@link FCPClientReferenceImplementation#handleTrustChangedNotification(Trust, Trust)}.
-	 */
-	private final class FCPTrustChangedNotificationHandler extends MaybeFailingFCPMessageHandler  {
-		@Override
-		public String getMessageName() {
-			return "TrustChangedNotification";
-		}
-		
-		@SuppressWarnings("unchecked")
-		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
-			((SubscribedObjectChangedHandler<Trust>)mSubscribedObjectChangedHandlers.get(SubscriptionType.Trusts))
-				.handleSubscribedObjectChanged(mTrustParser.parseObjectChangedNotification(sfs));
-		}
-	}
+		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data)
+		        throws FSParseException, InvalidParameterException, MalformedURLException,
+		               ProcessingFailedException {
+		    
+		    final SubscriptionType subscriptionType = parseSubscriptionType(sfs);
+		    
+            final FCPObjectChangedNotificationParser<? extends EventSource> parser
+                = mParsers.get(subscriptionType);
+            
+		    final SubscribedObjectChangedHandler<EventSource> handler
+		        = (SubscribedObjectChangedHandler<EventSource>)
+		            mSubscribedObjectChangedHandlers.get(subscriptionType);
+		    
+		    final ChangeSet<EventSource> changeSet
+		        = (ChangeSet<EventSource>) parser.parseObjectChangedNotification(sfs);
 
-	/**
-	 * Handles the "ScoreChangedNotification" message which WOT sends when a {@link Score} was changed, added or deleted.
-	 * This will be send if we are subscribed to {@link SubscriptionType#Scores}.
-	 * 
-	 * Parses the contained {@link Score} & passes it to the event handler 
-	 * {@link FCPClientReferenceImplementation#handleScoreChangedNotification(Score, Score)}.
-	 */
-	private final class FCPScoreChangedNotificationHandler extends MaybeFailingFCPMessageHandler {
-		@Override
-		public String getMessageName() {
-			return "ScoreChangedNotification";
+			handler.handleSubscribedObjectChanged(changeSet);
 		}
 		
-		@SuppressWarnings("unchecked")
-		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
-			((SubscribedObjectChangedHandler<Score>)mSubscribedObjectChangedHandlers.get(SubscriptionType.Scores))
-				.handleSubscribedObjectChanged(mScoreParser.parseObjectChangedNotification(sfs));
-		}
+        private final SubscriptionType parseSubscriptionType(final SimpleFieldSet sfs) {
+            return SubscriptionType.valueOf(sfs.get("SubscriptionType"));
+        }
 	}
 
 	/**
