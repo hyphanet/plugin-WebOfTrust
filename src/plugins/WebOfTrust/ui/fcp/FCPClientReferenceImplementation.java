@@ -771,7 +771,8 @@ public final class FCPClientReferenceImplementation {
 	}
 	
 	/**
-	 * @see SubscriptionSynchronizationHandler
+	 * @see BeginSubscriptionSynchronizationHandler
+	 * @see EndSubscriptionSynchronizationHandler
 	 * @see SubscribedObjectChangedHandler
 	 */
 	public final class ProcessingFailedException extends Exception {
@@ -1290,36 +1291,26 @@ public final class FCPClientReferenceImplementation {
 		 */
 		void handleConnectionStatusChanged(boolean connected);
 	}
-	
-	public interface SubscriptionSynchronizationHandler<T extends EventSource> {
-		/**
-		 * Called very soon after you have subscribed via {@link FCPClientReferenceImplementation#
-		 * subscribe(Class, BeginSubscriptionSynchronizationHandler,
-		 * EndSubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}.
-		 * The type T matches the Class parameter of the above subscribe function.
-		 * The passed {@link Collection} contains ALL objects in the WOT database of whose type T you have subscribed to:
-		 * - For {@link Identity}, all {@link Identity} and {@link OwnIdentity} objects in the WOT database.
-		 * - For {@link Trust}, all {@link Trust} objects in the WOT database.
-		 * - For {@link Score}, all {@link Score} objects in the WOT database.
-		 * You should store any of them which you need.
-		 * 
-		 * WOT sends ALL objects to this handler because this will cut down future traffic very much: For example, if an {@link Identity}
-		 * changes, WOT will only have to send the new version of it for allowing you to make your database completely up-to-date again.
-		 * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
-		 * a {@link SubscribedObjectChangedHandler} instead.
-		 * 
-		 * @throws ProcessingFailedException You are free to throw this. The failure of the handler will be signaled to WOT. It will cause the
-		 * subscription to fail. The client will automatically retry subscribing after a typical delay of roughly
-		 * {@link FCPClientReferenceImplementation#WOT_PING_DELAY}. You can use this mechanism for programming your client in a transactional
-		 * style: If anything in the transaction which processes this handler fails, roll it back and make the handler throw.
-		 * You can then expect to receive the same call again after the delay and hope that the transaction will succeed the next time.
-		 */
-		void handleSubscriptionSynchronization(Collection<T> allObjects) throws ProcessingFailedException;
-	}
 
 	public interface BeginSubscriptionSynchronizationHandler<T extends EventSource>  {
-	    /** FIXME: Recycle JavaDoc of SubscriptionSynchronizationHandler */
         /**
+         * Called very soon after you have subscribed via {@link FCPClientReferenceImplementation#
+         * subscribe(Class, BeginSubscriptionSynchronizationHandler,
+         * EndSubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)}.
+         * The type T matches the Class parameter of the above subscribe function.
+         * 
+         * After this, a series of calls to your {@link SubscribedObjectChangedHandler} will follow,
+         * in total shipping ALL objects in the WOT database of whose type T you have subscribed to:
+         * - For {@link Identity}, all {@link Identity} and {@link OwnIdentity} objects in the WOT database.
+         * - For {@link Trust}, all {@link Trust} objects in the WOT database.
+         * - For {@link Score}, all {@link Score} objects in the WOT database.
+         * You should store any of them which you need.
+         * 
+         * WOT sends ALL objects at the beginning of a connection because this will cut down future traffic very much: For example, if an {@link Identity}
+         * changes, WOT will only have to send the new version of it for allowing you to make your database completely up-to-date again.
+         * This means that this handler is only called once at the beginning of a {@link Subscription}, all changes after that will trigger
+         * a {@link SubscribedObjectChangedHandler} instead.
+         * 
          * @throws ProcessingFailedException You are free to throw this. The failure of the handler will be signaled to WOT. It will cause the
          * same notification to be re-sent after a delay of roughly {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}.
          * You can use this mechanism for programming your client in a transactional style: If anything in the transaction which processes 
@@ -1331,8 +1322,22 @@ public final class FCPClientReferenceImplementation {
 	}
 
 	public interface EndSubscriptionSynchronizationHandler<T extends EventSource>  {
-	    /** FIXME: Recycle JavaDoc of SubscriptionSynchronizationHandler */
 	    /**
+	     * Marks the end of the series of {@link ObjectChangedNotification} started by
+	     * {@link BeginSubscriptionSynchronizationHandler#}. See its JavaDoc for the purpose of
+	     * this mechanism.<br><br>
+	     * 
+	     * Upon processing of this callback, you must delete all objects of the type T from your
+	     * database whose versionID does not match the passed versionID:<br>
+	     * Each of the objects passed during the series to your
+	     * {@link SubscribedObjectChangedHandler} had been specified with the same versionID. As
+	     * the subscription synchronization contains the FULL dataset of all objects of the type T
+	     * in the WOT database, anything which is only contained in your database from a previous
+	     * connection but was not contained in the synchronization is an obsolete object which
+	     * does not exist in the WOT database anymore.<br>
+	     * The versionID serves as a "mark-and-sweep" garbage collection mechanism to allow you to
+	     * determine which those obsolete objects are, and delete them.
+	     * 
          * @throws ProcessingFailedException You are free to throw this. The failure of the handler will be signaled to WOT. It will cause the
          * same notification to be re-sent after a delay of roughly {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}.
          * You can use this mechanism for programming your client in a transactional style: If anything in the transaction which processes 
@@ -1357,7 +1362,16 @@ public final class FCPClientReferenceImplementation {
 		 * The passed {@link ChangeSet} contains the version of the object  before the change and after the change.
 		 * 
 		 * ATTENTION: The type of an {@link Identity} can change from {@link OwnIdentity} to {@link Identity} or vice versa.
-		 * This will also trigger a call to this event handler.
+		 * This will also trigger a call to this event handler.<br><br>
+		 * 
+		 * ATTENTION: If the notification is sent as part of series marked by
+		 * {@link BeginSynchronizationNotification} and
+		 * {@link EndSubscriptionSynchronizationHandler}, the {@link ChangeSet#beforeChange} will
+		 * always be null, even if the object had existed previously.<br>
+		 * This is because the purpose of the synchronization is to fix an unsynchronized state of
+		 * your client: Because WOT and the client are not in sync, WOT cannot know whether your
+		 * client already knew about the object before the synchronization. So it just sets it to
+		 * null.
 		 * 
 		 * @throws ProcessingFailedException You are free to throw this. The failure of the handler will be signaled to WOT. It will cause the
 		 * same notification to be re-sent after a delay of roughly {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}.
