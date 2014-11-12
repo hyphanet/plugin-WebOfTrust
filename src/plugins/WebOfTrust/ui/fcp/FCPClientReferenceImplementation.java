@@ -183,21 +183,19 @@ public final class FCPClientReferenceImplementation {
 		/** @see ScoresSubscription */
 		Scores(Score.class);
 		
-		public Class<? extends EventSource> subscribedObjectType;
+		public final Class<? extends EventSource> subscribedObjectType;
 		
 		SubscriptionType(Class<? extends EventSource> mySubscribedObjectType) {
 			subscribedObjectType = mySubscribedObjectType;
 		}
 		
 		public static SubscriptionType fromClass(Class<? extends EventSource> clazz) {
-			if(clazz == Identity.class)
-				return Identities;
-			else if(clazz == Trust.class)
-				return Trusts;
-			else if(clazz == Score.class)
-				return Scores;
-			else
-				throw new IllegalArgumentException("Not a valid SubscriptionType: " + clazz);
+		    for(SubscriptionType type : values()) {
+		        if(type.subscribedObjectType == clazz)
+		            return type;
+		    }
+		    
+		    throw new IllegalArgumentException("Not a valid SubscriptionType: " + clazz);
 		}
 	};
 	
