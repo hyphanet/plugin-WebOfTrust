@@ -350,6 +350,8 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
             final String message = notification.get("Message");
             
             if(message.equals("EndSynchronizationNotification")) {
+                // We're not interested in processing the EndSynchronizationNotification here, so we
+                // push it back and let the caller deal with it.
                 mReplyReceiver.restoreNextResult(notificationMessage);
                 break;
             }
@@ -395,8 +397,8 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		    
 			final SimpleFieldSet notification = notificationMessage.params;
 			final String message = notification.get("Message");
+			assertEquals("ObjectChangedEventNotification", message);
 			
-			if(message.equals("ObjectChangedEventNotification")) {
 			    SubscriptionType type
 			        = SubscriptionType.valueOf(notification.get("SubscriptionType"));
 			    
@@ -419,14 +421,6 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
                     default:
                         fail("Unknown SubscriptionType: " + type);
 			    }
-			} else if(message.equals("EndSynchronizationNotification")) {
-			    // We're not interested in processing the EndSynchronizationNotification here, so we
-			    // push it back and let the caller deal with it.
-			    mReplyReceiver.restoreNextResult(notificationMessage);
-			    return;
-			} else {
-			    fail("Unknown message type: " + message);
-			}
 		}
 	}
 	
