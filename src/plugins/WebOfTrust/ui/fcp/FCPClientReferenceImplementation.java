@@ -307,7 +307,6 @@ public final class FCPClientReferenceImplementation {
 				new FCPSubscriptionSucceededHandler(),
 				new FCPSubscriptionTerminatedHandler(),
 				new FCPErrorHandler(),
-				new FCPScoresSynchronizationHandler(),
 				new FCPBeginSynchronizationNotificationHandler(),
 				new FCPEndSynchronizationNotificationHandler(),
 				new FCPIdentityChangedNotificationHandler(),
@@ -956,27 +955,6 @@ public final class FCPClientReferenceImplementation {
 		}
 		
 		abstract void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) throws Throwable;
-	}
-
-	/**
-	 * Handles the "Scores" message which we receive in reply to {@link FCPClientReferenceImplementation#fcp_Subscribe(SubscriptionType)}
-	 * with {@link SubscriptionType#Scores}.
-	 * 
-	 * Parses the contained set of all WOT {@link Score}s & passes it to the event handler 
-	 * {@link FCPClientReferenceImplementation#handleScoresSynchronization(Collection)}.
-	 */
-	private final class FCPScoresSynchronizationHandler extends MaybeFailingFCPMessageHandler {
-		@Override
-		public String getMessageName() {
-			return "Scores";
-		}
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public void handle_MaybeFailing(SimpleFieldSet sfs, Bucket data) throws MalformedURLException, FSParseException, InvalidParameterException, ProcessingFailedException {
-			((SubscriptionSynchronizationHandler<Score>)mSubscriptionSynchronizationHandlers.get(SubscriptionType.Scores))
-				.handleSubscriptionSynchronization(mScoreParser.parseSynchronization(sfs));
-		}
 	}
 
 	/**
