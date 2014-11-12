@@ -1271,7 +1271,8 @@ public final class FCPClientReferenceImplementation {
 		 * EndSubscriptionSynchronizationHandler, SubscribedObjectChangedHandler)} in this handler!
 		 * Subscriptions will be filed automatically by the client whenever the connection is
 		 * established.
-		 * It will also automatically reconnect if the connection is lost.
+		 * It will also automatically reconnect if the connection is lost.<br><br>
+		 * 
 		 * ATTENTION: The client will automatically try to reconnect, you do NOT have to call {@link FCPClientReferenceImplementation#start()}
 		 * or anything else in this handler!
 		 */
