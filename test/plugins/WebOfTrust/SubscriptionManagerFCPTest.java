@@ -377,8 +377,8 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	<T extends Persistent> void putSynchronization(final List<T> source, final HashMap<String, T> target) {
 		assertEquals(0, target.size());
 		for(final T p : source) {
-			assertFalse(target.containsKey(p.getID()));
-			target.put(p.getID(), p);
+			final T previous = target.put(p.getID(), p);
+			assertEquals(null, previous);
 		}
 	}
 
