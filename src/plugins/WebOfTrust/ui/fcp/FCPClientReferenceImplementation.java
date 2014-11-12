@@ -502,7 +502,7 @@ public final class FCPClientReferenceImplementation {
 			}
 		} catch(PluginNotFoundException e) {
 			Logger.warning(this, "Cannot connect to WOT!");
-			// force_disconnect() does this for us.
+			// The force_disconnect() at the beginning of the function already did this for us.
 			/*
 			try {
 				mConnectionStatusChangedHandler.handleConnectionStatusChanged(false);
