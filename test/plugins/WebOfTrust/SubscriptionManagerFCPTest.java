@@ -28,6 +28,7 @@ import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.IdentityParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ScoreParser;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionType;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.TrustParser;
 import freenet.node.FSParseException;
 import freenet.node.fcp.FCPPluginClient;
@@ -369,20 +370,30 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		    
 			final SimpleFieldSet notification = notificationMessage.params;
 			final String message = notification.get("Message");
-			if(message.equals("IdentityChangedNotification")) {
-				putNotification(
-				    new IdentityParser(mWebOfTrust).parseObjectChangedNotification(notification),
-				    mReceivedIdentities);
-			} else if(message.equals("TrustChangedNotification")) {
-				putNotification(
-				    new TrustParser(mWebOfTrust, mReceivedIdentities)
-				        .parseObjectChangedNotification(notification),
-				    mReceivedTrusts);
-			} else if(message.equals("ScoreChangedNotification")) {
-				putNotification(
-				    new ScoreParser(mWebOfTrust, mReceivedIdentities)
-				        .parseObjectChangedNotification(notification),
-				    mReceivedScores);
+			
+			if(message.equals("ObjectChangedEventNotification")) {
+			    SubscriptionType type
+			        = SubscriptionType.valueOf(notification.get("SubscriptionType"));
+			    
+			    switch(type) {
+                    case Identities:
+                        putNotification(
+                            new IdentityParser(mWebOfTrust)
+                                .parseObjectChangedNotification(notification), mReceivedIdentities);
+                        break;
+                    case Trusts:
+                        putNotification(
+                            new TrustParser(mWebOfTrust, mReceivedIdentities)
+                                .parseObjectChangedNotification(notification), mReceivedTrusts);
+                        break;
+                    case Scores:
+                        putNotification(
+                            new ScoreParser(mWebOfTrust, mReceivedIdentities)
+                                .parseObjectChangedNotification(notification), mReceivedScores);
+                        break;
+                    default:
+                        fail("Unknown SubscriptionType: " + type);
+			    }
 			} else if(message.equals("EndSynchronizationNotification")) {
 			    // We're not interested in processing the EndSynchronizationNotification here, so we
 			    // push it back and let the caller deal with it.
