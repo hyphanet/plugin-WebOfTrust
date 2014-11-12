@@ -19,7 +19,6 @@ import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.BeginSubscript
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.EndSubscriptionSynchronizationHandler;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscribedObjectChangedHandler;
-import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionSynchronizationHandler;
 
 import com.db4o.ObjectSet;
 
@@ -168,56 +167,6 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	@Override
 	public void handleConnectionStatusChanged(final boolean connected) {
 		if(logMINOR) Logger.minor(this, "handleConnectionStatusChanged(" + connected + ")");
-	}
-
-	private final class SubscriptionSynchronizationHandlerImpl<T extends EventSource>
-	        implements SubscriptionSynchronizationHandler<T> {
-	    
-		private final Class<T> mClass;
-		private final HashMap<String, T> mTarget;
-		
-		public SubscriptionSynchronizationHandlerImpl(final Class<T> myClass,
-				final HashMap<String, T> myTarget) {
-			mClass = myClass;
-			mTarget = myTarget;
-		}
-		
-		/**
-		 * Fill our existing "database" (the {@link HashMap} mTarget) with the synchronization of ALL data which we have received from WOT.
-		 */
-		public void handleSubscriptionSynchronization(final Collection<T> source) {
-            if(logMINOR) {
-                Logger.minor(this, "handleSubscriptionSynchronization() for subscription type: "
-                    + mClass);
-            }
-
-			if(mTarget.size() > 0) {
-				Logger.normal(this, "Received additional synchronization, validating existing data against it...");
-				// ATTENTION: This can happen when the connection to WOT is lost temporarily. Therefore, in a real client, you should
-				// update your existing dataset WITHOUT complaining about mismatches.
-
-				if(source.size() != mTarget.size())
-					Logger.error(this, "Size mismatch: received size " + source.size() + " != existing size " + mTarget.size());
-				else {
-					for(final T expected : source) {
-						final T existing = mTarget.get(expected);
-						if(existing == null)
-							Logger.error(this, "Not found: expected " + expected);
-						else if(!existing.equals(expected)) {
-							Logger.error(this, "Not equals: expected " + expected + " to existing " + existing);
-							existing.equals(expected); // For being able to step inside of it with the debugger if you set a breakpoint at the previous line.
-						}
-					}
-				}
-				mTarget.clear();
-			}
-
-			for(final T p : source) {
-				mTarget.put(p.getID(), p);
-			}
-
-			if(logMINOR) Logger.minor(this, "handleSubscriptionSynchronization() finished.");
-		}
 	}
 
 	private final class BeginSubscriptionSynchronizationHandlerImpl<T extends EventSource>
