@@ -499,7 +499,8 @@ public final class FCPClientReferenceImplementation {
 			try {
 				mConnectionStatusChangedHandler.handleConnectionStatusChanged(true);
 			} catch(Throwable t) {
-				Logger.warning(this, "ConnectionStatusChangedHandler.handleConnectionStatusChanged() threw up, please fix your handler!", t);
+				Logger.error(this, "ConnectionStatusChangedHandler.handleConnectionStatusChanged() "
+				                 + "threw up, please fix your handler!", t);
 			}
 		} catch(PluginNotFoundException e) {
 			Logger.warning(this, "Cannot connect to WOT!");
