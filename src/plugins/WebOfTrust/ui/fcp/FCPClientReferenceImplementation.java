@@ -1353,7 +1353,7 @@ public final class FCPClientReferenceImplementation {
 		 * This will also trigger a call to this event handler.<br><br>
 		 * 
 		 * ATTENTION: If the notification is sent as part of series marked by
-		 * {@link BeginSynchronizationNotification} and
+		 * {@link BeginSubscriptionSynchronizationHandler} and
 		 * {@link EndSubscriptionSynchronizationHandler}, the {@link ChangeSet#beforeChange} will
 		 * always be null, even if the object had existed previously.<br>
 		 * This is because the purpose of the synchronization is to fix an unsynchronized state of
