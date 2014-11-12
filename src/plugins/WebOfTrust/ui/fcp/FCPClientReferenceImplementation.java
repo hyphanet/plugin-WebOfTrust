@@ -958,7 +958,9 @@ public final class FCPClientReferenceImplementation {
 	        return "BeginSynchronizationNotification";
 	    }
 
-	    @Override void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) {
+	    @Override void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data)
+	            throws ProcessingFailedException {
+	        
 	        mBeginSubscriptionSynchronizationHandlers.get(parseSubscriptionType(sfs))
 	            .handleBeginSubscriptionSynchronization(parseVersionID(sfs));
 	    }
@@ -980,7 +982,9 @@ public final class FCPClientReferenceImplementation {
 	        return "EndSynchronizationNotification";
 	    }
 
-	    @Override void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data) {
+	    @Override void handle_MaybeFailing(final SimpleFieldSet sfs, final Bucket data)
+	            throws ProcessingFailedException {
+	        
             mEndSubscriptionSynchronizationHandlers.get(parseSubscriptionType(sfs))
                 .handleEndSubscriptionSynchronization(parseVersionID(sfs));
 	    }
@@ -1315,12 +1319,28 @@ public final class FCPClientReferenceImplementation {
 
 	public interface BeginSubscriptionSynchronizationHandler<T extends EventSource>  {
 	    /** FIXME: Recycle JavaDoc of SubscriptionSynchronizationHandler */
-	    void handleBeginSubscriptionSynchronization(final UUID versionID);
+        /**
+         * @throws ProcessingFailedException You are free to throw this. The failure of the handler will be signaled to WOT. It will cause the
+         * same notification to be re-sent after a delay of roughly {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}.
+         * You can use this mechanism for programming your client in a transactional style: If anything in the transaction which processes 
+         * this handler fails, roll it back and make the handler throw. You can then expect to receive the same call again after the delay
+         * and hope that the transaction will succeed the next time.
+         */
+	    void handleBeginSubscriptionSynchronization(final UUID versionID)
+	            throws ProcessingFailedException;
 	}
 
 	public interface EndSubscriptionSynchronizationHandler<T extends EventSource>  {
 	    /** FIXME: Recycle JavaDoc of SubscriptionSynchronizationHandler */
-	    void handleEndSubscriptionSynchronization(final UUID versionID);
+	    /**
+         * @throws ProcessingFailedException You are free to throw this. The failure of the handler will be signaled to WOT. It will cause the
+         * same notification to be re-sent after a delay of roughly {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}.
+         * You can use this mechanism for programming your client in a transactional style: If anything in the transaction which processes 
+         * this handler fails, roll it back and make the handler throw. You can then expect to receive the same call again after the delay
+         * and hope that the transaction will succeed the next time.
+	     */
+	    void handleEndSubscriptionSynchronization(final UUID versionID)
+	            throws ProcessingFailedException;
 	}
 
 	public interface SubscribedObjectChangedHandler<T extends EventSource> {
