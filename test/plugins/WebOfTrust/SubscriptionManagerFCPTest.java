@@ -262,7 +262,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		
 		doRandomChangesToWOT(eventCount);
 		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
-		importNotifications();
+		importObjectChangedEventNotifications();
         assertFalse(mReplyReceiver.hasNextResult());
 
 		assertEquals(new HashSet<Identity>(mWebOfTrust.getAllIdentities()),
@@ -384,7 +384,9 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		}
 	}
 
-	void importNotifications() throws MalformedURLException, FSParseException, InvalidParameterException {
+	void importObjectChangedEventNotifications()
+	        throws MalformedURLException, FSParseException, InvalidParameterException {
+	    
 		while(mReplyReceiver.hasNextResult()) {
 		    final FCPPluginMessage notificationMessage = mReplyReceiver.getNextResult();
 		    
