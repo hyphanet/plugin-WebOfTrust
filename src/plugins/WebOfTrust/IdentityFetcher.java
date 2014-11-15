@@ -477,7 +477,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		}
 			
 		if(logDEBUG) Logger.debug(this, "Aborting fetch for identity " + identityID);
-		retriever.cancel(null, mClientContext);
+		retriever.cancel(mClientContext);
 		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
 	}
 	
@@ -531,7 +531,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		USKRetriever[] retrievers = mRequests.values().toArray(new USKRetriever[mRequests.size()]);		
 		int counter = 0;		 
 		for(USKRetriever r : retrievers) {
-			r.cancel(null, mClientContext);
+			r.cancel(mClientContext);
 			mUSKManager.unsubscribeContent(r.getOriginalUSK(), r, true);
 			 ++counter;
 		}
