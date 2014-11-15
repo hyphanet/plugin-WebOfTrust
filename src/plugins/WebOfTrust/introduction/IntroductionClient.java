@@ -429,8 +429,11 @@ public final class IntroductionClient extends TransferThread  {
 			final InsertBlock ib = new InsertBlock(tempB, null, solutionURI);
 
 			final InsertContext ictx = mClient.getInsertContext(true);
+			// FIXME: Code quality: Check if this is the default, if yes, remove it.
+			ictx.getCHKOnly = false;
 			
-			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+			final ClientPutter pu = mClient.insert(
+			    ib, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 			addInsert(pu); // Takes care of mBeingInsertedPuzleSolutions for us.
 			tempB = null;
 			

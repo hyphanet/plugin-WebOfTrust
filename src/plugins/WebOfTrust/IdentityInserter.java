@@ -170,8 +170,11 @@ public final class IdentityInserter extends TransferThread {
 			
 			InsertBlock ib = new InsertBlock(tempB, null, identity.getInsertURI().setSuggestedEdition(edition));
 			InsertContext ictx = mClient.getInsertContext(true);
+	        // FIXME: Code quality: Check if this is the default, if yes, remove it.
+			ictx.getCHKOnly = false;
 			
-			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+			ClientPutter pu = mClient.insert(
+			    ib, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 			addInsert(pu);
 			tempB = null;
 			
