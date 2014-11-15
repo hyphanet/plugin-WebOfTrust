@@ -310,6 +310,7 @@ public class WebInterface {
 			}
 		}
 
+		@Override
 		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 
 			// ATTENTION: The same code is used in Freetalk's WebInterface.java. Please synchronize any changes which happen there.
@@ -354,6 +355,7 @@ public class WebInterface {
 			}
 		}
 		
+		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			return new ErrorPage(this, req, context, new RuntimeException("This Toadlet does not offer HTML."));
 		}

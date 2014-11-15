@@ -26,6 +26,7 @@ public class IntroductionPuzzleTest extends DatabaseBasedTest {
 
 	private IntroductionPuzzleStore mPuzzleStore;
 	
+	@Override
 	@Before
 	protected void setUp() throws Exception {
 		super.setUp();

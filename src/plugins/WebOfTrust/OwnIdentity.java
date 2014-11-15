@@ -244,6 +244,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 * Checks whether two OwnIdentity objects are equal.
 	 * This checks <b>all</b> properties of the identities <b>excluding</b> the {@link Date} properties.
 	 */
+	@Override
 	public final boolean equals(Object obj) {
 		if(!super.equals(obj))
 			return false;
@@ -270,6 +271,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	/**
 	 * Clones this OwnIdentity. Does <b>not</b> clone the {@link Date} attributes, they are initialized to the current time!
 	 */
+	@Override
 	public final OwnIdentity clone() {
 		try {
 			OwnIdentity clone = new OwnIdentity(mWebOfTrust, getInsertURI(), getNickname(), doesPublishTrustList());
@@ -300,6 +302,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 * Stores this identity in the database without committing the transaction
 	 * You must synchronize on the WoT, on the identity and then on the database when using this function!
 	 */
+	@Override
 	protected final void storeWithoutCommit() {
 		try {
 			activateFully();
@@ -314,6 +317,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		super.storeWithoutCommit(); // Not in the try{} so we don't do checkedRollbackAndThrow twice
 	}
 	
+	@Override
 	protected final void deleteWithoutCommit() {
 		try {
 			activateFully();
@@ -328,6 +332,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		super.deleteWithoutCommit(); // Not in the try{} so we don't do checkedRollbackAndThrow twice
 	}
 	
+	@Override
 	public void startupDatabaseIntegrityTest() {
 		activateFully();
 		super.startupDatabaseIntegrityTest();

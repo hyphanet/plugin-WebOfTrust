@@ -822,6 +822,7 @@ public final class FCPClientReferenceImplementation {
 	 * In that case we need to gracefully tell WOT about that: In case of {@link Subscription}'s event {@link Notification}s, it will re-send them then. 
 	 */
 	private abstract class MaybeFailingFCPMessageHandler implements FCPMessageHandler {
+		@Override
 		public void handle(final SimpleFieldSet sfs, final Bucket data) throws ProcessingFailedException {
 			try {	
 				handle_MaybeFailing(sfs, data);

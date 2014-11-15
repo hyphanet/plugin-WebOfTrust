@@ -155,6 +155,7 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		/**
 		 * Fill our existing "database" (the {@link HashMap} mTarget) with the synchronization of ALL data which we have received from WOT.
 		 */
+		@Override
 		public void handleSubscriptionSynchronization(final Collection<T> source) {
             if(logMINOR) {
                 Logger.minor(this, "handleSubscriptionSynchronization() for subscription type: "
@@ -203,6 +204,7 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		 * It does more than that though: It checks whether the contents of the {@link FCPClientReferenceImplementation.ChangeSet} make sense.
 		 * For example our existing data in the HashMap should match the {@link FCPClientReferenceImplementation.ChangeSet#beforeChange}. 
 		 */
+		@Override
 		public void handleSubscribedObjectChanged(final ChangeSet<T> changeSet) {
 			if(logMINOR) Logger.minor(this, "handleSubscribedObjectChanged(): " + changeSet);
 

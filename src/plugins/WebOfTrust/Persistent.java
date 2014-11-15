@@ -498,84 +498,103 @@ public abstract class Persistent implements Serializable {
 			this(myWebOfTrust, myQuery.execute());
 		}
 	
+		@Override
 		public ExtObjectSet ext() {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean hasNext() {
 			return mObjectSet.hasNext();
 		}
 
+		@Override
 		public Type next() {
 			final Type next = mObjectSet.next();
 			next.initializeTransient(mWebOfTrust);
 			return next;
 		}
 
+		@Override
 		public void reset() {
 			mObjectSet.reset();
 		}
 
+		@Override
 		public int size() {
 			return mObjectSet.size();
 		}
 
+		@Override
 		public boolean add(final Type e) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public void add(final int index, final Type element) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean addAll(final Collection<? extends Type> c) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean addAll(final int index, final Collection<? extends Type> c) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public void clear() {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean contains(final Object o) {
 			return mObjectSet.contains(o);
 		}
 
+		@Override
 		public boolean containsAll(final Collection<?> c) {
 			return mObjectSet.containsAll(c);
 		}
 
+		@Override
 		public Type get(final int index) {
 			Type object = mObjectSet.get(index);
 			object.initializeTransient(mWebOfTrust);
 			return object;
 		}
 
+		@Override
 		public int indexOf(final Object o) {
 			return mObjectSet.indexOf(o);
 		}
 
+		@Override
 		public boolean isEmpty() {
 			return mObjectSet.isEmpty();
 		}
 
+		@Override
 		public final Iterator<Type> iterator() {
 			return new Iterator<Type>() {
 				final Iterator<Type> mIterator = mObjectSet.iterator(); 
 				
+				@Override
 				public boolean hasNext() {
 					return mIterator.hasNext();
 				}
 
+				@Override
 				public Type next() {
 					final Type next = mIterator.next();
 					next.initializeTransient(mWebOfTrust);
 					return next;
 				}
 
+				@Override
 				public void remove() {
 					throw new UnsupportedOperationException();
 				}
@@ -583,6 +602,7 @@ public abstract class Persistent implements Serializable {
 			};
 		}
 
+		@Override
 		public int lastIndexOf(final Object o) {
 			return mObjectSet.lastIndexOf(o);
 		}
@@ -594,87 +614,107 @@ public abstract class Persistent implements Serializable {
 				 mIterator = myIterator;
 			}
 
+			@Override
 			public void add(final ListType e) {
 				throw new UnsupportedOperationException();
 			}
 
+			@Override
 			public boolean hasNext() {
 				return mIterator.hasNext();
 			}
 
+			@Override
 			public boolean hasPrevious() {
 				return mIterator.hasPrevious();
 			}
 
+			@Override
 			public ListType next() {
 				final ListType next = mIterator.next();
 				next.initializeTransient(mWebOfTrust);
 				return next;
 			}
 
+			@Override
 			public int nextIndex() {
 				return mIterator.nextIndex();
 			}
 
+			@Override
 			public ListType previous() {
 				final ListType previous = mIterator.previous();
 				previous.initializeTransient(mWebOfTrust);
 				return previous;
 			}
 
+			@Override
 			public int previousIndex() {
 				return mIterator.previousIndex();
 			}
 
+			@Override
 			public void remove() {
 				throw new UnsupportedOperationException();
 			}
 
+			@Override
 			public void set(final ListType e) {
 				throw new UnsupportedOperationException();
 			}
 		}
 		
+		@Override
 		public ListIterator<Type> listIterator() {
 			return new InitializingListIterator<Type>(mObjectSet.listIterator());
 		}
 		
+		@Override
 		public ListIterator<Type> listIterator(final int index) {
 			return new InitializingListIterator<Type>(mObjectSet.listIterator(index));
 		}
 
+		@Override
 		public boolean remove(final Object o) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public Type remove(final int index) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean removeAll(final Collection<?> c) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean retainAll(final Collection<?> c) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public Type set(final int index, final Type element) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public List<Type> subList(final int fromIndex, final int toIndex) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public Object[] toArray() {
 			throw new UnsupportedOperationException("ObjectSet provides array functionality already.");
 		}
 
+		@Override
 		public <T> T[] toArray(final T[] a) {
 			throw new UnsupportedOperationException("ObjectSet provides array functionality already.");
 		}
 
+		@Override
 		public void remove() {
 			throw new UnsupportedOperationException();
 		}

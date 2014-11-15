@@ -266,6 +266,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 *  
 	 * @return A unique identifier for this Identity.
 	 */
+	@Override
 	public final String getID() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
@@ -881,6 +882,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		mLastChangedDate = CurrentTimeUTC.get();
 	}
 
+	@Override
 	public final String toString() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough 
 		return mNickname + "(" + mID + ")";
@@ -890,6 +892,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 * Compares whether two identities are equal.
 	 * This checks <b>all</b> properties of the identities <b>excluding</b> the {@link Date} properties.
 	 */
+	@Override
 	public boolean equals(Object obj) {
 		if (obj == this) {
 			return true;
@@ -952,6 +955,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 		return true;
 	}
 	
+	@Override
 	public int hashCode() {
 		return getID().hashCode();
 	}
@@ -970,6 +974,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	/**
 	 * Clones this identity. Does <b>not</b> clone the {@link Date} attributes, they are initialized to the current time!
 	 */
+	@Override
 	public Identity clone() {
 		try {
 			Identity clone = new Identity(mWebOfTrust, getRequestURI(), getNickname(), doesPublishTrustList());
@@ -1001,6 +1006,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 * Stores this identity in the database without committing the transaction
 	 * You must synchronize on the WoT, on the identity and then on the database when using this function!
 	 */
+	@Override
 	protected void storeWithoutCommit() {
 		try {
 			activateFully();
@@ -1042,6 +1048,7 @@ public class Identity extends Persistent implements Cloneable, Serializable {
 	 * You have to lock the WoT and the IntroductionPuzzleStore before calling this function.
 	 * @param identity
 	 */
+	@Override
 	protected void deleteWithoutCommit() {
 		try {
 			activateFully();

@@ -106,6 +106,7 @@ public abstract class WebPageImpl implements WebPage {
 	 * 
 	 * @return HTML code of the page.
 	 */
+	@Override
 	public String toHTML() {
 		// Generate the HTML output
 		return pageNode.generate();
@@ -172,6 +173,7 @@ public abstract class WebPageImpl implements WebPage {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public final void addToPage(WebPageImpl other) {
 		pageNode = other.pageNode;
 		contentNode = other.contentNode;

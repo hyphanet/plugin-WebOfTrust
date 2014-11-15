@@ -28,6 +28,7 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 	
 	private OwnIdentity mOwnIdentity;
 	
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 	

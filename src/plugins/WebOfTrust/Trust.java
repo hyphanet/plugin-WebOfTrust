@@ -231,6 +231,7 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 	/**
 	 * @see {@link TrustID}
 	 */
+	@Override
 	public String getID() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
@@ -346,6 +347,7 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 		mTrustee.initializeTransient(mWebOfTrust);
 	}
 	
+	@Override
 	protected void storeWithoutCommit() {
 		try {		
 			activateFully();
@@ -364,6 +366,7 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 	 * - <b>The involved identities are compared by {@link Identity#getID()}</b>, the objects do not have to be same or equals().
 	 * 	Also, this check is done only implicitly by comparing {@link Trust#getID()}.
 	 */
+	@Override
 	public boolean equals(final Object obj) {
 		if(obj == this)
 			return true;
@@ -394,6 +397,7 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 		return true;
 	}
 	
+	@Override
 	public Trust clone() {
 		try {
 			activateFully();

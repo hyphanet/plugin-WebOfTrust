@@ -234,6 +234,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 				split("[|]")[2];
 	}
 	
+	@Override
 	public String getID() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
@@ -355,6 +356,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		mWasInserted = true;
 	}
 	
+	@Override
 	protected void storeWithoutCommit() {
 		try {		
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
@@ -369,6 +371,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		}
 	}
 	
+	@Override
 	protected void deleteWithoutCommit() {
 		super.deleteWithoutCommit();
 	}

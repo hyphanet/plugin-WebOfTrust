@@ -17,6 +17,7 @@ public final class RandomGrabHashSetTest extends TestCase {
     Integer element1;
     Integer element2;
 
+    @Override
     protected final void setUp() throws Exception {
         super.setUp();
         

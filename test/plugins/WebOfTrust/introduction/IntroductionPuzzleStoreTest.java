@@ -33,6 +33,7 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 	private List<OwnIdentity> mOwnIdentities;
 	private OwnIdentity mOwnIdentity;
 	
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		
