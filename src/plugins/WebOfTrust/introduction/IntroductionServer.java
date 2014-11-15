@@ -26,10 +26,12 @@ import com.db4o.ObjectSet;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
@@ -314,9 +316,9 @@ public final class IntroductionServer extends TransferThread {
 	public void onFailure(final InsertException e, final BaseClientPutter state, final ObjectContainer container) 
 	{
 		try {
-			if(e.getMode() == InsertException.CANCELLED) {
+			if(e.getMode() == InsertExceptionMode.CANCELLED) {
 				if(logDEBUG) Logger.debug(this, "Insert cancelled: " + state.getURI());
-			} else if(e.getMode() == InsertException.COLLISION) {
+			} else if(e.getMode() == InsertExceptionMode.COLLISION) {
 				// TODO: Investigate why this happens.
 				Logger.warning(this, "Insert of puzzle collided, marking as inserted: " + state.getURI(), e);
 				
@@ -406,7 +408,7 @@ public final class IntroductionServer extends TransferThread {
 	@Override
 	public void onFailure(final FetchException e, final ClientGetter state, final ObjectContainer container) {
 		try {
-			if(e.getMode() == FetchException.CANCELLED) {
+			if(e.getMode() == FetchExceptionMode.CANCELLED) {
 				if(logDEBUG) Logger.debug(this, "Fetch cancelled: " + state.getURI());
 			}
 			else {

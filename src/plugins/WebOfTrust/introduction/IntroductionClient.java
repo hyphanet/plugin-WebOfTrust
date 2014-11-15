@@ -32,10 +32,12 @@ import com.db4o.ObjectSet;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
@@ -564,7 +566,7 @@ public final class IntroductionClient extends TransferThread  {
 	@Override
 	public void onFailure(final FetchException e, final ClientGetter state, final ObjectContainer container) {
 		try {
-			if(e.getMode() == FetchException.CANCELLED) {
+			if(e.getMode() == FetchExceptionMode.CANCELLED) {
 				if(logDEBUG) Logger.debug(this, "Fetch cancelled: " + state.getURI());
 			}
 			else if(e.isDNF()) {
@@ -632,9 +634,9 @@ public final class IntroductionClient extends TransferThread  {
 		/* No synchronization because the worst thing which can happen is that we insert it again */
 		
 		try {
-			if(e.getMode() == InsertException.CANCELLED)
+			if(e.getMode() == InsertExceptionMode.CANCELLED)
 				if(logDEBUG) Logger.debug(this, "Insert cancelled: " + state.getURI());
-			else if(e.getMode() == InsertException.COLLISION) {
+			else if(e.getMode() == InsertExceptionMode.COLLISION) {
 				Logger.normal(this, "Insert of puzzle solution collided, puzzle was solved already, marking as inserted: " + state.getURI());
 				markPuzzleSolutionAsInserted(state);
 			}
