@@ -26,6 +26,7 @@ public final class OwnIntroductionPuzzleTest extends AbstractJUnit3BaseTest {
 	private IntroductionPuzzleStore mPuzzleStore;
 	private IntroductionPuzzleFactory mPuzzleFactory;
 	
+	@Override
 	@Before
 	protected void setUp() throws Exception {
 		super.setUp();

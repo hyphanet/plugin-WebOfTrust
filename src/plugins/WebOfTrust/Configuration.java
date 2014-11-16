@@ -118,6 +118,7 @@ public final class Configuration extends Persistent {
 	/**
 	 * @deprecated Not implemented because we don't need it.
 	 */
+	@Override
 	@Deprecated()
 	public String getID() {
 		throw new UnsupportedOperationException();
@@ -148,6 +149,7 @@ public final class Configuration extends Persistent {
 	 * ATTENTION: A WOT database should ALWAYS contain a Configuration object. This function is only for debugging purposes
 	 * - namely {@link WebOfTrust#checkForDatabaseLeaks()}
 	 */
+	@Override
 	protected void deleteWithoutCommit() {
 		try {
 			activateFully();

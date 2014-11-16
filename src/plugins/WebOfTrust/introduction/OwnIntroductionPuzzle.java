@@ -101,6 +101,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	 * Get the Identity which solved this puzzle. It is set by the IntroductionServer when a puzzle solution to this puzzle was fetched. 
 	 * Returns null if the puzzle was solved but the parsing of the solution failed.
 	 */
+	@Override
 	public Identity getSolver() {
 		return super.getSolver();
 	}

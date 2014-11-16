@@ -174,6 +174,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		Logger.registerClass(WebOfTrust.class);
 	}
 
+	@Override
 	public void runPlugin(PluginRespirator myPR) {
 		try {
 			Logger.normal(this, "Web Of Trust plugin version " + Version.getMarketingVersion() + " starting up...");
@@ -200,14 +201,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// Queried by IdentityFetcher
 			mRequestClient = new RequestClient() {
 	
+				@Override
 				public boolean persistent() {
 					return false;
 				}
 	
+				@Override
 				public void removeFrom(ObjectContainer container) {
 					throw new UnsupportedOperationException();
 				}
 
+				@Override
 				public boolean realTimeFlag() {
 					return false;
 				}
@@ -1663,6 +1667,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * ATTENTION: If you add new code which terminates threads, you must make sure that they are
 	 * terminated in {@link AbstractFullNodeTest#setUpNode()} as well.
 	 */
+	@Override
 	public void terminate() {
 		Logger.normal(this, "Web Of Trust plugin terminating ...");
 		
@@ -3640,27 +3645,33 @@ public final class WebOfTrust extends WebOfTrustInterface
 		if(logDEBUG) Logger.debug(this, "Removed property '" + property + "' from identity '" + identity.getNickname() + "'");
 	}
 
+	@Override
 	public String getVersion() {
 		return Version.getMarketingVersion();
 	}
 	
+	@Override
 	public long getRealVersion() {
 		return Version.getRealVersion();
 	}
 
+	@Override
 	public String getString(String key) {
 	    return getBaseL10n().getString(key);
 	}
 	
+	@Override
 	public void setLanguage(LANGUAGE newLanguage) {
         WebOfTrust.l10n = new PluginL10n(this, newLanguage);
         if(logDEBUG) Logger.debug(this, "Set LANGUAGE to: " + newLanguage.isoCode);
 	}
 	
+	@Override
 	public PluginRespirator getPluginRespirator() {
 		return mPR;
 	}
 	
+	@Override
 	public ExtObjectContainer getDatabase() {
 		return mDB;
 	}
@@ -3669,6 +3680,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return mConfig;
 	}
 	
+	@Override
 	public SubscriptionManager getSubscriptionManager() {
 		return mSubscriptionManager;
 	}
@@ -3697,6 +3709,7 @@ public final class WebOfTrust extends WebOfTrustInterface
         return mIntroductionServer;
     }
 
+	@Override
 	protected FCPInterface getFCPInterface() {
 		return mFCPInterface;
 	}
@@ -3709,6 +3722,7 @@ public final class WebOfTrust extends WebOfTrustInterface
      * This is where our L10n files are stored.
      * @return Path of our L10n files.
      */
+    @Override
     public String getL10nFilesBasePath() {
         return "plugins/WebOfTrust/l10n/";
     }
@@ -3717,6 +3731,7 @@ public final class WebOfTrust extends WebOfTrustInterface
      * This is the mask of our L10n files : lang_en.l10n, lang_de.10n, ...
      * @return Mask of the L10n files.
      */
+    @Override
     public String getL10nFilesMask() {
         return "lang_${lang}.l10n";
     }
@@ -3727,6 +3742,7 @@ public final class WebOfTrust extends WebOfTrustInterface
      * override is not implemented in the node yet.
      * @return Mask of the override L10n files.
      */
+    @Override
     public String getL10nOverrideFilesMask() {
         return "WebOfTrust_lang_${lang}.override.l10n";
     }
@@ -3736,6 +3752,7 @@ public final class WebOfTrust extends WebOfTrustInterface
      * resources inside the plugin's Jar, for example L10n files.
      * @return ClassLoader object
      */
+    @Override
     public ClassLoader getPluginClassLoader() {
         return WebOfTrust.class.getClassLoader();
     }
@@ -3769,6 +3786,7 @@ public final class WebOfTrust extends WebOfTrustInterface
      * Tests whether two WoT are equal.
      * This is a complex operation in terms of execution time and memory usage and only intended for being used in unit tests.
      */
+	@Override
 	public synchronized boolean equals(Object obj) {
 		if(obj == this)
 			return true;

@@ -446,6 +446,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @return The UUID of this Subscription. Stored as String for db4o performance, but must be valid in terms of the UUID class.
 		 * @see #mID
 		 */
+		@Override
 		public final String getID() {
 			checkedActivate(1);
 			return mID;
@@ -1797,6 +1798,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @see Client#sendNotifications(SubscriptionManager) This function is called on each {@link Client} to deploy the {@link Notification} queue.
 	 */
+	@Override
 	public void run() {
 		if(logMINOR) Logger.minor(this, "run()...");
 		
@@ -1832,6 +1834,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/** {@inheritDoc} */
+	@Override
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}

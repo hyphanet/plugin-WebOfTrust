@@ -216,6 +216,7 @@ public final class Score extends Persistent implements Cloneable, EventSource {
 	/**
 	 * @see {@link ScoreID}
 	 */
+	@Override
 	public String getID() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
@@ -349,6 +350,7 @@ public final class Score extends Persistent implements Cloneable, EventSource {
 	 * - <b>The involved identities are compared by {@link Identity#getID()}</b>, the objects do not have to be same or equals().
 	 * 	Also, this check is done only implicitly by comparing {@link Score#getID()}.
 	 */
+	@Override
 	public boolean equals(Object obj) {
 		if(obj == this)
 			return true;
@@ -379,6 +381,7 @@ public final class Score extends Persistent implements Cloneable, EventSource {
 		return true;
 	}
 
+	@Override
 	public Score clone() {
 		activateFully();
 		final Score clone = new Score(mWebOfTrust, getTruster().clone(), getTrustee().clone(), getScore(), getRank(), getCapacity());

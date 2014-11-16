@@ -151,6 +151,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		/**
 		 * @see #getIdentityID
 		 */
+		@Override
 		public final String getID() {
 			return getIdentityID();
 		}
@@ -336,10 +337,12 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			Logger.warning(this, "Cannot schedule command processing: Ticker is null.");
 	}
 	
+	@Override
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
 	
+	@Override
 	public void run() {
 		synchronized(mWoT) { // Lock needed because we do getIdentityByID() in fetch()
 		synchronized(this) {
@@ -491,10 +494,12 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		return mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
 	}
 	
+	@Override
 	public short getPollingPriorityNormal() {
 		return RequestStarter.UPDATE_PRIORITY_CLASS;
 	}
 
+	@Override
 	public short getPollingPriorityProgress() {
 		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	}
@@ -538,6 +543,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	/**
 	 * Called when an identity is successfully fetched.
 	 */
+	@Override
 	public void onFound(USK origUSK, long edition, FetchResult result) {
 		final FreenetURI realURI = origUSK.getURI().setSuggestedEdition(edition);
 		final String identityID = IdentityID.constructAndValidateFromURI(realURI).toString();

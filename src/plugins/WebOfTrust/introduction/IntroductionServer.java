@@ -130,6 +130,7 @@ public final class IntroductionServer extends TransferThread {
 		return new ArrayList<BaseClientPutter>(DEFAULT_PUZZLE_COUNT * 5 + 1); /* Just assume that there are 5 identities */
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
@@ -283,6 +284,7 @@ public final class IntroductionServer extends TransferThread {
 	/** 
 	 * Called when a puzzle was successfully inserted.
 	 */
+	@Override
 	public void onSuccess(final BaseClientPutter state, final ObjectContainer container)
 	{
 		if(logDEBUG) Logger.debug(this, "Successful insert of puzzle: " + state.getURI());
@@ -308,6 +310,7 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Called when the insertion of a puzzle failed.
 	 */
+	@Override
 	public void onFailure(final InsertException e, final BaseClientPutter state, final ObjectContainer container) 
 	{
 		try {
@@ -345,6 +348,7 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Called when a puzzle solution is successfully fetched. We then add the identity which solved the puzzle.
 	 */
+	@Override
 	public void onSuccess(final FetchResult result, final ClientGetter state, final ObjectContainer container) {
 		Logger.normal(this, "Fetched puzzle solution: " + state.getURI());
 		
@@ -399,6 +403,7 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 */
+	@Override
 	public void onFailure(final FetchException e, final ClientGetter state, final ObjectContainer container) {
 		try {
 			if(e.getMode() == FetchException.CANCELLED) {
@@ -417,12 +422,15 @@ public final class IntroductionServer extends TransferThread {
 	/* Not needed functions from the ClientCallback interface */
 	
 	/** Only called by inserts */
+	@Override
 	public void onFetchable(BaseClientPutter state, ObjectContainer container) {}
 
 	/** Only called by inserts */
+	@Override
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {}
 
 	/** Called when freenet.async thinks that the request should be serialized to disk, if it is a persistent request. */
+	@Override
 	public void onMajorProgress(ObjectContainer container) {}
 
 	@Override

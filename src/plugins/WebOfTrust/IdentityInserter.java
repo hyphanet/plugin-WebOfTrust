@@ -184,6 +184,7 @@ public final class IdentityInserter extends TransferThread {
 		}
 	}
 	
+	@Override
 	public void onSuccess(BaseClientPutter state, ObjectContainer container)
 	{
 		Logger.normal(this, "Successful insert of identity: " + state.getURI());
@@ -227,6 +228,7 @@ public final class IdentityInserter extends TransferThread {
 		}
 	}
 
+	@Override
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
 	{
 		try {
@@ -250,14 +252,19 @@ public final class IdentityInserter extends TransferThread {
 	
 	/* Not needed functions from the ClientCallback interface */
 	
+	@Override
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) { }
 
+	@Override
 	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
 	
+	@Override
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
 
+	@Override
 	public void onMajorProgress(ObjectContainer container) { }
 
+	@Override
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) { }
 
 	@Override

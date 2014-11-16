@@ -28,6 +28,7 @@ public class XMLTransformerTest extends AbstractJUnit3BaseTest {
 	
 	private OwnIdentity mOwnIdentity;
 	
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 	

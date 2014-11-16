@@ -282,6 +282,7 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 				self = identity.getLastChangeDate();
 				Thread.sleep(10); // Make sure CurrentTimeUTC.get() changes.
 			}
+			@Override
 			public boolean equals(Object other) {
 				return self.equals(other);
 			}

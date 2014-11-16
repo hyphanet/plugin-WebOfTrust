@@ -66,14 +66,17 @@ public final class IntroductionPuzzleStore {
 		mDB = myWoT.getDatabase();
 		mRequestClient = new RequestClient() {
 			
+			@Override
 			public boolean persistent() {
 				return false;
 			}
 
+			@Override
 			public void removeFrom(ObjectContainer container) {
 				throw new UnsupportedOperationException();
 			}
 
+			@Override
 			public boolean realTimeFlag() {
 				return false;
 			}

@@ -138,6 +138,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
     	return false;
 	}
 
+	@Override
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) 
 			throws ToadletContextClosedException, IOException, RedirectException {
 		
