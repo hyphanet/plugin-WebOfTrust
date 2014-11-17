@@ -79,11 +79,10 @@ import freenet.support.io.NativeThread;
  * 
  * NOTICE: This class was based upon class SubscriptionManagerFCPTest, which you can find in the unit tests. Please backport improvements.
  * [Its not possible to link it in the JavaDoc because the unit tests are not within the classpath.] 
+ * <br><br>
  * 
- * FIXME: This class has recently been adapted to fred fcp-plugin-rewrite. Review the whole of it to
- * check whether JavaDoc and its general behavior are correct. Also, do a full
- * {@link DebugFCPClient} test run to ensure that this class here works properly.
- * 
+ * TODO: JavaDoc: The part of this class about subscription synchronization could need more JavaDoc.
+ *  
  * @see FCPInterface The "server" to which a FCP client connects.
  * @see SubscriptionManager The foundation of event-notifications and therefore the backend of all FCP traffic which this class does.
  * @author xor (xor@freenetproject.org)
