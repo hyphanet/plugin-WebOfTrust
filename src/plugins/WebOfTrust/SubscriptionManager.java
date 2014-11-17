@@ -832,7 +832,12 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * Attention: The {@link EndSynchronizationNotification} is a child class of this, not a
 	 * different class. Make sure to avoid accidentally matching it by 
-	 * "instanceof BeginSynchronizationNotification".
+	 * "instanceof BeginSynchronizationNotification".<br>
+	 * TODO: Code quality: The only reason for the above ambiguity is to eliminate code duplication
+	 * because the End* class needs some functions from Begin*. Resolve the ambiguity by adding a
+	 * third class AbstractSynchronizationNotification as parent class for both to contain the
+	 * common code; or by having a single class which contains a boolean which tells whether its
+	 * begin or end.
 	 */
 	@SuppressWarnings("serial")
     public static class BeginSynchronizationNotification<EventType extends EventSource>
