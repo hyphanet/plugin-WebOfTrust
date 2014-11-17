@@ -1451,10 +1451,14 @@ public final class FCPClientReferenceImplementation {
 	        }
 		}
 		
-		if(!mSubscriptionIDs.isEmpty()) {
-			Logger.warning(this, "stop(): Waiting for fcp_Unsubscribe() calls timed out, now forcing disconnect."
-					+ " If log messages about out-of-band messages follow, you can ignore them.");
-		}
+        if(!mSubscriptionIDs.isEmpty()) {
+            if(mConnection != null) {
+                Logger.warning(this, "stop(): Waiting for fcp_Unsubscribe() failed or timed out, "
+                    + "now forcing disconnect. If log messages about out-of-band messages follow, "
+                    + "you can ignore them.");
+            } else
+                Logger.warning(this, "stop(): Unsubscribing failed, mConnection == null already.");
+        }
 		
 		// We call force_disconnect() even if shutdown worked properly because there is no non-forced function and it won't force
 		// anything if all subscriptions have been terminated properly before.
