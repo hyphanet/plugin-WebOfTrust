@@ -22,6 +22,7 @@ import plugins.WebOfTrust.SubscriptionManager.EndSynchronizationNotification;
 import plugins.WebOfTrust.SubscriptionManager.IdentitiesSubscription;
 import plugins.WebOfTrust.SubscriptionManager.IdentityChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.Notification;
+import plugins.WebOfTrust.SubscriptionManager.ObjectChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.ScoreChangedNotification;
 import plugins.WebOfTrust.SubscriptionManager.ScoresSubscription;
 import plugins.WebOfTrust.SubscriptionManager.Subscription;
@@ -1148,8 +1149,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * <b>Reply:</b><br>
      * The reply will have the same {@link FCPPluginMessage#identifier} as the
      * original "Subscribe" message which you first sent to subscribe, or in other words be the
-     * reply to the original "Subscribe" message. It means that the subscription is active, and will
-     * be formatted as: <br>
+     * reply to the original "Subscribe" message. It means that the subscription is active, and its
+     * params will be formatted as: <br>
      * "Message" = "Subscribed"<br>
      * "SubscriptionID" = Random {@link UUID} of the Subscription.<br>
      * "To" = Same as the "To" field of your original message.<br><br>
@@ -1166,13 +1167,15 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * "To" = Same as you requested<br>
      * "OriginalMessage" = "Subscribe"<br><br>
      * 
-     * <b>{@link Notification}s:</b>
-     * A message of type "BeginSynchronizationEvent" will follow, followed by a series
-     * of "ObjectChangedEvent" messages (see below), followed by a message of type
-     * "EndSynchronizationEvent" message. See {@link BeginSynchronizationNotification} and
-     * {@link EndSynchronizationNotification} for an explanation of their purpose.<br><br>
+     * <h1>Event {@link Notification}s</h1>
      * 
-     * <b>{@link Notification}s:</b>
+     * <h2>{@link BeginSynchronizationNotification} and {@link EndSynchronizationNotification}:</h2>
+     * After the "Subscribed" message, a message of type "BeginSynchronizationEvent" will follow,
+     * followed by a series of "ObjectChangedEvent" messages (see below), followed by a message of
+     *  type "EndSynchronizationEvent" message. See {@link BeginSynchronizationNotification} and
+     * {@link EndSynchronizationNotification} for an explanation of their purpose.<br>
+     * 
+     * <h2>{@link ObjectChangedNotification}s:</h2>
      * Further "ObjectChangedEvent" messages will be sent at any time in the future if
      * an {@link Identity} / {@link Trust} / {@link Score} object has changed.
      * They will contain the version of the object before the change and after the change.
@@ -1180,8 +1183,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * {@link #sendIdentityChangedNotification(String, IdentityChangedNotification)} /
      * {@link #sendTrustChangedNotification(String, TrustChangedNotification)} /
      * {@link #sendScoreChangedNotification(String, ScoreChangedNotification)}.
-     * These messages are also send with the <b>synchronous</b> FCP API. In opposite to the initial synchronization message, by replying with
-     * failure to the synchronous FCP call, you can signal that you want to receive the same notification again.
+     * <br>
+     * 
+     * <h2>Replying to notifications:</h2>
+     * By replying with a {@link FCPPluginMessage} with {@link FCPPluginMessage#success}=false, you
+     * can signal that you want to receive the same notification again.
      * After a typical delay of {@link SubscriptionManager#PROCESS_NOTIFICATIONS_DELAY}, it will be re-sent.
      * There is a maximal amount of {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT} failures per FCP-Client.
      * If you exceed this limit, your subscriptions will be terminated. You will receive an "Unsubscribed" message then as long as
@@ -1196,7 +1202,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * gathering data for your subscription,
      * which would be expensive to do if its not even needed. But if you cannot send the message anymore due to a dropped connection,
      * the subscription will be terminated automatically after some time due to notification-deployment failing. Nevertheless,
-     * please always unsubscribe when possible.
+     * please always unsubscribe when possible.<br><br>
      * 
      * TODO: Code quality: Review & improve this JavaDoc.
      * 
