@@ -9,6 +9,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
+import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import plugins.WebOfTrust.ui.fcp.FCPInterface.FCPCallFailedException;
 
 import com.db4o.ObjectSet;
@@ -439,6 +440,14 @@ public final class SubscriptionManager implements PrioRunnable {
 			mClient.initializeTransient(mWebOfTrust);
 			return mClient;
 		}
+
+		/**
+		 * Gets the FCP {@link UUID} for the {@link Client} which created this {@link Subscription}.
+		 * @see #mClient
+		 */
+		protected final UUID getClientID() {
+			return getClient().getFCP_ID();
+		}
 		
 		/**
 		 * @return The UUID of this Subscription. Stored as String for db4o performance, but must be valid in terms of the UUID class.
@@ -563,60 +572,6 @@ public final class SubscriptionManager implements PrioRunnable {
         abstract void storeNotificationWithoutCommit(
             final EventType oldEventSource, final EventType newEventSource);
 
-		/**
-		 * Called by this Subscription when the type of it is FCP and a {@link Notification} shall be sent via FCP. 
-		 * The implementation MUST throw a {@link FCPCallFailedException} if the client did not signal that the processing was successful:
-		 * Not only shall the {@link Notification} be resent if transmission fails but also if the client fails processing it. This
-		 * will allow the client to use failing database transactions in the event handlers and just rollback and throw if the transaction
-		 * fails. 
-		 * The implementation MUST use synchronous FCP communication to allow the client to signal an error.
-		 * Also, synchronous communication is necessary for guaranteeing the notifications to arrive in proper order at the client.
-		 * <br><br>
-		 * 
-         * If this function fails by an exception, the caller MUST NOT proceed to deploy subsequent
-         * {@link Notification}s to the client. Instead, it must retry calling this function upon
-         * the same Notification until it succeeds or the retry limit is exceeded.<br>
-         * This is necessary because Notifications must be deployed in proper order to guarantee
-         * that they make sense to the client.<br>
-         * Notice that the above does not apply to all types of exceptions. See the JavaDoc of
-         * the various thrown exceptions for details.<br><br>
-		 * 
-         * <b>Thread safety:</b><br>
-         * This must be called while locking upon the SubscriptionManager.<br>
-		 * The {@link WebOfTrust} object shall NOT be locked:
-		 * The {@link Notification} objects which this function receives contain serialized clones of the objects from WebOfTrust.
-		 * Therefore, the notifications are self-contained and this function should and must NOT call any database query functions of the WebOfTrust. 
-		 * 
-		 * @param notification
-		 *             The {@link Notification} to send out via FCP. Must be cast-able to one of:
-		 *             <br>
-		 *             - {@link ObjectChangedNotification} containing objects matching the type
-		 *               of the type parameter EventType of this Subscription.<br>
-		 *             - {@link BeginSynchronizationNotification} with type parameter matching the
-         *               type of the type parameter EventType of this Subscription.<br>
-		 *             - {@link EndSynchronizationNotification} with type parameter matching the
-         *               type of the type parameter EventType of this Subscription.<br>
-         * @throws IOException
-         *             If the FCP client has disconnected. The SubscriptionManager then should not
-         *             retry deploying this Notification, the {@link Subscription} should be
-         *             terminated instead.
-         * @throws InterruptedException
-         *             If an external thread requested the current thread to terminate via
-         *             {@link Thread#interrupt()} while the data was being transfered to the client.
-         *             <br>This is a necessary shutdown mechanism as clients can be attached by
-         *             network and thus transfers can take a long time. Please honor it by 
-         *             terminating the thread so WOT can shutdown quickly.
-		 * @throws FCPCallFailedException
-		 *             If processing failed at the client.<br>
-         *             The SubscriptionManager should call
-         *             {@link Client#incrementSendNotificationsFailureCountWithoutCommit()} upon
-         *             {@link #mClient} then, and retry calling this function upon the same
-         *             Notification at the next iteration of the notification sending thread
-         *             - until the limit is reached.
-		 */
-        protected abstract void notifySubscriberByFCP(Notification<EventType> notification)
-            throws FCPCallFailedException, IOException, InterruptedException;
-
 		/** {@inheritDoc} */
 		@Override protected void activateFully() {
 			checkedActivate(1);
@@ -705,12 +660,62 @@ public final class SubscriptionManager implements PrioRunnable {
         }
 
 		/**
-		 * @see Subscription#notifySubscriberByFCP(Notification)
+		 * Used when this Notification shall be sent via FCP.
+		 * The implementation MUST throw a {@link FCPCallFailedException} if the client did not signal that the processing was successful:
+		 * Not only shall the Notification be resent if transmission fails but also if the client fails processing it. This
+		 * will allow the client to use failing database transactions in the event handlers and just rollback and throw if the transaction
+		 * fails.
+		 * The implementation MUST use synchronous FCP communication to allow the client to signal an error.
+		 * Also, synchronous communication is necessary for guaranteeing the notifications to arrive in proper order at the client.
+		 * <br><br>
+		 *
+		 * If this function fails by an exception, the caller MUST NOT proceed to deploy subsequent
+		 * Notifications to the client. Instead, it must retry calling this function upon
+		 * the same Notification until it succeeds or the retry limit is exceeded.<br>
+		 * This is necessary because Notifications must be deployed in proper order to guarantee
+		 * that they make sense to the client.<br>
+		 * Notice that the above does not apply to all types of exceptions. See the JavaDoc of
+		 * the various thrown exceptions for details.<br><br>
+		 *
+		 * <b>Thread safety:</b><br>
+		 * This must be called while locking upon the {@link SubscriptionManager}.<br>
+		 * The {@link WebOfTrust} object shall NOT be locked:
+		 * The Notification objects which this function receives contain serialized clones of the objects from WebOfTrust.
+		 * Therefore, the notifications are self-contained and this function should and must NOT call any database query functions of the WebOfTrust.
+		 *
+		 * @throws IOException
+		 *             If the FCP client has disconnected. The SubscriptionManager then should not
+		 *             retry deploying this Notification, the {@link Subscription} should be
+		 *             terminated instead.
+		 * @throws InterruptedException
+		 *             If an external thread requested the current thread to terminate via
+		 *             {@link Thread#interrupt()} while the data was being transferred to the
+		 *             client.
+		 *             <br>This is a necessary shutdown mechanism as clients can be attached by
+		 *             network and thus transfers can take a long time. Please honor it by
+		 *             terminating the thread so WOT can shutdown quickly.
+		 * @throws FCPCallFailedException
+		 *             If processing failed at the client.<br>
+		 *             The SubscriptionManager should call
+		 *             {@link Client#incrementSendNotificationsFailureCountWithoutCommit()} upon
+		 *             {@link #mClient} then, and retry calling this function upon the same
+		 *             Notification at the next iteration of the notification sending thread
+		 *             - until the limit is reached.
 		 */
-		void notifySubscriberByFCP()
+		protected final void notifySubscriberByFCP()
 				throws InterruptedException, FCPCallFailedException, IOException {
-			getSubscription().notifySubscriberByFCP(this);
+			UUID clientID = getSubscription().getClientID();
+			notifyClientByFCP(clientID, mWebOfTrust.getFCPInterface());
 		}
+
+		/**
+		 * Notification type specific implementation of {@link #notifySubscriberByFCP()}.
+		 * @see Notification#notifySubscriberByFCP()
+		 * @param clientID the client to send this notification to
+		 * @param fcp the FCP connection interface to send over
+		 */
+		protected abstract void notifyClientByFCP(UUID clientID, FCPInterface fcp)
+				throws InterruptedException, FCPCallFailedException, IOException;
 	}
 	
 	/**
@@ -890,7 +895,13 @@ public final class SubscriptionManager implements PrioRunnable {
             
             UUID.fromString(getID()); // Will throw if ID is no valid UUID.
         }
-        
+
+		@Override
+		protected void notifyClientByFCP(UUID clientID, FCPInterface fcp)
+				throws InterruptedException, FCPCallFailedException, IOException {
+			fcp.sendBeginOrEndSynchronizationNotification(clientID, this);
+		}
+
         @Override
         public String toString() {
             return super.toString() + " { mVersionID=" + getID() + " }";
@@ -940,6 +951,11 @@ public final class SubscriptionManager implements PrioRunnable {
 			super(mySubscription, oldIdentity, newIdentity);
 		}
 
+		@Override
+		protected void notifyClientByFCP(UUID clientID, FCPInterface fcp)
+				throws InterruptedException, FCPCallFailedException, IOException {
+			fcp.sendIdentityChangedNotification(clientID, this);
+		}
 	}
 	
 	/**
@@ -968,7 +984,12 @@ public final class SubscriptionManager implements PrioRunnable {
 				final Trust oldTrust, final Trust newTrust) {
 			super(mySubscription, oldTrust, newTrust);
 		}
-		
+
+		@Override
+		protected void notifyClientByFCP(UUID clientID, FCPInterface fcp)
+				throws InterruptedException, FCPCallFailedException, IOException {
+			fcp.sendTrustChangedNotification(clientID, this);
+		}
 	}
 	
 	/**
@@ -998,6 +1019,11 @@ public final class SubscriptionManager implements PrioRunnable {
 			super(mySubscription, oldScore, newScore);
 		}
 
+		@Override
+		protected void notifyClientByFCP(UUID clientID, FCPInterface fcp)
+				throws InterruptedException, FCPCallFailedException, IOException {
+			fcp.sendScoreChangedNotification(clientID, this);
+		}
 	}
 
 	/**
@@ -1021,37 +1047,6 @@ public final class SubscriptionManager implements PrioRunnable {
         @Override List<Identity> getSynchronization() {
             return mWebOfTrust.getAllIdentities();
         }
-
-        // TODO: Code quality: This function is almost the same in TrustsSubscription and
-        // ScoresSubscription. Add a type parameter <T extends EventSource> to Notification and use
-        // it to move this function upwards to the Subscription base class.
-		/** {@inheritDoc}
-		 * @param notification*/
-        @Override
-        protected void notifySubscriberByFCP(Notification<Identity> notification)
-                throws FCPCallFailedException, IOException, InterruptedException {
-
-		    final UUID clientID = getClient().getFCP_ID();
-		    
-			if(notification instanceof IdentityChangedNotification) {
-			    mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(
-			        clientID, (IdentityChangedNotification)notification);
-			} else if(notification instanceof BeginSynchronizationNotification<?>) {
-			    // EndSynchronizationNotification is a child of BeginSynchronizationNotification.
-			    
-			    // Would be a false positive:
-			    // The type parameter is not known at runtime due to the way Java is implemented.
-			    /* assert((BeginSynchronizationNotification<Identity>)notification != null)
-			        : "The IdentitiesSubscription should only receive Identity notifications"; */
-	             
-			    mWebOfTrust.getFCPInterface().sendBeginOrEndSynchronizationNotification(
-			        clientID,
-			        (BeginSynchronizationNotification<?>)notification);
-			} else {
-			    throw new UnsupportedOperationException("Unknown notification type: "
-			        + notification);
-			}
-		}
 
 		/**
 		 * Stores a {@link IdentityChangedNotification} to the {@link Notification} queue of this {@link Client}.
@@ -1090,34 +1085,6 @@ public final class SubscriptionManager implements PrioRunnable {
             return mWebOfTrust.getAllTrusts();
         }
 
-		/** {@inheritDoc}
-		 * @param notification*/
-        @Override
-        protected void notifySubscriberByFCP(final Notification<Trust> notification)
-                throws FCPCallFailedException, IOException, InterruptedException {
-
-            final UUID clientID = getClient().getFCP_ID();
-            
-            if(notification instanceof TrustChangedNotification) {
-                mWebOfTrust.getFCPInterface().sendTrustChangedNotification(
-                    clientID, (TrustChangedNotification)notification);
-            } else if(notification instanceof BeginSynchronizationNotification<?>) {
-                // EndSynchronizationNotification is a child of BeginSynchronizationNotification.
-                
-                // Would be a false positive:
-                // The type parameter is not known at runtime due to the way Java is implemented.
-                /* assert((BeginSynchronizationNotification<Trust>)notification != null)
-                    : "The TrustsSubscription should only receive Trust notifications"; */
-                
-                mWebOfTrust.getFCPInterface().sendBeginOrEndSynchronizationNotification(
-                    clientID,
-                    (BeginSynchronizationNotification<?>)notification);
-            } else {
-                throw new UnsupportedOperationException("Unknown notification type: "
-                    + notification);
-            }
-		}
-
 		/**
 		 * Stores a {@link TrustChangedNotification} to the {@link Notification} queue of this {@link Client}.
 		 * 
@@ -1152,34 +1119,6 @@ public final class SubscriptionManager implements PrioRunnable {
         @Override List<Score> getSynchronization() {
             return mWebOfTrust.getAllScores();
         }
-
-		/** {@inheritDoc}
-		 * @param notification*/
-        @Override
-        protected void notifySubscriberByFCP(final Notification<Score> notification)
-                throws FCPCallFailedException, IOException, InterruptedException {
-
-            final UUID clientID = getClient().getFCP_ID();
-            
-            if(notification instanceof ScoreChangedNotification) {
-                mWebOfTrust.getFCPInterface().sendScoreChangedNotification(
-                    clientID, (ScoreChangedNotification)notification);
-            } else if(notification instanceof BeginSynchronizationNotification<?>) {
-                // EndSynchronizationNotification is a child of BeginSynchronizationNotification.
-                
-                // Would be a false positive:
-                // The type parameter is not known at runtime due to the way Java is implemented.
-                /* assert((BeginSynchronizationNotification<Score>)notification != null)
-                    : "The ScoresSubscription should only receive Score notifications"; */
-                 
-                mWebOfTrust.getFCPInterface().sendBeginOrEndSynchronizationNotification(
-                    clientID,
-                    (BeginSynchronizationNotification<?>)notification);
-            } else {
-                throw new UnsupportedOperationException("Unknown notification type: "
-                    + notification);
-            }
-		}
 
 		/**
 		 * Stores a {@link ScoreChangedNotification} to the {@link Notification} queue of this {@link Client}.
