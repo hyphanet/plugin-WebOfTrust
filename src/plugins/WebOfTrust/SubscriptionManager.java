@@ -850,7 +850,7 @@ public final class SubscriptionManager implements PrioRunnable {
          * This allows the client to use a "mark-and-sweep" garbage collection mechanism to delete
          * obsolete {@link EventSource} objects which existed in its database before the
          * synchronization: After having received the end-marker
-         * {@link EndSynchronizationNotification}, any object whose
+         * {@link EndSynchronizationNotification}, any object of type EventType whose
          * {@link EventSource#getVersionID(UUID)} does not match the version ID of the current
          * synchronization is an obsolete object and must be deleted.<br><br>
          * 
