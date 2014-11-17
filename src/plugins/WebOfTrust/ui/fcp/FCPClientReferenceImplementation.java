@@ -553,26 +553,27 @@ public final class FCPClientReferenceImplementation {
 		if(mConnection == null)
 			return;
 		
-		    try {
-		        for(SubscriptionType type : mSubscriptionIDs.keySet())
-		            fcp_Unsubscribe(type);
-		    } catch (IOException e) {
-		        // The connection is dead already, so we cannot unsubscribe and don't have to.
-		        Logger.normal(this, "force_disconnect(): Disconnected already, not unsubscribing.");
-		    }
-		    
-            // The "Unsubscribed" message would normally trigger the removal from the 
-            // mSubscriptionIDs array but we cannot receive it anymore after we are
-            // disconnected so we remove the ID ourselves
-            for(SubscriptionType type : mSubscriptionIDs.keySet())
-                mSubscriptionIDs.remove(type);
-			
-			try {
-				mConnectionStatusChangedHandler.handleConnectionStatusChanged(false);
-			} catch(Throwable t) {
-				Logger.warning(this, "ConnectionStatusChangedHandler.handleConnectionStatusChanged() threw up, please fix your handler!", t);
-			}
-		
+		try {
+		    for(SubscriptionType type : mSubscriptionIDs.keySet())
+		        fcp_Unsubscribe(type);
+		} catch (IOException e) {
+		    // The connection is dead already, so we cannot unsubscribe and don't have to.
+		    Logger.normal(this, "force_disconnect(): Disconnected already, not unsubscribing.");
+		}
+
+		// The "Unsubscribed" message would normally trigger the removal from the 
+		// mSubscriptionIDs array but we cannot receive it anymore after we are
+		// disconnected so we remove the ID ourselves
+		for(SubscriptionType type : mSubscriptionIDs.keySet())
+		    mSubscriptionIDs.remove(type);
+
+		try {
+		    mConnectionStatusChangedHandler.handleConnectionStatusChanged(false);
+		} catch(Throwable t) {
+		    Logger.warning(this, "ConnectionStatusChangedHandler.handleConnectionStatusChanged() "
+		                       + "threw up, please fix your handler!", t);
+		}
+
 		// Notice: FCPPluginClient has explicit no disconnection mechanism. The JavaDoc of
 		// PluginRespirator.connectToOtherPlugin() instructs us that can and must drop all strong
 		// references to the FCPPluginClient to it to cause disconnection implicitly.
