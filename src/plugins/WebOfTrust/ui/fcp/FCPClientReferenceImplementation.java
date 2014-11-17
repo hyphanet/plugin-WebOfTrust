@@ -325,15 +325,16 @@ public final class FCPClientReferenceImplementation {
 	
 	/**
 	 * Tells the client to start connecting to WOT. Must be called at startup of your plugin.
-	 * ATTENTION: If you override this, you must call <code>super.start()</code>.
+	 * <br><br>
 	 * 
-	 * Must be called after your child class is ready to process messages in the event handlers:
+	 * Must be called after your user object of this client is ready to process messages in its
+	 * event handlers:<br>
 	 * - {@link #handleConnectionEstablished()}
 	 * - {@link #handleConnectionLost()}
 	 * 
 	 * You will not receive any event callbacks before start was called.
 	 */
-	public synchronized void start() {
+	public final synchronized void start() {
 		Logger.normal(this, "Starting...");
 		
 		if(mClientState != ClientState.NotStarted)
