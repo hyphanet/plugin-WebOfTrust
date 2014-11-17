@@ -1216,7 +1216,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	
     	try {
             FCPPluginMessage reply = FCPPluginMessage.constructSuccessReply(message);
-            Subscription<? extends EventSource> subscription;
+            Subscription<?> subscription;
             
 	    	if(to.equals("Identities")) {
 	    		subscription = mSubscriptionManager.subscribeToIdentities(client.getID());
@@ -1280,13 +1280,13 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             throws InvalidParameterException, UnknownSubscriptionException {
         
         final String subscriptionID = getMandatoryParameter(request.params, "SubscriptionID");
-    	final Class<Subscription<? extends EventSource>> clazz
+    	final Class<? extends Subscription> clazz
     	    = mSubscriptionManager.unsubscribe(subscriptionID);
         return handleUnsubscribe(request, clazz, subscriptionID);
     }
     
     public void sendUnsubscribedMessage(final UUID clientID,
-            final Class<Subscription<? extends EventSource>> clazz, final String subscriptionID)
+            final Class<? extends Subscription> clazz, final String subscriptionID)
                 throws IOException {
         
         mPluginRespirator.getPluginClientByID(clientID).send(SendDirection.ToClient,
@@ -1302,7 +1302,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      *            due to an original client message.
      */
     private FCPPluginMessage handleUnsubscribe(final FCPPluginMessage request,
-        final Class<Subscription<? extends EventSource>> clazz, final String subscriptionID) {
+        final Class<? extends Subscription> clazz, final String
+            subscriptionID) {
         
         final FCPPluginMessage result =
             request != null ? FCPPluginMessage.constructSuccessReply(request) :
@@ -1338,10 +1339,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         final FCPPluginMessage fcpMessage = FCPPluginMessage.construct();
         
         fcpMessage.params.putOverwrite("Message", 
-             notification instanceof EndSynchronizationNotification 
+             notification instanceof EndSynchronizationNotification
                  ? "EndSynchronizationEvent" : "BeginSynchronizationEvent");
         
-        Subscription<? extends EventSource> subscription = notification.getSubscription();
+        Subscription<?> subscription = notification.getSubscription();
         String to;
         
         // The type parameter of the BeginSynchronizationNotification<T> is not known at runtime
