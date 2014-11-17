@@ -1141,11 +1141,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     
     /**
      * Processes the "Subscribe" FCP message, filing a {@link Subscription} to event-{@link Notification}s via {@link SubscriptionManager}.
-     * <b>Required fields:</b>
+     * <br><b>Required fields:</b><br>
      * "To" = "Identities" or "Trusts" or "Scores" - chooses among {@link IdentitiesSubscription} / {@link TrustsSubscription} /
-     * {@link ScoresSubscription}.
+     * {@link ScoresSubscription}.<br><br>
      * 
-     * <b>Reply:</b>
+     * <b>Reply:</b><br>
      * The reply will have the same {@link FCPPluginMessage#identifier} as the
      * original "Subscribe" message which you first sent to subscribe, or in other words be the
      * reply to the original "Subscribe" message. It means that the subscription is active, and will
@@ -1156,6 +1156,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      *     
      * <b>Errors</b>:<br>
      * If you are already subscribed to the selected type, you will only receive a single message:
+     * <br>
      * {@link FCPPluginMessage#identifier} = same as of your "Subscribe" message<br>
      * {@link FCPPluginMessage#success} = false<br>
      * {@link FCPPluginMessage#errorCode} = "SubscriptionExistsAlready"<br>
