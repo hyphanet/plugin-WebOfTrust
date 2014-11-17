@@ -283,6 +283,14 @@ public final class FCPClientReferenceImplementation {
 	}
 
 
+	/**
+	 * TODO: Code quality: Document which functions of the {@link Map} interface have to be
+	 * implemented: The user of this constructor will typically be a client plugin, so the author
+	 * won't know much about the internals of this class. Also, the client plugin will likely use
+	 * a database for storing Identity objects, so each function would require implementation of
+	 * database query = be quite a bit of work. We likely only need a get(String key), so we could
+	 * save the client author quite a bit of work.
+	 */
 	public FCPClientReferenceImplementation(Map<String, Identity> myIdentityStorage,
 			final PluginRespirator myPluginRespirator, final Executor myExecutor,
 			final ConnectionStatusChangedHandler myConnectionStatusChangedHandler) {
