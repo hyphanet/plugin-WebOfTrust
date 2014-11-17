@@ -986,7 +986,10 @@ public final class FCPClientReferenceImplementation {
         }
 	}
 
-	/** @see SubscriptionManager.EndSynchronizationNotification */
+	/**
+	 * @see FCPBeginSynchronizationEventHandler
+	 * @see SubscriptionManager.EndSynchronizationNotification
+	 */
 	private final class FCPEndSynchronizationEventHandler
 	        extends FCPBeginSynchronizationEventHandler {
 
