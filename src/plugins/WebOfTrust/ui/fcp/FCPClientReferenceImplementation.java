@@ -1387,9 +1387,8 @@ public final class FCPClientReferenceImplementation {
 	
 	/**
 	 * Must be called at shutdown of your plugin.
-	 * ATTENTION: If you override this, you must call <code>super.stop()</code>!
 	 */
-	public synchronized void stop() {
+	public final synchronized void stop() {
 		Logger.normal(this, "stop() ...");
 		
 		if(mClientState != ClientState.Started) {
