@@ -318,7 +318,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * This can happen if the client exceeds the limit of {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT} failures
 		 * to process a {@link Notification}.
 		 * 
-		 * Any {@link Throwable}s which happen if sending the message fails are swallowed.
+		 * Exceptions which happen if sending the message fails are swallowed.
 		 */
 		@SuppressWarnings("unchecked")
 		private void notifyClientAboutDeletion(
@@ -337,8 +337,8 @@ public final class SubscriptionManager implements PrioRunnable {
 					default:
 						throw new UnsupportedOperationException("Unknown Type: " + getType());
 				}
-			} catch(Throwable t) {
-				Logger.error(getSubscriptionManager(), "notifyClientAboutDeletion() failed!", t);
+			} catch(IOException | RuntimeException | Error e) {
+				Logger.error(getSubscriptionManager(), "notifyClientAboutDeletion() failed!", e);
 			}
 		}
 		
