@@ -291,7 +291,7 @@ public final class FCPClientReferenceImplementation {
 	 * database query = be quite a bit of work. We likely only need a get(String key), so we could
 	 * save the client author quite a bit of work.
 	 */
-	public FCPClientReferenceImplementation(Map<String, Identity> myIdentityStorage,
+	public FCPClientReferenceImplementation(final Map<String, Identity> myIdentityStorage,
 			final PluginRespirator myPluginRespirator, final Executor myExecutor,
 			final ConnectionStatusChangedHandler myConnectionStatusChangedHandler) {
 		mIdentityStorage = myIdentityStorage;
