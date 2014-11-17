@@ -550,7 +550,9 @@ public final class FCPClientReferenceImplementation {
 	private synchronized void force_disconnect() {
 		Logger.normal(this, "force_disconnect()");
 		
-		if(mConnection != null) {
+		if(mConnection == null)
+			return;
+		
 		    try {
 		        for(SubscriptionType type : mSubscriptionIDs.keySet())
 		            fcp_Unsubscribe(type);
@@ -570,7 +572,6 @@ public final class FCPClientReferenceImplementation {
 			} catch(Throwable t) {
 				Logger.warning(this, "ConnectionStatusChangedHandler.handleConnectionStatusChanged() threw up, please fix your handler!", t);
 			}
-		}
 		
 		// Notice: FCPPluginClient has explicit no disconnection mechanism. The JavaDoc of
 		// PluginRespirator.connectToOtherPlugin() instructs us that can and must drop all strong
