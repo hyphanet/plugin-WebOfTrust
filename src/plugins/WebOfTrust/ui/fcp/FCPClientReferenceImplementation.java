@@ -1116,8 +1116,8 @@ public final class FCPClientReferenceImplementation {
 		public ChangeSet<T> parseObjectChangedEvent(final SimpleFieldSet notification)
 		        throws MalformedURLException, FSParseException, InvalidParameterException {
 		    
-			final SimpleFieldSet beforeChange = getOwnSubset(notification.subset("BeforeChange"));
-			final SimpleFieldSet afterChange = getOwnSubset(notification.subset("AfterChange"));
+			final SimpleFieldSet beforeChange = getOwnSubset(notification.subset("Before"));
+			final SimpleFieldSet afterChange = getOwnSubset(notification.subset("After"));
 			
 			return new ChangeSet<T>(parseSingle(beforeChange, 0), parseSingle(afterChange, 0));
 		}

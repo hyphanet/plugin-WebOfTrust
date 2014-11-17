@@ -1438,8 +1438,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         fcpMessage.params.putOverwrite("Message", "ObjectChangedEvent");
         fcpMessage.params.putOverwrite("SubscriptionType", subscriptionType.name());
-        fcpMessage.params.put("BeforeChange", beforeChange);
-        fcpMessage.params.put("AfterChange", afterChange);
+        fcpMessage.params.put("Before", beforeChange);
+        fcpMessage.params.put("After", afterChange);
         
         final FCPPluginMessage reply = mPluginRespirator.getPluginClientByID(clientID)
             .sendSynchronous(
