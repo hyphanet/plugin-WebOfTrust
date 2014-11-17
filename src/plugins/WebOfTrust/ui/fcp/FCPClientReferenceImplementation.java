@@ -378,7 +378,7 @@ public final class FCPClientReferenceImplementation {
 		if(mSubscribeTo.contains(realType))
 			throw new IllegalStateException("Subscription for that type exists already!");
 		
-		mSubscribeTo.add(SubscriptionType.fromClass(type));
+		mSubscribeTo.add(realType);
 		
 		IfNull.thenThrow(beginSyncHandler);
 		IfNull.thenThrow(endSyncHandler);
