@@ -17,6 +17,7 @@ import com.db4o.query.Query;
 
 import freenet.node.PrioRunnable;
 import freenet.node.fcp.FCPPluginClient;
+import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -1337,7 +1338,16 @@ public final class SubscriptionManager implements PrioRunnable {
      *             <br>This is a necessary shutdown mechanism as synchronization of a Subscription
      *             transfers possibly the whole WOT database to the client and therefore can take
      *             a very long time. Please honor it by terminating the thread so WOT can shutdown
-     *             quickly. 
+     *             quickly.<br>
+     *             TODO: Performance: Throwing InterruptedException is not implemented yet.
+     *             It should be thrown by {@link Subscription#storeSynchronizationWithoutCommit()}
+     *             as that is the callee of this function which can take very long.<br>
+     *             It would be trivial to implement it to check {@link Thread#interrupted()} in
+     *             its main loop and throw if it returns true. What's difficult is determining in
+     *             {@link SubscriptionManager#stop()} which *are* the Threads which need to be
+     *             interrupted - we do not store them anywhere, they are created by fred when
+     *             calling the FCP interface's
+     *             {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}.
 	 */
 	private void storeNewSubscriptionWithoutCommit(
 	        final Subscription<? extends EventSource> subscription)
