@@ -151,6 +151,8 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	}
 	
 	private <T extends Persistent> void validateAgainstDatabase(final ObjectSet<T> expectedSet, final HashMap<String, T> actualSet) {
+	    // FIXME: actualSet.toString() will log the WHOLE thing. Only log the type T somehow,
+	    // possibly by expecting a SubscriptionType or Class parameter.
 		if(actualSet.size() != expectedSet.size())
 			Logger.error(this, "Size mismatch for " + actualSet + ": actual size " + actualSet.size() + " != expected size " + expectedSet.size());
 		
