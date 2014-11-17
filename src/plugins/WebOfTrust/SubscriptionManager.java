@@ -745,6 +745,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Only one of oldObject or newObject may be null.
 		 * If both are non-null, their {@link Persistent#getID()} must be equal.
 		 * 
+		 * TODO: Code quality: oldObject and newObject should be EventSource, not Persistent.
+		 * 
 		 * @param mySubscription The {@link Subscription} which requested this type of Notification.
 		 * @param oldObject The version of the changed {@link Persistent} object before the change.
 		 * @param newObject The version of the changed {@link Persistent} object after the change.
