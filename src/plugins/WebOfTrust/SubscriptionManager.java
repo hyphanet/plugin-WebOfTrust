@@ -686,6 +686,7 @@ public final class SubscriptionManager implements PrioRunnable {
         /**
          * @deprecated Not implemented because we don't need it.
          */
+        @Override
         @Deprecated()
         public String getID() {
             throw new UnsupportedOperationException();
