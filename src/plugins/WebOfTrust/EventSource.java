@@ -32,9 +32,11 @@ import plugins.WebOfTrust.SubscriptionManager.Subscription;
  * is about.
  */
 public interface EventSource extends Cloneable, Serializable {
-    
-    /** {@inheritDoc} */
-    public EventSource clone(); // Override because it is not public in class Object.
+
+    /**
+     * Provides a clone of this event source. Implementations must return {@code this.clone()}.
+     */
+    public EventSource cloned();
     
     /**
      * When a {@link Notification} about an {@link EventSource} is being deployed to a

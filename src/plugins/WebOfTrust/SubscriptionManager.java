@@ -532,7 +532,7 @@ public final class SubscriptionManager implements PrioRunnable {
                 // main EventSource object stored in the mWebOfTrust. Thus, we clone() the
                 // EventSource and call the setter upon the temporary clone.
                 @SuppressWarnings("unchecked")
-                EventType eventSourceWithProperVersionID = (EventType) eventSource.clone();
+                EventType eventSourceWithProperVersionID = (EventType) eventSource.cloned();
                 eventSourceWithProperVersionID.setVersionID(synchronizationID);
                 
                 storeNotificationWithoutCommit(null, eventSourceWithProperVersionID);
@@ -562,8 +562,8 @@ public final class SubscriptionManager implements PrioRunnable {
 
         /**
          * Shall store a {@link ObjectChangedNotification} constructed via
-         * {@link ObjectChangedNotification#ObjectChangedNotification(Subscription, Persistent,
-         * Persistent)} with parameters oldObject = oldEventSource, newObject = newEventSource.<br>
+         * {@link ObjectChangedNotification#ObjectChangedNotification(Subscription, EventType,
+         * EventType)} with parameters oldObject = oldEventSource, newObject = newEventSource.<br>
          * <br> 
          * 
          * The type parameter of the {@link ObjectChangedNotification} shall match the type
@@ -730,8 +730,8 @@ public final class SubscriptionManager implements PrioRunnable {
      * NOTICE: Both Persistent objects are not stored in the database and must not be stored there to prevent duplicates!
 	 */
 	@SuppressWarnings("serial")
-	public static abstract class ObjectChangedNotification<EventType extends EventSource> extends
-			Notification<EventType> {
+	public static abstract class ObjectChangedNotification<EventType extends Persistent &
+			EventSource> extends Notification<EventType> {
 		
 		/**
 		 * A serialized copy of the changed {@link Persistent} object before the change.
@@ -757,15 +757,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Only one of oldObject or newObject may be null.
 		 * If both are non-null, their {@link Persistent#getID()} must be equal.
 		 * 
-		 * TODO: Code quality: oldObject and newObject should be EventSource, not Persistent.
-		 * 
 		 * @param mySubscription The {@link Subscription} which requested this type of Notification.
 		 * @param oldObject The version of the changed {@link Persistent} object before the change.
 		 * @param newObject The version of the changed {@link Persistent} object after the change.
 		 * @see Notification#Notification(Subscription) This parent constructor is also called.
 		 */
 		ObjectChangedNotification(final Subscription<EventType> mySubscription,
-		        final Persistent oldObject, final Persistent newObject) {
+		        final EventType oldObject, final EventType newObject) {
 		    
 			super(mySubscription);
 			
@@ -805,18 +803,26 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @return The changed {@link Persistent} object before the change. Null if the change was the creation of the object.
 		 * @see #mOldObject The backend member variable of this getter.
 		 */
-		public final Persistent getOldObject() throws NoSuchElementException {
+		public final EventType getOldObject() throws NoSuchElementException {
 			checkedActivate(1); // byte[] is a db4o primitive type so 1 is enough
-			return mOldObject != null ? Persistent.deserialize(mWebOfTrust, mOldObject) : null;
+			return deserialize(mOldObject);
 		}
 		
 		/**
 		 * @return The changed {@link Persistent} object after the change. Null if the change was the deletion of the object.
 		 * @see #mNewObject The backend member variable of this getter.
 		 */
-		public final Persistent getNewObject() throws NoSuchElementException {
+		public final EventType getNewObject() throws NoSuchElementException {
 			checkedActivate(1); // byte[] is a db4o primitive type so 1 is enough
-			return mNewObject != null ? Persistent.deserialize(mWebOfTrust, mNewObject) : null;
+			return deserialize(mNewObject);
+		}
+
+		@SuppressWarnings("unchecked")
+		private EventType deserialize(byte[] obj) {
+			if (obj == null) {
+				return null;
+			}
+			return (EventType) Persistent.deserialize(mWebOfTrust, mNewObject);
 		}
 
 		/** {@inheritDoc} */
