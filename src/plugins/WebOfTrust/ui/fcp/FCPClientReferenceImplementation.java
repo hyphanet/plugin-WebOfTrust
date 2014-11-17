@@ -97,7 +97,7 @@ public final class FCPClientReferenceImplementation {
 	private static final int WOT_RECONNECT_DELAY = 1 * 1000;
 	
 	/** The amount of milliseconds between sending pings to WOT to see if we are still connected */
-	private static final int WOT_PING_DELAY = 30 * 1000;
+	private static final int WOT_PING_DELAY = 60 * 1000;
 	
 	/** The amount of milliseconds after which assume the connection to WOT to be dead and try to reconnect */
 	private static final int WOT_PING_TIMEOUT_DELAY = 2*WOT_PING_DELAY;
