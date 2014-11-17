@@ -1218,6 +1218,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             FCPPluginMessage reply = FCPPluginMessage.constructSuccessReply(message);
             Subscription<? extends EventSource> subscription;
             
+            // TODO: Code quality: Use FCPClientReferenceImplementation.SubscriptionType.valueOf()
+            // Maybe copy the enum to class SubscriptionManager. (It must be copied instead of moved
+            // from FCPClientReferenceImplementation because that class should not require classes
+            // which wouldn't make sense to copy to a WOT client plugin. SubscriptionManager for
+            // sure does not need to be in a WOT client plugin)
 	    	if(to.equals("Identities")) {
 	    		subscription = mSubscriptionManager.subscribeToIdentities(client.getID());
 	    	} else if(to.equals("Trusts")) {
@@ -1310,6 +1315,12 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
     	final String type;
 
+        // TODO: Code quality: Use FCPClientReferenceImplementation.SubscriptionType.*.name()
+    	// Also require a SubscriptionType as parameter instead of a Class.
+    	// Maybe copy the enum to class SubscriptionManager. (It must be copied instead of moved
+    	// from FCPClientReferenceImplementation because that class should not require classes
+    	// which wouldn't make sense to copy to a WOT client plugin. SubscriptionManager for
+    	// sure does not need to be in a WOT client plugin)
     	if(clazz.equals(IdentitiesSubscription.class))
     		type = "Identities";
     	else if(clazz.equals(TrustsSubscription.class))
@@ -1348,6 +1359,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         // due to the way Java is implemented. Thus, we must use the hack of checking the
         // class of the Subscription to which the Notification belongs:
         // Subscription is not parameterized, so we can check its class.
+        // TODO: Code quality: Use FCPClientReferenceImplementation.SubscriptionType.*.name()
+        // Maybe copy the enum to class SubscriptionManager. (It must be copied instead of moved
+        // from FCPClientReferenceImplementation because that class should not require classes
+        // which wouldn't make sense to copy to a WOT client plugin. SubscriptionManager for
+        // sure does not need to be in a WOT client plugin)
         if(subscription instanceof IdentitiesSubscription)
             to = "Identities";
         else if (subscription instanceof TrustsSubscription)
