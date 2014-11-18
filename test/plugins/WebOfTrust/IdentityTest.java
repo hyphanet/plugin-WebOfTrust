@@ -342,9 +342,7 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 // TODO: Finish implementation and enable.	
 //	public void testEquals() {
 //		do {
-//			try {
-//				Thread.sleep(1);
-//			} catch (InterruptedException e) { }
+//			Thread.sleep(1);
 //		} while(identity.getAddedDate().equals(CurrentTimeUTC.get()));
 //		
 //		assertEquals(identity, identity);
@@ -364,9 +362,7 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 //	
 //	public void testClone() {
 //		do {
-//			try {
-//				Thread.sleep(1);
-//			} catch (InterruptedException e) { }
+//		    Thread.sleep(1);
 //		} while(identity.getAddedDate().equals(CurrentTimeUTC.get()));
 //		
 //		Identity clone = identity.clone();
