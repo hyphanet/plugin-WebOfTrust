@@ -1393,6 +1393,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * - New trust value from an identity. Use {@link #subscribeToTrusts(String)} instead.
 	 * - New edition hint for an identity. Edition hints are only useful to WOT, this shouldn't matter to clients. Also, edition hints are
 	 *   created by other identities, not by the identity which is their subject. The identity itself did not change. 
+	 * <br><br>
+	 *  
+	 * TODO: Code quality: Code duplication at subscribeToTrusts() and subscribeToScores()
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the {@link Client}. Must be unique among all FCP connections!
 	 * @return The {@link IdentitiesSubscription} which is created by this function.
