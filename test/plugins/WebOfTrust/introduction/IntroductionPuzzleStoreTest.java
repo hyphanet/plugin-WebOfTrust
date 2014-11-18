@@ -166,7 +166,9 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		assertEquals(puzzleCountB, mPuzzleStore.getUninsertedOwnPuzzlesByInserter(b).size());
 	}
 
-	public void testDeleteExpiredPuzzles() throws UnknownPuzzleException, IOException {
+	public void testDeleteExpiredPuzzles()
+	        throws UnknownPuzzleException, IOException, InterruptedException {
+	    
 		final List<IntroductionPuzzle> deletedPuzzles = new ArrayList<IntroductionPuzzle>();
 		final Date expirationDate = new Date(CurrentTimeUTC.getInMillis() + 500);
 		deletedPuzzles.add(constructPuzzleWithExpirationDate(mOwnIdentity, expirationDate));
@@ -176,9 +178,7 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		final List<OwnIntroductionPuzzle> notDeletedPuzzles = generateNewPuzzles(mOwnIdentity);
 		
 		while(CurrentTimeUTC.get().before(expirationDate)) {
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) { }
+		    Thread.sleep(500);
 		}
 
 		mPuzzleStore.deleteExpiredPuzzles();
