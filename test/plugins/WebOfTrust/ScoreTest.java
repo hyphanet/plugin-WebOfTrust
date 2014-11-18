@@ -102,13 +102,11 @@ public class ScoreTest extends AbstractJUnit3BaseTest {
 		assertEquals(originalScore, score);
 	}
 	
-	public void testEquals() {
+	public void testEquals() throws InterruptedException {
 		final Score score = new Score(mWoT, a, b, 100, 3, 2);
 		
 		do {
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) { }
+			Thread.sleep(1);
 		} while(score.getDateOfCreation().equals(CurrentTimeUTC.get()));
 		
 		final Score equalScore = new Score(mWoT, score.getTruster().clone(), score.getTrustee().clone(), score.getScore(), score.getRank(), score.getCapacity());
