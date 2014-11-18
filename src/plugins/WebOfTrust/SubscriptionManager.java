@@ -1348,7 +1348,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * and the {@link Persistent#transactionLock(ExtObjectContainer)}.<br>
 	 * You must take care of transaction management.<br>
 	 * 
-	 * @throws SubscriptionExistsAlreadyException Thrown if a subscription of the same type for the same client exists already. See {@link #throwIfSimilarSubscriptionExists(Subscription)}
+	 * @throws SubscriptionExistsAlreadyException
+	 *             Thrown if a subscription of the same type for the same client exists already.<br>
+	 *             See {@link #throwIfSimilarSubscriptionExists(Subscription)}.<br>
+	 *             Thrown before the database is modified in any way - you do not have to rollback
+	 *             the transaction.
      * @throws InterruptedException
      *             If an external thread requested the current thread to terminate via
      *             {@link Thread#interrupt()} while the data was being transfered to the client.
@@ -1423,6 +1427,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		    } catch(RuntimeException e) {
 		        Persistent.checkedRollbackAndThrow(mDB, this, e);
 		        throw e; // Satisfy the compiler: Without, it would complain about missing return.
+		    } catch(InterruptedException e) {
+		        // Shutdown of WOT was requested. This is normal mode of operation.
+		        Persistent.checkedRollback(mDB, this, e, LogLevel.NORMAL);
+		        throw e;
+		    } catch(SubscriptionExistsAlreadyException e) {
+		        // This is thrown before anything is stored to the database, rollback not needed.
+		        throw e;
 		    }
 		}
 		}
@@ -1458,7 +1469,14 @@ public final class SubscriptionManager implements PrioRunnable {
 	        } catch(RuntimeException e) {
                 Persistent.checkedRollbackAndThrow(mDB, this, e);
                 throw e; // Satisfy the compiler: Without, it would complain about missing return.
-            }
+	        } catch(InterruptedException e) {
+	            // Shutdown of WOT was requested. This is normal mode of operation.
+	            Persistent.checkedRollback(mDB, this, e, LogLevel.NORMAL);
+	            throw e;
+	        } catch(SubscriptionExistsAlreadyException e) {
+	            // This is thrown before anything is stored to the database, rollback not needed.
+	            throw e;
+	        }
 		}
 		}
 		}
@@ -1493,6 +1511,13 @@ public final class SubscriptionManager implements PrioRunnable {
 	        } catch(RuntimeException e) {
 	            Persistent.checkedRollbackAndThrow(mDB, this, e);
 	            throw e; // Satisfy the compiler: Without, it would complain about missing return.
+	        } catch(InterruptedException e) {
+	            // Shutdown of WOT was requested. This is normal mode of operation.
+	            Persistent.checkedRollback(mDB, this, e, LogLevel.NORMAL);
+	            throw e;
+	        } catch(SubscriptionExistsAlreadyException e) {
+	            // This is thrown before anything is stored to the database, rollback not needed.
+	            throw e;
 	        }
 	    }
 		}
