@@ -332,7 +332,7 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 				        // object in the synchronization as re-synchronization typically happens
 				        // due to connection loss, and its primary purpose is to fix the mismatches.
 				        // But In this *debug* client, the connection should not be lost, so 
-				        // e-synchronization should always produce matching data.
+				        // re-synchronization should always produce matching data.
 				        if(!existing.equals(changeSet.afterChange)) {
 				            Logger.warning(this, "Mismatch during re-synchronization - maybe"
 				                               + "the connection was lost? "
