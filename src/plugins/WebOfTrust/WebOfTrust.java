@@ -1730,7 +1730,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// Must be terminated after anything is down which can modify the database
 		try {
 			if(mDebugFCPClient != null) {
-				mSubscriptionManager.run(); // Make sure that pending notifications are deployed.
+			    // We now make sure that pending SubscriptionManager Notifications are deployed by
+			    // executing SubscriptionManager.run() before shutting down the DebugFCPClient:
+			    // The job of the DebugFCPClient is to compare the received notifications against
+			    // the main database to check whether the received dataset is complete and correct.
+			    // It needs all pending notifications for the data to match.
+			    // We first log that we are calling SubscriptionManager.run() for DebugFCPClient  
+			    // so that people don't think that SubscriptionManager.stop() is broken:
+			    // It would itself both log that stop() has executed already, and that run() is
+			    // executing after it, which would be confusing.
+			    Logger.debug(mSubscriptionManager, "run(): Executing for DebugFCPClient...");
+				mSubscriptionManager.run();
+				
 				mDebugFCPClient.stop();
 			}
 		} catch(Exception e) {
