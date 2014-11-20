@@ -121,10 +121,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             FCPPluginClient client, FCPPluginMessage fcpMessage) {
         
         if(fcpMessage.isReplyMessage()) {
-            Logger.warning(this, "Received an unexpected reply message: WOT currently should only"
-                + " use FCPPluginClient.sendSynchronous() for anything which is replied to by the"
-                + "client. Thus, all replies should be delivered to sendSynchronous() instead of the"
-                + "asynchronous message handler. Maybe the"
+            Logger.warning(this, "Received an unexpected reply message: WOT currently should only "
+                + "use FCPPluginClient.sendSynchronous() for anything which is replied to by the "
+                + "client. Thus, all replies should be delivered to sendSynchronous() instead of "
+                + "the asynchronous message handler. Maybe the "
                 + "sendSynchronous() thread timed out already? Reply message = " + fcpMessage);
             return null;
         }
