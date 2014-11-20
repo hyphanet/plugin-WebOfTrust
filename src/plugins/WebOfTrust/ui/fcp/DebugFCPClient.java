@@ -289,6 +289,17 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		public void handleSubscribedObjectChanged(final ChangeSet<T> changeSet) {
 			if(logMINOR) Logger.minor(this, "handleSubscribedObjectChanged(): " + changeSet);
 
+			// FIXME: Check value of EventSource.getVersionID() once its value is persisted by
+			// Identity/Trust/Store. Checks which would make sense:
+			// (1) If a synchronization is in progress, check that the versionID matches the one of
+			//     the synchronization.
+			// (2) If no synchronization is in progress, check that
+			//     ChangeSet.beforeChange.getVersionID().equals(currentBeforeChange.getVersionID()).
+			//     You should probably even amend the equals() of Identity/Trust/Score to includ
+			//     the check.
+			// Currently, it won't make sense to check it as it is initialized with a random value
+			// more often than needed. The result would be that check (2) would fail.
+			
 			// Check validity of existing data
 			if(changeSet.beforeChange != null) {
 				final T currentBeforeChange = mTarget.get(changeSet.beforeChange.getID());
