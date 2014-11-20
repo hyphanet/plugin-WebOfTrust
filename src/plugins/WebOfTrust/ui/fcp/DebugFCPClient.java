@@ -144,17 +144,20 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 		}
 		
 		Logger.normal(this, "terminate(): Validating received data against WOT database...");
-		validateAgainstDatabase(allIdentities, mReceivedIdentities);
-		validateAgainstDatabase(mWebOfTrust.getAllTrusts(), mReceivedTrusts);
-		validateAgainstDatabase(mWebOfTrust.getAllScores(), mReceivedScores);
+		validateAgainstDatabase(Identity.class, allIdentities, mReceivedIdentities);
+		validateAgainstDatabase(Trust.class, mWebOfTrust.getAllTrusts(), mReceivedTrusts);
+		validateAgainstDatabase(Score.class, mWebOfTrust.getAllScores(), mReceivedScores);
 		Logger.normal(this, "terminate() finished.");
 	}
 	
-	private <T extends Persistent> void validateAgainstDatabase(final ObjectSet<T> expectedSet, final HashMap<String, T> actualSet) {
-	    // FIXME: actualSet.toString() will log the WHOLE thing. Only log the type T somehow,
-	    // possibly by expecting a SubscriptionType or Class parameter.
-		if(actualSet.size() != expectedSet.size())
-			Logger.error(this, "Size mismatch for " + actualSet + ": actual size " + actualSet.size() + " != expected size " + expectedSet.size());
+	private <T extends Persistent> void validateAgainstDatabase(final Class<T> type,
+	        final ObjectSet<T> expectedSet, final HashMap<String, T> actualSet) {
+
+		if(actualSet.size() != expectedSet.size()) {
+			Logger.error(this,
+			    "Size mismatch for " + type + " subscription: "
+			    + ": actual size " + actualSet.size() + " != expected size " + expectedSet.size());
+		}
 		
 		for(final T expected : expectedSet) {
 			final T actual = actualSet.get(expected.getID());
