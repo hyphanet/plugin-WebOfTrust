@@ -430,14 +430,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			IfNull.thenThrow(mID, "mID");
 			UUID.fromString(mID); // Throws if invalid
 		}
-		
-		/**
-		 * You must call {@link #initializeTransient} before using this!
-		 */
-		protected final SubscriptionManager getSubscriptionManager() {
-			return mWebOfTrust.getSubscriptionManager();
-		}
-		
+
 		/**
 		 * Gets the {@link Client} which created this {@link Subscription}
 		 * @see #mClient
