@@ -561,6 +561,9 @@ public final class SubscriptionManager implements PrioRunnable {
          * 
          * The type parameter of the {@link ObjectChangedNotification} shall match the type
          * parameter EventType extends EventSource of this {@link Subscription}.
+         * <br><br>
+         * 
+         * TODO: Code quality: Rename to storeObjectChangedNotificationWithoutCommit
          */
         abstract void storeNotificationWithoutCommit(
             final EventType oldEventSource, final EventType newEventSource);
