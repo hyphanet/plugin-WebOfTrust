@@ -1418,6 +1418,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * <br><br>
 	 *  
 	 * TODO: Code quality: Code duplication at subscribeToTrusts() and subscribeToScores()
+	 * TODO: Code quality: Rename to subscribeToIdentitiesByFCP() or similar.
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the {@link Client}. Must be unique among all FCP connections!
 	 * @return The {@link IdentitiesSubscription} which is created by this function.
