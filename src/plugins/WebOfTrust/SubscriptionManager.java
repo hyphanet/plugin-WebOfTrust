@@ -98,7 +98,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		/**
 		 * An ID which associates this client with a FCP connection if the type is FCP.<br><br>
 		 * 
-		 * Must be a valid {@link UUID}, see {@link FCPPluginClient#getID()}.<br>
+		 * Must be a valid {@link UUID}, see {@link PluginRespirator#getPluginClientByID(UUID)}.<br>
 		 * (Stored as String so it is a db4o native type and doesn't require explicit management). 
 		 * 
 		 * @see #getFCP_ID()
