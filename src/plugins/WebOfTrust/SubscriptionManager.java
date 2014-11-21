@@ -124,6 +124,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		private byte mSendNotificationsFailureCount = 0;
 		
+		/** @param myFCP_ID See {@link #mFCP_ID} */
 		public Client(final UUID myFCP_ID) {
             assert(myFCP_ID != null);
             
