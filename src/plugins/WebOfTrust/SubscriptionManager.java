@@ -1426,8 +1426,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 *             If an external thread requested the current thread to terminate via
 	 *             {@link Thread#interrupt()} while the data was being transfered to the client.
 	 *             <br>This is a necessary shutdown mechanism as synchronization of a Subscription
-	 *             transfers possibly the whole WOT database to the client and therefore can take
-	 *             a very long time. Please honor it by terminating the thread so WOT can shutdown
+	 *             possibly creates a full copy of the whole WOT database and therefore can take a
+	 *             very long time. Please honor it by terminating the thread so WOT can shutdown
 	 *             quickly. 
 	 * @see IdentityChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
@@ -1468,9 +1468,9 @@ public final class SubscriptionManager implements PrioRunnable {
      *             If an external thread requested the current thread to terminate via
      *             {@link Thread#interrupt()} while the data was being transfered to the client.
      *             <br>This is a necessary shutdown mechanism as synchronization of a Subscription
-     *             transfers possibly the whole WOT database to the client and therefore can take
-     *             a very long time. Please honor it by terminating the thread so WOT can shutdown
-     *             quickly. 
+     *             possibly creates a full copy of the whole WOT database and therefore can take a
+     *             very long time. Please honor it by terminating the thread so WOT can shutdown
+     *             quickly.
 	 * @see TrustChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
 	public TrustsSubscription subscribeToTrusts(UUID fcpID)
@@ -1510,9 +1510,9 @@ public final class SubscriptionManager implements PrioRunnable {
      *             If an external thread requested the current thread to terminate via
      *             {@link Thread#interrupt()} while the data was being transfered to the client.
      *             <br>This is a necessary shutdown mechanism as synchronization of a Subscription
-     *             transfers possibly the whole WOT database to the client and therefore can take
-     *             a very long time. Please honor it by terminating the thread so WOT can shutdown
-     *             quickly. 
+     *             possibly creates a full copy of the whole WOT database and therefore can take a
+     *             very long time. Please honor it by terminating the thread so WOT can shutdown
+     *             quickly.
 	 * @see ScoreChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
 	public ScoresSubscription subscribeToScores(UUID fcpID)
