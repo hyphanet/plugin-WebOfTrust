@@ -712,8 +712,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
      * It provides two clones of the {@link Persistent} object about whose change the client shall be notified:
-     * - A version of it before the change via {@link Notification#getOldObject()}
-     * - A version of it after the change via {@link Notification#getNewObject()}
+     * - A version of it before the change via {@link ObjectChangedNotification#getOldObject()}<br>
+     * - A version of it after the change via {@link ObjectChangedNotification#getNewObject()}<br>
      * 
      * If one of the before/after getters returns null, this is because the object was added/deleted.
      * If both do return an non-null object, the object was modified.
