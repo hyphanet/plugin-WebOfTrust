@@ -1297,6 +1297,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * Thrown by various functions which query the database for a certain {@link Client} if none exists matching the given filters.
+	 * TODO: Performance: Look at the throwers and see whether this Exception is predictable enough
+	 * to justify not generating a stack trace.
 	 */
 	@SuppressWarnings("serial")
 	public static final class UnknownClientException extends Exception {
@@ -1311,6 +1313,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * Thrown by various functions which query the database for a certain {@link Subscription} if none exists matching the given filters.
+	 * TODO: Performance: Look at the throwers and see whether this Exception is predictable enough
+	 * to justify not generating a stack trace.
 	 */
 	@SuppressWarnings("serial")
 	public static final class UnknownSubscriptionException extends Exception {
