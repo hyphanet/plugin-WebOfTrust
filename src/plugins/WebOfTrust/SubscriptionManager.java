@@ -488,7 +488,8 @@ public final class SubscriptionManager implements PrioRunnable {
          * <br><br>
          * 
 		 * The job of this function is to store the initial state of the WOT database in this
-		 * Subscription, as a clone of all relevant objects, serialized into a byte[].<br>
+		 * Subscription, as a clone of all relevant objects, serialized into a series of
+		 * {@link ObjectChangedNotification}s.<br>
 		 * The actual deployment of the data to the client will happen in the future, as part of
 		 * regular {@link Notification} deployment: The synchronization can be large in size, and
 		 * thus sending it over the network can take a long time. Therefore, it would be bad if we
