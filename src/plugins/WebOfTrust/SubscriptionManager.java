@@ -379,8 +379,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	}
 	
 	/**
-	 * A subscription stores the information which client is subscribed to which content and how it is supposed
-	 * to be notified about updates.
+	 * A subscription stores the information which client is subscribed to which content.<br>
 	 * For each {@link Client}, one subscription is stored one per {@link EventSource}-type.
 	 * A {@link Client} cannot have multiple subscriptions of the same type.
 	 * 
