@@ -1280,6 +1280,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Thrown when a single {@link Client} tries to file a {@link Subscription} of the same class of
 	 * {@link EventSource}.
 	 * 
+	 * TODO: Performance: Do not generate a stack trace, as this is a planned Exception.
+	 * 
 	 * @see #throwIfSimilarSubscriptionExists
 	 */
 	@SuppressWarnings("serial")
