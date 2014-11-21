@@ -720,6 +720,13 @@ public final class SubscriptionManager implements PrioRunnable {
      * NOTICE: Modification can also mean that its class has changed!
      * 
      * NOTICE: Both Persistent objects are not stored in the database and must not be stored there to prevent duplicates!
+     * <br><br>
+     * 
+     * ATTENTION: {@link ObjectChangedNotification#getOldObject()}==null does NOT mean that the
+     * object did not exist before the notification for ObjectChangedNotifications which are
+     * deployed as part of a {@link Subscription} synchronization.<br>
+     * See {@link Subscription#storeSynchronizationWithoutCommit()} and
+     * {@link BeginSynchronizationNotification}.
 	 */
 	@SuppressWarnings("serial")
 	public static abstract class ObjectChangedNotification extends Notification {
@@ -793,7 +800,15 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 
 		/**
-		 * @return The changed {@link Persistent} object before the change. Null if the change was the creation of the object.
+		 * Returns the changed {@link Persistent} object before the change.<br>
+		 * Null if the change was the creation of the object.<br><br>
+		 * 
+		 * ATTENTION: A return value of null does NOT mean that the object did not exist before the
+		 * notification for ObjectChangedNotifications which are deployed as part of a
+		 * {@link Subscription} synchronization.<br>
+		 * See {@link Subscription#storeSynchronizationWithoutCommit()} and
+		 * {@link BeginSynchronizationNotification}.
+		 * 
 		 * @see #mOldObject The backend member variable of this getter.
 		 */
 		public final Persistent getOldObject() throws NoSuchElementException {
