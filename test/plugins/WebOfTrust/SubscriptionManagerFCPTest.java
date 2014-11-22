@@ -52,7 +52,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	@Ignore
 	static class ReplyReceiver implements FredPluginFCPMessageHandler.ClientSideFCPMessageHandler {
 
-		final LinkedList<FCPPluginMessage> mResults = new LinkedList<>();
+		private final LinkedList<FCPPluginMessage> mResults = new LinkedList<>();
 
 		/**
 		 * Called by fred to handle messages from WOT's FCP server.
@@ -107,7 +107,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	    // In opposite to send(), the reply to sendSynchronous() is NOT passed to the
 	    // FredPluginFCPMessageHandler, so the mReplyReceiver won't have received it, and we have to
 	    // add it manually to its list.
-	    mReplyReceiver.mResults.addLast(reply);
+	    mReplyReceiver.handlePluginFCPMessage(mClient, reply);
 	}
 
 	/**
