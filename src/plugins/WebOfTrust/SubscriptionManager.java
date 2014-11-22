@@ -1796,8 +1796,12 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Typically called when a {@link Identity} or {@link OwnIdentity} is added, deleted or its attributes are modified.
 	 * See {@link #subscribeToIdentities(String)} for a list of the changes which do or do not trigger a notification.
 	 * 
-	 * This function does not store a reference to the given identity object in the database, it only stores the ID.
-	 * You are safe to pass non-stored objects or objects which must not be stored.
+     * <br><br>This function does not store the given objects as real database entries, it
+     * only stores a copy of them serialized into a byte[] by {@link Persistent#serialize()},
+     * encapsulated into a {@link Notification} database object.<br>
+     * Thus, the passed objects will be invisible to regular database queries and you are safe to
+     * pass object such as clones which must not be stored in the database for consistency reasons
+     * (= not duplicating the objects in the main tables).<br><br>
 	 * 
 	 * You must synchronize on this {@link SubscriptionManager} and the {@link Persistent#transactionLock(ExtObjectContainer)} when calling this function!
 	 * 
@@ -1822,8 +1826,12 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * Typically called when a {@link Trust} is added, deleted or its attributes are modified.
 	 * 
-	 * This function does not store references to the passed objects in the database, it only stores their IDs.
-	 * You are safe to pass non-stored objects or objects which must not be stored.
+     * <br><br>This function does not store the given objects as real database entries, it
+     * only stores a copy of them serialized into a byte[] by {@link Persistent#serialize()},
+     * encapsulated into a {@link Notification} database object.<br>
+     * Thus, the passed objects will be invisible to regular database queries and you are safe to
+     * pass object such as clones which must not be stored in the database for consistency reasons
+     * (= not duplicating the objects in the main tables).<br><br>
 	 * 
 	 * You must synchronize on this {@link SubscriptionManager} and the {@link Persistent#transactionLock(ExtObjectContainer)} when calling this function!
 	 * 
@@ -1848,8 +1856,12 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * Typically called when a {@link Score} is added, deleted or its attributes are modified.
 	 * 
-	 * This function does not store references to the passed objects in the database, it only stores their IDs.
-	 * You are safe to pass non-stored objects or objects which must not be stored.
+     * <br><br>This function does not store the given objects as real database entries, it
+     * only stores a copy of them serialized into a byte[] by {@link Persistent#serialize()},
+     * encapsulated into a {@link Notification} database object.<br>
+     * Thus, the passed objects will be invisible to regular database queries and you are safe to
+     * pass object such as clones which must not be stored in the database for consistency reasons
+     * (= not duplicating the objects in the main tables).<br><br>
 	 * 
 	 * You must synchronize on this {@link SubscriptionManager} and the {@link Persistent#transactionLock(ExtObjectContainer)} when calling this function!
 	 * 
