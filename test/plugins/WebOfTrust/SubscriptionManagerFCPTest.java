@@ -142,9 +142,12 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	@Test public void testSubscribeUnsubscribe()
 	        throws FSParseException, IOException, InterruptedException {
 	    
-		testSubscribeUnsubscribe("Identities");
-		testSubscribeUnsubscribe("Trusts");
-		testSubscribeUnsubscribe("Scores");
+	    // Subscribe+Unsubscribe twice to check if unsubscribe leaves everything in a clean state
+	    for(int i=0; i < 2; ++i) {
+    		testSubscribeUnsubscribe("Identities");
+    		testSubscribeUnsubscribe("Trusts");
+    		testSubscribeUnsubscribe("Scores");
+	    }
 	}
 	
 	void testSubscribeUnsubscribe(String type)
