@@ -1952,11 +1952,13 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	private void scheduleNotificationProcessing() {
 	    synchronized(mTickerLock) {
-	        if(mTicker != null) {
-	            mTicker.queueTimedJob(
-	                this, "WoT SubscriptionManager", PROCESS_NOTIFICATIONS_DELAY, false, true);
-	        } else
-	            Logger.warning(this, "Cannot schedule notification processing: Ticker is null.");
+	        // Valid in unit tests. Don't log a warning to not spam stderr, this function is
+	        // executed frequently. We log a warning once in start() already.
+	        if(mTicker == null)
+	            return; 
+	        
+	        mTicker.queueTimedJob(
+	            this, "WoT SubscriptionManager", PROCESS_NOTIFICATIONS_DELAY, false, true);
 	    }
 	}
 	
@@ -1980,6 +1982,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		    if(respirator != null) { // We are connected to a node
 		        mTicker = new TrivialTicker(respirator.getNode().executor);
 		    } else { // We are inside of a unit test
+		        Logger.warning(this, "Cannot schedule notification processing: PluginRespirator == "
+		                           + "null. This is OK in unit tests.");
 		        mTicker = null;
 		    }
 		}
