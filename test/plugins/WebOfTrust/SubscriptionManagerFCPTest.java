@@ -52,7 +52,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	@Ignore
 	static class ReplyReceiver implements FredPluginFCPMessageHandler.ClientSideFCPMessageHandler {
 
-		final LinkedList<FCPPluginMessage> results = new LinkedList<>();
+		final LinkedList<FCPPluginMessage> mResults = new LinkedList<>();
 
 		/**
 		 * Called by fred to handle messages from WOT's FCP server.
@@ -61,7 +61,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
         public FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client,
                 FCPPluginMessage message) {
 		    
-		    results.addLast(message);
+		    mResults.addLast(message);
 
 		    // The fred code which calls this handler expects a reply to be returned to indicate
 		    // success so the sendSynchronous() calls in WOT can return.
@@ -73,15 +73,15 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		 * @throws NoSuchElementException If no result is available
 		 */
 		public FCPPluginMessage getNextResult() {
-			return results.removeFirst();
+			return mResults.removeFirst();
 		}
 		
 		public void restoreNextResult(FCPPluginMessage message) {
-		    results.addFirst(message);
+		    mResults.addFirst(message);
 		}
 		
 		public boolean hasNextResult() {
-			return !results.isEmpty();
+			return !mResults.isEmpty();
 		}
 
 	}
@@ -107,7 +107,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	    // In opposite to send(), the reply to sendSynchronous() is NOT passed to the
 	    // FredPluginFCPMessageHandler, so the mReplyReceiver won't have received it, and we have to
 	    // add it manually to its list.
-	    mReplyReceiver.results.addLast(reply);
+	    mReplyReceiver.mResults.addLast(reply);
 	}
 
 	/**
