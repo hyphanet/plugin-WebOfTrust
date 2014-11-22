@@ -20,6 +20,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import plugins.WebOfTrust.SubscriptionManager.Notification;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
@@ -39,6 +40,9 @@ import freenet.pluginmanager.FredPluginFCPMessageHandler.FCPPluginMessage;
 import freenet.support.SimpleFieldSet;
 
 /**
+ * TODO: New test: For each type of {@link Notification}, check whether it gets resent properly if
+ * we reply with a {@link FCPPluginMessage#success}==false.
+ * 
  * @see FCPClientReferenceImplementation This class can do an online test which is similar to this unit test.
  * @author xor (xor@freenetproject.org)
  */
