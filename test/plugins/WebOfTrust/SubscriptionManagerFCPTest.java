@@ -52,7 +52,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	@Ignore
 	static class ReplyReceiver implements FredPluginFCPMessageHandler.ClientSideFCPMessageHandler {
 
-		LinkedList<FCPPluginMessage> results = new LinkedList<FCPPluginMessage>();
+		final LinkedList<FCPPluginMessage> results = new LinkedList<>();
 
 		/**
 		 * Called by fred to handle messages from WOT's FCP server.
