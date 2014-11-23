@@ -5,17 +5,22 @@ package plugins.WebOfTrust;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.UUID;
 
 import javax.xml.transform.TransformerException;
 
+import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import freenet.keys.FreenetURI;
+import freenet.support.io.Closer;
 
 /**
  * A unit test for class {@link XMLTransformer}.
@@ -172,4 +177,56 @@ public class XMLTransformerTest extends DatabaseBasedTest {
 		//fail("Not yet implemented"); // TODO
 	}
 
+    /**
+     * Tests whether we are vulnerable to the
+     * <a href="https://www.owasp.org/index.php/XML_External_Entity_%28XXE%29_Processing">
+     * "XML External Entity" attack</a>.<br><br>
+     * 
+     * This attack works by defining an !ENTITY to be included from an external URI.<br>
+     * The URI could be http to break the anonymity of WOT users.<br><br>
+     * 
+     * ATTENTION: We only test with a file:// URI as this is easier to implement.
+     */
+    public void testXXEAttack() throws IOException, SAXException {
+        // TODO: Code quality: Use JUnit4 API to obtain a temp file
+        final String attackedFileName = UUID.randomUUID().toString();
+        final String attackedFileContent = UUID.randomUUID().toString();
+        final String xmlString =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+          + "<!DOCTYPE foo ["
+          + "<!ELEMENT foo ANY >"
+          + "<!ENTITY xxe SYSTEM \"file://" + attackedFileName + "\" >]>"
+          + "<foo>&xxe;</foo>"; // &xxe; will be replaced by attackedFileContent if we're vulnerable
+        
+        FileWriter attackedFileWriter = null;
+        ByteArrayInputStream inputStream = null;
+        
+        try {
+            attackedFileWriter = new FileWriter(attackedFileName);
+            attackedFileWriter.write(attackedFileContent);
+            attackedFileWriter.close();
+            attackedFileWriter = null;
+            
+            inputStream = new ByteArrayInputStream(xmlString.getBytes("UTF-8"));
+            
+            try {
+                @SuppressWarnings("unused")
+                Document xml = mTransformer.parseDocument(inputStream, inputStream.available() + 1);
+                
+                fail("The XML parser should throw upon an XXE attack attempt!");
+                
+                // TODO: Add code which checks whether the String attackedFileContent is indeed
+                // exposed through the Document. Might be possible by (have not actually tried it!):
+                // xml.getElementsByTagName("foo");
+            } catch(SAXParseException e) {
+                assertEquals(
+                    "DOCTYPE is disallowed when the feature "
+                  + "\"http://apache.org/xml/features/disallow-doctype-decl\" set to true."
+                  , e.getMessage());
+            }
+        } finally {
+            Closer.close(attackedFileWriter);
+            Closer.close(inputStream);
+        }
+    }
 }
