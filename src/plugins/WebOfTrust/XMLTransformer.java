@@ -159,7 +159,27 @@ public final class XMLTransformer {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
+    /**
+     * @param softXMLByteSizeLimit
+     *            <b>ATTENTION:</b> This limit cannot be accurately followed due to the way
+     *            {@link InputStream#available()} works. Consider this as a soft, fallback security
+     *            mechanism and please take further precautions to prevent too larger input. 
+     */
+    Document parseDocument(InputStream xmlInputStream, final int softXMLByteSizeLimit)
+            throws IOException, SAXException {
+        
+        xmlInputStream = new OneBytePerReadInputStream(xmlInputStream); // Workaround for Java bug, see the stream class for explanation
+         
+        // May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
+        if(xmlInputStream.available() > softXMLByteSizeLimit)
+            throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
+        
+        synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
+            return mDocumentBuilder.parse(xmlInputStream);
+        }
+    }
+
 	public void exportOwnIdentity(OwnIdentity identity, OutputStream os) throws TransformerException {
 		Document xmlDoc;
 		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway 
@@ -305,20 +325,11 @@ public final class XMLTransformer {
 	private ParsedIdentityXML parseIdentityXML(InputStream xmlInputStream) throws IOException {
 		Logger.normal(this, "Parsing identity XML...");
 		
-		xmlInputStream = new OneBytePerReadInputStream(xmlInputStream); // Workaround for Java bug, see the stream class for explanation
-
-		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
-		if(xmlInputStream.available() > MAX_IDENTITY_XML_BYTE_SIZE)
-			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
-		
 		final ParsedIdentityXML result = new ParsedIdentityXML();
 		
 		try {			
-			Document xmlDoc;
-			synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-				xmlDoc = mDocumentBuilder.parse(xmlInputStream);
-			}
-	
+			Document xmlDoc = parseDocument(xmlInputStream, MAX_IDENTITY_XML_BYTE_SIZE);
+			
 			final Element identityElement = (Element)xmlDoc.getElementsByTagName("Identity").item(0);
 			
 			if(Integer.parseInt(identityElement.getAttribute("Version")) > XML_FORMAT_VERSION)
@@ -611,19 +622,11 @@ public final class XMLTransformer {
 	 */
 	public Identity importIntroduction(OwnIdentity puzzleOwner, InputStream xmlInputStream)
 		throws InvalidParameterException, SAXException, IOException {
-		xmlInputStream = new OneBytePerReadInputStream(xmlInputStream); // Workaround for Java bug, see the stream class for explanation
-		
-		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
-		if(xmlInputStream.available() > MAX_INTRODUCTION_BYTE_SIZE)
-			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
-		
+	    
 		FreenetURI identityURI;
 		Identity newIdentity;
 		
-		Document xmlDoc;
-		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-			xmlDoc = mDocumentBuilder.parse(xmlInputStream);
-		}
+		Document xmlDoc = parseDocument(xmlInputStream, MAX_INTRODUCTION_BYTE_SIZE);
 		
 		Element introductionElement = (Element)xmlDoc.getElementsByTagName("IdentityIntroduction").item(0);
 
@@ -736,24 +739,15 @@ public final class XMLTransformer {
 	 */
 	public IntroductionPuzzle importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
 		throws SAXException, IOException, InvalidParameterException, UnknownIdentityException, IllegalBase64Exception, ParseException {
-		
-		xmlInputStream = new OneBytePerReadInputStream(xmlInputStream); // Workaround for Java bug, see the stream class for explanation
-		
-		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
-		if(xmlInputStream.available() > MAX_INTRODUCTIONPUZZLE_BYTE_SIZE)
-			throw new IllegalArgumentException("XML contains too many bytes: " + xmlInputStream.available());
-		
+	    
 		String puzzleID;
 		IntroductionPuzzle.PuzzleType puzzleType;
 		String puzzleMimeType;
 		Date puzzleValidUntilDate;
 		byte[] puzzleData;
 		
+		Document xmlDoc = parseDocument(xmlInputStream, MAX_INTRODUCTIONPUZZLE_BYTE_SIZE);
 		
-		Document xmlDoc;
-		synchronized(mDocumentBuilder) { // TODO: Figure out whether the DocumentBuilder is maybe synchronized anyway
-			xmlDoc = mDocumentBuilder.parse(xmlInputStream);
-		}
 		Element puzzleElement = (Element)xmlDoc.getElementsByTagName("IntroductionPuzzle").item(0);
 
 		if(Integer.parseInt(puzzleElement.getAttribute("Version")) > INTRODUCTION_XML_FORMAT_VERSION)
