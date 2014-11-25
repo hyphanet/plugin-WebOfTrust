@@ -149,6 +149,11 @@
 			<batchtest fork="yes">
 				<zipfileset src="${build-test-jar}">
 					<include name="**/*Test*.class"/>
+					<!-- Exclude member classes:
+					     Java will auto-generate switchtable classes for switch() upon enums.
+					     JUnit would then complain that those classes do not contain a public
+					     constructor. -->
+					<exclude name="**/*$*.class"/>
 					<exclude name="**/*Benchmark*.class" unless="benchmark" />
 				</zipfileset>
 			</batchtest>
