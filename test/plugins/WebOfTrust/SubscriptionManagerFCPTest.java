@@ -179,6 +179,18 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		assertFalse(mReplyReceiver.hasNextResult());
     }
 	
+    /**
+     * TODO: Code quality: Replace with {@link #subscribeAndSynchronize(String)} as it duplicates
+     * most of this.<br>
+     * The only difference is probably that this function here assumes that the
+     * received synchronization will be empty (= no messages will arrive between
+     * BeginSynchronizationEvent and EndSynchronizationEvent). The other function maybe could be
+     * made safe to validate this by having it compare the received synchronization data against
+     * the main WOT database. As the main WOT database should be empty here, the check would be
+     * equal to checking that the received synchronization is empty as demanded.
+     * And by that, the other user of the other function would receive the additional check of
+     * testing whether the synchronization is valid in comparison to the main WOT database.
+     */
 	String testSubscribeTo(String type)
 	        throws FSParseException, IOException, InterruptedException {
 	    
