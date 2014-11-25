@@ -306,12 +306,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
         assertEquals("Subscribed", subscription.params.get("Message"));
         assertEquals(type, subscription.params.get("To"));
         final String id = subscription.params.get("SubscriptionID");
-        try {
-            UUID.fromString(id);
-        } catch(IllegalArgumentException e) {
-            fail("SubscriptionID is invalid!");
-            throw e;
-        }
+        UUID.fromString(id); // Throws if invalid
         
         mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
         
