@@ -258,21 +258,19 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		subscribeAndSynchronize("Trusts");
 		subscribeAndSynchronize("Scores");
 		
-		assertEquals(new HashSet<Identity>(mWebOfTrust.getAllIdentities()),
-		             new HashSet<Identity>(mReceivedIdentities.values()));
-		
-		assertEquals(new HashSet<Trust>(mWebOfTrust.getAllTrusts()),
-		             new HashSet<Trust>(mReceivedTrusts.values()));
-
-		assertEquals(new HashSet<Score>(mWebOfTrust.getAllScores()),
-		             new HashSet<Score>(mReceivedScores.values()));
+		testWhetherReceivedDataMatchesMainDatabase();
 		
 		doRandomChangesToWOT(eventCount);
 		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
 		importObjectChangedEvents();
         assertFalse(mReplyReceiver.hasNextResult());
 
-		assertEquals(new HashSet<Identity>(mWebOfTrust.getAllIdentities()),
+		testWhetherReceivedDataMatchesMainDatabase();
+		
+	}
+
+    void testWhetherReceivedDataMatchesMainDatabase() {
+        assertEquals(new HashSet<Identity>(mWebOfTrust.getAllIdentities()),
 		             new HashSet<Identity>(mReceivedIdentities.values()));
 		
 		assertEquals(new HashSet<Trust>(mWebOfTrust.getAllTrusts()),
@@ -280,8 +278,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		
 		assertEquals(new HashSet<Score>(mWebOfTrust.getAllScores()),
 		             new HashSet<Score>(mReceivedScores.values()));
-		
-	}
+    }
 	
 	void subscribeAndSynchronize(final String type)
 	        throws FSParseException, InvalidParameterException, IOException, InterruptedException {
