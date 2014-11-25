@@ -159,7 +159,13 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	    
 		final String id = testSubscribeTo(type); // We are subscribed now.
 		
-		final SimpleFieldSet sfs = new SimpleFieldSet(true);
+		testUnsubscribeFrom(type, id);
+	}
+
+    void testUnsubscribeFrom(String type, final String id)
+            throws IOException, InterruptedException {
+        
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Unsubscribe");
 		sfs.putOverwrite("SubscriptionID", id);
 		fcpCall(sfs);
@@ -171,7 +177,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		assertEquals(type, result.params.get("From"));
 		assertEquals(id, result.params.get("SubscriptionID"));
 		assertFalse(mReplyReceiver.hasNextResult());
-	}
+    }
 	
 	String testSubscribeTo(String type)
 	        throws FSParseException, IOException, InterruptedException {
