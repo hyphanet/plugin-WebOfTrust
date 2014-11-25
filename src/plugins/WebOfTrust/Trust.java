@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.StringTokenizer;
+import java.util.UUID;
 
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -20,7 +21,7 @@ import freenet.support.StringValidityChecker;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Trust extends Persistent implements Cloneable, Serializable {
+public final class Trust extends Persistent implements Cloneable, EventSource {
 	
 	/** @see Serializable */
 	private static transient final long serialVersionUID = 1L;
@@ -101,7 +102,13 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 	// db4o uses the index on mTruster instead of the index on mTrusterTrustListEditon, so we don't create that index.
 	// @IndexedField
 	private long mTrusterTrustListEdition;
-	
+
+    /** An {@link UUID} set by {@link EventSource#setVersionID(UUID)}. See its JavaDoc for an
+     *  explanation of the purpose.<br>
+     *  Stored as String to reduce db4o maintenance overhead. */
+    private String mVersionID = null;
+
+
 	/**
 	 * A class for generating and validating Trust IDs.
 	 * Its purpose is NOT to be stored in the database: That would make the queries significantly slower.
@@ -456,4 +463,18 @@ public final class Trust extends Persistent implements Cloneable, Serializable {
 		mTrustee.activateFully();
 		stream.defaultWriteObject();
 	}
+
+    /** {@inheritDoc} */
+    @Override public void setVersionID(UUID versionID) { 
+        checkedActivate(1);
+        // No need to delete the old value from db4o: Its a String, and thus a native db4o value.
+        mVersionID = versionID.toString();
+    }
+
+    /** {@inheritDoc} */
+    @Override public UUID getVersionID() {
+        checkedActivate(1);
+        // FIXME: Validate whether this yields proper results using an event-notifications FCP dump
+        return mVersionID != null ? UUID.fromString(mVersionID) : UUID.randomUUID();
+    }
 }

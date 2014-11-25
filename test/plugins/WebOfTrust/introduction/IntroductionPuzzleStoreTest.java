@@ -12,7 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
-import plugins.WebOfTrust.DatabaseBasedTest;
+import plugins.WebOfTrust.AbstractJUnit3BaseTest;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.DuplicatePuzzleException;
@@ -26,7 +26,7 @@ import freenet.support.CurrentTimeUTC;
 /**
  * @author xor (xor@freenetproject.org)
  */
-public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
+public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 
 	private IntroductionPuzzleStore mPuzzleStore;
 	private List<IntroductionPuzzleFactory> mPuzzleFactories;
@@ -166,7 +166,9 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		assertEquals(puzzleCountB, mPuzzleStore.getUninsertedOwnPuzzlesByInserter(b).size());
 	}
 
-	public void testDeleteExpiredPuzzles() throws UnknownPuzzleException, IOException {
+	public void testDeleteExpiredPuzzles()
+	        throws UnknownPuzzleException, IOException, InterruptedException {
+	    
 		final List<IntroductionPuzzle> deletedPuzzles = new ArrayList<IntroductionPuzzle>();
 		final Date expirationDate = new Date(CurrentTimeUTC.getInMillis() + 500);
 		deletedPuzzles.add(constructPuzzleWithExpirationDate(mOwnIdentity, expirationDate));
@@ -176,9 +178,7 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		final List<OwnIntroductionPuzzle> notDeletedPuzzles = generateNewPuzzles(mOwnIdentity);
 		
 		while(CurrentTimeUTC.get().before(expirationDate)) {
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) { }
+		    Thread.sleep(500);
 		}
 
 		mPuzzleStore.deleteExpiredPuzzles();

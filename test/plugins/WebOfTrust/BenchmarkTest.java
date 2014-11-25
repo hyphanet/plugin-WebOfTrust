@@ -17,7 +17,7 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public class BenchmarkTest extends DatabaseBasedTest {
+public class BenchmarkTest extends AbstractJUnit3BaseTest {
 
 	/**
 	 * Benchmarks {@link WebOfTrust.verifyAndCorrectStoredScores}.

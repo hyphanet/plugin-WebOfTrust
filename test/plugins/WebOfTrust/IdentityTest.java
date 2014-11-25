@@ -22,7 +22,7 @@ import freenet.support.CurrentTimeUTC;
 /**
  * @author xor (xor@freenetproject.org) where not specified otherwise
  */
-public final class IdentityTest extends DatabaseBasedTest {
+public final class IdentityTest extends AbstractJUnit3BaseTest {
 	
 	private final String requestUriString = "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/23";
 	private final String requestUriStringSSK = "SSK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/23";
@@ -67,7 +67,7 @@ public final class IdentityTest extends DatabaseBasedTest {
 	 * Tests whether {@link Identity.clone()} returns an Identity which:
 	 * - which {@link equals()} the original.
 	 * - which is not the same object.
-	 * - which meets the requirements of {@link DatabaseBasedTest#testClone(Class, Object, Object)}
+	 * - which meets the requirements of {@link AbstractJUnit3BaseTest#testClone(Class, Object, Object)}
 	 */
 	public void testClone() throws MalformedURLException, InvalidParameterException, IllegalArgumentException, IllegalAccessException, InterruptedException {
 		final Identity original = new Identity(mWoT, getRandomSSKPair()[1], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
@@ -342,9 +342,7 @@ public final class IdentityTest extends DatabaseBasedTest {
 // TODO: Finish implementation and enable.	
 //	public void testEquals() {
 //		do {
-//			try {
-//				Thread.sleep(1);
-//			} catch (InterruptedException e) { }
+//			Thread.sleep(1);
 //		} while(identity.getAddedDate().equals(CurrentTimeUTC.get()));
 //		
 //		assertEquals(identity, identity);
@@ -364,9 +362,7 @@ public final class IdentityTest extends DatabaseBasedTest {
 //	
 //	public void testClone() {
 //		do {
-//			try {
-//				Thread.sleep(1);
-//			} catch (InterruptedException e) { }
+//		    Thread.sleep(1);
 //		} while(identity.getAddedDate().equals(CurrentTimeUTC.get()));
 //		
 //		Identity clone = identity.clone();

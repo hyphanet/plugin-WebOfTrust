@@ -35,7 +35,7 @@ import com.db4o.ext.ExtObjectContainer;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public class DatabaseShutdownRollbackTest extends DatabaseBasedTest {
+public class DatabaseShutdownRollbackTest extends AbstractJUnit3BaseTest {
 
 	@Ignore
 	private static final class Leak {

@@ -15,6 +15,7 @@ import java.util.Random;
 import junit.framework.TestCase;
 
 import org.junit.Ignore;
+import org.junit.rules.TemporaryFolder;
 
 import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
@@ -40,17 +41,21 @@ import freenet.keys.InsertableClientSSK;
  * 
  * You have to call super.setUp() and super.tearDown() if you override one of those methods.
  * 
- * TODO: Rename to "TestBaseClass" once event-notifications is merged.
- * 
  * @author xor (xor@freenetproject.org)
+ * @deprecated Use {@link AbstractJUnit4BaseTest} instead.
  */
-public class DatabaseBasedTest extends TestCase {
+@Deprecated
+public class AbstractJUnit3BaseTest extends TestCase {
 
 	protected WebOfTrust mWoT;
 	
 	protected RandomSource mRandom;
 
 	/**
+	 * TODO: Code quality: When migrating this code to {@link AbstractJUnit4BaseTest}, use
+	 * JUnit's {@link TemporaryFolder} instead. It will both ensure that the file does not exist
+	 * and that it is deleted at shutdown.
+	 *  
 	 * @return Returns the filename of the database. This is the name of the current test function plus ".db4o".
 	 */
 	public String getDatabaseFilename() {
@@ -140,7 +145,10 @@ public class DatabaseBasedTest extends TestCase {
 	/**
 	 * Generates a String containing random characters of the lowercase Latin alphabet.
 	 * @param The length of the returned string.
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#getRandomLatinString(int)} instead, which is a
+     *             copypaste of this.
 	 */
+	@Deprecated
 	protected String getRandomLatinString(int length) {
 		char[] s = new char[length];
 		for(int i=0; i<length; ++i)
@@ -151,7 +159,11 @@ public class DatabaseBasedTest extends TestCase {
 	/**
 	 * Returns a normally distributed value with a bias towards positive trust values.
 	 * TODO: Remove this bias once trust computation is equally fast for negative values;
+	 * 
+     * @deprecated Use {@link AbstractJUnit4BaseTest#getRandomTrustValue()} instead, which is a
+     *             copypaste of this.
 	 */
+	@Deprecated
 	private byte getRandomTrustValue() {
 		final double trustRange = Trust.MAX_TRUST_VALUE - Trust.MIN_TRUST_VALUE + 1;
 		long result;
@@ -165,7 +177,14 @@ public class DatabaseBasedTest extends TestCase {
 	/**
 	 * Generates a random SSK request-/insert-keypair, suitable for being used when creating identities.
 	 * @return An array where slot 0 is the insert URI and slot 1 is the request URI
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#getRandomInsertURI()} instead. Notice that
+	 *             even though in opposite to this function it only generates the insert URI, not
+	 *             the request URI, it will probably be sufficient: {@link OwnIdentity} creation has
+	 *             been adapted some time ago to only require the insert URI, not the full keypair.
+	 *             If it turns out to be not sufficient, please copy this function to
+	 *             {@link AbstractJUnit4BaseTest}.  
 	 */
+	@Deprecated
 	protected FreenetURI[] getRandomSSKPair() {
 		InsertableClientSSK ssk = InsertableClientSSK.createRandom(mRandom, "");
 		return new FreenetURI[]{ ssk.getInsertURI(), ssk.getURI() };
@@ -173,7 +192,11 @@ public class DatabaseBasedTest extends TestCase {
 	
 	/**
 	 * Generates a random SSK request URI, suitable for being used when creating identities.
+	 * 
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#getRandomRequestURI()} instead, which is a
+	 *             copypaste of this.
 	 */
+	@Deprecated
 	protected FreenetURI getRandomRequestURI() {
 		return InsertableClientSSK.createRandom(mRandom, "").getURI();
 	}
@@ -186,7 +209,10 @@ public class DatabaseBasedTest extends TestCase {
 	 * 
 	 * @param count Amount of identities to add
 	 * @return An {@link ArrayList} which contains all added identities.
+     * @deprecated Use {@link AbstractJUnit4BaseTest#addRandomIdentities(int)} instead, which is a
+     *             copypaste of this.
 	 */
+	@Deprecated
 	protected ArrayList<Identity> addRandomIdentities(int count) {
 		ArrayList<Identity> result = new ArrayList<Identity>(count+1);
 		
@@ -201,6 +227,13 @@ public class DatabaseBasedTest extends TestCase {
 		return result;
 	}
 	
+	/**
+     * @param count Amount of identities to add
+     * @return An {@link ArrayList} which contains all added identities.
+     * @deprecated Use {@link AbstractJUnit4BaseTest#addRandomOwnIdentities(int)} instead, which is
+     *             a copypaste of this.
+	 */
+	@Deprecated
 	protected ArrayList<OwnIdentity> addRandomOwnIdentities(int count) throws MalformedURLException, InvalidParameterException {
 		ArrayList<OwnIdentity> result = new ArrayList<OwnIdentity>(count+1);
 		
@@ -220,7 +253,11 @@ public class DatabaseBasedTest extends TestCase {
 	 * 
 	 * TODO: Adapt this to respect {@link Identity#doesPublishTrustList()}. First you need to adapt the callers of this function to actually
 	 * use identities which have set this to true - most callers generate identities with the default value which is false.
+	 * 
+     * @deprecated Use {@link AbstractJUnit4BaseTest#addRandomTrustValues(ArrayList, int)} instead,
+     *             which is a copypaste of this.
 	 */
+	@Deprecated
 	protected void addRandomTrustValues(final ArrayList<Identity> identities, final int trustCount) throws InvalidParameterException {
 		final int identityCount = identities.size();
 		
@@ -249,150 +286,7 @@ public class DatabaseBasedTest extends TestCase {
 		mWoT.finishTrustListImport();
 		Persistent.checkedCommit(mWoT.getDatabase(), this);
 	}
-	
-	protected void doRandomChangesToWOT(int eventCount) throws DuplicateTrustException, NotTrustedException, InvalidParameterException, UnknownIdentityException, MalformedURLException {
-		@Ignore
-		class Randomizer {
-			final RandomGrabHashSet<String> allOwnIdentities = new RandomGrabHashSet<String>(mRandom);
-			final RandomGrabHashSet<String> allIdentities = new RandomGrabHashSet<String>(mRandom);
-			final RandomGrabHashSet<String> allTrusts = new RandomGrabHashSet<String>(mRandom);
-			
-			Randomizer() { 
-				for(Identity identity : mWoT.getAllIdentities())
-					allIdentities.addOrThrow(identity.getID());
-				
-				for(OwnIdentity ownIdentity : mWoT.getAllOwnIdentities())
-					allOwnIdentities.addOrThrow(ownIdentity.getID());
-				
-				for(Trust trust : mWoT.getAllTrusts())
-					allTrusts.addOrThrow(trust.getID());
-			}
-		}
-		final Randomizer randomizer = new Randomizer();
-		
-		final int eventTypeCount = 15;
-		final long[] eventDurations = new long[eventTypeCount];
-		final int[] eventIterations = new int[eventTypeCount];
-		
-		for(int i=0; i < eventCount; ++i) {
-			final int type = mRandom.nextInt(eventTypeCount);
-			final long startTime = System.nanoTime();
-			switch(type) {
-				case 0: // WebOfTrust.createOwnIdentity()
-					{
-						final OwnIdentity identity = mWoT.createOwnIdentity(
-									getRandomSSKPair()[0], 
-									getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), 
-									mRandom.nextBoolean(),
-									getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH)
-								);
-						randomizer.allIdentities.addOrThrow(identity.getID());
-						randomizer.allOwnIdentities.addOrThrow(identity.getID());
-					}
-					break;
-				case 1: // WebOfTrust.deleteOwnIdentity()
-					{
-						final String original = randomizer.allOwnIdentities.getRandom();
-						mWoT.deleteOwnIdentity(original);
-						randomizer.allIdentities.remove(original);
-						randomizer.allOwnIdentities.remove(original);
-						// Dummy non-own identity which deleteOwnIdenity() has replaced it with.
-						final Identity surrogate = mWoT.getIdentityByID(original);
-						assertFalse(surrogate.getClass().equals(OwnIdentity.class));
-						randomizer.allIdentities.addOrThrow(surrogate.getID());
-					}
-					break;
-				case 2: // WebOfTrust.restoreOwnIdentity()
-					{
-						final FreenetURI[] keypair = getRandomSSKPair();
-						mWoT.restoreOwnIdentity(keypair[0]);
-						final String id = mWoT.getOwnIdentityByURI(keypair[1]).getID();
-						randomizer.allIdentities.addOrThrow(id);
-						randomizer.allOwnIdentities.addOrThrow(id);
-					}
-					break;
-				case 3: // WebOfTrust.restoreOwnIdentity() with previously existing non-own version of it
-					{
-						final FreenetURI[] keypair = getRandomSSKPair();
-						mWoT.addIdentity(keypair[1].toString());
-						mWoT.restoreOwnIdentity(keypair[0]);
-						final String id = mWoT.getOwnIdentityByURI(keypair[1]).getID();
-						randomizer.allIdentities.addOrThrow(id);
-						randomizer.allOwnIdentities.addOrThrow(id);
-					}
-					break;
-				case 4: // WebOfTrust.addIdentity()
-					randomizer.allIdentities.addOrThrow(mWoT.addIdentity(getRandomRequestURI().toString()).getID());
-					break;
-				case 5: // WebOfTrust.addContext() (adds context to identity)
-					{
-						final String ownIdentityID = randomizer.allOwnIdentities.getRandom();
-						final String context = getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH);
-						mWoT.addContext(ownIdentityID, context);
-						if(mRandom.nextBoolean())
-							mWoT.removeContext(ownIdentityID, context);
-					}
-					break;
-				case 6: // WebOfTrust.setProperty (adds property to identity)
-					{
-						final String ownIdentityID = randomizer.allOwnIdentities.getRandom();
-						final String propertyName = getRandomLatinString(Identity.MAX_PROPERTY_NAME_LENGTH);
-						final String propertyValue = getRandomLatinString(Identity.MAX_PROPERTY_VALUE_LENGTH);
-						mWoT.setProperty(ownIdentityID, propertyName, propertyValue);
-						if(mRandom.nextBoolean())
-							mWoT.removeProperty(ownIdentityID, propertyName);
-					}
-					break;
-				case 7: // Add/change trust value. Higher probability because trust values are the most changes which will happen on the real network
-				case 8:
-				case 9:
-				case 10:
-				case 11:
-				case 12:
-				case 13:
-					{
-						Identity truster;
-						Identity trustee;
-						do {
-							truster = mWoT.getIdentityByID(randomizer.allIdentities.getRandom());
-							trustee = mWoT.getIdentityByID(randomizer.allIdentities.getRandom());
-						} while(truster == trustee);
-						
-						mWoT.beginTrustListImport();
-						mWoT.setTrustWithoutCommit(truster, trustee, getRandomTrustValue(), getRandomLatinString(Trust.MAX_TRUST_COMMENT_LENGTH));
-						mWoT.finishTrustListImport();
-						Persistent.checkedCommit(mWoT.getDatabase(), this);
-						
-						final String trustID = new TrustID(truster, trustee).toString();
-						if(!randomizer.allTrusts.contains(trustID)) // We selected the truster/trustee randomly so a value may have existed
-							randomizer.allTrusts.addOrThrow(trustID); 
-					}
-					break;
-				case 14: // Remove trust value
-					{
-						mWoT.beginTrustListImport();
-						final Trust trust = mWoT.getTrust(randomizer.allTrusts.getRandom());
-						mWoT.removeTrustWithoutCommit(trust);
-						mWoT.finishTrustListImport();
-						Persistent.checkedCommit(mWoT.getDatabase(), this);
-						
-						randomizer.allTrusts.remove(trust.getID());
-					}
-					break;
-				default:
-					throw new RuntimeException("Please adapt eventTypeCount above!");
-			}
-			final long endTime = System.nanoTime();
-			eventDurations[type] += (endTime-startTime);
-			++eventIterations[type];
-		}
-		
-		for(int i=0; i < eventTypeCount; ++i) {
-			System.out.println("Event type " + i + ": Happend " + eventIterations[i] + " times; "
-					+ "avg. seconds: " + (((double)eventDurations[i])/eventIterations[i]) / (1000*1000*1000));
-		}
-	}
-	
+
 	protected HashSet<Identity> cloneAllIdentities() {
 		final ObjectSet<Identity> identities = mWoT.getAllIdentities();
 		final HashSet<Identity> clones = new HashSet<Identity>(identities.size() * 2);

@@ -47,21 +47,19 @@ import freenet.l10n.BaseL10n;
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.l10n.PluginL10n;
 import freenet.node.RequestClient;
+import freenet.node.fcp.FCPPluginClient;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginBaseL10n;
-import freenet.pluginmanager.FredPluginFCP;
+import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
-import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
-import freenet.support.api.Bucket;
 import freenet.support.io.FileUtil;
 
 /**
@@ -69,8 +67,15 @@ import freenet.support.io.FileUtil;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginVersioned, FredPluginRealVersioned,
-	FredPluginL10n, FredPluginBaseL10n {
+public final class WebOfTrust extends WebOfTrustInterface
+    implements
+        FredPlugin,
+        FredPluginThreadless,
+        FredPluginFCPMessageHandler.ServerSideFCPMessageHandler,
+        FredPluginVersioned,
+        FredPluginRealVersioned,
+        FredPluginL10n,
+        FredPluginBaseL10n {
 	
 	/* Constants */
 
@@ -268,7 +273,8 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 			mIntroductionClient = new IntroductionClient(this);
 			mIntroductionClient.start();
 
-			mWebInterface = new WebInterface(this, SELF_URI);
+			mWebInterface = WebInterface.constructIfEnabled(this, SELF_URI);
+
 			mFCPInterface = new FCPInterface(this);
 			mFCPInterface.start();
 			
@@ -366,6 +372,9 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
         	SubscriptionManager.ScoresSubscription.class,
         	SubscriptionManager.TrustsSubscription.class,
         	SubscriptionManager.Notification.class,
+        	SubscriptionManager.ObjectChangedNotification.class,
+        	SubscriptionManager.BeginSynchronizationNotification.class,
+        	SubscriptionManager.EndSynchronizationNotification.class,
         	SubscriptionManager.IdentityChangedNotification.class,
         	SubscriptionManager.ScoreChangedNotification.class,
         	SubscriptionManager.TrustChangedNotification.class,
@@ -1654,6 +1663,10 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		}
 	}
 
+	/**
+	 * ATTENTION: If you add new code which terminates threads, you must make sure that they are
+	 * terminated in {@link AbstractFullNodeTest#setUpNode()} as well.
+	 */
 	@Override
 	public void terminate() {
 		Logger.normal(this, "Web Of Trust plugin terminating ...");
@@ -1717,7 +1730,18 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		// Must be terminated after anything is down which can modify the database
 		try {
 			if(mDebugFCPClient != null) {
-				mSubscriptionManager.run(); // Make sure that pending notifications are deployed.
+			    // We now make sure that pending SubscriptionManager Notifications are deployed by
+			    // executing SubscriptionManager.run() before shutting down the DebugFCPClient:
+			    // The job of the DebugFCPClient is to compare the received notifications against
+			    // the main database to check whether the received dataset is complete and correct.
+			    // It needs all pending notifications for the data to match.
+			    // We first log that we are calling SubscriptionManager.run() for DebugFCPClient  
+			    // so that people don't think that SubscriptionManager.stop() is broken:
+			    // It would itself both log that stop() has executed already, and that run() is
+			    // executing after it, which would be confusing.
+			    Logger.debug(mSubscriptionManager, "run(): Executing for DebugFCPClient...");
+				mSubscriptionManager.run();
+				
 				mDebugFCPClient.stop();
 			}
 		} catch(Exception e) {
@@ -1745,13 +1769,16 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		Logger.normal(this, "Web Of Trust plugin terminated.");
 	}
 
-	/**
-	 * Inherited event handler from FredPluginFCP, handled in <code>class FCPInterface</code>.
-	 */
-	@Override
-	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
-		mFCPInterface.handle(replysender, params, data, accesstype);
-	}
+    /**
+     * Handles FCP messages.<br>
+     * Actually implemented at class {@link FCPInterface} at
+     * {@link FCPInterface#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
+     */
+    @Override
+    public FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message)
+    {
+        return mFCPInterface.handlePluginFCPMessage(client, message);
+    }
 
 	/**
 	 * Loads an own or normal identity from the database, querying on its ID.
@@ -1848,6 +1875,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * 
 	 * @return An {@link ObjectSet} containing all identities present in the database 
 	 */
+	@Override
 	public ObjectSet<Identity> getAllIdentities() {
 		final Query query = mDB.query();
 		query.constrain(Identity.class);
@@ -1974,7 +2002,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * 
 	 * You have to lock the WebOfTrust, the IntroductionPuzzleStore, the IdentityFetcher and the SubscriptionManager before calling this function.
 	 */
-	private void deleteWithoutCommit(Identity identity) {
+	void deleteWithoutCommit(Identity identity) {
 		// We want to use beginTrustListImport, finishTrustListImport / abortTrustListImport.
 		// If the caller already handles that for us though, we should not call those function again.
 		// So we check whether the caller already started an import.
@@ -2139,6 +2167,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * Get all scores in the database.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 */
+	@Override
 	public ObjectSet<Score> getAllScores() {
 		final Query query = mDB.query();
 		query.constrain(Score.class);
@@ -2348,6 +2377,7 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	 * 
 	 * @return An {@link ObjectSet} containing all {@link Trust} the passed Identity has received.
 	 */
+	@Override
 	public ObjectSet<Trust> getAllTrusts() {
 		final Query query = mDB.query();
 		query.constrain(Trust.class);
@@ -3670,6 +3700,10 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 		return mFetcher;
 	}
 
+    public IdentityInserter getIdentityInserter() {
+        return mInserter;
+    }
+
 	public XMLTransformer getXMLTransformer() {
 		return mXMLTransformer;
 	}
@@ -3681,7 +3715,11 @@ public final class WebOfTrust extends WebOfTrustInterface implements FredPlugin,
 	public IntroductionClient getIntroductionClient() {
 		return mIntroductionClient;
 	}
-	
+
+    public IntroductionServer getIntroductionServer() {
+        return mIntroductionServer;
+    }
+
 	@Override
 	protected FCPInterface getFCPInterface() {
 		return mFCPInterface;
