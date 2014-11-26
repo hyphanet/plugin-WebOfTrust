@@ -9,10 +9,12 @@ import freenet.support.Ticker;
 import freenet.support.io.NativeThread;
 
 /**
-* FIXME Javadoc
-*
-* @author bertm
-*/
+ * A {@link BackgroundJob} that is executed after triggers have been aggregated for a given delay.
+ *
+ * @author bertm
+ * @see BackgroundJob
+ * @see DelayedBackgroundJobFactory
+ */
 public class DelayedBackgroundJob implements BackgroundJob {
     private static enum JobState {
         /** Waiting for a trigger, no running job thread or scheduled job. */
@@ -27,32 +29,54 @@ public class DelayedBackgroundJob implements BackgroundJob {
         TERMINATED
     }
 
+    /** Special time value to indicate the absence of an oldest trigger. */
     private final static long NO_TRIGGER = 0;
 
+    /** The executor of this background job. */
     private final Executor executor;
+    /** The ticker used to schedule this job. */
     private final Ticker ticker;
+    /** Job wrapper for status tracking. */
     private final DelayedBackgroundRunnable realJob;
+    /** Human-readable name of this job. */
     private final String name;
-    private final long interval;
+    /** Aggregation delay in milliseconds. */
+    private final long delay;
 
+    /** The time at which the first trigger occurred after the latest job execution start. */
     private final AtomicLong oldestTrigger = new AtomicLong(NO_TRIGGER);
+    /** Running state of this job. */
     private JobState state = JobState.IDLE;
+    /** Job execution thread, only if the job is running. */
     private Thread thread = null;
 
     /**
-     * FIXME Javadoc: what is expected from executor and ticker?
+     * Constructs a delayed background job.
+     * The {@link Executor} and {@link Ticker} given <b>must</b> have an asynchronous implementation
+     * of respectively {@link Executor#execute(Runnable, String) execute} and
+     * {@link Ticker#queueTimedJob(Runnable, String, long, boolean, boolean) queueTimedJob}.
+     * @param job the job to run in the background
+     * @param name a human-readable name for the job
+     * @param delay the background job aggregation delay in milliseconds
+     * @param executor an asynchronous executor
+     * @param ticker an asynchronous ticker
      */
-    DelayedBackgroundJob(Runnable job, String name, long minInterval, Executor executor, Ticker
-            ticker) {
+    DelayedBackgroundJob(Runnable job, String name, long delay, Executor executor, Ticker ticker) {
         this.executor = executor;
         this.ticker = ticker;
         this.name = name;
-        this.interval = minInterval;
+        this.delay = delay;
         this.realJob = new DelayedBackgroundRunnable(job);
     }
 
     /**
-     * FIXME Javadoc: when does this schedule?
+     * Triggers scheduling of the job, if no job is scheduled. All subsequent triggers are ignored
+     * until the job executes.
+     *
+     * The first trigger received after the start of the last job execution leads to scheduling of
+     * another execution of the job, either after the delay or when the currently executing job is
+     * finished, whichever comes last. A newly constructed delayed background job can be assumed to
+     * have started its last job infinitely in the past.
      */
     @Override
     public void trigger() {
@@ -62,14 +86,14 @@ public class DelayedBackgroundJob implements BackgroundJob {
     }
 
     /**
-     * If this job is {@code IDLE}, enqueue the next run in {@link #interval} milliseconds after
+     * If this job is {@code IDLE}, enqueue the next run in {@link #delay} milliseconds after
      * the oldest trigger since the last job run, going to a {@code WAITING} state until it is run.
      */
     private synchronized void tryEnqueue() {
         if (state != JobState.IDLE) {
             return;
         }
-        long wait = oldestTrigger.get() + interval - System.currentTimeMillis();
+        long wait = oldestTrigger.get() + delay - System.currentTimeMillis();
         if (wait < 0) {
             wait = 0;
         }
@@ -104,8 +128,17 @@ public class DelayedBackgroundJob implements BackgroundJob {
     }
 
     @Override
-    public boolean isTerminated() {
+    public synchronized boolean isTerminated() {
         return state == JobState.TERMINATED;
+    }
+
+    @Override
+    public synchronized void waitForTermination(long timeout) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeout;
+        while(timeout >= 0 || state != JobState.TERMINATED) {
+            wait(timeout);
+            timeout = deadline - System.currentTimeMillis();
+        }
     }
 
     /**
@@ -159,6 +192,8 @@ public class DelayedBackgroundJob implements BackgroundJob {
             assert (thread == null) : "having job thread while going to TERMINATED state";
         }
         state = JobState.TERMINATED;
+        // Notify all threads waiting in waitForTermination()
+        notifyAll();
     }
 
     /**
