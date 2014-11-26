@@ -16,7 +16,7 @@ import freenet.support.io.NativeThread;
  * @see DelayedBackgroundJobFactory
  */
 public class DelayedBackgroundJob implements BackgroundJob {
-    private static enum JobState {
+    static enum JobState {
         /** Waiting for a trigger, no running job thread or scheduled job. */
         IDLE,
         /** Waiting for the scheduled job to be executed, no running job thread. */
@@ -259,5 +259,12 @@ public class DelayedBackgroundJob implements BackgroundJob {
             }
             return NativeThread.NORM_PRIORITY;
         }
+    }
+
+    /**
+     * For testing purposes. Returns the internal job state.
+     */
+    JobState getState() {
+        return state;
     }
 }
