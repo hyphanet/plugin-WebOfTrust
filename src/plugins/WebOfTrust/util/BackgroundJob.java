@@ -24,7 +24,11 @@ public interface BackgroundJob {
      * invocations of {@link #trigger()} have no effect.
      * If a background job is already terminated, subsequent invocations of this method have no
      * effect.
+     * This method does not wait for the job to terminate, it only triggers its termination and
+     * returns immediately. Use this method in conjunction with {@link #waitForTermination(long)}
+     * when blocking behaviour is required.
      * @see #isTerminated()
+     * @see #waitForTermination(long)
      */
     public void terminate();
 
@@ -41,8 +45,11 @@ public interface BackgroundJob {
     /**
      * Blocks until {@link #isTerminated()} is {@code true}, the timeout provided has expired, or
      * the thread is interrupted.
+     * This method does not terminate the background job, it only waits for it to terminate. Use
+     * this method in conjunction with {@link #terminate()} when terminating behaviour is required.
      * @param timeout the maximum time to wait in milliseconds
      * @throws InterruptedException When the calling thread is interrupted.
+     * @see #terminate()
      */
     public void waitForTermination(long timeout) throws InterruptedException;
 }
