@@ -71,26 +71,6 @@ public class DelayedBackgroundJob implements BackgroundJob {
     }
 
     /**
-     * Creates a tiny job that instructs the executor to run the background job immediately, to
-     * be executed by the ticker.
-     */
-    private Runnable createTickerJob() {
-        return new FastRunnable() {
-            @Override
-            public void run() {
-                synchronized(DelayedBackgroundJob.this) {
-                    // If this runnable is not the waitingTickerJob, it has been rescheduled. Only
-                    // run if this is the expected ticker job, otherwise the expected job will run
-                    // real soon.
-                    if (this == waitingTickerJob) {
-                        executor.execute(realJob, name + " (running)");
-                    }
-                }
-            }
-        };
-    }
-
-    /**
      * Triggers scheduling of the job with the default delay if no job is scheduled. If a job
      * is already scheduled later than the default delay, it is rescheduled at the default delay.
      *
@@ -119,6 +99,43 @@ public class DelayedBackgroundJob implements BackgroundJob {
      */
     public synchronized void trigger(long delay) {
         tryEnqueue(delay);
+    }
+
+    @Override
+    public synchronized void terminate() {
+        switch (state) {
+            case TERMINATED:
+                assert(waitingTickerJob == null) : "having ticker job in TERMINATED state";
+                assert(thread == null) : "having job thread in TERMINATED state";
+                return;
+            case TERMINATING:
+                assert(waitingTickerJob == null) : "having ticker job in TERMINATING state";
+                assert(thread != null) : "TERMINATING state but no thread";
+                return;
+            case IDLE:
+                toTERMINATED();
+                return;
+            case WAITING:
+                toTERMINATED();
+                return;
+            case RUNNING:
+                toTERMINATING();
+                return;
+        }
+    }
+
+    @Override
+    public synchronized boolean isTerminated() {
+        return state == JobState.TERMINATED;
+    }
+
+    @Override
+    public synchronized void waitForTermination(long timeout) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeout;
+        while(timeout > 0 && state != JobState.TERMINATED) {
+            wait(timeout);
+            timeout = deadline - System.currentTimeMillis();
+        }
     }
 
     /**
@@ -170,41 +187,24 @@ public class DelayedBackgroundJob implements BackgroundJob {
         }
     }
 
-    @Override
-    public synchronized void terminate() {
-        switch (state) {
-            case TERMINATED:
-                assert(waitingTickerJob == null) : "having ticker job in TERMINATED state";
-                assert(thread == null) : "having job thread in TERMINATED state";
-                return;
-            case TERMINATING:
-                assert(waitingTickerJob == null) : "having ticker job in TERMINATING state";
-                assert(thread != null) : "TERMINATING state but no thread";
-                return;
-            case IDLE:
-                toTERMINATED();
-                return;
-            case WAITING:
-                toTERMINATED();
-                return;
-            case RUNNING:
-                toTERMINATING();
-                return;
-        }
-    }
-
-    @Override
-    public synchronized boolean isTerminated() {
-        return state == JobState.TERMINATED;
-    }
-
-    @Override
-    public synchronized void waitForTermination(long timeout) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + timeout;
-        while(timeout > 0 && state != JobState.TERMINATED) {
-            wait(timeout);
-            timeout = deadline - System.currentTimeMillis();
-        }
+    /**
+     * Creates a tiny job that instructs the executor to run the background job immediately, to
+     * be executed by the ticker.
+     */
+    private Runnable createTickerJob() {
+        return new FastRunnable() {
+            @Override
+            public void run() {
+                synchronized(DelayedBackgroundJob.this) {
+                    // If this runnable is not the waitingTickerJob, it has been rescheduled. Only
+                    // run if this is the expected ticker job, otherwise the expected job will run
+                    // real soon.
+                    if (this == waitingTickerJob) {
+                        executor.execute(realJob, name + " (running)");
+                    }
+                }
+            }
+        };
     }
 
     /**
@@ -312,7 +312,7 @@ public class DelayedBackgroundJob implements BackgroundJob {
 
     /**
      * A wrapper for jobs. After the job finishes, either goes to an {@code IDLE} state or enqueues
-     * its own next run {@code WAITING}.
+     * its own next run {@code WAITING} (implementation in {@link #jobFinished()}).
      */
     private class DelayedBackgroundRunnable implements PrioRunnable {
         private final Runnable job;
