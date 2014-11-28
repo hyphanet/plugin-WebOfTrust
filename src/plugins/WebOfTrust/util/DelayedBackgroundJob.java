@@ -38,7 +38,10 @@ public class DelayedBackgroundJob implements BackgroundJob {
     private final Ticker ticker;
     /** Job wrapper for status tracking. */
     private final DelayedBackgroundRunnable realJob;
-    /** Human-readable name of this job. */
+    /** Tiny job to run on the ticker, invoking the execution of the {@link #realJob} on the
+     * executor */
+    private final Runnable tickerJob;
+     /** Human-readable name of this job. */
     private final String name;
     /** Aggregation delay in milliseconds. */
     private final long delay;
@@ -67,6 +70,20 @@ public class DelayedBackgroundJob implements BackgroundJob {
         this.name = name;
         this.delay = delay;
         this.realJob = new DelayedBackgroundRunnable(job);
+        this.tickerJob = createTickerJob();
+    }
+
+    /**
+     * Creates a tiny job that instructs the executor to run the background job immediately, to
+     * be executed by the ticker.
+     */
+    private Runnable createTickerJob() {
+        return new FastRunnable() {
+            @Override
+            public void run() {
+                executor.execute(realJob, name + " (running)");
+            }
+        };
     }
 
     /**
@@ -97,12 +114,7 @@ public class DelayedBackgroundJob implements BackgroundJob {
         if (wait < 0) {
             wait = 0;
         }
-        ticker.queueTimedJob(new FastRunnable() {
-            @Override
-            public void run() {
-                executor.execute(realJob, name + " (running)");
-            }
-        }, name + " (waiting)", wait, true, false);
+        ticker.queueTimedJob(tickerJob, name + " (waiting)", wait, true, false);
         toWAITING();
     }
 
@@ -190,6 +202,8 @@ public class DelayedBackgroundJob implements BackgroundJob {
             assert (state == JobState.IDLE || state == JobState.WAITING)
                     : "going to TERMINATED state from non-IDLE and non-WAITING state";
             assert (thread == null) : "having job thread while going to TERMINATED state";
+            // Remove the scheduled job, if any, from the ticker on a best-effort basis.
+            ticker.removeQueuedJob(tickerJob);
         }
         state = JobState.TERMINATED;
         // Notify all threads waiting in waitForTermination()
