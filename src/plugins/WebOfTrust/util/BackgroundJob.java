@@ -5,8 +5,8 @@ package plugins.WebOfTrust.util;
  *
  * Implementations of this interface must ensure that at most one single instance of the background
  * job is executed at any particular moment, i.e. a single background job must always appear to
- * be run sequentially. Unless terminated, all triggers must always eventually followed by an
- * execution of the background job.
+ * be run sequentially. Unless terminated, all triggers must eventually followed by an execution
+ * of the background job.
  *
  * @author bertm
  */
