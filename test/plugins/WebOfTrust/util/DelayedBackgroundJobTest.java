@@ -84,8 +84,8 @@ public class DelayedBackgroundJobTest {
     }
 
     /**
-     * Creates a Runnable that invokes {@code job.trigger()} 1000 times, sleeps for about 1 ms, and
-     * repeats this for {@code duration} ms.
+     * Creates a Runnable that invokes {@code job.triggerExecution()} 1000 times, sleeps for about
+     * 1 ms, and repeats this for {@code duration} ms.
      * The created Runnable is stateless and can be used multiple times, even concurrently.
      */
     private Runnable newHammerDefault(final DelayedBackgroundJob job, final long duration) {
@@ -95,7 +95,7 @@ public class DelayedBackgroundJobTest {
                 long t = System.currentTimeMillis();
                 while (System.currentTimeMillis() < t + duration) {
                     for (int i = 0; i < 1000; i++) {
-                        job.trigger();
+                        job.triggerExecution();
                     }
                     try {
                         Thread.sleep(1, rand.addAndGet(500));
@@ -108,8 +108,8 @@ public class DelayedBackgroundJobTest {
     }
 
     /**
-     * Creates a Runnable that invokes {@code job.trigger(long)} 1 time, sleeps for about 1 ms, and
-     * repeats this until all delays are used (first to last).
+     * Creates a Runnable that invokes {@code job.triggerExecution(long)} 1 time, sleeps for about
+     * 1 ms, and repeats this until all delays are used (first to last).
      * The created Runnable is stateless and can be used multiple times, even concurrently.
      */
     private Runnable newHammerCustom(final DelayedBackgroundJob job, final long[] delays) {
@@ -117,7 +117,7 @@ public class DelayedBackgroundJobTest {
             @Override
             public void run() {
                 for (long delay : delays) {
-                    job.trigger(delay);
+                    job.triggerExecution(delay);
                     try {
                         Thread.sleep(1, rand.addAndGet(500));
                     } catch (InterruptedException e) {
@@ -138,7 +138,7 @@ public class DelayedBackgroundJobTest {
         int val = value.getAndSet(0);
         assertEquals(JobState.IDLE, job.getState());
         for (int i = 1; i <= 10; i++) {
-            job.trigger(0);
+            job.triggerExecution(0);
             Thread.sleep(jobDuration);
             // Wait for at most an additional 20ms for the job to finish.
             sleeper = new Sleeper();
@@ -186,7 +186,7 @@ public class DelayedBackgroundJobTest {
         // certainly be changed after 75 ms, then remain stable.
         sleeper = new Sleeper();
         assertEquals(JobState.IDLE, job.getState());
-        job.trigger();
+        job.triggerExecution();
         sleeper.sleepUntil(25);
         assertEquals(0, value.get());
         sleeper.sleepUntil(75);
@@ -264,13 +264,13 @@ public class DelayedBackgroundJobTest {
         sleeper = new Sleeper();
         assertEquals(1, value.get());
         assertEquals(JobState.IDLE, job2.getState());
-        job2.trigger();
+        job2.triggerExecution();
         assertEquals(JobState.WAITING, job2.getState());
-        job2.trigger(0);
+        job2.triggerExecution(0);
         sleeper.sleepUntil(10);
         assertEquals(2, value.get());
         assertEquals(JobState.RUNNING, job2.getState());
-        job2.trigger();
+        job2.triggerExecution();
         sleeper.sleepUntil(50);
         assertEquals(2, value.get());
         assertEquals(JobState.WAITING, job2.getState());
@@ -297,7 +297,7 @@ public class DelayedBackgroundJobTest {
         DelayedBackgroundJob job2 = newJob(50, 20, "terminate2");
         assertEquals(JobState.IDLE, job2.getState());
         assertFalse(job2.isTerminated());
-        job2.trigger();
+        job2.triggerExecution();
         assertEquals(JobState.WAITING, job2.getState());
         assertFalse(job2.isTerminated());
         job2.terminate();
@@ -309,7 +309,7 @@ public class DelayedBackgroundJobTest {
         DelayedBackgroundJob job3 = newJob(50, 20, "terminate3");
         assertEquals(JobState.IDLE, job3.getState());
         assertFalse(job3.isTerminated());
-        job3.trigger(0);
+        job3.triggerExecution(0);
         Thread.sleep(20);
         assertEquals(JobState.RUNNING, job3.getState());
         // Synchronize here to avoid the race condition where the thread has terminated before we
@@ -365,7 +365,7 @@ public class DelayedBackgroundJobTest {
                 }
             }
         }, "wait3", 0, executor, ticker);
-        jobs[0].trigger(0);
+        jobs[0].triggerExecution(0);
         assertFalse(jobs[0].isTerminated());
         begin = System.currentTimeMillis();
         jobs[0].waitForTermination(1000);

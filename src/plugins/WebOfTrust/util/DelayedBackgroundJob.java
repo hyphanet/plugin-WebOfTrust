@@ -90,10 +90,10 @@ public class DelayedBackgroundJob implements BackgroundJob {
      * another execution of the job, either after the default delay or when the currently executing
      * job is finished, whichever comes last. A newly constructed delayed background job can be
      * assumed to have started its last job infinitely in the past.
-     * @see #trigger(long)
+     * @see #triggerExecution(long)
      */
     @Override
-    public synchronized void trigger() {
+    public synchronized void triggerExecution() {
         tryEnqueue(defaultDelay);
     }
 
@@ -107,9 +107,9 @@ public class DelayedBackgroundJob implements BackgroundJob {
      * job is finished, whichever comes last. A newly constructed delayed background job can be
      * assumed to have started its last job infinitely in the past.
      * @param delay the trigger aggregation delay in ms
-     * @see #trigger()
+     * @see #triggerExecution()
      */
-    public synchronized void trigger(long delay) {
+    public synchronized void triggerExecution(long delay) {
         tryEnqueue(delay);
     }
 
@@ -151,7 +151,7 @@ public class DelayedBackgroundJob implements BackgroundJob {
     }
 
     /**
-     * Implementation of {@link #trigger(long)}.
+     * Implementation of {@link #triggerExecution(long)}.
      * Caller must ensure synchronization on {@code this}.
      */
     private void tryEnqueue(long delay) {
