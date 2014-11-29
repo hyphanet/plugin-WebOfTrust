@@ -145,8 +145,8 @@
 
 			<assertions><enable/></assertions>
 			<formatter type="plain" usefile="false"/>
-
-			<batchtest fork="yes">
+			<test if="test.class" name="${test.class}"/>
+			<batchtest unless="test.class" fork="yes">
 				<zipfileset src="${build-test-jar}">
 					<include name="**/*Test*.class"/>
 					<!-- Exclude member classes:
