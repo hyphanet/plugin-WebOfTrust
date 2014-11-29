@@ -44,7 +44,7 @@ public class DelayedBackgroundJobFactory {
      * @param delay the background job aggregation delay in milliseconds
      * @see DelayedBackgroundJob#DelayedBackgroundJob(Runnable, String, long, Executor, Ticker)
      */
-    public BackgroundJob newJob(Runnable job, String name, long delay) {
+    public DelayedBackgroundJob newJob(Runnable job, String name, long delay) {
         return newJob(job, name, delay, executor, ticker);
     }
 
@@ -55,9 +55,9 @@ public class DelayedBackgroundJobFactory {
      * @param delay the background job aggregation delay in milliseconds
      * @see DelayedBackgroundJob#DelayedBackgroundJob(Runnable, String, long, Executor, Ticker)
      */
-    public BackgroundJob newJob(Runnable job, String name, long delay, Executor executor,
+    public DelayedBackgroundJob newJob(Runnable job, String name, long delay, Executor executor,
             Ticker ticker) {
-        BackgroundJob bg = new DelayedBackgroundJob(job, name, delay, executor, ticker);
+        DelayedBackgroundJob bg = new DelayedBackgroundJob(job, name, delay, executor, ticker);
         synchronized(aliveJobSet) {
             aliveJobSet.put(bg, PLACEHOLDER);
         }
