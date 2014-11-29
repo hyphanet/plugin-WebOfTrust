@@ -11,16 +11,16 @@ import freenet.support.Executor;
 import freenet.support.PooledExecutor;
 import freenet.support.PrioritizedTicker;
 
-import plugins.WebOfTrust.util.DelayedBackgroundJob.JobState;
+import plugins.WebOfTrust.util.TickerDelayedBackgroundJob.JobState;
 
 import static org.junit.Assert.*;
 
 /**
- * Unit tests for {@link DelayedBackgroundJob}.
+ * Unit tests for {@link TickerDelayedBackgroundJob}.
  *
  * @author bertm
  */
-public class DelayedBackgroundJobTest {
+public class TickerDelayedBackgroundJobTest {
     private Executor executor;
     private PrioritizedTicker ticker;
     // Value to increment by running jobs.
@@ -134,7 +134,7 @@ public class DelayedBackgroundJobTest {
      * @param job the job to warm up
      * @param jobDuration the expected duration of the job
      */
-    private void warmup(DelayedBackgroundJob job, long jobDuration) throws Exception {
+    private void warmup(TickerDelayedBackgroundJob job, long jobDuration) throws Exception {
         int val = value.getAndSet(0);
         assertEquals(JobState.IDLE, job.getState());
         for (int i = 1; i <= 10; i++) {
@@ -160,10 +160,10 @@ public class DelayedBackgroundJobTest {
      * @param delay the trigger aggregation delay
      * @return
      */
-    private DelayedBackgroundJob newJob(long jobDuration, long delay, String name) throws
+    private TickerDelayedBackgroundJob newJob(long jobDuration, long delay, String name) throws
             Exception {
         Runnable test = newValueIncrementer(jobDuration);
-        DelayedBackgroundJob job = new DelayedBackgroundJob(test, name, delay, ticker);
+        TickerDelayedBackgroundJob job = new TickerDelayedBackgroundJob(test, name, delay, ticker);
         warmup(job, jobDuration);
         return job;
     }
@@ -171,7 +171,7 @@ public class DelayedBackgroundJobTest {
     @Test
     public void testTriggerDefault() throws Exception {
         // First test for a reasonable fast test (with execution time smaller than the delay).
-        DelayedBackgroundJob job = newJob(10, 50, "default1");
+        TickerDelayedBackgroundJob job = newJob(10, 50, "default1");
         Runnable trigger = newHammerDefault(job, 60);
 
         sleeper = new Sleeper();
@@ -219,7 +219,7 @@ public class DelayedBackgroundJobTest {
 
         // Now test whether a slow background task (with execution time longer than the delay) is
         // handled correctly.
-        DelayedBackgroundJob slowJob = newJob(80, 50, "default2");
+        TickerDelayedBackgroundJob slowJob = newJob(80, 50, "default2");
         Thread hammer = new Thread(newHammerDefault(slowJob, 260));
         sleeper = new Sleeper();
         assertEquals(3, value.get());
@@ -245,7 +245,7 @@ public class DelayedBackgroundJobTest {
     @Test
     public void testTriggerCustom() throws Exception {
         // Simple test
-        DelayedBackgroundJob job1 = newJob(10, 1000, "custom1");
+        TickerDelayedBackgroundJob job1 = newJob(10, 1000, "custom1");
         Thread hammer = new Thread(newHammerCustom(job1, new long[] {60, 50, 30, 20, 10}));
         sleeper = new Sleeper();
         assertEquals(0, value.get());
@@ -260,7 +260,7 @@ public class DelayedBackgroundJobTest {
         assertEquals(JobState.IDLE, job1.getState());
 
         // Default delay plus immediate trigger
-        DelayedBackgroundJob job2 = newJob(30, 100, "custom1");
+        TickerDelayedBackgroundJob job2 = newJob(30, 100, "custom1");
         sleeper = new Sleeper();
         assertEquals(1, value.get());
         assertEquals(JobState.IDLE, job2.getState());
@@ -285,7 +285,7 @@ public class DelayedBackgroundJobTest {
     @Test
     public void testTerminate() throws Exception {
         // Test immediate termination on IDLE
-        DelayedBackgroundJob job1 = newJob(50, 20, "terminate1");
+        TickerDelayedBackgroundJob job1 = newJob(50, 20, "terminate1");
         assertEquals(JobState.IDLE, job1.getState());
         assertFalse(job1.isTerminated());
         job1.terminate();
@@ -294,7 +294,7 @@ public class DelayedBackgroundJobTest {
         assertFalse(wasInterrupted.get());
 
         // Test immediate termination on WAITING
-        DelayedBackgroundJob job2 = newJob(50, 20, "terminate2");
+        TickerDelayedBackgroundJob job2 = newJob(50, 20, "terminate2");
         assertEquals(JobState.IDLE, job2.getState());
         assertFalse(job2.isTerminated());
         job2.triggerExecution();
@@ -306,7 +306,7 @@ public class DelayedBackgroundJobTest {
         assertFalse(wasInterrupted.get());
 
         // Test interrupting termination on RUNNING
-        DelayedBackgroundJob job3 = newJob(50, 20, "terminate3");
+        TickerDelayedBackgroundJob job3 = newJob(50, 20, "terminate3");
         assertEquals(JobState.IDLE, job3.getState());
         assertFalse(job3.isTerminated());
         job3.triggerExecution(0);
@@ -353,7 +353,7 @@ public class DelayedBackgroundJobTest {
         // Test termination from job and notify
         // Circumvent Java referencing restrictions...
         final DelayedBackgroundJob[] jobs = new DelayedBackgroundJob[1];
-        jobs[0] = new DelayedBackgroundJob(new Runnable() {
+        jobs[0] = new TickerDelayedBackgroundJob(new Runnable() {
             @Override
             public void run() {
                 try {
