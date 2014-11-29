@@ -55,12 +55,17 @@ public class DelayedBackgroundJob implements BackgroundJob {
      * Constructs a delayed background job.
      * The {@link Executor} and {@link Ticker} given <b>must</b> have an asynchronous implementation
      * of respectively {@link Executor#execute(Runnable, String) execute} and
-     * {@link Ticker#queueTimedJob(Runnable, String, long, boolean, boolean) queueTimedJob}.
+     * {@link Ticker#queueTimedJob(Runnable, String, long, boolean, boolean) queueTimedJob}. When
+     * this background job is {@link BackgroundJob#terminate() terminated}, the running job will
+     * be notified by interruption of its thread. Hence, the job implementer must take care not to
+     * swallow {@link InterruptedException}.
      * @param job the job to run in the background
      * @param name a human-readable name for the job
      * @param delay the default background job aggregation delay in milliseconds
      * @param executor an asynchronous executor
      * @param ticker an asynchronous ticker
+     *
+     * @see DelayedBackgroundJobFactory
      */
     DelayedBackgroundJob(Runnable job, String name, long delay, Executor executor, Ticker ticker) {
         this.executor = executor;
@@ -171,6 +176,7 @@ public class DelayedBackgroundJob implements BackgroundJob {
      * ticker with the given delay, or executes the ticker job immediately if the delay is zero.
      * If the current state is {@code IDLE}, we the state is changed to {@code WAITING} and a new
      * ticker job is created.
+     * Caller must ensure synchronization on {@code this}.
      * @param delay the delay in ms
      */
     private void enqueueWaitingTickerJob(long delay) {

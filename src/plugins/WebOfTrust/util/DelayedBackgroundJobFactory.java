@@ -38,7 +38,10 @@ public class DelayedBackgroundJobFactory {
     }
 
     /**
-     * Constructs a new {@link DelayedBackgroundJob} using the default executor and ticker.
+     * Constructs a new {@link DelayedBackgroundJob} using the default executor and ticker. When
+     * this background job is {@link BackgroundJob#terminate() terminated}, the running job will
+     * be notified by interruption of its thread. Hence, the job implementer must take care not
+     * to swallow {@link InterruptedException}.
      * @param job the job to run in the background
      * @param name a human-readable name for the job
      * @param delay the background job aggregation delay in milliseconds
@@ -49,7 +52,10 @@ public class DelayedBackgroundJobFactory {
     }
 
     /**
-     * Constructs a new {@link DelayedBackgroundJob}.
+     * Constructs a new {@link DelayedBackgroundJob}. When  this background job is {@link
+     * BackgroundJob#terminate() terminated}, the running job will be notified by interruption of
+     * its thread. Hence, the job implementer must take care not to swallow
+     * {@link InterruptedException}.
      * @param job the job to run in the background
      * @param name a human-readable name for the job
      * @param delay the background job aggregation delay in milliseconds
