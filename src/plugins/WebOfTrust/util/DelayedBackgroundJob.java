@@ -30,16 +30,16 @@ public class DelayedBackgroundJob implements BackgroundJob {
     /** Constant for {@link #nextExecutionTime} meaning there is no next execution requested. */
     private final static long NO_EXECUTION = Long.MAX_VALUE;
 
-    /** The executor of this background job. */
-    private final Executor executor;
-    /** The ticker used to schedule this job. */
-    private final Ticker ticker;
     /** Job wrapper for status tracking. */
     private final DelayedBackgroundRunnable realJob;
-     /** Human-readable name of this job. */
+    /** Human-readable name of this job. */
     private final String name;
     /** Aggregation delay in milliseconds. */
     private final long defaultDelay;
+    /** The ticker used to schedule this job. */
+    private final Ticker ticker;
+    /** The executor of this background job. */
+    private final Executor executor;
 
     /** Tiny job to run on the ticker, invoking the execution of the {@link #realJob} on the
      * executor (only set in {@code WAITING} state). */
@@ -54,32 +54,32 @@ public class DelayedBackgroundJob implements BackgroundJob {
     /**
      * Constructs a delayed background job with the given default delay. Negative delays
      * are treated as zero delay.
-     * The {@link Executor} and {@link Ticker} given <b>must</b> have an asynchronous implementation
-     * of respectively {@link Executor#execute(Runnable, String) execute} and
-     * {@link Ticker#queueTimedJob(Runnable, String, long, boolean, boolean) queueTimedJob}. When
-     * this background job is {@link BackgroundJob#terminate() terminated}, the running job will
-     * be notified by interruption of its thread. Hence, the job implementer must take care not to
-     * swallow {@link InterruptedException}.
+     * The {@link Ticker} given and its {@link Executor} <b>must</b> have an asynchronous
+     * implementation of respectively
+     * {@link Ticker#queueTimedJob(Runnable, String, long, boolean, boolean) queueTimedJob} and
+     * {@link Executor#execute(Runnable, String) execute}. When this background job is
+     * {@link BackgroundJob#terminate() terminated}, the running job will be notified by means of
+     * interruption of its thread. Hence, the job implementer must take care not to swallow
+     * {@link InterruptedException}.
      * @param job the job to run in the background
      * @param name a human-readable name for the job
      * @param delay the default background job aggregation delay in milliseconds
-     * @param executor an asynchronous executor
-     * @param ticker an asynchronous ticker
+     * @param ticker an asynchronous ticker with asynchronous executor
      *
      * @see DelayedBackgroundJobFactory
      */
-    DelayedBackgroundJob(Runnable job, String name, long delay, Executor executor, Ticker ticker) {
-        if (job == null || name == null || executor == null || ticker == null) {
+    public DelayedBackgroundJob(Runnable job, String name, long delay, Ticker ticker) {
+        if (job == null || name == null || ticker == null || ticker.getExecutor() == null) {
             throw new NullPointerException();
         }
         if (delay < 0) {
             delay = 0;
         }
-        this.executor = executor;
-        this.ticker = ticker;
+        this.realJob = new DelayedBackgroundRunnable(job);
         this.name = name;
         this.defaultDelay = delay;
-        this.realJob = new DelayedBackgroundRunnable(job);
+        this.ticker = ticker;
+        this.executor = ticker.getExecutor();
     }
 
     /**

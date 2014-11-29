@@ -163,7 +163,7 @@ public class DelayedBackgroundJobTest {
     private DelayedBackgroundJob newJob(long jobDuration, long delay, String name) throws
             Exception {
         Runnable test = newValueIncrementer(jobDuration);
-        DelayedBackgroundJob job = new DelayedBackgroundJob(test, name, delay, executor, ticker);
+        DelayedBackgroundJob job = new DelayedBackgroundJob(test, name, delay, ticker);
         warmup(job, jobDuration);
         return job;
     }
@@ -364,7 +364,7 @@ public class DelayedBackgroundJobTest {
                     wasInterrupted.set(true);
                 }
             }
-        }, "wait3", 0, executor, ticker);
+        }, "wait3", 0, ticker);
         jobs[0].triggerExecution(0);
         assertFalse(jobs[0].isTerminated());
         begin = System.currentTimeMillis();

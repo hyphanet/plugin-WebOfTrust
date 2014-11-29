@@ -18,52 +18,49 @@ public class DelayedBackgroundJobFactory {
 
     /** Set of all live (i.e. not garbage collected) background jobs created by this instance. */
     private final WeakHashMap<BackgroundJob, Object> aliveJobSet;
-    /** The default executor. */
-    private final Executor executor;
     /** The default ticker. */
     private final Ticker ticker;
 
     /**
-     * Constructs a background job factory with given default {@link Executor} and {@link Ticker}.
-     * The {@link Executor} and {@link Ticker} given <b>must</b> have an asynchronous implementation
-     * of respectively {@link Executor#execute(Runnable, String) execute} and
-     * {@link Ticker#queueTimedJob(Runnable, String, long, boolean, boolean) queueTimedJob}.
-     * @param executor an asynchronous executor
+     * Constructs a background job factory with given default {@link Ticker}.
+     * The {@link Ticker} given and its {@link Executor} <b>must</b> have an asynchronous
+     * implementation of respectively
+     * {@link Ticker#queueTimedJob(Runnable, String, long, boolean, boolean) queueTimedJob} and
+     * {@link Executor#execute(Runnable, String) execute}.
      * @param ticker an asynchronous ticker
      */
-    public DelayedBackgroundJobFactory(Executor executor, Ticker ticker) {
-        this.executor = executor;
+    public DelayedBackgroundJobFactory(Ticker ticker) {
         this.ticker = ticker;
         aliveJobSet = new WeakHashMap<BackgroundJob, Object>();
     }
 
     /**
-     * Constructs a new {@link DelayedBackgroundJob} using the default executor and ticker. When
+     * Constructs a new {@link DelayedBackgroundJob} using the default ticker. When
      * this background job is {@link BackgroundJob#terminate() terminated}, the running job will
      * be notified by interruption of its thread. Hence, the job implementer must take care not
      * to swallow {@link InterruptedException}.
      * @param job the job to run in the background
      * @param name a human-readable name for the job
      * @param delay the background job aggregation delay in milliseconds
-     * @see DelayedBackgroundJob#DelayedBackgroundJob(Runnable, String, long, Executor, Ticker)
+     * @see DelayedBackgroundJob#DelayedBackgroundJob(Runnable, String, long, Ticker)
      */
     public DelayedBackgroundJob newJob(Runnable job, String name, long delay) {
-        return newJob(job, name, delay, executor, ticker);
+        return newJob(job, name, delay, ticker);
     }
 
     /**
-     * Constructs a new {@link DelayedBackgroundJob}. When  this background job is {@link
-     * BackgroundJob#terminate() terminated}, the running job will be notified by interruption of
-     * its thread. Hence, the job implementer must take care not to swallow
-     * {@link InterruptedException}.
+     * Constructs a new {@link DelayedBackgroundJob}, overriding the default ticker. When  this
+     * background job is {@link BackgroundJob#terminate() terminated}, the running job will be
+     * notified by interruption of its thread. Hence, the job implementer must take care not to
+     * swallow {@link InterruptedException}.
      * @param job the job to run in the background
      * @param name a human-readable name for the job
      * @param delay the background job aggregation delay in milliseconds
-     * @see DelayedBackgroundJob#DelayedBackgroundJob(Runnable, String, long, Executor, Ticker)
+     * @param ticker the custom ticker
+     * @see DelayedBackgroundJob#DelayedBackgroundJob(Runnable, String, long, Ticker)
      */
-    public DelayedBackgroundJob newJob(Runnable job, String name, long delay, Executor executor,
-            Ticker ticker) {
-        DelayedBackgroundJob bg = new DelayedBackgroundJob(job, name, delay, executor, ticker);
+    public DelayedBackgroundJob newJob(Runnable job, String name, long delay, Ticker ticker) {
+        DelayedBackgroundJob bg = new DelayedBackgroundJob(job, name, delay, ticker);
         synchronized(aliveJobSet) {
             aliveJobSet.put(bg, PLACEHOLDER);
         }
