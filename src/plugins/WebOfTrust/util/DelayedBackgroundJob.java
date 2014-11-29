@@ -52,7 +52,8 @@ public class DelayedBackgroundJob implements BackgroundJob {
     private long nextExecutionTime = NO_EXECUTION;
 
     /**
-     * Constructs a delayed background job.
+     * Constructs a delayed background job with the given default delay. Negative delays
+     * are treated as zero delay.
      * The {@link Executor} and {@link Ticker} given <b>must</b> have an asynchronous implementation
      * of respectively {@link Executor#execute(Runnable, String) execute} and
      * {@link Ticker#queueTimedJob(Runnable, String, long, boolean, boolean) queueTimedJob}. When
@@ -68,6 +69,12 @@ public class DelayedBackgroundJob implements BackgroundJob {
      * @see DelayedBackgroundJobFactory
      */
     DelayedBackgroundJob(Runnable job, String name, long delay, Executor executor, Ticker ticker) {
+        if (job == null || name == null || executor == null || ticker == null) {
+            throw new NullPointerException();
+        }
+        if (delay < 0) {
+            delay = 0;
+        }
         this.executor = executor;
         this.ticker = ticker;
         this.name = name;
@@ -93,7 +100,7 @@ public class DelayedBackgroundJob implements BackgroundJob {
     /**
      * Triggers scheduling of the job with the given delay if no job is scheduled. If a job
      * is already scheduled later than the given delay, it is rescheduled at the given delay.
-     * Negative delays are considered equal to zero delay.
+     * Negative delays are treated as to zero delays.
      *
      * The first trigger received after the start of the last job execution leads to scheduling of
      * another execution of the job, either after the default delay or when the currently executing
