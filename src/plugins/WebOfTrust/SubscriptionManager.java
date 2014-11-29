@@ -2000,7 +2000,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		// TODO: Code quality: The whole complex logic of this shutdown function could easily be
 		// eliminated by improving class TrivialTicker to interrupt() the current job:
 		// The problem which this code works around is that TrivialTicker.shutdown() will block
-		// until an eventually currently executing job (= SubscriptionManager.run()) has returned,
+		// until a possibly currently executing job (= SubscriptionManager.run()) has returned,
 		// but we need to interrupt() the current job as it can take a very long time.
 		// We cannot shutdown() and then interrupt() the current job, as shutdown would wait
 		// for the current job to finish. Instead, we must interrupt() the current job, and then
@@ -2053,7 +2053,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		    // Now we must deal with the cases 1/2 where SubscriptionManager.run() is maybe already
 		    // running:
 		    // The ticker is sequential, so by adding a job with delay=0, we can figure out whether
-		    // an eventually currently running SubscriptionManager.run() has finished by having
+		    // a possibly currently running SubscriptionManager.run() has finished by having
 		    // the following boolean set by the new ticker job.
 	        final AtomicBoolean tickerEmpty = new AtomicBoolean(false);
 		    mTicker.queueTimedJob(new Runnable() {
