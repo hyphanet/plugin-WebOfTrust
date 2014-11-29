@@ -17,7 +17,6 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.node.PrioRunnable;
-import freenet.node.fcp.FCPPluginClient;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
