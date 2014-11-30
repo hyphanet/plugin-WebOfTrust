@@ -418,6 +418,14 @@ public final class Trust extends Persistent implements Cloneable, EventSource {
 		}
 	}
 
+	/**
+	 * @see Trust#clone()
+	 */
+	@Override
+	public Trust cloned() {
+		return clone();
+	}
+
 	@Override
 	public void startupDatabaseIntegrityTest() throws Exception {
 		activateFully();

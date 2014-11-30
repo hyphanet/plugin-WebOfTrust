@@ -390,6 +390,14 @@ public final class Score extends Persistent implements Cloneable, EventSource {
 		return clone;
 	}
 
+	/**
+	 * @see Score#clone()
+	 */
+	@Override
+	public Score cloned() {
+		return clone();
+	}
+
 	@Override
 	public void startupDatabaseIntegrityTest() throws Exception {
 		activateFully();

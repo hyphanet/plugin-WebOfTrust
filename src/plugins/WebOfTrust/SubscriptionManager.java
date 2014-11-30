@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
+import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import plugins.WebOfTrust.ui.fcp.FCPInterface.FCPCallFailedException;
 
 import com.db4o.ObjectSet;
@@ -256,11 +257,11 @@ public final class SubscriptionManager implements PrioRunnable {
 			// This is necessary for SubscriptionManager.stop() to be fast.
 			switch(getType()) {
 				case FCP:
-					for(final Notification notification : manager.getNotifications(this)) {
+					for(final Notification<?> notification : manager.getNotifications(this)) {
 						if(SubscriptionManager.logDEBUG) Logger.debug(manager, "Sending notification via FCP: " + notification);
 						try {
 							try {
-								notification.getSubscription().notifySubscriberByFCP(notification);
+								notification.notifySubscriberByFCP();
 								notification.deleteWithoutCommit();
 							} catch(FCPCallFailedException | IOException | RuntimeException e) {
 								Persistent.checkedRollback(mDB, this, e, LogLevel.WARNING);
@@ -318,7 +319,7 @@ public final class SubscriptionManager implements PrioRunnable {
 			
 			return true;
 		}
-		
+
 		/**
 		 * Sends a message to the client which indicates that a {@link Subscription} has been forcefully terminated.
 		 * This can happen if the client exceeds the limit of {@link SubscriptionManager#DISCONNECT_CLIENT_AFTER_FAILURE_COUNT} failures
@@ -326,9 +327,8 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * 
 		 * Exceptions which happen if sending the message fails are swallowed.
 		 */
-		@SuppressWarnings("unchecked")
 		private void notifyClientAboutDeletion(
-		        final Subscription<? extends EventSource> deletedSubscriptoin) {
+		        final Subscription<?> deletedSubscriptoin) {
 		    
 			try {
 				Logger.warning(getSubscriptionManager(), "notifyClientAboutDeletion() for " + deletedSubscriptoin);
@@ -336,8 +336,7 @@ public final class SubscriptionManager implements PrioRunnable {
 				switch(getType()) {
 					case FCP:
 						mWebOfTrust.getFCPInterface().sendUnsubscribedMessage(getFCP_ID(),
-								(Class<Subscription<? extends EventSource>>) deletedSubscriptoin
-								    .getClass(),
+								deletedSubscriptoin.getClass(),
 								deletedSubscriptoin.getID());
 						break;
 					default:
@@ -358,8 +357,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param subscriptionManager The {@link SubscriptionManager} to which this Client belongs.
 		 */
 		protected void deleteWithoutCommit(final SubscriptionManager subscriptionManager) {
-			for(final Subscription<? extends EventSource> subscription
-			        : subscriptionManager.getSubscriptions(this)) {
+			for(final Subscription<?> subscription : subscriptionManager.getSubscriptions(this)) {
 			    
 				subscription.deleteWithoutCommit(subscriptionManager);
 				notifyClientAboutDeletion(subscription);
@@ -440,6 +438,14 @@ public final class SubscriptionManager implements PrioRunnable {
 			mClient.initializeTransient(mWebOfTrust);
 			return mClient;
 		}
+
+		/**
+		 * Gets the FCP {@link UUID} for the {@link Client} which created this {@link Subscription}.
+		 * @see #mClient
+		 */
+		protected final UUID getClientID() {
+			return getClient().getFCP_ID();
+		}
 		
 		/**
 		 * @return The UUID of this Subscription. Stored as String for db4o performance, but must be valid in terms of the UUID class.
@@ -469,7 +475,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param manager The {@link SubscriptionManager} to which this Subscription belongs.
 		 */
 		protected void deleteWithoutCommit(final SubscriptionManager manager) {
-			for(final Notification notification : manager.getNotifications(this)) {
+			for(final Notification<?> notification : manager.getNotifications(this)) {
 				notification.deleteWithoutCommit();
 			}
 			super.deleteWithoutCommit();
@@ -525,7 +531,7 @@ public final class SubscriptionManager implements PrioRunnable {
                 // main EventSource object stored in the mWebOfTrust. Thus, we clone() the
                 // EventSource and call the setter upon the temporary clone.
                 @SuppressWarnings("unchecked")
-                EventType eventSourceWithProperVersionID = (EventType) eventSource.clone();
+                EventType eventSourceWithProperVersionID = (EventType) eventSource.cloned();
                 eventSourceWithProperVersionID.setVersionID(synchronizationID);
                 
                 storeNotificationWithoutCommit(null, eventSourceWithProperVersionID);
@@ -555,8 +561,8 @@ public final class SubscriptionManager implements PrioRunnable {
 
         /**
          * Shall store a {@link ObjectChangedNotification} constructed via
-         * {@link ObjectChangedNotification#ObjectChangedNotification(Subscription, Persistent,
-         * Persistent)} with parameters oldObject = oldEventSource, newObject = newEventSource.<br>
+         * {@link ObjectChangedNotification#ObjectChangedNotification(Subscription, EventType,
+         * EventType)} with parameters oldObject = oldEventSource, newObject = newEventSource.<br>
          * <br> 
          * 
          * The type parameter of the {@link ObjectChangedNotification} shall match the type
@@ -567,60 +573,6 @@ public final class SubscriptionManager implements PrioRunnable {
          */
         abstract void storeNotificationWithoutCommit(
             final EventType oldEventSource, final EventType newEventSource);
-
-		/**
-		 * Called by this Subscription when the type of it is FCP and a {@link Notification} shall be sent via FCP. 
-		 * The implementation MUST throw a {@link FCPCallFailedException} if the client did not signal that the processing was successful:
-		 * Not only shall the {@link Notification} be resent if transmission fails but also if the client fails processing it. This
-		 * will allow the client to use failing database transactions in the event handlers and just rollback and throw if the transaction
-		 * fails. 
-		 * The implementation MUST use synchronous FCP communication to allow the client to signal an error.
-		 * Also, synchronous communication is necessary for guaranteeing the notifications to arrive in proper order at the client.
-		 * <br><br>
-		 * 
-         * If this function fails by an exception, the caller MUST NOT proceed to deploy subsequent
-         * {@link Notification}s to the client. Instead, it must retry calling this function upon
-         * the same Notification until it succeeds or the retry limit is exceeded.<br>
-         * This is necessary because Notifications must be deployed in proper order to guarantee
-         * that they make sense to the client.<br>
-         * Notice that the above does not apply to all types of exceptions. See the JavaDoc of
-         * the various thrown exceptions for details.<br><br>
-		 * 
-         * <b>Thread safety:</b><br>
-         * This must be called while locking upon the SubscriptionManager.<br>
-		 * The {@link WebOfTrust} object shall NOT be locked:
-		 * The {@link Notification} objects which this function receives contain serialized clones of the objects from WebOfTrust.
-		 * Therefore, the notifications are self-contained and this function should and must NOT call any database query functions of the WebOfTrust. 
-		 * 
-		 * @param notification 
-		 *             The {@link Notification} to send out via FCP. Must be cast-able to one of:
-		 *             <br>
-		 *             - {@link ObjectChangedNotification} containing objects matching the type
-		 *               of the type parameter EventType of this Subscription.<br>
-		 *             - {@link BeginSynchronizationNotification} with type parameter matching the
-         *               type of the type parameter EventType of this Subscription.<br>
-		 *             - {@link EndSynchronizationNotification} with type parameter matching the
-         *               type of the type parameter EventType of this Subscription.<br>
-         * @throws IOException
-         *             If the FCP client has disconnected. The SubscriptionManager then should not
-         *             retry deploying this Notification, the {@link Subscription} should be
-         *             terminated instead.
-         * @throws InterruptedException
-         *             If an external thread requested the current thread to terminate via
-         *             {@link Thread#interrupt()} while the data was being transfered to the client.
-         *             <br>This is a necessary shutdown mechanism as clients can be attached by
-         *             network and thus transfers can take a long time. Please honor it by 
-         *             terminating the thread so WOT can shutdown quickly.
-		 * @throws FCPCallFailedException
-		 *             If processing failed at the client.<br>
-         *             The SubscriptionManager should call
-         *             {@link Client#incrementSendNotificationsFailureCountWithoutCommit()} upon
-         *             {@link #mClient} then, and retry calling this function upon the same
-         *             Notification at the next iteration of the notification sending thread
-         *             - until the limit is reached.
-		 */
-        protected abstract void notifySubscriberByFCP(Notification notification)
-            throws FCPCallFailedException, IOException, InterruptedException;
 
 		/** {@inheritDoc} */
 		@Override protected void activateFully() {
@@ -638,7 +590,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * The SubscriptionManager will wake up some time after that, pull all notifications from the database and process them.
 	 */
 	@SuppressWarnings("serial")
-	public static abstract class Notification extends Persistent {
+	public static abstract class Notification<EventType extends EventSource> extends Persistent {
 		
 		/**
 		 * The {@link Client} to which this Notification belongs
@@ -650,7 +602,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * The {@link Subscription} to which this Notification belongs
 		 */
 		@IndexedField
-		private final Subscription<? extends EventSource> mSubscription;
+		private final Subscription<EventType> mSubscription;
 		
 		/**
 		 * The index of this Notification in the queue of its {@link Client}:
@@ -666,7 +618,7 @@ public final class SubscriptionManager implements PrioRunnable {
          * 
          * @param mySubscription The {@link Subscription} which requested this type of Notification.
          */
-        Notification(final Subscription<? extends EventSource> mySubscription) {
+        Notification(final Subscription<EventType> mySubscription) {
             mSubscription = mySubscription;
             mClient = mSubscription.getClient();
             mIndex = mClient.takeFreeNotificationIndexWithoutCommit();
@@ -698,7 +650,7 @@ public final class SubscriptionManager implements PrioRunnable {
         /**
          * @return The {@link Subscription} which requested this type of Notification.
          */
-        public Subscription<? extends EventSource> getSubscription() {
+        public Subscription<EventType> getSubscription() {
             checkedActivate(1);
             mSubscription.initializeTransient(mWebOfTrust);
             return mSubscription;
@@ -708,6 +660,64 @@ public final class SubscriptionManager implements PrioRunnable {
         @Override protected void activateFully() {
             checkedActivate(1);
         }
+
+		/**
+		 * Used when this Notification shall be sent via FCP.
+		 * The implementation MUST throw a {@link FCPCallFailedException} if the client did not signal that the processing was successful:
+		 * Not only shall the Notification be resent if transmission fails but also if the client fails processing it. This
+		 * will allow the client to use failing database transactions in the event handlers and just rollback and throw if the transaction
+		 * fails.
+		 * The implementation MUST use synchronous FCP communication to allow the client to signal an error.
+		 * Also, synchronous communication is necessary for guaranteeing the notifications to arrive in proper order at the client.
+		 * <br><br>
+		 *
+		 * If this function fails by an exception, the caller MUST NOT proceed to deploy subsequent
+		 * Notifications to the client. Instead, it must retry calling this function upon
+		 * the same Notification until it succeeds or the retry limit is exceeded.<br>
+		 * This is necessary because Notifications must be deployed in proper order to guarantee
+		 * that they make sense to the client.<br>
+		 * Notice that the above does not apply to all types of exceptions. See the JavaDoc of
+		 * the various thrown exceptions for details.<br><br>
+		 *
+		 * <b>Thread safety:</b><br>
+		 * This must be called while locking upon the {@link SubscriptionManager}.<br>
+		 * The {@link WebOfTrust} object shall NOT be locked:
+		 * The Notification objects which this function receives contain serialized clones of the objects from WebOfTrust.
+		 * Therefore, the notifications are self-contained and this function should and must NOT call any database query functions of the WebOfTrust.
+		 *
+		 * @throws IOException
+		 *             If the FCP client has disconnected. The SubscriptionManager then should not
+		 *             retry deploying this Notification, the {@link Subscription} should be
+		 *             terminated instead.
+		 * @throws InterruptedException
+		 *             If an external thread requested the current thread to terminate via
+		 *             {@link Thread#interrupt()} while the data was being transferred to the
+		 *             client.
+		 *             <br>This is a necessary shutdown mechanism as clients can be attached by
+		 *             network and thus transfers can take a long time. Please honor it by
+		 *             terminating the thread so WOT can shutdown quickly.
+		 * @throws FCPCallFailedException
+		 *             If processing failed at the client.<br>
+		 *             The SubscriptionManager should call
+		 *             {@link Client#incrementSendNotificationsFailureCountWithoutCommit()} upon
+		 *             {@link #mClient} then, and retry calling this function upon the same
+		 *             Notification at the next iteration of the notification sending thread
+		 *             - until the limit is reached.
+		 */
+		protected final void notifySubscriberByFCP()
+				throws InterruptedException, FCPCallFailedException, IOException {
+			UUID clientID = getSubscription().getClientID();
+			notifyClientByFCP(clientID, mWebOfTrust.getFCPInterface());
+		}
+
+		/**
+		 * Notification type specific implementation of {@link #notifySubscriberByFCP()}.
+		 * @see Notification#notifySubscriberByFCP()
+		 * @param clientID the client to send this notification to
+		 * @param fcp the FCP connection interface to send over
+		 */
+		protected abstract void notifyClientByFCP(UUID clientID, FCPInterface fcp)
+				throws InterruptedException, FCPCallFailedException, IOException;
 	}
 	
 	/**
@@ -729,7 +739,8 @@ public final class SubscriptionManager implements PrioRunnable {
      * {@link BeginSynchronizationNotification}.
 	 */
 	@SuppressWarnings("serial")
-	public static abstract class ObjectChangedNotification extends Notification {
+	public static abstract class ObjectChangedNotification<EventType extends Persistent &
+			EventSource> extends Notification<EventType> {
 		
 		/**
 		 * A serialized copy of the changed {@link Persistent} object before the change.
@@ -755,15 +766,13 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * Only one of oldObject or newObject may be null.
 		 * If both are non-null, their {@link Persistent#getID()} must be equal.
 		 * 
-		 * TODO: Code quality: oldObject and newObject should be EventSource, not Persistent.
-		 * 
 		 * @param mySubscription The {@link Subscription} which requested this type of Notification.
 		 * @param oldObject The version of the changed {@link Persistent} object before the change.
 		 * @param newObject The version of the changed {@link Persistent} object after the change.
 		 * @see Notification#Notification(Subscription) This parent constructor is also called.
 		 */
-		ObjectChangedNotification(final Subscription<? extends EventSource> mySubscription,
-		        final Persistent oldObject, final Persistent newObject) {
+		ObjectChangedNotification(final Subscription<EventType> mySubscription,
+		        final EventType oldObject, final EventType newObject) {
 		    
 			super(mySubscription);
 			
@@ -811,18 +820,26 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * 
 		 * @see #mOldObject The backend member variable of this getter.
 		 */
-		public final Persistent getOldObject() throws NoSuchElementException {
+		public final EventType getOldObject() throws NoSuchElementException {
 			checkedActivate(1); // byte[] is a db4o primitive type so 1 is enough
-			return mOldObject != null ? Persistent.deserialize(mWebOfTrust, mOldObject) : null;
+			return deserialize(mOldObject);
 		}
 		
 		/**
 		 * @return The changed {@link Persistent} object after the change. Null if the change was the deletion of the object.
 		 * @see #mNewObject The backend member variable of this getter.
 		 */
-		public final Persistent getNewObject() throws NoSuchElementException {
+		public final EventType getNewObject() throws NoSuchElementException {
 			checkedActivate(1); // byte[] is a db4o primitive type so 1 is enough
-			return mNewObject != null ? Persistent.deserialize(mWebOfTrust, mNewObject) : null;
+			return deserialize(mNewObject);
+		}
+
+		@SuppressWarnings("unchecked")
+		private EventType deserialize(byte[] obj) {
+			if (obj == null) {
+				return null;
+			}
+			return (EventType) Persistent.deserialize(mWebOfTrust, mNewObject);
 		}
 
 		/** {@inheritDoc} */
@@ -859,7 +876,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	@SuppressWarnings("serial")
     public static class BeginSynchronizationNotification<EventType extends EventSource>
-	        extends Notification {
+	        extends Notification<EventType> {
         /**
          * All {@link EventSource} objects which are stored inside of
          * {@link ObjectChangedNotification} as part of the synchronization which is marked by this
@@ -901,7 +918,13 @@ public final class SubscriptionManager implements PrioRunnable {
             
             UUID.fromString(getID()); // Will throw if ID is no valid UUID.
         }
-        
+
+		@Override
+		protected void notifyClientByFCP(UUID clientID, FCPInterface fcp)
+				throws InterruptedException, FCPCallFailedException, IOException {
+			fcp.sendBeginOrEndSynchronizationNotification(clientID, this);
+		}
+
         @Override
         public String toString() {
             return super.toString() + " { mVersionID=" + getID() + " }";
@@ -915,9 +938,8 @@ public final class SubscriptionManager implements PrioRunnable {
     public static class EndSynchronizationNotification<EventType extends EventSource>
             extends BeginSynchronizationNotification<EventType> {
         
-        @SuppressWarnings("unchecked")
         EndSynchronizationNotification(BeginSynchronizationNotification<EventType> begin) {
-            super((Subscription<EventType>) begin.getSubscription(), begin.getID());
+            super(begin.getSubscription(), begin.getID());
             
             assert !(begin instanceof EndSynchronizationNotification);
         }
@@ -939,7 +961,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see IdentitiesSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	@SuppressWarnings("serial")
-	public static class IdentityChangedNotification extends ObjectChangedNotification {
+	public static class IdentityChangedNotification extends ObjectChangedNotification<Identity> {
 		/**
 		 * Only one of oldIentity and newIdentity may be null. If both are non-null, their {@link Identity#getID()} must match.
 		 * 
@@ -952,6 +974,11 @@ public final class SubscriptionManager implements PrioRunnable {
 			super(mySubscription, oldIdentity, newIdentity);
 		}
 
+		@Override
+		protected void notifyClientByFCP(UUID clientID, FCPInterface fcp)
+				throws InterruptedException, FCPCallFailedException, IOException {
+			fcp.sendIdentityChangedNotification(clientID, this);
+		}
 	}
 	
 	/**
@@ -968,7 +995,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see TrustsSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	@SuppressWarnings("serial")
-	public static final class TrustChangedNotification extends ObjectChangedNotification {
+	public static final class TrustChangedNotification extends ObjectChangedNotification<Trust> {
 		/**
 		 * Only one of oldTrust and newTrust may be null. If both are non-null, their {@link Trust#getID()} must match.
 		 * 
@@ -976,11 +1003,16 @@ public final class SubscriptionManager implements PrioRunnable {
 		 * @param oldTrust The version of the {@link Trust} before the change.
 		 * @param newTrust The version of the {@link Trust} after the change.
 		 */
-		protected TrustChangedNotification(final Subscription<Trust> mySubscription, 
+		protected TrustChangedNotification(final Subscription<Trust> mySubscription,
 				final Trust oldTrust, final Trust newTrust) {
 			super(mySubscription, oldTrust, newTrust);
 		}
-		
+
+		@Override
+		protected void notifyClientByFCP(UUID clientID, FCPInterface fcp)
+				throws InterruptedException, FCPCallFailedException, IOException {
+			fcp.sendTrustChangedNotification(clientID, this);
+		}
 	}
 	
 	/**
@@ -997,7 +1029,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @see ScoresSubscription The type of {@link Subscription} which deploys this notification.
 	 */
 	@SuppressWarnings("serial")
-	public static final class ScoreChangedNotification extends ObjectChangedNotification {
+	public static final class ScoreChangedNotification extends ObjectChangedNotification<Score> {
 		/**
 		 * Only one of oldScore and newScore may be null. If both are non-null, their {@link Score#getID()} must match.
 		 * 
@@ -1010,6 +1042,11 @@ public final class SubscriptionManager implements PrioRunnable {
 			super(mySubscription, oldScore, newScore);
 		}
 
+		@Override
+		protected void notifyClientByFCP(UUID clientID, FCPInterface fcp)
+				throws InterruptedException, FCPCallFailedException, IOException {
+			fcp.sendScoreChangedNotification(clientID, this);
+		}
 	}
 
 	/**
@@ -1033,36 +1070,6 @@ public final class SubscriptionManager implements PrioRunnable {
         @Override List<Identity> getSynchronization() {
             return mWebOfTrust.getAllIdentities();
         }
-
-        // TODO: Code quality: This function is almost the same in TrustsSubscription and
-        // ScoresSubscription. Add a type parameter <T extends EventSource> to Notification and use
-        // it to move this function upwards to the Subscription base class.
-		/** {@inheritDoc} */
-        @Override
-        protected void notifySubscriberByFCP(Notification notification)
-                throws FCPCallFailedException, IOException, InterruptedException {
-
-		    final UUID clientID = getClient().getFCP_ID();
-		    
-			if(notification instanceof IdentityChangedNotification) {
-			    mWebOfTrust.getFCPInterface().sendIdentityChangedNotification(
-			        clientID, (IdentityChangedNotification)notification);
-			} else if(notification instanceof BeginSynchronizationNotification<?>) {
-			    // EndSynchronizationNotification is a child of BeginSynchronizationNotification.
-			    
-			    // Would be a false positive:
-			    // The type parameter is not known at runtime due to the way Java is implemented.
-			    /* assert((BeginSynchronizationNotification<Identity>)notification != null)
-			        : "The IdentitiesSubscription should only receive Identity notifications"; */
-	             
-			    mWebOfTrust.getFCPInterface().sendBeginOrEndSynchronizationNotification(
-			        clientID,
-			        (BeginSynchronizationNotification<?>)notification);
-			} else {
-			    throw new UnsupportedOperationException("Unknown notification type: "
-			        + notification);
-			}
-		}
 
 		/**
 		 * Stores a {@link IdentityChangedNotification} to the {@link Notification} queue of this {@link Client}.
@@ -1101,33 +1108,6 @@ public final class SubscriptionManager implements PrioRunnable {
             return mWebOfTrust.getAllTrusts();
         }
 
-		/** {@inheritDoc} */
-        @Override
-        protected void notifySubscriberByFCP(final Notification notification)
-                throws FCPCallFailedException, IOException, InterruptedException {
-
-            final UUID clientID = getClient().getFCP_ID();
-            
-            if(notification instanceof TrustChangedNotification) {
-                mWebOfTrust.getFCPInterface().sendTrustChangedNotification(
-                    clientID, (TrustChangedNotification)notification);
-            } else if(notification instanceof BeginSynchronizationNotification<?>) {
-                // EndSynchronizationNotification is a child of BeginSynchronizationNotification.
-                
-                // Would be a false positive:
-                // The type parameter is not known at runtime due to the way Java is implemented.
-                /* assert((BeginSynchronizationNotification<Trust>)notification != null)
-                    : "The TrustsSubscription should only receive Trust notifications"; */
-                
-                mWebOfTrust.getFCPInterface().sendBeginOrEndSynchronizationNotification(
-                    clientID,
-                    (BeginSynchronizationNotification<?>)notification);
-            } else {
-                throw new UnsupportedOperationException("Unknown notification type: "
-                    + notification);
-            }
-		}
-
 		/**
 		 * Stores a {@link TrustChangedNotification} to the {@link Notification} queue of this {@link Client}.
 		 * 
@@ -1162,33 +1142,6 @@ public final class SubscriptionManager implements PrioRunnable {
         @Override List<Score> getSynchronization() {
             return mWebOfTrust.getAllScores();
         }
-
-		/** {@inheritDoc} */
-        @Override
-        protected void notifySubscriberByFCP(final Notification notification)
-                throws FCPCallFailedException, IOException, InterruptedException {
-
-            final UUID clientID = getClient().getFCP_ID();
-            
-            if(notification instanceof ScoreChangedNotification) {
-                mWebOfTrust.getFCPInterface().sendScoreChangedNotification(
-                    clientID, (ScoreChangedNotification)notification);
-            } else if(notification instanceof BeginSynchronizationNotification<?>) {
-                // EndSynchronizationNotification is a child of BeginSynchronizationNotification.
-                
-                // Would be a false positive:
-                // The type parameter is not known at runtime due to the way Java is implemented.
-                /* assert((BeginSynchronizationNotification<Score>)notification != null)
-                    : "The ScoresSubscription should only receive Score notifications"; */
-                 
-                mWebOfTrust.getFCPInterface().sendBeginOrEndSynchronizationNotification(
-                    clientID,
-                    (BeginSynchronizationNotification<?>)notification);
-            } else {
-                throw new UnsupportedOperationException("Unknown notification type: "
-                    + notification);
-            }
-		}
 
 		/**
 		 * Stores a {@link ScoreChangedNotification} to the {@link Notification} queue of this {@link Client}.
@@ -1286,10 +1239,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	@SuppressWarnings("serial")
 	public static final class SubscriptionExistsAlreadyException extends Exception {
-		public final Subscription<? extends EventSource> existingSubscription;
+		public final Subscription<?> existingSubscription;
 		
 		public SubscriptionExistsAlreadyException(
-		        Subscription<? extends EventSource> existingSubscription) {
+		        Subscription<?> existingSubscription) {
 		    
 			this.existingSubscription = existingSubscription;
 		}
@@ -1336,20 +1289,14 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @param subscription The new subscription which the client is trying to create. The database is checked for an existing one with similar properties as specified above.
 	 * @throws SubscriptionExistsAlreadyException If a {@link Subscription} exists which matches the attributes of the given Subscription as specified in the description of the function.
 	 */
-	@SuppressWarnings("unchecked")
-	private synchronized void throwIfSimilarSubscriptionExists(
-	        final Subscription<? extends EventSource> subscription)
-	            throws SubscriptionExistsAlreadyException {
+	private synchronized void throwIfSimilarSubscriptionExists(final Subscription<?> subscription)
+			throws SubscriptionExistsAlreadyException {
 	    
 		try {
 			final Client client = subscription.getClient();
 			if(!mDB.isStored(client))
-				return; // The client was newly created just for this subscription so there cannot be any similar subscriptions on it. 
-			final Subscription<? extends EventSource> existing
-			    = getSubscription(
-			        (Class<? extends Subscription<? extends EventSource>>) subscription.getClass()
-			        , client
-			      );
+				return; // The client was newly created just for this subscription so there cannot be any similar subscriptions on it.
+			final Subscription<?> existing = getSubscription(subscription.getClass(), client);
 			throw new SubscriptionExistsAlreadyException(existing);
 		} catch (UnknownSubscriptionException e) {
 			return;
@@ -1388,8 +1335,7 @@ public final class SubscriptionManager implements PrioRunnable {
      *             calling the FCP interface's
      *             {@link FredPluginFCPMessageHandler.ServerSideFCPMessageHandler}.
 	 */
-	private void storeNewSubscriptionWithoutCommit(
-	        final Subscription<? extends EventSource> subscription)
+	private void storeNewSubscriptionWithoutCommit(final Subscription<?> subscription)
 	            throws InterruptedException, SubscriptionExistsAlreadyException {
 	    
 		subscription.initializeTransient(mWoT);
@@ -1550,12 +1496,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return The class of the terminated {@link Subscription}
 	 * @throws UnknownSubscriptionException If no subscription with the given ID exists.
 	 */
-	@SuppressWarnings("unchecked")
-	public Class<Subscription<? extends EventSource>> unsubscribe(String subscriptionID)
+	public Class<? extends Subscription> unsubscribe(String subscriptionID)
 	        throws UnknownSubscriptionException {
 	    
 		synchronized(this) {
-		final Subscription<? extends EventSource> subscription = getSubscription(subscriptionID);
+		final Subscription<?> subscription = getSubscription(subscriptionID);
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				subscription.deleteWithoutCommit(this);
@@ -1572,7 +1517,7 @@ public final class SubscriptionManager implements PrioRunnable {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
-		return (Class<Subscription<? extends EventSource>>) subscription.getClass();
+		return subscription.getClass();
 		}
 	}
 	
@@ -1620,20 +1565,20 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @return All existing {@link Subscription}s.
 	 */
-	private ObjectSet<Subscription<? extends EventSource>> getAllSubscriptions() {
+	private ObjectSet<Subscription<?>> getAllSubscriptions() {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
-		return new Persistent.InitializingObjectSet<Subscription<? extends EventSource>>(mWoT, q);
+		return new Persistent.InitializingObjectSet<Subscription<?>>(mWoT, q);
 	}
 	
 	/**
 	 * @return All subscriptions of the given {@link Client}.
 	 */
-	private ObjectSet<Subscription<? extends EventSource>> getSubscriptions(final Client client) {
+	private ObjectSet<Subscription<?>> getSubscriptions(final Client client) {
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
 		q.descend("mClient").constrain(client).identity();
-		return new Persistent.InitializingObjectSet<Subscription<? extends EventSource>>(mWoT, q);
+		return new Persistent.InitializingObjectSet<Subscription<?>>(mWoT, q);
 	}
 	
 	/**
@@ -1647,12 +1592,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @param clazz The type of {@link EventSource} to filter by.
 	 * @return Get all {@link Subscription}s to a certain {@link EventSource} type.
 	 */
-	private ObjectSet<? extends Subscription<? extends EventSource>> getSubscriptions(
-	        final Class<? extends Subscription<? extends EventSource>> clazz) {
-	    
+	private <S extends Subscription> ObjectSet<S> getSubscriptions(final Class<S> clazz) {
+
 		final Query q = mDB.query();
 		q.constrain(clazz);
-		return new Persistent.InitializingObjectSet<Subscription<? extends EventSource>>(mWoT, q);
+		return new Persistent.InitializingObjectSet<S>(mWoT, q);
 	}
 	
 	/**
@@ -1660,14 +1604,13 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return The {@link Subscription} with the given ID. Only one Subscription can exist for a single ID.
 	 * @throws UnknownSubscriptionException If no {@link Subscription} exists with the given ID.
 	 */
-	private Subscription<? extends EventSource> getSubscription(final String id)
-	        throws UnknownSubscriptionException {
+	private Subscription<?> getSubscription(final String id) throws UnknownSubscriptionException {
 	    
 		final Query q = mDB.query();
 		q.constrain(Subscription.class);
 		q.descend("mID").constrain(id);	
-		ObjectSet<Subscription<? extends EventSource>> result
-		    = new Persistent.InitializingObjectSet<Subscription<? extends EventSource>>(mWoT, q);
+		ObjectSet<Subscription<?>> result
+		    = new Persistent.InitializingObjectSet<Subscription<?>>(mWoT, q);
 		
 		switch(result.size()) {
 			case 1: return result.next();
@@ -1691,15 +1634,13 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @return See description.
 	 * @throws UnknownSubscriptionException If no matching {@link Subscription} exists.
 	 */
-	private Subscription<? extends EventSource> getSubscription(
-	        final Class<? extends Subscription<? extends EventSource>> clazz, final Client client)
+	private <S extends Subscription> S getSubscription(final Class<S> clazz, final Client client)
 	            throws UnknownSubscriptionException {
 	    
 		final Query q = mDB.query();
 		q.constrain(clazz);
 		q.descend("mClient").constrain(client).identity();		
-		ObjectSet<Subscription<? extends EventSource>> result
-		    = new Persistent.InitializingObjectSet<Subscription<? extends EventSource>>(mWoT, q);
+		ObjectSet<S> result = new Persistent.InitializingObjectSet<S>(mWoT, q);
 		
 		switch(result.size()) {
 			case 1: return result.next();
@@ -1722,11 +1663,11 @@ public final class SubscriptionManager implements PrioRunnable {
 		
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				for(Notification n : getAllNotifications()) {
+				for(Notification<?> n : getAllNotifications()) {
 					n.deleteWithoutCommit();
 				}
 				
-				for(Subscription<? extends EventSource> s : getAllSubscriptions()) {
+				for(Subscription<?> s : getAllSubscriptions()) {
 					s.deleteWithoutCommit();
 				}
 				
@@ -1747,10 +1688,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * 
 	 * @return All objects of class Notification which are stored in the database.
 	 */
-	private ObjectSet<? extends Notification> getAllNotifications() {
+	private ObjectSet<Notification<?>> getAllNotifications() {
 		final Query q = mDB.query();
 		q.constrain(Notification.class);
-		return new Persistent.InitializingObjectSet<Notification>(mWoT, q);
+		return new Persistent.InitializingObjectSet<Notification<?>>(mWoT, q);
 	}
 	
 	/**
@@ -1762,13 +1703,12 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * @param subscription The {@link Subscription} of whose queue to return notifications from.
 	 * @return All {@link Notification}s on the queue of the subscription.
 	 */
-	private ObjectSet<? extends Notification> getNotifications(
-	        final Subscription<? extends EventSource> subscription) {
-	    
+	private <EventType extends EventSource> ObjectSet<Notification<EventType>>
+	getNotifications(final Subscription<EventType> subscription) {
 		final Query q = mDB.query();
 		q.constrain(Notification.class);
 		q.descend("mSubscription").constrain(subscription).identity();
-		return new Persistent.InitializingObjectSet<Notification>(mWoT, q);
+		return new Persistent.InitializingObjectSet<Notification<EventType>>(mWoT, q);
 	}
 	
  	/**
@@ -1782,12 +1722,13 @@ public final class SubscriptionManager implements PrioRunnable {
  	 * @param subscription The {@link Client} of whose queue to return notifications from.
 	 * @return All {@link Notification}s on the queue of the {@link Client}, ordered ascending by time of happening of their inducing event.
  	 */
-	private ObjectSet<? extends Notification> getNotifications(final Client client) {
+	private ObjectSet<Notification<?>> getNotifications(final Client
+			client) {
 		final Query q = mDB.query();
 		q.constrain(Notification.class);
 		q.descend("mClient").constrain(client).identity();
 		q.descend("mIndex").orderAscending();
-		return new Persistent.InitializingObjectSet<Notification>(mWoT, q);
+		return new Persistent.InitializingObjectSet<Notification<?>>(mWoT, q);
 	}
 	
 	/**
@@ -1811,8 +1752,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	protected void storeIdentityChangedNotificationWithoutCommit(final Identity oldIdentity, final Identity newIdentity) {
 		if(logDEBUG) Logger.debug(this, "storeIdentityChangedNotificationWithoutCommit(): old=" + oldIdentity + "; new=" + newIdentity);
 		
-		@SuppressWarnings("unchecked")
-		final ObjectSet<IdentitiesSubscription> subscriptions = (ObjectSet<IdentitiesSubscription>)getSubscriptions(IdentitiesSubscription.class);
+		final ObjectSet<IdentitiesSubscription> subscriptions = getSubscriptions(IdentitiesSubscription.class);
 		
 		for(IdentitiesSubscription subscription : subscriptions) {
 			subscription.storeNotificationWithoutCommit(oldIdentity, newIdentity);
@@ -1840,9 +1780,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	protected void storeTrustChangedNotificationWithoutCommit(final Trust oldTrust, final Trust newTrust) {
 		if(logDEBUG) Logger.debug(this, "storeTrustChangedNotificationWithoutCommit(): old=" + oldTrust + "; new=" + newTrust);
-		
-		@SuppressWarnings("unchecked")
-		final ObjectSet<TrustsSubscription> subscriptions = (ObjectSet<TrustsSubscription>)getSubscriptions(TrustsSubscription.class);
+
+		final ObjectSet<TrustsSubscription> subscriptions = getSubscriptions(TrustsSubscription.class);
 		
 		for(TrustsSubscription subscription : subscriptions) {
 			subscription.storeNotificationWithoutCommit(oldTrust, newTrust);
@@ -1870,9 +1809,8 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	protected void storeScoreChangedNotificationWithoutCommit(final Score oldScore, final Score newScore) {
 		if(logDEBUG) Logger.debug(this, "storeScoreChangedNotificationWithoutCommit(): old=" + oldScore + "; new=" + newScore);
-		
-		@SuppressWarnings("unchecked")
-		final ObjectSet<ScoresSubscription> subscriptions = (ObjectSet<ScoresSubscription>)getSubscriptions(ScoresSubscription.class);
+
+		final ObjectSet<ScoresSubscription> subscriptions = getSubscriptions(ScoresSubscription.class);
 		
 		for(ScoresSubscription subscription : subscriptions) {
 			subscription.storeNotificationWithoutCommit(oldScore, newScore);

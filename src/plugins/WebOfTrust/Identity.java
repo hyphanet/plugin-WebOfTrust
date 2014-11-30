@@ -1005,8 +1005,14 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			throw new IllegalStateException(e); 
 		}
 	}
-	
 
+	/**
+	 * @see Identity#clone()
+	 */
+	@Override
+	public Identity cloned() {
+		return clone();
+	}
 	
 	/**
 	 * Stores this identity in the database without committing the transaction
