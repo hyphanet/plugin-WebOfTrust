@@ -2,14 +2,22 @@ package plugins.WebOfTrust.util;
 
 /**
  * Factory for {@link BackgroundJob}s which allows all background jobs constructed using an instance
- * of this class to be terminated with a single method invocation. This interface does not
- * restrict how factories should provide access to new instances, it only specifies
- * common operations on the instances constructed by the factory.
+ * of this class to be terminated with a single method invocation.
  *
  * @author bertm
  * @see BackgroundJobFactoryBase
  */
 public interface BackgroundJobFactory {
+    /**
+     * Constructs a new background job using the default parameters. When this background job is
+     * {@link BackgroundJob#terminate() terminated}, the running job will be notified by
+     * interruption of its thread. Hence, the job implementer must take care not to swallow
+     * {@link InterruptedException}.
+     * @param job the job to run
+     * @param name the human-readable name of the job
+     */
+    public BackgroundJob newJob(Runnable job, String name);
+
     /**
      * {@link BackgroundJob#terminate() Terminates} all live
      * {@link BackgroundJob background jobs} created by this factory, but does not wait for

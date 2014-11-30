@@ -12,19 +12,28 @@ import freenet.support.Ticker;
 public class TickerDelayedBackgroundJobFactory
         extends BackgroundJobFactoryBase
         implements DelayedBackgroundJobFactory {
+    /** The default delay. */
+    private final long defaultDelay;
     /** The default ticker. */
     private final Ticker ticker;
 
     /**
-     * Constructs a background job factory with given default {@link Ticker}.
+     * Constructs a background job factory with given default delay and {@link Ticker}.
      * The {@link Ticker} given and its {@link Executor} <b>must</b> have an asynchronous
      * implementation of respectively
      * {@link Ticker#queueTimedJob(Runnable, String, long, boolean, boolean) queueTimedJob} and
      * {@link Executor#execute(Runnable, String) execute}.
+     * @param delay the default trigger aggregation delay
      * @param ticker an asynchronous ticker
      */
-    public TickerDelayedBackgroundJobFactory(Ticker ticker) {
+    public TickerDelayedBackgroundJobFactory(long delay, Ticker ticker) {
+        this.defaultDelay = delay;
         this.ticker = ticker;
+    }
+
+    @Override
+    public TickerDelayedBackgroundJob newJob(Runnable job, String name) {
+        return newJob(job, name, defaultDelay, ticker);
     }
 
     /**
