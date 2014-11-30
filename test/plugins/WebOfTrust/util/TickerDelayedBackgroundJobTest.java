@@ -191,7 +191,6 @@ public class TickerDelayedBackgroundJobTest {
         assertEquals(0, value.get());
         sleeper.sleepUntil(75);
         assertEquals(1, value.get());
-        assertEquals(JobState.IDLE, job.getState());
         sleeper.sleepUntil(175);
         assertEquals(1, value.get());
         assertEquals(JobState.IDLE, job.getState());
@@ -212,7 +211,6 @@ public class TickerDelayedBackgroundJobTest {
         assertEquals(2, value.get());
         sleeper.sleepUntil(125);
         assertEquals(3, value.get());
-        assertEquals(JobState.IDLE, job.getState());
         sleeper.sleepUntil(225);
         assertEquals(3, value.get());
         assertEquals(JobState.IDLE, job.getState());
