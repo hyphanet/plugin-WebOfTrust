@@ -189,13 +189,13 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
                     // 4. Run the background job
                     job.run();
                 } finally {
-                    // 5. Increment runCount
                     synchronized(SynchronousDelayedBackgroundJob.this) {
+                        // 5. Increment runCount
                         runCount++;
                         runningJobThread = null;
+                        // 6. Notify all threads waiting upon completion
+                        SynchronousDelayedBackgroundJob.this.notifyAll();
                     }
-                    // 6. Notify all threads waiting upon completion
-                    SynchronousDelayedBackgroundJob.this.notifyAll();
                 }
             }
         });
