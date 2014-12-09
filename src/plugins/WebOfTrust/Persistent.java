@@ -229,8 +229,10 @@ public abstract class Persistent implements Serializable {
 		testDatabaseIntegrity();
 		if(mDB.isStored(object))
 			mDB.delete(object);
-		else
-			Logger.warning(this, "Trying to delete a inexistent object: " + object, new RuntimeException()); // Exception added to get a stack trace
+		else {
+			Logger.warning(this, "Trying to delete a nonexistent object: " + object,
+			    new RuntimeException()); // Exception added to get a stack trace
+		}
 		testDatabaseIntegrity();
 	}
 	
