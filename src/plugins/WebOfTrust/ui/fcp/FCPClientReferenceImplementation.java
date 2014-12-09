@@ -1149,7 +1149,7 @@ public final class FCPClientReferenceImplementation {
 			
 			final String type = sfs.get("Type");
 	    	
-			if(type.equals("Inexistent"))
+			if(type.equals("Nonexistent"))
 	    		return null;
 	    	
 	        final String nickname = sfs.get("Nickname");
@@ -1215,7 +1215,7 @@ public final class FCPClientReferenceImplementation {
 		protected Trust parseSingle(final SimpleFieldSet wholeSfs, final int index) throws FSParseException, InvalidParameterException {
 			final SimpleFieldSet sfs = wholeSfs.getSubset(Integer.toString(index));
 			
-	    	if(sfs.get("Value").equals("Inexistent"))
+	    	if(sfs.get("Value").equals("Nonexistent"))
 	    		return null;
 	    	
 			final String trusterID = sfs.get("Truster");
@@ -1255,7 +1255,7 @@ public final class FCPClientReferenceImplementation {
 		protected Score parseSingle(final SimpleFieldSet wholeSfs, final int index) throws FSParseException {
 			final SimpleFieldSet sfs = wholeSfs.getSubset(Integer.toString(index));
 			
-	    	if(sfs.get("Value").equals("Inexistent"))
+	    	if(sfs.get("Value").equals("Nonexistent"))
 	    		return null;
 	    	
 			final String trusterID = sfs.get("Truster");

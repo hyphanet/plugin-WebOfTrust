@@ -300,7 +300,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final String prefix = "Trusts." + suffix + ".";
     	
     	if(trust == null) {
-    		sfs.putOverwrite(prefix + "Value", "Inexistent");
+    		sfs.putOverwrite(prefix + "Value", "Nonexistent");
     		return sfs;
     	}
     	
@@ -339,7 +339,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final String prefix = "Scores." + suffix + ".";
     	
     	if(score == null) {
-    		sfs.putOverwrite(prefix + "Value", "Inexistent");
+    		sfs.putOverwrite(prefix + "Value", "Nonexistent");
     		return sfs;
     	}
     	
@@ -498,8 +498,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * 
      * All following field names are prefixed with the given prefix and suffixed with the given suffix:
      * 
-     * Type = type of the identity,  "Inexistent", "OwnIdentity" or "Identity".
-     * If the Type is  "Inexistent", the identity does not exist anymore and no other fields will be present.
+     * Type = type of the identity,  "Nonexistent", "OwnIdentity" or "Identity".
+     * If the Type is  "Nonexistent", the identity does not exist anymore and no other fields will
+     * be present.
      * 
      * Nickname = nickname of the identity
      * RequestURI = request URI of the identity
@@ -538,7 +539,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      */
     private void addIdentityFields(SimpleFieldSet sfs, Identity identity, final String prefix, String suffix) {
     	if(identity == null) {
-    		sfs.putOverwrite(prefix + "Type" + suffix, "Inexistent");
+    		sfs.putOverwrite(prefix + "Type" + suffix, "Nonexistent");
     		return;
     	}
     	

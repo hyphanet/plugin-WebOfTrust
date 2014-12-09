@@ -78,7 +78,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 	
 	/**
 	 * NOTICE: When changing this function, please also update the following functions as they contain similar code:
-	 * - testRestoreOwnIdentity_Inexistent
+	 * - testRestoreOwnIdentity_Nonexistent
 	 * - testRestoreOwnIdentity_ExistingAsDanglingNonOwnIdentityAlready
 	 * - testDeleteOwnIdentity_Dangling
 	 */
@@ -745,13 +745,17 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 	/**
 	 * Test for {@link restoreOwnIdentity}: No identity with the given ID exists.
 	 */
-	public void testRestoreOwnIdentity_Inexistent() throws MalformedURLException, InvalidParameterException, UnknownIdentityException, NotInTrustTreeException {
+	public void testRestoreOwnIdentity_Nonexistent()
+	        throws MalformedURLException, InvalidParameterException, UnknownIdentityException,
+	        NotInTrustTreeException {
+	    
 		final FreenetURI insertURI = new FreenetURI("USK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/WebOfTrust/10");
 		
 		mWoT.restoreOwnIdentity(insertURI);
 		
-		// The following is a copypasta of testInitTrustTree - restoring of an inexistent OwnIdentity is similar to creation of a new one
-		// and the creation of a new OwnIdentity should init the trust tree.
+		// The following is a copypasta of testInitTrustTree - restoring of an nonexistent
+		// OwnIdentity is similar to creation of a new one and the creation of a new OwnIdentity
+		// should init the trust tree.
 		flushCaches();
 		assertEquals(0, mWoT.getAllNonOwnIdentities().size());
 		assertEquals(1, mWoT.getAllOwnIdentities().size());
@@ -1004,12 +1008,14 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 	 * - The identity to delete does not exist. Deleting should fail.
 	 * - The identity to delete is not an own identity. Deleting should fail
 	 */
-	public void testDeleteOwnIdentity_Inexistent() throws MalformedURLException, InvalidParameterException {
+	public void testDeleteOwnIdentity_Nonexistent()
+	        throws MalformedURLException, InvalidParameterException {
+	    
 		final String id = IdentityID.constructAndValidateFromURI(new FreenetURI(requestUriA)).toString();
 		
 		try {
 			mWoT.deleteOwnIdentity(id);
-			fail("deleteOwnIdentity() should fail for inexistent identities.");
+			fail("deleteOwnIdentity() should fail for nonexistent identities.");
 		} catch (UnknownIdentityException e) {
 			// Success.
 		}
