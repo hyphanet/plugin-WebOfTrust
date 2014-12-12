@@ -2244,7 +2244,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 	public Trust getTrust(final Identity truster, final Identity trustee) throws NotTrustedException, DuplicateTrustException {
 		return getTrust(new TrustID(truster, trustee).toString());
 	}
-	
+
+    /**
+     * @see #getTrust(Identity, Identity)
+     * @param trusterID A valid {@link IdentityID}.
+     * @param trusteeID A valid {@link IdentityID}. 
+     */
+    public Trust getTrust(final String trusterID, final String trusteeID)
+            throws DuplicateTrustException, NotTrustedException {
+        
+        return getTrust(new TrustID(trusterID, trusteeID).toString());
+    }
+
 	/**
 	 * Gets the {@link Trust} with the given {@link TrustID}. 
 	 * 
