@@ -121,7 +121,7 @@ public class IdentityPage extends WebPageImpl {
 
 		try
 		{
-			Trust trust = mWebOfTrust.getTrust(mLoggedInOwnIdentity, identity);
+			Trust trust = mWebOfTrust.getTrust(mLoggedInOwnIdentityID, identity.getID());
 			trustValue = String.valueOf(trust.getValue());
 			trustComment = trust.getComment();
 		}
