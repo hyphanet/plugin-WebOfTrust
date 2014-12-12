@@ -17,6 +17,7 @@ import javax.xml.transform.TransformerException;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -191,8 +192,21 @@ public final class IntroductionClient extends TransferThread  {
 	 * 
 	 * The locking policy when using this function is that we do not lock anything while parsing the returned list - it's not a problem if a single 
 	 * puzzle gets deleted while the user is solving it.
+	 * 
+	 * @param ownIdentityID The value of {@link OwnIdentity#getID()} of the {@link OwnIdentity}
+	 *                      which will solve the returned puzzles.<br>
+	 *                      Used for selecting the puzzles which are from an {@link Identity} which:
+	 *                      <br>
+	 *                      - has a good {@link Score} from the perspective of the
+	 *                        {@link OwnIdentity}.<br>
+	 *                      - does not already trust the {@link OwnIdentity} anyway.
+	 * @throws UnknownIdentityException If there is no {@link OwnIdentity} matching the given
+	 *                                  ownIdentityID.
 	 */
-	public List<IntroductionPuzzle> getPuzzles(final OwnIdentity user, final PuzzleType puzzleType, final int count) {
+	public List<IntroductionPuzzle> getPuzzles(
+	        final String ownIdentityID, final PuzzleType puzzleType, final int count)
+	            throws UnknownIdentityException {
+	    
 		final ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count + 1);
 		final HashSet<Identity> resultHasPuzzleFrom = new HashSet<Identity>(count * 2); /* Have some room so we do not hit the load factor */
 		
@@ -201,6 +215,7 @@ public final class IntroductionClient extends TransferThread  {
 		 * until it releases the WoT. */
 		synchronized(mWoT) {
 		synchronized(mPuzzleStore) {
+		    final OwnIdentity user = mWoT.getOwnIdentityByID(ownIdentityID);
 			final ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedPuzzles(puzzleType);
 			 
 			for(final IntroductionPuzzle puzzle : puzzles) {

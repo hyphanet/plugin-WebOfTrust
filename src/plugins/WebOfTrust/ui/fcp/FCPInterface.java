@@ -1083,7 +1083,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final String type = getMandatoryParameter(params, "Type");
     	final int amount = Integer.valueOf(getMandatoryParameter(params, "Amount"));
     	
-    	List<IntroductionPuzzle> puzzles = mWoT.getIntroductionClient().getPuzzles(mWoT.getOwnIdentityByID(identityID), PuzzleType.valueOf(type), amount);
+    	List<IntroductionPuzzle> puzzles
+    	    = mWoT.getIntroductionClient().getPuzzles(identityID, PuzzleType.valueOf(type), amount);
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "IntroductionPuzzles");

@@ -73,10 +73,18 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 	
 	private void makePuzzleBox() {
-		HTMLNode boxContent = addContentBox(l10n().getString("IntroduceIdentityPage.PuzzleBox.Header"));
-		
 		// synchronized(mClient) { /* The client returns an ArrayList, not the ObjectContainer, so this should be safe */
-		List<IntroductionPuzzle> puzzles = mClient.getPuzzles(mLoggedInOwnIdentity, PuzzleType.Captcha, PUZZLE_DISPLAY_COUNT);
+		List<IntroductionPuzzle> puzzles;
+        try {
+            puzzles = mClient.getPuzzles(
+                mLoggedInOwnIdentityID, PuzzleType.Captcha, PUZZLE_DISPLAY_COUNT);
+        } catch (UnknownIdentityException e) {
+            new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
+            return;
+        }
+        
+        HTMLNode boxContent
+            = addContentBox(l10n().getString("IntroduceIdentityPage.PuzzleBox.Header"));
 		
 		if(puzzles.size() > 0 ) {
 			HTMLNode solveForm = pr.addFormChild(boxContent, uri.toString(), "solvePuzzles");
