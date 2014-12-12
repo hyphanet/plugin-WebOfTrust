@@ -55,11 +55,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				String id = mRequest.getPartAsStringThrowing("id" + idx, IntroductionPuzzle.MAXIMAL_ID_LENGTH);
 				String solution = mRequest.getPartAsStringThrowing("Solution" + id, IntroductionPuzzle.MAXIMAL_SOLUTION_LENGTH);
 				if(!solution.trim().equals("")) {
-					IntroductionPuzzle p;
-					p = mWebOfTrust.getIntroductionPuzzleStore().getByID(id);
-
-					// It is safe to use this function without synchronization as it re-queries the identity from the database.
-					mClient.solvePuzzle(mLoggedInOwnIdentity, p, solution);
+					mClient.solvePuzzle(mLoggedInOwnIdentityID, id, solution);
 				} else {
 					// We don't break the processing loop here because users might intentionally not solve puzzles which are too difficult.
 				}

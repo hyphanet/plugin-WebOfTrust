@@ -243,16 +243,22 @@ public final class IntroductionClient extends TransferThread  {
 	 * @throws InvalidParameterException If the puzzle was already solved.
 	 * @throws RuntimeException If the identity or the puzzle was deleted already.
 	 */
-	public void solvePuzzle(OwnIdentity solver, IntroductionPuzzle puzzle, final String solution) throws InvalidParameterException {
+	public void solvePuzzle(
+	        final String solverOwnIdentityID, final String puzzleID, final String solution)
+	            throws InvalidParameterException {
+	    
+	    final OwnIdentity solver;
+	    final IntroductionPuzzle puzzle;
+	    
 		synchronized(mWoT) {
 			try {
-				solver = mWoT.getOwnIdentityByID(solver.getID());
+				solver = mWoT.getOwnIdentityByID(solverOwnIdentityID);
 			} catch(UnknownIdentityException e) {
 				throw new RuntimeException("Your own identity was deleted already.");
 			}
 		synchronized(mPuzzleStore) {
 			try {
-				puzzle = mPuzzleStore.getByID(puzzle.getID());
+				puzzle = mPuzzleStore.getByID(puzzleID);
 			} catch (UnknownPuzzleException e) {
 				throw new RuntimeException("The solved puzzle was deleted already.");
 			}

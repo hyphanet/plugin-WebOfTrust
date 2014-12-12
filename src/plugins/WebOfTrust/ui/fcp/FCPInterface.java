@@ -1118,9 +1118,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final String puzzleID = getMandatoryParameter(params, "Puzzle");
     	final String solution = getMandatoryParameter(params, "Solution");
     	
-    	// We do not have to take locks here. TODO: Write a solvePuzzle which only takes IDs, it re-queries the objects anyway
-    	mWoT.getIntroductionClient().solvePuzzle(
-    			mWoT.getOwnIdentityByID(identityID), mWoT.getIntroductionPuzzleStore().getByID(puzzleID), solution);
+    	mWoT.getIntroductionClient().solvePuzzle(identityID, puzzleID, solution);
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "PuzzleSolved");
