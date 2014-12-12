@@ -242,6 +242,8 @@ public final class IntroductionClient extends TransferThread  {
 	 * 
 	 * @throws InvalidParameterException If the puzzle was already solved.
 	 * @throws RuntimeException If the identity or the puzzle was deleted already.
+	 *                          TODO: Code quality: Throw {@link UnknownIdentityException} and
+	 *                          {@link UnknownPuzzleException} instead.
 	 */
 	public void solvePuzzle(
 	        final String solverOwnIdentityID, final String puzzleID, final String solution)
