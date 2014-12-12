@@ -34,7 +34,12 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	public IntroduceIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
+        // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+		synchronized(mWebOfTrust) {
+		    mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
+        }
+		
 		mClient = mWebOfTrust.getIntroductionClient();
 	}
 
