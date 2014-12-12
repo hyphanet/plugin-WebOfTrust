@@ -13,7 +13,6 @@ import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.exceptions.DuplicateScoreException;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
@@ -60,7 +59,13 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 */
 	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException, UnknownIdentityException {
 		super(toadlet, myRequest, context, true);
-		mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
+		
+        // TODO: Performance: The synchronized() and the clone() here and the getOwnIdentityByID()
+		// in makeKnownIdentitiesList() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+		synchronized(mWebOfTrust) {
+		    mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
+        }
 	}
 
 	@Override
@@ -262,16 +267,30 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		long currentTime = CurrentTimeUTC.getInMillis();
 		
+		
+		synchronized(mWebOfTrust) {
+		
 		final int indexOfFirstIdentity = page * IDENTITIES_PER_PAGE;
-		final ObjectSet<Identity> allIdentities = mWebOfTrust.getAllIdentitiesFilteredAndSorted(mLoggedInOwnIdentity, nickFilter, sortInstruction);
+		
+		// Re-query it instead of using mLoggedInOwnIdentity because mLoggedInOwnIdentity is a
+		// clone() and thus will not work with database queries on the WebOfTrust.
+		// See the constructor for why we clone() it.
+		final OwnIdentity ownId;
+		try {
+		    ownId = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
+		} catch(UnknownIdentityException e) {
+		    new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
+		    return;
+		}
+		
+		final ObjectSet<Identity> allIdentities
+		    = mWebOfTrust.getAllIdentitiesFilteredAndSorted(ownId, nickFilter, sortInstruction);
 		final Iterator<Identity> identities = allIdentities.listIterator(indexOfFirstIdentity);
 		
-
-		synchronized(mWebOfTrust) {
 		for(int displayed = 0; displayed < IDENTITIES_PER_PAGE && identities.hasNext(); ++displayed) {
 			final Identity id = identities.next();
 			
-			if(id == mLoggedInOwnIdentity) continue;
+			if(id == ownId) continue;
 
 			HTMLNode row=identitiesTable.addChild("tr");
 			
@@ -302,7 +321,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			//Score
 			try {
-				final Score score = mWebOfTrust.getScore((OwnIdentity)mLoggedInOwnIdentity, id);
+				final Score score = mWebOfTrust.getScore(ownId, id);
 				final int scoreValue = score.getScore();
 				final int rank = score.getRank();
 				
@@ -317,7 +336,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 			
 			// Own Trust
-			row.addChild(getReceivedTrustCell(mLoggedInOwnIdentity, id));
+			row.addChild(getReceivedTrustCell(ownId, id));
 			
 			// Checkbox
 			row.addChild(getSetTrustCell(id));
@@ -339,11 +358,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			row.addChild("td", "align", "center", Long.toString(id.getEdition()));
 			
 			row.addChild("td", "align", "center", Long.toString(id.getLatestEditionHint()));
-		}
-		}
 		
 		identitiesTable.addChild(getKnownIdentitiesListTableHeader());
 		knownIdentitiesBox.addChild(getKnownIdentitiesListPageLinks(page, allIdentities.size()));
+	    }
+        }
 	}
 	
 	private HTMLNode getKnownIdentitiesListTableHeader() {
