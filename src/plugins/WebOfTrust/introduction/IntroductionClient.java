@@ -188,10 +188,13 @@ public final class IntroductionClient extends TransferThread  {
 	}
 	
 	/**
-	 * Use this function in the UI to get a list of puzzles for the user to solve.
+	 * Use this function in the UI to get a list of puzzles for the user to solve.<br><br>
 	 * 
-	 * The locking policy when using this function is that we do not lock anything while parsing the returned list - it's not a problem if a single 
-	 * puzzle gets deleted while the user is solving it.
+	 * You do not have to lock any parts of the database while parsing the returned list:<br>
+	 * This function returns clone()s of the {@link IntroductionPuzzle} objects, not the actual
+	 * ones stored in the database.<br>
+	 * TODO: Performance: Don't return clones and also maybe remove the internal synchronized()
+	 * after this is fixed: https://bugs.freenetproject.org/view.php?id=6247
 	 * 
 	 * @param ownIdentityID The value of {@link OwnIdentity#getID()} of the {@link OwnIdentity}
 	 *                      which will solve the returned puzzles.<br>
@@ -230,7 +233,7 @@ public final class IntroductionClient extends TransferThread  {
 								/* We are already on this identity's trust list so there is no use in solving another puzzle from it */
 							}
 							catch(NotTrustedException e) {
-								result.add(puzzle);
+								result.add(puzzle.clone());
 								resultHasPuzzleFrom.add(puzzle.getInserter());
 								if(result.size() == count)
 									break;

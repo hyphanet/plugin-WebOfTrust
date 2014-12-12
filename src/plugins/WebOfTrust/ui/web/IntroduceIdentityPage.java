@@ -73,7 +73,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 	
 	private void makePuzzleBox() {
-		// synchronized(mClient) { /* The client returns an ArrayList, not the ObjectContainer, so this should be safe */
+	    // getPuzzles() will return clone()s only, so no database locking is needed.
 		List<IntroductionPuzzle> puzzles;
         try {
             puzzles = mClient.getPuzzles(
