@@ -42,6 +42,8 @@ public class StatisticsPage extends WebPageImpl {
 		HTMLNode box = addContentBox(l10n().getString("StatisticsPage.SummaryBox.Header"));
 		HTMLNode list = new HTMLNode("ul");
 		
+        // TODO: Performance: All the synchronized() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
 		synchronized(mWebOfTrust) {
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.OwnIdentities") + ": " + mWebOfTrust.getAllOwnIdentities().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.KnownIdentities") + ": " + mWebOfTrust.getAllNonOwnIdentities().size()));
