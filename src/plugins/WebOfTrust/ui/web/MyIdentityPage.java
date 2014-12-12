@@ -34,6 +34,8 @@ public class MyIdentityPage extends WebPageImpl {
 	private final WebInterfaceToadlet introduceIdentityToadlet;
 	
 	private final OwnIdentity mIdentity;
+	private final int mReceivedTrustCount;
+	private final int mGivenTrustCount;
 	
 	/**
 	 * Creates a new MyIdentityPage.
@@ -46,7 +48,13 @@ public class MyIdentityPage extends WebPageImpl {
 	public MyIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException, UnknownIdentityException {
 		super(toadlet, myRequest, context, true);
 
-		mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
+        // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+		synchronized(mWebOfTrust) {
+		    mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
+		    mReceivedTrustCount = mWebOfTrust.getReceivedTrusts(mIdentity).size();
+		    mGivenTrustCount = mWebOfTrust.getGivenTrusts(mIdentity).size();
+		}
 
 		editIdentityToadlet = mWebInterface.getToadlet(EditOwnIdentityWebInterfaceToadlet.class);
 		deleteIdentityToadlet = mWebInterface.getToadlet(DeleteOwnIdentityWebInterfaceToadlet.class);
@@ -119,7 +127,7 @@ public class MyIdentityPage extends WebPageImpl {
 
 		// TODO: Do a direct link to the received-trusts part of the linked page
 		HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-		String trustersString = Long.toString(mWebOfTrust.getReceivedTrusts(id).size());
+		String trustersString = Integer.toString(mReceivedTrustCount);
 		if(restoreInProgress)
 			trustersCell.addChild("#", trustersString);
 		else
@@ -127,7 +135,7 @@ public class MyIdentityPage extends WebPageImpl {
 
 		// TODO: Do a direct link to the given-trusts part of the linked page
 		HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-		String trusteesString = Long.toString(mWebOfTrust.getGivenTrusts(id).size());
+		String trusteesString = Integer.toString(mGivenTrustCount);
 		if(restoreInProgress)
 			trusteesCell.addChild("#", trusteesString);
 		else
