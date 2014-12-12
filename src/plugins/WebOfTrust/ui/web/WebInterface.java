@@ -24,6 +24,7 @@ import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.identicon.Identicon;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
+import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.filter.ContentFilter;
 import freenet.clients.http.PageMaker;
@@ -150,8 +151,12 @@ public class WebInterface {
 			assert ID.length() == IdentityID.LENGTH;
 
 			try {
-				final OwnIdentity ownIdentity = mWoT.getOwnIdentityByID(ID);
-				sessionManager.createSession(ownIdentity.getID(), ctx);
+		        // TODO: Performance: The synchronized() can be removed after this is fixed:
+		        // https://bugs.freenetproject.org/view.php?id=6247
+			    synchronized(mWoT) {
+			        final OwnIdentity ownIdentity = mWoT.getOwnIdentityByID(ID);
+			        sessionManager.createSession(ownIdentity.getID(), ctx);
+			    }
 			} catch(UnknownIdentityException e) {
 				Logger.error(this.getClass(), "Attempted to log in to unknown identity. Was it deleted?", e);
 				writeTemporaryRedirect(ctx, "Unknown identity", path());
@@ -323,7 +328,13 @@ public class WebInterface {
 			InputStream filterInput = null;
 			OutputStream filterOutput = null;
 			try {
-				final IntroductionPuzzle puzzle = mWoT.getIntroductionPuzzleStore().getByID(req.getParam("PuzzleID"));
+			    final IntroductionPuzzleStore puzzleStore = mWoT.getIntroductionPuzzleStore();
+				final IntroductionPuzzle puzzle;
+		        // TODO: Performance: The synchronized() and clone() can be removed after this is
+				// fixed: https://bugs.freenetproject.org/view.php?id=6247
+				synchronized(puzzleStore) {
+				    puzzle = puzzleStore.getByID(req.getParam("PuzzleID")).clone();
+				}
 				
 				final String mimeType = puzzle.getMimeType();
 				
