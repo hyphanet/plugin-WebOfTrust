@@ -244,8 +244,6 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     private SimpleFieldSet handleCreateIdentity(final SimpleFieldSet params)
     	throws InvalidParameterException, FSParseException, MalformedURLException {
     	
-    	OwnIdentity identity;
-    	
     	final String identityNickname = getMandatoryParameter(params, "Nickname");
     	final String identityContext = getMandatoryParameter(params, "Context");
     	final String identityPublishesTrustListStr = getMandatoryParameter(params, "PublishTrustList");
@@ -253,7 +251,14 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final boolean identityPublishesTrustList = identityPublishesTrustListStr.equals("true") || identityPublishesTrustListStr.equals("yes");
     	final String identityInsertURI = params.get("InsertURI");
 
-    	synchronized(mWoT) { /* Preserve the locking order to prevent future deadlocks */
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "IdentityCreated");
+
+        // TODO: Performance: The synchronized() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+        synchronized(mWoT) {
+        OwnIdentity identity;
+
         if (identityInsertURI == null) {
             identity = mWoT.createOwnIdentity(identityNickname, identityPublishesTrustList, identityContext);
         } else {
@@ -266,13 +271,12 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		} catch (UnknownIdentityException e) {
 			throw new RuntimeException(e);
 		}
-    	}
 
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-        sfs.putOverwrite("Message", "IdentityCreated");
         sfs.putOverwrite("ID", identity.getID());
         sfs.putOverwrite("InsertURI", identity.getInsertURI().toString());
         sfs.putOverwrite("RequestURI", identity.getRequestURI().toString());
+        }
+
         return sfs;
     }
     
