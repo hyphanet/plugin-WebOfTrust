@@ -756,11 +756,6 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         return result;
     }
 
-    /**
-     * @param request
-     *            Can be null if you use this to send out Trusts due to an event, not due to
-     *            an original client message.
-     */
     private FCPPluginMessage handleGetTrusts(final FCPPluginMessage request) {
         final FCPPluginMessage result = FCPPluginMessage.constructSuccessReply(request);
         
