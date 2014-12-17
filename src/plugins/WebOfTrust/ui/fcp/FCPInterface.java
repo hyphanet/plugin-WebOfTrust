@@ -721,12 +721,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 
 		return sfs;
     }
-    
-    /**
-     * @param request
-     *            Can be null if you use this to send out identities due to an event, not due to
-     *            an original client message.
-     */
+
     private FCPPluginMessage handleGetIdentities(final FCPPluginMessage request) {
         final FCPPluginMessage result = FCPPluginMessage.constructSuccessReply(request);
         
