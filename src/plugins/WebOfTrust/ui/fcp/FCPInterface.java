@@ -330,6 +330,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final String trusteeID = getMandatoryParameter(params, "Trustee");
 
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        // TODO: Performance: The synchronized() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
     	synchronized(mWoT) {
     		Score score = null;
     		try {
