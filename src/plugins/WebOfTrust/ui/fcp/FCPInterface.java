@@ -431,6 +431,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 
     	final SimpleFieldSet sfs;
     	
+        // We query two Identity objects from the database. Thus we must synchronize to ensure that
+        // the returned data is coherent - one of the two might be deleted meanwhile, or change
+        // from being an Identity to being an OwnIdentity.
     	synchronized(mWoT) {
     		final Identity identity = mWoT.getIdentityByID(identityID);
     		final OwnIdentity truster = (trusterID != null ? mWoT.getOwnIdentityByID(trusterID) : null);
