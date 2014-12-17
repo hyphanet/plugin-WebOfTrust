@@ -685,6 +685,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "OwnIdentities");
 
+        // getAllOwnIdentities() demands that we synchronize while processing the returned list.
 		synchronized(mWoT) {
 			int i = 0;
 			for(final OwnIdentity oid : mWoT.getAllOwnIdentities()) {
