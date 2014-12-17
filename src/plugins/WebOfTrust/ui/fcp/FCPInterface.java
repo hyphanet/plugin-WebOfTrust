@@ -766,7 +766,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         result.params.putOverwrite("Message", "Trusts");
    
-		// TODO: Optimization: Remove this lock if it works without it.
+        // WebOfTrust.getAllTrusts() demands that we synchronize while processing the result.
         synchronized(mWoT) {
         	int i = 0;
 			for(final Trust trust : mWoT.getAllTrusts()) {
