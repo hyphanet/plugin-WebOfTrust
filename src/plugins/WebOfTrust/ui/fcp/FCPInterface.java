@@ -734,7 +734,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		
         final String context = request.params.get("Context");
         
-		// TODO: Optimization: Remove this lock if it works without it.
+        // WebOfTrust.getAllIdentities() demands that we synchronize while processing the result.
 		synchronized(mWoT) {
 			final boolean getAll = context == null || context.equals("");
 	
