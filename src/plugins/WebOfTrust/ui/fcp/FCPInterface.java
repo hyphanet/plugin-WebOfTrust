@@ -889,6 +889,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         final boolean getAll = context.equals("");
         
+        // WebOfTrust.getReceivedTrusts() demands that we synchronize while processing the result.
         synchronized(mWoT) {
         	int i = 0;
 			for(final Trust trust : mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID))) {
