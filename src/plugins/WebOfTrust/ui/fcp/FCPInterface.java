@@ -253,8 +253,6 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final boolean identityPublishesTrustList = identityPublishesTrustListStr.equals("true") || identityPublishesTrustListStr.equals("yes");
     	final String identityInsertURI = params.get("InsertURI");
 
-    	/* The constructor will throw for us if one is missing. Do not use "||" because that would lead to creation of a new URI if the
-    	 * user forgot one of the URIs and the user would not get notified about that.  */
     	synchronized(mWoT) { /* Preserve the locking order to prevent future deadlocks */
         if (identityInsertURI == null) {
             identity = mWoT.createOwnIdentity(identityNickname, identityPublishesTrustList, identityContext);
