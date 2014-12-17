@@ -2246,14 +2246,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 
     /**
-     * FIXME: Performance: This has been added much later than {@link #getTrust(Identity,
-     * Identity)}. Check all callers of that function whether they can be replaced with this one:
-     * Its possibly that they only query the identity objects from the database for calling the
-     * getTrust(). That query could be avoided by calling this function which only needs the IDs of
-     * the identities, not the whole identity objects. Maybe also do this for getScore(). Also
-     * notice that there might be a bugtracker entry for this already which then can be marked as
-     * resolved. 
-     * 
      * @see #getTrust(Identity, Identity)
      * @param trusterID A valid {@link IdentityID}.
      * @param trusteeID A valid {@link IdentityID}. 
