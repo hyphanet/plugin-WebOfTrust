@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import plugins.WebOfTrust.EventSource;
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
@@ -288,10 +289,14 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         // TODO: Performance: The synchronized() can be removed after this is fixed:
         // https://bugs.freenetproject.org/view.php?id=6247
     	synchronized(mWoT) {
+            // getTrust() won't validate the IDs. Since we are a UI, it's better to do it:
+            // This will prevent getTrust() claiming that there is no trust due to invalid IDs.
+            IdentityID.constructAndValidateFromString(trusterID);
+            IdentityID.constructAndValidateFromString(trusteeID);
+
     		Trust trust = null;
     		try {
-        		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
-    			trust = mWoT.getTrust(mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID));
+                trust = mWoT.getTrust(trusterID, trusteeID);
     		} catch(NotTrustedException e) {}
     		
     		handleGetTrust(sfs, trust, "0");
