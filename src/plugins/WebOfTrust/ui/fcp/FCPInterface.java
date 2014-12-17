@@ -809,6 +809,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Identities");
 		
+        // WebOfTrust.getIdentitiesByScore() demands that we synchronize while processing the result
+        // Also, we query the OwnIdentity truster before calling it, i.e. query two datasets
+        // from the database. Thus we must synchronize to ensure that the returned data is coherent
+        // - the truster might be deleted meanwhile, or change from being an OwnIdentity to being an
+        // Identity.
 		synchronized(mWoT) {
 			final OwnIdentity truster = trusterID != null ? mWoT.getOwnIdentityByID(trusterID) : null;
 			final boolean getAll = context.equals("");
