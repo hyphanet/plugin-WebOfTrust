@@ -776,7 +776,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
        
         result.params.putOverwrite("Message", "Scores");
    
-		// TODO: Optimization: Remove this lock if it works without it.
+        // WebOfTrust.getAllScores() demands that we synchronize while processing the result.
         synchronized(mWoT) {
         	int i = 0;
 			for(final Score score: mWoT.getAllScores()) {
