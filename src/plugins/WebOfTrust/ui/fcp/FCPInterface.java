@@ -409,12 +409,16 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     private SimpleFieldSet handleAddIdentity(final SimpleFieldSet params) throws InvalidParameterException, MalformedURLException {
     	final String requestURI = getMandatoryParameter(params, "RequestURI");
 
-    	final Identity identity = mWoT.addIdentity(requestURI);
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "IdentityAdded");
 
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-    	sfs.putOverwrite("Message", "IdentityAdded");
-    	sfs.putOverwrite("ID", identity.getID());
-    	sfs.putOverwrite("Nickname", identity.getNickname());
+        // TODO: Performance: The synchronized() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+        synchronized(mWoT) {
+            final Identity identity = mWoT.addIdentity(requestURI);
+            sfs.putOverwrite("ID", identity.getID());
+            sfs.putOverwrite("Nickname", identity.getNickname());
+        }
     	return sfs;
     }
     
