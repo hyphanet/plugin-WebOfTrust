@@ -1421,7 +1421,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * TODO: Code quality: Rename to subscribeToIdentitiesByFCP() or similar.
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the {@link Client}. Must be unique among all FCP connections!
-	 * @return The {@link IdentitiesSubscription} which is created by this function.
+	 * @return The return value of {@link Subscription#getID()} of the created subscription.<br>
+	 *         TODO: Return the Subscription object after this is fixed:
+	 *         https://bugs.freenetproject.org/view.php?id=6247
 	 * @throws InterruptedException
 	 *             If an external thread requested the current thread to terminate via
 	 *             {@link Thread#interrupt()} while the data was being transfered to the client.
@@ -1431,7 +1433,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 *             quickly. 
 	 * @see IdentityChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
-    public IdentitiesSubscription subscribeToIdentities(UUID fcpID)
+    public String subscribeToIdentities(UUID fcpID)
             throws InterruptedException, SubscriptionExistsAlreadyException {
 
 		synchronized(mWoT) {
@@ -1442,7 +1444,7 @@ public final class SubscriptionManager implements PrioRunnable {
     			    = new IdentitiesSubscription(getOrCreateClient(fcpID));
     			storeNewSubscriptionWithoutCommit(subscription);
     			subscription.checkedCommit(this);
-    			return subscription;
+    			return subscription.getID();
 		    } catch(RuntimeException e) {
 		        Persistent.checkedRollbackAndThrow(mDB, this, e);
 		        throw e; // Satisfy the compiler: Without, it would complain about missing return.
@@ -1463,7 +1465,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * The {@link Client} is notified when a {@link Trust} changes, is created or removed.
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the {@link Client}. Must be unique among all FCP connections!
-	 * @return The {@link TrustsSubscription} which is created by this function.
+     * @return The return value of {@link Subscription#getID()} of the created subscription.<br>
+     *         TODO: Return the Subscription object after this is fixed:
+     *         https://bugs.freenetproject.org/view.php?id=6247
      * @throws InterruptedException
      *             If an external thread requested the current thread to terminate via
      *             {@link Thread#interrupt()} while the data was being transfered to the client.
@@ -1473,7 +1477,7 @@ public final class SubscriptionManager implements PrioRunnable {
      *             quickly.
 	 * @see TrustChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
-	public TrustsSubscription subscribeToTrusts(UUID fcpID)
+	public String subscribeToTrusts(UUID fcpID)
 	    throws InterruptedException, SubscriptionExistsAlreadyException {
 	    
 		synchronized(mWoT) {
@@ -1484,7 +1488,7 @@ public final class SubscriptionManager implements PrioRunnable {
     			    = new TrustsSubscription(getOrCreateClient(fcpID));
     			storeNewSubscriptionWithoutCommit(subscription);
     			subscription.checkedCommit(this);
-    			return subscription;
+    			return subscription.getID();
 	        } catch(RuntimeException e) {
                 Persistent.checkedRollbackAndThrow(mDB, this, e);
                 throw e; // Satisfy the compiler: Without, it would complain about missing return.
@@ -1505,7 +1509,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * The {@link Client} is notified when a {@link Score} changes, is created or removed.
 	 * 
 	 * @param fcpID The identifier of the FCP connection of the {@link Client}. Must be unique among all FCP connections!
-	 * @return The {@link ScoresSubscription} which is created by this function.
+     * @return The return value of {@link Subscription#getID()} of the created subscription.<br>
+     *         TODO: Return the Subscription object after this is fixed:
+     *         https://bugs.freenetproject.org/view.php?id=6247
      * @throws InterruptedException
      *             If an external thread requested the current thread to terminate via
      *             {@link Thread#interrupt()} while the data was being transfered to the client.
@@ -1515,7 +1521,7 @@ public final class SubscriptionManager implements PrioRunnable {
      *             quickly.
 	 * @see ScoreChangedNotification The type of {@link Notification} which is sent when an event happens.
 	 */
-	public ScoresSubscription subscribeToScores(UUID fcpID)
+	public String subscribeToScores(UUID fcpID)
 	        throws InterruptedException, SubscriptionExistsAlreadyException {
 	    
 		synchronized(mWoT) {
@@ -1526,7 +1532,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	                = new ScoresSubscription(getOrCreateClient(fcpID));
 	            storeNewSubscriptionWithoutCommit(subscription);
 	            subscription.checkedCommit(this);
-	            return subscription;
+	            return subscription.getID();
 	        } catch(RuntimeException e) {
 	            Persistent.checkedRollbackAndThrow(mDB, this, e);
 	            throw e; // Satisfy the compiler: Without, it would complain about missing return.

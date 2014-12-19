@@ -1243,7 +1243,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	
     	try {
             FCPPluginMessage reply = FCPPluginMessage.constructSuccessReply(message);
-            Subscription<? extends EventSource> subscription;
+            String subscriptionID;
             
             // TODO: Code quality: Use FCPClientReferenceImplementation.SubscriptionType.valueOf()
             // Maybe copy the enum to class SubscriptionManager. (It must be copied instead of moved
@@ -1251,17 +1251,17 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             // which wouldn't make sense to copy to a WOT client plugin. SubscriptionManager for
             // sure does not need to be in a WOT client plugin)
 	    	if(to.equals("Identities")) {
-	    		subscription = mSubscriptionManager.subscribeToIdentities(client.getID());
+                subscriptionID = mSubscriptionManager.subscribeToIdentities(client.getID());
 	    	} else if(to.equals("Trusts")) {
-	    		subscription = mSubscriptionManager.subscribeToTrusts(client.getID());
+                subscriptionID = mSubscriptionManager.subscribeToTrusts(client.getID());
 	    	} else if(to.equals("Scores")) {
-	    		subscription = mSubscriptionManager.subscribeToScores(client.getID());
+                subscriptionID = mSubscriptionManager.subscribeToScores(client.getID());
 	    	} else
 	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
 	    	
 	    	SimpleFieldSet sfs = reply.params;
 	    	sfs.putOverwrite("Message", "Subscribed");
-	    	sfs.putOverwrite("SubscriptionID", subscription.getID());
+            sfs.putOverwrite("SubscriptionID", subscriptionID);
 	    	sfs.putOverwrite("To", to);
             
             return reply;
