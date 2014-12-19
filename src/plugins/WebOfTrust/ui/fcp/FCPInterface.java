@@ -41,6 +41,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionType;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.keys.FreenetURI;
@@ -1137,14 +1138,20 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     
     private SimpleFieldSet handleGetIntroductionPuzzle(final SimpleFieldSet params) throws InvalidParameterException, UnknownPuzzleException {
     	final String puzzleID = getMandatoryParameter(params, "Puzzle");
+
+        final SimpleFieldSet result = new SimpleFieldSet(true);
+        result.putOverwrite("Message", "IntroductionPuzzle");
+
+        final IntroductionPuzzleStore puzzleStore = mWoT.getIntroductionPuzzleStore();
+        // TODO: Performance: The synchronized() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+        synchronized(puzzleStore) {
+            final IntroductionPuzzle puzzle = puzzleStore.getByID(puzzleID);
+            result.putOverwrite("Type", puzzle.getType().toString());
+            result.putOverwrite("MimeType", puzzle.getMimeType());
+            result.putOverwrite("Data", Base64.encodeStandard(puzzle.getData()));
+        }
     	
-    	IntroductionPuzzle puzzle = mWoT.getIntroductionPuzzleStore().getByID(puzzleID);
-    	    	
-    	final SimpleFieldSet result = new SimpleFieldSet(true);
-    	result.putOverwrite("Message", "IntroductionPuzzle");
-    	result.putOverwrite("Type", puzzle.getType().toString());
-    	result.putOverwrite("MimeType", puzzle.getMimeType());
-    	result.putOverwrite("Data", Base64.encodeStandard(puzzle.getData()));
     	return result;
     }
     
