@@ -974,6 +974,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         final boolean getAll = context.equals("");
 
+        // WebOfTrust.getGivenTrusts() demands that we synchronize while processing the result.
+        // Also, we query the Identity truster before calling it, i.e. query two datasets
+        // from the database. Thus we must synchronize to ensure that the returned data is
+        // coherent - the truster might be deleted meanwhile.
         synchronized(mWoT) {
         	int i = 0;
         	for(final Trust trust : mWoT.getGivenTrusts(mWoT.getIdentityByID(identityID))) {
