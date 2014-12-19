@@ -1116,6 +1116,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final String type = getMandatoryParameter(params, "Type");
     	final int amount = Integer.valueOf(getMandatoryParameter(params, "Amount"));
     	
+        // getPuzzles() will return clone()s only, so no synchronized() is needed.
     	List<IntroductionPuzzle> puzzles
     	    = mWoT.getIntroductionClient().getPuzzles(identityID, PuzzleType.valueOf(type), amount);
     	
