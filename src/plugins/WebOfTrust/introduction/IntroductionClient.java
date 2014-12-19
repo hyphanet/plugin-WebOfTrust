@@ -17,6 +17,7 @@ import javax.xml.transform.TransformerException;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -187,22 +188,40 @@ public final class IntroductionClient extends TransferThread  {
 	}
 	
 	/**
-	 * Use this function in the UI to get a list of puzzles for the user to solve.
+	 * Use this function in the UI to get a list of puzzles for the user to solve.<br><br>
 	 * 
-	 * The locking policy when using this function is that we do not lock anything while parsing the returned list - it's not a problem if a single 
-	 * puzzle gets deleted while the user is solving it.
+	 * You do not have to lock any parts of the database while parsing the returned list:<br>
+	 * This function returns clone()s of the {@link IntroductionPuzzle} objects, not the actual
+	 * ones stored in the database.<br>
+	 * TODO: Performance: Don't return clones and also maybe remove the internal synchronized()
+	 * after this is fixed: https://bugs.freenetproject.org/view.php?id=6247
+	 * 
+	 * @param ownIdentityID The value of {@link OwnIdentity#getID()} of the {@link OwnIdentity}
+	 *                      which will solve the returned puzzles.<br>
+	 *                      Used for selecting the puzzles which are from an {@link Identity} which:
+	 *                      <br>
+	 *                      - has a good {@link Score} from the perspective of the
+	 *                        {@link OwnIdentity}.<br>
+	 *                      - does not already trust the {@link OwnIdentity} anyway.
+	 * @throws UnknownIdentityException If there is no {@link OwnIdentity} matching the given
+	 *                                  ownIdentityID.
 	 */
-	public List<IntroductionPuzzle> getPuzzles(final OwnIdentity user, final PuzzleType puzzleType, final int count) {
+	public List<IntroductionPuzzle> getPuzzles(
+	        final String ownIdentityID, final PuzzleType puzzleType, final int count)
+	            throws UnknownIdentityException {
+	    
 		final ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count + 1);
-		final HashSet<Identity> resultHasPuzzleFrom = new HashSet<Identity>(count * 2); /* Have some room so we do not hit the load factor */
 		
 		/* Deadlocks could occur without the lock on WoT because the loop calls functions which lock the WoT - if something else started to
 		 * execute (while we have already locked the puzzle store) which locks the WoT and waits for the puzzle store to become available
 		 * until it releases the WoT. */
 		synchronized(mWoT) {
 		synchronized(mPuzzleStore) {
+		    final OwnIdentity user = mWoT.getOwnIdentityByID(ownIdentityID);
 			final ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedPuzzles(puzzleType);
-			 
+			final HashSet<Identity> resultHasPuzzleFrom
+			    = new HashSet<Identity>(count * 2 /* It will grow at 75% load -> Make it larger */);
+
 			for(final IntroductionPuzzle puzzle : puzzles) {
 				try {
 					/* TODO: Maybe also check whether the user has already solved puzzles of the identity which inserted this one */ 
@@ -215,7 +234,7 @@ public final class IntroductionClient extends TransferThread  {
 								/* We are already on this identity's trust list so there is no use in solving another puzzle from it */
 							}
 							catch(NotTrustedException e) {
-								result.add(puzzle);
+								result.add(puzzle.clone());
 								resultHasPuzzleFrom.add(puzzle.getInserter());
 								if(result.size() == count)
 									break;
@@ -242,17 +261,25 @@ public final class IntroductionClient extends TransferThread  {
 	 * 
 	 * @throws InvalidParameterException If the puzzle was already solved.
 	 * @throws RuntimeException If the identity or the puzzle was deleted already.
+	 *                          TODO: Code quality: Throw {@link UnknownIdentityException} and
+	 *                          {@link UnknownPuzzleException} instead.
 	 */
-	public void solvePuzzle(OwnIdentity solver, IntroductionPuzzle puzzle, final String solution) throws InvalidParameterException {
+	public void solvePuzzle(
+	        final String solverOwnIdentityID, final String puzzleID, final String solution)
+	            throws InvalidParameterException {
+	    
+	    final OwnIdentity solver;
+	    final IntroductionPuzzle puzzle;
+	    
 		synchronized(mWoT) {
 			try {
-				solver = mWoT.getOwnIdentityByID(solver.getID());
+				solver = mWoT.getOwnIdentityByID(solverOwnIdentityID);
 			} catch(UnknownIdentityException e) {
 				throw new RuntimeException("Your own identity was deleted already.");
 			}
 		synchronized(mPuzzleStore) {
 			try {
-				puzzle = mPuzzleStore.getByID(puzzle.getID());
+				puzzle = mPuzzleStore.getByID(puzzleID);
 			} catch (UnknownPuzzleException e) {
 				throw new RuntimeException("The solved puzzle was deleted already.");
 			}

@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.util.AssertUtil;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.StringValidityChecker;
 
@@ -131,7 +132,20 @@ public final class Trust extends Persistent implements Cloneable, EventSource {
 			mTrusteeID = trustee.getID();
 			mID = truster.getID() + "@" + trustee.getID();
 		}
-		
+
+        public TrustID(final String trusterID, final String trusteeID) {
+            AssertUtil.assertDidNotThrow(new Runnable() {
+                @Override public void run() {
+                    IdentityID.constructAndValidateFromString(trusterID);
+                    IdentityID.constructAndValidateFromString(trusteeID);
+                }
+            });
+            
+            mTrusterID = trusterID;
+            mTrusteeID = trusteeID;
+            mID = trusterID  + "@" + trusteeID;
+        }
+
 		private TrustID(String id) {
 			if(id.length() > MAX_TRUST_ID_LENGTH)
 				throw new IllegalArgumentException("ID is too long, length: " + id.length());

@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import plugins.WebOfTrust.EventSource;
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
@@ -40,6 +41,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionType;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.keys.FreenetURI;
@@ -244,8 +246,6 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     private SimpleFieldSet handleCreateIdentity(final SimpleFieldSet params)
     	throws InvalidParameterException, FSParseException, MalformedURLException {
     	
-    	OwnIdentity identity;
-    	
     	final String identityNickname = getMandatoryParameter(params, "Nickname");
     	final String identityContext = getMandatoryParameter(params, "Context");
     	final String identityPublishesTrustListStr = getMandatoryParameter(params, "PublishTrustList");
@@ -253,9 +253,14 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final boolean identityPublishesTrustList = identityPublishesTrustListStr.equals("true") || identityPublishesTrustListStr.equals("yes");
     	final String identityInsertURI = params.get("InsertURI");
 
-    	/* The constructor will throw for us if one is missing. Do not use "||" because that would lead to creation of a new URI if the
-    	 * user forgot one of the URIs and the user would not get notified about that.  */
-    	synchronized(mWoT) { /* Preserve the locking order to prevent future deadlocks */
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "IdentityCreated");
+
+        // TODO: Performance: The synchronized() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+        synchronized(mWoT) {
+        OwnIdentity identity;
+
         if (identityInsertURI == null) {
             identity = mWoT.createOwnIdentity(identityNickname, identityPublishesTrustList, identityContext);
         } else {
@@ -268,13 +273,12 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		} catch (UnknownIdentityException e) {
 			throw new RuntimeException(e);
 		}
-    	}
 
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-        sfs.putOverwrite("Message", "IdentityCreated");
         sfs.putOverwrite("ID", identity.getID());
         sfs.putOverwrite("InsertURI", identity.getInsertURI().toString());
         sfs.putOverwrite("RequestURI", identity.getRequestURI().toString());
+        }
+
         return sfs;
     }
     
@@ -283,11 +287,17 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final String trusteeID = getMandatoryParameter(params, "Trustee");
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        // TODO: Performance: The synchronized() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
     	synchronized(mWoT) {
+            // getTrust() won't validate the IDs. Since we are a UI, it's better to do it:
+            // This will prevent getTrust() claiming that there is no trust due to invalid IDs.
+            IdentityID.constructAndValidateFromString(trusterID);
+            IdentityID.constructAndValidateFromString(trusteeID);
+
     		Trust trust = null;
     		try {
-        		// TODO: Optimize by implementing https://bugs.freenetproject.org/view.php?id=6076
-    			trust = mWoT.getTrust(mWoT.getIdentityByID(trusterID), mWoT.getIdentityByID(trusteeID));
+                trust = mWoT.getTrust(trusterID, trusteeID);
     		} catch(NotTrustedException e) {}
     		
     		handleGetTrust(sfs, trust, "0");
@@ -321,6 +331,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final String trusteeID = getMandatoryParameter(params, "Trustee");
 
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        // TODO: Performance: The synchronized() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
     	synchronized(mWoT) {
     		Score score = null;
     		try {
@@ -398,12 +410,16 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     private SimpleFieldSet handleAddIdentity(final SimpleFieldSet params) throws InvalidParameterException, MalformedURLException {
     	final String requestURI = getMandatoryParameter(params, "RequestURI");
 
-    	final Identity identity = mWoT.addIdentity(requestURI);
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "IdentityAdded");
 
-    	final SimpleFieldSet sfs = new SimpleFieldSet(true);
-    	sfs.putOverwrite("Message", "IdentityAdded");
-    	sfs.putOverwrite("ID", identity.getID());
-    	sfs.putOverwrite("Nickname", identity.getNickname());
+        // TODO: Performance: The synchronized() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+        synchronized(mWoT) {
+            final Identity identity = mWoT.addIdentity(requestURI);
+            sfs.putOverwrite("ID", identity.getID());
+            sfs.putOverwrite("Nickname", identity.getNickname());
+        }
     	return sfs;
     }
     
@@ -416,6 +432,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 
     	final SimpleFieldSet sfs;
     	
+        // We query two Identity objects from the database. Thus we must synchronize to ensure that
+        // the returned data is coherent - one of the two might be deleted meanwhile, or change
+        // from being an Identity to being an OwnIdentity.
     	synchronized(mWoT) {
     		final Identity identity = mWoT.getIdentityByID(identityID);
     		final OwnIdentity truster = (trusterID != null ? mWoT.getOwnIdentityByID(trusterID) : null);
@@ -667,6 +686,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "OwnIdentities");
 
+        // getAllOwnIdentities() demands that we synchronize while processing the returned list.
 		synchronized(mWoT) {
 			int i = 0;
 			for(final OwnIdentity oid : mWoT.getAllOwnIdentities()) {
@@ -702,12 +722,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 
 		return sfs;
     }
-    
-    /**
-     * @param request
-     *            Can be null if you use this to send out identities due to an event, not due to
-     *            an original client message.
-     */
+
     private FCPPluginMessage handleGetIdentities(final FCPPluginMessage request) {
         final FCPPluginMessage result = FCPPluginMessage.constructSuccessReply(request);
         
@@ -715,7 +730,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		
         final String context = request.params.get("Context");
         
-		// TODO: Optimization: Remove this lock if it works without it.
+        // WebOfTrust.getAllIdentities() demands that we synchronize while processing the result.
 		synchronized(mWoT) {
 			final boolean getAll = context == null || context.equals("");
 	
@@ -737,17 +752,12 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         return result;
     }
 
-    /**
-     * @param request
-     *            Can be null if you use this to send out Trusts due to an event, not due to
-     *            an original client message.
-     */
     private FCPPluginMessage handleGetTrusts(final FCPPluginMessage request) {
         final FCPPluginMessage result = FCPPluginMessage.constructSuccessReply(request);
         
         result.params.putOverwrite("Message", "Trusts");
    
-		// TODO: Optimization: Remove this lock if it works without it.
+        // WebOfTrust.getAllTrusts() demands that we synchronize while processing the result.
         synchronized(mWoT) {
         	int i = 0;
 			for(final Trust trust : mWoT.getAllTrusts()) {
@@ -761,18 +771,13 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         return result;
     }
-    
-    /**
-     * @param request
-     *            Can be null if you use this to send out Trusts due to an event, not due to
-     *            an original client message.
-     */
+
     private FCPPluginMessage handleGetScores(final FCPPluginMessage request) {
         final FCPPluginMessage result = FCPPluginMessage.constructSuccessReply(request);
        
         result.params.putOverwrite("Message", "Scores");
    
-		// TODO: Optimization: Remove this lock if it works without it.
+        // WebOfTrust.getAllScores() demands that we synchronize while processing the result.
         synchronized(mWoT) {
         	int i = 0;
 			for(final Score score: mWoT.getAllScores()) {
@@ -805,6 +810,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
 		final SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "Identities");
 		
+        // WebOfTrust.getIdentitiesByScore() demands that we synchronize while processing the result
+        // Also, we query the OwnIdentity truster before calling it, i.e. query two datasets
+        // from the database. Thus we must synchronize to ensure that the returned data is coherent
+        // - the truster might be deleted meanwhile, or change from being an OwnIdentity to being an
+        // Identity.
 		synchronized(mWoT) {
 			final OwnIdentity truster = trusterID != null ? mWoT.getOwnIdentityByID(trusterID) : null;
 			final boolean getAll = context.equals("");
@@ -880,6 +890,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         final boolean getAll = context.equals("");
         
+        // WebOfTrust.getReceivedTrusts() demands that we synchronize while processing the result.
+        // Also, we query the Identity trustee before calling it, i.e. query two datasets
+        // from the database. Thus we must synchronize to ensure that the returned data is
+        // coherent - the trustee might be deleted meanwhile.
         synchronized(mWoT) {
         	int i = 0;
 			for(final Trust trust : mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID))) {
@@ -926,10 +940,18 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     		else if (selection.equals("0")) select = 0;
     		else throw new InvalidParameterException("Unhandled selection value (" + selection + ")");
         	
+            // getReceivedTrusts() demands that we synchronize while processing the result.
+            // Also, we query the Identity truster before calling it, i.e. query two datasets
+            // from the database. Thus we must synchronize to ensure that the returned data is
+            // coherent - the truster might be deleted meanwhile.
     		synchronized(mWoT) {
         		result = mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID), select).size();
         	}
         } else {
+            // getReceivedTrusts() demands that we synchronize while processing the result.
+            // Also, we query the Identity truster before calling it, i.e. query two datasets
+            // from the database. Thus we must synchronize to ensure that the returned data is
+            // coherent - the truster might be deleted meanwhile.
         	synchronized(mWoT) {
         		result = mWoT.getReceivedTrusts(mWoT.getIdentityByID(identityID)).size();
         	}
@@ -953,6 +975,10 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         final boolean getAll = context.equals("");
 
+        // WebOfTrust.getGivenTrusts() demands that we synchronize while processing the result.
+        // Also, we query the Identity truster before calling it, i.e. query two datasets
+        // from the database. Thus we must synchronize to ensure that the returned data is
+        // coherent - the truster might be deleted meanwhile.
         synchronized(mWoT) {
         	int i = 0;
         	for(final Trust trust : mWoT.getGivenTrusts(mWoT.getIdentityByID(identityID))) {
@@ -1001,10 +1027,18 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     		else if (selection.equals("0")) select = 0;
     		else throw new InvalidParameterException("Unhandled selection value (" + selection + ")");
         	
+            // WebOfTrust.getGivenTrusts() demands that we synchronize while processing the result.
+            // Also, we query the Identity truster before calling it, i.e. query two datasets
+            // from the database. Thus we must synchronize to ensure that the returned data is
+            // coherent - the truster might be deleted meanwhile.
     		synchronized(mWoT) {
         		result = mWoT.getGivenTrusts(mWoT.getIdentityByID(identityID), select).size();
         	}
         } else {
+            // WebOfTrust.getGivenTrusts() demands that we synchronize while processing the result.
+            // Also, we query the Identity truster before calling it, i.e. query two datasets
+            // from the database. Thus we must synchronize to ensure that the returned data is
+            // coherent - the truster might be deleted meanwhile.
         	synchronized(mWoT) {
         		result = mWoT.getGivenTrusts(mWoT.getIdentityByID(identityID)).size();
         	}
@@ -1083,7 +1117,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final String type = getMandatoryParameter(params, "Type");
     	final int amount = Integer.valueOf(getMandatoryParameter(params, "Amount"));
     	
-    	List<IntroductionPuzzle> puzzles = mWoT.getIntroductionClient().getPuzzles(mWoT.getOwnIdentityByID(identityID), PuzzleType.valueOf(type), amount);
+        // getPuzzles() will return clone()s only, so no synchronized() is needed.
+    	List<IntroductionPuzzle> puzzles
+    	    = mWoT.getIntroductionClient().getPuzzles(identityID, PuzzleType.valueOf(type), amount);
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "IntroductionPuzzles");
@@ -1102,14 +1138,20 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     
     private SimpleFieldSet handleGetIntroductionPuzzle(final SimpleFieldSet params) throws InvalidParameterException, UnknownPuzzleException {
     	final String puzzleID = getMandatoryParameter(params, "Puzzle");
+
+        final SimpleFieldSet result = new SimpleFieldSet(true);
+        result.putOverwrite("Message", "IntroductionPuzzle");
+
+        final IntroductionPuzzleStore puzzleStore = mWoT.getIntroductionPuzzleStore();
+        // TODO: Performance: The synchronized() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+        synchronized(puzzleStore) {
+            final IntroductionPuzzle puzzle = puzzleStore.getByID(puzzleID);
+            result.putOverwrite("Type", puzzle.getType().toString());
+            result.putOverwrite("MimeType", puzzle.getMimeType());
+            result.putOverwrite("Data", Base64.encodeStandard(puzzle.getData()));
+        }
     	
-    	IntroductionPuzzle puzzle = mWoT.getIntroductionPuzzleStore().getByID(puzzleID);
-    	    	
-    	final SimpleFieldSet result = new SimpleFieldSet(true);
-    	result.putOverwrite("Message", "IntroductionPuzzle");
-    	result.putOverwrite("Type", puzzle.getType().toString());
-    	result.putOverwrite("MimeType", puzzle.getMimeType());
-    	result.putOverwrite("Data", Base64.encodeStandard(puzzle.getData()));
     	return result;
     }
     
@@ -1118,9 +1160,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	final String puzzleID = getMandatoryParameter(params, "Puzzle");
     	final String solution = getMandatoryParameter(params, "Solution");
     	
-    	// We do not have to take locks here. TODO: Write a solvePuzzle which only takes IDs, it re-queries the objects anyway
-    	mWoT.getIntroductionClient().solvePuzzle(
-    			mWoT.getOwnIdentityByID(identityID), mWoT.getIntroductionPuzzleStore().getByID(puzzleID), solution);
+    	mWoT.getIntroductionClient().solvePuzzle(identityID, puzzleID, solution);
     	
     	final SimpleFieldSet sfs = new SimpleFieldSet(true);
     	sfs.putOverwrite("Message", "PuzzleSolved");
@@ -1203,7 +1243,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     	
     	try {
             FCPPluginMessage reply = FCPPluginMessage.constructSuccessReply(message);
-            Subscription<? extends EventSource> subscription;
+            String subscriptionID;
             
             // TODO: Code quality: Use FCPClientReferenceImplementation.SubscriptionType.valueOf()
             // Maybe copy the enum to class SubscriptionManager. (It must be copied instead of moved
@@ -1211,17 +1251,17 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             // which wouldn't make sense to copy to a WOT client plugin. SubscriptionManager for
             // sure does not need to be in a WOT client plugin)
 	    	if(to.equals("Identities")) {
-	    		subscription = mSubscriptionManager.subscribeToIdentities(client.getID());
+                subscriptionID = mSubscriptionManager.subscribeToIdentities(client.getID());
 	    	} else if(to.equals("Trusts")) {
-	    		subscription = mSubscriptionManager.subscribeToTrusts(client.getID());
+                subscriptionID = mSubscriptionManager.subscribeToTrusts(client.getID());
 	    	} else if(to.equals("Scores")) {
-	    		subscription = mSubscriptionManager.subscribeToScores(client.getID());
+                subscriptionID = mSubscriptionManager.subscribeToScores(client.getID());
 	    	} else
 	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
 	    	
 	    	SimpleFieldSet sfs = reply.params;
 	    	sfs.putOverwrite("Message", "Subscribed");
-	    	sfs.putOverwrite("SubscriptionID", subscription.getID());
+            sfs.putOverwrite("SubscriptionID", subscriptionID);
 	    	sfs.putOverwrite("To", to);
             
             return reply;

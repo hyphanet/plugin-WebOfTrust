@@ -486,6 +486,9 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 			return false;
 		
 		try {
+            // TODO: Performance: The synchronized() can be removed after this is fixed:
+            // https://bugs.freenetproject.org/view.php?id=6247
+            synchronized(mWebOfTrust) {
 			final OwnIdentity id;
 
 			if(mGenerateRandomSSK) 
@@ -507,6 +510,7 @@ public final class CreateOwnIdentityWizardPage extends WebPageImpl {
 					mL10nBoldSubstitutionInput, mL10nBoldSubstitutionOutput);
 
 			LogInPage.addLoginButton(this, summaryBox, id, mRedirectTarget);
+            }
 
 			return true;
 		}

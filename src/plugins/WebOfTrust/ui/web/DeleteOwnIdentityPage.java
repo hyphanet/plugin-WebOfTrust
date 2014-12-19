@@ -29,7 +29,11 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
+        // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+        synchronized(mWebOfTrust) {
+            mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
+        }
 	}
 
 	@Override

@@ -34,7 +34,12 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	public IntroduceIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
+        // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+		synchronized(mWebOfTrust) {
+		    mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
+        }
+		
 		mClient = mWebOfTrust.getIntroductionClient();
 	}
 
@@ -55,11 +60,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				String id = mRequest.getPartAsStringThrowing("id" + idx, IntroductionPuzzle.MAXIMAL_ID_LENGTH);
 				String solution = mRequest.getPartAsStringThrowing("Solution" + id, IntroductionPuzzle.MAXIMAL_SOLUTION_LENGTH);
 				if(!solution.trim().equals("")) {
-					IntroductionPuzzle p;
-					p = mWebOfTrust.getIntroductionPuzzleStore().getByID(id);
-
-					// It is safe to use this function without synchronization as it re-queries the identity from the database.
-					mClient.solvePuzzle(mLoggedInOwnIdentity, p, solution);
+					mClient.solvePuzzle(mLoggedInOwnIdentityID, id, solution);
 				} else {
 					// We don't break the processing loop here because users might intentionally not solve puzzles which are too difficult.
 				}
@@ -77,10 +78,18 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 	
 	private void makePuzzleBox() {
-		HTMLNode boxContent = addContentBox(l10n().getString("IntroduceIdentityPage.PuzzleBox.Header"));
-		
-		// synchronized(mClient) { /* The client returns an ArrayList, not the ObjectContainer, so this should be safe */
-		List<IntroductionPuzzle> puzzles = mClient.getPuzzles(mLoggedInOwnIdentity, PuzzleType.Captcha, PUZZLE_DISPLAY_COUNT);
+	    // getPuzzles() will return clone()s only, so no database locking is needed.
+		List<IntroductionPuzzle> puzzles;
+        try {
+            puzzles = mClient.getPuzzles(
+                mLoggedInOwnIdentityID, PuzzleType.Captcha, PUZZLE_DISPLAY_COUNT);
+        } catch (UnknownIdentityException e) {
+            new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
+            return;
+        }
+        
+        HTMLNode boxContent
+            = addContentBox(l10n().getString("IntroduceIdentityPage.PuzzleBox.Header"));
 		
 		if(puzzles.size() > 0 ) {
 			HTMLNode solveForm = pr.addFormChild(boxContent, uri.toString(), "solvePuzzles");

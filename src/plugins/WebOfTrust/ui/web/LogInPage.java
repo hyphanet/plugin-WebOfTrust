@@ -62,6 +62,8 @@ public final class LogInPage extends WebPageImpl {
 	public void make(final boolean mayWrite) {
 		makeWelcomeBox();
 		
+        // TODO: Performance: The synchronized() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
 		synchronized (mWebOfTrust) {
 			final ObjectSet<OwnIdentity> ownIdentities = mWebOfTrust.getAllOwnIdentities();
 		

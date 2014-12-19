@@ -54,7 +54,7 @@ public class IdentityPage extends WebPageImpl {
 	private final OwnIdentity mLoggedInOwnIdentity;
 	
 	/** The identity to show trust relationships of. */
-	private final Identity identity;
+	private Identity identity;
 
 
 	/**
@@ -68,8 +68,11 @@ public class IdentityPage extends WebPageImpl {
 	public IdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-		mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
-		identity = mWebOfTrust.getIdentityByID(mRequest.getParam("id")); 
+        // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+        synchronized(mWebOfTrust) { 
+            mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
+        }
 	}
 
 	/**
@@ -79,7 +82,16 @@ public class IdentityPage extends WebPageImpl {
 	 */
 	@Override
 	public void make(final boolean mayWrite) {
+        // TODO: Performance: The synchronized() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
 		synchronized(mWebOfTrust) {			
+		    try {
+	            identity = mWebOfTrust.getIdentityByID(mRequest.getParam("id"));
+		    } catch(UnknownIdentityException e) {
+		        new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
+		        return;
+		    }
+		    
 			makeURIBox();
 			makeServicesBox();
 			makeStatisticsBox();
@@ -121,7 +133,7 @@ public class IdentityPage extends WebPageImpl {
 
 		try
 		{
-			Trust trust = mWebOfTrust.getTrust(mLoggedInOwnIdentity, identity);
+			Trust trust = mWebOfTrust.getTrust(mLoggedInOwnIdentityID, identity.getID());
 			trustValue = String.valueOf(trust.getValue());
 			trustComment = trust.getComment();
 		}
