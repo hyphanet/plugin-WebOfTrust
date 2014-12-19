@@ -211,7 +211,6 @@ public final class IntroductionClient extends TransferThread  {
 	            throws UnknownIdentityException {
 	    
 		final ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count + 1);
-		final HashSet<Identity> resultHasPuzzleFrom = new HashSet<Identity>(count * 2); /* Have some room so we do not hit the load factor */
 		
 		/* Deadlocks could occur without the lock on WoT because the loop calls functions which lock the WoT - if something else started to
 		 * execute (while we have already locked the puzzle store) which locks the WoT and waits for the puzzle store to become available
@@ -220,7 +219,9 @@ public final class IntroductionClient extends TransferThread  {
 		synchronized(mPuzzleStore) {
 		    final OwnIdentity user = mWoT.getOwnIdentityByID(ownIdentityID);
 			final ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedPuzzles(puzzleType);
-			 
+			final HashSet<Identity> resultHasPuzzleFrom
+			    = new HashSet<Identity>(count * 2 /* It will grow at 75% load -> Make it larger */);
+
 			for(final IntroductionPuzzle puzzle : puzzles) {
 				try {
 					/* TODO: Maybe also check whether the user has already solved puzzles of the identity which inserted this one */ 
