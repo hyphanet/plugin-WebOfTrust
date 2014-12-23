@@ -42,6 +42,7 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.LRUQueue;
@@ -151,6 +152,11 @@ public final class IntroductionClient extends TransferThread  {
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
+
+	/** {@inheritDoc} */
+    @Override public RequestClient getRequestClient() {
+        return mPuzzleStore.getRequestClient();
+    }
 
 	@Override
 	protected long getStartupDelay() {
@@ -524,7 +530,7 @@ public final class IntroductionClient extends TransferThread  {
 		// Use the SubscriptionManager (its in its own branch currently) for allowing clients to subscribe to puzzles and only raise the priority if a client
 		// is subscribed.
 		final short fetchPriority = puzzleStoreIsTooEmpty() ? RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS : RequestStarter.UPDATE_PRIORITY_CLASS;
-		final ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mPuzzleStore.getRequestClient(), 
+		final ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE,
 				this, fetchContext, fetchPriority);
 		addFetch(g);
 		

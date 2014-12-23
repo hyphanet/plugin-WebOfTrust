@@ -36,6 +36,7 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.TransferThread;
@@ -137,7 +138,12 @@ public final class IntroductionServer extends TransferThread {
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
-	
+
+	/** {@inheritDoc} */
+    @Override public RequestClient getRequestClient() {
+        return mPuzzleStore.getRequestClient();
+    }
+
 	@Override
 	protected long getStartupDelay() {
 		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
@@ -198,7 +204,8 @@ public final class IntroductionServer extends TransferThread {
 				// the puzzle solution during that, we might get to know it.
 				fetchContext.maxSplitfileBlockRetries = -1;
 				fetchContext.maxNonSplitfileRetries = -1;
-				final ClientGetter g = mClient.fetch(p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE, mPuzzleStore.getRequestClient(),
+				final ClientGetter g = mClient.fetch(
+                    p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE,
 						this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS); 
 				addFetch(g);
 				if(logDEBUG) Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
