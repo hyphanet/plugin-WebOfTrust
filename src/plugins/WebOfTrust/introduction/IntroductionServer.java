@@ -324,7 +324,7 @@ public final class IntroductionServer extends TransferThread {
 	 * Called when the insertion of a puzzle failed.
 	 */
 	@Override
-	public void onFailure(final InsertException e, final BaseClientPutter state, final ObjectContainer container) 
+    public void onFailure(final InsertException e, final BaseClientPutter state) 
 	{
 		try {
 			if(e.getMode() == InsertExceptionMode.CANCELLED) {

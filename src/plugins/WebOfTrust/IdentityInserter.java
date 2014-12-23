@@ -234,7 +234,7 @@ public final class IdentityInserter extends TransferThread {
 	}
 
 	@Override
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
+    public void onFailure(InsertException e, BaseClientPutter state) 
 	{
 		try {
 			if(e.getMode() == InsertExceptionMode.CANCELLED) {

@@ -639,7 +639,7 @@ public final class IntroductionClient extends TransferThread  {
 	 * Calling when inserting a puzzle solution failed.
 	 */
 	@Override
-	public void onFailure(final InsertException e, final BaseClientPutter state, final ObjectContainer container)
+    public void onFailure(final InsertException e, final BaseClientPutter state)
 	{
 		/* No synchronization because the worst thing which can happen is that we insert it again */
 		
