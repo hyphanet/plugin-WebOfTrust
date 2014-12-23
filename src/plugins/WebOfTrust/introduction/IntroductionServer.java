@@ -435,10 +435,6 @@ public final class IntroductionServer extends TransferThread {
 	@Override
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {}
 
-	/** Called when freenet.async thinks that the request should be serialized to disk, if it is a persistent request. */
-	@Override
-	public void onMajorProgress(ObjectContainer container) {}
-
 	@Override
 	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();

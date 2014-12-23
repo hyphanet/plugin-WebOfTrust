@@ -664,11 +664,6 @@ public final class IntroductionClient extends TransferThread  {
 	/** Only called by inserts */
 	@Override
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {}
-
-	/** Called when freenet.async thinks that the request should be serialized to
-	 * disk, if it is a persistent request. */
-	@Override
-	public void onMajorProgress(ObjectContainer container) {}
 	
 	
 	@Override
