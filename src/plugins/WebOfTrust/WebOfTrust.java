@@ -205,11 +205,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 				public boolean persistent() {
 					return false;
 				}
-	
-				@Override
-				public void removeFrom(ObjectContainer container) {
-					throw new UnsupportedOperationException();
-				}
 
 				@Override
 				public boolean realTimeFlag() {
