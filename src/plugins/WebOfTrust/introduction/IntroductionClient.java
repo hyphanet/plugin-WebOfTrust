@@ -623,7 +623,7 @@ public final class IntroductionClient extends TransferThread  {
 	 * Called when a puzzle solution is successfully inserted.
 	 */
 	@Override
-	public void onSuccess(final BaseClientPutter state, final ObjectContainer container)
+    public void onSuccess(final BaseClientPutter state)
 	{
 		Logger.normal(this, "Successful insert of puzzle solution: " + state.getURI());
 		

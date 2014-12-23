@@ -190,7 +190,7 @@ public final class IdentityInserter extends TransferThread {
 	}
 	
 	@Override
-	public void onSuccess(BaseClientPutter state, ObjectContainer container)
+    public void onSuccess(BaseClientPutter state)
 	{
 		Logger.normal(this, "Successful insert of identity: " + state.getURI());
 		
