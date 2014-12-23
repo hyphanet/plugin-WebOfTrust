@@ -440,7 +440,7 @@ public final class IntroductionServer extends TransferThread {
 
 	/** Only called by inserts */
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {}
+    public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
 
 	@Override
 	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {

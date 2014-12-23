@@ -669,7 +669,7 @@ public final class IntroductionClient extends TransferThread  {
 
 	/** Only called by inserts */
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {}
+    public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
 	
 	
 	@Override

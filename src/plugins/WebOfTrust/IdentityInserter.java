@@ -264,7 +264,7 @@ public final class IdentityInserter extends TransferThread {
     public void onFetchable(BaseClientPutter state) { }
 	
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
+    public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
 
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) { }
