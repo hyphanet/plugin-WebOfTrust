@@ -436,7 +436,7 @@ public final class IntroductionServer extends TransferThread {
 	
 	/** Only called by inserts */
 	@Override
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {}
+    public void onFetchable(BaseClientPutter state) {}
 
 	/** Only called by inserts */
 	@Override
