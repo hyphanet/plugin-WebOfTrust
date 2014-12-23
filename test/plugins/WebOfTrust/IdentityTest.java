@@ -210,6 +210,10 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 	
 	public void testValidateNickname() {
 		try {
+            // '@' needs to be disallowed because we use it in Identity.getShortestUniqueNickname()
+            // to separate the nickname from the the Identity public key hash.
+            // If it was allowed, people could spoof nicknames by suffixing them with
+            // '@attack-target-hash'
 			Identity.validateNickname("a@b");
 			fail();
 		} catch(InvalidParameterException e) {}
