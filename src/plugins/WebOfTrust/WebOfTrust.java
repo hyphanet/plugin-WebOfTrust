@@ -41,13 +41,13 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
+import freenet.clients.fcp.FCPPluginClient;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.BaseL10n;
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.l10n.PluginL10n;
 import freenet.node.RequestClient;
-import freenet.node.fcp.FCPPluginClient;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginBaseL10n;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
