@@ -24,6 +24,7 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
@@ -106,6 +107,16 @@ public final class IdentityInserter extends TransferThread {
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
+
+    /**
+     * Should not be called since this class only does inserts, not requests.<br><br>
+     * {@inheritDoc}
+     */
+    @Override public RequestClient getRequestClient() {
+        Logger.error(this, "getRequestClient() called for *insert* class IdentityInserter",
+            new RuntimeException()); // Add exception for logging a stack trace
+        return mWoT.getRequestClient();
+    }
 
 	@Override
 	protected long getStartupDelay() {
