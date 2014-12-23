@@ -21,6 +21,7 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
@@ -33,6 +34,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Inserts OwnIdentities to Freenet when they need it.
@@ -276,6 +278,20 @@ public final class IdentityInserter extends TransferThread {
 	
 	@Override
     public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
+
+    /**
+     * Should not be called since this class does not create persistent requests.<br>
+     * Will throw an exception since the interface specification requires it to do some stuff,
+     * which it does not do.<br>
+     * Parent interface JavaDoc follows:<br><br>
+     * {@inheritDoc}
+     */
+    @Override public void onResume(final ClientContext context) throws ResumeFailedException {
+        final ResumeFailedException error = new ResumeFailedException(
+            "onResume() called even though this class does not create persistent requests");
+        Logger.error(this, error.getMessage(), error /* Add exception for logging stack trace */);
+        throw error;
+    }
 
 	@Override
     public void onSuccess(FetchResult result, ClientGetter state) { }
