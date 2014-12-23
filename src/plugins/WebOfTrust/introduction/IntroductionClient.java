@@ -546,7 +546,7 @@ public final class IntroductionClient extends TransferThread  {
 	 * Called when a puzzle is successfully fetched.
 	 */
 	@Override
-	public void onSuccess(final FetchResult result, final ClientGetter state, final ObjectContainer container) {
+    public void onSuccess(final FetchResult result, final ClientGetter state) {
 		Logger.normal(this, "Fetched puzzle: " + state.getURI());
 		
 		Bucket bucket = null;

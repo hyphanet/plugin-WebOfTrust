@@ -362,7 +362,7 @@ public final class IntroductionServer extends TransferThread {
 	 * Called when a puzzle solution is successfully fetched. We then add the identity which solved the puzzle.
 	 */
 	@Override
-	public void onSuccess(final FetchResult result, final ClientGetter state, final ObjectContainer container) {
+    public void onSuccess(final FetchResult result, final ClientGetter state) {
 		Logger.normal(this, "Fetched puzzle solution: " + state.getURI());
 		
 		Bucket bucket = null;
