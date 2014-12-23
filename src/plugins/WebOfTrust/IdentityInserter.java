@@ -258,7 +258,7 @@ public final class IdentityInserter extends TransferThread {
 	/* Not needed functions from the ClientCallback interface */
 	
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) { }
+    public void onFailure(FetchException e, ClientGetter state) { }
 
 	@Override
 	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }

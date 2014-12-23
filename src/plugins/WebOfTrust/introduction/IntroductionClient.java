@@ -574,7 +574,7 @@ public final class IntroductionClient extends TransferThread  {
 	 * In our case, called when there is no puzzle available.
 	 */
 	@Override
-	public void onFailure(final FetchException e, final ClientGetter state, final ObjectContainer container) {
+    public void onFailure(final FetchException e, final ClientGetter state) {
 		try {
 			if(e.getMode() == FetchExceptionMode.CANCELLED) {
 				if(logDEBUG) Logger.debug(this, "Fetch cancelled: " + state.getURI());

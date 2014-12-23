@@ -417,7 +417,7 @@ public final class IntroductionServer extends TransferThread {
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 */
 	@Override
-	public void onFailure(final FetchException e, final ClientGetter state, final ObjectContainer container) {
+    public void onFailure(final FetchException e, final ClientGetter state) {
 		try {
 			if(e.getMode() == FetchExceptionMode.CANCELLED) {
 				if(logDEBUG) Logger.debug(this, "Fetch cancelled: " + state.getURI());
