@@ -51,9 +51,31 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	
 	/** The USK requestURI used to fetch this identity from Freenet. It's edition number is the one of the data which we have currently stored
 	 * in the database (the values of this identity, trust values, etc.) if mCurrentEditionFetchState is Fetched or ParsingFailed, otherwise it
-	 * is the next edition number which should be downloaded. */
-	protected FreenetURI mRequestURI;
-	
+     * is the next edition number which should be downloaded.
+     * @deprecated Will always be null. Use {@link #mRequestURIString} instead.<br>
+     *             See {@link WebOfTrust#upgradeDatabaseFormatVersion5} for why this was replaced.
+     *             <br>TODO: Remove this variable once the aforementioned database upgrade code is
+     *             removed. When removing it, make sure to check the db4o manual for whether
+     *             it is necessary to delete its backend database field manually using db4o API;
+     *             and if necessary do that with another database format version upgrade. */
+    protected FreenetURI mRequestURI = null;
+
+    /**
+     * The USK request {@link FreenetURI} used to fetch this identity from Freenet.<br><br>
+     * 
+     * The meaning of its edition number is as follows:<br>
+     * - If mCurrentEditionFetchState is Fetched ParsingFailed, it's edition number is the one of
+     *   the data which we have currently stored in the database (the values of this identity, trust
+     *   values, etc.).<br>
+     * - For other values of mCurrentEditionFetchState, it is the next edition number which should
+     *   be downloaded.<br><br>
+     * 
+     * Converted to {@link String} via {@link FreenetURI#toString()}: We do not store this as
+     * {@link FreenetURI} since the FreenetURI class is not part of WOT, and thus a black box for
+     * which we cannot guarantee that db4o can store it properly.
+     */
+    protected String mRequestURIString;
+
 	public static enum FetchState {
 		NotFetched,
 		ParsingFailed,
