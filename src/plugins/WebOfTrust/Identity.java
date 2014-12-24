@@ -61,6 +61,7 @@ public class Identity extends Persistent implements Cloneable, EventSource {
      *             removed. When removing it, make sure to check the db4o manual for whether
      *             it is necessary to delete its backend database field manually using db4o API;
      *             and if necessary do that with another database format version upgrade. */
+    @Deprecated
     protected FreenetURI mRequestURI = null;
 
     /**
