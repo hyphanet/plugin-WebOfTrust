@@ -408,14 +408,19 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	 * Instead, use {@link #setEdition(long)} whenever possible.
 	 */
 	public void forceSetEdition(final long newEdition) {
-		checkedActivate(1);
-		checkedActivate(mRequestURI, 2);
+        // If we did not call checkedActivate(), db4o would not notice and not store the modified
+        // mRequestURIString - But checkedActivate() is done by the following getRequestURI()
+        // already, so we do not call it again here.
+        /* checkedActivate(1); */
+        final FreenetURI requestURI = getRequestURI();
 		
-		final long currentEdition = mRequestURI.getEdition();
+        final long currentEdition = requestURI.getEdition();
 		
 		if(newEdition != currentEdition) {
-			mRequestURI.removeFrom(mDB);
-			mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
+            // String is a db4o primitive type, and thus automatically deleted. This also applies
+            // to the long which we set in the following code.
+            /* checkedDelete(mRequestURIString); */
+            mRequestURIString = requestURI.setSuggestedEdition(newEdition).toString();
 			if (newEdition > mLatestEditionHint) {
 				// Do not call setNewEditionHint() to prevent confusing logging.
 				mLatestEditionHint = newEdition;
