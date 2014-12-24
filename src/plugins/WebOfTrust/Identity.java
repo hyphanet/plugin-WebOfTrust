@@ -52,8 +52,11 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	/** The USK requestURI used to fetch this identity from Freenet. It's edition number is the one of the data which we have currently stored
 	 * in the database (the values of this identity, trust values, etc.) if mCurrentEditionFetchState is Fetched or ParsingFailed, otherwise it
      * is the next edition number which should be downloaded.
-     * @deprecated Will always be null. Use {@link #mRequestURIString} instead.<br>
+     * @deprecated Use {@link #mRequestURIString} instead.<br>
      *             See {@link WebOfTrust#upgradeDatabaseFormatVersion5} for why this was replaced.
+     *             <br>For newly constructed Identity objects, will always be null.<br>
+     *             For Identity objects existing in old databases, will be null after
+     *             {@link #upgradeDatabaseFormatVersion5WithoutCommit()}.<br>
      *             <br>TODO: Remove this variable once the aforementioned database upgrade code is
      *             removed. When removing it, make sure to check the db4o manual for whether
      *             it is necessary to delete its backend database field manually using db4o API;
