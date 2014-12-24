@@ -1136,27 +1136,36 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 		if(mID == null)
 			throw new NullPointerException("mID==null");
 
-		if(mRequestURI == null)
-			throw new NullPointerException("mRequestURI==null");
+        if(mRequestURI != null) {
+            throw new IllegalStateException(
+                "upgradeDatabaseFormatVersion5() should delete mRequestURI");
+        }
+
+		if(mRequestURIString == null)
+			throw new NullPointerException("mRequestURIString==null");
+		
+        final FreenetURI requestURI = getRequestURI();
 		
 		try {
-			if(!testAndNormalizeRequestURI(mRequestURI).equals(mRequestURI.setSuggestedEdition(0)))
-				throw new IllegalStateException("mRequestURI is not normalized: " + mRequestURI);
+            if(!testAndNormalizeRequestURI(requestURI).equals(requestURI.setSuggestedEdition(0)))
+                throw new IllegalStateException("Request URI is not normalized: " + requestURI);
 		} catch (MalformedURLException e) {
-			throw new IllegalStateException("mRequestURI is invalid: " + e);
+            throw new IllegalStateException("Request URI is invalid: " + e);
 		}
 		
-		if(!mID.equals(IdentityID.constructAndValidateFromURI(mRequestURI).toString()))
-			throw new IllegalStateException("ID does not match request URI!");
+        if(!mID.equals(IdentityID.constructAndValidateFromURI(requestURI).toString()))
+            throw new IllegalStateException("ID does not match request URI!");
 		
 		IdentityID.constructAndValidateFromString(mID); // Throws if invalid
 		
 		if(mCurrentEditionFetchState == null)
 			throw new NullPointerException("mCurrentEditionFetchState==null");
 		
-		if(mLatestEditionHint < 0 || mLatestEditionHint < mRequestURI.getEdition())
-			throw new IllegalStateException("Invalid edition hint: " + mLatestEditionHint + "; current edition: " + mRequestURI.getEdition());
-		
+        if(mLatestEditionHint < 0 || mLatestEditionHint < requestURI.getEdition()) {
+            throw new IllegalStateException("Invalid edition hint: " + mLatestEditionHint
+                                          + "; current edition: " + requestURI.getEdition());
+        }
+
 		if(mLastFetchedDate == null)
 			throw new NullPointerException("mLastFetchedDate==null");
 		
