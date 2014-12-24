@@ -63,6 +63,9 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		// This is already done by super()
 		// setEdition(0);
 		
+        // TODO: Code quality: Can this be moved to testAndNormalizeInsertURI without side effects?
+        // Please be very careful to review all code paths which use the function, the URI code
+        // is rather fragile because users can shove all kinds of bogus URIs into it.
 		if(!insertURI.isUSK() && !insertURI.isSSK())
 			throw new InvalidParameterException("Identity URI keytype not supported: " + insertURI);
 		
