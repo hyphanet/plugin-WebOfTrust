@@ -156,9 +156,13 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 * @return This OwnIdentity's insertURI
 	 */
 	public final FreenetURI getInsertURI() {
-		checkedActivate(1);
-		checkedActivate(mInsertURI, 2);
-		return mInsertURI;
+        checkedActivate(1); // String is a db4o primitive type so 1 is enough
+        try {
+            return new FreenetURI(mInsertURIString);
+        } catch (MalformedURLException e) {
+            // Should never happen: We never store invalid URIs.
+            throw new RuntimeException(e);
+        }
 	}
 	
 	/**
