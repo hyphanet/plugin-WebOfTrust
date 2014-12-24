@@ -1065,7 +1065,13 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			activateFully();
 
 			// checkedStore(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			checkedStore(mRequestURI);
+
+            assert(mRequestURI == null)
+                : "upgradeDatabaseFormatVersion5() should delete mRequestURI";
+
+            /* String is a db4o primitive type, and thus automatically stored. */
+            // checkedStore(mRequestURIString);
+
 			// checkedStore(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			// checkedStore(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			// checkedStore(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
