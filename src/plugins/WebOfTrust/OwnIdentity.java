@@ -216,15 +216,14 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	@Override
 	public void forceSetEdition(final long newEdition) {
 		super.forceSetEdition(newEdition);
-		
-		checkedActivate(1);
-		checkedActivate(mInsertURI, 2);
-		
-		final long currentEdition = mInsertURI.getEdition();
+
+        final FreenetURI insertURI = getInsertURI();
+        final long currentEdition = insertURI.getEdition();
 		
 		if(newEdition != currentEdition) {
-			mInsertURI.removeFrom(mDB);
-			mInsertURI = mInsertURI.setSuggestedEdition(newEdition);
+            // Strings are a db4o primitive type, and thus automatically deleted.
+            /* checkedDelete(mInsertURIString); */
+            mInsertURIString = insertURI.setSuggestedEdition(newEdition).toString();
 			updated();
 		}
 	}
