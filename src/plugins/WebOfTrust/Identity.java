@@ -468,10 +468,18 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	 * Decrease the current edition by one. Used by {@link #markForRefetch()}.
 	 */
 	private final void decreaseEdition() {
-		checkedActivate(1);
-		checkedActivate(mRequestURI, 2);
-		mRequestURI.removeFrom(mDB);
-		mRequestURI = mRequestURI.setSuggestedEdition(Math.max(mRequestURI.getEdition() - 1, 0));
+        // If we did not call checkedActivate(), db4o would not notice and not store the modified
+        // mRequestURIString - But checkedActivate() is done by the following getRequestURI()
+        // already, so we do not call it again here.
+        /* checkedActivate(1); */
+        FreenetURI requestURI = getRequestURI();
+
+        requestURI = requestURI.setSuggestedEdition(Math.max(requestURI.getEdition() - 1, 0));
+
+        // String is a db4o primitive type, and thus automatically deleted.
+        /* checkedDelete(mRequestURIString); */
+        mRequestURIString = requestURI.toString();
+
 		// TODO: I decided that we should not decrease the edition hint here. Think about that again.
 	}
 	
