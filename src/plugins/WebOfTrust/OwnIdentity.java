@@ -191,16 +191,21 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		super.setEdition(edition);
 		
 		checkedActivate(1);
-		
-		mCurrentEditionFetchState = FetchState.Fetched;
-		
-		checkedActivate(mInsertURI, 2);
-		
-		if(edition > mInsertURI.getEdition()) {
-			mInsertURI.removeFrom(mDB);
-			mInsertURI = mInsertURI.setSuggestedEdition(edition);
-			updated();
-		}
+        // Enums are a db4o primitive type, and thus automatically deleted. This also applies
+        // to the String mInsertURIString which we set in the following code.
+        /* checkedDelete(mCurrentEditionFetchState); */
+        mCurrentEditionFetchState = FetchState.Fetched;
+
+        final FreenetURI insertURI = getInsertURI();
+        final long oldEdition = insertURI.getEdition();
+
+        assert !(edition < oldEdition)
+            : "super.setEdition() should have thrown when trying to decrease the edition";
+
+        if (edition > oldEdition) {
+            mInsertURIString = insertURI.setSuggestedEdition(edition).toString();
+            updated();
+        }
 	}
 	
 	/**
