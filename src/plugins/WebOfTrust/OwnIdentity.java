@@ -66,7 +66,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		if(!insertURI.isUSK() && !insertURI.isSSK())
 			throw new InvalidParameterException("Identity URI keytype not supported: " + insertURI);
 		
-		mInsertURI = testAndNormalizeInsertURI(insertURI);
+        FreenetURI normalizedInsertURI = testAndNormalizeInsertURI(insertURI);
 
         // We need this.getEdition() but initializeTransient() was not called yet so it won't work.
         // So instead, we manually obtain the edition from the request URI.
@@ -77,7 +77,8 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
             // Should not happen: Class Identity shouldn't store an invalid mRequestURIString
             throw new RuntimeException(e);
         }
-        mInsertURI = mInsertURI.setSuggestedEdition(requestURI.getEdition());
+        normalizedInsertURI = normalizedInsertURI.setSuggestedEdition(requestURI.getEdition());
+        mInsertURIString = normalizedInsertURI.toString();
 
 		mLastInsertDate = new Date(0);
 
