@@ -364,7 +364,13 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		try {
 			activateFully();
 
-			mInsertURI.removeFrom(mDB);
+            assert(mInsertURI == null)
+                : "upgradeDatabaseFormatVersion5WithoutCommit() should delete mInsertURI";
+            // checkedDelete(mInsertURI);
+
+            /* String is a db4o primitive type, and thus automatically deleted. */
+            // checkedDelete(mInsertURIString);
+
 			// checkedDelete(mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 		}
 		catch(RuntimeException e) {
