@@ -373,20 +373,26 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	 * @throws InvalidParameterException If the new edition is less than the current one. TODO: Evaluate whether we shouldn't be throwing a RuntimeException instead
 	 */
 	protected void setEdition(long newEdition) throws InvalidParameterException {
-		checkedActivate(1);
-		checkedActivate(mRequestURI, 2);
+        // If we did not call checkedActivate(), db4o would not notice and not store the modified
+        // mRequestURIString - But checkedActivate() is done by the following getRequestURI()
+        // already, so we do not call it again here.
+        /* checkedActivate(1); */
+        final FreenetURI requestURI = getRequestURI();
+
 		// checkedActivate(mCurrentEditionFetchState, 1); is not needed, has no members
 		// checkedActivate(mLatestEditionHint, 1); is not needed, long is a db4o primitive type 
 		
-		long currentEdition = mRequestURI.getEdition();
+        long currentEdition = requestURI.getEdition();
 		
 		if (newEdition < currentEdition) {
 			throw new InvalidParameterException("The edition of an identity cannot be lowered.");
 		}
 		
 		if (newEdition > currentEdition) {
-			mRequestURI.removeFrom(mDB);
-			mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
+            // String is a db4o primitive type, and thus automatically deleted. This also applies
+            // to the enum and long which we set in the following code.
+            /* checkedDelete(mRequestURIString); */
+            mRequestURIString = requestURI.setSuggestedEdition(newEdition).toString();
 			mCurrentEditionFetchState = FetchState.NotFetched;
 			if (newEdition > mLatestEditionHint) {
 				// Do not call setNewEditionHint() to prevent confusing logging.
