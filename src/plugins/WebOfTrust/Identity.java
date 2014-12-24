@@ -1067,7 +1067,7 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			// checkedStore(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 
             assert(mRequestURI == null)
-                : "upgradeDatabaseFormatVersion5() should delete mRequestURI";
+                : "upgradeDatabaseFormatVersion5WithoutCommit() should delete mRequestURI";
 
             /* String is a db4o primitive type, and thus automatically stored. */
             // checkedStore(mRequestURIString);
@@ -1085,7 +1085,21 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			checkedRollbackAndThrow(e);
 		}
 	}
-	
+
+    /** @see WebOfTrust#upgradeDatabaseFormatVersion5 */
+    protected void upgradeDatabaseFormatVersion5WithoutCommit() {
+        checkedActivate(1);
+        checkedActivate(mRequestURI, 2);
+        mRequestURIString = mRequestURI.toString();
+
+        // A FreenetURI currently only contains db4o primitive types (String, arrays, etc.) and thus
+        // we can delete it having to delete its member variables explicitly.
+        mDB.delete(mRequestURI);
+        mRequestURI = null;
+
+        storeWithoutCommit();
+    }
+
 	/**
 	 * Locks the WoT and the database and stores the identity.
 	 */
@@ -1115,7 +1129,7 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			// checkedDelete(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 
             assert(mRequestURI == null)
-                : "upgradeDatabaseFormatVersion5() should delete mRequestURI";
+                : "upgradeDatabaseFormatVersion5WithoutCommit() should delete mRequestURI";
             // checkedDelete(mRequestURI);
 
             /* String is a db4o primitive type, and thus automatically deleted. */
@@ -1144,7 +1158,7 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 
         if(mRequestURI != null) {
             throw new IllegalStateException(
-                "upgradeDatabaseFormatVersion5() should delete mRequestURI");
+                "upgradeDatabaseFormatVersion5WithoutCommit() should delete mRequestURI");
         }
 
 		if(mRequestURIString == null)
