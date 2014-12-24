@@ -385,21 +385,30 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		activateFully();
 		super.startupDatabaseIntegrityTest();
 		
-		if(mInsertURI == null)
-			throw new NullPointerException("mInsertURI==null");
+        if(mInsertURI != null) {
+            throw new IllegalStateException(
+                "upgradeDatabaseFormatVersion5WithoutCommit() should delete mInsertURI");
+        }
+
+        if(mInsertURIString == null)
+            throw new NullPointerException("mInsertURIString==null");
+
+        final FreenetURI insertURI = getInsertURI();
 		
 		try {
-			if(!testAndNormalizeInsertURI(mInsertURI).setSuggestedEdition(mInsertURI.getEdition()).equals(mInsertURI))
-				throw new IllegalStateException("mInsertURI is not normalized: " + mInsertURI);
+            final FreenetURI normalizedInsertURI
+                = testAndNormalizeInsertURI(insertURI).setSuggestedEdition(insertURI.getEdition());
+            if(!normalizedInsertURI.equals(insertURI))
+                throw new IllegalStateException("Insert URI is not normalized: " + insertURI);
 		} catch (MalformedURLException e) {
-			throw new IllegalStateException("mInsertURI is invalid: " + e);
+            throw new IllegalStateException("Insert URI is invalid: " + e);
 		}
 		
 		try {
-            if(!mInsertURI.deriveRequestURIFromInsertURI().equals(getRequestURI()))
+            if(!insertURI.deriveRequestURIFromInsertURI().equals(getRequestURI()))
 				throw new IllegalStateException("Insert and request URI do not fit together!");
 		} catch (MalformedURLException e) {
-			throw new IllegalStateException("mInsertURI is not an insert URI!");
+            throw new IllegalStateException("Insert URI is not an insert URI!");
 		}
 		
 		if(mLastInsertDate == null)
