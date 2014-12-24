@@ -25,8 +25,21 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	/** @see Serializable */
 	private static final long serialVersionUID = 1L;
 
-	protected FreenetURI mInsertURI;
-	
+    /**
+     * @deprecated Use {@link #mInsertURIString} instead.<br>
+     *             See {@link WebOfTrust#upgradeDatabaseFormatVersion5} for why this was replaced.
+     *             <br>For newly constructed OwnIdentity objects, will always be null.<br>
+     *             For OwnIdentity objects existing in old databases, will be null after
+     *             {@link #upgradeDatabaseFormatVersion5WithoutCommit()}.<br>
+     *             <br>TODO: Remove this variable once the aforementioned database upgrade code is
+     *             removed. When removing it, make sure to check the db4o manual for whether
+     *             it is necessary to delete its backend database field manually using db4o API;
+     *             and if necessary do that with another database format version upgrade. */
+    @Deprecated
+    protected FreenetURI mInsertURI = null;
+
+    protected String mInsertURIString;
+
 	protected Date mLastInsertDate;
 	
 	
