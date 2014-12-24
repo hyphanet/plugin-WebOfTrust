@@ -357,7 +357,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		}
 		
 		try {
-			if(!mInsertURI.deriveRequestURIFromInsertURI().equals(mRequestURI))
+            if(!mInsertURI.deriveRequestURIFromInsertURI().equals(getRequestURI()))
 				throw new IllegalStateException("Insert and request URI do not fit together!");
 		} catch (MalformedURLException e) {
 			throw new IllegalStateException("mInsertURI is not an insert URI!");
