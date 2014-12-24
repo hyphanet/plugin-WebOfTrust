@@ -234,6 +234,14 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 */
 	@Override
 	protected final void markForRefetch() {
+        // TODO: Code quality: This function should throw UnsupportedOperationException instead of
+        // returning as it does not make sense to call this upon an OwnIdentity, it only makes sense
+        // for the parent class Identity. However, I was too lazy for making sure that the function
+        // does not get called during special conditions of score computation, so I merely added
+        // error logging instead of making it throw. If log file analysis shows that the function is
+        // in fact never called, replace the logging with a throw.
+        Logger.error(this, "markForRefetch() should not be used upon OwnIdentity",
+            new UnsupportedOperationException() /* Add exception for logging a stack trace */);
 		return;
 	}
 	
