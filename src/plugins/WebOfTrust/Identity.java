@@ -246,9 +246,11 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	protected Identity(WebOfTrustInterface myWoT, FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException, MalformedURLException {
 		initializeTransient(myWoT);
 		
-		mRequestURI = testAndNormalizeRequestURI(newRequestURI); // Also takes care of setting the edition to 0 - see below for explanation
+        // Also takes care of setting the edition to 0 - see below for explanation
+        final FreenetURI normalizedRequestURI = testAndNormalizeRequestURI(newRequestURI);
+        mRequestURIString = normalizedRequestURI.toString();
 		
-		mID = IdentityID.constructAndValidateFromURI(mRequestURI).toString();
+        mID = IdentityID.constructAndValidateFromURI(normalizedRequestURI).toString();
 		
 		try {
 			// We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
