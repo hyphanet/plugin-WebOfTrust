@@ -306,9 +306,13 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	 * @return The requestURI ({@link FreenetURI}) to fetch this Identity 
 	 */
 	public final FreenetURI getRequestURI() {
-		checkedActivate(1);
-		checkedActivate(mRequestURI, 2);
-		return mRequestURI;
+        checkedActivate(1); // String is a db4o primitive type so 1 is enough
+        try {
+            return new FreenetURI(mRequestURIString);
+        } catch (MalformedURLException e) {
+            // Should never happen: We never store invalid URIs.
+            throw new RuntimeException(e);
+        }
 	}
 	
 	/**
