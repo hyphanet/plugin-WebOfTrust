@@ -54,9 +54,18 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 			throw new InvalidParameterException("Identity URI keytype not supported: " + insertURI);
 		
 		mInsertURI = testAndNormalizeInsertURI(insertURI);
-		// initializeTransient() was not called yet so we must use mRequestURI.getEdition() instead of this.getEdition()
-		mInsertURI = mInsertURI.setSuggestedEdition(mRequestURI.getEdition());
-		
+
+        // We need this.getEdition() but initializeTransient() was not called yet so it won't work.
+        // So instead, we manually obtain the edition from the request URI.
+        final FreenetURI requestURI;
+        try {
+            requestURI = new FreenetURI(mRequestURIString);
+        } catch(MalformedURLException e) {
+            // Should not happen: Class Identity shouldn't store an invalid mRequestURIString
+            throw new RuntimeException(e);
+        }
+        mInsertURI = mInsertURI.setSuggestedEdition(requestURI.getEdition());
+
 		mLastInsertDate = new Date(0);
 
 		// Must be set to "fetched" to prevent the identity fetcher from trying to fetch the current edition and to make the identity inserter
