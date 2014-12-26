@@ -363,7 +363,23 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		
 		super.storeWithoutCommit(); // Not in the try{} so we don't do checkedRollbackAndThrow twice
 	}
-	
+
+    /** @see WebOfTrust#upgradeDatabaseFormatVersion5 */
+    @Override protected void upgradeDatabaseFormatVersion5WithoutCommit() {
+        super.upgradeDatabaseFormatVersion5WithoutCommit();
+
+        checkedActivate(1);
+        checkedActivate(mInsertURI, 2);
+        mInsertURIString = mInsertURI.toString();
+
+        // A FreenetURI currently only contains db4o primitive types (String, arrays, etc.) and thus
+        // we can delete it having to delete its member variables explicitly.
+        mDB.delete(mInsertURI);
+        mInsertURI = null;
+
+        storeWithoutCommit();
+    }
+
 	@Override
 	protected final void deleteWithoutCommit() {
 		try {
