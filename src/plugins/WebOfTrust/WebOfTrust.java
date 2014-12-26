@@ -730,7 +730,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 		int leakCounter = 0;
 		for(final FreenetURI uri : (ObjectSet<FreenetURI>)query.execute()) {
 			if(!nonGarbageFreenetURIs.containsKey(uri)) {
-				uri.removeFrom(mDB);
+                // A FreenetURI currently only contains db4o primitive types (String, arrays, etc.)
+                // and thus we can delete it having to delete its member variables explicitly.
+                mDB.delete(uri);
 				++leakCounter;
 			}
 		}
