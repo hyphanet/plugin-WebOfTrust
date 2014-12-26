@@ -85,7 +85,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/** Package-private method to allow unit tests to bypass some assert()s */
 	
 	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = 5;
+	public static final int DATABASE_FORMAT_VERSION = 6;
 	
 	
 
@@ -588,7 +588,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					case 2: upgradeDatabaseFormatVersion2(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 3: upgradeDatabaseFormatVersion3(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 4: upgradeDatabaseFormatVersion4(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
-					case 5: break;
+					case 5: upgradeDatabaseFormatVersion5(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 6: break;
 					default:
 						throw new UnsupportedOperationException("Your database is newer than this WOT version! Please upgrade WOT.");
 				}
@@ -754,7 +755,51 @@ public final class WebOfTrust extends WebOfTrustInterface
 	private void upgradeDatabaseFormatVersion4() {
 		upgradeDatabaseFormatVersion2();
 	}
-	
+
+    /**
+     * Upgrades database format version 5 to 6.<br>
+     * 
+     * The {@link FreenetURI} functions for storing {@link FreenetURI} inside of db4o were removed
+     * from fred recently. Thus, we must store {@link FreenetURI} as {@link String} instead.<br>
+     * This function copies the {@link FreenetURI} members of stored objects to the new String
+     * equivalents.<br><br>
+     * 
+     * TODO: When removing this upgrade code path, remove the following deprecated code as well:<br>
+     * - {@link Identity#mRequestURI}<br>
+     * - {@link Identity#upgradeDatabaseFormatVersion5WithoutCommit()}<br>
+     * - {@link OwnIdentity#mInsertURI}<br>
+     * - {@link OwnIdentity#upgradeDatabaseFormatVersion5WithoutCommit()}
+     */
+    @SuppressWarnings("unchecked")
+    private void upgradeDatabaseFormatVersion5() {
+        Logger.normal(this, "Converting FreenetURI to String...");
+        for(Identity identity : getAllIdentities()) {
+            identity.upgradeDatabaseFormatVersion5WithoutCommit();
+        }
+        
+        if(logDEBUG) {
+            // Since nothing should store FreenetURI inside the database anymore after the
+            // format upgrade of this function, it is quite easy to test whether the function works:
+            // Query the database for FreenetURI objects. We do this now...
+            Logger.debug(this, "Checking database for leaked FreenetURI objects...");
+            
+            final Query query = mDB.query();
+            query.constrain(FreenetURI.class);
+            
+            int leakCounter = 0;
+            for(FreenetURI uri : (ObjectSet<FreenetURI>)query.execute()) {
+                Logger.error(this, "Found leaked FreenetURI: " + uri);
+                ++leakCounter;
+                // Don't delete it: If this happens, there is a bug in this database format upgrade
+                // function, and it should be fixed. Also, this code only gets executed if DEBUG
+                // logging is enabled, so there wouldn't be any use in deleting it here.
+            }
+            
+            Logger.debug(this, "Count of leaked FreenetURI: " + leakCounter);
+        }
+        Logger.normal(this, "Finished cnverting FreenetURI to String.");
+    }
+
 	/**
 	 * DO NOT USE THIS FUNCTION ON A DATABASE WHICH YOU WANT TO CONTINUE TO USE!
 	 * 
