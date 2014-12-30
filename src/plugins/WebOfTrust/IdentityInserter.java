@@ -110,13 +110,12 @@ public final class IdentityInserter extends TransferThread {
 		return NativeThread.LOW_PRIORITY;
 	}
 
-    /**
-     * Should not be called since this class only does inserts, not requests.<br><br>
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override public RequestClient getRequestClient() {
-        Logger.error(this, "getRequestClient() called for *insert* class IdentityInserter",
-            new RuntimeException()); // Add exception for logging a stack trace
+        // Testing shows that this is also called for inserts, not only for requests.
+        // For symmetry, we use the same RequestClient as the one IdentityFetcher uses:
+        // Identity fetches and inserts belong together, so it makes sense to use the same
+        // RequestClient for them.
         return mWoT.getRequestClient();
     }
 

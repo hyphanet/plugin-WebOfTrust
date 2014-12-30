@@ -90,6 +90,13 @@ public final class IntroductionPuzzleStore {
 		return mWoT;
 	}
 	
+    /**
+     * @return A {@link RequestClient} which shall be used by {@link IntroductionServer} and
+     *         {@link IntroductionClient} to group their Freenet data transfers into the same
+     *         scheduling group.<br>
+     *         Puzzle fetches and inserts belong together, so it makes sense to use the same
+     *         RequestClient for them.
+     */
 	protected RequestClient getRequestClient() {
 		return mRequestClient;
 	}

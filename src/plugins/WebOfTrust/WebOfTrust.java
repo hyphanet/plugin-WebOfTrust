@@ -3778,6 +3778,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return mFCPInterface;
 	}
 
+    /**
+     * @return A {@link RequestClient} which shall be used by {@link IdentityFetcher} and
+     *         {@link IdentityInserter} to group their Freenet data transfers into the same
+     *         scheduling group.<br>
+     *         Identity fetches and inserts belong together, so it makes sense to use the same
+     *         RequestClient for them.
+     */
 	public RequestClient getRequestClient() {
 		return mRequestClient;
 	}

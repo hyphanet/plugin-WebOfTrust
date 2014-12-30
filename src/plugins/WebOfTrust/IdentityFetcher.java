@@ -128,6 +128,9 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		// Initialized by start()
 		mTicker = null;
 		
+        // For symmetry, we use the same RequestClient as the one IdentityInserter uses:
+        // Identity fetches and inserts belong together, so it makes sense to use the same
+        // RequestClient for them.
 		mRequestClient = mWoT.getRequestClient();
 		
 		mStartupTimeMilliseconds = CurrentTimeUTC.getInMillis();
