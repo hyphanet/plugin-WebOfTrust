@@ -53,10 +53,11 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	 * in the database (the values of this identity, trust values, etc.) if mCurrentEditionFetchState is Fetched or ParsingFailed, otherwise it
      * is the next edition number which should be downloaded.
      * @deprecated Use {@link #mRequestURIString} instead.<br>
-     *             See {@link WebOfTrust#upgradeDatabaseFormatVersion5} for why this was replaced.
+     *             See {@link WebOfTrust#upgradeDatabaseFormatVersion12345} for why this was
+     *             replaced.
      *             <br>For newly constructed Identity objects, will always be null.<br>
      *             For Identity objects existing in old databases, will be null after
-     *             {@link #upgradeDatabaseFormatVersion5WithoutCommit()}.<br>
+     *             {@link #upgradeDatabaseFormatVersion12345WithoutCommit()}.<br>
      *             <br>TODO: Remove this variable once the aforementioned database upgrade code is
      *             removed. When removing it, make sure to check the db4o manual for whether
      *             it is necessary to delete its backend database field manually using db4o API;
@@ -1091,7 +1092,7 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	}
 
     /** @see WebOfTrust#upgradeDatabaseFormatVersion5 */
-    protected void upgradeDatabaseFormatVersion5WithoutCommit() {
+    protected void upgradeDatabaseFormatVersion12345WithoutCommit() {
         checkedActivate(1);
         
         if(mRequestURIString != null) {

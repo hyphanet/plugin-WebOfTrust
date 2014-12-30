@@ -27,10 +27,11 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 
     /**
      * @deprecated Use {@link #mInsertURIString} instead.<br>
-     *             See {@link WebOfTrust#upgradeDatabaseFormatVersion5} for why this was replaced.
+     *             See {@link WebOfTrust#upgradeDatabaseFormatVersion12345} for why this was
+     *             replaced.
      *             <br>For newly constructed OwnIdentity objects, will always be null.<br>
      *             For OwnIdentity objects existing in old databases, will be null after
-     *             {@link #upgradeDatabaseFormatVersion5WithoutCommit()}.<br>
+     *             {@link #upgradeDatabaseFormatVersion12345WithoutCommit()}.<br>
      *             <br>TODO: Remove this variable once the aforementioned database upgrade code is
      *             removed. When removing it, make sure to check the db4o manual for whether
      *             it is necessary to delete its backend database field manually using db4o API;
@@ -365,8 +366,8 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	}
 
     /** @see WebOfTrust#upgradeDatabaseFormatVersion5 */
-    @Override protected void upgradeDatabaseFormatVersion5WithoutCommit() {
-        super.upgradeDatabaseFormatVersion5WithoutCommit();
+    @Override protected void upgradeDatabaseFormatVersion12345WithoutCommit() {
+        super.upgradeDatabaseFormatVersion12345WithoutCommit();
 
         checkedActivate(1);
         
