@@ -11,7 +11,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Random;
 
-import com.db4o.ObjectContainer;
 import com.db4o.ext.ExtObjectContainer;
 
 import freenet.client.FetchException;
