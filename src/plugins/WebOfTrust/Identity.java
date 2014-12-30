@@ -1093,6 +1093,16 @@ public class Identity extends Persistent implements Cloneable, EventSource {
     /** @see WebOfTrust#upgradeDatabaseFormatVersion5 */
     protected void upgradeDatabaseFormatVersion5WithoutCommit() {
         checkedActivate(1);
+        
+        if(mRequestURIString != null) {
+            // This object has had its mRequestURI migrated to mRequestURIString already.
+            // Might happen during very old database format version upgrade codepaths which
+            // create fresh Identity objects - newly constructed objects will not need migration.
+            assert(mRequestURI == null);
+            return;
+        }
+        
+        assert(mRequestURI != null);
         checkedActivate(mRequestURI, 2);
         mRequestURIString = mRequestURI.toString();
 

@@ -369,6 +369,16 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
         super.upgradeDatabaseFormatVersion5WithoutCommit();
 
         checkedActivate(1);
+        
+        if(mInsertURIString != null) {
+            // This object has had its mInsertURI migrated to mInsertURIString already.
+            // Might happen during very old database format version upgrade codepaths which
+            // create fresh OwnIdentity objects - newly constructed objects will not need migration.
+            assert(mInsertURI == null);
+            return;
+        }
+        
+        assert(mInsertURI != null);
         checkedActivate(mInsertURI, 2);
         mInsertURIString = mInsertURI.toString();
 
