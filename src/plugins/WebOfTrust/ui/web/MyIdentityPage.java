@@ -51,9 +51,12 @@ public class MyIdentityPage extends WebPageImpl {
         // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
         // https://bugs.freenetproject.org/view.php?id=6247
 		synchronized(mWebOfTrust) {
-		    mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
-		    mReceivedTrustCount = mWebOfTrust.getReceivedTrusts(mIdentity).size();
-		    mGivenTrustCount = mWebOfTrust.getGivenTrusts(mIdentity).size();
+            final OwnIdentity identity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
+            
+            mReceivedTrustCount = mWebOfTrust.getReceivedTrusts(identity).size();
+            mGivenTrustCount = mWebOfTrust.getGivenTrusts(identity).size();
+            // Clone it after the above database queries since they require object identity.
+            mIdentity = identity.clone();
 		}
 
 		editIdentityToadlet = mWebInterface.getToadlet(EditOwnIdentityWebInterfaceToadlet.class);
