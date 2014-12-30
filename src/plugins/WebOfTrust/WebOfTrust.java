@@ -41,13 +41,13 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
+import freenet.clients.fcp.FCPPluginClient;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.BaseL10n;
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.l10n.PluginL10n;
 import freenet.node.RequestClient;
-import freenet.node.fcp.FCPPluginClient;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginBaseL10n;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
@@ -85,7 +85,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/** Package-private method to allow unit tests to bypass some assert()s */
 	
 	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = 5;
+	public static final int DATABASE_FORMAT_VERSION = 6;
 	
 	
 
@@ -204,11 +204,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 				@Override
 				public boolean persistent() {
 					return false;
-				}
-	
-				@Override
-				public void removeFrom(ObjectContainer container) {
-					throw new UnsupportedOperationException();
 				}
 
 				@Override
@@ -588,12 +583,23 @@ public final class WebOfTrust extends WebOfTrustInterface
 		synchronized(mSubscriptionManager) { // For deleteWithoutCommit(Identity) / restoreOwnIdentityWithoutCommit()
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
+                // upgradeDatabaseFormatVersion12345() must be called before the individual upgrade
+                // functions. See its JavaDoc.
+                // Notice: The below switch() might call it again. That won't break anything.
+                if (databaseFormatVersion < 5)
+                    upgradeDatabaseFormatVersion12345();
+
 				switch(databaseFormatVersion) {
 					case 1: upgradeDatabaseFormatVersion1(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 2: upgradeDatabaseFormatVersion2(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
-					case 3: upgradeDatabaseFormatVersion3(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+                    case 3:
+                        // The following was done by upgradeDatabaseFormatVersion12345() already.
+                        // It will not work if called a second time, so we don't call it here.
+                        /* upgradeDatabaseFormatVersion3(); */
+                        mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 4: upgradeDatabaseFormatVersion4(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
-					case 5: break;
+                    case 5: upgradeDatabaseFormatVersion12345(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 6: break;
 					default:
 						throw new UnsupportedOperationException("Your database is newer than this WOT version! Please upgrade WOT.");
 				}
@@ -702,7 +708,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 	
 	/**
-	 * Upgrades database format version 3 to version 4
+     * Upgrades database format version 3 to version 4.<br>
+     * ATTENTION: Must not be called after upgradeDatabaseFormatVersion12345() as that function
+     * changes the way we store FreenetURI. It also deals with calling this function here if
+     * necessary. Thus, all you need to take care of is calling upgradeDatabaseFormatVersion12345().
+     * <br><br>
 	 * 
 	 * This deletes leaked FreenetURI objects. Leaked means that they are not being referenced by any objects which we actually use.
 	 * This was caused by a bug in class Identity, see https://bugs.freenetproject.org/view.php?id=5964
@@ -724,9 +734,23 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// The only relevant ones are classes Identity and OwnIdentity. All other classes do not contain FreenetURI as stored member fields.
 		
 		for(final Identity identity : getAllIdentities()) {
-			nonGarbageFreenetURIs.put(identity.getRequestURI(), null);
-			if(identity instanceof OwnIdentity)
-				nonGarbageFreenetURIs.put(((OwnIdentity)identity).getInsertURI(), null);
+            // Don't use identity.getRequestURI() but rather use the member variable directly:
+            // getRequestURI() won't work before upgradeDatabaseFormatVersion12345() was called.
+            // But that function needs to call this function here, so we cannot call it before.
+            identity.checkedActivate(1);
+            assert (identity.mRequestURI != null);
+            identity.checkedActivate(identity.mRequestURI, 2);
+            
+            nonGarbageFreenetURIs.put(identity.mRequestURI, null);
+
+            if(identity instanceof OwnIdentity) {
+                final OwnIdentity ownIdentity = (OwnIdentity) identity;
+                ownIdentity.checkedActivate(1);
+                assert (ownIdentity.mInsertURI != null);
+                ownIdentity.checkedActivate(ownIdentity.mInsertURI, 2);
+                
+                nonGarbageFreenetURIs.put(ownIdentity.mInsertURI, null);
+            }
 		}
 		
 		final Query query = mDB.query();
@@ -735,7 +759,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 		int leakCounter = 0;
 		for(final FreenetURI uri : (ObjectSet<FreenetURI>)query.execute()) {
 			if(!nonGarbageFreenetURIs.containsKey(uri)) {
-				uri.removeFrom(mDB);
+                // A FreenetURI currently only contains db4o primitive types (String, arrays, etc.)
+                // and thus we can delete it having to delete its member variables explicitly.
+                mDB.delete(uri);
 				++leakCounter;
 			}
 		}
@@ -757,7 +783,70 @@ public final class WebOfTrust extends WebOfTrustInterface
 	private void upgradeDatabaseFormatVersion4() {
 		upgradeDatabaseFormatVersion2();
 	}
-	
+
+    /**
+     * Upgrades necessary for all database format versions up to 5.<br>
+     * ATTENTION: Must be called before any further database format upgrade code, see the second
+     * to next section for an explanation.<br><br>
+     * 
+     * The {@link FreenetURI} functions for storing {@link FreenetURI} inside of db4o were removed
+     * from fred recently. Thus, we must store {@link FreenetURI} as {@link String} instead.<br>
+     * This function copies the {@link FreenetURI} members of stored {@link Identity} and
+     * {@link OwnIdentity} objects to the new String equivalents.<br><br>
+     * 
+     * This function must be called before all other database upgrade code because the
+     * {@link Identity} and {@link OwnIdentity} classes have been changed to only use the String
+     * field of their URIs. Thus, if we did not convert the FreenetURI to String before calling
+     * further database upgrade code, there would be {@link NullPointerException}s if the other
+     * database upgrade code used Identity/OwnIdentity functions which try to access the String URI.
+     * <br><br>
+     * 
+     * It is safe to call this function multiple times, as
+     * {@link Identity#upgradeDatabaseFormatVersion12345WithoutCommit()} is idempotent.<br><br>
+     * 
+     * TODO: When removing this upgrade code path, remove the following deprecated code as well:<br>
+     * - {@link Identity#mRequestURI}<br>
+     * - {@link Identity#upgradeDatabaseFormatVersion12345WithoutCommit()}<br>
+     * - {@link OwnIdentity#mInsertURI}<br>
+     * - {@link OwnIdentity#upgradeDatabaseFormatVersion12345WithoutCommit()}
+     */
+    @SuppressWarnings("unchecked")
+    private void upgradeDatabaseFormatVersion12345() {
+        if(getConfig().getDatabaseFormatVersion() <= 3) {
+            // upgradeDatabaseFormatVersion3() deletes leaked FreenetURI objects.
+            // We must call it before this function converts FreenetURI to String, otherwise the
+            // leak detection code will not work.
+            upgradeDatabaseFormatVersion3();
+        }
+        
+        Logger.normal(this, "Converting FreenetURI to String...");
+        for(Identity identity : getAllIdentities()) {
+            identity.upgradeDatabaseFormatVersion12345WithoutCommit();
+        }
+        
+        if(logDEBUG) {
+            // Since nothing should store FreenetURI inside the database anymore after the
+            // format upgrade of this function, it is quite easy to test whether the function works:
+            // Query the database for FreenetURI objects. We do this now...
+            Logger.debug(this, "Checking database for leaked FreenetURI objects...");
+            
+            final Query query = mDB.query();
+            query.constrain(FreenetURI.class);
+            
+            int leakCounter = 0;
+            for(FreenetURI uri : (ObjectSet<FreenetURI>)query.execute()) {
+                Logger.error(this, "Found leaked FreenetURI: " + uri);
+                ++leakCounter;
+                // Don't delete it: If this happens, there is a bug in this database format upgrade
+                // function, and it should be fixed. Also, this code only gets executed if DEBUG
+                // logging is enabled, so there wouldn't be any use in deleting it here.
+            }
+            
+            Logger.debug(this, "Count of leaked FreenetURI: " + leakCounter);
+        }
+        Logger.normal(this, "Finished converting FreenetURI to String.");
+    }
+
 	/**
 	 * DO NOT USE THIS FUNCTION ON A DATABASE WHICH YOU WANT TO CONTINUE TO USE!
 	 * 
@@ -3736,6 +3825,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return mFCPInterface;
 	}
 
+    /**
+     * @return A {@link RequestClient} which shall be used by {@link IdentityFetcher} and
+     *         {@link IdentityInserter} to group their Freenet data transfers into the same
+     *         scheduling group.<br>
+     *         Identity fetches and inserts belong together, so it makes sense to use the same
+     *         RequestClient for them.
+     */
 	public RequestClient getRequestClient() {
 		return mRequestClient;
 	}

@@ -25,8 +25,22 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	/** @see Serializable */
 	private static final long serialVersionUID = 1L;
 
-	protected FreenetURI mInsertURI;
-	
+    /**
+     * @deprecated Use {@link #mInsertURIString} instead.<br>
+     *             See {@link WebOfTrust#upgradeDatabaseFormatVersion12345} for why this was
+     *             replaced.
+     *             <br>For newly constructed OwnIdentity objects, will always be null.<br>
+     *             For OwnIdentity objects existing in old databases, will be null after
+     *             {@link #upgradeDatabaseFormatVersion12345WithoutCommit()}.<br>
+     *             <br>TODO: Remove this variable once the aforementioned database upgrade code is
+     *             removed. When removing it, make sure to check the db4o manual for whether
+     *             it is necessary to delete its backend database field manually using db4o API;
+     *             and if necessary do that with another database format version upgrade. */
+    @Deprecated
+    protected FreenetURI mInsertURI = null;
+
+    protected String mInsertURIString;
+
 	protected Date mLastInsertDate;
 	
 	
@@ -50,13 +64,26 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		// This is already done by super()
 		// setEdition(0);
 		
+        // TODO: Code quality: Can this be moved to testAndNormalizeInsertURI without side effects?
+        // Please be very careful to review all code paths which use the function, the URI code
+        // is rather fragile because users can shove all kinds of bogus URIs into it.
 		if(!insertURI.isUSK() && !insertURI.isSSK())
 			throw new InvalidParameterException("Identity URI keytype not supported: " + insertURI);
 		
-		mInsertURI = testAndNormalizeInsertURI(insertURI);
-		// initializeTransient() was not called yet so we must use mRequestURI.getEdition() instead of this.getEdition()
-		mInsertURI = mInsertURI.setSuggestedEdition(mRequestURI.getEdition());
-		
+        FreenetURI normalizedInsertURI = testAndNormalizeInsertURI(insertURI);
+
+        // We need this.getEdition() but initializeTransient() was not called yet so it won't work.
+        // So instead, we manually obtain the edition from the request URI.
+        final FreenetURI requestURI;
+        try {
+            requestURI = new FreenetURI(mRequestURIString);
+        } catch(MalformedURLException e) {
+            // Should not happen: Class Identity shouldn't store an invalid mRequestURIString
+            throw new RuntimeException(e);
+        }
+        normalizedInsertURI = normalizedInsertURI.setSuggestedEdition(requestURI.getEdition());
+        mInsertURIString = normalizedInsertURI.toString();
+
 		mLastInsertDate = new Date(0);
 
 		// Must be set to "fetched" to prevent the identity fetcher from trying to fetch the current edition and to make the identity inserter
@@ -130,9 +157,13 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 * @return This OwnIdentity's insertURI
 	 */
 	public final FreenetURI getInsertURI() {
-		checkedActivate(1);
-		checkedActivate(mInsertURI, 2);
-		return mInsertURI;
+        checkedActivate(1); // String is a db4o primitive type so 1 is enough
+        try {
+            return new FreenetURI(mInsertURIString);
+        } catch (MalformedURLException e) {
+            // Should never happen: We never store invalid URIs.
+            throw new RuntimeException(e);
+        }
 	}
 	
 	/**
@@ -161,16 +192,21 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		super.setEdition(edition);
 		
 		checkedActivate(1);
-		
-		mCurrentEditionFetchState = FetchState.Fetched;
-		
-		checkedActivate(mInsertURI, 2);
-		
-		if(edition > mInsertURI.getEdition()) {
-			mInsertURI.removeFrom(mDB);
-			mInsertURI = mInsertURI.setSuggestedEdition(edition);
-			updated();
-		}
+        // Enums are a db4o primitive type, and thus automatically deleted. This also applies
+        // to the String mInsertURIString which we set in the following code.
+        /* checkedDelete(mCurrentEditionFetchState); */
+        mCurrentEditionFetchState = FetchState.Fetched;
+
+        final FreenetURI insertURI = getInsertURI();
+        final long oldEdition = insertURI.getEdition();
+
+        assert !(edition < oldEdition)
+            : "super.setEdition() should have thrown when trying to decrease the edition";
+
+        if (edition > oldEdition) {
+            mInsertURIString = insertURI.setSuggestedEdition(edition).toString();
+            updated();
+        }
 	}
 	
 	/**
@@ -181,15 +217,14 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	@Override
 	public void forceSetEdition(final long newEdition) {
 		super.forceSetEdition(newEdition);
-		
-		checkedActivate(1);
-		checkedActivate(mInsertURI, 2);
-		
-		final long currentEdition = mInsertURI.getEdition();
+
+        final FreenetURI insertURI = getInsertURI();
+        final long currentEdition = insertURI.getEdition();
 		
 		if(newEdition != currentEdition) {
-			mInsertURI.removeFrom(mDB);
-			mInsertURI = mInsertURI.setSuggestedEdition(newEdition);
+            // Strings are a db4o primitive type, and thus automatically deleted.
+            /* checkedDelete(mInsertURIString); */
+            mInsertURIString = insertURI.setSuggestedEdition(newEdition).toString();
 			updated();
 		}
 	}
@@ -200,6 +235,14 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 */
 	@Override
 	protected final void markForRefetch() {
+        // TODO: Code quality: This function should throw UnsupportedOperationException instead of
+        // returning as it does not make sense to call this upon an OwnIdentity, it only makes sense
+        // for the parent class Identity. However, I was too lazy for making sure that the function
+        // does not get called during special conditions of score computation, so I merely added
+        // error logging instead of making it throw. If log file analysis shows that the function is
+        // in fact never called, replace the logging with a throw.
+        Logger.error(this, "markForRefetch() should not be used upon OwnIdentity",
+            new UnsupportedOperationException() /* Add exception for logging a stack trace */);
 		return;
 	}
 	
@@ -307,7 +350,12 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		try {
 			activateFully();
 			
-			checkedStore(mInsertURI);
+            assert(mInsertURI == null)
+                : "upgradeDatabaseFormatVersion5WithoutCommit() should delete mInsertURI";
+
+            /* String is a db4o primitive type, and thus automatically stored. */
+            // checkedStore(mInsertURIString);
+
 			// checkedStore(mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 		}
 		catch(RuntimeException e) {
@@ -316,13 +364,45 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		
 		super.storeWithoutCommit(); // Not in the try{} so we don't do checkedRollbackAndThrow twice
 	}
-	
+
+    /** @see WebOfTrust#upgradeDatabaseFormatVersion5 */
+    @Override protected void upgradeDatabaseFormatVersion12345WithoutCommit() {
+        super.upgradeDatabaseFormatVersion12345WithoutCommit();
+
+        checkedActivate(1);
+        
+        if(mInsertURIString != null) {
+            // This object has had its mInsertURI migrated to mInsertURIString already.
+            // Might happen during very old database format version upgrade codepaths which
+            // create fresh OwnIdentity objects - newly constructed objects will not need migration.
+            assert(mInsertURI == null);
+            return;
+        }
+        
+        assert(mInsertURI != null);
+        checkedActivate(mInsertURI, 2);
+        mInsertURIString = mInsertURI.toString();
+
+        // A FreenetURI currently only contains db4o primitive types (String, arrays, etc.) and thus
+        // we can delete it having to delete its member variables explicitly.
+        mDB.delete(mInsertURI);
+        mInsertURI = null;
+
+        storeWithoutCommit();
+    }
+
 	@Override
 	protected final void deleteWithoutCommit() {
 		try {
 			activateFully();
 
-			mInsertURI.removeFrom(mDB);
+            assert(mInsertURI == null)
+                : "upgradeDatabaseFormatVersion5WithoutCommit() should delete mInsertURI";
+            // checkedDelete(mInsertURI);
+
+            /* String is a db4o primitive type, and thus automatically deleted. */
+            // checkedDelete(mInsertURIString);
+
 			// checkedDelete(mLastInsertDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 		}
 		catch(RuntimeException e) {
@@ -337,21 +417,30 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		activateFully();
 		super.startupDatabaseIntegrityTest();
 		
-		if(mInsertURI == null)
-			throw new NullPointerException("mInsertURI==null");
+        if(mInsertURI != null) {
+            throw new IllegalStateException(
+                "upgradeDatabaseFormatVersion5WithoutCommit() should delete mInsertURI");
+        }
+
+        if(mInsertURIString == null)
+            throw new NullPointerException("mInsertURIString==null");
+
+        final FreenetURI insertURI = getInsertURI();
 		
 		try {
-			if(!testAndNormalizeInsertURI(mInsertURI).setSuggestedEdition(mInsertURI.getEdition()).equals(mInsertURI))
-				throw new IllegalStateException("mInsertURI is not normalized: " + mInsertURI);
+            final FreenetURI normalizedInsertURI
+                = testAndNormalizeInsertURI(insertURI).setSuggestedEdition(insertURI.getEdition());
+            if(!normalizedInsertURI.equals(insertURI))
+                throw new IllegalStateException("Insert URI is not normalized: " + insertURI);
 		} catch (MalformedURLException e) {
-			throw new IllegalStateException("mInsertURI is invalid: " + e);
+            throw new IllegalStateException("Insert URI is invalid: " + e);
 		}
 		
 		try {
-			if(!mInsertURI.deriveRequestURIFromInsertURI().equals(mRequestURI))
+            if(!insertURI.deriveRequestURIFromInsertURI().equals(getRequestURI()))
 				throw new IllegalStateException("Insert and request URI do not fit together!");
 		} catch (MalformedURLException e) {
-			throw new IllegalStateException("mInsertURI is not an insert URI!");
+            throw new IllegalStateException("Insert URI is not an insert URI!");
 		}
 		
 		if(mLastInsertDate == null)

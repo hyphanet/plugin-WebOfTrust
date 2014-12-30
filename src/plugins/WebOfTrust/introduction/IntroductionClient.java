@@ -32,22 +32,28 @@ import com.db4o.ObjectSet;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 
 /**
@@ -148,6 +154,11 @@ public final class IntroductionClient extends TransferThread  {
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
+
+	/** {@inheritDoc} */
+    @Override public RequestClient getRequestClient() {
+        return mPuzzleStore.getRequestClient();
+    }
 
 	@Override
 	protected long getStartupDelay() {
@@ -413,7 +424,7 @@ public final class IntroductionClient extends TransferThread  {
 		
 		assert(!puzzle.wasInserted());
 		
-		Bucket tempB = mTBF.makeBucket(XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE + 1);
+		RandomAccessBucket tempB = mTBF.makeBucket(XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE + 1);
 		OutputStream os = null;
 		
 		try {
@@ -426,8 +437,11 @@ public final class IntroductionClient extends TransferThread  {
 			final InsertBlock ib = new InsertBlock(tempB, null, solutionURI);
 
 			final InsertContext ictx = mClient.getInsertContext(true);
+			// FIXME: Code quality: Check if this is the default, if yes, remove it.
+			ictx.getCHKOnly = false;
 			
-			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+			final ClientPutter pu = mClient.insert(
+			    ib, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 			addInsert(pu); // Takes care of mBeingInsertedPuzleSolutions for us.
 			tempB = null;
 			
@@ -518,7 +532,7 @@ public final class IntroductionClient extends TransferThread  {
 		// Use the SubscriptionManager (its in its own branch currently) for allowing clients to subscribe to puzzles and only raise the priority if a client
 		// is subscribed.
 		final short fetchPriority = puzzleStoreIsTooEmpty() ? RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS : RequestStarter.UPDATE_PRIORITY_CLASS;
-		final ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mPuzzleStore.getRequestClient(), 
+		final ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE,
 				this, fetchContext, fetchPriority);
 		addFetch(g);
 		
@@ -534,7 +548,7 @@ public final class IntroductionClient extends TransferThread  {
 	 * Called when a puzzle is successfully fetched.
 	 */
 	@Override
-	public void onSuccess(final FetchResult result, final ClientGetter state, final ObjectContainer container) {
+    public void onSuccess(final FetchResult result, final ClientGetter state) {
 		Logger.normal(this, "Fetched puzzle: " + state.getURI());
 		
 		Bucket bucket = null;
@@ -562,9 +576,9 @@ public final class IntroductionClient extends TransferThread  {
 	 * In our case, called when there is no puzzle available.
 	 */
 	@Override
-	public void onFailure(final FetchException e, final ClientGetter state, final ObjectContainer container) {
+    public void onFailure(final FetchException e, final ClientGetter state) {
 		try {
-			if(e.getMode() == FetchException.CANCELLED) {
+			if(e.getMode() == FetchExceptionMode.CANCELLED) {
 				if(logDEBUG) Logger.debug(this, "Fetch cancelled: " + state.getURI());
 			}
 			else if(e.isDNF()) {
@@ -611,7 +625,7 @@ public final class IntroductionClient extends TransferThread  {
 	 * Called when a puzzle solution is successfully inserted.
 	 */
 	@Override
-	public void onSuccess(final BaseClientPutter state, final ObjectContainer container)
+    public void onSuccess(final BaseClientPutter state)
 	{
 		Logger.normal(this, "Successful insert of puzzle solution: " + state.getURI());
 		
@@ -627,14 +641,14 @@ public final class IntroductionClient extends TransferThread  {
 	 * Calling when inserting a puzzle solution failed.
 	 */
 	@Override
-	public void onFailure(final InsertException e, final BaseClientPutter state, final ObjectContainer container)
+    public void onFailure(final InsertException e, final BaseClientPutter state)
 	{
 		/* No synchronization because the worst thing which can happen is that we insert it again */
 		
 		try {
-			if(e.getMode() == InsertException.CANCELLED)
+			if(e.getMode() == InsertExceptionMode.CANCELLED)
 				if(logDEBUG) Logger.debug(this, "Insert cancelled: " + state.getURI());
-			else if(e.getMode() == InsertException.COLLISION) {
+			else if(e.getMode() == InsertExceptionMode.COLLISION) {
 				Logger.normal(this, "Insert of puzzle solution collided, puzzle was solved already, marking as inserted: " + state.getURI());
 				markPuzzleSolutionAsInserted(state);
 			}
@@ -653,16 +667,11 @@ public final class IntroductionClient extends TransferThread  {
 
 	/** Only called by inserts */
 	@Override
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {}
+    public void onFetchable(BaseClientPutter state) {}
 
 	/** Only called by inserts */
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {}
-
-	/** Called when freenet.async thinks that the request should be serialized to
-	 * disk, if it is a persistent request. */
-	@Override
-	public void onMajorProgress(ObjectContainer container) {}
+    public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
 	
 	
 	@Override
@@ -701,10 +710,23 @@ public final class IntroductionClient extends TransferThread  {
 	}
 
 	@Override
-	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
-			ObjectContainer container) {
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();
 		throw new UnsupportedOperationException();
 	}
+
+    /**
+     * Should not be called since this class does not create persistent requests.<br>
+     * Will throw an exception since the interface specification requires it to do some stuff,
+     * which it does not do.<br>
+     * Parent interface JavaDoc follows:<br><br>
+     * {@inheritDoc}
+     */
+    @Override public void onResume(final ClientContext context) throws ResumeFailedException {
+        final ResumeFailedException error = new ResumeFailedException(
+            "onResume() called even though this class does not create persistent requests");
+        Logger.error(this, error.getMessage(), error /* Add exception for logging stack trace */);
+        throw error;
+    }
 
 }

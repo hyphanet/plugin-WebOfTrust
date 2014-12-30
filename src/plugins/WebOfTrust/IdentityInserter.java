@@ -11,7 +11,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Random;
 
-import com.db4o.ObjectContainer;
 import com.db4o.ext.ExtObjectContainer;
 
 import freenet.client.FetchException;
@@ -19,17 +18,22 @@ import freenet.client.FetchResult;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Inserts OwnIdentities to Freenet when they need it.
@@ -105,6 +109,15 @@ public final class IdentityInserter extends TransferThread {
 		return NativeThread.LOW_PRIORITY;
 	}
 
+    /** {@inheritDoc} */
+    @Override public RequestClient getRequestClient() {
+        // Testing shows that this is also called for inserts, not only for requests.
+        // For symmetry, we use the same RequestClient as the one IdentityFetcher uses:
+        // Identity fetches and inserts belong together, so it makes sense to use the same
+        // RequestClient for them.
+        return mWoT.getRequestClient();
+    }
+
 	@Override
 	protected long getStartupDelay() {
 		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
@@ -153,7 +166,7 @@ public final class IdentityInserter extends TransferThread {
 	 * @throws IOException 
 	 */
 	private void insert(OwnIdentity identity) throws IOException {
-		Bucket tempB = mTBF.makeBucket(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE + 1);  
+		RandomAccessBucket tempB = mTBF.makeBucket(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE + 1);  
 		OutputStream os = null;
 
 		try {
@@ -168,8 +181,11 @@ public final class IdentityInserter extends TransferThread {
 			
 			InsertBlock ib = new InsertBlock(tempB, null, identity.getInsertURI().setSuggestedEdition(edition));
 			InsertContext ictx = mClient.getInsertContext(true);
+	        // FIXME: Code quality: Check if this is the default, if yes, remove it.
+			ictx.getCHKOnly = false;
 			
-			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+			ClientPutter pu = mClient.insert(
+			    ib, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 			addInsert(pu);
 			tempB = null;
 			
@@ -185,7 +201,7 @@ public final class IdentityInserter extends TransferThread {
 	}
 	
 	@Override
-	public void onSuccess(BaseClientPutter state, ObjectContainer container)
+    public void onSuccess(BaseClientPutter state)
 	{
 		Logger.normal(this, "Successful insert of identity: " + state.getURI());
 		
@@ -229,10 +245,10 @@ public final class IdentityInserter extends TransferThread {
 	}
 
 	@Override
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
+    public void onFailure(InsertException e, BaseClientPutter state) 
 	{
 		try {
-			if(e.getMode() == InsertException.CANCELLED) {
+			if(e.getMode() == InsertExceptionMode.CANCELLED) {
 				if(logDEBUG) Logger.debug(this, "Insert cancelled: " + state.getURI());
 			}
 			else {
@@ -253,23 +269,33 @@ public final class IdentityInserter extends TransferThread {
 	/* Not needed functions from the ClientCallback interface */
 	
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) { }
+    public void onFailure(FetchException e, ClientGetter state) { }
 
 	@Override
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
+    public void onFetchable(BaseClientPutter state) { }
 	
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
+    public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
+
+    /**
+     * Should not be called since this class does not create persistent requests.<br>
+     * Will throw an exception since the interface specification requires it to do some stuff,
+     * which it does not do.<br>
+     * Parent interface JavaDoc follows:<br><br>
+     * {@inheritDoc}
+     */
+    @Override public void onResume(final ClientContext context) throws ResumeFailedException {
+        final ResumeFailedException error = new ResumeFailedException(
+            "onResume() called even though this class does not create persistent requests");
+        Logger.error(this, error.getMessage(), error /* Add exception for logging stack trace */);
+        throw error;
+    }
 
 	@Override
-	public void onMajorProgress(ObjectContainer container) { }
+    public void onSuccess(FetchResult result, ClientGetter state) { }
 
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) { }
-
-	@Override
-	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
-			ObjectContainer container) {
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();
 		throw new UnsupportedOperationException();
 	}

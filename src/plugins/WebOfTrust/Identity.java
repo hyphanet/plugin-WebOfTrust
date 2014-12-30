@@ -51,9 +51,36 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	
 	/** The USK requestURI used to fetch this identity from Freenet. It's edition number is the one of the data which we have currently stored
 	 * in the database (the values of this identity, trust values, etc.) if mCurrentEditionFetchState is Fetched or ParsingFailed, otherwise it
-	 * is the next edition number which should be downloaded. */
-	protected FreenetURI mRequestURI;
-	
+     * is the next edition number which should be downloaded.
+     * @deprecated Use {@link #mRequestURIString} instead.<br>
+     *             See {@link WebOfTrust#upgradeDatabaseFormatVersion12345} for why this was
+     *             replaced.
+     *             <br>For newly constructed Identity objects, will always be null.<br>
+     *             For Identity objects existing in old databases, will be null after
+     *             {@link #upgradeDatabaseFormatVersion12345WithoutCommit()}.<br>
+     *             <br>TODO: Remove this variable once the aforementioned database upgrade code is
+     *             removed. When removing it, make sure to check the db4o manual for whether
+     *             it is necessary to delete its backend database field manually using db4o API;
+     *             and if necessary do that with another database format version upgrade. */
+    @Deprecated
+    protected FreenetURI mRequestURI = null;
+
+    /**
+     * The USK request {@link FreenetURI} used to fetch this identity from Freenet.<br><br>
+     * 
+     * The meaning of its edition number is as follows:<br>
+     * - If mCurrentEditionFetchState is Fetched ParsingFailed, it's edition number is the one of
+     *   the data which we have currently stored in the database (the values of this identity, trust
+     *   values, etc.).<br>
+     * - For other values of mCurrentEditionFetchState, it is the next edition number which should
+     *   be downloaded.<br><br>
+     * 
+     * Converted to {@link String} via {@link FreenetURI#toString()}: We do not store this as
+     * {@link FreenetURI} since the FreenetURI class is not part of WOT, and thus a black box for
+     * which we cannot guarantee that db4o can store it properly.
+     */
+    protected String mRequestURIString;
+
 	public static enum FetchState {
 		NotFetched,
 		ParsingFailed,
@@ -224,9 +251,11 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	protected Identity(WebOfTrustInterface myWoT, FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException, MalformedURLException {
 		initializeTransient(myWoT);
 		
-		mRequestURI = testAndNormalizeRequestURI(newRequestURI); // Also takes care of setting the edition to 0 - see below for explanation
+        // Also takes care of setting the edition to 0 - see below for explanation
+        final FreenetURI normalizedRequestURI = testAndNormalizeRequestURI(newRequestURI);
+        mRequestURIString = normalizedRequestURI.toString();
 		
-		mID = IdentityID.constructAndValidateFromURI(mRequestURI).toString();
+        mID = IdentityID.constructAndValidateFromURI(normalizedRequestURI).toString();
 		
 		try {
 			// We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
@@ -282,9 +311,13 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	 * @return The requestURI ({@link FreenetURI}) to fetch this Identity 
 	 */
 	public final FreenetURI getRequestURI() {
-		checkedActivate(1);
-		checkedActivate(mRequestURI, 2);
-		return mRequestURI;
+        checkedActivate(1); // String is a db4o primitive type so 1 is enough
+        try {
+            return new FreenetURI(mRequestURIString);
+        } catch (MalformedURLException e) {
+            // Should never happen: We never store invalid URIs.
+            throw new RuntimeException(e);
+        }
 	}
 	
 	/**
@@ -345,20 +378,26 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	 * @throws InvalidParameterException If the new edition is less than the current one. TODO: Evaluate whether we shouldn't be throwing a RuntimeException instead
 	 */
 	protected void setEdition(long newEdition) throws InvalidParameterException {
-		checkedActivate(1);
-		checkedActivate(mRequestURI, 2);
+        // If we did not call checkedActivate(), db4o would not notice and not store the modified
+        // mRequestURIString - But checkedActivate() is done by the following getRequestURI()
+        // already, so we do not call it again here.
+        /* checkedActivate(1); */
+        final FreenetURI requestURI = getRequestURI();
+
 		// checkedActivate(mCurrentEditionFetchState, 1); is not needed, has no members
 		// checkedActivate(mLatestEditionHint, 1); is not needed, long is a db4o primitive type 
 		
-		long currentEdition = mRequestURI.getEdition();
+        long currentEdition = requestURI.getEdition();
 		
 		if (newEdition < currentEdition) {
 			throw new InvalidParameterException("The edition of an identity cannot be lowered.");
 		}
 		
 		if (newEdition > currentEdition) {
-			mRequestURI.removeFrom(mDB);
-			mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
+            // String is a db4o primitive type, and thus automatically deleted. This also applies
+            // to the enum and long which we set in the following code.
+            /* checkedDelete(mRequestURIString); */
+            mRequestURIString = requestURI.setSuggestedEdition(newEdition).toString();
 			mCurrentEditionFetchState = FetchState.NotFetched;
 			if (newEdition > mLatestEditionHint) {
 				// Do not call setNewEditionHint() to prevent confusing logging.
@@ -374,14 +413,19 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	 * Instead, use {@link #setEdition(long)} whenever possible.
 	 */
 	public void forceSetEdition(final long newEdition) {
-		checkedActivate(1);
-		checkedActivate(mRequestURI, 2);
+        // If we did not call checkedActivate(), db4o would not notice and not store the modified
+        // mRequestURIString - But checkedActivate() is done by the following getRequestURI()
+        // already, so we do not call it again here.
+        /* checkedActivate(1); */
+        final FreenetURI requestURI = getRequestURI();
 		
-		final long currentEdition = mRequestURI.getEdition();
+        final long currentEdition = requestURI.getEdition();
 		
 		if(newEdition != currentEdition) {
-			mRequestURI.removeFrom(mDB);
-			mRequestURI = mRequestURI.setSuggestedEdition(newEdition);
+            // String is a db4o primitive type, and thus automatically deleted. This also applies
+            // to the long which we set in the following code.
+            /* checkedDelete(mRequestURIString); */
+            mRequestURIString = requestURI.setSuggestedEdition(newEdition).toString();
 			if (newEdition > mLatestEditionHint) {
 				// Do not call setNewEditionHint() to prevent confusing logging.
 				mLatestEditionHint = newEdition;
@@ -429,10 +473,18 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	 * Decrease the current edition by one. Used by {@link #markForRefetch()}.
 	 */
 	private final void decreaseEdition() {
-		checkedActivate(1);
-		checkedActivate(mRequestURI, 2);
-		mRequestURI.removeFrom(mDB);
-		mRequestURI = mRequestURI.setSuggestedEdition(Math.max(mRequestURI.getEdition() - 1, 0));
+        // If we did not call checkedActivate(), db4o would not notice and not store the modified
+        // mRequestURIString - But checkedActivate() is done by the following getRequestURI()
+        // already, so we do not call it again here.
+        /* checkedActivate(1); */
+        FreenetURI requestURI = getRequestURI();
+
+        requestURI = requestURI.setSuggestedEdition(Math.max(requestURI.getEdition() - 1, 0));
+
+        // String is a db4o primitive type, and thus automatically deleted.
+        /* checkedDelete(mRequestURIString); */
+        mRequestURIString = requestURI.toString();
+
 		// TODO: I decided that we should not decrease the edition hint here. Think about that again.
 	}
 	
@@ -1018,7 +1070,13 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			activateFully();
 
 			// checkedStore(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			checkedStore(mRequestURI);
+
+            assert(mRequestURI == null)
+                : "upgradeDatabaseFormatVersion5WithoutCommit() should delete mRequestURI";
+
+            /* String is a db4o primitive type, and thus automatically stored. */
+            // checkedStore(mRequestURIString);
+
 			// checkedStore(mFirstFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			// checkedStore(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			// checkedStore(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
@@ -1032,7 +1090,31 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			checkedRollbackAndThrow(e);
 		}
 	}
-	
+
+    /** @see WebOfTrust#upgradeDatabaseFormatVersion5 */
+    protected void upgradeDatabaseFormatVersion12345WithoutCommit() {
+        checkedActivate(1);
+        
+        if(mRequestURIString != null) {
+            // This object has had its mRequestURI migrated to mRequestURIString already.
+            // Might happen during very old database format version upgrade codepaths which
+            // create fresh Identity objects - newly constructed objects will not need migration.
+            assert(mRequestURI == null);
+            return;
+        }
+        
+        assert(mRequestURI != null);
+        checkedActivate(mRequestURI, 2);
+        mRequestURIString = mRequestURI.toString();
+
+        // A FreenetURI currently only contains db4o primitive types (String, arrays, etc.) and thus
+        // we can delete it having to delete its member variables explicitly.
+        mDB.delete(mRequestURI);
+        mRequestURI = null;
+
+        storeWithoutCommit();
+    }
+
 	/**
 	 * Locks the WoT and the database and stores the identity.
 	 */
@@ -1060,7 +1142,14 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			activateFully();
 			
 			// checkedDelete(mID); /* Not stored because db4o considers it as a primitive and automatically stores it. */
-			mRequestURI.removeFrom(mDB);
+
+            assert(mRequestURI == null)
+                : "upgradeDatabaseFormatVersion5WithoutCommit() should delete mRequestURI";
+            // checkedDelete(mRequestURI);
+
+            /* String is a db4o primitive type, and thus automatically deleted. */
+            // checkedDelete(mRequestURIString);
+
 			checkedDelete(mCurrentEditionFetchState); // TODO: Is this still necessary?
 			// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
 			// checkedDelete(mLastChangedDate); /* Not stored because db4o considers it as a primitive and automatically stores it. */
@@ -1082,27 +1171,36 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 		if(mID == null)
 			throw new NullPointerException("mID==null");
 
-		if(mRequestURI == null)
-			throw new NullPointerException("mRequestURI==null");
+        if(mRequestURI != null) {
+            throw new IllegalStateException(
+                "upgradeDatabaseFormatVersion5WithoutCommit() should delete mRequestURI");
+        }
+
+		if(mRequestURIString == null)
+			throw new NullPointerException("mRequestURIString==null");
+		
+        final FreenetURI requestURI = getRequestURI();
 		
 		try {
-			if(!testAndNormalizeRequestURI(mRequestURI).equals(mRequestURI.setSuggestedEdition(0)))
-				throw new IllegalStateException("mRequestURI is not normalized: " + mRequestURI);
+            if(!testAndNormalizeRequestURI(requestURI).equals(requestURI.setSuggestedEdition(0)))
+                throw new IllegalStateException("Request URI is not normalized: " + requestURI);
 		} catch (MalformedURLException e) {
-			throw new IllegalStateException("mRequestURI is invalid: " + e);
+            throw new IllegalStateException("Request URI is invalid: " + e);
 		}
 		
-		if(!mID.equals(IdentityID.constructAndValidateFromURI(mRequestURI).toString()))
-			throw new IllegalStateException("ID does not match request URI!");
+        if(!mID.equals(IdentityID.constructAndValidateFromURI(requestURI).toString()))
+            throw new IllegalStateException("ID does not match request URI!");
 		
 		IdentityID.constructAndValidateFromString(mID); // Throws if invalid
 		
 		if(mCurrentEditionFetchState == null)
 			throw new NullPointerException("mCurrentEditionFetchState==null");
 		
-		if(mLatestEditionHint < 0 || mLatestEditionHint < mRequestURI.getEdition())
-			throw new IllegalStateException("Invalid edition hint: " + mLatestEditionHint + "; current edition: " + mRequestURI.getEdition());
-		
+        if(mLatestEditionHint < 0 || mLatestEditionHint < requestURI.getEdition()) {
+            throw new IllegalStateException("Invalid edition hint: " + mLatestEditionHint
+                                          + "; current edition: " + requestURI.getEdition());
+        }
+
 		if(mLastFetchedDate == null)
 			throw new NullPointerException("mLastFetchedDate==null");
 		
