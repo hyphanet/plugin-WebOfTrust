@@ -797,7 +797,7 @@ public final class WebOfTrust extends WebOfTrustInterface
             
             Logger.debug(this, "Count of leaked FreenetURI: " + leakCounter);
         }
-        Logger.normal(this, "Finished cnverting FreenetURI to String.");
+        Logger.normal(this, "Finished converting FreenetURI to String.");
     }
 
 	/**
