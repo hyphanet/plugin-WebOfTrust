@@ -46,6 +46,7 @@ import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionTy
 import plugins.WebOfTrust.util.RandomName;
 import freenet.clients.fcp.FCPPluginClient;
 import freenet.clients.fcp.FCPPluginClient.SendDirection;
+import freenet.clients.fcp.FCPPluginMessage;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
