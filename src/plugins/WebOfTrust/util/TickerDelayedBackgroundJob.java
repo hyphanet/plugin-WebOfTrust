@@ -228,6 +228,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     private void toIDLE() {
         assert(state == JobState.RUNNING) : "going to IDLE from non-RUNNING state";
         assert(thread == Thread.currentThread()) : "going to IDLE from non-job thread";
+        assert(waitingTickerJob == null) : "having ticker job while going to IDLE state";
         thread = null;
         state = JobState.IDLE;
     }
@@ -251,6 +252,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         assert(state == JobState.WAITING) : "going to RUNNING state from non-WAITING state";
         assert(thread == null) : "already having job thread while going to RUNNING state";
         assert(waitingTickerJob != null) : "going to RUNNING state without ticker job";
+        assert(nextExecutionTime <= System.currentTimeMillis());
         waitingTickerJob = null;
         nextExecutionTime = NO_EXECUTION;
         thread = Thread.currentThread();
