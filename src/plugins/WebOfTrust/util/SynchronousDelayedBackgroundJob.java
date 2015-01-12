@@ -217,7 +217,7 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
 
     @Override
     public synchronized boolean isTerminated() {
-        return isTerminating && runningJobThread == null;
+        return isTerminating && runningJobThread == null && nextRunDeadline == NO_DEADLINE;
     }
 
     @Override
