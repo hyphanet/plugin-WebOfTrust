@@ -15,7 +15,7 @@ public class TickerDelayedBackgroundJobFactory
     /** The default delay. */
     private final long defaultDelay;
     /** The default ticker. */
-    private final Ticker ticker;
+    private final Ticker defaultTicker;
 
     /**
      * Constructs a background job factory with given default delay and {@link Ticker}.
@@ -28,12 +28,12 @@ public class TickerDelayedBackgroundJobFactory
      */
     public TickerDelayedBackgroundJobFactory(long delayMillis, Ticker ticker) {
         this.defaultDelay = delayMillis;
-        this.ticker = ticker;
+        this.defaultTicker = ticker;
     }
 
     @Override
     public TickerDelayedBackgroundJob newJob(Runnable job, String name) {
-        return newJob(job, name, defaultDelay, ticker);
+        return newJob(job, name, defaultDelay, defaultTicker);
     }
 
     /**
@@ -50,7 +50,7 @@ public class TickerDelayedBackgroundJobFactory
      */
     @Override
     public TickerDelayedBackgroundJob newJob(Runnable job, String name, long delayMillis) {
-        return newJob(job, name, delayMillis, ticker);
+        return newJob(job, name, delayMillis, defaultTicker);
     }
 
     /**
@@ -72,3 +72,4 @@ public class TickerDelayedBackgroundJobFactory
         return bg;
     }
 }
+
