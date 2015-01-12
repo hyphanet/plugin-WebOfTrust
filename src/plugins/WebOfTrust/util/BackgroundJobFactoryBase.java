@@ -10,8 +10,6 @@ import java.util.WeakHashMap;
  * @author bertm
  */
 public abstract class BackgroundJobFactoryBase implements BackgroundJobFactory {
-    private static final Object PLACEHOLDER = new Object();
-
     /** Set of all live (i.e. not garbage collected) background jobs created by this instance. */
     private final WeakHashMap<BackgroundJob, Object> aliveJobSet =
             new WeakHashMap<BackgroundJob, Object>();
@@ -58,7 +56,7 @@ public abstract class BackgroundJobFactoryBase implements BackgroundJobFactory {
      */
     protected final void registerNewJob(BackgroundJob job) {
         synchronized(aliveJobSet) {
-            aliveJobSet.put(job, PLACEHOLDER);
+            aliveJobSet.put(job, null);
         }
     }
 }
