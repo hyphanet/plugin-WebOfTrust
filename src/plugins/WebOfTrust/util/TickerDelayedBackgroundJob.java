@@ -295,7 +295,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      * WAITING}, it may start.
      * @return {@code true} if the job may start
      */
-    private synchronized boolean jobStarted() {
+    private synchronized boolean onJobStarted() {
         if (state == JobState.TERMINATED) {
             return false;
         }
@@ -308,7 +308,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      * trigger since the start of the last job), waiting for a trigger in {@code IDLE} or going
      * to the {@code TERMINATED} state if we were previously {@code TERMINATING}.
      */
-    private synchronized void jobFinished() {
+    private synchronized void onJobFinished() {
         if (state == JobState.TERMINATED) {
             return;
         }
@@ -325,7 +325,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
 
     /**
      * A wrapper for jobs. After the job finishes, either goes to an {@code IDLE} state or enqueues
-     * its own next run {@code WAITING} (implementation in {@link #jobFinished()}).
+     * its own next run {@code WAITING} (implementation in {@link #onJobFinished()}).
      */
     private class DelayedBackgroundRunnable implements PrioRunnable {
         private final Runnable job;
@@ -337,11 +337,11 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         @Override
         public void run() {
             try {
-                if (jobStarted()) {
+                if (onJobStarted()) {
                     job.run();
                 }
             } finally {
-                jobFinished();
+                onJobFinished();
             }
         }
 
