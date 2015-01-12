@@ -184,7 +184,8 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         assert(state == JobState.IDLE || state == JobState.WAITING) :
                 "enqueueing ticker job in non-IDLE and non-WAITING state";
         if (state == JobState.WAITING) {
-            // Best-effort attempt at removing the stale job to be replaced.
+            // Best-effort attempt at removing the stale job to be replaced; this fails if the job
+            // has already been removed from the ticker queue.
             ticker.removeQueuedJob(waitingTickerJob);
             // Replace the ticker job in case the above fails, so the stale job will not run.
             waitingTickerJob = createTickerJob();
