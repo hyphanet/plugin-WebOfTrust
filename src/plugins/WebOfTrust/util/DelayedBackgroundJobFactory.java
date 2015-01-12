@@ -10,7 +10,9 @@ public interface DelayedBackgroundJobFactory extends BackgroundJobFactory {
      * Constructs a new {@link DelayedBackgroundJob}. When this background job is
      * {@link DelayedBackgroundJob#terminate() terminated}, the running job will be notified by
      * interruption of its thread. Hence, the job implementer must take care not to swallow
-     * {@link InterruptedException}.
+     * {@link InterruptedException}, or for long computations, periodically check the
+     * {@link Thread#interrupted()} flag of its {@link Thread#currentThread() thread} and exit
+     * accordingly.
      * @param job the job to run in the background
      * @param name a human-readable name for the job
      * @param delayMillis the background job aggregation delay in milliseconds
