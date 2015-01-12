@@ -36,7 +36,9 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
      * are treated as zero delay.
      * When this background job is {@link BackgroundJob#terminate() terminated}, the running job
      * will be notified by means of interruption of its thread. Hence, the job implementer must take
-     * care not to swallow {@link InterruptedException}.
+     * care not to swallow {@link InterruptedException}, or for long computations, periodically
+     * check the {@link Thread#interrupted()} flag of its {@link Thread#currentThread() thread} and
+     * exit accordingly.
      * @param job the job to run
      * @param name the human-readable name of the job
      * @param delayMillis the default background job aggregation delay in milliseconds
