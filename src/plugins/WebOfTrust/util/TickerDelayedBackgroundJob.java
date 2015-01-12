@@ -205,6 +205,8 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      * be executed by the ticker.
      */
     private Runnable createTickerJob() {
+        // Use FastRunnable here so hopefully the Ticker will execute this on its main thread
+        // instead of spawning a new thread for this.
         return new FastRunnable() {
             @Override
             public void run() {
