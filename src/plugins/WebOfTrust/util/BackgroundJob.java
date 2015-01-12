@@ -38,9 +38,12 @@ public interface BackgroundJob {
      * of {@link #triggerExecution()} have no effect. Implementations must ensure that a terminated
      * background job cannot be restarted, i.e. once this method returns {@code true}, it will
      * always return {@code true}.
+     * This method returns immediately, use {@link #waitForTermination(long)} when blocking
+     * behaviour is required.
      * Implementations must ensure that this method is safe to invoke from any thread at any moment.
      * @return {@code true} if this background job is terminated
      * @see #terminate()
+     * @see #waitForTermination(long)
      */
     public boolean isTerminated();
 
