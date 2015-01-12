@@ -39,12 +39,12 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
      * care not to swallow {@link InterruptedException}.
      * @param job the job to run
      * @param name the human-readable name of the job
-     * @param delay the default background job aggregation delay in milliseconds
+     * @param delayMillis the default background job aggregation delay in milliseconds
      */
-    public SynchronousDelayedBackgroundJob(Runnable job, String name, long delay) {
+    public SynchronousDelayedBackgroundJob(Runnable job, String name, long delayMillis) {
         this.job = job;
         this.name = name;
-        this.defaultDelay = delay;
+        this.defaultDelay = delayMillis;
     }
 
     /**
@@ -76,14 +76,14 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
      * If the calling thread is interrupted while waiting for the job to finish execution, this
      * method will return as soon as possible, without waiting for the job to finish, and sets the
      * thread interruption flag.
-     * @param delay the maximum trigger aggregation delay in milliseconds
+     * @param delayMillis the maximum trigger aggregation delay in milliseconds
      */
     @Override
-    public synchronized void triggerExecution(long delay) {
+    public synchronized void triggerExecution(long delayMillis) {
         if (isTerminating) {
             return;
         }
-        triggerExecutionAsynchronously(delay);
+        triggerExecutionAsynchronously(delayMillis);
         // When called from the job thread, don't wait for the job to finish: this would cause a
         // deadlock.
         if (runningJobThread == Thread.currentThread()) {
@@ -115,11 +115,11 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
      * @see #triggerExecution(long)
      * Caller must ensure synchronization on {@code this}.
      */
-    private void triggerExecutionAsynchronously(long delay) {
-        if (delay < 0) {
-            delay = 0;
+    private void triggerExecutionAsynchronously(long delayMillis) {
+        if (delayMillis < 0) {
+            delayMillis = 0;
         }
-        long newDeadline = System.currentTimeMillis() + delay;
+        long newDeadline = System.currentTimeMillis() + delayMillis;
         if (newDeadline < nextRunDeadline) {
             nextRunDeadline = newDeadline;
             if (!nextRunScheduled) {
@@ -221,11 +221,11 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
     }
 
     @Override
-    public synchronized void waitForTermination(long timeout) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + timeout;
-        while(timeout > 0 && !isTerminated()) {
-            wait(timeout);
-            timeout = deadline - System.currentTimeMillis();
+    public synchronized void waitForTermination(long timeoutMillis) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMillis;
+        while(timeoutMillis > 0 && !isTerminated()) {
+            wait(timeoutMillis);
+            timeoutMillis = deadline - System.currentTimeMillis();
         }
     }
 }

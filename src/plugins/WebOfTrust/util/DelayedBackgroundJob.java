@@ -20,7 +20,7 @@ public interface DelayedBackgroundJob extends BackgroundJob {
      * delay, or as soon as the currently running job finishes, whichever comes last.
      * Negative delays are treated as to zero delays. Implementations must ensure that this method
      * is safe to invoke from any thread at any moment.
-     * @param delay the maximum trigger aggregation delay in milliseconds
+     * @param delayMillis the maximum trigger aggregation delay in milliseconds
      */
-    public void triggerExecution(long delay);
+    public void triggerExecution(long delayMillis);
 }
