@@ -43,10 +43,10 @@ public interface BackgroundJobFactory {
      * jobs in this snapshot have terminated, if the timeout has expired, or if the wait is
      * interrupted.
      * This method does not terminate the jobs, it only waits for them to be terminated.
-     * @param timeout the maximum time to wait
+     * @param timeoutMillis the maximum time to wait
      * @throws InterruptedException If the wait is interrupted.
      * @see BackgroundJob#waitForTermination(long)
      * @see #terminateAll()
      */
-    public void waitForTerminationOfAll(long timeout) throws InterruptedException;
+    public void waitForTerminationOfAll(long timeoutMillis) throws InterruptedException;
 }

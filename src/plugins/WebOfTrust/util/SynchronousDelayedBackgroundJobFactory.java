@@ -13,10 +13,10 @@ public class SynchronousDelayedBackgroundJobFactory
 
     /**
      * Constructs a background job factory with given default delay.
-     * @param delay the default trigger aggregation delay
+     * @param delayMillis the default trigger aggregation delay in milliseconds
      */
-    public SynchronousDelayedBackgroundJobFactory(long delay) {
-        defaultDelay = delay;
+    public SynchronousDelayedBackgroundJobFactory(long delayMillis) {
+        defaultDelay = delayMillis;
     }
 
     @Override
@@ -31,12 +31,13 @@ public class SynchronousDelayedBackgroundJobFactory
      * {@link InterruptedException}.
      * @param job the job to run in the background
      * @param name a human-readable name for the job
-     * @param delay the background job aggregation delay in milliseconds
+     * @param delayMillis the background job aggregation delay in milliseconds
      * @see SynchronousDelayedBackgroundJob#SynchronousDelayedBackgroundJob(Runnable, String, long)
      */
     @Override
-    public SynchronousDelayedBackgroundJob newJob(Runnable job, String name, long delay) {
-        SynchronousDelayedBackgroundJob bg = new SynchronousDelayedBackgroundJob(job, name, delay);
+    public SynchronousDelayedBackgroundJob newJob(Runnable job, String name, long delayMillis) {
+        SynchronousDelayedBackgroundJob bg = new SynchronousDelayedBackgroundJob(job, name,
+                delayMillis);
         registerNewJob(bg);
         return bg;
     }

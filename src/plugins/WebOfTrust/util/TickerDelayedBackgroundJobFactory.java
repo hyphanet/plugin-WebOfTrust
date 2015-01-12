@@ -23,11 +23,11 @@ public class TickerDelayedBackgroundJobFactory
      * implementation of respectively
      * {@link Ticker#queueTimedJob(Runnable, String, long, boolean, boolean) queueTimedJob} and
      * {@link Executor#execute(Runnable, String) execute}.
-     * @param delay the default trigger aggregation delay
+     * @param delayMillis the default trigger aggregation delay
      * @param ticker an asynchronous ticker
      */
-    public TickerDelayedBackgroundJobFactory(long delay, Ticker ticker) {
-        this.defaultDelay = delay;
+    public TickerDelayedBackgroundJobFactory(long delayMillis, Ticker ticker) {
+        this.defaultDelay = delayMillis;
         this.ticker = ticker;
     }
 
@@ -43,12 +43,12 @@ public class TickerDelayedBackgroundJobFactory
      * to swallow {@link InterruptedException}.
      * @param job the job to run in the background
      * @param name a human-readable name for the job
-     * @param delay the background job aggregation delay in milliseconds
+     * @param delayMillis the background job aggregation delay in milliseconds
      * @see TickerDelayedBackgroundJob#TickerDelayedBackgroundJob(Runnable, String, long, Ticker)
      */
     @Override
-    public TickerDelayedBackgroundJob newJob(Runnable job, String name, long delay) {
-        return newJob(job, name, delay, ticker);
+    public TickerDelayedBackgroundJob newJob(Runnable job, String name, long delayMillis) {
+        return newJob(job, name, delayMillis, ticker);
     }
 
     /**
@@ -58,12 +58,14 @@ public class TickerDelayedBackgroundJobFactory
      * swallow {@link InterruptedException}.
      * @param job the job to run in the background
      * @param name a human-readable name for the job
-     * @param delay the background job aggregation delay in milliseconds
+     * @param delayMillis the background job aggregation delay in milliseconds
      * @param ticker the custom ticker
      * @see TickerDelayedBackgroundJob#TickerDelayedBackgroundJob(Runnable, String, long, Ticker)
      */
-    public TickerDelayedBackgroundJob newJob(Runnable job, String name, long delay, Ticker ticker) {
-        TickerDelayedBackgroundJob bg = new TickerDelayedBackgroundJob(job, name, delay, ticker);
+    public TickerDelayedBackgroundJob newJob(Runnable job, String name, long delayMillis,
+            Ticker ticker) {
+        TickerDelayedBackgroundJob bg = new TickerDelayedBackgroundJob(job, name, delayMillis,
+                ticker);
         registerNewJob(bg);
         return bg;
     }

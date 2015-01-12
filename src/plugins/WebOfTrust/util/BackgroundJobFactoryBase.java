@@ -37,16 +37,16 @@ public abstract class BackgroundJobFactoryBase implements BackgroundJobFactory {
     }
 
     @Override
-    public final void waitForTerminationOfAll(long timeout) throws InterruptedException {
+    public final void waitForTerminationOfAll(long timeoutMillis) throws InterruptedException {
         ArrayList<BackgroundJob> jobs;
         synchronized(aliveJobSet) {
             jobs = new ArrayList<BackgroundJob>(aliveJobSet.keySet());
         }
-        long deadline = System.currentTimeMillis() + timeout;
+        long deadline = System.currentTimeMillis() + timeoutMillis;
         for (BackgroundJob job : jobs) {
-            job.waitForTermination(timeout);
-            timeout = deadline - System.currentTimeMillis();
-            if (timeout <= 0) {
+            job.waitForTermination(timeoutMillis);
+            timeoutMillis = deadline - System.currentTimeMillis();
+            if (timeoutMillis <= 0) {
                 return;
             }
         }

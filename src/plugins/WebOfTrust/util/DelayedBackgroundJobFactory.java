@@ -13,7 +13,7 @@ public interface DelayedBackgroundJobFactory extends BackgroundJobFactory {
      * {@link InterruptedException}.
      * @param job the job to run in the background
      * @param name a human-readable name for the job
-     * @param delay the background job aggregation delay in milliseconds
+     * @param delayMillis the background job aggregation delay in milliseconds
      */
-    public DelayedBackgroundJob newJob(Runnable job, String name, long delay);
+    public DelayedBackgroundJob newJob(Runnable job, String name, long delayMillis);
 }
