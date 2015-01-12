@@ -12,7 +12,9 @@ public interface BackgroundJobFactory {
      * Constructs a new background job using the default parameters. When this background job is
      * {@link BackgroundJob#terminate() terminated}, the running job will be notified by
      * interruption of its thread. Hence, the job implementer must take care not to swallow
-     * {@link InterruptedException}.
+     * {@link InterruptedException}, or for long computations, periodically check the
+     * {@link Thread#interrupted()} flag of its {@link Thread#currentThread() thread} and exit
+     * accordingly.
      * @param job the job to run
      * @param name the human-readable name of the job
      */
