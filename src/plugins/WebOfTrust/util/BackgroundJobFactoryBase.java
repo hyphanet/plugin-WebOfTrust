@@ -25,13 +25,14 @@ public abstract class BackgroundJobFactoryBase implements BackgroundJobFactory {
 
     @Override
     public final boolean allTerminated() {
-        boolean allTerminated = true;
         synchronized(aliveJobSet) {
             for (BackgroundJob bg : aliveJobSet.keySet()) {
-                allTerminated &= bg.isTerminated();
+                if (!bg.isTerminated()) {
+                    return false;
+                }
             }
         }
-        return allTerminated;
+        return true;
     }
 
     @Override
