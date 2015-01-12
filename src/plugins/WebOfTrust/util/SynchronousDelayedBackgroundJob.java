@@ -112,8 +112,8 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
      * Implementation of {@link #triggerExecution(long)} that does everything expected from that
      * method, except it does not check for termination (the caller is assumed to have done this)
      * and does not wait for the execution to complete.
-     * @see #triggerExecution(long)
      * Caller must ensure synchronization on {@code this}.
+     * @see #triggerExecution(long)
      */
     private void triggerExecutionAsynchronously(long delayMillis) {
         if (delayMillis < 0) {
