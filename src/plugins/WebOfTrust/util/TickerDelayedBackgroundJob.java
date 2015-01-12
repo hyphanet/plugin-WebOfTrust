@@ -168,12 +168,6 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
                 // Will automatically schedule this run when the running job finishes.
                 return;
             }
-            if (state == JobState.WAITING) {
-                // Best-effort attempt at removing the stale job to be replaced.
-                ticker.removeQueuedJob(waitingTickerJob);
-                // Replace the ticker job in case the above fails, so the stale job will not run.
-                waitingTickerJob = createTickerJob();
-            }
             enqueueWaitingTickerJob(delay);
         }
     }
@@ -189,7 +183,12 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     private void enqueueWaitingTickerJob(long delayMillis) {
         assert(state == JobState.IDLE || state == JobState.WAITING) :
                 "enqueueing ticker job in non-IDLE and non-WAITING state";
-        // Use a unique job for each (re)scheduling to avoid running twice.
+        if (state == JobState.WAITING) {
+            // Best-effort attempt at removing the stale job to be replaced.
+            ticker.removeQueuedJob(waitingTickerJob);
+            // Replace the ticker job in case the above fails, so the stale job will not run.
+            waitingTickerJob = createTickerJob();
+        }
         if (state == JobState.IDLE) {
             toWAITING();
         }
@@ -237,6 +236,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         assert(state == JobState.IDLE) : "going to WAITING from non-IDLE state";
         assert(thread == null) : "having job thread while going to WAITING state";
         assert(waitingTickerJob == null) : "having ticker job while going to WAITING state";
+        // Use a unique job for each (re)scheduling to avoid running twice.
         waitingTickerJob = createTickerJob();
         state = JobState.WAITING;
     }
