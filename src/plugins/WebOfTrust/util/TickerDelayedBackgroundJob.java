@@ -93,7 +93,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      */
     @Override
     public synchronized void triggerExecution() {
-        tryEnqueue(defaultDelay);
+        triggerExecution(defaultDelay);
     }
 
     /**
