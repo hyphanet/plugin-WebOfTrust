@@ -44,8 +44,9 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionType;
 import plugins.WebOfTrust.util.RandomName;
-import freenet.clients.fcp.FCPPluginClient;
-import freenet.clients.fcp.FCPPluginClient.SendDirection;
+import freenet.clients.fcp.FCPPluginConnection;
+import freenet.clients.fcp.FCPPluginConnection.SendDirection;
+import freenet.clients.fcp.FCPPluginMessage;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
@@ -120,7 +121,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /** {@inheritDoc} */
     @Override
     public FCPPluginMessage handlePluginFCPMessage(
-            FCPPluginClient client, FCPPluginMessage fcpMessage) {
+            FCPPluginConnection connection, FCPPluginMessage fcpMessage) {
         
         if(fcpMessage.isReplyMessage()) {
             Logger.warning(this, "Received an unexpected reply message: WOT currently should only "
@@ -189,7 +190,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             } else if (message.equals("SolveIntroductionPuzzle")) {
                 result = handleSolveIntroductionPuzzle(params);
             } else if (message.equals("Subscribe")) {
-                reply = handleSubscribe(client, fcpMessage);
+                reply = handleSubscribe(connection, fcpMessage);
             } else if (message.equals("Unsubscribe")) {
                 reply = handleUnsubscribe(fcpMessage);
             } else if (message.equals("Ping")) {
@@ -1237,7 +1238,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * @see SubscriptionManager#subscribeToScores(String) The underyling implementation for "To" = "Trusts"
      * @see SubscriptionManager#subscribeToTrusts(String) The underlying implementation for "To" = "Scores"
      */
-    private FCPPluginMessage handleSubscribe(final FCPPluginClient client, final FCPPluginMessage message) throws InvalidParameterException {
+    private FCPPluginMessage handleSubscribe(final FCPPluginConnection connection,
+            final FCPPluginMessage message) throws InvalidParameterException {
+        
         final String to = getMandatoryParameter(message.params, "To");
 
     	
@@ -1251,11 +1254,11 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             // which wouldn't make sense to copy to a WOT client plugin. SubscriptionManager for
             // sure does not need to be in a WOT client plugin)
 	    	if(to.equals("Identities")) {
-                subscriptionID = mSubscriptionManager.subscribeToIdentities(client.getID());
+                subscriptionID = mSubscriptionManager.subscribeToIdentities(connection.getID());
 	    	} else if(to.equals("Trusts")) {
-                subscriptionID = mSubscriptionManager.subscribeToTrusts(client.getID());
+                subscriptionID = mSubscriptionManager.subscribeToTrusts(connection.getID());
 	    	} else if(to.equals("Scores")) {
-                subscriptionID = mSubscriptionManager.subscribeToScores(client.getID());
+                subscriptionID = mSubscriptionManager.subscribeToScores(connection.getID());
 	    	} else
 	    		throw new InvalidParameterException("Invalid subscription type specified: " + to);
 	    	
