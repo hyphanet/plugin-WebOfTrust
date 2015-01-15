@@ -50,7 +50,6 @@ import freenet.clients.fcp.FCPPluginMessage;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
-import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Base64;
 import freenet.support.Logger;
@@ -1302,7 +1301,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     }
     
     /**
-     * Handles the "Unsubscribe" message, the inverse operation to the "Subscribe". See {@link #handleSubscribe(PluginReplySender, SimpleFieldSet)}.
+     * Handles the "Unsubscribe" message, the inverse operation to the "Subscribe".<br>
+     * See {@link #handleSubscribe(FCPPluginConnection, FCPPluginMessage)}.
      * <b>Required fields:</b>
      * "SubscriptionID" = Must be equal to the value of the same field which you received in reply to the "Subscribe" message.
      * 
