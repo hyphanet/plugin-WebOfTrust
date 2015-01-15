@@ -111,7 +111,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     
     public void stop() {
         // We currently do not have to interrupt() threads on functions of FCPInterface which use
-        // FCPPluginClient.sendSynchronous():
+        // FCPPluginConnection.sendSynchronous():
         // By their JavaDoc, they all require the caller to deal with interrupting the thread upon
         // shutdown and all callers are outside of this class (they're typically in
         // SubscriptionManager).
@@ -124,9 +124,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         if(fcpMessage.isReplyMessage()) {
             Logger.warning(this, "Received an unexpected reply message: WOT currently should only "
-                + "use FCPPluginClient.sendSynchronous() for anything which is replied to by the "
-                + "client. Thus, all replies should be delivered to sendSynchronous() instead of "
-                + "the asynchronous message handler. Maybe the "
+                + "use FCPPluginConnection.sendSynchronous() for anything which is replied to by "
+                + "the client. Thus, all replies should be delivered to sendSynchronous() instead "
+                + "of the asynchronous message handler. Maybe the "
                 + "sendSynchronous() thread timed out already? Reply message = " + fcpMessage);
             return null;
         }
@@ -1370,8 +1370,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * ATTENTION: At shutdown of WOT, you have to make sure to use {@link Thread#interrupt()} to
      * interrupt any of your threads which call this function:<br>
-     * It uses the blocking {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage
-     * long)}, which can take a long time to complete. It can be aborted by interrupt().<br><br>
+     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(SendDirection,
+     * FCPPluginMessage, long)}, which can take a long time to complete. It can be aborted by
+     * interrupt().<br><br>
      * 
      * {@link EndSynchronizationNotification} is a subclass of
      * {@link BeginSynchronizationNotification}, so this function can deal with both.
@@ -1427,8 +1428,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * ATTENTION: At shutdown of WOT, you have to make sure to use {@link Thread#interrupt()} to
      * interrupt any of your threads which call this function:<br>
-     * It uses the blocking {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage
-     * long)}, which can take a long time to complete. It can be aborted by interrupt().<br><br>
+     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(SendDirection,
+     * FCPPluginMessage, long)}, which can take a long time to complete. It can be aborted by
+     * interrupt().<br><br>
      * 
      * @see SubscriptionManager.IdentityChangedNotification
      */
@@ -1445,8 +1447,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * ATTENTION: At shutdown of WOT, you have to make sure to use {@link Thread#interrupt()} to
      * interrupt any of your threads which call this function:<br>
-     * It uses the blocking {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage
-     * long)}, which can take a long time to complete. It can be aborted by interrupt().<br><br>
+     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(SendDirection,
+     * FCPPluginMessage, long)}, which can take a long time to complete. It can be aborted by
+     * interrupt().<br><br>
      * 
      * @see SubscriptionManager.TrustChangedNotification
      */
@@ -1463,8 +1466,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * ATTENTION: At shutdown of WOT, you have to make sure to use {@link Thread#interrupt()} to
      * interrupt any of your threads which call this function:<br>
-     * It uses the blocking {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage
-     * long)}, which can take a long time to complete. It can be aborted by interrupt().<br><br>
+     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(SendDirection,
+     * FCPPluginMessage, long)}, which can take a long time to complete. It can be aborted by
+     * interrupt().<br><br>
      * 
      * @see SubscriptionManager.ScoreChangedNotification
      */
@@ -1481,8 +1485,9 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * ATTENTION: At shutdown of WOT, you have to make sure to use {@link Thread#interrupt()} to
      * interrupt any of your threads which call this function:<br>
-     * It uses the blocking {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage
-     * long)}, which can take a long time to complete. It can be aborted by interrupt().<br><br>
+     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(SendDirection,
+     * FCPPluginMessage, long)}, which can take a long time to complete. It can be aborted by
+     * interrupt().<br><br>
      */
     private void sendChangeNotification(
             final UUID clientID, final SubscriptionType subscriptionType,
