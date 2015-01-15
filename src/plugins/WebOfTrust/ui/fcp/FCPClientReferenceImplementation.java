@@ -31,8 +31,8 @@ import plugins.WebOfTrust.SubscriptionManager.TrustsSubscription;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrustInterface;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
-import freenet.clients.fcp.FCPPluginClient;
-import freenet.clients.fcp.FCPPluginClient.SendDirection;
+import freenet.clients.fcp.FCPPluginConnection;
+import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.clients.fcp.FCPPluginMessage;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
@@ -154,7 +154,7 @@ public final class FCPClientReferenceImplementation {
 	 * TODO: Optimization: I don't think it needs to be volatile anymore, I think we synchronize
 	 * in all places which uses this. Validate that and remove the volatile if yes.
 	 */
-	private volatile FCPPluginClient mConnection = null;
+	private volatile FCPPluginConnection mConnection = null;
 	
 	/** Called when the connection to WOT is established or lost. Shall be used by the UI to display a "Please install Web Of Trust" warning. */
 	private final ConnectionStatusChangedHandler mConnectionStatusChangedHandler;
@@ -533,7 +533,7 @@ public final class FCPClientReferenceImplementation {
 	 * 
 	 * ATTENTION: Does not synchronize, does not check whether {@link #mConnection} is null.<br><br>
 	 * 
-	 * @throws IOException See {@link FCPPluginClient#send(SendDirection, FCPPluginMessage)}.
+	 * @throws IOException See {@link FCPPluginConnection#send(SendDirection, FCPPluginMessage)}.
 	 */
 	private void send(final SimpleFieldSet sfs) throws IOException {
 		mConnection.send(SendDirection.ToServer, FCPPluginMessage.construct(sfs, null));
@@ -573,9 +573,9 @@ public final class FCPClientReferenceImplementation {
 		                       + "threw up, please fix your handler!", t);
 		}
 
-		// Notice: FCPPluginClient has explicit no disconnection mechanism. The JavaDoc of
+		// Notice: FCPPluginConnection has no explicit disconnection mechanism. The JavaDoc of
 		// PluginRespirator.connectToOtherPlugin() instructs us that can and must drop all strong
-		// references to the FCPPluginClient to it to cause disconnection implicitly.
+		// references to the FCPPluginConnection to it to cause disconnection implicitly.
 		mConnection = null;
 	}
 	
@@ -604,7 +604,7 @@ public final class FCPClientReferenceImplementation {
 	 * Used for checking whether the connection to WOT is alive.<br><br>
 	 * 
 	 * TODO: Code quality: This is a good candidate for using
-	 * {@link FCPPluginClient#sendSynchronous(SendDirection, FCPPluginMessage, long)}. See
+	 * {@link FCPPluginConnection#sendSynchronous(SendDirection, FCPPluginMessage, long)}. See
 	 * {@link PluginRespirator#connectToOtherPlugin(String,
 	 * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} for an explanation.
 	 * 
@@ -681,7 +681,7 @@ public final class FCPClientReferenceImplementation {
 
 	/**
 	 * Receives FCP messages from WOT:
-	 * - In reply to messages sent to it via {@link FCPPluginClient}
+	 * - In reply to messages sent to it via {@link FCPPluginConnection}
 	 * - As events happen via event-{@link Notification}s
 	 */
 	private class FCPMessageReceiver
@@ -694,16 +694,16 @@ public final class FCPClientReferenceImplementation {
 		 * {@link FCPMessageHandler#handle(SimpleFieldSet, Bucket).
 		 */
         @Override
-        public final FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client,
+        public final FCPPluginMessage handlePluginFCPMessage(FCPPluginConnection connection,
                 FCPPluginMessage message) {
 			synchronized(FCPClientReferenceImplementation.this) {
 
 			// Check whether we are actually connected. If we are not connected, we must not handle FCP messages.
 			// We do NOT have to check mClientState: mConnection must only be non-null in states where it is acceptable.
-			if(mConnection == null || client != mConnection) {
-				final String state = "My client: " + mConnection
+			if(mConnection == null || connection != mConnection) {
+				final String state = "My connection: " + mConnection
 				                   + "; My ClientState:" + mClientState
-				                   + "; Passed client: " + client
+				                   + "; Passed connection: " + connection
 				                   + "; Passed FCPPluginMessage ==" + message;
 
 				final String errorMessage =
@@ -759,9 +759,10 @@ public final class FCPClientReferenceImplementation {
 	 * Each FCP message sent by WOT contains a "Message" field in its {@link SimpleFieldSet}. For each value of "Message",
 	 * a {@link FCPMessageHandler} implementation must exist.
 	 * 
-	 * Upon reception of a message, {@link FCPMessageReceiver#handlePluginFCPMessage(
-	 * FCPPluginClient, FCPPluginMessage)} calls {@link FCPMessageHandler#handle(FCPPluginMessage)}
-	 * of the {@link FCPMessageHandler} which is responsible for it. 
+	 * Upon reception of a message,
+	 * {@link FCPMessageReceiver#handlePluginFCPMessage(FCPPluginConnection, FCPPluginMessage)}
+	 * calls {@link FCPMessageHandler#handle(FCPPluginMessage)} of the {@link FCPMessageHandler}
+	 * which is responsible for it.
 	 */
 	private interface FCPMessageHandler {
 		/**
@@ -772,8 +773,8 @@ public final class FCPClientReferenceImplementation {
 		/**
 		 * @throws ProcessingFailedException
 		 *             May be thrown if you want {@link FCPMessageReceiver#handlePluginFCPMessage(
-		 *             FCPPluginClient, FCPPluginMessage)} to signal to WOT that processing failed.
-		 *             This only is suitable for handlers of event-notifications:<br>
+		 *             FCPPluginConnection, FCPPluginMessage)} to signal to WOT that processing
+		 *             failed. This only is suitable for handlers of event-notifications:<br>
 		 *             WOT will send the event-notifications synchronously and therefore notice if
 		 *             they failed. It will resend them for a certain amount of retries then.
 		 */
