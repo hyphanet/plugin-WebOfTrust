@@ -1324,7 +1324,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             final Class<Subscription<? extends EventSource>> clazz, final String subscriptionID)
                 throws IOException {
         
-        mPluginRespirator.getFCPPluginClientByID(clientID).send(SendDirection.ToClient,
+        mPluginRespirator.getPluginConnectionByID(clientID).send(SendDirection.ToClient,
             handleUnsubscribe(null, clazz, subscriptionID));
     }
     
@@ -1415,7 +1415,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         fcpMessage.params.putOverwrite("To", to);
         fcpMessage.params.putOverwrite("VersionID", notification.getID());
         
-        final FCPPluginMessage reply = mPluginRespirator.getFCPPluginClientByID(clientID)
+        final FCPPluginMessage reply = mPluginRespirator.getPluginConnectionByID(clientID)
             .sendSynchronous(
                 SendDirection.ToClient,
                 fcpMessage,
@@ -1502,7 +1502,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         fcpMessage.params.put("Before", beforeChange);
         fcpMessage.params.put("After", afterChange);
         
-        final FCPPluginMessage reply = mPluginRespirator.getFCPPluginClientByID(clientID)
+        final FCPPluginMessage reply = mPluginRespirator.getPluginConnectionByID(clientID)
             .sendSynchronous(
                 SendDirection.ToClient,
                 fcpMessage,
