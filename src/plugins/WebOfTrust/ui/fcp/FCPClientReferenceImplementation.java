@@ -32,7 +32,6 @@ import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrustInterface;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.clients.fcp.FCPPluginConnection;
-import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.clients.fcp.FCPPluginMessage;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
@@ -533,10 +532,10 @@ public final class FCPClientReferenceImplementation {
 	 * 
 	 * ATTENTION: Does not synchronize, does not check whether {@link #mConnection} is null.<br><br>
 	 * 
-	 * @throws IOException See {@link FCPPluginConnection#send(SendDirection, FCPPluginMessage)}.
+	 * @throws IOException See {@link FCPPluginConnection#send(FCPPluginMessage)}.
 	 */
 	private void send(final SimpleFieldSet sfs) throws IOException {
-		mConnection.send(SendDirection.ToServer, FCPPluginMessage.construct(sfs, null));
+		mConnection.send(FCPPluginMessage.construct(sfs, null));
 	}
 	
 	/**
@@ -604,7 +603,7 @@ public final class FCPClientReferenceImplementation {
 	 * Used for checking whether the connection to WOT is alive.<br><br>
 	 * 
 	 * TODO: Code quality: This is a good candidate for using
-	 * {@link FCPPluginConnection#sendSynchronous(SendDirection, FCPPluginMessage, long)}. See
+	 * {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)}. See
 	 * {@link PluginRespirator#connectToOtherPlugin(String,
 	 * FredPluginFCPMessageHandler.ClientSideFCPMessageHandler)} for an explanation.
 	 * 
