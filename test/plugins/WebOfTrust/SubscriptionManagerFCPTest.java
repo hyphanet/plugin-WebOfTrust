@@ -33,7 +33,6 @@ import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ScoreParser;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionType;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.TrustParser;
 import freenet.clients.fcp.FCPPluginConnection;
-import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.clients.fcp.FCPPluginMessage;
 import freenet.node.FSParseException;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
@@ -105,7 +104,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	 * You can obtain the result(s) by <code>mReplySender.getNextResult();</code>
 	 */
 	void fcpCall(final SimpleFieldSet params) throws IOException, InterruptedException {
-	    FCPPluginMessage reply = mConnection.sendSynchronous(SendDirection.ToServer,
+	    FCPPluginMessage reply = mConnection.sendSynchronous(
 	        FCPPluginMessage.construct(params, null), TimeUnit.SECONDS.toNanos(10));
 	    
 	    // In opposite to send(), the reply to sendSynchronous() is NOT passed to the
