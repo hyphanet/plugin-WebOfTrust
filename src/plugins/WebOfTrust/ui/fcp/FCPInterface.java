@@ -45,7 +45,6 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscriptionType;
 import plugins.WebOfTrust.util.RandomName;
 import freenet.clients.fcp.FCPPluginConnection;
-import freenet.clients.fcp.FCPPluginConnection.SendDirection;
 import freenet.clients.fcp.FCPPluginMessage;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
@@ -1324,7 +1323,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
             final Class<Subscription<? extends EventSource>> clazz, final String subscriptionID)
                 throws IOException {
         
-        mPluginRespirator.getPluginConnectionByID(clientID).send(SendDirection.ToClient,
+        mPluginRespirator.getPluginConnectionByID(clientID).send(
             handleUnsubscribe(null, clazz, subscriptionID));
     }
     
@@ -1370,9 +1369,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * ATTENTION: At shutdown of WOT, you have to make sure to use {@link Thread#interrupt()} to
      * interrupt any of your threads which call this function:<br>
-     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(SendDirection,
-     * FCPPluginMessage, long)}, which can take a long time to complete. It can be aborted by
-     * interrupt().<br><br>
+     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)},
+     * which can take a long time to complete. It can be aborted by interrupt().<br><br>
      * 
      * {@link EndSynchronizationNotification} is a subclass of
      * {@link BeginSynchronizationNotification}, so this function can deal with both.
@@ -1417,9 +1415,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         final FCPPluginMessage reply = mPluginRespirator.getPluginConnectionByID(clientID)
             .sendSynchronous(
-                SendDirection.ToClient,
-                fcpMessage,
-                TimeUnit.MINUTES.toNanos(SUBSCRIPTION_NOTIFICATION_TIMEOUT_MINUTES));
+                fcpMessage, TimeUnit.MINUTES.toNanos(SUBSCRIPTION_NOTIFICATION_TIMEOUT_MINUTES));
         
         if(reply.success == false)
             throw new FCPCallFailedException(reply);
@@ -1428,9 +1424,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * ATTENTION: At shutdown of WOT, you have to make sure to use {@link Thread#interrupt()} to
      * interrupt any of your threads which call this function:<br>
-     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(SendDirection,
-     * FCPPluginMessage, long)}, which can take a long time to complete. It can be aborted by
-     * interrupt().<br><br>
+     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)},
+     * which can take a long time to complete. It can be aborted by interrupt().<br><br>
      * 
      * @see SubscriptionManager.IdentityChangedNotification
      */
@@ -1447,9 +1442,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * ATTENTION: At shutdown of WOT, you have to make sure to use {@link Thread#interrupt()} to
      * interrupt any of your threads which call this function:<br>
-     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(SendDirection,
-     * FCPPluginMessage, long)}, which can take a long time to complete. It can be aborted by
-     * interrupt().<br><br>
+     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)},
+     * which can take a long time to complete. It can be aborted by interrupt().<br><br>
      * 
      * @see SubscriptionManager.TrustChangedNotification
      */
@@ -1466,9 +1460,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * ATTENTION: At shutdown of WOT, you have to make sure to use {@link Thread#interrupt()} to
      * interrupt any of your threads which call this function:<br>
-     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(SendDirection,
-     * FCPPluginMessage, long)}, which can take a long time to complete. It can be aborted by
-     * interrupt().<br><br>
+     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)},
+     * which can take a long time to complete. It can be aborted by interrupt().<br><br>
      * 
      * @see SubscriptionManager.ScoreChangedNotification
      */
@@ -1485,9 +1478,8 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
     /**
      * ATTENTION: At shutdown of WOT, you have to make sure to use {@link Thread#interrupt()} to
      * interrupt any of your threads which call this function:<br>
-     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(SendDirection,
-     * FCPPluginMessage, long)}, which can take a long time to complete. It can be aborted by
-     * interrupt().<br><br>
+     * It uses the blocking {@link FCPPluginConnection#sendSynchronous(FCPPluginMessage, long)},
+     * which can take a long time to complete. It can be aborted by interrupt().<br><br>
      */
     private void sendChangeNotification(
             final UUID clientID, final SubscriptionType subscriptionType,
@@ -1504,9 +1496,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         final FCPPluginMessage reply = mPluginRespirator.getPluginConnectionByID(clientID)
             .sendSynchronous(
-                SendDirection.ToClient,
-                fcpMessage,
-                TimeUnit.MINUTES.toNanos(SUBSCRIPTION_NOTIFICATION_TIMEOUT_MINUTES));
+                fcpMessage, TimeUnit.MINUTES.toNanos(SUBSCRIPTION_NOTIFICATION_TIMEOUT_MINUTES));
         
         if(reply.success == false)
             throw new FCPCallFailedException(reply);
