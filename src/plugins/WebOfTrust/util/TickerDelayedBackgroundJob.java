@@ -13,6 +13,18 @@ import freenet.support.io.NativeThread;
  * @see TickerDelayedBackgroundJobFactory
  */
 public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
+    /** Job wrapper for status tracking. */
+    private final DelayedBackgroundRunnable realJob;
+    /** Human-readable name of this job. */
+    private final String name;
+    /** Aggregation delay in milliseconds. */
+    private final long defaultDelay;
+    /** The ticker used to schedule this job. */
+    private final Ticker ticker;
+    /** The executor of this background job. */
+    private final Executor executor;
+
+
     static enum JobState {
         /** Waiting for a trigger, no running job thread or scheduled job. */
         IDLE,
@@ -25,30 +37,22 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         /** Terminated, no running job thread. */
         TERMINATED
     }
-
-    /** Constant for {@link #nextExecutionTime} meaning there is no next execution requested. */
-    private final static long NO_EXECUTION = Long.MAX_VALUE;
-
-    /** Job wrapper for status tracking. */
-    private final DelayedBackgroundRunnable realJob;
-    /** Human-readable name of this job. */
-    private final String name;
-    /** Aggregation delay in milliseconds. */
-    private final long defaultDelay;
-    /** The ticker used to schedule this job. */
-    private final Ticker ticker;
-    /** The executor of this background job. */
-    private final Executor executor;
+    /** Running state of this job. */
+    private JobState state = JobState.IDLE;
 
     /** Tiny job to run on the ticker, invoking the execution of the {@link #realJob} on the
      * executor (only set in {@link JobState#WAITING}). */
     private Runnable waitingTickerJob = null;
-    /** Running state of this job. */
-    private JobState state = JobState.IDLE;
+
     /** Job execution thread, only if the job is running (only set in {@link JobState#RUNNING}). */
     private Thread thread = null;
+
+
+    /** Constant for {@link #nextExecutionTime} meaning there is no next execution requested. */
+    private final static long NO_EXECUTION = Long.MAX_VALUE;
     /** Next absolute time we have a job execution scheduled, or {@link #NO_EXECUTION} if none. */
     private long nextExecutionTime = NO_EXECUTION;
+
 
     /**
      * Constructs a delayed background job with the given default delay. Negative delays
