@@ -25,6 +25,25 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     private final Executor executor;
 
 
+    /**
+     * TODO: Code quality: To ease understanding of the whole of TickerDelayedBackgroundJob, and to
+     * help with testing, add a member function which contains assert()s for all the member
+     * variables of TickerDelayedBackgroundJob. Each assert() should demonstrate the expected values
+     * of the member variable in the given state.
+     * <pre><code>
+     * public boolean validate() {
+     *   switch(this) {
+     *     case IDLE:
+     *       assert(waitingTickerJob == null)
+     *     ...
+     *   }
+     *   // Return boolean so we can contain the call to this function in an assert for performance
+     *   return true;
+     * }
+     * </code></pre>
+     * Notice: You will have to remove the attribute "static" from the enum so you can access the
+     * members of the TickerDelayedBackgroundJob.
+     */
     static enum JobState {
         /** Waiting for a trigger, no running job thread or scheduled job. */
         IDLE,
