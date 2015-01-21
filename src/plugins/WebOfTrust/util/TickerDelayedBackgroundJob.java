@@ -59,24 +59,26 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      * {@link Executor#execute(Runnable, String) execute}. When this background job is
      * {@link BackgroundJob#terminate() terminated}, the running job will be notified by means of
      * interruption of its thread. Hence, the job implementer must take care not to swallow
-     * {@link InterruptedException}.
+     * {@link InterruptedException}, or for long computations, periodically check the
+     * {@link Thread#interrupted()} flag of its {@link Thread#currentThread() thread} and exit
+     * accordingly.
      * @param job the job to run in the background
      * @param name a human-readable name for the job
-     * @param delay the default background job aggregation delay in milliseconds
+     * @param delayMillis the default background job aggregation delay in milliseconds
      * @param ticker an asynchronous ticker with asynchronous executor
      *
      * @see TickerDelayedBackgroundJobFactory
      */
-    public TickerDelayedBackgroundJob(Runnable job, String name, long delay, Ticker ticker) {
+    public TickerDelayedBackgroundJob(Runnable job, String name, long delayMillis, Ticker ticker) {
         if (job == null || name == null || ticker == null || ticker.getExecutor() == null) {
             throw new NullPointerException();
         }
-        if (delay < 0) {
-            delay = 0;
+        if (delayMillis < 0) {
+            delayMillis = 0;
         }
         this.realJob = new DelayedBackgroundRunnable(job);
         this.name = name;
-        this.defaultDelay = delay;
+        this.defaultDelay = delayMillis;
         this.ticker = ticker;
         this.executor = ticker.getExecutor();
     }
@@ -93,7 +95,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      */
     @Override
     public synchronized void triggerExecution() {
-        tryEnqueue(defaultDelay);
+        triggerExecution(defaultDelay);
     }
 
     /**
@@ -105,12 +107,12 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      * another execution of the job, either after the default delay or when the currently executing
      * job is finished, whichever comes last. A newly constructed delayed background job can be
      * assumed to have started its last job infinitely in the past.
-     * @param delay the maximum trigger aggregation delay in milliseconds
+     * @param delayMillis the maximum trigger aggregation delay in milliseconds
      * @see #triggerExecution()
      */
     @Override
-    public synchronized void triggerExecution(long delay) {
-        tryEnqueue(delay);
+    public synchronized void triggerExecution(long delayMillis) {
+        tryEnqueue(delayMillis);
     }
 
     @Override
@@ -142,11 +144,11 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     }
 
     @Override
-    public synchronized void waitForTermination(long timeout) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + timeout;
-        while(timeout > 0 && state != JobState.TERMINATED) {
-            wait(timeout);
-            timeout = deadline - System.currentTimeMillis();
+    public synchronized void waitForTermination(long timeoutMillis) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMillis;
+        while(timeoutMillis > 0 && state != JobState.TERMINATED) {
+            wait(timeoutMillis);
+            timeoutMillis = deadline - System.currentTimeMillis();
         }
     }
 
@@ -154,25 +156,19 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      * Implementation of {@link #triggerExecution(long)}.
      * Caller must ensure synchronization on {@code this}.
      */
-    private void tryEnqueue(long delay) {
+    private void tryEnqueue(long delayMillis) {
         if (state == JobState.TERMINATING || state == JobState.TERMINATED) {
             return;
         }
-        if (delay < 0) {
-            delay = 0;
+        if (delayMillis < 0) {
+            delayMillis = 0;
         }
-        long newExecutionTime = System.currentTimeMillis() + delay;
+        long newExecutionTime = System.currentTimeMillis() + delayMillis;
         if (newExecutionTime < nextExecutionTime) {
             nextExecutionTime = newExecutionTime;
             if (state == JobState.RUNNING) {
                 // Will automatically schedule this run when the running job finishes.
                 return;
-            }
-            if (state == JobState.WAITING) {
-                // Best-effort attempt at removing the stale job to be replaced.
-                ticker.removeQueuedJob(waitingTickerJob);
-                // Replace the ticker job in case the above fails, so the stale job will not run.
-                waitingTickerJob = createTickerJob();
             }
             enqueueWaitingTickerJob(delay);
         }
@@ -184,17 +180,23 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      * If the current state is {@code IDLE}, we the state is changed to {@code WAITING} and a new
      * ticker job is created.
      * Caller must ensure synchronization on {@code this}.
-     * @param delay the delay in ms
+     * @param delayMillis the delay in milliseconds
      */
-    private void enqueueWaitingTickerJob(long delay) {
+    private void enqueueWaitingTickerJob(long delayMillis) {
         assert(state == JobState.IDLE || state == JobState.WAITING) :
                 "enqueueing ticker job in non-IDLE and non-WAITING state";
-        // Use a unique job for each (re)scheduling to avoid running twice.
+        if (state == JobState.WAITING) {
+            // Best-effort attempt at removing the stale job to be replaced; this fails if the job
+            // has already been removed from the ticker queue.
+            ticker.removeQueuedJob(waitingTickerJob);
+            // Replace the ticker job in case the above fails, so the stale job will not run.
+            waitingTickerJob = createTickerJob();
+        }
         if (state == JobState.IDLE) {
             toWAITING();
         }
-        if (delay > 0) {
-            ticker.queueTimedJob(waitingTickerJob, name + " (waiting)", delay, true, false);
+        if (delayMillis > 0) {
+            ticker.queueTimedJob(waitingTickerJob, name + " (waiting)", delayMillis, true, false);
         } else {
             waitingTickerJob.run();
         }
@@ -205,6 +207,8 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      * be executed by the ticker.
      */
     private Runnable createTickerJob() {
+        // Use FastRunnable here so hopefully the Ticker will execute this on its main thread
+        // instead of spawning a new thread for this.
         return new FastRunnable() {
             @Override
             public void run() {
@@ -226,6 +230,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     private void toIDLE() {
         assert(state == JobState.RUNNING) : "going to IDLE from non-RUNNING state";
         assert(thread == Thread.currentThread()) : "going to IDLE from non-job thread";
+        assert(waitingTickerJob == null) : "having ticker job while going to IDLE state";
         thread = null;
         state = JobState.IDLE;
     }
@@ -237,6 +242,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         assert(state == JobState.IDLE) : "going to WAITING from non-IDLE state";
         assert(thread == null) : "having job thread while going to WAITING state";
         assert(waitingTickerJob == null) : "having ticker job while going to WAITING state";
+        // Use a unique job for each (re)scheduling to avoid running twice.
         waitingTickerJob = createTickerJob();
         state = JobState.WAITING;
     }
@@ -248,6 +254,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         assert(state == JobState.WAITING) : "going to RUNNING state from non-WAITING state";
         assert(thread == null) : "already having job thread while going to RUNNING state";
         assert(waitingTickerJob != null) : "going to RUNNING state without ticker job";
+        assert(nextExecutionTime <= System.currentTimeMillis());
         waitingTickerJob = null;
         nextExecutionTime = NO_EXECUTION;
         thread = Thread.currentThread();
@@ -295,7 +302,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      * WAITING}, it may start.
      * @return {@code true} if the job may start
      */
-    private synchronized boolean jobStarted() {
+    private synchronized boolean onJobStarted() {
         if (state == JobState.TERMINATED) {
             return false;
         }
@@ -308,7 +315,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      * trigger since the start of the last job), waiting for a trigger in {@code IDLE} or going
      * to the {@code TERMINATED} state if we were previously {@code TERMINATING}.
      */
-    private synchronized void jobFinished() {
+    private synchronized void onJobFinished() {
         if (state == JobState.TERMINATED) {
             return;
         }
@@ -325,7 +332,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
 
     /**
      * A wrapper for jobs. After the job finishes, either goes to an {@code IDLE} state or enqueues
-     * its own next run {@code WAITING} (implementation in {@link #jobFinished()}).
+     * its own next run {@code WAITING} (implementation in {@link #onJobFinished()}).
      */
     private class DelayedBackgroundRunnable implements PrioRunnable {
         private final Runnable job;
@@ -337,11 +344,11 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         @Override
         public void run() {
             try {
-                if (jobStarted()) {
+                if (onJobStarted()) {
                     job.run();
                 }
             } finally {
-                jobFinished();
+                onJobFinished();
             }
         }
 

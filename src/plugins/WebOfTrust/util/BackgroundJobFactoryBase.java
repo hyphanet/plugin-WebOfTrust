@@ -10,8 +10,6 @@ import java.util.WeakHashMap;
  * @author bertm
  */
 public abstract class BackgroundJobFactoryBase implements BackgroundJobFactory {
-    private static final Object PLACEHOLDER = new Object();
-
     /** Set of all live (i.e. not garbage collected) background jobs created by this instance. */
     private final WeakHashMap<BackgroundJob, Object> aliveJobSet =
             new WeakHashMap<BackgroundJob, Object>();
@@ -27,26 +25,27 @@ public abstract class BackgroundJobFactoryBase implements BackgroundJobFactory {
 
     @Override
     public final boolean allTerminated() {
-        boolean allTerminated = true;
         synchronized(aliveJobSet) {
             for (BackgroundJob bg : aliveJobSet.keySet()) {
-                allTerminated &= bg.isTerminated();
+                if (!bg.isTerminated()) {
+                    return false;
+                }
             }
         }
-        return allTerminated;
+        return true;
     }
 
     @Override
-    public final void waitForTerminationOfAll(long timeout) throws InterruptedException {
+    public final void waitForTerminationOfAll(long timeoutMillis) throws InterruptedException {
         ArrayList<BackgroundJob> jobs;
         synchronized(aliveJobSet) {
             jobs = new ArrayList<BackgroundJob>(aliveJobSet.keySet());
         }
-        long deadline = System.currentTimeMillis() + timeout;
+        long deadline = System.currentTimeMillis() + timeoutMillis;
         for (BackgroundJob job : jobs) {
-            job.waitForTermination(timeout);
-            timeout = deadline - System.currentTimeMillis();
-            if (timeout <= 0) {
+            job.waitForTermination(timeoutMillis);
+            timeoutMillis = deadline - System.currentTimeMillis();
+            if (timeoutMillis <= 0) {
                 return;
             }
         }
@@ -58,7 +57,7 @@ public abstract class BackgroundJobFactoryBase implements BackgroundJobFactory {
      */
     protected final void registerNewJob(BackgroundJob job) {
         synchronized(aliveJobSet) {
-            aliveJobSet.put(job, PLACEHOLDER);
+            aliveJobSet.put(job, null);
         }
     }
 }
