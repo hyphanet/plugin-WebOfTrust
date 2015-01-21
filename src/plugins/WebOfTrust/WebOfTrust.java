@@ -41,7 +41,8 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
-import freenet.clients.fcp.FCPPluginClient;
+import freenet.clients.fcp.FCPPluginConnection;
+import freenet.clients.fcp.FCPPluginMessage;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.BaseL10n;
@@ -1861,12 +1862,12 @@ public final class WebOfTrust extends WebOfTrustInterface
     /**
      * Handles FCP messages.<br>
      * Actually implemented at class {@link FCPInterface} at
-     * {@link FCPInterface#handlePluginFCPMessage(FCPPluginClient, FCPPluginMessage)}.
+     * {@link FCPInterface#handlePluginFCPMessage(FCPPluginConnection, FCPPluginMessage)}.
      */
     @Override
-    public FCPPluginMessage handlePluginFCPMessage(FCPPluginClient client, FCPPluginMessage message)
-    {
-        return mFCPInterface.handlePluginFCPMessage(client, message);
+    public FCPPluginMessage handlePluginFCPMessage(FCPPluginConnection connection,
+            FCPPluginMessage message) {
+        return mFCPInterface.handlePluginFCPMessage(connection, message);
     }
 
 	/**
