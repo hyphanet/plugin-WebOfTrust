@@ -170,7 +170,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
                 // Will automatically schedule this run when the running job finishes.
                 return;
             }
-            enqueueWaitingTickerJob(delay);
+            enqueueWaitingTickerJob(delayMillis);
         }
     }
 
