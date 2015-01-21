@@ -26,7 +26,7 @@ public interface BackgroundJob {
      * effect.
      * This method does not wait for the job to terminate, it only triggers its termination and
      * returns immediately. Use this method in conjunction with {@link #waitForTermination(long)}
-     * when blocking behaviour is required.
+     * when blocking behavior is required.
      * Implementations must ensure that this method is safe to invoke from any thread at any moment.
      * @see #isTerminated()
      * @see #waitForTermination(long)
@@ -39,7 +39,7 @@ public interface BackgroundJob {
      * background job cannot be restarted, i.e. once this method returns {@code true}, it will
      * always return {@code true}.
      * This method returns immediately, use {@link #waitForTermination(long)} when blocking
-     * behaviour is required.
+     * behavior is required.
      * Implementations must ensure that this method is safe to invoke from any thread at any moment.
      * @return {@code true} if this background job is terminated
      * @see #terminate()
@@ -51,7 +51,7 @@ public interface BackgroundJob {
      * Blocks until {@link #isTerminated()} is {@code true}, the timeout provided has expired, or
      * the thread is interrupted.
      * This method does not terminate the background job, it only waits for it to terminate. Use
-     * this method in conjunction with {@link #terminate()} when terminating behaviour is required.
+     * this method in conjunction with {@link #terminate()} when terminating behavior is required.
      * Implementations must ensure that this method is safe to invoke from any thread at any moment.
      * @param timeoutMillis the maximum time to wait in milliseconds
      * @throws InterruptedException When the calling thread is interrupted.
