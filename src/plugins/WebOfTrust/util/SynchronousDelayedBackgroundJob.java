@@ -42,6 +42,9 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
      * @param job the job to run
      * @param name the human-readable name of the job
      * @param delayMillis the default background job aggregation delay in milliseconds
+     * @see SynchronousDelayedBackgroundJobFactory
+     *     You may use the SynchronousDelayedBackgroundJobFactory instead of this constructor for
+     *     the benefit of easy batch termination. You do not have to use it though.
      */
     public SynchronousDelayedBackgroundJob(Runnable job, String name, long delayMillis) {
         this.job = job;

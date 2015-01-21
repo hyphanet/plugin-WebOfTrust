@@ -1,7 +1,8 @@
 package plugins.WebOfTrust.util;
 
 /**
- * Background job factory implementation for {@link SynchronousDelayedBackgroundJob}s.
+ * Background job factory implementation for {@link SynchronousDelayedBackgroundJob}s.<br>
+ * You do not have to use this, you may also construct the jobs directly using their constructors.
  *
  * @author bertm
  * @see SynchronousDelayedBackgroundJob

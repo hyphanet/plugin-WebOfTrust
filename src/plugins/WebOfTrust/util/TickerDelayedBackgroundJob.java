@@ -90,8 +90,9 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      * @param name a human-readable name for the job
      * @param delayMillis the default background job aggregation delay in milliseconds
      * @param ticker an asynchronous ticker with asynchronous executor
-     *
      * @see TickerDelayedBackgroundJobFactory
+     *     You may use the TickerDelayedBackgroundJobFactory instead of this constructor for
+     *     the benefit of easy batch termination. You do not have to use it though.
      */
     public TickerDelayedBackgroundJob(Runnable job, String name, long delayMillis, Ticker ticker) {
         if (job == null || name == null || ticker == null || ticker.getExecutor() == null) {

@@ -4,7 +4,8 @@ import freenet.support.Executor;
 import freenet.support.Ticker;
 
 /**
- * Background job factory implementation for {@link TickerDelayedBackgroundJob}s.
+ * Background job factory implementation for {@link TickerDelayedBackgroundJob}s.<br>
+ * You do not have to use this, you may also construct the jobs directly using their constructors.
  *
  * @author bertm
  * @see TickerDelayedBackgroundJob
