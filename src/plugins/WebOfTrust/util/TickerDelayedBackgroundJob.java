@@ -32,11 +32,12 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
      * of the member variable in the given state.
      * <pre><code>
      * public boolean validate() {
+     *   synchronized(TickerDelayedBackgroundJob.this) {
      *   switch(this) {
      *     case IDLE:
      *       assert(waitingTickerJob == null)
      *     ...
-     *   }
+     *   }}
      *   // Return boolean so we can contain the call to this function in an assert for performance
      *   return true;
      * }
