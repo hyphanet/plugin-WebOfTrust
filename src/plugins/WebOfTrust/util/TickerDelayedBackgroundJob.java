@@ -41,11 +41,11 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     private final Executor executor;
 
     /** Tiny job to run on the ticker, invoking the execution of the {@link #realJob} on the
-     * executor (only set in {@code WAITING} state). */
+     * executor (only set in {@link JobState#WAITING}). */
     private Runnable waitingTickerJob = null;
     /** Running state of this job. */
     private JobState state = JobState.IDLE;
-    /** Job execution thread, only if the job is running (only set in {@code RUNNING} state). */
+    /** Job execution thread, only if the job is running (only set in {@link JobState#RUNNING}). */
     private Thread thread = null;
     /** Next absolute time we have a job execution scheduled, or {@link #NO_EXECUTION} if none. */
     private long nextExecutionTime = NO_EXECUTION;
@@ -177,8 +177,8 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     /**
      * Schedules the ticker job (which will submit the background job to the executor) at the
      * ticker with the given delay, or executes the ticker job immediately if the delay is zero.
-     * If the current state is {@code IDLE}, we the state is changed to {@code WAITING} and a new
-     * ticker job is created.
+     * If the current state is {@link JobState#IDLE}, the state is changed to
+     * {@link JobState#WAITING} and a new ticker job is created.
      * Caller must ensure synchronization on {@code this}.
      * @param delayMillis the delay in milliseconds
      */
@@ -297,9 +297,9 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     }
 
     /**
-     * Indicates whether this job may start and sets the state to {@code RUNNING}
-     * accordingly. If this job is {@code TERMINATED}, it may not start, if it is {@code
-     * WAITING}, it may start.
+     * Indicates whether this job may start and sets the state to {@link JobState#RUNNING}
+     * accordingly. If this job is in {@link JobState#TERMINATED}, it may not start, if it is
+     * in {@link JobState#WAITING}, it may start.
      * @return {@code true} if the job may start
      */
     private synchronized boolean onJobStarted() {
@@ -311,9 +311,10 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     }
 
     /**
-     * Finishes the job by either enqueueing itself again in {@code WAITING} (if there has been a
-     * trigger since the start of the last job), waiting for a trigger in {@code IDLE} or going
-     * to the {@code TERMINATED} state if we were previously {@code TERMINATING}.
+     * Finishes the job by either enqueuing itself again in {@link JobState#WAITING} (if there has
+     * been a trigger since the start of the last job), waiting for a trigger in
+     * {@link JobState#IDLE} or going to {@link JobState#TERMINATED} if we were previously in
+     * {@link JobState#TERMINATING}.
      */
     private synchronized void onJobFinished() {
         if (state == JobState.TERMINATED) {
@@ -331,8 +332,9 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     }
 
     /**
-     * A wrapper for jobs. After the job finishes, either goes to an {@code IDLE} state or enqueues
-     * its own next run {@code WAITING} (implementation in {@link #onJobFinished()}).
+     * A wrapper for jobs. After the job finishes, either goes to a {@link JobState#IDLE} or
+     * enqueues its own next run {@link JobState#WAITING} (implementation in
+     * {@link #onJobFinished()}).
      */
     private class DelayedBackgroundRunnable implements PrioRunnable {
         private final Runnable job;
