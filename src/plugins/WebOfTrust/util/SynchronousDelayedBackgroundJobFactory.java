@@ -1,8 +1,15 @@
 package plugins.WebOfTrust.util;
 
+import java.util.WeakHashMap;
+
 /**
  * Background job factory implementation for {@link SynchronousDelayedBackgroundJob}s.<br>
  * You do not have to use this, you may also construct the jobs directly using their constructors.
+ * <br><br>
+ * 
+ * ATTENTION: This internally uses a {@link WeakHashMap}. As Java HashMaps never shrink, you must
+ * not allow arbitrary strangers who are connected by network to cause creation of jobs using
+ * this factory. They could cause denial of service by making the HashMap grow very large.
  *
  * @author bertm
  * @see SynchronousDelayedBackgroundJob
