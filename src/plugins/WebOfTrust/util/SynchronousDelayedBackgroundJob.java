@@ -1,5 +1,7 @@
 package plugins.WebOfTrust.util;
 
+import freenet.support.Logger;
+
 /**
  * Implementation of delayed background jobs where {@link #triggerExecution} blocks until the
  * background job has finished, as if the background job was performed synchronously. This
@@ -153,9 +155,16 @@ public final class SynchronousDelayedBackgroundJob implements DelayedBackgroundJ
                         try {
                             SynchronousDelayedBackgroundJob.this.wait(delay);
                         } catch (InterruptedException e) {
-                            // Ignore. We can't really return here, since there is at
-                            // least one thread waiting for this thread to complete
-                            // (possibly including side effects caused by its run).
+                            // Should not happen: We have NOT set runningJobThread to the current
+                            // thread yet, so the containing SynchronousDelayedBackgroundJob had no
+                            // access to this thread, and thus no possibility to call interrupt()
+                            // on it. The interrupt() must have been misuse from the outside.
+                            // We ignore the interrupt instead of returning since the contract of
+                            // triggerExecution() promises to wait for the execution to actually
+                            // happen, so we must proceed to make it happen.
+                            // (Notice: The same applies to a similar catch() below)
+                            Logger.error(this, "Received unexpected InterruptedException. "
+                                             + "Instead use terminate()!", e);
                         }
                     }
                     // 2. Wait until the previous job is done, if any
@@ -163,12 +172,9 @@ public final class SynchronousDelayedBackgroundJob implements DelayedBackgroundJ
                         try {
                             SynchronousDelayedBackgroundJob.this.wait();
                         } catch (InterruptedException e) {
-                            // Ignore. This thread is not even visible from the
-                            // outside at this point, and we will be notified once the
-                            // currently running job is finished. We can't really return
-                            // here, since there is at least one thread waiting for this
-                            // thread to complete (possibly including side effects
-                            // caused by its run).
+                            // Should not happen as explained above.
+                            Logger.error(this, "Received unexpected InterruptedException. "
+                                             + "Instead use terminate()!", e);
                         }
                     }
                     // 3. Reset the nextRun variables
