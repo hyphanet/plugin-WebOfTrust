@@ -6,12 +6,7 @@ package plugins.WebOfTrust.util;
  * @author bertm
  */
 public interface DelayedBackgroundJob extends BackgroundJob {
-    /**
-     * Triggers the execution of the job after either aggregating triggers for at most some delay
-     * specified by the implementation or as soon as the currently running job finishes, whichever
-     * comes last. Implementations must ensure that this method is safe to invoke from any thread
-     * at any moment.
-     */
+    /** Same as {@link #triggerExecution(long)} with delayMillis = default set by implementation. */
     @Override
     public void triggerExecution();
 

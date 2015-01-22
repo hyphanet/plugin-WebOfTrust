@@ -108,16 +108,7 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         this.executor = ticker.getExecutor();
     }
 
-    /**
-     * Triggers scheduling of the job with the default delay if no job is scheduled. If a job
-     * is already scheduled later than the default delay, it is rescheduled at the default delay.
-     *
-     * The first trigger received after the start of the last job execution leads to scheduling of
-     * another execution of the job, either after the default delay or when the currently executing
-     * job is finished, whichever comes last. A newly constructed delayed background job can be
-     * assumed to have started its last job infinitely in the past.
-     * @see #triggerExecution(long)
-     */
+    /** Same as {@link #triggerExecution(long)} with delayMillis = default set at constructor. */
     @Override
     public synchronized void triggerExecution() {
         triggerExecution(defaultDelay);
