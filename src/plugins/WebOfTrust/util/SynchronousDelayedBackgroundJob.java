@@ -4,6 +4,20 @@ package plugins.WebOfTrust.util;
  * Implementation of delayed background jobs where {@link #triggerExecution} blocks until the
  * background job has finished, as if the background job was performed synchronously. This
  * class is intended to be used in unit tests, and is likely not very useful for general purposes.
+ * <br><br>
+ * 
+ * TODO: Code quality: This rather complex class could maybe be simplified by extending
+ * {@link TickerDelayedBackgroundJob}. IIRC, the only difference it has to that class is that
+ * {@link #triggerExecution(long)} shall wait for the job to complete. That could be implemented
+ * by wrapping the job which is passed to the parent {@link TickerDelayedBackgroundJob} in a
+ * wrapper class which helps {@link #triggerExecution(long)} to wait for it to complete.<br>
+ * This might also not only be indicated for simplicity but to guarantee that after
+ * {@link #waitForTermination(long)} has finished, the {@link #runningJobThread} has exited: The
+ * current implementation does not {@link Thread#join()} it but merely waits for it to have no more
+ * code to execute. I am not sure whether this is an issue, since the thread will exit soon anyway,
+ * but it might be necessary to prevent issues when unloading Freenet plugins which contain this
+ * class: It is possible that the JVM will complain that the classloader has purged the code of
+ * the class from memory already when it tries to load the following code to execute on the thread.
  *
  * @author bertm
  */
