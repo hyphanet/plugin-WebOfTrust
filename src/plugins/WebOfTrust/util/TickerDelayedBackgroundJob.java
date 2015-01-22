@@ -108,12 +108,6 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         this.executor = ticker.getExecutor();
     }
 
-    /** Same as {@link #triggerExecution(long)} with delayMillis = default set at constructor. */
-    @Override
-    public synchronized void triggerExecution() {
-        triggerExecution(defaultDelay);
-    }
-
     /**
      * Triggers scheduling of the job with the given delay if no job is scheduled. If a job
      * is already scheduled later than the given delay, it is rescheduled at the given delay.
@@ -129,6 +123,12 @@ public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     @Override
     public synchronized void triggerExecution(long delayMillis) {
         tryEnqueue(delayMillis);
+    }
+
+    /** Same as {@link #triggerExecution(long)} with delayMillis = default set at constructor. */
+    @Override
+    public synchronized void triggerExecution() {
+        triggerExecution(defaultDelay);
     }
 
     @Override

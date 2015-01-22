@@ -52,12 +52,6 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
         this.defaultDelay = delayMillis;
     }
 
-    /** Same as {@link #triggerExecution(long)} with delayMillis = default set at constructor. */
-    @Override
-    public synchronized void triggerExecution() {
-        triggerExecution(defaultDelay);
-    }
-
     /**
      * Triggers the execution of the job after either aggregating triggers for at most the given
      * delay, or as soon as the currently running job finishes, whichever comes last. Negative
@@ -100,6 +94,12 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
                 return;
             }
         }
+    }
+
+    /** Same as {@link #triggerExecution(long)} with delayMillis = default set at constructor. */
+    @Override
+    public synchronized void triggerExecution() {
+        triggerExecution(defaultDelay);
     }
 
     /**
