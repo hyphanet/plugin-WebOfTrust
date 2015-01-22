@@ -32,6 +32,8 @@ public interface BackgroundJobFactory {
      * WOT currently will not use the factories but create and terminate jobs using their own
      * functions, so this is not important. But for future use it might be worth to fix this
      * function to make sure that it is an atomic operation which prevents creation of further jobs.
+     * See {@link BackgroundJobFactoryBase#registerNewJob(BackgroundJob)} for ideas on how to fix
+     * this.
      */
     @Deprecated
     public void terminateAll();

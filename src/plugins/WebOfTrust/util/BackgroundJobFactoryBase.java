@@ -59,6 +59,16 @@ public abstract class BackgroundJobFactoryBase implements BackgroundJobFactory {
      * method for each background job they construct.
      */
     protected final void registerNewJob(BackgroundJob job) {
+        // FIXME: To get rid of the deprecation of terminateAll(), allTerminated() and
+        // waitForTerminationOfAll(), do this:
+        // - Use a different synchronization object than aliveJobSet here and in all the other places
+        //   which use it. (This is needed because we will null it, see below)
+        // - Make terminate() move the value of aliveJobSet to a different member variable, lets
+        //   call it terminatingJobSet, and set aliveJobSet to null.
+        // - Make registerNewJob() fail if aliveJobSet is null. Maybe throwing InterruptedException
+        //   would also make sense, as this is a shutdown condition.
+        // - Make waitForTerminationOfAll() wait for the content of terminatingJobSet
+
         synchronized(aliveJobSet) {
             aliveJobSet.put(job, null);
         }
