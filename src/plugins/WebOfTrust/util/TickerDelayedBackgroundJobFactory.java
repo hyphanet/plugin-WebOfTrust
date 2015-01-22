@@ -17,7 +17,7 @@ import freenet.support.Ticker;
  * @author bertm
  * @see TickerDelayedBackgroundJob
  */
-public class TickerDelayedBackgroundJobFactory
+public final class TickerDelayedBackgroundJobFactory
         extends BackgroundJobFactoryBase
         implements DelayedBackgroundJobFactory {
     /** The default delay. */

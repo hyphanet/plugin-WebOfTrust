@@ -14,7 +14,7 @@ import java.util.WeakHashMap;
  * @author bertm
  * @see SynchronousDelayedBackgroundJob
  */
-public class SynchronousDelayedBackgroundJobFactory
+public final class SynchronousDelayedBackgroundJobFactory
         extends BackgroundJobFactoryBase
         implements DelayedBackgroundJobFactory {
     private final long defaultDelay;

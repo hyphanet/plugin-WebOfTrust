@@ -12,7 +12,7 @@ import freenet.support.io.NativeThread;
  * @author bertm
  * @see TickerDelayedBackgroundJobFactory
  */
-public class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
+public final class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     /** Job wrapper for status tracking. */
     private final DelayedBackgroundRunnable realJob;
     /** Human-readable name of this job. */

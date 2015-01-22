@@ -7,7 +7,7 @@ package plugins.WebOfTrust.util;
  *
  * @author bertm
  */
-public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
+public final class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
     /** Constant deadline value indicating no set {@link #nextRunDeadline deadline}, greater than
      * all deadlines. */
     private static final long NO_DEADLINE = Long.MAX_VALUE;
