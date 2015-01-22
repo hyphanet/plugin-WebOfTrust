@@ -184,8 +184,9 @@ public final class SynchronousDelayedBackgroundJob implements DelayedBackgroundJ
                     // and interruption should be handled correctly.
                     runningJobThread = Thread.currentThread();
                     // We cannot return here if we are terminating, since that would violate the
-                    // contract specified by {@link #triggerExecution()}. Instead, interrupt the
-                    // thread so that the job may terminate early.
+                    // contract specified by {@link #triggerExecution()}: It promises to wait for
+                    // the execution to actually happen, so we must proceed to make it happen.
+                    // Instead, interrupt the thread so that the job may terminate early.
                     if (isTerminating) {
                         runningJobThread.interrupt();
                     }
