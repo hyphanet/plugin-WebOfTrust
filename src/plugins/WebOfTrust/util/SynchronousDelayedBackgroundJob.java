@@ -10,16 +10,7 @@ package plugins.WebOfTrust.util;
  * {@link TickerDelayedBackgroundJob}. IIRC, the only difference it has to that class is that
  * {@link #triggerExecution(long)} shall wait for the job to complete. That could be implemented
  * by wrapping the job which is passed to the parent {@link TickerDelayedBackgroundJob} in a
- * wrapper class which helps {@link #triggerExecution(long)} to wait for it to complete.<br>
- * This might also not only be indicated for simplicity but to guarantee that after
- * {@link #waitForTermination(long)} has finished, the {@link #runningJobThread} has exited: The
- * current implementation does not {@link Thread#join()} it but merely waits for it to have no more
- * code to execute. I am not sure whether this is an issue, since the thread will exit soon anyway,
- * but it might be necessary to prevent issues when unloading Freenet plugins which contain this
- * class: Wen terminating plugins, we force the classloader to unload the plugin JAR, and thus
- * unload all its classes. Hence it is possible that the JVM will throw an exception when trying to
- * load the next code to execute on the thread, because the class which contains the code isn't even
- * loaded anymore. 
+ * wrapper class which helps {@link #triggerExecution(long)} to wait for it to complete.
  *
  * @author bertm
  */
@@ -228,6 +219,20 @@ public final class SynchronousDelayedBackgroundJob implements DelayedBackgroundJ
         return isTerminating && runningJobThread == null && nextRunDeadline == NO_DEADLINE;
     }
 
+    /**
+     * {@inheritDoc}<br><br>
+     * 
+     * NOTICE: The current implementation does not {@link Thread#join()} its worker thread but
+     * merely waits for it to have no more code to execute. I am not sure whether this is an issue,
+     * since the thread will exit soon if it has no more code to execute, but I speculate that it
+     * might cause issues when unloading Freenet plugins which contain this class: When terminating
+     * plugins, we force the classloader to unload the plugin JAR, and thus unload all its classes.
+     * Hence it is possible that the JVM will throw an exception when trying to load the next
+     * code to execute on the thread, because this class, which contains the code, isn't even loaded
+     * anymore.<br>
+     * This could be fixed by moving this class to Freenet itself so it won't be unloaded by
+     * unloading plugins.
+     */
     @Override
     public synchronized void waitForTermination(long timeoutMillis) throws InterruptedException {
         long deadline = System.currentTimeMillis() + timeoutMillis;
