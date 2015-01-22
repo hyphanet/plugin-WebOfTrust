@@ -16,8 +16,10 @@ package plugins.WebOfTrust.util;
  * current implementation does not {@link Thread#join()} it but merely waits for it to have no more
  * code to execute. I am not sure whether this is an issue, since the thread will exit soon anyway,
  * but it might be necessary to prevent issues when unloading Freenet plugins which contain this
- * class: It is possible that the JVM will complain that the classloader has purged the code of
- * the class from memory already when it tries to load the following code to execute on the thread.
+ * class: Wen terminating plugins, we force the classloader to unload the plugin JAR, and thus
+ * unload all its classes. Hence it is possible that the JVM will throw an exception when trying to
+ * load the next code to execute on the thread, because the class which contains the code isn't even
+ * loaded anymore. 
  *
  * @author bertm
  */
