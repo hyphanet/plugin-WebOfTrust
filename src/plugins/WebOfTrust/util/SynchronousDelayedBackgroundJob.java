@@ -53,9 +53,8 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
     }
 
     /**
-     * Triggers the execution of the job after either aggregating triggers for at most the given
-     * delay, or as soon as the currently running job finishes, whichever comes last. Negative
-     * delays are treated as to zero delays.
+     * {@inheritDoc}<br><br>
+     * 
      * If this background job was terminating or has terminated prior to the invocation of this
      * method, this method has no effect and returns immediately.
      * This method waits for the first job to start after the trigger to finish before returning,
@@ -64,7 +63,6 @@ public class SynchronousDelayedBackgroundJob implements DelayedBackgroundJob {
      * If the calling thread is interrupted while waiting for the job to finish execution, this
      * method will return as soon as possible, without waiting for the job to finish, and sets the
      * thread interruption flag.
-     * @param delayMillis the maximum trigger aggregation delay in milliseconds
      */
     @Override
     public synchronized void triggerExecution(long delayMillis) {
