@@ -15,6 +15,7 @@ public abstract class BackgroundJobFactoryBase implements BackgroundJobFactory {
             new WeakHashMap<BackgroundJob, Object>();
 
     @Override
+    @Deprecated
     public final void terminateAll() {
         synchronized(aliveJobSet) {
             for (BackgroundJob bg : aliveJobSet.keySet()) {
@@ -24,6 +25,7 @@ public abstract class BackgroundJobFactoryBase implements BackgroundJobFactory {
     }
 
     @Override
+    @Deprecated
     public final boolean allTerminated() {
         synchronized(aliveJobSet) {
             for (BackgroundJob bg : aliveJobSet.keySet()) {
@@ -36,6 +38,7 @@ public abstract class BackgroundJobFactoryBase implements BackgroundJobFactory {
     }
 
     @Override
+    @Deprecated
     public final void waitForTerminationOfAll(long timeoutMillis) throws InterruptedException {
         ArrayList<BackgroundJob> jobs;
         synchronized(aliveJobSet) {

@@ -26,14 +26,23 @@ public interface BackgroundJobFactory {
      * completion.
      * @see BackgroundJob#terminate()
      * @see #waitForTerminationOfAll(long)
+     * @deprecated FIXME: The implementations of this function will currently only terminate the
+     * currently running jobs but NOT prevent creation of new ones after it has been called. This
+     * renders the function quite useless for shutdown, which would probably be its primary purpose.
+     * WOT currently will not use the factories but create and terminate jobs using their own
+     * functions, so this is not important. But for future use it might be worth to fix this
+     * function to make sure that it is an atomic operation which prevents creation of further jobs.
      */
+    @Deprecated
     public void terminateAll();
 
     /**
      * Checks whether all live {@link BackgroundJob background jobs} created by this factory are
      * terminated.
      * @return {@code true} if all jobs are terminated.
+     * @Deprecated See {@link #terminateAll()}.
      */
+    @Deprecated
     public boolean allTerminated();
 
     /**
@@ -47,6 +56,8 @@ public interface BackgroundJobFactory {
      * @throws InterruptedException If the wait is interrupted.
      * @see BackgroundJob#waitForTermination(long)
      * @see #terminateAll()
+     * @deprecated See {@link #terminateAll()}
      */
+    @Deprecated
     public void waitForTerminationOfAll(long timeoutMillis) throws InterruptedException;
 }
