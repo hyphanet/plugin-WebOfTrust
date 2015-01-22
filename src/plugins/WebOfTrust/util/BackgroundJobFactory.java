@@ -38,7 +38,9 @@ public interface BackgroundJobFactory {
 
     /**
      * Checks whether all live {@link BackgroundJob background jobs} created by this factory are
-     * terminated.
+     * terminated.<br>
+     * This method returns immediately, use {@link #waitForTerminationOfAll(long)} when blocking
+     * behavior is required.
      * @return {@code true} if all jobs are terminated.
      * @Deprecated See {@link #terminateAll()}.
      */
