@@ -20,8 +20,10 @@ public final class SynchronousDelayedBackgroundJobFactory
     private final long defaultDelay;
 
     /**
-     * Constructs a background job factory with given default delay.
-     * @param delayMillis the default trigger aggregation delay in milliseconds
+     * Constructs a background job factory which will produce jobs with given default delay.
+     * <b>Please do read the JavaDoc of the underlying job constructor
+     * {@link SynchronousDelayedBackgroundJob#SynchronousDelayedBackgroundJob(Runnable, String,
+     * long)} for knowing about the requirements of the parameters.</b>
      */
     public SynchronousDelayedBackgroundJobFactory(long delayMillis) {
         defaultDelay = delayMillis;
@@ -35,10 +37,9 @@ public final class SynchronousDelayedBackgroundJobFactory
     /**
      * Same as {@link #newJob(Runnable, String)} with the default job aggregation delay replaced by
      * the amount of milliseconds you specify.<br>
-     * <b>Please do read its JavaDoc to know about requirements for the passed job.</b>
-     * 
-     * @see SynchronousDelayedBackgroundJob#SynchronousDelayedBackgroundJob(Runnable, String, long)
-     *     The underlying job constructor.
+     * <b>Please do read the JavaDoc of the underlying job constructor
+     * {@link SynchronousDelayedBackgroundJob#SynchronousDelayedBackgroundJob(Runnable, String,
+     * long)} for knowing about the requirements of the parameters</b>
      */
     @Override
     public SynchronousDelayedBackgroundJob newJob(Runnable job, String name, long delayMillis) {
