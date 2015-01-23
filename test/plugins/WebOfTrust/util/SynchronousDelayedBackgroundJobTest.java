@@ -48,6 +48,7 @@ public class SynchronousDelayedBackgroundJobTest {
                 if (isRunning.getAndSet(true)) {
                     wasConcurrent.set(true);
                 }
+                Thread.yield();
                 r.run();
                 isRunning.set(false);
             }
