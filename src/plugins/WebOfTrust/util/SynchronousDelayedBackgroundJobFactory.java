@@ -33,16 +33,12 @@ public final class SynchronousDelayedBackgroundJobFactory
     }
 
     /**
-     * Constructs a new {@link SynchronousDelayedBackgroundJob}. When this background job is
-     * {@link BackgroundJob#terminate() terminated}, the running job will be notified by
-     * interruption of its thread. Hence, the job implementer must take care not to swallow
-     * {@link InterruptedException}, or for long computations, periodically check the
-     * {@link Thread#interrupted()} flag of its {@link Thread#currentThread() thread} and exit
-     * accordingly.
-     * @param job the job to run in the background
-     * @param name a human-readable name for the job
-     * @param delayMillis the background job aggregation delay in milliseconds
+     * Same as {@link #newJob(Runnable, String)} with the default job aggregation delay replaced by
+     * the amount of milliseconds you specify.<br>
+     * <b>Please do read its JavaDoc to know about requirements for the passed job.</b>
+     * 
      * @see SynchronousDelayedBackgroundJob#SynchronousDelayedBackgroundJob(Runnable, String, long)
+     *     The underlying job constructor.
      */
     @Override
     public SynchronousDelayedBackgroundJob newJob(Runnable job, String name, long delayMillis) {
