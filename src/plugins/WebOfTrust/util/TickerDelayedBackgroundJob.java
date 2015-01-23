@@ -352,7 +352,13 @@ public final class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
     /**
      * A wrapper for jobs. After the job finishes, either goes to a {@link JobState#IDLE} or
      * enqueues its own next run {@link JobState#WAITING} (implementation in
-     * {@link #onJobFinished()}).
+     * {@link #onJobFinished()}).<br><br>
+     * 
+     * TODO: Code quality: The amount of different Runnables which the container class
+     * TickerDelayedBackgroundJob contains is quite large already. Maybe merge the Runnable created
+     * at {@link TickerDelayedBackgroundJob#createTickerJob()} into this Runnable here. This would
+     * change a lot about how this class works, and take multiple hours to review, so I would
+     * suggest you only do this upon other major required changes though.
      */
     private class DelayedBackgroundRunnable implements PrioRunnable {
         private final Runnable job;
