@@ -233,9 +233,10 @@ public final class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
             @Override
             public void run() {
                 synchronized(TickerDelayedBackgroundJob.this) {
-                    // If this runnable is not the waitingTickerJob, it has been rescheduled. Only
-                    // run if this is the expected ticker job, otherwise the expected job will run
-                    // real soon.
+                    // If this Runnable is not the waitingTickerJob, we have been rescheduled to run
+                    // at a different time. Only run if this is the expected ticker job, otherwise
+                    // don't run in favor of the new job which is scheduled to run at the proper
+                    // time.
                     if (this == waitingTickerJob) {
                         executor.execute(realJob, name + " (running)");
                     }
@@ -263,7 +264,6 @@ public final class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         assert(thread == null) : "having job thread while going to WAITING state";
         assert(waitingTickerJob == null) : "having ticker job while going to WAITING state";
         assert(nextExecutionTime != NO_EXECUTION);
-        // Use a unique job for each (re)scheduling to avoid running twice.
         waitingTickerJob = createTickerJob();
         state = JobState.WAITING;
     }
