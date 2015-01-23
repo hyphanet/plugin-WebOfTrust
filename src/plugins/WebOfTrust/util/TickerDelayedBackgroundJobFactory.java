@@ -2,7 +2,6 @@ package plugins.WebOfTrust.util;
 
 import java.util.WeakHashMap;
 
-import freenet.support.Executor;
 import freenet.support.Ticker;
 
 /**
@@ -26,13 +25,11 @@ public final class TickerDelayedBackgroundJobFactory
     private final Ticker defaultTicker;
 
     /**
-     * Constructs a background job factory with given default delay and {@link Ticker}.
-     * The {@link Ticker} given and its {@link Executor} <b>must</b> have an asynchronous
-     * implementation of respectively
-     * {@link Ticker#queueTimedJob(Runnable, String, long, boolean, boolean) queueTimedJob} and
-     * {@link Executor#execute(Runnable, String) execute}.
-     * @param delayMillis the default trigger aggregation delay
-     * @param ticker an asynchronous ticker
+     * Constructs a background job factory which will produce jobs with the given default delay
+     * and default {@link Ticker}.<br>
+     * <b>Please do read the JavaDoc of the underlying job constructor
+     * {@link TickerDelayedBackgroundJob#TickerDelayedBackgroundJob(Runnable, String, long, Ticker)}
+     * for knowing about the requirements of the parameters.</b>
      */
     public TickerDelayedBackgroundJobFactory(long delayMillis, Ticker ticker) {
         this.defaultDelay = delayMillis;
@@ -45,16 +42,11 @@ public final class TickerDelayedBackgroundJobFactory
     }
 
     /**
-     * Constructs a new {@link TickerDelayedBackgroundJob} using the default ticker. When
-     * this background job is {@link BackgroundJob#terminate() terminated}, the running job will
-     * be notified by interruption of its thread. Hence, the job implementer must take care not to
-     * swallow {@link InterruptedException}, or for long computations, periodically check the
-     * {@link Thread#interrupted()} flag of its {@link Thread#currentThread() thread} and exit
-     * accordingly.
-     * @param job the job to run in the background
-     * @param name a human-readable name for the job
-     * @param delayMillis the background job aggregation delay in milliseconds
-     * @see TickerDelayedBackgroundJob#TickerDelayedBackgroundJob(Runnable, String, long, Ticker)
+     * Same as {@link #newJob(Runnable, String)} with the default job aggregation delay replaced by
+     * the amount of milliseconds you specify.<br>
+     * <b>Please do read the JavaDoc of the underlying job constructor
+     * {@link TickerDelayedBackgroundJob#TickerDelayedBackgroundJob(Runnable, String, long, Ticker)}
+     * for knowing about the requirements of the parameters.</b>
      */
     @Override
     public TickerDelayedBackgroundJob newJob(Runnable job, String name, long delayMillis) {
@@ -62,17 +54,11 @@ public final class TickerDelayedBackgroundJobFactory
     }
 
     /**
-     * Constructs a new {@link TickerDelayedBackgroundJob}, overriding the default ticker. When this
-     * background job is {@link BackgroundJob#terminate() terminated}, the running job will be
-     * notified by interruption of its thread. Hence, the job implementer must take care not to
-     * swallow {@link InterruptedException}, or for long computations, periodically check the
-     * {@link Thread#interrupted()} flag of its {@link Thread#currentThread() thread} and exit
-     * accordingly.
-     * @param job the job to run in the background
-     * @param name a human-readable name for the job
-     * @param delayMillis the background job aggregation delay in milliseconds
-     * @param ticker the custom ticker
-     * @see TickerDelayedBackgroundJob#TickerDelayedBackgroundJob(Runnable, String, long, Ticker)
+     * Same as {@link #newJob(Runnable, String)} with the default job aggregation delay replaced by
+     * the amount of milliseconds you specify, and the default ticker replaced as well.<br>
+     * <b>Please do read the JavaDoc of the underlying job constructor
+     * {@link TickerDelayedBackgroundJob#TickerDelayedBackgroundJob(Runnable, String, long, Ticker)}
+     * for knowing about the requirements of the parameters</b>
      */
     public TickerDelayedBackgroundJob newJob(Runnable job, String name, long delayMillis,
             Ticker ticker) {
