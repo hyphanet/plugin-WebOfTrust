@@ -204,10 +204,12 @@ public final class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         assert(state == JobState.IDLE || state == JobState.WAITING) :
                 "enqueueing ticker job in non-IDLE and non-WAITING state";
         if (state == JobState.WAITING) {
-            // Best-effort attempt at removing the stale job to be replaced; this fails if the job
-            // has already been removed from the ticker queue.
+            // Best-effort attempt at removing the stale job to be replaced; this fails silently if
+            // the job has already been removed because it has just started to run.
             ticker.removeQueuedJob(waitingTickerJob);
-            // Replace the ticker job in case the above fails, so the stale job will not run.
+            // Replace the ticker job in case the above fails because it already started to execute.
+            // The stale job will check whether waitingTickerJob == this, and because it is not,
+            // refuse to start in favor of the new job.
             waitingTickerJob = createTickerJob();
         }
         if (state == JobState.IDLE) {
@@ -301,8 +303,12 @@ public final class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         } else if (state == JobState.WAITING) {
             assert(thread == null) : "having job thread while going to TERMINATED state";
             assert(waitingTickerJob != null) : "in WAITING state but no ticker job";
-            // Remove the scheduled job from the ticker on a best-effort basis.
+            // Best-effort attempt at removing the scheduled job from the ticker; this fails
+            // silently if the job has already been removed because it has just started to run.
             ticker.removeQueuedJob(waitingTickerJob);
+            // Remove the ticker job in case the above fails because it already started to execute.
+            // The job will check whether waitingTickerJob == this, and because it is not,
+            // refuse to start.
             waitingTickerJob = null;
         } else {
             assert(state == JobState.IDLE) : "going to TERMINATED state from illegal state";
