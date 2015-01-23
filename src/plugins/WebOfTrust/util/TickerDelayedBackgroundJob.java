@@ -262,6 +262,7 @@ public final class TickerDelayedBackgroundJob implements DelayedBackgroundJob {
         assert(state == JobState.IDLE) : "going to WAITING from non-IDLE state";
         assert(thread == null) : "having job thread while going to WAITING state";
         assert(waitingTickerJob == null) : "having ticker job while going to WAITING state";
+        assert(nextExecutionTime != NO_EXECUTION);
         // Use a unique job for each (re)scheduling to avoid running twice.
         waitingTickerJob = createTickerJob();
         state = JobState.WAITING;
