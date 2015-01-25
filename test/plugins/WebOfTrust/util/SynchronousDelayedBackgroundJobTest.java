@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -17,12 +18,14 @@ import static org.junit.Assert.*;
 public class SynchronousDelayedBackgroundJobTest {
     /** Concurrency canary. */
     private AtomicBoolean wasConcurrent;
+    private AtomicBoolean wasInterrupted;
     /** Background job for the current test. */
     private SynchronousDelayedBackgroundJob job;
 
     @Before
     public void setUp() {
         wasConcurrent = new AtomicBoolean(false);
+        wasInterrupted = new AtomicBoolean(false);
         job = null;
     }
 
@@ -32,6 +35,7 @@ public class SynchronousDelayedBackgroundJobTest {
     @After
     public void checkCanaries() {
         assertFalse(wasConcurrent.get());
+        assertFalse(wasInterrupted.get());
     }
 
     /**
@@ -94,5 +98,80 @@ public class SynchronousDelayedBackgroundJobTest {
         job.terminate();
         job.waitForTermination(Long.MAX_VALUE);
         assertTrue(job.isTerminated());
+    }
+    
+    /**
+     * Test  to ensure that multiple parallel calls to triggerExceution() never cause the job
+     * to run twice in parallel.
+     */
+    @Test
+    public void concurrentTriggerExecutionTest() throws Exception {
+        // This test works by creating an amount of threadCount threads of which each calls
+        //     DelayedBackgroundJob.triggerExecution(random value between 0 and maxDelay);
+        // for an amount of perThreadExecutionCount times.
+        // Those parallel calls of triggerExecution() are done to test whether the job ensures
+        // properly that the actual job thread never executes multiple times in parallel.
+        // The job itself sleeps for a time of executionDuration then to ensure that parallel
+        // executions have a higher probability of being detected.
+        final int maxExecutionDelay = 1;
+        final int executionDuration = 1;
+        final int threadCount = 10;
+        final int perThreadExecutionCount = 100;
+        final AtomicInteger actualExecutionCount = new AtomicInteger(0);
+        final Thread[] threads = new Thread[threadCount];
+        
+        // withConcurrentCanary() adds a wrapper Runnable which will detect parallel execution
+        Runnable run = withConcurrencyCanary(new Runnable() { @Override public void run() {
+            try {
+                Thread.sleep(executionDuration);
+            } catch (InterruptedException e) {
+                wasInterrupted.set(true);
+            }
+            actualExecutionCount.incrementAndGet();
+        }});
+        
+        job = new SynchronousDelayedBackgroundJob(run, "self",
+            10 * 1000 * 1000 /* Set very large default delay to ensure that it would be detected if
+                                it was used even though we don't plan to use it */ );
+        
+        for(int i=0; i < threadCount; ++i) {
+            threads[i] = new Thread(new Runnable() { @Override public void run() {
+                ThreadLocalRandom r = ThreadLocalRandom.current();
+                for(int i=0; i < perThreadExecutionCount ; ++i) {
+                    // Test both the code path of no delay (0) and a small delay (1) by randomly
+                    // choosing among those both values
+                    job.triggerExecution(r.nextLong(maxExecutionDelay
+                        + 1 /* add 1 because nextLong() excludes the max value */));
+                }
+            }});
+        }
+        
+        long begin = System.currentTimeMillis();
+        
+        // Start them in a separate loop, not in the loop where we construct them, to ensure that
+        // they are all started at the same time, execute in parallel, and thus have maximal
+        // probability of race conditions.
+        for(int i=0; i < threadCount; ++i)
+            threads[i].start();
+        
+        for(int i=0; i < threadCount; ++i)
+            threads[i].join();
+        
+        job.terminate();
+        job.waitForTermination(Long.MAX_VALUE);
+        assertTrue(job.isTerminated());
+        
+        long end = System.currentTimeMillis();
+        
+        
+        assertEquals(threadCount * perThreadExecutionCount, actualExecutionCount);
+        assertTrue(end - begin
+            <= threadCount * perThreadExecutionCount * (maxExecutionDelay + executionDuration)
+               * 1 /* 0% tolerance because we already randomize the delay */);
+        
+        
+        // checkCanaries() is what actually checks whether any execution happened in parallel.
+        // Will be done by JUnit for us because it has an @After annotation.
+        /* checkCanaries(); */
     }
 }
