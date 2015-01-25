@@ -95,7 +95,7 @@ public class SynchronousDelayedBackgroundJobTest {
         assertTrue(end - begin < (longDelay + (additionalRuns * defaultDelay)) * tolerance);
         
         job.terminate();
-        job.waitForTermination(20);
+        job.waitForTermination(Long.MAX_VALUE);
         assertTrue(job.isTerminated());
     }
 }
