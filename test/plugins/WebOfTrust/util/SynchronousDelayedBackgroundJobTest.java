@@ -65,7 +65,7 @@ public class SynchronousDelayedBackgroundJobTest {
             @Override
             public void run() {
                 runCount.incrementAndGet();
-                job.triggerExecution(0);
+                job.triggerExecution();
             }
         });
         job = new SynchronousDelayedBackgroundJob(run, "self", 10);
