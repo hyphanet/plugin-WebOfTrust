@@ -164,7 +164,8 @@ public class SynchronousDelayedBackgroundJobTest {
         long end = System.currentTimeMillis();
         
         
-        assertEquals(threadCount * perThreadExecutionCount, actualExecutionCount);
+        assertTrue(actualExecutionCount.get() < threadCount * perThreadExecutionCount);
+        
         assertTrue(end - begin
             <= threadCount * perThreadExecutionCount * (maxExecutionDelay + executionDuration)
                * 1 /* 0% tolerance because we already randomize the delay */);
