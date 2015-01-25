@@ -65,21 +65,35 @@ public class SynchronousDelayedBackgroundJobTest {
             @Override
             public void run() {
                 runCount.incrementAndGet();
+                // For SynchronousDelayedBackgroundJob, triggerExecution() is synchronous - it waits
+                // for the next execution to happen. Thus, when calling it from the job thread
+                // (= the execution itself) deadlocks would be possible. Hence the implementation
+                // ought to detect if triggerExecution() is called from the job thread and not wait
+                // for the next execution then. We can easily test for such threads by just calling
+                // triggerExecution() from the job thread. If there is a deadlock, it will never
+                // complete.
                 job.triggerExecution();
             }
         });
-        job = new SynchronousDelayedBackgroundJob(run, "self", 10);
+        long defaultDelay = 10;
+        job = new SynchronousDelayedBackgroundJob(run, "self", defaultDelay);
+        
+        long longDelay = 100;
         long begin = System.currentTimeMillis();
-        job.triggerExecution(100);
+        job.triggerExecution(longDelay);
         long end = System.currentTimeMillis();
-        assertTrue(end - begin >= 100);
-        assertTrue(end - begin < 120);
-        while(runCount.get() <= 10) {
+        assertTrue(end - begin >= longDelay);
+        float tolerance = 1.2f;
+        assertTrue(end - begin < longDelay * tolerance);
+
+        int additionalRuns = 10;
+        while(runCount.get() < 1+additionalRuns) {
             Thread.sleep(1);
         }
         end = System.currentTimeMillis();
-        assertTrue(end - begin >= 200);
-        assertTrue(end - begin < 250);
+        assertTrue(end - begin >= longDelay + (additionalRuns * defaultDelay));
+        assertTrue(end - begin < (longDelay + (additionalRuns * defaultDelay)) * tolerance);
+        
         job.terminate();
         job.waitForTermination(20);
         assertTrue(job.isTerminated());
