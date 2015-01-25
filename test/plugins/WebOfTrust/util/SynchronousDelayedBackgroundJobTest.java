@@ -17,15 +17,12 @@ import static org.junit.Assert.*;
 public class SynchronousDelayedBackgroundJobTest {
     /** Concurrency canary. */
     private AtomicBoolean wasConcurrent;
-    /** Runnable for the current test. */
-    private Runnable run;
     /** Background job for the current test. */
     private SynchronousDelayedBackgroundJob job;
 
     @Before
     public void setUp() {
         wasConcurrent = new AtomicBoolean(false);
-        run = null;
         job = null;
     }
 
