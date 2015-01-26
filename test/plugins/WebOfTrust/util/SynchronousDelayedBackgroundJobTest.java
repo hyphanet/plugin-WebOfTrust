@@ -11,7 +11,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.*;
 
 /**
- * A real simple unit test for {@link SynchronousDelayedBackgroundJob}.
+ * A real simple unit test for {@link SynchronousDelayedBackgroundJob}.<br><br>
+ *
+ * TODO: Code quality: This mostly tests the thread-safety of triggerExecution(). Lacking tests:<br>
+ * - Thread-safety and reliability of terminate() / waitForTermination(). Tests should be added to
+ *   ensure that they work when concurrently called with triggerExecution().<br>
+ * - Reliability of triggerExecution(). Tests should be added to ensure that it always causes an
+ *   actual execution if one has the right to be scheduled.<br>
  *
  * @author bertm
  */
