@@ -139,6 +139,7 @@ public class TickerDelayedBackgroundJobTest {
         assertEquals(JobState.IDLE, job.getState());
         for (int i = 1; i <= 10; i++) {
             job.triggerExecution(0);
+            assertTrue(job.getState() == JobState.WAITING || job.getState() == JobState.RUNNING);
             Thread.sleep(jobDuration);
             // Wait for at most an additional 20ms for the job to finish.
             sleeper = new Sleeper();
