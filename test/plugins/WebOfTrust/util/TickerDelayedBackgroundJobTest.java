@@ -346,7 +346,9 @@ public class TickerDelayedBackgroundJobTest {
         assertEquals(7, value.get());
         assertEquals("Should be RUNNING until t = 50 + 80 + 50 + 80 + 50 + 80",
             JobState.RUNNING, slowJob.getState());
-        sleeper.sleepUntil(395);
+        // The hammer hammered up to t = 260ms, then the job slept for 50ms, and ran for 80ms
+        // 260 + 50 + 80 = 390. So after 390, we should be IDLE for ever.
+        sleeper.sleepUntil(260 + 50 + 80 + 5);
         assertEquals(7, value.get());
         assertEquals(JobState.IDLE, slowJob.getState());
         assertFalse(wasConcurrent.get());
