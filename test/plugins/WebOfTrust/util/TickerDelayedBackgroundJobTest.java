@@ -200,11 +200,11 @@ public class TickerDelayedBackgroundJobTest {
         // Same as before, but now with 10 threads hammering the trigger for 60 ms: we expect no
         // increase the first 25 ms, one increase after 75 ms, another increase after 125 ms, then
         // remain stable.
-        sleeper = new Sleeper();
         ArrayList<Thread> threads = new ArrayList<>();
         Runnable trigger = newHammerDefault(job, 60);
         for (int i = 0; i < 10; i++)
             threads.add(new Thread(trigger));
+        sleeper = new Sleeper(); // Set "t = 0" to the point where we start the trigger threads
         for(Thread t : threads) // Separate loop for maximal concurrency
             t.start();
         assertEquals(1, value.get());
