@@ -4,15 +4,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import freenet.support.Executor;
 import freenet.support.PooledExecutor;
 import freenet.support.PrioritizedTicker;
-
 import plugins.WebOfTrust.util.TickerDelayedBackgroundJob.JobState;
-
 import static org.junit.Assert.*;
 
 /**
@@ -203,10 +202,11 @@ public class TickerDelayedBackgroundJobTest {
         // increase the first 25 ms, one increase after 75 ms, another increase after 125 ms, then
         // remain stable.
         sleeper = new Sleeper();
-        for (int i = 0; i < 10; i++) {
-            Thread t = new Thread(trigger);
+        ArrayList<Thread> threads = new ArrayList<>();
+        for (int i = 0; i < 10; i++)
+            threads.add(new Thread(trigger));
+        for(Thread t : threads) // Separate loop for maximal concurrency
             t.start();
-        }
         assertEquals(1, value.get());
         sleeper.sleepUntil(25);
         assertEquals(1, value.get());
