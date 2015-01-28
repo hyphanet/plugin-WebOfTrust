@@ -150,6 +150,7 @@ public class TickerDelayedBackgroundJobTest {
                 sleeper.sleepUntil(j + 1);
             }
             assertEquals(JobState.IDLE, job.getState());
+            assertEquals(i, value.get());
         }
         value.set(val);
     }
