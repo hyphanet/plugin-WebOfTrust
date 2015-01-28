@@ -173,7 +173,6 @@ public class TickerDelayedBackgroundJobTest {
     public void testTriggerDefault() throws Exception {
         // First test for a reasonable fast test (with execution time smaller than the delay).
         TickerDelayedBackgroundJob job = newJob(10, 50, "default1");
-        Runnable trigger = newHammerDefault(job, 60);
 
         sleeper = new Sleeper();
         assertEquals(0, value.get());
@@ -203,6 +202,7 @@ public class TickerDelayedBackgroundJobTest {
         // remain stable.
         sleeper = new Sleeper();
         ArrayList<Thread> threads = new ArrayList<>();
+        Runnable trigger = newHammerDefault(job, 60);
         for (int i = 0; i < 10; i++)
             threads.add(new Thread(trigger));
         for(Thread t : threads) // Separate loop for maximal concurrency
