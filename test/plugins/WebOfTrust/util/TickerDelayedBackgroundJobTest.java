@@ -205,7 +205,6 @@ public class TickerDelayedBackgroundJobTest {
             Thread t = new Thread(trigger);
             t.start();
         }
-        long sleep;
         assertEquals(1, value.get());
         sleeper.sleepUntil(25);
         assertEquals(1, value.get());
