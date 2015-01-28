@@ -4,7 +4,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -153,6 +154,107 @@ public class TickerDelayedBackgroundJobTest {
         }
         value.set(val);
     }
+    
+    /**
+     * An ExecutorService which will keep the given amount of threads running and waiting for work
+     * right at time of construction, i.e. before any Runnable has been submitted for execution.<br>
+     * This greatly reduces the delay which is encountered when calling {@link #execute(Runnable)},
+     * as compared to for example pre-creating Java {@link Thread}s and calling
+     * {@link Thread#start()} upon them.<br><br>
+     * 
+     * The motivation behind writing this was that I had encountered {@link Thread#start()} taking
+     * up to 10 milliseconds.<br><br>
+     * 
+     * Notice: This is not based upon {@link PooledExecutor} but rather uses the standard JRE
+     * thread pools because {@link PooledExecutor} terminates idle threads upon certain conditions.
+     * So pre-creating the threads would not have any effect because they would die soon after.
+     * TODO: Code quality: Add this class' features to {@link PooledExecutor}.
+     */
+    private class FastExecutorService {
+     
+        private final ExecutorService pool;
+        
+        public FastExecutorService(int hotThreads) {
+            pool = Executors.newFixedThreadPool(hotThreads);
+            warmupPoolThreads(hotThreads);
+        }
+    
+        /**
+         * Ensures that the {@link #pool} has at least the given amount of living threads ready
+         * waiting for work.<br>
+         */
+        private void warmupPoolThreads(final int threadsToCreate) {
+            // Since Java's ExecutorService has no feature for forcing the desired amount of threads
+            // to be pre-created, we have to emulate that feature. We do so by forcing it to
+            // pre-create them by shoving Runnables into it which block until the desired amount of
+            // hreads is alive.
+            
+            class Counter {
+                // Anonymous classes can only access *final* variables. To get a non-final one
+                // accessible in the anonymous Runnable below, we must wrap it in this class, and
+                // put an instance of the class into a final variable.
+                int threads = 0;
+            }
+            final Counter counter = new Counter();
+
+            synchronized(counter) {
+                for(int i=0; i < threadsToCreate; ++i) {
+                    pool.execute(new Runnable() { @Override public void run() {
+                        synchronized(counter) {
+                            ++counter.threads;
+                            while(counter.threads < threadsToCreate) {
+                                try {
+                                    // To ensure that the Executor pools N threads, N threads must
+                                    // be blocked. So we must block here.
+                                    counter.wait();
+                                } catch (InterruptedException e) {
+                                    wasInterrupted.set(true);
+                                }
+                                // Notice: We loop again now to guard against spurious wait() wakeup
+                            }
+                            counter.notifyAll();
+                        }
+                    }});
+                }
+            
+                while(counter.threads < threadsToCreate) {
+                    try {
+                        counter.wait();
+                    } catch (InterruptedException e) {
+                        wasInterrupted.set(true);
+                    }
+                }
+            }
+        }
+        
+        public void execute(Runnable r) {
+            pool.execute(r);
+        }
+    }
+    
+    @Test
+    public void testFastExecutorService() {
+        final AtomicInteger threadCount = new AtomicInteger();
+        Runnable sleepingThread = new Runnable() { @Override public void run() {
+            threadCount.incrementAndGet();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                wasInterrupted.set(true);
+            }
+            threadCount.decrementAndGet();
+        }};
+        
+        FastExecutorService exec = new FastExecutorService(100);
+        Sleeper sleeper = new Sleeper();
+        long begin = System.currentTimeMillis();
+        for(int i = 0; i < 100 ; ++i)
+            exec.execute(sleepingThread);
+        long end = System.currentTimeMillis();
+        assertTrue((end - begin) < 10);
+        sleeper.sleepUntil(50);
+        assertEquals(100, threadCount.get());
+    }
 
     /**
      * Creates a new, warmed-up DelayedBackgroundJob that increments the {@link #value} by 1 and
@@ -200,13 +302,11 @@ public class TickerDelayedBackgroundJobTest {
         // Same as before, but now with 10 threads hammering the trigger for 60 ms: we expect no
         // increase the first 25 ms, one increase after 75 ms, another increase after 125 ms, then
         // remain stable.
-        ArrayList<Thread> threads = new ArrayList<>();
         Runnable trigger = newHammerDefault(job, 60);
-        for (int i = 0; i < 10; i++)
-            threads.add(new Thread(trigger));
+        FastExecutorService fastExec = new FastExecutorService(10);
         sleeper = new Sleeper(); // Set "t = 0" to the point where we start the trigger threads
-        for(Thread t : threads) // Separate loop for maximal concurrency
-            t.start();
+        for (int i = 0; i < 10; i++)
+            fastExec.execute(trigger);
         assertEquals(1, value.get());
         sleeper.sleepUntil(25);
         assertEquals(1, value.get());
