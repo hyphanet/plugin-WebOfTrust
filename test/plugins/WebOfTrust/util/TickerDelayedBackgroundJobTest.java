@@ -338,8 +338,10 @@ public class TickerDelayedBackgroundJobTest {
         sleeper.sleepUntil(50 + 80 + 25);
         assertEquals(5, value.get());
         assertEquals("Should be WAITING until t = 50 + 80 + 50", JobState.WAITING, job.getState());
-        sleeper.sleepUntil(235);
+        sleeper.sleepUntil(50 + 80 + 50 + 80 - 25);
         assertEquals(6, value.get());
+        assertEquals("Should be RUNNING until t = 50 + 80 + 50 + 80",
+            JobState.RUNNING, job.getState());
         sleeper.sleepUntil(315);
         assertEquals(7, value.get());
         assertEquals(JobState.RUNNING, slowJob.getState());
