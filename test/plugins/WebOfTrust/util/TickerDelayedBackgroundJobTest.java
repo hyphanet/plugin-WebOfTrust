@@ -378,7 +378,7 @@ public class TickerDelayedBackgroundJobTest {
 
     /** Utility to allow for sustained sleeping until specified time after instantiation. */
     private class Sleeper {
-        long creation = System.currentTimeMillis();
+        final long creation = System.currentTimeMillis();
         void sleepUntil(long msFromCreation) {
             try {
                 long sleep = creation + msFromCreation - System.currentTimeMillis();
