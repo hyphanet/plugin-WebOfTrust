@@ -299,22 +299,27 @@ public class TickerDelayedBackgroundJobTest {
         assertEquals(1, value.get());
         assertEquals(JobState.IDLE, job.getState());
 
-        // Same as before, but now with 10 threads hammering the trigger for 60 ms: we expect no
-        // increase the first 25 ms, one increase after 75 ms, another increase after 125 ms, then
-        // remain stable.
+        // Same as before, but now with 10 threads hammering the trigger for 60 ms: We expect
+        // - no increase of value for the first 50ms since the job delay is that long
+        // - one increase after the job delay = 50 ms
+        // - another increase after twice the job delay = 50ms * 2 = 100 ms since the hammer threads
+        //   will immediately schedule another run after the first one has started at t = 50ms. So
+        //   the second run will start at t = first run delay + another delay = 50ms + 50ms
+        // - After the second run which started at 100ms no more run since the trigger threads only
+        //   hammered for 60ms.
         Runnable trigger = newHammerDefault(job, 60);
         FastExecutorService fastExec = new FastExecutorService(10);
         sleeper = new Sleeper(); // Set "t = 0" to the point where we start the trigger threads
         for (int i = 0; i < 10; i++)
             fastExec.execute(trigger);
         assertEquals(1, value.get());
-        sleeper.sleepUntil(25);
+        sleeper.sleepUntil(50 - 25);
         assertEquals(1, value.get());
         assertEquals(JobState.WAITING, job.getState());
-        sleeper.sleepUntil(75);
+        sleeper.sleepUntil(50 + 25);
         assertEquals(2, value.get());
         assertEquals(JobState.WAITING, job.getState());
-        sleeper.sleepUntil(125);
+        sleeper.sleepUntil(50 + 50 + 25);
         assertEquals(3, value.get());
         assertEquals(JobState.IDLE, job.getState());
         sleeper.sleepUntil(225);
