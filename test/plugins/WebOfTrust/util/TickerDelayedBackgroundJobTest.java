@@ -331,17 +331,18 @@ public class TickerDelayedBackgroundJobTest {
         fastExec.execute(hammer);
         sleeper.sleepUntil(50 - 25);
         assertEquals(3, value.get());
-        assertEquals("Should be WAITING until t = 50", JobState.WAITING, job.getState());
+        assertEquals("Should be WAITING until t = 50", JobState.WAITING, slowJob.getState());
         sleeper.sleepUntil(50 + 25);
         assertEquals(4, value.get());
-        assertEquals("Should be RUNNING until t = 50 + 80", JobState.RUNNING, job.getState());
+        assertEquals("Should be RUNNING until t = 50 + 80", JobState.RUNNING, slowJob.getState());
         sleeper.sleepUntil(50 + 80 + 25);
         assertEquals(5, value.get());
-        assertEquals("Should be WAITING until t = 50 + 80 + 50", JobState.WAITING, job.getState());
+        assertEquals("Should be WAITING until t = 50 + 80 + 50",
+            JobState.WAITING, slowJob.getState());
         sleeper.sleepUntil(50 + 80 + 50 + 80 - 25);
         assertEquals(6, value.get());
         assertEquals("Should be RUNNING until t = 50 + 80 + 50 + 80",
-            JobState.RUNNING, job.getState());
+            JobState.RUNNING, slowJob.getState());
         sleeper.sleepUntil(50 + 80 + 50 + 80 + 50 + 5);
         assertEquals(7, value.get());
         assertEquals("Should be RUNNING until t = 50 + 80 + 50 + 80 + 50 + 80",
