@@ -358,8 +358,8 @@ public class TickerDelayedBackgroundJobTest {
         sleeper.sleepUntil(370 + 25);
         assertEquals(7, value.get());
         assertEquals(JobState.IDLE, slowJob.getState());
-        // Wait another cycle to be dead sure
-        sleeper.sleepUntil(260 + (50 + 80 + 5) * 2);
+        // Wait another trigger delay to be dead sure
+        sleeper.sleepUntil(370 + 50 + 25);
         assertEquals(7, value.get());
         assertEquals(JobState.IDLE, slowJob.getState());
         assertFalse(wasConcurrent.get());
