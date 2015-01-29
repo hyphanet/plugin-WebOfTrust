@@ -324,6 +324,9 @@ public class TickerDelayedBackgroundJobTest {
         // Now test whether a slow background task (with execution time longer than the delay) is
         // handled correctly.
         TickerDelayedBackgroundJob slowJob = newJob(80 /* duration */, 50 /* delay */, "default2");
+        // The hammer will triggerExecution(default delay) for 260 ms. As the job default delay of
+        // 50ms is shorter than its run duration of 80ms, each run of a job will immediately be
+        // followed by the next run until the hammering stops.
         Runnable hammer = newHammerDefault(slowJob, 260 /* time of hammering triggerExecution() */);
         sleeper = new Sleeper();
         assertEquals(3, value.get());
@@ -337,19 +340,22 @@ public class TickerDelayedBackgroundJobTest {
         assertEquals("Should be RUNNING until t = 50 + 80", JobState.RUNNING, slowJob.getState());
         sleeper.sleepUntil(50 + 80 + 25);
         assertEquals(5, value.get());
-        assertEquals("Should be WAITING until t = 50 + 80 + 50",
-            JobState.WAITING, slowJob.getState());
-        sleeper.sleepUntil(50 + 80 + 50 + 80 - 25);
+        assertEquals("Should be RUNNING until t = 50 + 80 + 80 = 210",
+            JobState.RUNNING, slowJob.getState());
+        sleeper.sleepUntil(210 + 25);
         assertEquals(6, value.get());
-        assertEquals("Should be RUNNING until t = 50 + 80 + 50 + 80",
+        assertEquals("Should be RUNNING until t = 50 + 80 + 80 + 80 = 290",
             JobState.RUNNING, slowJob.getState());
-        sleeper.sleepUntil(50 + 80 + 50 + 80 + 50 + 5);
+        sleeper.sleepUntil(290 + 25);
         assertEquals(7, value.get());
-        assertEquals("Should be RUNNING until t = 50 + 80 + 50 + 80 + 50 + 80",
+        assertEquals("Should be RUNNING until t = 50 + 80 + 80 + 80 + 80 = 370",
             JobState.RUNNING, slowJob.getState());
-        // The hammer hammered up to t = 260ms, then the job slept for 50ms, and ran for 80ms
-        // 260 + 50 + 80 = 390. So after 390, we should be IDLE for ever.
-        sleeper.sleepUntil(260 + 50 + 80 + 5);
+        // The hammer hammered up to t = 260ms, the job was running up to t = 290ms, and then
+        // immediately run once more even without the hammering: We have been hammering right from
+        // the beginning of the last run, so another run was eligible. 
+        // This really-last run added another 80 ms, so it lasted up to 290ms + 80ms = 370ms.
+        // So after 370 ms, we should be IDLE for ever.
+        sleeper.sleepUntil(370 + 25);
         assertEquals(7, value.get());
         assertEquals(JobState.IDLE, slowJob.getState());
         // Wait another cycle to be dead sure
