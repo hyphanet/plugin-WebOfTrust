@@ -323,8 +323,8 @@ public class TickerDelayedBackgroundJobTest {
 
         // Now test whether a slow background task (with execution time longer than the delay) is
         // handled correctly.
-        TickerDelayedBackgroundJob slowJob = newJob(80, 50, "default2");
-        Runnable hammer = newHammerDefault(slowJob, 260);
+        TickerDelayedBackgroundJob slowJob = newJob(80 /* duration */, 50 /* delay */, "default2");
+        Runnable hammer = newHammerDefault(slowJob, 260 /* time of hammering triggerExecution() */);
         sleeper = new Sleeper();
         assertEquals(3, value.get());
         assertEquals(JobState.IDLE, slowJob.getState());
