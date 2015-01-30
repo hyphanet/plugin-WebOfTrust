@@ -375,7 +375,7 @@ public class TickerDelayedBackgroundJobTest {
     @Test
     public void testTriggerCustom() throws Exception {
         // Simple test
-        TickerDelayedBackgroundJob job1 = newJob(10, 1000, "custom1");
+        TickerDelayedBackgroundJob job1 = newJob(10 /* duration */, 1000 /* delay */, "custom1");
         Thread hammer = new Thread(newHammerCustom(job1, new long[] {60, 50, 30, 20, 10}));
         sleeper = new Sleeper();
         assertEquals(0, value.get());
