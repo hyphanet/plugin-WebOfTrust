@@ -333,10 +333,12 @@ public class TickerDelayedBackgroundJobTest {
         // 50ms is shorter than its run duration of 80ms, each run of a job will immediately be
         // followed by the next run until the hammering stops.
         Runnable hammer = newHammerDefault(slowJob, 260 /* time of hammering triggerExecution() */);
+        fastExec = new FastExecutorService(3);
         sleeper = new Sleeper();
         assertEquals(3, value.get());
         assertEquals(JobState.IDLE, slowJob.getState());
-        fastExec.execute(hammer);
+        for (int i = 0; i < 3; i++)
+            fastExec.execute(hammer);
         sleeper.sleepUntil(50 - 25);
         assertEquals(3, value.get());
         assertEquals("Should be WAITING until t = 50", JobState.WAITING, slowJob.getState());
