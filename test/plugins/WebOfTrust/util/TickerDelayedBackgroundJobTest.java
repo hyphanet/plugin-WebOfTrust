@@ -408,7 +408,7 @@ public class TickerDelayedBackgroundJobTest {
         assertEquals(JobState.IDLE, job1.getState());
 
         // Default delay plus immediate trigger
-        TickerDelayedBackgroundJob job2 = newJob(30, 100, "custom1");
+        TickerDelayedBackgroundJob job2 = newJob(30 /* duration */, 100 /* delay */, "custom1");
         sleeper = new Sleeper();
         assertEquals(1, value.get());
         assertEquals(JobState.IDLE, job2.getState());
