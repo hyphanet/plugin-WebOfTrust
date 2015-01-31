@@ -437,12 +437,28 @@ public class TickerDelayedBackgroundJobTest {
     public void testTerminate() throws Exception {
         // Test immediate termination on IDLE
         TickerDelayedBackgroundJob job1 = newJob(50 /* duration */, 20 /* delay */, "terminate1");
+        class TerminatedTester1 {
+            public TerminatedTester1(TickerDelayedBackgroundJob job1) {
+                assertEquals(JobState.TERMINATED, job1.getState());
+                assertTrue(job1.isTerminated());
+                assertFalse(wasInterrupted.get());
+            }
+        }
         assertEquals(JobState.IDLE, job1.getState());
         assertFalse(job1.isTerminated());
         job1.terminate();
-        assertEquals(JobState.TERMINATED, job1.getState());
-        assertTrue(job1.isTerminated());
-        assertFalse(wasInterrupted.get());
+        new TerminatedTester1(job1);
+        // Test triggerExecution() after termination
+        job1.triggerExecution();
+        new Sleeper().sleepUntil(20 + 25);
+        new TerminatedTester1(job1);
+        assertEquals(1, value.get());
+        // Test triggerExecution(0) after termination
+        // - The special value 0 should have a different internal codepath
+        job1.triggerExecution(0);
+        new Sleeper().sleepUntil(25);
+        new TerminatedTester1(job1);
+        assertEquals(1, value.get());
 
         // Test immediate termination on WAITING
         TickerDelayedBackgroundJob job2 = newJob(50 /* duration */, 20 /* delay */, "terminate2");
