@@ -436,7 +436,7 @@ public class TickerDelayedBackgroundJobTest {
     @Test
     public void testTerminate() throws Exception {
         // Test immediate termination on IDLE
-        TickerDelayedBackgroundJob job1 = newJob(50, 20, "terminate1");
+        TickerDelayedBackgroundJob job1 = newJob(50 /* duration */, 20 /* delay */, "terminate1");
         assertEquals(JobState.IDLE, job1.getState());
         assertFalse(job1.isTerminated());
         job1.terminate();
@@ -445,7 +445,7 @@ public class TickerDelayedBackgroundJobTest {
         assertFalse(wasInterrupted.get());
 
         // Test immediate termination on WAITING
-        TickerDelayedBackgroundJob job2 = newJob(50, 20, "terminate2");
+        TickerDelayedBackgroundJob job2 = newJob(50 /* duration */, 20 /* delay */, "terminate2");
         assertEquals(JobState.IDLE, job2.getState());
         assertFalse(job2.isTerminated());
         job2.triggerExecution();
@@ -457,7 +457,7 @@ public class TickerDelayedBackgroundJobTest {
         assertFalse(wasInterrupted.get());
 
         // Test interrupting termination on RUNNING
-        TickerDelayedBackgroundJob job3 = newJob(50, 20, "terminate3");
+        TickerDelayedBackgroundJob job3 = newJob(50 /* duration */, 20 /* delay */, "terminate3");
         assertEquals(JobState.IDLE, job3.getState());
         assertFalse(job3.isTerminated());
         job3.triggerExecution(0);
