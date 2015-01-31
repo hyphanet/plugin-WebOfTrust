@@ -423,7 +423,8 @@ public class TickerDelayedBackgroundJobTest {
         job2.triggerExecution();
         sleeper.sleepUntil(50);
         assertEquals(2, value.get());
-        assertEquals(JobState.WAITING, job2.getState());
+        // We triggered at t = 10, with the default delay of 100, we are at t = 50
+        assertEquals("Should be waiting until t = 10 + 100", JobState.WAITING, job2.getState());
         sleeper.sleepUntil(130);
         assertEquals(3, value.get());
         assertEquals(JobState.RUNNING, job2.getState());
