@@ -378,11 +378,12 @@ public class TickerDelayedBackgroundJobTest {
         // triggerExecution(long delay) immediately followed by triggerExecution(short delay), it
         // should decrease the existing delay to the short one.
         TickerDelayedBackgroundJob job1 = newJob(10 /* duration */, 1000 /* delay */, "custom1");
-        Thread hammer = new Thread(newHammerCustom(job1, new long[] {60, 50, 30, 20, 10}));
+        Runnable hammer = newHammerCustom(job1, new long[] {60, 50, 30, 20, 10});
+        FastExecutorService fastExec = new FastExecutorService(1);
         sleeper = new Sleeper();
         assertEquals(0, value.get());
         assertEquals(JobState.IDLE, job1.getState());
-        hammer.start();
+        fastExec.execute(hammer);
         sleeper.sleepUntil(10);
         assertEquals(0, value.get());
         assertEquals(JobState.WAITING, job1.getState());
