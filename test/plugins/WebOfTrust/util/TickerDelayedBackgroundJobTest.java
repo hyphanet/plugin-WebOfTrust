@@ -397,6 +397,7 @@ public class TickerDelayedBackgroundJobTest {
         assertEquals("Should be RUNNING until t = 4 + 10 + 10 = 24",
             JobState.RUNNING, job1.getState());
         sleeper.sleepUntil(30);
+        assertEquals(1, value.get());
         assertEquals(JobState.IDLE, job1.getState());
 
         // Default delay plus immediate trigger
