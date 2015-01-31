@@ -389,6 +389,13 @@ public class TickerDelayedBackgroundJobTest {
         assertEquals(JobState.WAITING, job1.getState());
         sleeper.sleepUntil(20);
         assertEquals(1, value.get());
+        // The time until which the job is running computes as follows:
+        // It takes 4 iterations of the hammer to reduce the job delay to 10 ms.
+        // As the hammer sleeps for ~1 ms at each iteration, that adds 4ms.
+        // Then the job delay of 10 ms needs to expire, which adds 10ms.
+        // Then the job runs for 10 ms, which adds another 10 ms.
+        assertEquals("Should be RUNNING until t = 4 + 10 + 10 = 24",
+            JobState.RUNNING, job1.getState());
         sleeper.sleepUntil(30);
         assertEquals(JobState.IDLE, job1.getState());
 
