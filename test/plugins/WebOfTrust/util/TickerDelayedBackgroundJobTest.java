@@ -377,7 +377,7 @@ public class TickerDelayedBackgroundJobTest {
         // Simple test to check whether decreasing the trigger delay works. I.e. if you call
         // triggerExecution(long delay) immediately followed by triggerExecution(short delay), it
         // should decrease the existing delay to the short one.
-        TickerDelayedBackgroundJob job1 = newJob(10 /* duration */, 1000 /* delay */, "custom1");
+        TickerDelayedBackgroundJob job1 = newJob(10 /* duration */, 70 /* delay */, "custom1");
         Runnable hammer = newHammerCustom(job1, new long[] {60, 50, 30, 20, 10});
         FastExecutorService fastExec = new FastExecutorService(1);
         sleeper = new Sleeper();
@@ -397,6 +397,13 @@ public class TickerDelayedBackgroundJobTest {
         assertEquals("Should be RUNNING until t = 4 + 10 + 10 = 24",
             JobState.RUNNING, job1.getState());
         sleeper.sleepUntil(30);
+        assertEquals(1, value.get());
+        assertEquals(JobState.IDLE, job1.getState());
+        // Remember: The whole of the above test run wanted to check whether overriding a trigger
+        // delay with a shorter delay works. So the longer delays which were overriden should not
+        // be in effect anymore. We now test whether bugs caused them to be used nevertheless.
+        sleeper.sleepUntil(70 /* maximal trigger delay we used */ + 10 /* job duration */
+            + 25 /* for safety */);
         assertEquals(1, value.get());
         assertEquals(JobState.IDLE, job1.getState());
 
