@@ -427,7 +427,7 @@ public class TickerDelayedBackgroundJobTest {
         assertEquals("Should be waiting until t = 10 + 100", JobState.WAITING, job2.getState());
         sleeper.sleepUntil(130);
         assertEquals(3, value.get());
-        assertEquals(JobState.RUNNING, job2.getState());
+        assertEquals("Should be running until t = 110 + 30", JobState.RUNNING, job2.getState());
         sleeper.sleepUntil(160);
         assertEquals(3, value.get());
         assertEquals(JobState.IDLE, job2.getState());
