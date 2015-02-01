@@ -521,6 +521,15 @@ public class TickerDelayedBackgroundJobTest {
         job2.waitForTermination(1000);
         end = System.currentTimeMillis();
         assertTrue(end - begin < 2);
+        
+        // Test that terminating WAITING jobs returns reasonably immediately.
+        TickerDelayedBackgroundJob job3 = newJob(0 /* duration */, 1000 * 1000 /* delay */, "w3");
+        job3.triggerExecution();
+        job3.terminate();
+        begin = System.currentTimeMillis();
+        job3.waitForTermination(1000);
+        end = System.currentTimeMillis();
+        assertTrue(end - begin < 2);
 
         // Test termination from RUNNING job and notify
         // (The array is to circumvent the Java referencing restriction of anonymous local classes
