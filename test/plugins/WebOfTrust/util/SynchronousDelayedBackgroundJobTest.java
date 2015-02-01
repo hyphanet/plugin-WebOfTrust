@@ -18,6 +18,8 @@ import static org.junit.Assert.*;
  *   ensure that they work when concurrently called with triggerExecution().<br>
  * - Reliability of triggerExecution(). Tests should be added to ensure that it always causes an
  *   actual execution if one has the right to be scheduled.<br>
+ * Notice: The best way to improve this class likely is to re-use the most of
+ * {@link TickerDelayedBackgroundJobTest}, maybe via a common base class.
  *
  * @author bertm
  */
