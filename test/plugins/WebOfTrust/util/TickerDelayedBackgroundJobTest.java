@@ -473,6 +473,17 @@ public class TickerDelayedBackgroundJobTest {
         new Sleeper().sleepUntil(20 + 25);
         new TerminatedTester(job2);
         assertEquals(1, value.get());
+        // Test triggerExecution() after termination
+        job2.triggerExecution();
+        new Sleeper().sleepUntil(20 + 25);
+        new TerminatedTester(job2);
+        assertEquals(1, value.get());
+        // Test triggerExecution(0) after termination
+        // - The special value 0 should have a different internal codepath
+        job2.triggerExecution(0);
+        new Sleeper().sleepUntil(25);
+        new TerminatedTester(job2);
+        assertEquals(1, value.get());
         
         // Test interrupting termination on RUNNING
         TickerDelayedBackgroundJob job3 = newJob(50 /* duration */, 20 /* delay */, "terminate3");
