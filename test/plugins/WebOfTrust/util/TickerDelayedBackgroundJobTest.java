@@ -503,16 +503,15 @@ public class TickerDelayedBackgroundJobTest {
     @Test
     public void testWaitForTermination() throws Exception {
         long begin, end;
-        // Test that the timeout is obeyed within reasonable limits (at most 10 ms too much).
+        // Test that the timeout is obeyed within reasonable limits (at most 10% too much).
         DelayedBackgroundJob job1 = newJob(0 /* duration */, 50 /* delay */, "wait1");
-        for (int i = 0; i < 10; i++) {
-            long timeout = 10 * i;
+        for (int timeout = 50; timeout <= 550; timeout += 100) {
             begin = System.currentTimeMillis();
             job1.waitForTermination(timeout);
             end = System.currentTimeMillis();
             long waited = end - begin;
             assertTrue(waited >= timeout);
-            assertTrue(waited <= timeout + 10);
+            assertTrue(waited <= timeout * 1.1f);
         }
 
         // Test that terminated jobs return reasonably immediately.
