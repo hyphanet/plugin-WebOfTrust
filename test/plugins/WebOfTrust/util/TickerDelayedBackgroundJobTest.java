@@ -23,6 +23,16 @@ import static org.junit.Assert.*;
  * @author bertm
  */
 public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
+    /**
+     * Number of times a Java function must be executed before it is JIT-compiled for faster
+     * execution.<br>
+     * This is used for the warmup functions to execute time critical code often enough to cause
+     * it to be compiled.<br>
+     * Obtained from <a href="http://www.oracle.com/technetwork/java/vmoptions-jsp-140102.html">
+     * Oracle</a> on 2015-02-02.
+     */
+    private static final int DEFAULT_JAVA_COMPILE_THRESHOLD = 1501;
+    
     private Executor executor;
     private PrioritizedTicker ticker;
     // Value to increment by running jobs.
