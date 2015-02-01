@@ -127,33 +127,7 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         };
     }
 
-    /**
-     * Warmup the job/ticker/executor by triggering its immediate execution and waiting for the
-     * change to happen 10 times. Restores the {@link #value} after warmup.
-     * @param job the job to warm up
-     * @param jobDuration the expected duration of the job
-     */
-    private void warmup(TickerDelayedBackgroundJob job, long jobDuration) throws Exception {
-        int val = value.getAndSet(0);
-        assertEquals(JobState.IDLE, job.getState());
-        for (int i = 1; i <= 10; i++) {
-            job.triggerExecution(0);
-            assertTrue(job.getState() == JobState.WAITING || job.getState() == JobState.RUNNING);
-            Thread.sleep(jobDuration);
-            // Wait for at most an additional 20ms for the job to finish.
-            sleeper = new Sleeper();
-            for (int j = 0; j < 20; j++) {
-                if (job.getState() == JobState.IDLE) {
-                    break;
-                }
-                sleeper.sleepUntil(j + 1);
-            }
-            assertEquals(JobState.IDLE, job.getState());
-            assertEquals(i, value.get());
-        }
-        value.set(val);
-    }
-    
+
     /**
      * An ExecutorService which will keep the given amount of threads running and waiting for work
      * right at time of construction, i.e. before any Runnable has been submitted for execution.<br>
@@ -256,17 +230,16 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
     }
 
     /**
-     * Creates a new, warmed-up DelayedBackgroundJob that increments the {@link #value} by 1 and
+     * Creates a new, DelayedBackgroundJob that increments the {@link #value} by 1 and
      * waits for {@code jobDuration} ms on each execution, with given aggregation delay.
      * @param jobDuration the job duration
      * @param delay the trigger aggregation delay
      * @return
      */
-    private TickerDelayedBackgroundJob newJob(long jobDuration, long delay, String name) throws
-            Exception {
+    private TickerDelayedBackgroundJob newJob(long jobDuration, long delay, String name) {
         Runnable test = newValueIncrementer(jobDuration);
         TickerDelayedBackgroundJob job = new TickerDelayedBackgroundJob(test, name, delay, ticker);
-        warmup(job, jobDuration);
+        assertEquals(JobState.IDLE, job.getState());
         return job;
     }
 
