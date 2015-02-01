@@ -438,25 +438,32 @@ public class TickerDelayedBackgroundJobTest {
         // Test immediate termination on IDLE
         TickerDelayedBackgroundJob job1 = newJob(50 /* duration */, 20 /* delay */, "terminate1");
         class TerminatedTester {
-            public TerminatedTester(TickerDelayedBackgroundJob job1) {
+            private void test(TickerDelayedBackgroundJob job1) {
                 assertEquals(JobState.TERMINATED, job1.getState());
                 assertTrue(job1.isTerminated());
                 assertFalse(wasInterrupted.get());
                 assertEquals(1, value.get());
             }
+            
+            public TerminatedTester(TickerDelayedBackgroundJob job1) {
+                test(job1);
+                // Test whether a possibly existing already scheduled run does not execute
+                new Sleeper().sleepUntil(20 + 25);
+                test(job1);
+                // Test triggerExecution() after termination
+                job1.triggerExecution();
+                new Sleeper().sleepUntil(20 + 25);
+                test(job1);
+                // Test triggerExecution(0) after termination
+                // - The special value 0 should have a different internal codepath
+                job1.triggerExecution(0);
+                new Sleeper().sleepUntil(25);
+                test(job1);
+            }
         }
         assertEquals(JobState.IDLE, job1.getState());
         assertFalse(job1.isTerminated());
         job1.terminate();
-        new TerminatedTester(job1);
-        // Test triggerExecution() after termination
-        job1.triggerExecution();
-        new Sleeper().sleepUntil(20 + 25);
-        new TerminatedTester(job1);
-        // Test triggerExecution(0) after termination
-        // - The special value 0 should have a different internal codepath
-        job1.triggerExecution(0);
-        new Sleeper().sleepUntil(25);
         new TerminatedTester(job1);
 
         // Test immediate termination on WAITING
@@ -467,18 +474,6 @@ public class TickerDelayedBackgroundJobTest {
         assertEquals(JobState.WAITING, job2.getState());
         assertFalse(job2.isTerminated());
         job2.terminate();
-        new TerminatedTester(job2);
-        // Test whether the already scheduled run does not execute
-        new Sleeper().sleepUntil(20 + 25);
-        new TerminatedTester(job2);
-        // Test triggerExecution() after termination
-        job2.triggerExecution();
-        new Sleeper().sleepUntil(20 + 25);
-        new TerminatedTester(job2);
-        // Test triggerExecution(0) after termination
-        // - The special value 0 should have a different internal codepath
-        job2.triggerExecution(0);
-        new Sleeper().sleepUntil(25);
         new TerminatedTester(job2);
         
         // Test interrupting termination on RUNNING
