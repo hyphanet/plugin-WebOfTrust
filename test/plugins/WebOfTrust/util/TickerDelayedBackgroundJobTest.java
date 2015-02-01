@@ -522,7 +522,7 @@ public class TickerDelayedBackgroundJobTest {
         end = System.currentTimeMillis();
         assertTrue(end - begin < 2);
 
-        // Test termination from job and notify
+        // Test termination from RUNNING job and notify
         // (The array is to circumvent the Java referencing restriction of anonymous local classes
         // not being able to access non-final variables in their containing function)
         final DelayedBackgroundJob[] jobs = new DelayedBackgroundJob[1];
