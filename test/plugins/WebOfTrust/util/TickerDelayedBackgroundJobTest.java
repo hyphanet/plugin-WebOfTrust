@@ -514,7 +514,7 @@ public class TickerDelayedBackgroundJobTest {
             assertTrue(waited <= timeout * 1.1f);
         }
 
-        // Test that terminated jobs return reasonably immediately.
+        // Test that terminating IDLE jobs returns reasonably immediately.
         DelayedBackgroundJob job2 = newJob(0 /* duration */, 50 /* delay */, "wait2");
         job2.terminate();
         begin = System.currentTimeMillis();
