@@ -469,7 +469,11 @@ public class TickerDelayedBackgroundJobTest {
         assertFalse(job2.isTerminated());
         job2.terminate();
         new TerminatedTester(job2);
-
+        // Test whether the already scheduled run does not execute
+        new Sleeper().sleepUntil(20 + 25);
+        new TerminatedTester(job2);
+        assertEquals(1, value.get());
+        
         // Test interrupting termination on RUNNING
         TickerDelayedBackgroundJob job3 = newJob(50 /* duration */, 20 /* delay */, "terminate3");
         assertEquals(JobState.IDLE, job3.getState());
