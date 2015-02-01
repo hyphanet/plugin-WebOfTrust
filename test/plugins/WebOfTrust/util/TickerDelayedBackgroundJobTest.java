@@ -437,12 +437,13 @@ public class TickerDelayedBackgroundJobTest {
     public void testTerminate() throws Exception {
         // Test immediate termination on IDLE
         TickerDelayedBackgroundJob job1 = newJob(50 /* duration */, 20 /* delay */, "terminate1");
+        assertEquals(0, value.get());
         class TerminatedTester {
             private void test(TickerDelayedBackgroundJob job1) {
                 assertEquals(JobState.TERMINATED, job1.getState());
                 assertTrue(job1.isTerminated());
                 assertFalse(wasInterrupted.get());
-                assertEquals(1, value.get());
+                assertEquals(0, value.get());
             }
             
             public TerminatedTester(TickerDelayedBackgroundJob job1) {
@@ -468,6 +469,7 @@ public class TickerDelayedBackgroundJobTest {
 
         // Test immediate termination on WAITING
         TickerDelayedBackgroundJob job2 = newJob(50 /* duration */, 20 /* delay */, "terminate2");
+        assertEquals(0, value.get());
         assertEquals(JobState.IDLE, job2.getState());
         assertFalse(job2.isTerminated());
         job2.triggerExecution();
@@ -494,7 +496,7 @@ public class TickerDelayedBackgroundJobTest {
         // Reset interrupted flag and value, otherwise both "@After {@link #checkCanaries()}" and 
         // TerminatedTester will throw
         assertTrue(wasInterrupted.getAndSet(false));
-        assertEquals(2, value.getAndSet(1));
+        assertEquals(1, value.getAndSet(0));
         new TerminatedTester(job3);
     }
 
