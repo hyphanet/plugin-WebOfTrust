@@ -54,6 +54,11 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         wasInterrupted = new AtomicBoolean(false);
         sleeper = null;
         ticker.start();
+        
+        // The following functions need what was initialized above. As JUnit's "@Before" doesn't
+        // guarantee any call order among multiple functions having it as annotation, we cannot use
+        // it on those functions, we must call them here to ensure the order.
+        warmupNewValueIncrementer();
     }
 
     /**
@@ -90,6 +95,16 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
                 isRunning.set(false);
             }
         };
+    }
+
+    /** @see #DEFAULT_JAVA_COMPILE_THRESHOLD */
+    public void warmupNewValueIncrementer() {
+        int oldValue = value.get();
+        
+        for(int i=0; i < DEFAULT_JAVA_COMPILE_THRESHOLD; ++i)
+            newValueIncrementer(1).run();
+        
+        value.set(oldValue);
     }
 
     /**
