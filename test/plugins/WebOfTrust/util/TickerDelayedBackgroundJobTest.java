@@ -556,7 +556,7 @@ public class TickerDelayedBackgroundJobTest {
         jobs[0].waitForTermination(1000);
         end = System.currentTimeMillis();
         assertTrue(jobs[0].isTerminated());
-        assertTrue(end - begin >= 40);
+        assertTrue(end - begin >= 50);
         assertTrue(end - begin <= 70);
         assertTrue(wasInterrupted.get());
         // Reset interrupted flag, otherwise our @After {@link #checkCanaries()} will throw.
