@@ -512,6 +512,7 @@ public class TickerDelayedBackgroundJobTest {
             long waited = end - begin;
             assertTrue(waited >= timeout);
             assertTrue(waited <= timeout * 1.1f);
+            assertFalse(job1.isTerminated());
         }
 
         // Test that terminating IDLE jobs returns reasonably immediately.
@@ -521,6 +522,7 @@ public class TickerDelayedBackgroundJobTest {
         job2.waitForTermination(1000);
         end = System.currentTimeMillis();
         assertTrue(end - begin < 2);
+        assertTrue(job2.isTerminated());
         
         // Test that terminating WAITING jobs returns reasonably immediately.
         TickerDelayedBackgroundJob job3 = newJob(0 /* duration */, 1000 * 1000 /* delay */, "w3");
@@ -530,6 +532,7 @@ public class TickerDelayedBackgroundJobTest {
         job3.waitForTermination(1000);
         end = System.currentTimeMillis();
         assertTrue(end - begin < 2);
+        assertTrue(job3.isTerminated());
 
         // Test termination from RUNNING job and notify
         // (The array is to circumvent the Java referencing restriction of anonymous local classes
