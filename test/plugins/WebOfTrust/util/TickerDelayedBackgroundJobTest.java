@@ -491,11 +491,11 @@ public class TickerDelayedBackgroundJobTest {
             assertFalse(job3.isTerminated());
         }
         Thread.sleep(20);
-        assertEquals(JobState.TERMINATED, job3.getState());
-        assertTrue(job3.isTerminated());
-        assertTrue(wasInterrupted.get());
-        // Reset interrupted flag, otherwise our @After {@link #checkCanaries()} will throw.
-        wasInterrupted.set(false);
+        // Reset interrupted flag and value, otherwise both "@After {@link #checkCanaries()}" and 
+        // TerminatedTester will throw
+        assertTrue(wasInterrupted.getAndSet(false));
+        assertEquals(2, value.getAndSet(1));
+        new TerminatedTester(job3);
     }
 
     @Test
