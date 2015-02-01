@@ -274,7 +274,7 @@ public class TickerDelayedBackgroundJobTest {
     @Test
     public void testTriggerDefault() throws Exception {
         // First test for a reasonable fast test (with execution time smaller than the delay).
-        TickerDelayedBackgroundJob job = newJob(10, 50, "default1");
+        TickerDelayedBackgroundJob job = newJob(10 /* duration */, 50 /* delay */, "default1");
 
         sleeper = new Sleeper();
         assertEquals(0, value.get());
