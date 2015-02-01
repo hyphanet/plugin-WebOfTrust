@@ -541,9 +541,9 @@ public class TickerDelayedBackgroundJobTest {
         jobs[0] = new TickerDelayedBackgroundJob(new Runnable() {
             @Override
             public void run() {
+                new Sleeper().sleepUntil(50);
+                jobs[0].terminate();
                 try {
-                    Thread.sleep(50);
-                    jobs[0].terminate();
                     Thread.sleep(20000);
                 } catch (InterruptedException e) {
                     wasInterrupted.set(true);
