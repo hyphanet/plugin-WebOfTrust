@@ -504,7 +504,7 @@ public class TickerDelayedBackgroundJobTest {
     public void testWaitForTermination() throws Exception {
         long begin, end;
         // Test that the timeout is obeyed within reasonable limits (at most 10 ms too much).
-        DelayedBackgroundJob job1 = newJob(0, 50, "wait1");
+        DelayedBackgroundJob job1 = newJob(0 /* duration */, 50 /* delay */, "wait1");
         for (int i = 0; i < 10; i++) {
             long timeout = 10 * i;
             begin = System.currentTimeMillis();
@@ -516,7 +516,7 @@ public class TickerDelayedBackgroundJobTest {
         }
 
         // Test that terminated jobs return reasonably immediately.
-        DelayedBackgroundJob job2 = newJob(0, 50, "wait2");
+        DelayedBackgroundJob job2 = newJob(0 /* duration */, 50 /* delay */, "wait2");
         job2.terminate();
         begin = System.currentTimeMillis();
         job2.waitForTermination(1000);
