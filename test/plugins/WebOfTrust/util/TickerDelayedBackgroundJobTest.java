@@ -9,6 +9,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import plugins.WebOfTrust.AbstractJUnit4BaseTest;
+import plugins.WebOfTrust.WebOfTrust;
 import freenet.support.Executor;
 import freenet.support.PooledExecutor;
 import freenet.support.PrioritizedTicker;
@@ -20,7 +22,7 @@ import static org.junit.Assert.*;
  *
  * @author bertm
  */
-public class TickerDelayedBackgroundJobTest {
+public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
     private Executor executor;
     private PrioritizedTicker ticker;
     // Value to increment by running jobs.
@@ -29,8 +31,6 @@ public class TickerDelayedBackgroundJobTest {
     private AtomicBoolean wasConcurrent;
     // Canary for thread interruption.
     private AtomicBoolean wasInterrupted;
-    // Thread sleep "randomizer".
-    private AtomicInteger rand;
     // Sleeper for timing-sensitive tests.
     private Sleeper sleeper;
 
@@ -42,7 +42,6 @@ public class TickerDelayedBackgroundJobTest {
         value = new AtomicInteger(0);
         wasConcurrent = new AtomicBoolean(false);
         wasInterrupted = new AtomicBoolean(false);
-        rand = new AtomicInteger(0);
         sleeper = null;
         ticker.start();
     }
@@ -98,7 +97,7 @@ public class TickerDelayedBackgroundJobTest {
                         job.triggerExecution();
                     }
                     try {
-                        Thread.sleep(1, rand.addAndGet(500));
+                        Thread.sleep(1, mRandom.nextInt(999999 + 1));
                     } catch (InterruptedException e) {
                         wasInterrupted.set(true);
                     }
@@ -119,7 +118,7 @@ public class TickerDelayedBackgroundJobTest {
                 for (long delay : delays) {
                     job.triggerExecution(delay);
                     try {
-                        Thread.sleep(1, rand.addAndGet(500));
+                        Thread.sleep(1, mRandom.nextInt(999999 + 1));
                     } catch (InterruptedException e) {
                         wasInterrupted.set(true);
                     }
@@ -576,5 +575,10 @@ public class TickerDelayedBackgroundJobTest {
                 throw new RuntimeException("Got interrupted during sleep.", e);
             }
         }
+    }
+    
+    @Override protected WebOfTrust getWebOfTrust() {
+        fail("Not implemented");
+        return null;
     }
 }
