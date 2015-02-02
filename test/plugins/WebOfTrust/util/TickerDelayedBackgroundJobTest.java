@@ -63,6 +63,7 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         warmupNewHammerDefault();
         warmupNewHammerCustom();
         warmupFastExecutorService();
+        warmupNewJob();
     }
 
     /**
@@ -302,6 +303,13 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         TickerDelayedBackgroundJob job = new TickerDelayedBackgroundJob(test, name, delay, ticker);
         assertEquals(JobState.IDLE, job.getState());
         return job;
+    }
+    
+    /** @see #DEFAULT_JAVA_COMPILE_THRESHOLD */
+    public void warmupNewJob() {
+        for(int i = 0; i < DEFAULT_JAVA_COMPILE_THRESHOLD; ++i) {
+            newJob(0, 0, "warmup");
+        }
     }
 
     @Test
