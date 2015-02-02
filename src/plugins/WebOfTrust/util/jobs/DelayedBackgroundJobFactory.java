@@ -1,4 +1,4 @@
-package plugins.WebOfTrust.util;
+package plugins.WebOfTrust.util.jobs;
 
 /**
  * Background job factory that allows for creation of {@link DelayedBackgroundJob}s.

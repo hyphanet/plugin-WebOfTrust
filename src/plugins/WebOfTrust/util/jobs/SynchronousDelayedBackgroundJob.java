@@ -1,4 +1,4 @@
-package plugins.WebOfTrust.util;
+package plugins.WebOfTrust.util.jobs;
 
 import freenet.support.Logger;
 

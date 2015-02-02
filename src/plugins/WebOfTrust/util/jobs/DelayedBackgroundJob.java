@@ -1,4 +1,4 @@
-package plugins.WebOfTrust.util;
+package plugins.WebOfTrust.util.jobs;
 
 /**
  * A {@link BackgroundJob} that is executed after triggers have been aggregated for some delay.

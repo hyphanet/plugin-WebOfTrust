@@ -1,4 +1,4 @@
-package plugins.WebOfTrust.util;
+package plugins.WebOfTrust.util.jobs;
 
 /**
  * Factory for {@link BackgroundJob}s which allows all background jobs constructed using an instance

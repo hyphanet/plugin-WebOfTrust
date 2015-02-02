@@ -1,4 +1,4 @@
-package plugins.WebOfTrust.util;
+package plugins.WebOfTrust.util.jobs;
 
 /**
  * A background job that can be triggered to run, for example for performing maintenance jobs.

@@ -1,4 +1,4 @@
-package plugins.WebOfTrust.util;
+package plugins.WebOfTrust.util.jobs;
 
 import freenet.node.FastRunnable;
 import freenet.node.PrioRunnable;

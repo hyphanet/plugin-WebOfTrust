@@ -1,4 +1,4 @@
-package plugins.WebOfTrust.util;
+package plugins.WebOfTrust.util.jobs;
 
 import org.junit.After;
 import org.junit.Before;
@@ -15,7 +15,7 @@ import plugins.WebOfTrust.WebOfTrust;
 import freenet.support.Executor;
 import freenet.support.PooledExecutor;
 import freenet.support.PrioritizedTicker;
-import plugins.WebOfTrust.util.TickerDelayedBackgroundJob.JobState;
+import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob.JobState;
 import static java.lang.Math.max;
 import static java.lang.Runtime.getRuntime;
 import static org.junit.Assert.*;
