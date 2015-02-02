@@ -8,6 +8,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.lang.Math.max;
+import static java.lang.Runtime.getRuntime;
 import static org.junit.Assert.*;
 
 /**
@@ -123,8 +125,8 @@ public class SynchronousDelayedBackgroundJobTest {
         // executions have a higher probability of being detected.
         final int maxExecutionDelay = 1;
         final int executionDuration = 1;
-        final int threadCount = 10;
-        final int perThreadExecutionCount = 100;
+        final int threadCount = max(getRuntime().availableProcessors() - 1, 2);
+        final int perThreadExecutionCount = 1000;
         final AtomicInteger actualExecutionCount = new AtomicInteger(0);
         final Thread[] threads = new Thread[threadCount];
         
