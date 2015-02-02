@@ -16,6 +16,8 @@ import freenet.support.Executor;
 import freenet.support.PooledExecutor;
 import freenet.support.PrioritizedTicker;
 import plugins.WebOfTrust.util.TickerDelayedBackgroundJob.JobState;
+import static java.lang.Math.max;
+import static java.lang.Runtime.getRuntime;
 import static org.junit.Assert.*;
 
 /**
@@ -260,7 +262,8 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
 
     /** @see #DEFAULT_JAVA_COMPILE_THRESHOLD */
     public void warmupFastExecutorService() throws InterruptedException {
-        FastExecutorService service = new FastExecutorService(10);
+        FastExecutorService service
+            = new FastExecutorService(max(getRuntime().availableProcessors() - 1, 1));
         for(int i = 0; i < DEFAULT_JAVA_COMPILE_THRESHOLD; ++i) {
             Runnable emptyRunnable = new Runnable() { @Override public void run() { }};
             service.execute(emptyRunnable);
@@ -350,9 +353,10 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         // - After the second run which started at 100ms no more run since the trigger threads only
         //   hammered for 60ms.
         Runnable trigger = newHammerDefault(job, 60);
-        FastExecutorService fastExec = new FastExecutorService(10);
+        int triggerThreads = max(getRuntime().availableProcessors() - 1, 2);
+        FastExecutorService fastExec = new FastExecutorService(triggerThreads);
         sleeper = new Sleeper(); // Set "t = 0" to the point where we start the trigger threads
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < triggerThreads; i++)
             fastExec.execute(trigger);
         assertEquals(1, value.get());
         sleeper.sleepUntil(50 - 25);
@@ -375,11 +379,12 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         // 50ms is shorter than its run duration of 80ms, each run of a job will immediately be
         // followed by the next run until the hammering stops.
         Runnable hammer = newHammerDefault(slowJob, 260 /* time of hammering triggerExecution() */);
-        fastExec = new FastExecutorService(3);
+        int hammerThreads = max(getRuntime().availableProcessors() - 1, 2);
+        fastExec = new FastExecutorService(hammerThreads);
         sleeper = new Sleeper();
         assertEquals(3, value.get());
         assertEquals(JobState.IDLE, slowJob.getState());
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < hammerThreads; i++)
             fastExec.execute(hammer);
         sleeper.sleepUntil(50 - 25);
         assertEquals(3, value.get());
