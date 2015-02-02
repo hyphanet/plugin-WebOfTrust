@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -61,6 +62,7 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         warmupNewValueIncrementer();
         warmupNewHammerDefault();
         warmupNewHammerCustom();
+        warmupFastExecutorService();
     }
 
     /**
@@ -247,8 +249,23 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         public void execute(Runnable r) {
             pool.execute(r);
         }
+
+        public void awaitTermination() throws InterruptedException {
+            pool.shutdown();
+            pool.awaitTermination(1000, TimeUnit.DAYS);
+        }
     }
-    
+
+    /** @see #DEFAULT_JAVA_COMPILE_THRESHOLD */
+    public void warmupFastExecutorService() throws InterruptedException {
+        FastExecutorService service = new FastExecutorService(10);
+        for(int i = 0; i < DEFAULT_JAVA_COMPILE_THRESHOLD; ++i) {
+            Runnable emptyRunnable = new Runnable() { @Override public void run() { }};
+            service.execute(emptyRunnable);
+        }
+        service.awaitTermination();
+    }
+
     @Test
     public void testFastExecutorService() {
         final AtomicInteger threadCount = new AtomicInteger();
