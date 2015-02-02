@@ -316,6 +316,7 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         }
     }
 
+    /** TODO: Code quality: Split up */
     @Test
     public void testTriggerDefault() throws Exception {
         // First test for a reasonable fast test (with execution time smaller than the delay).
@@ -419,6 +420,7 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         assertFalse(wasConcurrent.get());
     }
 
+    /** TODO: Code quality: Split up */
     @Test
     public void testTriggerCustom() throws Exception {
         // Simple test to check whether decreasing the trigger delay works. I.e. if you call
