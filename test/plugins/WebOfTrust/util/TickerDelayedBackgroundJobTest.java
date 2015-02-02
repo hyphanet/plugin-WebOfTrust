@@ -59,6 +59,7 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         // guarantee any call order among multiple functions having it as annotation, we cannot use
         // it on those functions, we must call them here to ensure the order.
         warmupNewValueIncrementer();
+        warmupNewHammerDefault();
     }
 
     /**
@@ -129,6 +130,15 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
                 }
             }
         };
+    }
+
+    /** @see #DEFAULT_JAVA_COMPILE_THRESHOLD */
+    public void warmupNewHammerDefault() {
+        TickerDelayedBackgroundJob emptyNoDelayJob = new TickerDelayedBackgroundJob(
+            new Runnable() {@Override public void run() {}}, "warmup", 0, ticker);
+        
+        for(int i = 0; i < DEFAULT_JAVA_COMPILE_THRESHOLD; ++i)
+            newHammerDefault(emptyNoDelayJob, 1).run();
     }
 
     /**
