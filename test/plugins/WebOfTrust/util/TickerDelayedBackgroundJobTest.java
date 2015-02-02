@@ -60,6 +60,7 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         // it on those functions, we must call them here to ensure the order.
         warmupNewValueIncrementer();
         warmupNewHammerDefault();
+        warmupNewHammerCustom();
     }
 
     /**
@@ -162,6 +163,14 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         };
     }
 
+    /** @see #DEFAULT_JAVA_COMPILE_THRESHOLD */
+    public void warmupNewHammerCustom() {
+        TickerDelayedBackgroundJob emptyNoDelayJob = new TickerDelayedBackgroundJob(
+            new Runnable() {@Override public void run() {}}, "warmup", 0, ticker);
+        
+        for (int i = 0; i < DEFAULT_JAVA_COMPILE_THRESHOLD; ++i)
+            newHammerCustom(emptyNoDelayJob, new long[] { 1 }).run();
+    }
 
     /**
      * An ExecutorService which will keep the given amount of threads running and waiting for work
