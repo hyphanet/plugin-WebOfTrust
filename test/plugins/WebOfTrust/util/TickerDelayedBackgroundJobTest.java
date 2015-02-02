@@ -64,6 +64,7 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         warmupNewHammerCustom();
         warmupFastExecutorService();
         warmupNewJob();
+        warmupSleeper();
     }
 
     /**
@@ -619,6 +620,13 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         }
     }
     
+    /** @see #DEFAULT_JAVA_COMPILE_THRESHOLD */
+    public void warmupSleeper() {
+        for(int i=0; i < DEFAULT_JAVA_COMPILE_THRESHOLD; ++i) {
+            new Sleeper().sleepUntil(1);
+        }
+    }
+
     @Override protected WebOfTrust getWebOfTrust() {
         fail("Not implemented");
         return null;
