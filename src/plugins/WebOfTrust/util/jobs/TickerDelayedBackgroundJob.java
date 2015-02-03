@@ -7,7 +7,11 @@ import freenet.support.Ticker;
 import freenet.support.io.NativeThread;
 
 /**
- * A {@link DelayedBackgroundJob} implementation that uses a {@link Ticker} for scheduling.
+ * A {@link DelayedBackgroundJob} implementation that uses a {@link Ticker} for scheduling.<br><br>
+ * 
+ * This can be considered the "standard" implementation of {@link DelayedBackgroundJob}: Compared to
+ * {@link SynchronousDelayedBackgroundJob} and {@link MockDelayedBackgroundJob}, which are intended
+ * to be used in tests, it is more thoroughly tested by unit tests.
  *
  * @author bertm
  * @see TickerDelayedBackgroundJobFactory
