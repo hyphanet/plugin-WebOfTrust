@@ -26,6 +26,13 @@ import freenet.support.Ticker;
  * to call {@link #triggerExecution()} after all locks are relinquished.
  */
 public final class MockDelayedBackgroundJob implements DelayedBackgroundJob {
+    
+    /**
+     * A constant instance of MockDelayedBackgroundJob. As this class is stateless, you may use it
+     * instead of individual instances.
+     */
+    public static final MockDelayedBackgroundJob DEFAULT = new MockDelayedBackgroundJob();
+
 
     @Override public void triggerExecution(long delayMillis) { }
 

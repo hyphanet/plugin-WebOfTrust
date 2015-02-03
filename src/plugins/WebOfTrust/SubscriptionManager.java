@@ -1239,12 +1239,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * {@link DelayedBackgroundJob}.<br>
 	 * The execution typically is scheduled after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}.
 	 * 
-	 * Defaults to {@link #FAKE_JOB} until {@link #start()} was called, then becomes a
-	 * {@link TickerDelayedBackgroundJob} until {@link #stop()} is called.
+	 * Defaults to {@link MockDelayedBackgroundJob#DEFAULT} until {@link #start()} was called, then
+	 * becomes a {@link TickerDelayedBackgroundJob} until {@link #stop()} is called.
 	 */
-	private final AtomicReference<DelayedBackgroundJob> mJob = new AtomicReference<>(FAKE_JOB);
-	
-	private static final DelayedBackgroundJob FAKE_JOB = new MockDelayedBackgroundJob();
+	private final AtomicReference<DelayedBackgroundJob> mJob
+	    = new AtomicReference<>((DelayedBackgroundJob)MockDelayedBackgroundJob.DEFAULT);
 
 
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
@@ -1959,7 +1958,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		final PluginRespirator respirator = mWoT.getPluginRespirator();
 
 		if(respirator != null) { // We are connected to a node
-		    boolean notAlreadyStarted = mJob.compareAndSet(FAKE_JOB,
+		    boolean notAlreadyStarted = mJob.compareAndSet(MockDelayedBackgroundJob.DEFAULT,
 		        new TickerDelayedBackgroundJob(this, "WoT SubscriptionManager",
 		            PROCESS_NOTIFICATIONS_DELAY, respirator.getNode().getTicker()));
 		    
@@ -1979,9 +1978,9 @@ public final class SubscriptionManager implements PrioRunnable {
 	protected void stop() {
 		Logger.normal(this, "stop()...");
 		
-		DelayedBackgroundJob job = mJob.getAndSet(FAKE_JOB);
+		DelayedBackgroundJob job = mJob.getAndSet(MockDelayedBackgroundJob.DEFAULT);
 		
-		assert job != FAKE_JOB : "You forgot to call start()!";
+		assert job != MockDelayedBackgroundJob.DEFAULT : "You forgot to call start()!";
 		    
 		job.terminate();
 		try {
