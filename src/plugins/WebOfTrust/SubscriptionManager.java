@@ -1973,7 +1973,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	
 	/**
 	 * Shuts down this SubscriptionManager by aborting all queued notification processing and waiting for running processing to finish.
-	 * FIXME: Test.
+	 * FIXME: Test.<br><br>
+	 * 
+	 * Notice: Not synchronized so it can be run in parallel with {@link #run()}. This will allow it
+	 * to call {@link DelayedBackgroundJob#terminate()} while run() is executing, which calls
+	 * {@link Thread#interrupt()} on the run()-thread to cause it to exit quickly.
 	 */
 	protected void stop() {
 		Logger.normal(this, "stop()...");
