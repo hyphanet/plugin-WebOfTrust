@@ -1,12 +1,29 @@
 package plugins.WebOfTrust.util.jobs;
 
+import freenet.pluginmanager.PluginRespirator;
+import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 
 /**
  * Implementation of delayed background jobs where {@link #triggerExecution} blocks until the
  * background job has finished, as if the background job was performed synchronously. This
  * class is intended to be used in unit tests, and is likely not very useful for general purposes.
  * <br><br>
+ * 
+ * Can be used during startup of Freenet plugins to replace {@link TickerDelayedBackgroundJob}.
+ * This can be necessary because during startup, the {@link PluginRespirator} is not be available to
+ * plugins immediately. Because of that, they cannot access the node's {@link Executor} and
+ * {@link Ticker}, and thus should not construct a {@link TickerDelayedBackgroundJob} to avoid
+ * having to construct a duplicate Executor / Ticker.<br><br>
+ * 
+ * Notice: Be aware that its {{@link #triggerExecution()}} will block until the job's execution
+ * completes. This can cause deadlocks if the job's thread tries to acquire locks which the thread
+ * which is calling triggerExecution() is holding: The job will be run on a separate thread, so it
+ * doesn't own the locks of the triggering thread.<br>
+ * If that problem affects you, you can use the other possible replacement for
+ * {@link TickerDelayedBackgroundJob} which is {@link MockDelayedBackgroundJob}; or change
+ * your code to call {@link #triggerExecution()} after all locks are relinquished.<br><br>
  * 
  * TODO: Code quality: This rather complex class could maybe be simplified by extending
  * {@link TickerDelayedBackgroundJob}. IIRC, the only difference it has to that class is that
