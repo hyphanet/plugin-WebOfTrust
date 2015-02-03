@@ -1953,16 +1953,29 @@ public final class SubscriptionManager implements PrioRunnable {
 	 */
 	protected synchronized void start() {
 		Logger.normal(this, "start()...");
+
+        // This is thread-safe guard against concurrent multiple calls to start() since start() is
+        // synchronized. Or in other words: If it wasn't synchronized, this wouldn't be thread-safe
+        // since the value of mJob could change after get() returns.
+        if(mJob.get() != MockDelayedBackgroundJob.DEFAULT)
+            throw new IllegalStateException("start() was already called!");
+        
+        // This must be called while synchronized on this SubscriptionManager, and the lock must be
+        // held until mJob is set (which we do by having the whole function be synchronized):
+        // Holding the lock prevents Clients or Notifications from being created before
+        // scheduleNotificationProcessing() is made functioning by setting mJob.
+        // It is critically necessary for scheduleNotificationProcessing() to be working before
+        // any Clients/Notifications can be created: Notifications to Clients will only be sent out
+        // if scheduleNotificationProcssing() is functioning at the moment a Notification is
+        // created.
 		deleteAllClients();
 		
 		final PluginRespirator respirator = mWoT.getPluginRespirator();
 
 		if(respirator != null) { // We are connected to a node
-		    boolean notAlreadyStarted = mJob.compareAndSet(MockDelayedBackgroundJob.DEFAULT,
-		        new TickerDelayedBackgroundJob(this, "WoT SubscriptionManager",
-		            PROCESS_NOTIFICATIONS_DELAY, respirator.getNode().getTicker()));
-		    
-		    assert notAlreadyStarted : "start() must not be called twice";
+            // We don't have to use compareAndSet() since start() is synchronized
+            mJob.set(new TickerDelayedBackgroundJob(this, "WoT SubscriptionManager",
+                PROCESS_NOTIFICATIONS_DELAY, respirator.getNode().getTicker()));
 		} else { // We are inside of a unit test
 		    Logger.warning(this, "No PluginRespirator available, will never run job. "
 		                       + "This should only happen in unit tests!");
@@ -1982,6 +1995,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	protected void stop() {
 		Logger.normal(this, "stop()...");
 		
+		// Since stop() is not synchronized, getAndSet() has to be used instead of two distinct
+		// get() and set() to prevent us from discarding the reference to a different job than the
+		// one we terminated. Or in other words: getAndSet() guards against a concurrent call to
+		// start()
 		DelayedBackgroundJob job = mJob.getAndSet(MockDelayedBackgroundJob.DEFAULT);
 		
 		assert job != MockDelayedBackgroundJob.DEFAULT : "You forgot to call start()!";
