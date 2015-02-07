@@ -270,6 +270,18 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		}
 	}
 	
+    /**
+     * Synchronization:<br>
+     * This function does neither lock the database nor commit the transaction. You have to surround
+     * it with:<br><code>
+     * synchronized(instance of WebOfTrust) {
+     * synchronized(instance of IdentityFetcher) {
+     * synchronized(Persistent.transactionLock(mDB)) {
+     *     try { ... storeStartFetchCommandWithoutCommit(id); Persistent.checkedCommit(mDB, this); }
+     *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
+     * }}}
+     * </code>
+     */
 	public void storeStartFetchCommandWithoutCommit(Identity identity) {
 		storeStartFetchCommandWithoutCommit(identity.getID());
 	}
