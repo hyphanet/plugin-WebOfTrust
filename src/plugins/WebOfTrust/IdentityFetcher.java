@@ -13,6 +13,7 @@ import java.util.HashMap;
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -57,6 +58,9 @@ import freenet.support.io.NativeThread;
  */
 public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable {
 	
+    /**
+     * Will be used as delay for the {@link DelayedBackgroundJob} which schedules processing of
+     * {@link IdentityFetcherCommand}s. */
 	private static final long PROCESS_COMMANDS_DELAY = 60 * 1000;
 	
 	private final WebOfTrust mWoT;
