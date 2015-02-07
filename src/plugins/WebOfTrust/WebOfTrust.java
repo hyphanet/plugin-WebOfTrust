@@ -2075,7 +2075,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 *   If you call this function for ALL identities in a database, EVERYTHING should be deleted and the database SHOULD be empty.
 	 *   You then can check whether the database actually IS empty to test for leakage.
 	 * 
-	 * You have to lock the WebOfTrust, the IntroductionPuzzleStore, the IdentityFetcher and the SubscriptionManager before calling this function.
+	 * You have to lock the WebOfTrust, the IntroductionPuzzleStore, the IdentityFetcher, the
+	 * SubscriptionManager and the Persistent.transactionLock() before calling this function.
 	 */
 	void deleteWithoutCommit(Identity identity) {
 		// We want to use beginTrustListImport, finishTrustListImport / abortTrustListImport.
