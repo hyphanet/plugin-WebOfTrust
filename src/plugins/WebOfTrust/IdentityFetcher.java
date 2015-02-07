@@ -285,7 +285,18 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	public void storeStartFetchCommandWithoutCommit(Identity identity) {
 		storeStartFetchCommandWithoutCommit(identity.getID());
 	}
-	
+
+    /**
+     * Synchronization:<br>
+     * This function does neither lock the database nor commit the transaction. You have to surround
+     * it with:<br><code>
+     * synchronized(instance of IdentityFetcher) {
+     * synchronized(Persistent.transactionLock(mDB)) {
+     *     try { ... storeStartFetchCommandWithoutCommit(id); Persistent.checkedCommit(mDB, this); }
+     *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
+     * }}
+     * </code>
+     */
 	public void storeStartFetchCommandWithoutCommit(String identityID) {
 		if(logDEBUG) Logger.debug(this, "Start fetch command received for " + identityID);
 		
