@@ -244,22 +244,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			createSeedIdentities();
 			
-			Logger.normal(this, "Starting fetches of all identities...");
-			synchronized(this) {
-			synchronized(mFetcher) {
-				mFetcher.start();
-				for(Identity identity : getAllIdentities()) {
-					if(shouldFetchIdentity(identity)) {
-						try {
-							mFetcher.fetch(identity);
-						}
-						catch(Exception e) {
-							Logger.error(this, "Fetching identity failed!", e);
-						}
-					}
-				}
-			}
-			}
+            mFetcher.start();
 			
 			mInserter.start();
 
@@ -2271,7 +2256,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity.
 	 */
-	private boolean shouldFetchIdentity(final Identity identity) {
+    boolean shouldFetchIdentity(final Identity identity) {
 		if(identity instanceof OwnIdentity)
 			return true;
 		

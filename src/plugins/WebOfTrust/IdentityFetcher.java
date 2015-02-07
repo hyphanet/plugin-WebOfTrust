@@ -511,13 +511,30 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	/**
 	 * Deletes all existing commands using {@link #deleteAllCommands()}. Enables usage of {@link #scheduleCommandProcessing()}.
 	 */
-	protected synchronized void start() {
+	protected void start() {
+        synchronized (mWoT) {
+        synchronized (this) {
+
 		if(mTicker != null)
 			throw new IllegalStateException("start() was already called!");
 		
 		deleteAllCommands();
 		
 		mTicker = new TrivialTicker(mWoT.getPluginRespirator().getNode().executor); 
+
+        Logger.normal(this, "Starting fetches of all identities...");
+        for(Identity identity : mWoT.getAllIdentities()) {
+            if(mWoT.shouldFetchIdentity(identity)) {
+                try {
+                    fetch(identity);
+                }
+                catch(Exception e) {
+                    Logger.error(this, "Fetching identity failed!", e);
+                }
+            }
+        }
+        }
+        }
 	}
 	
 	/**
