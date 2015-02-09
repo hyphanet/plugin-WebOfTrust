@@ -329,6 +329,9 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
      *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
      * }}}
      * </code>
+     * 
+     * <br><br>TODO: Performance: The backend database query doesn't require the identity, it merely
+     * needs its ID. Thus, make this function only consume the ID & adapt the callers.
      */
 	public void storeAbortFetchCommandWithoutCommit(Identity identity) {
 		if(logDEBUG) Logger.debug(this, "Abort fetch command received for " + identity);
