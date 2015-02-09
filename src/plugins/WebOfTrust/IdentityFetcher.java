@@ -43,10 +43,6 @@ import freenet.support.io.NativeThread;
  * Fetches Identities from Freenet.
  * Contains an ArrayList of all current requests.
  * 
- * TODO: There is some synchronization missing for the fetcher in some places where fetcher commands are issued.
- * It still works because those places are typically synchronized on the WoT anyway. We should fix it nevertheless.
- * Maybe we just might want to get rid of synchronization on the fetcher for storing commands... I will have to investigate.
- * 
  * <b>Synchronization:</b>
  * The locking order must be:
  * 	synchronized(instance of WebOfTrust) {
