@@ -1979,6 +1979,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		} else { // We are inside of a unit test
 		    Logger.warning(this, "No PluginRespirator available, will never run job. "
 		                       + "This should only happen in unit tests!");
+		    assert(mJob.get() == MockDelayedBackgroundJob.DEFAULT);
 		}
 		
 		Logger.normal(this, "start() finished.");
