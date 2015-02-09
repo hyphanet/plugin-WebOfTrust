@@ -466,7 +466,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * 
 	 * @param identity the Identity to fetch
 	 */
-	protected synchronized void fetch(Identity identity) throws Exception {
+	private synchronized void fetch(Identity identity) throws Exception {
 			USKRetriever retriever = mRequests.get(identity.getID());
 
 			USK usk;
