@@ -113,7 +113,8 @@ public final class FCPClientReferenceImplementation {
 	private final PluginRespirator mPluginRespirator;
 	
 	/** The function {@link KeepaliveLoop#run()} is periodically executed by {@link #mTicker}.
-	 *  It sends a Ping to WOT and checks whether the existing subscriptions are OK. */
+	 *  It sends a Ping to WOT and checks whether the existing subscriptions are OK.
+	 *  If no reply to the Ping is received, it automatically reconnects. */
 	private final KeepaliveLoop mKeepAliveLoop = new KeepaliveLoop();
 	
 	/** For scheduling threaded execution of {@link KeepaliveLoop#run()} on {@link #mKeepAliveLoop}. */
