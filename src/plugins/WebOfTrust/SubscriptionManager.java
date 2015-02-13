@@ -1950,6 +1950,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * You must call this before any subscriptions are created, so for example before FCP is available.
 	 * 
 	 * ATTENTION: Does NOT work in unit tests - you must manually trigger subscription processing by calling {@link #run()} there.
+	 * 
+	 * TODO: Code quality: {@link IdentityFetcher#start()} and {@link IdentityFetcher#stop()} were
+	 * based upon this function and {@link #stop()} and have received significant improvements
+	 * already. Backport those improvements to this class' start() and stop().
 	 */
 	protected synchronized void start() {
 		Logger.normal(this, "start()...");

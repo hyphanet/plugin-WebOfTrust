@@ -14,6 +14,8 @@ import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
+import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
+import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -34,7 +36,9 @@ import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
-import freenet.support.TrivialTicker;
+import freenet.support.PooledExecutor;
+import freenet.support.PrioritizedTicker;
+import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
@@ -76,7 +80,27 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * if the WoT becomes large. We should instead ask the node whether we already have a request for the given SSK URI. So how to do that??? */
 	private final HashMap<String, USKRetriever> mRequests = new HashMap<String, USKRetriever>(128); /* TODO: profile & tweak */
 	
-	private volatile TrivialTicker mTicker;
+    /**
+     * The IdentityFetcher schedules execution of its command processing thread on this
+     * {@link DelayedBackgroundJob}.<br>
+     * The execution typically is scheduled after a delay of {@link #PROCESS_COMMANDS_DELAY}.<br>
+     * <br>
+     * 
+     * The value distinguishes the run state of this IdentityFetcher as follows:<br>
+     * - Until {@link #start()} was called, defaults to {@link MockDelayedBackgroundJob#DEFAULT}
+     *   with {@link DelayedBackgroundJob#isTerminated()} == true.<br>
+     * - Once {@link #start()} has been called, becomes a
+     *   {@link TickerDelayedBackgroundJob} with {@link DelayedBackgroundJob#isTerminated()}
+     *   == false.<br>
+     * - Once {@link #stop()} has been called, stays a {@link TickerDelayedBackgroundJob} but has
+     *   {@link DelayedBackgroundJob#isTerminated()} == true for ever.<br><br>
+     * 
+     * There can be exactly one start() - stop() lifecycle, an IdentityFetcher cannot be recycled.
+     * <br><br>
+     * 
+     * Volatile since {@link #stop()} needs to use it without synchronization.
+     */
+    private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
 	
 	/* Statistics */
 	
@@ -125,8 +149,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			mClientContext = null;
 		}
 		
-		// Initialized by start()
-		mTicker = null;
 		
         // For symmetry, we use the same RequestClient as the one IdentityInserter uses:
         // Identity fetches and inserts belong together, so it makes sense to use the same
@@ -384,10 +406,9 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	}
 	
 	private void scheduleCommandProcessing() {
-		if(mTicker != null)
-			mTicker.queueTimedJob(this, "WoT IdentityFetcher", PROCESS_COMMANDS_DELAY, false, true);
-		else
-			Logger.warning(this, "Cannot schedule command processing: Ticker is null.");
+        assert (!mJob.isTerminated())
+            : "Should not be called before start() or after stop() as mJob won't execute then";
+        mJob.triggerExecution();
 	}
 	
 	@Override
@@ -395,6 +416,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		return NativeThread.LOW_PRIORITY;
 	}
 	
+    /** TODO: Performance: Check and obey {@link Thread#interrupted()} as {@link #stop()} will
+     *  interrupt the thread. */
 	@Override
 	public void run() {
 		synchronized(mWoT) { // Lock needed because we do getIdentityByID() in fetch()
@@ -565,12 +588,19 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
         synchronized (mWoT) {
         synchronized (this) {
 
-		if(mTicker != null)
-			throw new IllegalStateException("start() was already called!");
-		
+         // This is thread-safe guard against concurrent multiple calls to start() / stop() since
+         // stop() does not modify the job and start() is synchronized. 
+         if(mJob != MockDelayedBackgroundJob.DEFAULT)
+             throw new IllegalStateException("start() was already called!");
+
+         // This must be called while synchronized on this IdentityFetcher, and the lock must be
+         // held until mJob is set:
+         // Holding the lock prevents IdentityFetcherCommands from being created before
+         // scheduleCommandProcessing() is made functioning by setting mJob.
+         // It is critically necessary for scheduleCommandProcessing() to be working before
+         // any commands can be created: Commands will only be processed if
+         // scheduleCommandProcessing() is functioning at the moment a command is created.
 		deleteAllCommands();
-		
-		mTicker = new TrivialTicker(mWoT.getPluginRespirator().getNode().executor); 
 
         Logger.normal(this, "Starting fetches of all identities...");
         for(Identity identity : mWoT.getAllIdentities()) {
@@ -583,21 +613,99 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
                 }
             }
         }
+
+
+        final PluginRespirator respirator = mWoT.getPluginRespirator();
+        final Ticker ticker;
+        final Runnable jobRunnable;
+        
+        if(respirator != null) { // We are connected to a node
+            ticker = respirator.getNode().getTicker();
+            jobRunnable = this;
+        } else { // We are inside of a unit test
+            Logger.warning(this, "No PluginRespirator available, will never run job. "
+                               + "This should only happen in unit tests!");
+            
+            // Generate our own Ticker so we can set mJob to be a real TickerDelayedBackgroundJob.
+            // This is better than leaving it be a MockDelayedBackgroundJob because it allows us to
+            // clearly distinguish the run state (start() not called, start() called, stop() called)
+            ticker = new PrioritizedTicker(new PooledExecutor(), 0);
+            jobRunnable = new Runnable() { @Override public void run() {
+                    // Do nothing because:
+                    // - We shouldn't do work on custom executors, we should only ever use the main
+                    //   one of the node.
+                    // - Unit tests execute instantly after loading the WOT plugin, so delayed jobs
+                    //   should not happen since their timing cannot be guaranteed to match the unit
+                    //   tests execution state.
+                  };
+            };
         }
-        }
+        
+        // Set the volatile mJob after all of startup is finished to ensure that stop() can use it
+        // *without* synchronization to check whether start() was called already.
+        mJob = new TickerDelayedBackgroundJob(
+            jobRunnable, "WoT IdentityFetcher", PROCESS_COMMANDS_DELAY, ticker);
+        
+        } // synchronized(this)
+        } // synchronized(mWoT)
 	}
 	
 	/**
 	 * Stops all running requests.
 	 */
-	protected synchronized void stop() {
+	protected void stop() {
 		if(logDEBUG) Logger.debug(this, "Trying to stop all requests");
 		
-		if(mTicker != null) {
-			mTicker.shutdown();
-			mTicker = null;
-		}
+		// The following code intentionally does NOT write to the mJob variable so it does not have
+		// to use synchronized(this). We do not want to synchronize because:
+		// 1) run() is synchronized(this), so we would not get the lock until run() is finished.
+		//    But we want to call mJob.terminate() immediately while run() is still executing to
+		//    make it call Thread.interrupt() upon run() to speed up its termination. So we
+		//    shouldn't require acquisition of the lock before terminate().
+		// 2) Keeping mJob as is makes sure that start() is not possible anymore so this object can
+		//    only have a single lifecycle. Recycling needs to be impossible: If we allowed
+		//    restarting, the cleanup of the USKRetrievers at the end of this function could damage
+		//    the new lifecycle because its synchronization block does not include mJob.terminate()
+		//    and thus it would not be possible to guarantee that we kill the USKRetrievers of the
+		//    same cycle 
 		
+		
+		// Since mJob can only transition from not "not started yet" as implied by the "==" here
+		// to "started" as implied by "!=", but never backwards, and is set by start() after
+		// everything is completed, this is thread-safe against concurrent start() / stop().
+		if(mJob == MockDelayedBackgroundJob.DEFAULT)
+		    throw new IllegalStateException("start() not called yet!");
+		
+		// We cannot guard against concurrent stop() here since we don't synchronize, we can only
+		// probabilistically detect it by assert(). Concurrent stop() is not a problem though since
+		// restarting jobs is not possibl: We cannot run into a situation where we accidentally
+		// stop the wrong lifecycle. It can only happen that we do cleanup the cleanup which a
+		// different thread would have done, but they won't care since all used functions below will
+		// succeed silently if called multiple times.
+		assert !mJob.isTerminated() : "stop() called already";
+		
+		mJob.terminate();
+        try {
+            // We must wait without timeout since we need to cancel our requests at the core of
+            // Freenet (see below synchronized(this)) and the job thread might create requests until
+            // it is terminated.
+            mJob.waitForTermination(Long.MAX_VALUE);
+        } catch (InterruptedException e) {
+            // We are a shutdown function, there is no sense in sending a shutdown signal to us.
+            Logger.error(this, "stop() should not be interrupt()ed.", e);
+        }
+        
+        // We are safe now to terminate all existing Freenet requests since no new ones can be
+        // created anymore:
+        // - only start() and run() do so.
+        // - start() is not possible anymore
+        // - run() can only be executed by mJob, and it will not do so after waitForTermination().
+        // 
+        // Nevertheless, all access to mRequests needs to be guarded by synchronized(this):
+        // - It is also accessed by our Freenet callback handlers which might be called by fred at
+        //   arbitrary points in time.
+        // - stop() can be called multiple times in parallel.
+		synchronized(this) {
 		USKRetriever[] retrievers = mRequests.values().toArray(new USKRetriever[mRequests.size()]);		
 		int counter = 0;		 
 		for(USKRetriever r : retrievers) {
@@ -608,6 +716,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		mRequests.clear();
 		
 		if(logDEBUG) Logger.debug(this, "Stopped " + counter + " current requests");
+		}
 	}
 
 	/**
