@@ -339,7 +339,7 @@ public final class FCPClientReferenceImplementation {
 			throw new IllegalStateException(mClientState.toString());
 		
 		mClientState = ClientState.Started;
-		mKeepAliveLoop.scheduleKeepaliveLoopExecution();
+		mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
 
 		Logger.normal(this, "Started.");
 	}
