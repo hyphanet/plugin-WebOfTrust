@@ -31,6 +31,8 @@ import plugins.WebOfTrust.SubscriptionManager.TrustsSubscription;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrustInterface;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
+import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob;
 import freenet.clients.fcp.FCPPluginConnection;
 import freenet.clients.fcp.FCPPluginMessage;
 import freenet.keys.FreenetURI;
@@ -40,11 +42,10 @@ import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
-import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
-import freenet.support.TrivialTicker;
+import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.codeshortification.IfNull;
 import freenet.support.io.NativeThread;
@@ -112,13 +113,10 @@ public final class FCPClientReferenceImplementation {
 	/** The interface for creating connections to WOT via FCP. Provided by the Freenet node */
 	private final PluginRespirator mPluginRespirator;
 	
-	/** The function {@link KeepaliveLoop#run()} is periodically executed by {@link #mTicker}.
+	/** The function {@link KeepaliveLoop#run()} is periodically executed.
 	 *  It sends a Ping to WOT and checks whether the existing subscriptions are OK.
 	 *  If no reply to the Ping is received, it automatically reconnects. */
-	private final KeepaliveLoop mKeepAliveLoop = new KeepaliveLoop();
-	
-	/** For scheduling threaded execution of {@link KeepaliveLoop#run()} on {@link #mKeepAliveLoop}. */
-	private final TrivialTicker mTicker;
+	private final KeepaliveLoop mKeepAliveLoop;
 	
 	/** For randomizing the delay between periodic execution of {@link KeepaliveLoop#run()} on {@link #mKeepAliveLoop} */
 	private final Random mRandom;
@@ -291,11 +289,11 @@ public final class FCPClientReferenceImplementation {
 	 * save the client author quite a bit of work.
 	 */
 	public FCPClientReferenceImplementation(final Map<String, Identity> myIdentityStorage,
-			final PluginRespirator myPluginRespirator, final Executor myExecutor,
+			final PluginRespirator myPluginRespirator,
 			final ConnectionStatusChangedHandler myConnectionStatusChangedHandler) {
 		mIdentityStorage = myIdentityStorage;
 		mPluginRespirator = myPluginRespirator;
-		mTicker = new TrivialTicker(myExecutor);
+		mKeepAliveLoop = new KeepaliveLoop(mPluginRespirator.getNode().getTicker());
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
 		
 		mConnectionStatusChangedHandler = myConnectionStatusChangedHandler;
@@ -340,7 +338,7 @@ public final class FCPClientReferenceImplementation {
 			throw new IllegalStateException(mClientState.toString());
 		
 		mClientState = ClientState.Started;
-		mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
+		mKeepAliveLoop.triggerExecution(0);
 
 		Logger.normal(this, "Started.");
 	}
@@ -387,7 +385,7 @@ public final class FCPClientReferenceImplementation {
 		mEndSubscriptionSynchronizationHandlers.put(realType, endSyncHandler);
 		mSubscribedObjectChangedHandlers.put(realType, objectChangedHandler);
 		
-		mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
+		mKeepAliveLoop.triggerExecution(0);
 	}
 	
 	/**
@@ -399,30 +397,38 @@ public final class FCPClientReferenceImplementation {
 		
 		mSubscribeTo.remove(SubscriptionType.fromClass(type));
 
-		mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
+		mKeepAliveLoop.triggerExecution(0);
 	}
 
 	/**
 	 * The function {@link KeepaliveLoop#run()} is periodically executed by {@link FCPClientReferenceImplementation#mTicker}.
 	 * It sends a Ping to WOT and checks whether the existing subscriptions are OK.
 	 */
-	private final class KeepaliveLoop implements PrioRunnable {
+	private final class KeepaliveLoop implements DelayedBackgroundJob, PrioRunnable {
+	    /** The actual implementation of DelayedBackgroundJob.<br>
+	     *  For scheduling threaded, delayed execution of {@link KeepaliveLoop#run()}. */
+	    private final DelayedBackgroundJob mJob;
+
+	    public KeepaliveLoop(Ticker ticker) {
+	        mJob = new TickerDelayedBackgroundJob(this, "WOT " + this.getClass().getSimpleName(),
+	            0 /* We always specify a delay, so no default is needed */, ticker);
+	    }
+
 		/**
-		 * Schedules execution of {@link #run()} via {@link #mTicker} after a delay:
+		 * Calls {@link #triggerExecution(long)} with the delay chosen as follows:<br>
 		 * If connected to WOT, the delay will be randomized and roughly equal to {@link #WOT_PING_DELAY}.
 		 * If not connected, it will be WOT_RECONNECT_DELAY.
 		 */
-		private void scheduleKeepaliveLoopExecution() {
+	    @Override public void triggerExecution() {
 			final long sleepTime = mConnection != null ? (WOT_PING_DELAY/2 + mRandom.nextInt(WOT_PING_DELAY)) : WOT_RECONNECT_DELAY;
-			mTicker.queueTimedJob(this, "WOT " + this.getClass().getSimpleName(), sleepTime, false, true);
+			triggerExecution(sleepTime);
 		}
 
-		/**
-		 * Schedules execution of {@link #run()} via {@link #mTicker} after a delay.
-		 */
-		private void scheduleKeepaliveLoopExecution(long sleepTime) {
-			// Re-schedule because subscribe/unsubscribe need it to happen immediately.
-			mTicker.rescheduleTimedJob(this, "WOT " + this.getClass().getSimpleName(), sleepTime);
+        @Override public void triggerExecution(long sleepTime) {
+            // If the given delay is shorter than an already scheduled run, this will implicitly
+            // reschedule the run to the shorter delay as desired.
+            // (We do desire this because subscribe/unsubscribe need it to happen immediately)
+            mJob.triggerExecution(sleepTime);
 
 			if(logMINOR) Logger.minor(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
 		}
@@ -433,7 +439,17 @@ public final class FCPClientReferenceImplementation {
 		 * 
 		 * Executed by {@link #mTicker} as scheduled periodically:
 		 * - Every {@link #WOT_RECONNECT_DELAY} seconds if we have no connection to WOT
-		 * - Every {@link #WOT_PING_DELAY} if we have a connection to WOT 
+		 * - Every {@link #WOT_PING_DELAY} if we have a connection to WOT <br><br>
+		 * 
+		 * Notice: This function does NOT honor {@link Thread#interrupted()} like a user of
+		 * {@link DelayedBackgroundJob} should. This is because I do not see much potential for
+		 * honoring it as this should be a very fast function in theory. However when changing this
+		 * function to include more code please make sure to consider allowing thread interruption.
+		 * When adapting this function to honor interruption, you must also adapt
+		 * {@link FCPClientReferenceImplementation#stop()} to be even able to interrupt us by
+		 * making it call {@link #terminate()} outside of
+		 * synchronized(FCPClientReferenceImplementation.this). See the call to terminate() there
+		 * for an in-depth explanation of the required changes.
 		 */
 		@Override
 		public final void run() { 
@@ -442,8 +458,10 @@ public final class FCPClientReferenceImplementation {
 			        if(logMINOR) Logger.minor(this, "Connection-checking loop running...");
 
 			        if(mClientState != ClientState.Started) {
-			            Logger.error(this, "Connection-checking loop executed in wrong "
-			                + " ClientState: " + mClientState);
+                        // FCPClientReferenceImplementation.stop() sets ClientState.StopRequested
+                        // before terminate()ing us so it is a valid state here.
+                        assert mClientState == ClientState.StopRequested
+                            : "Connection-checking loop executed in wrong state: " + mClientState;
 			            return;
 			        }
 
@@ -475,11 +493,23 @@ public final class FCPClientReferenceImplementation {
 			        // Will schedule this function to be executed again.
 			        // The delay is long if mConnection is alive and we are just waiting for a ping.
 			        // The delay is short if mConnection == null and we need to reconnection.
-			        scheduleKeepaliveLoopExecution();
+			        triggerExecution();
 			        if(logMINOR) Logger.minor(this, "Connection-checking finished.");
 			    }
 			}
 		}
+		
+        @Override public void terminate() {
+            mJob.terminate();
+        }
+
+        @Override public boolean isTerminated() {
+            return mJob.isTerminated();
+        }
+
+        @Override public void waitForTermination(long delayMillis) throws InterruptedException {
+            mJob.waitForTermination(delayMillis);
+        }
 
 		/**
 		 * Determines the priority of the thread running {@link #run()}
@@ -839,7 +869,7 @@ public final class FCPClientReferenceImplementation {
 	    	// checkSubscriptions() only files one subscription at a time (see its code for an explanation).
 	    	// Therefore, after subscription has succeeded, we need to schedule the KeepaliveLoop (which is run()) to be executed again
 	    	// soon so it calls checkSubscriptions() to file the following subscriptions.
-	    	mKeepAliveLoop.scheduleKeepaliveLoopExecution(0);
+            mKeepAliveLoop.triggerExecution(0);
 		}
 	}
 	
@@ -1388,20 +1418,74 @@ public final class FCPClientReferenceImplementation {
 	/**
 	 * Must be called at shutdown of your plugin.
 	 */
-	public final synchronized void stop() {
+	public final void stop() {
 		Logger.normal(this, "stop() ...");
-		
-		if(mClientState != ClientState.Started) {
-			Logger.warning(this, "stop(): Not even started, current state = " + mClientState);
-			return;
-		}
-		
-		// The purpose of having this state is so we can wait for the confirmations of fcp_Unsubscribe() to arrive from WOT.
-		mClientState = ClientState.StopRequested;
-		
-		// Prevent run() from executing again. It cannot be running right now because this function is synchronized
-		mTicker.shutdown();
-		
+
+        // The following comment is only for readers who came here because they are planing to 
+        // change KeepAliveLoop.run() to honor Thread.interrupted():
+        // For the said purpose, this synchronized() block should be somehow eliminated because it
+        // prevents us from causing the interrupt while run() is still executing - we call
+        // terminate() to cause the interrupt AFTER this block but run() will have the lock which
+        // this block wants, so we won't reach terminate() before run() is finished already.
+        // When trying to eliminate this synchronized() block, please notice:
+        // - It is important to somehow store the StopRequested state before we begin to terminate()
+        //   stuff to ensure that this IdentityFetcher cannot appear to be in a working state even
+        //   though it is not if waitFortermination() fails but terminate() had succeeded.
+        // - We do need to check mClientState != ClientState.Started here before terminate() because
+        //   otherwise we might terminate() the KeepAliveLoop before we even have been start()ed,
+        //   which would cause start() to appear to be working but the KeepAliveLoop never executing
+        // Overall, changing this would be somehow complex. Possible solutions:
+        // - Using an AtomicReference for the mClientState so it has its own concurrency domain. See
+        //   class SubscriptionManager's variable mJob. However, this would require review &
+        //   adaption of this whole class since mClientState is assumed to be synchronized against
+        //   this.
+        // - Getting rid of mClientState and using mKeepAliveLoop.isTerminated() as state.
+        //   This might be possible because one of the primary purposes of mClientState is claimed
+        //   to be to prevent new subscriptions from happening while this function is waiting for
+        //   the existing ones to be terminated. This doesn't seem to be actually necessary:
+        //   Terminating the KeepAliveLoop prevents new subscriptions from being transported to WOT
+        //   as subscribe() only requests us to subscribe at WOT, but doesn't send the FCP message,
+        //   it leaves that job to the KeepAliveLoop
+        //   However, it is possible that mClientState still serves other important purposes, so
+        //   please review the class carefully.
+        synchronized(this) {
+            if(mClientState != ClientState.Started) {
+                Logger.warning(this, "stop(): Not even started, current state = " + mClientState);
+                return;
+            }
+
+            // The purpose of having this state is so we can wait for the confirmations of
+            // fcp_Unsubscribe() to arrive from WOT.
+            // Also, we do this now already instead of before unsubscribing to make sure that this
+            // object is marked as stopping before we terminate the KeepAliveLoop. See the above
+            // large comment for why this is a good idea.
+            mClientState = ClientState.StopRequested;
+        }
+
+        // Prevent mKeepAliveLoop.run() from executing again.
+        mKeepAliveLoop.terminate();
+        
+        // Notice: We MUST do this outside of synchronized(this) because run() is synchronized(this)
+        // as well, and thus a deadlock would occur if we called waitForTermination() while holding
+        // the lock because run() might already be executing and waiting for the lock.
+        try {
+            mKeepAliveLoop.waitForTermination(Long.MAX_VALUE);
+        } catch (InterruptedException e) {
+            // We are a shutdown function, it does not make any sense to interrupt us.
+            Logger.error(this, "stop() should not be Thread.interrupt()ed.", e);
+            // We partly honor the shutdown request by:
+            // - not calling the waitForTermination() again
+            // - Saving the state of the Thread being interrupted in case something outside
+            //   is expecting it, by calling interrupt() below.
+            Thread.currentThread().interrupt(); 
+        }
+
+        synchronized(this) {
+        // ClientState.StopRequested prevents new subscriptions from being filed. It is necessary
+        // that this is the case before we now start to unsubscribe the existing subscriptions so
+        // new ones cannot happen afterwards
+        assert(mClientState == ClientState.StopRequested);
+        
 		// Call fcp_Unsubscribe() on any remaining subscriptions and wait() for the "Unsubscribe" messages to arrive
 		if(!mSubscriptionIDs.isEmpty() && mConnection != null) {
 		    try {
@@ -1467,6 +1551,7 @@ public final class FCPClientReferenceImplementation {
 		mClientState = ClientState.Stopped;
 		
 		Logger.normal(this, "stop() finished.");
+        }
 	}
 
 }
