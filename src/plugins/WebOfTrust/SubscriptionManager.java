@@ -1940,7 +1940,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Schedules the {@link #run()} method to be executed after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}
 	 */
 	private void scheduleNotificationProcessing() {
-	    mJob.get().triggerExecution();
+        DelayedBackgroundJob job = mJob.get();
+        assert (!job.isTerminated())
+            : "Should not be called before start() or after stop() as mJob won't execute then";
+        job.triggerExecution();
 	}
 	
 
