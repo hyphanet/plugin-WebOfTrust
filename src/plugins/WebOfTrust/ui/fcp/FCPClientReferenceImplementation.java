@@ -425,6 +425,9 @@ public final class FCPClientReferenceImplementation {
 		}
 
         @Override public void triggerExecution(long sleepTime) {
+            assert(!mJob.isTerminated())
+                : "Should not be called after terminate() as mJob won't execute then";
+
             // If the given delay is shorter than an already scheduled run, this will implicitly
             // reschedule the run to the shorter delay as desired.
             // (We do desire this because subscribe/unsubscribe need it to happen immediately)
