@@ -26,6 +26,7 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.util.TransferThread;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -48,7 +49,6 @@ import freenet.node.RequestStarter;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
-import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
