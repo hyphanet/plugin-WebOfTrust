@@ -401,7 +401,7 @@ public final class FCPClientReferenceImplementation {
 	}
 
 	/**
-	 * The function {@link KeepaliveLoop#run()} is periodically executed by {@link FCPClientReferenceImplementation#mTicker}.
+	 * The function {@link KeepaliveLoop#run()} is periodically executed by {@link #mJob}.
 	 * It sends a Ping to WOT and checks whether the existing subscriptions are OK.
 	 */
 	private final class KeepaliveLoop implements DelayedBackgroundJob, PrioRunnable {
@@ -440,7 +440,7 @@ public final class FCPClientReferenceImplementation {
 		 * "Keepalive Loop": Checks whether we are connected to WOT. Connects to it if the connection is lost or did not exist yet.
 		 * Then files all {@link Subscription}s.
 		 * 
-		 * Executed by {@link #mTicker} as scheduled periodically:
+		 * Executed by {@link #mJob} as scheduled periodically:
 		 * - Every {@link #WOT_RECONNECT_DELAY} seconds if we have no connection to WOT
 		 * - Every {@link #WOT_PING_DELAY} if we have a connection to WOT <br><br>
 		 * 
