@@ -319,7 +319,7 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
     /** TODO: Code quality: Split up */
     @Test
     public void testTriggerDefault() throws Exception {
-        // First test for a reasonable fast test (with execution time smaller than the delay).
+        // First test for a reasonable fast job (with execution time smaller than the delay).
         TickerDelayedBackgroundJob job = newJob(10 /* duration */, 50 /* delay */, "default1");
 
         sleeper = new Sleeper();
