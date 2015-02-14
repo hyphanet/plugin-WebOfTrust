@@ -583,7 +583,7 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
         assertTrue(end - begin < 2);
         assertTrue(job3.isTerminated());
 
-        // Test termination from RUNNING job and notify
+        // Test termination from RUNNING job and subsequent job interruption
         // (The array is to circumvent the Java referencing restriction of anonymous local classes
         // not being able to access non-final variables in their containing function)
         final DelayedBackgroundJob[] jobs = new DelayedBackgroundJob[1];
