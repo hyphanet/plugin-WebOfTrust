@@ -745,7 +745,7 @@ public final class XMLTransformer {
 	/**
 	 * @param xmlInputStream An InputStream which must not return more than {@link MAX_INTRODUCTIONPUZZLE_BYTE_SIZE} bytes.
 	 */
-	public IntroductionPuzzle importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
+	public void importIntroductionPuzzle(FreenetURI puzzleURI, InputStream xmlInputStream)
 		throws SAXException, IOException, InvalidParameterException, UnknownIdentityException, IllegalBase64Exception, ParseException {
 	    
 		String puzzleID;
@@ -771,18 +771,16 @@ public final class XMLTransformer {
 		Element dataElement = (Element)puzzleElement.getElementsByTagName("Data").item(0);
 		puzzleData = Base64.decodeStandard(dataElement.getAttribute("Value"));
 
-		
-		IntroductionPuzzle puzzle;
-		
 		synchronized(mWoT) {
+		synchronized(mWoT.getIntroductionPuzzleStore()) {
 			Identity puzzleInserter = mWoT.getIdentityByURI(puzzleURI);
-			puzzle = new IntroductionPuzzle(mWoT, puzzleInserter, puzzleID, puzzleType, puzzleMimeType, puzzleData, 
-					IntroductionPuzzle.getDateFromRequestURI(puzzleURI), puzzleValidUntilDate, IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
+			IntroductionPuzzle puzzle
+			    = new IntroductionPuzzle(mWoT, puzzleInserter, puzzleID, puzzleType, puzzleMimeType,
+			        puzzleData,  IntroductionPuzzle.getDateFromRequestURI(puzzleURI),
+			        puzzleValidUntilDate, IntroductionPuzzle.getIndexFromRequestURI(puzzleURI));
 		
 			mWoT.getIntroductionPuzzleStore().storeAndCommit(puzzle);
-		}
-		
-		return puzzle;
+		}}
 	}
 
 }

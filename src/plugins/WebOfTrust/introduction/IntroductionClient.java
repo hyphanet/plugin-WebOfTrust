@@ -28,7 +28,6 @@ import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.util.TransferThread;
 
-import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
 import freenet.client.FetchContext;
@@ -181,9 +180,12 @@ public final class IntroductionClient extends TransferThread  {
 		
 		synchronized(this) {
 			long time = CurrentTimeUTC.getInMillis();
+			long timeSinceLastIteration = (time - mLastIterationTime);
 			
-			if((time - mLastIterationTime) <= MINIMAL_SLEEP_TIME)
+			if(timeSinceLastIteration < MINIMAL_SLEEP_TIME) {
+			    nextIteration(MINIMAL_SLEEP_TIME - timeSinceLastIteration);
 				return;
+			}
 			
 			mLastIterationTime = time;
 		}
@@ -260,6 +262,10 @@ public final class IntroductionClient extends TransferThread  {
 		}
 		}
 		
+        // TODO: Performance: iterate() not only deals with downloading more puzzles but
+        // also with inserts, deleting expired puzzles, etc. Instead we should have an
+        // event-driven loop for each and only trigger the one for downloading
+        // new puzzles here.
 		nextIteration();
 		
 		return result;
@@ -279,16 +285,15 @@ public final class IntroductionClient extends TransferThread  {
 	        final String solverOwnIdentityID, final String puzzleID, final String solution)
 	            throws InvalidParameterException {
 	    
-	    final OwnIdentity solver;
-	    final IntroductionPuzzle puzzle;
-	    
 		synchronized(mWoT) {
+            final OwnIdentity solver;
 			try {
 				solver = mWoT.getOwnIdentityByID(solverOwnIdentityID);
 			} catch(UnknownIdentityException e) {
 				throw new RuntimeException("Your own identity was deleted already.");
 			}
 		synchronized(mPuzzleStore) {
+            final IntroductionPuzzle puzzle;
 			try {
 				puzzle = mPuzzleStore.getByID(puzzleID);
 			} catch (UnknownPuzzleException e) {
@@ -301,12 +306,13 @@ public final class IntroductionClient extends TransferThread  {
 		}
 		}
 		
-		try {
-			insertPuzzleSolution(puzzle);
-		}
-		catch(Exception e) {
-			Logger.error(this, "insertPuzzleSolution() failed.", e);
-		}
+        // We may not call insertPuzzleSolution() directly here because the parent class
+        // TransferThread requires that only iterate() creates new transfers. So we schedule
+        // iterate() to be executed instead.
+        // TODO: Performance: iterate() not only deals with inserting puzzle solutions but
+        // also with downloading puzzles, deleting expired puzzles, etc. Instead we should have an
+        // event-driven loop for each and only trigger the one for inserting solutions here.
+        nextIteration();
 	}
 
 	/**
@@ -558,8 +564,14 @@ public final class IntroductionClient extends TransferThread  {
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
 			
-			final IntroductionPuzzle puzzle = mWoT.getXMLTransformer().importIntroductionPuzzle(state.getURI(), inputStream);
-			downloadPuzzle(puzzle.getInserter());
+			mWoT.getXMLTransformer().importIntroductionPuzzle(state.getURI(), inputStream);
+			// The parent class TransferThread forbids us to create transfers in onSuccess(), so
+			// this had to be commented out.
+			// Downloading a second puzzle from one inserter was more of heuristics than an actual
+			// need anyway: Solving multiple puzzles of one identity is not useful, you can only
+			// get into its trust list once. This was being done nevertheless in case someone wanted
+			// to introduce multiple identities at once, but that is a pretty rare usecase IMHO.
+			/* downloadPuzzle(puzzle.getInserter()); */
 		}
 		catch (Exception e) { 
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
@@ -588,8 +600,11 @@ public final class IntroductionClient extends TransferThread  {
 				 *  wait for the next time-based iteration of the puzzle fetch loop to avoid wasting CPU cycles. */ 
 	
 				if(puzzleStoreIsTooEmpty()) {
-					// TODO: Use nextIteration here. This requires fixing it to allow us cause an execution even if we are below the minimal sleep time
-					downloadPuzzles();
+				    // TODO: Performance: iterate() not only deals with downloading more puzzles but
+				    // also with inserts, deleting expired puzzles, etc. Instead we should have an
+				    // event-driven loop for each and only trigger the one for downloading
+				    // new puzzles here.
+					nextIteration();
 				}
 			} else if (e.isFatal()) {
 				Logger.error(this, "Downloading puzzle failed: " + state.getURI(), e);

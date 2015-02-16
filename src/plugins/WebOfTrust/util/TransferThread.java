@@ -9,6 +9,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.Collection;
 
+import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
+import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -22,7 +24,6 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
-import freenet.support.TrivialTicker;
 import freenet.support.io.TempBucketFactory;
 
 /**
@@ -30,18 +31,25 @@ import freenet.support.io.TempBucketFactory;
  * 
  * When calling <code>start()</code>, the thread will iterate the first time after <code>getStartupDelay()</code> milliseconds.
  * After each iteration, it will sleep for <code>getSleepTime()</code> milliseconds.
+ * <br><br>
+ * 
+ * ATTENTION: You must only ever create transfers in {@link #iterate()}. Otherwise
+ * {@link #terminate()} could not be guaranteed to terminate all existing transfers.
  * 
  * @author xor
  */
 public abstract class TransferThread implements PrioRunnable, ClientGetCallback, ClientPutCallback {
 	
-	private final String mName;
 	protected final Node mNode;
 	protected final HighLevelSimpleClient mClient;
 	protected final ClientContext mClientContext;
 	protected final TempBucketFactory mTBF;
 	
-	private TrivialTicker mTicker;
+    /**
+     * Used to schedule periodic execution of {@link #run()}, and thus {@link #iterate()}.<br>
+     * Its {@link DelayedBackgroundJob#isTerminated()} state also implicitly serves as our own
+     * execution state. See {@link #start()} and {@link #terminate()}. */
+    private final DelayedBackgroundJob mJob;
 	
 	private final Collection<ClientGetter> mFetches = createFetchStorage();
 	private final Collection<BaseClientPutter> mInserts = createInsertStorage();
@@ -51,9 +59,9 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 		mClient = myClient;
 		mClientContext = mNode.clientCore.clientContext;
 		mTBF = mNode.clientCore.tempBucketFactory;
-		mName = myName;
 		
-		mTicker = new TrivialTicker(mNode.executor);
+        mJob = new TickerDelayedBackgroundJob(this, myName,
+            0 /* We don't use the default delay, we always specify one */, mNode.getTicker());
 	}
 	
 	/**
@@ -62,7 +70,12 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	 */
 	public void start() {
 		Logger.debug(this, "Starting...");
-		mTicker.queueTimedJob(this, mName, getStartupDelay(), false, true);
+
+        // We don't need to reliably protect against this, triggerExecution() will do nothing if we
+        // terminate()d the job already.
+        assert (!mJob.isTerminated());
+
+        mJob.triggerExecution(getStartupDelay());
 	}
 	
 	/** Specify the priority of this thread. Priorities to return can be found in class NativeThread. */
@@ -71,6 +84,8 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 
 	@Override
 	public void run() {
+        assert (!mJob.isTerminated());
+
 		long sleepTime = SECONDS.toMillis(1);
 		try {
 			Logger.debug(this, "Loop running...");
@@ -82,15 +97,23 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 		}
 		finally {
 			Logger.debug(this, "Loop finished. Sleeping for " + MINUTES.convert(sleepTime, MILLISECONDS) + " minutes.");
-			mTicker.queueTimedJob(this, mName, sleepTime, false, true);
+            mJob.triggerExecution(sleepTime);
 		}
 	}
 	
 	/**
-	 * Wakes up the thread so that iterate() is called.
+	 * Same as {@link #nextIteration()} with a delay of zero.
 	 */
 	public void nextIteration() {
-		mTicker.rescheduleTimedJob(this, mName, 0);
+	    nextIteration(0);
+	}
+	
+    /**
+     * Schedules {@link #iterate()} to be executed after the given delay.
+     */
+	public void nextIteration(long delayMillis) {
+        assert (!mJob.isTerminated());
+        mJob.triggerExecution(delayMillis);
 	}
 	
 	protected void abortAllTransfers() {
@@ -131,6 +154,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	
 	protected void addFetch(ClientGetter g) {
 		synchronized(mFetches) {
+            assert (!mJob.isTerminated());
 			mFetches.add(g);
 		}
 	}
@@ -144,6 +168,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	
 	protected void addInsert(BaseClientPutter p) {
 		synchronized(mInserts) {
+            assert (!mJob.isTerminated());
 			mInserts.add(p);
 		}
 	}
@@ -169,7 +194,24 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	
 	public void terminate() {
 		Logger.debug(this, "Terminating...");
-		mTicker.shutdown();
+
+        // We don't need a reliable guard against calling this twice, what we do is non-destructive
+        // and thread-safe.
+        assert (!mJob.isTerminated());
+
+        mJob.terminate();
+        try {
+            // We must wait without timeout since we need to cancel our requests at the core of
+            // Freenet (see below) and the job thread might create requests until it is terminated.
+            mJob.waitForTermination(Long.MAX_VALUE);
+        } catch (InterruptedException e) {
+            // We are a shutdown function, there is no sense in sending a shutdown signal to us.
+            Logger.error(this, "terminate() should not be interrupt()ed.", e);
+        }
+
+        // Having terminate()d mJob prevents run() and thus iterate() from executing, and iterate()
+        // is the only thing which can create transfers. Thus we are safe to clean up the existing
+        // transfers now.
 		try {
 			abortAllTransfers();
 		}
@@ -190,6 +232,8 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	
 	/**
 	 * Called by the TransferThread after getStartupDelay() milliseconds for the first time and then after each getSleepTime() milliseconds.
+	 * <br>May new create transfers. You <b>must</b> register them with
+	 * {@link #addFetch(ClientGetter)} or {@link #addInsert(BaseClientPutter)}.
 	 */
 	protected abstract void iterate();
 
@@ -197,34 +241,44 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	/* Fetches */
 	
 	/**
-	 * You have to do "finally { removeFetch() }" when using this function.
-	 */
+	 * You have to do "finally { removeFetch() }" when using this function.<br>
+	 * You <b>must not</b> create new transfers in this function, only do that in
+	 * {@link #iterate()}. */
 	@Override
 	public abstract void onSuccess(FetchResult result, ClientGetter state);
 
 	/**
-	 * You have to do "finally { removeFetch() }" when using this function.
-	 */
+	 * You have to do "finally { removeFetch() }" when using this function.<br>
+     * You <b>must not</b> create new transfers in this function, only do that in
+     * {@link #iterate()}. */
 	@Override
 	public abstract void onFailure(FetchException e, ClientGetter state);
 
 	/* Inserts */
 	
 	/**
-	 * You have to do "finally { removeInsert() }" when using this function.
-	 */
+	 * You have to do "finally { removeInsert() }" when using this function.<br>
+     * You <b>must not</b> create new transfers in this function, only do that in
+     * {@link #iterate()}. */
 	@Override
 	public abstract void onSuccess(BaseClientPutter state);
 
 	/**
-	 * You have to do "finally { removeInsert() }" when using this function.
-	 */
+	 * You have to do "finally { removeInsert() }" when using this function.<br>
+     * You <b>must not</b> create new transfers in this function, only do that in
+     * {@link #iterate()}. */
 	@Override
 	public abstract void onFailure(InsertException e, BaseClientPutter state);
 
+	/**
+     * You <b>must not</b> create new transfers in this function, only do that in
+     * {@link #iterate()}. */
 	@Override
 	public abstract void onFetchable(BaseClientPutter state);
 
+    /**
+     * You <b>must not</b> create new transfers in this function, only do that in
+     * {@link #iterate()}. */
 	@Override
 	public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state);
 
