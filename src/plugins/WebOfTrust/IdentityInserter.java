@@ -45,17 +45,18 @@ import freenet.support.io.ResumeFailedException;
 public final class IdentityInserter extends TransferThread {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 10 * 60 * 1000;
 	
 	/**
 	 * The minimal time for which an identity must not have changed before we insert it.
 	 */
-	private static final int MIN_DELAY_BEFORE_INSERT = 15 * 60 * 1000;
+    private static final int MIN_DELAY_BEFORE_INSERT = 1 /* hours */ * 60 * 60 * 1000;
 	
 	/**
 	 * The maximal delay for which an identity insert can be delayed (relative to the last insert) due to continuous changes.
 	 */
-	private static final int MAX_DELAY_BEFORE_INSERT = 30 * 60 * 1000;
+    private static final int MAX_DELAY_BEFORE_INSERT = 3 /* hours */ * 60 * 60 * 1000;
+
+    private static final int THREAD_PERIOD = MAX_DELAY_BEFORE_INSERT / 2;
 	
 	/**
 	 * The amount of time after which we insert a new edition of an identity even though it did not change.

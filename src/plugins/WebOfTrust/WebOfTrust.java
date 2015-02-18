@@ -3177,6 +3177,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 				if(mIntroductionClient != null)
 					mIntroductionClient.nextIteration(); // This will make it fetch more introduction puzzles.
+				
+	            if(mInserter != null)
+	                mInserter.nextIteration();
 
 				Logger.normal(this, "Successfully created a new OwnIdentity: " + identity);
 				return identity;
