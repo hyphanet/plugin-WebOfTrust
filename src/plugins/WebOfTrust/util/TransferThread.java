@@ -76,6 +76,8 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
         assert (!mJob.isTerminated());
 
         mJob.triggerExecution(getStartupDelay());
+        
+        Logger.debug(this, "Started.");
 	}
 	
 	/** Specify the priority of this thread. Priorities to return can be found in class NativeThread. */
