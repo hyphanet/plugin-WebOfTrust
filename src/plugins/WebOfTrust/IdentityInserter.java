@@ -11,6 +11,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Random;
 
+import plugins.WebOfTrust.util.TransferThread;
+
 import com.db4o.ext.ExtObjectContainer;
 
 import freenet.client.FetchException;
@@ -28,7 +30,6 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
-import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;

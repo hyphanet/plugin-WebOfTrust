@@ -5,13 +5,17 @@ package plugins.WebOfTrust;
 
 import static org.junit.Assert.*;
 
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import plugins.WebOfTrust.Trust.TrustID;
@@ -40,12 +44,48 @@ public abstract class AbstractJUnit4BaseTest {
     @Rule
     public final TemporaryFolder mTempFolder = new TemporaryFolder();
     
+    /** @see #setupUncaughtExceptionHandler() */
+    private final AtomicReference<Throwable> uncaughtException = new AtomicReference<>(null);
+    
     
     @Before public void setupRandomNumberGenerator() {
         Random seedGenerator = new Random();
         long seed = seedGenerator.nextLong();
         mRandom = new DummyRandomSource(seed);
         System.out.println(this + " Random seed: " + seed);
+    }
+    
+    /**
+     * JUnit will by default ignore uncaught Exceptions in threads other than the ones it
+     * created itself, so we must register a handler for them to pass them to the main JUnit
+     * threads. We pass them by setting {@link #uncaughtException}, and checking its value in
+     * {@code @After} {@link #testUncaughtExceptions()}.
+     */
+    @Before public void setupUncaughtExceptionHandler() {
+        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+            @Override public void uncaughtException(Thread t, Throwable e) {
+                uncaughtException.compareAndSet(null, e);
+            }
+        });
+    }
+    
+    /** @see #setupUncaughtExceptionHandler() */
+    @After public void testUncaughtExceptions() {
+        Throwable t = uncaughtException.get();
+        if(t != null)
+            fail(t.toString());
+    }
+    
+    /** @see #setupUncaughtExceptionHandler() */
+    @Test public void testSetupUncaughtExceptionHandler() throws InterruptedException {
+        Thread t = new Thread(new Runnable() {@Override public void run() {
+            throw new RuntimeException();
+        }});
+        t.start();
+        t.join();
+        assertNotEquals(null, uncaughtException.get());
+        // Set back to null so testUncaughtExceptions() does not fail
+        uncaughtException.set(null);
     }
 
     /**

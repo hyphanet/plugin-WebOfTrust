@@ -20,8 +20,8 @@ import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.introduction.captcha.CaptchaFactory1;
+import plugins.WebOfTrust.util.TransferThread;
 
-import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
 import freenet.client.FetchContext;
@@ -40,7 +40,6 @@ import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
-import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;

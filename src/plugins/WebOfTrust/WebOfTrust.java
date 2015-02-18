@@ -244,22 +244,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			createSeedIdentities();
 			
-			Logger.normal(this, "Starting fetches of all identities...");
-			synchronized(this) {
-			synchronized(mFetcher) {
-				mFetcher.start();
-				for(Identity identity : getAllIdentities()) {
-					if(shouldFetchIdentity(identity)) {
-						try {
-							mFetcher.fetch(identity);
-						}
-						catch(Exception e) {
-							Logger.error(this, "Fetching identity failed!", e);
-						}
-					}
-				}
-			}
-			}
+            mFetcher.start();
 			
 			mInserter.start();
 
@@ -2090,7 +2075,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 *   If you call this function for ALL identities in a database, EVERYTHING should be deleted and the database SHOULD be empty.
 	 *   You then can check whether the database actually IS empty to test for leakage.
 	 * 
-	 * You have to lock the WebOfTrust, the IntroductionPuzzleStore, the IdentityFetcher and the SubscriptionManager before calling this function.
+	 * You have to lock the WebOfTrust, the IntroductionPuzzleStore, the IdentityFetcher, the
+	 * SubscriptionManager and the Persistent.transactionLock() before calling this function.
 	 */
 	void deleteWithoutCommit(Identity identity) {
 		// We want to use beginTrustListImport, finishTrustListImport / abortTrustListImport.
@@ -2271,7 +2257,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity.
 	 */
-	private boolean shouldFetchIdentity(final Identity identity) {
+    boolean shouldFetchIdentity(final Identity identity) {
 		if(identity instanceof OwnIdentity)
 			return true;
 		

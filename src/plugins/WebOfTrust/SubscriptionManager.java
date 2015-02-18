@@ -7,10 +7,13 @@ import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 import plugins.WebOfTrust.ui.fcp.FCPInterface.FCPCallFailedException;
+import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
+import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
+import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -21,7 +24,6 @@ import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.TrivialTicker;
 import freenet.support.codeshortification.IfNull;
 import freenet.support.io.NativeThread;
 
@@ -1233,25 +1235,17 @@ public final class SubscriptionManager implements PrioRunnable {
 	private final ExtObjectContainer mDB;
 
 	/**
-	 * The SubscriptionManager schedules execution of its notification deployment thread on this {@link TrivialTicker}.
+	 * The SubscriptionManager schedules execution of its notification deployment thread on this
+	 * {@link DelayedBackgroundJob}.<br>
 	 * The execution typically is scheduled after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}.
 	 * 
-	 * Is null until {@link #start()} was called.
+	 * Defaults to {@link MockDelayedBackgroundJob#DEFAULT} until {@link #start()} was called, then
+	 * becomes a {@link TickerDelayedBackgroundJob} until {@link #stop()} is called.
 	 */
-	private TrivialTicker mTicker = null;
-	
-	/** Used for synchronizing access on {@link #mTicker}.  */
-	private final Object mTickerLock = new Object();
-	
-	/**
-	 * If execution of {@link #run()} was scheduled by {@link #mTicker}, run() must set this
-	 * variable to the thread which is executing it.<br>
-	 * This allows {@link #stop()} to call {@link Thread#interrupt()} upon the thread to request
-	 * it to exit soon for a fast shutdown.<br>
-	 * Volatile because it is accessed without synchronization in {@link #stop()}.
-	 */
-	private volatile Thread mThreadFromTicker = null;
-	
+	private final AtomicReference<DelayedBackgroundJob> mJob
+	    = new AtomicReference<>((DelayedBackgroundJob)MockDelayedBackgroundJob.DEFAULT);
+
+
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
 	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
 	private static transient volatile boolean logDEBUG = false;
@@ -1890,12 +1884,11 @@ public final class SubscriptionManager implements PrioRunnable {
 	/**
 	 * Sends out the {@link Notification} queue of each {@link Client}.
 	 * 
-	 * Typically called by the Ticker {@link #mTicker} on a separate thread. This is triggered by {@link #scheduleNotificationProcessing()}
-	 * - the scheduling function should be called whenever a {@link Notification} is stored to the database.
-	 *  <br>
-	 * Sets {@link #mThreadFromTicker} to the thread which is executing it.<br>
-	 * {@link Thread#interrupt()} may be called to request the thread to exit soon for speeding
-	 * up shutdown.<br><br>
+	 * Typically called by the DelayedBackgroundJob {@link #mJob} on a separate thread. This is
+	 * triggered by {@link #scheduleNotificationProcessing()} - that scheduling function should be
+	 * called whenever a {@link Notification} is stored to the database. <br>
+	 * {@link Thread#interrupt()} may be called by {@link DelayedBackgroundJob#terminate()} to
+	 * request the thread to exit soon for speeding up shutdown.<br><br>
 	 * 
 	 * If deploying the notifications for a {@link Client} fails, this function is scheduled to be run again after some time.
 	 * If deploying for a certain {@link Client} fails more than {@link #DISCONNECT_CLIENT_AFTER_FAILURE_COUNT} times, the {@link Client} is deleted.
@@ -1905,13 +1898,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	@Override
 	public void run() {
 		if(logMINOR) Logger.minor(this, "run()...");
-        
-        try {
-        assert(mThreadFromTicker == null)
-            : "run() should only be scheduled on the ticker with the no-duplicates-flag";
-        
-        mThreadFromTicker = Thread.currentThread();
-        
+		
 		/* We do NOT allow database queries on the WebOfTrust object in sendNotifications: 
 		 * Notification objects contain serialized clones of all required objects for deploying them, they are self-contained.
 		 * Therefore, we don't have to take the WebOfTrust lock and can execute in parallel to threads which need to lock the WebOfTrust.*/
@@ -1940,10 +1927,6 @@ public final class SubscriptionManager implements PrioRunnable {
 		}
 		//}
 		
-        } finally {
-            mThreadFromTicker = null;
-        }
-		
 		if(logMINOR) Logger.minor(this, "run() finished.");
 	}
 	
@@ -1957,15 +1940,10 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Schedules the {@link #run()} method to be executed after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}
 	 */
 	private void scheduleNotificationProcessing() {
-	    synchronized(mTickerLock) {
-	        // Valid in unit tests. Don't log a warning to not spam stderr, this function is
-	        // executed frequently. We log a warning once in start() already.
-	        if(mTicker == null)
-	            return; 
-	        
-	        mTicker.queueTimedJob(
-	            this, "WoT SubscriptionManager", PROCESS_NOTIFICATIONS_DELAY, false, true);
-	    }
+        DelayedBackgroundJob job = mJob.get();
+        assert (!job.isTerminated())
+            : "Should not be called before start() or after stop() as mJob won't execute then";
+        job.triggerExecution();
 	}
 	
 
@@ -1975,129 +1953,74 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * You must call this before any subscriptions are created, so for example before FCP is available.
 	 * 
 	 * ATTENTION: Does NOT work in unit tests - you must manually trigger subscription processing by calling {@link #run()} there.
+	 * 
+	 * TODO: Code quality: {@link IdentityFetcher#start()} and {@link IdentityFetcher#stop()} were
+	 * based upon this function and {@link #stop()} and have received significant improvements
+	 * already. Backport those improvements to this class' start() and stop().
 	 */
 	protected synchronized void start() {
 		Logger.normal(this, "start()...");
+
+        // This is thread-safe guard against concurrent multiple calls to start() since start() is
+        // synchronized. Or in other words: If it wasn't synchronized, this wouldn't be thread-safe
+        // since the value of mJob could change after get() returns.
+        if(mJob.get() != MockDelayedBackgroundJob.DEFAULT)
+            throw new IllegalStateException("start() was already called!");
+        
+        // This must be called while synchronized on this SubscriptionManager, and the lock must be
+        // held until mJob is set (which we do by having the whole function be synchronized):
+        // Holding the lock prevents Clients or Notifications from being created before
+        // scheduleNotificationProcessing() is made functioning by setting mJob.
+        // It is critically necessary for scheduleNotificationProcessing() to be working before
+        // any Clients/Notifications can be created: Notifications to Clients will only be sent out
+        // if scheduleNotificationProcssing() is functioning at the moment a Notification is
+        // created.
 		deleteAllClients();
 		
 		final PluginRespirator respirator = mWoT.getPluginRespirator();
-		
-		synchronized(mTickerLock) {
-		    assert(mTicker == null);
 
-		    if(respirator != null) { // We are connected to a node
-		        mTicker = new TrivialTicker(respirator.getNode().executor);
-		    } else { // We are inside of a unit test
-		        Logger.warning(this, "Cannot schedule notification processing: PluginRespirator == "
-		                           + "null. This is OK in unit tests.");
-		        mTicker = null;
-		    }
+		if(respirator != null) { // We are connected to a node
+            // We don't have to use compareAndSet() since start() is synchronized
+            mJob.set(new TickerDelayedBackgroundJob(this, "WoT SubscriptionManager",
+                PROCESS_NOTIFICATIONS_DELAY, respirator.getNode().getTicker()));
+		} else { // We are inside of a unit test
+		    Logger.warning(this, "No PluginRespirator available, will never run job. "
+		                       + "This should only happen in unit tests!");
+		    assert(mJob.get() == MockDelayedBackgroundJob.DEFAULT);
 		}
+		
 		Logger.normal(this, "start() finished.");
 	}
 	
 	/**
 	 * Shuts down this SubscriptionManager by aborting all queued notification processing and waiting for running processing to finish.
-	 * FIXME: Test.
+	 * FIXME: Test.<br><br>
+	 * 
+	 * Notice: Not synchronized so it can be run in parallel with {@link #run()}. This will allow it
+	 * to call {@link DelayedBackgroundJob#terminate()} while run() is executing, which calls
+	 * {@link Thread#interrupt()} on the run()-thread to cause it to exit quickly.
 	 */
 	protected void stop() {
 		Logger.normal(this, "stop()...");
 		
-		// TODO: Code quality: The whole complex logic of this shutdown function could easily be
-		// eliminated by improving class TrivialTicker to interrupt() the current job:
-		// The problem which this code works around is that TrivialTicker.shutdown() will block
-		// until a possibly currently executing job (= SubscriptionManager.run()) has returned,
-		// but we need to interrupt() the current job as it can take a very long time.
-		// We cannot shutdown() and then interrupt() the current job, as shutdown would wait
-		// for the current job to finish. Instead, we must interrupt() the current job, and then
-		// shutdown().
-		// But we cannot prevent the Ticker from accepting new jobs before shutdown() has finished.
-		// Thus, we cannot just interrupt() our job before shutdown() as it might be re-queued
-		// immediately afterwards. Instead we here have to take the additional lock mTickerLock
-		// during shutdown and in all functions which queue jobs on the ticker to ensure that the
-		// job does not get re-queued while we interrupt() it.
-		// This is ugly because:
-		// - of the size of the logic here.
-		// - because it requires functions which want to queue stuff on the ticker
-		//   (= scheduleNotificationProcessing()) to always take the mTickerLock:
-		//   This is is double locking because the ticker itself will take its own internal lock
-		//   when the scheduling function is called.
-		// To get rid of this, I see two possible solutions:
-		// 1) Split up TrivialTicker.shutdown() into prepareShutdown() and shutdown(). The former
-		//    would prevent accepting of new jobs atomically, but return immediately; the latter
-		//    would wait for the existing job to finish. This could eliminate the 
-		//    synchronized(mTickerLock) when queuing jobs  which is currently needed so we can
-		//    safely assume that no further jobs are queued during shutdown.
-		//    This is the less beautiful solution though as it will still require most of the below
-		//    logic here.
-		// 2) The more beautiful solution: Have TrivialTicker.shutdown() automatically call
-		//    Thread.interrupt() upon the currently running job. This would eliminate ALL of the
-		//    logic below, we would only have to do mTicker.shutdown() (plus some logic for safely
-		//    setting mTicker = null). If you're not sure whether random thread interruption 
-		//    breaks existing code, you should just add a shutdown(boolean interrupt) which
-		//    deprecates the old function.
-		//    Notice that the amending of the ticker to be able to interrupt likely would be a
-		//    benefit to fred as well: AFAIK, it uses it to code related to network packet sending,
-		//    and socket I/O usually is interruptible because network sending takes a long time.
-		synchronized(mTickerLock) {
-            // No further jobs can be queued while we are terminating the currently running jobs:
-            // The scheduleNotificationProcessing() which queues this class' worker jobs on the
-            // ticker need the mTickerLock, which we have, so it cannot queue more jobs while we are
-		    // in here.
+		// Since stop() is not synchronized, getAndSet() has to be used instead of two distinct
+		// get() and set() to prevent us from discarding the reference to a different job than the
+		// one we terminated. Or in other words: getAndSet() guards against a concurrent call to
+		// start()
+		DelayedBackgroundJob job = mJob.getAndSet(MockDelayedBackgroundJob.DEFAULT);
+		
+		assert job != MockDelayedBackgroundJob.DEFAULT : "You forgot to call start()!";
 		    
-		    // Valid in unit tests.
-		    if(mTicker == null)
-		        return;
-		    
-		    // SubscriptionManager.run() might be:
-		    // 1) queued for execution in the Ticker
-		    // 2) not queued,
-		    // 3) already running.
-		    // We eliminate case 1) by trying to cancel the queued job.
-		    mTicker.cancelTimedJob(SubscriptionManager.this);
-		    
-		    // Now we must deal with the cases 1/2 where SubscriptionManager.run() is maybe already
-		    // running:
-		    // The ticker is sequential, so by adding a job with delay=0, we can figure out whether
-		    // a possibly currently running SubscriptionManager.run() has finished by having
-		    // the following boolean set by the new ticker job.
-	        final AtomicBoolean tickerEmpty = new AtomicBoolean(false);
-		    mTicker.queueTimedJob(new Runnable() {
-                @Override public void run() {
-                    tickerEmpty.set(true);
-                }
-            }, "WOT SubscriptionManager.stop()", 0, false, false);
-		    
-		    // The SubscriptionManager.run() can take a long time to execute. Thus, it sets the 
-		    // mThreadFromTicker to the thread which is executing it so we can call interrupt() upon
-		    // it to request a quick shutdown.
-		    // We now wait for mThreadFromTicker to become set so we can interrupt it.
-		    // Additionally, we only wait while tickerEmpty == false, because its possible that
-		    // there is no run() thread.
-		    while(tickerEmpty.get() == false) {
-    		    final Thread threadFromTicker = mThreadFromTicker; // Copy since its volatile.
-    
-    		    if(threadFromTicker != null) {
-    		        threadFromTicker.interrupt();
-    		        // There can only be one such thread, so we can break now as we interrupted it.
-    		        // ticker.shutdown() will be executed next, which will wait for the thread to
-    		        // actually exit.
-    		        break;
-    		    }
-    		    
-    		    // A busy-loop is OK here since setting mThreadFromTicker is done very early in the
-    		    // SubscriptionManager.run(). (Not doing this with a wait()/notify() mechanism
-    		    // to not complexify run(), and to reduce the amount of locks it has to take)
-    		    try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    Logger.error(this, "stop() should not be interrupt()ed", e);
-                }
-		    }
-		    
-		    mTicker.shutdown();
-		    mTicker = null;
-		}
+		job.terminate();
+		try {
+		    // TODO: Performance: Decrease if it doesn't interfere with plugin unloading. I would
+		    // rather not though: Plugin unloading unloads the JAR of the plugin, and thus all its
+		    // classes. That will probably cause havoc if threads of it are still running.
+            job.waitForTermination(Long.MAX_VALUE);
+        } catch (InterruptedException e) {
+            // We are a shutdown function, there is no sense in sending a shutdown signal to us.
+            Logger.error(this, "stop() should not be interrupt()ed.", e);
+        }
 
 		Logger.normal(this, "stop() finished.");
 	}

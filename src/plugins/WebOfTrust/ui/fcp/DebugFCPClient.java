@@ -22,7 +22,6 @@ import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.SubscribedObje
 
 import com.db4o.ObjectSet;
 
-import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -86,8 +85,10 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	}
 
 	
-	private DebugFCPClient(final WebOfTrust myWebOfTrust, final Executor myExecutor, Map<String, Identity> identityStorage) {
-		mClient = new FCPClientReferenceImplementation(identityStorage, myWebOfTrust.getPluginRespirator(), myExecutor, this);
+	private DebugFCPClient(final WebOfTrust myWebOfTrust,
+	        final Map<String, Identity> identityStorage) {
+		mClient = new FCPClientReferenceImplementation(
+		    identityStorage, myWebOfTrust.getPluginRespirator(), this);
 		mWebOfTrust = myWebOfTrust;
 		
 		mSynchronizationInProgress.put(Identity.class, false);
@@ -97,7 +98,7 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	
 	public static DebugFCPClient construct(final WebOfTrust myWebOfTrust) {
 		final HashMap<String, Identity> identityStorage = new HashMap<String, Identity>();
-		final DebugFCPClient client = new DebugFCPClient(myWebOfTrust, myWebOfTrust.getPluginRespirator().getNode().executor, identityStorage);
+		final DebugFCPClient client = new DebugFCPClient(myWebOfTrust, identityStorage);
 		client.mReceivedIdentities = identityStorage;
 		return client;
 	}
