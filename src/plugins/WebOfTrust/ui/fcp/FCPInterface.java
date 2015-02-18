@@ -48,12 +48,16 @@ import freenet.clients.fcp.FCPPluginConnection;
 import freenet.clients.fcp.FCPPluginMessage;
 import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
+import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
+import freenet.pluginmanager.PluginNotFoundException;
+import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 
 /**
  * ATTENTION: There is a deprecation mechanism for getting rid of old SimpleFieldSet keys (fields)
@@ -71,7 +75,9 @@ import freenet.support.SimpleFieldSet;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSideFCPMessageHandler {
+public final class FCPInterface
+    implements FredPluginFCP,
+               FredPluginFCPMessageHandler.ServerSideFCPMessageHandler {
 
     /**
      * Timeout when sending an {@link SubscriptionManager.Notification} to a client.<br>
@@ -233,7 +239,58 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
         
         return reply;
     }
-    
+
+    /**
+     * Backwards-compatibility handler for legacy fred plugin FCP API {@link FredPluginFCP}.<br>
+     * Passes through messages to the new API handler {@link #handlePluginFCPMessage(
+     * FCPPluginConnection, FCPPluginMessage)}}.
+     * 
+     * @deprecated
+     *     The old plugin FCP API {@link FredPluginFCP} is planned to be removed from fred, so this
+     *     function shall be removed then as well.
+     */
+    @Deprecated
+    @Override public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data,
+            int accesstype) {
+        try {
+            final FCPPluginMessage message = FCPPluginMessage.construct(params, data);
+            final String messageCode = params.get("Message");
+            final FCPPluginMessage result;
+            
+            // Log only with LogLevel MINOR because FCP messages can happen very frequently and
+            // it might slow things down if we log this for each.
+            // Log at LogLevel ERROR  instead of only MINOR so developers notice it.
+            if(logMINOR) {
+                Logger.error(this,
+                    "Received FCP message via legacy plugin FCP API. Please update your "
+                  + "client application to use the new API. See "
+                  + "PluginRespirator.connectToOtherPlugin(). Identifier: "
+                  + replysender.getIdentifier());
+            }
+            
+            if(messageCode != null && messageCode.equals("Subscribe")) {
+                // handleSubscribe() needs functions of FCPPluginConnection, i.e. the new 
+                // plugin FCP API, so we cannot handle it in this handler for the old legacy API.
+                result = errorMessageFCP(message, new UnsupportedOperationException(
+                        "'Subscribe' message can only be used via the new plugin API. "
+                      + "See PluginRespirator.connectToOtherPlugin()."));;
+            } else {
+                result = handlePluginFCPMessage(null, message);
+            }
+            
+            try {
+                replysender.send(result.params, result.data);
+            } catch(PluginNotFoundException e) {
+                Logger.normal(this, "Connection lost already while trying to send FCP reply.", e);
+            }
+        } catch (RuntimeException | Error e) {
+            // handlePluginFCPMessage() will return all regular FCP errors such as wrong parameters
+            // as a FCP error message, it won't throw them out. So what we catch here is real,
+            // severe errors.
+            Logger.error(this, "Error in FCP message handler", e);
+        }
+    }
+
     private String getMandatoryParameter(final SimpleFieldSet sfs, final String name) throws InvalidParameterException {
     	final String result = sfs.get(name);
     	if(result == null)
@@ -1518,7 +1575,7 @@ public final class FCPInterface implements FredPluginFCPMessageHandler.ServerSid
      * handler which will return them upon error.
      */
     private FCPPluginMessage errorMessageFCP(final FCPPluginMessage originalMessage,
-            final Exception e) {
+            final Throwable e) {
         
         // "InternalError" and e.toString() are  suggested by the FCPPluginMessage JavaDoc.
         return errorMessageFCP(originalMessage, "InternalError", e.toString());

@@ -51,16 +51,20 @@ import freenet.l10n.PluginL10n;
 import freenet.node.RequestClient;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginBaseL10n;
+import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
+import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
+import freenet.support.api.Bucket;
 import freenet.support.io.FileUtil;
 
 /**
@@ -73,6 +77,7 @@ public final class WebOfTrust extends WebOfTrustInterface
         FredPlugin,
         FredPluginThreadless,
         FredPluginFCPMessageHandler.ServerSideFCPMessageHandler,
+        FredPluginFCP,
         FredPluginVersioned,
         FredPluginRealVersioned,
         FredPluginL10n,
@@ -1853,6 +1858,19 @@ public final class WebOfTrust extends WebOfTrustInterface
     public FCPPluginMessage handlePluginFCPMessage(FCPPluginConnection connection,
             FCPPluginMessage message) {
         return mFCPInterface.handlePluginFCPMessage(connection, message);
+    }
+    
+    /**
+     * Backwards-compatibility handler for legacy fred plugin FCP API {@link FredPluginFCP}.<br>
+     * 
+     * @deprecated
+     *     The old plugin FCP API {@link FredPluginFCP} is planned to be removed from fred, so this
+     *     function shall be removed then as well.
+     */
+    @Deprecated
+    @Override public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data,
+            int accesstype) {
+        mFCPInterface.handle(replysender, params, data, accesstype);
     }
 
 	/**
