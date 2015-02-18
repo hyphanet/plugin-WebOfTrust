@@ -22,7 +22,6 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.introduction.captcha.CaptchaFactory1;
 import plugins.WebOfTrust.util.TransferThread;
 
-import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
 import freenet.client.FetchContext;
