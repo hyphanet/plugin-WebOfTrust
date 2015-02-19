@@ -1755,13 +1755,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 	public void terminate() {
 		Logger.normal(this, "Web Of Trust plugin terminating ...");
 		
-        // NOTICE: The way this parallelizes shutdown of subsystems is mostly code-duplication:
+        // TODO: Code quality: The way this parallelizes shutdown of subsystems is ugly:
         // BackgroundJob, which many of the subsystems use, already has both async terminate() and
         // synchronous waitForTermination() which could be used to parallelize shutdown.
-        // This functionality merely is hidden by the shutdown functions of the subsystems being
-        // implemented in a blocking manner for historical reasons.
-        // So please someday change this function to use the existing async functions instead of
-        // shoving everything into a thread.
+        // Nevertheless, this function creates threads for terminating those subsystems because
+        // they don't expose the async shutdown functions, they only expose blocking ones.
+        // So please someday change the subsystems to expose async shutdown functions and remove
+        // the thread creation from this function.
 
 
         // When the counter of the following CountDownLatch is zero, all threads which terminate
