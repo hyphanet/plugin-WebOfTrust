@@ -422,11 +422,11 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
-	
-    /** TODO: Performance: Check and obey {@link Thread#interrupted()} as {@link #stop()} will
-     *  interrupt the thread. */
+
 	@Override
 	public void run() {
+	    final Thread thread = Thread.currentThread();
+
 		synchronized(mWoT) { // Lock needed because we do getIdentityByID() in fetch()
 		synchronized(this) {
 		synchronized(Persistent.transactionLock(mDB)) {
@@ -440,6 +440,9 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 					} catch(Exception e) {
 						Logger.error(this, "Aborting fetch failed", e);
 					}
+					
+					if(thread.isInterrupted())
+					    break;
 				}
 				
 				for(IdentityFetcherCommand command : getCommands(StartFetchCommand.class)) {
@@ -450,6 +453,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 						Logger.error(this, "Fetching identity failed", e);
 					}
 					
+                    if(thread.isInterrupted())
+                        break;
 				}
 				
 				for(IdentityFetcherCommand command : getCommands(UpdateEditionHintCommand.class)) {
@@ -460,7 +465,14 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 						Logger.error(this, "Updating edition hint failed", e);
 					}
 					
+                    if(thread.isInterrupted())
+                        break;
 				}
+				
+				// isInterrupted() does not clear the interruption flag, so we do the logging here
+				// instead of duplicating it at each of the above "if(thread.isInterrupted())"
+				if(thread.isInterrupted())
+				    Logger.normal(this, "Shutdown requested, aborting command processing...");
 				
 				if(logDEBUG) Logger.debug(this, "Processing finished.");
 				
