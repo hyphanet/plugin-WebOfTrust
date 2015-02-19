@@ -357,6 +357,13 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		try {
 			getCommand(StartFetchCommand.class, identity).deleteWithoutCommit();
 			if(logDEBUG) Logger.debug(this, "Deleting start fetch command for " + identity);
+			
+			assert(mRequests.get(identity.getID()) == null)
+			    : "We have not yet processed the StartFetchCommand for the identity, so there "
+			    + "should not be a request for it. ID: " + identity.getID();
+			
+			// There shouldn't be a request to abort so we don't store an AbortFetchCommand.
+			return;
 		}
 		catch(NoSuchCommandException e) { }
 		
