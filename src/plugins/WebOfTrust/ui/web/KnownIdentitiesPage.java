@@ -358,10 +358,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			row.addChild("td", "align", "center", Long.toString(id.getEdition()));
 			
 			row.addChild("td", "align", "center", Long.toString(id.getLatestEditionHint()));
-		
-		identitiesTable.addChild(getKnownIdentitiesListTableHeader());
-		knownIdentitiesBox.addChild(getKnownIdentitiesListPageLinks(page, allIdentities.size()));
 	    }
+        identitiesTable.addChild(getKnownIdentitiesListTableHeader());
+        knownIdentitiesBox.addChild(getKnownIdentitiesListPageLinks(page, allIdentities.size()));
         }
 	}
 	
