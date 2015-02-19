@@ -7,10 +7,13 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.Identity.IdentityID;
@@ -60,6 +63,7 @@ import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
@@ -1751,61 +1755,91 @@ public final class WebOfTrust extends WebOfTrustInterface
 	public void terminate() {
 		Logger.normal(this, "Web Of Trust plugin terminating ...");
 		
-		/* We use single try/catch blocks so that failure of termination of one service does not prevent termination of the others */
+        // NOTICE: The way this parallelizes shutdown of subsystems is mostly code-duplication:
+        // BackgroundJob, which many of the subsystems use, already has both async terminate() and
+        // synchronous waitForTermination() which could be used to parallelize shutdown.
+        // This functionality merely is hidden by the shutdown functions of the subsystems being
+        // implemented in a blocking manner for historical reasons.
+        // So please someday change this function to use the existing async functions instead of
+        // shoving everything into a thread.
 
-		try {
+
+        // When the counter of the following CountDownLatch is zero, all threads which terminate
+        // a WOT subsystem have finished, and shutdown of them is thus complete.
+        // We are not creating the latch object yet but initialize it to null because we do not
+        // want to hardcode its counter value (= the amount of shutdown threads) but rather compute
+        // it automatically once we created all threads. This is good because if the counter had to
+        // be manually specified, developers could forget incrementing it when adding new threads.
+        // Because we need to change the value of the latch from null when we create it, we need
+        // to use an AtomicReference as a wrapper: Java forbids local classes from accessing
+        // non-final variables of their containing function.
+        final AtomicReference<CountDownLatch> latch = new AtomicReference<>(null);
+        
+        // Because the current implementations of the submodule shutdown functions are blocking, we
+        // call them in threads of this class:
+        abstract class ShutdownThread implements Runnable {
+            @Override public void run() {
+                try {
+                    realRun();
+                } catch(RuntimeException | Error e) {
+                    Logger.error(this, "Error during termination.", e);
+                } finally {
+                    latch.get().countDown();
+                }
+            };
+            
+            abstract void realRun();
+        }
+		
+		final ArrayList<ShutdownThread> shutdownThreads = new ArrayList<ShutdownThread>(8); 
+		
+		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
 			if(mFCPInterface != null)
 				mFCPInterface.stop();
-		} catch(Exception e) {
-			Logger.error(this, "Error during termination.", e);
-		}
+		}});
 		
-		try {
+		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
 			if(mWebInterface != null)
-				this.mWebInterface.unload();
-		}
-		catch(Exception e) {
-			Logger.error(this, "Error during termination.", e);
-		}
+				mWebInterface.unload();
+		}});
 		
-		try {
+		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
 			if(mIntroductionClient != null)
 				mIntroductionClient.terminate();
-		}
-		catch(Exception e) {
-			Logger.error(this, "Error during termination.", e);
-		}
+		}});
 		
-		try {
+		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
 			if(mIntroductionServer != null)
 				mIntroductionServer.terminate();
-		}
-		catch(Exception e) {
-			Logger.error(this, "Error during termination.", e);
-		}
+		}});
 		
-		try {
+		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
 			if(mInserter != null)
 				mInserter.terminate();
-		}
-		catch(Exception e) {
-			Logger.error(this, "Error during termination.", e);
-		}
+		}});
 		
-		try {
+		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
 			if(mFetcher != null)
 				mFetcher.stop();
-		}
-		catch(Exception e) {
-			Logger.error(this, "Error during termination.", e);
-		}
+		}});
 
-		try {
+		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
 			if(mSubscriptionManager != null)
 				mSubscriptionManager.stop();
-		} catch(Exception e) {
-			Logger.error(this, "Error during termination.", e);
-		}
+		}});
+
+        latch.set(new CountDownLatch(shutdownThreads.size()));
+
+        Executor executor = mPR.getNode().executor;
+        for(ShutdownThread thread : shutdownThreads)
+            executor.execute(thread);
+
+        try {
+            latch.get().await();
+        } catch(InterruptedException e1) {
+            // We ARE a shutdown function, it doesn't make any sense to request us to shutdown.
+            Logger.error(this, "Termination function requested to terminate!", e1);
+        }
 		
 		// Must be terminated after anything is down which can modify the database
 		try {
