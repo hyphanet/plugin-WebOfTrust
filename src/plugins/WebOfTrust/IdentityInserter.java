@@ -134,7 +134,6 @@ public final class IdentityInserter extends TransferThread {
 	protected void iterate() {
 		abortInserts();
 		
-		// FIXME: Use SubscriptionManager instead of periodic polling
 		synchronized(mWoT) {
 			for(OwnIdentity identity : mWoT.getAllOwnIdentities()) {
 				if(identity.needsInsert()) {
