@@ -66,6 +66,7 @@ import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.api.Bucket;
@@ -1830,7 +1831,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 
         latch.set(new CountDownLatch(shutdownThreads.size()));
 
-        Executor executor = mPR.getNode().executor;
+        Executor executor = (mPR != null /* Can be null in unit tests */)
+                          ? mPR.getNode().executor
+                          : new PooledExecutor();
+        
         for(ShutdownThread thread : shutdownThreads)
             executor.execute(thread);
 
