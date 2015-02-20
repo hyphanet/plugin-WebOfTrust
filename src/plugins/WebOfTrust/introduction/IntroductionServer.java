@@ -279,8 +279,6 @@ public final class IntroductionServer extends TransferThread {
 
 			final InsertBlock ib = new InsertBlock(tempB, null, puzzle.getInsertURI());
 			final InsertContext ictx = mClient.getInsertContext(true);
-            // FIXME: Code quality: Check if this is the default, if yes, remove it.
-			ictx.getCHKOnly = false;
 			
 			final ClientPutter pu = mClient.insert(
 			    ib, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
