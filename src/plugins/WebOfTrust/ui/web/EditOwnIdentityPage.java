@@ -21,7 +21,7 @@ import freenet.support.api.HTTPRequest;
  */
 public class EditOwnIdentityPage extends WebPageImpl {
 	
-	private final OwnIdentity mIdentity;
+    private OwnIdentity mIdentity;
 
 	/**
 	 * @throws RedirectException If the {@link Session} has expired. 
@@ -31,6 +31,7 @@ public class EditOwnIdentityPage extends WebPageImpl {
 		
         // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
         // https://bugs.freenetproject.org/view.php?id=6247
+        // Also remove the similar code from make() then.
         synchronized(mWebOfTrust) {
             mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
         }
@@ -45,7 +46,17 @@ public class EditOwnIdentityPage extends WebPageImpl {
 				try {
 					mWebOfTrust.setPublishTrustList(mIdentity.getID(), newPublishTrustList);
 					mWebOfTrust.setPublishIntroductionPuzzles(mIdentity.getID(), newPublishTrustList && newPublishPuzzles);
-					
+
+                    // Update the identity to get the latest state so we display the changed version
+                    // in the UI properly.
+                    // TODO: Performance: This can be removed once the TODO at the constructor of
+                    // not cloning it has been resolved. If we didn't clone it, the database would
+                    // apply the updates to it as it would be the same object as was updated by the
+                    // above setPublish...()
+                    synchronized (mWebOfTrust) {
+                        mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
+                    }
+
 		            HTMLNode aBox = addContentBox(l10n().getString("EditOwnIdentityPage.SettingsSaved.Header"));
 		            aBox.addChild("p", l10n().getString("EditOwnIdentityPage.SettingsSaved.Text"));
 				}
