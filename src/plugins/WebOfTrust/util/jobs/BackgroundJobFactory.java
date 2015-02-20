@@ -29,7 +29,7 @@ public interface BackgroundJobFactory {
      * completion.
      * @see BackgroundJob#terminate()
      * @see #waitForTerminationOfAll(long)
-     * @deprecated FIXME: The implementations of this function will currently only terminate the
+     * @deprecated TODO: The implementations of this function will currently only terminate the
      * currently running jobs but NOT prevent creation of new ones after it has been called. This
      * renders the function quite useless for shutdown, which would probably be its primary purpose.
      * WOT currently will not use the factories but create and terminate jobs using their own
