@@ -310,6 +310,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		mSubscriptionManager = new SubscriptionManager(this);
 		
 		mFetcher = new IdentityFetcher(this, null);
+		mFetcher.start();
 		
 		mFCPInterface = new FCPInterface(this);
 		
