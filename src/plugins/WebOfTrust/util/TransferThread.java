@@ -98,6 +98,13 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 			Logger.error(this, "Error in iterate() or getSleepTime() probably", e);
 		}
 		finally {
+            // FIXME: The delay we log is not correct: If iterate() used nextIteration() to
+            // reschedule itself to a time shorter than sleepTime, triggerExecution(sleepTime) which
+            // we call here will not have any effect since it uses the shortest delay of all calls,
+            // and our sleepTime is longer.
+            // To fix this, we probably should add a getCurrentDelay() to BackgroundJob and use
+            // that to log the actual delay.. This problem affects class IntroductionClient already,
+            // so there is some use in fixing this.
 			Logger.debug(this, "Loop finished. Sleeping for " + MINUTES.convert(sleepTime, MILLISECONDS) + " minutes.");
             mJob.triggerExecution(sleepTime);
 		}
