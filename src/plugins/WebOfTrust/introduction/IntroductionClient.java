@@ -351,19 +351,21 @@ public final class IntroductionClient extends TransferThread  {
 		/* Download puzzles from identities from which we have not downloaded for a certain period. This is ensured by
 		 * keeping the last few hundred identities stored in a FIFO with fixed length, named mIdentities. */
 		
-			for(final Identity i : allIdentities) {
-				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
-				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i.getID()))  {
-					try {
-						if(mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)
-							identitiesToDownloadFrom.add(i);
-					}
-					catch(NotInTrustTreeException e) { }
-				}
-	
-				if(identitiesToDownloadFrom.size() >= newRequestCount)
-					break;
-			}
+		for(final Identity i : allIdentities) {
+		    /* TODO: Create a "boolean providesIntroduction" in Identity to use a database query
+		     * instead of this */ 
+		    if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)
+		            && !mIdentities.contains(i.getID()))  {
+		        try {
+		            if(mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)
+		                identitiesToDownloadFrom.add(i);
+		        }
+		        catch(NotInTrustTreeException e) { }
+		    }
+
+		    if(identitiesToDownloadFrom.size() >= newRequestCount)
+		        break;
+		}
 		
 		/* If we run out of identities to download from, flush the list of identities of which we have downloaded puzzles from */
 		if(identitiesToDownloadFrom.size() == 0) {
