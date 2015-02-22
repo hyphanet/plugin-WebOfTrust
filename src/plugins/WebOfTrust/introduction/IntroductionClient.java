@@ -704,8 +704,9 @@ public final class IntroductionClient extends TransferThread  {
 				throw new RuntimeException("Already in HashSet: uri: " + uri + "; id: " + id);
 		} catch(RuntimeException e) { // Also for exceptions which might happen in getIDFromSolutionURI etc.
 			Logger.error(this, "Unable to add puzzle ID to the list of running inserts.", e);
+		} finally {
+		    super.addInsert(p);
 		}
-		super.addInsert(p);
 	}
 	
 	@Override
@@ -719,8 +720,9 @@ public final class IntroductionClient extends TransferThread  {
 			//	throw new RuntimeException("Not in HashSet: uri: " + uri + "; id: " + id);
 		} catch(RuntimeException e) { // Also for exceptions which might happen in getIDFromSolutionURI etc.
 			Logger.error(this, "Unable to remove puzzle ID from list of running inserts.", e);
+		} finally {
+		    super.removeInsert(p);
 		}
-		super.removeInsert(p);
 	}
 
 	@Override
