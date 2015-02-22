@@ -114,6 +114,8 @@ public final class IntroductionClient extends TransferThread  {
 	 */
 	private final LRUQueue<String> mIdentities = new LRUQueue<String>(); // A suitable default size might be PUZZLE_POOL_SIZE + 1
 	
+	/** Key = {@link IntroductionPuzzle#getID()}
+	 *        (or {@link IntroductionPuzzle#getIDFromSolutionURI(FreenetURI)}) */
 	private HashSet<String> mBeingInsertedPuzzleSolutions = new HashSet<String>();
 	
 	public static final int IDENTITIES_LRU_QUEUE_SIZE_LIMIT = 512;
