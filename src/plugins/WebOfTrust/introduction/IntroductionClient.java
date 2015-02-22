@@ -496,22 +496,28 @@ public final class IntroductionClient extends TransferThread  {
 			}
 		}
 		
-			// mIdentities contains up to IDENTITIES_LRU_QUEUE_SIZE_LIMIT identities of which we have recently downloaded puzzles. This queue is used to ensure
-			// that we download puzzles from different identities and not always from the same ones. 
-			// The oldest identity falls out of the LRUQueue if it has reached it size limit and therefore puzzle downloads from that one are allowed again.
-			// It is only checked in downloadPuzzles() whether puzzle downloads are allowed because we DO download multiple puzzles per identity, up to the limit
-			// of MAX_PUZZLES_PER_IDENTITY - the onSuccess() starts download of the next one by calling this function here usually.
-				
-			if(mIdentities.size() >= IDENTITIES_LRU_QUEUE_SIZE_LIMIT) {
-				// We do not call pop() now already because if the given identity is already in the pipeline then downloading a puzzle from it should NOT cause
-				// a different identity to fall out - the given identity should be moved to the top and the others should stay in the pipeline. Therefore we
-				// do a contains() check... 
-				if(!mIdentities.contains(inserter.getID())) {
-					mIdentities.pop();
-				}
-			}
-			
-			mIdentities.push(inserter.getID()); // put this identity at the beginning of the LRUQueue
+		
+		// mIdentities contains up to IDENTITIES_LRU_QUEUE_SIZE_LIMIT identities of which we have
+		// recently downloaded puzzles. This queue is used to ensure that we download puzzles from
+		// different identities and not always from the same ones. 
+		// The oldest identity falls out of the LRUQueue if it has reached it size limit and
+		// therefore puzzle downloads from that one are allowed again.
+		// It is only checked in downloadPuzzles() whether puzzle downloads are allowed because we
+		// DO download multiple puzzles per identity, up to the limit of MAX_PUZZLES_PER_IDENTITY
+		// - the onSuccess() starts download of the next one by calling this function here usually.
+
+		if(mIdentities.size() >= IDENTITIES_LRU_QUEUE_SIZE_LIMIT) {
+		    // We do not call pop() now already because if the given identity is already in the
+		    // pipeline then downloading a puzzle from it should NOT cause a different identity to
+		    // fall out - the given identity should be moved to the top and the others should stay
+		    // in the pipeline. Therefore we do a contains() check... 
+		    if(!mIdentities.contains(inserter.getID())) {
+		        mIdentities.pop();
+		    }
+		}
+
+		mIdentities.push(inserter.getID()); // put this identity at the beginning of the LRUQueue
+		
 		
 		final FreenetURI uri = IntroductionPuzzle.generateRequestURI(inserter, currentDate, index);		
 		final FetchContext fetchContext = mClient.getFetchContext();
