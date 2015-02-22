@@ -351,9 +351,6 @@ public final class IntroductionClient extends TransferThread  {
 		/* Download puzzles from identities from which we have not downloaded for a certain period. This is ensured by
 		 * keeping the last few hundred identities stored in a FIFO with fixed length, named mIdentities. */
 		
-		/* Normally we would have to lock the WoT here first so that no deadlock happens if something else locks the mIdentities and
-		 * waits for the WoT until it unlocks them. BUT nothing else in this class locks mIdentities and then the WoT */
-		synchronized(mIdentities) {
 			for(final Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
 				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i.getID()))  {
@@ -367,7 +364,6 @@ public final class IntroductionClient extends TransferThread  {
 				if(identitiesToDownloadFrom.size() >= newRequestCount)
 					break;
 			}
-		}
 		
 		/* If we run out of identities to download from, flush the list of identities of which we have downloaded puzzles from */
 		if(identitiesToDownloadFrom.size() == 0) {
@@ -459,13 +455,14 @@ public final class IntroductionClient extends TransferThread  {
 		
 	/**
 	 * Finds a random index of a puzzle from the inserter which we did not download yet and downloads it.
+	 * You must synchronize upon this IntroductionClient when calling this function.
 	 */
-	private synchronized void downloadPuzzle(final Identity inserter) throws FetchException {
+	private void downloadPuzzle(final Identity inserter) throws FetchException {
 		downloadPuzzle(inserter, mRandom.nextInt(IntroductionServer.getIdentityPuzzleCount(inserter))); 
 	}
 	
 	/**
-	 * Not synchronized because its caller is synchronized already.
+	 * You must synchronize upon this IntroductionClient when calling this function.
 	 */
 	private void downloadPuzzle(final Identity inserter, int index) throws FetchException {
 		final int inserterPuzzleCount = IntroductionServer.getIdentityPuzzleCount(inserter);
@@ -499,9 +496,6 @@ public final class IntroductionClient extends TransferThread  {
 			}
 		}
 		
-		/* Attention: Do not lock the WoT here before locking mIdentities because there is another synchronized(mIdentities) in this class
-		 * which locks the WoT inside the mIdentities-lock */
-		synchronized(mIdentities) {
 			// mIdentities contains up to IDENTITIES_LRU_QUEUE_SIZE_LIMIT identities of which we have recently downloaded puzzles. This queue is used to ensure
 			// that we download puzzles from different identities and not always from the same ones. 
 			// The oldest identity falls out of the LRUQueue if it has reached it size limit and therefore puzzle downloads from that one are allowed again.
@@ -518,7 +512,6 @@ public final class IntroductionClient extends TransferThread  {
 			}
 			
 			mIdentities.push(inserter.getID()); // put this identity at the beginning of the LRUQueue
-		}
 		
 		final FreenetURI uri = IntroductionPuzzle.generateRequestURI(inserter, currentDate, index);		
 		final FetchContext fetchContext = mClient.getFetchContext();
