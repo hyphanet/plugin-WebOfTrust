@@ -114,6 +114,8 @@ public final class IntroductionClient extends TransferThread  {
 	 */
 	private final LRUQueue<String> mIdentities = new LRUQueue<String>(); // A suitable default size might be PUZZLE_POOL_SIZE + 1
 	
+	/** Key = {@link IntroductionPuzzle#getID()}
+	 *        (or {@link IntroductionPuzzle#getIDFromSolutionURI(FreenetURI)}) */
 	private HashSet<String> mBeingInsertedPuzzleSolutions = new HashSet<String>();
 	
 	public static final int IDENTITIES_LRU_QUEUE_SIZE_LIMIT = 512;
@@ -178,6 +180,8 @@ public final class IntroductionClient extends TransferThread  {
 	@Override
 	protected void iterate() {
 		
+	    // TODO: Performance: The synchronized(this) can likely be removed since TransferThread
+	    // should never execute iterate() multiple times concurrently.
 		synchronized(this) {
 			long time = CurrentTimeUTC.getInMillis();
 			long timeSinceLastIteration = (time - mLastIterationTime);
@@ -340,33 +344,31 @@ public final class IntroductionClient extends TransferThread  {
 		
 		final int newRequestCount = PUZZLE_REQUEST_COUNT - fetchCount;
 		
-		/* Normally we would lock the whole WoT here because we iterate over a list returned by it. But because it is not a severe
-		 * problem if we download a puzzle of an identity which has been deleted or so we do not do that. */
-		final ObjectSet<Identity> allIdentities;
+        // TODO: Performance: The synchronized() upon mWoT can maybe be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
 		synchronized(mWoT) {
-			allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
-		}
+		final ObjectSet<Identity> allIdentities
+		    = mWoT.getAllNonOwnIdentitiesSortedByModification();
+		
 		final ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(PUZZLE_REQUEST_COUNT + 1);
 		
 		/* Download puzzles from identities from which we have not downloaded for a certain period. This is ensured by
 		 * keeping the last few hundred identities stored in a FIFO with fixed length, named mIdentities. */
 		
-		/* Normally we would have to lock the WoT here first so that no deadlock happens if something else locks the mIdentities and
-		 * waits for the WoT until it unlocks them. BUT nothing else in this class locks mIdentities and then the WoT */
-		synchronized(mIdentities) {
-			for(final Identity i : allIdentities) {
-				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
-				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i.getID()))  {
-					try {
-						if(mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)
-							identitiesToDownloadFrom.add(i);
-					}
-					catch(NotInTrustTreeException e) { }
-				}
-	
-				if(identitiesToDownloadFrom.size() >= newRequestCount)
-					break;
-			}
+		for(final Identity i : allIdentities) {
+		    /* TODO: Create a "boolean providesIntroduction" in Identity to use a database query
+		     * instead of this */ 
+		    if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)
+		            && !mIdentities.contains(i.getID()))  {
+		        try {
+		            if(mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)
+		                identitiesToDownloadFrom.add(i);
+		        }
+		        catch(NotInTrustTreeException e) { }
+		    }
+
+		    if(identitiesToDownloadFrom.size() >= newRequestCount)
+		        break;
 		}
 		
 		/* If we run out of identities to download from, flush the list of identities of which we have downloaded puzzles from */
@@ -395,6 +397,7 @@ public final class IntroductionClient extends TransferThread  {
 				Logger.error(this, "Starting puzzle download failed for " + i, e);
 			}
 		}
+		} // synchronized(mWoT)
 		
 		Logger.normal(this, "Finished starting more fetches. Amount of fetches now: " + fetchCount());
 	}
@@ -404,6 +407,11 @@ public final class IntroductionClient extends TransferThread  {
 	 * taken <b>before</b> the mPuzzleStore-lock which this function also takes.
 	 */
 	private synchronized void insertSolutions() {
+	    // TODO: Performance: The synchronized() upon mWoT can maybe be removed after this is fixed:
+	    // https://bugs.freenetproject.org/view.php?id=6247
+	    // (IntroductionPuzzle objects contain references to Identity objects, and mWoT is the
+	    // synchronization domain of Identity objects)
+	    synchronized(mWoT) {
 		synchronized(mPuzzleStore) {
 			final ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedSolvedPuzzles();
 			
@@ -415,16 +423,18 @@ public final class IntroductionClient extends TransferThread  {
 					Logger.error(this, "Inserting solution for " + p + " failed.");
 				}
 			}
-		}
+		}}
 	}
 	
 	/**
 	 * Checks whether the given puzzle is currently being inserted.
 	 * If not, starts an insert for it and marks it as currently being inserted in the HashSet of this IntroductionClient.
 	 * 
-	 * Synchronized because it accesses the mBeingInsertedPuzzleSolutions HashSet.
+     * You must synchronize upon this IntroductionClient when calling this function.
 	 */
-	private synchronized void insertPuzzleSolution(final IntroductionPuzzle puzzle) throws IOException, TransformerException, InsertException {
+	private void insertPuzzleSolution(final IntroductionPuzzle puzzle)
+	        throws IOException, TransformerException, InsertException {
+	    
 		if(mBeingInsertedPuzzleSolutions.contains(puzzle.getID())) 
 			return;
 		
@@ -459,13 +469,14 @@ public final class IntroductionClient extends TransferThread  {
 		
 	/**
 	 * Finds a random index of a puzzle from the inserter which we did not download yet and downloads it.
+	 * You must synchronize upon this IntroductionClient when calling this function.
 	 */
-	private synchronized void downloadPuzzle(final Identity inserter) throws FetchException {
+	private void downloadPuzzle(final Identity inserter) throws FetchException {
 		downloadPuzzle(inserter, mRandom.nextInt(IntroductionServer.getIdentityPuzzleCount(inserter))); 
 	}
 	
 	/**
-	 * Not synchronized because its caller is synchronized already.
+	 * You must synchronize upon this IntroductionClient when calling this function.
 	 */
 	private void downloadPuzzle(final Identity inserter, int index) throws FetchException {
 		final int inserterPuzzleCount = IntroductionServer.getIdentityPuzzleCount(inserter);
@@ -499,26 +510,28 @@ public final class IntroductionClient extends TransferThread  {
 			}
 		}
 		
-		/* Attention: Do not lock the WoT here before locking mIdentities because there is another synchronized(mIdentities) in this class
-		 * which locks the WoT inside the mIdentities-lock */
-		synchronized(mIdentities) {
-			// mIdentities contains up to IDENTITIES_LRU_QUEUE_SIZE_LIMIT identities of which we have recently downloaded puzzles. This queue is used to ensure
-			// that we download puzzles from different identities and not always from the same ones. 
-			// The oldest identity falls out of the LRUQueue if it has reached it size limit and therefore puzzle downloads from that one are allowed again.
-			// It is only checked in downloadPuzzles() whether puzzle downloads are allowed because we DO download multiple puzzles per identity, up to the limit
-			// of MAX_PUZZLES_PER_IDENTITY - the onSuccess() starts download of the next one by calling this function here usually.
-				
-			if(mIdentities.size() >= IDENTITIES_LRU_QUEUE_SIZE_LIMIT) {
-				// We do not call pop() now already because if the given identity is already in the pipeline then downloading a puzzle from it should NOT cause
-				// a different identity to fall out - the given identity should be moved to the top and the others should stay in the pipeline. Therefore we
-				// do a contains() check... 
-				if(!mIdentities.contains(inserter.getID())) {
-					mIdentities.pop();
-				}
-			}
-			
-			mIdentities.push(inserter.getID()); // put this identity at the beginning of the LRUQueue
+		
+		// mIdentities contains up to IDENTITIES_LRU_QUEUE_SIZE_LIMIT identities of which we have
+		// recently downloaded puzzles. This queue is used to ensure that we download puzzles from
+		// different identities and not always from the same ones. 
+		// The oldest identity falls out of the LRUQueue if it has reached it size limit and
+		// therefore puzzle downloads from that one are allowed again.
+		// It is only checked in downloadPuzzles() whether puzzle downloads are allowed because we
+		// DO download multiple puzzles per identity, up to the limit of MAX_PUZZLES_PER_IDENTITY
+		// - the onSuccess() starts download of the next one by calling this function here usually.
+
+		if(mIdentities.size() >= IDENTITIES_LRU_QUEUE_SIZE_LIMIT) {
+		    // We do not call pop() now already because if the given identity is already in the
+		    // pipeline then downloading a puzzle from it should NOT cause a different identity to
+		    // fall out - the given identity should be moved to the top and the others should stay
+		    // in the pipeline. Therefore we do a contains() check... 
+		    if(!mIdentities.contains(inserter.getID())) {
+		        mIdentities.pop();
+		    }
 		}
+
+		mIdentities.push(inserter.getID()); // put this identity at the beginning of the LRUQueue
+		
 		
 		final FreenetURI uri = IntroductionPuzzle.generateRequestURI(inserter, currentDate, index);		
 		final FetchContext fetchContext = mClient.getFetchContext();
@@ -703,8 +716,9 @@ public final class IntroductionClient extends TransferThread  {
 				throw new RuntimeException("Already in HashSet: uri: " + uri + "; id: " + id);
 		} catch(RuntimeException e) { // Also for exceptions which might happen in getIDFromSolutionURI etc.
 			Logger.error(this, "Unable to add puzzle ID to the list of running inserts.", e);
+		} finally {
+		    super.addInsert(p);
 		}
-		super.addInsert(p);
 	}
 	
 	@Override
@@ -718,8 +732,9 @@ public final class IntroductionClient extends TransferThread  {
 			//	throw new RuntimeException("Not in HashSet: uri: " + uri + "; id: " + id);
 		} catch(RuntimeException e) { // Also for exceptions which might happen in getIDFromSolutionURI etc.
 			Logger.error(this, "Unable to remove puzzle ID from list of running inserts.", e);
+		} finally {
+		    super.removeInsert(p);
 		}
-		super.removeInsert(p);
 	}
 
 	@Override
