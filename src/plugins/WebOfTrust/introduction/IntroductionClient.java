@@ -180,6 +180,8 @@ public final class IntroductionClient extends TransferThread  {
 	@Override
 	protected void iterate() {
 		
+	    // TODO: Performance: The synchronized(this) can likely be removed since TransferThread
+	    // should never execute iterate() multiple times concurrently.
 		synchronized(this) {
 			long time = CurrentTimeUTC.getInMillis();
 			long timeSinceLastIteration = (time - mLastIterationTime);
