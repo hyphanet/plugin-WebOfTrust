@@ -344,12 +344,12 @@ public final class IntroductionClient extends TransferThread  {
 		
 		final int newRequestCount = PUZZLE_REQUEST_COUNT - fetchCount;
 		
-		/* Normally we would lock the whole WoT here because we iterate over a list returned by it. But because it is not a severe
-		 * problem if we download a puzzle of an identity which has been deleted or so we do not do that. */
-		final ObjectSet<Identity> allIdentities;
+        // TODO: Performance: The synchronized() upon mWoT can maybe be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
 		synchronized(mWoT) {
-			allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
-		}
+		final ObjectSet<Identity> allIdentities
+		    = mWoT.getAllNonOwnIdentitiesSortedByModification();
+		
 		final ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(PUZZLE_REQUEST_COUNT + 1);
 		
 		/* Download puzzles from identities from which we have not downloaded for a certain period. This is ensured by
@@ -397,6 +397,7 @@ public final class IntroductionClient extends TransferThread  {
 				Logger.error(this, "Starting puzzle download failed for " + i, e);
 			}
 		}
+		} // synchronized(mWoT)
 		
 		Logger.normal(this, "Finished starting more fetches. Amount of fetches now: " + fetchCount());
 	}
@@ -406,6 +407,11 @@ public final class IntroductionClient extends TransferThread  {
 	 * taken <b>before</b> the mPuzzleStore-lock which this function also takes.
 	 */
 	private synchronized void insertSolutions() {
+	    // TODO: Performance: The synchronized() upon mWoT can maybe be removed after this is fixed:
+	    // https://bugs.freenetproject.org/view.php?id=6247
+	    // (IntroductionPuzzle objects contain references to Identity objects, and mWoT is the
+	    // synchronization domain of Identity objects)
+	    synchronized(mWoT) {
 		synchronized(mPuzzleStore) {
 			final ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedSolvedPuzzles();
 			
@@ -417,7 +423,7 @@ public final class IntroductionClient extends TransferThread  {
 					Logger.error(this, "Inserting solution for " + p + " failed.");
 				}
 			}
-		}
+		}}
 	}
 	
 	/**
