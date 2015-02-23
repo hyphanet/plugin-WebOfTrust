@@ -430,9 +430,11 @@ public final class IntroductionClient extends TransferThread  {
 	 * Checks whether the given puzzle is currently being inserted.
 	 * If not, starts an insert for it and marks it as currently being inserted in the HashSet of this IntroductionClient.
 	 * 
-	 * Synchronized because it accesses the mBeingInsertedPuzzleSolutions HashSet.
+     * You must synchronize upon this IntroductionClient when calling this function.
 	 */
-	private synchronized void insertPuzzleSolution(final IntroductionPuzzle puzzle) throws IOException, TransformerException, InsertException {
+	private void insertPuzzleSolution(final IntroductionPuzzle puzzle)
+	        throws IOException, TransformerException, InsertException {
+	    
 		if(mBeingInsertedPuzzleSolutions.contains(puzzle.getID())) 
 			return;
 		
