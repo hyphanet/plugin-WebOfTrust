@@ -697,7 +697,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		
 		// We cannot guard against concurrent stop() here since we don't synchronize, we can only
 		// probabilistically detect it by assert(). Concurrent stop() is not a problem though since
-		// restarting jobs is not possibl: We cannot run into a situation where we accidentally
+		// restarting jobs is not possible: We cannot run into a situation where we accidentally
 		// stop the wrong lifecycle. It can only happen that we do cleanup the cleanup which a
 		// different thread would have done, but they won't care since all used functions below will
 		// succeed silently if called multiple times.
