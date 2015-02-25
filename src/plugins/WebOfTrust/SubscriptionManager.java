@@ -24,6 +24,9 @@ import freenet.pluginmanager.FredPluginFCPMessageHandler;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.PooledExecutor;
+import freenet.support.PrioritizedTicker;
+import freenet.support.Ticker;
 import freenet.support.codeshortification.IfNull;
 import freenet.support.io.NativeThread;
 
@@ -1978,16 +1981,34 @@ public final class SubscriptionManager implements PrioRunnable {
 		deleteAllClients();
 		
 		final PluginRespirator respirator = mWoT.getPluginRespirator();
-
+        final Ticker ticker;
+        final Runnable jobRunnable;
+        
 		if(respirator != null) { // We are connected to a node
-            // We don't have to use compareAndSet() since start() is synchronized
-            mJob.set(new TickerDelayedBackgroundJob(this, "WoT SubscriptionManager",
-                PROCESS_NOTIFICATIONS_DELAY, respirator.getNode().getTicker()));
+            ticker = respirator.getNode().getTicker();
+            jobRunnable = this;
 		} else { // We are inside of a unit test
 		    Logger.warning(this, "No PluginRespirator available, will never run job. "
 		                       + "This should only happen in unit tests!");
-		    assert(mJob.get() == MockDelayedBackgroundJob.DEFAULT);
+            
+            // Generate our own Ticker so we can set mJob to be a real TickerDelayedBackgroundJob.
+            // This is better than leaving it be a MockDelayedBackgroundJob because it allows us to
+            // clearly distinguish the run state (start() not called, start() called, stop() called)
+            ticker = new PrioritizedTicker(new PooledExecutor(), 0);
+            jobRunnable = new Runnable() { @Override public void run() {
+                 // Do nothing because:
+                 // - We shouldn't do work on custom executors, we should only ever use the main
+                 //   one of the node.
+                 // - Unit tests execute instantly after loading the WOT plugin, so delayed jobs
+                 //   should not happen since their timing cannot be guaranteed to match the unit
+                 //   tests execution state.
+               };
+            };
 		}
+		
+        // We don't have to use compareAndSet() since start() is synchronized
+        mJob.set(new TickerDelayedBackgroundJob(jobRunnable, "WoT SubscriptionManager",
+            PROCESS_NOTIFICATIONS_DELAY, ticker));
 		
 		Logger.normal(this, "start() finished.");
 	}

@@ -308,6 +308,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		mPuzzleStore = new IntroductionPuzzleStore(this);
 		
 		mSubscriptionManager = new SubscriptionManager(this);
+		mSubscriptionManager.start();
 		
 		mFetcher = new IdentityFetcher(this, null);
 		mFetcher.start();
