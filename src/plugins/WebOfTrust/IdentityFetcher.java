@@ -608,6 +608,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * Deletes all existing commands using {@link #deleteAllCommands()}. Enables usage of {@link #scheduleCommandProcessing()}.
 	 */
 	protected void start() {
+        Logger.normal(this, "start()...");
+
         synchronized (mWoT) {
         synchronized (this) {
 
@@ -671,12 +673,16 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
         
         } // synchronized(this)
         } // synchronized(mWoT)
+
+        Logger.normal(this, "start() finished.");
 	}
 	
 	/**
 	 * Stops all running requests.
 	 */
 	protected void stop() {
+        Logger.normal(this, "stop()...");
+
 		if(logDEBUG) Logger.debug(this, "Trying to stop all requests");
 		
 		// The following code intentionally does NOT write to the mJob variable so it does not have
@@ -740,6 +746,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		
 		if(logDEBUG) Logger.debug(this, "Stopped " + counter + " current requests");
 		}
+		
+        Logger.normal(this, "stop() finished.");
 	}
 
 	/**
