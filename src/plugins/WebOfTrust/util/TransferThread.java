@@ -121,7 +121,9 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
      * Schedules {@link #iterate()} to be executed after the given delay.
      */
 	public void nextIteration(long delayMillis) {
-        assert (!mJob.isTerminated());
+        // We do not do this because some unit tests intentionally terminate() us before they run.
+        /*  assert (!mJob.isTerminated()) : "Should not be called after terminate()!"; */
+        
         mJob.triggerExecution(delayMillis);
 	}
 	
