@@ -7,10 +7,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 import plugins.WebOfTrust.ui.fcp.FCPInterface.FCPCallFailedException;
+import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob;
@@ -1241,12 +1241,23 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * The SubscriptionManager schedules execution of its notification deployment thread on this
 	 * {@link DelayedBackgroundJob}.<br>
 	 * The execution typically is scheduled after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}.
+	 * <br><br>
 	 * 
-	 * Defaults to {@link MockDelayedBackgroundJob#DEFAULT} until {@link #start()} was called, then
-	 * becomes a {@link TickerDelayedBackgroundJob} until {@link #stop()} is called.
+     * The value distinguishes the run state of this SubscriptionManager as follows:<br>
+     * - Until {@link #start()} was called, defaults to {@link MockDelayedBackgroundJob#DEFAULT}
+     *   with {@link DelayedBackgroundJob#isTerminated()} == true.<br>
+     * - Once {@link #start()} has been called, becomes a
+     *   {@link TickerDelayedBackgroundJob} with {@link DelayedBackgroundJob#isTerminated()}
+     *   == false.<br>
+     * - Once {@link #stop()} has been called, stays a {@link TickerDelayedBackgroundJob} but has
+     *   {@link DelayedBackgroundJob#isTerminated()} == true for ever.<br><br>
+     * 
+     * There can be exactly one start() - stop() lifecycle, a SubscriptionManager cannot be
+     * recycled.<br><br>
+     * 
+     * Volatile since {@link #stop()} needs to use it without synchronization.
 	 */
-	private final AtomicReference<DelayedBackgroundJob> mJob
-	    = new AtomicReference<>((DelayedBackgroundJob)MockDelayedBackgroundJob.DEFAULT);
+    private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
 
 
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
@@ -1943,31 +1954,36 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Schedules the {@link #run()} method to be executed after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}
 	 */
 	private void scheduleNotificationProcessing() {
-        DelayedBackgroundJob job = mJob.get();
-        assert (!job.isTerminated())
-            : "Should not be called before start() or after stop() as mJob won't execute then";
-        job.triggerExecution();
+        assert(mJob != MockDelayedBackgroundJob.DEFAULT)
+            : "Should not be called before start() as mJob won't execute then!";
+        
+        // We do not do this because some unit tests intentionally stop() us before they run.
+        /*  assert (!mJob.isTerminated()) : "Should not be called after stop()!"; */
+        
+        mJob.triggerExecution();
 	}
 	
 
 	/**
 	 * Deletes all old {@link Client}s, {@link Subscription}s and {@link Notification}s and enables subscription processing. 
+	 * Enables usage of {@link #scheduleNotificationProcessing()()}.
 	 * 
 	 * You must call this before any subscriptions are created, so for example before FCP is available.
 	 * 
 	 * ATTENTION: Does NOT work in unit tests - you must manually trigger subscription processing by calling {@link #run()} there.
 	 * 
-	 * TODO: Code quality: {@link IdentityFetcher#start()} and {@link IdentityFetcher#stop()} were
-	 * based upon this function and {@link #stop()} and have received significant improvements
-	 * already. Backport those improvements to this class' start() and stop().
+	 * TODO: Code quality: start() and {@link #stop()} are partly duplicated in class
+	 * IdentityFetcher. It might thus make sense to add basic functionality of start() / stop()
+	 * to {@link BackgroundJob}. This might for example include the ability to specify pre-startup
+	 * and pre-shutdown callbacks which the {@link BackgroundJob} calls upon us so we can do
+	 * our own initialization / cleanup.
 	 */
 	protected synchronized void start() {
 		Logger.normal(this, "start()...");
 
-        // This is thread-safe guard against concurrent multiple calls to start() since start() is
-        // synchronized. Or in other words: If it wasn't synchronized, this wouldn't be thread-safe
-        // since the value of mJob could change after get() returns.
-        if(mJob.get() != MockDelayedBackgroundJob.DEFAULT)
+        // This is thread-safe guard against concurrent multiple calls to start() / stop() since
+        // stop() does not modify the job and start() is synchronized. 
+        if(mJob != MockDelayedBackgroundJob.DEFAULT)
             throw new IllegalStateException("start() was already called!");
         
         // This must be called while synchronized on this SubscriptionManager, and the lock must be
@@ -2006,9 +2022,10 @@ public final class SubscriptionManager implements PrioRunnable {
             };
 		}
 		
-        // We don't have to use compareAndSet() since start() is synchronized
-        mJob.set(new TickerDelayedBackgroundJob(jobRunnable, "WoT SubscriptionManager",
-            PROCESS_NOTIFICATIONS_DELAY, ticker));
+        // Set the volatile mJob after all of startup is finished to ensure that stop() can use it
+        // *without* synchronization to check whether start() was called already.
+        mJob = new TickerDelayedBackgroundJob(
+            jobRunnable, "WoT SubscriptionManager", PROCESS_NOTIFICATIONS_DELAY, ticker);
 		
 		Logger.normal(this, "start() finished.");
 	}
@@ -2023,20 +2040,37 @@ public final class SubscriptionManager implements PrioRunnable {
 	protected void stop() {
 		Logger.normal(this, "stop()...");
 		
-		// Since stop() is not synchronized, getAndSet() has to be used instead of two distinct
-		// get() and set() to prevent us from discarding the reference to a different job than the
-		// one we terminated. Or in other words: getAndSet() guards against a concurrent call to
-		// start()
-		DelayedBackgroundJob job = mJob.getAndSet(MockDelayedBackgroundJob.DEFAULT);
-		
-		assert job != MockDelayedBackgroundJob.DEFAULT : "You forgot to call start()!";
-		    
-		job.terminate();
+        // The following code intentionally does NOT write to the mJob variable so it does not have
+        // to use synchronized(this). We do not want to synchronize because:
+        // 1) run() is synchronized(this), so we would not get the lock until run() is finished.
+        //    But we want to call mJob.terminate() immediately while run() is still executing to
+        //    make it call Thread.interrupt() upon run() to speed up its termination. So we
+        //    shouldn't require acquisition of the lock before terminate().
+        // 2) Keeping mJob as is makes sure that start() is not possible anymore so this object can
+        //    only have a single lifecycle. Recycling being impossible reduces complexity and is not
+        //    needed for normal operation of WOT anyway.
+        
+        
+        // Since mJob can only transition from not "not started yet" as implied by the "==" here
+        // to "started" as implied by "!=", but never backwards, and is set by start() after
+        // everything is completed, this is thread-safe against concurrent start() / stop().
+        if(mJob == MockDelayedBackgroundJob.DEFAULT)
+            throw new IllegalStateException("start() not called yet!");
+        
+        // We cannot guard against concurrent stop() here since we don't synchronize, we can only
+        // probabilistically detect it by assert(). Concurrent stop() is not a problem though since
+        // restarting jobs is not possible: We cannot run into a situation where we accidentally
+        // stop the wrong lifecycle. It can only happen that we do cleanup the cleanup which a
+        // different thread would have done, but they won't care since all used functions below will
+        // succeed silently if called multiple times.
+        assert !mJob.isTerminated() : "stop() called already";
+        
+        mJob.terminate();
 		try {
 		    // TODO: Performance: Decrease if it doesn't interfere with plugin unloading. I would
 		    // rather not though: Plugin unloading unloads the JAR of the plugin, and thus all its
 		    // classes. That will probably cause havoc if threads of it are still running.
-            job.waitForTermination(Long.MAX_VALUE);
+            mJob.waitForTermination(Long.MAX_VALUE);
         } catch (InterruptedException e) {
             // We are a shutdown function, there is no sense in sending a shutdown signal to us.
             Logger.error(this, "stop() should not be interrupt()ed.", e);
