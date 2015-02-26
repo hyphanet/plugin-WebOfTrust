@@ -413,8 +413,12 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	}
 	
 	private void scheduleCommandProcessing() {
-        assert (!mJob.isTerminated())
-            : "Should not be called before start() or after stop() as mJob won't execute then";
+        assert(mJob != MockDelayedBackgroundJob.DEFAULT)
+            : "Should not be called before start() as mJob won't execute then!";
+        
+        // We do not do this because some unit tests intentionally stop() us before they run. 
+        /*  assert (!mJob.isTerminated()) : "Should not be called after stop()"; */
+        
         mJob.triggerExecution();
 	}
 	
