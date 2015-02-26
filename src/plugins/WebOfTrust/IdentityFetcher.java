@@ -678,7 +678,11 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	}
 	
 	/**
-	 * Stops all running requests.
+     * Stops all running requests.<br><br>
+     * 
+     * Notice: Not synchronized so it can be run in parallel with {@link #run()}. This will allow it
+     * to call {@link DelayedBackgroundJob#terminate()} while run() is executing, which calls
+     * {@link Thread#interrupt()} on the run()-thread to cause it to exit quickly.
 	 */
 	protected void stop() {
         Logger.normal(this, "stop()...");
