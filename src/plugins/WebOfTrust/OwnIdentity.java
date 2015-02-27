@@ -286,6 +286,10 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	/**
 	 * Checks whether two OwnIdentity objects are equal.
 	 * This checks <b>all</b> properties of the identities <b>excluding</b> the {@link Date} properties.
+     * <br><br>
+     * 
+     * Notice: {@link #toString()} returns a String which contains the same data as this function
+     * compares. This can ease debugging.
 	 */
 	@Override
 	public final boolean equals(Object obj) {
@@ -301,6 +305,16 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 			return false;
 		
 		return true;
+	}
+	
+	/** @return A String containing everything which {@link #equals(Object)} would compare. */
+	@Override
+	public final String toString() {
+        activateFully(); 
+        return "[OwnIdentity: " + super.toString()
+             + "; mInsertURIString: " + mInsertURIString
+             + "; mInsertURI: " + mInsertURI
+             + "]";
 	}
 	
 	/**

@@ -182,17 +182,16 @@ public final class Score extends Persistent implements Cloneable, EventSource {
 		return getID().hashCode();
 	}
 	
+	/** @return A String containing everything which {@link #equals(Object)} would compare. */
 	@Override
-	public synchronized String toString() {
-		// This function locks very much stuff and is synchronized. The lock on Score objects should always be taken last by our locking policy right now,
-		// otherwise this function might be dangerous to be used for example with logging. Therefore TODO: Ensure that locks on Score are really taken last.
-		
-		/* We do not synchronize on truster and trustee because nickname changes are not allowed, the only thing which can happen
-		 * is that we get a blank nickname if it has not been received yet, that is not severe though.*/
-		
-		return "[Score " + super.toString() + ": truster: " + getTruster().getNickname() + "@" + getTruster().getID() +
-				"; trustee: " + getTrustee().getNickname() + "@" + getTrustee().getID() +
-				"; value: " + getScore() +  "; rank: " + getRank() + "; capacity : " + getCapacity() + "]";
+	public String toString() {
+	    activateFully();
+		return "[Score: " + super.toString()
+		     + "; mID: " + mID
+		     + "; mValue: " + mValue
+		     + "; mRank: " + mRank
+		     + "; mCapacity: " + mCapacity
+		     + "]";
 	}
 
 	/**
@@ -349,6 +348,10 @@ public final class Score extends Persistent implements Cloneable, EventSource {
 	 * - <b>All</b> attributes are compared <b>except</b> the dates.<br />
 	 * - <b>The involved identities are compared by {@link Identity#getID()}</b>, the objects do not have to be same or equals().
 	 * 	Also, this check is done only implicitly by comparing {@link Score#getID()}.
+     * <br><br>
+     * 
+     * Notice: {@link #toString()} returns a String which contains the same data as this function
+     * compares. This can ease debugging.
 	 */
 	@Override
 	public boolean equals(Object obj) {

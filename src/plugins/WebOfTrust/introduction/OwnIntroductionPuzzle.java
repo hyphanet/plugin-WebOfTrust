@@ -5,7 +5,10 @@ import java.util.UUID;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.Score;
+import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrustInterface;
+import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
@@ -146,4 +149,16 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	public boolean equals(Object o) {
 		return super.equals(o);
 	}
+	
+    /**
+     * TODO: Code quality: This should be unified to have the same output format as the equivalent
+     * function in {@link OwnIdentity} / {@link Identity} / {@link Trust} / {@link Score}.
+     * Especially should it be changed to output precisely what {@link #equals(Object)} would
+     * compare. Don't forget to add the same JavaDoc to {@link #equals(Object)} about that as is
+     * present in the aforementioned classes.<br>
+     * Matching the compared values of {@link #equals(Object)} will be useful for
+     * {@link DebugFCPClient} once puzzles are shipped by event-notifications. */
+    @Override public String toString() {
+        return super.toString();
+    }
 }

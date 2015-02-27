@@ -940,15 +940,30 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 		mLastChangedDate = CurrentTimeUTC.get();
 	}
 
+	/** @return A String containing everything which {@link #equals(Object)} would compare. */
 	@Override
-	public final String toString() {
-		checkedActivate(1); // String is a db4o primitive type so 1 is enough 
-		return mNickname + "(" + mID + ")";
+	public String toString() {
+		activateFully(); 
+		return "[Identity: " + super.toString()
+		     + "; mID: " + mID
+		     + "; mRequestURIString: " + mRequestURIString
+		     + "; mRequestURI: " + mRequestURI
+		     + "; mCurrentEditionFetchState: " + mCurrentEditionFetchState
+		     + "; mLatestEditionHint: " + mLatestEditionHint
+		     + "; mNickname: " + mNickname
+		     + "; mDoesPublishTrustList: " + mDoesPublishTrustList
+		     + "; mContexts: " + mContexts
+		     + "; mProperties: " + mProperties
+		     + "]";
 	}
 
 	/**
 	 * Compares whether two identities are equal.
 	 * This checks <b>all</b> properties of the identities <b>excluding</b> the {@link Date} properties.
+     * <br><br>
+     * 
+     * Notice: {@link #toString()} returns a String which contains the same data as this function
+     * compares. This can ease debugging.
 	 */
 	@Override
 	public boolean equals(Object obj) {

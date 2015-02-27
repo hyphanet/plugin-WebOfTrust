@@ -229,10 +229,16 @@ public final class Trust extends Persistent implements Cloneable, EventSource {
 		return getID().hashCode();
 	}
 
+    /** @return A String containing everything which {@link #equals(Object)} would compare. */
 	@Override
-	public synchronized String toString() {
-		return "[Trust " + super.toString() + ": ID: " + getID() + "; value:" + getValue() + "; comment: \"" 
-				+ getComment() + "\"; truster edition: " + getTrusterEdition() + " ]";
+	public String toString() {
+	    activateFully();
+		return "[Trust: " + super.toString()
+		     + "; mID: " + mID
+		     + "; mValue:" + mValue
+             + "; mTrusterTrustListEdition: " + mTrusterTrustListEdition
+		     + "; mComment: \""  + mComment+ "\""
+		     + "]";
 	}
 
 	/** @return The Identity that gives this trust. */
@@ -386,6 +392,10 @@ public final class Trust extends Persistent implements Cloneable, EventSource {
 	 * - <b>All</b> attributes are compared <b>except</b> the dates.<br />
 	 * - <b>The involved identities are compared by {@link Identity#getID()}</b>, the objects do not have to be same or equals().
 	 * 	Also, this check is done only implicitly by comparing {@link Trust#getID()}.
+     * <br><br>
+     * 
+     * Notice: {@link #toString()} returns a String which contains the same data as this function
+     * compares. This can ease debugging.
 	 */
 	@Override
 	public boolean equals(final Object obj) {

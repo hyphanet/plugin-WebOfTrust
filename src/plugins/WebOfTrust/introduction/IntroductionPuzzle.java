@@ -13,8 +13,11 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
+import plugins.WebOfTrust.Score;
+import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrustInterface;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
@@ -434,6 +437,14 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		}
 	}
 
+	/**
+	 * TODO: Code quality: This should be unified to have the same output format as the equivalent
+	 * function in {@link OwnIdentity} / {@link Identity} / {@link Trust} / {@link Score}.
+	 * Especially should it be changed to output precisely what {@link #equals(Object)} would
+	 * compare. Don't forget to add the same JavaDoc to {@link #equals(Object)} about that as is
+	 * present in the aforementioned classes.<br>
+	 * Matching the compared values of {@link #equals(Object)} will be useful for
+	 * {@link DebugFCPClient} once puzzles are shipped by event-notifications. */
 	@Override
 	public String toString() {
 		return "[" + super.toString() + ": mID:" + mID + "; mDayOfInsertion: " + mDayOfInsertion + "; mRequestURI: " + getRequestURI().toString() + "]";
