@@ -358,12 +358,30 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			getCommand(StartFetchCommand.class, identity).deleteWithoutCommit();
 			if(logDEBUG) Logger.debug(this, "Deleting start fetch command for " + identity);
 			
+			// TODO: Performance: The following assert failed randomly, especially when using
+			// WebOfTrust.deleteOwnIdentity() via the web interface. I currently cannot reproduce
+			// it and need to get the release done. As a workaround, we proceed to do store an
+			// AbortFetchCommand here instead of doing nothing and returning. This will make sure
+			// that a possibly currently running fetch for the identity always gets terminated as
+			// desired; at the cost of maybe storing useless AbortFetchCommands because there
+			// actually is no fetch running. The code which processes the commands will not break
+			// in that case, it will log an error.
+			// A possible explanation for the failure is the following sequence of events:
+			// 1. The identity has a fetch running
+			// 2. storeAbortFetchCommandWithoutCommit() is called and stores an AbortFetchCommand
+			// 3. storeStartFetchCommandWithoutCommit() is called which deletes the
+			//    AbortFetchCommand AND stores a StartFetchCommand. As a result, a StartFetchCommand
+			//    is pending even though we are already fetching the identity. Thus the assert here
+			//    fails.
+			// Notice: This is also documented at https://bugs.freenetproject.org/view.php?id=6468
+			/*
 			assert(mRequests.get(identity.getID()) == null)
 			    : "We have not yet processed the StartFetchCommand for the identity, so there "
 			    + "should not be a request for it. ID: " + identity.getID();
 			
 			// There shouldn't be a request to abort so we don't store an AbortFetchCommand.
 			return;
+			*/
 		}
 		catch(NoSuchCommandException e) { }
 		
