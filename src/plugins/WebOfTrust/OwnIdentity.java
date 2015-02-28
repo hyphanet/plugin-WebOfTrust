@@ -381,8 +381,6 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 
     /** @see WebOfTrust#upgradeDatabaseFormatVersion5 */
     @Override protected void upgradeDatabaseFormatVersion12345WithoutCommit() {
-        super.upgradeDatabaseFormatVersion12345WithoutCommit();
-
         checkedActivate(1);
         
         if(mInsertURIString != null) {
@@ -401,8 +399,13 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
         // we can delete it having to delete its member variables explicitly.
         mDB.delete(mInsertURI);
         mInsertURI = null;
-
-        storeWithoutCommit();
+        
+        // Do this after we've migrated mInsertURI because it will storeWithoutCommit() and
+        // storeWithoutCommit() contains an assert(mInsertURI == null)
+        super.upgradeDatabaseFormatVersion12345WithoutCommit();
+        
+        // Done by the previous call, not needed.
+        /* storeWithoutCommit(); */
     }
 
 	@Override

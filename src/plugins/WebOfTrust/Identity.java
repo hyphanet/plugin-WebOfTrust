@@ -1127,6 +1127,7 @@ public class Identity extends Persistent implements Cloneable, EventSource {
         mDB.delete(mRequestURI);
         mRequestURI = null;
 
+        // OwnIdentity.upgradeDatabaseFormatVersion12345WithoutCommit() needs this, don't remove it
         storeWithoutCommit();
     }
 
