@@ -3057,6 +3057,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// If the capacity changed from 0 to positive, we need to refetch the current edition: Identities with capacity 0 cannot
 					// cause new identities to be imported from their trust list, capacity > 0 allows this.
 					// If the fetch status changed from true to false, we need to stop fetching it
+					// FIXME: Performance: This if() has the following inefficiency probably:
+					// Its condition can be true if the following is true:
+					// oldScore.getCapacity()== 0 && newScore.getCapacity() > 0
+					//      && shouldFetchIdentity(trustee)
+					// This CAN be the case if the identity already HAS a positive capacity in the
+					// trust tree of a different tree owner. In that case, we will already have
+					// imported the trustees of the identity because the other tree owner's given
+					// capacity allows it, so there is no real need to refetch the trust list it.
+					// BUT it has been a long time since I worked on the score computation so please
+					// think about this very carefully before you change it.
 					if((!oldShouldFetch || (oldScore.getCapacity()== 0 && newScore.getCapacity() > 0)) && shouldFetchIdentity(trustee)) {
 						if(logMINOR) {
 							if(!oldShouldFetch)
