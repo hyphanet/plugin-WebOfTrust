@@ -283,7 +283,11 @@ public final class FCPInterface
             } catch(PluginNotFoundException e) {
                 Logger.normal(this, "Connection lost already while trying to send FCP reply.", e);
             }
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
+            // FIXME: Code quality: This used to be "catch(RuntimeException | Error e)" but
+            // was changed to catch(Throwable) because we need to be Java 6 compatible until
+            // the next build. Change it back to the Java7-style catch(). 
+
             // handlePluginFCPMessage() will return all regular FCP errors such as wrong parameters
             // as a FCP error message, it won't throw them out. So what we catch here is real,
             // severe errors.

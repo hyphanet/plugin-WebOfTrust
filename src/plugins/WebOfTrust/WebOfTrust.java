@@ -1785,7 +1785,11 @@ public final class WebOfTrust extends WebOfTrustInterface
             @Override public void run() {
                 try {
                     realRun();
-                } catch(RuntimeException | Error e) {
+                } catch(Throwable e) {
+                    // FIXME: Code quality: This used to be "catch(RuntimeException | Error e)" but
+                    // was changed to catch(Throwable) because we need to be Java 6 compatible until
+                    // the next build. Change it back to the Java7-style catch(). 
+
                     Logger.error(this, "Error during termination.", e);
                 } finally {
                     latch.get().countDown();

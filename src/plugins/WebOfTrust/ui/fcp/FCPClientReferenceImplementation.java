@@ -490,7 +490,12 @@ public final class FCPClientReferenceImplementation {
 			            force_disconnect();
 			            return; // finally{} block schedules fast reconnecting.
 			        }
-			    } catch (RuntimeException | Error e) {
+			    } catch (Throwable e) {
+			        // FIXME: Code quality: This used to be "catch(RuntimeException | Error e)" but
+			        // was changed to catch(Throwable) because we need to be Java 6 compatible until
+			        // the next build. Change it back to the Java7-style catch(). The following
+			        // comment is a leftover of the Java7-style catch(), it will be valid again once
+			        // you restore the Java7-catch():
 			        // This catches every non-declare-able Exception to ensure that the thread
 			        // doesn't die because of them: Keeping the connection alive is important so
 			        // this thread must stay alive.
