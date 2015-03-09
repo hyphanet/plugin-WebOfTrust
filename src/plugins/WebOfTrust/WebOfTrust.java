@@ -1777,7 +1777,7 @@ public final class WebOfTrust extends WebOfTrustInterface
         // Because we need to change the value of the latch from null when we create it, we need
         // to use an AtomicReference as a wrapper: Java forbids local classes from accessing
         // non-final variables of their containing function.
-        final AtomicReference<CountDownLatch> latch = new AtomicReference<>(null);
+        final AtomicReference<CountDownLatch> latch = new AtomicReference<CountDownLatch>(null);
         
         // Because the current implementations of the submodule shutdown functions are blocking, we
         // call them in threads of this class:

@@ -45,7 +45,8 @@ public abstract class AbstractJUnit4BaseTest {
     public final TemporaryFolder mTempFolder = new TemporaryFolder();
     
     /** @see #setupUncaughtExceptionHandler() */
-    private final AtomicReference<Throwable> uncaughtException = new AtomicReference<>(null);
+    private final AtomicReference<Throwable> uncaughtException
+        = new AtomicReference<Throwable>(null);
     
     
     @Before public void setupRandomNumberGenerator() {
@@ -226,9 +227,12 @@ public abstract class AbstractJUnit4BaseTest {
             
         @Ignore
         class Randomizer {
-            final RandomGrabHashSet<String> allOwnIdentities = new RandomGrabHashSet<>(mRandom);
-            final RandomGrabHashSet<String> allIdentities = new RandomGrabHashSet<>(mRandom);
-            final RandomGrabHashSet<String> allTrusts = new RandomGrabHashSet<>(mRandom);
+            final RandomGrabHashSet<String> allOwnIdentities
+                = new RandomGrabHashSet<String>(mRandom);
+            final RandomGrabHashSet<String> allIdentities
+                = new RandomGrabHashSet<String>(mRandom);
+            final RandomGrabHashSet<String> allTrusts
+                = new RandomGrabHashSet<String>(mRandom);
             
             Randomizer() { 
                 for(Identity identity : mWoT.getAllIdentities())

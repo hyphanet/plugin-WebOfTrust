@@ -69,7 +69,7 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	 * was not called yet.
 	 */
 	private final HashMap<Class<? extends EventSource>, Boolean> mSynchronizationInProgress
-	    = new HashMap<>();
+	    = new HashMap<Class<? extends EventSource>, Boolean>();
 	
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
 	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
@@ -368,7 +368,7 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	private <T extends EventSource> Collection<T> getEventSourcesWithMatchingVersionID(
 	        Collection<T> database, UUID versionID) {
 
-	    LinkedList<T> result = new LinkedList<>();
+	    LinkedList<T> result = new LinkedList<T>();
 
 	    for(T eventSource : database) {
 	        if(eventSource.getVersionID().equals(versionID))
@@ -390,7 +390,7 @@ public final class DebugFCPClient implements FCPClientReferenceImplementation.Co
 	private <T extends EventSource> Collection<T> getEventSourcesWithDifferentVersionID(
 	        Collection<T> database, UUID versionID) {
 
-	    LinkedList<T> result = new LinkedList<>();
+	    LinkedList<T> result = new LinkedList<T>();
 
 	    for(T eventSource : database) {
 	        if(!eventSource.getVersionID().equals(versionID))

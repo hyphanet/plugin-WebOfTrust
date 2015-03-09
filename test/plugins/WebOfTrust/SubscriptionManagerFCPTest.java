@@ -55,7 +55,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	@Ignore
 	static class ReplyReceiver implements FredPluginFCPMessageHandler.ClientSideFCPMessageHandler {
 
-		private final LinkedList<FCPPluginMessage> mResults = new LinkedList<>();
+		private final LinkedList<FCPPluginMessage> mResults = new LinkedList<FCPPluginMessage>();
 
 		/**
 		 * Called by fred to handle messages from WOT's FCP server.
@@ -339,7 +339,7 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	        throws MalformedURLException, FSParseException, InvalidParameterException {
 	    
 	    final FCPEventSourceContainerParser<? extends EventSource> parser;
-	    final List<? extends EventSource> result = new LinkedList<>();
+	    final List<? extends EventSource> result = new LinkedList<EventSource>();
 	    final List<EventSource> resultCasted = (LinkedList<EventSource>)result;
 	    
 	    switch(type) {

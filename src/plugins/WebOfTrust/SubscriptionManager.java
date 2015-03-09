@@ -511,7 +511,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		protected final void storeSynchronizationWithoutCommit() {
             final BeginSynchronizationNotification<EventType> beginMarker
-                = new BeginSynchronizationNotification<>(this);
+                = new BeginSynchronizationNotification<EventType>(this);
                 
             beginMarker.initializeTransient(mWebOfTrust);
             beginMarker.storeWithoutCommit();
@@ -537,7 +537,7 @@ public final class SubscriptionManager implements PrioRunnable {
             }
             
             final EndSynchronizationNotification<EventType> endMarker
-                = new EndSynchronizationNotification<>(beginMarker);
+                = new EndSynchronizationNotification<EventType>(beginMarker);
             
             endMarker.initializeTransient(mWebOfTrust);
             endMarker.storeWithoutCommit();
