@@ -267,7 +267,19 @@ public final class SubscriptionManager implements PrioRunnable {
 							try {
 								notification.getSubscription().notifySubscriberByFCP(notification);
 								notification.deleteWithoutCommit();
-							} catch(FCPCallFailedException | IOException | RuntimeException e) {
+							} catch(InterruptedException e) {
+                                // Shutdown of WOT was requested. This is normal mode of operation,
+                                // and not the fault of the client, so we do not increment its
+                                // failure counter.
+                                Persistent.checkedRollback(mDB, this, e, LogLevel.NORMAL);
+                                throw e;
+                            } catch(Throwable e) {
+					            // FIXME: Code quality: This used to be 
+							    // catch(FCPCallFailedException | IOException | RuntimeException e)
+							    // but was changed to catch(Throwable) because we need to be Java 6
+							    // compatible until the next build. Change it back to the
+							    // Java7-style catch(). 
+							    
 								Persistent.checkedRollback(mDB, this, e, LogLevel.WARNING);
 								
 								final byte failureCount = incrementSendNotificationsFailureCountWithoutCommit();
@@ -298,12 +310,6 @@ public final class SubscriptionManager implements PrioRunnable {
 									manager.scheduleNotificationProcessing();
 								
 								return doNotDeleteClient;
-							} catch(InterruptedException e) {
-							    // Shutdown of WOT was requested. This is normal mode of operation,
-							    // and not the fault of the client, so we do not increment its
-							    // failure counter.
-							    Persistent.checkedRollback(mDB, this, e, LogLevel.NORMAL);
-							    throw e;
 							}
 							
 							// If processing of a single notification fails, we do not want the previous notifications
@@ -348,7 +354,12 @@ public final class SubscriptionManager implements PrioRunnable {
 					default:
 						throw new UnsupportedOperationException("Unknown Type: " + getType());
 				}
-			} catch(IOException | RuntimeException | Error e) {
+			} catch(Throwable e) {
+                // FIXME: Code quality: This used to be 
+                // catch(IOException | RuntimeException | Error e) 
+                // but was changed to catch(Throwable) because we need to be Java 6
+                // compatible until the next build. Change it back to the
+                // Java7-style catch(). 
 				Logger.error(getSubscriptionManager(), "notifyClientAboutDeletion() failed!", e);
 			}
 		}
@@ -511,7 +522,7 @@ public final class SubscriptionManager implements PrioRunnable {
 		 */
 		protected final void storeSynchronizationWithoutCommit() {
             final BeginSynchronizationNotification<EventType> beginMarker
-                = new BeginSynchronizationNotification<>(this);
+                = new BeginSynchronizationNotification<EventType>(this);
                 
             beginMarker.initializeTransient(mWebOfTrust);
             beginMarker.storeWithoutCommit();
@@ -537,7 +548,7 @@ public final class SubscriptionManager implements PrioRunnable {
             }
             
             final EndSynchronizationNotification<EventType> endMarker
-                = new EndSynchronizationNotification<>(beginMarker);
+                = new EndSynchronizationNotification<EventType>(beginMarker);
             
             endMarker.initializeTransient(mWebOfTrust);
             endMarker.storeWithoutCommit();

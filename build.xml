@@ -9,8 +9,8 @@
 	<property name="bcprov.location" location="../fred/lib/bcprov.jar"/>
 	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WebOfTrust.jar"/>
 	<property name="svn.revision" value="@custom@"/>
-	<property name="source-version" value="1.7"/>
-	<property name="target-version" value="1.7"/>
+	<property name="source-version" value="1.6"/>
+	<property name="target-version" value="1.6"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
 	<property name="build-test-jar" location="${build-test}/WebOfTrust-with-unit-tests.jar"/>

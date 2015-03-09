@@ -213,7 +213,9 @@ public final class FCPClientReferenceImplementation {
      */
 	private final EnumMap
 	    <SubscriptionType, BeginSubscriptionSynchronizationHandler<? extends EventSource>>
-	        mBeginSubscriptionSynchronizationHandlers = new EnumMap<>(SubscriptionType.class);
+	        mBeginSubscriptionSynchronizationHandlers = new EnumMap
+	            <SubscriptionType, BeginSubscriptionSynchronizationHandler<? extends EventSource>>
+	            (SubscriptionType.class);
 
     /**
      * Each is of these handlers at the end of a Subscription to indicate that the series of
@@ -229,7 +231,9 @@ public final class FCPClientReferenceImplementation {
      */
 	private final EnumMap
 	    <SubscriptionType, EndSubscriptionSynchronizationHandler<? extends EventSource>>
-	        mEndSubscriptionSynchronizationHandlers = new EnumMap<>(SubscriptionType.class);
+	        mEndSubscriptionSynchronizationHandlers = new EnumMap
+	            <SubscriptionType, EndSubscriptionSynchronizationHandler<? extends EventSource>>
+	            (SubscriptionType.class);
 
 	/**
 	 * Each of these handlers is called when an object changes to whose type the client is subscribed.
@@ -237,7 +241,9 @@ public final class FCPClientReferenceImplementation {
 	 */
 	private final EnumMap
 	    <SubscriptionType, SubscribedObjectChangedHandler<? extends EventSource>>
-	        mSubscribedObjectChangedHandlers = new EnumMap<>(SubscriptionType.class);
+	        mSubscribedObjectChangedHandlers = new EnumMap
+	            <SubscriptionType, SubscribedObjectChangedHandler<? extends EventSource>>
+	            (SubscriptionType.class);
 	
 	/**
 	 * The values are the IDs of the current subscriptions of the {@link SubscriptionType} which the key specifies.
@@ -264,7 +270,9 @@ public final class FCPClientReferenceImplementation {
 	 */
     private final EnumMap
 	    <SubscriptionType, FCPEventSourceContainerParser<? extends EventSource>>
-	        mParsers = new EnumMap<>(SubscriptionType.class);
+	        mParsers = new EnumMap
+	        <SubscriptionType, FCPEventSourceContainerParser<? extends EventSource>>
+            (SubscriptionType.class);
 
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
 	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
@@ -482,7 +490,12 @@ public final class FCPClientReferenceImplementation {
 			            force_disconnect();
 			            return; // finally{} block schedules fast reconnecting.
 			        }
-			    } catch (RuntimeException | Error e) {
+			    } catch (Throwable e) {
+			        // FIXME: Code quality: This used to be "catch(RuntimeException | Error e)" but
+			        // was changed to catch(Throwable) because we need to be Java 6 compatible until
+			        // the next build. Change it back to the Java7-style catch(). The following
+			        // comment is a leftover of the Java7-style catch(), it will be valid again once
+			        // you restore the Java7-catch():
 			        // This catches every non-declare-able Exception to ensure that the thread
 			        // doesn't die because of them: Keeping the connection alive is important so
 			        // this thread must stay alive.
