@@ -82,6 +82,9 @@ public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 		original.setEdition(10); // Make sure to use a non-default edition
 		original.setNewEditionHint(10); // Make sure to use a non-default edition hint
 		original.updateLastInsertDate();
+        original.addContext(getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH));
+        original.setProperty(getRandomLatinString(Identity.MAX_PROPERTY_NAME_LENGTH),
+                             getRandomLatinString(Identity.MAX_PROPERTY_VALUE_LENGTH));
 		
 		Thread.sleep(10); // Identity contains Date mLastChangedDate which might not get properly cloned.
 		assertFalse(CurrentTimeUTC.get().equals(original.getLastChangeDate()));
