@@ -395,13 +395,19 @@ public final class XMLTransformer {
 			
 			Logger.normal(this, "Importing parsed XML for " + identity);
 
-            // This is only an assert() and not an if() because it's an expensive database query and
-            // because it won't cause much damage if we import an unwanted identity: As part of its
-            // design goals, the Score computation algorithm will ignore Trusts of Identitys for
-            // which shouldFetchIdentity() is false. So the unwanted Identity will only bloat the
-            // database a bit, its Trusts won't be able to affect the Score view of any OwnIdentity.
-            assert mWoT.shouldFetchIdentity(identity)
-                 : "importIdentity() called for unwanted identity: " + identity;
+			// When shouldFetchIdentity() changes from true to false due to an identity becoming
+			// distrusted, this change will not cause the IdentityFetcher to abort the fetch
+			// immediately: It queues the command to abort the fetch, and processes commands after
+			// some seconds. Thus, it is possible that the IdentityFetcher calls this function to
+			// import an identity which is not actually wanted anymore. So we must check whether the
+			// identity is really still wanted.
+            if(!mWoT.shouldFetchIdentity(identity)) {
+                Logger.normal(this,
+                    "importIdentity() called for unwanted identity, probably because the "
+                  + "IdentityFetcher has not processed the AbortFetchCommand yet, not importing: "
+                  + identity);
+                return;
+            }
 			
 			long newEdition = identityURI.getEdition();
 			if(identity.getEdition() > newEdition) {

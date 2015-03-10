@@ -795,8 +795,11 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
                     // If mRequests doesn't contain the request thats not necessarily an error:
                     // This thread might not have gotten the locks before the thread which
                     // terminated the request.
-                    // But we MUST return here for sure because importIdentity() will NOT check
-                    // whether the identity is wanted.
+                    // Notice: This check can have false negatives: The identity might have a
+				    // pending AbortFetchCommand which was not processed yet. So mRequests can
+				    // still contain a request for the identity even though we should not fetch it.
+				    // Thus, the XMLTransformer will have to also check for whether the identity is
+				    // actually wanted.
 					return;
 				}
 
