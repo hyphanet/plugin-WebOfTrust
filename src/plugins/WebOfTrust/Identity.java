@@ -1057,11 +1057,13 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			clone.setNewEditionHint(getLatestEditionHint());
 			clone.setCreationDate(getCreationDate());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
-			clone.mLastChangedDate = (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 			clone.mLatestEditionHint = getLatestEditionHint(); // Don't use the setter since it won't lower the current edition hint.
 			clone.setContexts(getContexts());
 			clone.setProperties(getProperties());
-			
+			// Clone it because date is mutable. Set it *after* calling all setters since they would
+			// update it to the current time otherwise.
+	        clone.mLastChangedDate = (Date)mLastChangedDate.clone();
+	        
 			return clone;
 			
 		} catch (InvalidParameterException e) {
