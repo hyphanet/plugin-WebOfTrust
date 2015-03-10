@@ -221,7 +221,9 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		HTMLNode knownIdentitiesBox = addContentBox(l10n().getString("KnownIdentitiesPage.KnownIdentities.Header"));
 		knownIdentitiesBox = pr.addFormChild(knownIdentitiesBox, uri.toString(), "Filters").addChild("p");
-
+		knownIdentitiesBox.addChild("input",
+		                            new String[] { "type",   "name", "value" },
+		                            new String[] { "hidden", "page", Integer.toString(page + 1)});
 		
 		
 		InfoboxNode filtersBoxNode = getContentBox(l10n().getString("KnownIdentitiesPage.FiltersAndSorting.Header"));
@@ -269,8 +271,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		
 		synchronized(mWebOfTrust) {
-		
-		final int indexOfFirstIdentity = page * IDENTITIES_PER_PAGE;
+		int indexOfFirstIdentity = page * IDENTITIES_PER_PAGE;
 		
 		// Re-query it instead of using mLoggedInOwnIdentity because mLoggedInOwnIdentity is a
 		// clone() and thus will not work with database queries on the WebOfTrust.
@@ -285,7 +286,23 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		final ObjectSet<Identity> allIdentities
 		    = mWebOfTrust.getAllIdentitiesFilteredAndSorted(ownId, nickFilter, sortInstruction);
-		final Iterator<Identity> identities = allIdentities.listIterator(indexOfFirstIdentity);
+		
+	    Iterator<Identity> identities;
+		try {
+		    identities = allIdentities.listIterator(indexOfFirstIdentity);
+		} catch(IndexOutOfBoundsException e) {
+		    // The user supplied a higher page index than there are pages. This can happen when the
+		    // user changes the search filters while not being on the first page.
+		    // We fall back to displaying the last page.
+		    // Notice: We intentionally do not prevent listIterator() from throwing by checking
+		    // the index for validity before calling listIterator(). This is because we would need
+		    // to call allIdentities.size() to check the index. This would force the database to
+		    // compute the full result set even though we only need the results up to the current
+		    // page if we are not on the last page.
+		    page = getPageCount(allIdentities.size()) - 1;
+		    indexOfFirstIdentity = page * IDENTITIES_PER_PAGE;
+		    identities = allIdentities.listIterator(indexOfFirstIdentity);
+		}
 		
 		for(int displayed = 0; displayed < IDENTITIES_PER_PAGE && identities.hasNext(); ++displayed) {
 			final Identity id = identities.next();
