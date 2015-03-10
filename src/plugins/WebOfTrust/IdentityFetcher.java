@@ -431,8 +431,18 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	}
 	
 	private void scheduleCommandProcessing() {
-        assert(mJob != MockDelayedBackgroundJob.DEFAULT)
-            : "Should not be called before start() as mJob won't execute then!";
+	    // We do not do the following commented out assert() because:
+	    // 1) WebOfTrust.upgradeDB() can rightfully cause this function to be called before start()
+	    //    (in case it calls functions which create commands):
+	    //    upgradeDB()'s job is to update outdated databases to a new database format. No
+	    //    subsystem of WOT which accesses the database should be start()ed before the database
+	    //    has been converted to the current format, including the IdentityFetcher.
+	    // 2) It doesn't matter if we don't process commands which were created before start():
+	    //    start() will delete all old commands anyway and compute the set of identities to be
+	    //    fetched from scratch.
+	    //
+	    /* assert(mJob != MockDelayedBackgroundJob.DEFAULT)
+            : "Should not be called before start() as mJob won't execute then!"; */
         
         // We do not do this because some unit tests intentionally stop() us before they run. 
         /*  assert (!mJob.isTerminated()) : "Should not be called after stop()"; */

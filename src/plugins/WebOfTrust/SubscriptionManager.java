@@ -1965,8 +1965,18 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * Schedules the {@link #run()} method to be executed after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}
 	 */
 	private void scheduleNotificationProcessing() {
-        assert(mJob != MockDelayedBackgroundJob.DEFAULT)
-            : "Should not be called before start() as mJob won't execute then!";
+        // We do not do the following commented out assert() because:
+        // 1) WebOfTrust.upgradeDB() can rightfully cause this function to be called before start()
+        //    (in case it calls functions which create Notifications):
+        //    upgradeDB()'s job is to update outdated databases to a new database format. No
+        //    subsystem of WOT which accesses the database should be start()ed before the database
+        //    has been converted to the current format, including the SubscriptionManager.
+        // 2) It doesn't matter if we don't process Notifications which were queued before start():
+        //    start() will automatically delete all existing Clients, so the Notifications would be
+        //    deleted as well.
+        //
+        /* assert(mJob != MockDelayedBackgroundJob.DEFAULT)
+            : "Should not be called before start() as mJob won't execute then!"; */
         
         // We do not do this because some unit tests intentionally stop() us before they run.
         /*  assert (!mJob.isTerminated()) : "Should not be called after stop()!"; */
@@ -2005,6 +2015,9 @@ public final class SubscriptionManager implements PrioRunnable {
         // any Clients/Notifications can be created: Notifications to Clients will only be sent out
         // if scheduleNotificationProcssing() is functioning at the moment a Notification is
         // created.
+        // Notice: Once you change Clients/Notifications to be persistent across restarts of WOT,
+        // and therefore remove this, please make sure to notice and update the comments inside
+        // scheduleNotificationProcessing().
 		deleteAllClients();
 		
 		final PluginRespirator respirator = mWoT.getPluginRespirator();
