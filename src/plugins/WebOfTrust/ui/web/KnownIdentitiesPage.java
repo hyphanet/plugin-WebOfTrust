@@ -267,10 +267,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		WebOfTrust.SortOrder sortInstruction = WebOfTrust.SortOrder.valueOf("By" + sortBy + sortType);
 		
-		long currentTime = CurrentTimeUTC.getInMillis();
-		
-		
 		synchronized(mWebOfTrust) {
+		long currentTime = CurrentTimeUTC.getInMillis();
 		int indexOfFirstIdentity = page * IDENTITIES_PER_PAGE;
 		
 		// Re-query it instead of using mLoggedInOwnIdentity because mLoggedInOwnIdentity is a
