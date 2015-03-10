@@ -392,7 +392,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 *                      a numeric label then. Bugtracker entry: https://bugs.freenetproject.org/view.php?id=6245
 	 */
 	private HTMLNode getKnownIdentitiesListPageLinks(final int currentPage, final int identityCount) {
-		final int pageCount = identityCount / IDENTITIES_PER_PAGE + ((identityCount % IDENTITIES_PER_PAGE > 0) ? 1 : 0);
+	    final int pageCount = getPageCount(identityCount);
 		final int lastPage = pageCount-1;
 		
 		HTMLNode div = new HTMLNode("div");
@@ -437,6 +437,12 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		return div;
 	}
 	
+	/** @return Count of pages we would paginate into for the given total amount of identities. */
+    private static int getPageCount(final int identityCount) {
+       return identityCount / IDENTITIES_PER_PAGE
+              + ((identityCount % IDENTITIES_PER_PAGE > 0) ? 1 : 0);
+    }
+    
 	/**
 	 * Get a single entry in the link list to the pages of the known identities list.
 	 * 
