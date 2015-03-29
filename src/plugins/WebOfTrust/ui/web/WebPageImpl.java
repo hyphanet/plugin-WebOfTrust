@@ -93,7 +93,7 @@ public abstract class WebPageImpl implements WebPage {
 		
 		pr = mWebOfTrust.getPluginRespirator();
 		this.pm = mWebInterface.getPageMaker();
-		PageNode page = pm.getPageNode("Web of Trust", ctx);
+		PageNode page = pm.getPageNode(baseL10n.getString("WebInterface.WotMenuName"), ctx);
 		this.pageNode = page.outer;
 		this.contentNode = page.content;
 		this.mRequest = myRequest;
