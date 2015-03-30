@@ -111,21 +111,22 @@ public abstract class WebPageImpl implements WebPage {
 	        OwnIdentity loggedInOwnIdentity) {
 	    
 		mToadlet = toadlet;
-		mWebInterface = mToadlet.webInterface;
+		mRequest = myRequest;
 		mContext = ctx;
+        mLoggedInOwnIdentity = loggedInOwnIdentity;
+        mLoggedInOwnIdentityID = mLoggedInOwnIdentity != null ? mLoggedInOwnIdentity.getID() : null;
+
+		mWebInterface = mToadlet.webInterface;
 		mWebOfTrust = mWebInterface.getWoT();
 		uri = mToadlet.getURI();
 		baseL10n = mWebInterface.l10n();
-		
 		pr = mWebOfTrust.getPluginRespirator();
-		this.pm = mWebInterface.getPageMaker();
+		pm = mWebInterface.getPageMaker();
+
+
 		PageNode page = pm.getPageNode(baseL10n.getString("WebInterface.WotMenuName"), ctx);
 		this.pageNode = page.outer;
 		this.contentNode = page.content;
-		this.mRequest = myRequest;
-		
-		mLoggedInOwnIdentity = loggedInOwnIdentity;
-		mLoggedInOwnIdentityID = mLoggedInOwnIdentity != null ? mLoggedInOwnIdentity.getID() : null;
 	}
 	
 	/**
