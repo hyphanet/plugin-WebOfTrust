@@ -124,7 +124,12 @@ public abstract class WebPageImpl implements WebPage {
 		pm = mWebInterface.getPageMaker();
 
 
-		PageNode page = pm.getPageNode(baseL10n.getString("WebInterface.WotMenuName"), ctx);
+        String pageTitle = mLoggedInOwnIdentity != null ?
+              baseL10n.getString("WebInterface.PageTitle.LoggedIn",
+                                 "nickname", mLoggedInOwnIdentity.getShortestUniqueNickname())
+            : baseL10n.getString("WebInterface.PageTitle.NotLoggedIn");
+        
+        PageNode page = pm.getPageNode(pageTitle, ctx);
 		this.pageNode = page.outer;
 		this.contentNode = page.content;
 	}

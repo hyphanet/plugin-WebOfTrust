@@ -33,4 +33,6 @@ CreateOwnIdentityWizardPage.Step.CreateIdentity.Failure=Es tut uns Leid - es gab
 CreateOwnIdentityWizardPage.Step.CreateIdentity.Header=Identität erstellt
 ErrorPage.InternalError.Header=Interner Fehler, bitte melden Sie das
 StatisticsPage.SummaryBox.FetchProgress=Summe aller Editionen: ${editionCount}
+WebInterface.PageTitle.LoggedIn=Community - Eingeloggt als ${nickname}
+WebInterface.PageTitle.NotLoggedIn=Community
 End
