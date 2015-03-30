@@ -7,7 +7,9 @@ package plugins.WebOfTrust.ui.web;
 
 import java.net.URI;
 
+import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
@@ -38,6 +40,9 @@ public abstract class WebPageImpl implements WebPage {
 	
 	protected final ToadletContext mContext;
 	
+	protected final OwnIdentity mLoggedInOwnIdentity;
+	
+	/** @deprecated Replace with {@link OwnIdentity#getID()} of {@link #mLoggedInOwnIdentity} */
 	protected final String mLoggedInOwnIdentityID;
 	
 	protected final URI uri;
@@ -67,9 +72,28 @@ public abstract class WebPageImpl implements WebPage {
 	 *                   Instead of setting this to false, use the constructor {@link #WebPageImpl(WebInterfaceToadlet, HTTPRequest, ToadletContext)}. It has
 	 *                   the advantage of not possibly throwing a {@link RedirectException}.
 	 * @throws RedirectException If useSession was true and the {@link Session} was expired already. Then the user is redirected to the {@link LoginWebInterfaceToadlet}.
+	 * @throws UnknownIdentityException
+	 *     If useSession was true and the {@link OwnIdentity} specified by the
+	 *     {@link Session#getUserID()} has been deleted already.
 	 */
-	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx, boolean useSession) throws RedirectException {
-		this(toadlet, myRequest, ctx, useSession ? toadlet.getLoggedInUserID(ctx) : null);
+	public WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx,
+	        boolean useSession) throws RedirectException, UnknownIdentityException {
+	    
+		this(toadlet, myRequest, ctx,
+		    useSession ? getLoggedInOwnIdentityFromHTTPSession(toadlet, ctx) : null);
+	}
+	
+	private static OwnIdentity getLoggedInOwnIdentityFromHTTPSession(WebInterfaceToadlet toadlet,
+	        ToadletContext ctx) throws RedirectException, UnknownIdentityException {
+	    
+	    String id = toadlet.getLoggedInUserID(ctx);
+	    WebOfTrust wot = toadlet.webInterface.getWoT();
+	    
+        // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
+        synchronized(wot) {
+            return wot.getOwnIdentityByID(id).clone();
+        }
 	}
 	
 	/**
@@ -83,7 +107,9 @@ public abstract class WebPageImpl implements WebPage {
 	 * @see #WebPageImpl(WebInterfaceToadlet, HTTPRequest, ToadletContext, boolean) Frontend to this.
 	 * @see #WebPageImpl(WebInterfaceToadlet, HTTPRequest, ToadletContext) Frontend to this.
 	 */
-	private WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx, String loggedInOwnIdentityID) {
+	private WebPageImpl(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext ctx,
+	        OwnIdentity loggedInOwnIdentity) {
+	    
 		mToadlet = toadlet;
 		mWebInterface = mToadlet.webInterface;
 		mContext = ctx;
@@ -98,7 +124,8 @@ public abstract class WebPageImpl implements WebPage {
 		this.contentNode = page.content;
 		this.mRequest = myRequest;
 		
-		mLoggedInOwnIdentityID = loggedInOwnIdentityID;
+		mLoggedInOwnIdentity = loggedInOwnIdentity;
+		mLoggedInOwnIdentityID = mLoggedInOwnIdentity != null ? mLoggedInOwnIdentity.getID() : null;
 	}
 	
 	/**
