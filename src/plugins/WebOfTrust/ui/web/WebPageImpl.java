@@ -42,9 +42,6 @@ public abstract class WebPageImpl implements WebPage {
 	
 	protected final OwnIdentity mLoggedInOwnIdentity;
 	
-	/** @deprecated Replace with {@link OwnIdentity#getID()} of {@link #mLoggedInOwnIdentity} */
-	protected final String mLoggedInOwnIdentityID;
-	
 	protected final URI uri;
 
 	protected final PluginRespirator pr;
@@ -67,8 +64,9 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
 	 * @param ctx Similar to myRequest, this is also request-specific data. Don't ask me why we have two types to store it.
-	 * @param useSession If true, the timeout of the current {@link Session} is refreshed and {@link #mLoggedInOwnIdentityID} is initialized to the ID of the
-	 *                   logged in identity.
+	 * @param useSession If true, the timeout of the current {@link Session} is refreshed and
+	 *                   {@link #mLoggedInOwnIdentity} is initialized to a clone() of the logged in
+	 *                   {@link OwnIdentity} (it will be null otherwise).<br>
 	 *                   Instead of setting this to false, use the constructor {@link #WebPageImpl(WebInterfaceToadlet, HTTPRequest, ToadletContext)}. It has
 	 *                   the advantage of not possibly throwing a {@link RedirectException}.
 	 * @throws RedirectException If useSession was true and the {@link Session} was expired already. Then the user is redirected to the {@link LoginWebInterfaceToadlet}.
@@ -117,7 +115,6 @@ public abstract class WebPageImpl implements WebPage {
 		mRequest = myRequest;
 		mContext = ctx;
         mLoggedInOwnIdentity = loggedInOwnIdentity;
-        mLoggedInOwnIdentityID = mLoggedInOwnIdentity != null ? mLoggedInOwnIdentity.getID() : null;
 
 		mWebInterface = mToadlet.webInterface;
 		mWebOfTrust = mWebInterface.getWoT();
