@@ -40,8 +40,6 @@ import freenet.support.api.HTTPRequest;
 public class KnownIdentitiesPage extends WebPageImpl {
 	
 	public static final int IDENTITIES_PER_PAGE = 15;
-
-	private final OwnIdentity mLoggedInOwnIdentity;
 	
 	private static enum SortBy {
 		Nickname,
@@ -59,13 +57,6 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 */
 	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException, UnknownIdentityException {
 		super(toadlet, myRequest, context, true);
-		
-        // TODO: Performance: The synchronized() and the clone() here and the getOwnIdentityByID()
-		// in makeKnownIdentitiesList() can be removed after this is fixed:
-        // https://bugs.freenetproject.org/view.php?id=6247
-		synchronized(mWebOfTrust) {
-		    mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
-        }
 	}
 
 	@Override
@@ -109,9 +100,11 @@ public class KnownIdentitiesPage extends WebPageImpl {
 					}
 
 					if(value.equals(""))
-						mWebOfTrust.removeTrust(mLoggedInOwnIdentityID, trusteeID);
-					else
-						mWebOfTrust.setTrust(mLoggedInOwnIdentityID, trusteeID, Byte.parseByte(value), comment);
+						mWebOfTrust.removeTrust(mLoggedInOwnIdentity.getID(), trusteeID);
+					else {
+						mWebOfTrust.setTrust(mLoggedInOwnIdentity.getID(), trusteeID,
+						                     Byte.parseByte(value), comment);
+					}
 					
 					if(addIdentity && (value.equals("") || Byte.parseByte(value) < 0)) {
 						addErrorBox(l10n().getString("KnownIdentitiesPage.AddIdentity.NoTrustWarning.Header"), 
@@ -273,10 +266,12 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		// Re-query it instead of using mLoggedInOwnIdentity because mLoggedInOwnIdentity is a
 		// clone() and thus will not work with database queries on the WebOfTrust.
-		// See the constructor for why we clone() it.
+		// TODO: Performance: This can be removed once the TODO at
+		// WebPageImpl.getLoggedInOwnIdentityFromHTTPSession() of not cloning the
+		// OwnIdentity has been been resolved.
 		final OwnIdentity ownId;
 		try {
-		    ownId = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
+		    ownId = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentity.getID());
 		} catch(UnknownIdentityException e) {
 		    new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
 		    return;
