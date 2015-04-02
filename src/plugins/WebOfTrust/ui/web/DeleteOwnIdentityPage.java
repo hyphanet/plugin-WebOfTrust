@@ -20,27 +20,18 @@ import freenet.support.api.HTTPRequest;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class DeleteOwnIdentityPage extends WebPageImpl {
-	
-	private final OwnIdentity mIdentity;
-
 	/**
 	 * @throws RedirectException If the {@link Session} has expired. 
 	 */
 	public DeleteOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
-		
-        // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
-        // https://bugs.freenetproject.org/view.php?id=6247
-        synchronized(mWebOfTrust) {
-            mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
-        }
 	}
 
 	@Override
 	public void make(final boolean mayWrite) {
 		if(mayWrite && mRequest.isPartSet("confirm")) {
 			try {
-				mWebOfTrust.deleteOwnIdentity(mIdentity.getID());
+				mWebOfTrust.deleteOwnIdentity(mLoggedInOwnIdentity.getID());
 				mToadlet.logOut(mContext);
 				
 				HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Header"));
@@ -60,7 +51,7 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 	private void makeConfirmation() {
 		HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Header"));
 
-		box.addChild(new HTMLNode("p", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text1", "nickname", mIdentity.getShortestUniqueNickname())));
+		box.addChild(new HTMLNode("p", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text1", "nickname", mLoggedInOwnIdentity.getShortestUniqueNickname())));
 		box.addChild(new HTMLNode("p", l10n().getString("DeleteOwnIdentityPage.DeleteIdentityBox.Text2")));
 
 		HTMLNode confirmForm = pr.addFormChild(box, uri.toString(), "DeleteIdentity");

@@ -6,7 +6,6 @@ package plugins.WebOfTrust.ui.web;
 import java.net.URI;
 import java.util.List;
 
-import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.IntroductionClient;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
@@ -23,7 +22,6 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	protected static int PUZZLE_DISPLAY_COUNT = 16;
 	
 	protected final IntroductionClient mClient;
-	protected final OwnIdentity mLoggedInOwnIdentity;
 
 	/**
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
@@ -33,12 +31,6 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	 */
 	public IntroduceIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
-		
-        // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
-        // https://bugs.freenetproject.org/view.php?id=6247
-		synchronized(mWebOfTrust) {
-		    mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
-        }
 		
 		mClient = mWebOfTrust.getIntroductionClient();
 	}
@@ -60,7 +52,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				String id = mRequest.getPartAsStringThrowing("id" + idx, IntroductionPuzzle.MAXIMAL_ID_LENGTH);
 				String solution = mRequest.getPartAsStringThrowing("Solution" + id, IntroductionPuzzle.MAXIMAL_SOLUTION_LENGTH);
 				if(!solution.trim().equals("")) {
-					mClient.solvePuzzle(mLoggedInOwnIdentityID, id, solution);
+					mClient.solvePuzzle(mLoggedInOwnIdentity.getID(), id, solution);
 				} else {
 					// We don't break the processing loop here because users might intentionally not solve puzzles which are too difficult.
 				}
@@ -82,7 +74,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		List<IntroductionPuzzle> puzzles;
         try {
             puzzles = mClient.getPuzzles(
-                mLoggedInOwnIdentityID, PuzzleType.Captcha, PUZZLE_DISPLAY_COUNT);
+                mLoggedInOwnIdentity.getID(), PuzzleType.Captcha, PUZZLE_DISPLAY_COUNT);
         } catch (UnknownIdentityException e) {
             new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
             return;

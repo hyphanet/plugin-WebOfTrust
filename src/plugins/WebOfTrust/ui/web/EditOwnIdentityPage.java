@@ -29,12 +29,9 @@ public class EditOwnIdentityPage extends WebPageImpl {
 	public EditOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
 		
-        // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
-        // https://bugs.freenetproject.org/view.php?id=6247
-        // Also remove the similar code from make() then.
-        synchronized(mWebOfTrust) {
-            mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
-        }
+		// super.mLoggedInOwnIdentity is final, but we need to replace the identity in make().
+		// Thus, copy it to our own member variable so we can modify it.
+		mIdentity = super.mLoggedInOwnIdentity;
 	}
 	
 	@Override
@@ -49,12 +46,13 @@ public class EditOwnIdentityPage extends WebPageImpl {
 
                     // Update the identity to get the latest state so we display the changed version
                     // in the UI properly.
-                    // TODO: Performance: This can be removed once the TODO at the constructor of
-                    // not cloning it has been resolved. If we didn't clone it, the database would
+                    // TODO: Performance: This can be removed once the TODO at
+                    // WebPageImpl.getLoggedInOwnIdentityFromHTTPSession() of not cloning the
+                    // OwnIdentity has been been resolved. If we didn't clone it, the database would
                     // apply the updates to it as it would be the same object as was updated by the
                     // above setPublish...()
                     synchronized (mWebOfTrust) {
-                        mIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
+                        mIdentity = mWebOfTrust.getOwnIdentityByID(mIdentity.getID()).clone();
                     }
 
 		            HTMLNode aBox = addContentBox(l10n().getString("EditOwnIdentityPage.SettingsSaved.Header"));
