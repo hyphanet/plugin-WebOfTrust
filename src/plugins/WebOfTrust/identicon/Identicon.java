@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import freenet.support.io.Closer;
+
 /**
  * Generates identicons.
  *
@@ -69,8 +71,13 @@ public class Identicon {
 		backgroundGraphics.addRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON));
 		Graphics2D foregroundGraphics = (Graphics2D) foregroundImage.getGraphics();
 		foregroundGraphics.addRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON));
-		BitShiftedInputStream bitStream = new BitShiftedInputStream(new ByteArrayInputStream(data), 8);
+		ByteArrayInputStream byteStream = null;
+		BitShiftedInputStream bitStream = null;
+
 		try {
+		    byteStream = new ByteArrayInputStream(data);
+		    bitStream = new BitShiftedInputStream(byteStream, 8);
+
 			/* create colors. */
 			Color[] backgroundColors = new Color[16];
 			Color[] foregroundColors = new Color[16];
@@ -118,6 +125,9 @@ public class Identicon {
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+		    Closer.close(bitStream);
+		    Closer.close(byteStream);
 		}
 		return backgroundImage;
 	}
