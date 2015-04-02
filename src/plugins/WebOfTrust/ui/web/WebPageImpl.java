@@ -91,6 +91,8 @@ public abstract class WebPageImpl implements WebPage {
 	    
         // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
         // https://bugs.freenetproject.org/view.php?id=6247
+        // Once the clone() is removed, please also adapt EditOwnIdentityPage.make() to not re-query
+        // the identity from the database anymore. See the TODO there for details.
         synchronized(wot) {
             return wot.getOwnIdentityByID(id).clone();
         }
