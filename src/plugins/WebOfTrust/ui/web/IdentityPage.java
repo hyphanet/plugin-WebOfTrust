@@ -50,8 +50,6 @@ import freenet.support.api.HTTPRequest;
 public class IdentityPage extends WebPageImpl {
 	
 	private final static SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-	private final OwnIdentity mLoggedInOwnIdentity;
 	
 	/** The identity to show trust relationships of. */
 	private Identity identity;
@@ -67,12 +65,6 @@ public class IdentityPage extends WebPageImpl {
 	 */
 	public IdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
 		super(toadlet, myRequest, context, true);
-		
-        // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
-        // https://bugs.freenetproject.org/view.php?id=6247
-        synchronized(mWebOfTrust) { 
-            mLoggedInOwnIdentity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID).clone();
-        }
 	}
 
 	/**
@@ -114,9 +106,11 @@ public class IdentityPage extends WebPageImpl {
 
 			try {
 				if(value.equals(""))
-					mWebOfTrust.removeTrust(mLoggedInOwnIdentityID, identity.getID());
-				else
-					mWebOfTrust.setTrust(mLoggedInOwnIdentityID, identity.getID(), Byte.parseByte(value), comment);
+					mWebOfTrust.removeTrust(mLoggedInOwnIdentity.getID(), identity.getID());
+				else {
+					mWebOfTrust.setTrust(mLoggedInOwnIdentity.getID(), identity.getID(),
+					    Byte.parseByte(value), comment);
+				}
 			} catch(NumberFormatException e) {
 				addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), l10n().getString("Trust.InvalidValue"));
 			} catch(InvalidParameterException e) {
@@ -133,7 +127,7 @@ public class IdentityPage extends WebPageImpl {
 
 		try
 		{
-			Trust trust = mWebOfTrust.getTrust(mLoggedInOwnIdentityID, identity.getID());
+			Trust trust = mWebOfTrust.getTrust(mLoggedInOwnIdentity.getID(), identity.getID());
 			trustValue = String.valueOf(trust.getValue());
 			trustComment = trust.getComment();
 		}

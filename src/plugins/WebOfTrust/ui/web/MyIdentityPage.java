@@ -33,7 +33,6 @@ public class MyIdentityPage extends WebPageImpl {
 	private final WebInterfaceToadlet deleteIdentityToadlet;
 	private final WebInterfaceToadlet introduceIdentityToadlet;
 	
-	private final OwnIdentity mIdentity;
 	private final int mReceivedTrustCount;
 	private final int mGivenTrustCount;
 	
@@ -48,15 +47,17 @@ public class MyIdentityPage extends WebPageImpl {
 	public MyIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException, UnknownIdentityException {
 		super(toadlet, myRequest, context, true);
 
-        // TODO: Performance: The synchronized() and clone() can be removed after this is fixed:
-        // https://bugs.freenetproject.org/view.php?id=6247
+        // Re-query it instead of using mLoggedInOwnIdentity because mLoggedInOwnIdentity is a
+        // clone() and thus will not work with database queries on the WebOfTrust.
+        // TODO: Performance: The re-querying can be removed once the TODO at
+        // WebPageImpl.getLoggedInOwnIdentityFromHTTPSession() of not cloning the
+        // OwnIdentity has been been resolved.
 		synchronized(mWebOfTrust) {
-            final OwnIdentity identity = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentityID);
+            final OwnIdentity identity
+                = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentity.getID());
             
             mReceivedTrustCount = mWebOfTrust.getReceivedTrusts(identity).size();
             mGivenTrustCount = mWebOfTrust.getGivenTrusts(identity).size();
-            // Clone it after the above database queries since they require object identity.
-            mIdentity = identity.clone();
 		}
 
 		editIdentityToadlet = mWebInterface.getToadlet(EditOwnIdentityWebInterfaceToadlet.class);
@@ -93,7 +94,7 @@ public class MyIdentityPage extends WebPageImpl {
 		row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Trustees"));
 		row.addChild("th", l10n().getString("MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Manage"));
 
-		OwnIdentity id = mIdentity;
+		OwnIdentity id = mLoggedInOwnIdentity;
 		row = identitiesTable.addChild("tr");
 
 		final boolean restoreInProgress = id.isRestoreInProgress();
