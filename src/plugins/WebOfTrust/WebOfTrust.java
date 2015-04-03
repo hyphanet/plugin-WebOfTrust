@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -2021,6 +2022,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 	
 	public static enum SortOrder {
+	    ByEditionAscending,
+	    ByEditionDescending,
 		ByNicknameAscending,
 		ByNicknameDescending,
 		ByScoreAscending,
@@ -2037,6 +2040,34 @@ public final class WebOfTrust extends WebOfTrustInterface
 		Query q = mDB.query();
 		
 		switch(sortInstruction) {
+            case ByEditionAscending:
+                q.constrain(Identity.class);
+                // TODO: Performance: Add a member variable "mEdition" to Identity and use a native
+                // db4o sorting query upon that. Currently, class Identity stores the edition inside
+                // the String which holds its FreenetURI. The base URI is different for each
+                // identity so we cannot just sort upon the URI string.
+                // Also do the same for the case ByEditionDescending below.
+                // NOTICE: If implement this TODO, you will have to write database upgrade code to
+                // populate the new member variable in old databases. This requires quite a bit of
+                // work and good testing. Thus, I would suggest you implement it together with
+                // all possible further sorting functions which also need new fields. You should 
+                // check the web interface's KnownIdentitiesPage for values which need sorting.
+                // There is also a bugtracker entry for adding more sorting:
+                // https://bugs.freenetproject.org/view.php?id=6501
+                q.sortBy(new Comparator<Identity>() {
+                    @Override public int compare(Identity i1, Identity i2) {
+                        return Long.compare(i1.getEdition(), i2.getEdition());
+                    }
+                });
+                break;
+            case ByEditionDescending:
+                q.constrain(Identity.class);
+                q.sortBy(new Comparator<Identity>() {
+                    @Override public int compare(Identity i1, Identity i2) {
+                        return -Long.compare(i1.getEdition(), i2.getEdition());
+                    }
+                });
+                break;
 			case ByNicknameAscending:
 				q.constrain(Identity.class);
 				q.descend("mNickname").orderAscending();

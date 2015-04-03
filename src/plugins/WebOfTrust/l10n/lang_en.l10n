@@ -96,6 +96,7 @@ KnownIdentitiesPage.FiltersAndSorting.Header=Filters and sorting
 KnownIdentitiesPage.FiltersAndSorting.ShowOnlyNicksContaining=Show only nicks containing
 KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Ascending=Ascending
 KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Descending=Descending
+KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Edition=Edition
 KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.LocalTrust=Local trust
 KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Nickname=Nickname
 KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Score=Score
