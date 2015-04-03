@@ -42,6 +42,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	public static final int IDENTITIES_PER_PAGE = 15;
 	
 	private static enum SortBy {
+	    Edition,
 		Nickname,
 		Score,
 		LocalTrust
@@ -230,6 +231,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		filtersBox.addChild("#", " " + l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy") + " : ");
 		HTMLNode option = filtersBox.addChild("select", new String[]{"name", "id"}, new String[]{"sortby", "sortby"});
 		TreeMap<String, String> options = new TreeMap<String, String>();
+        options.put(SortBy.Edition.toString(), l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Edition"));
 		options.put(SortBy.Nickname.toString(), l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Nickname"));
 		options.put(SortBy.Score.toString(), l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Score"));
 		options.put(SortBy.LocalTrust.toString(), l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.LocalTrust"));
