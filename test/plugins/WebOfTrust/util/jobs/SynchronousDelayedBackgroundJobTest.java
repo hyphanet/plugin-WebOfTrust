@@ -3,17 +3,17 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.util.jobs;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static java.lang.Math.max;
 import static java.lang.Runtime.getRuntime;
 import static org.junit.Assert.*;
+
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * A real simple unit test for {@link SynchronousDelayedBackgroundJob}.<br><br>
@@ -149,12 +149,12 @@ public class SynchronousDelayedBackgroundJobTest {
         
         for(int i=0; i < threadCount; ++i) {
             threads[i] = new Thread(new Runnable() { @Override public void run() {
-                ThreadLocalRandom r = ThreadLocalRandom.current();
+                Random r = new Random();
                 for(int i=0; i < perThreadExecutionCount ; ++i) {
                     // Test both the code path of no delay (0) and a small delay (1) by randomly
                     // choosing among those both values
-                    job.triggerExecution(r.nextLong(maxExecutionDelay
-                        + 1 /* add 1 because nextLong() excludes the max value */));
+                    job.triggerExecution(r.nextInt(maxExecutionDelay
+                        + 1 /* add 1 because nextInt() excludes the max value */));
                 }
             }});
         }
