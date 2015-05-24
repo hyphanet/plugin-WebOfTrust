@@ -135,7 +135,8 @@
 		</jar>
 	</target>
 
-	<target name="junit" depends="unit-build" if="junit.present" unless="${test.skip}">
+	<target name="junit" depends="unit-build" if="junit.present" unless="${test.skip}"
+			description="Runs all unit tests (set test.skip=true to skip or set test.class=&lt;test class&gt; (e.g. test.class=plugins.WebOfTrust.WoTTest) to run a single test)">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes">
 			<classpath>
 				<path refid="lib.path"/>
@@ -145,8 +146,8 @@
 
 			<assertions><enable/></assertions>
 			<formatter type="plain" usefile="false"/>
-
-			<batchtest fork="yes">
+			<test if="test.class" name="${test.class}"/>
+			<batchtest unless="test.class" fork="yes">
 				<zipfileset src="${build-test-jar}">
 					<include name="**/*Test*.class"/>
 					<!-- Exclude member classes:
