@@ -27,6 +27,12 @@ import freenet.support.Ticker;
  * If that problem affects you, you can use the other possible replacement for
  * {@link TickerDelayedBackgroundJob} which is {@link MockDelayedBackgroundJob}; or change
  * your code to call {@link #triggerExecution()} after all locks are relinquished.<br><br>
+ *
+ * ATTENTION: The unit tests for this class will not by run by the build script by default! They
+ * are only run if Ant is executed with parameter "-Dtest.unreliable=true".<br>
+ * This is because the tests are timing sensitive, and thus may fail randomly on slow machines.
+ * See <a href="https://bugs.freenetproject.org/view.php?id=6521">the relevant bugtracker entry</a>.
+ * <br><br>
  * 
  * TODO: Code quality: This rather complex class could maybe be simplified by extending
  * {@link TickerDelayedBackgroundJob}. IIRC, the only difference it has to that class is that

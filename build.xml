@@ -135,7 +135,12 @@
 		</jar>
 	</target>
 
-	<target name="junit" depends="unit-build" if="junit.present" unless="${test.skip}">
+	<target name="junit" depends="unit-build" if="junit.present" unless="${test.skip}"
+			description="Runs all unit tests. Options:&#10;
+		        - Set test.skip=true to skip&#10;
+		        - Set test.class=&lt;test class&gt; (e.g. test.class=plugins.WebOfTrust.WoTTest) to run a single test)&#10;
+		        - Set test.benchmark=true to run benchmarks.&#10;
+		        - Set test.unreliable=true to run tests which may fail on slow machines.">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes">
 			<classpath>
 				<path refid="lib.path"/>
@@ -145,8 +150,8 @@
 
 			<assertions><enable/></assertions>
 			<formatter type="plain" usefile="false"/>
-
-			<batchtest fork="yes">
+			<test if="test.class" name="${test.class}"/>
+			<batchtest unless="test.class" fork="yes">
 				<zipfileset src="${build-test-jar}">
 					<include name="**/*Test*.class"/>
 					<!-- Exclude member classes:
@@ -154,7 +159,11 @@
 					     JUnit would then complain that those classes do not contain a public
 					     constructor. -->
 					<exclude name="**/*$*.class"/>
-					<exclude name="**/*Benchmark*.class" unless="benchmark" />
+					<exclude name="**/*Benchmark*.class" unless="test.benchmark" />
+					<exclude name="**/SynchronousDelayedBackgroundJobTest.class"
+						unless="test.unreliable" />
+					<exclude name="**/TickerDelayedBackgroundJobTest.class"
+						unless="test.unreliable" />
 				</zipfileset>
 			</batchtest>
 			

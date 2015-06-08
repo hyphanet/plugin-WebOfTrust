@@ -14,8 +14,14 @@ import freenet.support.io.NativeThread;
  * 
  * This can be considered the "standard" implementation of {@link DelayedBackgroundJob}: Compared to
  * {@link SynchronousDelayedBackgroundJob} and {@link MockDelayedBackgroundJob}, which are intended
- * to be used in tests, it is more thoroughly tested by unit tests.
- *
+ * to be used in tests, it is more thoroughly tested by unit tests.<br><br>
+ * 
+ * ATTENTION: The unit tests for this class will not by run by the build script by default! They
+ * are only run if Ant is executed with parameter "-Dtest.unreliable=true".<br>
+ * This is because the tests are timing sensitive, and thus may fail randomly on slow machines.
+ * See <a href="https://bugs.freenetproject.org/view.php?id=6521">the relevant bugtracker entry</a>.
+ * <br><br>
+ * 
  * @author bertm
  * @see TickerDelayedBackgroundJobFactory
  */
