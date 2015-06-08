@@ -24,7 +24,13 @@ import static java.lang.Runtime.getRuntime;
 import static org.junit.Assert.*;
 
 /**
- * Unit tests for {@link TickerDelayedBackgroundJob}.
+ * Unit tests for {@link TickerDelayedBackgroundJob}.<br><br>
+ * 
+ * ATTENTION: This test will not by run by the build script by default! It is only run if Ant is
+ * executed with parameter "-Dtest.unreliable=true".<br>
+ * This is because this test is timing sensitive, and thus may fail randomly on slow machines.
+ * See <a href="https://bugs.freenetproject.org/view.php?id=6521">the relevant bugtracker entry</a>.
+ * <br><br>
  *
  * @author bertm
  */

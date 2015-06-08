@@ -139,7 +139,8 @@
 			description="Runs all unit tests. Options:&#10;
 		        - Set test.skip=true to skip&#10;
 		        - Set test.class=&lt;test class&gt; (e.g. test.class=plugins.WebOfTrust.WoTTest) to run a single test)&#10;
-		        - Set test.benchmark=true to run benchmarks.">
+		        - Set test.benchmark=true to run benchmarks.&#10;
+		        - Set test.unreliable=true to run tests which may fail on slow machines.">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes">
 			<classpath>
 				<path refid="lib.path"/>
@@ -159,6 +160,10 @@
 					     constructor. -->
 					<exclude name="**/*$*.class"/>
 					<exclude name="**/*Benchmark*.class" unless="test.benchmark" />
+					<exclude name="**/SynchronousDelayedBackgroundJobTest.class"
+						unless="test.unreliable" />
+					<exclude name="**/TickerDelayedBackgroundJobTest.class"
+						unless="test.unreliable" />
 				</zipfileset>
 			</batchtest>
 			

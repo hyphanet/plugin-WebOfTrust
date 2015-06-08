@@ -17,6 +17,12 @@ import org.junit.Test;
 
 /**
  * A real simple unit test for {@link SynchronousDelayedBackgroundJob}.<br><br>
+ * 
+ * ATTENTION: This test will not by run by the build script by default! It is only run if Ant is
+ * executed with parameter "-Dtest.unreliable=true".<br>
+ * This is because this test is timing sensitive, and thus may fail randomly on slow machines.
+ * See <a href="https://bugs.freenetproject.org/view.php?id=6521">the relevant bugtracker entry</a>.
+ * <br><br>
  *
  * TODO: Code quality: This mostly tests the thread-safety of triggerExecution(). Lacking tests:<br>
  * - Thread-safety and reliability of terminate() / waitForTermination(). Tests should be added to
