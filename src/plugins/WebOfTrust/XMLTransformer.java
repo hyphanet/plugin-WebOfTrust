@@ -56,6 +56,9 @@ import freenet.support.Logger;
  * and introduction puzzles. The code for handling the XML related to identity introduction is not in a separate class in the WoT.Introduction
  * package so that we do not need to create multiple instances of the XML parsers / pass the parsers to the other class. 
  * 
+ * TODO: Code quality: Rename to IdentityFileReaderAndWriter to match naming of
+ * {@link IdentityFileQueue} and {@link IdentityFileProcessor}.
+ * 
  * @author xor (xor@freenetproject.org)
  */
 public final class XMLTransformer {

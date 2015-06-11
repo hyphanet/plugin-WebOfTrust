@@ -54,9 +54,9 @@ import freenet.support.io.NativeThread;
  *	synchronized(instance of IdentityFetcher) {
  *	synchronized(Persistent.transactionLock(instance of ObjectContainer)) {
  * 
- * TODO: Code quality: This class should be renamed to IdentityFileFetcher to match the naming
- * of IdentityFileQueue. Notice that this needs to be done together with db4o schema evolution
- * since this class stores member classes inside db4o.
+ * TODO: Code quality: Rename to IdentityFileFetcher to match the naming of
+ * {@link IdentityFileQueue} and {@link IdentityFileProcessor}. Notice that this needs to be done
+ * together with db4o schema evolution since this class stores member classes inside db4o.
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
