@@ -3,8 +3,14 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.util.concurrent.TimeUnit;
+
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
+import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob;
+import freenet.node.PrioRunnable;
+import freenet.support.Ticker;
+import freenet.support.io.NativeThread.PriorityLevel;
 
 /**
  * The {@link IdentityFetcher} fetches the data files of all known identities and stores them
@@ -21,5 +27,75 @@ import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
  * replace the old one. 
  */
 public final class IdentityFileProcessor implements DelayedBackgroundJob {
+	/** We wait for this delay before processing to give some time for deduplication. */
+	public static final long PROCESSING_DELAY_MILLISECONDS = TimeUnit.MINUTES.toMillis(1);
+
+	/** Backend of the functions of this class which implement {@link DelayedBackgroundJob}. */
+	private final DelayedBackgroundJob mRealDelayedBackgroundJob;
+
+
+	IdentityFileProcessor(Ticker ticker) {
+		mRealDelayedBackgroundJob = new TickerDelayedBackgroundJob(
+			new Processor(), "WOT IdentityFileProcessor", PROCESSING_DELAY_MILLISECONDS, ticker);
+	}
+
+	/**
+	 * Must be called by the {@link IdentityFileQueue} every time a new file is enqueued.<br>
+	 * Processing will happen after the delay of {@link #PROCESSING_DELAY_MILLISECONDS} to give
+	 * time for deduplication.<br><br>
+	 * 
+	 * {@link IdentityFileQueue} implementations which do not deduplicate should instead use
+	 * {@link #triggerExecution(long)} to force a delay of 0. */
+	@Override public void triggerExecution() {
+		mRealDelayedBackgroundJob.triggerExecution();
+	}
+
+	/**
+	 * {@link IdentityFileQueue} implementations which do not deduplicate may use this function
+	 * instead of {@link #triggerExecution()} to force a delay of 0:<br>
+	 * The only reason for a non-zero delay is to give time for deduplication. */
+	@Override public void triggerExecution(long delayMillis) {
+		mRealDelayedBackgroundJob.triggerExecution(delayMillis);
+	}
+
+	/** The actual processing thread, run by {@link IdentityFileProcessor#triggerExecution()}. */
+	private final class Processor implements Runnable, PrioRunnable {
+		public void run() {
+			throw new UnsupportedOperationException("FIXME: Implement.");
+			// Notice: The implementation should query the IdentityFileQueue for *multiple* files
+			// until it is empty since multiple calls to triggerExecution() will only cause one
+			// execution of run().
+			// Notice: waitForTermination() uses an infinite delay since it assumes this function
+			// will support thread interruption. Thus, please implement it to do so.
+		}
+
+		@Override public int getPriority() {
+			// LOW_PRIORITY since we are background processing, and not triggered by UI actions.
+			// Not MIN_PRIORITY since we are not garbage cleanup, and serve the important job
+			// of delivering updated trust lists to Score computation.
+			return PriorityLevel.LOW_PRIORITY.value;
+		}
+	}
+
+
+	/** Must be called before the WOT plugin is terminated. */
+	@Override public void terminate() {
+		mRealDelayedBackgroundJob.terminate();
+	}
+
+	/** Not needed by WOT. */
+	@Override public boolean isTerminated() {
+		return mRealDelayedBackgroundJob.isTerminated();
+	}
+
+	/**
+	 * Must be called after {@link #terminate()} was called, and before the WOT plugin is
+	 * terminated.<br>
+	 * @param timeoutMillis Is ignored, {@link Long#MAX_VALUE} will always be used. */
+	@Override public void waitForTermination(long timeoutMillis) throws InterruptedException {
+		// Processor.run() supports thread interruption by terminate(), so we force the timeout to
+		// be infinite so we always wait for clean exit of run() after it was terminate()d.
+		mRealDelayedBackgroundJob.waitForTermination(Long.MAX_VALUE);
+	}
 
 }
