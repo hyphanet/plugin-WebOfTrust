@@ -20,6 +20,6 @@ import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
  * been queued, it makes sense to first wait for a short delay as new editions might arrive to
  * replace the old one. 
  */
-public class IdentityFileProcessor implements DelayedBackgroundJob {
+public final class IdentityFileProcessor implements DelayedBackgroundJob {
 
 }
