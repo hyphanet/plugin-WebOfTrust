@@ -35,9 +35,9 @@ import freenet.keys.FreenetURI;
  */
 public interface IdentityFileQueue {
 	public static final class IdentityFileStream {
-		public final FreenetURI uri;
+		public final FreenetURI mURI;
 
-		public final InputStream xmlInputStream;
+		public final InputStream mXMLInputStream;
 
 		/**
 		 * @param uri
@@ -47,8 +47,8 @@ public interface IdentityFileQueue {
 		 *     The unmodified XML data of the file.
 		 */
 		public IdentityFileStream(FreenetURI uri, InputStream xmlInputStream) {
-			this.uri = uri;
-			this.xmlInputStream = xmlInputStream;
+			mURI = uri;
+			mXMLInputStream = xmlInputStream;
 		}
 	}
 
