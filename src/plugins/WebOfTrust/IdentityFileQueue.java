@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.InputStream;
+
 import freenet.keys.FreenetURI;
 
 
@@ -32,5 +34,26 @@ import freenet.keys.FreenetURI;
  * to name the data set of an {@link Identity} in an easy to understand way.
  */
 public interface IdentityFileQueue {
+	public static final class IdentityFileStream {
+		public final FreenetURI uri;
 
+		public final InputStream xmlInputStream;
+
+		/**
+		 * @param uri
+		 *     The {@link FreenetURI} from which the identity file was downloaded.<br>
+		 *     ATTENTION: The edition in the URI must match the specific edition of the file.
+		 * @param xmlInputStream
+		 *     The unmodified XML data of the file.
+		 */
+		public IdentityFileStream(FreenetURI uri, InputStream xmlInputStream) {
+			this.uri = uri;
+			this.xmlInputStream = xmlInputStream;
+		}
+	}
+
+	public void add(IdentityFileStream file);
+
+	/** Removes and returns element from the queue. Returns null if the queue is empty. */
+	public IdentityFileStream poll();
 }
