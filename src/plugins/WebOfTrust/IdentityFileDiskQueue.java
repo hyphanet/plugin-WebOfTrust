@@ -42,9 +42,15 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 		mQueueDir = new File(mDataDir, "Queued");
 		mProcessingDir = new File(mDataDir, "Processing");
 		mFinishedDir = new File(mDataDir, "Finished");
-		mQueueDir.mkdir();
-		mProcessingDir.mkdir();
-		mFinishedDir.mkdir();
+		
+		if(!mQueueDir.exists() && !mQueueDir.mkdir())
+			throw new RuntimeException("Cannot create " + mQueueDir);
+		
+		if(!mProcessingDir.exists() && !mProcessingDir.mkdir())
+			throw new RuntimeException("Cannot create " + mProcessingDir);
+		
+		if(!mFinishedDir.exists() && !mFinishedDir.mkdir())
+			throw new RuntimeException("Cannot create " + mFinishedDir);
 	}
 
 	@Override public synchronized void add(IdentityFileStream file) {
