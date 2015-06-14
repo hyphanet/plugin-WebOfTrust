@@ -5,6 +5,9 @@ package plugins.WebOfTrust;
 
 import java.io.File;
 
+import plugins.WebOfTrust.Identity.IdentityID;
+import freenet.keys.FreenetURI;
+
 /**
  * {@link IdentityFileQueue} implementation which writes the files to disk instead of keeping them
  * in memory.<br><br>
@@ -39,4 +42,13 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 		mFinishedDir.mkdir();
 	}
 
+	private File getQueueFilename(FreenetURI identityFileURI) {
+		// We want to deduplicate editions of files for the same identity.
+		// This can be done by causing filenames to always collide for the same identity:
+		// An existing file of an old edition will be overwritten then.
+		// We cause the collissions by using the ID of the identity as the only variable component
+		// of the filename.
+		IdentityID id = IdentityID.constructAndValidateFromURI(identityFileURI);
+		return new File(mQueueDir, id + ".wot-identity");
+	}
 }
