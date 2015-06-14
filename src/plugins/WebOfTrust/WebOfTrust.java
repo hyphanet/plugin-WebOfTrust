@@ -319,7 +319,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		setLanguage(LANGUAGE.getDefault()); // Even without UI, WOT will use l10n for Exceptions, so we need a language. Normally the node calls this for us.
 	}
 	
-	private File getUserDataDirectory() {
+	File getUserDataDirectory() {
         final File wotDirectory = new File(mPR.getNode().getUserDir(), WebOfTrustInterface.WOT_NAME);
         
         if(!wotDirectory.exists() && !wotDirectory.mkdir())
