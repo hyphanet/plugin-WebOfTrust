@@ -4,9 +4,14 @@
 package plugins.WebOfTrust;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 import plugins.WebOfTrust.Identity.IdentityID;
 import freenet.keys.FreenetURI;
+import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 /**
  * {@link IdentityFileQueue} implementation which writes the files to disk instead of keeping them
@@ -40,6 +45,24 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 		mQueueDir.mkdir();
 		mProcessingDir.mkdir();
 		mFinishedDir.mkdir();
+	}
+
+	@Override public synchronized void add(IdentityFileStream file) {
+		File filename = getQueueFilename(file.mURI);
+		// Delete for deduplication
+		if(filename.exists() && !filename.delete())
+			throw new RuntimeException("Cannot write to " + filename);
+		
+		OutputStream out = null;
+		
+		try {
+			out = new FileOutputStream(filename);
+			FileUtil.copy(file.mXMLInputStream, out, -1);
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			Closer.close(out);
+		}
 	}
 
 	private File getQueueFilename(FreenetURI identityFileURI) {
