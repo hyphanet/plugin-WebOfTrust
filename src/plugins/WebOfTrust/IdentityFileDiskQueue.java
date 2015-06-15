@@ -137,8 +137,11 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 		// An existing file of an old edition will be overwritten then.
 		// We cause the collissions by using the ID of the identity as the only variable component
 		// of the filename.
-		IdentityID id = IdentityID.constructAndValidateFromURI(identityFileURI);
+		return new File(mQueueDir, getEncodedIdentityID(identityFileURI) + ".wot-identity");
+	}
+
+	private String getEncodedIdentityID(FreenetURI identityURI) {
 		// FIXME: Encode the ID with base 36 to ensure maximal filesystem compatibility.
-		return new File(mQueueDir, id + ".wot-identity");
+		return IdentityID.constructAndValidateFromURI(identityURI).toString();
 	}
 }
