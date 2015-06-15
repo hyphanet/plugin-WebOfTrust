@@ -138,6 +138,7 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 		// We cause the collissions by using the ID of the identity as the only variable component
 		// of the filename.
 		IdentityID id = IdentityID.constructAndValidateFromURI(identityFileURI);
+		// FIXME: Encode the ID with base 36 to ensure maximal filesystem compatibility.
 		return new File(mQueueDir, id + ".wot-identity");
 	}
 }
