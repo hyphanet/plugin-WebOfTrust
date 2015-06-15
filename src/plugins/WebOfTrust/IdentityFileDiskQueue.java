@@ -7,13 +7,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 import plugins.WebOfTrust.Identity.IdentityID;
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -146,6 +149,56 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 	private String getEncodedIdentityID(FreenetURI identityURI) {
 		// FIXME: Encode the ID with base 36 to ensure maximal filesystem compatibility.
 		return IdentityID.constructAndValidateFromURI(identityURI).toString();
+	}
+
+	/**
+	 * When we return {@link IdentityFileStream} objects from {@link IdentityFileDiskQueue#poll()},
+	 * we wrap their {@link InputStream} in this wrapper. Its purpose is to hook {@link #close()} to
+	 * implement cleanup of our disk directories. */
+	private final class InputStreamWithCleanup extends FilterInputStream {
+		/**
+		 * The backend file in {@link IdentityFileDiskQueue#mProcessingDir}.<br>
+		 * On {@link #close()} we delete it; or archive it for debugging purposes.
+		 * FIXME: Implement deletion. Currently only archival is implemented. */
+		private final File mSourceFile;
+
+		/**
+		 * The URI where the File {@link #mSourceFile} was downloaded from.<br>
+		 * If the file is to be archived for debugging purposes, the URI will be used for producing
+		 * a new filename for archival. */
+		private final FreenetURI mSourceURI;
+
+
+		public InputStreamWithCleanup(File fileName, IdentityFile fileData,
+				InputStream fileStream) {
+			super(fileStream);
+			mSourceFile = fileName;
+			mSourceURI = fileData.mURI;
+		}
+
+		@Override
+		public void close() throws IOException {
+			try {
+				super.close();
+			} finally {
+				synchronized(IdentityFileDiskQueue.this) {
+					File moveTo = getAndReserveFinishedFilename(mSourceURI);
+
+					assert(mSourceFile.exists());
+					assert(!moveTo.exists());
+
+					if(!mSourceFile.renameTo(moveTo)) {
+						Logger.error(this, "Cannot move file, source: " + mSourceFile
+							             + "; dest: " + moveTo);
+						
+						// We must delete as fallback: Otherwise, subsequent processed files of the
+						// same Identity would collide with the filenames in the mProcessingDir.
+						if(!mSourceFile.delete())
+							Logger.error(this, "Cannot delete file: " + mSourceFile);
+					}
+				}
+			}
+		}
 	}
 
 	/**
