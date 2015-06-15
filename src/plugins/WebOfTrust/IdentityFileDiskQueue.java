@@ -39,6 +39,9 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * When the stream of a file returned by {@link #poll()} is closed, the closing function of
 	 * the stream will move the file to this subdir of {@link #mDataDir}. */
 	private final File mFinishedDir;
+
+	/** Amount of files which were moved to {@link #mFinishedDir}. */
+	private int mFinishedFiles = 0;
 	
 
 	public IdentityFileDiskQueue(WebOfTrust wot) {
@@ -143,5 +146,30 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 	private String getEncodedIdentityID(FreenetURI identityURI) {
 		// FIXME: Encode the ID with base 36 to ensure maximal filesystem compatibility.
 		return IdentityID.constructAndValidateFromURI(identityURI).toString();
+	}
+
+	/**
+	 * Returns a filename suitable for use in directory {@link #mFinishedDir}.<br>
+	 * Subsequent calls will never return the same filename again.<br><br>
+	 * 
+	 * ATTENTION: Must be called while being synchronized(this).<br><br>
+	 * 
+	 * Format:<br>
+	 *     "I_identityID-HASH_edition-E.wot-identity"<br>
+	 * where:<br>
+	 *     I = zero-padded integer counting up from 0, to tell the precise order in which queued
+	 *         files were processed. The padding is for nice sorting in the file manager.<br>
+	 *     HASH = the ID of the {@link Identity}.<br>
+	 *     E = the {@link Identity#getEdition() edition} of the identity file, as a zero-padded long
+	 *         integer.<br><br>
+	 * 
+	 * Notice: The filenames contain more information than WOT needs for general purposes of future
+	 * external scripts. */
+	private File getAndReserveFinishedFilename(FreenetURI sourceURI) {
+		return new File(mFinishedDir,
+			String.format("%0d_identityID-%s_edition-%0d.wot-identity",
+				++mFinishedFiles,
+				getEncodedIdentityID(sourceURI),
+				sourceURI.getEdition()));
 	}
 }
