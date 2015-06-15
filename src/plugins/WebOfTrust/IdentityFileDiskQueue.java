@@ -3,10 +3,14 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 import plugins.WebOfTrust.Identity.IdentityID;
 import freenet.keys.FreenetURI;
@@ -53,22 +57,78 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 			throw new RuntimeException("Cannot create " + mFinishedDir);
 	}
 
-	@Override public synchronized void add(IdentityFileStream file) {
-		File filename = getQueueFilename(file.mURI);
+	/**
+	 * Wrapper class for storing an {@link IdentityFileStream} to disk via {@link Serializable}.
+	 * This is used to write and read the actual files of the queue. */
+	private static final class IdentityFile implements Serializable {
+		private static final long serialVersionUID = 1L;
+
+		/** @see IdentityFileStream#mURI */
+		public final FreenetURI mURI;
+
+		/** @see IdentityFileStream#mXMLInputStream */
+		public final byte[] mXML;
+
+		public IdentityFile(IdentityFileStream source) {
+			mURI = source.mURI.clone();
+			
+			ByteArrayOutputStream bos = null;
+			try {
+				bos = new ByteArrayOutputStream(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE + 1);
+				FileUtil.copy(source.mXMLInputStream, bos, -1);
+				mXML = bos.toByteArray();
+			} catch(IOException e) {
+				throw new RuntimeException(e);
+			} finally {
+				Closer.close(bos);
+				Closer.close(source.mXMLInputStream);
+			}
+		}
+
+		public void write(File file) {
+			FileOutputStream fos = null;
+			ObjectOutputStream ous = null;
+			
+			try {
+				fos = new FileOutputStream(file);
+				ous = new ObjectOutputStream(fos);
+				ous.writeObject(this);
+			} catch(IOException e) {
+				throw new RuntimeException(e);
+			} finally {
+				Closer.close(ous);
+				Closer.close(fos);
+			}
+		}
+
+		public static IdentityFile read(File source) {
+			FileInputStream fis = null;
+			ObjectInputStream ois = null;
+			
+			try {
+				fis = new FileInputStream(source);
+				ois = new ObjectInputStream(fis);
+				final IdentityFile deserialized = (IdentityFile)ois.readObject();
+				assert(deserialized != null) : "Not an IdentityFile: " + source;
+				return deserialized;
+			} catch(IOException e) {
+				throw new RuntimeException(e);
+			} catch (ClassNotFoundException e) {
+				throw new RuntimeException(e);
+			} finally {
+				Closer.close(ois);
+				Closer.close(fis);
+			}
+		}
+	}
+
+	@Override public synchronized void add(IdentityFileStream identityFileStream) {
+		File filename = getQueueFilename(identityFileStream.mURI);
 		// Delete for deduplication
 		if(filename.exists() && !filename.delete())
 			throw new RuntimeException("Cannot write to " + filename);
 		
-		OutputStream out = null;
-		
-		try {
-			out = new FileOutputStream(filename);
-			FileUtil.copy(file.mXMLInputStream, out, -1);
-		} catch(IOException e) {
-			throw new RuntimeException(e);
-		} finally {
-			Closer.close(out);
-		}
+		new IdentityFile(identityFileStream).write(filename);
 	}
 
 	private File getQueueFilename(FreenetURI identityFileURI) {
