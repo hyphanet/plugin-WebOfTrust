@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -149,6 +150,41 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 	private String getEncodedIdentityID(FreenetURI identityURI) {
 		// FIXME: Encode the ID with base 36 to ensure maximal filesystem compatibility.
 		return IdentityID.constructAndValidateFromURI(identityURI).toString();
+	}
+
+	@Override public synchronized IdentityFileStream poll() {
+		// In theory, we should not have to loop over the result of listFiles(), we could always
+		// return the first slot in its resulting array: poll() is not required to return any
+		// specific selection of files.
+		// However, to be robust against things such as the user sticking arbitrary files in the
+		// directory, we loop over the files in the queue dir nevertheless:
+		// If processing a file fails, we try the others until we succeed. 
+		for(File queuedFile : mQueueDir.listFiles()) {
+			try {
+				IdentityFile fileData = IdentityFile.read(queuedFile);
+				
+				// Before we can return the file data, we must move the on-disk file from mQueueDir
+				// to mProcessingDir to prevent it from getting poll()ed again.
+				File dequeuedFile = new File(mProcessingDir, queuedFile.getName());
+				assert(!dequeuedFile.exists());
+				if(!queuedFile.renameTo(dequeuedFile)) {
+					throw new RuntimeException("Cannot move file, source: " + queuedFile
+			                                 + "; dest: " + dequeuedFile);
+				}
+				
+				// The InputStreamWithCleanup wrapper will remove the file from mProcessingDir once
+				// the stream is close()d.
+				return new IdentityFileStream(fileData.mURI,
+					new InputStreamWithCleanup(dequeuedFile, fileData,
+						new ByteArrayInputStream(fileData.mXML)));
+			} catch(RuntimeException e) {
+				Logger.error(this, "Error in poll() for queued file: " + queuedFile, e);
+				// Try whether we can process the next file
+				continue;
+			}
+		}
+
+		return null; // Queue is empty
 	}
 
 	/**
