@@ -44,8 +44,41 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * the stream will move the file to this subdir of {@link #mDataDir}. */
 	private final File mFinishedDir;
 
-	/** Amount of files which were moved to {@link #mFinishedDir}. */
+	/**
+	 * Count of files which were passed to {@link #add(IdentityFileStream)}.<br>
+	 * This <b>includes</b> files which:<br>
+	 * - are not queued anymore, i.e. have been moved to {@link #mFinishedDir}.<br>
+	 * - are still queued.<br>
+	 * - were deleted due to deduplication.<br>
+	 * - were not actually enqueued due to errors.<br><br>
+	 * 
+	 * The lost files are included to ensure that errors can be noticed by the user from statistics
+	 * in the UI. */
+	private int mTotalQueuedFiles = 0;
+	
+	/**
+	 * Count of files which have been passed to {@link #add(IdentityFileStream)} but have not
+	 * been dequeued by {@link #poll()} yet. */
+	private int mQueuedFiles = 0;
+	
+	/**
+	 * Count of files which are currently in {@link #mProcessingDir}.<br>
+	 * This number should only ever be 0 or 1 as required by {@link IdentityFileQueue#poll()}.
+	 * (Concurrent processing is not supported because the filenames could collide). */
+	private int mProcessingFiles = 0;
+	
+	/**
+	 * Count of files which were moved to {@link #mFinishedDir}.<br>
+	 * This number can be less than the files passed to {@link #add(IdentityFileStream)}:
+	 * Files can be dropped due to deduplication (or errors). */
 	private int mFinishedFiles = 0;
+
+	/**
+	 * See {@link IdentityFileQueue}.<br>
+	 * Equal to <code>{@link #mTotalQueuedFiles} - {@link #mQueuedFiles} - {@link #mProcessingFiles}
+	 * - {@link #mFinishedFiles}</code>.
+	 */
+	private int mDeduplicatedFiles = 0;
 	
 
 	public IdentityFileDiskQueue(WebOfTrust wot) {
@@ -130,12 +163,28 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 	}
 
 	@Override public synchronized void add(IdentityFileStream identityFileStream) {
+		// We increment the counter before errors could occur so erroneously dropped files are
+		// included: This ensures that the user might notice dropped files from the statistics in
+		// the UI.
+		++mTotalQueuedFiles;
+		
 		File filename = getQueueFilename(identityFileStream.mURI);
 		// Delete for deduplication
-		if(filename.exists() && !filename.delete())
-			throw new RuntimeException("Cannot write to " + filename);
+		if(filename.exists()) {
+			if(!filename.delete())
+				throw new RuntimeException("Cannot write to " + filename);
+			
+			++mDeduplicatedFiles;
+		}
 		
 		new IdentityFile(identityFileStream).write(filename);
+		
+		++mQueuedFiles;
+		
+		assert(mQueuedFiles <= mTotalQueuedFiles);
+		
+		assert(mDeduplicatedFiles ==
+			   mTotalQueuedFiles - mQueuedFiles - mProcessingFiles - mFinishedFiles);
 	}
 
 	private File getQueueFilename(FreenetURI identityFileURI) {
@@ -153,13 +202,16 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 	}
 
 	@Override public synchronized IdentityFileStream poll() {
+		File[] queue = mQueueDir.listFiles();
+		assert(queue.length == mQueuedFiles);
+		
 		// In theory, we should not have to loop over the result of listFiles(), we could always
 		// return the first slot in its resulting array: poll() is not required to return any
 		// specific selection of files.
 		// However, to be robust against things such as the user sticking arbitrary files in the
 		// directory, we loop over the files in the queue dir nevertheless:
 		// If processing a file fails, we try the others until we succeed. 
-		for(File queuedFile : mQueueDir.listFiles()) {
+		for(File queuedFile : queue) {
 			try {
 				IdentityFile fileData = IdentityFile.read(queuedFile);
 				
@@ -174,9 +226,17 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 				
 				// The InputStreamWithCleanup wrapper will remove the file from mProcessingDir once
 				// the stream is close()d.
-				return new IdentityFileStream(fileData.mURI,
+				IdentityFileStream result = new IdentityFileStream(fileData.mURI,
 					new InputStreamWithCleanup(dequeuedFile, fileData,
 						new ByteArrayInputStream(fileData.mXML)));
+				
+				++mProcessingFiles;
+				assert(mProcessingFiles == 1);
+				
+				--mQueuedFiles;
+				assert(mQueuedFiles >= 0);
+				
+				return result;
 			} catch(RuntimeException e) {
 				Logger.error(this, "Error in poll() for queued file: " + queuedFile, e);
 				// Try whether we can process the next file
@@ -218,6 +278,8 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 				super.close();
 			} finally {
 				synchronized(IdentityFileDiskQueue.this) {
+					assert(mProcessingFiles == 1);
+					
 					File moveTo = getAndReserveFinishedFilename(mSourceURI);
 
 					assert(mSourceFile.exists());
@@ -231,7 +293,12 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 						// same Identity would collide with the filenames in the mProcessingDir.
 						if(!mSourceFile.delete())
 							Logger.error(this, "Cannot delete file: " + mSourceFile);
-					}
+						else
+							--mProcessingFiles;
+					} else
+						--mProcessingFiles;
+					
+					assert(mProcessingFiles == 0);
 				}
 			}
 		}
@@ -255,10 +322,14 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * Notice: The filenames contain more information than WOT needs for general purposes of future
 	 * external scripts. */
 	private File getAndReserveFinishedFilename(FreenetURI sourceURI) {
-		return new File(mFinishedDir,
+		File result = new File(mFinishedDir,
 			String.format("%0d_identityID-%s_edition-%0d.wot-identity",
 				++mFinishedFiles,
 				getEncodedIdentityID(sourceURI),
 				sourceURI.getEdition()));
+		
+		assert(mFinishedFiles <= mTotalQueuedFiles);
+		
+		return result;
 	}
 }
