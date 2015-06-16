@@ -44,6 +44,11 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * the stream will move the file to this subdir of {@link #mDataDir}. */
 	private final File mFinishedDir;
 
+	/**
+	 * FIXME: Add function "validate()" which contains many of the assert()s in class
+	 * IdentityFileDiskQueue as regular throws. Also check whether the numbers match the directory
+	 * contents on disk. Use that function in clone() so it gets called when the user views the
+	 * statistics on the web interface. */
 	public static final class IdentityFileQueueStatistics {
 		/**
 		 * Count of files which were passed to {@link #add(IdentityFileStream)}.<br>
