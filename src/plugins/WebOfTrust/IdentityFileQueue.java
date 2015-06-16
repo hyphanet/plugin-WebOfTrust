@@ -54,6 +54,11 @@ public interface IdentityFileQueue {
 
 	public void add(IdentityFileStream file);
 
-	/** Removes and returns element from the queue. Returns null if the queue is empty. */
+	/**
+	 * Removes and returns element from the queue. Returns null if the queue is empty.<br><br>
+	 * 
+	 * ATTENTION: Concurrent processing of multiple elements from the queue is not supported.
+	 * This means that the {@link InputStream} of a returned {@link IdentityFileStream} must be
+	 * closed before you call {@link #poll()} the next time.*/
 	public IdentityFileStream poll();
 }
