@@ -27,7 +27,12 @@ import freenet.support.io.NativeThread.PriorityLevel;
  * replace the old one. 
  */
 public final class IdentityFileProcessor implements DelayedBackgroundJob {
-	/** We wait for this delay before processing to give some time for deduplication. */
+	/**
+	 * We wait for this delay before processing to give some time for deduplication.<br><br>
+	 * 
+	 * TODO: Performance: Make configurable. Tell the user that very high delays will increase
+	 * performance since {@link IdentityFileQueue} will deduplicate a lot of files then - at the
+	 * cost of higher latency for remote trust updates to have an effect.<br><br>
 	public static final long PROCESSING_DELAY_MILLISECONDS = TimeUnit.MINUTES.toMillis(1);
 
 	/** Backend of the functions of this class which implement {@link DelayedBackgroundJob}. */
