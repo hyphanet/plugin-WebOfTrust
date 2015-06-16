@@ -33,6 +33,10 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 	 * TODO: Performance: Make configurable. Tell the user that very high delays will increase
 	 * performance since {@link IdentityFileQueue} will deduplicate a lot of files then - at the
 	 * cost of higher latency for remote trust updates to have an effect.<br><br>
+	 * 
+	 * FIXME: Performance: Tweak default value. Use the statistics of {@link IdentityFileDiskQueue}
+	 * to find a reasonable default. Especially test this with fresh empty databases as newbies
+	 * who need to fetch all identities are most likely to benefit from deduplication. */
 	public static final long PROCESSING_DELAY_MILLISECONDS = TimeUnit.MINUTES.toMillis(1);
 
 	/** Backend of the functions of this class which implement {@link DelayedBackgroundJob}. */
