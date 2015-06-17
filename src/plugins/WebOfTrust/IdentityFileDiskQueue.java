@@ -58,8 +58,8 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 		 * - were deleted due to deduplication.<br>
 		 * - were not actually enqueued due to errors.<br><br>
 		 * 
-		 * The lost files are included to ensure that errors can be noticed by the user from statistics
-		 * in the UI. */
+		 * The lost files are included to ensure that errors can be noticed by the user from
+		 * statistics in the UI. */
 		public int mTotalQueuedFiles = 0;
 		
 		/**
@@ -81,8 +81,8 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 
 		/**
 		 * See {@link IdentityFileQueue}.<br>
-		 * Equal to <code>{@link #mTotalQueuedFiles} - {@link #mQueuedFiles} - {@link #mProcessingFiles}
-		 * - {@link #mFinishedFiles}</code>.
+		 * Equal to <code>{@link #mTotalQueuedFiles} - {@link #mQueuedFiles}
+		 * - {@link #mProcessingFiles} - {@link #mFinishedFiles}</code>.
 		 */
 		public int mDeduplicatedFiles = 0;
 	}
