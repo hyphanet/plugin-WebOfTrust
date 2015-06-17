@@ -53,10 +53,10 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 		/**
 		 * Count of files which were passed to {@link #add(IdentityFileStream)}.<br>
 		 * This <b>includes</b> files which:<br>
-		 * - are not queued anymore, i.e. have been moved to {@link #mFinishedDir}.<br>
-		 * - are still queued.<br>
-		 * - were deleted due to deduplication.<br>
-		 * - were not actually enqueued due to errors.<br><br>
+		 * - are not queued anymore (see {@link #mFinishedFiles}).<br>
+		 * - are still queued (see {@link #mQueuedFiles}).<br>
+		 * - were deleted due to deduplication (see {@link #mDeduplicatedFiles}).<br>
+		 * - were not actually enqueued due to errors (FIXME: Add counter for this).<br><br>
 		 * 
 		 * The lost files are included to ensure that errors can be noticed by the user from
 		 * statistics in the UI. */
@@ -68,13 +68,19 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 		public int mQueuedFiles = 0;
 		
 		/**
-		 * Count of files which are currently in {@link #mProcessingDir}.<br>
+		 * Count of files which are currently in processing.<br>
+		 * A file is considered to be in processing when it has been dequeued using
+		 * {@link IdentityFileQueue#poll()}, but the {@link InputStream} of the
+		 * {@link IdentityFileStream} has not been closed yet.<br>
 		 * This number should only ever be 0 or 1 as required by {@link IdentityFileQueue#poll()}.
 		 * (Concurrent processing is not supported because the filenames could collide). */
 		public int mProcessingFiles = 0;
 		
 		/**
-		 * Count of files which were moved to {@link #mFinishedDir}.<br>
+		 * Count of files for which processing is finished.<br>
+		 * A file is considered to be finished when it has been dequeued using
+		 * {@link IdentityFileQueue#poll()} and the {@link InputStream} of the
+		 * {@link IdentityFileStream} has been closed.<br>
 		 * This number can be less than the files passed to {@link #add(IdentityFileStream)}:
 		 * Files can be dropped due to deduplication (or errors). */
 		public int mFinishedFiles = 0;
