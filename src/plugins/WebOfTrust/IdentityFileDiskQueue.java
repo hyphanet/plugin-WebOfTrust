@@ -299,4 +299,8 @@ public final class IdentityFileDiskQueue implements IdentityFileQueue {
 		
 		return result;
 	}
+
+	@Override public synchronized IdentityFileQueueStatistics getStatistics() {
+		return mStatistics.clone();
+	}
 }

@@ -75,7 +75,7 @@ public interface IdentityFileQueue {
 	 * IdentityFileDiskQueue as regular throws. Also check whether the numbers match the directory
 	 * contents on disk. Use that function in clone() so it gets called when the user views the
 	 * statistics on the web interface. */
-	public static final class IdentityFileQueueStatistics {
+	public static final class IdentityFileQueueStatistics implements Cloneable {
 		/**
 		 * Count of files which were passed to {@link #add(IdentityFileStream)}.<br>
 		 * This <b>includes</b> files which:<br>
@@ -117,5 +117,13 @@ public interface IdentityFileQueue {
 		 * - {@link #mProcessingFiles} - {@link #mFinishedFiles}</code>.
 		 */
 		public int mDeduplicatedFiles = 0;
+
+		@Override public IdentityFileQueueStatistics clone() {
+			try {
+				return (IdentityFileQueueStatistics)super.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 }
