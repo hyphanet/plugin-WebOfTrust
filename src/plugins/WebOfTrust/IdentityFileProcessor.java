@@ -39,13 +39,26 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 	 * who need to fetch all identities are most likely to benefit from deduplication. */
 	public static final long PROCESSING_DELAY_MILLISECONDS = TimeUnit.MINUTES.toMillis(1);
 
+	/** We consume the files of this queue when it calls our {@link #triggerExecution()}. */
+	private final IdentityFileQueue mQueue;
+
 	/** Backend of the functions of this class which implement {@link DelayedBackgroundJob}. */
 	private final DelayedBackgroundJob mRealDelayedBackgroundJob;
 
 
-	IdentityFileProcessor(Ticker ticker) {
+	IdentityFileProcessor(IdentityFileQueue queue, Ticker ticker) {
 		mRealDelayedBackgroundJob = new TickerDelayedBackgroundJob(
 			new Processor(), "WOT IdentityFileProcessor", PROCESSING_DELAY_MILLISECONDS, ticker);
+		
+		mQueue = queue;
+		// Not called in constructor since then the queue might call our functions concurrently
+		// before we are even finished with construction. Called in start() instead.
+		/* mQueue.registerEventHandler(this); */
+	}
+
+	/** Must be called during startup of WOT */
+	public void start() {
+		mQueue.registerEventHandler(this);
 	}
 
 	/**
