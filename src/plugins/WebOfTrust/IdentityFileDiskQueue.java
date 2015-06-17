@@ -44,7 +44,7 @@ public class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * the stream will move the file to this subdir of {@link #mDataDir}. */
 	private final File mFinishedDir;
 
-	private IdentityFileQueueStatistics mStatistics = new IdentityFileQueueStatistics();
+	private final IdentityFileQueueStatistics mStatistics = new IdentityFileQueueStatistics();
 
 
 	public IdentityFileDiskQueue(WebOfTrust wot) {
