@@ -61,4 +61,53 @@ public interface IdentityFileQueue {
 	 * This means that the {@link InputStream} of a returned {@link IdentityFileStream} must be
 	 * closed before you call {@link #poll()} the next time.*/
 	public IdentityFileStream poll();
+
+	/**
+	 * FIXME: Add function "validate()" which contains many of the assert()s in class
+	 * IdentityFileDiskQueue as regular throws. Also check whether the numbers match the directory
+	 * contents on disk. Use that function in clone() so it gets called when the user views the
+	 * statistics on the web interface. */
+	public static final class IdentityFileQueueStatistics {
+		/**
+		 * Count of files which were passed to {@link #add(IdentityFileStream)}.<br>
+		 * This <b>includes</b> files which:<br>
+		 * - are not queued anymore (see {@link #mFinishedFiles}).<br>
+		 * - are still queued (see {@link #mQueuedFiles}).<br>
+		 * - were deleted due to deduplication (see {@link #mDeduplicatedFiles}).<br>
+		 * - were not actually enqueued due to errors (FIXME: Add counter for this).<br><br>
+		 * 
+		 * The lost files are included to ensure that errors can be noticed by the user from
+		 * statistics in the UI. */
+		public int mTotalQueuedFiles = 0;
+		
+		/**
+		 * Count of files which have been passed to {@link #add(IdentityFileStream)} but have not
+		 * been dequeued by {@link #poll()} yet. */
+		public int mQueuedFiles = 0;
+		
+		/**
+		 * Count of files which are currently in processing.<br>
+		 * A file is considered to be in processing when it has been dequeued using
+		 * {@link IdentityFileQueue#poll()}, but the {@link InputStream} of the
+		 * {@link IdentityFileStream} has not been closed yet.<br>
+		 * This number should only ever be 0 or 1 as required by {@link IdentityFileQueue#poll()}.
+		 * (Concurrent processing is not supported because the filenames could collide). */
+		public int mProcessingFiles = 0;
+		
+		/**
+		 * Count of files for which processing is finished.<br>
+		 * A file is considered to be finished when it has been dequeued using
+		 * {@link IdentityFileQueue#poll()} and the {@link InputStream} of the
+		 * {@link IdentityFileStream} has been closed.<br>
+		 * This number can be less than the files passed to {@link #add(IdentityFileStream)}:
+		 * Files can be dropped due to deduplication (or errors). */
+		public int mFinishedFiles = 0;
+	
+		/**
+		 * See {@link IdentityFileQueue}.<br>
+		 * Equal to <code>{@link #mTotalQueuedFiles} - {@link #mQueuedFiles}
+		 * - {@link #mProcessingFiles} - {@link #mFinishedFiles}</code>.
+		 */
+		public int mDeduplicatedFiles = 0;
+	}
 }
