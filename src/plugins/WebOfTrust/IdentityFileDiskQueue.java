@@ -16,6 +16,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
@@ -45,6 +46,12 @@ public final class IdentityFileDiskQueue implements IdentityFileQueue {
 	private final File mFinishedDir;
 
 	private final IdentityFileQueueStatistics mStatistics = new IdentityFileQueueStatistics();
+	
+	/**
+	 * FIXME: Trigger execution of the handler if the queue is non-empty during startup.
+	 * 
+	 * @see #registerEventHandler(BackgroundJob) */
+	private BackgroundJob mEventHandler;
 
 
 	public IdentityFileDiskQueue(WebOfTrust wot) {
@@ -152,6 +159,11 @@ public final class IdentityFileDiskQueue implements IdentityFileQueue {
 		assert(mStatistics.mDeduplicatedFiles ==
 			   mStatistics.mTotalQueuedFiles - mStatistics.mQueuedFiles
 			   - mStatistics.mProcessingFiles - mStatistics.mFinishedFiles);
+		
+		if(mEventHandler != null)
+			mEventHandler.triggerExecution();
+		else
+			Logger.error(this, "IdentityFile queued but no event handler is monitoring the queue!");
 	}
 
 	private File getQueueFilename(FreenetURI identityFileURI) {
@@ -298,6 +310,15 @@ public final class IdentityFileDiskQueue implements IdentityFileQueue {
 		assert(mStatistics.mFinishedFiles <= mStatistics.mTotalQueuedFiles);
 		
 		return result;
+	}
+
+	@Override public synchronized void registerEventHandler(BackgroundJob handler) {
+		if(mEventHandler != null) {
+			throw new UnsupportedOperationException(
+				"Support for more than one event handler is not implemented yet.");
+		}
+		
+		mEventHandler = handler;
 	}
 
 	@Override public synchronized IdentityFileQueueStatistics getStatistics() {
