@@ -45,6 +45,10 @@ public final class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * the stream will move the file to this subdir of {@link #mDataDir}. */
 	private final File mFinishedDir;
 
+	/**
+	 * FIXME: Initialize if the queue is non-empty during startup.
+	 * 
+	 * @see #getStatistics() */
 	private final IdentityFileQueueStatistics mStatistics = new IdentityFileQueueStatistics();
 	
 	/**
