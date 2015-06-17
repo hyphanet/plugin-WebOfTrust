@@ -5,6 +5,7 @@ package plugins.WebOfTrust;
 
 import java.io.InputStream;
 
+import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import freenet.keys.FreenetURI;
 
 
@@ -61,6 +62,11 @@ public interface IdentityFileQueue {
 	 * This means that the {@link InputStream} of a returned {@link IdentityFileStream} must be
 	 * closed before you call {@link #poll()} the next time.*/
 	public IdentityFileStream poll();
+
+	/**
+	 * Registers a {@link BackgroundJob} whose {@link BackgroundJob#triggerExecution()} shall be
+	 * called by the queue once an element is available for the job to {@link #poll()}.<br> */
+	public void registerEventHandler(BackgroundJob handler);
 
 	/**
 	 * @return
