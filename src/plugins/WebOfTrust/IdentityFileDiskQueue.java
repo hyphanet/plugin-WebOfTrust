@@ -30,7 +30,7 @@ import freenet.support.io.FileUtil;
  * {@link IdentityFileQueue} for details.<br>
  * The order of files is not preserved.<br>
  */
-public final class IdentityFileDiskQueue implements IdentityFileQueue {
+final class IdentityFileDiskQueue implements IdentityFileQueue {
 	/** Subdirectory of WOT data directory where we put our data dirs. */
 	private final File mDataDir;
 
