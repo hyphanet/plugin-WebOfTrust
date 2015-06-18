@@ -138,8 +138,20 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * - When a new identity is received by the IntrouductionServer it is fetched
 	 * - When an identity is manually added it is also fetched.
 	 * - ...
-	 */
+	 * 
+	 * The fetched identity files will be enqueued in the {@link #mIdentityFileQueue} for processing
+	 * by the {@link #mIdentityFileProcessor}. */
 	private IdentityFetcher mFetcher;
+	
+	/**
+	 * After {@link #mFetcher} has fetched an identity file, it is queued in this queue
+	 * for processing by {@link #mIdentityFileProcessor}. */
+	private IdentityFileQueue mIdentityFileQueue;
+	
+	/**
+	 * Processes identity files after they were fetched by the {@link #mFetcher} and enqueued in
+	 * the {@link #mIdentityFileQueue}. */
+	private IdentityFileProcessor mIdentityFileProcessor;
 	
 	
 	/**
