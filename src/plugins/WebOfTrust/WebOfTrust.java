@@ -1843,6 +1843,23 @@ public final class WebOfTrust extends WebOfTrustInterface
 			if(mFetcher != null)
 				mFetcher.stop();
 		}});
+		
+		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
+			if(mIdentityFileProcessor != null) {
+				// TODO: Code quality: Make all subsystems support non-blocking terminate() and
+				// waitForTermination(). Then the ShutdownThread/CountDownLatch mechanism can be
+				// replaced with two simple loops: One which calls terminate() on all subsystems,
+				// and one which does the same with waitForTermination().
+				// NOTICE: This is the same as the TODO at the beginning of the function:
+				// "TODO: Code quality: The way this parallelizes shutdown of subsystems is ugly:"
+				mIdentityFileProcessor.terminate();
+				try {
+					mIdentityFileProcessor.waitForTermination(Long.MAX_VALUE);
+				} catch (InterruptedException e) {
+					Logger.error(this, "ShutdownThread should not be interrupted!", e);
+				}
+			}
+		}});
 
 		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
 			if(mSubscriptionManager != null)
