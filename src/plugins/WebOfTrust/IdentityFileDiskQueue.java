@@ -154,6 +154,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			++mStatistics.mDeduplicatedFiles;
 		}
 		
+		// FIXME: Measure how long this takes. The IdentityFetcher contains code which could be
+		// recycled for that.
 		new IdentityFile(identityFileStream).write(filename);
 		
 		++mStatistics.mQueuedFiles;
