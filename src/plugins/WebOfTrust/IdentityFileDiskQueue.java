@@ -253,6 +253,9 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		 * a new filename for archival. */
 		private final FreenetURI mSourceURI;
 
+		/** Used to prevent {@link #close()} from executing twice */
+		private boolean mClosedAlready = false;
+
 
 		public InputStreamWithCleanup(File fileName, IdentityFile fileData,
 				InputStream fileStream) {
@@ -267,6 +270,11 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				super.close();
 			} finally {
 				synchronized(IdentityFileDiskQueue.this) {
+					// Prevent wrong value of mProcessingFiles by multiple calls to close(), which
+					// paranoid code might do.
+					if(mClosedAlready)
+						return;
+
 					assert(mStatistics.mProcessingFiles == 1);
 					
 					File moveTo = getAndReserveFinishedFilename(mSourceURI);
@@ -288,6 +296,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 						--mStatistics.mProcessingFiles;
 					
 					assert(mStatistics.mProcessingFiles == 0);
+
+					mClosedAlready = true;
 				}
 			}
 		}
