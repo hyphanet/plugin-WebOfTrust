@@ -130,7 +130,8 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 					    "Parsing identity XML failed severely - edition probably could NOT be "
 				      + "marked for not being fetched again: " + stream.mURI, e);
 				} finally {
-					Closer.close(stream.mXMLInputStream);
+					if(stream != null)
+						Closer.close(stream.mXMLInputStream);
 				}
 				
 				if(Thread.interrupted()) {
