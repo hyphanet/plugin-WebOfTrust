@@ -154,6 +154,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			if(!filename.delete())
 				throw new RuntimeException("Cannot write to " + filename);
 			
+			--mStatistics.mQueuedFiles;
 			++mStatistics.mDeduplicatedFiles;
 		}
 		
