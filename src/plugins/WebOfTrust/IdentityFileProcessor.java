@@ -69,6 +69,8 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 		// Not called in constructor since then the queue might call our functions concurrently
 		// before we are even finished with construction. Called in start() instead.
 		/* mQueue.registerEventHandler(this); */
+		
+		mXMLTransformer = xmlTransformer;
 	}
 
 	/** Must be called during startup of WOT */
