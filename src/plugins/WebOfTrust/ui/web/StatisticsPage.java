@@ -5,6 +5,7 @@ package plugins.WebOfTrust.ui.web;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
+import plugins.WebOfTrust.IdentityFileQueue.IdentityFileQueueStatistics;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
@@ -33,6 +34,7 @@ public class StatisticsPage extends WebPageImpl {
 	@Override
 	public void make(final boolean mayWrite) {
 		makeSummary();
+		makeIdentityFileQueueBox();
 	}
 
 	/**
@@ -80,6 +82,26 @@ public class StatisticsPage extends WebPageImpl {
 		        l10n().getString("StatisticsPage.SummaryBox.EventNotifications.Total", "amount",
 		            Long.toString(sm.getTotalNotificationsAmountForCurrentClients()))));
 		}
+		
+		box.addChild(list);
+	}
+	
+	public void makeIdentityFileQueueBox() {
+		String l10nPrefix = "StatisticsPage.IdentityFileQueueBox.";
+		HTMLNode box = addContentBox(l10n().getString(l10nPrefix + "Header"));
+		HTMLNode list = new HTMLNode("ul");
+		IdentityFileQueueStatistics stats = mWebOfTrust.getIdentityFileQueue().getStatistics();
+
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "TotalQueuedFiles")
+			+ stats.mTotalQueuedFiles));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "QueuedFiles")
+			+ stats.mQueuedFiles));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "ProcessingFiles")
+			+ stats.mProcessingFiles));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "FinishedFiles")
+			+ stats.mFinishedFiles));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "DeduplicatedFiles")
+			+ stats.mDeduplicatedFiles));
 		
 		box.addChild(list);
 	}
