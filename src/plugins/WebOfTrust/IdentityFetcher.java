@@ -123,6 +123,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	private int mFetchedCount = 0;
 	
 	/**
+	 * FIXME: Move to IdentityFileProcessor
 	 * The total time in milliseconds which processing of all fetched identity XML files took.
 	 */
 	private long mIdentityImportNanoseconds = 0;
@@ -849,6 +850,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	}
 	
 	/**
+	 * FIXME: Move to IdentityFileProcessor
 	 * Notice that this function is synchronized because it processes multiple member variables.
 	 * 
 	 * @return The average time it took for parsing an identity XML file in seconds.
@@ -861,6 +863,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	}
 	
 	/**
+	 * FIXME: Move to IdentityFileProcessor
 	 * Notice that this function is synchronized because it processes multiple member variables.
 	 * 
 	 * @return The average number of identity XML files which are fetched per hour.
