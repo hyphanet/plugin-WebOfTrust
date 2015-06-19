@@ -236,9 +236,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 				}
 				
 			};
-			
-			mFetcher = new IdentityFetcher(this, getPluginRespirator());
-			
+
+
+			mIdentityFileQueue = new IdentityFileDiskQueue(this);
+
+			mIdentityFileProcessor
+				= new IdentityFileProcessor(mIdentityFileQueue, mPR.getNode().getTicker());
+
+			mFetcher = new IdentityFetcher(this, getPluginRespirator(), mIdentityFileQueue);
+
+
 			// Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager while this is executing.
 			upgradeDB();
 			
@@ -267,7 +274,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			createSeedIdentities();
 			
+			// Identity files flow through the following pipe:
+			//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
+			// Thus, we start the pipe's daemons in reverse order to ensure that the receiving ones
+			// are available before the ones which fill the pipe.
+			mIdentityFileProcessor.start();
+			/* mIdentityFileQueue.start(); */    // Not necessary, has no thread.
             mFetcher.start();
+
 			
 			mInserter.start();
 
@@ -323,9 +337,23 @@ public final class WebOfTrust extends WebOfTrustInterface
 		mSubscriptionManager = new SubscriptionManager(this);
 		mSubscriptionManager.start();
 		
-		mFetcher = new IdentityFetcher(this, null);
-		mFetcher.start();
+
+		mIdentityFileQueue = new IdentityFileDiskQueue(this);
+
+		mIdentityFileProcessor
+			= new IdentityFileProcessor(mIdentityFileQueue, null);
+
+		mFetcher = new IdentityFetcher(this, null, mIdentityFileQueue);
 		
+		// Identity files flow through the following pipe:
+		//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
+		// Thus, we start the pipe's daemons in reverse order to ensure that the receiving ones
+		// are available before the ones which fill the pipe.
+		mIdentityFileProcessor.start();
+		/* mIdentityFileQueue.start(); */	// Not necessary, has no thread.
+		mFetcher.start();
+
+
 		mFCPInterface = new FCPInterface(this);
 		
 		setLanguage(LANGUAGE.getDefault()); // Even without UI, WOT will use l10n for Exceptions, so we need a language. Normally the node calls this for us.

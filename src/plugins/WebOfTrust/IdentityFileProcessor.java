@@ -7,8 +7,10 @@ import java.util.concurrent.TimeUnit;
 
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
+import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob;
 import freenet.node.PrioRunnable;
+import freenet.support.Logger;
 import freenet.support.Ticker;
 import freenet.support.io.NativeThread.PriorityLevel;
 
@@ -47,8 +49,17 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 
 
 	IdentityFileProcessor(IdentityFileQueue queue, Ticker ticker) {
-		mRealDelayedBackgroundJob = new TickerDelayedBackgroundJob(
-			new Processor(), "WOT IdentityFileProcessor", PROCESSING_DELAY_MILLISECONDS, ticker);
+		if(ticker != null) {
+			mRealDelayedBackgroundJob = new TickerDelayedBackgroundJob(
+				new Processor(), "WOT IdentityFileProcessor", PROCESSING_DELAY_MILLISECONDS,
+				ticker);
+		} else {
+			// Don't log this as error since it is used for unit tests
+			Logger.warning(this, "No Ticker provided, processing will never execute!",
+				new RuntimeException("For stack trace"));
+
+			mRealDelayedBackgroundJob = MockDelayedBackgroundJob.DEFAULT;
+		}
 		
 		mQueue = queue;
 		// Not called in constructor since then the queue might call our functions concurrently

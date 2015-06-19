@@ -105,7 +105,11 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
      * Volatile since {@link #stop()} needs to use it without synchronization.
      */
     private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
-	
+
+    /** Fetched identity files are stored for processing at this {@link IdentityFileQueue}. */
+    private final IdentityFileQueue mQueue;
+
+
 	/* Statistics */
 	
 	/**
@@ -138,8 +142,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * 
 	 * @param myWoT A reference to a {@link WebOfTrust}
 	 */
-	protected IdentityFetcher(WebOfTrust myWoT, PluginRespirator respirator) {
+	protected IdentityFetcher(WebOfTrust myWoT, PluginRespirator respirator,
+			IdentityFileQueue queue) {
 		mWoT = myWoT;
+		mQueue = queue;
 		
 		mDB = mWoT.getDatabase();
 		
