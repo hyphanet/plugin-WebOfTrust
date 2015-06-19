@@ -401,13 +401,17 @@ public final class XMLTransformer {
 			// When shouldFetchIdentity() changes from true to false due to an identity becoming
 			// distrusted, this change will not cause the IdentityFetcher to abort the fetch
 			// immediately: It queues the command to abort the fetch, and processes commands after
-			// some seconds. Thus, it is possible that the IdentityFetcher calls this function to
-			// import an identity which is not actually wanted anymore. So we must check whether the
-			// identity is really still wanted.
+			// some seconds.
+			// Also, fetched identity files are enqueued for processing in an IdentityFileQueue, and
+			// might wait there for several minutes.
+			// Thus, it is possible that this function is called for an Identity which is not
+			// actually wanted anymore. So we must check whether the identity is really still
+			// wanted.
             if(!mWoT.shouldFetchIdentity(identity)) {
                 Logger.normal(this,
                     "importIdentity() called for unwanted identity, probably because the "
-                  + "IdentityFetcher has not processed the AbortFetchCommand yet, not importing: "
+                  + "IdentityFetcher has not processed the AbortFetchCommand yet or the "
+                  + "file was in the IdentityFileQueue for some time, not importing: "
                   + identity);
                 return;
             }
