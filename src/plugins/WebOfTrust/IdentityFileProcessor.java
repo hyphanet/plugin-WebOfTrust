@@ -13,6 +13,7 @@ import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.Ticker;
+import freenet.support.io.Closer;
 import freenet.support.io.NativeThread.PriorityLevel;
 
 /**
@@ -102,14 +103,19 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 		public void run() {
 			Logger.normal(this, "run()...");
 			
-			IdentityFileStream stream = null;
 			// We query the IdentityFileQueue for *multiple* files until it is empty since if
 			// it does multiple calls to triggerExecution(), that will only cause one execution of
 			// run().
-			while((stream = mQueue.poll()) != null) {
-				Logger.normal(this, "run(): Processing: " + stream.mURI);
+			while(true) {
+				IdentityFileStream stream = null;
 				
 				try {
+					stream = mQueue.poll();
+					if(stream == null)
+						break;
+					
+					Logger.normal(this, "run(): Processing: " + stream.mURI);
+					
 					/* FIXME: Make the commented-out code work by moving the relevant stuff
 					 * from IdentityFetcher to this class */
 					
@@ -123,6 +129,8 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 					Logger.error(this,
 					    "Parsing identity XML failed severely - edition probably could NOT be "
 				      + "marked for not being fetched again: " + stream.mURI, e);
+				} finally {
+					Closer.close(stream.mXMLInputStream);
 				}
 				
 				if(Thread.interrupted()) {
