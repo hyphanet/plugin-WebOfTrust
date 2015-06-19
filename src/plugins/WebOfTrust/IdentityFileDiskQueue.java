@@ -64,6 +64,9 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		mProcessingDir = new File(mDataDir, "Processing");
 		mFinishedDir = new File(mDataDir, "Finished");
 		
+		if(!mDataDir.exists() && !mDataDir.mkdir())
+			throw new RuntimeException("Cannot create " + mDataDir);
+		
 		if(!mQueueDir.exists() && !mQueueDir.mkdir())
 			throw new RuntimeException("Cannot create " + mQueueDir);
 		
