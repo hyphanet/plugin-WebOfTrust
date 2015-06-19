@@ -3950,6 +3950,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 	public IdentityFetcher getIdentityFetcher() {
 		return mFetcher;
 	}
+	
+	public IdentityFileQueue getIdentityFileQueue() {
+		return mIdentityFileQueue;
+	}
 
     public IdentityInserter getIdentityInserter() {
         return mInserter;

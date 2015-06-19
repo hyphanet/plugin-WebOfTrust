@@ -34,7 +34,7 @@ import freenet.keys.FreenetURI;
  * Notice: Implementations do not necessarily have to be disk-based, the word "file" is only used
  * to name the data set of an {@link Identity} in an easy to understand way.
  */
-interface IdentityFileQueue {
+public interface IdentityFileQueue {
 	public static final class IdentityFileStream {
 		public final FreenetURI mURI;
 
