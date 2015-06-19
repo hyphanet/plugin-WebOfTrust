@@ -239,17 +239,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 
 			mIdentityFileQueue = new IdentityFileDiskQueue(this);
+			
+			mXMLTransformer = new XMLTransformer(this);
 
-			mIdentityFileProcessor
-				= new IdentityFileProcessor(mIdentityFileQueue, mPR.getNode().getTicker());
+			mIdentityFileProcessor = new IdentityFileProcessor(
+				mIdentityFileQueue, mPR.getNode().getTicker(), mXMLTransformer);
 
 			mFetcher = new IdentityFetcher(this, getPluginRespirator(), mIdentityFileQueue);
 
 
 			// Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager while this is executing.
 			upgradeDB();
-			
-			mXMLTransformer = new XMLTransformer(this);
 
 			
 			mInserter = new IdentityInserter(this);
@@ -341,7 +341,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		mIdentityFileQueue = new IdentityFileDiskQueue(this);
 
 		mIdentityFileProcessor
-			= new IdentityFileProcessor(mIdentityFileQueue, null);
+			= new IdentityFileProcessor(mIdentityFileQueue, null, null);
 
 		mFetcher = new IdentityFetcher(this, null, mIdentityFileQueue);
 		
