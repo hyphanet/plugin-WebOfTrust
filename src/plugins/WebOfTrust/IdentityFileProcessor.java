@@ -5,6 +5,7 @@ package plugins.WebOfTrust;
 
 import java.util.concurrent.TimeUnit;
 
+import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
@@ -46,9 +47,12 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 
 	/** Backend of the functions of this class which implement {@link DelayedBackgroundJob}. */
 	private final DelayedBackgroundJob mRealDelayedBackgroundJob;
+	
+	/** Identity files will be passed to this {@link XMLTransformer} for the actual processing. */
+	private final XMLTransformer mXMLTransformer;
 
 
-	IdentityFileProcessor(IdentityFileQueue queue, Ticker ticker) {
+	IdentityFileProcessor(IdentityFileQueue queue, Ticker ticker, XMLTransformer xmlTransformer) {
 		if(ticker != null) {
 			mRealDelayedBackgroundJob = new TickerDelayedBackgroundJob(
 				new Processor(), "WOT IdentityFileProcessor", PROCESSING_DELAY_MILLISECONDS,
@@ -94,12 +98,39 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 	/** The actual processing thread, run by {@link IdentityFileProcessor#triggerExecution()}. */
 	private final class Processor implements Runnable, PrioRunnable {
 		public void run() {
-			throw new UnsupportedOperationException("FIXME: Implement.");
-			// Notice: The implementation should query the IdentityFileQueue for *multiple* files
-			// until it is empty since multiple calls to triggerExecution() will only cause one
-			// execution of run().
-			// Notice: waitForTermination() uses an infinite delay since it assumes this function
-			// will support thread interruption. Thus, please implement it to do so.
+			Logger.normal(this, "run()...");
+			
+			IdentityFileStream stream = null;
+			// We query the IdentityFileQueue for *multiple* files until it is empty since if
+			// it does multiple calls to triggerExecution(), that will only cause one execution of
+			// run().
+			while((stream = mQueue.poll()) != null) {
+				Logger.normal(this, "run(): Processing: " + stream.mURI);
+				
+				try {
+					/* FIXME: Make the commented-out code work by moving the relevant stuff
+					 * from IdentityFetcher to this class */
+					
+					// final long startTime = System.nanoTime();
+					mXMLTransformer.importIdentity(stream.mURI, stream.mXMLInputStream);
+					// final long endTime = System.nanoTime();
+	
+					// ++mFetchedCount;
+					// mIdentityImportNanoseconds +=  endTime - startTime;
+				} catch(RuntimeException e) {
+					Logger.error(this,
+					    "Parsing identity XML failed severely - edition probably could NOT be "
+				      + "marked for not being fetched again: " + stream.mURI, e);
+				}
+				
+				if(Thread.interrupted()) {
+					// terminate() interrupts our thread, so we obey that.
+					Logger.normal(this, "run(): Shutdown requested, exiting...");
+					break;
+				}
+			}
+			
+			Logger.normal(this, "run() finished.");
 		}
 
 		@Override public int getPriority() {

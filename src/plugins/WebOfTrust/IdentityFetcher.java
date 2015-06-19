@@ -12,6 +12,7 @@ import java.util.HashMap;
 
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
@@ -810,31 +811,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
 			
-			synchronized(mWoT) { // Preserve the locking order: importIdentity() will synchronize on the WOT and then on this IdentityFetcher
-			synchronized(this) {
-				if(!mRequests.containsKey(identityID)) {
-                    // If mRequests doesn't contain the request thats not necessarily an error:
-                    // This thread might not have gotten the locks before the thread which
-                    // terminated the request.
-                    // Notice: This check can have false negatives: The identity might have a
-				    // pending AbortFetchCommand which was not processed yet. So mRequests can
-				    // still contain a request for the identity even though we should not fetch it.
-				    // Thus, the XMLTransformer will have to also check for whether the identity is
-				    // actually wanted.
-					return;
-				}
-
-				final long startTime = System.nanoTime();
-				mWoT.getXMLTransformer().importIdentity(realURI, inputStream);
-				final long endTime = System.nanoTime();
-
-				++mFetchedCount;
-				mIdentityImportNanoseconds +=  endTime - startTime;
-			}
-			}
+			mQueue.add(new IdentityFileStream(realURI, inputStream));
 		}
 		catch(Exception e) {
-			Logger.error(this, "Parsing identity XML failed severely - edition probably could NOT be marked for not being fetched again: " + realURI, e);
+			Logger.error(this, "Queueing identity XML failed: " + realURI, e);
 		}
 		finally {
 			Closer.close(inputStream);
