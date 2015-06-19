@@ -312,7 +312,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * external scripts. */
 	private File getAndReserveFinishedFilename(FreenetURI sourceURI) {
 		File result = new File(mFinishedDir,
-			String.format("%0d_identityID-%s_edition-%0d.wot-identity",
+			String.format("%09d_identityID-%s_edition-%018d.wot-identity",
 				++mStatistics.mFinishedFiles,
 				getEncodedIdentityID(sourceURI),
 				sourceURI.getEdition()));
