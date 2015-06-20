@@ -75,6 +75,23 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		
 		if(!mFinishedDir.exists() && !mFinishedDir.mkdir())
 			throw new RuntimeException("Cannot create " + mFinishedDir);
+
+		cleanDirectories();
+	}
+
+	/** Used at startup to ensure that the data directories are in a clean state */
+	private synchronized void cleanDirectories() {
+		// Queue dir policy:
+		// - Keep all queued files so we don't have to download them again.
+		// - Count them so mStatistics.mQueuedFiles is correct.
+		for(File file : mQueueDir.listFiles()) {
+			if(!file.getName().endsWith(IdentityFile.FILE_EXTENSION)) {
+				Logger.warning(this, "Unexpected file type: " + file.getAbsolutePath());
+				continue;
+			}
+
+			++mStatistics.mQueuedFiles;
+		}
 	}
 
 	/**
