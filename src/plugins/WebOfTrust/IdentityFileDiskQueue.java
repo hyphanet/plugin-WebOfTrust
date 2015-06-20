@@ -44,6 +44,15 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * When the stream of a file returned by {@link #poll()} is closed, the closing function of
 	 * the stream will move the file to this subdir of {@link #mDataDir}. */
 	private final File mFinishedDir;
+	
+	/**
+	 * Amount of old files in {@link #mFinishedDir}, i.e. files from a previous session.<br>
+	 * We use this to ensure that filename index prefixes of new files do not collide.<br><br>
+	 * 
+	 * Notice: We do intentionally track this separately instead of initializing
+	 * {@link IdentityFileQueueStatistics#mFinishedFiles} with this value: The other statistics are
+	 * not persisted, so they would not be coherent with this value. */
+	private int mOldFinishedFileCount;
 
 	/**
 	 * FIXME: Initialize if the queue is non-empty during startup.
@@ -111,6 +120,35 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			                     + file.getAbsolutePath());
 			}
 		}
+		
+		
+		// Finished dir policy:
+		// The finished dir is an archival dir which archives old identity files for debug purposes.
+		// Thus, we want to keep all files in mFinishedDir.
+		// To ensure that new files do not collide with the index prefixes of old ones, we now need
+		// to find the highest filename index prefix of the old files.
+		int maxFinishedIndex = 0;
+
+		for(File file: mFinishedDir.listFiles()) {
+			String name = file.getName();
+			
+			if(!name.endsWith(IdentityFile.FILE_EXTENSION)) {
+				Logger.warning(this, "Unexpected file type: " + file.getAbsolutePath());
+				continue;
+			}
+
+			try {
+				 int index = Integer.parseInt(name.substring(0, name.indexOf('_')));
+				 maxFinishedIndex = Math.max(maxFinishedIndex, index);
+			} catch(RuntimeException e) { // TODO: Code quality: Java 7
+				                          // catch NumberFormatException | IndexOutOfBoundsException
+				
+				Logger.warning(this, "Cannot parse file name: " + file.getAbsolutePath());
+				continue;
+			}
+		}
+		
+		mOldFinishedFileCount = maxFinishedIndex;
 	}
 
 	/**
@@ -362,7 +400,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	private File getAndReserveFinishedFilename(FreenetURI sourceURI) {
 		File result = new File(mFinishedDir,
 			String.format("%09d_identityID-%s_edition-%018d" + IdentityFile.FILE_EXTENSION,
-				++mStatistics.mFinishedFiles,
+				++mStatistics.mFinishedFiles + mOldFinishedFileCount,
 				getEncodedIdentityID(sourceURI),
 				sourceURI.getEdition()));
 		
