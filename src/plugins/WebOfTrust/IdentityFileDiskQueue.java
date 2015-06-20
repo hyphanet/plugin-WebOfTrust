@@ -54,10 +54,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * not persisted, so they would not be coherent with this value. */
 	private int mOldFinishedFileCount;
 
-	/**
-	 * FIXME: Initialize if the queue is non-empty during startup.
-	 * 
-	 * @see #getStatistics() */
+	/** @see #getStatistics() */
 	private final IdentityFileQueueStatistics mStatistics = new IdentityFileQueueStatistics();
 	
 	/**
