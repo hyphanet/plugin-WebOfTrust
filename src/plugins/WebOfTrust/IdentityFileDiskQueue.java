@@ -81,6 +81,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * Wrapper class for storing an {@link IdentityFileStream} to disk via {@link Serializable}.
 	 * This is used to write and read the actual files of the queue. */
 	private static final class IdentityFile implements Serializable {
+		public static transient final String FILE_EXTENSION = ".wot-identity";
+		
 		private static final long serialVersionUID = 1L;
 
 		/** @see IdentityFileStream#mURI */
@@ -182,7 +184,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		// An existing file of an old edition will be overwritten then.
 		// We cause the collissions by using the ID of the identity as the only variable component
 		// of the filename.
-		return new File(mQueueDir, getEncodedIdentityID(identityFileURI) + ".wot-identity");
+		return new File(mQueueDir,
+			            getEncodedIdentityID(identityFileURI) + IdentityFile.FILE_EXTENSION);
 	}
 
 	private String getEncodedIdentityID(FreenetURI identityURI) {
@@ -322,7 +325,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * external scripts. */
 	private File getAndReserveFinishedFilename(FreenetURI sourceURI) {
 		File result = new File(mFinishedDir,
-			String.format("%09d_identityID-%s_edition-%018d.wot-identity",
+			String.format("%09d_identityID-%s_edition-%018d" + IdentityFile.FILE_EXTENSION,
 				++mStatistics.mFinishedFiles,
 				getEncodedIdentityID(sourceURI),
 				sourceURI.getEdition()));
