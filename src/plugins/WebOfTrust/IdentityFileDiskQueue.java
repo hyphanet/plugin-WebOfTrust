@@ -57,10 +57,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	/** @see #getStatistics() */
 	private final IdentityFileQueueStatistics mStatistics = new IdentityFileQueueStatistics();
 	
-	/**
-	 * FIXME: Trigger execution of the handler if the queue is non-empty during startup.
-	 * 
-	 * @see #registerEventHandler(BackgroundJob) */
+	/** @see #registerEventHandler(BackgroundJob) */
 	private BackgroundJob mEventHandler;
 
 
@@ -146,6 +143,14 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		}
 		
 		mOldFinishedFileCount = maxFinishedIndex;
+		
+		
+		// We cannot do this now since we have no event handler yet.
+		// registerEventHandler() does it for us.
+		/*
+		if(mStatistics.mQueuedFiles != 0)
+			mEventHandler.triggerExecution();
+		*/
 	}
 
 	/**
@@ -413,6 +418,11 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		}
 		
 		mEventHandler = handler;
+		
+		// We preserve queued files across restarts, so as soon after startup as we know who
+		// the event handler is, we must wake up the event handler to process the waiting files.
+		if(mStatistics.mQueuedFiles != 0)
+			mEventHandler.triggerExecution();
 	}
 
 	@Override public synchronized IdentityFileQueueStatistics getStatistics() {
