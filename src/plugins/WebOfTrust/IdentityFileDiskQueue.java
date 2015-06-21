@@ -234,6 +234,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				return result;
 			} catch(RuntimeException e) {
 				Logger.error(this, "Error in poll() for queued file: " + queuedFile, e);
+				// FIXME: Delete the file if debug logging is not enabled.
 				// Try whether we can process the next file
 				continue;
 			}
