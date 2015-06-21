@@ -31,7 +31,7 @@ import freenet.support.io.FileUtil;
 final class IdentityFile implements Serializable {
 	public static transient final String FILE_EXTENSION = ".wot-identity";
 	
-	private static final long serialVersionUID = 3L;
+	private static final long serialVersionUID = 4L;
 
 	/** @see #getURI() */
 	private final String mURI;
@@ -128,7 +128,11 @@ final class IdentityFile implements Serializable {
 	}
 
 	private int hashCodeRecompute() {
-		return mURI.hashCode() // Use String.hashCode(), not FreenetURI.hashCode(), to avoid cache
-			^ Arrays.hashCode(mXML);
+		// Use Arrays.hashCode(), not String.hashCode() or even FreenetURI.hashCode(), to avoid
+		// caching:
+		// We use the hash code to validate integrity of serialized data, so it must always be
+		// recomputed.
+		return Arrays.hashCode(mURI.toCharArray())
+			 ^ Arrays.hashCode(mXML);
 	}
 }
