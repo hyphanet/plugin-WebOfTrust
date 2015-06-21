@@ -6,6 +6,7 @@ package plugins.WebOfTrust;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -150,6 +151,12 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 		 */
 		public static transient final int LENGTH = 43;
 		
+		/**
+		 * The {@link FreenetURI#getRoutingKey()} of the {@link FreenetURI} of the Identity.
+		 * This is the backend data of the real ID {@link #mID}, which only differs in encoding. */
+		private final byte[] mRoutingKey;
+		
+		/** {@link Base64}-encoded version of {@link #mRoutingKey}. */
 		private final String mID;
 		
 		/**
@@ -162,7 +169,7 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 				throw new IllegalArgumentException("ID is too long, length: " + id.length());
 			
 			try {
-				Base64.decode(id);
+				mRoutingKey = Base64.decode(id);
 			} catch (IllegalBase64Exception e) {
 				throw new RuntimeException("ID does not contain valid Base64: " + id);
 			}
@@ -185,7 +192,8 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			}
 			
 			/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
-			mID = Base64.encode(uri.getRoutingKey());
+			mRoutingKey = uri.getRoutingKey();
+			mID = Base64.encode(mRoutingKey);
 		}
 		
 		/**
@@ -210,9 +218,20 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			return new IdentityID(uri);
 		}
 		
+		/**
+		 * @return The IdentityID encoded as {@link Base64}.
+		 * @see #toStringBase36() */
 		@Override
 		public String toString() {
 			return mID;
+		}
+		
+		/**
+		 * TODO: Performance: Use something faster than {@link BigInteger#toString()}.
+		 * @return The IdentityID encoded as base 36.
+		 * @see #toString() Function for encoding as base 64. */
+		public String toStringBase36() {
+			return new BigInteger(mRoutingKey).toString(36);
 		}
 		
 		@Override
