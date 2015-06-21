@@ -19,7 +19,7 @@ import freenet.support.io.FileUtil;
 
 /**
  * Wrapper class for storing an {@link IdentityFileStream} to disk via {@link Serializable}.
- * This is used to write and read the actual files of the queue.
+ * This is used to write and read the files of the {@link IdentityFileDiskQueue}.
  * 
  * FIXME: Add checksum and validate it during deserialization. This is indicated because:
  * 1) I have done a test run where I modified the XML on a serialized file - the result was that
