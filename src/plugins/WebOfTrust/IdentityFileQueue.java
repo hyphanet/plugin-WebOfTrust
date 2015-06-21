@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.FilterInputStream;
 import java.io.InputStream;
 
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
@@ -35,6 +36,17 @@ import freenet.keys.FreenetURI;
  * to name the data set of an {@link Identity} in an easy to understand way.
  */
 public interface IdentityFileQueue {
+	/**
+	 * TODO: Code quality: This should be a {@link FilterInputStream} to allow replacing
+	 * 
+	 *     if(identityFileStream != null)
+	 *         Closer.close(identityFileStream.mXMLInputStream);
+	 * 
+	 * with
+	 * 
+	 *     Closer.close(identityFileStream);
+	 *     
+	 * in class IdentityFileQueue (variables are named differently there, search for Closer). */
 	public static final class IdentityFileStream {
 		public final FreenetURI mURI;
 
