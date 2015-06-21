@@ -21,13 +21,7 @@ import freenet.support.io.FileUtil;
 
 /**
  * Wrapper class for storing an {@link IdentityFileStream} to disk via {@link Serializable}.
- * This is used to write and read the files of the {@link IdentityFileDiskQueue}.
- * 
- * FIXME: Add checksum and validate it during deserialization. This is indicated because:
- * 1) I have done a test run where I modified the XML on a serialized file - the result was that
- *    the deserializer does not notice it, the modified XML was imported as is.
- * 2) At startup, we do not delete pre-existing files. They might have been damaged due to
- *    system crashes, force termination, etc. */
+ * This is used to write and read the files of the {@link IdentityFileDiskQueue}. */
 final class IdentityFile implements Serializable {
 	public static transient final String FILE_EXTENSION = ".wot-identity";
 	
