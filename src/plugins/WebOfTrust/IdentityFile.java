@@ -32,8 +32,8 @@ final class IdentityFile implements Serializable {
 	
 	private static final long serialVersionUID = 2L;
 
-	/** @see IdentityFileStream#mURI */
-	public final FreenetURI mURI;
+	/** @see #getURI() */
+	private final FreenetURI mURI;
 
 	/** @see IdentityFileStream#mXMLInputStream */
 	public final byte[] mXML;
@@ -110,6 +110,11 @@ final class IdentityFile implements Serializable {
 			Closer.close(ois);
 			Closer.close(fis);
 		}
+	}
+
+	/** @see IdentityFileStream#mURI */
+	public FreenetURI getURI() {
+		return mURI;
 	}
 
 	@Override public int hashCode() {

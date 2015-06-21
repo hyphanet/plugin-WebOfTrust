@@ -221,7 +221,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				
 				// The InputStreamWithCleanup wrapper will remove the file from mProcessingDir once
 				// the stream is close()d.
-				IdentityFileStream result = new IdentityFileStream(fileData.mURI,
+				IdentityFileStream result = new IdentityFileStream(fileData.getURI(),
 					new InputStreamWithCleanup(dequeuedFile, fileData,
 						new ByteArrayInputStream(fileData.mXML)));
 				
@@ -267,7 +267,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				InputStream fileStream) {
 			super(fileStream);
 			mSourceFile = fileName;
-			mSourceURI = fileData.mURI;
+			mSourceURI = fileData.getURI();
 		}
 
 		@Override
