@@ -242,6 +242,9 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 		
 		/**
 		 * TODO: Performance: Use something faster than {@link BigInteger#toString()}.
+		 * FIXME: Use something which does not add a "-" sign if it considers the byte[] to be
+		 * negative.
+		 * 
 		 * @return The IdentityID encoded as base 36.
 		 * @see #toString() Function for encoding as base 64. */
 		public String toStringBase36() {
