@@ -1,0 +1,91 @@
+/* This code is part of WoT, a plugin for Freenet. It is distributed
+ * under the GNU General Public License, version 2 (or at your option
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
+package plugins.WebOfTrust;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
+import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
+import freenet.keys.FreenetURI;
+import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
+
+/**
+ * Wrapper class for storing an {@link IdentityFileStream} to disk via {@link Serializable}.
+ * This is used to write and read the actual files of the queue.
+ * 
+ * FIXME: Add checksum and validate it during deserialization. This is indicated because:
+ * 1) I have done a test run where I modified the XML on a serialized file - the result was that
+ *    the deserializer does not notice it, the modified XML was imported as is.
+ * 2) At startup, we do not delete pre-existing files. They might have been damaged due to
+ *    system crashes, force termination, etc. */
+final class IdentityFile implements Serializable {
+	public static transient final String FILE_EXTENSION = ".wot-identity";
+	
+	private static final long serialVersionUID = 1L;
+
+	/** @see IdentityFileStream#mURI */
+	public final FreenetURI mURI;
+
+	/** @see IdentityFileStream#mXMLInputStream */
+	public final byte[] mXML;
+
+	public IdentityFile(IdentityFileStream source) {
+		mURI = source.mURI.clone();
+		
+		ByteArrayOutputStream bos = null;
+		try {
+			bos = new ByteArrayOutputStream(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE + 1);
+			FileUtil.copy(source.mXMLInputStream, bos, -1);
+			mXML = bos.toByteArray();
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			Closer.close(bos);
+			Closer.close(source.mXMLInputStream);
+		}
+	}
+
+	public void write(File file) {
+		FileOutputStream fos = null;
+		ObjectOutputStream ous = null;
+		
+		try {
+			fos = new FileOutputStream(file);
+			ous = new ObjectOutputStream(fos);
+			ous.writeObject(this);
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			Closer.close(ous);
+			Closer.close(fos);
+		}
+	}
+
+	public static IdentityFile read(File source) {
+		FileInputStream fis = null;
+		ObjectInputStream ois = null;
+		
+		try {
+			fis = new FileInputStream(source);
+			ois = new ObjectInputStream(fis);
+			final IdentityFile deserialized = (IdentityFile)ois.readObject();
+			assert(deserialized != null) : "Not an IdentityFile: " + source;
+			return deserialized;
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		} finally {
+			Closer.close(ois);
+			Closer.close(fis);
+		}
+	}
+}
