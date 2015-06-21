@@ -193,6 +193,20 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			
 			/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
 			mRoutingKey = uri.getRoutingKey();
+			// TODO: Performance: Only compute this on-demand from mRoutingKey in getters.
+			// Also make sure that the opposite is possible for the constructor which only
+			// receives the value of mID but not mRoutingKey: It should not compute the
+			// mRoutingKey from the ID; getters should do that on demand.
+			// Further, please check the call hierarchy of all functions of this class to ensure
+			// that the lack of always decoding the Base64 which this will introduce does not cause
+			// a lack of validation of the input data: This class is being used specifically to
+			// validate data from the network in some places, so it must continue to do so there.
+			// You should introduce additional validating constructAndValidate*() functions for
+			// those cases.
+			// Notice that the opposite applies as well:
+			// Some of the existing constructAndValidate*() functions are used in places which do
+			// not actually need validation. Those places should be changed to use the new
+			// non-validating construction functions.
 			mID = Base64.encode(mRoutingKey);
 		}
 		
