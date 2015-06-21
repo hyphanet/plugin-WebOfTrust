@@ -37,20 +37,30 @@ final class IdentityFile implements Serializable {
 	/** @see IdentityFileStream#mXMLInputStream */
 	public final byte[] mXML;
 
-	public IdentityFile(IdentityFileStream source) {
-		mURI = source.mURI.clone();
+	private IdentityFile(FreenetURI uri, byte[] xml) {
+		mURI = uri;
+		mXML = xml;
+	}
+
+	static IdentityFile read(IdentityFileStream source) {
+		FreenetURI uri;
+		byte[] xml;
+		
+		uri = source.mURI.clone();
 		
 		ByteArrayOutputStream bos = null;
 		try {
 			bos = new ByteArrayOutputStream(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE + 1);
 			FileUtil.copy(source.mXMLInputStream, bos, -1);
-			mXML = bos.toByteArray();
+			xml = bos.toByteArray();
 		} catch(IOException e) {
 			throw new RuntimeException(e);
 		} finally {
 			Closer.close(bos);
 			Closer.close(source.mXMLInputStream);
 		}
+		
+		return new IdentityFile(uri, xml);
 	}
 
 	public void write(File file) {
