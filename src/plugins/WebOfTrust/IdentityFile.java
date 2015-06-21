@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.net.MalformedURLException;
 import java.util.Arrays;
 
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
@@ -30,10 +31,10 @@ import freenet.support.io.FileUtil;
 final class IdentityFile implements Serializable {
 	public static transient final String FILE_EXTENSION = ".wot-identity";
 	
-	private static final long serialVersionUID = 2L;
+	private static final long serialVersionUID = 3L;
 
 	/** @see #getURI() */
-	private final FreenetURI mURI;
+	private final String mURI;
 
 	/** @see IdentityFileStream#mXMLInputStream */
 	public final byte[] mXML;
@@ -46,16 +47,16 @@ final class IdentityFile implements Serializable {
 
 
 	private IdentityFile(FreenetURI uri, byte[] xml) {
-		mURI = uri;
+		mURI = uri.toString();
 		mXML = xml;
-		mHashCode = hashCodeCompute();
+		mHashCode = hashCodeRecompute();
 	}
 
 	static IdentityFile read(IdentityFileStream source) {
 		FreenetURI uri;
 		byte[] xml;
 		
-		uri = source.mURI.clone();
+		uri = source.mURI;
 		
 		ByteArrayOutputStream bos = null;
 		try {
@@ -98,7 +99,7 @@ final class IdentityFile implements Serializable {
 			final IdentityFile deserialized = (IdentityFile)ois.readObject();
 			assert(deserialized != null) : "Not an IdentityFile: " + source;
 			
-			if(deserialized.hashCode() != deserialized.hashCodeCompute())
+			if(deserialized.hashCode() != deserialized.hashCodeRecompute())
 				throw new IOException("Checksum mismatch: " + source);
 			
 			return deserialized;
@@ -114,14 +115,20 @@ final class IdentityFile implements Serializable {
 
 	/** @see IdentityFileStream#mURI */
 	public FreenetURI getURI() {
-		return mURI;
+		try {
+			return new FreenetURI(mURI);
+		} catch (MalformedURLException e) {
+			// We always set mURI via FreenetURI.toString(), so it should always be valid.
+			throw new RuntimeException("SHOULD NEVER HAPPEN", e);
+		}
 	}
 
 	@Override public int hashCode() {
 		return mHashCode;
 	}
 
-	public int hashCodeCompute() {
-		return mURI.hashCode() ^ Arrays.hashCode(mXML);
+	private int hashCodeRecompute() {
+		return mURI.hashCode() // Use String.hashCode(), not FreenetURI.hashCode(), to avoid cache
+			^ Arrays.hashCode(mXML);
 	}
 }
