@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Arrays;
 
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import freenet.keys.FreenetURI;
@@ -29,17 +30,25 @@ import freenet.support.io.FileUtil;
 final class IdentityFile implements Serializable {
 	public static transient final String FILE_EXTENSION = ".wot-identity";
 	
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 2L;
 
 	/** @see IdentityFileStream#mURI */
 	public final FreenetURI mURI;
 
 	/** @see IdentityFileStream#mXMLInputStream */
 	public final byte[] mXML;
+	
+	/**
+	 * Java serialization does not verify data integrity, so we do it ourselves with this hash.<br>
+	 * This is a good idea since at startup, we do not flush files enqueued in the
+	 * {@link IdentityFileDiskQueue} - they might have been corrupted due to a crash. */
+	private final int mHashCode;
+
 
 	private IdentityFile(FreenetURI uri, byte[] xml) {
 		mURI = uri;
 		mXML = xml;
+		mHashCode = hashCodeCompute();
 	}
 
 	static IdentityFile read(IdentityFileStream source) {
@@ -88,6 +97,10 @@ final class IdentityFile implements Serializable {
 			ois = new ObjectInputStream(fis);
 			final IdentityFile deserialized = (IdentityFile)ois.readObject();
 			assert(deserialized != null) : "Not an IdentityFile: " + source;
+			
+			if(deserialized.hashCode() != deserialized.hashCodeCompute())
+				throw new IOException("Checksum mismatch: " + source);
+			
 			return deserialized;
 		} catch(IOException e) {
 			throw new RuntimeException(e);
@@ -97,5 +110,13 @@ final class IdentityFile implements Serializable {
 			Closer.close(ois);
 			Closer.close(fis);
 		}
+	}
+
+	@Override public int hashCode() {
+		return mHashCode;
+	}
+
+	public int hashCodeCompute() {
+		return mURI.hashCode() ^ Arrays.hashCode(mXML);
 	}
 }
