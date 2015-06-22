@@ -336,10 +336,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			++mStatistics.mFinishedFiles;
 			assert(mStatistics.mFinishedFiles <= mStatistics.mTotalQueuedFiles);
 			
-			if(!mSourceFile.delete())
-				Logger.error(this, "Cannot delete file: " + mSourceFile);
-			else
+			if(mSourceFile.delete())
 				--mStatistics.mProcessingFiles;
+			else
+				Logger.error(this, "Cannot delete file: " + mSourceFile);
 		}
 
 		/** Must be called while synchronized(IdentityFileDiskQueue.this) */
@@ -356,10 +356,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				// We must delete as fallback: Otherwise, subsequent processed files of the
 				// same Identity would collide with the filenames in the mProcessingDir.
 				// (Do not use deleteFile() since it would update mStatistics which we did already.)
-				if(!mSourceFile.delete())
-					Logger.error(this, "Cannot delete file: " + mSourceFile);
-				else
+				if(mSourceFile.delete())
 					--mStatistics.mProcessingFiles;
+				else
+					Logger.error(this, "Cannot delete file: " + mSourceFile);
 			} else
 				--mStatistics.mProcessingFiles;
 		}
