@@ -61,6 +61,12 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * {@link LogLevel#DEBUG} for this class. Used as performance optimization to prevent
 	 * construction of the log strings if it is not necessary. */
 	private static transient volatile boolean logDEBUG = false;
+	
+	/**
+	 * Automatically set to true by {@link Logger} if the log level is set to
+	 * {@link LogLevel#MINOR} for this class. Used as performance optimization to prevent
+	 * construction of the log strings if it is not necessary. */
+	private static transient volatile boolean logMINOR = false;
 
 	static {
 		// Necessary for automatic setting of logDEBUG and logMINOR
@@ -179,17 +185,41 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		File filename = getQueueFilename(identityFileStream.mURI);
 		// Delete for deduplication
 		if(filename.exists()) {
-			assert(IdentityFile.read(filename).getURI().getEdition()
-				<= identityFileStream.mURI.getEdition())
-				: "The IdentityFetcher must not fetch old editions after more recent ones! "
-				+ "NOTICE: If WOT was restarted, fetching old editions can happen: The queued "
-				+ "files are not deleted upon restart, but the IdentityFetcher does not know that.";
+			long existingQueuedEdition = IdentityFile.read(filename).getURI().getEdition();
+			long givenEdition = identityFileStream.mURI.getEdition();
 			
-			if(!filename.delete())
-				throw new RuntimeException("Cannot write to " + filename);
-			
-			--mStatistics.mQueuedFiles;
-			++mStatistics.mDeduplicatedFiles;
+			// Make sure that we do not delete a queued new edition in favor of an old one passed
+			// to us. This can happen because:
+			// A) the IdentityFetcher.onFound() USK subscription callback is called in threads and
+			//    thus no proper order of arrival of files is guaranteed.
+			// B) we keep queued files across restarts, but the IdentityFetcher fetches are
+			//    restarted from the edition specified in the main database. As queued files have
+			//    not been imported in the main database yet, the edition there may be older than
+			//    what is queued.
+			if(existingQueuedEdition >= givenEdition) {
+				if(logMINOR) {
+					Logger.minor(this, "Fetched edition which is older than queued file, dropping: "
+									   + givenEdition);
+				}
+				
+				++mStatistics.mDeduplicatedFiles;
+				assert(mStatistics.mDeduplicatedFiles ==
+					   mStatistics.mTotalQueuedFiles - mStatistics.mQueuedFiles
+					   - mStatistics.mProcessingFiles - mStatistics.mFinishedFiles);
+				return;
+			} else {
+				// Queued file *is* old, deduplicate it
+				if(filename.delete()) {
+					if(logMINOR) {
+						Logger.minor(this, "Deduplicating edition " + existingQueuedEdition
+						                 + " with edition " + givenEdition
+						                 + " for: " + identityFileStream.mURI);
+					
+					--mStatistics.mQueuedFiles;
+					++mStatistics.mDeduplicatedFiles;
+				} else
+					throw new RuntimeException("Cannot write to " + filename);				
+			}
 		}
 		
 		// FIXME: Measure how long this takes. The IdentityFetcher contains code which could be
