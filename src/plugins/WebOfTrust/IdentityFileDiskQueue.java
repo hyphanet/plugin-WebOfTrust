@@ -13,6 +13,7 @@ import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * {@link IdentityFileQueue} implementation which writes the files to disk instead of keeping them
@@ -51,6 +52,18 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	
 	/** @see #registerEventHandler(BackgroundJob) */
 	private BackgroundJob mEventHandler;
+
+
+	/**
+	 * Automatically set to true by {@link Logger} if the log level is set to
+	 * {@link LogLevel#DEBUG} for this class. Used as performance optimization to prevent
+	 * construction of the log strings if it is not necessary. */
+	private static transient volatile boolean logDEBUG = false;
+
+	static {
+		// Necessary for automatic setting of logDEBUG and logMINOR
+		Logger.registerClass(IdentityFileDiskQueue.class);
+	}
 
 
 	public IdentityFileDiskQueue(WebOfTrust wot) {
@@ -252,7 +265,14 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				return result;
 			} catch(RuntimeException e) {
 				Logger.error(this, "Error in poll() for queued file: " + queuedFile, e);
-				// FIXME: Delete the file if debug logging is not enabled.
+				
+				if(!logDEBUG) {
+					Logger.error(this, "logDEBUG is false, deleting erroneous file: " + queuedFile);
+					
+					if(!queuedFile.delete())
+						Logger.error(this, "Cannot delete file: " + queuedFile);
+				}
+				
 				// Try whether we can process the next file
 				continue;
 			}
