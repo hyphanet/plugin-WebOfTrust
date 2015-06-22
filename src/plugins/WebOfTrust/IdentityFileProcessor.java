@@ -139,6 +139,10 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 					Logger.normal(this, "run(): Shutdown requested, exiting...");
 					break;
 				}
+				
+				// Processing an identity file can take a long time, and thus we give other stuff
+				// a chance to execute in between processing each.
+				Thread.yield();
 			}
 			
 			Logger.normal(this, "run() finished.");
