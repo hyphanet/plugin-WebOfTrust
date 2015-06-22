@@ -169,6 +169,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		File filename = getQueueFilename(identityFileStream.mURI);
 		// Delete for deduplication
 		if(filename.exists()) {
+			assert(IdentityFile.read(filename).getURI().getEdition()
+				<= identityFileStream.mURI.getEdition())
+				: "The IdentityFetcher must not fetch old editions after more recent ones!";
+			
 			if(!filename.delete())
 				throw new RuntimeException("Cannot write to " + filename);
 			
