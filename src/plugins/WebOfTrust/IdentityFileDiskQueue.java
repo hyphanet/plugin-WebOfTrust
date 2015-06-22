@@ -214,6 +214,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 						Logger.minor(this, "Deduplicating edition " + existingQueuedEdition
 						                 + " with edition " + givenEdition
 						                 + " for: " + identityFileStream.mURI);
+					}
 					
 					--mStatistics.mQueuedFiles;
 					++mStatistics.mDeduplicatedFiles;
