@@ -96,8 +96,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		// - Count them so mStatistics.mQueuedFiles is correct.
 		for(File file : mQueueDir.listFiles()) {
 			if(!file.getName().endsWith(IdentityFile.FILE_EXTENSION)) {
-				Logger.warning(this, "cleanDirectories(): Unexpected file type: "
-			                       + file.getAbsolutePath());
+				Logger.warning(this, "cleanDirectories(): Unexpected file type: " + file);
 				continue;
 			}
 
@@ -115,17 +114,15 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		// for moving it back.
 		for(File file : mProcessingDir.listFiles()) {
 			if(!file.getName().endsWith(IdentityFile.FILE_EXTENSION)) {
-				Logger.warning(this, "cleanDirectories(): Unexpected file type: "
-			                       + file.getAbsolutePath());
+				Logger.warning(this, "cleanDirectories(): Unexpected file type: " + file);
 				continue;
 			}
 			
 			if(!file.delete())  {
 				Logger.error(this, "cleanDirectories(): Cannot delete old file in mProcessingDir: "
-			                     + file.getAbsolutePath());
+			                     + file);
 			} else {
-				Logger.normal(this, "cleanDirectories(): Deleted old processing file: "
-			                      + file.getAbsolutePath());
+				Logger.normal(this, "cleanDirectories(): Deleted old processing file: " + file);
 			}
 		}
 		
@@ -141,8 +138,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			String name = file.getName();
 			
 			if(!name.endsWith(IdentityFile.FILE_EXTENSION)) {
-				Logger.warning(this, "cleanDirectories(): Unexpected file type: "
-			                       + file.getAbsolutePath());
+				Logger.warning(this, "cleanDirectories(): Unexpected file type: " + file);
 				continue;
 			}
 
@@ -152,8 +148,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			} catch(RuntimeException e) { // TODO: Code quality: Java 7
 				                          // catch NumberFormatException | IndexOutOfBoundsException
 				
-				Logger.warning(this, "cleanDirectories(): Cannot parse file name: "
-				                   + file.getAbsolutePath());
+				Logger.warning(this, "cleanDirectories(): Cannot parse file name: " + file);
 				continue;
 			}
 		}
