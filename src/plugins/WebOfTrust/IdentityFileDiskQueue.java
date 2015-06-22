@@ -326,6 +326,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			}
 		}
 		
+		/** Must be called while synchronized(IdentityFileDiskQueue.this) */
 		private void archiveFile() {
 			File moveTo = getAndReserveFinishedFilename(mSourceURI);
 
