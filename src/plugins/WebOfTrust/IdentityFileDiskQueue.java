@@ -266,7 +266,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				if(!logDEBUG) {
 					Logger.error(this, "logDEBUG is false, deleting erroneous file: " + queuedFile);
 					
-					if(!queuedFile.delete())
+					if(queuedFile.delete()) {
+						--mStatistics.mQueuedFiles;
+						assert(mStatistics.mQueuedFiles >= 0);
+					} else
 						Logger.error(this, "Cannot delete file: " + queuedFile);
 				}
 				
