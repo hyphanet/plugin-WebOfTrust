@@ -181,7 +181,9 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		if(filename.exists()) {
 			assert(IdentityFile.read(filename).getURI().getEdition()
 				<= identityFileStream.mURI.getEdition())
-				: "The IdentityFetcher must not fetch old editions after more recent ones!";
+				: "The IdentityFetcher must not fetch old editions after more recent ones! "
+				+ "NOTICE: If WOT was restarted, fetching old editions can happen: The queued "
+				+ "files are not deleted upon restart, but the IdentityFetcher does not know that.";
 			
 			if(!filename.delete())
 				throw new RuntimeException("Cannot write to " + filename);
