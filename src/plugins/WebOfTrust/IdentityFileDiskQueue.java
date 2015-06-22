@@ -185,7 +185,12 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		File filename = getQueueFilename(identityFileStream.mURI);
 		// Delete for deduplication
 		if(filename.exists()) {
-			long existingQueuedEdition = IdentityFile.read(filename).getURI().getEdition();
+			IdentityFile existingQueuedData = IdentityFile.read(filename);
+			assert(IdentityID.constructAndValidateFromURI(existingQueuedData.getURI())
+				   .equals(IdentityID.constructAndValidateFromURI(identityFileStream.mURI)))
+				: "Filenames should only collide for the same Identity, see getQueueFilename()";
+			
+			long existingQueuedEdition = existingQueuedData.getURI().getEdition();
 			long givenEdition = identityFileStream.mURI.getEdition();
 			
 			// Make sure that we do not delete a queued new edition in favor of an old one passed
