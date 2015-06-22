@@ -35,8 +35,11 @@ final class IdentityFile implements Serializable {
 	
 	/**
 	 * Java serialization does not verify data integrity, so we do it ourselves with this hash.<br>
-	 * This is a good idea since at startup, we do not flush files enqueued in the
-	 * {@link IdentityFileDiskQueue} - they might have been corrupted due to a crash. */
+	 * This is a good idea since:<br>
+	 * - At startup, we do not flush files enqueued in the {@link IdentityFileDiskQueue}. They might
+	 *   have been corrupted due to a crash.<br>
+	 * - {@link IdentityFileDiskQueue} does not use file locking, so the user might interfere with
+	 *   the files in parallel. */
 	private final int mHashCode;
 
 
