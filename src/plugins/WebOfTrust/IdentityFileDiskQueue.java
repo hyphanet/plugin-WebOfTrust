@@ -34,8 +34,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	private final File mProcessingDir;
 
 	/**
-	 * When the stream of a file returned by {@link #poll()} is closed, the closing function of
-	 * the stream will move the file to this subdir of {@link #mDataDir}. */
+	 * If {@link #logDEBUG} is true, when the stream of a file returned by {@link #poll()} is
+	 * closed, the closing function of the stream will move the file to this subdir of
+	 * {@link #mDataDir}.<br>
+	 * If {@link #logDEBUG} is false, the finished files will be deleted upon stream closure. */
 	private final File mFinishedDir;
 	
 	/**
@@ -283,8 +285,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	private final class InputStreamWithCleanup extends FilterInputStream {
 		/**
 		 * The backend file in {@link IdentityFileDiskQueue#mProcessingDir}.<br>
-		 * On {@link #close()} we delete it; or archive it for debugging purposes.
-		 * FIXME: Implement deletion. Currently only archival is implemented. */
+		 * On {@link #close()} we delete it; or archive it for debugging purposes if
+		 * {@link IdentityFileDiskQueue#logDEBUG} is true */
 		private final File mSourceFile;
 
 		/**
@@ -317,7 +319,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 
 					assert(mStatistics.mProcessingFiles == 1);
 
-					archiveFile();
+					if(!logDEBUG)
+						deleteFile();
+					else
+						archiveFile();
 					
 					assert(mStatistics.mProcessingFiles == 0);
 
@@ -326,6 +331,17 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			}
 		}
 		
+		/** Must be called while synchronized(IdentityFileDiskQueue.this) */
+		private void deleteFile() {
+			++mStatistics.mFinishedFiles;
+			assert(mStatistics.mFinishedFiles <= mStatistics.mTotalQueuedFiles);
+			
+			if(!mSourceFile.delete())
+				Logger.error(this, "Cannot delete file: " + mSourceFile);
+			else
+				--mStatistics.mProcessingFiles;
+		}
+
 		/** Must be called while synchronized(IdentityFileDiskQueue.this) */
 		private void archiveFile() {
 			File moveTo = getAndReserveFinishedFilename(mSourceURI);
@@ -339,6 +355,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 
 				// We must delete as fallback: Otherwise, subsequent processed files of the
 				// same Identity would collide with the filenames in the mProcessingDir.
+				// (Do not use deleteFile() since it would update mStatistics which we did already.)
 				if(!mSourceFile.delete())
 					Logger.error(this, "Cannot delete file: " + mSourceFile);
 				else
