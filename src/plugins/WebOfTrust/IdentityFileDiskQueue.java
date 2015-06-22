@@ -316,7 +316,17 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 						return;
 
 					assert(mStatistics.mProcessingFiles == 1);
+
+					archiveFile();
 					
+					assert(mStatistics.mProcessingFiles == 0);
+
+					mClosedAlready = true;
+				}
+			}
+		}
+		
+		private void archiveFile() {
 					File moveTo = getAndReserveFinishedFilename(mSourceURI);
 
 					assert(mSourceFile.exists());
@@ -334,13 +344,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 							--mStatistics.mProcessingFiles;
 					} else
 						--mStatistics.mProcessingFiles;
-					
-					assert(mStatistics.mProcessingFiles == 0);
-
-					mClosedAlready = true;
 				}
-			}
-		}
 	}
 
 	/**
