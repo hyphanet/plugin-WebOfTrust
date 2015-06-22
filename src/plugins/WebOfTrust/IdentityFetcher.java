@@ -800,7 +800,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	@Override
 	public void onFound(USK origUSK, long edition, FetchResult result) {
 		final FreenetURI realURI = origUSK.getURI().setSuggestedEdition(edition);
-		final String identityID = IdentityID.constructAndValidateFromURI(realURI).toString();
 		
 		if(logDEBUG) Logger.debug(this, "Fetched identity: " + realURI);
 		
