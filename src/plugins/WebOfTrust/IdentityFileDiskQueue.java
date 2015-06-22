@@ -76,12 +76,15 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 
 	/** Used at startup to ensure that the data directories are in a clean state */
 	private synchronized void cleanDirectories() {
+		Logger.normal(this, "cleanDirectories(): Inspecting old files...");
+		
 		// Queue dir policy:
 		// - Keep all queued files so we don't have to download them again.
 		// - Count them so mStatistics.mQueuedFiles is correct.
 		for(File file : mQueueDir.listFiles()) {
 			if(!file.getName().endsWith(IdentityFile.FILE_EXTENSION)) {
-				Logger.warning(this, "Unexpected file type: " + file.getAbsolutePath());
+				Logger.warning(this, "cleanDirectories(): Unexpected file type: "
+			                       + file.getAbsolutePath());
 				continue;
 			}
 
@@ -89,6 +92,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			++mStatistics.mTotalQueuedFiles;
 		}
 
+		Logger.normal(this, "cleanDirectories(): Old queued files: " + mStatistics.mQueuedFiles);
 
 		// Processing dir policy:
 		// In theory we could move the files back to the queue. But its possible that a colliding
@@ -98,13 +102,17 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		// for moving it back.
 		for(File file : mProcessingDir.listFiles()) {
 			if(!file.getName().endsWith(IdentityFile.FILE_EXTENSION)) {
-				Logger.warning(this, "Unexpected file type: " + file.getAbsolutePath());
+				Logger.warning(this, "cleanDirectories(): Unexpected file type: "
+			                       + file.getAbsolutePath());
 				continue;
 			}
 			
 			if(!file.delete())  {
-				Logger.error(this, "Cannot delete old file in mProcessingDir: "
+				Logger.error(this, "cleanDirectories(): Cannot delete old file in mProcessingDir: "
 			                     + file.getAbsolutePath());
+			} else {
+				Logger.normal(this, "cleanDirectories(): Deleted old processing file: "
+			                      + file.getAbsolutePath());
 			}
 		}
 		
@@ -120,7 +128,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			String name = file.getName();
 			
 			if(!name.endsWith(IdentityFile.FILE_EXTENSION)) {
-				Logger.warning(this, "Unexpected file type: " + file.getAbsolutePath());
+				Logger.warning(this, "cleanDirectories(): Unexpected file type: "
+			                       + file.getAbsolutePath());
 				continue;
 			}
 
@@ -130,12 +139,15 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			} catch(RuntimeException e) { // TODO: Code quality: Java 7
 				                          // catch NumberFormatException | IndexOutOfBoundsException
 				
-				Logger.warning(this, "Cannot parse file name: " + file.getAbsolutePath());
+				Logger.warning(this, "cleanDirectories(): Cannot parse file name: "
+				                   + file.getAbsolutePath());
 				continue;
 			}
 		}
 		
 		mOldFinishedFileCount = maxFinishedIndex;
+		
+		Logger.normal(this, "cleanDirectories(): Old finished files: " + mOldFinishedFileCount);
 		
 		
 		// We cannot do this now since we have no event handler yet.
@@ -144,6 +156,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		if(mStatistics.mQueuedFiles != 0)
 			mEventHandler.triggerExecution();
 		*/
+		
+		Logger.normal(this, "cleanDirectories(): Finished.");
 	}
 
 	@Override public synchronized void add(IdentityFileStream identityFileStream) {
