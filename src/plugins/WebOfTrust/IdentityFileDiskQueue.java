@@ -327,24 +327,24 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		}
 		
 		private void archiveFile() {
-					File moveTo = getAndReserveFinishedFilename(mSourceURI);
+			File moveTo = getAndReserveFinishedFilename(mSourceURI);
 
-					assert(mSourceFile.exists());
-					assert(!moveTo.exists());
+			assert(mSourceFile.exists());
+			assert(!moveTo.exists());
 
-					if(!mSourceFile.renameTo(moveTo)) {
-						Logger.error(this, "Cannot move file, source: " + mSourceFile
-							             + "; dest: " + moveTo);
-						
-						// We must delete as fallback: Otherwise, subsequent processed files of the
-						// same Identity would collide with the filenames in the mProcessingDir.
-						if(!mSourceFile.delete())
-							Logger.error(this, "Cannot delete file: " + mSourceFile);
-						else
-							--mStatistics.mProcessingFiles;
-					} else
-						--mStatistics.mProcessingFiles;
-				}
+			if(!mSourceFile.renameTo(moveTo)) {
+				Logger.error(this, "Cannot move file, source: " + mSourceFile
+								 + "; dest: " + moveTo);
+
+				// We must delete as fallback: Otherwise, subsequent processed files of the
+				// same Identity would collide with the filenames in the mProcessingDir.
+				if(!mSourceFile.delete())
+					Logger.error(this, "Cannot delete file: " + mSourceFile);
+				else
+					--mStatistics.mProcessingFiles;
+			} else
+				--mStatistics.mProcessingFiles;
+		}
 	}
 
 	/**
