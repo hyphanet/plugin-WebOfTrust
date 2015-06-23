@@ -154,16 +154,22 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 						break;
 					
 					Logger.normal(this, "run(): Processing: " + stream.mURI);
-					
-					/* FIXME: Make the commented-out code work by moving the relevant stuff
-					 * from IdentityFetcher to this class */
-					
-					// final long startTime = System.nanoTime();
+
+
+					// FIXME: Improve accuracy: importIdentity() first takes a lot of locks, which
+					// might take some time if other daemons (CAPTCHAs, UI, SubscriptionManager)
+					// are running. Thus, it should do the measurement itself to exclude that, and
+					// return the measured value.
+					// When implementing that, also do separate measurement of XML processing time
+					// so we get an idea how slow it is (I suspect it to be rather slow).
+					final long startTime = System.nanoTime();
 					mXMLTransformer.importIdentity(stream.mURI, stream.mXMLInputStream);
-					// final long endTime = System.nanoTime();
-	
-					// ++mFetchedCount;
-					// mIdentityImportNanoseconds +=  endTime - startTime;
+					final long endTime = System.nanoTime();
+
+					synchronized(IdentityFileProcessor.this) {
+						++mStatistics.mProcessedFiles;
+						mStatistics.mProcessingTimeNanoseconds +=  endTime - startTime;
+					}
 				} catch(RuntimeException e) {
 					Logger.error(this,
 					    "Parsing identity XML failed severely - edition probably could NOT be "
@@ -216,4 +222,11 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 		mRealDelayedBackgroundJob.waitForTermination(Long.MAX_VALUE);
 	}
 
+	/**
+	 * Gets a {@link Statistics} object suitable for displaying statistics in the UI.<br>
+	 * Its data is coherent, i.e. queried in an atomic fashion.<br>
+	 * The object is a clone, you may interfere with the contents of the member variables. */
+	public synchronized Statistics getStatistics() {
+		return mStatistics.clone();
+	}
 }
