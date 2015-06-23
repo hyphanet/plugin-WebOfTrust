@@ -145,7 +145,7 @@ StatisticsPage.IdentityFileQueueBox.FinishedFiles=Finished files:
 StatisticsPage.IdentityFileQueueBox.Header=Identity file queue
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Processing files: 
 StatisticsPage.IdentityFileQueueBox.QueuedFiles=Queued files: 
-StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Total ever enqueued files: 
+StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Total ever enqueued (= fetched) files: 
 StatisticsPage.SummaryBox.AverageIdentityImportTime=Average seconds for importing one identity XML file
 StatisticsPage.SummaryBox.EventNotifications.Pending=Event notifications queued for sending: ${amount}
 StatisticsPage.SummaryBox.EventNotifications.Total=Total event notifications ever created (only for current clients): ${amount}

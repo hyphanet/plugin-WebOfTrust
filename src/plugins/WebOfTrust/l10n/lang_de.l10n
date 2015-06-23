@@ -39,7 +39,7 @@ StatisticsPage.IdentityFileQueueBox.FinishedFiles=Fertige Dateien:
 StatisticsPage.IdentityFileQueueBox.Header=Warteschlange für Identitäts-Dateien
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Dateien in Bearbeitung: 
 StatisticsPage.IdentityFileQueueBox.QueuedFiles=Wartende Dateien: 
-StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Insgesamt eingefügte Dateien: 
+StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Insgesamt eingefügte (= heruntergeladene) Dateien: 
 StatisticsPage.SummaryBox.FetchProgress=Summe aller Editionen: ${editionCount}
 WebInterface.PageTitle.LoggedIn=Community - Eingeloggt als ${nickname}
 WebInterface.PageTitle.NotLoggedIn=Community
