@@ -89,11 +89,7 @@ public interface IdentityFileQueue {
 	 *     The object is a clone, you may interfere with the contents of the member variables. */
 	public IdentityFileQueueStatistics getStatistics();
 
-	/**
-	 * FIXME: Add function "validate()" which contains many of the assert()s in class
-	 * IdentityFileDiskQueue as regular throws. Also check whether the numbers match the directory
-	 * contents on disk. Use that function in clone() so it gets called when the user views the
-	 * statistics on the web interface. */
+
 	public static final class IdentityFileQueueStatistics implements Cloneable {
 		/**
 		 * Count of files which were passed to {@link #add(IdentityFileStream)}.<br>
@@ -163,7 +159,8 @@ public interface IdentityFileQueue {
 			
 			return (float)mTotalQueuedFiles / uptimeHours;		
 		}
-		
+
+		/** FIXME: Also check whether the numbers match the directory contents on disk. */
 		boolean checkConsistency() {
 			return (
 				 	(mQueuedFiles > 0)
