@@ -208,9 +208,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				}
 				
 				++mStatistics.mDeduplicatedFiles;
-				assert(mStatistics.mDeduplicatedFiles ==
-					   mStatistics.mTotalQueuedFiles - mStatistics.mQueuedFiles
-					   - mStatistics.mProcessingFiles - mStatistics.mFinishedFiles);
+				assert(mStatistics.checkConsistency());
 				return;
 			} else {
 				// Queued file *is* old, deduplicate it
@@ -236,9 +234,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		
 		assert(mStatistics.mQueuedFiles <= mStatistics.mTotalQueuedFiles);
 		
-		assert(mStatistics.mDeduplicatedFiles ==
-			   mStatistics.mTotalQueuedFiles - mStatistics.mQueuedFiles
-			   - mStatistics.mProcessingFiles - mStatistics.mFinishedFiles);
+		assert(mStatistics.checkConsistency());
 		
 		if(mEventHandler != null)
 			mEventHandler.triggerExecution();

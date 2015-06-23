@@ -163,5 +163,13 @@ public interface IdentityFileQueue {
 			
 			return (float)mTotalQueuedFiles / uptimeHours;		
 		}
+		
+		boolean checkConsistency() {
+			if(mDeduplicatedFiles !=
+					mTotalQueuedFiles - mQueuedFiles - mProcessingFiles - mFinishedFiles)
+				return false;
+			
+			return true;
+		}
 	}
 }
