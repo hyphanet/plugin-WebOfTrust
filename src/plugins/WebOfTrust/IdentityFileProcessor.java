@@ -30,7 +30,7 @@ import freenet.support.io.NativeThread.PriorityLevel;
  * been queued, it makes sense to first wait for a short delay as new editions might arrive to
  * replace the old one. 
  */
-final class IdentityFileProcessor implements DelayedBackgroundJob {
+public final class IdentityFileProcessor implements DelayedBackgroundJob {
 	/**
 	 * We wait for this delay before processing to give some time for deduplication.<br><br>
 	 * 
@@ -114,7 +114,7 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 	}
 
 	/** Must be called during startup of WOT */
-	public void start() {
+	void start() {
 		mQueue.registerEventHandler(this);
 	}
 
