@@ -165,20 +165,16 @@ public interface IdentityFileQueue {
 		}
 		
 		boolean checkConsistency() {
-			if(mFinishedFiles > mTotalQueuedFiles)
-				return false;
-			
-			if(mDeduplicatedFiles !=
-					mTotalQueuedFiles - mQueuedFiles - mProcessingFiles - mFinishedFiles)
-				return false;
-			
-			if(mQueuedFiles > mTotalQueuedFiles)
-				return false;
-			
-			if(mQueuedFiles < 0)
-				return false;
-			
-			return true;
+			return (
+					(mFinishedFiles <= mTotalQueuedFiles)
+					
+				 && (mDeduplicatedFiles ==
+						mTotalQueuedFiles - mQueuedFiles - mProcessingFiles - mFinishedFiles)
+					
+				 && (mQueuedFiles <= mTotalQueuedFiles)
+				
+				 && (mQueuedFiles > 0)
+			 );
 		}
 	}
 }
