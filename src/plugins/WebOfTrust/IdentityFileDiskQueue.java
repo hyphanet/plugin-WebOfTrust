@@ -368,7 +368,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		/** Must be called while synchronized(IdentityFileDiskQueue.this) */
 		private void deleteFile() {
 			++mStatistics.mFinishedFiles;
-			assert(mStatistics.mFinishedFiles <= mStatistics.mTotalQueuedFiles);
+			assert(mStatistics.checkConsistency());
 			
 			if(mSourceFile.delete())
 				--mStatistics.mProcessingFiles;
@@ -423,7 +423,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				getEncodedIdentityID(sourceURI),
 				sourceURI.getEdition()));
 		
-		assert(mStatistics.mFinishedFiles <= mStatistics.mTotalQueuedFiles);
+		assert(mStatistics.checkConsistency());
 		
 		return result;
 	}

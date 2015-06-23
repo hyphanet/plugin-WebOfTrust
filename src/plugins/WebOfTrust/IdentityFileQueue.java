@@ -165,6 +165,9 @@ public interface IdentityFileQueue {
 		}
 		
 		boolean checkConsistency() {
+			if(mFinishedFiles > mTotalQueuedFiles)
+				return false;
+			
 			if(mDeduplicatedFiles !=
 					mTotalQueuedFiles - mQueuedFiles - mProcessingFiles - mFinishedFiles)
 				return false;
