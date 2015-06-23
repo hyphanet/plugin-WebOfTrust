@@ -69,7 +69,6 @@ public class StatisticsPage extends WebPageImpl {
 		IdentityFetcher fetcher = mWebOfTrust.getIdentityFetcher();
 		synchronized(fetcher) {
 			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FetchedIdentities") + ": " + fetcher.getFetchedCount()));
-			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.AverageFetchedIdentitiesPerHour") + ": " + fetcher.getAverageFetchCountPerHour()));
 			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.AverageIdentityImportTime") + ": " + fetcher.getAverageXMLImportTime()));
 		}
 		
@@ -92,6 +91,8 @@ public class StatisticsPage extends WebPageImpl {
 		HTMLNode list = new HTMLNode("ul");
 		IdentityFileQueueStatistics stats = mWebOfTrust.getIdentityFileQueue().getStatistics();
 
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "AverageQueuedFilesPerHour")
+			+ stats.getAverageQueuedFilesPerHour()));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "TotalQueuedFiles")
 			+ stats.mTotalQueuedFiles));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "QueuedFiles")

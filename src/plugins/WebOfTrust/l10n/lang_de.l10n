@@ -33,6 +33,7 @@ CreateOwnIdentityWizardPage.Step.CreateIdentity.Failure=Es tut uns Leid - es gab
 CreateOwnIdentityWizardPage.Step.CreateIdentity.Header=Identität erstellt
 ErrorPage.InternalError.Header=Interner Fehler, bitte melden Sie das
 KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Edition=Edition
+StatisticsPage.IdentityFileQueueBox.AverageQueuedFilesPerHour=Durschnittlich pro Stunde heruntergeladene XML Dateien:
 StatisticsPage.IdentityFileQueueBox.DeduplicatedFiles=Deduplizierte Dateien: 
 StatisticsPage.IdentityFileQueueBox.FinishedFiles=Fertige Dateien: 
 StatisticsPage.IdentityFileQueueBox.Header=Warteschlange für Identitäts-Dateien

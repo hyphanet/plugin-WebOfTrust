@@ -114,11 +114,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	/* Statistics */
 	
 	/**
-	 * The value of CurrentTimeUTC.getInMillis() when this IdentityFetcher was created.
-	 */
-	private final long mStartupTimeMilliseconds;
-	
-	/**
 	 * The number of identity XML files which this IdentityFetcher has fetched.
 	 */
 	private int mFetchedCount = 0;
@@ -166,8 +161,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
         // Identity fetches and inserts belong together, so it makes sense to use the same
         // RequestClient for them.
 		mRequestClient = mWoT.getRequestClient();
-		
-		mStartupTimeMilliseconds = CurrentTimeUTC.getInMillis();
 	}
 	
 	@SuppressWarnings("serial")
@@ -839,22 +832,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			return 0;
 		
 		return ((double)mIdentityImportNanoseconds/(1000*1000*1000)) / (double)mFetchedCount;
-	}
-	
-	/**
-	 * FIXME: Move to IdentityFileProcessor
-	 * Notice that this function is synchronized because it processes multiple member variables.
-	 * 
-	 * @return The average number of identity XML files which are fetched per hour.
-	 */
-	public synchronized float getAverageFetchCountPerHour() {
-		float uptimeSeconds = (float)(CurrentTimeUTC.getInMillis() - mStartupTimeMilliseconds)/1000;
-		float uptimeHours = uptimeSeconds / (60*60);
-		
-		if(uptimeHours == 0) // prevent division by 0
-			return 0;
-		
-		return (float)mFetchedCount / uptimeHours;		
 	}
 
 }

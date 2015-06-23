@@ -8,6 +8,7 @@ import java.io.InputStream;
 
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import freenet.keys.FreenetURI;
+import freenet.support.CurrentTimeUTC;
 
 
 /**
@@ -135,6 +136,10 @@ public interface IdentityFileQueue {
 		 * - {@link #mProcessingFiles} - {@link #mFinishedFiles}</code>.
 		 */
 		public int mDeduplicatedFiles = 0;
+		
+		/** Value of {@link CurrentTimeUTC#getInMillis()} when this object was created. */
+		public final long mStartupTimeMilliseconds = CurrentTimeUTC.getInMillis();
+
 
 		@Override public IdentityFileQueueStatistics clone() {
 			try {
@@ -143,5 +148,19 @@ public interface IdentityFileQueue {
 				throw new RuntimeException(e);
 			}
 		}
+		
+	/**
+	 * The average increase of {@link #mTotalQueuedFiles} per hour.<br>
+	 * If no bugs are in {@link IdentityFetcher}, this is equal to the number of fetched files per
+	 * hour. */
+	public float getAverageQueuedFilesPerHour() {
+		float uptimeSeconds = (float)(CurrentTimeUTC.getInMillis() - mStartupTimeMilliseconds)/1000;
+		float uptimeHours = uptimeSeconds / (60*60);
+		
+		if(uptimeHours == 0) // prevent division by 0
+			return 0;
+		
+		return (float)mTotalQueuedFiles / uptimeHours;		
+	}
 	}
 }
