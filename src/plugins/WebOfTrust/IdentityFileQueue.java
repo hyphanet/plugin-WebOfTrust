@@ -169,6 +169,9 @@ public interface IdentityFileQueue {
 					mTotalQueuedFiles - mQueuedFiles - mProcessingFiles - mFinishedFiles)
 				return false;
 			
+			if(mQueuedFiles > mTotalQueuedFiles)
+				return false;
+			
 			return true;
 		}
 	}

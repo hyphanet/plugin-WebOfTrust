@@ -231,9 +231,6 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		IdentityFile.read(identityFileStream).write(filename);
 		
 		++mStatistics.mQueuedFiles;
-		
-		assert(mStatistics.mQueuedFiles <= mStatistics.mTotalQueuedFiles);
-		
 		assert(mStatistics.checkConsistency());
 		
 		if(mEventHandler != null)
