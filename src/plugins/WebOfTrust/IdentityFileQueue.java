@@ -172,6 +172,9 @@ public interface IdentityFileQueue {
 			if(mQueuedFiles > mTotalQueuedFiles)
 				return false;
 			
+			if(mQueuedFiles < 0)
+				return false;
+			
 			return true;
 		}
 	}

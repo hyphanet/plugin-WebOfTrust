@@ -288,7 +288,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				assert(mStatistics.mProcessingFiles == 1);
 				
 				--mStatistics.mQueuedFiles;
-				assert(mStatistics.mQueuedFiles >= 0);
+				assert(mStatistics.checkConsistency());
 				
 				return result;
 			} catch(RuntimeException e) {
@@ -299,7 +299,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 					
 					if(queuedFile.delete()) {
 						--mStatistics.mQueuedFiles;
-						assert(mStatistics.mQueuedFiles >= 0);
+						assert(mStatistics.checkConsistency());
 					} else
 						Logger.error(this, "Cannot delete file: " + queuedFile);
 				}
