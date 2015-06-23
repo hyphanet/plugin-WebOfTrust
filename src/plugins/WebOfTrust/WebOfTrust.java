@@ -3947,7 +3947,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return mSubscriptionManager;
 	}
 	
-	public IdentityFetcher getIdentityFetcher() {
+	IdentityFetcher getIdentityFetcher() {
 		return mFetcher;
 	}
 	
