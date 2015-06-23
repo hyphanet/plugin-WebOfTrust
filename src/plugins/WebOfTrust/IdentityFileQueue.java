@@ -163,11 +163,25 @@ public interface IdentityFileQueue {
 		/** FIXME: Also check whether the numbers match the directory contents on disk. */
 		boolean checkConsistency() {
 			return (
-					(mQueuedFiles >= 0)
+					(mTotalQueuedFiles >= 0)
+					
+				 && (mQueuedFiles >= 0)
+				 
+				 && (mProcessingFiles >= 0)
+				 
+				 && (mFinishedFiles >= 0)
+				 
+				 && (mDeduplicatedFiles >= 0)
 				
 				 && (mQueuedFiles <= mTotalQueuedFiles)
 				 
+				 && (mProcessingFiles <= mTotalQueuedFiles)
+				 
 				 && (mFinishedFiles <= mTotalQueuedFiles)
+				 
+				 && (mDeduplicatedFiles <= mTotalQueuedFiles)
+				 
+				 && (mProcessingFiles <= 1)
 					
 				 && (mDeduplicatedFiles ==
 						mTotalQueuedFiles - mQueuedFiles - mProcessingFiles - mFinishedFiles)
