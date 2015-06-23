@@ -165,6 +165,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		
 		Logger.normal(this, "cleanDirectories(): Old finished files: " + mOldFinishedFileCount);
 		
+		assert(mStatistics.checkConsistency());
 		
 		// We cannot do this now since we have no event handler yet.
 		// registerEventHandler() does it for us.
@@ -221,6 +222,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 					
 					--mStatistics.mQueuedFiles;
 					++mStatistics.mDeduplicatedFiles;
+					assert(mStatistics.checkConsistency());
 				} else
 					throw new RuntimeException("Cannot write to " + filename);				
 			}
@@ -368,12 +370,13 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		/** Must be called while synchronized(IdentityFileDiskQueue.this) */
 		private void deleteFile() {
 			++mStatistics.mFinishedFiles;
-			assert(mStatistics.checkConsistency());
 			
 			if(mSourceFile.delete())
 				--mStatistics.mProcessingFiles;
 			else
 				Logger.error(this, "Cannot delete file: " + mSourceFile);
+			
+			assert(mStatistics.checkConsistency());
 		}
 
 		/** Must be called while synchronized(IdentityFileDiskQueue.this) */
@@ -396,6 +399,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 					Logger.error(this, "Cannot delete file: " + mSourceFile);
 			} else
 				--mStatistics.mProcessingFiles;
+			
+			assert(mStatistics.checkConsistency());
 		}
 	}
 
@@ -443,6 +448,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	}
 
 	@Override public synchronized IdentityFileQueueStatistics getStatistics() {
-		return mStatistics.clone();
+		IdentityFileQueueStatistics result = mStatistics.clone();
+		assert(result.checkConsistency());
+		return result;
 	}
 }
