@@ -83,7 +83,18 @@ public class StatisticsPage extends WebPageImpl {
 		
 		box.addChild(list);
 	}
-	
+
+	/**
+	 * TODO: Move to class {@link WebOfTrust}
+	 */
+	private long getEditionSum() {
+		long editionSum = 0;
+		for(Identity identity : mWebOfTrust.getAllIdentities()) {
+			editionSum += identity.getEdition();
+		}
+		return editionSum;
+	}
+
 	public void makeIdentityFileQueueBox() {
 		String l10nPrefix = "StatisticsPage.IdentityFileQueueBox.";
 		HTMLNode box = addContentBox(l10n().getString(l10nPrefix + "Header"));
@@ -104,16 +115,5 @@ public class StatisticsPage extends WebPageImpl {
 			+ stats.mDeduplicatedFiles));
 		
 		box.addChild(list);
-	}
-
-	/**
-	 * TODO: Move to class {@link WebOfTrust}
-	 */
-	private long getEditionSum() {
-		long editionSum = 0;
-		for(Identity identity : mWebOfTrust.getAllIdentities()) {
-			editionSum += identity.getEdition();
-		}
-		return editionSum;
 	}
 }
