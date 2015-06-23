@@ -813,14 +813,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			Closer.close(bucket);
 		}
 	}
-	
-	/**
-	 * @return The number of identity XML files which this fetcher has fetched and processed successfully.
-	 */
-	public int getFetchedCount() {
-		return mFetchedCount;
-	}
-	
+
 	/**
 	 * FIXME: Move to IdentityFileProcessor
 	 * Notice that this function is synchronized because it processes multiple member variables.

@@ -68,7 +68,6 @@ public class StatisticsPage extends WebPageImpl {
 		
 		IdentityFetcher fetcher = mWebOfTrust.getIdentityFetcher();
 		synchronized(fetcher) {
-			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FetchedIdentities") + ": " + fetcher.getFetchedCount()));
 			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.AverageIdentityImportTime") + ": " + fetcher.getAverageXMLImportTime()));
 		}
 		

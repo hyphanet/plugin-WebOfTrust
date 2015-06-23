@@ -149,7 +149,6 @@ StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Total ever enqueued (= fetc
 StatisticsPage.SummaryBox.AverageIdentityImportTime=Average seconds for importing one identity XML file
 StatisticsPage.SummaryBox.EventNotifications.Pending=Event notifications queued for sending: ${amount}
 StatisticsPage.SummaryBox.EventNotifications.Total=Total event notifications ever created (only for current clients): ${amount}
-StatisticsPage.SummaryBox.FetchedIdentities=Fetched identity XML files
 StatisticsPage.SummaryBox.FetchProgress=Sum of all edition numbers: ${editionCount}
 StatisticsPage.SummaryBox.FullRecomputations=Number of full score re-computations
 StatisticsPage.SummaryBox.FullRecomputationTime=Average time for full score re-computation
