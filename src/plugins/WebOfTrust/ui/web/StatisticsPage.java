@@ -3,14 +3,17 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import java.util.concurrent.TimeUnit;
+
 import plugins.WebOfTrust.Identity;
-import plugins.WebOfTrust.IdentityFetcher;
+import plugins.WebOfTrust.IdentityFileProcessor;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileQueueStatistics;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
+import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
 
 /**
@@ -35,6 +38,7 @@ public class StatisticsPage extends WebPageImpl {
 	public void make(final boolean mayWrite) {
 		makeSummary();
 		makeIdentityFileQueueBox();
+		makeIdentityFileProcessorBox();
 	}
 
 	/**
@@ -65,12 +69,7 @@ public class StatisticsPage extends WebPageImpl {
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.NotInsertedCaptchasSolutions") + ": " + puzzleStore.getUninsertedSolvedPuzzles().size()));
 		}
 		}
-		
-		IdentityFetcher fetcher = mWebOfTrust.getIdentityFetcher();
-		synchronized(fetcher) {
-			list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.AverageIdentityImportTime") + ": " + fetcher.getAverageXMLImportTime()));
-		}
-		
+
 		SubscriptionManager sm = mWebOfTrust.getSubscriptionManager();
 		synchronized(sm) {
 		    list.addChild(new HTMLNode("li",
@@ -113,6 +112,25 @@ public class StatisticsPage extends WebPageImpl {
 			+ stats.mFinishedFiles));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "DeduplicatedFiles")
 			+ stats.mDeduplicatedFiles));
+		
+		box.addChild(list);
+	}
+
+	public void makeIdentityFileProcessorBox() {
+		String l10nPrefix = "StatisticsPage.IdentityFileProcessorBox.";
+		HTMLNode box = addContentBox(l10n().getString(l10nPrefix + "Header"));
+		HTMLNode list = new HTMLNode("ul");
+		IdentityFileProcessor.Statistics stats
+			= mWebOfTrust.getIdentityFileProcessor().getStatistics();
+
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "ProcessedFiles")
+			+ stats.mProcessedFiles));
+		
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "TotalProcessingTime")
+			+ TimeUtil.formatTime(TimeUnit.NANOSECONDS.toMillis(stats.mProcessingTimeNanoseconds))));
+		
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "AverageProcessingTimeSecs")
+			+ stats.getAverageXMLImportTime()));
 		
 		box.addChild(list);
 	}
