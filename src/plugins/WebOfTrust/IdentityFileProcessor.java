@@ -52,6 +52,43 @@ final class IdentityFileProcessor implements DelayedBackgroundJob {
 	/** Identity files will be passed to this {@link XMLTransformer} for the actual processing. */
 	private final XMLTransformer mXMLTransformer;
 
+	private final Statistics mStatistics = new Statistics();
+
+
+	public static final class Statistics implements Cloneable {
+		/** Number of files for which processing has been finished. */
+		public int mProcessedFiles = 0;
+
+		/** Total time it took to process all {@link #mProcessedFiles}. */
+		public long mProcessingTimeNanoseconds = 0;
+
+	/**
+	 * Gets the average time it took for processing a file, in seconds. This is rather crude as it
+	 * includes all of those:<br>
+	 * - The time to acquire all locks, which could be a lot if WOT is busy.<br>
+	 * - The time to parse the XML.<br>
+	 * - The time to do Score recomputations.<br>
+	 * (There is a FIXME in {@link IdentityFileProcessor.Processor#run()} to improve this).<br><br>
+	 * 
+	 * ATTENTION: Not synchronized - only use this if you are sure that the Statistics object is not
+	 * being modified anymore. This is the case if you obtained it using
+	 * {@link IdentityFileProcessor#getStatistics()}. */
+	public double getAverageXMLImportTime() {
+		if(mProcessedFiles == 0) // prevent division by 0
+			return 0;
+		
+		return ((double)mProcessingTimeNanoseconds/(1000*1000*1000)) / (double)mProcessedFiles;
+	}
+
+		@Override public Statistics clone() {
+			try {
+				return (Statistics)super.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new RuntimeException(e);
+			}
+		}	
+	}
+
 
 	IdentityFileProcessor(IdentityFileQueue queue, Ticker ticker, XMLTransformer xmlTransformer) {
 		if(ticker != null) {

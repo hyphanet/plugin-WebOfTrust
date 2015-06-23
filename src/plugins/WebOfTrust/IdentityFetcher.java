@@ -111,19 +111,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
     private final IdentityFileQueue mQueue;
 
 
-	/* Statistics */
-	
-	/**
-	 * The number of identity XML files which this IdentityFetcher has fetched.
-	 */
-	private int mFetchedCount = 0;
-	
-	/**
-	 * FIXME: Move to IdentityFileProcessor
-	 * The total time in milliseconds which processing of all fetched identity XML files took.
-	 */
-	private long mIdentityImportNanoseconds = 0;
-	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
 	private static transient volatile boolean logDEBUG = false;
@@ -813,18 +800,4 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			Closer.close(bucket);
 		}
 	}
-
-	/**
-	 * FIXME: Move to IdentityFileProcessor
-	 * Notice that this function is synchronized because it processes multiple member variables.
-	 * 
-	 * @return The average time it took for parsing an identity XML file in seconds.
-	 */
-	public synchronized double getAverageXMLImportTime() {
-		if(mFetchedCount == 0) // prevent division by 0
-			return 0;
-		
-		return ((double)mIdentityImportNanoseconds/(1000*1000*1000)) / (double)mFetchedCount;
-	}
-
 }
