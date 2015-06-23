@@ -228,8 +228,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			}
 		}
 		
-		// FIXME: Measure how long this takes. The IdentityFetcher contains code which could be
-		// recycled for that.
+		// FIXME: Measure how long this takes. The IdentityFileProcessor contains code which could
+		// be recycled for that.
 		IdentityFile.read(identityFileStream).write(filename);
 		
 		++mStatistics.mQueuedFiles;
