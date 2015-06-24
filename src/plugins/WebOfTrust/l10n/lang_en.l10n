@@ -146,6 +146,7 @@ StatisticsPage.IdentityFileProcessorBox.ProcessedFiles=Processed files:
 StatisticsPage.IdentityFileProcessorBox.TotalProcessingTime=Total processing time: 
 StatisticsPage.IdentityFileQueueBox.AverageQueuedFilesPerHour=Average fetched identity XML files per hour: 
 StatisticsPage.IdentityFileQueueBox.DeduplicatedFiles=Deduplicated files: 
+StatisticsPage.IdentityFileQueueBox.FailedFiles=Failed files: 
 StatisticsPage.IdentityFileQueueBox.FinishedFiles=Finished files: 
 StatisticsPage.IdentityFileQueueBox.Header=Identity file queue
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Processing files: 

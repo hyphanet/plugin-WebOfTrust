@@ -40,6 +40,7 @@ StatisticsPage.IdentityFileProcessorBox.ProcessedFiles=Bearbeitete Dateien:
 StatisticsPage.IdentityFileProcessorBox.TotalProcessingTime=Bearbeitungszeit insgesamt: 
 StatisticsPage.IdentityFileQueueBox.AverageQueuedFilesPerHour=Durschnittlich pro Stunde heruntergeladene XML Dateien: 
 StatisticsPage.IdentityFileQueueBox.DeduplicatedFiles=Deduplizierte Dateien: 
+StatisticsPage.IdentityFileQueueBox.FailedFiles=Fehlgeschlagene Dateien: 
 StatisticsPage.IdentityFileQueueBox.FinishedFiles=Fertige Dateien: 
 StatisticsPage.IdentityFileQueueBox.Header=Warteschlange für Identitäts-Dateien
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Dateien in Bearbeitung: 

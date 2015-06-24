@@ -112,6 +112,8 @@ public class StatisticsPage extends WebPageImpl {
 			+ stats.mFinishedFiles));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "DeduplicatedFiles")
 			+ stats.mDeduplicatedFiles));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "FailedFiles")
+			+ stats.mFailedFiles));
 		
 		box.addChild(list);
 	}
