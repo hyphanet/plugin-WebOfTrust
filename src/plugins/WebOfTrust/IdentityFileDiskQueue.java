@@ -446,7 +446,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				getEncodedIdentityID(sourceURI),
 				sourceURI.getEdition()));
 		
-		assert(mStatistics.checkConsistency());
+		// Cannot do this yet: mProcessingFiles etc. are not updated yet.
+		/* assert(mStatistics.checkConsistency()); */
 		
 		return result;
 	}
