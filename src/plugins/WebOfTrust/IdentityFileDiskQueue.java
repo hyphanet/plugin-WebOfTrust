@@ -179,68 +179,69 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 
 	@Override public synchronized void add(IdentityFileStream identityFileStream) {
 		try {
-		// We increment the counter before errors could occur so erroneously dropped files are
-		// included: This ensures that the user might notice dropped files from the statistics in
-		// the UI.
-		++mStatistics.mTotalQueuedFiles;
-		
-		File filename = getQueueFilename(identityFileStream.mURI);
-		// Delete for deduplication
-		if(filename.exists()) {
-			IdentityFile existingQueuedData = IdentityFile.read(filename);
-			assert(IdentityID.constructAndValidateFromURI(existingQueuedData.getURI())
-				   .equals(IdentityID.constructAndValidateFromURI(identityFileStream.mURI)))
-				: "Filenames should only collide for the same Identity, see getQueueFilename()";
+			// We increment the counter before errors could occur so erroneously dropped files are
+			// included: This ensures that the user might notice dropped files from the statistics
+			// in the UI.
+			++mStatistics.mTotalQueuedFiles;
 			
-			long existingQueuedEdition = existingQueuedData.getURI().getEdition();
-			long givenEdition = identityFileStream.mURI.getEdition();
-			
-			// Make sure that we do not delete a queued new edition in favor of an old one passed
-			// to us. This can happen because:
-			// A) the IdentityFetcher.onFound() USK subscription callback is called in threads and
-			//    thus no proper order of arrival of files is guaranteed.
-			// B) we keep queued files across restarts, but the IdentityFetcher fetches are
-			//    restarted from the edition specified in the main database. As queued files have
-			//    not been imported in the main database yet, the edition there may be older than
-			//    what is queued.
-			if(existingQueuedEdition >= givenEdition) {
-				if(logMINOR) {
-					Logger.minor(this, "Fetched edition which is older than queued file, dropping: "
-									   + givenEdition);
-				}
+			File filename = getQueueFilename(identityFileStream.mURI);
+			// Delete for deduplication
+			if(filename.exists()) {
+				IdentityFile existingQueuedData = IdentityFile.read(filename);
+				assert(IdentityID.constructAndValidateFromURI(existingQueuedData.getURI())
+					   .equals(IdentityID.constructAndValidateFromURI(identityFileStream.mURI)))
+					: "Filenames should only collide for the same Identity, see getQueueFilename()";
 				
-				++mStatistics.mDeduplicatedFiles;
-				assert(mStatistics.checkConsistency());
-				return;
-			} else {
-				// Queued file *is* old, deduplicate it
-				if(filename.delete()) {
+				long existingQueuedEdition = existingQueuedData.getURI().getEdition();
+				long givenEdition = identityFileStream.mURI.getEdition();
+				
+				// Make sure that we do not delete a queued new edition in favor of an old one
+				// passed to us. This can happen because:
+				// A) the IdentityFetcher.onFound() USK subscription callback is called in threads
+				//    and thus no proper order of arrival of files is guaranteed.
+				// B) we keep queued files across restarts, but the IdentityFetcher fetches are
+				//    restarted from the edition specified in the main database. As queued files
+				//    have not been imported in the main database yet, the edition there may be
+				//    older than what is queued.
+				if(existingQueuedEdition >= givenEdition) {
 					if(logMINOR) {
-						Logger.minor(this, "Deduplicating edition " + existingQueuedEdition
-						                 + " with edition " + givenEdition
-						                 + " for: " + identityFileStream.mURI);
+						Logger.minor(this, "Fetched edition which is older than queued file, "
+										 + "dropping: " + givenEdition);
 					}
 					
-					--mStatistics.mQueuedFiles;
 					++mStatistics.mDeduplicatedFiles;
 					assert(mStatistics.checkConsistency());
-				} else
-					throw new RuntimeException("Cannot write to " + filename);				
+					return;
+				} else {
+					// Queued file *is* old, deduplicate it
+					if(filename.delete()) {
+						if(logMINOR) {
+							Logger.minor(this, "Deduplicating edition " + existingQueuedEdition
+							                 + " with edition " + givenEdition
+							                 + " for: " + identityFileStream.mURI);
+						}
+						
+						--mStatistics.mQueuedFiles;
+						++mStatistics.mDeduplicatedFiles;
+						assert(mStatistics.checkConsistency());
+					} else
+						throw new RuntimeException("Cannot write to " + filename);				
+				}
 			}
-		}
-		
-		// FIXME: Measure how long this takes. The IdentityFileProcessor contains code which could
-		// be recycled for that.
-		IdentityFile.read(identityFileStream).write(filename);
-		
-		++mStatistics.mQueuedFiles;
-		assert(mStatistics.checkConsistency());
-		
-		if(mEventHandler != null)
-			mEventHandler.triggerExecution();
-		else
-			Logger.error(this, "IdentityFile queued but no event handler is monitoring the queue!");
-		
+			
+			// FIXME: Measure how long this takes. The IdentityFileProcessor contains code which
+			// could be recycled for that.
+			IdentityFile.read(identityFileStream).write(filename);
+			
+			++mStatistics.mQueuedFiles;
+			assert(mStatistics.checkConsistency());
+			
+			if(mEventHandler != null)
+				mEventHandler.triggerExecution();
+			else {
+				Logger.error(this, "IdentityFile queued but no event handler is monitoring the "
+					 			 + "queue!");
+			}
 		} catch(RuntimeException e) {
 			++mStatistics.mFailedFiles;
 			throw e;
