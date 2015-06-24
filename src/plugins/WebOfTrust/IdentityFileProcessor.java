@@ -56,8 +56,14 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 
 
 	public static final class Statistics implements Cloneable {
-		/** Number of files for which processing has been finished. */
+		/** Number of files for which processing has been finished successfully. */
 		public int mProcessedFiles = 0;
+
+		/**
+		 * Number of files for which processing failed.<br>
+		 * This does not necessarily indicate bugs: Processing fails if remote Identitys have
+		 * inserted bogus data, which they might do as they please. */
+		public int mFailedFiles = 0;
 
 		/** Total time it took to process all {@link #mProcessedFiles}. */
 		public long mProcessingTimeNanoseconds = 0;
@@ -174,6 +180,10 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 					Logger.error(this,
 					    "Parsing identity XML failed severely - edition probably could NOT be "
 				      + "marked for not being fetched again: " + stream.mURI, e);
+					
+					synchronized(IdentityFileProcessor.this) {
+						++mStatistics.mFailedFiles;
+					}
 				} finally {
 					if(stream != null)
 						Closer.close(stream.mXMLInputStream);
