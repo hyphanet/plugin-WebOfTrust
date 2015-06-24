@@ -223,7 +223,9 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 						
 						--mStatistics.mQueuedFiles;
 						++mStatistics.mDeduplicatedFiles;
-						assert(mStatistics.checkConsistency());
+						// Must first add the new file to the queue before this is valid again
+						// because mTotalQueuedFiles has been incremented already.
+						/* assert(mStatistics.checkConsistency()); */
 					} else
 						throw new RuntimeException("Cannot write to " + filename);				
 				}
