@@ -246,9 +246,11 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			}
 		} catch(RuntimeException e) {
 			++mStatistics.mFailedFiles;
+			assert(mStatistics.checkConsistency());
 			throw e;
 		} catch(Error e) { // TODO: Java 7: Merge with above to catch(RuntimeException | Error e)
 			++mStatistics.mFailedFiles;
+			assert(mStatistics.checkConsistency());
 			throw e;
 		}
 	}
@@ -313,6 +315,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				Logger.error(this, "Error in poll() for queued file: " + queuedFile, e);
 				
 				++mStatistics.mFailedFiles;
+				assert(mStatistics.checkConsistency());
 				
 				if(!logDEBUG) {
 					Logger.error(this, "logDEBUG is false, deleting erroneous file: " + queuedFile);
