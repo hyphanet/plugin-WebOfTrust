@@ -166,6 +166,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		Logger.normal(this, "cleanDirectories(): Old finished files: " + mOldFinishedFileCount);
 		
 		assert(mStatistics.checkConsistency());
+		assert(checkDiskConsistency());
 		
 		// We cannot do this now since we have no event handler yet.
 		// registerEventHandler() does it for us.
@@ -211,6 +212,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 					
 					++mStatistics.mDeduplicatedFiles;
 					assert(mStatistics.checkConsistency());
+					assert(checkDiskConsistency());
 					return;
 				} else {
 					// Queued file *is* old, deduplicate it
@@ -237,6 +239,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			
 			++mStatistics.mQueuedFiles;
 			assert(mStatistics.checkConsistency());
+			assert(checkDiskConsistency());
 			
 			if(mEventHandler != null)
 				mEventHandler.triggerExecution();
@@ -309,6 +312,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				
 				--mStatistics.mQueuedFiles;
 				assert(mStatistics.checkConsistency());
+				assert(checkDiskConsistency());
 				
 				return result;
 			} catch(RuntimeException e) {
@@ -323,6 +327,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 					if(queuedFile.delete()) {
 						--mStatistics.mQueuedFiles;
 						assert(mStatistics.checkConsistency());
+						assert(checkDiskConsistency());
 					} else
 						Logger.error(this, "Cannot delete file: " + queuedFile);
 				}
@@ -398,6 +403,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				Logger.error(this, "Cannot delete file: " + mSourceFile);
 			
 			assert(mStatistics.checkConsistency());
+			assert(checkDiskConsistency());
 		}
 
 		/** Must be called while synchronized(IdentityFileDiskQueue.this) */
@@ -422,6 +428,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				--mStatistics.mProcessingFiles;
 			
 			assert(mStatistics.checkConsistency());
+			assert(checkDiskConsistency());
 		}
 	}
 
@@ -472,6 +479,22 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	@Override public synchronized IdentityFileQueueStatistics getStatistics() {
 		IdentityFileQueueStatistics result = mStatistics.clone();
 		assert(result.checkConsistency());
+		assert(checkDiskConsistency());
 		return result;
+	}
+	
+	/**
+	 * Returns true if the numbers in {@link #mStatistics} match the amount of files in the on-disk
+	 * directories. */
+	private synchronized boolean checkDiskConsistency() {
+		int queued = mQueueDir.listFiles().length;
+		int processing = mProcessingDir.listFiles().length;
+		int finished = mFinishedDir.listFiles().length;
+		
+		return (
+				(queued == mStatistics.mQueuedFiles)
+			 && (processing == mStatistics.mProcessingFiles)
+			 && (finished == mStatistics.mFinishedFiles)
+		    );
 	}
 }

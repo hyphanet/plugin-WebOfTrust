@@ -164,7 +164,6 @@ public interface IdentityFileQueue {
 			return (float)mTotalQueuedFiles / uptimeHours;		
 		}
 
-		/** FIXME: Also check whether the numbers match the directory contents on disk. */
 		boolean checkConsistency() {
 			return (
 					(mTotalQueuedFiles >= 0)
