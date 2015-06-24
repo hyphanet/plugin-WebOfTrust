@@ -178,6 +178,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	}
 
 	@Override public synchronized void add(IdentityFileStream identityFileStream) {
+		try {
 		// We increment the counter before errors could occur so erroneously dropped files are
 		// included: This ensures that the user might notice dropped files from the statistics in
 		// the UI.
@@ -239,6 +240,14 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			mEventHandler.triggerExecution();
 		else
 			Logger.error(this, "IdentityFile queued but no event handler is monitoring the queue!");
+		
+		} catch(RuntimeException e) {
+			++mStatistics.mFailedFiles;
+			throw e;
+		} catch(Error e) { // TODO: Java 7: Merge with above to catch(RuntimeException | Error e)
+			++mStatistics.mFailedFiles;
+			throw e;
+		}
 	}
 
 	private File getQueueFilename(FreenetURI identityFileURI) {
@@ -299,6 +308,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				return result;
 			} catch(RuntimeException e) {
 				Logger.error(this, "Error in poll() for queued file: " + queuedFile, e);
+				
+				++mStatistics.mFailedFiles;
 				
 				if(!logDEBUG) {
 					Logger.error(this, "logDEBUG is false, deleting erroneous file: " + queuedFile);

@@ -97,7 +97,7 @@ public interface IdentityFileQueue {
 		 * - are not queued anymore (see {@link #mFinishedFiles}).<br>
 		 * - are still queued (see {@link #mQueuedFiles}).<br>
 		 * - were deleted due to deduplication (see {@link #mDeduplicatedFiles}).<br>
-		 * - were not actually enqueued due to errors (FIXME: Add counter for this).<br><br>
+		 * - failed en-/dequeuing due to errors (see {@link #mFailedFiles}).<br><br>
 		 * 
 		 * The lost files are included to ensure that errors can be noticed by the user from
 		 * statistics in the UI. */
@@ -132,7 +132,11 @@ public interface IdentityFileQueue {
 		 * - {@link #mProcessingFiles} - {@link #mFinishedFiles}</code>.
 		 */
 		public int mDeduplicatedFiles = 0;
-		
+
+		/** Number of files which the queue has dropped due to internal errors. These are bugs. */
+		public int mFailedFiles = 0;
+
+
 		/** Value of {@link CurrentTimeUTC#getInMillis()} when this object was created. */
 		public final long mStartupTimeMilliseconds = CurrentTimeUTC.getInMillis();
 
@@ -172,6 +176,8 @@ public interface IdentityFileQueue {
 				 && (mFinishedFiles >= 0)
 				 
 				 && (mDeduplicatedFiles >= 0)
+				 
+				 && (mFailedFiles == 0)
 				
 				 && (mQueuedFiles <= mTotalQueuedFiles)
 				 
