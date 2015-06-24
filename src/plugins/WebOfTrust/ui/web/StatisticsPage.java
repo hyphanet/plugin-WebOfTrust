@@ -125,7 +125,10 @@ public class StatisticsPage extends WebPageImpl {
 
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "ProcessedFiles")
 			+ stats.mProcessedFiles));
-		
+
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "FailedFiles")
+			+ stats.mFailedFiles));
+
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "TotalProcessingTime")
 			+ TimeUtil.formatTime(TimeUnit.NANOSECONDS.toMillis(stats.mProcessingTimeNanoseconds))));
 		

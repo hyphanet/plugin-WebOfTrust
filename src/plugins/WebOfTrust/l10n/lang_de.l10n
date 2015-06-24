@@ -34,6 +34,7 @@ CreateOwnIdentityWizardPage.Step.CreateIdentity.Header=Identität erstellt
 ErrorPage.InternalError.Header=Interner Fehler, bitte melden Sie das
 KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Edition=Edition
 StatisticsPage.IdentityFileProcessorBox.AverageProcessingTimeSecs=Durschnittliche Bearbeitungszeit für eine XML Datei, in Sekunden: 
+StatisticsPage.IdentityFileProcessorBox.FailedFiles=Dateibearbeitung fehlgeschlagen: 
 StatisticsPage.IdentityFileProcessorBox.Header=Bearbeiter für Identitäts-Dateien
 StatisticsPage.IdentityFileProcessorBox.ProcessedFiles=Bearbeitete Dateien: 
 StatisticsPage.IdentityFileProcessorBox.TotalProcessingTime=Bearbeitungszeit insgesamt: 

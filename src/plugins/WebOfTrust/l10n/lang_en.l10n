@@ -140,6 +140,7 @@ MyIdentityPage.OwnIdentities.OwnIdentityTableHeader.Trusters=Trusters
 MyIdentityPage.OwnIdentities.OwnIdentityTable.IntroduceButton=Introduce
 MyIdentityPage.OwnIdentities.OwnIdentityTable.RestoreInProgress=Restoration in progress.
 StatisticsPage.IdentityFileProcessorBox.AverageProcessingTimeSecs=Average seconds for importing one identity XML file: 
+StatisticsPage.IdentityFileProcessorBox.FailedFiles=Failed files: 
 StatisticsPage.IdentityFileProcessorBox.Header=Identity file processor
 StatisticsPage.IdentityFileProcessorBox.ProcessedFiles=Processed files: 
 StatisticsPage.IdentityFileProcessorBox.TotalProcessingTime=Total processing time: 
