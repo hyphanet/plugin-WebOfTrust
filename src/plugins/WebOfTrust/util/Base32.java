@@ -29,7 +29,11 @@ package plugins.WebOfTrust.util;
  * (see http://www.faqs.org/rfcs/rfc3548.html )
  *
  * Imported public-domain code of Bitzi.
- *
+ * 
+ * TODO: Code quality: Move to a common shared library since both WOT and Freemail use it.
+ * freenet-ext.jar does seem to contain a Base32.java as well, but I don't know about whether there
+ * is any guarantee that its in the right place and will stay in freenet-ext.
+ * 
  * @author Robert Kaye
  * @author Gordon Mohr
  */
