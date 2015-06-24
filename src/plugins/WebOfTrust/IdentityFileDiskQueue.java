@@ -282,6 +282,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				
 				// The InputStreamWithCleanup wrapper will remove the file from mProcessingDir once
 				// the stream is close()d.
+				// TODO: Code quality: Close inner streams upon construction failure of outer ones.
+				// Not critical to fix: The streams do not lock any resources. Also, closing the
+				// InputStreamWithCleanup would delete the file even though we haven't returned it
+				// for processing yet.
 				IdentityFileStream result = new IdentityFileStream(fileData.getURI(),
 					new InputStreamWithCleanup(dequeuedFile, fileData,
 						new ByteArrayInputStream(fileData.mXML)));
