@@ -6,7 +6,6 @@ package plugins.WebOfTrust;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +16,7 @@ import java.util.Map.Entry;
 import java.util.UUID;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.util.Base32;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.support.Base64;
@@ -234,21 +234,17 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 		
 		/**
 		 * @return The IdentityID encoded as {@link Base64}.
-		 * @see #toStringBase36() */
+		 * @see #toStringBase32() */
 		@Override
 		public String toString() {
 			return mID;
 		}
 		
 		/**
-		 * TODO: Performance: Use something faster than {@link BigInteger#toString()}.
-		 * FIXME: Use something which does not add a "-" sign if it considers the byte[] to be
-		 * negative. I would suggest class Base32 from Freemail.
-		 * 
-		 * @return The IdentityID encoded as base 36.
-		 * @see #toString() Function for encoding as base 64. */
-		public String toStringBase36() {
-			return new BigInteger(mRoutingKey).toString(36);
+		 * @return The IdentityID encoded as {@link Base32}
+		 * @see #toString() Function for encoding as {@link Base64}. */
+		public String toStringBase32() {
+			return Base32.encode(mRoutingKey);
 		}
 		
 		@Override
