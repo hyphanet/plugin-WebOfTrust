@@ -60,6 +60,7 @@ final class IdentityFile implements Serializable {
 			bos = new ByteArrayOutputStream(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE + 1);
 			FileUtil.copy(source.mXMLInputStream, bos, -1);
 			xml = bos.toByteArray();
+			assert(xml.length <= XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE);
 		} catch(IOException e) {
 			throw new RuntimeException(e);
 		} finally {
