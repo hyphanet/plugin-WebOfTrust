@@ -53,8 +53,12 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 			
 			while((file = mQueue.removeFirst()) != null) {
 				try {
-					return new IdentityFileStream(
+					IdentityFileStream result = new IdentityFileStream(
 						file.getURI(), new ByteArrayInputStream(file.mXML));
+					
+					++mStatistics.mFinishedFiles;
+					
+					return result;
 				} catch(RuntimeException e) {
 					++mStatistics.mFailedFiles;
 					assert(false) : e;
