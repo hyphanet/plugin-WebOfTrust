@@ -494,7 +494,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		return (
 				(queued == mStatistics.mQueuedFiles)
 			 && (processing == mStatistics.mProcessingFiles)
-			 && (finished == mStatistics.mFinishedFiles)
+			 && (logDEBUG == false && finished == 0 || finished == mStatistics.mFinishedFiles)
 		    );
 	}
 }
