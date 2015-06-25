@@ -76,9 +76,10 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 	}
 
 	private synchronized boolean checkConsistency() {
-		assert(mStatistics.checkConsistency());
-		assert(mStatistics.mDeduplicatedFiles == 0);
-		assert(mStatistics.mProcessingFiles == 0);
-		assert(mQueue.size() == mStatistics.mQueuedFiles);
+		return
+			   mStatistics.checkConsistency()
+			&& mStatistics.mDeduplicatedFiles == 0
+			&& mStatistics.mProcessingFiles == 0
+			&& mQueue.size() == mStatistics.mQueuedFiles;
 	}
 }
