@@ -114,7 +114,11 @@ public interface IdentityFileQueue {
 		 * {@link IdentityFileQueue#poll()}, but the {@link InputStream} of the
 		 * {@link IdentityFileStream} has not been closed yet.<br>
 		 * This number should only ever be 0 or 1 as required by {@link IdentityFileQueue#poll()}.
-		 * (Concurrent processing is not supported because the filenames could collide). */
+		 * (Concurrent processing is not supported because the filenames could collide).<br><br>
+		 * 
+		 * Notice: Queue implementations are free to not track this number, i.e. keep it at 0.<br>
+		 * Without warranty it can be said that {@link IdentityFileDiskQueue} does track this
+		 * number, but {@link IdentityFileMemoryQueue} does not. */
 		public int mProcessingFiles = 0;
 		
 		/**
@@ -123,7 +127,13 @@ public interface IdentityFileQueue {
 		 * {@link IdentityFileQueue#poll()} and the {@link InputStream} of the
 		 * {@link IdentityFileStream} has been closed.<br>
 		 * This number can be less than the files passed to {@link #add(IdentityFileStream)}:
-		 * Files can be dropped due to deduplication (or errors). */
+		 * Files can be dropped due to deduplication (or errors).<br><br>
+		 * 
+		 * Notice: Queue implementations are free to increment this number even before the stream
+		 * has been closed.<br>
+		 * Without warranty it can be said that {@link IdentityFileDiskQueue} does wait for the
+		 * stream to be closed, but {@link IdentityFileMemoryQueue} does not and rather increments
+		 * immediately in {@link IdentityFileMemoryQueue#poll()}. */
 		public int mFinishedFiles = 0;
 	
 		/**

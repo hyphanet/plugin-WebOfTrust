@@ -3,13 +3,14 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.ByteArrayInputStream;
 import java.util.LinkedList;
 
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 
 /**
  * {@link IdentityFileQueue} implementation which stores the files in memory instead of on disk.<br>
- * <br>
+ * Order of the files is preserved in a FIFO manner.<br><br>
  * 
  * This implementation aims at being used in unit tests only. Thus, in comparison to the
  * {@link IdentityFileDiskQueue} which WOT actually uses, it has the following disadvantages:<br>
@@ -46,8 +47,38 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 		}
 	}
 
+	@Override public synchronized IdentityFileStream poll() {
+		try {
+			IdentityFile file;
+			
+			while((file = mQueue.removeFirst()) != null) {
+				try {
+					return new IdentityFileStream(
+						file.getURI(), new ByteArrayInputStream(file.mXML));
+				} catch(RuntimeException e) {
+					++mStatistics.mFailedFiles;
+					assert(false) : e;
+					continue;
+				} catch(Error e) {
+					// TODO: Java 7: Merge with above to catch(RuntimeException | Error e)
+					++mStatistics.mFailedFiles;
+					assert(false) : e;
+					continue;
+				} finally {
+					--mStatistics.mQueuedFiles;
+				}
+			}
+				
+			return null; // Queue is empty
+		} finally {
+			assert(checkConsistency());
+		}
+	}
+
 	private synchronized boolean checkConsistency() {
 		assert(mStatistics.checkConsistency());
+		assert(mStatistics.mDeduplicatedFiles == 0);
+		assert(mStatistics.mProcessingFiles == 0);
 		assert(mQueue.size() == mStatistics.mQueuedFiles);
 	}
 }
