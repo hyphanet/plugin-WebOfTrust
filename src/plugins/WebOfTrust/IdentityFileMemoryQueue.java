@@ -6,6 +6,7 @@ package plugins.WebOfTrust;
 import java.io.ByteArrayInputStream;
 import java.util.LinkedList;
 
+import plugins.WebOfTrust.IdentityFileQueue.IdentityFileQueueStatistics;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 
 /**
@@ -96,6 +97,11 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 		
 		if(mQueue.size() != 0)
 			mEventHandler.triggerExecution();
+	}
+
+	@Override public synchronized IdentityFileQueueStatistics getStatistics() {
+		assert(checkConsistency());
+		return mStatistics.clone();
 	}
 
 	private synchronized boolean checkConsistency() {
