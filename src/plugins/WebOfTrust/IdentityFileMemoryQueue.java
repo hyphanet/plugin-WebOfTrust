@@ -20,9 +20,8 @@ import plugins.WebOfTrust.util.jobs.BackgroundJob;
  * - It doesn't use the {@link Logger}, you need to instead enable assert() in your JVM.<br><br>
  * 
  * TODO: Performance: Add configuration option to allow users to make their WOT use this instead
- * of the default {@link IdentityFileDiskQueue}. Be sure to add more self-tests before, and to
- * warn users that they only should use it if they have lots of memory.
- */
+ * of the default {@link IdentityFileDiskQueue}. Be sure to resolve the above disadvantages before,
+ * and to warn users that they only should use it if they have lots of memory. */
 final class IdentityFileMemoryQueue implements IdentityFileQueue {
 
 	private final LinkedList<IdentityFile> mQueue = new LinkedList<IdentityFile>();
