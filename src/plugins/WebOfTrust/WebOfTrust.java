@@ -341,7 +341,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 		mSubscriptionManager.start();
 		
 
-		mIdentityFileQueue = new IdentityFileDiskQueue(this);
+		// Use a memory queue instead of the disk queue we use during regular operation:
+		// This constructor only has the name of the database file, not a user data directory.
+		// Thus getUserDataDirectory() would fail, so constructing a disk queue would also fail.
+		mIdentityFileQueue = new IdentityFileMemoryQueue();
 
 		mIdentityFileProcessor
 			= new IdentityFileProcessor(mIdentityFileQueue, null, null);
