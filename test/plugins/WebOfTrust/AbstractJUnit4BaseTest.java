@@ -5,6 +5,8 @@ package plugins.WebOfTrust;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -94,6 +96,22 @@ public abstract class AbstractJUnit4BaseTest {
      * {@link Identity} / {@link Trust} / {@link Score} objects. 
      */
     protected abstract WebOfTrust getWebOfTrust();
+
+    /**
+     * Returns a new {@link WebOfTrust} instance with an empty database. 
+     * Multiple calls to this are guaranteed to use a different database file each.
+     */
+    protected WebOfTrust constructEmptyWebOfTrust() {
+    	try {
+    		File dataDir = mTempFolder.newFolder();
+    		File database = new File(dataDir, dataDir.getName() + ".db4o");
+    		assertFalse(database.exists());
+    		return new WebOfTrust(database.toString());
+    	} catch(IOException e) {
+    		fail(e.toString());
+    		throw new RuntimeException(e);
+    	}
+    }
 
     /**
      * Adds identities with random request URIs to the database.
