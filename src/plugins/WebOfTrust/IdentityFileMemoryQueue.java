@@ -6,7 +6,6 @@ package plugins.WebOfTrust;
 import java.io.ByteArrayInputStream;
 import java.util.LinkedList;
 
-import plugins.WebOfTrust.IdentityFileQueue.IdentityFileQueueStatistics;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 
 /**
