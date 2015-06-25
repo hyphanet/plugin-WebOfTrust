@@ -238,7 +238,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			};
 
 
-			mIdentityFileQueue = new IdentityFileDiskQueue(this);
+			mIdentityFileQueue = new IdentityFileDiskQueue(getUserDataDirectory());
 			// You may use this instead for debugging purposes, or on very high memory nodes.
 			// See its JavaDoc for requirements of making this a config option.
 			/* mIdentityFileQueue = new IdentityFileMemoryQueue(); */

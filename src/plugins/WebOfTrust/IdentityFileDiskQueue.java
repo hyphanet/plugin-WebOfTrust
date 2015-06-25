@@ -74,8 +74,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	}
 
 
-	public IdentityFileDiskQueue(WebOfTrust wot) {
-		mDataDir = new File(wot.getUserDataDirectory(), "IdentityFileQueue");
+	public IdentityFileDiskQueue(File parentDirectory) {
+		mDataDir = new File(parentDirectory, "IdentityFileQueue");
 		mQueueDir = new File(mDataDir, "Queued");
 		mProcessingDir = new File(mDataDir, "Processing");
 		mFinishedDir = new File(mDataDir, "Finished");
