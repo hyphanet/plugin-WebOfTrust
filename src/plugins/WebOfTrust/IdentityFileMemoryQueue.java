@@ -6,6 +6,7 @@ package plugins.WebOfTrust;
 import java.io.ByteArrayInputStream;
 import java.util.LinkedList;
 
+import freenet.support.Logger;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 
 /**
@@ -16,7 +17,7 @@ import plugins.WebOfTrust.util.jobs.BackgroundJob;
  * {@link IdentityFileDiskQueue} which WOT actually uses, it has the following disadvantages:<br>
  * - It doesn't deduplicate editions. See {@link IdentityFileQueue} for what that means.<br>
  * - It doesn't watch its memory usage and thus on fast Freenet nodes might cause OOM.<br>
- * - It doesn't contain as strong self-test assert()s as {@link IdentityFileDiskQueue}.<br><br>
+ * - It doesn't use the {@link Logger}, you need to instead enable assert() in your JVM.<br><br>
  * 
  * TODO: Performance: Add configuration option to allow users to make their WOT use this instead
  * of the default {@link IdentityFileDiskQueue}. Be sure to add more self-tests before, and to
