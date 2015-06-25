@@ -239,6 +239,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 
 			mIdentityFileQueue = new IdentityFileDiskQueue(this);
+			// You may use this instead for debugging purposes, or on very high memory nodes.
+			// See its JavaDoc for requirements of making this a config option.
+			/* mIdentityFileQueue = new IdentityFileMemoryQueue(); */
 			
 			mXMLTransformer = new XMLTransformer(this);
 
