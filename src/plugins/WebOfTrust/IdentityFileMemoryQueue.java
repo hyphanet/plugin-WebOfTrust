@@ -28,11 +28,18 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 
 	private final IdentityFileQueueStatistics mStatistics = new IdentityFileQueueStatistics();
 
+	private BackgroundJob mEventHandler;
+
 
 	@Override public synchronized void add(IdentityFileStream file) {
 		try {
 			mQueue.addLast(IdentityFile.read(file));
 			++mStatistics.mQueuedFiles;
+			
+			if(mEventHandler != null)
+				mEventHandler.triggerExecution();
+			else
+				assert(false);
 		} catch(RuntimeException e) {
 			++mStatistics.mFailedFiles;
 			assert(false) : e;
@@ -77,6 +84,18 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 		} finally {
 			assert(checkConsistency());
 		}
+	}
+
+	@Override public synchronized void registerEventHandler(BackgroundJob handler) {
+		if(mEventHandler != null) {
+			throw new UnsupportedOperationException(
+				"Support for more than one event handler is not implemented yet.");
+		}
+		
+		mEventHandler = handler;
+		
+		if(mQueue.size() != 0)
+			mEventHandler.triggerExecution();
 	}
 
 	private synchronized boolean checkConsistency() {
