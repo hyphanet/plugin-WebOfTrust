@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.util.LinkedList;
+
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 
 /**
@@ -21,4 +23,26 @@ import plugins.WebOfTrust.util.jobs.BackgroundJob;
  */
 final class IdentityFileMemoryQueue implements IdentityFileQueue {
 
+	private final LinkedList<IdentityFile> mQueue = new LinkedList<IdentityFile>();
+
+	private final IdentityFileQueueStatistics mStatistics = new IdentityFileQueueStatistics();
+
+
+	@Override public synchronized void add(IdentityFileStream file) {
+		try {
+			mQueue.addLast(IdentityFile.read(file));
+			++mStatistics.mQueuedFiles;
+		} catch(RuntimeException e) {
+			++mStatistics.mFailedFiles;
+			assert(false) : e;
+			throw e;
+		} catch(Error e) { // TODO: Java 7: Merge with above to catch(RuntimeException | Error e)
+			++mStatistics.mFailedFiles;
+			assert(false) : e;
+			throw e;
+		} finally {
+			++mStatistics.mTotalQueuedFiles;
+			assert(mStatistics.checkConsistency());
+		}
+	}
 }
