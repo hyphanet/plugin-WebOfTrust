@@ -346,8 +346,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// Thus getUserDataDirectory() would fail, so constructing a disk queue would also fail.
 		mIdentityFileQueue = new IdentityFileMemoryQueue();
 
+		mXMLTransformer = new XMLTransformer(this);
+		
 		mIdentityFileProcessor
-			= new IdentityFileProcessor(mIdentityFileQueue, null, null);
+			= new IdentityFileProcessor(mIdentityFileQueue, null, mXMLTransformer);
 
 		mFetcher = new IdentityFetcher(this, null, mIdentityFileQueue);
 		
