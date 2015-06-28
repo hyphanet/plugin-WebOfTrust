@@ -11,10 +11,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import javax.xml.transform.TransformerException;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
@@ -162,21 +164,35 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 		IdentityFileProcessor proc2 = new IdentityFileProcessor(queue2,
 			new PrioritizedTicker(new PooledExecutor(), 0), wot2.getXMLTransformer());
 		
-		proc1.start();
-		proc2.start();
-		
-		// FIXME: Enqueue the files in parallel in threads to test thread safety.
-		
-		Collections.shuffle(mIdentityFiles1, mRandom);
-		for(IdentityFileStream stream : mIdentityFiles1)
-			queue1.add(stream);
-		
-		Collections.shuffle(mIdentityFiles2, mRandom);
-		for(IdentityFileStream stream : mIdentityFiles2)
-			queue2.add(stream);
-		
-		proc1.triggerExecution(0);
-		proc2.triggerExecution(0);
+		@Ignore final class ConcurrentEnqueuer {
+			public void enqueue(final List<IdentityFileStream> files,
+					final IdentityFileQueue queue, final IdentityFileProcessor proc)
+					throws InterruptedException {
+				
+				Collections.shuffle(files, mRandom);
+				
+				ArrayList<Thread> threads = new ArrayList<Thread>(files.size() + 1);
+				
+				for(final IdentityFileStream file : files) {
+					threads.add(new Thread(new Runnable() { @Override public void run() {
+						// Trigger processor execution before the queue contains stuff to ensure
+						// concurrency issues between the processor thread and add() also get
+						// noticed.
+						proc.triggerExecution(0);
+						queue.add(file);
+						proc.triggerExecution(0);
+					}}));
+				}
+				
+				proc.start();
+				// Start threads in separate loop for maximum concurrency
+				for(Thread thread : threads) thread.start();
+				for(Thread thread : threads) thread.join();
+			}
+		};
+
+		new ConcurrentEnqueuer().enqueue(mIdentityFiles1, queue1, proc1);	
+		new ConcurrentEnqueuer().enqueue(mIdentityFiles2, queue2, proc2);
 		
 		do {
 			Thread.sleep(100);
