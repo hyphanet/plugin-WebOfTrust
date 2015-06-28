@@ -177,9 +177,12 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 						mStatistics.mProcessingTimeNanoseconds +=  endTime - startTime;
 					}
 				} catch(RuntimeException e) {
-					Logger.error(this,
-					    "Parsing identity XML failed severely - edition probably could NOT be "
-				      + "marked for not being fetched again: " + stream.mURI, e);
+					if(stream != null && stream.mURI != null) {
+						Logger.error(this,
+						    "Parsing identity XML failed severely - edition probably could NOT be "
+						  + "marked for not being fetched again: " + stream.mURI, e);
+					} else
+						Logger.error(this, "Error in poll()", e);
 					
 					synchronized(IdentityFileProcessor.this) {
 						++mStatistics.mFailedFiles;
