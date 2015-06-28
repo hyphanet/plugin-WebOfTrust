@@ -4,7 +4,6 @@
 package plugins.WebOfTrust;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -127,5 +126,69 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 			}
 		}
 	}
+
+	@Test public void testByComparingResultsOfTwoImplementations()
+			throws IOException, InterruptedException, InvalidParameterException {
+
+		WebOfTrust wot1 = constructEmptyWebOfTrust();
+		WebOfTrust wot2 = constructEmptyWebOfTrust();
+		
+		assertEquals(wot1, wot2);
+
+		// Copy the OwnIdentitys from the source WOT to our test WOTs to ensure that trust lists
+		// are being imported.
+		for(OwnIdentity ownId : mWebOfTrust.getAllOwnIdentities()) {
+			wot1.restoreOwnIdentity(ownId.getInsertURI());
+			wot2.restoreOwnIdentity(ownId.getInsertURI());
+		}
+
+		IdentityFileQueue queue1 = new IdentityFileMemoryQueue();
+		IdentityFileQueue queue2 = new IdentityFileDiskQueue(mTempFolder.newFolder());
+		
+		// TODO: Code quality: Move the Ticker creation to a function. Also search the other unit
+		// tests for similar code to deduplicate then.
+		IdentityFileProcessor proc1 = new IdentityFileProcessor(queue1,
+			new PrioritizedTicker(new PooledExecutor(), 0), wot1.getXMLTransformer());
+		IdentityFileProcessor proc2 = new IdentityFileProcessor(queue2,
+			new PrioritizedTicker(new PooledExecutor(), 0), wot2.getXMLTransformer());
+		
+		proc1.start();
+		proc2.start();
+		
+		// FIXME: Enqueue the files in parallel in threads to test thread safety.
+		
+		Collections.shuffle(mIdentityFiles1, mRandom);
+		for(IdentityFileStream stream : mIdentityFiles1)
+			queue1.add(stream);
+		
+		Collections.shuffle(mIdentityFiles2, mRandom);
+		for(IdentityFileStream stream : mIdentityFiles2)
+			queue2.add(stream);
+		
+		proc1.triggerExecution(0);
+		proc2.triggerExecution(0);
+		
+		do {
+			Thread.sleep(100);
+		} while(
+				queue1.getStatistics().mQueuedFiles != 0
+			 || queue2.getStatistics().mQueuedFiles != 0
+			 || proc1.getStatistics().mProcessedFiles != mIdentityFiles1.size()
+			 // Deduplication can cause us to process less files than mIdentityFiles2.size()
+			 || proc2.getStatistics().mProcessedFiles != queue2.getStatistics().mFinishedFiles
+		 );
+		
+		proc1.terminate();
+		proc2.terminate();
+		proc1.waitForTermination(Long.MAX_VALUE);
+		proc2.waitForTermination(Long.MAX_VALUE);
+		
+		assertEquals(mWebOfTrust, wot1);
+		assertEquals(mWebOfTrust, wot2);
+	}
+
+    @Override protected WebOfTrust getWebOfTrust() {
+    	return mWebOfTrust;
+    }
 
 }
