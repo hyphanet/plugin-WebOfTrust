@@ -34,9 +34,8 @@ import freenet.support.PrioritizedTicker;
  * They are being tested against each other by feeding the same set of identity files to them, and
  * then checking whether the resulting WOT database is equal.<br><br>
  * 
- * FIXME: General ideas for tests:<br>
- * - Test whether deduplication does not over-deduplicate stuff which it shouldn't deduplicate. Also
- *   test whether it does deduplicate stuff which it should.
+ * TODO: Ideas for tests:<br>
+ * - Test whether deduplication does actually deduplicate stuff.
  */
 public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 	
