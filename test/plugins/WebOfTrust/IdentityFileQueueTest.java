@@ -113,6 +113,16 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 				identity.setEdition(identity.getEdition() + 1);
 				identity.storeAndCommit();
 				
+				// testByComparingResultsOfTwoImplementations() will use WebOfTrust.equals() to
+				// compare the original WebOfTrust against what was transported by identity files.
+				// The equals() also checks the value of trust.getTrusterEdition(), so we need
+				// to update it.
+				for(Trust trust : mWebOfTrust.getGivenTrusts(identity)) {
+					trust.trusterEditionUpdated();
+					trust.storeWithoutCommit();
+				}
+				Persistent.checkedCommit(mWebOfTrust.getDatabase(), this);
+				
 				mWebOfTrust.getXMLTransformer().exportOwnIdentity(identity, bos);
 				
 				ByteArrayInputStream bis1
