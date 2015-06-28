@@ -204,7 +204,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				//    restarted from the edition specified in the main database. As queued files
 				//    have not been imported in the main database yet, the edition there may be
 				//    older than what is queued.
-				if(existingQueuedEdition >= givenEdition) {
+				// Notice: This is intentionally a ">" check instead of ">=":
+				// If we re-fetch the same edition, we better drop the file on disk to protect
+				// against broken files which are stuck in the queue due to corruption/bugs.
+				if(existingQueuedEdition > givenEdition) {
 					if(logMINOR) {
 						Logger.minor(this, "Fetched edition which is older than queued file, "
 										 + "dropping: " + givenEdition);
