@@ -106,7 +106,7 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 
 				// Re-query since we only have a clone() but db4o needs the original
 				identity = mWebOfTrust.getOwnIdentityByID(identity.getID());
-				
+				identity.setPublishTrustList(true);
 				// Before creating the file, we increment the edition of the identity to ensure that
 				// the edition deduplication code of IdentityFileDiskQueue doesn't wrongly
 				// deduplicate the newer files with older ones.
