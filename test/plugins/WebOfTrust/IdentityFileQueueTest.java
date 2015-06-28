@@ -59,8 +59,12 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 	 * dumps of several stages of the generation of {@link #mWebOfTrust}, including the final
 	 * stage.<br>
 	 * Those dumps will be used as input for the {@link IdentityFileQueue} implementations
-	 * to validate that they operate correctly. */
-	@Before public void setUp() throws InvalidParameterException, DuplicateTrustException,
+	 * to validate that they operate correctly.<br><br>
+	 * 
+	 * NOTICE: This does not have a {@link Before} annotation but rather is only called explicitly
+	 * by the test which needs it so the tests of the parent class do not cause it to run since it
+	 * takes a long time to execute. */
+	private void setUp() throws InvalidParameterException, DuplicateTrustException,
 			NotTrustedException, UnknownIdentityException, TransformerException, IOException {
 		
 		mWebOfTrust = constructEmptyWebOfTrust();
@@ -139,7 +143,11 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 	}
 
 	@Test public void testByComparingResultsOfTwoImplementations()
-			throws IOException, InterruptedException, InvalidParameterException {
+			throws IOException, InterruptedException, InvalidParameterException,
+			DuplicateTrustException, NotTrustedException, UnknownIdentityException,
+			TransformerException {
+		
+		setUp();
 
 		WebOfTrust wot1 = constructEmptyWebOfTrust();
 		WebOfTrust wot2 = constructEmptyWebOfTrust();
