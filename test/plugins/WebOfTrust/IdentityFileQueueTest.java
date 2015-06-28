@@ -104,10 +104,17 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 			for(OwnIdentity identity : ownIdentitiesUncasted) {
 				ByteArrayOutputStream bos
 					= new ByteArrayOutputStream(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE + 1);
+
+				// Re-query since we only have a clone() but db4o needs the original
+				identity = mWebOfTrust.getOwnIdentityByID(identity.getID());
 				
-				mWebOfTrust.getXMLTransformer().exportOwnIdentity(
-					// Re-query since we only have a clone() but db4o needs the original
-					mWebOfTrust.getOwnIdentityByID(identity.getID()), bos);
+				// Before creating the file, we increment the edition of the identity to ensure that
+				// the edition deduplication code of IdentityFileDiskQueue doesn't wrongly
+				// deduplicate the newer files with older ones.
+				identity.setEdition(identity.getEdition() + 1);
+				identity.storeAndCommit();
+				
+				mWebOfTrust.getXMLTransformer().exportOwnIdentity(identity, bos);
 				
 				ByteArrayInputStream bis1
 					= new ByteArrayInputStream(bos.toByteArray());
