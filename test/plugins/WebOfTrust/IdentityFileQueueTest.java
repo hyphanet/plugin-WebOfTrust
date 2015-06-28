@@ -67,7 +67,7 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 		mWebOfTrust = constructEmptyWebOfTrust();
 
 		// Our goal is to populate mIdentityFiles1/2 with this many files for each OwnIdentity.
-		final int identityFileCount = 5;
+		final int identityFileCount = 50;
 		
 		// Now we generate a random Identity/Trust/Score graph.
 		// We need a full copy of the trust graph as IdentityFiles. Exporting IdentityFiles is only
