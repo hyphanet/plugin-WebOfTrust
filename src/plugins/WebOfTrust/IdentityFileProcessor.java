@@ -39,8 +39,8 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 	 * cost of higher latency for remote trust updates to have an effect.<br><br>
 	 * 
 	 * TODO: Performance: Once all of the other WOT performance issues are fixed, and thus we
-	 * don't need to rely upon deduplicating identity files for reason performance anymore, decrease
-	 * this back to 1 minute for improving general latency of WOT.<br><br>
+	 * don't need to rely upon deduplicating identity files for performance reasons anymore,
+	 * decrease this back to 1 minute for improving general latency of WOT.<br><br>
 	 * 
 	 * FIXME: Performance: Tweak default value. Use the statistics of {@link IdentityFileDiskQueue}
 	 * to find a reasonable default. Especially test this with fresh empty databases as newbies
