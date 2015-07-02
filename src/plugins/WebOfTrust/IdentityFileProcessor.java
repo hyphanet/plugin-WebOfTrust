@@ -45,7 +45,7 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 	 * FIXME: Performance: Tweak default value. Use the statistics of {@link IdentityFileDiskQueue}
 	 * to find a reasonable default. Especially test this with fresh empty databases as newbies
 	 * who need to fetch all identities are most likely to benefit from deduplication. */
-	public static final long PROCESSING_DELAY_MILLISECONDS = TimeUnit.MINUTES.toMillis(5);
+	public static final long PROCESSING_DELAY_MILLISECONDS = TimeUnit.MINUTES.toMillis(10);
 
 	/** We consume the files of this queue when it calls our {@link #triggerExecution()}. */
 	private final IdentityFileQueue mQueue;
