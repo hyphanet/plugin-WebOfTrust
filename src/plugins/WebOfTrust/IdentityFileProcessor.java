@@ -48,7 +48,7 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 	 * To find a reasonable default, use an infinite processing delay together with a fresh, empty
 	 * database to see how much deduplication is the maximal possible value. Also see
 	 * https://bugs.freenetproject.org/view.php?id=6555 */
-	public static final long PROCESSING_DELAY_MILLISECONDS = TimeUnit.MINUTES.toMillis(10);
+	public static final long PROCESSING_DELAY_MILLISECONDS = TimeUnit.MINUTES.toMillis(1);
 
 	/** We consume the files of this queue when it calls our {@link #triggerExecution()}. */
 	private final IdentityFileQueue mQueue;
