@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import java.util.UUID;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.util.Base32;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.support.Base64;
@@ -150,6 +151,12 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 		 */
 		public static transient final int LENGTH = 43;
 		
+		/**
+		 * The {@link FreenetURI#getRoutingKey()} of the {@link FreenetURI} of the Identity.
+		 * This is the backend data of the real ID {@link #mID}, which only differs in encoding. */
+		private final byte[] mRoutingKey;
+		
+		/** {@link Base64}-encoded version of {@link #mRoutingKey}. */
 		private final String mID;
 		
 		/**
@@ -162,7 +169,7 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 				throw new IllegalArgumentException("ID is too long, length: " + id.length());
 			
 			try {
-				Base64.decode(id);
+				mRoutingKey = Base64.decode(id);
 			} catch (IllegalBase64Exception e) {
 				throw new RuntimeException("ID does not contain valid Base64: " + id);
 			}
@@ -185,7 +192,22 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			}
 			
 			/* WARNING: When changing this, also update Freetalk.WoT.WoTIdentity.getUIDFromURI()! */
-			mID = Base64.encode(uri.getRoutingKey());
+			mRoutingKey = uri.getRoutingKey();
+			// TODO: Performance: Only compute this on-demand from mRoutingKey in getters.
+			// Also make sure that the opposite is possible for the constructor which only
+			// receives the value of mID but not mRoutingKey: It should not compute the
+			// mRoutingKey from the ID; getters should do that on demand.
+			// Further, please check the call hierarchy of all functions of this class to ensure
+			// that the lack of always decoding the Base64 which this will introduce does not cause
+			// a lack of validation of the input data: This class is being used specifically to
+			// validate data from the network in some places, so it must continue to do so there.
+			// You should introduce additional validating constructAndValidate*() functions for
+			// those cases.
+			// Notice that the opposite applies as well:
+			// Some of the existing constructAndValidate*() functions are used in places which do
+			// not actually need validation. Those places should be changed to use the new
+			// non-validating construction functions.
+			mID = Base64.encode(mRoutingKey);
 		}
 		
 		/**
@@ -210,9 +232,19 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			return new IdentityID(uri);
 		}
 		
+		/**
+		 * @return The IdentityID encoded as {@link Base64}.
+		 * @see #toStringBase32() */
 		@Override
 		public String toString() {
 			return mID;
+		}
+		
+		/**
+		 * @return The IdentityID encoded as {@link Base32}
+		 * @see #toString() Function for encoding as {@link Base64}. */
+		public String toStringBase32() {
+			return Base32.encode(mRoutingKey);
 		}
 		
 		@Override

@@ -138,8 +138,20 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * - When a new identity is received by the IntrouductionServer it is fetched
 	 * - When an identity is manually added it is also fetched.
 	 * - ...
-	 */
+	 * 
+	 * The fetched identity files will be enqueued in the {@link #mIdentityFileQueue} for processing
+	 * by the {@link #mIdentityFileProcessor}. */
 	private IdentityFetcher mFetcher;
+	
+	/**
+	 * After {@link #mFetcher} has fetched an identity file, it is queued in this queue
+	 * for processing by {@link #mIdentityFileProcessor}. */
+	private IdentityFileQueue mIdentityFileQueue;
+	
+	/**
+	 * Processes identity files after they were fetched by the {@link #mFetcher} and enqueued in
+	 * the {@link #mIdentityFileQueue}. */
+	private IdentityFileProcessor mIdentityFileProcessor;
 	
 	
 	/**
@@ -224,13 +236,23 @@ public final class WebOfTrust extends WebOfTrustInterface
 				}
 				
 			};
-			
-			mFetcher = new IdentityFetcher(this, getPluginRespirator());
-			
-			// Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager while this is executing.
-			upgradeDB();
+
+
+			mIdentityFileQueue = new IdentityFileDiskQueue(getUserDataDirectory());
+			// You may use this instead for debugging purposes, or on very high memory nodes.
+			// See its JavaDoc for requirements of making this a config option.
+			/* mIdentityFileQueue = new IdentityFileMemoryQueue(); */
 			
 			mXMLTransformer = new XMLTransformer(this);
+
+			mIdentityFileProcessor = new IdentityFileProcessor(
+				mIdentityFileQueue, mPR.getNode().getTicker(), mXMLTransformer);
+
+			mFetcher = new IdentityFetcher(this, getPluginRespirator(), mIdentityFileQueue);
+
+
+			// Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager while this is executing.
+			upgradeDB();
 
 			
 			mInserter = new IdentityInserter(this);
@@ -255,7 +277,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			createSeedIdentities();
 			
+			// Identity files flow through the following pipe:
+			//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
+			// Thus, we start the pipe's daemons in reverse order to ensure that the receiving ones
+			// are available before the ones which fill the pipe.
+			mIdentityFileProcessor.start();
+			/* mIdentityFileQueue.start(); */    // Not necessary, has no thread.
             mFetcher.start();
+
 			
 			mInserter.start();
 
@@ -311,15 +340,34 @@ public final class WebOfTrust extends WebOfTrustInterface
 		mSubscriptionManager = new SubscriptionManager(this);
 		mSubscriptionManager.start();
 		
-		mFetcher = new IdentityFetcher(this, null);
-		mFetcher.start();
+
+		// Use a memory queue instead of the disk queue we use during regular operation:
+		// This constructor only has the name of the database file, not a user data directory.
+		// Thus getUserDataDirectory() would fail, so constructing a disk queue would also fail.
+		mIdentityFileQueue = new IdentityFileMemoryQueue();
+
+		mXMLTransformer = new XMLTransformer(this);
 		
+		mIdentityFileProcessor
+			= new IdentityFileProcessor(mIdentityFileQueue, null, mXMLTransformer);
+
+		mFetcher = new IdentityFetcher(this, null, mIdentityFileQueue);
+		
+		// Identity files flow through the following pipe:
+		//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
+		// Thus, we start the pipe's daemons in reverse order to ensure that the receiving ones
+		// are available before the ones which fill the pipe.
+		mIdentityFileProcessor.start();
+		/* mIdentityFileQueue.start(); */	// Not necessary, has no thread.
+		mFetcher.start();
+
+
 		mFCPInterface = new FCPInterface(this);
 		
 		setLanguage(LANGUAGE.getDefault()); // Even without UI, WOT will use l10n for Exceptions, so we need a language. Normally the node calls this for us.
 	}
 	
-	private File getUserDataDirectory() {
+	File getUserDataDirectory() {
         final File wotDirectory = new File(mPR.getNode().getUserDir(), WebOfTrustInterface.WOT_NAME);
         
         if(!wotDirectory.exists() && !wotDirectory.mkdir())
@@ -1830,6 +1878,23 @@ public final class WebOfTrust extends WebOfTrustInterface
 		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
 			if(mFetcher != null)
 				mFetcher.stop();
+		}});
+		
+		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
+			if(mIdentityFileProcessor != null) {
+				// TODO: Code quality: Make all subsystems support non-blocking terminate() and
+				// waitForTermination(). Then the ShutdownThread/CountDownLatch mechanism can be
+				// replaced with two simple loops: One which calls terminate() on all subsystems,
+				// and one which does the same with waitForTermination().
+				// NOTICE: This is the same as the TODO at the beginning of the function:
+				// "TODO: Code quality: The way this parallelizes shutdown of subsystems is ugly:"
+				mIdentityFileProcessor.terminate();
+				try {
+					mIdentityFileProcessor.waitForTermination(Long.MAX_VALUE);
+				} catch (InterruptedException e) {
+					Logger.error(this, "ShutdownThread should not be interrupted!", e);
+				}
+			}
 		}});
 
 		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
@@ -3890,8 +3955,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return mSubscriptionManager;
 	}
 	
-	public IdentityFetcher getIdentityFetcher() {
+	IdentityFetcher getIdentityFetcher() {
 		return mFetcher;
+	}
+	
+	public IdentityFileQueue getIdentityFileQueue() {
+		return mIdentityFileQueue;
+	}
+
+	public IdentityFileProcessor getIdentityFileProcessor() {
+		return mIdentityFileProcessor;
 	}
 
     public IdentityInserter getIdentityInserter() {

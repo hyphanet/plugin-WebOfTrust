@@ -12,6 +12,7 @@ import java.util.HashMap;
 
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
@@ -53,6 +54,10 @@ import freenet.support.io.NativeThread;
  *	synchronized(instance of IntroductionPuzzleStore) {
  *	synchronized(instance of IdentityFetcher) {
  *	synchronized(Persistent.transactionLock(instance of ObjectContainer)) {
+ * 
+ * TODO: Code quality: Rename to IdentityFileFetcher to match the naming of
+ * {@link IdentityFileQueue} and {@link IdentityFileProcessor}. Notice that this needs to be done
+ * together with db4o schema evolution since this class stores member classes inside db4o.
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
@@ -101,24 +106,11 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
      * Volatile since {@link #stop()} needs to use it without synchronization.
      */
     private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
-	
-	/* Statistics */
-	
-	/**
-	 * The value of CurrentTimeUTC.getInMillis() when this IdentityFetcher was created.
-	 */
-	private final long mStartupTimeMilliseconds;
-	
-	/**
-	 * The number of identity XML files which this IdentityFetcher has fetched.
-	 */
-	private int mFetchedCount = 0;
-	
-	/**
-	 * The total time in milliseconds which processing of all fetched identity XML files took.
-	 */
-	private long mIdentityImportNanoseconds = 0;
-	
+
+    /** Fetched identity files are stored for processing at this {@link IdentityFileQueue}. */
+    private final IdentityFileQueue mQueue;
+
+
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
 	private static transient volatile boolean logDEBUG = false;
@@ -134,8 +126,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * 
 	 * @param myWoT A reference to a {@link WebOfTrust}
 	 */
-	protected IdentityFetcher(WebOfTrust myWoT, PluginRespirator respirator) {
+	protected IdentityFetcher(WebOfTrust myWoT, PluginRespirator respirator,
+			IdentityFileQueue queue) {
 		mWoT = myWoT;
+		mQueue = queue;
 		
 		mDB = mWoT.getDatabase();
 		
@@ -154,8 +148,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
         // Identity fetches and inserts belong together, so it makes sense to use the same
         // RequestClient for them.
 		mRequestClient = mWoT.getRequestClient();
-		
-		mStartupTimeMilliseconds = CurrentTimeUTC.getInMillis();
 	}
 	
 	@SuppressWarnings("serial")
@@ -788,7 +780,6 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	@Override
 	public void onFound(USK origUSK, long edition, FetchResult result) {
 		final FreenetURI realURI = origUSK.getURI().setSuggestedEdition(edition);
-		final String identityID = IdentityID.constructAndValidateFromURI(realURI).toString();
 		
 		if(logDEBUG) Logger.debug(this, "Fetched identity: " + realURI);
 		
@@ -799,70 +790,14 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
 			
-			synchronized(mWoT) { // Preserve the locking order: importIdentity() will synchronize on the WOT and then on this IdentityFetcher
-			synchronized(this) {
-				if(!mRequests.containsKey(identityID)) {
-                    // If mRequests doesn't contain the request thats not necessarily an error:
-                    // This thread might not have gotten the locks before the thread which
-                    // terminated the request.
-                    // Notice: This check can have false negatives: The identity might have a
-				    // pending AbortFetchCommand which was not processed yet. So mRequests can
-				    // still contain a request for the identity even though we should not fetch it.
-				    // Thus, the XMLTransformer will have to also check for whether the identity is
-				    // actually wanted.
-					return;
-				}
-
-				final long startTime = System.nanoTime();
-				mWoT.getXMLTransformer().importIdentity(realURI, inputStream);
-				final long endTime = System.nanoTime();
-
-				++mFetchedCount;
-				mIdentityImportNanoseconds +=  endTime - startTime;
-			}
-			}
+			mQueue.add(new IdentityFileStream(realURI, inputStream));
 		}
 		catch(Exception e) {
-			Logger.error(this, "Parsing identity XML failed severely - edition probably could NOT be marked for not being fetched again: " + realURI, e);
+			Logger.error(this, "Queueing identity XML failed: " + realURI, e);
 		}
 		finally {
 			Closer.close(inputStream);
 			Closer.close(bucket);
 		}
 	}
-	
-	/**
-	 * @return The number of identity XML files which this fetcher has fetched and processed successfully.
-	 */
-	public int getFetchedCount() {
-		return mFetchedCount;
-	}
-	
-	/**
-	 * Notice that this function is synchronized because it processes multiple member variables.
-	 * 
-	 * @return The average time it took for parsing an identity XML file in seconds.
-	 */
-	public synchronized double getAverageXMLImportTime() {
-		if(mFetchedCount == 0) // prevent division by 0
-			return 0;
-		
-		return ((double)mIdentityImportNanoseconds/(1000*1000*1000)) / (double)mFetchedCount;
-	}
-	
-	/**
-	 * Notice that this function is synchronized because it processes multiple member variables.
-	 * 
-	 * @return The average number of identity XML files which are fetched per hour.
-	 */
-	public synchronized float getAverageFetchCountPerHour() {
-		float uptimeSeconds = (float)(CurrentTimeUTC.getInMillis() - mStartupTimeMilliseconds)/1000;
-		float uptimeHours = uptimeSeconds / (60*60);
-		
-		if(uptimeHours == 0) // prevent division by 0
-			return 0;
-		
-		return (float)mFetchedCount / uptimeHours;		
-	}
-
 }
