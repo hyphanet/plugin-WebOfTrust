@@ -251,6 +251,8 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	        throws InvalidParameterException, FSParseException, DuplicateTrustException,
 	        NotTrustedException, UnknownIdentityException, IOException, InterruptedException {
 	    
+		// TODO: Extract a generic AbstractJUnit4BaseTest function for random trust graph setup.
+		
 		final int initialOwnIdentityCount = 1;
 		final int initialIdentityCount = 100;
 		final int initialTrustCount = (initialIdentityCount*initialIdentityCount) / 10; // A complete graph would be identityCount² trust values.
