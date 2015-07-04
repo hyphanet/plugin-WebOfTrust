@@ -47,6 +47,7 @@ StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Dateien in Bearbeitung:
 StatisticsPage.IdentityFileQueueBox.QueuedFiles=Wartende Dateien: 
 StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Insgesamt eingefügte (= heruntergeladene) Dateien: 
 StatisticsPage.SummaryBox.FetchProgress=Summe aller Editionen: ${editionCount}
+StatisticsPage.SummaryBox.UnfetchedIdentities=Nicht heruntergeladene Identitäten: 
 WebInterface.PageTitle.LoggedIn=Community - Eingeloggt als ${nickname}
 WebInterface.PageTitle.NotLoggedIn=Community
 End
