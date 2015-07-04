@@ -167,6 +167,7 @@ StatisticsPage.SummaryBox.ScoreRelationships=Score relationships
 StatisticsPage.SummaryBox.SolvedCaptchasOfOthers=Solved puzzles of others
 StatisticsPage.SummaryBox.SolvedOwnCaptchas=Solved own puzzles
 StatisticsPage.SummaryBox.TrustRelationships=Trust relationships
+StatisticsPage.SummaryBox.UnfetchedIdentities=Not downloaded identities: 
 StatisticsPage.SummaryBox.UnsolvedCaptchasOfOthers=Unsolved puzzles of others
 StatisticsPage.SummaryBox.UnsolvedOwnCaptchas=Unsolved own puzzles
 Trust.InvalidValue=Invalid trust value. Trust values must be in range of -100 to +100.

@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -2414,6 +2415,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * Synchronization: You must synchronize on this WebOfTrust when using this function.
 	 * 
+	 * TODO: Performance: Various callers could be optimized by storing the value of this for all
+	 * identities in a database table.
+	 * 
 	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity.
 	 */
     boolean shouldFetchIdentity(final Identity identity) {
@@ -4050,6 +4054,29 @@ public final class WebOfTrust extends WebOfTrustInterface
     public BaseL10n getBaseL10n() {
         return WebOfTrust.l10n.getBase();
     }
+
+	/**
+	 * Gets the amount of non-own identities which were never fetched yet but will be fetched.<br>
+	 * This is identities for which {@link #shouldFetchIdentity(Identity)} returns true but
+	 * {@link Identity#getLastFetchedDate()} is <code>new Date(0)</code>.<br><br>
+	 * 
+	 * Notice: This is an expensive database query and thus should only be used for manual
+	 * statistical inquiries at the UI; do not use it in program logic. */
+	public int getNumberOfUnfetchedIdentities() {
+		Query query = mDB.query();
+		query.constrain(Identity.class);
+		query.constrain(OwnIdentity.class).not();
+		query.descend("mLastFetchedDate").constrain(new Date(0));
+		
+		// TODO: Performance: Once we have a database table for the value of shouldFetchIdentity()
+		// for each identity remove this loop and do everything in the database query.
+		int count = 0;
+		for(Identity identity : new Persistent.InitializingObjectSet<Identity>(this, query)) {
+			if(shouldFetchIdentity(identity))
+				++count;
+		}
+		return count;
+	}
 
     public int getNumberOfFullScoreRecomputations() {
     	return mFullScoreRecomputationCount;
