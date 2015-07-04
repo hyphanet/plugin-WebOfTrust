@@ -94,7 +94,7 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	 * specified and pass it as a hint to the USKManager. */
 	protected long mLatestEditionHint;
 	
-	/** Date of the last time we successfully fetched the XML of this identity */
+	/** @see #getLastFetchedDate() */
 	@IndexedField
 	protected Date mLastFetchedDate;
 	
@@ -546,8 +546,8 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	}
 
 	/**
-	 * @return The date of this Identity's last modification.
-	 */
+	 * Returns the date when we last fetched an {@link IdentityFile} for this Identity.<br>
+	 * If the Identity was never fetched yet, this will be <code>new Date(0)</code>. */
 	public final Date getLastFetchedDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastFetchedDate.clone();	// Clone it because date is mutable
