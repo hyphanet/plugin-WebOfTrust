@@ -2122,6 +2122,8 @@ public final class WebOfTrust extends WebOfTrustInterface
                 // https://bugs.freenetproject.org/view.php?id=6501
                 q.sortBy(new Comparator<Identity>() {
                     @Override public int compare(Identity i1, Identity i2) {
+                        i1.initializeTransient(WebOfTrust.this);
+                        i2.initializeTransient(WebOfTrust.this);
                         return Long.compare(i1.getEdition(), i2.getEdition());
                     }
                 });
@@ -2130,6 +2132,8 @@ public final class WebOfTrust extends WebOfTrustInterface
                 q.constrain(Identity.class);
                 q.sortBy(new Comparator<Identity>() {
                     @Override public int compare(Identity i1, Identity i2) {
+                        i1.initializeTransient(WebOfTrust.this);
+                        i2.initializeTransient(WebOfTrust.this);
                         return -Long.compare(i1.getEdition(), i2.getEdition());
                     }
                 });
