@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -2824,7 +2825,79 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 		return value;
 	}
-	
+
+	/** 
+	 * Based on "uniform-cost search" algorithm (= optimized Dijkstra).<br>
+	 * Modified with respect to ignoring "blocked" edges: Having received a rank of
+	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees. */
+	private int computeRankFromScratch(final OwnIdentity source, final Identity target) {
+		final class Vertex implements Comparable<Vertex>{
+			final Identity identity;
+			final Integer rank;
+			
+			public Vertex(Identity identity, int rank) {
+				this.identity = identity;
+				this.rank = rank;
+			}
+
+			@Override public int compareTo(Vertex o) {
+				return rank.compareTo(o.rank);
+			}
+		}
+		
+		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
+		HashSet<Identity> seen = new HashSet<Identity>();
+		
+		// Some unit tests require the special case of initTrustTreeWithoutCommit() not having been
+		// called for an OwnIdentity yet to yield a proper result of "no rank".
+		final int sourceRank;
+		try {
+			sourceRank = getScore(source, source).getRank();	
+		} catch (NotInTrustTreeException e) {
+			Logger.warning(this, "initTrustTreeWithoutCommit() not called for: " + source);
+			return -1;
+		}
+		
+		queue.add(new Vertex(source, sourceRank));
+		seen.add(source);
+		
+		while(!queue.isEmpty()) {
+			Vertex vertex = queue.poll();
+			
+			if(vertex.identity == target)
+				return vertex.rank;
+			
+			seen.add(vertex.identity);
+			
+			// Identity is not allowed to hand down a rank to trustees, no need to look at them
+			if(vertex.rank == Integer.MAX_VALUE)
+				continue;
+			
+			for(Trust trust : getGivenTrusts(vertex.identity)) {
+				Identity neighbourVertex = trust.getTrustee();
+				
+				if(seen.contains(neighbourVertex))
+					continue; // Prevent infinite loop
+				
+				// FIXME: Performance: The UCS algorithm actually does decreaseKey() here instead of
+				// add(), but Java PriorityQueue does not support decreaseKey().
+				// remove() is also not an option since it is O(N).
+				// The existingcode will work since the entry with the too high priority will be
+				// processed after the one with the lower priority since being sorted is the main
+				// feature of a PQ. But it increases memory usage and runtime to have useless
+				// entries in the PQ.
+				
+				if(trust.getValue() > 0) {
+					queue.add(new Vertex(neighbourVertex, vertex.rank + 1));
+				} else {
+					queue.add(new Vertex(neighbourVertex, Integer.MAX_VALUE));
+				}
+			}
+		}
+		
+		return -1;
+	}
+
 	/**
 	 * Computes the trustees's rank in the trust tree of the truster.
 	 * It gets its best ranked non-zero-capacity truster's rank, plus one.
