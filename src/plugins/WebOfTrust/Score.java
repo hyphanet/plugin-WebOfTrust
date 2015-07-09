@@ -64,7 +64,10 @@ public final class Score extends Persistent implements Cloneable, EventSource {
 	@IndexedField
 	private int mValue;
 	
-	/** How far the Identity is from the tree's root. Tells how much point it can add to its trustees score. */
+	/**
+	 * How far the Identity is from the tree's root. Tells how much point it can add to its trustees
+	 * score.
+	 * @see WebOfTrust#computeRankFromScratch() */
 	private int mRank;
 	
 	/** How much point the trusted Identity can add to its trustees score. Depends on its rank AND the trust given by the tree owner.
@@ -256,6 +259,7 @@ public final class Score extends Persistent implements Cloneable, EventSource {
 
 	/**
 	 * @return The minimal distance in steps of {@link Trust} values from the truster to the trustee
+	 * @see WebOfTrust#computeRankFromScratch()
 	 */
 	public synchronized int getRank() {
 		checkedActivate(1); // int is a db4o primitive type so 1 is enough
