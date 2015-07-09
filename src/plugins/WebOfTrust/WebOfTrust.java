@@ -2920,6 +2920,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Synchronization:
 	 * You have to synchronize on this WebOfTrust object when using this function.
 	 * 
+	 * TODO: Code quality: Move the documentation to {@link #computeRankFromScratch(OwnIdentity,
+	 * Identity)} and document that this function here only works if the database content is up to
+	 * date in certain areas.
+	 * 
 	 * @param truster The OwnIdentity that owns the trust tree
 	 * @return The new Rank if this Identity
 	 * @throws DuplicateScoreException if there already exist more than one {@link Score} objects for the trustee (should never happen)
