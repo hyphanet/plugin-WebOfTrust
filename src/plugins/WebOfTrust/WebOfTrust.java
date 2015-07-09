@@ -1600,7 +1600,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 								// given by the tree owner.
 								try {
 									final Trust treeOwnerTrust = getTrust(treeOwner, trustee);
-									assert(treeOwnerTrust.getValue() <= 0); // TODO: Is this correct?
+									assert(treeOwnerTrust.getValue() <= 0)
+										: "The treeOwner Trusts are processed before all other "
+										+ "Trusts, and their rank value overwrites the ones of "
+										+ "non-treeOwner Trusts. Thus, if there is a treeOwner "
+										+ "Trust, it should have a value which could have caused "
+										+ "the current rank of Integer.MAX_VALUE.";
 								} catch(NotTrustedException e) {
 									if(trust.getValue() > 0) {
 										rankValues.put(trustee, trusteeRank);
