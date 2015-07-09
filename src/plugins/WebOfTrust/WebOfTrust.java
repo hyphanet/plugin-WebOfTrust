@@ -1524,6 +1524,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// An identity is visible if there is a trust chain from the owner to it.
 			// The rank is the distance in trust steps from the treeOwner.			
 			// So the treeOwner is rank 0, the trustees of the treeOwner are rank 1 and so on.
+			// (The initial size is specified as twice the possible maximal amount of entries to
+			// ensure that the HashMap does not have to be grown.)
 			final HashMap<Identity, Integer> rankValues = new HashMap<Identity, Integer>(allIdentities.size() * 2);
 			
 			// Compute the rank values
