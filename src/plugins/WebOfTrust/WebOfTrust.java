@@ -1484,7 +1484,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 	
 	/**
 	 * Reference-implementation of score computation. This means:<br />
-	 * - It is not used by the real WoT code because its slow<br />
 	 * - It is used by unit tests (and WoT) to check whether the real implementation works<br />
 	 * - It is the function which you should read if you want to understand how WoT works.<br />
 	 * 
@@ -1525,6 +1524,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// An identity is visible if there is a trust chain from the owner to it.
 			// The rank is the distance in trust steps from the treeOwner.			
 			// So the treeOwner is rank 0, the trustees of the treeOwner are rank 1 and so on.
+			// (The initial size is specified as twice the possible maximal amount of entries to
+			// ensure that the HashMap does not have to be grown.)
 			final HashMap<Identity, Integer> rankValues = new HashMap<Identity, Integer>(allIdentities.size() * 2);
 			
 			// Compute the rank values
@@ -1599,7 +1600,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 								// given by the tree owner.
 								try {
 									final Trust treeOwnerTrust = getTrust(treeOwner, trustee);
-									assert(treeOwnerTrust.getValue() <= 0); // TODO: Is this correct?
+									assert(treeOwnerTrust.getValue() <= 0)
+										: "The treeOwner Trusts are processed before all other "
+										+ "Trusts, and their rank value overwrites the ones of "
+										+ "non-treeOwner Trusts. Thus, if there is a treeOwner "
+										+ "Trust, it should have a value which could have caused "
+										+ "the current rank of Integer.MAX_VALUE.";
 								} catch(NotTrustedException e) {
 									if(trust.getValue() > 0) {
 										rankValues.put(trustee, trusteeRank);
