@@ -1484,7 +1484,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 	
 	/**
 	 * Reference-implementation of score computation. This means:<br />
-	 * - It is not used by the real WoT code because its slow<br />
 	 * - It is used by unit tests (and WoT) to check whether the real implementation works<br />
 	 * - It is the function which you should read if you want to understand how WoT works.<br />
 	 * 
