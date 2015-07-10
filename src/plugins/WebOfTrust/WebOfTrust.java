@@ -2861,6 +2861,24 @@ public final class WebOfTrust extends WebOfTrustInterface
 			return -1;
 		}
 		
+		try {
+			// If a direct distrust exists from the OwnIdentity source to the target, then it
+			// must always overwrite the rank to be MAX_VALUE, even if a path with a lower rank
+			// would exist over more Trust steps. This is a demand of the specification of the
+			// WOT algorithm, see computeAllScoresWithoutCommit().
+			// Thus, we must now check whether a direct Trust exists before running the actual
+			// search algorithm could return a lower rank than MAX_VALUE.
+			if(getTrust(source, target).getValue() <= 0)
+				return Integer.MAX_VALUE;
+			
+			// We know a direct non-distrust from source to target exists, so we can directly
+			// compute the rank as sourceRank + 1.
+			// Notice that this is an optimization: Not returning here and instead letting the
+			// main search algorithm run now would yield the same result.
+			return sourceRank + 1;
+		} catch(NotTrustedException e) {}
+		
+		
 		queue.add(new Vertex(source, sourceRank));
 		seen.add(source);
 		
