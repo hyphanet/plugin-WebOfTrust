@@ -3321,6 +3321,27 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 		}	
 		
+		if(mFullScoreComputationNeeded) {
+			Identity distrusted;
+			
+			if(newTrust != null) {
+				distrusted = newTrust.getTrustee();
+			} else {
+				try {
+					// Must re-query the identity since oldTrust is a clone()
+					distrusted = getIdentityByID(oldTrust.getTrustee().getID());
+				} catch(UnknownIdentityException e) {
+					throw new RuntimeException(e);
+				}
+			}
+			
+			updateScoresAfterDistrustWithoutCommit(distrusted);
+			
+			mFullScoreComputationNeeded = false;
+			assert(computeAllScoresWithoutCommit());
+		}
+
+		// FIXME: Measure updateScoresAfterDistrustWithoutCommit() separately
 		if(includeMeasurement) {
 			++mIncrementalScoreRecomputationCount;
 			mIncrementalScoreRecomputationMilliseconds += CurrentTimeUTC.getInMillis() - beginTime;
@@ -3354,7 +3375,55 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 	}
 
-	
+	private void updateScoresAfterDistrustWithoutCommit(Identity distrusted) {
+		LinkedList<Identity> queue = new LinkedList<Identity>();
+		HashSet<Identity> queued = new HashSet<Identity>();
+		
+		queue.add(distrusted);
+		queued.add(distrusted);
+		
+		Identity vertex;
+		while((vertex = queue.poll()) != null) {
+			for(Score score : getScores(vertex)) {
+				// FIXME: Encapsulate
+				score.mRankOutdated = true;
+				score.storeWithoutCommit();
+			}
+			
+			for(Trust nextTrust : getGivenTrusts(vertex)) {
+				Identity neighbour = nextTrust.getTrustee();
+				if(!queued.contains(neighbour)) {
+					queue.add(neighbour);
+					queued.add(neighbour);
+				}
+			}
+		}
+		
+		// FIXME: Encapsulate
+		final Query query = mDB.query();
+		query.constrain(Score.class);
+		query.descend("mRankOutdated").constrain(true);
+		
+		for(Score score : new Persistent.InitializingObjectSet<Score>(this, query)) {
+			int newRank = computeRankFromScratch(score.getTruster(), score.getTrustee());
+			if(newRank < 0) {
+				score.deleteWithoutCommit();
+				continue;
+			}
+			
+			int newCapacity = computeCapacity(score.getTruster(), score.getTrustee(), newRank);
+			
+			int newScore = computeScoreValue(score.getTruster(), score.getTrustee());
+			
+			score.setRank(newRank);
+			score.setCapacity(newCapacity);
+			score.setValue(newScore);
+			score.mRankOutdated = false;
+			
+			score.storeWithoutCommit();
+		}
+	}
+
 	/* Client interface functions */
 	
 	/**
