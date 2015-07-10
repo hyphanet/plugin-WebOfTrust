@@ -3398,6 +3398,31 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 		}
 		
+		// We now have marked all *existing* Score objects which could be reached through the
+		// distrusted identity as pending to be updated.
+		// However, there might *not* have been an existing Score object for the distrusted identity
+		// if it had not received a trust value yet; and by the distrust it could now be eligible
+		// for having one exist.
+		// Thus, we must check whether we need to create a new Score object.
+		// (We do not have to do this for trustees of the distrusted identity: A distrusted
+		// identity must not be allowed to introduce other identities to prevent sybil, so it
+		// cannot give them a Score)
+		// FIXME: Test whether the above is actually true. Do so by attaching a special marker
+		// to the created score values and checking whether they continue to survice the loop
+		// below which deletes scores.
+		// FIXME: Do something smarter: Maybe we could first look at the changed trust value
+		// to decide whether it could cause a Score object to be created before we do the
+		// expensive database query which follows...
+		for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+			try {
+				getScore(treeOwner, distrusted);
+			} catch(NotInTrustTreeException e) {
+				Score outdated = new Score(this, treeOwner, distrusted, 0, 0, 0);
+				outdated.mRankOutdated = true;
+				outdated.storeWithoutCommit();
+			}
+		}
+		
 		// FIXME: Encapsulate, also the copypaste below
 		final Query query = mDB.query();
 		query.constrain(Score.class);
@@ -3436,9 +3461,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			score.storeWithoutCommit();
 		}
-		
-		// FIXME: If the distrusted identity does not have a Score yet, should we create one?
-		// Might be the case in complex operations such as deleteOwnIdentity(), restoreOwnIdentity()
 	}
 
 	/* Client interface functions */
