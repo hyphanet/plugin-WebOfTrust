@@ -2851,13 +2851,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
 		HashSet<Identity> seen = new HashSet<Identity>();
 		
-		// Some unit tests require the special case of initTrustTreeWithoutCommit() not having been
-		// called for an OwnIdentity yet to yield a proper result of "no rank".
 		final int sourceRank;
 		try {
 			sourceRank = getScore(source, source).getRank();	
 		} catch (NotInTrustTreeException e) {
 			Logger.warning(this, "initTrustTreeWithoutCommit() not called for: " + source);
+			// Some unit tests require the special case of initTrustTreeWithoutCommit() not having
+			// been called for an OwnIdentity yet to yield a proper result of "no rank".
 			return -1;
 		}
 		
