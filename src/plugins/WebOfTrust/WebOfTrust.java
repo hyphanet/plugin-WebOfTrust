@@ -3338,7 +3338,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 			updateScoresAfterDistrustWithoutCommit(distrusted);
 			
 			mFullScoreComputationNeeded = false;
-			assert(computeAllScoresWithoutCommit());
 		}
 
 		// FIXME: Measure updateScoresAfterDistrustWithoutCommit() separately
