@@ -3422,6 +3422,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			score.storeWithoutCommit();
 		}
+		
+		// FIXME: If the distrusted identity does not have a Score yet, should we create one?
+		// Might be the case in complex operations such as deleteOwnIdentity(), restoreOwnIdentity()
 	}
 
 	/* Client interface functions */
