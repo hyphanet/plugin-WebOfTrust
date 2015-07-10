@@ -2885,7 +2885,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// FIXME: Performance: The UCS algorithm actually does decreaseKey() here instead of
 				// add(), but Java PriorityQueue does not support decreaseKey().
 				// remove() is also not an option since it is O(N).
-				// The existingcode will work since the entry with the too high priority will be
+				// The existing code will work since the entry with the too high priority will be
 				// processed after the one with the lower priority since being sorted is the main
 				// feature of a PQ. But it increases memory usage and runtime to have useless
 				// entries in the PQ.
