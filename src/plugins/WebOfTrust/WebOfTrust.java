@@ -3398,12 +3398,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 		}
 		
-		// FIXME: Encapsulate
+		// FIXME: Encapsulate, also the copypaste below
 		final Query query = mDB.query();
 		query.constrain(Score.class);
 		query.descend("mRankOutdated").constrain(true);
+		final ObjectSet<Score> scores = new Persistent.InitializingObjectSet<Score>(this, query);
 		
-		for(Score score : new Persistent.InitializingObjectSet<Score>(this, query)) {
+		for(Score score : scores) {
 			int newRank = computeRankFromScratch(score.getTruster(), score.getTrustee());
 			if(newRank < 0) {
 				score.deleteWithoutCommit();
@@ -3411,12 +3412,26 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 			
 			int newCapacity = computeCapacity(score.getTruster(), score.getTrustee(), newRank);
-			
-			int newScore = computeScoreValue(score.getTruster(), score.getTrustee());
-			
+
 			score.setRank(newRank);
 			score.setCapacity(newCapacity);
+			score.storeWithoutCommit();
+		}
+		
+		// Re-query from the database to ensure that we don't restore the deleted Score objects.
+		final Query query2 = mDB.query();
+		query2.constrain(Score.class);
+		query2.descend("mRankOutdated").constrain(true);
+		final ObjectSet<Score> scores2 = new Persistent.InitializingObjectSet<Score>(this, query2);
+		
+		// Compute score values *after* all ranks/capacities are updated:
+		// The value of a single score is computed using the ranks/capacities of the other scores.
+		// Thus, all ranks/capacities must be correct before we compute values.
+		for(Score score : scores2) {
+			int newScore = computeScoreValue(score.getTruster(), score.getTrustee());
+
 			score.setValue(newScore);
+			// FIXME: Rename to something like "mOutdated" since we not only use it for rank
 			score.mRankOutdated = false;
 			
 			score.storeWithoutCommit();
