@@ -177,7 +177,9 @@ public final class Score extends Persistent implements Cloneable, EventSource {
 		setRank(myRank);
 		setCapacity(myCapacity);
 		
-		// mLastChangedDate = CurrentTimeUTC.get(); <= setValue() etc do this already.
+		// setValue() etc. might not set this if the value matches the defaults.
+		if(mLastChangedDate == null)
+			mLastChangedDate = CurrentTimeUTC.get();
 	}
 	
 	@Override
