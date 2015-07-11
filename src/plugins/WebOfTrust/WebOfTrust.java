@@ -3402,6 +3402,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 		queued = null;
 		queue = null;
 		
+		HashSet<Score> createdScores = new HashSet<Score>();
+		
 		// We now have marked all *existing* Score objects which could be reached through the
 		// distrusted identity as pending to be updated.
 		// However, there might *not* have been an existing Score object for the distrusted identity
@@ -3424,6 +3426,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				Score outdated = new Score(this, treeOwner, distrusted, 0, 0, 0);
 				outdated.mRankOutdated = true;
 				outdated.storeWithoutCommit();
+				createdScores.add(outdated);
 			}
 		}
 		
@@ -3434,18 +3437,28 @@ public final class WebOfTrust extends WebOfTrustInterface
 		final ObjectSet<Score> scores = new Persistent.InitializingObjectSet<Score>(this, query);
 		
 		for(Score score : scores) {
+			Score oldScore = score.clone();
+			
 			int newRank = computeRankFromScratch(score.getTruster(), score.getTrustee());
 			if(newRank < 0) {
 				score.deleteWithoutCommit();
+				// Notify the SubscriptionManager about the deleted Score - but only if we didn't
+				// create it ourself. In that case, it didn't know about its existence yet anyway.
+				if(!createdScores.contains(score))
+					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, null);
 				continue;
 			}
 			
 			int newCapacity = computeCapacity(score.getTruster(), score.getTrustee(), newRank);
-
+			
 			score.setRank(newRank);
 			score.setCapacity(newCapacity);
 			score.storeWithoutCommit();
+			
+			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, score);
 		}
+		
+		createdScores = null;
 		
 		// Re-query from the database to ensure that we don't restore the deleted Score objects.
 		final Query query2 = mDB.query();
@@ -3457,13 +3470,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// The value of a single score is computed using the ranks/capacities of the other scores.
 		// Thus, all ranks/capacities must be correct before we compute values.
 		for(Score score : scores2) {
+			Score oldScore = score.clone();
+			
 			int newScore = computeScoreValue(score.getTruster(), score.getTrustee());
-
 			score.setValue(newScore);
 			// FIXME: Rename to something like "mOutdated" since we not only use it for rank
 			score.mRankOutdated = false;
-			
 			score.storeWithoutCommit();
+			
+			// TODO: Performance: Somehow join this with the event created in the previous loop.
+			// This is difficult though: We have no way to obtain the oldScore of the previous
+			// loop here. We could keep them in a list but that might use much memory.
+			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, score);
 		}
 	}
 
