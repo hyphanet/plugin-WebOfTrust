@@ -3457,7 +3457,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 			score.setCapacity(newCapacity);
 			score.storeWithoutCommit();
 			
-			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, score);
+			if(!score.equals(oldScore))
+				mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, score);
 		}
 		
 		createdScores = null;
@@ -3483,7 +3484,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// TODO: Performance: Somehow join this with the event created in the previous loop.
 			// This is difficult though: We have no way to obtain the oldScore of the previous
 			// loop here. We could keep them in a list but that might use much memory.
-			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, score);
+			if(!score.equals(oldScore))
+				mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, score);
 		}
 	}
 
