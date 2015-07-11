@@ -3374,6 +3374,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 	}
 
+	/**
+	 * FIXME: This doesn't update the {@link IdentityFetcher}'s "should fetch?" states. */
 	private void updateScoresAfterDistrustWithoutCommit(Identity distrusted) {
 		LinkedList<Identity> queue = new LinkedList<Identity>();
 		HashSet<Identity> queued = new HashSet<Identity>();
