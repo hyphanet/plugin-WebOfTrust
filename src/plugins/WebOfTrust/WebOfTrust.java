@@ -3398,6 +3398,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 		}
 		
+		// We don't need those anymore, free them already - especially queued could be large.
+		queued = null;
+		queue = null;
+		
 		// We now have marked all *existing* Score objects which could be reached through the
 		// distrusted identity as pending to be updated.
 		// However, there might *not* have been an existing Score object for the distrusted identity
