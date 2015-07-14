@@ -2834,6 +2834,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Modified with respect to ignoring "blocked" edges: Having received a rank of
 	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees. */
 	private int computeRankFromScratch(final OwnIdentity source, final Identity target) {
+		// FIXME: We probably need to use IdentityHashMap / IdentityHashSet in here instead of
+		// regular ones since the equals() functions of Identity/Trust/Score will not only compare
+		// the ID of the involved objects but also their current state. For example this means that
+		// a changed Score value causes equals() to return false when comparing old and new object.
+		// Notice: Even if we don't need to modify such objects, using IdentityHashMap is
+		// probably indicated for performance reasons anyway.
+		
 		final class Vertex implements Comparable<Vertex>{
 			final Identity identity;
 			final Integer rank;
@@ -3377,6 +3384,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/**
 	 * FIXME: This doesn't update the {@link IdentityFetcher}'s "should fetch?" states. */
 	private void updateScoresAfterDistrustWithoutCommit(Identity distrusted) {
+		// FIXME: We probably need to use IdentityHashMap / IdentityHashSet in here instead of
+		// regular ones since the equals() functions of Identity/Trust/Score will not only compare
+		// the ID of the involved objects but also their current state. For example this means that
+		// a changed Score value causes equals() to return false when comparing old and new object.
+		// Notice: Even if we don't need to modify such objects, using IdentityHashMap is
+		// probably indicated for performance reasons anyway.
+		
 		LinkedList<Identity> queue = new LinkedList<Identity>();
 		HashSet<Identity> queued = new HashSet<Identity>();
 		
