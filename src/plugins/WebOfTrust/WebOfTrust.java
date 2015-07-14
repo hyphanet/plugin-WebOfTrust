@@ -3197,6 +3197,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					continue;
 				}
 				
+				// FIXME: Performance: Why is this inside the loop, it doesn't depend on anything
+				// which changes during the loop?
 				// See explanation above "We cannot iteratively REMOVE an inherited rank..."
 				if(trustWasModified && oldTrust.getValue() > 0 && newTrust.getValue() <= 0) {
 					mFullScoreComputationNeeded = true;
