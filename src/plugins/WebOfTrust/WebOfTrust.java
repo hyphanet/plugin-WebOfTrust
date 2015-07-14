@@ -3379,13 +3379,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/**
 	 * FIXME: This doesn't update the {@link IdentityFetcher}'s "should fetch?" states. */
 	private void updateScoresAfterDistrustWithoutCommit(Identity distrusted) {
-		// FIXME: We probably need to use IdentityHashMap / IdentityHashSet in here instead of
-		// regular ones since the equals() functions of Identity/Trust/Score will not only compare
-		// the ID of the involved objects but also their current state. For example this means that
-		// a changed Score value causes equals() to return false when comparing old and new object.
-		// Notice: Even if we don't need to modify such objects, using IdentityHashMap is
-		// probably indicated for performance reasons anyway.
-		
 		LinkedList<Identity> queue = new LinkedList<Identity>();
 		IdentityHashSet<Identity> queued = new IdentityHashSet<Identity>();
 		// FIXME: Profile memory usage of this. It might get too large to fit into memory.
@@ -3419,7 +3412,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		queued = null;
 		queue = null;
 		
-		HashSet<Score> createdScores = new HashSet<Score>();
+		IdentityHashSet<Score> createdScores = new IdentityHashSet<Score>();
 		
 		// We now have marked all *existing* Score objects which could be reached through the
 		// distrusted identity as pending to be updated.
