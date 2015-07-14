@@ -35,6 +35,7 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.IntroductionServer;
 import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
 import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import plugins.WebOfTrust.ui.web.WebInterface;
 
@@ -67,6 +68,7 @@ import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
+import freenet.support.IdentityHashSet;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
@@ -3393,6 +3395,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		LinkedList<Identity> queue = new LinkedList<Identity>();
 		HashSet<Identity> queued = new HashSet<Identity>();
+		// FIXME: Profile memory usage of this. It might get too large to fit into memory.
+		// If it does, then instead store this in the database by having an "outdated?" flag on
+		// Score objects.
+		LinkedList<Score> scoresWithMaybeOutdatedRank = new LinkedList<Score>();
 		
 		queue.add(distrusted);
 		queued.add(distrusted);
@@ -3400,9 +3406,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 		Identity vertex;
 		while((vertex = queue.poll()) != null) {
 			for(Score score : getScores(vertex)) {
-				// FIXME: Encapsulate
-				score.mRankOutdated = true;
-				score.storeWithoutCommit();
+				// FIXME: Remove this very slow assert
+				assert(!scoresWithMaybeOutdatedRank.contains(score))
+					: "Each identity is only queued once so each score should only be visited once";
+				
+				scoresWithMaybeOutdatedRank.add(score);
 			}
 			
 			for(Trust nextTrust : getGivenTrusts(vertex)) {
@@ -3440,19 +3448,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 				getScore(treeOwner, distrusted);
 			} catch(NotInTrustTreeException e) {
 				Score outdated = new Score(this, treeOwner, distrusted, 0, 0, 0);
-				outdated.mRankOutdated = true;
 				outdated.storeWithoutCommit();
+				scoresWithMaybeOutdatedRank.add(outdated);
 				createdScores.add(outdated);
 			}
 		}
 		
-		// FIXME: Encapsulate, also the copypaste below
-		final Query query = mDB.query();
-		query.constrain(Score.class);
-		query.descend("mRankOutdated").constrain(true);
-		final ObjectSet<Score> scores = new Persistent.InitializingObjectSet<Score>(this, query);
+		LinkedList<ChangeSet<Score>> scoresWhichChangedOrWereCreated
+			= new LinkedList<ChangeSet<Score>>();
 		
-		for(Score score : scores) {
+		for(Score score : scoresWithMaybeOutdatedRank) {
 			Score oldScore = score.clone();
 			
 			int newRank = computeRankFromScratch(score.getTruster(), score.getTrustee());
@@ -3471,35 +3476,31 @@ public final class WebOfTrust extends WebOfTrustInterface
 			score.setCapacity(newCapacity);
 			score.storeWithoutCommit();
 			
-			if(!score.equals(oldScore))
-				mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, score);
+			Boolean scoreWasCreated = null;
+			if(!score.equals(oldScore) || (scoreWasCreated = createdScores.contains(score))) {
+				if(scoreWasCreated == null)
+					scoreWasCreated = createdScores.contains(score);
+
+				ChangeSet<Score> diff
+					= new ChangeSet<Score>(scoreWasCreated ? null : oldScore, score);
+				
+				scoresWhichChangedOrWereCreated.add(diff);
+			}
 		}
 		
 		createdScores = null;
-		
-		// Re-query from the database to ensure that we don't restore the deleted Score objects.
-		final Query query2 = mDB.query();
-		query2.constrain(Score.class);
-		query2.descend("mRankOutdated").constrain(true);
-		final ObjectSet<Score> scores2 = new Persistent.InitializingObjectSet<Score>(this, query2);
-		
+		scoresWithMaybeOutdatedRank = null;
+
 		// Compute score values *after* all ranks/capacities are updated:
 		// The value of a single score is computed using the ranks/capacities of the other scores.
 		// Thus, all ranks/capacities must be correct before we compute values.
-		for(Score score : scores2) {
-			Score oldScore = score.clone();
-			
-			int newScore = computeScoreValue(score.getTruster(), score.getTrustee());
-			score.setValue(newScore);
-			// FIXME: Rename to something like "mOutdated" since we not only use it for rank
-			score.mRankOutdated = false;
+		for(ChangeSet<Score> changeSet : scoresWhichChangedOrWereCreated) {
+			Score score = changeSet.afterChange;
+			score.setValue(computeScoreValue(score.getTruster(), score.getTrustee()));
 			score.storeWithoutCommit();
 			
-			// TODO: Performance: Somehow join this with the event created in the previous loop.
-			// This is difficult though: We have no way to obtain the oldScore of the previous
-			// loop here. We could keep them in a list but that might use much memory.
-			if(!score.equals(oldScore))
-				mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, score);
+			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(
+				changeSet.beforeChange, changeSet.afterChange);
 		}
 	}
 
