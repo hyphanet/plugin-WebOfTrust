@@ -3442,7 +3442,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 		}
 		
-		LinkedList<ChangeSet<Score>> scoresWhichChangedOrWereCreated
+		LinkedList<ChangeSet<Score>> scoresWithMaybeOutdatedValue
 			= new LinkedList<ChangeSet<Score>>();
 		
 		for(Score score : scoresWithMaybeOutdatedRank) {
@@ -3464,16 +3464,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 			score.setCapacity(newCapacity);
 			score.storeWithoutCommit();
 			
-			Boolean scoreWasCreated = null;
-			if(!score.equals(oldScore) || (scoreWasCreated = createdScores.contains(score))) {
-				if(scoreWasCreated == null)
-					scoreWasCreated = createdScores.contains(score);
-
-				ChangeSet<Score> diff
-					= new ChangeSet<Score>(scoreWasCreated ? null : oldScore, score);
-				
-				scoresWhichChangedOrWereCreated.add(diff);
-			}
+			ChangeSet<Score> diff
+					= new ChangeSet<Score>(createdScores.contains(score) ? null : oldScore, score);
+			
+			// Add the Score to the list of values to be updated even if rank/capacity did not
+			// change:
+			// The value's computation includes trust values, and this function is called if
+			// trust value has changed.
+			scoresWithMaybeOutdatedValue.add(diff);
 		}
 		
 		createdScores = null;
@@ -3482,13 +3480,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// Compute score values *after* all ranks/capacities are updated:
 		// The value of a single score is computed using the ranks/capacities of the other scores.
 		// Thus, all ranks/capacities must be correct before we compute values.
-		for(ChangeSet<Score> changeSet : scoresWhichChangedOrWereCreated) {
+		for(ChangeSet<Score> changeSet : scoresWithMaybeOutdatedValue) {
 			Score score = changeSet.afterChange;
 			score.setValue(computeScoreValue(score.getTruster(), score.getTrustee()));
 			score.storeWithoutCommit();
 			
-			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(
-				changeSet.beforeChange, changeSet.afterChange);
+			if(changeSet.beforeChange == null
+				|| !changeSet.afterChange.equals(changeSet.beforeChange)) {
+				
+				mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(
+					changeSet.beforeChange, changeSet.afterChange);
+			}
 		}
 	}
 
