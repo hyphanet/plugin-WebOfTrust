@@ -34,7 +34,7 @@ public final class StopWatch {
 		if(mStopTime == null)
 			stop();
 		
-		return TimeUtil.formatTime(TimeUnit.NANOSECONDS.toMillis(mStopTime - mStartTime));
+		return TimeUtil.formatTime(TimeUnit.NANOSECONDS.toMillis(mStopTime - mStartTime), 3, true);
 	}
 
 }
