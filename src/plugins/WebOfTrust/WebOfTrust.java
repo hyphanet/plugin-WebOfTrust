@@ -2890,11 +2890,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 			if(vertex.identity == target)
 				return vertex.rank;
 			
-			seen.add(vertex.identity);
-			
 			// Identity is not allowed to hand down a rank to trustees, no need to look at them
 			if(vertex.rank == Integer.MAX_VALUE)
 				continue;
+			
+			seen.add(vertex.identity);
 			
 			for(Trust trust : getGivenTrusts(vertex.identity)) {
 				Identity neighbourVertex = trust.getTrustee();
