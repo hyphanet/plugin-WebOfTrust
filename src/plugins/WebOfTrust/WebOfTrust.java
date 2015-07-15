@@ -3888,20 +3888,22 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// They will be created automatically when updating the given trusts
 					// - so thats what we will do now.
 					
-					// Update all given trusts
-					for(Trust givenTrust : getGivenTrusts(oldIdentity)) {
-						// TODO: Instead of using the regular removeTrustWithoutCommit on all trust values, we could:
-						// - manually delete the old Trust objects from the database
-						// - manually store the new trust objects
-						// - Realize that only the trust graph of the restored identity needs to be updated and write an optimized version
-						// of setTrustWithoutCommit which deals with that.
-						// But before we do that, we should first do the existing possible optimization of removeTrustWithoutCommit:
-						// To get rid of removeTrustWithoutCommit always triggering a FULL score recomputation and instead make
-						// it only update the parts of the trust graph which are affected.
-						// Maybe the optimized version is fast enough that we don't have to do the optimization which this TODO suggests.
-						removeTrustWithoutCommit(givenTrust);
-						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
-					}
+					// Copy all given trusts at first instead of using removeTrustWithoutCommit()
+					// and immediately afterwards setTrustWithoutCommit() because those functions
+					// would be confused by both the OwnIdentity and non-own Identity object being
+					// in the database at the same time.
+					// Thus we will first delete the non-own Identity and then re-set the trusts.
+					final ObjectSet<Trust> oldGivenTrusts = getGivenTrusts(oldIdentity);
+					
+					// TODO: No need to copy after this is fixed:
+					// https://bugs.freenetproject.org/view.php?id=6596
+					final ArrayList<Trust> oldGivenTrustsCopy
+						= new ArrayList<Trust>(oldGivenTrusts);
+					
+					for(Trust oldGivenTrust : oldGivenTrusts)
+						oldGivenTrust.deleteWithoutCommit();
+					
+					assert(getGivenTrusts(oldIdentity).size() == 0);
 					
 					// We do not call finishTrustListImport() now: It might trigger execution of computeAllScoresWithoutCommit
 					// which would re-create scores of the old identity. We later call it AFTER deleting the old identity.
@@ -3916,6 +3918,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// Therefore, it is OK that the fetcher does not immediately process the commands now.
 					
 					oldIdentity.deleteWithoutCommit();
+					
+					// Update all given trusts. This will also cause received scores to be computed,
+					// which is why we had not set them yet.
+					for(Trust givenTrust : oldGivenTrustsCopy)
+						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 					
 					finishTrustListImport();
 				} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
