@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
@@ -281,6 +282,11 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		File[] queue = mQueueDir.listFiles();
 		assert(queue.length == mStatistics.mQueuedFiles);
 		
+		if(logDEBUG) {
+			Logger.debug(this, "poll(): DEBUG logging enabled, sorting files alphabetically...");
+			Arrays.sort(queue);
+		}
+
 		// In theory, we should not have to loop over the result of listFiles(), we could always
 		// return the first slot in its resulting array: poll() is not required to return any
 		// specific selection of files.
@@ -317,6 +323,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				assert(mStatistics.checkConsistency());
 				assert(checkDiskConsistency());
 				
+				if(logDEBUG) Logger.debug(this, "poll(): Yielded " + queuedFile.getName());
 				return result;
 			} catch(RuntimeException e) {
 				Logger.error(this, "Error in poll() for queued file: " + queuedFile, e);
@@ -340,6 +347,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			}
 		}
 
+		if(logDEBUG) Logger.debug(this, "poll(): Yielded no file" );
 		return null; // Queue is empty
 	}
 
