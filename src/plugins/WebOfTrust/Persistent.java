@@ -708,7 +708,10 @@ public abstract class Persistent implements Serializable {
 
 		@Override
 		public Object[] toArray() {
-			throw new UnsupportedOperationException("ObjectSet provides array functionality already.");
+			Object[] result = mObjectSet.toArray();
+			for(Object o : result)
+				((Persistent)o).initializeTransient(mWebOfTrust);
+			return result;
 		}
 
 		@Override
