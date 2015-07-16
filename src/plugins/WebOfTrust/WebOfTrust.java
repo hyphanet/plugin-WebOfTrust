@@ -3586,6 +3586,40 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return scoresWithOutdatedRank;
 	}
 
+	private LinkedList<ChangeSet<Score>> updateCapacitiesAfterDistrustWithoutCommit(
+			LinkedList<ChangeSet<Score>> scoresWithOutdatedRank) {
+		
+		StopWatch time = logMINOR ? new StopWatch() : null;
+		
+		// FIXME: Profile memory usage of this. It might get too large to fit into memory.
+		// If it does, then instead store this in the database by having an "outdated?" flag on
+		// Score objects.
+		LinkedList<ChangeSet<Score>> scoresWithOutdatedCapacity
+			= new LinkedList<ChangeSet<Score>>();
+		
+		for(ChangeSet<Score> changeSet : scoresWithOutdatedRank) {
+			Score score = changeSet.afterChange;
+			int newCapacity
+				= computeCapacity(score.getTruster(), score.getTrustee(), score.getRank());
+			
+			if(score.getCapacity() == newCapacity)
+				continue;
+			
+			score.setCapacity(newCapacity);
+			score.storeWithoutCommit();
+			
+			scoresWithOutdatedCapacity.add(changeSet);
+		}
+		
+		if(logMINOR) {
+			Logger.minor(this,
+				"Time for processing " + scoresWithOutdatedRank.size() + " scores to mark "
+		      + scoresWithOutdatedCapacity.size() + " capacities as outdated: " + time);
+		}
+		
+		return scoresWithOutdatedCapacity;
+	}
+
 	/* Client interface functions */
 	
 	/**
