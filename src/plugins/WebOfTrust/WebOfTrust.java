@@ -2851,7 +2851,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 		
 		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
-		IdentityHashSet<Identity> seen = new IdentityHashSet<Identity>();
+		HashSet<String> seen = new HashSet<String>(); // Key = Identity.getID()
 		
 		final int sourceRank;
 		try {
@@ -2882,7 +2882,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		
 		queue.add(new Vertex(source, sourceRank));
-		seen.add(source);
+		seen.add(source.getID());
 		
 		while(!queue.isEmpty()) {
 			Vertex vertex = queue.poll();
@@ -2894,12 +2894,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 			if(vertex.rank == Integer.MAX_VALUE)
 				continue;
 			
-			seen.add(vertex.identity);
+			seen.add(vertex.identity.getID());
 			
 			for(Trust trust : getGivenTrusts(vertex.identity)) {
 				Identity neighbourVertex = trust.getTrustee();
 				
-				if(seen.contains(neighbourVertex))
+				if(seen.contains(neighbourVertex.getID()))
 					continue; // Prevent infinite loop
 				
 				// FIXME: Performance: The UCS algorithm actually does decreaseKey() here instead of
