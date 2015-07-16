@@ -38,6 +38,7 @@ import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import plugins.WebOfTrust.ui.web.WebInterface;
+import plugins.WebOfTrust.util.StopWatch;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -3492,6 +3493,97 @@ public final class WebOfTrust extends WebOfTrustInterface
 					changeSet.beforeChange, changeSet.afterChange);
 			}
 		}
+	}
+
+	private LinkedList<ChangeSet<Score>>
+			updateRanksAfterDistrustWithoutCommit(Identity distrusted) {
+		
+		StopWatch time = logMINOR ? new StopWatch() : null;
+		
+		LinkedList<Score> scoreQueue = new LinkedList<Score>();
+		HashSet<String> scoresQueued = new HashSet<String>(); // Key = Score.getID()
+		HashSet<String> scoresCreated = new HashSet<String>(); // Key = Score.getID()
+		// FIXME: Profile memory usage of this. It might get too large to fit into memory.
+		// If it does, then instead store this in the database by having an "outdated?" flag on
+		// Score objects.
+		LinkedList<ChangeSet<Score>> scoresWithOutdatedRank = new LinkedList<ChangeSet<Score>>();
+
+		// Add all Scores of the distrusted identity to the queue.
+		// We do this by iterating over all treeOwners instead via getScores():
+		// There might *not* have been an existing Score object in every trust tree for the
+		// distrusted identity if it had not received a trust value yet; and by the distrust it
+		// could now be eligible for having one exist.
+		// Thus, we must check whether we need to create a new Score object.
+		// (We do not have to do this for trustees of the distrusted identity: A distrusted
+		// identity must not be allowed to introduce other identities to prevent sybil, so
+		// it cannot give them a Score)
+		// FIXME: Test whether the above is actually true. Do so by attaching a special
+		// marker to the created score values and checking whether they continue to survice 
+		// the loop below which deletes scores.
+		// FIXME: Do something smarter: Maybe we could first look at the changed trust value
+		// to decide whether it could cause a Score object to be created before we do the
+		// expensive database query which follows...
+		for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+			try {
+				scoreQueue.add(getScore(treeOwner, distrusted));
+			} catch(NotInTrustTreeException e) {
+				Score outdated = new Score(this, treeOwner, distrusted, 0, 0, 0);
+				outdated.storeWithoutCommit();
+				scoreQueue.add(outdated);
+				scoresQueued.add(outdated.getID());
+				scoresCreated.add(outdated.getID());
+			}
+		}
+
+		Score score;
+		while((score = scoreQueue.poll()) != null) {
+			int newRank = computeRankFromScratch(score.getTruster(), score.getTrustee());
+			if(score.getRank() == newRank)
+				continue;
+
+			if(newRank < 0) {
+				score.deleteWithoutCommit();
+				// Notify the SubscriptionManager about the deleted Score - but only if we didn't
+				// create it ourself. In that case, it didn't know about its existence yet anyway.
+				if(!scoresCreated.contains(score.getID()))
+					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(score, null);
+				continue;
+			}
+			
+			Score oldScore = scoresCreated.contains(score.getID()) ? null : score.clone();
+			score.setRank(newRank);
+			score.storeWithoutCommit();
+			ChangeSet<Score> diff = new ChangeSet<Score>(oldScore, score);
+			
+			boolean wasAlreadyProcessed = scoresWithOutdatedRank.add(diff);
+			assert(!wasAlreadyProcessed)
+				: "Each Score is only queued once so each should only be visited once";
+
+			for(Trust edge : getGivenTrusts(score.getTrustee())) {
+				Identity neighbour = edge.getTrustee();
+				
+				if(scoresQueued.contains(new ScoreID(score.getTruster(), neighbour)))
+					continue;
+				
+				Score touchedScore;
+				try  {
+					touchedScore = getScore(score.getTruster(), neighbour);
+				} catch(NotInTrustTreeException e) {
+					continue;
+				}
+				
+				scoreQueue.add(touchedScore);
+				scoresQueued.add(touchedScore.getID());
+			}
+		}
+		
+		if(logMINOR) {
+			Logger.minor(this,
+				"Time for processing " + scoresQueued.size() + " scores to mark "
+			  + scoresWithOutdatedRank.size() + " ranks as outdated: " + time);
+		}
+		
+		return scoresWithOutdatedRank;
 	}
 
 	/* Client interface functions */
