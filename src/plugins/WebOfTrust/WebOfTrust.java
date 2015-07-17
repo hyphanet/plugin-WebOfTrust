@@ -3531,9 +3531,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// create it ourself. In that case, it didn't know about its existence yet anyway.
 				if(!scoresCreated.contains(score.getID()))
 					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(score, null);
-				continue;
-			}
-			
+			} else {
 			Score oldScore = scoresCreated.contains(score.getID()) ? null : score.clone();
 			score.setRank(newRank);
 			score.storeWithoutCommit();
@@ -3542,6 +3540,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			boolean wasAlreadyProcessed = scoresWithOutdatedRank.put(score.getID(), diff) != null;
 			assert(!wasAlreadyProcessed)
 				: "Each Score is only queued once so each should only be visited once";
+			}
 
 			for(Trust edge : getGivenTrusts(score.getTrustee())) {
 				Identity neighbour = edge.getTrustee();
