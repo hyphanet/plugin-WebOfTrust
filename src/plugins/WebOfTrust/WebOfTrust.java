@@ -3398,7 +3398,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// No need to add scoresWithUpdatedCapacity to modifiedScores: They are a subset of
 		// scoresWithUpdatedRank, which is already in modifiedScores.
 		
-		StopWatch time1 = new StopWatch();
+		StopWatch time1 = logMINOR ? new StopWatch() : null;
 		
 		// Now we update Score values.
 		// A Score value in a trust tree of an OwnIdentity is the sum of all Trust values an
@@ -3443,7 +3443,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			  + "trust included in them: " + time1);
 		}
 		
-		StopWatch time2 = new StopWatch();
+		StopWatch time2 = logMINOR ? new StopWatch() : null;
 		
 		// Compute Score values for Scores whose capacity cahnged.
 		// We only process the list of scoresWithUpdatedCapacity, not those of
