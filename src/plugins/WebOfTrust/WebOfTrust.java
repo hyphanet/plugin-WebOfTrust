@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -3588,7 +3589,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 
 	private LinkedList<ChangeSet<Score>> updateCapacitiesAfterDistrustWithoutCommit(
-			LinkedList<ChangeSet<Score>> scoresWithOutdatedRank) {
+			Collection<ChangeSet<Score>> scoresWithOutdatedRank) {
 		
 		StopWatch time = logMINOR ? new StopWatch() : null;
 		
