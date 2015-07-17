@@ -3415,34 +3415,34 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// Normally, we might have to check whether a new Score has to be created due to the changed
 		// trust value - but updateRanksAfterDistrustWithoutCommit() did this already.
 		for(Score score : getScores(distrusted)) {
-					ChangeSet<Score> changeSet = scoresWhichNeedEventNotification.get(score.getID());
-					assert(changeSet == null || changeSet.afterChange == score);
-					
-					Score oldScore = changeSet != null ? changeSet.beforeChange : score.clone();
-					
-					score.setValue(computeScoreValue(score.getTruster(), score.getTrustee()));
-					score.storeWithoutCommit();
-					
-					// The Collection scoresWithUpdatedCapacity is those Score whose values need
-					// to be updated. We already did update the value for this Score, so we can
-					// remove it from the list.
-					scoresWithUpdatedCapacity.remove(score.getID());
-					
-					// By now, rank, capacity and value of the Score have been updated, so we 
-					// are finished with processing it and create the event notification for it
-					// already.
-					if(changeSet == null)
-						changeSet = new ChangeSet<Score>(oldScore, score);
-					
-					if(changeSet.beforeChange == null
-							|| !changeSet.afterChange.equals(changeSet.beforeChange)) {
-						mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(
-							changeSet.beforeChange, changeSet.afterChange);
-					}
-					
-					scoresWhichNeedEventNotification.remove(score.getID());
+			ChangeSet<Score> changeSet = scoresWhichNeedEventNotification.get(score.getID());
+			assert(changeSet == null || changeSet.afterChange == score);
 
-					++scoresAffectedByTrustChange;
+			Score oldScore = changeSet != null ? changeSet.beforeChange : score.clone();
+
+			score.setValue(computeScoreValue(score.getTruster(), score.getTrustee()));
+			score.storeWithoutCommit();
+
+			// The Collection scoresWithUpdatedCapacity is those Score whose values need
+			// to be updated. We already did update the value for this Score, so we can
+			// remove it from the list.
+			scoresWithUpdatedCapacity.remove(score.getID());
+
+			// By now, rank, capacity and value of the Score have been updated, so we 
+			// are finished with processing it and create the event notification for it
+			// already.
+			if(changeSet == null)
+				changeSet = new ChangeSet<Score>(oldScore, score);
+
+			if(changeSet.beforeChange == null
+					|| !changeSet.afterChange.equals(changeSet.beforeChange)) {
+				mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(
+					changeSet.beforeChange, changeSet.afterChange);
+			}
+
+			scoresWhichNeedEventNotification.remove(score.getID());
+
+			++scoresAffectedByTrustChange;
 		}
 		
 		if(logMINOR) {
