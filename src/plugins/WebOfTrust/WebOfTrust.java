@@ -70,7 +70,6 @@ import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
-import freenet.support.IdentityHashSet;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
@@ -3383,116 +3382,99 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/**
 	 * FIXME: This doesn't update the {@link IdentityFetcher}'s "should fetch?" states. */
 	private void updateScoresAfterDistrustWithoutCommit(Identity distrusted) {
-		LinkedList<Identity> queue = new LinkedList<Identity>();
-		IdentityHashSet<Identity> queued = new IdentityHashSet<Identity>();
 		// FIXME: Profile memory usage of this. It might get too large to fit into memory.
 		// If it does, then instead store this in the database by having an "outdated?" flag on
 		// Score objects.
-		LinkedList<Score> scoresWithMaybeOutdatedRank = new LinkedList<Score>();
+		HashMap<String, ChangeSet<Score>> scoresWithUpdatedRank
+			= updateRanksAfterDistrustWithoutCommit(distrusted); // Key = Score.getID()
 		
-		queue.add(distrusted);
-		queued.add(distrusted);
+		HashMap<String, ChangeSet<Score>> scoresWhichNeedEventNotification = scoresWithUpdatedRank;
 		
-		Identity vertex;
-		while((vertex = queue.poll()) != null) {
-			for(Score score : getScores(vertex)) {
-				// FIXME: Remove this very slow assert
-				assert(!scoresWithMaybeOutdatedRank.contains(score))
-					: "Each identity is only queued once so each score should only be visited once";
-				
-				scoresWithMaybeOutdatedRank.add(score);
-			}
-			
-			for(Trust nextTrust : getGivenTrusts(vertex)) {
-				Identity neighbour = nextTrust.getTrustee();
-				if(!queued.contains(neighbour)) {
-					queue.add(neighbour);
-					queued.add(neighbour);
+		HashMap<String, ChangeSet<Score>> scoresWithUpdatedCapacity
+			= updateCapacitiesAfterDistrustWithoutCommit(scoresWithUpdatedRank.values());
+		
+		scoresWithUpdatedRank = null;
+		
+		// No need to add scoresWithUpdatedCapacity to modifiedScores: They are a subset of
+		// scoresWithUpdatedRank, which is already in modifiedScores.
+		
+		StopWatch time1 = new StopWatch();
+		
+		// Now we update Score values.
+		// A Score value in a trust tree of an OwnIdentity is the sum of all Trust values an
+		// identity has received, multiplied by the capacities of the Score the trust giver has
+		// received in the trust tree of the OwnIdentity.
+		// Thus, we must update the Scores for which the "Trust * weight" product changed:
+		// 1) Scores for which an included Trust value has changed = Scores which the distrusted
+		//    identity has received a trust value in. This is what the following loop does.
+		// 2) Scores whose capacity changed. The loop after the following one does that.
+		
+		int scoresAffectedByTrustChange = 0;
+		ObjectSet<OwnIdentity> treeOwners = getAllOwnIdentities();
+		for(Trust trust : getReceivedTrusts(distrusted)) {
+			for(OwnIdentity treeOwner : treeOwners) {
+				try  {
+					Score score = getScore(treeOwner, trust.getTrustee());
+					
+					ChangeSet<Score> changeSet = scoresWhichNeedEventNotification.get(score.getID());
+					assert(changeSet.afterChange == score);
+					
+					Score oldScore = changeSet != null ? changeSet.beforeChange : score.clone();
+					
+					score.setValue(computeScoreValue(score.getTruster(), score.getTrustee()));
+					score.storeWithoutCommit();
+					
+					// The Collection scoresWithUpdatedCapacity is those Score whose values need
+					// to be updated. We already did update the value for this Score, so we can
+					// remove it from the list.
+					scoresWithUpdatedCapacity.remove(score.getID());
+					
+					// By now, rank, capacity and value of the Score have been updated, so we 
+					// are finished with processing it and create the event notification for it
+					// already.
+					if(changeSet == null)
+						changeSet = new ChangeSet<Score>(oldScore, score);
+					
+					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(
+						changeSet.beforeChange, changeSet.afterChange);
+					
+					scoresWhichNeedEventNotification.remove(score.getID());
+
+					++scoresAffectedByTrustChange;
+				} catch(NotInTrustTreeException e) {
+					// Normally, we might have to check whether a Score has to be created.
+					// But updateRanksAfterDistrustWithoutCommit() did this already.
 				}
 			}
 		}
 		
-		// We don't need those anymore, free them already - especially queued could be large.
-		queued = null;
-		queue = null;
-		
-		IdentityHashSet<Score> createdScores = new IdentityHashSet<Score>();
-		
-		// We now have marked all *existing* Score objects which could be reached through the
-		// distrusted identity as pending to be updated.
-		// However, there might *not* have been an existing Score object for the distrusted identity
-		// if it had not received a trust value yet; and by the distrust it could now be eligible
-		// for having one exist.
-		// Thus, we must check whether we need to create a new Score object.
-		// (We do not have to do this for trustees of the distrusted identity: A distrusted
-		// identity must not be allowed to introduce other identities to prevent sybil, so it
-		// cannot give them a Score)
-		// FIXME: Test whether the above is actually true. Do so by attaching a special marker
-		// to the created score values and checking whether they continue to survice the loop
-		// below which deletes scores.
-		// FIXME: Do something smarter: Maybe we could first look at the changed trust value
-		// to decide whether it could cause a Score object to be created before we do the
-		// expensive database query which follows...
-		for(OwnIdentity treeOwner : getAllOwnIdentities()) {
-			try {
-				getScore(treeOwner, distrusted);
-			} catch(NotInTrustTreeException e) {
-				Score outdated = new Score(this, treeOwner, distrusted, 0, 0, 0);
-				outdated.storeWithoutCommit();
-				scoresWithMaybeOutdatedRank.add(outdated);
-				createdScores.add(outdated);
-			}
+		if(logMINOR) {
+			Logger.minor(this,
+				"Time for updating " + scoresAffectedByTrustChange + " score values due to changed "
+			  + "trust included in them: " + time1);
 		}
 		
-		LinkedList<ChangeSet<Score>> scoresWithMaybeOutdatedValue
-			= new LinkedList<ChangeSet<Score>>();
+		StopWatch time2 = new StopWatch();
 		
-		for(Score score : scoresWithMaybeOutdatedRank) {
-			Score oldScore = score.clone();
-			
-			int newRank = computeRankFromScratch(score.getTruster(), score.getTrustee());
-			if(newRank < 0) {
-				score.deleteWithoutCommit();
-				// Notify the SubscriptionManager about the deleted Score - but only if we didn't
-				// create it ourself. In that case, it didn't know about its existence yet anyway.
-				if(!createdScores.contains(score))
-					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, null);
-				continue;
-			}
-			
-			int newCapacity = computeCapacity(score.getTruster(), score.getTrustee(), newRank);
-			
-			score.setRank(newRank);
-			score.setCapacity(newCapacity);
-			score.storeWithoutCommit();
-			
-			ChangeSet<Score> diff
-					= new ChangeSet<Score>(createdScores.contains(score) ? null : oldScore, score);
-			
-			// Add the Score to the list of values to be updated even if rank/capacity did not
-			// change:
-			// The value's computation includes trust values, and this function is called if
-			// trust value has changed.
-			scoresWithMaybeOutdatedValue.add(diff);
-		}
-		
-		createdScores = null;
-		scoresWithMaybeOutdatedRank = null;
-
-		// Compute score values *after* all ranks/capacities are updated:
-		// The value of a single score is computed using the ranks/capacities of the other scores.
-		// Thus, all ranks/capacities must be correct before we compute values.
-		for(ChangeSet<Score> changeSet : scoresWithMaybeOutdatedValue) {
+		// Compute Score values for Scores whose capacity cahnged.
+		// We only process the list of scoresWithUpdatedCapacity, not those of
+		// scoresWithUpdatedRank: The capacity is computed from the rank, but it does not change
+		// for all possibly rank changes.
+		for(ChangeSet<Score> changeSet : scoresWithUpdatedCapacity.values()) {
 			Score score = changeSet.afterChange;
 			score.setValue(computeScoreValue(score.getTruster(), score.getTrustee()));
 			score.storeWithoutCommit();
-			
-			if(changeSet.beforeChange == null
-				|| !changeSet.afterChange.equals(changeSet.beforeChange)) {
-				
-				mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(
-					changeSet.beforeChange, changeSet.afterChange);
-			}
+		}
+		
+		if(logMINOR) {
+			Logger.minor(this,
+				"Time for updating " + scoresAffectedByTrustChange + " score values due to changed "
+			  + "capacity" + time2);
+		}
+
+		for(ChangeSet<Score> changeSet : scoresWhichNeedEventNotification.values()) {
+			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(
+				changeSet.beforeChange, changeSet.afterChange);
 		}
 	}
 
