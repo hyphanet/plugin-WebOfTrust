@@ -3520,7 +3520,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		while((score = scoreQueue.poll()) != null) {
 			int newRank = computeRankFromScratch(score.getTruster(), score.getTrustee());
 			if(score.getRank() == newRank) {
-				assert(!scoresCreated.contains(score))
+				assert(!scoresCreated.contains(score.getID()))
 					: "created scores should be initialized with an invalid rank";
 				continue;
 			}
@@ -3546,7 +3546,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			for(Trust edge : getGivenTrusts(score.getTrustee())) {
 				Identity neighbour = edge.getTrustee();
 				
-				if(scoresQueued.contains(new ScoreID(score.getTruster(), neighbour)))
+				if(scoresQueued.contains(new ScoreID(score.getTruster(), neighbour).toString()))
 					continue;
 				
 				Score touchedScore;
