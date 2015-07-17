@@ -3542,16 +3542,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 				assert(!wasAlreadyProcessed)
 					: "Each Score is only queued once so each should only be visited once";
 			}
-
+			
+			final OwnIdentity treeOwner = score.getTruster();
+			
 			for(Trust edge : getGivenTrusts(score.getTrustee())) {
 				Identity neighbour = edge.getTrustee();
 				
-				if(scoresQueued.contains(new ScoreID(score.getTruster(), neighbour).toString()))
+				if(scoresQueued.contains(new ScoreID(treeOwner, neighbour).toString()))
 					continue;
 				
 				Score touchedScore;
 				try  {
-					touchedScore = getScore(score.getTruster(), neighbour);
+					touchedScore = getScore(treeOwner, neighbour);
 				} catch(NotInTrustTreeException e) {
 					// No need to create a Score: This function is only called upon distrust.
 					// Distrust can only induce Score creation for the distrusted identity, not
