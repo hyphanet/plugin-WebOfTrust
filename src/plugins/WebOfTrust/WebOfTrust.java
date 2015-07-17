@@ -3417,7 +3417,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 					Score score = getScore(treeOwner, trust.getTrustee());
 					
 					ChangeSet<Score> changeSet = scoresWhichNeedEventNotification.get(score.getID());
-					assert(changeSet.afterChange == score);
+					assert(changeSet == null || changeSet.afterChange == score);
 					
 					Score oldScore = changeSet != null ? changeSet.beforeChange : score.clone();
 					
