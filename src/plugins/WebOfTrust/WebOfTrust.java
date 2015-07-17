@@ -2856,7 +2856,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		final int sourceRank;
 		try {
-			sourceRank = getScore(source, source).getRank();	
+			sourceRank = getScore(source, source).getRank();
+			if(source == target)
+				return sourceRank;
 		} catch (NotInTrustTreeException e) {
 			Logger.warning(this, "initTrustTreeWithoutCommit() not called for: " + source);
 			// Some unit tests require the special case of initTrustTreeWithoutCommit() not having
@@ -2881,9 +2883,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 			return sourceRank + 1;
 		} catch(NotTrustedException e) {}
 		
-		
-		queue.add(new Vertex(source, sourceRank));
 		seen.add(source.getID());
+		for(Trust sourceTrust : getGivenTrusts(source)) {
+			Identity trustee = sourceTrust.getTrustee();
+			int rank = sourceTrust.getValue() > 0 ? sourceRank + 1 : Integer.MAX_VALUE;
+			queue.add(new Vertex(trustee, rank));
+			
+			// If the source OwnIdentity has assigned a rank to an Identity, that decision
+			// is mandatory - other identities may not overwrite it.
+			// Thus, in this case we must prevent the Identity from being able to receive
+			// a rank from others by marking it as seen already.
+			seen.add(trustee.getID());
+		}
 		
 		while(!queue.isEmpty()) {
 			Vertex vertex = queue.poll();
