@@ -3508,7 +3508,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 			try {
 				scoreQueue.add(getScore(treeOwner, distrusted));
 			} catch(NotInTrustTreeException e) {
-				Score outdated = new Score(this, treeOwner, distrusted, 0, -1, 0);
+				// Use initial rank value of 0 because:
+				// - it is invalid and thus the below "if(score.getRank() == newRank)" will not be
+				//   confused
+				// - cannot use -1 because the below computeRankFromScratch() will return that.
+				Score outdated = new Score(this, treeOwner, distrusted, 0, 0, 0);
 				outdated.storeWithoutCommit();
 				scoreQueue.add(outdated);
 				scoresQueued.add(outdated.getID());
