@@ -3402,8 +3402,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		// Now we update Score values.
 		// A Score value in a trust tree of an OwnIdentity is the sum of all Trust values an
-		// identity has received, multiplied by the capacities of the Score the trust giver has
-		// received in the trust tree of the OwnIdentity.
+		// identity has received, multiplied by the capacity each trust giver has received in the
+		// Score of the OwnIdentity.
 		// Thus, we must update the Scores for which the "Trust * weight" product changed:
 		// 1) Scores for which an included Trust value has changed = Scores which the distrusted
 		//    identity has received a trust value in. This is what the following loop does.
