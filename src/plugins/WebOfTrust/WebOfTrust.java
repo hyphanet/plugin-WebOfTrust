@@ -3532,14 +3532,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 				if(!scoresCreated.contains(score.getID()))
 					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(score, null);
 			} else {
-			Score oldScore = scoresCreated.contains(score.getID()) ? null : score.clone();
-			score.setRank(newRank);
-			score.storeWithoutCommit();
-			ChangeSet<Score> diff = new ChangeSet<Score>(oldScore, score);
-			
-			boolean wasAlreadyProcessed = scoresWithOutdatedRank.put(score.getID(), diff) != null;
-			assert(!wasAlreadyProcessed)
-				: "Each Score is only queued once so each should only be visited once";
+				Score oldScore = scoresCreated.contains(score.getID()) ? null : score.clone();
+				score.setRank(newRank);
+				score.storeWithoutCommit();
+				ChangeSet<Score> diff = new ChangeSet<Score>(oldScore, score);
+				
+				boolean wasAlreadyProcessed
+					= scoresWithOutdatedRank.put(score.getID(), diff) != null;
+				assert(!wasAlreadyProcessed)
+					: "Each Score is only queued once so each should only be visited once";
 			}
 
 			for(Trust edge : getGivenTrusts(score.getTrustee())) {
