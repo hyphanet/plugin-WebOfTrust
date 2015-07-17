@@ -3406,16 +3406,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// Score of the OwnIdentity.
 		// Thus, we must update the Scores for which the "Trust * weight" product changed:
 		// 1) Scores for which an included Trust value has changed = Scores which the distrusted
-		//    identity has received a trust value in. This is what the following loop does.
+		//    identity has received. This is because this function is to be called when a single
+		//    trust value has changed, and the distrusted identity is the receiver of that value.
+		//    This is what the following loop does.
 		// 2) Scores whose capacity changed. The loop after the following one does that.
 		
 		int scoresAffectedByTrustChange = 0;
-		ObjectSet<OwnIdentity> treeOwners = getAllOwnIdentities();
-		for(Trust trust : getReceivedTrusts(distrusted)) {
-			for(OwnIdentity treeOwner : treeOwners) {
-				try  {
-					Score score = getScore(treeOwner, trust.getTrustee());
-					
+		// Normally, we might have to check whether a new Score has to be created due to the changed
+		// trust value - but updateRanksAfterDistrustWithoutCommit() did this already.
+		for(Score score : getScores(distrusted)) {
 					ChangeSet<Score> changeSet = scoresWhichNeedEventNotification.get(score.getID());
 					assert(changeSet == null || changeSet.afterChange == score);
 					
@@ -3444,11 +3443,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 					scoresWhichNeedEventNotification.remove(score.getID());
 
 					++scoresAffectedByTrustChange;
-				} catch(NotInTrustTreeException e) {
-					// Normally, we might have to check whether a Score has to be created.
-					// But updateRanksAfterDistrustWithoutCommit() did this already.
-				}
-			}
 		}
 		
 		if(logMINOR) {
