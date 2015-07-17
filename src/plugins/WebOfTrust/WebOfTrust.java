@@ -3477,6 +3477,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		LinkedList<Score> scoreQueue = new LinkedList<Score>();
 		HashSet<String> scoresQueued = new HashSet<String>(); // Key = Score.getID()
+		// TODO: Performance: This HashSet could be avoided by changing the code which uses it
+		// to flag Score objects as just created by for example setting their rank to -1.
+		// However, I am uncertain whether it is possible that Score objects with a rank of -1 are
+		// created by other code as class Score does allow it explicitely, so it might be used
+		// for other things already.
 		HashSet<String> scoresCreated = new HashSet<String>(); // Key = Score.getID()
 		// FIXME: Profile memory usage of this. It might get too large to fit into memory.
 		// If it does, then instead store this in the database by having an "outdated?" flag on
@@ -3503,7 +3508,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			try {
 				scoreQueue.add(getScore(treeOwner, distrusted));
 			} catch(NotInTrustTreeException e) {
-				Score outdated = new Score(this, treeOwner, distrusted, 0, 0, 0);
+				Score outdated = new Score(this, treeOwner, distrusted, 0, -1, 0);
 				outdated.storeWithoutCommit();
 				scoreQueue.add(outdated);
 				scoresQueued.add(outdated.getID());
@@ -3514,8 +3519,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 		Score score;
 		while((score = scoreQueue.poll()) != null) {
 			int newRank = computeRankFromScratch(score.getTruster(), score.getTrustee());
-			if(score.getRank() == newRank)
+			if(score.getRank() == newRank) {
+				assert(!scoresCreated.contains(score))
+					: "created scores should be initialized with an invalid rank";
 				continue;
+			}
 
 			if(newRank < 0) {
 				score.deleteWithoutCommit();
