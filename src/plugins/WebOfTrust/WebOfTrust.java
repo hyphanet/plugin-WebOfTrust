@@ -3553,6 +3553,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 				try  {
 					touchedScore = getScore(score.getTruster(), neighbour);
 				} catch(NotInTrustTreeException e) {
+					// No need to create a Score: This function is only called upon distrust.
+					// Distrust can only induce Score creation for the distrusted identity, not
+					// for its trustees. We already dealt with creating scores for the distrusted
+					// identity in all score trees.
 					continue;
 				}
 				
