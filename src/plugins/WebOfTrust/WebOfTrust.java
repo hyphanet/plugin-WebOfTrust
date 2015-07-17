@@ -3461,6 +3461,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 			  + "capacity" + time2);
 		}
 
+		// Instead of creating events while updating rank, capacity and value, create the events
+		// after all three components have been updated to ensure that we only create one event
+		// for each modified Score instead of three.
 		for(ChangeSet<Score> changeSet : scoresWhichNeedEventNotification.values()) {
 			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(
 				changeSet.beforeChange, changeSet.afterChange);
