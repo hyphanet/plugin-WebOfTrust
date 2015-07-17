@@ -3529,7 +3529,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				continue;
 			}
 
-			if(newRank < 0) {
+			if(newRank == -1) {
 				score.deleteWithoutCommit();
 				// Notify the SubscriptionManager about the deleted Score - but only if we didn't
 				// create it ourself. In that case, it didn't know about its existence yet anyway.
