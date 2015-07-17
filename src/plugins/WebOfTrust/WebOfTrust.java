@@ -3495,7 +3495,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 	}
 
-	private LinkedList<ChangeSet<Score>>
+	private HashMap<String, ChangeSet<Score>>
 			updateRanksAfterDistrustWithoutCommit(Identity distrusted) {
 		
 		StopWatch time = logMINOR ? new StopWatch() : null;
@@ -3506,7 +3506,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// FIXME: Profile memory usage of this. It might get too large to fit into memory.
 		// If it does, then instead store this in the database by having an "outdated?" flag on
 		// Score objects.
-		LinkedList<ChangeSet<Score>> scoresWithOutdatedRank = new LinkedList<ChangeSet<Score>>();
+		HashMap<String, ChangeSet<Score>> scoresWithOutdatedRank
+			= new HashMap<String, ChangeSet<Score>>(); // Key = Score.getID()
 
 		// Add all Scores of the distrusted identity to the queue.
 		// We do this by iterating over all treeOwners instead via getScores():
@@ -3555,7 +3556,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			score.storeWithoutCommit();
 			ChangeSet<Score> diff = new ChangeSet<Score>(oldScore, score);
 			
-			boolean wasAlreadyProcessed = scoresWithOutdatedRank.add(diff);
+			boolean wasAlreadyProcessed = scoresWithOutdatedRank.put(score.getID(), diff) != null;
 			assert(!wasAlreadyProcessed)
 				: "Each Score is only queued once so each should only be visited once";
 
