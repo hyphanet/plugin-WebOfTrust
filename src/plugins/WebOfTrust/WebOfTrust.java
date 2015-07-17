@@ -3435,8 +3435,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 					if(changeSet == null)
 						changeSet = new ChangeSet<Score>(oldScore, score);
 					
-					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(
-						changeSet.beforeChange, changeSet.afterChange);
+					if(changeSet.beforeChange == null
+							|| !changeSet.afterChange.equals(changeSet.beforeChange)) {
+						mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(
+							changeSet.beforeChange, changeSet.afterChange);
+					}
 					
 					scoresWhichNeedEventNotification.remove(score.getID());
 
