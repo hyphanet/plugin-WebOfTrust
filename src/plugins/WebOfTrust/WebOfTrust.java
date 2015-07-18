@@ -3431,7 +3431,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 			Score oldScore = changeSet != null ? changeSet.beforeChange : score.clone();
 
-			score.setValue(computeScoreValue(score.getTruster(), score.getTrustee()));
+			score.setValue(computeScoreValue(score.getTruster(), distrusted));
 			score.storeWithoutCommit();
 
 			// The Collection scoresWithUpdatedCapacity is those Score whose values need
