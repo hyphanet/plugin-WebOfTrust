@@ -3391,7 +3391,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 
 	/**
-	 * FIXME: This doesn't update the {@link IdentityFetcher}'s "should fetch?" states. */
+	 * FIXME: This doesn't update the {@link IdentityFetcher}'s "should fetch?" states.
+	 * FIXME: Check whether all the HashMap/HashSet used by this and the callees to avoid double 
+	 * computations of stuff actually yield hits. It is possible that I wrongly assumed that double
+	 * computations are possible in some of the cases where a map is used. */
 	private void updateScoresAfterDistrustWithoutCommit(Identity distrusted) {
 		// FIXME: Profile memory usage of this. It might get too large to fit into memory.
 		// If it does, then instead store this in the database by having an "outdated?" flag on
