@@ -3415,38 +3415,34 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// A Score value in a trust tree of an OwnIdentity is the sum of all Trust values an
 		// identity has received, multiplied by the capacity each trust giver has received in the
 		// Score of the OwnIdentity.
-		// Thus, we must update the Scores for which the "Trust * weight" product changed:
+		// So we must update Scores for which the product "Trust * capacity(Trust giver)" changed:
 		// 1) Scores for which an included Trust value has changed = Scores which the distrusted
 		//    identity has received. This is because this function is to be called when a single
 		//    trust value has changed, and the distrusted identity is the receiver of that value.
 		//    This is what the following loop does.
-		// 2) Scores whose capacity changed. The loop after the following one does that.
+		// 2) Scores in which a Trust value is included for which the capacity of the giver of
+		//    the Trust value has changed.
+		//    This is what the loop after the following loop does.
 		
 		int scoresAffectedByTrustChange = 0;
 		// Normally, we might have to check whether a new Score has to be created due to the changed
 		// trust value - but updateRanksAfterDistrustWithoutCommit() did this already.
 		for(Score score : getScores(distrusted)) {
-			ChangeSet<Score> changeSet = scoresWhichNeedEventNotification.remove(score.getID());
-			assert(changeSet == null || changeSet.afterChange == score);
-
-			Score oldScore = changeSet != null ? changeSet.beforeChange : score.clone();
-
+			Score oldScore = score.clone();
 			score.setValue(computeScoreValue(score.getTruster(), distrusted));
 			score.storeWithoutCommit();
 
-			// The Collection scoresWithUpdatedCapacity is those Score whose values need
-			// to be updated. We already did update the value for this Score, so we can
-			// remove it from the list.
-			scoresWithUpdatedCapacity.remove(score.getID());
-
-			// By now, rank, capacity and value of the Score have been updated, so we 
-			// are finished with processing it and create the event notification for it
-			// already.
-			if(changeSet != null || !oldScore.equals(score))
-				mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, score);
+			if(!score.equals(oldScore)) {
+				String id = score.getID();
+				if(!scoresWhichNeedEventNotification.containsKey(id))
+					scoresWhichNeedEventNotification.put(id, new ChangeSet<Score>(oldScore, score));
+			}
 
 			++scoresAffectedByTrustChange;
 		}
+		
+		// FIXME: Performance: Somehow mark the scores we processed here so the loop below does not
+		// process them again.
 		
 		if(logMINOR) {
 			Logger.minor(this,
@@ -3457,14 +3453,38 @@ public final class WebOfTrust extends WebOfTrustInterface
 		StopWatch time2 = logMINOR ? new StopWatch() : null;
 		int scoresAffectedByCapacityChange = 0;
 		
-		// Compute Score values for Scores whose capacity cahnged.
-		// We only process the list of scoresWithUpdatedCapacity, not those of
-		// scoresWithUpdatedRank: The capacity is computed from the rank, but it does not change
-		// for all possibly rank changes.
+		// The capacity of an Identity's Score is the weight which the Trust values given by
+		// the Identity have when computing Scores of other Identitys.
+		// Thus, if the capacity of a Score X changed, we need to update the other Scores in which
+		// a Trust value which is weighted by X's capacity is involved.
 		for(ChangeSet<Score> changeSet : scoresWithUpdatedCapacity.values()) {
-			Score score = changeSet.afterChange;
-			score.setValue(computeScoreValue(score.getTruster(), score.getTrustee()));
-			score.storeWithoutCommit();
+			Score scoreWithUpdatedCapacity = changeSet.afterChange;
+			OwnIdentity treeOwner = scoreWithUpdatedCapacity.getTruster();
+			Identity trustGiver = scoreWithUpdatedCapacity.getTrustee();
+			
+			for(Trust givenTrust : getGivenTrusts(trustGiver)) {
+				Identity trustReceiver = givenTrust.getTrustee();
+				Score score;
+				try {
+					score = getScore(treeOwner, trustReceiver);
+				} catch(NotInTrustTreeException e) {
+					// No need to create it: updateRanksAfterDistrustWithoutCommit() has already
+					// created all scores which could be created.
+					continue;
+				}
+				
+				Score oldScore = score.clone();
+				score.setValue(computeScoreValue(treeOwner, trustReceiver));
+				score.storeWithoutCommit();
+				 
+				if(!score.equals(oldScore)) {
+					String id = score.getID();
+					if(!scoresWhichNeedEventNotification.containsKey(id)) {
+						scoresWhichNeedEventNotification.put(id,
+							new ChangeSet<Score>(oldScore, score));
+					}
+				}
+			}
 		}
 
 		scoresWithUpdatedCapacity = null;
