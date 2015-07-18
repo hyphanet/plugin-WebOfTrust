@@ -3465,7 +3465,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 			score.setValue(computeScoreValue(score.getTruster(), score.getTrustee()));
 			score.storeWithoutCommit();
 		}
-		
+
+		scoresWithUpdatedCapacity = null;
+
 		if(logMINOR) {
 			Logger.minor(this,
 				"Time for updating " + scoresAffectedByTrustChange + " score values due to changed "
