@@ -2835,11 +2835,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/** 
 	 * Based on "uniform-cost search" algorithm (= optimized Dijkstra).<br>
 	 * Modified with respect to ignoring "blocked" edges: Having received a rank of
-	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees.
-	 * FIXME: "Invert" this algorithm: Instead of starting to search for target from source,
-	 * start to search for source from target. This will mean that we don't have to walk the
-	 * WHOLE graph if target is untrusted. */
-	private int computeRankFromScratch(final OwnIdentity source, final Identity target) {
+	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees. */
+	private int computeRankFromScratch_Forward(final OwnIdentity source, final Identity target) {
 		final class Vertex implements Comparable<Vertex>{
 			final Identity identity;
 			final Integer rank;
@@ -2936,6 +2933,145 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return -1;
 	}
 
+	/**
+	 * Same as {@link #computeRankFromScratchForward(OwnIdentity, Identity)} except for the fact
+	 * that the UCS algorithm is walking backwards from target to source.
+	 * For understanding purposes, it is suggested that you read the aforementioned function first.
+	 * 
+	 * This fixes the worst case of the other implementation where the target is distrusted, i.e.
+	 * where there is no Trust path from source to target. In that case, the other implementation
+	 * would walk almost the whole WOT database if we assume that most Trusts in the database are
+	 * positive.
+	 * This inverse algorithm can be expected to be a lot faster in the case where there is no
+	 * Trust path from source to target:
+	 * WOT does not download identities which are distrusted. Thus, if we assume that evil,
+	 * distrusted identities are only trusted by other evil distrusted identities, their social
+	 * network will likely not be downloaded and therefore the trusts they have received will be
+	 * very few. So the "dark", "evil" part of the Trust graph is likely small compared to the
+	 * "good" part.
+	 * Since this algorithm starts at the target identity, and only walks positive Trust edges,
+	 * and not negative ones, if the target is distrusted it will only have to walk the "dark" part
+	 * of the Trust graph as only the other "dark" identities trust it.
+	 * As the dark part is a lot smaller, it has to search a lot less.
+	 * FIXME: Review, I was pretty tired when I wrote this.
+	 * FIXME: Unit test by: 1) Create a random trust graph 2) Compute rank of all identities, and
+	 * compute against what {@link #computeRankFromScratchForward(OwnIdentity, Identity)
+	 * computes. */
+	private int computeRankFromScratch(final OwnIdentity source, final Identity target) {
+		final class Vertex implements Comparable<Vertex>{
+			final Identity identity;
+			final Integer rank;
+			
+			public Vertex(Identity identity, int rank) {
+				this.identity = identity;
+				this.rank = rank;
+			}
+
+			@Override public int compareTo(Vertex o) {
+				return rank.compareTo(o.rank);
+			}
+		}
+		
+		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
+		HashSet<String> seen = new HashSet<String>(); // Key = Identity.getID()
+		
+		final int sourceRank;
+		try {
+			sourceRank = getScore(source, source).getRank();
+			if(source == target)
+				return sourceRank;
+		} catch (NotInTrustTreeException e) {
+			Logger.warning(this, "initTrustTreeWithoutCommit() not called for: " + source);
+			// Some unit tests require the special case of initTrustTreeWithoutCommit() not having
+			// been called for an OwnIdentity yet to yield a proper result of "no rank".
+			return -1;
+		}
+		
+		try {
+			// If a direct distrust exists from the OwnIdentity source to the target, then it
+			// must always overwrite the rank to be MAX_VALUE, even if a path with a lower rank
+			// would exist over more Trust steps. This is a demand of the specification of the
+			// WOT algorithm, see computeAllScoresWithoutCommit().
+			// Thus, we must now check whether a direct Trust exists before running the actual
+			// search algorithm could return a lower rank than MAX_VALUE.
+			if(getTrust(source, target).getValue() <= 0)
+				return Integer.MAX_VALUE;
+			
+			// We know a direct non-distrust from source to target exists, so we can directly
+			// compute the rank as sourceRank + 1.
+			// Notice that this is an optimization: Not returning here and instead letting the
+			// main search algorithm run now would yield the same result.
+			return sourceRank + 1;
+		} catch(NotTrustedException e) {}
+		
+		seen.add(target.getID());
+		for(Trust targetTrust : getReceivedTrusts(target)) {
+			Identity truster = targetTrust.getTruster();
+			int rank = targetTrust.getValue() > 0 ? 1 : Integer.MAX_VALUE;
+			queue.add(new Vertex(truster, rank));
+		}
+		
+		while(!queue.isEmpty()) {
+			Vertex vertex = queue.poll();
+			
+			if(vertex.identity == source)
+				return vertex.rank != Integer.MAX_VALUE ? vertex.rank + sourceRank : Integer.MAX_VALUE;
+			
+			seen.add(vertex.identity.getID());
+
+			ObjectSet<Trust> receivedTrusts = getReceivedTrusts(vertex.identity);
+			
+			for(Trust trust : receivedTrusts) {
+				// The decision of an OwnIdentity overwrites all other Trust values an identity has
+				// received. Thus, the rank is forced by it as well, and we must not walk other
+				// edges.
+				if(trust.getTruster() == source) {
+					if(trust.getValue() > 0) {
+						queue.add(new Vertex(source,
+							vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
+					}
+					
+					receivedTrusts = null;
+					break;
+				}
+			}
+			
+			if(receivedTrusts == null)
+				continue;
+			
+			for(Trust trust : receivedTrusts) {
+				Identity neighbourVertex = trust.getTruster();
+				
+				if(seen.contains(neighbourVertex.getID()))
+					continue; // Prevent infinite loop
+				
+				// FIXME: Performance: The UCS algorithm actually does decreaseKey() here instead of
+				// add(), but Java PriorityQueue does not support decreaseKey().
+				// remove() is also not an option since it is O(N).
+				// The existing code will work since the entry with the too high priority will be
+				// processed after the one with the lower priority since being sorted is the main
+				// feature of a PQ. But it increases memory usage and runtime to have useless
+				// entries in the PQ.
+				
+				if(trust.getValue() > 0) {
+					queue.add(new Vertex(neighbourVertex,
+						vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
+				} else {
+					// An identity with a rank of MAX_VALUE may not give its rank to its trustees.
+					// So the only case where the rank of our search target is MAX_VALUE is when it
+					// is the last in the chain of Trust steps.
+					// We already took care of this case by adding its received Trusts to the queue
+					// before starting processing the queue, so this case here cannot be the last
+					// Trust steps anymore, it is last + 1, last + 2, etc...
+					// Thus, we do not have to walk the MAX_VALUE ranks here.
+					
+					/* queue.add(new Vertex(neighbourVertex, Integer.MAX_VALUE)); */
+				}
+			}
+		}
+		
+		return -1;
+	}
 	/**
 	 * Computes the trustees's rank in the trust tree of the truster.
 	 * It gets its best ranked non-zero-capacity truster's rank, plus one.
