@@ -3553,19 +3553,21 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// to decide whether it could cause a Score object to be created before we do the
 		// expensive database query which follows...
 		for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+			Score outdated;
 			try {
-				scoreQueue.add(getScore(treeOwner, distrusted));
+				outdated = getScore(treeOwner, distrusted);
 			} catch(NotInTrustTreeException e) {
 				// Use initial rank value of 0 because:
 				// - it is invalid and thus the below "if(score.getRank() == newRank)" will not be
 				//   confused
 				// - cannot use -1 because the below computeRankFromScratch() will return that.
-				Score outdated = new Score(this, treeOwner, distrusted, 0, 0, 0);
+				outdated = new Score(this, treeOwner, distrusted, 0, 0, 0);
 				outdated.storeWithoutCommit();
-				scoreQueue.add(outdated);
-				scoresQueued.add(outdated.getID());
 				scoresCreated.add(outdated.getID());
 			}
+			
+			scoreQueue.add(outdated);
+			scoresQueued.add(outdated.getID());
 		}
 
 		Score score;
