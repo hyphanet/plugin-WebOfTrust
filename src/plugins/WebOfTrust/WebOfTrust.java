@@ -3411,6 +3411,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		StopWatch time1 = logMINOR ? new StopWatch() : null;
 		
+		// TODO: Code quality: Move whole value processing code below to function
+		
+		HashSet<String> scoresWithUpdatedValue = new HashSet<String>(); // Key = Score.getID()
+		
 		// Now we update Score values.
 		// A Score value in a trust tree of an OwnIdentity is the sum of all Trust values an
 		// identity has received, multiplied by the capacity each trust giver has received in the
@@ -3431,18 +3435,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 			Score oldScore = score.clone();
 			score.setValue(computeScoreValue(score.getTruster(), distrusted));
 			score.storeWithoutCommit();
-
+			
+			String id = score.getID();
+			
+			scoresWithUpdatedValue.add(id);
+			
 			if(!score.equals(oldScore)) {
-				String id = score.getID();
 				if(!scoresWhichNeedEventNotification.containsKey(id))
 					scoresWhichNeedEventNotification.put(id, new ChangeSet<Score>(oldScore, score));
 			}
 
 			++scoresAffectedByTrustChange;
 		}
-		
-		// FIXME: Performance: Somehow mark the scores we processed here so the loop below does not
-		// process them again.
 		
 		if(logMINOR) {
 			Logger.minor(this,
@@ -3464,8 +3468,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			for(Trust givenTrust : getGivenTrusts(trustGiver)) {
 				Identity trustReceiver = givenTrust.getTrustee();
+				ScoreID scoreID = new ScoreID(treeOwner, trustReceiver);
+				
+				if(!scoresWithUpdatedValue.add(scoreID.toString()))
+					continue;
+				
 				Score score;
 				try {
+					// TODO: Performance: Use getScore() which consumes ScoreID
 					score = getScore(treeOwner, trustReceiver);
 				} catch(NotInTrustTreeException e) {
 					// No need to create it: updateRanksAfterDistrustWithoutCommit() has already
@@ -3488,6 +3498,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 
 		scoresWithUpdatedCapacity = null;
+		scoresWithUpdatedValue = null;
 
 		if(logMINOR) {
 			Logger.minor(this,
