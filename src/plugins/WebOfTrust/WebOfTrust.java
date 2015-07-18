@@ -2835,7 +2835,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/** 
 	 * Based on "uniform-cost search" algorithm (= optimized Dijkstra).<br>
 	 * Modified with respect to ignoring "blocked" edges: Having received a rank of
-	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees. */
+	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees.
+	 * FIXME: "Invert" this algorithm: Instead of starting to search for target from source,
+	 * start to search for source from target. This will mean that we don't have to walk the
+	 * WHOLE graph if target is untrusted. */
 	private int computeRankFromScratch(final OwnIdentity source, final Identity target) {
 		final class Vertex implements Comparable<Vertex>{
 			final Identity identity;
