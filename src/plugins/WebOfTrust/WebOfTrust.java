@@ -2934,7 +2934,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 
 	/**
-	 * Same as {@link #computeRankFromScratchForward(OwnIdentity, Identity)} except for the fact
+	 * Same as {@link #computeRankFromScratch_Forward(OwnIdentity, Identity)} except for the fact
 	 * that the UCS algorithm is walking backwards from target to source.
 	 * For understanding purposes, it is suggested that you read the aforementioned function first.
 	 * 
@@ -2955,7 +2955,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * As the dark part is a lot smaller, it has to search a lot less.
 	 * FIXME: Review, I was pretty tired when I wrote this.
 	 * FIXME: Unit test by: 1) Create a random trust graph 2) Compute rank of all identities, and
-	 * compute against what {@link #computeRankFromScratchForward(OwnIdentity, Identity)
+	 * compute against what {@link #computeRankFromScratch_Forward(OwnIdentity, Identity)
 	 * computes. */
 	private int computeRankFromScratch(final OwnIdentity source, final Identity target) {
 		final class Vertex implements Comparable<Vertex>{
@@ -3029,6 +3029,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 					if(trust.getValue() > 0) {
 						queue.add(new Vertex(source,
 							vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
+					} else {
+						// An identity with a rank of MAX_VALUE may not give its rank to its
+						// trustees.
+						// So the only case where the rank of our search target is MAX_VALUE is when
+						// it is the last in the chain of Trust steps.
+						// We already took care of this case by adding its received Trusts to the
+						// queue before starting processing the queue, so this case here cannot be
+						// the last Trust steps anymore, it is last + 1, last + 2, etc...
+						// Thus, we do not have to walk the MAX_VALUE ranks here.
+						
+						/* queue.add(new Vertex(source, Integer.MAX_VALUE)); */
 					}
 					
 					receivedTrusts = null;
@@ -3057,14 +3068,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 					queue.add(new Vertex(neighbourVertex,
 						vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
 				} else {
-					// An identity with a rank of MAX_VALUE may not give its rank to its trustees.
-					// So the only case where the rank of our search target is MAX_VALUE is when it
-					// is the last in the chain of Trust steps.
-					// We already took care of this case by adding its received Trusts to the queue
-					// before starting processing the queue, so this case here cannot be the last
-					// Trust steps anymore, it is last + 1, last + 2, etc...
-					// Thus, we do not have to walk the MAX_VALUE ranks here.
-					
+					// Same as above
 					/* queue.add(new Vertex(neighbourVertex, Integer.MAX_VALUE)); */
 				}
 			}
