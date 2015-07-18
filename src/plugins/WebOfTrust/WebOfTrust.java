@@ -3455,6 +3455,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 		
 		StopWatch time2 = logMINOR ? new StopWatch() : null;
+		int scoresAffectedByCapacityChange = 0;
 		
 		// Compute Score values for Scores whose capacity cahnged.
 		// We only process the list of scoresWithUpdatedCapacity, not those of
@@ -3470,8 +3471,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 		if(logMINOR) {
 			Logger.minor(this,
-				"Time for updating " + scoresAffectedByTrustChange + " score values due to changed "
-			  + "capacity" + time2);
+				"Time for updating " + scoresAffectedByCapacityChange + " score values due to "
+			  + "changed capacity: " + time2);
 		}
 
 		// Instead of creating events while updating rank, capacity and value, create the events
