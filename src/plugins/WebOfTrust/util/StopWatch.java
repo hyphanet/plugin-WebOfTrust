@@ -30,6 +30,10 @@ public final class StopWatch {
 		return mStopTime - mStartTime;
 	}
 
+	public void divideNanosBy(long divisor) {
+		mStopTime = mStartTime + (mStopTime - mStartTime) / divisor;
+	}
+
 	public String toString() {
 		if(mStopTime == null)
 			stop();
