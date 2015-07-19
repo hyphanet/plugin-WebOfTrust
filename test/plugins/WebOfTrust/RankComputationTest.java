@@ -52,6 +52,8 @@ public final class RankComputationTest extends AbstractJUnit4BaseTest {
 		assertEquals(identitys.size(), mWebOfTrust.getAllIdentities().size());
 		addRandomTrustValues(identitys, trustCount);
 		
+		System.out.println("Ranks: " + rankCount);
+		
 		StopWatch computeAllScoresTime = new StopWatch();
 		mWebOfTrust.verifyAndCorrectStoredScores(); // Calls computeAllScoresWithoutCommit()
 		computeAllScoresTime.stop();
