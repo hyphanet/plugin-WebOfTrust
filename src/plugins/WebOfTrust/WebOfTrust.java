@@ -3017,7 +3017,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 			if(vertex.identity == source)
 				return vertex.rank != Integer.MAX_VALUE ? vertex.rank + sourceRank : Integer.MAX_VALUE;
 			
-			seen.add(vertex.identity.getID());
+			if(!seen.add(vertex.identity.getID()))
+				continue; // Necessary because we do not use decreaseKey(), see below
 			
 			Trust trustFromSource = sourceTrusts.get(vertex.identity.getID());
 			if(trustFromSource != null) {
