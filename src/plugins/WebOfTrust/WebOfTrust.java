@@ -3032,13 +3032,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 							vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
 					} else {
 						// An identity with a rank of MAX_VALUE may not give its rank to its
-						// trustees.
-						// So the only case where the rank of our search target is MAX_VALUE is when
-						// it is the last in the chain of Trust steps.
-						// We already took care of this case by adding its received Trusts to the
-						// queue before starting processing the queue, so this case here cannot be
-						// the last Trust steps anymore, it is last + 1, last + 2, etc...
-						// Thus, we do not have to walk the MAX_VALUE ranks here.
+						// trustees. So the only case where the rank of an identity can be MAX_VALUE
+						// is when it is the last in the chain of Trust steps.
+						// By adding the received Trusts of the search target to the queue before
+						// starting processing the queue, we already processed the last links of the
+						// chain. Here we can only be at last + 1, last + 2, etc.
+						// So at this point, a rank of MAX_VALUE cannot be given because it would be
+						// in the middle of the chain, not at the end.
 						
 						/* queue.add(new Vertex(source, Integer.MAX_VALUE)); */
 					}
