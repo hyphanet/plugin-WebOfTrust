@@ -3022,6 +3022,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 			ObjectSet<Trust> receivedTrusts = getReceivedTrusts(vertex.identity);
 			
+			// TODO: Performance: Cache the Trusts of the source OwnIdentity in a HashMap or
+			// ArrayList indexed by receiver. Instead of iterating over the received Trusts here,
+			// look in that table whether vertex.identity has received an OwnIdentity Trust.
+			// Benchmark whether that is faster.
 			for(Trust trust : receivedTrusts) {
 				// The decision of an OwnIdentity overwrites all other Trust values an identity has
 				// received. Thus, the rank is forced by it as well, and we must not walk other
