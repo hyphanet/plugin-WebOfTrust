@@ -2999,6 +2999,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 			queue.add(new Vertex(truster, rank));
 		}
 		
+		// If a vertex has received a Trust from the source, all other Trusts it has received can
+		// be ignored. Thus, we cache the source Trusts: This allows us to first check for a
+		// source Trust before we query all Trusts of a vertex. This should be faster since db4o
+		// queries are expensive.
+		// TODO: Performance: Use an array-backed map since this will be small.
+		// Key = Identity.getID() of receiver of Trust
+		HashMap<String, Trust> sourceTrusts = new HashMap<String, Trust>();
+		for(Trust sourceTrust : getGivenTrusts(source)) {
+			// TODO: Performance: Add & use Trust.getTrusteeID(), can be computed from Trust ID
+			sourceTrusts.put(sourceTrust.getTrustee().getID(), sourceTrust);
+		}
+		
 		while(!queue.isEmpty()) {
 			Vertex vertex = queue.poll();
 			
@@ -3006,19 +3018,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 				return vertex.rank != Integer.MAX_VALUE ? vertex.rank + sourceRank : Integer.MAX_VALUE;
 			
 			seen.add(vertex.identity.getID());
-
-			ObjectSet<Trust> receivedTrusts = getReceivedTrusts(vertex.identity);
 			
-			// TODO: Performance: Cache the Trusts of the source OwnIdentity in a HashMap or
-			// ArrayList indexed by receiver. Instead of iterating over the received Trusts here,
-			// look in that table whether vertex.identity has received an OwnIdentity Trust.
-			// Benchmark whether that is faster.
-			for(Trust trust : receivedTrusts) {
+			Trust trustFromSource = sourceTrusts.get(vertex.identity.getID());
+			if(trustFromSource != null) {
 				// The decision of an OwnIdentity overwrites all other Trust values an identity has
 				// received. Thus, the rank is forced by it as well, and we must not walk other
 				// edges.
-				if(trust.getTruster() == source) {
-					if(trust.getValue() > 0) {
+
+					if(trustFromSource.getValue() > 0) {
 						queue.add(new Vertex(source,
 							vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
 					} else {
@@ -3034,15 +3041,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 						/* queue.add(new Vertex(source, Integer.MAX_VALUE)); */
 					}
 					
-					receivedTrusts = null;
-					break;
-				}
+					continue;
 			}
+
 			
-			if(receivedTrusts == null)
-				continue;
-			
-			for(Trust trust : receivedTrusts) {
+			for(Trust trust : getReceivedTrusts(vertex.identity)) {
 				Identity neighbourVertex = trust.getTruster();
 				
 				if(seen.contains(neighbourVertex.getID()))
