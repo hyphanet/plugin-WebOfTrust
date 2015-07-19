@@ -2984,28 +2984,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 			return -1;
 		}
 		
-		// FIXME: Performance: This was copied from the inverted algorithm. Can we remove it here?
-		try {
-			// If a direct distrust exists from the OwnIdentity source to the target, then it
-			// must always overwrite the rank to be MAX_VALUE, even if a path with a lower rank
-			// would exist over more Trust steps. This is a demand of the specification of the
-			// WOT algorithm, see computeAllScoresWithoutCommit().
-			// Thus, we must now check whether a direct Trust exists before running the actual
-			// search algorithm could return a lower rank than MAX_VALUE.
-			if(getTrust(source, target).getValue() <= 0)
-				return Integer.MAX_VALUE;
-			
-			// We know a direct non-distrust from source to target exists, so we can directly
-			// compute the rank as sourceRank + 1.
-			// Notice that this is an optimization: Not returning here and instead letting the
-			// main search algorithm run now would yield the same result.
-			return sourceRank + 1;
-		} catch(NotTrustedException e) {}
-		
 		seen.add(target.getID());
 		for(Trust targetTrust : getReceivedTrusts(target)) {
 			Identity truster = targetTrust.getTruster();
 			int rank = targetTrust.getValue() > 0 ? 1 : Integer.MAX_VALUE;
+			
+			if(truster == source) {
+				// If a direct Trust exists from the OwnIdentity source to the target, then it
+				// must always overwrite any other rank paths. This is a demand of the specification
+				// of the WOT algorithm, see computeAllScoresWithoutCommit().
+				return rank != Integer.MAX_VALUE ? rank + sourceRank : Integer.MAX_VALUE;
+			}
+			
 			queue.add(new Vertex(truster, rank));
 		}
 		
