@@ -2836,7 +2836,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Based on "uniform-cost search" algorithm (= optimized Dijkstra).<br>
 	 * Modified with respect to ignoring "blocked" edges: Having received a rank of
 	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees. */
-	private int computeRankFromScratch_Forward(final OwnIdentity source, final Identity target) {
+	int computeRankFromScratch_Forward(final OwnIdentity source, final Identity target) {
 		final class Vertex implements Comparable<Vertex>{
 			final Identity identity;
 			final Integer rank;
@@ -2953,11 +2953,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * and not negative ones, if the target is distrusted it will only have to walk the "dark" part
 	 * of the Trust graph as only the other "dark" identities trust it.
 	 * As the dark part is a lot smaller, it has to search a lot less.
-	 * FIXME: Review, I was pretty tired when I wrote this.
-	 * FIXME: Unit test by: 1) Create a random trust graph 2) Compute rank of all identities, and
-	 * compute against what {@link #computeRankFromScratch_Forward(OwnIdentity, Identity)
-	 * computes. */
-	private int computeRankFromScratch(final OwnIdentity source, final Identity target) {
+	 * FIXME: Review, I was pretty tired when I wrote this. */
+	int computeRankFromScratch(final OwnIdentity source, final Identity target) {
 		final class Vertex implements Comparable<Vertex>{
 			final Identity identity;
 			final Integer rank;
