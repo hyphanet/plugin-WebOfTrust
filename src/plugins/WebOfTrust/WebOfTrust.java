@@ -2987,6 +2987,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			return -1;
 		}
 		
+		// FIXME: Performance: This was copied from the inverted algorithm. Can we remove it here?
 		try {
 			// If a direct distrust exists from the OwnIdentity source to the target, then it
 			// must always overwrite the rank to be MAX_VALUE, even if a path with a lower rank
