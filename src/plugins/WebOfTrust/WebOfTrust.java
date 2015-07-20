@@ -397,9 +397,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		// Required config options:
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader()));
-		// TODO: Optimization: We do explicit activation everywhere. We could change this to 0 and test whether everything still works.
-		// Ideally, we would benchmark both 0 and 1 and make it configurable.
-		cfg.activationDepth(1);
+		cfg.activationDepth(Persistent.DEFAULT_ACTIVATION_DEPTH);
 		cfg.updateDepth(1); // This must not be changed: We only activate(this, 1) before store(this).
 		Logger.normal(this, "Default activation depth: " + cfg.activationDepth());
 		cfg.exceptionsOnNotStorable(true);
