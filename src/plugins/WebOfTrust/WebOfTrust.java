@@ -173,6 +173,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 	
 	/* Actual data of the WoT */
 	
+	/**
+	 * TODO: Performance / Code quality: We have incremental computation in
+	 * {@link #updateScoresWithoutCommit(Trust, Trust)} now using
+	 * {@link #updateScoresAfterDistrustWithoutCommit(Identity)}. It uses this variable where
+	 * full recomputation was needed previously. Thus, this should be renamed to
+	 * "mUpdateScoresAfterDistrustNeeded", and probably become a local variable in
+	 * {@link #updateScoresWithoutCommit(Trust, Trust)}. However, before doing that, please
+	 * review the other code which uses this variable for whether it uses incremental computation
+	 * already. */
 	private boolean mFullScoreComputationNeeded = false;
 	
 	private boolean mTrustListImportInProgress = false;
