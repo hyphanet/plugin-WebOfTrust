@@ -41,6 +41,9 @@ import freenet.support.io.Closer;
  * @author xor (xor@freenetproject.org)
  */
 public abstract class Persistent implements Serializable {
+	// TODO: Optimization: We do explicit activation everywhere. We could change this to 0 and test whether everything still works.
+	// Ideally, we would benchmark both 0 and 1 and make it configurable.
+	public static transient final int DEFAULT_ACTIVATION_DEPTH = 1;
 	
 	/** @see Serializable */
 	private static transient final long serialVersionUID = 1L;
@@ -54,7 +57,13 @@ public abstract class Persistent implements Serializable {
 	 * A reference to the database in which this Persistent object resists.
 	 */
 	protected transient ExtObjectContainer mDB;
-	
+
+	/**
+	 * The highest value {@link #checkedActivate(int)} was called with on this object.<br>
+	 * Used to prevent multiple calls with the same value being passed to db4o. This has shown
+	 * to be a performance improvement in benchmarks - db4o seems bad at deduplicating the calls. */
+	private transient int mActivatedUpTo = 0;
+
 	
 	/**
 	 * The date when this persistent object was created. 
@@ -140,7 +149,18 @@ public abstract class Persistent implements Serializable {
 		mWebOfTrust = myWebOfTrust;
 		mDB = mWebOfTrust.getDatabase();
 	}
-	
+
+	/**
+	 * @see #initializeTransient(WebOfTrustInterface)
+	 * @see #mActivatedUpTo */
+	private final void initializeTransient(final WebOfTrustInterface myWebOfTrust,
+			final int activatedUpTo) {
+		
+		mWebOfTrust = myWebOfTrust;
+		mDB = mWebOfTrust.getDatabase();
+		mActivatedUpTo = activatedUpTo;
+	}
+
 	/**
 	 * @deprecated Only for being used when dealing with objects which are from a different object container than the passed Freetalk uses.
 	 */
@@ -181,7 +201,11 @@ public abstract class Persistent implements Serializable {
 	 * Same as a call to {@link checkedActivate(this, depth)}
 	 */
 	protected final void checkedActivate(final int depth) {
+		if(mActivatedUpTo == depth)
+			return;
+		
 		checkedActivate(this, depth);
+		mActivatedUpTo = depth;
 	}
 	
 	/**
@@ -490,8 +514,14 @@ public abstract class Persistent implements Serializable {
 		private final WebOfTrustInterface mWebOfTrust;
 		private final ObjectSet<Type> mObjectSet;
 		
+		/**
+		 * Private because we can only safely initialize {@link Persistent#mActivatedUpTo} to
+		 * {@link Persistent#DEFAULT_ACTIVATION_DEPTH} if we can assume that all objects in the set
+		 * are the direct result from a query and thus activated up to the default depth.
+		 * (The opposite to being a "direct result from a query" is obtaining other objects from
+		 * the member variables of objects which came from a query.) */
 		@SuppressWarnings("unchecked") 	// "ObjectSet<Type> myObjectSet" won't compile against db4o-7.12 so we use the Suppress trick
-		public InitializingObjectSet(final WebOfTrustInterface myWebOfTrust, @SuppressWarnings("rawtypes") final ObjectSet myObjectSet) {
+		private InitializingObjectSet(final WebOfTrustInterface myWebOfTrust, @SuppressWarnings("rawtypes") final ObjectSet myObjectSet) {
 			mWebOfTrust = myWebOfTrust;
 			mObjectSet = (ObjectSet<Type>)myObjectSet;
 		}
@@ -513,7 +543,7 @@ public abstract class Persistent implements Serializable {
 		@Override
 		public Type next() {
 			final Type next = mObjectSet.next();
-			next.initializeTransient(mWebOfTrust);
+			next.initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
 			return next;
 		}
 
@@ -565,7 +595,7 @@ public abstract class Persistent implements Serializable {
 		@Override
 		public Type get(final int index) {
 			Type object = mObjectSet.get(index);
-			object.initializeTransient(mWebOfTrust);
+			object.initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
 			return object;
 		}
 
@@ -592,7 +622,7 @@ public abstract class Persistent implements Serializable {
 				@Override
 				public Type next() {
 					final Type next = mIterator.next();
-					next.initializeTransient(mWebOfTrust);
+					next.initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
 					return next;
 				}
 
@@ -634,7 +664,7 @@ public abstract class Persistent implements Serializable {
 			@Override
 			public ListType next() {
 				final ListType next = mIterator.next();
-				next.initializeTransient(mWebOfTrust);
+				next.initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
 				return next;
 			}
 
@@ -646,7 +676,7 @@ public abstract class Persistent implements Serializable {
 			@Override
 			public ListType previous() {
 				final ListType previous = mIterator.previous();
-				previous.initializeTransient(mWebOfTrust);
+				previous.initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
 				return previous;
 			}
 
@@ -710,7 +740,7 @@ public abstract class Persistent implements Serializable {
 		public Object[] toArray() {
 			Object[] result = mObjectSet.toArray();
 			for(Object o : result)
-				((Persistent)o).initializeTransient(mWebOfTrust);
+				((Persistent)o).initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
 			return result;
 		}
 
