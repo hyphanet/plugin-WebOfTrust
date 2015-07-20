@@ -190,9 +190,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/* Statistics */
 	private int mFullScoreRecomputationCount = 0;
 	private long mFullScoreRecomputationMilliseconds = 0;
-	private int mIncrementalScoreRecomputationCount = 0;
-	private long mIncrementalScoreRecomputationMilliseconds = 0;
-	
+	private int mIncrementalScoreRecomputationDueToTrustCount = 0;
+	private int mIncrementalScoreRecomputationDueToDistrustCount = 0;
+	private long mIncrementalScoreRecomputationDueToTrustNanos = 0;
+	private long mIncrementalScoreRecomputationDueToDistrustNanos = 0;
+
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
@@ -3306,10 +3308,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	private void updateScoresWithoutCommit(final Trust oldTrust, final Trust newTrust) {
 		if(logMINOR) Logger.minor(this, "Doing an incremental computation of all Scores...");
 		
-		final long beginTime = CurrentTimeUTC.getInMillis();
-		// We only include the time measurement if we actually do something.
-		// If we figure out that a full score recomputation is needed just by looking at the initial parameters, the measurement won't be included.
-		boolean includeMeasurement = false;
+		StopWatch time = new StopWatch();
 		
 		final boolean trustWasCreated = (oldTrust == null);
 		final boolean trustWasDeleted = (newTrust == null);
@@ -3337,8 +3336,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 
 		if(!mFullScoreComputationNeeded && (trustWasCreated || trustWasModified)) {
-			includeMeasurement = true; 
-			
 			for(OwnIdentity treeOwner : getAllOwnIdentities()) {
 				try {
 					// Throws to abort the update of the trustee's score: If the truster has no rank or capacity in the tree owner's view then we don't need to update the trustee's score.
@@ -3474,9 +3471,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 				if(mFullScoreComputationNeeded)
 					break;
 			}
-		}	
+		}
+
+		if(!mFullScoreComputationNeeded) {
+			++mIncrementalScoreRecomputationDueToTrustCount;
+			mIncrementalScoreRecomputationDueToTrustNanos += time.getNanos();
+		} else {
+			// TODO: Code quality: Do not reset time so we include the time which was necessary
+			// to determine whether mFullScoreComputationNeeded = true / false.
+			// The resetting was added since updateScoresAfterDistrustWithoutCommit() is new and
+			// I wanted a precise measurement of how fast it is alone.
+			time = new StopWatch();
 		
-		if(mFullScoreComputationNeeded) {
 			Identity distrusted;
 			
 			if(newTrust != null) {
@@ -3493,23 +3499,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 			updateScoresAfterDistrustWithoutCommit(distrusted);
 			
 			mFullScoreComputationNeeded = false;
-		}
-
-		// FIXME: Measure updateScoresAfterDistrustWithoutCommit() separately
-		if(includeMeasurement) {
-			++mIncrementalScoreRecomputationCount;
-			mIncrementalScoreRecomputationMilliseconds += CurrentTimeUTC.getInMillis() - beginTime;
+	
+			++mIncrementalScoreRecomputationDueToDistrustCount;
+			mIncrementalScoreRecomputationDueToDistrustNanos += time.getNanos();
 		}
 		
 		if(logMINOR) {
-			final String time = includeMeasurement ?
-							("Stats: Amount: " + mIncrementalScoreRecomputationCount + "; Avg Time:" + getAverageIncrementalScoreRecomputationTime() + "s")
-							: ("Time not measured: Computation was aborted before doing anything.");
-			
 			if(!mFullScoreComputationNeeded)
-				Logger.minor(this, "Incremental computation of all Scores finished. " + time);
+				Logger.minor(this, "Incremental computation of all Scores finished.");
 			else
-				Logger.minor(this, "Incremental computation of all Scores not possible, full computation is needed. " + time);
+				Logger.minor(this, "Incremental computation of all Scores not possible, full computation is needed.");
 		}
 		
 		if(!mTrustListImportInProgress) {
@@ -4644,15 +4643,31 @@ public final class WebOfTrust extends WebOfTrustInterface
     public synchronized double getAverageFullScoreRecomputationTime() {
     	return (double)mFullScoreRecomputationMilliseconds / ((mFullScoreRecomputationCount!= 0 ? mFullScoreRecomputationCount : 1) * 1000); 
     }
-    
-    public int getNumberOfIncrementalScoreRecomputations() {
-    	return mIncrementalScoreRecomputationCount;
-    }
-    
-    public synchronized double getAverageIncrementalScoreRecomputationTime() {
-    	return (double)mIncrementalScoreRecomputationMilliseconds / ((mIncrementalScoreRecomputationCount!= 0 ? mIncrementalScoreRecomputationCount : 1) * 1000); 
-    }
-	
+
+	public int getNumberOfIncrementalScoreRecomputationDueToTrust() {
+		return mIncrementalScoreRecomputationDueToTrustCount;
+	}
+
+	public int getNumberOfIncrementalScoreRecomputationDueToDistrust() {
+		return mIncrementalScoreRecomputationDueToDistrustCount;
+	}
+
+	public synchronized double getAverageTimeForIncrementalScoreRecomputationDueToTrust() {
+		return (double)mIncrementalScoreRecomputationDueToTrustNanos / 
+			(1000d * 1000d * 1000d *
+				(mIncrementalScoreRecomputationDueToTrustCount != 0
+			  ?  mIncrementalScoreRecomputationDueToTrustCount : 1)
+			);
+	}
+
+	public synchronized double getAverageTimeForIncrementalScoreRecomputationDueToDistrust() {
+		return (double)mIncrementalScoreRecomputationDueToDistrustNanos / 
+			(1000d * 1000d * 1000d *
+				(mIncrementalScoreRecomputationDueToDistrustCount != 0
+			  ?  mIncrementalScoreRecomputationDueToDistrustCount : 1)
+			);
+	}
+
     /**
      * Tests whether two WoT are equal.
      * This is a complex operation in terms of execution time and memory usage and only intended for being used in unit tests.
