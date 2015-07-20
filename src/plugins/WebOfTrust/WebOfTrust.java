@@ -3308,6 +3308,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 	private void updateScoresWithoutCommit(final Trust oldTrust, final Trust newTrust) {
 		if(logMINOR) Logger.minor(this, "Doing an incremental computation of all Scores...");
 		
+		assert(!mFullScoreComputationNeeded)
+			: "updateScoresAfterDistrustWithoutCommit() which we call below will only work if "
+			+ "called for each individual distrust, it is not a batch operation!";
+
 		StopWatch time = new StopWatch();
 		
 		final boolean trustWasCreated = (oldTrust == null);
