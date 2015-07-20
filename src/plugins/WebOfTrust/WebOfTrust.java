@@ -4639,10 +4639,11 @@ public final class WebOfTrust extends WebOfTrustInterface
     public int getNumberOfFullScoreRecomputations() {
     	return mFullScoreRecomputationCount;
     }
-    
-    public synchronized double getAverageFullScoreRecomputationTime() {
-    	return (double)mFullScoreRecomputationMilliseconds / ((mFullScoreRecomputationCount!= 0 ? mFullScoreRecomputationCount : 1) * 1000); 
-    }
+
+	public synchronized double getAverageFullScoreRecomputationTime() {
+		return (double) mFullScoreRecomputationMilliseconds
+			/ (1000d * (mFullScoreRecomputationCount != 0 ? mFullScoreRecomputationCount : 1));
+	}
 
 	public int getNumberOfIncrementalScoreRecomputationDueToTrust() {
 		return mIncrementalScoreRecomputationDueToTrustCount;
