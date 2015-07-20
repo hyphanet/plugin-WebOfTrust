@@ -7,6 +7,7 @@ import static org.junit.Assert.*;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -92,10 +93,16 @@ public final class RankComputationTest extends AbstractJUnit4BaseTest {
 			}
 		}
 		
+		time_rank_computeRankFromScratch /= rankCount;
+		time_rank_computeRankFromScratch_Forward /= rankCount;
+		
 		// TimeUtil wants millis, not nanos
-		time_rank_computeRankFromScratch /= (rankCount * 1000);
-		time_rank_computeRankFromScratch_Forward /= (rankCount * 1000);
+		time_rank_computeRankFromScratch
+			= TimeUnit.NANOSECONDS.toMillis(time_rank_computeRankFromScratch);
 
+		time_rank_computeRankFromScratch_Forward
+			= TimeUnit.NANOSECONDS.toMillis(time_rank_computeRankFromScratch_Forward);
+		
 		System.out.println("computeRankFromScratch() avg. time per rank: "
 			+ TimeUtil.formatTime(time_rank_computeRankFromScratch, 3, true));
 		
