@@ -153,7 +153,7 @@ public abstract class Persistent implements Serializable {
 	/**
 	 * @see #initializeTransient(WebOfTrustInterface)
 	 * @see #mActivatedUpTo */
-	private final void initializeTransient(final WebOfTrustInterface myWebOfTrust,
+	final void initializeTransient(final WebOfTrustInterface myWebOfTrust,
 			final int activatedUpTo) {
 		
 		mWebOfTrust = myWebOfTrust;
