@@ -1640,8 +1640,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 				Integer targetScore;
 				final Integer targetRank = rankValues.get(target);
 				
+				/* RankComputationTest does this as a unit test for us
+				 * 
 				assert(computeRankFromScratch(treeOwner, target)
 					== (targetRank != null ? targetRank : -1));
+				*/
 				
 				if(targetRank == null) {
 					targetScore = null;
