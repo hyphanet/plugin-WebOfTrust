@@ -11,7 +11,6 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 
 import plugins.WebOfTrust.Identity.FetchState;
-import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
@@ -35,7 +34,6 @@ import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.PrioritizedTicker;
@@ -254,7 +252,48 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		q.constrain(commandType);
 		return new Persistent.InitializingObjectSet<IdentityFetcher.IdentityFetcherCommand>(mWoT, q);
 	}
-	
+
+	/**
+	 * Returns the effective state of whether the fetcher will fetch an identity.
+	 * This considers both queued commands as well as already processed commands.
+	 * It will also check for useless commands (for example StartFetchCommand when identity is
+	 * already being fetched) and contradictory commands (= both start and stop command at once).
+	 * The checks are mostly asserts.
+	 * 
+	 * For debugging purposes only.
+	 * 
+	 * You must synchronize upon this IdentityFetcher while calling this function. */
+	final boolean getShouldFetchState(final String identityID) {
+		boolean abortFetchScheduled = false;
+		try {
+			getCommand(AbortFetchCommand.class, identityID);
+			abortFetchScheduled = true;
+		} catch(NoSuchCommandException e) {}
+		
+		boolean startFetchScheduled = false;
+		try {
+			getCommand(StartFetchCommand.class, identityID);
+			startFetchScheduled = true;
+		} catch(NoSuchCommandException e) {}
+		
+		if(abortFetchScheduled && startFetchScheduled) {
+			assert(false);
+			throw new IllegalStateException("Contradictory commands stored");
+		}
+		
+		if(abortFetchScheduled) {
+			assert(mRequests.containsKey(identityID)) : "Command is useless";
+			return false;
+		}
+		
+		if(startFetchScheduled) {
+			assert(!mRequests.containsKey(identityID)) : "Command is useless";
+			return true;
+		}
+		
+		return mRequests.containsKey(identityID);
+	}
+
 	/**
 	 * ATTENTION: Outside classes should only use this for debugging purposes such as {@link WebOfTrust#checkForDatabaseLeaks()}.
 	 */
