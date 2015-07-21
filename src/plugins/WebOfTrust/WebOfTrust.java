@@ -1733,6 +1733,39 @@ public final class WebOfTrust extends WebOfTrustInterface
 						mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(null, newScore);
 					}
 				}
+
+				if(!needToCheckFetchStatus) {
+					// The Score database was correct, and thus shouldFetchIdentity() cannot have
+					// changed its value since no Score changed - which is why
+					// needToCheckFetchStatus == false is false yet.
+					// However, previously called alternate Score computation implementations could
+					// have forgotten to tell IdentityFetcher the shouldFetchIdentity() value, so
+					// for debugging purposes we now also check whether IdentityFetcher has the
+					// correct state.
+					
+					final boolean realOldShouldFetch = mFetcher.getShouldFetchState(target.getID());
+					final boolean newShouldFetch = shouldFetchIdentity(target);
+					
+					if(realOldShouldFetch != newShouldFetch) {
+						needToCheckFetchStatus = true;
+						returnValue = false;
+						oldShouldFetch = realOldShouldFetch;
+						
+						// We purposely always log an error even if mFullScoreComputationNeeded is
+						// false: needToCheckFetchStatus was false when we entered this branch
+						// because the stored Scores were correct, so the Scores were already
+						// correct before this function was called, and thus the code which
+						// set mFullScoreComputationNeeded wasn't responsible for the wrong
+						// shouldFetchState as it didn't create those Scores either.
+						Logger.error(this, "Correcting wrong IdentityFetcher shouldFetch state: "
+							+ "was: " + realOldShouldFetch + "; should be: " + newShouldFetch + "; "
+							+ "identity: " + target, new Exception());
+					}
+					
+					// FIXME: Would it be possible to detect whether an identity should have been
+					// marked for re-fetching due to changed capacity?
+					// See right below for an explanation of this situation.
+				}
 				
 				if(needToCheckFetchStatus) {
 					// If fetch status changed from false to true, we need to start fetching it
@@ -1740,6 +1773,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// cause new identities to be imported from their trust list, capacity > 0 allows this.
 					// If the fetch status changed from true to false, we need to stop fetching it
 					if((!oldShouldFetch || (oldCapacity == 0 && newScore != null && newScore.getCapacity() > 0)) && shouldFetchIdentity(target) ) {
+						returnValue = false;
+						
 						if(logMINOR) {
 							if(!oldShouldFetch)
 								Logger.minor(this, "Fetch status changed from false to true, refetching " + target);
@@ -1761,6 +1796,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 						mFetcher.storeStartFetchCommandWithoutCommit(target);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(target)) {
+						returnValue = false;
+						
 						if(logMINOR) Logger.minor(this, "Fetch status changed from true to false, aborting fetch of " + target);
 
 						mFetcher.storeAbortFetchCommandWithoutCommit(target);
