@@ -3599,7 +3599,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 
 	/**
-	 * FIXME: This doesn't update the {@link IdentityFetcher}'s "should fetch?" states.
 	 * FIXME: Check whether all the HashMap/HashSet used by this and the callees to avoid double 
 	 * computations of stuff actually yield hits. It is possible that I wrongly assumed that double
 	 * computations are possible in some of the cases where a map is used. */
@@ -3726,12 +3725,64 @@ public final class WebOfTrust extends WebOfTrustInterface
 			  + "changed capacity: " + time2);
 		}
 
-		// Instead of creating events while updating rank, capacity and value, create the events
-		// after all three components have been updated to ensure that we only create one event
-		// for each modified Score instead of three.
+		// Update SubscriptionManager and IdentityFetcher.
+		// (Instead of having already created events while updating rank, capacity and value, we now
+		// create the events after all three components have been updated to ensure that we only
+		// create one event for each modified Score instead of three.)
 		for(ChangeSet<Score> changeSet : scoresWhichNeedEventNotification.values()) {
-			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(
-				changeSet.beforeChange, changeSet.afterChange);
+			Score oldScore = changeSet.beforeChange;
+			Score newScore = changeSet.afterChange;
+			
+			// Update SubscriptionManager
+			
+			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, newScore);
+			
+			// Update IdentityFetcher
+			
+			boolean scoreWasCreatedOrDeleted = (oldScore == null ^ newScore == null);
+			boolean capacityOrValueChangedSignum =
+				!scoreWasCreatedOrDeleted &&
+				(
+					oldScore.getCapacity() == 0 && newScore.getCapacity() > 0 ||
+					oldScore.getScore() < 0 && newScore.getScore() >= 0
+				);
+			
+			// TODO: Performance: I am not sure whether a score having been created can cause any
+			// change to shouldFetchIdentity() in this function: I feel like the Score can only be
+			// a distrusting one and thus not cause an Identity to suddenly be wanted.
+			// Thus, if the Score was created, you might avoid executing this branch.
+			if(scoreWasCreatedOrDeleted || capacityOrValueChangedSignum) {
+				Identity target = newScore != null ? newScore.getTrustee() : oldScore.getTrustee();
+				
+				// TODO: Performance: Use a IdentityHashMap<Identity> to only do this once for
+				// every Identity, i.e. not repeat it for every OwnIdentity's Score tree.
+				// As long as we don't, the IdentityFetcher will deduplicate the commands itself,
+				// but database queries are expensive.
+				// On the other hand, keeping all Identitys in memory might cause OOM, and the
+				// amount of hits this would cause is likely small: As long as WOT doesn't have
+				// a public gateway mode, the amount of OwnIdentitys can be assumed to be very small
+				// as only one real user is using WOT.
+				
+				if(shouldFetchIdentity(target)) {
+					// If the capacity changed from 0 to > 0, we have to call markForRefetch(), see
+					// WoTTest.testRefetchDueToCapacityChange().
+					// Currently, we also call it for any changy of shouldFetchIdentity() even if
+					// there was no Score and thus no capacity before - the old Score computation
+					// implementation did this, and I have no time checking whether it is needed.
+					// TODO: Performance: Figure out if this is necessary.
+					Identity oldTarget = target.clone();
+					target.markForRefetch();
+					target.storeWithoutCommit();
+					
+					if(!target.equals(oldTarget)) { // markForRefetch() does nothing on OwnIdentity
+						mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(
+							oldTarget, target);
+					}
+					
+					mFetcher.storeStartFetchCommandWithoutCommit(target);
+				} else
+					mFetcher.storeAbortFetchCommandWithoutCommit(target);
+			}
 		}
 	}
 
