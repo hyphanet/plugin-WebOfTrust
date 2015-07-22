@@ -3673,7 +3673,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// Thus, if the capacity of a Score X changed, we need to update the other Scores in which
 		// a Trust value which is weighted by X's capacity is involved.
 		for(ChangeSet<Score> changeSet : scoresWithUpdatedCapacity.values()) {
-			Score scoreWithUpdatedCapacity = changeSet.afterChange;
+			if(changeSet.afterChange == null && changeSet.beforeChange.getCapacity() == 0) {
+				// The Identity's capacity was deleted *and* the identity had a capacity of 0
+				// before. With capacity of 0, it couldn't have influenced any other Identity's
+				// Score values before and with no capacity now, it also cannot.
+				// Thus, nothing has changed and we can skip it.
+				continue;
+			}
+			
+			Score scoreWithUpdatedCapacity
+				= changeSet.afterChange != null ? changeSet.afterChange : changeSet.beforeChange;
 			OwnIdentity treeOwner = scoreWithUpdatedCapacity.getTruster();
 			Identity trustGiver = scoreWithUpdatedCapacity.getTrustee();
 			
@@ -3789,10 +3798,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 			if(newRank == -1) {
 				score.deleteWithoutCommit();
-				// Notify the SubscriptionManager about the deleted Score - but only if we didn't
-				// create it ourself. In that case, it didn't know about its existence yet anyway.
-				if(!scoresCreated.contains(score.getID()))
-					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(score, null);
+				// If we created the Score ourself, don't tell the caller about the delete rank:
+				// There was no rank before, we had only created the Score to cause an attempt
+				// of finding a rank possibly newly existing rank.
+				if(!scoresCreated.contains(score.getID())) {
+					ChangeSet<Score> diff = new ChangeSet<Score>(score, null);
+					
+					boolean wasAlreadyProcessed
+						= scoresWithOutdatedRank.put(score.getID(), diff) != null;
+					assert(!wasAlreadyProcessed)
+						: "Each Score is only queued once so each should only be visited once";
+				}
 			} else {
 				Score oldScore = scoresCreated.contains(score.getID()) ? null : score.clone();
 				score.setRank(newRank);
@@ -3851,6 +3867,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		for(ChangeSet<Score> changeSet : scoresWithOutdatedRank) {
 			Score score = changeSet.afterChange;
+			if(score == null) {
+				assert(changeSet.beforeChange != null);
+				scoresWithOutdatedCapacity.put(changeSet.beforeChange.getID(), changeSet);
+				continue;
+			}
+			
 			int newCapacity
 				= computeCapacity(score.getTruster(), score.getTrustee(), score.getRank());
 			
