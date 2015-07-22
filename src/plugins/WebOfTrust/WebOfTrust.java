@@ -3972,6 +3972,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 			try {
 				identity.storeWithoutCommit();
+				mFetcher.storeStartFetchCommandWithoutCommit(identity);
 				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
 				initTrustTreeWithoutCommit(identity);
 
