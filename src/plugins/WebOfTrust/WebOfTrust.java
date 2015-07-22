@@ -1762,9 +1762,20 @@ public final class WebOfTrust extends WebOfTrustInterface
 							+ "identity: " + target, new Exception());
 					}
 					
-					// FIXME: Would it be possible to detect whether an identity should have been
-					// marked for re-fetching due to changed capacity?
-					// See right below for an explanation of this situation.
+					// ATTENTION if you want to implement an alternate Score computation algorithm:
+					// What we just validated about the previous Score computation run is NOT the 
+					// whole deal of verifying the IdentityFetcher state. What also would have to be
+					// validated is: If the capacity of the identity was 0 before the previous run
+					// and then changed to > 0 in the previous run, then the current edition of the
+					// identity has to be marked as "not fetched". This is because identities with
+					// capacity 0 are not allowed to introduce trustees, but identities with
+					// capacity > 0 are. To get those trustees, we have to re-fetch the identity's
+					// tust list.
+					// We cannot check this here though: The information whether capacity changed
+					// from 0 to > 0 in the previous Score computation run only available *during*
+					// the previous run, not now.
+					// We compensate for this by having a unit test for this situation:
+					// WoTTest.testRefetchDueToCapacityChange()
 				}
 				
 				if(needToCheckFetchStatus) {
