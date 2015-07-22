@@ -256,9 +256,7 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	/**
 	 * Returns the effective state of whether the fetcher will fetch an identity.
 	 * This considers both queued commands as well as already processed commands.
-	 * It will also check for useless commands (for example StartFetchCommand when identity is
-	 * already being fetched) and contradictory commands (= both start and stop command at once).
-	 * The checks are mostly asserts.
+	 * It will also check for contradictory commands (= both start and stop command at once).
 	 * 
 	 * For debugging purposes only.
 	 * 
@@ -282,12 +280,19 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		}
 		
 		if(abortFetchScheduled) {
-			assert(mRequests.containsKey(identityID)) : "Command is useless";
+			// This assert() would currently fail since storeAbortFetchCommandWithoutCommit()
+			// will currently store a command even if mRequests.containsKey(identityID) == false.
+			// See the TODO there.
+			
+			/* assert(mRequests.containsKey(identityID)) : "Command is useless"; */
 			return false;
 		}
 		
 		if(startFetchScheduled) {
-			assert(!mRequests.containsKey(identityID)) : "Command is useless";
+			// Similar to the above: Current implementation of storeStartFetchCommandWithoutCommit()
+			// would cause this to fail
+			
+			/* assert(!mRequests.containsKey(identityID)) : "Command is useless"; */
 			return true;
 		}
 		
@@ -405,6 +410,9 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			//    is pending even though we are already fetching the identity. Thus the assert here
 			//    fails.
 			// Notice: This is also documented at https://bugs.freenetproject.org/view.php?id=6468
+			// Notice: When fixing this to return here, also enable the commented out assert()
+			// in getShouldFetchState(). Also deal with the other assert() in that function and
+			// the cause of it being commented out in storeStartFetchCommandWithoutCommit().
 			/*
 			assert(mRequests.get(identity.getID()) == null)
 			    : "We have not yet processed the StartFetchCommand for the identity, so there "
