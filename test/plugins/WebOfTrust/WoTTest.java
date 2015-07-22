@@ -1170,7 +1170,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 			InvalidParameterException, NumberFormatException, UnknownIdentityException,
 			NotInTrustTreeException {
 		
-		OwnIdentity truster = mWoT.createOwnIdentity("test", true, null);
+		OwnIdentity truster = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "o", true, null);
 		Identity trustee = mWoT.addIdentity(requestUriA);
 		trustee.setEdition(1);
 		trustee.onFetched();
