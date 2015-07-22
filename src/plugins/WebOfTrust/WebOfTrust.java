@@ -3979,6 +3979,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				beginTrustListImport();
 
 				// Incremental score computation has proven to be very very slow when creating identities so we just schedule a full computation.
+				// TODO: Performance: Only recompute the Score tree of the created identity.
 				mFullScoreComputationNeeded = true;
 
 				for(String seedURI : WebOfTrustInterface.SEED_IDENTITIES) {
