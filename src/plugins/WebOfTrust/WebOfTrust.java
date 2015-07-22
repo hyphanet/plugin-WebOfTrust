@@ -1733,6 +1733,58 @@ public final class WebOfTrust extends WebOfTrustInterface
 						mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(null, newScore);
 					}
 				}
+
+				if(!needToCheckFetchStatus) {
+					// The Score database was correct, and thus shouldFetchIdentity() cannot have
+					// changed its value since no Score changed - which is why
+					// needToCheckFetchStatus == false is false yet.
+					// However, previously called alternate Score computation implementations could
+					// have forgotten to tell IdentityFetcher the shouldFetchIdentity() value, so
+					// for debugging purposes we now also check whether IdentityFetcher has the
+					// correct state.
+					
+					final boolean realOldShouldFetch = mFetcher.getShouldFetchState(target.getID());
+					final boolean newShouldFetch = shouldFetchIdentity(target);
+					
+					if(realOldShouldFetch != newShouldFetch) {
+						needToCheckFetchStatus = true;
+						returnValue = false;
+						oldShouldFetch = realOldShouldFetch;
+						
+						// We purposely always log an error even if mFullScoreComputationNeeded is
+						// false: needToCheckFetchStatus was false when we entered this branch
+						// because the stored Scores were correct, so the Scores were already
+						// correct before this function was called, and thus the code which
+						// set mFullScoreComputationNeeded wasn't responsible for the wrong
+						// shouldFetchState as it didn't create those Scores either.
+						Logger.error(this, "Correcting wrong IdentityFetcher shouldFetch state: "
+							+ "was: " + realOldShouldFetch + "; should be: " + newShouldFetch + "; "
+							+ "identity: " + target, new Exception());
+					}
+					
+					// ATTENTION if you want to implement an alternate Score computation algorithm:
+					// What we just validated about the previous Score computation run is NOT the 
+					// whole deal of verifying the IdentityFetcher state. What also would have to be
+					// validated is: If the capacity of the identity was 0 before the previous run
+					// and then changed to > 0 in the previous run, then the current edition of the
+					// identity has to be marked as "not fetched". This is because identities with
+					// capacity 0 are not allowed to introduce trustees, but identities with
+					// capacity > 0 are. To get those trustees, we have to re-fetch the identity's
+					// tust list.
+					// We cannot check this here though: The information whether capacity changed
+					// from 0 to > 0 in the previous Score computation run only available *during*
+					// the previous run, not now.
+					// We compensate for this by having a unit test for this situation:
+					// WoTTest.testRefetchDueToCapacityChange()
+					
+					// TODO: Code quality: Instead of only checking the "should fetch?" state for
+					// existing Identitys, also check for those which have been deleted: Obtain the
+					// full list of URIs being fetched from the IdentityFetcher, and check for any
+					// URIs which don't belong to an existing Identity which should be fetched.
+					// However, these false positives are not security critical: When the
+					// XMLTransformer imports fetched files, it will check whether an Identity
+					// exists (and whether should be fetched).
+				}
 				
 				if(needToCheckFetchStatus) {
 					// If fetch status changed from false to true, we need to start fetching it
@@ -1740,6 +1792,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// cause new identities to be imported from their trust list, capacity > 0 allows this.
 					// If the fetch status changed from true to false, we need to stop fetching it
 					if((!oldShouldFetch || (oldCapacity == 0 && newScore != null && newScore.getCapacity() > 0)) && shouldFetchIdentity(target) ) {
+						returnValue = false;
+						
 						if(logMINOR) {
 							if(!oldShouldFetch)
 								Logger.minor(this, "Fetch status changed from false to true, refetching " + target);
@@ -1761,6 +1815,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 						mFetcher.storeStartFetchCommandWithoutCommit(target);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(target)) {
+						returnValue = false;
+						
 						if(logMINOR) Logger.minor(this, "Fetch status changed from true to false, aborting fetch of " + target);
 
 						mFetcher.storeAbortFetchCommandWithoutCommit(target);

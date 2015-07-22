@@ -1125,5 +1125,68 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		assertEquals(oldTrusts, new HashSet<Trust>(mWoT.getAllTrusts()));
 		assertEquals(oldScores, new HashSet<Score>(mWoT.getAllScores()));
 	}
-	
+
+	/**
+	 * If an Identity has a {@link Score#getCapacity()} of 0, we do fetch the identity, but do not
+	 * add its trustees to our database. If the capacity changes to > 0, it becomes eligible for
+	 * introducing its trustees.
+	 * Those, upon capacity change from 0 to > 0, we should re-fetch the current edition of the
+	 * {@link IdentityFile} so we get a chance to add its trustees.
+	 * This test checks whether in the described case the score computation code properly calls
+	 * {@link Identity#markForRefetch()} to cause fetching the current IdentityFile again.
+	 * 
+	 * Notice: This tests existence is crucial because the function
+	 * {@link WebOfTrust#verifyAndCorrectStoredScores() which is used for non-unit-test integrity
+	 * checks of real databases cannot check this condition: The information that a capacity
+	 * changed is only available while it changes, the fact that it had changed is not stored
+	 * in the database. */
+	public void testRefetchDueToCapacityChange() throws MalformedURLException,
+			InvalidParameterException, NumberFormatException, UnknownIdentityException,
+			NotInTrustTreeException {
+		
+		OwnIdentity truster = mWoT.createOwnIdentity("test", true, null);
+		Identity trustee = mWoT.addIdentity(requestUriA);
+		trustee.setEdition(1);
+		trustee.onFetched();
+		trustee.storeAndCommit();
+		
+		// Test whether capacity 0 to > 0 change causes an already fetched edition to be refetched
+		
+		mWoT.setTrust(truster, trustee, (byte) 0, "should cause capacity 0");
+		Score score = mWoT.getScore(truster, trustee);
+		assertEquals(0, score.getCapacity());
+		assertEquals(1, trustee.getEdition());
+		assertEquals(FetchState.Fetched, trustee.getCurrentEditionFetchState());
+		
+		mWoT.setTrust(truster, trustee, (byte) 1, "should cause capacity > 0");
+		assertTrue(score.getCapacity() > 0);
+		assertEquals(1, trustee.getEdition());
+		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
+		
+		// Test whether capacity 0 to > 0 causes edition to be decreased if the current edition
+		// was not fetched yet - the previous one is what has to be refetched then.
+		
+		mWoT.setTrust(truster, trustee, (byte) 0, "should cause capacity 0");
+		assertEquals(0, score.getCapacity());
+		assertEquals(1, trustee.getEdition());
+		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
+		
+		mWoT.setTrust(truster, trustee, (byte) 1, "should cause capacity > 0");
+		assertTrue(score.getCapacity() > 0);
+		assertEquals(0, trustee.getEdition());
+		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
+		
+		// Test whether edition is not wrongly decreased to being negative (which would be an
+		// invalid edition) in the same case as we just tested but with a starting edition of 0
+		
+		mWoT.setTrust(truster, trustee, (byte) 0, "should cause capacity 0");
+		assertEquals(0, score.getCapacity());
+		assertEquals(0, trustee.getEdition());
+		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
+		
+		mWoT.setTrust(truster, trustee, (byte) 1, "should cause capacity > 0");
+		assertTrue(score.getCapacity() > 0);
+		assertEquals(0, trustee.getEdition());
+		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
+	}
 }
