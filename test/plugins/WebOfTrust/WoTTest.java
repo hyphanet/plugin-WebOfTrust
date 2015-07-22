@@ -490,6 +490,32 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		}
 		catch (NotInTrustTreeException e) {}
 	}
+	
+	public void testRemoveTrust3() throws MalformedURLException, InvalidParameterException,
+			NotInTrustTreeException, UnknownIdentityException {
+		
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "o", true, null);
+		Identity a = mWoT.addIdentity(requestUriA);
+		Identity b = mWoT.addIdentity(requestUriB);
+		Identity c = mWoT.addIdentity(requestUriC);
+		
+		mWoT.setTrust(o, a, (byte) 100, "");
+		mWoT.setTrust(o, b, (byte) 100, "");
+		mWoT.setTrust(a, c, (byte) 100, "");
+		mWoT.setTrust(b, c, (byte) 100, "");
+		
+		Score oldScoreC = mWoT.getScore(o, c).clone();
+		assertEquals(2, oldScoreC.getRank());
+		assertEquals(16, oldScoreC.getCapacity());
+		assertEquals(80, oldScoreC.getScore());
+		
+		mWoT.removeTrust(o.getID(), a.getID());
+		
+		Score scoreC = mWoT.getScore(o, c);
+		assertEquals(oldScoreC.getRank(), scoreC.getRank());
+		assertEquals(oldScoreC.getCapacity(), scoreC.getCapacity());
+		assertEquals(40, scoreC.getScore());
+	}
 
 	/**
 	 * Test whether spammer resistance works properly.
