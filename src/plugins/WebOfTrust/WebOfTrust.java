@@ -1776,6 +1776,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// the previous run, not now.
 					// We compensate for this by having a unit test for this situation:
 					// WoTTest.testRefetchDueToCapacityChange()
+					
+					// TODO: Code quality: Instead of only checking the "should fetch?" state for
+					// existing Identitys, also check for those which have been deleted: Obtain the
+					// full list of URIs being fetched from the IdentityFetcher, and check for any
+					// URIs which don't belong to an existing Identity which should be fetched.
+					// However, these false positives are not security critical: When the
+					// XMLTransformer imports fetched files, it will check whether an Identity
+					// exists (and whether should be fetched).
 				}
 				
 				if(needToCheckFetchStatus) {
