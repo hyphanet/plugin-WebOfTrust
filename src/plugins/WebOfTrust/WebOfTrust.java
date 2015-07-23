@@ -2416,6 +2416,22 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 	}
 
+	/** @see #getScore(OwnIdentity, Identity) */
+	public synchronized Score getScore(final String id) throws NotInTrustTreeException {
+		// TODO: Code quality: assert(id is valid)
+		
+		final Query query = mDB.query();
+		query.constrain(Score.class);
+		query.descend("mID").constrain(id);
+		final ObjectSet<Score> result = new Persistent.InitializingObjectSet<Score>(this, query);
+		
+		switch(result.size()) {
+			case 1: return result.next();
+			case 0: throw new NotInTrustTreeException(id);
+			default: throw new DuplicateScoreException(id, result.size());
+		}
+	}
+
 	/**
 	 * Gets a list of all this Identity's Scores.
 	 * You have to synchronize on this WoT around the call to this function and the processing of the returned list! 
@@ -2572,7 +2588,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// TODO: Performance: Get rid of the self-score check and just return true.
 			// See main TODO at WoTTest.testSetTrust1().
 			try {
-				Score selfScore = getScore((OwnIdentity)identity, identity);
+				// Don't use getScore(OwnIdentity, Identity) because the callers pass clone()s to us
+				Score selfScore = getScore(new ScoreID(identity, identity).toString());
 				assert(selfScore.getRank() == 0);
 				assert(selfScore.getCapacity() == 100);
 				assert(selfScore.getScore() == Integer.MAX_VALUE);
