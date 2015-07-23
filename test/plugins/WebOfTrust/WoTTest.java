@@ -102,6 +102,19 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		assertSame(a, score.getTrustee());
 	}
 	
+	/**
+	 * Test behavior of Score computation if {@link WebOfTrust#initTrustTreeWithoutCommit()} was
+	 * not called for an {@link OwnIdentity} yet. Notice that this function should always be called
+	 * when creating an {@link OwnIdentity}, I am not sure behind the motivation of this unit test.
+	 * It dates back to a very early version of WOT and probably is not very important as we
+	 * currently always init the trust tree for all OwnIdentitys.
+	 *  
+	 * TODO: Performance / code quality: The fact that by this test we require Score computation
+	 * functions to check for {@link WebOfTrust#initTrustTreeWithoutCommit()} having been called for
+	 * involved OwnIdentitys complicates a lot of code, and causes additional queries there using
+	 * {@link WebOfTrust#getScore(OwnIdentity, Identity)}. Maybe get rid of this test, and remove
+	 * all those checks from Score computation functions. First check Git history for why it was
+	 * added though. */
 	public void testSetTrust1() throws InvalidParameterException, MalformedURLException {
 		/* We store A manually instead of using createOwnIdentity() so that the WoT does not initialize it's trust tree (it does not have a score for itself). */
 		OwnIdentity a = new OwnIdentity(mWoT, insertUriA, "A", true); a.storeAndCommit();

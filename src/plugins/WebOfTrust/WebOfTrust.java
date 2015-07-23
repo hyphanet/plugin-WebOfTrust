@@ -2502,8 +2502,20 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity.
 	 */
     boolean shouldFetchIdentity(final Identity identity) {
-		if(identity instanceof OwnIdentity)
-			return true;
+		if(identity instanceof OwnIdentity) {
+			// TODO: Performance: Get rid of the self-score check and just return true.
+			// See main TODO at WoTTest.testSetTrust1().
+			try {
+				Score selfScore = getScore((OwnIdentity)identity, identity);
+				assert(selfScore.getRank() == 0);
+				assert(selfScore.getCapacity() == 100);
+				assert(selfScore.getScore() == Integer.MAX_VALUE);
+				return true;
+			} catch(NotInTrustTreeException e) {
+				// initTrustTreeWithoutCommit() not called yet
+				return false;
+			}
+		}
 		
 		int bestScore = Integer.MIN_VALUE;
 		int bestCapacity = 0;
@@ -2555,6 +2567,22 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * the global {@link #shouldFetchIdentity(Identity)}.
 	 */
 	private boolean shouldMaybeFetchIdentity(final Score score) {
+		Identity identity = score.getTrustee();
+		if(identity instanceof OwnIdentity) {
+			// TODO: Performance: Get rid of the self-score check and just return true.
+			// See main TODO at WoTTest.testSetTrust1().
+			try {
+				Score selfScore = getScore((OwnIdentity)identity, identity);
+				assert(selfScore.getRank() == 0);
+				assert(selfScore.getCapacity() == 100);
+				assert(selfScore.getScore() == Integer.MAX_VALUE);
+				return true;
+			} catch(NotInTrustTreeException e) {
+				// initTrustTreeWithoutCommit() not called yet
+				return false;
+			}
+		}
+		
 		return score.getCapacity() > 0 || score.getScore() >= 0;
 	}
 
