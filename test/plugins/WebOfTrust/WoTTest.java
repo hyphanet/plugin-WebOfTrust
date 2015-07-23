@@ -1153,9 +1153,10 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 	}
 
 	/**
-	 * If an Identity has a {@link Score#getCapacity()} of 0, we do fetch the identity, but do not
-	 * add its trustees to our database. If the capacity changes to > 0, it becomes eligible for
-	 * introducing its trustees.
+	 * If an Identity has a positive Score, and thus
+	 * {@link WebOfTrust#shouldFetchIdentity(Identity)} == true, but a {@link Score#getCapacity()}
+	 * of 0, we do fetch the identity, but do not add its trustees to our database. If the capacity
+	 * changes to > 0, it becomes eligible for introducing its trustees.
 	 * Those, upon capacity change from 0 to > 0, we should re-fetch the current edition of the
 	 * {@link IdentityFile} so we get a chance to add its trustees.
 	 * This test checks whether in the described case the score computation code properly calls
