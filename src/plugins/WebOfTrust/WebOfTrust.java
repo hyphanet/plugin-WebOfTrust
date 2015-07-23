@@ -2539,7 +2539,25 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 		return false;
 	}
-	
+
+	/**
+	 * Same as {@link #shouldFetchIdentity(Identity)} except for pretending that only the given
+	 * {@link Score} exists.
+	 * I.e. tells you whether the {@link Identity} should be fetched from the perspective of the
+	 * {@link OwnIdentity} who gave the passed Score, ignoring all other OwnIdentitys decision.
+	 * The return value of this is wrong if the given Score does not indicate that the Identity
+	 * should be fetched, but there are other Scores which do: If only a single OwnIdentity wants
+	 * an Identity to be fetched, we must fetch it.
+	 * In other words: {@link #shouldFetchIdentity(Identity)} is equals to the logical OR between
+	 * the return values of this function here being called for all scores in the database.
+	 * 
+	 * Can be used to decide whether changing of a single Score might change the return value of
+	 * the global {@link #shouldFetchIdentity(Identity)}.
+	 */
+	private boolean shouldMaybeFetchIdentity(final Score score) {
+		return score.getCapacity() > 0 || score.getScore() >= 0;
+	}
+
 	/**
 	 * Gets non-own Identities matching a specified score criteria.
 	 * TODO: Rename to getNonOwnIdentitiesByScore. Or even better: Make it return own identities as well, this will speed up the database query and clients might be ok with it.
@@ -3755,19 +3773,20 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			// Update IdentityFetcher
 			
-			boolean scoreWasCreatedOrDeleted = (oldScore == null ^ newScore == null);
-			boolean capacityOrValueChangedSignum =
-				!scoreWasCreatedOrDeleted &&
-				(
-					oldScore.getCapacity() == 0 && newScore.getCapacity() > 0 ||
-					oldScore.getScore() < 0 && newScore.getScore() >= 0
-				);
+			boolean shouldFetchIdentity_maybeChanged = false;
+			
+			if(oldScore == null ^ newScore == null) {
+				// Score was created or deleted
+				shouldFetchIdentity_maybeChanged = true;
+			} else if(shouldMaybeFetchIdentity(oldScore) != shouldMaybeFetchIdentity(newScore)) {
+				shouldFetchIdentity_maybeChanged = true;
+			}
 			
 			// TODO: Performance: I am not sure whether a score having been created can cause any
 			// change to shouldFetchIdentity() in this function: I feel like the Score can only be
 			// a distrusting one and thus not cause an Identity to suddenly be wanted.
 			// Thus, if the Score was created, you might avoid executing this branch.
-			if(scoreWasCreatedOrDeleted || capacityOrValueChangedSignum) {
+			if(shouldFetchIdentity_maybeChanged) {
 				Identity target = newScore != null ? newScore.getTrustee() : oldScore.getTrustee();
 				
 				// TODO: Performance: Use a IdentityHashMap<Identity> to only do this once for
