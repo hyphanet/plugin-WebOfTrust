@@ -4393,6 +4393,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					for(Trust givenTrust : oldGivenTrustsCopy)
 						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 					
+					mFetcher.storeStartFetchCommandWithoutCommit(identity);
+					
 					finishTrustListImport();
 				} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
 					identity = new OwnIdentity(this, insertFreenetURI, null, false);
@@ -4406,9 +4408,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
 					
 					initTrustTreeWithoutCommit(identity);
+					mFetcher.storeStartFetchCommandWithoutCommit(identity);
 				}
-				
-				mFetcher.storeStartFetchCommandWithoutCommit(identity);
 
 				// This function messes with the trust graph manually so it is a good idea to check whether it is intact afterwards.
 				assert(computeAllScoresWithoutCommit());
