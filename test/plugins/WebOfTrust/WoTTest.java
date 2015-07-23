@@ -1173,13 +1173,13 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		
 		OwnIdentity truster = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "o", true, null);
 		Identity trustee = mWoT.addIdentity(requestUriA);
-		trustee.setEdition(1);
-		trustee.onFetched();
-		trustee.storeAndCommit();
 		
 		// Test whether capacity 0 to > 0 change causes an already fetched edition to be refetched
 		
 		mWoT.setTrust(truster, trustee, (byte) 0, "should cause capacity 0");
+		trustee.setEdition(1);
+		trustee.onFetched();
+		trustee.storeAndCommit();
 		Score score = mWoT.getScore(truster, trustee);
 		assertEquals(0, score.getCapacity());
 		assertEquals(1, trustee.getEdition());
