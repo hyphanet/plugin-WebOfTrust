@@ -2517,6 +2517,22 @@ public final class WebOfTrust extends WebOfTrustInterface
 			bestCapacity  = Math.max(score.getCapacity(), bestCapacity);
 			bestScore  = Math.max(score.getScore(), bestScore);
 			
+			// Notice: Identitys with negative score are considered as distrusted, so one might
+			// wonder why we hereby download identities even if their Score is negative just because
+			// their capacity is > 0.
+			// This is to ensure that the fetching algorithm allows the score computation algorithm
+			// to be "stable": It should yield the same resulting scores independent of the order in
+			// which identities are downloaded.
+			// If an identity has a capacity of > 0, it is eligible to vote, and thus might cause
+			// the negative score it has to disappear if we do still download its trust lists
+			// *after* the Score is already negative (= changed order of downloading).
+			// This isn't self-voting, it is rather caused by the fact that downloading its votes
+			// could cause many identities to appear which have a much higher capacity than the
+			// current distrusters. Those new identities will cause the current distrusters to be
+			// distrusted; and thus make the currently negative score positive. In other words the
+			// rank graph could be structured completely differently, where the current distrusted
+			// identity has a much lower rank than the current distrusters, and thus its trustees
+			// have higher voting powers than the current distrusters.
 			if(bestCapacity > 0 || bestScore >= 0)
 				return true;
 		}
