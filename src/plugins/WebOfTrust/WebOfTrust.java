@@ -70,6 +70,7 @@ import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
+import freenet.support.IdentityHashSet;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
@@ -3117,7 +3118,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 		
 		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
-		HashSet<String> seen = new HashSet<String>(); // Key = Identity.getID()
+		// Use IdentityHashSet because Identity.equals() compares more than needed.
+		IdentityHashSet<Identity> seen = new IdentityHashSet<Identity>();
 		
 		final int sourceRank;
 		try {
@@ -3131,7 +3133,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			return -1;
 		}
 		
-		seen.add(target.getID());
+		seen.add(target);
 		for(Trust targetTrust : getReceivedTrusts(target)) {
 			Identity truster = targetTrust.getTruster();
 			int rank = targetTrust.getValue() > 0 ? 1 : Integer.MAX_VALUE;
@@ -3151,11 +3153,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// source Trust before we query all Trusts of a vertex. This should be faster since db4o
 		// queries are expensive.
 		// TODO: Performance: Use an array-backed map since this will be small.
-		// Key = Identity.getID() of receiver of Trust
-		HashMap<String, Trust> sourceTrusts = new HashMap<String, Trust>();
+		// Key = Identity which received the Trust
+		IdentityHashMap<Identity, Trust> sourceTrusts = new IdentityHashMap<Identity, Trust>();
 		for(Trust sourceTrust : getGivenTrusts(source)) {
 			// TODO: Performance: Add & use Trust.getTrusteeID(), can be computed from Trust ID
-			sourceTrusts.put(sourceTrust.getTrustee().getID(), sourceTrust);
+			sourceTrusts.put(sourceTrust.getTrustee(), sourceTrust);
 		}
 		
 		while(!queue.isEmpty()) {
@@ -3164,10 +3166,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 			if(vertex.identity == source)
 				return vertex.rank != Integer.MAX_VALUE ? vertex.rank + sourceRank : Integer.MAX_VALUE;
 			
-			if(!seen.add(vertex.identity.getID()))
+			if(!seen.add(vertex.identity))
 				continue; // Necessary because we do not use decreaseKey(), see below
 			
-			Trust trustFromSource = sourceTrusts.get(vertex.identity.getID());
+			Trust trustFromSource = sourceTrusts.get(vertex.identity);
 			if(trustFromSource != null) {
 				// The decision of an OwnIdentity overwrites all other Trust values an identity has
 				// received. Thus, the rank is forced by it as well, and we must not walk other
@@ -3196,7 +3198,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			for(Trust trust : getReceivedTrusts(vertex.identity)) {
 				Identity neighbourVertex = trust.getTruster();
 				
-				if(seen.contains(neighbourVertex.getID()))
+				if(seen.contains(neighbourVertex))
 					continue; // Prevent infinite loop
 				
 				// FIXME: Performance: The UCS algorithm actually does decreaseKey() here instead of
