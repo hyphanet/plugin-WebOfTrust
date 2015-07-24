@@ -4296,7 +4296,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 				oldIdentity.deleteWithoutCommit();
 
-				mFetcher.storeStartFetchCommandWithoutCommit(newIdentity);
+				if(shouldFetchIdentity(newIdentity))
+					mFetcher.storeStartFetchCommandWithoutCommit(newIdentity);
 				
 				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, newIdentity);
 
