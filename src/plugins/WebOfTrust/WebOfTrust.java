@@ -280,7 +280,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// TODO: Do this once every few startups and notify the user in the web ui if errors are found.
 			if(logDEBUG)
 				verifyDatabaseIntegrity();
+			
+			// Identity files flow through the following pipe:
+			//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
+			// Thus, we start the pipe's daemons in reverse order to ensure that the receiving ones
+			// are available before the ones which fill the pipe.
+			mIdentityFileProcessor.start();
+			/* mIdentityFileQueue.start(); */    // Not necessary, has no thread.
+			mFetcher.start();
 
+			// verifyAndCorrectStoredScores() must be called after the IdentityFetcher was started
+			// because it will verify its state.
 			// TODO: Only do this once every few startups once we are certain that score computation does not have any serious bugs.
 			verifyAndCorrectStoredScores();
 						
@@ -293,15 +303,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			
 			createSeedIdentities();
-			
-			// Identity files flow through the following pipe:
-			//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
-			// Thus, we start the pipe's daemons in reverse order to ensure that the receiving ones
-			// are available before the ones which fill the pipe.
-			mIdentityFileProcessor.start();
-			/* mIdentityFileQueue.start(); */    // Not necessary, has no thread.
-            mFetcher.start();
-
 			
 			mInserter.start();
 
