@@ -4483,6 +4483,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					
 					// Update all given trusts. This will also cause given scores to be computed,
 					// which is why we had not set them yet.
+					// FIXME: Performance: This could maybe be optimized by setting
+					// mFullScoreComputationNeeded to true. Do benchmarks.
 					for(Trust givenTrust : oldGivenTrustsCopy)
 						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 					
