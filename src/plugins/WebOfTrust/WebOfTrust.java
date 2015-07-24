@@ -4481,7 +4481,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 					
 					oldIdentity.deleteWithoutCommit();
 					
-					// Update all given trusts. This will also cause received scores to be computed,
+					// Update all given trusts. This will also cause given scores to be computed,
 					// which is why we had not set them yet.
 					for(Trust givenTrust : oldGivenTrustsCopy)
 						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
