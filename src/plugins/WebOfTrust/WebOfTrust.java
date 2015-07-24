@@ -3100,8 +3100,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Since this algorithm starts at the target identity, and only walks positive Trust edges,
 	 * and not negative ones, if the target is distrusted it will only have to walk the "dark" part
 	 * of the Trust graph as only the other "dark" identities trust it.
-	 * As the dark part is a lot smaller, it has to search a lot less.
-	 * FIXME: Review, I was pretty tired when I wrote this. */
+	 * As the dark part is a lot smaller, it has to search a lot less. */
 	int computeRankFromScratch(final OwnIdentity source, final Identity target) {
 		final class Vertex implements Comparable<Vertex>{
 			final Identity identity;
