@@ -4245,6 +4245,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// Non-own identities do not assign scores to other identities so we can just delete them.
 				for(Score oldScore : getGivenScores(oldIdentity)) {
 					final Identity trustee = oldScore.getTrustee();
+					// TODO: Performance: It might be possible to accelerate this using
+					// shouldMaybeFetchIdentity() to first check whether shouldFetchIdentity() could
+					// change. shouldMaybeFetchIdentity() does less database queries.
 					final boolean oldShouldFetchTrustee = shouldFetchIdentity(trustee);
 					
 					oldScore.deleteWithoutCommit();
