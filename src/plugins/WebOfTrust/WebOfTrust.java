@@ -3454,9 +3454,33 @@ public final class WebOfTrust extends WebOfTrustInterface
 	private void updateScoresWithoutCommit(final Trust oldTrust, final Trust newTrust) {
 		if(logMINOR) Logger.minor(this, "Doing an incremental computation of all Scores...");
 		
-		assert(!mFullScoreComputationNeeded)
-			: "updateScoresAfterDistrustWithoutCommit() which we call below will only work if "
-			+ "called for each individual distrust, it is not a batch operation!";
+		if(mFullScoreComputationNeeded) {
+			// updateScoresAfterDistrustWithoutCommit() which we call below will only work if
+			// called for each individual distrust, it is not a batch operation.
+			// Thus, if a full score computation is scheduled, which indicates that multiple Trusts
+			// have been modified, we must not proceed.
+			// Normally, we should throw a RuntimeException, as all Score computation should be
+			// incremental for performance reasons, but createOwnIdentity() currently needs this
+			// codepath, so we just return.
+			// TODO: Performance: Check whether all other uses of the codepath are valid using
+			// this assert:
+			/*
+			assert(!mFullScoreComputationNeeded)
+				: "updateScoresAfterDistrustWithoutCommit() which we call below will only work if "
+				+ "called for each individual distrust, it is not a batch operation!";
+			*/
+			
+			if(logMINOR)
+				Logger.minor(this, "Full score computation scheduled, not doing incremental one!");
+			
+			if(!mTrustListImportInProgress) {
+				// If not trust list import is in progress, finishTrustListImport() will not be
+				// called, so we must do the full computation ourselves.
+				computeAllScoresWithoutCommit();
+				assert(computeAllScoresWithoutCommit()); // computeAllScoresWithoutCommit is stable
+			}
+			return;
+		}
 
 		StopWatch time = new StopWatch();
 		
