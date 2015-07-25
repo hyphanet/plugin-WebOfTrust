@@ -72,7 +72,11 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * Together with {@link IdentityFileDiskQueue}s ability of archiving all fetched files
 	 * to disk, this can be used for debugging purposes. For example for testing changes to the
 	 * {@link Score} computation algorithm, it is a good idea to import many {@link Trust} lists to
-	 * have many changes to the Trust graph. */
+	 * have many changes to the Trust graph.
+	 * 
+	 * ATTENTION: If this is enabled, the seed identities will be created with an edition of 0.
+	 * This will persist restarts, and thus also continue to persist even if you disable this flag
+	 * again. Thus please only use this flag with throwaway databases. */
 	public static final boolean DEBUG__NETWORK_DUMP_MODE = false;
 
 	private final WebOfTrust mWoT;

@@ -1784,7 +1784,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 				try {
 					final Identity newSeed = new Identity(this, seedURI, null, true);
 					// We have to explicitly set the edition number because the constructor only considers the given edition as a hint.
-					newSeed.setEdition(new FreenetURI(seedURI).getEdition());
+					if(!IdentityFetcher.DEBUG__NETWORK_DUMP_MODE)
+						newSeed.setEdition(new FreenetURI(seedURI).getEdition());
 					newSeed.storeWithoutCommit();
 					Logger.normal(this, "Created seed identity: " + newSeed);
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, newSeed);
