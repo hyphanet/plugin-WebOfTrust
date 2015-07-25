@@ -69,6 +69,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	/**
 	 * If true, the fetcher will not only fetch the latest editions of Identitys, but also old
 	 * ones.
+	 * Also, {@link IdentityFileDiskQueue} will disable its deduplication of multiple fetched
+	 * {@link IdentityFile}s with the same edition. 
 	 * Together with {@link IdentityFileDiskQueue}s ability of archiving all fetched files
 	 * to disk, this can be used for debugging purposes. For example for testing changes to the
 	 * {@link Score} computation algorithm, it is a good idea to import many {@link Trust} lists to
