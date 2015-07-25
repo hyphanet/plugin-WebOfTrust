@@ -1786,6 +1786,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// We have to explicitly set the edition number because the constructor only considers the given edition as a hint.
 					if(!IdentityFetcher.DEBUG__NETWORK_DUMP_MODE)
 						newSeed.setEdition(new FreenetURI(seedURI).getEdition());
+					else
+						Logger.warning(this, "Network-dump mode enabled. Using seed edition 0!");
 					newSeed.storeWithoutCommit();
 					Logger.normal(this, "Created seed identity: " + newSeed);
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, newSeed);
