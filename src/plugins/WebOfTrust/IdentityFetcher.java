@@ -635,7 +635,18 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		fetchContext.ignoreUSKDatehints = !fetchLatestOnly;
 		if(logDEBUG) Logger.debug(this, "Trying to start fetching uri " + usk); 
 		
-		return mUSKManager.subscribeContent(usk, this, fetchLatestOnly, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
+		if(fetchLatestOnly)
+			return mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
+		else {
+			// There is no version of subscribeContent() which supports disabling using a
+			// USKSparseProxyCallback, so we manually do what suscribeContent() does except for
+			// using a sparse proxy.
+			// FIXME: Code quality: File a fred pull request which adds such a subscribeContent()
+			USKRetriever ret = new USKRetriever(
+				fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient, this, usk);
+			mUSKManager.subscribe(usk, ret, true, fetchContext.ignoreUSKDatehints, mRequestClient);
+			return ret;
+		}
 	}
 	
 	@Override
