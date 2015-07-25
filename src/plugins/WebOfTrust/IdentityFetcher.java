@@ -164,7 +164,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		
 		if(DEBUG__NETWORK_DUMP_MODE) {
 			Logger.warning(
-				this, "Network-dump mode enabled. Will fetch old editions of identities!");
+				this, "IdentityFetcher.DEBUG__NETWORK_DUMP_MODE == true: Will fetch old editions "
+					+ " of identities!");
 		}
 	}
 	

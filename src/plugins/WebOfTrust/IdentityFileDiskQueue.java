@@ -102,7 +102,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			mDeduplicationEnabled = true;
 		} else {
 			Logger.warning(this,
-				"IdentityFetcher.DEBUG__NETWORK_DUMP_MODE enabled, disabling deduplication!");
+				"IdentityFetcher.DEBUG__NETWORK_DUMP_MODE == true: Disabling deduplication!");
 			
 			mDeduplicationEnabled = false;
 		}
