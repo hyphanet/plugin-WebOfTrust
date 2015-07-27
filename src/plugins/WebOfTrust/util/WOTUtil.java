@@ -51,6 +51,7 @@ public final class WOTUtil {
 		// Print output
 		System.out.println();
 		System.out.println("Identities: " + identityCount);
+		System.out.println("Not fetched identities: " + wot.getNumberOfUnfetchedIdentities());
 		System.out.println("Trusts: " + trustCount);
 		System.out.println("Trust histogram follows ...");
 		System.out.println("None: " + noTrust);
