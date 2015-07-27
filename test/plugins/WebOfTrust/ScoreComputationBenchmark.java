@@ -310,15 +310,21 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 		System.out.println("Creating complete graph of " + trustCount + " Trusts...");
 		int i = 0;
 		StopWatch setupTime = new StopWatch();
+		// Setup is not part of the benchmark, so to speed up setup, we use
+		// begin/finishTrustListImport() to ensure that only one full recomputation happens for all
+		// trusts.
+		wot.beginTrustListImport();
 		for(Identity truster : ids) { 
 			for(Identity trustee : ids) {
 				if(truster == trustee)
 					continue;
 				
 				System.out.println("Setting trust " + ++i + " ...");
-				wot.setTrust(truster, trustee, getRandomTrustValue(trustDistribution), "");
+				wot.setTrustWithoutCommit(truster, trustee, getRandomTrustValue(trustDistribution), "");
 			}
 		}
+		System.out.println("finishTrustListImport() ...");
+		wot.finishTrustListImport();
 		setupTime.stop();
 		
 		int fullRecomputationsForSetup = mWebOfTrust.getNumberOfFullScoreRecomputations();
