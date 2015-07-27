@@ -3,19 +3,22 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
+import java.util.Collections;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.util.StopWatch;
 import plugins.WebOfTrust.util.WOTUtil;
-import freenet.support.TimeUtil;
+import freenet.crypt.DummyRandomSource;
 
 public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 
@@ -24,9 +27,9 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 	private static final int IDENTITY_COUNT = 11985;
 
 	/**
-	 * For shorter execution time, reduce the copy of this in {@link #benchmark()} instead of this
-	 * to not break {@link #getTrustDistribution()}. */
-	private static final int TRUST_COUNT = 222122;
+	 * Notice: Only used for {@link #getTrustDistribution()}, not for the actual benchmark. It has
+	 * its own count. */
+	private static final int TRUST_DISTRIBUTION_TRUST_COUNT = 222122;
 
 	/**
 	 * Dataset was obtained using WOTUtil Trust histogram from a network dump of 2015-07-23 with:
@@ -36,7 +39,7 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 	 * 
 	 * ATTENTION: When updating this, also update:
 	 * {@link #IDENTITY_COUNT}
-	 * {@link #TRUST_COUNT} */
+	 * {@link #TRUST_DISTRIBUTION_TRUST_COUNT} */
 	private static final int[][] TRUST_DISTRIBUTION =
 		new int[][] {
 			{ -100, 423 },
@@ -249,15 +252,28 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 			+ "disable them for all classes running these benchmarks. ";
 	}
 
+	@Before public void setUpWOT() throws UnknownIdentityException, MalformedURLException {
+	    // Delete the seed identities since the test assumes the WOT database to be empty.
+	    deleteSeedIdentities();
+	}
+
 	@Test
-	public void benchmark() throws MalformedURLException, InvalidParameterException,
-			NumberFormatException, UnknownIdentityException {
+	public void benchmark_updateScoresAfterDistrust() throws MalformedURLException,
+			InvalidParameterException, NumberFormatException, UnknownIdentityException,
+			DuplicateTrustException, NotTrustedException {
+		
 		
 		final int ownIdentityCount = OWN_IDENTITY_COUNT;
-		final int identityCount = IDENTITY_COUNT / 10; // Reduce for shorter execution time.
-		final int trustCount = TRUST_COUNT / (10*(10-1)); // Reduce for shorter execution time.
-		
-        assertTrue(trustCount <= identityCount * (identityCount-1));
+		// Smaller than IDENTITY_COUNT for shorter execution time.
+		final int identityCount = IDENTITY_COUNT / 100;
+		// We create a complete graph since that is the possible worst case for distrust
+		// computation: There are the most possible paths for re-routing ranks, and thus the
+		// algorithm will run for longer.
+		// Notice: Changing this will have no effect, as the trust generation loop loops over all
+		// Identitys instead of over this count. It is merely used for further computations (and
+		// thus must be correct).
+		final int trustCount = (identityCount + ownIdentityCount) * 
+			                   (identityCount + ownIdentityCount-1);
 		
 		WebOfTrust wot = getWebOfTrust();
 		ArrayList<OwnIdentity> ownIds = new ArrayList<OwnIdentity>(ownIdentityCount + 1);
@@ -274,35 +290,62 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 		for(int i = 0; i < identityCount; ++i)
 			ids.add(wot.addIdentity(getRandomRequestURI().toString()));
 		
-		System.out.println("Computing trust distribution from " + TRUST_COUNT + " samples...");
+		System.out.println("Computing trust distribution from " + TRUST_DISTRIBUTION_TRUST_COUNT
+			             + " samples...");
 		trustDistribution = getTrustDistribution();
 		
-		System.out.println("Setting " + trustCount + " Trusts...");
-		long startTime = System.nanoTime();
-		for(int i = 0; i < trustCount; ++i) {
-			System.out.println("Setting trust " + i + " ...");
-			
-			int truster;
-			int trustee;
-			
-			do {
-				truster = mRandom.nextInt(identityCount);
-				trustee = mRandom.nextInt(identityCount);
-			} while(truster == trustee);
-			
-			wot.setTrust(
-				ids.get(truster), ids.get(trustee), getRandomTrustValue(trustDistribution), "");
+		System.out.println("Creating complete graph of " + trustCount + " Trusts...");
+		int i = 0;
+		StopWatch setupTime = new StopWatch();
+		for(Identity truster : ids) { 
+			for(Identity trustee : ids) {
+				if(truster == trustee)
+					continue;
+				
+				System.out.println("Setting trust " + ++i + " ...");
+				wot.setTrust(truster, trustee, getRandomTrustValue(trustDistribution), "");
+			}
 		}
-		long endTime = System.nanoTime();
-		long ms = TimeUnit.NANOSECONDS.toMillis(endTime - startTime);
+		setupTime.stop();
 		
-		System.out.println("Total time: " + TimeUtil.formatTime(ms, 3, true));
-		System.out.println("Full Score recomputations: "
-			+ mWebOfTrust.getNumberOfFullScoreRecomputations());
+		int fullRecomputationsForSetup = mWebOfTrust.getNumberOfFullScoreRecomputations();
+		
+		System.out.println("Setup time: " + setupTime);
+		System.out.println("Full Score recomputations: " + fullRecomputationsForSetup);
 		
 		// Print Trust distribution histogram so you can check whether getTrustDistribution()
 		// produces the same histogram as its internal backend histogram.
 		WOTUtil.histogram(mWebOfTrust);
+		
+		// Setup complete. Now the actual benchmark follows: 
+		// We remove all trusts in the graph one-by-one, in random order.
+		
+		System.out.println("Removing complete graph of " + trustCount + " Trusts...");
+	
+		ArrayList<Trust> trusts = new ArrayList<Trust>(trustCount + 1);
+		// Workaround for https://bugs.freenetproject.org/view.php?id=6596 
+		for(Trust trust : mWebOfTrust.getAllTrusts())
+			trusts.add(trust.clone());
+		
+		Collections.shuffle(trusts, mRandom);
+		
+		assertEquals(trustCount, trusts.size());
+		i = trustCount;
+		StopWatch benchmarkTime = new StopWatch();
+		for(Trust trust : trusts) {
+			StopWatch individualBenchmarkTime = new StopWatch(); 
+			wot.removeTrustIncludingNonOwn(trust.getTruster().getID(), trust.getTrustee().getID());
+			individualBenchmarkTime.stop();
+			
+			// Use output suitable for Gnuplot
+			System.out.println(i-- + ", " + individualBenchmarkTime.getNanos());
+		}
+		benchmarkTime.stop();
+		int fullRecomputationsForRemoval
+			= wot.getNumberOfFullScoreRecomputations() - fullRecomputationsForSetup;
+		
+		System.out.println("Benchmark result time: " + benchmarkTime);
+		System.out.println("Full Score recomputations: " + fullRecomputationsForRemoval);
 	}
 
 	private byte getRandomTrustValue(ArrayList<Byte> trustDistribution) {
@@ -312,7 +355,7 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 	private static ArrayList<Byte> getTrustDistribution() {
 		// Resulting trust values to meet the distribution.
 		// If distribution says "100 occurrences of value 3", then value 3 will be added 100 times.
-		ArrayList<Byte> result = new ArrayList<Byte>(TRUST_COUNT + 1);
+		ArrayList<Byte> result = new ArrayList<Byte>(TRUST_DISTRIBUTION_TRUST_COUNT + 1);
 		
 		for(byte value = -100; value <= +100; ++value) {
 			int index = value + 100;
@@ -327,7 +370,7 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 		
 		// Return value is computed. Now test whether it is correct.
 		
-		assertEquals(TRUST_COUNT, result.size());
+		assertEquals(TRUST_DISTRIBUTION_TRUST_COUNT, result.size());
 		
 		int[] distribution = new int[201];
 		

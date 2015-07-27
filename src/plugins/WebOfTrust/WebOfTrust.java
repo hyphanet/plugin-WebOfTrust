@@ -3747,6 +3747,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		setTrust(truster, trustee, value, comment);
 	}
 	
+	/** FIXME: Should this throw {@link NotTrustedException} instead of swallowing it? */
 	public synchronized void removeTrust(String ownTrusterID, String trusteeID) throws UnknownIdentityException {
 		final OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
 		final Identity trustee = getIdentityByID(trusteeID);
@@ -3765,7 +3766,29 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 		}
 	}
-	
+
+	/**
+	 * Same as {@link #removeTrust(String, String)} except that it additionally allows removing
+	 * trust values set by a non-own {@link Identity} where the other function only allows removing
+	 * trusts of {@link OwnIdentity}. */
+	synchronized void removeTrustIncludingNonOwn(String trusterID, String trusteeID)
+			throws UnknownIdentityException, NotTrustedException {
+
+		synchronized(mFetcher) {
+		synchronized(mSubscriptionManager) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try  {
+				removeTrustWithoutCommit(getTrust(trusterID, trusteeID));
+				Persistent.checkedCommit(mDB, this);
+			}
+			catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		}
+		}
+	}
+
 	/**
 	 * Enables or disables the publishing of the trust list of an {@link OwnIdentity}.
 	 * The trust list contains all trust values which the OwnIdentity has assigned to other identities.
