@@ -5,6 +5,9 @@ package plugins.WebOfTrust;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +24,16 @@ import plugins.WebOfTrust.util.WOTUtil;
 import freenet.crypt.DummyRandomSource;
 
 public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
+	
+	/**
+	 * ATTENTION: File will not be deleted, it will be appended to so you can average multiple runs
+	 * using the "smooth" option:<br>
+	 * <code>
+	 * gnuplot<br>
+	 * > plot "ScoreComputationBenchmark.gnuplot" smooth unique
+	 * </code>
+	 */
+	private static final File GNUPLOT_OUTPUT = new File("ScoreComputationBenchmark.gnuplot");
 
 	private static final int OWN_IDENTITY_COUNT = 1;
 
@@ -258,9 +271,9 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 	}
 
 	@Test
-	public void benchmark_updateScoresAfterDistrust() throws MalformedURLException,
-			InvalidParameterException, NumberFormatException, UnknownIdentityException,
-			DuplicateTrustException, NotTrustedException {
+	public void benchmark_updateScoresAfterDistrust() throws InvalidParameterException,
+			NumberFormatException, UnknownIdentityException, DuplicateTrustException,
+			NotTrustedException, IOException {
 		
 		
 		final int ownIdentityCount = OWN_IDENTITY_COUNT;
@@ -329,20 +342,34 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 		
 		Collections.shuffle(trusts, mRandom);
 		
+		FileWriter output = new FileWriter(GNUPLOT_OUTPUT, true);
+		
 		assertEquals(trustCount, trusts.size());
 		i = trustCount;
 		StopWatch benchmarkTime = new StopWatch();
 		for(Trust trust : trusts) {
+			System.out.println("Processing Trust: " + i);
+			
+			// Try to exclude GC peaks from single trust benchmarks
+			System.gc();
+			
+			String trusterID = trust.getTruster().getID();
+			String trusteeID = trust.getTrustee().getID();
+			
 			StopWatch individualBenchmarkTime = new StopWatch(); 
-			wot.removeTrustIncludingNonOwn(trust.getTruster().getID(), trust.getTrustee().getID());
+			wot.removeTrustIncludingNonOwn(trusterID, trusteeID);
 			individualBenchmarkTime.stop();
 			
-			// Use output suitable for Gnuplot
-			System.out.println(i-- + ", " + individualBenchmarkTime.getNanos());
+			double seconds = (double)individualBenchmarkTime.getNanos() / (1000000000d);
+			output.write(i + " " + seconds);
+			
+			--i;
 		}
 		benchmarkTime.stop();
 		int fullRecomputationsForRemoval
 			= wot.getNumberOfFullScoreRecomputations() - fullRecomputationsForSetup;
+		
+		output.close();
 		
 		System.out.println("Benchmark result time: " + benchmarkTime);
 		System.out.println("Full Score recomputations: " + fullRecomputationsForRemoval);
