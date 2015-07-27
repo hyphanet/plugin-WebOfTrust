@@ -31,7 +31,7 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 		final int identityCount = 1000;
 		final int trustCount = 10 * 1000;
 		
-        assert(trustCount < identityCount * (identityCount-1));
+        assertTrue(trustCount < identityCount * (identityCount-1));
 		
 		WebOfTrust wot = getWebOfTrust();
 		ArrayList<OwnIdentity> ownIds = new ArrayList<OwnIdentity>(ownIdentityCount + 1);
