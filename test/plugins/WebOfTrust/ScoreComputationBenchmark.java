@@ -367,7 +367,7 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 			individualBenchmarkTime.stop();
 			
 			double seconds = (double)individualBenchmarkTime.getNanos() / (1000000000d);
-			output.write(i + " " + seconds);
+			output.write(i + " " + seconds + '\n');
 			
 			--i;
 		}
