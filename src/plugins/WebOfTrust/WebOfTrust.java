@@ -2700,7 +2700,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * You have to synchronize on this WebOfTrust while querying the parameter identities and calling this function.
 	 */
-	void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
+	void setTrust(Identity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
 		synchronized(mFetcher) {
