@@ -12,12 +12,16 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 /**
  * This is NOT an actual unit test. It is a set of benchmarks to measure the performance of WOT.
  * 
+ * As opposed to {@link ScoreComputationBenchmark}, instead of incremental score computation, this
+ * benchmarks the function {@link WebOfTrust#verifyAndCorrectStoredScores()} for recomputing all
+ * scores from scratch.
+ * 
  * Also, this is NOT run in the default test suite which is run by Ant when building.
- * To run it, put "benchmark=true" into the "override.properties" build confiugration file. If it does not exist, create it in the root of the project.
+ * To run it, put "test.benchmark=true" into the "override.properties" build confiugration file. If it does not exist, create it in the root of the project.
  * 
  * @author xor (xor@freenetproject.org)
  */
-public class BenchmarkTest extends AbstractJUnit3BaseTest {
+public class ScoreRecomputationBenchmark extends AbstractJUnit3BaseTest {
 
 	/**
 	 * Benchmarks {@link WebOfTrust.verifyAndCorrectStoredScores}.
