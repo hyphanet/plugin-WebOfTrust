@@ -337,7 +337,7 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 		for(int value = -100; value <= +100; ++value) {
 			int index = value + 100;
 			assertEquals(TRUST_DISTRIBUTION[index][0], value);
-			assertEquals(TRUST_DISTRIBUTION[index][1], distribution[value]);
+			assertEquals(TRUST_DISTRIBUTION[index][1], distribution[index]);
 		}
 		
 		return result;
