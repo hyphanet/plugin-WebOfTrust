@@ -257,7 +257,7 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 		final int identityCount = IDENTITY_COUNT / 10; // Reduce for shorter execution time.
 		final int trustCount = TRUST_COUNT / (10*(10-1)); // Reduce for shorter execution time.
 		
-        assertTrue(trustCount < identityCount * (identityCount-1));
+        assertTrue(trustCount <= identityCount * (identityCount-1));
 		
 		WebOfTrust wot = getWebOfTrust();
 		ArrayList<OwnIdentity> ownIds = new ArrayList<OwnIdentity>(ownIdentityCount + 1);
