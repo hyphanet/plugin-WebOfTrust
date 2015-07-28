@@ -3770,8 +3770,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/**
 	 * Same as {@link #removeTrust(String, String)} except that it additionally allows removing
 	 * trust values set by a non-own {@link Identity} where the other function only allows removing
-	 * trusts of {@link OwnIdentity}. */
-	synchronized void removeTrustIncludingNonOwn(String trusterID, String trusteeID)
+	 * trusts of {@link OwnIdentity}.
+	 * ATTENTION: For debug purposes only! */
+	public synchronized void removeTrustIncludingNonOwn(String trusterID, String trusteeID)
 			throws UnknownIdentityException, NotTrustedException {
 
 		synchronized(mFetcher) {
