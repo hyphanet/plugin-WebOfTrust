@@ -986,7 +986,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return foundLeak;
 	}
 	
-	private synchronized boolean verifyDatabaseIntegrity() {
+	public synchronized boolean verifyDatabaseIntegrity() {
 		// Take locks of all objects which deal with persistent stuff because we act upon ALL persistent objects.
 		synchronized(mPuzzleStore) {
 		synchronized(mFetcher) {
@@ -1200,21 +1200,24 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * The function is synchronized and does a transaction, no outer synchronization is needed. 
 	 */
-	protected synchronized void verifyAndCorrectStoredScores() {
+	public synchronized boolean verifyAndCorrectStoredScores() {
 		Logger.normal(this, "Veriying all stored scores ...");
 		synchronized(mFetcher) {
 		synchronized(mSubscriptionManager) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				computeAllScoresWithoutCommit();
+				boolean result = computeAllScoresWithoutCommit();
 				Persistent.checkedCommit(mDB, this);
+				return result;
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			} finally {
+				Logger.normal(this, "Veriying all stored scores finished.");
 			}
 		}
 		}
 		}
-		Logger.normal(this, "Veriying all stored scores finished.");
+		return false;
 	}
 	
 	/**
