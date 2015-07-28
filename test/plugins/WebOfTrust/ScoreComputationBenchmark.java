@@ -334,7 +334,7 @@ public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 		
 		// Print Trust distribution histogram so you can check whether getTrustDistribution()
 		// produces the same histogram as its internal backend histogram.
-		WOTUtil.histogram(mWebOfTrust);
+		WOTUtil.trustValueHistogram(mWebOfTrust);
 		
 		// Setup complete. Now the actual benchmark follows: 
 		// We remove all trusts in the graph one-by-one, in random order.
