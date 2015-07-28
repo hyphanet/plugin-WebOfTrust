@@ -16,9 +16,9 @@ import com.db4o.ObjectSet;
 /**
  * Command-line tool for maintenance and analysis of WOT databases.
  * 
- * Run by:
- * java -classpath ../fred/lib/freenet/freenet-ext.jar:../fred/dist/freenet.jar:dist/WebOfTrust.jar
- *     plugins.WebOfTrust.util.WOTUtil */
+ * Run and show syntax by:
+ *     ./wotutil.sh
+ */
 public final class WOTUtil {
 
 	public static void trustValueHistogram(WebOfTrust wot) {
