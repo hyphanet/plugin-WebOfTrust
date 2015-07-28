@@ -196,21 +196,25 @@ public final class WOTUtil {
 		err.println("    Can be paused by pressing ENTER.");
 		err.println("WOTUtil -trustValueHistogram INPUT_DATABASE");
 		err.println("WOTUtil -trusteeCountHistogram INPUT_DATABASE");
-		System.exit(1);
 	}
-
-	public static void main(String[] args)
-			throws NumberFormatException, IOException, UnknownIdentityException,
-				   NotTrustedException, InterruptedException {
-		
-		if(args.length < 2) {
-			printSyntax();
-			return;
-		}
-		
+	
+	public static int mainWithReturnValue(String[] args) {
 		WebOfTrust wot = null;
+		
 		try {
+			if(args.length < 2) {
+				printSyntax();
+				return 1;
+			}
+		
 			wot = new WebOfTrust(args[1]);
+			
+			System.out.println("Checking database for corruption...");
+			
+			if(!wot.verifyDatabaseIntegrity() || !wot.verifyAndCorrectStoredScores()) {
+				System.err.println("Damaged database, exiting!");
+				return 2;
+			}
 			
 			if(args[0].equalsIgnoreCase("-trustValueHistogram"))
 				trustValueHistogram(wot);
@@ -219,16 +223,25 @@ public final class WOTUtil {
 			else if(args[0].equalsIgnoreCase("-benchmarkRemoveTrustDestructive")) {
 				if(args.length != 4) {
 					printSyntax();
-					return;
+					return 1;
 				}
 				benchmarkRemoveTrustDestructive(wot, new File(args[2]), Long.parseLong(args[3]));
 			} else {
 				printSyntax();
-				return;
+				return 1;
 			}
+			
+			return 0; // Success
+		} catch(Exception e) {
+			System.err.println(e);
+			return 3;
 		} finally {
 			if(wot != null)
 				wot.terminate();
 		}
+	}
+			
+	public static void main(String[] args) {
+		System.exit(mainWithReturnValue(args));
 	}
 }
