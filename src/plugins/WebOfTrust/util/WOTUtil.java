@@ -4,7 +4,10 @@
 package plugins.WebOfTrust.util;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.TreeMap;
 
+import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 
@@ -17,8 +20,8 @@ import com.db4o.ObjectSet;
  * java -classpath ../fred/lib/freenet/freenet-ext.jar:../fred/dist/freenet.jar:dist/WebOfTrust.jar
  *     plugins.WebOfTrust.util.WOTUtil */
 public final class WOTUtil {
-	
-	public static void histogram(WebOfTrust wot) {
+
+	public static void trustValueHistogram(WebOfTrust wot) {
 		// Counts number of occurrences of each possible Trust value. +1 for value of 0.
 		int[] histogram = new int[Trust.MAX_TRUST_VALUE + Math.abs(Trust.MIN_TRUST_VALUE) + 1];
 		Arrays.fill(histogram, 0);
@@ -61,11 +64,53 @@ public final class WOTUtil {
 			System.out.println(value + ": " + histogram[i]);
 		}
 	}
-	
+
+	public static void trusteeCountHistogram(WebOfTrust wot) {
+		// Key = Amount of trustees
+		// Value = Number of identities which count of trustees as specified by the key 
+		Map<Integer, Integer> histogram = new TreeMap<Integer, Integer>();
+		
+		// Compute histogram
+		
+		final ObjectSet<Identity> trusters = wot.getAllIdentities();
+		final int trusterCount = trusters.size();
+		final int onePercent = (trusterCount / 100);
+		int processedTrusters = 0;
+		
+		for(Identity truster : trusters) {
+			Integer trustees = wot.getGivenTrusts(truster).size();
+			Integer oldSum = histogram.get(trustees); 
+			histogram.put(trustees, oldSum != null ? oldSum + 1 : 1);
+			
+			++processedTrusters;
+
+			if(processedTrusters % onePercent == 0)
+				System.out.println("Progress: " + processedTrusters / onePercent + "% ...");
+		}
+		
+		// Print output
+		
+		System.out.println();
+		System.out.println("Identities: " + trusterCount);
+		System.out.println("Not fetched identities: " + wot.getNumberOfUnfetchedIdentities());
+		System.out.println("Trusts: " + wot.getAllTrusts().size());
+		System.out.println("Trustee count histogram follows ...");
+		
+		for(Map.Entry<Integer, Integer> entry : histogram.entrySet()) {
+			System.out.println(entry.getKey() + ": " + entry.getValue());
+		}
+	}
+
 	public static void main(String[] args) {
-		if(args.length != 2|| !args[0].equalsIgnoreCase("-trusthistogram")) {
+		if(args.length != 2
+			||
+				   (!args[0].equalsIgnoreCase("-trustValueHistogram")
+				 && !args[0].equalsIgnoreCase("-trusteeCountHistogram"))
+			) {
+			
 			System.err.println("Syntax: ");
-			System.err.println("WOTUtil -trusthisgtogram DATABASE_FILENAME");
+			System.err.println("WOTUtil -trustValueHistogram DATABASE_FILENAME");
+			System.err.println("WOTUtil -trusteeCountHistogram DATABASE_FILENAME");
 			System.exit(1);
 			return;
 		}
@@ -73,7 +118,11 @@ public final class WOTUtil {
 		WebOfTrust wot = null;
 		try {
 			wot = new WebOfTrust(args[1]);
-			histogram(wot);
+			
+			if(args[0].equalsIgnoreCase("-trustValueHistogram"))
+				trustValueHistogram(wot);
+			else
+				trusteeCountHistogram(wot);
 		} finally {
 			if(wot != null)
 				wot.terminate();
