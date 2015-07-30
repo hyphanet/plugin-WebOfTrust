@@ -42,6 +42,9 @@ public final class WOTUtil {
 		
 		// Use fixed seed for deterministic comparison against Score computation rewrite:
 		// https://bugs.freenetproject.org/view.php?id=5757
+		// Notice: When resuming by restarting upon the same database, specifying the same seed will
+		// not yield deterministic results: Collections.shuffle() will be run upon a smaller set of
+		// Trusts and thus likely yield different results.
 		final Random random = new Random(seed); 
 		final List<TrustID> trusts = Collections.unmodifiableList(getTrustsRandomized(wot, random));
 		final int trustCount = trusts.size();
@@ -69,17 +72,8 @@ public final class WOTUtil {
 			if(System.in.available() > 0) {
 				System.in.read();
 				
-				System.err.println("PAUSED - press ENTER to continue.");
-				System.err.println("Full recomputations: "
-					+ wot.getNumberOfFullScoreRecomputations());
-				
-				System.gc();
-				
-				while(System.in.available() == 0)
-					Thread.sleep(1000);
-
-				System.in.read();
-				System.err.println("Continuing...");
+				System.err.println("ENTER pressed to request pause - exiting ...");
+				break;
 			}
 		}
 		
@@ -193,7 +187,8 @@ public final class WOTUtil {
 		err.println("WOTUtil -benchmarkRemoveTrustDestructive INPUT_DATABASE OUTPUT_GNUPLOT SEED");
 		err.println("    ATTENTION: Destroys the given database!");
 		err.println("    ATTENTION: OUTPUT_GNUPLOT will be appended to, not overwritten.");
-		err.println("    Can be paused by pressing ENTER.");
+		err.println("    Push ENTER to exit for pause. Resume by restarting with same parameters.");
+		err.println("    Deterministic execution by SEED is not supported with resume.");
 		err.println("WOTUtil -trustValueHistogram INPUT_DATABASE");
 		err.println("WOTUtil -trusteeCountHistogram INPUT_DATABASE");
 	}
