@@ -651,6 +651,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * Fetches the given USK and returns the new USKRetriever. Does not check whether there is already a fetch for that USK.
 	 */
 	private USKRetriever fetch(USK usk) throws MalformedURLException {
+		if(mUSKManager == null) {
+			Logger.warning(this, "mUSKManager==null, not fetching anything! Only valid in tests!");
+			return null;
+		}
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxArchiveLevels = 0; // Because archives can become huge and WOT does not use them, we should disallow them. See JavaDoc of the variable.
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
@@ -809,6 +813,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		USKRetriever[] retrievers = mRequests.values().toArray(new USKRetriever[mRequests.size()]);		
 		int counter = 0;		 
 		for(USKRetriever r : retrievers) {
+			if(r == null) {
+				// fetch(USK) returns null in tests.
+				continue;
+			}
 			r.cancel(mClientContext);
 			mUSKManager.unsubscribeContent(r.getOriginalUSK(), r, true);
 			 ++counter;
