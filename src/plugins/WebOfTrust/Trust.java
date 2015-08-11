@@ -119,7 +119,7 @@ public final class Trust extends Persistent implements Cloneable, EventSource {
 	 * 
 	 * TODO: This was added after we already had manual ID-generation / checking in the code everywhere. Use this class instead. 
 	 */
-	protected static final class TrustID {
+	public static final class TrustID {
 		
 		private static final int MAX_TRUST_ID_LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
 		
@@ -131,6 +131,12 @@ public final class Trust extends Persistent implements Cloneable, EventSource {
 			mTrusterID = truster.getID();
 			mTrusteeID = trustee.getID();
 			mID = truster.getID() + "@" + trustee.getID();
+		}
+
+		public TrustID(Trust trust) {
+			mTrusterID = trust.getTruster().getID();
+			mTrusteeID = trust.getTrustee().getID();
+			mID = trust.getID();
 		}
 
         public TrustID(final String trusterID, final String trusteeID) {
@@ -172,7 +178,15 @@ public final class Trust extends Persistent implements Cloneable, EventSource {
 			
 			return trustID;
 		}
-		
+
+		public final String getTrusterID() {
+			return mTrusterID;
+		}
+
+		public final String getTrusteeID() {
+			return mTrusteeID;
+		}
+
 		@Override
 		public final String toString() {
 			return mID;
