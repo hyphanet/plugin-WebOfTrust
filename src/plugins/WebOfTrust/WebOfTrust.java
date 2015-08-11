@@ -3959,9 +3959,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 			if(newRank == -1) {
 				score.deleteWithoutCommit();
-				// If we created the Score ourself, don't tell the caller about the delete rank:
+				// If we created the Score ourself, don't tell the caller about the deleted rank:
 				// There was no rank before, we had only created the Score to cause an attempt
-				// of finding a rank possibly newly existing rank.
+				// of finding a possibly newly existing rank.
 				if(!scoresCreated.contains(score.getID())) {
 					ChangeSet<Score> diff = new ChangeSet<Score>(score, null);
 					
