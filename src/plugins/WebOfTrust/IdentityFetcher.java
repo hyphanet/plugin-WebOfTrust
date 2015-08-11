@@ -11,7 +11,6 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 
 import plugins.WebOfTrust.Identity.FetchState;
-import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
@@ -35,7 +34,6 @@ import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.PrioritizedTicker;
@@ -67,7 +65,22 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
      * Will be used as delay for the {@link DelayedBackgroundJob} which schedules processing of
      * {@link IdentityFetcherCommand}s. */
 	private static final long PROCESS_COMMANDS_DELAY = 60 * 1000;
-	
+
+	/**
+	 * If true, the fetcher will not only fetch the latest editions of Identitys, but also old
+	 * ones.
+	 * Also, {@link IdentityFileDiskQueue} will disable its deduplication of multiple fetched
+	 * {@link IdentityFile}s with the same edition. 
+	 * Together with {@link IdentityFileDiskQueue}s ability of archiving all fetched files
+	 * to disk, this can be used for debugging purposes. For example for testing changes to the
+	 * {@link Score} computation algorithm, it is a good idea to import many {@link Trust} lists to
+	 * have many changes to the Trust graph.
+	 * 
+	 * ATTENTION: If this is enabled, the seed identities will be created with an edition of 0.
+	 * This will persist restarts, and thus also continue to persist even if you disable this flag
+	 * again. Thus please only use this flag with throwaway databases. */
+	public static final boolean DEBUG__NETWORK_DUMP_MODE = false;
+
 	private final WebOfTrust mWoT;
 	
 	private final ExtObjectContainer mDB;
@@ -148,6 +161,12 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
         // Identity fetches and inserts belong together, so it makes sense to use the same
         // RequestClient for them.
 		mRequestClient = mWoT.getRequestClient();
+		
+		if(DEBUG__NETWORK_DUMP_MODE) {
+			Logger.warning(
+				this, "IdentityFetcher.DEBUG__NETWORK_DUMP_MODE == true: Will fetch old editions "
+					+ " of identities!");
+		}
 	}
 	
 	@SuppressWarnings("serial")
@@ -554,7 +573,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			if(retriever == null)
 				mRequests.put(identity.getID(), fetch(usk));
 
-			mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
+			if(!DEBUG__NETWORK_DUMP_MODE)
+				mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
 	}
 	
 	/**
@@ -581,7 +601,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 
 			if(logDEBUG) Logger.debug(this, "Updating edition hint to " + editionHint + " for " + identityID);
 
-			mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
+			if(!DEBUG__NETWORK_DUMP_MODE)
+				mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
 		} catch (UnknownIdentityException e) {
 			Logger.normal(this, "Updating edition hint failed, the identity was deleted already.", e);
 		}
@@ -604,13 +625,28 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * Fetches the given USK and returns the new USKRetriever. Does not check whether there is already a fetch for that USK.
 	 */
 	private USKRetriever fetch(USK usk) throws MalformedURLException {
+		boolean fetchLatestOnly = !DEBUG__NETWORK_DUMP_MODE;
+		
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxArchiveLevels = 0; // Because archives can become huge and WOT does not use them, we should disallow them. See JavaDoc of the variable.
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		fetchContext.maxOutputLength = XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE;
+		fetchContext.ignoreUSKDatehints = !fetchLatestOnly;
 		if(logDEBUG) Logger.debug(this, "Trying to start fetching uri " + usk); 
-		return mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
+		
+		if(fetchLatestOnly)
+			return mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
+		else {
+			// There is no version of subscribeContent() which supports disabling using a
+			// USKSparseProxyCallback, so we manually do what suscribeContent() does except for
+			// using a sparse proxy.
+			// FIXME: Code quality: File a fred pull request which adds such a subscribeContent()
+			USKRetriever ret = new USKRetriever(
+				fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient, this, usk);
+			mUSKManager.subscribe(usk, ret, true, fetchContext.ignoreUSKDatehints, mRequestClient);
+			return ret;
+		}
 	}
 	
 	@Override

@@ -40,7 +40,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * {@link #mDataDir}.<br>
 	 * If {@link #logDEBUG} is false, the finished files will be deleted upon stream closure. */
 	private final File mFinishedDir;
-	
+
+	/** @see IdentityFetcher#DEBUG__NETWORK_DUMP_MODE */
+	private final boolean mDeduplicationEnabled;
+
 	/**
 	 * Amount of old files in {@link #mFinishedDir}, i.e. files from a previous session.<br>
 	 * We use this to ensure that filename index prefixes of new files do not collide.<br><br>
@@ -94,6 +97,15 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			throw new RuntimeException("Cannot create " + mFinishedDir);
 
 		cleanDirectories();
+		
+		if(!IdentityFetcher.DEBUG__NETWORK_DUMP_MODE) {
+			mDeduplicationEnabled = true;
+		} else {
+			Logger.warning(this,
+				"IdentityFetcher.DEBUG__NETWORK_DUMP_MODE == true: Disabling deduplication!");
+			
+			mDeduplicationEnabled = false;
+		}
 	}
 
 	/** Used at startup to ensure that the data directories are in a clean state */
@@ -263,13 +275,21 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	}
 
 	private File getQueueFilename(FreenetURI identityFileURI) {
-		// We want to deduplicate editions of files for the same identity.
-		// This can be done by causing filenames to always collide for the same identity:
-		// An existing file of an old edition will be overwritten then.
-		// We cause the collissions by using the ID of the identity as the only variable component
-		// of the filename.
-		return new File(mQueueDir,
+		if(mDeduplicationEnabled) {
+			// We want to deduplicate editions of files for the same identity.
+			// This can be done by causing filenames to always collide for the same identity:
+			// An existing file of an old edition will be overwritten then.
+			// We cause the collissions by using the ID of the identity as the only variable
+			// component of the filename.
+			return new File(mQueueDir,
 			            getEncodedIdentityID(identityFileURI) + IdentityFile.FILE_EXTENSION);
+		} else {
+			// Return non-colliding filenames by including edition
+			return new File(mQueueDir,
+				String.format("identityID-%s_edition-%018d" + IdentityFile.FILE_EXTENSION,
+								getEncodedIdentityID(identityFileURI),
+								identityFileURI.getEdition()));	
+		}
 	}
 
 	private String getEncodedIdentityID(FreenetURI identityURI) {
