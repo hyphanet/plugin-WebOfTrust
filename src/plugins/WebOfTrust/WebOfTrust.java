@@ -3813,6 +3813,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				Score oldScore = score.clone();
 				score.setValue(computeScoreValue(treeOwner, trustReceiver));
 				score.storeWithoutCommit();
+				++scoresAffectedByCapacityChange;
 				 
 				if(!score.equals(oldScore)) {
 					String id = score.getID();
