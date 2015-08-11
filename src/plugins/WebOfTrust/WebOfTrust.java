@@ -3724,8 +3724,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		scoresWithUpdatedRank = null;
 		
-		// No need to add scoresWithUpdatedCapacity to modifiedScores: They are a subset of
-		// scoresWithUpdatedRank, which is already in modifiedScores.
+		// No need to add scoresWithUpdatedCapacity to scoresWhichNeedEventNotification: They are
+		// a subset of scoresWithUpdatedRank, which is already in scoresWhichNeedEventNotification.
 		
 		StopWatch time1 = logMINOR ? new StopWatch() : null;
 		
