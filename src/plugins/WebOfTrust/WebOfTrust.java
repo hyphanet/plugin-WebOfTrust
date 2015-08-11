@@ -3120,6 +3120,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 		}
 		
+		// TODO: Performance: It is likely that the priority part of the queue is used very
+		// scarcely: All edges we ever add have either weight of 1 or Integer.MAX_VALUE. Further,
+		// there are very few with Integer.MAX_VALUE - only the received trusts of the target may
+		// use MAX_VALUE.
+		// If there only was weight 1, the natural order in which edges are added would be sorted
+		// by priority already (this is how breadth-first search works).
+		// So we almost don't need the sorting by priority. Maybe a more simple datastructure can be
+		// used to amend a non-sorting queue to be able to handle the few cases of MAX_VALUE which
+		// need sorting?
 		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
 		// Use IdentityHashSet because Identity.equals() compares more than needed.
 		IdentityHashSet<Identity> seen = new IdentityHashSet<Identity>();
