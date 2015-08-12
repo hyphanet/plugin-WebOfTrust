@@ -20,8 +20,8 @@ import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.ui.terminal.WOTUtil;
 import plugins.WebOfTrust.util.StopWatch;
-import plugins.WebOfTrust.util.WOTUtil;
 import freenet.crypt.DummyRandomSource;
 
 public final class ScoreComputationBenchmark extends AbstractFullNodeTest {

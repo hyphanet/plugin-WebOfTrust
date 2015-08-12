@@ -1,7 +1,7 @@
 /* This code is part of WoT, a plugin for Freenet. It is distributed 
  * under the GNU General Public License, version 2 (or at your option
  * any later version). See http://www.gnu.org/ for details of the GPL. */
-package plugins.WebOfTrust.util;
+package plugins.WebOfTrust.ui.terminal;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -21,6 +21,7 @@ import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.util.StopWatch;
 
 import com.db4o.ObjectSet;
 
