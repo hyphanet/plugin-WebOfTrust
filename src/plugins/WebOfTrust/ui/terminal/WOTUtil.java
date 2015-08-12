@@ -190,7 +190,7 @@ public final class WOTUtil {
 		err.println("    ATTENTION: OUTPUT_GNUPLOT will be appended to, not overwritten.");
 		err.println("    Push ENTER to exit for pause. Resume by restarting with same parameters.");
 		err.println("    Deterministic execution by SEED is not supported with resume.");
-		err.println("WOTUtil -test INPUT_DATABASE");
+		err.println("WOTUtil -testAndRepair INPUT_DATABASE");
 		err.println("WOTUtil -trustValueHistogram INPUT_DATABASE");
 		err.println("WOTUtil -trusteeCountHistogram INPUT_DATABASE");
 	}
@@ -213,7 +213,7 @@ public final class WOTUtil {
 				return 2;
 			}
 			
-			if(args[0].equalsIgnoreCase("-test"))
+			if(args[0].equalsIgnoreCase("-testAndRepair"))
 				System.out.println("Database OK!"); // Test happened above already.
 			else if(args[0].equalsIgnoreCase("-trustValueHistogram"))
 				trustValueHistogram(wot);
