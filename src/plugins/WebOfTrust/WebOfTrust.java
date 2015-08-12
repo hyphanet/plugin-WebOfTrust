@@ -534,10 +534,20 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// objects before defragmenting. So we just don't defragment if the database format version has changed.
 			final boolean canDefragment = peekDatabaseFormatVersion(this, database.ext()) == WebOfTrust.DATABASE_FORMAT_VERSION;
 
-			while(!database.close());
-			
 			if(!canDefragment) {
 				Logger.normal(this, "Not defragmenting, database format version changed!");
+				while(!database.close());
+				return;
+			}
+
+			// Check whether the minimal delay between defragmentations is expired
+			// TODO: Code quality: Only update last defrag date if defragmentation actually succeeds
+			boolean mayDefrag = tryUpdateLastDefragDate(this, database.ext());
+			
+			while(!database.close());
+
+			if(!mayDefrag) {
+				Logger.normal(this, "Not defragmenting, minimal delay not expired.");
 				return;
 			}
 			
@@ -1418,7 +1428,46 @@ public final class WebOfTrust extends WebOfTrustInterface
 				return -1;
 		}
 	}
-	
+
+	/**
+	 * ATTENTION: This function is not synchronized, use it only in single threaded mode.
+	 * @return
+	 *     True if {@link Configuration#getLastDefragDate()} indicated that the caller may do
+	 *     database defragmentation now.
+	 *     Will also call {@link Configuration#updateLastDefragDate()} and store the modified
+	 *     configuration.
+	 */
+	@SuppressWarnings("deprecation")
+	private static boolean tryUpdateLastDefragDate(WebOfTrust wot, ExtObjectContainer database) {
+		final Query query = database.query();
+		query.constrain(Configuration.class);
+		@SuppressWarnings("unchecked")
+		ObjectSet<Configuration> result = (ObjectSet<Configuration>)query.execute();
+		
+		switch(result.size()) {
+			case 1: {
+				final Configuration config = (Configuration)result.next();
+				config.initializeTransient(wot, database);
+				// For the HashMaps to stay alive we need to activate to full depth.
+				config.checkedActivate(4);
+				
+				Date lastDefragDate = config.getLastDefragDate();
+				Date nextDefragDate
+					= new Date(lastDefragDate.getTime() + Configuration.DEFAULT_DEFRAG_INTERVAL);
+			
+				if(!nextDefragDate.after(CurrentTimeUTC.get())) {
+					config.updateLastDefragDate();
+					config.storeAndCommit();
+					return true;
+				} else
+					return false;
+			}
+			default:
+				Logger.error(wot, "tryUpdateLastDefragDate(): No Configuration found!");
+				return false;
+		}
+	}
+
 	/**
 	 * Loads an existing Config object from the database and adds any missing default values to it, creates and stores a new one if none exists.
 	 * @return The config object.
