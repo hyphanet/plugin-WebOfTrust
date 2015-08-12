@@ -103,7 +103,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/** Package-private method to allow unit tests to bypass some assert()s */
 	
 	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = 6;
+	public static final int DATABASE_FORMAT_VERSION = 7;
 	
 	
 
@@ -662,7 +662,8 @@ public final class WebOfTrust extends WebOfTrustInterface
                         mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 4: upgradeDatabaseFormatVersion4(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
                     case 5: upgradeDatabaseFormatVersion12345(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
-					case 6: break;
+					case 6: upgradeDatabaseFormatVersion6(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 7: break;
 					default:
 						throw new UnsupportedOperationException("Your database is newer than this WOT version! Please upgrade WOT.");
 				}
@@ -909,6 +910,22 @@ public final class WebOfTrust extends WebOfTrustInterface
         }
         Logger.normal(this, "Finished converting FreenetURI to String.");
     }
+
+	/**
+	 * Upgrades database format version 6 to version 7.<br><br>
+	 *
+	 * Initializes values of:<br>
+	 * {@link Configuration#getLastDefragDate()}<br>
+	 * {@link Configuration#getLastVerificationOfScoresDate()} */
+	private void upgradeDatabaseFormatVersion6() {
+		Logger.normal(this, "Setting dates of last defrag / score verification to 'now'...");
+
+		// We default to pretend that defrag/verification were just run: Old versions of WoT ran
+		// them at *every* startup, so we can safely assume they were just run.
+		mConfig.updateLastDefragDate();
+		mConfig.updateLastVerificationOfScoresDate();
+		mConfig.storeWithoutCommit();
+	}
 
 	/**
 	 * DO NOT USE THIS FUNCTION ON A DATABASE WHICH YOU WANT TO CONTINUE TO USE!

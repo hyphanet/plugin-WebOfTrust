@@ -167,12 +167,7 @@ public final class Configuration extends Persistent {
 	public synchronized void storeAndCommit() {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				activateFully();
-				
-				checkedStore(mStringParams);
-				checkedStore(mIntParams);
-				
-				checkedStore(this);
+				storeWithoutCommit();
 				checkedCommit(this);
 			}
 			catch(RuntimeException e) {
@@ -180,7 +175,16 @@ public final class Configuration extends Persistent {
 			}
 		}
 	}
-	
+
+	@Override protected void storeWithoutCommit() {
+		activateFully();
+		
+		checkedStore(mStringParams);
+		checkedStore(mIntParams);
+		
+		checkedStore(this);
+	}
+
 	/**
 	 * ATTENTION: A WOT database should ALWAYS contain a Configuration object. This function is only for debugging purposes
 	 * - namely {@link WebOfTrust#checkForDatabaseLeaks()}
