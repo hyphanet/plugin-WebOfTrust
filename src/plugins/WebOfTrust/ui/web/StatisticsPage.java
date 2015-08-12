@@ -59,8 +59,10 @@ public class StatisticsPage extends WebPageImpl {
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.ScoreRelationships") + ": " + mWebOfTrust.getAllScores().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputations") + ": " + mWebOfTrust.getNumberOfFullScoreRecomputations()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputationTime") + ": " + mWebOfTrust.getAverageFullScoreRecomputationTime()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalRecomputations") + ": " + mWebOfTrust.getNumberOfIncrementalScoreRecomputations()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalRecomputationTime") + ": " + mWebOfTrust.getAverageIncrementalScoreRecomputationTime()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalTrustRecomputations") + mWebOfTrust.getNumberOfIncrementalScoreRecomputationDueToTrust()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalTrustRecomputationTime") + mWebOfTrust.getAverageTimeForIncrementalScoreRecomputationDueToTrust()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalDistrustRecomputations") + mWebOfTrust.getNumberOfIncrementalScoreRecomputationDueToDistrust()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalDistrustRecomputationTime") + mWebOfTrust.getAverageTimeForIncrementalScoreRecomputationDueToDistrust()));
 		IntroductionPuzzleStore puzzleStore = mWebOfTrust.getIntroductionPuzzleStore();
 		synchronized(puzzleStore) {
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.UnsolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(false)));

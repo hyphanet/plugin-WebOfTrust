@@ -8,12 +8,14 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -34,8 +36,10 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.IntroductionServer;
 import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
 import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
+import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import plugins.WebOfTrust.ui.web.WebInterface;
+import plugins.WebOfTrust.util.StopWatch;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -66,6 +70,7 @@ import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
+import freenet.support.IdentityHashSet;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
@@ -169,6 +174,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 	
 	/* Actual data of the WoT */
 	
+	/**
+	 * TODO: Performance / Code quality: We have incremental computation in
+	 * {@link #updateScoresWithoutCommit(Trust, Trust)} now using
+	 * {@link #updateScoresAfterDistrustWithoutCommit(Identity)}. It uses this variable where
+	 * full recomputation was needed previously. Thus, this should be renamed to
+	 * "mUpdateScoresAfterDistrustNeeded", and probably become a local variable in
+	 * {@link #updateScoresWithoutCommit(Trust, Trust)}. However, before doing that, please
+	 * review the other code which uses this variable for whether it uses incremental computation
+	 * already. */
 	private boolean mFullScoreComputationNeeded = false;
 	
 	private boolean mTrustListImportInProgress = false;
@@ -186,9 +200,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/* Statistics */
 	private int mFullScoreRecomputationCount = 0;
 	private long mFullScoreRecomputationMilliseconds = 0;
-	private int mIncrementalScoreRecomputationCount = 0;
-	private long mIncrementalScoreRecomputationMilliseconds = 0;
-	
+	private int mIncrementalScoreRecomputationDueToTrustCount = 0;
+	private int mIncrementalScoreRecomputationDueToDistrustCount = 0;
+	private long mIncrementalScoreRecomputationDueToTrustNanos = 0;
+	private long mIncrementalScoreRecomputationDueToDistrustNanos = 0;
+
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
@@ -264,7 +280,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// TODO: Do this once every few startups and notify the user in the web ui if errors are found.
 			if(logDEBUG)
 				verifyDatabaseIntegrity();
+			
+			// Identity files flow through the following pipe:
+			//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
+			// Thus, we start the pipe's daemons in reverse order to ensure that the receiving ones
+			// are available before the ones which fill the pipe.
+			mIdentityFileProcessor.start();
+			/* mIdentityFileQueue.start(); */    // Not necessary, has no thread.
+			mFetcher.start();
 
+			// verifyAndCorrectStoredScores() must be called after the IdentityFetcher was started
+			// because it will verify its state.
 			// TODO: Only do this once every few startups once we are certain that score computation does not have any serious bugs.
 			verifyAndCorrectStoredScores();
 						
@@ -277,15 +303,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			
 			createSeedIdentities();
-			
-			// Identity files flow through the following pipe:
-			//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
-			// Thus, we start the pipe's daemons in reverse order to ensure that the receiving ones
-			// are available before the ones which fill the pipe.
-			mIdentityFileProcessor.start();
-			/* mIdentityFileQueue.start(); */    // Not necessary, has no thread.
-            mFetcher.start();
-
 			
 			mInserter.start();
 
@@ -382,9 +399,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		// Required config options:
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader()));
-		// TODO: Optimization: We do explicit activation everywhere. We could change this to 0 and test whether everything still works.
-		// Ideally, we would benchmark both 0 and 1 and make it configurable.
-		cfg.activationDepth(1);
+		cfg.activationDepth(Persistent.DEFAULT_ACTIVATION_DEPTH);
 		cfg.updateDepth(1); // This must not be changed: We only activate(this, 1) before store(this).
 		Logger.normal(this, "Default activation depth: " + cfg.activationDepth());
 		cfg.exceptionsOnNotStorable(true);
@@ -971,7 +986,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return foundLeak;
 	}
 	
-	private synchronized boolean verifyDatabaseIntegrity() {
+	public synchronized boolean verifyDatabaseIntegrity() {
 		// Take locks of all objects which deal with persistent stuff because we act upon ALL persistent objects.
 		synchronized(mPuzzleStore) {
 		synchronized(mFetcher) {
@@ -1185,21 +1200,24 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * The function is synchronized and does a transaction, no outer synchronization is needed. 
 	 */
-	protected synchronized void verifyAndCorrectStoredScores() {
+	public synchronized boolean verifyAndCorrectStoredScores() {
 		Logger.normal(this, "Veriying all stored scores ...");
 		synchronized(mFetcher) {
 		synchronized(mSubscriptionManager) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				computeAllScoresWithoutCommit();
+				boolean result = computeAllScoresWithoutCommit();
 				Persistent.checkedCommit(mDB, this);
+				return result;
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			} finally {
+				Logger.normal(this, "Veriying all stored scores finished.");
 			}
 		}
 		}
 		}
-		Logger.normal(this, "Veriying all stored scores finished.");
+		return false;
 	}
 	
 	/**
@@ -1627,6 +1645,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 				Integer targetScore;
 				final Integer targetRank = rankValues.get(target);
 				
+				/* RankComputationTest does this as a unit test for us
+				 * 
+				assert(computeRankFromScratch(treeOwner, target)
+					== (targetRank != null ? targetRank : -1));
+				*/
+				
 				if(targetRank == null) {
 					targetScore = null;
 				} else {
@@ -1714,6 +1738,58 @@ public final class WebOfTrust extends WebOfTrustInterface
 						mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(null, newScore);
 					}
 				}
+
+				if(!needToCheckFetchStatus) {
+					// The Score database was correct, and thus shouldFetchIdentity() cannot have
+					// changed its value since no Score changed - which is why
+					// needToCheckFetchStatus == false is false yet.
+					// However, previously called alternate Score computation implementations could
+					// have forgotten to tell IdentityFetcher the shouldFetchIdentity() value, so
+					// for debugging purposes we now also check whether IdentityFetcher has the
+					// correct state.
+					
+					final boolean realOldShouldFetch = mFetcher.getShouldFetchState(target.getID());
+					final boolean newShouldFetch = shouldFetchIdentity(target);
+					
+					if(realOldShouldFetch != newShouldFetch) {
+						needToCheckFetchStatus = true;
+						returnValue = false;
+						oldShouldFetch = realOldShouldFetch;
+						
+						// We purposely always log an error even if mFullScoreComputationNeeded is
+						// false: needToCheckFetchStatus was false when we entered this branch
+						// because the stored Scores were correct, so the Scores were already
+						// correct before this function was called, and thus the code which
+						// set mFullScoreComputationNeeded wasn't responsible for the wrong
+						// shouldFetchState as it didn't create those Scores either.
+						Logger.error(this, "Correcting wrong IdentityFetcher shouldFetch state: "
+							+ "was: " + realOldShouldFetch + "; should be: " + newShouldFetch + "; "
+							+ "identity: " + target, new Exception());
+					}
+					
+					// ATTENTION if you want to implement an alternate Score computation algorithm:
+					// What we just validated about the previous Score computation run is NOT the 
+					// whole deal of verifying the IdentityFetcher state. What also would have to be
+					// validated is: If the capacity of the identity was 0 before the previous run
+					// and then changed to > 0 in the previous run, then the current edition of the
+					// identity has to be marked as "not fetched". This is because identities with
+					// capacity 0 are not allowed to introduce trustees, but identities with
+					// capacity > 0 are. To get those trustees, we have to re-fetch the identity's
+					// tust list.
+					// We cannot check this here though: The information whether capacity changed
+					// from 0 to > 0 in the previous Score computation run only available *during*
+					// the previous run, not now.
+					// We compensate for this by having a unit test for this situation:
+					// WoTTest.testRefetchDueToCapacityChange()
+					
+					// TODO: Code quality: Instead of only checking the "should fetch?" state for
+					// existing Identitys, also check for those which have been deleted: Obtain the
+					// full list of URIs being fetched from the IdentityFetcher, and check for any
+					// URIs which don't belong to an existing Identity which should be fetched.
+					// However, these false positives are not security critical: When the
+					// XMLTransformer imports fetched files, it will check whether an Identity
+					// exists (and whether should be fetched).
+				}
 				
 				if(needToCheckFetchStatus) {
 					// If fetch status changed from false to true, we need to start fetching it
@@ -1721,6 +1797,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// cause new identities to be imported from their trust list, capacity > 0 allows this.
 					// If the fetch status changed from true to false, we need to stop fetching it
 					if((!oldShouldFetch || (oldCapacity == 0 && newScore != null && newScore.getCapacity() > 0)) && shouldFetchIdentity(target) ) {
+						returnValue = false;
+						
 						if(logMINOR) {
 							if(!oldShouldFetch)
 								Logger.minor(this, "Fetch status changed from false to true, refetching " + target);
@@ -1742,6 +1820,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 						mFetcher.storeStartFetchCommandWithoutCommit(target);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(target)) {
+						returnValue = false;
+						
 						if(logMINOR) Logger.minor(this, "Fetch status changed from true to false, aborting fetch of " + target);
 
 						mFetcher.storeAbortFetchCommandWithoutCommit(target);
@@ -2341,6 +2421,22 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 	}
 
+	/** @see #getScore(OwnIdentity, Identity) */
+	public synchronized Score getScore(final String id) throws NotInTrustTreeException {
+		// TODO: Code quality: assert(id is valid)
+		
+		final Query query = mDB.query();
+		query.constrain(Score.class);
+		query.descend("mID").constrain(id);
+		final ObjectSet<Score> result = new Persistent.InitializingObjectSet<Score>(this, query);
+		
+		switch(result.size()) {
+			case 1: return result.next();
+			case 0: throw new NotInTrustTreeException(id);
+			default: throw new DuplicateScoreException(id, result.size());
+		}
+	}
+
 	/**
 	 * Gets a list of all this Identity's Scores.
 	 * You have to synchronize on this WoT around the call to this function and the processing of the returned list! 
@@ -2427,8 +2523,20 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity.
 	 */
     boolean shouldFetchIdentity(final Identity identity) {
-		if(identity instanceof OwnIdentity)
-			return true;
+		if(identity instanceof OwnIdentity) {
+			// TODO: Performance: Get rid of the self-score check and just return true.
+			// See main TODO at WoTTest.testSetTrust1().
+			try {
+				Score selfScore = getScore((OwnIdentity)identity, identity);
+				assert(selfScore.getRank() == 0);
+				assert(selfScore.getCapacity() == 100);
+				assert(selfScore.getScore() == Integer.MAX_VALUE);
+				return true;
+			} catch(NotInTrustTreeException e) {
+				// initTrustTreeWithoutCommit() not called yet
+				return false;
+			}
+		}
 		
 		int bestScore = Integer.MIN_VALUE;
 		int bestCapacity = 0;
@@ -2442,13 +2550,64 @@ public final class WebOfTrust extends WebOfTrustInterface
 			bestCapacity  = Math.max(score.getCapacity(), bestCapacity);
 			bestScore  = Math.max(score.getScore(), bestScore);
 			
+			// Notice: Identitys with negative score are considered as distrusted, so one might
+			// wonder why we hereby download identities even if their Score is negative just because
+			// their capacity is > 0.
+			// This is to ensure that the fetching algorithm allows the score computation algorithm
+			// to be "stable": It should yield the same resulting scores independent of the order in
+			// which identities are downloaded.
+			// If an identity has a capacity of > 0, it is eligible to vote, and thus might cause
+			// the negative score it has to disappear if we do still download its trust lists
+			// *after* the Score is already negative (= changed order of downloading).
+			// This isn't self-voting, it is rather caused by the fact that downloading its votes
+			// could cause many identities to appear which have a much higher capacity than the
+			// current distrusters. Those new identities will cause the current distrusters to be
+			// distrusted; and thus make the currently negative score positive. In other words the
+			// rank graph could be structured completely differently, where the current distrusted
+			// identity has a much lower rank than the current distrusters, and thus its trustees
+			// have higher voting powers than the current distrusters.
 			if(bestCapacity > 0 || bestScore >= 0)
 				return true;
 		}
 			
 		return false;
 	}
-	
+
+	/**
+	 * Same as {@link #shouldFetchIdentity(Identity)} except for pretending that only the given
+	 * {@link Score} exists.
+	 * I.e. tells you whether the {@link Identity} should be fetched from the perspective of the
+	 * {@link OwnIdentity} who gave the passed Score, ignoring all other OwnIdentitys decision.
+	 * The return value of this is wrong if the given Score does not indicate that the Identity
+	 * should be fetched, but there are other Scores which do: If only a single OwnIdentity wants
+	 * an Identity to be fetched, we must fetch it.
+	 * In other words: {@link #shouldFetchIdentity(Identity)} is equals to the logical OR between
+	 * the return values of this function here being called for all scores in the database.
+	 * 
+	 * Can be used to decide whether changing of a single Score might change the return value of
+	 * the global {@link #shouldFetchIdentity(Identity)}.
+	 */
+	private boolean shouldMaybeFetchIdentity(final Score score) {
+		Identity identity = score.getTrustee();
+		if(identity instanceof OwnIdentity) {
+			// TODO: Performance: Get rid of the self-score check and just return true.
+			// See main TODO at WoTTest.testSetTrust1().
+			try {
+				// Don't use getScore(OwnIdentity, Identity) because the callers pass clone()s to us
+				Score selfScore = getScore(new ScoreID(identity, identity).toString());
+				assert(selfScore.getRank() == 0);
+				assert(selfScore.getCapacity() == 100);
+				assert(selfScore.getScore() == Integer.MAX_VALUE);
+				return true;
+			} catch(NotInTrustTreeException e) {
+				// initTrustTreeWithoutCommit() not called yet
+				return false;
+			}
+		}
+		
+		return score.getCapacity() > 0 || score.getScore() >= 0;
+	}
+
 	/**
 	 * Gets non-own Identities matching a specified score criteria.
 	 * TODO: Rename to getNonOwnIdentitiesByScore. Or even better: Make it return own identities as well, this will speed up the database query and clients might be ok with it.
@@ -2702,7 +2861,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * You have to synchronize on this WebOfTrust while querying the parameter identities and calling this function.
 	 */
-	void setTrust(OwnIdentity truster, Identity trustee, byte newValue, String newComment)
+	void setTrust(Identity truster, Identity trustee, byte newValue, String newComment)
 		throws InvalidParameterException {
 		
 		synchronized(mFetcher) {
@@ -2824,7 +2983,256 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 		return value;
 	}
-	
+
+	/** 
+	 * Based on "uniform-cost search" algorithm (= optimized Dijkstra).<br>
+	 * Modified with respect to ignoring "blocked" edges: Having received a rank of
+	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees. */
+	int computeRankFromScratch_Forward(final OwnIdentity source, final Identity target) {
+		final class Vertex implements Comparable<Vertex>{
+			final Identity identity;
+			final Integer rank;
+			
+			public Vertex(Identity identity, int rank) {
+				this.identity = identity;
+				this.rank = rank;
+			}
+
+			@Override public int compareTo(Vertex o) {
+				return rank.compareTo(o.rank);
+			}
+		}
+		
+		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
+		HashSet<String> seen = new HashSet<String>(); // Key = Identity.getID()
+		
+		final int sourceRank;
+		try {
+			sourceRank = getScore(source, source).getRank();
+			if(source == target)
+				return sourceRank;
+		} catch (NotInTrustTreeException e) {
+			Logger.warning(this, "initTrustTreeWithoutCommit() not called for: " + source);
+			// Some unit tests require the special case of initTrustTreeWithoutCommit() not having
+			// been called for an OwnIdentity yet to yield a proper result of "no rank".
+			return -1;
+		}
+		
+		try {
+			// If a direct distrust exists from the OwnIdentity source to the target, then it
+			// must always overwrite the rank to be MAX_VALUE, even if a path with a lower rank
+			// would exist over more Trust steps. This is a demand of the specification of the
+			// WOT algorithm, see computeAllScoresWithoutCommit().
+			// Thus, we must now check whether a direct Trust exists before running the actual
+			// search algorithm could return a lower rank than MAX_VALUE.
+			if(getTrust(source, target).getValue() <= 0)
+				return Integer.MAX_VALUE;
+			
+			// We know a direct non-distrust from source to target exists, so we can directly
+			// compute the rank as sourceRank + 1.
+			// Notice that this is an optimization: Not returning here and instead letting the
+			// main search algorithm run now would yield the same result.
+			return sourceRank + 1;
+		} catch(NotTrustedException e) {}
+		
+		seen.add(source.getID());
+		for(Trust sourceTrust : getGivenTrusts(source)) {
+			Identity trustee = sourceTrust.getTrustee();
+			int rank = sourceTrust.getValue() > 0 ? sourceRank + 1 : Integer.MAX_VALUE;
+			queue.add(new Vertex(trustee, rank));
+			
+			// If the source OwnIdentity has assigned a rank to an Identity, that decision
+			// is mandatory - other identities may not overwrite it.
+			// Thus, in this case we must prevent the Identity from being able to receive
+			// a rank from others by marking it as seen already.
+			seen.add(trustee.getID());
+		}
+		
+		while(!queue.isEmpty()) {
+			Vertex vertex = queue.poll();
+			
+			if(vertex.identity == target)
+				return vertex.rank;
+			
+			// Identity is not allowed to hand down a rank to trustees, no need to look at them
+			if(vertex.rank == Integer.MAX_VALUE)
+				continue;
+			
+			seen.add(vertex.identity.getID());
+			
+			for(Trust trust : getGivenTrusts(vertex.identity)) {
+				Identity neighbourVertex = trust.getTrustee();
+				
+				if(seen.contains(neighbourVertex.getID()))
+					continue; // Prevent infinite loop
+				
+				// FIXME: Performance: The UCS algorithm actually does decreaseKey() here instead of
+				// add(), but Java PriorityQueue does not support decreaseKey().
+				// remove() is also not an option since it is O(N).
+				// The existing code will work since the entry with the too high priority will be
+				// processed after the one with the lower priority since being sorted is the main
+				// feature of a PQ. But it increases memory usage and runtime to have useless
+				// entries in the PQ.
+				
+				if(trust.getValue() > 0) {
+					queue.add(new Vertex(neighbourVertex, vertex.rank + 1));
+				} else {
+					queue.add(new Vertex(neighbourVertex, Integer.MAX_VALUE));
+				}
+			}
+		}
+		
+		return -1;
+	}
+
+	/**
+	 * Same as {@link #computeRankFromScratch_Forward(OwnIdentity, Identity)} except for the fact
+	 * that the UCS algorithm is walking backwards from target to source.
+	 * For understanding purposes, it is suggested that you read the aforementioned function first.
+	 * 
+	 * This fixes the worst case of the other implementation where the target is distrusted, i.e.
+	 * where there is no Trust path from source to target. In that case, the other implementation
+	 * would walk almost the whole WOT database if we assume that most Trusts in the database are
+	 * positive.
+	 * This inverse algorithm can be expected to be a lot faster in the case where there is no
+	 * Trust path from source to target:
+	 * WOT does not download identities which are distrusted. Thus, if we assume that evil,
+	 * distrusted identities are only trusted by other evil distrusted identities, their social
+	 * network will likely not be downloaded and therefore the trusts they have received will be
+	 * very few. So the "dark", "evil" part of the Trust graph is likely small compared to the
+	 * "good" part.
+	 * Since this algorithm starts at the target identity, and only walks positive Trust edges,
+	 * and not negative ones, if the target is distrusted it will only have to walk the "dark" part
+	 * of the Trust graph as only the other "dark" identities trust it.
+	 * As the dark part is a lot smaller, it has to search a lot less. */
+	int computeRankFromScratch(final OwnIdentity source, final Identity target) {
+		final class Vertex implements Comparable<Vertex>{
+			final Identity identity;
+			final Integer rank;
+			
+			public Vertex(Identity identity, int rank) {
+				this.identity = identity;
+				this.rank = rank;
+			}
+
+			@Override public int compareTo(Vertex o) {
+				return rank.compareTo(o.rank);
+			}
+		}
+		
+		// TODO: Performance: It is likely that the priority part of the queue is used very
+		// scarcely: All edges we ever add have either weight of 1 or Integer.MAX_VALUE. Further,
+		// there are very few with Integer.MAX_VALUE - only the received trusts of the target may
+		// use MAX_VALUE.
+		// If there only was weight 1, the natural order in which edges are added would be sorted
+		// by priority already (this is how breadth-first search works).
+		// So we almost don't need the sorting by priority. Maybe a more simple datastructure can be
+		// used to amend a non-sorting queue to be able to handle the few cases of MAX_VALUE which
+		// need sorting?
+		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
+		// Use IdentityHashSet because Identity.equals() compares more than needed.
+		IdentityHashSet<Identity> seen = new IdentityHashSet<Identity>();
+		
+		final int sourceRank;
+		try {
+			sourceRank = getScore(source, source).getRank();
+			if(source == target)
+				return sourceRank;
+		} catch (NotInTrustTreeException e) {
+			Logger.warning(this, "initTrustTreeWithoutCommit() not called for: " + source);
+			// Some unit tests require the special case of initTrustTreeWithoutCommit() not having
+			// been called for an OwnIdentity yet to yield a proper result of "no rank".
+			return -1;
+		}
+		
+		seen.add(target);
+		for(Trust targetTrust : getReceivedTrusts(target)) {
+			Identity truster = targetTrust.getTruster();
+			int rank = targetTrust.getValue() > 0 ? 1 : Integer.MAX_VALUE;
+			
+			if(truster == source) {
+				// If a direct Trust exists from the OwnIdentity source to the target, then it
+				// must always overwrite any other rank paths. This is a demand of the specification
+				// of the WOT algorithm, see computeAllScoresWithoutCommit().
+				return rank != Integer.MAX_VALUE ? rank + sourceRank : Integer.MAX_VALUE;
+			}
+			
+			queue.add(new Vertex(truster, rank));
+		}
+		
+		// If a vertex has received a Trust from the source, all other Trusts it has received can
+		// be ignored. Thus, we cache the source Trusts: This allows us to first check for a
+		// source Trust before we query all Trusts of a vertex. This should be faster since db4o
+		// queries are expensive.
+		// TODO: Performance: Use an array-backed map since this will be small.
+		// Key = Identity which received the Trust
+		IdentityHashMap<Identity, Trust> sourceTrusts = new IdentityHashMap<Identity, Trust>();
+		for(Trust sourceTrust : getGivenTrusts(source)) {
+			// TODO: Performance: Add & use Trust.getTrusteeID(), can be computed from Trust ID
+			sourceTrusts.put(sourceTrust.getTrustee(), sourceTrust);
+		}
+		
+		while(!queue.isEmpty()) {
+			Vertex vertex = queue.poll();
+			
+			if(vertex.identity == source)
+				return vertex.rank != Integer.MAX_VALUE ? vertex.rank + sourceRank : Integer.MAX_VALUE;
+			
+			if(!seen.add(vertex.identity))
+				continue; // Necessary because we do not use decreaseKey(), see below
+			
+			Trust trustFromSource = sourceTrusts.get(vertex.identity);
+			if(trustFromSource != null) {
+				// The decision of an OwnIdentity overwrites all other Trust values an identity has
+				// received. Thus, the rank is forced by it as well, and we must not walk other
+				// edges.
+
+				if(trustFromSource.getValue() > 0) {
+					queue.add(new Vertex(source,
+						vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
+				} else {
+					// An identity with a rank of MAX_VALUE may not give its rank to its trustees.
+					// So the only case where the rank of an identity can be MAX_VALUE is when it is
+					// the last in the chain of Trust steps.
+					// By adding the received Trusts of the search target to the queue before
+					// starting processing the queue, we already processed the last links of the
+					// chain. Here we can only be at last + 1, last + 2, etc.
+					// So at this point, a rank of MAX_VALUE cannot be given because it would be in
+					// the middle of the chain, not at the end.
+
+					/* queue.add(new Vertex(source, Integer.MAX_VALUE)); */
+				}
+
+				continue;
+			}
+
+			
+			for(Trust trust : getReceivedTrusts(vertex.identity)) {
+				Identity neighbourVertex = trust.getTruster();
+				
+				if(seen.contains(neighbourVertex))
+					continue; // Prevent infinite loop
+				
+				// FIXME: Performance: The UCS algorithm actually does decreaseKey() here instead of
+				// add(), but Java PriorityQueue does not support decreaseKey().
+				// remove() is also not an option since it is O(N).
+				// The existing code will work since the entry with the too high priority will be
+				// processed after the one with the lower priority since being sorted is the main
+				// feature of a PQ. But it increases memory usage and runtime to have useless
+				// entries in the PQ.
+				
+				if(trust.getValue() > 0) {
+					queue.add(new Vertex(neighbourVertex,
+						vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
+				} else {
+					// Same as above
+					/* queue.add(new Vertex(neighbourVertex, Integer.MAX_VALUE)); */
+				}
+			}
+		}
+		
+		return -1;
+	}
 	/**
 	 * Computes the trustees's rank in the trust tree of the truster.
 	 * It gets its best ranked non-zero-capacity truster's rank, plus one.
@@ -2846,6 +3254,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * Synchronization:
 	 * You have to synchronize on this WebOfTrust object when using this function.
+	 * 
+	 * TODO: Code quality: Move the documentation to {@link #computeRankFromScratch(OwnIdentity,
+	 * Identity)} and document that this function here only works if the database content is up to
+	 * date in certain areas.
 	 * 
 	 * @param truster The OwnIdentity that owns the trust tree
 	 * @return The new Rank if this Identity
@@ -3055,10 +3467,35 @@ public final class WebOfTrust extends WebOfTrustInterface
 	private void updateScoresWithoutCommit(final Trust oldTrust, final Trust newTrust) {
 		if(logMINOR) Logger.minor(this, "Doing an incremental computation of all Scores...");
 		
-		final long beginTime = CurrentTimeUTC.getInMillis();
-		// We only include the time measurement if we actually do something.
-		// If we figure out that a full score recomputation is needed just by looking at the initial parameters, the measurement won't be included.
-		boolean includeMeasurement = false;
+		if(mFullScoreComputationNeeded) {
+			// updateScoresAfterDistrustWithoutCommit() which we call below will only work if
+			// called for each individual distrust, it is not a batch operation.
+			// Thus, if a full score computation is scheduled, which indicates that multiple Trusts
+			// have been modified, we must not proceed.
+			// Normally, we should throw a RuntimeException, as all Score computation should be
+			// incremental for performance reasons, but createOwnIdentity() currently needs this
+			// codepath, so we just return.
+			// TODO: Performance: Check whether all other uses of the codepath are valid using
+			// this assert:
+			/*
+			assert(!mFullScoreComputationNeeded)
+				: "updateScoresAfterDistrustWithoutCommit() which we call below will only work if "
+				+ "called for each individual distrust, it is not a batch operation!";
+			*/
+			
+			if(logMINOR)
+				Logger.minor(this, "Full score computation scheduled, not doing incremental one!");
+			
+			if(!mTrustListImportInProgress) {
+				// If not trust list import is in progress, finishTrustListImport() will not be
+				// called, so we must do the full computation ourselves.
+				computeAllScoresWithoutCommit();
+				assert(computeAllScoresWithoutCommit()); // computeAllScoresWithoutCommit is stable
+			}
+			return;
+		}
+
+		StopWatch time = new StopWatch();
 		
 		final boolean trustWasCreated = (oldTrust == null);
 		final boolean trustWasDeleted = (newTrust == null);
@@ -3086,8 +3523,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 
 		if(!mFullScoreComputationNeeded && (trustWasCreated || trustWasModified)) {
-			includeMeasurement = true; 
-			
 			for(OwnIdentity treeOwner : getAllOwnIdentities()) {
 				try {
 					// Throws to abort the update of the trustee's score: If the truster has no rank or capacity in the tree owner's view then we don't need to update the trustee's score.
@@ -3097,6 +3532,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					continue;
 				}
 				
+				// FIXME: Performance: Why is this inside the loop, it doesn't depend on anything
+				// which changes during the loop?
 				// See explanation above "We cannot iteratively REMOVE an inherited rank..."
 				if(trustWasModified && oldTrust.getValue() > 0 && newTrust.getValue() <= 0) {
 					mFullScoreComputationNeeded = true;
@@ -3221,22 +3658,44 @@ public final class WebOfTrust extends WebOfTrustInterface
 				if(mFullScoreComputationNeeded)
 					break;
 			}
-		}	
+		}
+
+		if(!mFullScoreComputationNeeded) {
+			++mIncrementalScoreRecomputationDueToTrustCount;
+			mIncrementalScoreRecomputationDueToTrustNanos += time.getNanos();
+		} else {
+			// TODO: Code quality: Do not reset time so we include the time which was necessary
+			// to determine whether mFullScoreComputationNeeded = true / false.
+			// The resetting was added since updateScoresAfterDistrustWithoutCommit() is new and
+			// I wanted a precise measurement of how fast it is alone.
+			time = new StopWatch();
 		
-		if(includeMeasurement) {
-			++mIncrementalScoreRecomputationCount;
-			mIncrementalScoreRecomputationMilliseconds += CurrentTimeUTC.getInMillis() - beginTime;
+			Identity distrusted;
+			
+			if(newTrust != null) {
+				distrusted = newTrust.getTrustee();
+			} else {
+				try {
+					// Must re-query the identity since oldTrust is a clone()
+					distrusted = getIdentityByID(oldTrust.getTrustee().getID());
+				} catch(UnknownIdentityException e) {
+					throw new RuntimeException(e);
+				}
+			}
+			
+			updateScoresAfterDistrustWithoutCommit(distrusted);
+			
+			mFullScoreComputationNeeded = false;
+	
+			++mIncrementalScoreRecomputationDueToDistrustCount;
+			mIncrementalScoreRecomputationDueToDistrustNanos += time.getNanos();
 		}
 		
 		if(logMINOR) {
-			final String time = includeMeasurement ?
-							("Stats: Amount: " + mIncrementalScoreRecomputationCount + "; Avg Time:" + getAverageIncrementalScoreRecomputationTime() + "s")
-							: ("Time not measured: Computation was aborted before doing anything.");
-			
 			if(!mFullScoreComputationNeeded)
-				Logger.minor(this, "Incremental computation of all Scores finished. " + time);
+				Logger.minor(this, "Incremental computation of all Scores finished.");
 			else
-				Logger.minor(this, "Incremental computation of all Scores not possible, full computation is needed. " + time);
+				Logger.minor(this, "Incremental computation of all Scores not possible, full computation is needed.");
 		}
 		
 		if(!mTrustListImportInProgress) {
@@ -3256,7 +3715,355 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 	}
 
-	
+	/**
+	 * FIXME: Check whether all the HashMap/HashSet used by this and the callees to avoid double 
+	 * computations of stuff actually yield hits. It is possible that I wrongly assumed that double
+	 * computations are possible in some of the cases where a map is used. */
+	private void updateScoresAfterDistrustWithoutCommit(Identity distrusted) {
+		// FIXME: Profile memory usage of this. It might get too large to fit into memory.
+		// If it does, then instead store this in the database by having an "outdated?" flag on
+		// Score objects.
+		HashMap<String, ChangeSet<Score>> scoresWithUpdatedRank
+			= updateRanksAfterDistrustWithoutCommit(distrusted); // Key = Score.getID()
+		
+		HashMap<String, ChangeSet<Score>> scoresWhichNeedEventNotification = scoresWithUpdatedRank;
+		
+		HashMap<String, ChangeSet<Score>> scoresWithUpdatedCapacity
+			= updateCapacitiesAfterDistrustWithoutCommit(scoresWithUpdatedRank.values());
+		
+		scoresWithUpdatedRank = null;
+		
+		// No need to add scoresWithUpdatedCapacity to scoresWhichNeedEventNotification: They are
+		// a subset of scoresWithUpdatedRank, which is already in scoresWhichNeedEventNotification.
+		
+		StopWatch time1 = logMINOR ? new StopWatch() : null;
+		
+		// TODO: Code quality: Move whole value processing code below to function
+		
+		HashSet<String> scoresWithUpdatedValue = new HashSet<String>(); // Key = Score.getID()
+		
+		// Now we update Score values.
+		// A Score value in a trust tree of an OwnIdentity is the sum of all Trust values an
+		// identity has received, multiplied by the capacity each trust giver has received in the
+		// Score of the OwnIdentity.
+		// So we must update Scores for which the product "Trust * capacity(Trust giver)" changed:
+		// 1) Scores for which an included Trust value has changed = Scores which the distrusted
+		//    identity has received. This is because this function is to be called when a single
+		//    trust value has changed, and the distrusted identity is the receiver of that value.
+		//    This is what the following loop does.
+		// 2) Scores in which a Trust value is included for which the capacity of the giver of
+		//    the Trust value has changed.
+		//    This is what the loop after the following loop does.
+		
+		int scoresAffectedByTrustChange = 0;
+		// Normally, we might have to check whether a new Score has to be created due to the changed
+		// trust value - but updateRanksAfterDistrustWithoutCommit() did this already.
+		for(Score score : getScores(distrusted)) {
+			Score oldScore = score.clone();
+			score.setValue(computeScoreValue(score.getTruster(), distrusted));
+			score.storeWithoutCommit();
+			
+			String id = score.getID();
+			
+			scoresWithUpdatedValue.add(id);
+			
+			if(!score.equals(oldScore)) {
+				if(!scoresWhichNeedEventNotification.containsKey(id))
+					scoresWhichNeedEventNotification.put(id, new ChangeSet<Score>(oldScore, score));
+			}
+
+			++scoresAffectedByTrustChange;
+		}
+		
+		if(logMINOR) {
+			Logger.minor(this,
+				"Time for updating " + scoresAffectedByTrustChange + " score values due to changed "
+			  + "trust included in them: " + time1);
+		}
+		
+		StopWatch time2 = logMINOR ? new StopWatch() : null;
+		int scoresAffectedByCapacityChange = 0;
+		
+		// The capacity of an Identity's Score is the weight which the Trust values given by
+		// the Identity have when computing Scores of other Identitys.
+		// Thus, if the capacity of a Score X changed, we need to update the other Scores in which
+		// a Trust value which is weighted by X's capacity is involved.
+		for(ChangeSet<Score> changeSet : scoresWithUpdatedCapacity.values()) {
+			if(changeSet.afterChange == null && changeSet.beforeChange.getCapacity() == 0) {
+				// The Identity's capacity was deleted *and* the identity had a capacity of 0
+				// before. With capacity of 0, it couldn't have influenced any other Identity's
+				// Score values before and with no capacity now, it also cannot.
+				// Thus, nothing has changed and we can skip it.
+				continue;
+			}
+			
+			Score scoreWithUpdatedCapacity
+				= changeSet.afterChange != null ? changeSet.afterChange : changeSet.beforeChange;
+			OwnIdentity treeOwner = scoreWithUpdatedCapacity.getTruster();
+			Identity trustGiver = scoreWithUpdatedCapacity.getTrustee();
+			
+			for(Trust givenTrust : getGivenTrusts(trustGiver)) {
+				Identity trustReceiver = givenTrust.getTrustee();
+				ScoreID scoreID = new ScoreID(treeOwner, trustReceiver);
+				
+				if(!scoresWithUpdatedValue.add(scoreID.toString()))
+					continue;
+				
+				Score score;
+				try {
+					// TODO: Performance: Use getScore() which consumes ScoreID
+					score = getScore(treeOwner, trustReceiver);
+				} catch(NotInTrustTreeException e) {
+					// No need to create it: updateRanksAfterDistrustWithoutCommit() has already
+					// created all scores which could be created.
+					continue;
+				}
+				
+				Score oldScore = score.clone();
+				score.setValue(computeScoreValue(treeOwner, trustReceiver));
+				score.storeWithoutCommit();
+				++scoresAffectedByCapacityChange;
+				 
+				if(!score.equals(oldScore)) {
+					String id = score.getID();
+					if(!scoresWhichNeedEventNotification.containsKey(id)) {
+						scoresWhichNeedEventNotification.put(id,
+							new ChangeSet<Score>(oldScore, score));
+					}
+				}
+			}
+		}
+
+		scoresWithUpdatedCapacity = null;
+		scoresWithUpdatedValue = null;
+
+		if(logMINOR) {
+			Logger.minor(this,
+				"Time for updating " + scoresAffectedByCapacityChange + " score values due to "
+			  + "changed capacity: " + time2);
+		}
+
+		// Update SubscriptionManager and IdentityFetcher.
+		// (Instead of having already created events while updating rank, capacity and value, we now
+		// create the events after all three components have been updated to ensure that we only
+		// create one event for each modified Score instead of three.)
+		for(ChangeSet<Score> changeSet : scoresWhichNeedEventNotification.values()) {
+			Score oldScore = changeSet.beforeChange;
+			Score newScore = changeSet.afterChange;
+			
+			// Update SubscriptionManager
+			
+			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, newScore);
+			
+			// Update IdentityFetcher
+			
+			boolean shouldFetchIdentity_maybeChanged = false;
+			
+			if(oldScore == null ^ newScore == null) {
+				// Score was created or deleted
+				shouldFetchIdentity_maybeChanged = true;
+			} else if(shouldMaybeFetchIdentity(oldScore) != shouldMaybeFetchIdentity(newScore)) {
+				shouldFetchIdentity_maybeChanged = true;
+			}
+			
+			// TODO: Performance: I am not sure whether a score having been created can cause any
+			// change to shouldFetchIdentity() in this function: I feel like the Score can only be
+			// a distrusting one and thus not cause an Identity to suddenly be wanted.
+			// Thus, if the Score was created, you might avoid executing this branch.
+			if(shouldFetchIdentity_maybeChanged) {
+				Identity target = newScore != null ? newScore.getTrustee() : oldScore.getTrustee();
+				
+				// TODO: Performance: Use a IdentityHashMap<Identity> to only do this once for
+				// every Identity, i.e. not repeat it for every OwnIdentity's Score tree.
+				// As long as we don't, the IdentityFetcher will deduplicate the commands itself,
+				// but database queries are expensive.
+				// On the other hand, keeping all Identitys in memory might cause OOM, and the
+				// amount of hits this would cause is likely small: As long as WOT doesn't have
+				// a public gateway mode, the amount of OwnIdentitys can be assumed to be very small
+				// as only one real user is using WOT.
+				
+				if(shouldFetchIdentity(target)) {
+					// If the capacity changed from 0 to > 0, we have to call markForRefetch(), see
+					// WoTTest.testRefetchDueToCapacityChange().
+					// Currently, we also call it for any changy of shouldFetchIdentity() even if
+					// there was no Score and thus no capacity before - the old Score computation
+					// implementation did this, and I have no time checking whether it is needed.
+					// TODO: Performance: Figure out if this is necessary.
+					Identity oldTarget = target.clone();
+					target.markForRefetch();
+					target.storeWithoutCommit();
+					
+					if(!target.equals(oldTarget)) { // markForRefetch() does nothing on OwnIdentity
+						mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(
+							oldTarget, target);
+					}
+					
+					mFetcher.storeStartFetchCommandWithoutCommit(target);
+				} else
+					mFetcher.storeAbortFetchCommandWithoutCommit(target);
+			}
+		}
+	}
+
+	private HashMap<String, ChangeSet<Score>>
+			updateRanksAfterDistrustWithoutCommit(Identity distrusted) {
+		
+		StopWatch time = logMINOR ? new StopWatch() : null;
+		
+		LinkedList<Score> scoreQueue = new LinkedList<Score>();
+		HashSet<String> scoresQueued = new HashSet<String>(); // Key = Score.getID()
+		// TODO: Performance: This HashSet could be avoided by changing the code which uses it
+		// to flag Score objects as just created by for example setting their rank to -1.
+		// However, I am uncertain whether it is possible that Score objects with a rank of -1 are
+		// created by other code as class Score does allow it explicitely, so it might be used
+		// for other things already.
+		HashSet<String> scoresCreated = new HashSet<String>(); // Key = Score.getID()
+		// FIXME: Profile memory usage of this. It might get too large to fit into memory.
+		// If it does, then instead store this in the database by having an "outdated?" flag on
+		// Score objects.
+		HashMap<String, ChangeSet<Score>> scoresWithOutdatedRank
+			= new HashMap<String, ChangeSet<Score>>(); // Key = Score.getID()
+
+		// Add all Scores of the distrusted identity to the queue.
+		// We do this by iterating over all treeOwners instead via getScores():
+		// There might *not* have been an existing Score object in every trust tree for the
+		// distrusted identity if it had not received a trust value yet; and by the distrust it
+		// could now be eligible for having one exist.
+		// Thus, we must check whether we need to create a new Score object.
+		// (We do not have to do this for trustees of the distrusted identity: A distrusted
+		// identity must not be allowed to introduce other identities to prevent sybil, so
+		// it cannot give them a Score)
+		// FIXME: Test whether the above is actually true. Do so by attaching a special
+		// marker to the created score values and checking whether they continue to survice 
+		// the loop below which deletes scores.
+		// FIXME: Do something smarter: Maybe we could first look at the changed trust value
+		// to decide whether it could cause a Score object to be created before we do the
+		// expensive database query which follows...
+		for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+			Score outdated;
+			try {
+				outdated = getScore(treeOwner, distrusted);
+			} catch(NotInTrustTreeException e) {
+				// Use initial rank value of 0 because:
+				// - it is invalid and thus the below "if(score.getRank() == newRank)" will not be
+				//   confused
+				// - cannot use -1 because the below computeRankFromScratch() will return that.
+				outdated = new Score(this, treeOwner, distrusted, 0, 0, 0);
+				outdated.storeWithoutCommit();
+				scoresCreated.add(outdated.getID());
+			}
+			
+			scoreQueue.add(outdated);
+			scoresQueued.add(outdated.getID());
+		}
+
+		Score score;
+		while((score = scoreQueue.poll()) != null) {
+			int newRank = computeRankFromScratch(score.getTruster(), score.getTrustee());
+			if(score.getRank() == newRank) {
+				assert(!scoresCreated.contains(score.getID()))
+					: "created scores should be initialized with an invalid rank";
+				continue;
+			}
+
+			if(newRank == -1) {
+				score.deleteWithoutCommit();
+				// If we created the Score ourself, don't tell the caller about the deleted rank:
+				// There was no rank before, we had only created the Score to cause an attempt
+				// of finding a possibly newly existing rank.
+				if(!scoresCreated.contains(score.getID())) {
+					ChangeSet<Score> diff = new ChangeSet<Score>(score, null);
+					
+					boolean wasAlreadyProcessed
+						= scoresWithOutdatedRank.put(score.getID(), diff) != null;
+					assert(!wasAlreadyProcessed)
+						: "Each Score is only queued once so each should only be visited once";
+				}
+			} else {
+				Score oldScore = scoresCreated.contains(score.getID()) ? null : score.clone();
+				score.setRank(newRank);
+				score.storeWithoutCommit();
+				ChangeSet<Score> diff = new ChangeSet<Score>(oldScore, score);
+				
+				boolean wasAlreadyProcessed
+					= scoresWithOutdatedRank.put(score.getID(), diff) != null;
+				assert(!wasAlreadyProcessed)
+					: "Each Score is only queued once so each should only be visited once";
+			}
+			
+			final OwnIdentity treeOwner = score.getTruster();
+			
+			for(Trust edge : getGivenTrusts(score.getTrustee())) {
+				Identity neighbour = edge.getTrustee();
+				
+				if(scoresQueued.contains(new ScoreID(treeOwner, neighbour).toString()))
+					continue;
+				
+				Score touchedScore;
+				try  {
+					touchedScore = getScore(treeOwner, neighbour);
+				} catch(NotInTrustTreeException e) {
+					// No need to create a Score: This function is only called upon distrust.
+					// Distrust can only induce Score creation for the distrusted identity, not
+					// for its trustees. We already dealt with creating scores for the distrusted
+					// identity in all score trees.
+					continue;
+				}
+				
+				scoreQueue.add(touchedScore);
+				scoresQueued.add(touchedScore.getID());
+			}
+		}
+		
+		if(logMINOR) {
+			Logger.minor(this,
+				"Time for processing " + scoresQueued.size() + " scores to mark "
+			  + scoresWithOutdatedRank.size() + " ranks as outdated: " + time);
+		}
+		
+		return scoresWithOutdatedRank;
+	}
+
+	private HashMap<String, ChangeSet<Score>> updateCapacitiesAfterDistrustWithoutCommit(
+			Collection<ChangeSet<Score>> scoresWithOutdatedRank) {
+		
+		StopWatch time = logMINOR ? new StopWatch() : null;
+		
+		// FIXME: Profile memory usage of this. It might get too large to fit into memory.
+		// If it does, then instead store this in the database by having an "outdated?" flag on
+		// Score objects.
+		HashMap<String, ChangeSet<Score>> scoresWithOutdatedCapacity
+			= new HashMap<String, ChangeSet<Score>>(); // Key = Score.getID()
+		
+		for(ChangeSet<Score> changeSet : scoresWithOutdatedRank) {
+			Score score = changeSet.afterChange;
+			if(score == null) {
+				assert(changeSet.beforeChange != null);
+				scoresWithOutdatedCapacity.put(changeSet.beforeChange.getID(), changeSet);
+				continue;
+			}
+			
+			int newCapacity
+				= computeCapacity(score.getTruster(), score.getTrustee(), score.getRank());
+			
+			if(score.getCapacity() == newCapacity)
+				continue;
+			
+			score.setCapacity(newCapacity);
+			score.storeWithoutCommit();
+			
+			scoresWithOutdatedCapacity.put(score.getID(), changeSet);
+		}
+		
+		if(logMINOR) {
+			Logger.minor(this,
+				"Time for processing " + scoresWithOutdatedRank.size() + " scores to mark "
+		      + scoresWithOutdatedCapacity.size() + " capacities as outdated: " + time);
+		}
+		
+		return scoresWithOutdatedCapacity;
+	}
+
 	/* Client interface functions */
 	
 	/**
@@ -3335,12 +4142,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 			try {
 				identity.storeWithoutCommit();
+				mFetcher.storeStartFetchCommandWithoutCommit(identity);
 				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
 				initTrustTreeWithoutCommit(identity);
 
 				beginTrustListImport();
 
 				// Incremental score computation has proven to be very very slow when creating identities so we just schedule a full computation.
+				// TODO: Performance: Only recompute the Score tree of the created identity.
 				mFullScoreComputationNeeded = true;
 
 				for(String seedURI : WebOfTrustInterface.SEED_IDENTITIES) {
@@ -3475,6 +4284,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// Non-own identities do not assign scores to other identities so we can just delete them.
 				for(Score oldScore : getGivenScores(oldIdentity)) {
 					final Identity trustee = oldScore.getTrustee();
+					// TODO: Performance: It might be possible to accelerate this using
+					// shouldMaybeFetchIdentity() to first check whether shouldFetchIdentity() could
+					// change. shouldMaybeFetchIdentity() does less database queries.
 					final boolean oldShouldFetchTrustee = shouldFetchIdentity(trustee);
 					
 					oldScore.deleteWithoutCommit();
@@ -3523,7 +4335,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 				oldIdentity.deleteWithoutCommit();
 
-				mFetcher.storeStartFetchCommandWithoutCommit(newIdentity);
+				if(shouldFetchIdentity(newIdentity))
+					mFetcher.storeStartFetchCommandWithoutCommit(newIdentity);
 				
 				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, newIdentity);
 
@@ -3651,20 +4464,22 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// They will be created automatically when updating the given trusts
 					// - so thats what we will do now.
 					
-					// Update all given trusts
-					for(Trust givenTrust : getGivenTrusts(oldIdentity)) {
-						// TODO: Instead of using the regular removeTrustWithoutCommit on all trust values, we could:
-						// - manually delete the old Trust objects from the database
-						// - manually store the new trust objects
-						// - Realize that only the trust graph of the restored identity needs to be updated and write an optimized version
-						// of setTrustWithoutCommit which deals with that.
-						// But before we do that, we should first do the existing possible optimization of removeTrustWithoutCommit:
-						// To get rid of removeTrustWithoutCommit always triggering a FULL score recomputation and instead make
-						// it only update the parts of the trust graph which are affected.
-						// Maybe the optimized version is fast enough that we don't have to do the optimization which this TODO suggests.
-						removeTrustWithoutCommit(givenTrust);
-						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
-					}
+					// Copy all given trusts at first instead of using removeTrustWithoutCommit()
+					// and immediately afterwards setTrustWithoutCommit() because those functions
+					// would be confused by both the OwnIdentity and non-own Identity object being
+					// in the database at the same time.
+					// Thus we will first delete the non-own Identity and then re-set the trusts.
+					final ObjectSet<Trust> oldGivenTrusts = getGivenTrusts(oldIdentity);
+					
+					// TODO: No need to copy after this is fixed:
+					// https://bugs.freenetproject.org/view.php?id=6596
+					final ArrayList<Trust> oldGivenTrustsCopy
+						= new ArrayList<Trust>(oldGivenTrusts);
+					
+					for(Trust oldGivenTrust : oldGivenTrusts)
+						oldGivenTrust.deleteWithoutCommit();
+					
+					assert(getGivenTrusts(oldIdentity).size() == 0);
 					
 					// We do not call finishTrustListImport() now: It might trigger execution of computeAllScoresWithoutCommit
 					// which would re-create scores of the old identity. We later call it AFTER deleting the old identity.
@@ -3680,6 +4495,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 					
 					oldIdentity.deleteWithoutCommit();
 					
+					// Update all given trusts. This will also cause given scores to be computed,
+					// which is why we had not set them yet.
+					// FIXME: Performance: This could maybe be optimized by setting
+					// mFullScoreComputationNeeded to true. Do benchmarks.
+					for(Trust givenTrust : oldGivenTrustsCopy)
+						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
+					
+					mFetcher.storeStartFetchCommandWithoutCommit(identity);
+					
 					finishTrustListImport();
 				} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
 					identity = new OwnIdentity(this, insertFreenetURI, null, false);
@@ -3693,9 +4517,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
 					
 					initTrustTreeWithoutCommit(identity);
+					mFetcher.storeStartFetchCommandWithoutCommit(identity);
 				}
-				
-				mFetcher.storeStartFetchCommandWithoutCommit(identity);
 
 				// This function messes with the trust graph manually so it is a good idea to check whether it is intact afterwards.
 				assert(computeAllScoresWithoutCommit());
@@ -3749,6 +4572,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		setTrust(truster, trustee, value, comment);
 	}
 	
+	/** FIXME: Should this throw {@link NotTrustedException} instead of swallowing it? */
 	public synchronized void removeTrust(String ownTrusterID, String trusteeID) throws UnknownIdentityException {
 		final OwnIdentity truster = getOwnIdentityByID(ownTrusterID);
 		final Identity trustee = getIdentityByID(trusteeID);
@@ -3767,7 +4591,30 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 		}
 	}
-	
+
+	/**
+	 * Same as {@link #removeTrust(String, String)} except that it additionally allows removing
+	 * trust values set by a non-own {@link Identity} where the other function only allows removing
+	 * trusts of {@link OwnIdentity}.
+	 * ATTENTION: For debug purposes only! */
+	public synchronized void removeTrustIncludingNonOwn(String trusterID, String trusteeID)
+			throws UnknownIdentityException, NotTrustedException {
+
+		synchronized(mFetcher) {
+		synchronized(mSubscriptionManager) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try  {
+				removeTrustWithoutCommit(getTrust(trusterID, trusteeID));
+				Persistent.checkedCommit(mDB, this);
+			}
+			catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		}
+		}
+	}
+
 	/**
 	 * Enables or disables the publishing of the trust list of an {@link OwnIdentity}.
 	 * The trust list contains all trust values which the OwnIdentity has assigned to other identities.
@@ -4087,19 +4934,36 @@ public final class WebOfTrust extends WebOfTrustInterface
     public int getNumberOfFullScoreRecomputations() {
     	return mFullScoreRecomputationCount;
     }
-    
-    public synchronized double getAverageFullScoreRecomputationTime() {
-    	return (double)mFullScoreRecomputationMilliseconds / ((mFullScoreRecomputationCount!= 0 ? mFullScoreRecomputationCount : 1) * 1000); 
-    }
-    
-    public int getNumberOfIncrementalScoreRecomputations() {
-    	return mIncrementalScoreRecomputationCount;
-    }
-    
-    public synchronized double getAverageIncrementalScoreRecomputationTime() {
-    	return (double)mIncrementalScoreRecomputationMilliseconds / ((mIncrementalScoreRecomputationCount!= 0 ? mIncrementalScoreRecomputationCount : 1) * 1000); 
-    }
-	
+
+	public synchronized double getAverageFullScoreRecomputationTime() {
+		return (double) mFullScoreRecomputationMilliseconds
+			/ (1000d * (mFullScoreRecomputationCount != 0 ? mFullScoreRecomputationCount : 1));
+	}
+
+	public int getNumberOfIncrementalScoreRecomputationDueToTrust() {
+		return mIncrementalScoreRecomputationDueToTrustCount;
+	}
+
+	public int getNumberOfIncrementalScoreRecomputationDueToDistrust() {
+		return mIncrementalScoreRecomputationDueToDistrustCount;
+	}
+
+	public synchronized double getAverageTimeForIncrementalScoreRecomputationDueToTrust() {
+		return (double)mIncrementalScoreRecomputationDueToTrustNanos / 
+			(1000d * 1000d * 1000d *
+				(mIncrementalScoreRecomputationDueToTrustCount != 0
+			  ?  mIncrementalScoreRecomputationDueToTrustCount : 1)
+			);
+	}
+
+	public synchronized double getAverageTimeForIncrementalScoreRecomputationDueToDistrust() {
+		return (double)mIncrementalScoreRecomputationDueToDistrustNanos / 
+			(1000d * 1000d * 1000d *
+				(mIncrementalScoreRecomputationDueToDistrustCount != 0
+			  ?  mIncrementalScoreRecomputationDueToDistrustCount : 1)
+			);
+	}
+
     /**
      * Tests whether two WoT are equal.
      * This is a complex operation in terms of execution time and memory usage and only intended for being used in unit tests.
