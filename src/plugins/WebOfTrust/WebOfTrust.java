@@ -289,10 +289,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 			/* mIdentityFileQueue.start(); */    // Not necessary, has no thread.
 			mFetcher.start();
 
-			// verifyAndCorrectStoredScores() must be called after the IdentityFetcher was started
-			// because it will verify its state.
-			// TODO: Only do this once every few startups once we are certain that score computation does not have any serious bugs.
-			verifyAndCorrectStoredScores();
+			// maybeVerifyAndCorrectStoredScores() must be called after the IdentityFetcher was
+			// started because it will verify its state.
+			maybeVerifyAndCorrectStoredScores();
 						
 			// Database is up now, integrity is checked. We can start to actually do stuff
 			
@@ -1220,7 +1219,42 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		Logger.normal(this, "Cloning database finished.");
 	}
-	
+
+	/**
+	 * If a delay of {@value Configuration#DEFAULT_VERIFY_SCORES_INTERVAL} has expired since the
+	 * last execution, verifies that all stored {@link Score} objects are correct.<br><br>
+	 * 
+	 * Shall be called at startup: Score computation is fully incremental nowadays and thus wrong
+	 * results due to bugs will persist for a long time. This function fixes wrong Scores. */
+	private synchronized void maybeVerifyAndCorrectStoredScores() {
+		boolean doVerify = false;
+		
+		if(logDEBUG) {
+			Logger.debug(this, "maybeVerifyAndCorrectStoredScores(): Executing verification: "
+			                 + "DEBUG logging enabled");
+			doVerify = true;
+		} else {
+			Date lastVerification = mConfig.getLastVerificationOfScoresDate();
+			Date nextVerification = new Date(lastVerification.getTime()
+			                               + Configuration.DEFAULT_VERIFY_SCORES_INTERVAL);
+			
+			if(!nextVerification.after(CurrentTimeUTC.get())) {
+				Logger.normal(this, "maybeVerifyAndCorrectStoredScores(): Executing verification: "
+				                  + "Minimal delay expired");
+				doVerify = true;
+			}
+		}
+		
+		if(doVerify) {
+			verifyAndCorrectStoredScores();
+			mConfig.updateLastVerificationOfScoresDate();
+			mConfig.storeAndCommit();
+		} else {
+			Logger.normal(this, "maybeVerifyAndCorrectStoredScores(): Not executing verification: "
+			                  + "Minimal delay not expired, DEBUG logging disabled");
+		}
+	}
+
 	/**
 	 * Recomputes the {@link Score} of all identities and checks whether the score which is stored in the database is correct.
 	 * Incorrect scores are corrected & stored.
