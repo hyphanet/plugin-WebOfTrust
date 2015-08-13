@@ -103,7 +103,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/** Package-private method to allow unit tests to bypass some assert()s */
 	
 	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = 6;
+	public static final int DATABASE_FORMAT_VERSION = 7;
 	
 	
 
@@ -289,10 +289,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 			/* mIdentityFileQueue.start(); */    // Not necessary, has no thread.
 			mFetcher.start();
 
-			// verifyAndCorrectStoredScores() must be called after the IdentityFetcher was started
-			// because it will verify its state.
-			// TODO: Only do this once every few startups once we are certain that score computation does not have any serious bugs.
-			verifyAndCorrectStoredScores();
+			// maybeVerifyAndCorrectStoredScores() must be called after the IdentityFetcher was
+			// started because it will verify its state.
+			maybeVerifyAndCorrectStoredScores();
 						
 			// Database is up now, integrity is checked. We can start to actually do stuff
 			
@@ -534,10 +533,20 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// objects before defragmenting. So we just don't defragment if the database format version has changed.
 			final boolean canDefragment = peekDatabaseFormatVersion(this, database.ext()) == WebOfTrust.DATABASE_FORMAT_VERSION;
 
-			while(!database.close());
-			
 			if(!canDefragment) {
 				Logger.normal(this, "Not defragmenting, database format version changed!");
+				while(!database.close());
+				return;
+			}
+
+			// Check whether the minimal delay between defragmentations is expired
+			// TODO: Code quality: Only update last defrag date if defragmentation actually succeeds
+			boolean mayDefrag = tryUpdateLastDefragDate(this, database.ext());
+			
+			while(!database.close());
+
+			if(!mayDefrag) {
+				Logger.normal(this, "Not defragmenting, minimal delay not expired.");
 				return;
 			}
 			
@@ -662,7 +671,8 @@ public final class WebOfTrust extends WebOfTrustInterface
                         mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 4: upgradeDatabaseFormatVersion4(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
                     case 5: upgradeDatabaseFormatVersion12345(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
-					case 6: break;
+					case 6: upgradeDatabaseFormatVersion6(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 7: break;
 					default:
 						throw new UnsupportedOperationException("Your database is newer than this WOT version! Please upgrade WOT.");
 				}
@@ -909,6 +919,22 @@ public final class WebOfTrust extends WebOfTrustInterface
         }
         Logger.normal(this, "Finished converting FreenetURI to String.");
     }
+
+	/**
+	 * Upgrades database format version 6 to version 7.<br><br>
+	 *
+	 * Initializes values of:<br>
+	 * {@link Configuration#getLastDefragDate()}<br>
+	 * {@link Configuration#getLastVerificationOfScoresDate()} */
+	private void upgradeDatabaseFormatVersion6() {
+		Logger.normal(this, "Setting dates of last defrag / score verification to 'now'...");
+
+		// We default to pretend that defrag/verification were just run: Old versions of WoT ran
+		// them at *every* startup, so we can safely assume they were just run.
+		mConfig.updateLastDefragDate();
+		mConfig.updateLastVerificationOfScoresDate();
+		mConfig.storeWithoutCommit();
+	}
 
 	/**
 	 * DO NOT USE THIS FUNCTION ON A DATABASE WHICH YOU WANT TO CONTINUE TO USE!
@@ -1193,7 +1219,42 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		Logger.normal(this, "Cloning database finished.");
 	}
-	
+
+	/**
+	 * If a delay of {@value Configuration#DEFAULT_VERIFY_SCORES_INTERVAL} has expired since the
+	 * last execution, verifies that all stored {@link Score} objects are correct.<br><br>
+	 * 
+	 * Shall be called at startup: Score computation is fully incremental nowadays and thus wrong
+	 * results due to bugs will persist for a long time. This function fixes wrong Scores. */
+	private synchronized void maybeVerifyAndCorrectStoredScores() {
+		boolean doVerify = false;
+		
+		if(logDEBUG) {
+			Logger.debug(this, "maybeVerifyAndCorrectStoredScores(): Executing verification: "
+			                 + "DEBUG logging enabled");
+			doVerify = true;
+		} else {
+			Date lastVerification = mConfig.getLastVerificationOfScoresDate();
+			Date nextVerification = new Date(lastVerification.getTime()
+			                               + Configuration.DEFAULT_VERIFY_SCORES_INTERVAL);
+			
+			if(!nextVerification.after(CurrentTimeUTC.get())) {
+				Logger.normal(this, "maybeVerifyAndCorrectStoredScores(): Executing verification: "
+				                  + "Minimal delay expired");
+				doVerify = true;
+			}
+		}
+		
+		if(doVerify) {
+			verifyAndCorrectStoredScores();
+			mConfig.updateLastVerificationOfScoresDate();
+			mConfig.storeAndCommit();
+		} else {
+			Logger.normal(this, "maybeVerifyAndCorrectStoredScores(): Not executing verification: "
+			                  + "Minimal delay not expired, DEBUG logging disabled");
+		}
+	}
+
 	/**
 	 * Recomputes the {@link Score} of all identities and checks whether the score which is stored in the database is correct.
 	 * Incorrect scores are corrected & stored.
@@ -1401,7 +1462,46 @@ public final class WebOfTrust extends WebOfTrustInterface
 				return -1;
 		}
 	}
-	
+
+	/**
+	 * ATTENTION: This function is not synchronized, use it only in single threaded mode.
+	 * @return
+	 *     True if {@link Configuration#getLastDefragDate()} indicated that the caller may do
+	 *     database defragmentation now.
+	 *     Will also call {@link Configuration#updateLastDefragDate()} and store the modified
+	 *     configuration.
+	 */
+	@SuppressWarnings("deprecation")
+	private static boolean tryUpdateLastDefragDate(WebOfTrust wot, ExtObjectContainer database) {
+		final Query query = database.query();
+		query.constrain(Configuration.class);
+		@SuppressWarnings("unchecked")
+		ObjectSet<Configuration> result = (ObjectSet<Configuration>)query.execute();
+		
+		switch(result.size()) {
+			case 1: {
+				final Configuration config = (Configuration)result.next();
+				config.initializeTransient(wot, database);
+				// For the HashMaps to stay alive we need to activate to full depth.
+				config.checkedActivate(4);
+				
+				Date lastDefragDate = config.getLastDefragDate();
+				Date nextDefragDate
+					= new Date(lastDefragDate.getTime() + Configuration.DEFAULT_DEFRAG_INTERVAL);
+			
+				if(!nextDefragDate.after(CurrentTimeUTC.get())) {
+					config.updateLastDefragDate();
+					config.storeAndCommit();
+					return true;
+				} else
+					return false;
+			}
+			default:
+				Logger.error(wot, "tryUpdateLastDefragDate(): No Configuration found!");
+				return false;
+		}
+	}
+
 	/**
 	 * Loads an existing Config object from the database and adds any missing default values to it, creates and stores a new one if none exists.
 	 * @return The config object.
