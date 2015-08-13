@@ -273,7 +273,53 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		q.constrain(commandType);
 		return new Persistent.InitializingObjectSet<IdentityFetcher.IdentityFetcherCommand>(mWoT, q);
 	}
-	
+
+	/**
+	 * Returns the effective state of whether the fetcher will fetch an identity.
+	 * This considers both queued commands as well as already processed commands.
+	 * It will also check for contradictory commands (= both start and stop command at once).
+	 * 
+	 * For debugging purposes only.
+	 * 
+	 * You must synchronize upon this IdentityFetcher while calling this function. */
+	final boolean getShouldFetchState(final String identityID) {
+		boolean abortFetchScheduled = false;
+		try {
+			getCommand(AbortFetchCommand.class, identityID);
+			abortFetchScheduled = true;
+		} catch(NoSuchCommandException e) {}
+		
+		boolean startFetchScheduled = false;
+		try {
+			getCommand(StartFetchCommand.class, identityID);
+			startFetchScheduled = true;
+		} catch(NoSuchCommandException e) {}
+		
+		if(abortFetchScheduled && startFetchScheduled) {
+			assert(false);
+			throw new IllegalStateException("Contradictory commands stored");
+		}
+		
+		if(abortFetchScheduled) {
+			// This assert() would currently fail since storeAbortFetchCommandWithoutCommit()
+			// will currently store a command even if mRequests.containsKey(identityID) == false.
+			// See the TODO there.
+			
+			/* assert(mRequests.containsKey(identityID)) : "Command is useless"; */
+			return false;
+		}
+		
+		if(startFetchScheduled) {
+			// Similar to the above: Current implementation of storeStartFetchCommandWithoutCommit()
+			// would cause this to fail
+			
+			/* assert(!mRequests.containsKey(identityID)) : "Command is useless"; */
+			return true;
+		}
+		
+		return mRequests.containsKey(identityID);
+	}
+
 	/**
 	 * ATTENTION: Outside classes should only use this for debugging purposes such as {@link WebOfTrust#checkForDatabaseLeaks()}.
 	 */
@@ -385,6 +431,9 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			//    is pending even though we are already fetching the identity. Thus the assert here
 			//    fails.
 			// Notice: This is also documented at https://bugs.freenetproject.org/view.php?id=6468
+			// Notice: When fixing this to return here, also enable the commented out assert()
+			// in getShouldFetchState(). Also deal with the other assert() in that function and
+			// the cause of it being commented out in storeStartFetchCommandWithoutCommit().
 			/*
 			assert(mRequests.get(identity.getID()) == null)
 			    : "We have not yet processed the StartFetchCommand for the identity, so there "
@@ -625,6 +674,11 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * Fetches the given USK and returns the new USKRetriever. Does not check whether there is already a fetch for that USK.
 	 */
 	private USKRetriever fetch(USK usk) throws MalformedURLException {
+		if(mUSKManager == null) {
+			Logger.warning(this, "mUSKManager==null, not fetching anything! Only valid in tests!");
+			return null;
+		}
+		
 		boolean fetchLatestOnly = !DEBUG__NETWORK_DUMP_MODE;
 		
 		FetchContext fetchContext = mClient.getFetchContext();
@@ -798,6 +852,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		USKRetriever[] retrievers = mRequests.values().toArray(new USKRetriever[mRequests.size()]);		
 		int counter = 0;		 
 		for(USKRetriever r : retrievers) {
+			if(r == null) {
+				// fetch(USK) returns null in tests.
+				continue;
+			}
 			r.cancel(mClientContext);
 			mUSKManager.unsubscribeContent(r.getOriginalUSK(), r, true);
 			 ++counter;

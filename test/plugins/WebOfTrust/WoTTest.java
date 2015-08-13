@@ -102,6 +102,19 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		assertSame(a, score.getTrustee());
 	}
 	
+	/**
+	 * Test behavior of Score computation if {@link WebOfTrust#initTrustTreeWithoutCommit()} was
+	 * not called for an {@link OwnIdentity} yet. Notice that this function should always be called
+	 * when creating an {@link OwnIdentity}, I am not sure behind the motivation of this unit test.
+	 * It dates back to a very early version of WOT and probably is not very important as we
+	 * currently always init the trust tree for all OwnIdentitys.
+	 *  
+	 * TODO: Performance / code quality: The fact that by this test we require Score computation
+	 * functions to check for {@link WebOfTrust#initTrustTreeWithoutCommit()} having been called for
+	 * involved OwnIdentitys complicates a lot of code, and causes additional queries there using
+	 * {@link WebOfTrust#getScore(OwnIdentity, Identity)}. Maybe get rid of this test, and remove
+	 * all those checks from Score computation functions. First check Git history for why it was
+	 * added though. */
 	public void testSetTrust1() throws InvalidParameterException, MalformedURLException {
 		/* We store A manually instead of using createOwnIdentity() so that the WoT does not initialize it's trust tree (it does not have a score for itself). */
 		OwnIdentity a = new OwnIdentity(mWoT, insertUriA, "A", true); a.storeAndCommit();
@@ -489,6 +502,32 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 			fail();
 		}
 		catch (NotInTrustTreeException e) {}
+	}
+	
+	public void testRemoveTrust3() throws MalformedURLException, InvalidParameterException,
+			NotInTrustTreeException, UnknownIdentityException {
+		
+		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "o", true, null);
+		Identity a = mWoT.addIdentity(requestUriA);
+		Identity b = mWoT.addIdentity(requestUriB);
+		Identity c = mWoT.addIdentity(requestUriC);
+		
+		mWoT.setTrust(o, a, (byte) 100, "");
+		mWoT.setTrust(o, b, (byte) 100, "");
+		mWoT.setTrust(a, c, (byte) 100, "");
+		mWoT.setTrust(b, c, (byte) 100, "");
+		
+		Score oldScoreC = mWoT.getScore(o, c).clone();
+		assertEquals(2, oldScoreC.getRank());
+		assertEquals(16, oldScoreC.getCapacity());
+		assertEquals(80, oldScoreC.getScore());
+		
+		mWoT.removeTrust(o.getID(), a.getID());
+		
+		Score scoreC = mWoT.getScore(o, c);
+		assertEquals(oldScoreC.getRank(), scoreC.getRank());
+		assertEquals(oldScoreC.getCapacity(), scoreC.getCapacity());
+		assertEquals(40, scoreC.getScore());
 	}
 
 	/**
@@ -1125,5 +1164,69 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		assertEquals(oldTrusts, new HashSet<Trust>(mWoT.getAllTrusts()));
 		assertEquals(oldScores, new HashSet<Score>(mWoT.getAllScores()));
 	}
-	
+
+	/**
+	 * If an Identity has a positive Score, and thus
+	 * {@link WebOfTrust#shouldFetchIdentity(Identity)} == true, but a {@link Score#getCapacity()}
+	 * of 0, we do fetch the identity, but do not add its trustees to our database. If the capacity
+	 * changes to > 0, it becomes eligible for introducing its trustees.
+	 * Those, upon capacity change from 0 to > 0, we should re-fetch the current edition of the
+	 * {@link IdentityFile} so we get a chance to add its trustees.
+	 * This test checks whether in the described case the score computation code properly calls
+	 * {@link Identity#markForRefetch()} to cause fetching the current IdentityFile again.
+	 * 
+	 * Notice: This tests existence is crucial because the function
+	 * {@link WebOfTrust#verifyAndCorrectStoredScores() which is used for non-unit-test integrity
+	 * checks of real databases cannot check this condition: The information that a capacity
+	 * changed is only available while it changes, the fact that it had changed is not stored
+	 * in the database. */
+	public void testRefetchDueToCapacityChange() throws MalformedURLException,
+			InvalidParameterException, NumberFormatException, UnknownIdentityException,
+			NotInTrustTreeException {
+		
+		OwnIdentity truster = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "o", true, null);
+		Identity trustee = mWoT.addIdentity(requestUriA);
+		
+		// Test whether capacity 0 to > 0 change causes an already fetched edition to be refetched
+		
+		mWoT.setTrust(truster, trustee, (byte) 0, "should cause capacity 0");
+		trustee.setEdition(1);
+		trustee.onFetched();
+		trustee.storeAndCommit();
+		Score score = mWoT.getScore(truster, trustee);
+		assertEquals(0, score.getCapacity());
+		assertEquals(1, trustee.getEdition());
+		assertEquals(FetchState.Fetched, trustee.getCurrentEditionFetchState());
+		
+		mWoT.setTrust(truster, trustee, (byte) 1, "should cause capacity > 0");
+		assertTrue(score.getCapacity() > 0);
+		assertEquals(1, trustee.getEdition());
+		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
+		
+		// Test whether capacity 0 to > 0 causes edition to be decreased if the current edition
+		// was not fetched yet - the previous one is what has to be refetched then.
+		
+		mWoT.setTrust(truster, trustee, (byte) 0, "should cause capacity 0");
+		assertEquals(0, score.getCapacity());
+		assertEquals(1, trustee.getEdition());
+		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
+		
+		mWoT.setTrust(truster, trustee, (byte) 1, "should cause capacity > 0");
+		assertTrue(score.getCapacity() > 0);
+		assertEquals(0, trustee.getEdition());
+		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
+		
+		// Test whether edition is not wrongly decreased to being negative (which would be an
+		// invalid edition) in the same case as we just tested but with a starting edition of 0
+		
+		mWoT.setTrust(truster, trustee, (byte) 0, "should cause capacity 0");
+		assertEquals(0, score.getCapacity());
+		assertEquals(0, trustee.getEdition());
+		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
+		
+		mWoT.setTrust(truster, trustee, (byte) 1, "should cause capacity > 0");
+		assertTrue(score.getCapacity() > 0);
+		assertEquals(0, trustee.getEdition());
+		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
+	}
 }
