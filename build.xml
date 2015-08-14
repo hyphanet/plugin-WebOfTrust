@@ -18,18 +18,20 @@
 	<property name="src" location="src/"/>
 	<property name="javadoc" location="javadoc/"/>
 	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
+	<property name="hamcrest.location" value="/usr/share/java/hamcrest-core.jar"/>
 	<property name="version.src" value="plugins/WebOfTrust/Version.java" />
 	<property name="version.build" value="plugins/WebOfTrust/Version.class" />
 
 	<available file="src/plugins/WebOfTrust/Version.java" property="version.present"/>
 	<available file="${junit.location}" property="junit.present"/>
+	<available file="${hamcrest.location}" property="hamcrest.present"/>
 
 	<path id="lib.path">
 		<pathelement location="${bcprov.location}"/>
 		<pathelement location="${freenet-ext.location}"/>
 		<pathelement location="${freenet-cvs-snapshot.location}"/>
 	</path>
-	
+
 	<presetdef name="javac">
 		<!--
 		Workaround for ant 1.8 misfeature. TODO: Remove when ant fixes this.
@@ -111,7 +113,14 @@
 
 	<!-- ================================================== -->
 
-	<target name="unit-build" depends="compile" if="junit.present">
+	<condition property="unit.dependencies">
+		<and>
+			<istrue value="${junit.present}"/>
+			<istrue value="${hamcrest.present}"/>
+		</and>
+	</condition>
+
+	<target name="unit-build" depends="compile" if="unit.dependencies">
 		<javac srcdir="test/" destdir="${build-test}/test" debug="on" optimize="on"
 				source="${source-version}" target="${target-version}" >
 			
@@ -119,6 +128,7 @@
 				<path refid="lib.path"/>
 				<pathelement path="${build}"/>
 				<pathelement location="${junit.location}"/>
+				<pathelement location="${hamcrest.location}"/>
 			</classpath>
 			<compilerarg value="-Xlint"/>
 			<include name="**/*.java"/>
@@ -135,7 +145,7 @@
 		</jar>
 	</target>
 
-	<target name="junit" depends="unit-build" if="junit.present" unless="${test.skip}"
+	<target name="junit" depends="unit-build" if="unit.dependencies" unless="${test.skip}"
 			description="Runs all unit tests. Options:&#10;
 		        - Set test.skip=true to skip&#10;
 		        - Set test.class=&lt;test class&gt; (e.g. test.class=plugins.WebOfTrust.WoTTest) to run a single test)&#10;
@@ -148,6 +158,7 @@
 				<path refid="lib.path"/>
 				<pathelement location="${build-test-jar}"/>
 				<pathelement location="${junit.location}"/>
+				<pathelement location="${hamcrest.location}"/>
 			</classpath>
 
 			<assertions><enable/></assertions>
@@ -182,6 +193,7 @@
 				<path refid="lib.path"/>
 				<pathelement location="${build-test-jar}"/>
 				<pathelement location="${junit.location}"/>
+				<pathelement location="${hamcrest.location}"/>
 			</classpath>
 
 			<assertions><disable/></assertions>
