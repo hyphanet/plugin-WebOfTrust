@@ -11,7 +11,6 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 
 import plugins.WebOfTrust.Identity.FetchState;
-import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
@@ -35,7 +34,6 @@ import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.PrioritizedTicker;
@@ -67,7 +65,22 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
      * Will be used as delay for the {@link DelayedBackgroundJob} which schedules processing of
      * {@link IdentityFetcherCommand}s. */
 	private static final long PROCESS_COMMANDS_DELAY = 60 * 1000;
-	
+
+	/**
+	 * If true, the fetcher will not only fetch the latest editions of Identitys, but also old
+	 * ones.
+	 * Also, {@link IdentityFileDiskQueue} will disable its deduplication of multiple fetched
+	 * {@link IdentityFile}s with the same edition. 
+	 * Together with {@link IdentityFileDiskQueue}s ability of archiving all fetched files
+	 * to disk, this can be used for debugging purposes. For example for testing changes to the
+	 * {@link Score} computation algorithm, it is a good idea to import many {@link Trust} lists to
+	 * have many changes to the Trust graph.
+	 * 
+	 * ATTENTION: If this is enabled, the seed identities will be created with an edition of 0.
+	 * This will persist restarts, and thus also continue to persist even if you disable this flag
+	 * again. Thus please only use this flag with throwaway databases. */
+	public static final boolean DEBUG__NETWORK_DUMP_MODE = false;
+
 	private final WebOfTrust mWoT;
 	
 	private final ExtObjectContainer mDB;
@@ -148,6 +161,12 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
         // Identity fetches and inserts belong together, so it makes sense to use the same
         // RequestClient for them.
 		mRequestClient = mWoT.getRequestClient();
+		
+		if(DEBUG__NETWORK_DUMP_MODE) {
+			Logger.warning(
+				this, "IdentityFetcher.DEBUG__NETWORK_DUMP_MODE == true: Will fetch old editions "
+					+ " of identities!");
+		}
 	}
 	
 	@SuppressWarnings("serial")
@@ -254,7 +273,53 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		q.constrain(commandType);
 		return new Persistent.InitializingObjectSet<IdentityFetcher.IdentityFetcherCommand>(mWoT, q);
 	}
-	
+
+	/**
+	 * Returns the effective state of whether the fetcher will fetch an identity.
+	 * This considers both queued commands as well as already processed commands.
+	 * It will also check for contradictory commands (= both start and stop command at once).
+	 * 
+	 * For debugging purposes only.
+	 * 
+	 * You must synchronize upon this IdentityFetcher while calling this function. */
+	final boolean getShouldFetchState(final String identityID) {
+		boolean abortFetchScheduled = false;
+		try {
+			getCommand(AbortFetchCommand.class, identityID);
+			abortFetchScheduled = true;
+		} catch(NoSuchCommandException e) {}
+		
+		boolean startFetchScheduled = false;
+		try {
+			getCommand(StartFetchCommand.class, identityID);
+			startFetchScheduled = true;
+		} catch(NoSuchCommandException e) {}
+		
+		if(abortFetchScheduled && startFetchScheduled) {
+			assert(false);
+			throw new IllegalStateException("Contradictory commands stored");
+		}
+		
+		if(abortFetchScheduled) {
+			// This assert() would currently fail since storeAbortFetchCommandWithoutCommit()
+			// will currently store a command even if mRequests.containsKey(identityID) == false.
+			// See the TODO there.
+			
+			/* assert(mRequests.containsKey(identityID)) : "Command is useless"; */
+			return false;
+		}
+		
+		if(startFetchScheduled) {
+			// Similar to the above: Current implementation of storeStartFetchCommandWithoutCommit()
+			// would cause this to fail
+			
+			/* assert(!mRequests.containsKey(identityID)) : "Command is useless"; */
+			return true;
+		}
+		
+		return mRequests.containsKey(identityID);
+	}
+
 	/**
 	 * ATTENTION: Outside classes should only use this for debugging purposes such as {@link WebOfTrust#checkForDatabaseLeaks()}.
 	 */
@@ -366,6 +431,9 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			//    is pending even though we are already fetching the identity. Thus the assert here
 			//    fails.
 			// Notice: This is also documented at https://bugs.freenetproject.org/view.php?id=6468
+			// Notice: When fixing this to return here, also enable the commented out assert()
+			// in getShouldFetchState(). Also deal with the other assert() in that function and
+			// the cause of it being commented out in storeStartFetchCommandWithoutCommit().
 			/*
 			assert(mRequests.get(identity.getID()) == null)
 			    : "We have not yet processed the StartFetchCommand for the identity, so there "
@@ -554,7 +622,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 			if(retriever == null)
 				mRequests.put(identity.getID(), fetch(usk));
 
-			mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
+			if(!DEBUG__NETWORK_DUMP_MODE)
+				mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
 	}
 	
 	/**
@@ -581,7 +650,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 
 			if(logDEBUG) Logger.debug(this, "Updating edition hint to " + editionHint + " for " + identityID);
 
-			mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
+			if(!DEBUG__NETWORK_DUMP_MODE)
+				mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
 		} catch (UnknownIdentityException e) {
 			Logger.normal(this, "Updating edition hint failed, the identity was deleted already.", e);
 		}
@@ -604,13 +674,33 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 	 * Fetches the given USK and returns the new USKRetriever. Does not check whether there is already a fetch for that USK.
 	 */
 	private USKRetriever fetch(USK usk) throws MalformedURLException {
+		if(mUSKManager == null) {
+			Logger.warning(this, "mUSKManager==null, not fetching anything! Only valid in tests!");
+			return null;
+		}
+		
+		boolean fetchLatestOnly = !DEBUG__NETWORK_DUMP_MODE;
+		
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxArchiveLevels = 0; // Because archives can become huge and WOT does not use them, we should disallow them. See JavaDoc of the variable.
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		fetchContext.maxOutputLength = XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE;
+		fetchContext.ignoreUSKDatehints = !fetchLatestOnly;
 		if(logDEBUG) Logger.debug(this, "Trying to start fetching uri " + usk); 
-		return mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
+		
+		if(fetchLatestOnly)
+			return mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
+		else {
+			// There is no version of subscribeContent() which supports disabling using a
+			// USKSparseProxyCallback, so we manually do what suscribeContent() does except for
+			// using a sparse proxy.
+			// FIXME: Code quality: File a fred pull request which adds such a subscribeContent()
+			USKRetriever ret = new USKRetriever(
+				fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient, this, usk);
+			mUSKManager.subscribe(usk, ret, true, fetchContext.ignoreUSKDatehints, mRequestClient);
+			return ret;
+		}
 	}
 	
 	@Override
@@ -762,6 +852,10 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
 		USKRetriever[] retrievers = mRequests.values().toArray(new USKRetriever[mRequests.size()]);		
 		int counter = 0;		 
 		for(USKRetriever r : retrievers) {
+			if(r == null) {
+				// fetch(USK) returns null in tests.
+				continue;
+			}
 			r.cancel(mClientContext);
 			mUSKManager.unsubscribeContent(r.getOriginalUSK(), r, true);
 			 ++counter;

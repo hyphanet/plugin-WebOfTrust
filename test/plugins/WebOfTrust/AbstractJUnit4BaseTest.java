@@ -430,7 +430,7 @@ public abstract class AbstractJUnit4BaseTest {
      * Returns a normally distributed value with a bias towards positive trust values.
      * TODO: Remove this bias once trust computation is equally fast for negative values;
      */
-    private byte getRandomTrustValue() {
+    protected byte getRandomTrustValue() {
         final double trustRange = Trust.MAX_TRUST_VALUE - Trust.MIN_TRUST_VALUE + 1;
         long result;
         do {
