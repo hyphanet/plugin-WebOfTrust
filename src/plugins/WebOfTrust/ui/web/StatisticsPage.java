@@ -3,8 +3,15 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import static freenet.support.TimeUtil.formatTime;
+import static plugins.WebOfTrust.Configuration.DEFAULT_DEFRAG_INTERVAL;
+import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
+import static plugins.WebOfTrust.ui.web.CommonWebUtils.formatTimeDelta;
+
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+import plugins.WebOfTrust.Configuration;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFileProcessor;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileQueueStatistics;
@@ -12,6 +19,7 @@ import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import freenet.clients.http.ToadletContext;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
@@ -39,6 +47,7 @@ public class StatisticsPage extends WebPageImpl {
 		makeSummary();
 		makeIdentityFileQueueBox();
 		makeIdentityFileProcessorBox();
+		makeMaintenanceBox();
 	}
 
 	/**
@@ -142,4 +151,41 @@ public class StatisticsPage extends WebPageImpl {
 		
 		box.addChild(list);
 	}
+
+	public void makeMaintenanceBox() {
+		String l10nPrefix = "StatisticsPage.MaintenanceBox.";
+		HTMLNode box = addContentBox(l10n().getString(l10nPrefix + "Header"));
+		HTMLNode list = new HTMLNode("ul");
+		
+		Date now;
+		Date lastDefragDate;
+		Date lastVerificationDate;
+		
+		// TODO: Performance: The synchronized() can be removed after this is fixed:
+		// https://bugs.freenetproject.org/view.php?id=6247
+		synchronized(mWebOfTrust) {
+			Configuration config = mWebOfTrust.getConfig();
+			now = CurrentTimeUTC.get();
+			lastDefragDate = config.getLastDefragDate();
+			lastVerificationDate = config.getLastVerificationOfScoresDate();
+		}
+		
+		String defrag =  l10n().getString(l10nPrefix + "LastDefrag",
+			new String[] { "lastTime",
+			               "interval" },
+			new String[] { formatTimeDelta(now.getTime() - lastDefragDate.getTime(), l10n()),
+			               formatTime(DEFAULT_DEFRAG_INTERVAL) });
+		
+		String verification =  l10n().getString(l10nPrefix + "LastScoreVerification",
+			new String[] { "lastTime",
+			               "interval" },
+			new String[] { formatTimeDelta(now.getTime() - lastVerificationDate.getTime(), l10n()),
+			               formatTime(DEFAULT_VERIFY_SCORES_INTERVAL) });
+		
+		list.addChild(new HTMLNode("li", defrag));
+		list.addChild(new HTMLNode("li", verification));
+		
+		box.addChild(list);
+	}
+
 }

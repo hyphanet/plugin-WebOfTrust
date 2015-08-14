@@ -46,6 +46,9 @@ StatisticsPage.IdentityFileQueueBox.Header=Warteschlange für Identitäts-Dateie
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Dateien in Bearbeitung: 
 StatisticsPage.IdentityFileQueueBox.QueuedFiles=Wartende Dateien: 
 StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Insgesamt eingefügte (= heruntergeladene) Dateien: 
+StatisticsPage.MaintenanceBox.Header=Wartung
+StatisticsPage.MaintenanceBox.LastDefrag=Letzte Defragmentierung der Datenbank: ${lastTime} (Zeitplan: alle ${interval})
+StatisticsPage.MaintenanceBox.LastScoreVerification=Letzte Überprüfung der inkrementell berechneten Vertrauenswerte: ${lastTime} (Zeitplan: alle ${interval})
 StatisticsPage.SummaryBox.FetchProgress=Summe aller Editionen: ${editionCount}
 StatisticsPage.SummaryBox.IncrementalTrustRecomputations=Anzahl der schrittweisen Neuberechnungen der Vertrauenswerte wegen neuem Vertrauen: 
 StatisticsPage.SummaryBox.IncrementalTrustRecomputationTime=Durchschnittliche Zeit für schrittweise Neuberechnung der Vertrauenswerte wegen neuem Vertrauen: 
