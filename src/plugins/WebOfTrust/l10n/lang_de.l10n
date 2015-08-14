@@ -152,6 +152,9 @@ StatisticsPage.IdentityFileQueueBox.Header=Warteschlange für Identitäts-Dateie
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Dateien in Bearbeitung: 
 StatisticsPage.IdentityFileQueueBox.QueuedFiles=Wartende Dateien: 
 StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Insgesamt eingefügte (\= heruntergeladene) Dateien: 
+StatisticsPage.MaintenanceBox.Header=Wartung
+StatisticsPage.MaintenanceBox.LastDefrag=Letzte Defragmentierung der Datenbank: ${lastTime} (Zeitplan: alle ${interval})
+StatisticsPage.MaintenanceBox.LastScoreVerification=Letzte Überprüfung der inkrementell berechneten Vertrauenswerte: ${lastTime} (Zeitplan: alle ${interval})
 StatisticsPage.SummaryBox.EventNotifications.Pending=Ereignismeldungen in der Versand-Warteschlange: ${amount}
 StatisticsPage.SummaryBox.EventNotifications.Total=Gesamtzahl der jemals erstellten Ereignismeldungen (nur für aktuelle Clients): ${amount}
 StatisticsPage.SummaryBox.FetchProgress=Summe aller Editionsnummern: ${editionCount}
