@@ -3,8 +3,11 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.util.Date;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
+import freenet.support.CurrentTimeUTC;
 import freenet.support.codeshortification.IfNull;
 
 /* ATTENTION: This code is a duplicate of plugins.Freetalk.Config. Any changes there should also be done here! */
@@ -21,11 +24,36 @@ import freenet.support.codeshortification.IfNull;
 public final class Configuration extends Persistent {
 
 	/**
+	 * At startup, we defragment the db4o database after this interval has expired.
+	 * TODO: Code quality: Make configurable. */
+	public final static transient long DEFAULT_DEFRAG_INTERVAL = TimeUnit.DAYS.toMillis(7);
+
+	/**
+	 * At startup, we call {@link WebOfTrust#verifyAndCorrectStoredScores()} after this interval has
+	 * expired.
+	 * TODO: Code quality: Make configurable. */
+	public final static transient long DEFAULT_VERIFY_SCORES_INTERVAL = TimeUnit.DAYS.toMillis(28);
+
+	/**
 	 * The database format version of this WoT-database.
 	 * Stored in a primitive integer field to ensure that db4o does not lose it - I've observed the HashMaps to be null suddenly sometimes :(
 	 */
 	private int mDatabaseFormatVersion;
-	
+
+	/**
+	 * The last time we defragmented the db4o database.
+	 * It's an expensive operation, and thus we only run it once per
+	 * {@link #DEFAULT_DEFRAG_INTERVAL}.
+	 */
+	private Date mLastDefragDate;
+
+	/**
+	 * The last time we ran {@link WebOfTrust#verifyAndCorrectStoredScores()}.
+	 * It's an expensive operation, and thus we only run it once per
+	 * {@link #DEFAULT_VERIFY_SCORES_INTERVAL}.
+	 */
+	private Date mLastVerificationOfScoresDate;
+
 	/**
 	 * The {@link HashMap} that contains all {@link String} configuration parameters
 	 */
@@ -52,6 +80,14 @@ public final class Configuration extends Persistent {
 	 */
 	protected Configuration(WebOfTrust myWebOfTrust) {
 		mDatabaseFormatVersion = WebOfTrust.DATABASE_FORMAT_VERSION;
+		
+		// This constructor can be assumed to be called upon first time use of WOT.
+		// Thus, default to current time so defrag and score verification are not run for their
+		// minimal delay: This ensures that the first time user experience is not impacted by
+		// huge startup delays.
+		mLastDefragDate = CurrentTimeUTC.get();
+		mLastVerificationOfScoresDate = CurrentTimeUTC.get();
+		
 		mStringParams = new HashMap<String, String>();
 		mIntParams = new HashMap<String, Integer>();
 		initializeTransient(myWebOfTrust);
@@ -131,12 +167,7 @@ public final class Configuration extends Persistent {
 	public synchronized void storeAndCommit() {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				activateFully();
-				
-				checkedStore(mStringParams);
-				checkedStore(mIntParams);
-				
-				checkedStore(this);
+				storeWithoutCommit();
 				checkedCommit(this);
 			}
 			catch(RuntimeException e) {
@@ -144,7 +175,16 @@ public final class Configuration extends Persistent {
 			}
 		}
 	}
-	
+
+	@Override protected void storeWithoutCommit() {
+		activateFully();
+		
+		checkedStore(mStringParams);
+		checkedStore(mIntParams);
+		
+		checkedStore(this);
+	}
+
 	/**
 	 * ATTENTION: A WOT database should ALWAYS contain a Configuration object. This function is only for debugging purposes
 	 * - namely {@link WebOfTrust#checkForDatabaseLeaks()}
@@ -173,6 +213,34 @@ public final class Configuration extends Persistent {
 			throw new RuntimeException("mDatabaseFormatVersion==" + mDatabaseFormatVersion + "; newVersion==" + newVersion);
 		
 		mDatabaseFormatVersion = newVersion;
+	}
+
+	public Date getLastDefragDate() {
+		checkedActivate(1); // int is a db4o primitive type so 1 is enough
+		return (Date)mLastDefragDate.clone(); // Clone it because date is mutable
+	}
+
+	public void updateLastDefragDate() {
+		// Date is a db4o primitive type so activation depth of 1 is enough. We also don't need
+		// to delete because of that, db4o will do it automatically.
+		checkedActivate(1);
+		// checkedDelete(mLastDefragDate);
+		
+		mLastDefragDate = CurrentTimeUTC.get();
+	}
+
+	public Date getLastVerificationOfScoresDate() {
+		checkedActivate(1); // int is a db4o primitive type so 1 is enough
+		return (Date)mLastVerificationOfScoresDate.clone(); // Clone it because date is mutable
+	}
+
+	public void updateLastVerificationOfScoresDate() {
+		// Date is a db4o primitive type so activation depth of 1 is enough. We also don't need
+		// to delete because of that, db4o will do it automatically.
+		checkedActivate(1);
+		// checkedDelete(mLastVerificationOfScores);
+		
+		mLastVerificationOfScoresDate = CurrentTimeUTC.get();
 	}
 
 	/**

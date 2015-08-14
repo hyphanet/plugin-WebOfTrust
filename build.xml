@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!-- ant build file for WoT -->
 
-<project name="WoT" default="dist" basedir=".">
+<project name="WoT" default="dist" basedir="." xmlns:if="ant:if" xmlns:unless="ant:unless">
 	<property file="override.properties"/>
 
 	<property name="freenet-cvs-snapshot.location" location="../fred/dist/freenet.jar"/>
@@ -18,18 +18,20 @@
 	<property name="src" location="src/"/>
 	<property name="javadoc" location="javadoc/"/>
 	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
+	<property name="hamcrest.location" value="/usr/share/java/hamcrest-core.jar"/>
 	<property name="version.src" value="plugins/WebOfTrust/Version.java" />
 	<property name="version.build" value="plugins/WebOfTrust/Version.class" />
 
 	<available file="src/plugins/WebOfTrust/Version.java" property="version.present"/>
 	<available file="${junit.location}" property="junit.present"/>
+	<available file="${hamcrest.location}" property="hamcrest.present"/>
 
 	<path id="lib.path">
 		<pathelement location="${bcprov.location}"/>
 		<pathelement location="${freenet-ext.location}"/>
 		<pathelement location="${freenet-cvs-snapshot.location}"/>
 	</path>
-	
+
 	<presetdef name="javac">
 		<!--
 		Workaround for ant 1.8 misfeature. TODO: Remove when ant fixes this.
@@ -111,7 +113,14 @@
 
 	<!-- ================================================== -->
 
-	<target name="unit-build" depends="compile" if="junit.present">
+	<condition property="unit.dependencies">
+		<and>
+			<istrue value="${junit.present}"/>
+			<istrue value="${hamcrest.present}"/>
+		</and>
+	</condition>
+
+	<target name="unit-build" depends="compile" if="unit.dependencies">
 		<javac srcdir="test/" destdir="${build-test}/test" debug="on" optimize="on"
 				source="${source-version}" target="${target-version}" >
 			
@@ -119,6 +128,7 @@
 				<path refid="lib.path"/>
 				<pathelement path="${build}"/>
 				<pathelement location="${junit.location}"/>
+				<pathelement location="${hamcrest.location}"/>
 			</classpath>
 			<compilerarg value="-Xlint"/>
 			<include name="**/*.java"/>
@@ -135,17 +145,20 @@
 		</jar>
 	</target>
 
-	<target name="junit" depends="unit-build" if="junit.present" unless="${test.skip}"
+	<target name="junit" depends="unit-build" if="unit.dependencies" unless="${test.skip}"
 			description="Runs all unit tests. Options:&#10;
 		        - Set test.skip=true to skip&#10;
 		        - Set test.class=&lt;test class&gt; (e.g. test.class=plugins.WebOfTrust.WoTTest) to run a single test)&#10;
 		        - Set test.benchmark=true to run benchmarks.&#10;
 		        - Set test.unreliable=true to run tests which may fail on slow machines.">
-		<junit printsummary="yes" fork="yes" haltonfailure="yes">
+		
+		<!-- Regular non-benchmark unit tests. -->
+		<junit printsummary="yes" fork="yes" haltonfailure="yes" unless:true="${test.benchmark}">
 			<classpath>
 				<path refid="lib.path"/>
 				<pathelement location="${build-test-jar}"/>
 				<pathelement location="${junit.location}"/>
+				<pathelement location="${hamcrest.location}"/>
 			</classpath>
 
 			<assertions><enable/></assertions>
@@ -159,11 +172,41 @@
 					     JUnit would then complain that those classes do not contain a public
 					     constructor. -->
 					<exclude name="**/*$*.class"/>
-					<exclude name="**/*Benchmark*.class" unless="test.benchmark" />
+					<exclude name="**/*Benchmark*.class"/>
 					<exclude name="**/SynchronousDelayedBackgroundJobTest.class"
 						unless="test.unreliable" />
 					<exclude name="**/TickerDelayedBackgroundJobTest.class"
 						unless="test.unreliable" />
+				</zipfileset>
+			</batchtest>
+			
+			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
+			<jvmarg value="-Djava.awt.headless=true"/>
+			<!-- Pass the name of the JAR to the tests so they can load it into a fred instance -->
+			<jvmarg value="-DWOT_test_jar=${build-test-jar}"/>
+		</junit>
+		
+		<!-- Benchmarks. They need assertions disabled so they're a task of their own. -->
+		<!-- Also, we set showoutput="true" so you get live output as benchmarks take a long time -->
+		<junit printsummary="yes" showoutput="true" fork="yes" haltonfailure="yes" if:true="${test.benchmark}">
+			<classpath>
+				<path refid="lib.path"/>
+				<pathelement location="${build-test-jar}"/>
+				<pathelement location="${junit.location}"/>
+				<pathelement location="${hamcrest.location}"/>
+			</classpath>
+
+			<assertions><disable/></assertions>
+			<formatter type="plain" usefile="false"/>
+			<test if="test.class" name="${test.class}"/>
+			<batchtest unless="test.class" fork="yes">
+				<zipfileset src="${build-test-jar}">
+					<include name="**/*Benchmark*.class"/>
+					<!-- Exclude member classes:
+					     Java will auto-generate switchtable classes for switch() upon enums.
+					     JUnit would then complain that those classes do not contain a public
+					     constructor. -->
+					<exclude name="**/*$*.class"/>
 				</zipfileset>
 			</batchtest>
 			
