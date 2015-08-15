@@ -20,7 +20,7 @@ public class Version {
 	 * etc, at a minimum any build inserted into auto-update should have a unique 
 	 * version.
 	 */
-	public static final long version = 15;
+	public static final long version = 16;
 	
 	/** Published as an identity property if you own a seed identity. */
 	public static final long mandatoryVersion = 1;
@@ -29,7 +29,7 @@ public class Version {
 	public static final long latestVersion = version;
 
 	public static String getMarketingVersion() {
-		return "0.4.2 "+gitRevision;
+		return "0.4.3 "+gitRevision;
 	}
 
 	public static long getRealVersion() {
