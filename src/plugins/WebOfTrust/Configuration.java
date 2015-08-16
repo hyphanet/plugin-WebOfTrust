@@ -381,6 +381,21 @@ public final class Configuration extends Persistent {
 			throw new IllegalStateException("FATAL: startupDatabaseIntegrityTest called with wrong database format version! is: " 
 					+ mDatabaseFormatVersion + "; should be: " + WebOfTrust.DATABASE_FORMAT_VERSION);
 		
+		
+		IfNull.thenThrow(mLastDefragDate);
+		IfNull.thenThrow(mLastVerificationOfScoresDate);
+		
+		Date now = CurrentTimeUTC.get();
+		
+		if(mLastDefragDate.after(now))
+			throw new IllegalStateException("mLastDefragDate is in the future: " + mLastDefragDate);
+		
+		if(mLastVerificationOfScoresDate.after(now)) {
+			throw new IllegalStateException("mLastVerificationOfScoresDate is in the future: "
+			                               + mLastVerificationOfScoresDate);
+		}
+		
+
 		if(mIntParams == null)
 			throw new NullPointerException("mIntParams==null");
 		
