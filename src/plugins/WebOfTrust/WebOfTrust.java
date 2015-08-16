@@ -232,8 +232,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 			mDB = openDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME));
 			
 			mConfig = getOrCreateConfig();
-			if(mConfig.getDatabaseFormatVersion() > WebOfTrust.DATABASE_FORMAT_VERSION)
-				throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 			
 			mSubscriptionManager = new SubscriptionManager(this);
 			
@@ -392,9 +390,17 @@ public final class WebOfTrust extends WebOfTrustInterface
         
         return wotDirectory;
 	}
-	
+
+	/** Same as {@link #getNewDatabaseConfiguration(boolean)} with parameter readOnly = false. */
 	private com.db4o.config.Configuration getNewDatabaseConfiguration() {
+		return getNewDatabaseConfiguration(false);
+	}
+
+	private com.db4o.config.Configuration getNewDatabaseConfiguration(boolean readOnly) {
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
+		
+		if(readOnly)
+			cfg.readOnly(true);
 		
 		// Required config options:
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader()));
@@ -527,17 +533,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		// Open it first, because defrag will throw if it needs to upgrade the file.
 		{
-			final ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(), databaseFile.getAbsolutePath());
-			
 			// Db4o will throw during defragmentation if new fields were added to classes and we didn't initialize their values on existing
 			// objects before defragmenting. So we just don't defragment if the database format version has changed.
-			final boolean canDefragment = peekDatabaseFormatVersion(this, database.ext()) == WebOfTrust.DATABASE_FORMAT_VERSION;
+			final boolean canDefragment = peekDatabaseFormatVersion(databaseFile) == WebOfTrust.DATABASE_FORMAT_VERSION;
 
 			if(!canDefragment) {
 				Logger.normal(this, "Not defragmenting, database format version changed!");
-				while(!database.close());
 				return;
 			}
+			
+			final ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(), databaseFile.getAbsolutePath());
 
 			// Check whether the minimal delay between defragmentations is expired
 			// TODO: Code quality: Only update last defrag date if defragmentation actually succeeds
@@ -620,6 +625,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 */
 	private synchronized ExtObjectContainer openDatabase(File file) {
 		Logger.normal(this, "Opening database using db4o " + Db4o.version());
+		
+		if(peekDatabaseFormatVersion(file) > WebOfTrust.DATABASE_FORMAT_VERSION) {
+			throw new RuntimeException(
+			    "The format of your WoT database is newer than the WoT plugin you tried to load. "
+			  + "Please upgrade to the latest version of the WoT plugin!");
+		}
 		
 		if(mDB != null) 
 			throw new RuntimeException("Database is opened already!");
@@ -1444,7 +1455,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * @return The WOT database format version of the given database. -1 if there is no Configuration stored in it or multiple configurations exist.
 	 */
 	@SuppressWarnings("deprecation")
-	private static int peekDatabaseFormatVersion(WebOfTrust wot, ExtObjectContainer database) {
+	private int peekDatabaseFormatVersion(File dbFile) {
+		ObjectContainer database
+			= Db4o.openFile(getNewDatabaseConfiguration(true), dbFile.getAbsolutePath());
+		
+		try {
 		final Query query = database.query();
 		query.constrain(Configuration.class);
 		@SuppressWarnings("unchecked")
@@ -1453,13 +1468,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 		switch(result.size()) {
 			case 1: {
 				final Configuration config = (Configuration)result.next();
-				config.initializeTransient(wot, database);
+				config.initializeTransient(this, database.ext());
 				// For the HashMaps to stay alive we need to activate to full depth.
 				config.checkedActivate(4);
 				return config.getDatabaseFormatVersion();
 			}
 			default:
 				return -1;
+		}
+		} finally {
+			database.close();
 		}
 	}
 
