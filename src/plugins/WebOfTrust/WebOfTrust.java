@@ -1456,6 +1456,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 */
 	@SuppressWarnings("deprecation")
 	private int peekDatabaseFormatVersion(File dbFile) {
+		if(!dbFile.exists())
+			return -1;
+		
 		ObjectContainer database
 			= Db4o.openFile(getNewDatabaseConfiguration(true), dbFile.getAbsolutePath());
 		
