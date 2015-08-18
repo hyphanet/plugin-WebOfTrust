@@ -2309,7 +2309,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 		ByLocalTrustAscending,
 		ByLocalTrustDescending
 	}
-	
+
+	/** TODO: Code quality: Use {@link Long#compare(long, long)}} once we require Java 7 */
+	private static final class LongJava6 {
+		public static int compare(long a, long b) {
+			if(a < b) return -1;
+			if(a == b) return 0;
+			return 1;
+		}
+	}
+
 	/**
 	 * Get a filtered and sorted list of identities.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list.
@@ -2336,7 +2345,7 @@ public final class WebOfTrust extends WebOfTrustInterface
                     @Override public int compare(Identity i1, Identity i2) {
                         i1.initializeTransient(WebOfTrust.this);
                         i2.initializeTransient(WebOfTrust.this);
-                        return Long.compare(i1.getEdition(), i2.getEdition());
+                        return LongJava6.compare(i1.getEdition(), i2.getEdition());
                     }
                 });
                 break;
@@ -2346,7 +2355,7 @@ public final class WebOfTrust extends WebOfTrustInterface
                     @Override public int compare(Identity i1, Identity i2) {
                         i1.initializeTransient(WebOfTrust.this);
                         i2.initializeTransient(WebOfTrust.this);
-                        return -Long.compare(i1.getEdition(), i2.getEdition());
+                        return -LongJava6.compare(i1.getEdition(), i2.getEdition());
                     }
                 });
                 break;
