@@ -3278,6 +3278,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 			if(vertex.identity == source)
 				return vertex.rank != Integer.MAX_VALUE ? vertex.rank + sourceRank : Integer.MAX_VALUE;
 			
+			// FIXME: Performance: Investigate whether we could/should handle the seen-checks fully
+			// in the below loop which iterates over the trusts. This is how the paper of Ariel
+			// Felner does it ("Position Paper: Dijkstra’s Algorithm versus Uniform Cost Search or a
+			// Case Against Dijkstra’s Algorithm")
 			if(!seen.add(vertex.identity))
 				continue; // Necessary because we do not use decreaseKey(), see below
 			
