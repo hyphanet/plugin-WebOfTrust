@@ -3399,20 +3399,81 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return -1;
 	}
 
+	/**
+	 * Same as {@link #computeRankFromScratch(OwnIdentity, Identity)}, except that it optimizes
+	 * its computations using a cache which is fed using the following observations:
+	 * 
+	 * - Rank computation is nothing but a solution to the standard "single-pair shortest-path"
+	 *   (SPSP) problem of graph theory:
+	 *   In the weighted, directed {@link Trust} graph, we search the shortest path from the source
+	 *   {@link OwnIdentity} to the target {@link Identity}.
+	 * - Such a shortest path which contains multiple edges can be cut into more shortest paths:
+	 *   Each sub-path is shortest as well.
+	 * - Thus, if we found a path from "S -> E1 -> E2 -> T", then "S -> E1 -> E2" is also a
+	 *   shortest path from S to E2.
+	 * - Hence, we can update the cache with shortest paths for E1 and E2 when we searched the
+	 *   path for T.
+	 *   
+	 * @param rankCache Key = {@link ScoreID#toString()}, Value = rank.
+	 */
 	int computeRankFromScratch_Caching(final OwnIdentity source, final Identity target,
 			final Map<String, Integer> rankCache) {
 		
 		final class Vertex implements Comparable<Vertex>{
+			final Vertex previous;
 			final Identity identity;
 			final Integer rank;
 			
-			public Vertex(Identity identity, int rank) {
+			public Vertex(Vertex previous, Identity identity, int rank) {
+				this.previous = previous;
 				this.identity = identity;
 				this.rank = rank;
 			}
 
 			@Override public int compareTo(Vertex o) {
 				return rank.compareTo(o.rank);
+			}
+			
+			void updateCacheWithMyself() {
+				Integer oldRank = rankCache.put(new ScoreID(source, identity).toString(), rank);
+				assert(oldRank == null || oldRank == rank);
+			}
+			
+			void updateCacheWithMyPath() {
+				assert(this.identity == source) : "Path should be from source to target";
+				
+				// As we search rank paths in reverse, i.e. from target to source, the rank values
+				// in the vertices are reversed, example:
+				//     S.rank = 2  ->  I.rank = 1  ->  T.rank = 0
+				// So we correct them to be:
+				//     S.rank = 0  ->  I.rank = 1  ->  T.rank = 2
+				int reversedRank = 0;
+				
+				// The rank of MAX_VALUE is not a path length but a special value. So we cannot
+				// reach it by counting up reversedRank, we need to set it manually.
+				// Luckily, it can only happen at the end of a rank chain (this is explained in
+				// the below main loop of computeRankFromScratch_Caching()), so we know how to
+				// check when we need to set it:
+				final boolean lastRankIsMAX_VALUE = (this.rank == Integer.MAX_VALUE);
+				
+				Vertex v;
+				for(v = this; ; v = v.previous) {
+					if(lastRankIsMAX_VALUE && v.identity == target)
+						reversedRank = Integer.MAX_VALUE;
+					
+					new Vertex(null, v.identity, reversedRank).updateCacheWithMyself();
+					
+					if(v.identity == target) {
+						assert(v.rank == 0);
+						assert(v.previous == null);
+						break;
+					}
+					
+					++reversedRank;
+				}
+				
+				assert(reversedRank == this.rank);
+				assert(v.identity == target) : "Path should be from source to target";
 			}
 		}
 		
@@ -3429,19 +3490,24 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// Use IdentityHashSet because Identity.equals() compares more than needed.
 		IdentityHashSet<Identity> seen = new IdentityHashSet<Identity>();
 		
-		final int sourceRank;
+		int sourceRank;
 		try {
 			sourceRank = getScore(source, source).getRank();
+			new Vertex(null, source, sourceRank).updateCacheWithMyself();
 			if(source == target)
 				return sourceRank;
 		} catch (NotInTrustTreeException e) {
 			Logger.warning(this, "initTrustTreeWithoutCommit() not called for: " + source);
+			sourceRank = -1;
 			// Some unit tests require the special case of initTrustTreeWithoutCommit() not having
 			// been called for an OwnIdentity yet to yield a proper result of "no rank".
-			return -1;
+			new Vertex(null, source, sourceRank).updateCacheWithMyself();
+			new Vertex(null, target, sourceRank).updateCacheWithMyself();
+			return sourceRank;
 		}
 		
 		seen.add(target);
+		Vertex targetVertex = new Vertex(null, target, 0); // For Vertex.updateCacheWithMyPath()
 		for(Trust targetTrust : getReceivedTrusts(target)) {
 			Identity truster = targetTrust.getTruster();
 			int rank = targetTrust.getValue() > 0 ? 1 : Integer.MAX_VALUE;
@@ -3450,10 +3516,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// If a direct Trust exists from the OwnIdentity source to the target, then it
 				// must always overwrite any other rank paths. This is a demand of the specification
 				// of the WOT algorithm, see computeAllScoresWithoutCommit().
-				return rank != Integer.MAX_VALUE ? rank + sourceRank : Integer.MAX_VALUE;
+				Vertex result = new Vertex(null, target,
+					rank != Integer.MAX_VALUE ? rank + sourceRank : Integer.MAX_VALUE);
+				
+				result.updateCacheWithMyself();
+				return result.rank;
 			}
 			
-			queue.add(new Vertex(truster, rank));
+			queue.add(new Vertex(targetVertex, truster, rank));
 		}
 		
 		// If a vertex has received a Trust from the source, all other Trusts it has received can
@@ -3471,8 +3541,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 		while(!queue.isEmpty()) {
 			Vertex vertex = queue.poll();
 			
-			if(vertex.identity == source)
-				return vertex.rank != Integer.MAX_VALUE ? vertex.rank + sourceRank : Integer.MAX_VALUE;
+			if(vertex.identity == source) {
+				Vertex result = new Vertex(vertex.previous, source, 
+					vertex.rank != Integer.MAX_VALUE ? vertex.rank + sourceRank
+					                                 : Integer.MAX_VALUE);
+				
+				result.updateCacheWithMyPath();
+				return result.rank;
+			}
 			
 			// FIXME: Performance: Investigate whether we could/should handle the seen-checks fully
 			// in the below loop which iterates over the trusts. This is how the paper of Ariel
@@ -3488,7 +3564,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// edges.
 
 				if(trustFromSource.getValue() > 0) {
-					queue.add(new Vertex(source,
+					queue.add(new Vertex(vertex, source,
 						vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
 				} else {
 					// An identity with a rank of MAX_VALUE may not give its rank to its trustees.
@@ -3522,7 +3598,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// entries in the PQ.
 				
 				if(trust.getValue() > 0) {
-					queue.add(new Vertex(neighbourVertex,
+					queue.add(new Vertex(vertex, neighbourVertex,
 						vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
 				} else {
 					// Same as above
@@ -3531,7 +3607,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 		}
 		
-		return -1;
+		final int result = -1; // No rank path found.
+		
+		// Since we did not find a path, there is no Vertex at the end of the path whose
+		// updateCacheWithMyPredecessors() could be used.
+		// So instead, we must update the cache by looking at the seen-set.
+		// (Notice: seen also includes the target, we don't have to put it into the cache manually)
+		for(Identity unreachable : seen)
+			new Vertex(null, unreachable, result).updateCacheWithMyself();
+		
+		return result;
 	}
 
 	/**
