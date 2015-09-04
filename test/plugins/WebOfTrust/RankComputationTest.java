@@ -45,7 +45,9 @@ public final class RankComputationTest extends AbstractJUnit4BaseTest {
 		int ownIdentityCount = 2;
 		int identityCount = 100;
 		int trustCount = (identityCount*identityCount) / 10;
-		int rankCount = ownIdentityCount * identityCount, scoreCount = rankCount;
+		// OwnIdentities do assign a Score to themselves, we must include that.
+		int scoreCount = ownIdentityCount * (identityCount + ownIdentityCount);
+		int rankCount = scoreCount;
 		
 		ArrayList<OwnIdentity> ownIdentitys = addRandomOwnIdentities(ownIdentityCount);
 		ArrayList<Identity> identitys = addRandomIdentities(identityCount);
