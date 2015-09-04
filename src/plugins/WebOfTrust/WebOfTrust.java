@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -3128,11 +3129,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Modified with respect to ignoring "blocked" edges: Having received a rank of
 	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees.
 	 * 
-	 * ATTENTION: This function should not be used in practice. It is merely provided to:
-	 * - ease understanding of where {@link #computeRankFromScratch(OwnIdentity, Identity)} came
-	 *   from as this function is its predecessor.
+	 * ATTENTION: This function should not be used in practice. Use
+	 * {@link #computeRankFromScratch_Caching(OwnIdentity, Identity, Map)} instead.
+	 * It is merely provided to:
+	 * - ease understanding of where {@link #computeRankFromScratch(OwnIdentity, Identity)}
+	 *   and then {@link #computeRankFromScratch_Caching(OwnIdentity, Identity, Map)} came
+	 *   from as this function is their predecessor (in the order they were just mentioned).
 	 * - for unit testing purposes, provide an alternate, unoptimized implementation of said
-	 *   function. */
+	 *   functions.
+	 *   
+	 * TODO: Code quality: Since we have 4 implementations of rank computation now
+	 * (including {@link #computeAllScoresWithoutCommit()}), this and the other functions should be
+	 * moved to an interface "RankComputer" with 4 implementing classes.*/
 	int computeRankFromScratch_Forward(final OwnIdentity source, final Identity target) {
 		final class Vertex implements Comparable<Vertex>{
 			final Identity identity;
@@ -3249,7 +3257,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Since this algorithm starts at the target identity, and only walks positive Trust edges,
 	 * and not negative ones, if the target is distrusted it will only have to walk the "dark" part
 	 * of the Trust graph as only the other "dark" identities trust it.
-	 * As the dark part is a lot smaller, it has to search a lot less. */
+	 * As the dark part is a lot smaller, it has to search a lot less.
+	 *
+	 * ATTENTION: This function should not be used in practice. Use
+	 * {@link #computeRankFromScratch_Caching(OwnIdentity, Identity, Map)} instead.
+	 * It is merely provided to:
+	 * - ease understanding of where {@link #computeRankFromScratch_Caching(OwnIdentity, Identity,
+	 *   Map)} came from as this function is its predecessor.
+	 * - for unit testing purposes, provide an alternate, unoptimized implementation of said
+	 *   function. */
 	int computeRankFromScratch(final OwnIdentity source, final Identity target) {
 		final class Vertex implements Comparable<Vertex>{
 			final Identity identity;
@@ -3382,6 +3398,142 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		return -1;
 	}
+
+	int computeRankFromScratch_Caching(final OwnIdentity source, final Identity target,
+			final Map<String, Integer> rankCache) {
+		
+		final class Vertex implements Comparable<Vertex>{
+			final Identity identity;
+			final Integer rank;
+			
+			public Vertex(Identity identity, int rank) {
+				this.identity = identity;
+				this.rank = rank;
+			}
+
+			@Override public int compareTo(Vertex o) {
+				return rank.compareTo(o.rank);
+			}
+		}
+		
+		// TODO: Performance: It is likely that the priority part of the queue is used very
+		// scarcely: All edges we ever add have either weight of 1 or Integer.MAX_VALUE. Further,
+		// there are very few with Integer.MAX_VALUE - only the received trusts of the target may
+		// use MAX_VALUE.
+		// If there only was weight 1, the natural order in which edges are added would be sorted
+		// by priority already (this is how breadth-first search works).
+		// So we almost don't need the sorting by priority. Maybe a more simple datastructure can be
+		// used to amend a non-sorting queue to be able to handle the few cases of MAX_VALUE which
+		// need sorting?
+		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
+		// Use IdentityHashSet because Identity.equals() compares more than needed.
+		IdentityHashSet<Identity> seen = new IdentityHashSet<Identity>();
+		
+		final int sourceRank;
+		try {
+			sourceRank = getScore(source, source).getRank();
+			if(source == target)
+				return sourceRank;
+		} catch (NotInTrustTreeException e) {
+			Logger.warning(this, "initTrustTreeWithoutCommit() not called for: " + source);
+			// Some unit tests require the special case of initTrustTreeWithoutCommit() not having
+			// been called for an OwnIdentity yet to yield a proper result of "no rank".
+			return -1;
+		}
+		
+		seen.add(target);
+		for(Trust targetTrust : getReceivedTrusts(target)) {
+			Identity truster = targetTrust.getTruster();
+			int rank = targetTrust.getValue() > 0 ? 1 : Integer.MAX_VALUE;
+			
+			if(truster == source) {
+				// If a direct Trust exists from the OwnIdentity source to the target, then it
+				// must always overwrite any other rank paths. This is a demand of the specification
+				// of the WOT algorithm, see computeAllScoresWithoutCommit().
+				return rank != Integer.MAX_VALUE ? rank + sourceRank : Integer.MAX_VALUE;
+			}
+			
+			queue.add(new Vertex(truster, rank));
+		}
+		
+		// If a vertex has received a Trust from the source, all other Trusts it has received can
+		// be ignored. Thus, we cache the source Trusts: This allows us to first check for a
+		// source Trust before we query all Trusts of a vertex. This should be faster since db4o
+		// queries are expensive.
+		// TODO: Performance: Use an array-backed map since this will be small.
+		// Key = Identity which received the Trust
+		IdentityHashMap<Identity, Trust> sourceTrusts = new IdentityHashMap<Identity, Trust>();
+		for(Trust sourceTrust : getGivenTrusts(source)) {
+			// TODO: Performance: Add & use Trust.getTrusteeID(), can be computed from Trust ID
+			sourceTrusts.put(sourceTrust.getTrustee(), sourceTrust);
+		}
+		
+		while(!queue.isEmpty()) {
+			Vertex vertex = queue.poll();
+			
+			if(vertex.identity == source)
+				return vertex.rank != Integer.MAX_VALUE ? vertex.rank + sourceRank : Integer.MAX_VALUE;
+			
+			// FIXME: Performance: Investigate whether we could/should handle the seen-checks fully
+			// in the below loop which iterates over the trusts. This is how the paper of Ariel
+			// Felner does it ("Position Paper: Dijkstra’s Algorithm versus Uniform Cost Search or a
+			// Case Against Dijkstra’s Algorithm")
+			if(!seen.add(vertex.identity))
+				continue; // Necessary because we do not use decreaseKey(), see below
+			
+			Trust trustFromSource = sourceTrusts.get(vertex.identity);
+			if(trustFromSource != null) {
+				// The decision of an OwnIdentity overwrites all other Trust values an identity has
+				// received. Thus, the rank is forced by it as well, and we must not walk other
+				// edges.
+
+				if(trustFromSource.getValue() > 0) {
+					queue.add(new Vertex(source,
+						vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
+				} else {
+					// An identity with a rank of MAX_VALUE may not give its rank to its trustees.
+					// So the only case where the rank of an identity can be MAX_VALUE is when it is
+					// the last in the chain of Trust steps.
+					// By adding the received Trusts of the search target to the queue before
+					// starting processing the queue, we already processed the last links of the
+					// chain. Here we can only be at last + 1, last + 2, etc.
+					// So at this point, a rank of MAX_VALUE cannot be given because it would be in
+					// the middle of the chain, not at the end.
+
+					/* queue.add(new Vertex(source, Integer.MAX_VALUE)); */
+				}
+
+				continue;
+			}
+
+			
+			for(Trust trust : getReceivedTrusts(vertex.identity)) {
+				Identity neighbourVertex = trust.getTruster();
+				
+				if(seen.contains(neighbourVertex))
+					continue; // Prevent infinite loop
+				
+				// FIXME: Performance: The UCS algorithm actually does decreaseKey() here instead of
+				// add(), but Java PriorityQueue does not support decreaseKey().
+				// remove() is also not an option since it is O(N).
+				// The existing code will work since the entry with the too high priority will be
+				// processed after the one with the lower priority since being sorted is the main
+				// feature of a PQ. But it increases memory usage and runtime to have useless
+				// entries in the PQ.
+				
+				if(trust.getValue() > 0) {
+					queue.add(new Vertex(neighbourVertex,
+						vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
+				} else {
+					// Same as above
+					/* queue.add(new Vertex(neighbourVertex, Integer.MAX_VALUE)); */
+				}
+			}
+		}
+		
+		return -1;
+	}
+
 	/**
 	 * Computes the trustees's rank in the trust tree of the truster.
 	 * It gets its best ranked non-zero-capacity truster's rank, plus one.
