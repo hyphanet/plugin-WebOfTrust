@@ -3126,7 +3126,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/** 
 	 * Based on "uniform-cost search" algorithm (= optimized Dijkstra).<br>
 	 * Modified with respect to ignoring "blocked" edges: Having received a rank of
-	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees. */
+	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees.
+	 * 
+	 * ATTENTION: This function should not be used in practice. It is merely provided to:
+	 * - ease understanding of where {@link #computeRankFromScratch(OwnIdentity, Identity)} came
+	 *   from as this function is its predecessor.
+	 * - for unit testing purposes, provide an alternate, unoptimized implementation of said
+	 *   function. */
 	int computeRankFromScratch_Forward(final OwnIdentity source, final Identity target) {
 		final class Vertex implements Comparable<Vertex>{
 			final Identity identity;
