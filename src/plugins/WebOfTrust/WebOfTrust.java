@@ -3442,7 +3442,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 			
 			void updateCacheWithMyself() {
-				assert(rank == computeRankFromScratch(source, identity)) : "My rank is invalid!";
+				/* This assert() be very slow, please only enable it for debugging purposes. */
+				// assert(rank == computeRankFromScratch(source, identity)) : "My rank is invalid!";
 				
 				Integer oldRank = rankCache.put(new ScoreID(source, identity).toString(), rank);
 				assert(oldRank == null || oldRank == rank);
@@ -3450,7 +3451,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			void updateCacheWithMyPath() {
 				assert(this.identity == source) : "Path should be from source to target";
-				assert(rank == computeRankFromScratch(source, target)) : "My rank is invalid!";
+				/* This assert() be very slow, please only enable it for debugging purposes. */
+				// assert(rank == computeRankFromScratch(source, target)) : "My rank is invalid!";
 				
 				// As we search rank paths in reverse, i.e. from target to source, the rank values
 				// in the vertices are reversed, example:
@@ -3517,7 +3519,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 				if(uplink == null)
 					return null;
 				
-				assert(uplink == computeRankFromScratch(source, identity)) : "Cache is invalid!";
+				/* This assert() be very slow, please only enable it for debugging purposes. */
+				// assert(uplink == computeRankFromScratch(source, identity)) : "Cache is invalid!";
 				
 				int targetRank;
 				
