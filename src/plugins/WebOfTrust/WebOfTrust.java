@@ -4425,9 +4425,21 @@ public final class WebOfTrust extends WebOfTrustInterface
 			scoresQueued.add(outdated.getID());
 		}
 
+		// computeRankFromScratch() has a worst-case runtime of O(IdentityCount * ...)
+		// This function here has a worst-case runtime of O(IdentityCount * ...) as well.
+		// Thus, if we used computeRankFromScratch() in this function, it would have a worst
+		// case runtime of O(IdentityCount ^ 2).
+		// As a consequence, a function computeRankFromScratch_Caching() has been written which
+		// caches ranks in this Map and so prevents the O(... ^ 2) worst case.
+		// (It also opportunistically computes even more ranks than we request it to compute, which
+		// is the actual trick. See its JavaDoc)
+		HashMap<String, Integer> rankCache = new HashMap<String, Integer>();
+		
 		Score score;
 		while((score = scoreQueue.poll()) != null) {
-			int newRank = computeRankFromScratch(score.getTruster(), score.getTrustee());
+			int newRank
+				= computeRankFromScratch_Caching(score.getTruster(), score.getTrustee(), rankCache);
+			
 			if(score.getRank() == newRank) {
 				assert(!scoresCreated.contains(score.getID()))
 					: "created scores should be initialized with an invalid rank";
