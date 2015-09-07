@@ -3419,6 +3419,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 	int computeRankFromScratch_Caching(final OwnIdentity source, final Identity target,
 			final Map<String, Integer> rankCache) {
 		
+		// Check cache for whether we know the solution to this whole function call already
+		{
+			Integer cachedRank = rankCache.get(new ScoreID(source, target).toString());
+			if(cachedRank != null)
+				return cachedRank;
+		}
+		
 		final class Vertex implements Comparable<Vertex>{
 			final Vertex previous;
 			final Identity identity;
@@ -3435,19 +3442,22 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 			
 			void updateCacheWithMyself() {
+				assert(rank == computeRankFromScratch(source, identity)) : "My rank is invalid!";
+				
 				Integer oldRank = rankCache.put(new ScoreID(source, identity).toString(), rank);
 				assert(oldRank == null || oldRank == rank);
 			}
 			
 			void updateCacheWithMyPath() {
 				assert(this.identity == source) : "Path should be from source to target";
+				assert(rank == computeRankFromScratch(source, target)) : "My rank is invalid!";
 				
 				// As we search rank paths in reverse, i.e. from target to source, the rank values
 				// in the vertices are reversed, example:
 				//     S.rank = 2  ->  I.rank = 1  ->  T.rank = 0
 				// So we correct them to be:
 				//     S.rank = 0  ->  I.rank = 1  ->  T.rank = 2
-				int reversedRank = 0;
+				int reversedRank = 0; //FIXME: sourceRank
 				
 				// The rank of MAX_VALUE is not a path length but a special value. So we cannot
 				// reach it by counting up reversedRank, we need to set it manually.
@@ -3469,11 +3479,66 @@ public final class WebOfTrust extends WebOfTrustInterface
 						break;
 					}
 					
-					++reversedRank;
+					if(v.rank - v.previous.rank == 1)
+						reversedRank += 1;
+					else {
+						// Rank chain was produced by completePathToSourceUsingCache() and thus is
+						// not complete, i.e. does not include some vertices between this and the
+						// previous one.
+						reversedRank = v.rank - v.previous.rank;
+					}
 				}
 				
 				assert(reversedRank == this.rank);
 				assert(v.identity == target) : "Path should be from source to target";
+			}
+			
+			/**
+			 * If the chain of this vertex' previous field is a current known partial shortest path
+			 * of:
+			 *     target <- V1 <- V2 <- this
+			 * Then this function will check the cache for whether it can be completed as:
+			 *     target <- V1 <- V2 <- this <- V3 <- source
+			 * 
+			 * The resulting rank will be:
+			 *     current_known_partial_rank_of_this + cache_entry_of_rank_of_V3
+			 * 
+			 * Notice: The vertex V3 (or possibly more in between) will not actually be available in
+			 * the cache, as the cache only stores the rank, not the path up to it.
+			 * As a consequence, the returned Vertex chain is:
+			 * 		target <- V1 <- V2 <- this <- source
+			 * This has to be and is respected in updateCacheWithMyPath().
+			 */
+			Vertex completePathToSourceUsingCache() {
+				assert(this.identity != source);
+				assert(this.identity != target);
+				
+				Integer uplink = rankCache.get(new ScoreID(source, identity).toString());
+				if(uplink == null)
+					return null;
+				
+				assert(uplink == computeRankFromScratch(source, identity)) : "Cache is invalid!";
+				
+				int targetRank;
+				
+				// A rank of MAX_VALUE may not be inherited more than once, it must be at the
+				// end of the path (i.e. at the target)
+				if(uplink == Integer.MAX_VALUE)
+					targetRank = -1;
+				else if(uplink == -1) // No path exists
+					targetRank = -1;
+				else if(this.rank == Integer.MAX_VALUE)
+					targetRank = Integer.MAX_VALUE;
+				else
+					targetRank = this.rank + uplink;
+				
+				/* This would be wrong: The path we found might not be an overall shortest path:
+				 * This function is called before the UCS algorithm has finished, and then a
+				 * currently known shortest path might not be the overall shortest path yet.
+				 * This is also why we don't update the cache now. */
+				// assert(targetRank == computeRankFromScratch(source, target));
+				
+				return new Vertex(this, source, targetRank);
 			}
 		}
 		
@@ -3490,9 +3555,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// Use IdentityHashSet because Identity.equals() compares more than needed.
 		IdentityHashSet<Identity> seen = new IdentityHashSet<Identity>();
 		
-		int sourceRank;
+		Integer sourceRank = rankCache.get(new ScoreID(source, source).toString());
 		try {
-			sourceRank = getScore(source, source).getRank();
+			if(sourceRank == null)
+				sourceRank = getScore(source, source).getRank();
+			else if(sourceRank == -1) {
+				new Vertex(null, target, -1).updateCacheWithMyself();
+				return -1;
+			}
+			
 			new Vertex(null, source, sourceRank).updateCacheWithMyself();
 			if(source == target)
 				return sourceRank;
@@ -3556,6 +3627,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// Case Against Dijkstra’s Algorithm")
 			if(!seen.add(vertex.identity))
 				continue; // Necessary because we do not use decreaseKey(), see below
+			
+			Vertex pathToSource = vertex.completePathToSourceUsingCache();
+			if(pathToSource != null) { // null == Cache couldn't answer whether a path exists.
+				if(pathToSource.rank != -1) // -1 == Cache knew for sure that no path exists.
+					queue.add(pathToSource);
+				
+				continue;
+			}
 			
 			Trust trustFromSource = sourceTrusts.get(vertex.identity);
 			if(trustFromSource != null) {
