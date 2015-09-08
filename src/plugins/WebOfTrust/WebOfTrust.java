@@ -3449,6 +3449,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 				assert(oldRank == null || oldRank == rank);
 			}
 			
+			/**
+			 * If the previous field constitutes a linked list such as:
+			 *     target <- V2 <- V1 <- this (= source)
+			 * 
+			 * Then this function will update the rankCache with the opportunistically computed
+			 * ranks of all linked list elements such as:
+			 *     target.rank = 3  <-  V2.rank = 2  <-  V1.rank = 1  <-  this.rank = 0
+			 * 
+			 * There are some special cases where the linked list lacks some elements, you will
+			 * understand them if you first read completePathToSourceUsingCache(). */
 			void updateCacheWithMyPath() {
 				assert(this.identity == source) : "Path should be from source to target";
 				/* This assert() be very slow, please only enable it for debugging purposes. */
