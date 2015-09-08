@@ -3478,8 +3478,28 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// check when we need to set it:
 				final boolean lastRankIsMAX_VALUE = (this.rank == Integer.MAX_VALUE);
 				
-				Vertex v;
-				for(v = this; ; v = v.previous) {
+				Vertex v = this;
+				
+				// Rank chains produced by completePathToSourceUsingCache() may miss
+				// vertices between the head and its previous vertex.
+				// If that is the case, we must manually determine the reversedRank of the second
+				// vertex.
+				if(v.rank - v.previous.rank > 1) {
+					// Prepone the first iteration of the main loop so we can begin with the second
+					new Vertex(null, v.identity, reversedRank).updateCacheWithMyself();
+					v = v.previous;
+					// Prepare proper reversedRank for second (= now first) main loop iteration:
+					// As the rank from the second vertex to the source was obtained from the
+					// cache, we can get the rank of the second vertex from the cache.
+					// completePathToSourceUsingCache() does not just put the correct rank into the
+					// second vertex because this would break the above condition
+					//    "if(v.rank - v.previous.rank > 1)"
+					// i.e. we could not detect when to take the reversedRank from the second
+					// vertex.
+					reversedRank = rankCache.get(new ScoreID(source, v.identity).toString());
+				}
+				
+				for(; ; v = v.previous) {
 					if(lastRankIsMAX_VALUE && v.identity == target)
 						reversedRank = Integer.MAX_VALUE;
 					
@@ -3491,14 +3511,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 						break;
 					}
 					
-					if(v.rank - v.previous.rank == 1)
-						reversedRank += 1;
-					else {
-						// Rank chain was produced by completePathToSourceUsingCache() and thus is
-						// not complete, i.e. does not include some vertices between this and the
-						// previous one.
-						reversedRank = v.rank - v.previous.rank;
-					}
+					++reversedRank;
 				}
 				
 				assert(reversedRank == this.rank);
