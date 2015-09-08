@@ -3691,12 +3691,33 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		final int result = -1; // No rank path found.
 		
-		// Since we did not find a path, there is no Vertex at the end of the path whose
-		// updateCacheWithMyPredecessors() could be used.
-		// So instead, we must update the cache by looking at the seen-set.
-		// (Notice: seen also includes the target, we don't have to put it into the cache manually)
-		for(Identity unreachable : seen)
-			new Vertex(null, unreachable, result).updateCacheWithMyself();
+		// If we find no path from target to source, all Identitys which we walked across
+		// (= the seen set) can be assumed to also not have a path to the source.
+		// We now use this for updating the cache, i.e. opportunistically computing the rank
+		// of all Identities in the seen set. It is a huge benefit because:
+		// The worst case of the single-pair shortest-path algorithm (= this function) is having to
+		// walk the *whole* graph until we find out that no path exists. So we process
+		// O(IdentityCount) Identitys. We can then opportunistically update the cache for all
+		// O(IdentityCount) of them!
+		for(Identity maybeUnreachable : seen) {
+			// There is one exception to considering seen Identitys as unreachable:
+			// Those which have received a Trust value from outside of the seen set might have an
+			// uplink to the source, so we do not mark them as unreachable. 
+			// Those were not excluded when the set was filled because of the fact that ranks
+			// of Integer.MAX_VALUE can only be inherited once. So if one of those Identitys has a
+			// rank of MAX_VALUE, it couldn't give it to the target, but it does have it for itself
+			// and thus is not unreachable on its own.
+			boolean isUnreachable = true;
+			for(Trust trust : getReceivedTrusts(maybeUnreachable)) {
+				if(!seen.contains(trust.getTruster())) {
+					isUnreachable = false;
+					break;
+				}
+			}
+			
+			if(isUnreachable)
+				new Vertex(null, maybeUnreachable, result).updateCacheWithMyself();
+		}
 		
 		return result;
 	}
