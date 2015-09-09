@@ -3429,7 +3429,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 		final class Vertex implements Comparable<Vertex>{
 			final Vertex previous;
 			final Identity identity;
+			/**
+			 * Manually counted rank, i.e. the UCS algorithm counts this up.
+			 * "Reversed": Counted up from target to source.
+			 * Might not be the real rank of the Identity yet as the algorithm creates Vertexes
+			 * even when its not finished yet. */
 			final Integer rank;
+			/**
+			 * Actual rank of this vertex as discovered from the cache by
+			 * completePathToSourceUsingCache(). */
+			private Integer realRank = null;
 			
 			public Vertex(Vertex previous, Identity identity, int rank) {
 				this.previous = previous;
@@ -3480,23 +3489,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 				Vertex v = this;
 				
-				// Rank chains produced by completePathToSourceUsingCache() may miss
-				// vertices between the head and its previous vertex.
-				// If that is the case, we must manually determine the reversedRank of the second
-				// vertex.
-				if(v.rank - v.previous.rank > 1) {
+				// Rank chains produced by completePathToSourceUsingCache() may miss vertices
+				// between the head and its previous vertex.
+				// If that is the case, we cannot compute the reversedRank of the second vertex by
+				// merely counting up reversedRank: We don't know how many vertices are missing.
+				// Instead, we get the reversedRank of the second vertex from its realRank variable.
+				if(v.previous.realRank != null) {
 					// Prepone the first iteration of the main loop so we can begin with the second
 					new Vertex(null, v.identity, reversedRank).updateCacheWithMyself();
 					v = v.previous;
-					// Prepare proper reversedRank for second (= now first) main loop iteration:
-					// As the rank from the second vertex to the source was obtained from the
-					// cache, we can get the rank of the second vertex from the cache.
-					// completePathToSourceUsingCache() does not just put the correct rank into the
-					// second vertex because this would break the above condition
-					//    "if(v.rank - v.previous.rank > 1)"
-					// i.e. we could not detect when to take the reversedRank from the second
-					// vertex.
-					reversedRank = rankCache.get(new ScoreID(source, v.identity).toString());
+					// Prepare proper reversedRank for second (= now first) main loop iteration
+					reversedRank = v.realRank;
 				}
 				
 				for(; ; v = v.previous) {
@@ -3563,6 +3566,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 				 * currently known shortest path might not be the overall shortest path yet.
 				 * This is also why we don't update the cache now. */
 				// assert(targetRank == computeRankFromScratch(source, target));
+				
+				this.realRank = uplink;
 				
 				return new Vertex(this, source, targetRank);
 			}
