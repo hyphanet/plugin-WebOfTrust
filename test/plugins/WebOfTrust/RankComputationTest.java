@@ -27,10 +27,10 @@ import freenet.support.TimeUtil;
  * - {@link WebOfTrust#computeAllScoresWithoutCommit()}
  * 
  * For the caching function, tests whether the cache it produces is correct.
- * Notice: For using this to debug wrong cache entries, you might have to comment out that
- * function's code which makes it use its own cache for returning early. This is because if it
- * produces wrong cache entries, the asserts which test its returned rank value (and determine it
- * to be wrong maybe ) could make this test fail before it reaches the stage of testing the cache.
+ * Notice: For using this to debug wrong cache entries, you might have to comment out the assert
+ * which checks the returned rank before checking the cache. This is because if it produces wrong
+ * cache entries, the assert which tests its returned rank value (and determine it
+ * to be wrong maybe) could make this test fail before it reaches the stage of testing the cache.
  * 
  * Also measures the execution time per rank for the first 3 of them. The last currently only
  * receives measurement of the total time for a Score, which includes more computation than a rank.
@@ -113,21 +113,21 @@ public final class RankComputationTest extends AbstractJUnit4BaseTest {
 				assertEquals(rank_computeAllScores, rank_computeRankFromScratch_Caching);
 				assertEquals(rank_computeAllScores, rank_computeRankFromScratch);
 				assertEquals(rank_computeAllScores, rank_computeRankFromScratch_Forward);
+				
+				for(Entry<String, Integer> cacheEntry : rankCache.entrySet()) {
+					try {
+						assertEquals(mWebOfTrust.getScore(cacheEntry.getKey()).getRank(),
+							cacheEntry.getValue().intValue());
+					} catch (NotInTrustTreeException e) {
+						assertEquals(-1, cacheEntry.getValue().intValue());
+					}
+				}
 			}
 		}
 		
-		// Make sure the following for() loop doesn't falsely indicate a correct cache when the
+		// Make sure the above for() loop didn't falsely indicate a correct cache when the
 		// cache was just empty and thus invalid.
 		assertEquals(rankCount, rankCache.size());
-		
-		for(Entry<String, Integer> cacheEntry : rankCache.entrySet()) {
-			try {
-				assertEquals(mWebOfTrust.getScore(cacheEntry.getKey()).getRank(),
-					cacheEntry.getValue().intValue());
-			} catch (NotInTrustTreeException e) {
-				assertEquals(-1, cacheEntry.getValue().intValue());
-			}
-		}
 		
 		time_rank_computeRankFromScratch_Caching /= rankCount;
 		time_rank_computeRankFromScratch /= rankCount;
