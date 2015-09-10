@@ -3464,13 +3464,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 				if(rank != Integer.MAX_VALUE)
 					rankCountedInVertexSteps = rank;
 				else {
-					assert(previous == null
-						|| previous.rankCountedInVertexSteps != Integer.MAX_VALUE);
-					
-					rankCountedInVertexSteps
-						= previous != null ? previous.rankCountedInVertexSteps + 1 : 0;
+					if(previous == null) {
+						rankCountedInVertexSteps = 0;
+					} else {
+						if(previous.realRank != null) {
+							assert(previous.realRank != Integer.MAX_VALUE);
+							rankCountedInVertexSteps = previous.realRank + 1;
+						} else {
+							assert(previous.rankCountedInVertexSteps != Integer.MAX_VALUE);
+							rankCountedInVertexSteps = previous.rankCountedInVertexSteps + 1;
+						}
+					}
 				}
-				
 			}
 
 			@Override public int compareTo(Vertex o) {
