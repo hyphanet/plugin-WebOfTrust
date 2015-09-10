@@ -3451,11 +3451,19 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 			
 			void updateCacheWithMyself() {
-				/* This assert() be very slow, please only enable it for debugging purposes. */
+				/* This assert() be very slow, please only enable it for debugging purposes.
+				 * A slightly optimized version of this is below. */
 				// assert(rank == computeRankFromScratch(source, identity)) : "My rank is invalid!";
 				
 				Integer oldRank = rankCache.put(new ScoreID(source, identity).toString(), rank);
 				assert(oldRank == null || oldRank == rank);
+				
+				// This assert() be very slow, please only enable it for debugging purposes.
+				/*
+				assert(rank ==
+					(oldRank != null ? oldRank : computeRankFromScratch(source, identity)))
+					: "My rank is invalid!";
+				*/
 			}
 			
 			/**
