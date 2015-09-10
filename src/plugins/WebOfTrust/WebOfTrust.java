@@ -3436,6 +3436,22 @@ public final class WebOfTrust extends WebOfTrustInterface
 			 * even when its not finished yet. */
 			final Integer rank;
 			/**
+			 * In the case where multiple vertices have a rank of Integer.MAX_VALUE, if compareTo()
+			 * would only compare rank, then it would return "ranks are equal" for compared
+			 * MAX_VALUE vertices, and cause their order in the PriorityQueue of the shortest-path
+			 * search to be random.
+			 * When the shortest-path algorithm would end, while the computed rank of MAX_VALUE
+			 * would be the lowest as demanded, the path leading up to it might be more Vertex
+			 * steps than the shortest possible path as the PriorityQueue was not told path lengths
+			 * byeond MAX_VALUE by compareTo().
+			 * This would cause updateCacheWithMyPath() to compute wrong ranks for the vertices
+			 * along the path.
+			 * To fix this, this value counts the rank steps as if there was no MAX_VALUE, and
+			 * compareTo() uses it as fallback if rank is MAX_VALUE. This ensures that even ranks of
+			 * MAX_VALUE have a correct shortest Vertex path behind them. */
+			private final Integer rankCountedInVertexSteps;
+			
+			/**
 			 * Actual rank of this vertex as discovered from the cache by
 			 * completePathToSourceUsingCache(). */
 			private Integer realRank = null;
@@ -3444,10 +3460,24 @@ public final class WebOfTrust extends WebOfTrustInterface
 				this.previous = previous;
 				this.identity = identity;
 				this.rank = rank;
+				
+				if(rank != Integer.MAX_VALUE)
+					rankCountedInVertexSteps = rank;
+				else {
+					assert(previous == null
+						|| previous.rankCountedInVertexSteps != Integer.MAX_VALUE);
+					
+					rankCountedInVertexSteps
+						= previous != null ? previous.rankCountedInVertexSteps + 1 : 0;
+				}
+				
 			}
 
 			@Override public int compareTo(Vertex o) {
-				return rank.compareTo(o.rank);
+				int result = rank.compareTo(o.rank);
+				// See rankCountedInVertexSteps for why we do this.
+				return result != 0 ? result :
+					rankCountedInVertexSteps.compareTo(o.rankCountedInVertexSteps);
 			}
 			
 			void updateCacheWithMyself() {
