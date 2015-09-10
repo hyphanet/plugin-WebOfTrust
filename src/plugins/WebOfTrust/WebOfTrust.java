@@ -3430,10 +3430,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 			final Vertex previous;
 			final Identity identity;
 			/**
-			 * Manually counted rank, i.e. the UCS algorithm counts this up.
+			 * Current known number of counted rank steps of rank of target, i.e. the shortest-path
+			 * search algorithm counts this up as it walks the PriorityQueue.
 			 * "Reversed": Counted up from target to source.
 			 * Might not be the real rank of the Identity yet as the algorithm creates Vertexes
-			 * even when its not finished yet. */
+			 * even when its not finished yet.
+			 * May be Integer.MAX_VALUE if the target is only attached by a zero-or-less Trust. */
 			final Integer rank;
 			/**
 			 * In the case where multiple vertices have a rank of Integer.MAX_VALUE, if compareTo()
@@ -3450,10 +3452,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 			 * compareTo() uses it as fallback if rank is MAX_VALUE. This ensures that even ranks of
 			 * MAX_VALUE have a correct shortest Vertex path behind them. */
 			private final Integer rankCountedInVertexSteps;
-			
 			/**
 			 * Actual rank of this vertex as discovered from the cache by
-			 * completePathToSourceUsingCache(). */
+			 * completePathToSourceUsingCache().
+			 * ATTENTION: Where rank and rankCountedInVertexSteps count the rank of the *target*
+			 * identity, this is the rank of this vertex' Identity.
+			 * In other words: Same as computeRankFromScratch(source, this.identity); */
 			private Integer realRank = null;
 			
 			public Vertex(Vertex previous, Identity identity, int rank) {
@@ -3467,11 +3471,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 					if(previous == null) {
 						rankCountedInVertexSteps = 0;
 					} else {
+						assert(previous.rankCountedInVertexSteps != Integer.MAX_VALUE);
+						
 						if(previous.realRank != null) {
+							assert(this.identity == source);
 							assert(previous.realRank != Integer.MAX_VALUE);
-							rankCountedInVertexSteps = previous.realRank + 1;
+							// Steps from source to previous + steps from previous to target. 
+							rankCountedInVertexSteps
+								= previous.realRank + previous.rankCountedInVertexSteps;
 						} else {
-							assert(previous.rankCountedInVertexSteps != Integer.MAX_VALUE);
 							rankCountedInVertexSteps = previous.rankCountedInVertexSteps + 1;
 						}
 					}
