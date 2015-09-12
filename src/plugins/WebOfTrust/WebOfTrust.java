@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -3126,7 +3127,20 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/** 
 	 * Based on "uniform-cost search" algorithm (= optimized Dijkstra).<br>
 	 * Modified with respect to ignoring "blocked" edges: Having received a rank of
-	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees. */
+	 * {@link Integer#MAX_VALUE} disallows an Identity to hand down a rank to its trustees.
+	 * 
+	 * ATTENTION: This function should not be used in practice. Use
+	 * {@link #computeRankFromScratch_Caching(OwnIdentity, Identity, Map)} instead.
+	 * It is merely provided to:
+	 * - ease understanding of where {@link #computeRankFromScratch(OwnIdentity, Identity)}
+	 *   and then {@link #computeRankFromScratch_Caching(OwnIdentity, Identity, Map)} came
+	 *   from as this function is their predecessor (in the order they were just mentioned).
+	 * - for unit testing purposes, provide an alternate, unoptimized implementation of said
+	 *   functions.
+	 *   
+	 * TODO: Code quality: Since we have 4 implementations of rank computation now
+	 * (including {@link #computeAllScoresWithoutCommit()}), this and the other functions should be
+	 * moved to an interface "RankComputer" with 4 implementing classes.*/
 	int computeRankFromScratch_Forward(final OwnIdentity source, final Identity target) {
 		final class Vertex implements Comparable<Vertex>{
 			final Identity identity;
@@ -3243,7 +3257,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Since this algorithm starts at the target identity, and only walks positive Trust edges,
 	 * and not negative ones, if the target is distrusted it will only have to walk the "dark" part
 	 * of the Trust graph as only the other "dark" identities trust it.
-	 * As the dark part is a lot smaller, it has to search a lot less. */
+	 * As the dark part is a lot smaller, it has to search a lot less.
+	 *
+	 * ATTENTION: This function should not be used in practice. Use
+	 * {@link #computeRankFromScratch_Caching(OwnIdentity, Identity, Map)} instead.
+	 * It is merely provided to:
+	 * - ease understanding of where {@link #computeRankFromScratch_Caching(OwnIdentity, Identity,
+	 *   Map)} came from as this function is its predecessor.
+	 * - for unit testing purposes, provide an alternate, unoptimized implementation of said
+	 *   function. */
 	int computeRankFromScratch(final OwnIdentity source, final Identity target) {
 		final class Vertex implements Comparable<Vertex>{
 			final Identity identity;
@@ -3376,6 +3398,409 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		return -1;
 	}
+
+	/**
+	 * Same as {@link #computeRankFromScratch(OwnIdentity, Identity)}, except that it optimizes
+	 * its computations using a cache which is fed using the following observations:
+	 * 
+	 * - Rank computation is nothing but a solution to the standard "single-pair shortest-path"
+	 *   (SPSP) problem of graph theory:
+	 *   In the weighted, directed {@link Trust} graph, we search the shortest path from the source
+	 *   {@link OwnIdentity} to the target {@link Identity}.
+	 * - Such a shortest path which contains multiple edges can be cut into more shortest paths:
+	 *   Each sub-path is shortest as well.
+	 * - Thus, if we found a path from "S -> E1 -> E2 -> T", then "S -> E1 -> E2" is also a
+	 *   shortest path from S to E2.
+	 * - Hence, we can update the cache with shortest paths for E1 and E2 when we searched the
+	 *   path for T.
+	 *   
+	 * @param rankCache Key = {@link ScoreID#toString()}, Value = rank.
+	 */
+	int computeRankFromScratch_Caching(final OwnIdentity source, final Identity target,
+			final Map<String, Integer> rankCache) {
+		
+		// Check cache for whether we know the solution to this whole function call already
+		{
+			Integer cachedRank = rankCache.get(new ScoreID(source, target).toString());
+			if(cachedRank != null)
+				return cachedRank;
+		}
+		
+		final class Vertex implements Comparable<Vertex>{
+			final Vertex previous;
+			final Identity identity;
+			/**
+			 * Current known number of counted rank steps of rank of target, i.e. the shortest-path
+			 * search algorithm counts this up as it walks the PriorityQueue.
+			 * "Reversed": Counted up from target to source.
+			 * Might not be the real rank of the Identity yet as the algorithm creates Vertexes
+			 * even when its not finished yet.
+			 * May be Integer.MAX_VALUE if the target is only attached by a zero-or-less Trust. */
+			final Integer rank;
+			/**
+			 * In the case where multiple vertices have a rank of Integer.MAX_VALUE, if compareTo()
+			 * would only compare rank, then it would return "ranks are equal" for compared
+			 * MAX_VALUE vertices, and cause their order in the PriorityQueue of the shortest-path
+			 * search to be random.
+			 * When the shortest-path algorithm would end, while the computed rank of MAX_VALUE
+			 * would be the lowest as demanded, the path leading up to it might be more Vertex
+			 * steps than the shortest possible path as the PriorityQueue was not told path lengths
+			 * byeond MAX_VALUE by compareTo().
+			 * This would cause updateCacheWithMyPath() to compute wrong ranks for the vertices
+			 * along the path.
+			 * To fix this, this value counts the rank steps as if there was no MAX_VALUE, and
+			 * compareTo() uses it as fallback if rank is MAX_VALUE. This ensures that even ranks of
+			 * MAX_VALUE have a correct shortest Vertex path behind them. */
+			private final Integer rankCountedInVertexSteps;
+			/**
+			 * Actual rank of this vertex as discovered from the cache by
+			 * completePathToSourceUsingCache().
+			 * ATTENTION: Where rank and rankCountedInVertexSteps count the rank of the *target*
+			 * identity, this is the rank of this vertex' Identity.
+			 * In other words: Same as computeRankFromScratch(source, this.identity); */
+			private Integer realRank = null;
+			
+			public Vertex(Vertex previous, Identity identity, int rank) {
+				this.previous = previous;
+				this.identity = identity;
+				this.rank = rank;
+				
+				if(rank != Integer.MAX_VALUE)
+					rankCountedInVertexSteps = rank;
+				else {
+					if(previous == null) {
+						rankCountedInVertexSteps = 0;
+					} else {
+						assert(previous.rankCountedInVertexSteps != Integer.MAX_VALUE);
+						
+						if(previous.realRank != null) {
+							assert(this.identity == source);
+							assert(previous.realRank != Integer.MAX_VALUE);
+							// Steps from source to previous + steps from previous to target. 
+							rankCountedInVertexSteps
+								= previous.realRank + previous.rankCountedInVertexSteps;
+						} else {
+							rankCountedInVertexSteps = previous.rankCountedInVertexSteps + 1;
+						}
+					}
+				}
+			}
+
+			@Override public int compareTo(Vertex o) {
+				int result = rank.compareTo(o.rank);
+				// See rankCountedInVertexSteps for why we do this.
+				return result != 0 ? result :
+					rankCountedInVertexSteps.compareTo(o.rankCountedInVertexSteps);
+			}
+			
+			void updateCacheWithMyself() {
+				/* This assert() be very slow, please only enable it for debugging purposes.
+				 * A slightly optimized version of this is below. */
+				// assert(rank == computeRankFromScratch(source, identity)) : "My rank is invalid!";
+				
+				Integer oldRank = rankCache.put(new ScoreID(source, identity).toString(), rank);
+				assert(oldRank == null || oldRank == rank);
+				
+				// This assert() be very slow, please only enable it for debugging purposes.
+				/*
+				assert(rank ==
+					(oldRank != null ? oldRank : computeRankFromScratch(source, identity)))
+					: "My rank is invalid!";
+				*/
+			}
+			
+			/**
+			 * If the previous field constitutes a linked list such as:
+			 *     target <- V2 <- V1 <- this (= source)
+			 * 
+			 * Then this function will update the rankCache with the opportunistically computed
+			 * ranks of all linked list elements such as:
+			 *     target.rank = 3  <-  V2.rank = 2  <-  V1.rank = 1  <-  this.rank = 0
+			 * 
+			 * There are some special cases where the linked list lacks some elements, you will
+			 * understand them if you first read completePathToSourceUsingCache(). */
+			void updateCacheWithMyPath() {
+				assert(this.identity == source) : "Path should be from source to target";
+				/* This assert() be very slow, please only enable it for debugging purposes. */
+				// assert(rank == computeRankFromScratch(source, target)) : "My rank is invalid!";
+				
+				// As we search rank paths in reverse, i.e. from target to source, the rank values
+				// in the vertices are reversed, example:
+				//     S.rank = 2  ->  I.rank = 1  ->  T.rank = 0
+				// So we correct them to be:
+				//     S.rank = 0  ->  I.rank = 1  ->  T.rank = 2
+				int reversedRank = 0; //FIXME: sourceRank
+				
+				// The rank of MAX_VALUE is not a path length but a special value. So we cannot
+				// reach it by counting up reversedRank, we need to set it manually.
+				// Luckily, it can only happen at the end of a rank chain (this is explained in
+				// the below main loop of computeRankFromScratch_Caching()), so we know how to
+				// check when we need to set it:
+				final boolean lastRankIsMAX_VALUE = (this.rank == Integer.MAX_VALUE);
+				
+				Vertex v = this;
+				
+				// Rank chains produced by completePathToSourceUsingCache() may miss vertices
+				// between the head and its previous vertex.
+				// If that is the case, we cannot compute the reversedRank of the second vertex by
+				// merely counting up reversedRank: We don't know how many vertices are missing.
+				// Instead, we get the reversedRank of the second vertex from its realRank variable.
+				if(v.previous.realRank != null) {
+					// Prepone the first iteration of the main loop so we can begin with the second
+					new Vertex(null, v.identity, reversedRank).updateCacheWithMyself();
+					v = v.previous;
+					// Prepare proper reversedRank for second (= now first) main loop iteration
+					reversedRank = v.realRank;
+				}
+				
+				for(; ; v = v.previous) {
+					if(lastRankIsMAX_VALUE && v.identity == target)
+						reversedRank = Integer.MAX_VALUE;
+					
+					new Vertex(null, v.identity, reversedRank).updateCacheWithMyself();
+					
+					if(v.identity == target) {
+						assert(v.rank == 0);
+						assert(v.previous == null);
+						break;
+					}
+					
+					++reversedRank;
+				}
+				
+				assert(reversedRank == this.rank);
+				assert(v.identity == target) : "Path should be from source to target";
+			}
+			
+			/**
+			 * If the chain of this vertex' previous field is a current known partial shortest path
+			 * of:
+			 *     target <- V1 <- V2 <- this
+			 * Then this function will check the cache for whether it can be completed as:
+			 *     target <- V1 <- V2 <- this <- V3 <- source
+			 * 
+			 * The resulting rank will be:
+			 *     current_known_partial_rank_of_this + cache_entry_of_rank_of_V3
+			 * 
+			 * Notice: The vertex V3 (or possibly more in between) will not actually be available in
+			 * the cache, as the cache only stores the rank, not the path up to it.
+			 * As a consequence, the returned Vertex chain is:
+			 * 		target <- V1 <- V2 <- this <- source
+			 * This has to be and is respected in updateCacheWithMyPath().
+			 */
+			Vertex completePathToSourceUsingCache() {
+				assert(this.identity != source);
+				assert(this.identity != target);
+				
+				Integer uplink = rankCache.get(new ScoreID(source, identity).toString());
+				if(uplink == null)
+					return null;
+				
+				/* This assert() be very slow, please only enable it for debugging purposes. */
+				// assert(uplink == computeRankFromScratch(source, identity)) : "Cache is invalid!";
+				
+				int targetRank;
+				
+				// A rank of MAX_VALUE may not be inherited more than once, it must be at the
+				// end of the path (i.e. at the target)
+				if(uplink == Integer.MAX_VALUE)
+					targetRank = -1;
+				else if(uplink == -1) // No path exists
+					targetRank = -1;
+				else if(this.rank == Integer.MAX_VALUE)
+					targetRank = Integer.MAX_VALUE;
+				else
+					targetRank = this.rank + uplink;
+				
+				/* This would be wrong: The path we found might not be an overall shortest path:
+				 * This function is called before the UCS algorithm has finished, and then a
+				 * currently known shortest path might not be the overall shortest path yet.
+				 * This is also why we don't update the cache now. */
+				// assert(targetRank == computeRankFromScratch(source, target));
+				
+				this.realRank = uplink;
+				
+				return new Vertex(this, source, targetRank);
+			}
+		}
+		
+		// TODO: Performance: It is likely that the priority part of the queue is used very
+		// scarcely: All edges we ever add have either weight of 1 or Integer.MAX_VALUE. Further,
+		// there are very few with Integer.MAX_VALUE - only the received trusts of the target may
+		// use MAX_VALUE.
+		// If there only was weight 1, the natural order in which edges are added would be sorted
+		// by priority already (this is how breadth-first search works).
+		// So we almost don't need the sorting by priority. Maybe a more simple datastructure can be
+		// used to amend a non-sorting queue to be able to handle the few cases of MAX_VALUE which
+		// need sorting?
+		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
+		// Use IdentityHashSet because Identity.equals() compares more than needed.
+		IdentityHashSet<Identity> seen = new IdentityHashSet<Identity>();
+		
+		Integer sourceRank = rankCache.get(new ScoreID(source, source).toString());
+		try {
+			if(sourceRank == null)
+				sourceRank = getScore(source, source).getRank();
+			else if(sourceRank == -1) {
+				new Vertex(null, target, -1).updateCacheWithMyself();
+				return -1;
+			}
+			
+			new Vertex(null, source, sourceRank).updateCacheWithMyself();
+			if(source == target)
+				return sourceRank;
+		} catch (NotInTrustTreeException e) {
+			Logger.warning(this, "initTrustTreeWithoutCommit() not called for: " + source);
+			sourceRank = -1;
+			// Some unit tests require the special case of initTrustTreeWithoutCommit() not having
+			// been called for an OwnIdentity yet to yield a proper result of "no rank".
+			new Vertex(null, source, sourceRank).updateCacheWithMyself();
+			new Vertex(null, target, sourceRank).updateCacheWithMyself();
+			return sourceRank;
+		}
+		
+		seen.add(target);
+		Vertex targetVertex = new Vertex(null, target, 0); // For Vertex.updateCacheWithMyPath()
+		for(Trust targetTrust : getReceivedTrusts(target)) {
+			Identity truster = targetTrust.getTruster();
+			int rank = targetTrust.getValue() > 0 ? 1 : Integer.MAX_VALUE;
+			
+			if(truster == source) {
+				// If a direct Trust exists from the OwnIdentity source to the target, then it
+				// must always overwrite any other rank paths. This is a demand of the specification
+				// of the WOT algorithm, see computeAllScoresWithoutCommit().
+				Vertex result = new Vertex(null, target,
+					rank != Integer.MAX_VALUE ? rank + sourceRank : Integer.MAX_VALUE);
+				
+				result.updateCacheWithMyself();
+				return result.rank;
+			}
+			
+			queue.add(new Vertex(targetVertex, truster, rank));
+		}
+		
+		// If a vertex has received a Trust from the source, all other Trusts it has received can
+		// be ignored. Thus, we cache the source Trusts: This allows us to first check for a
+		// source Trust before we query all Trusts of a vertex. This should be faster since db4o
+		// queries are expensive.
+		// TODO: Performance: Use an array-backed map since this will be small.
+		// Key = Identity which received the Trust
+		IdentityHashMap<Identity, Trust> sourceTrusts = new IdentityHashMap<Identity, Trust>();
+		for(Trust sourceTrust : getGivenTrusts(source)) {
+			// TODO: Performance: Add & use Trust.getTrusteeID(), can be computed from Trust ID
+			sourceTrusts.put(sourceTrust.getTrustee(), sourceTrust);
+		}
+		
+		while(!queue.isEmpty()) {
+			Vertex vertex = queue.poll();
+			
+			if(vertex.identity == source) {
+				Vertex result = new Vertex(vertex.previous, source, 
+					vertex.rank != Integer.MAX_VALUE ? vertex.rank + sourceRank
+					                                 : Integer.MAX_VALUE);
+				
+				result.updateCacheWithMyPath();
+				return result.rank;
+			}
+			
+			// FIXME: Performance: Investigate whether we could/should handle the seen-checks fully
+			// in the below loop which iterates over the trusts. This is how the paper of Ariel
+			// Felner does it ("Position Paper: Dijkstra’s Algorithm versus Uniform Cost Search or a
+			// Case Against Dijkstra’s Algorithm")
+			if(!seen.add(vertex.identity))
+				continue; // Necessary because we do not use decreaseKey(), see below
+			
+			Vertex pathToSource = vertex.completePathToSourceUsingCache();
+			if(pathToSource != null) { // null == Cache couldn't answer whether a path exists.
+				if(pathToSource.rank != -1) // -1 == Cache knew for sure that no path exists.
+					queue.add(pathToSource);
+				
+				continue;
+			}
+			
+			Trust trustFromSource = sourceTrusts.get(vertex.identity);
+			if(trustFromSource != null) {
+				// The decision of an OwnIdentity overwrites all other Trust values an identity has
+				// received. Thus, the rank is forced by it as well, and we must not walk other
+				// edges.
+
+				if(trustFromSource.getValue() > 0) {
+					queue.add(new Vertex(vertex, source,
+						vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
+				} else {
+					// An identity with a rank of MAX_VALUE may not give its rank to its trustees.
+					// So the only case where the rank of an identity can be MAX_VALUE is when it is
+					// the last in the chain of Trust steps.
+					// By adding the received Trusts of the search target to the queue before
+					// starting processing the queue, we already processed the last links of the
+					// chain. Here we can only be at last + 1, last + 2, etc.
+					// So at this point, a rank of MAX_VALUE cannot be given because it would be in
+					// the middle of the chain, not at the end.
+
+					/* queue.add(new Vertex(source, Integer.MAX_VALUE)); */
+				}
+
+				continue;
+			}
+
+			
+			for(Trust trust : getReceivedTrusts(vertex.identity)) {
+				Identity neighbourVertex = trust.getTruster();
+				
+				if(seen.contains(neighbourVertex))
+					continue; // Prevent infinite loop
+				
+				// FIXME: Performance: The UCS algorithm actually does decreaseKey() here instead of
+				// add(), but Java PriorityQueue does not support decreaseKey().
+				// remove() is also not an option since it is O(N).
+				// The existing code will work since the entry with the too high priority will be
+				// processed after the one with the lower priority since being sorted is the main
+				// feature of a PQ. But it increases memory usage and runtime to have useless
+				// entries in the PQ.
+				
+				if(trust.getValue() > 0) {
+					queue.add(new Vertex(vertex, neighbourVertex,
+						vertex.rank != Integer.MAX_VALUE ? vertex.rank + 1 : Integer.MAX_VALUE));
+				} else {
+					// Same as above
+					/* queue.add(new Vertex(neighbourVertex, Integer.MAX_VALUE)); */
+				}
+			}
+		}
+		
+		final int result = -1; // No rank path found.
+		
+		// If we find no path from target to source, all Identitys which we walked across
+		// (= the seen set) can be assumed to also not have a path to the source.
+		// We now use this for updating the cache, i.e. opportunistically computing the rank
+		// of all Identities in the seen set. It is a huge benefit because:
+		// The worst case of the single-pair shortest-path algorithm (= this function) is having to
+		// walk the *whole* graph until we find out that no path exists. So we process
+		// O(IdentityCount) Identitys. We can then opportunistically update the cache for all
+		// O(IdentityCount) of them!
+		for(Identity maybeUnreachable : seen) {
+			// There is one exception to considering seen Identitys as unreachable:
+			// Those which have received a Trust value from outside of the seen set might have an
+			// uplink to the source, so we do not mark them as unreachable. 
+			// Those were not excluded when the set was filled because of the fact that ranks
+			// of Integer.MAX_VALUE can only be inherited once. So if one of those Identitys has a
+			// rank of MAX_VALUE, it couldn't give it to the target, but it does have it for itself
+			// and thus is not unreachable on its own.
+			boolean isUnreachable = true;
+			for(Trust trust : getReceivedTrusts(maybeUnreachable)) {
+				if(!seen.contains(trust.getTruster())) {
+					isUnreachable = false;
+					break;
+				}
+			}
+			
+			if(isUnreachable)
+				new Vertex(null, maybeUnreachable, result).updateCacheWithMyself();
+		}
+		
+		return result;
+	}
+
 	/**
 	 * Computes the trustees's rank in the trust tree of the truster.
 	 * It gets its best ranked non-zero-capacity truster's rank, plus one.
@@ -4100,9 +4525,21 @@ public final class WebOfTrust extends WebOfTrustInterface
 			scoresQueued.add(outdated.getID());
 		}
 
+		// computeRankFromScratch() has a worst-case runtime of O(IdentityCount * ...)
+		// This function here has a worst-case runtime of O(IdentityCount * ...) as well.
+		// Thus, if we used computeRankFromScratch() in this function, it would have a worst
+		// case runtime of O(IdentityCount ^ 2).
+		// As a consequence, a function computeRankFromScratch_Caching() has been written which
+		// caches ranks in this Map and so prevents the O(... ^ 2) worst case.
+		// (It also opportunistically computes even more ranks than we request it to compute, which
+		// is the actual trick. See its JavaDoc)
+		HashMap<String, Integer> rankCache = new HashMap<String, Integer>();
+		
 		Score score;
 		while((score = scoreQueue.poll()) != null) {
-			int newRank = computeRankFromScratch(score.getTruster(), score.getTrustee());
+			int newRank
+				= computeRankFromScratch_Caching(score.getTruster(), score.getTrustee(), rankCache);
+			
 			if(score.getRank() == newRank) {
 				assert(!scoresCreated.contains(score.getID()))
 					: "created scores should be initialized with an invalid rank";
