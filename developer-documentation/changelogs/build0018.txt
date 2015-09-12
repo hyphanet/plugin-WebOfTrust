@@ -1,0 +1,134 @@
+Web of Trust Version 0.4.4 build0018
+------------------------------------------------------------------------
+
+SUMMARY AND OUTLOOK (detailed changelog is below):
+
+NOTICE: While this release has not yet been bundled with a new Freenet 
+release, it can be acquired a lot easier than previous non-bundled 
+ones:
+1) Update your Freenet to the testing version using the shell command
+   "./update.sh testing" on Linux or "update.cmd testing" on Windows.
+2) Unload the "WebOfTrust" plugin and load the "WebOfTrust Testing 
+   Versions" plugin. Please do first read the description for the 
+   security implications!
+Once Freenet build 1471 is released, step 1 will not be necessary 
+anymore.
+You will also get this release someday if you do not switch to the 
+testing  branch. It will just take longer: Non-testing releases are 
+shipped together with regular Freenet releases; and Freenet releases do 
+not happen as often as WoT releases.
+
+This WoT version finally ships some of the long awaited core performance 
+improvements:
+
+- Previous builds would fall back to "full Score re-computation" upon 
+  Trust changes which cause "distrust": Removal of a Trust value, 
+  changing a Trust value from above zero to zero or negative, or adding 
+  a zero or below zero Trust value. The full re-computation was a
+  *very* slow piece of code as it basically recalculates the whole 
+  Score database. It usually took ~ 1 minute, or even 10 minutes on some 
+  machines. This was made even worse by the fact that it happened not 
+  only for local Trust changes but also for remote ones. Also, due to 
+  unfortunate current limitations of the database code [4], it would 
+  block the web interface from responding during the whole time.
+  This build ships an incremental Score recomputation algorithm for 
+  these situations - which should be a lot faster:
+  Measurements [1] show an average execution time of 1.7 seconds = a 
+  speed improvement of factor 28.
+  As there was an incremental recomputation code for non-distrust Trust 
+  changes already, Score recomputation is fully incremental now.
+
+- Restarting of WoT / your computer usually caused:
+    1) a defragmentation of the database.
+    2) a full Score recomputation (to prevent bugs in the existing 
+       incremental Score computation code from causing wrong values to 
+       exist for a long time).
+  This has been changed to:
+    1) Defrag only happens once a week.
+    2) Full Score recomputation only happens once a month.
+  As a consequence, startup should be a lot faster.
+  It now takes ~2 minutes on my machine.
+
+Next steps of development will be:
+
+- While the average execution time of 1.7 seconds of the new incremental 
+  Score computation algorithm is acceptable, its worst case execution 
+  time of above 60 seconds is not.
+  It is difficult to judge how frequently the worst case happens, as the 
+  benchmark which was conducted had to be synthetic: The operations 
+  which cause the new code to run are quite rare with network dumps, so 
+  real Trust changes couldn't be used as a benchmarks.
+  It thus can be hoped that the worst case is a "worst case of a worst 
+  case" and rarely happens on the real network.
+  To determine how often it happens, the next build will ship additions
+  to the statistics page to monitor it [2].
+  If it happens to often, there is still hope: During the months of
+  development of the new code, quite a few ideas for further improvement
+  arose. Part of those are completely new algorithms, and thus they're 
+  not implemented yet but will have to wait until we have measurements 
+  to show whether the effort of rewriting this yet once more is 
+  indicated.
+
+- The improved startup time of ~2 minutes is still too much.
+  It is caused by the fact that WoT will currently subscribe to the USKs 
+  of *all* trusted Identities - currently over 11 000!
+  This is not only inacceptable from a startup point of view, but also 
+  from a network-load perspective - it causes a O(N^2) network-wide 
+  load; and also slows down each individual node significantly.
+  Hence, the algorithm will be changed to only subscribe to the USKs of 
+  directly trusted identities; and to fetch non-directly-trusted ones in 
+  a more sparse, opportunistic approach. See [3].
+
+- The new incremental distrust computation code was the subject of my 
+  bachelor's thesis. It therefore yielded not only the new algorithm, 
+  but also a very long document which describes the old algorithm and 
+  the steps towards the new one.
+  This thesis' document has turned out to be well-suited to become a 
+  "WoT developer's manual", and I plan to release it as such soon.
+  I will wait with that until university has graded it (ETA: October) 
+  for slightly selfish reasons: I don't want to risk getting negative 
+  opinions on it before I know for sure that I passed - that'd only 
+  cause needless panic. I hope this is only slightly selfish as a  
+  non-paniced xor is a happy xor and a happy xor will produce more
+  WoT code :)
+  I will announce the document on the usual channels once it is 
+  available.
+
+
+CHANGELOG - prefixed with the bugtracker issue number:
+
+- 0000001: title_of_issue_1.............................................
+           more_lines_of_title..........................................
+  
+  Blah.
+  Blah.
+
+- 0000002: .............................................................
+           .............................................................
+  0000003: .............................................................
+           .............................................................
+  
+  Blah.
+  Blah.
+
+
+CHANGELOG about stuff only interesting for developers:
+
+- 0000004: .............................................................
+           .............................................................
+  
+  Blah.
+  Blah.
+
+
+Thanks to:
+  - Person1
+  - Person2
+
+
+Links:
+  [1] FIXME
+  [2] https://bugs.freenetproject.org/view.php?id=6648
+  [3] https://bugs.freenetproject.org/view.php?id=3816
+  [4] https://bugs.freenetproject.org/view.php?id=5748
+      https://bugs.freenetproject.org/view.php?id=6247
