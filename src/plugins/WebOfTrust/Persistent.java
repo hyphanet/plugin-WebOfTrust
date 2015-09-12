@@ -517,7 +517,8 @@ public abstract class Persistent implements Serializable {
 		 * Used to detect iterating over the same ObjectSet twice. This is a trick to notice
 		 * usage of db4o in a way which would trigger a db4o bug.
 		 * See <a href="https://bugs.freenetproject.org/view.php?id=6596">the bugtracker entry</a>.
-		 * TODO: Remove one the bug is fixed in db4o. */
+		 * TODO: Performance: Remove once the issue which caused this workaround is fixed:
+		 * https://bugs.freenetproject.org/view.php?id=6646 */
 		private boolean mIterated1 = false;
 		/** Same purpose as {@link #mIterated1}. */
 		private boolean mIterated2 = false;
