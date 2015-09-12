@@ -1,7 +1,7 @@
 Web of Trust Version 0.4.4 build0018
 ------------------------------------------------------------------------
 
-SUMMARY AND OUTLOOK - detailed changelog is below:
+SUMMARY AND OUTLOOK (detailed changelog is below):
 
 Summary blah blah. Blah blah reference to link [1].
 
