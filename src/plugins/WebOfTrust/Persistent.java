@@ -513,6 +513,14 @@ public abstract class Persistent implements Serializable {
 		
 		private final WebOfTrustInterface mWebOfTrust;
 		private final ObjectSet<Type> mObjectSet;
+		/**
+		 * Used to detect iterating over the same ObjectSet twice. This is a trick to notice
+		 * usage of db4o in a way which would trigger a db4o bug.
+		 * See <a href="https://bugs.freenetproject.org/view.php?id=6596">the bugtracker entry</a>.
+		 * TODO: Remove one the bug is fixed in db4o. */
+		private boolean mIterated1 = false;
+		/** Same purpose as {@link #mIterated1}. */
+		private boolean mIterated2 = false;
 		
 		/**
 		 * Private because we can only safely initialize {@link Persistent#mActivatedUpTo} to
@@ -537,11 +545,17 @@ public abstract class Persistent implements Serializable {
 
 		@Override
 		public boolean hasNext() {
+			assert(!mIterated2);
+			assert(mIterated1 = true);
+			
 			return mObjectSet.hasNext();
 		}
 
 		@Override
 		public Type next() {
+			assert(!mIterated2);
+			assert(mIterated1 = true);
+			
 			final Type next = mObjectSet.next();
 			next.initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
 			return next;
@@ -549,6 +563,8 @@ public abstract class Persistent implements Serializable {
 
 		@Override
 		public void reset() {
+			assert(false) : "See mIterated1";
+			
 			mObjectSet.reset();
 		}
 
@@ -611,6 +627,10 @@ public abstract class Persistent implements Serializable {
 
 		@Override
 		public final Iterator<Type> iterator() {
+			assert(!mIterated1);
+			assert(!mIterated2);
+			assert(mIterated2 = true);
+			
 			return new Iterator<Type>() {
 				final Iterator<Type> mIterator = mObjectSet.iterator(); 
 				
@@ -698,11 +718,19 @@ public abstract class Persistent implements Serializable {
 		
 		@Override
 		public ListIterator<Type> listIterator() {
+			assert(!mIterated1);
+			assert(!mIterated2);
+			assert(mIterated2 = true);
+			
 			return new InitializingListIterator<Type>(mObjectSet.listIterator());
 		}
 		
 		@Override
 		public ListIterator<Type> listIterator(final int index) {
+			assert(!mIterated1);
+			assert(!mIterated2);
+			assert(mIterated2 = true);
+			
 			return new InitializingListIterator<Type>(mObjectSet.listIterator(index));
 		}
 
