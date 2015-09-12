@@ -45,7 +45,7 @@ improvements:
        exist for a long time).
   This has been changed to:
     1) Defrag only happens once a week.
-    2) Full Score recomputation only happens once a month.
+    2) Full Score recomputation only happens once every 4 weeks.
   As a consequence, startup should be a lot faster.
   It now takes ~2 minutes on my machine.
 
@@ -61,7 +61,8 @@ Next steps of development will be:
   It thus can be hoped that the worst case is a "worst case of a worst 
   case" and rarely happens on the real network.
   To determine how often it happens, the next build will ship additions
-  to the statistics page to monitor it [2].
+  to the "Statistics" page to monitor the worst case [2]. (The average 
+  case was already added to the statistics, search for "distrust".)
   If it happens to often, there is still hope: During the months of
   development of the new code, quite a few ideas for further improvement
   arose. Part of those are completely new algorithms, and thus they're 
