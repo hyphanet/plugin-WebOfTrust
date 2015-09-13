@@ -112,6 +112,20 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
   Blah.
 
+- 0006622: [Security] TheSeeker's machines have been seized by US government, please update your trust values (xor)
+- 0006605: [Performance] Prevent using ObjectContainer.activate() if already activated to sufficient depth (xor)
+- 0006621: [Usability] Update translations (operhiem1)
+- 0006610: [Code quality] Add command line utility for dumping Trust histogram (xor)
+- 0006617: [Code quality] WOTUtil: Add feature for doing database integrity test and recomputing all Scores (xor)
+- 0006618: [Code quality] StatisticsPage: Show date of last defrag / verification of Scores (xor)
+- 0006627: [Bugs] Trying to load new databases with old WOT versions can break them (xor)
+- 0005994: [Security] Schedule defragmentation after deletion of an OwnIdentity (xor)
+- 0006607: [Security] deleteOwnIdentity() will cause the replacement non-own Identity to be fetched even if it is distrusted (xor)
+- 0005757: [Performance] Get rid of using computeAllScoresWithoutCommit whereever possible (xor)
+- 0006636: [Performance] computeRankFromScratch() should opportunistically compute ranks and put them into a cache (xor)
+- 0005962: [Performance] Don't defragment at every startup, defragment every 7 days (xor)
+- 0006616: [Performance] Don't run verifyAndCorrectStoredScores() at every startup, run it once every 28 days (xor)
+- 0006631: [Code quality] Provide development versions of WOT via fred USK plugin updater (xor)
 
 CHANGELOG about stuff only interesting for developers:
 
@@ -121,6 +135,12 @@ CHANGELOG about stuff only interesting for developers:
   Blah.
   Blah.
 
+- 0006620: [Code quality] Add Hamcrest to junit-build classpath (pull request 32) (operhiem1)
+- 0006609: [Performance] Add synthetic benchmark for improvements of issue 5757 (xor)
+- 0005882: [Core] computeAllScoresWithoutCommit() return value should be false when the IdentityFetcher state was wrong (xor)
+- 0006608: [Code quality] IdentityFetcher should have a "network dump mode" where it will also download old editions (xor)
+- 0006596: [Bugs] Iterating twice over the same ObjectSet can yield different results (xor)
+- 0006647: [Code quality] Provide changelog template (xor)
 
 Thanks to:
   - Person1
