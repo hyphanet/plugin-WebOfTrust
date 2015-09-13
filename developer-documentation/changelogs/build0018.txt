@@ -3,6 +3,16 @@ Web of Trust Version 0.4.4 build0018
 
 SUMMARY AND OUTLOOK (detailed changelog is below):
 
+NOTICE: According to TheSeeker, his machines have been seized by the US
+government. This gives the governemnt access to his WoT / FMS
+identities, his Freesites, etc. Please update your trust values.
+He was a seed-identity until ~2 years ago, and thus might have received
+a trust value of 100 from you automatically if you created your
+identities back then.
+(He says this was due to stuff *not* related to Freenet, and that he
+was neither intentionally committing a crime nor being aware of
+unintentionally having illegal things on his computers.)
+
 NOTICE: While this release has not yet been bundled with a new Freenet 
 release, it can be acquired a lot easier than previous non-bundled 
 ones:
@@ -112,10 +122,72 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
   Blah.
 
-- 0006622: [Security] TheSeeker's machines have been seized by US government, please update your trust values (xor)
-- 0006605: [Performance] Prevent using ObjectContainer.activate() if already activated to sufficient depth (xor)
+- 0006605: [Performance] Prevent using ObjectContainer.activate() if
+           already activated to sufficient depth (xor)
+  
+  "Activation" is a technical term of the db4o database which WoT uses.
+  It is similar to a "join" in relational databases:
+  For example, activating a Trust object will load the identities which
+  gave / received the Trust value. This involves disk IO, and therefore
+  is an expensive operation.
+  
+  When an object is already activated, and then the activate() function
+  is called again, db4o should do nothing in theory.
+  Profiling has shown that this is not the case unfortunately, it
+  takes db4o quite a bit of time to determine that nothing needs to
+  be done.
+  
+  Thus code has been added to WoT to prevent activating stuff twice.
+  
+  The performance impact of this has not been measured, but it should
+  help quite a bit: All getter functions of WoT classes have activation
+  code; and when doing stuff with objects one often calls more than
+  one getter on each object.
+
 - 0006621: [Usability] Update translations (operhiem1)
-- 0006610: [Code quality] Add command line utility for dumping Trust histogram (xor)
+  
+  Huge thanks to the volunteers on Transifex for providing these,
+  and to operhiem1 for managing Transifex.
+  
+  10 files changed, 106 insertions(+), 55 deletions(-)
+  de    | 22 +++++++++++-----------
+  el    | 28 +++++++++++++++++++++++-----
+  es    | 25 +++++++++++++++++++++++--
+  fi    | 2 --
+  fr    | 28 ++++++++++++++++++++--------
+  hu    | 2 --
+  nl    | 2 --
+  pt_BR | 14 +++++++++-----
+  ru    | 22 ++++++----------------
+  zh-cn | 16 ++++++++++++++--
+  
+  (The fact that some languages received more removals than additions
+  is due to changed English source strings which were not translated
+  yet.)
+
+- 0006610: [Code quality] Add command line utility for dumping Trust
+           histogram (xor)
+  
+  WoT now has another user interface: The "wotutil.sh" terminal tool.
+  
+  One of its features is to gather statistics about trust value
+  distribution. This shall be of use for statistical evaluations.
+  
+  It already yielded a discovery [5]:
+  The Trust value distribution is not "smooth". There are certain
+  discrete steps of Trust values such as 75 which occur a lot more
+  often than ones which would seem less "natural" to humans.
+  
+  It can be speculated that a reason for this is UI design in WoT
+  client applications such as Sone which encourages discrete steps
+  instead of small +/- 1 changes.
+  
+  If you are a client application developer, please consider changing
+  your UI to encourage +/- 1 steps.
+  The WoT algorithm supports the full input range of [-100, +100], and
+  it would be usage below its capabilities if we only used a few of
+  those 201 values.
+
 - 0006617: [Code quality] WOTUtil: Add feature for doing database integrity test and recomputing all Scores (xor)
 - 0006618: [Code quality] StatisticsPage: Show date of last defrag / verification of Scores (xor)
 - 0006627: [Bugs] Trying to load new databases with old WOT versions can break them (xor)
@@ -143,9 +215,8 @@ CHANGELOG about stuff only interesting for developers:
 - 0006647: [Code quality] Provide changelog template (xor)
 
 Thanks to:
-  - Person1
-  - Person2
-
+  - All volunteers on Transifex for updating many translations.
+  - operhiem1 for coordinating Transifex
 
 Links:
   [1] FIXME
@@ -153,3 +224,4 @@ Links:
   [3] https://bugs.freenetproject.org/view.php?id=3816
   [4] https://bugs.freenetproject.org/view.php?id=5748
       https://bugs.freenetproject.org/view.php?id=6247
+  [5] FIXME
