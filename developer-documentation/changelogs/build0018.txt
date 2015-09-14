@@ -108,20 +108,6 @@ Next steps of development will be:
 
 CHANGELOG - prefixed with the bugtracker issue number:
 
-- 0000001: title_of_issue_1.............................................
-           more_lines_of_title..........................................
-  
-  Blah.
-  Blah.
-
-- 0000002: .............................................................
-           .............................................................
-  0000003: .............................................................
-           .............................................................
-  
-  Blah.
-  Blah.
-
 - 0006605: [Performance] Prevent using ObjectContainer.activate() if
            already activated to sufficient depth (xor)
   
@@ -188,24 +174,156 @@ CHANGELOG - prefixed with the bugtracker issue number:
   it would be usage below its capabilities if we only used a few of
   those 201 values.
 
-- 0006617: [Code quality] WOTUtil: Add feature for doing database integrity test and recomputing all Scores (xor)
-- 0006618: [Code quality] StatisticsPage: Show date of last defrag / verification of Scores (xor)
-- 0006627: [Bugs] Trying to load new databases with old WOT versions can break them (xor)
-- 0005994: [Security] Schedule defragmentation after deletion of an OwnIdentity (xor)
-- 0006607: [Security] deleteOwnIdentity() will cause the replacement non-own Identity to be fetched even if it is distrusted (xor)
-- 0005757: [Performance] Get rid of using computeAllScoresWithoutCommit whereever possible (xor)
-- 0006636: [Performance] computeRankFromScratch() should opportunistically compute ranks and put them into a cache (xor)
-- 0005962: [Performance] Don't defragment at every startup, defragment every 7 days (xor)
-- 0006616: [Performance] Don't run verifyAndCorrectStoredScores() at every startup, run it once every 28 days (xor)
-- 0006631: [Code quality] Provide development versions of WOT via fred USK plugin updater (xor)
+- 0006617: [Code quality] WOTUtil: Add feature for doing database
+           integrity test and recomputing all Scores (xor)
+  
+  Since Score computation is fully incremental now (as explained in the
+  summary at the beginning of the changelog), wrong Scores caused by
+  bugs will persist for a long time.
+  
+  To be able to detect and fix this, the aforementioned "wotutil.sh"
+  has an option "-testAndRepair" which does a full re-computation
+  (and an integrity test of the database schema).
+  
+  You shouldn't need to run this in normal operation as WoT will do
+  a full re-computation every 4 weeks.
+  It is meant mostly as a tool for developers to be able to validate
+  success of test runs.
+  
+  Nevertheless, users might help testing by doing this sometimes.
+
+- 0006618: [Code quality] StatisticsPage: Show date of last defrag /
+           verification of Scores (xor)
+  
+  Since full Score re-computation and database defragmentation have been
+  changed from happening every startup to every few days (as explained
+  in the summary at the beginning of the changelog), the new code to
+  only run them every few days might have bugs.
+  
+  To assist users with noticing these bugs, the dates when those
+  maintenance operations last happened are displayed on the "Statistics"
+  page.
+
+- 0006627: [Bugs] Trying to load new databases with old WOT versions can
+           break them (xor)
+  
+  The structure of WoT databases ("database schema") is versioned. The
+  version is changed if the structure changes. To ensure that old
+  versions of WoT do not load databases with a newer structure version,
+  there has always been code in WoT which makes it refuse loading a
+  newer database.
+  
+  Unfortunately, in WoT versions prior to this one, this code was
+  bugged. The databases *were* being loaded, which caused corruption
+  if you tried to start an old WoT with a new database.
+  
+  This has now been fixed, so WoT versions starting from this one will
+  correctly refuse to load newer databases.
+  
+  However, old versions such as the previous one cannot be fixed as
+  they're out in the public already.
+  And since this version does change the database structure, the
+  previous one *will* cause corruption. (You'll at least notice if your
+  database is corrupted, WoT will crash at startup. I can write code to
+  repair such databases if you don't have a backup; please ask me then.)
+  
+  Thus, please do *NOT* try to downgrade this release to build0017 or
+  before!
+
+- 0005994: [Security] Schedule defragmentation after deletion of an
+           OwnIdentity (xor)
+  
+  Databases are complex structures. Thus, deleting data from them might
+  not actually erase it from disk. The free space might be kept as-is
+  until something else fills it.
+  
+  To prevent leaking of deleted user identities, a defragmentation is
+  scheduled after the user deletes an identity.
+  This will happen at the next restart of WoT.
+  
+  NOTICE: In general, WoT is not yet safe against leaking data to disk.
+  It for example does not yet encrypt its database if Freenet is
+  configured for encryption. Freenet will hopefully soon notice the
+  user about this, see [6].
+  
+- 0006607: [Security] deleteOwnIdentity() will cause the replacement
+           non-own Identity to be fetched even if it is distrusted (xor)
+  
+  When the user deletes one of his local identities, it is not actually
+  deleted but converted to a non-local one. (This is for security
+  reasons: Other local identities might have assigned trust to it,
+  which should not get deleted.)
+  
+  This code had a bug which would cause the deleted identity to continue
+  to be downloaded no matter whether it was trusted or not.
+  While distrusting one of your own identities after deleting it for
+  sure is a rare use case, this nevertheless was fixed.
+
+- 0005757: [Performance] Get rid of using computeAllScoresWithoutCommit
+           whereever possible (xor)
+  
+  This is the new incremental distrust computation code which was
+  described in the summary at the beginning of the changelog.
+
+- 0006636: [Performance] computeRankFromScratch() should
+           opportunistically compute ranks and put them into a cache
+           (xor)
+  
+  As explained in the summary at the beginning of the changelog, the
+  new incremental distrust computation code has a high worst-case
+  runtime.
+  To alleviate the worst-case, this algorithmic optimization has been
+  appplied already. It is of a complex nature and thus beyond
+  explaining here.
+  
+  Once my aforementioned bachelor's thesis has been published, you
+  will be able to realize that this optimization is one of those
+  suggested in the "Outlook" section of the thesis.
+  Reading the thesis will then explain this optimization.
+  
+  The measurements at [1] aim to show how much this optimization helps.
+  It is labeled as "revision 2" there; the version before it (which is
+  the thesis' original code) is labeled as "revision 1".
+
+- 0005962: [Performance] Don't defragment at every startup, defragment
+           every 7 days (xor)
+  
+  As explained in the summary at the beginning of the changelog.
+  
+- 0006616: [Performance] Don't run verifyAndCorrectStoredScores() at
+           every startup, run it once every 28 days (xor)
+  
+  As explained in the summary at the beginning of the changelog.
+
+- 0006631: [Code quality] Provide development versions of WOT via fred
+           USK plugin updater (xor)
+  
+  As explained in the summary at the beginning of the changelog.
+  Some more information:
+  
+  These are compiled by myself instead of being compiled by the release
+  manager. So instead of on a dedicated high-security system which is
+  only booted for releases, they're compiled on a regular development
+  machine which is in daily online use.
+  They're downloaded from my main USK which is used for my flog and 
+  WoT identity, and thus hooked up to the network quite often.
+  These both are inherently less secure.
+  
+  With regards to quality testing, I plan to keep the same standards as
+  with regular releases. I will test new code before deployment just as
+  I always did. The releases will be packaged with a "buildXXXX" number
+  as regular releases, and also be announced as such.
+  
+  So basically, this release channel has the main goal of allowing me to
+  do releases myself without paying the security price of giving me
+  access to the main Freenet release keys.
+  This is necessary as Freenet releases happen less often than WoT
+  releases nowadays.
+  It provides the side effect of allowing many users to provide testing
+  without big hassle so the release gets well-tested before it is put
+  onto the main network.
 
 CHANGELOG about stuff only interesting for developers:
-
-- 0000004: .............................................................
-           .............................................................
-  
-  Blah.
-  Blah.
 
 - 0006620: [Code quality] Add Hamcrest to junit-build classpath (pull request 32) (operhiem1)
 - 0006609: [Performance] Add synthetic benchmark for improvements of issue 5757 (xor)
@@ -225,3 +343,4 @@ Links:
   [4] https://bugs.freenetproject.org/view.php?id=5748
       https://bugs.freenetproject.org/view.php?id=6247
   [5] FIXME
+  [6] https://bugs.freenetproject.org/view.php?id=6559
