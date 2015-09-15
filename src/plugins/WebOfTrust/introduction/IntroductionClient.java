@@ -347,8 +347,7 @@ public final class IntroductionClient extends TransferThread  {
         // TODO: Performance: The synchronized() upon mWoT can maybe be removed after this is fixed:
         // https://bugs.freenetproject.org/view.php?id=6247
 		synchronized(mWoT) {
-		final ObjectSet<Identity> allIdentities
-		    = mWoT.getAllNonOwnIdentitiesSortedByModification();
+		ObjectSet<Identity> allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
 		
 		final ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(PUZZLE_REQUEST_COUNT + 1);
 		
@@ -375,6 +374,10 @@ public final class IntroductionClient extends TransferThread  {
 		if(identitiesToDownloadFrom.size() == 0) {
 			mIdentities.clear(); /* We probably have less updated identities today than the size of the LRUQueue, empty it */
 
+			// TODO: Performance: Don't re-query this from the database once the issue which caused
+			// this workaround is fixed: https://bugs.freenetproject.org/view.php?id=6646
+			allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
+			
 			for(final Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
 				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT))  {

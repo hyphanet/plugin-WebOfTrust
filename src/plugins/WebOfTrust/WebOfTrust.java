@@ -1656,10 +1656,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 		final long beginTime = CurrentTimeUTC.getInMillis();
 		
 		boolean returnValue = true;
-		final ObjectSet<Identity> allIdentities = getAllIdentities();
 		
 		// Scores are a rating of an identity from the view of an OwnIdentity so we compute them per OwnIdentity.
 		for(OwnIdentity treeOwner : getAllOwnIdentities()) {
+			// TODO: Performance: Move this outside the above loop once the issue which caused this
+			// workaround is fixed: https://bugs.freenetproject.org/view.php?id=6646
+			final ObjectSet<Identity> allIdentities = getAllIdentities();
+			
 			// At the end of the loop body, this table will be filled with the ranks of all identities which are visible for treeOwner.
 			// An identity is visible if there is a trust chain from the owner to it.
 			// The rank is the distance in trust steps from the treeOwner.			

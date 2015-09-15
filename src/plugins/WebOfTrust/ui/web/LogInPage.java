@@ -3,14 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust.ui.web;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.ui.web.WebInterface.CreateOwnIdentityWebInterfaceToadlet;
 import plugins.WebOfTrust.ui.web.WebInterface.LogOutWebInterfaceToadlet;
 import plugins.WebOfTrust.ui.web.WebInterface.LoginWebInterfaceToadlet;
-
-import com.db4o.ObjectSet;
-
 import freenet.clients.http.SessionManager;
 import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
@@ -65,9 +65,12 @@ public final class LogInPage extends WebPageImpl {
         // TODO: Performance: The synchronized() can be removed after this is fixed:
         // https://bugs.freenetproject.org/view.php?id=6247
 		synchronized (mWebOfTrust) {
-			final ObjectSet<OwnIdentity> ownIdentities = mWebOfTrust.getAllOwnIdentities();
-		
-			if (ownIdentities.hasNext()) {
+			// TODO: Performance: Don't convert to ArrayList once the issue which caused this
+			// workaround is fixed: https://bugs.freenetproject.org/view.php?id=6646
+			final List<OwnIdentity> ownIdentities
+				= new ArrayList<OwnIdentity>(mWebOfTrust.getAllOwnIdentities());
+			
+			if (!ownIdentities.isEmpty()) {
 				makeLoginBox(ownIdentities);
 				makeCreateIdentityBox();
 			} else {
@@ -88,7 +91,7 @@ public final class LogInPage extends WebPageImpl {
 		l10n().addL10nSubstitution(welcomeBox.addChild("p"), "LoginPage.Welcome.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 	}
 
-	private final void makeLoginBox(ObjectSet<OwnIdentity> ownIdentities) {
+	private final void makeLoginBox(List<OwnIdentity> ownIdentities) {
 		HTMLNode loginBox = addContentBox(l10n().getString("LoginPage.LogIn.Header"));
 
 		HTMLNode selectForm = pr.addFormChild(loginBox, mToadlet.getURI().toString(), mToadlet.pageTitle);
