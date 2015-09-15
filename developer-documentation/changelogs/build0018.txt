@@ -325,22 +325,112 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
 CHANGELOG about stuff only interesting for developers:
 
-- 0006620: [Code quality] Add Hamcrest to junit-build classpath (pull request 32) (operhiem1)
-- 0006609: [Performance] Add synthetic benchmark for improvements of issue 5757 (xor)
-- 0005882: [Core] computeAllScoresWithoutCommit() return value should be false when the IdentityFetcher state was wrong (xor)
-- 0006608: [Code quality] IdentityFetcher should have a "network dump mode" where it will also download old editions (xor)
-- 0006596: [Bugs] Iterating twice over the same ObjectSet can yield different results (xor)
+- 0006620: [Code quality] Add Hamcrest to junit-build classpath (pull
+           request 32) (operhiem1)
+  
+  Hamcrest is a framework complementary to JUnit [7].
+  It may be used for easing unit test development.
+
+  Thanks to operhiem1 for this!
+
+- 0006609: [Performance] Add synthetic benchmark for improvements of
+           issue 5757 (xor)
+  
+  Multiple attempts have been conducted to benchmark the Score
+  computation improvements which have been explained in the summary
+  at the beginning of this changelog:
+  
+  - Class WOTUtil's function benchmarkRemoveTrustDestructive():
+    This can be used upon a regular WoT database, i.e. a dump of the
+    real network, to measure the performance of the function for
+    removing Trust values.
+    It does so by removing random Trust values one-by-one, and measuring
+    the time it takes for each.
+    This specifically tests the new code as described in the changelog's
+    summary, and thus is what was used for producing the plot [1].
+    
+  - Class ScoreComputationBenchmark:
+    It aims to simulate the topology of the Trust graph as measured on
+    the real network using WOTUtil's new histogram features.
+    This was not completed to full extent yet: It does follow the Trust
+    value distribution, and the trustee count distribution (thanks
+    ArneBab!), but not the received-Trust distribution.
+    Future development might complete this. It then could be used to
+    make the unit tests more realistic: They do use random Trust graphs
+    already, but the probability distribution was chosen arbitrarily,
+    not from measurements.
+  
+  A more detailed elaboration of the benchmarks can be studied in my
+  bachelor's thesis once it is published.
+
+- 0005882: [Core] computeAllScoresWithoutCommit() return value should be
+           false when the IdentityFetcher state was wrong (xor)
+  
+  computeAllScoresWithoutCommit() is the full Score re-computation
+  function which the summary of the changelog talks about.
+  
+  It not only serves the purpose of re-computing stuff, but also of
+  *validating* correctness of the existing database contents. This is
+  used heavily in assert()s, and thus also in unit tests.
+  
+  It previously did not check the correctness of the instructions given
+  to the IdentityFetcher of whether it should fetch each of the
+  known Identities or not.
+  Now it also validates whether the IdentityFetcher has been correctly
+  told to fetch/ignore Identities.
+  
+  This means that the new Score computation code is also tested to
+  correctly feed the IdentityFetcher with commands.
+
+- 0006608: [Code quality] IdentityFetcher should have a
+           "network dump mode" where it will also download old editions
+           (xor)
+  
+  By default, the IdentityFetcher will try to only fetch the latest
+  edition of each known Identity.
+  A network dump using the IdentityFileDiskQueue thus is a snapshot of a
+  possibly infinitesimally short timespan. It will therefore lack the
+  temporal nature of Trust values being changed around by users.
+  This is a problem if you want to test/benchmark things which happen
+  across longer timespans.
+  
+  Hence the new flag IdentityFetcher.DEBUG__NETWORK_DUMP_MODE can be set
+  to true to make the IdentityFetcher try to download some *old*
+  editions as well.
+  
+  Unfortunately, my test run of a handful of hours showed that most old
+  editions have fallen out of the network. IIRC, less than 100
+  Identities were discovered, even though we have over 11 000 nowadays.
+  I did not have very much patience though (less than half a day), so
+  you might give this a try yourself.
+
+- 0006596: [Bugs] Add workaround for db4o bug (xor)
+  
+  This one is too boring to explain in detail here.
+  What can be said is that assert()s have been added to make developer's
+  notice if they use programming patterns which might trigger the db4o
+  bug.
+
 - 0006647: [Code quality] Provide changelog template (xor)
+
+  See file "developer-documentation/Changelog-template.txt".
+
 
 Thanks to:
   - All volunteers on Transifex for updating many translations.
+  - ArneBab for the ideas about graph topology modelling in
+    ScoreComputationBenchmark.
   - operhiem1 for coordinating Transifex
+
 
 Links:
   [1] FIXME
+      Produced using this GnuPlot script:
+      https://gist.github.com/xor-freenet/33b7a17db0d3b80b842e
   [2] https://bugs.freenetproject.org/view.php?id=6648
   [3] https://bugs.freenetproject.org/view.php?id=3816
   [4] https://bugs.freenetproject.org/view.php?id=5748
       https://bugs.freenetproject.org/view.php?id=6247
   [5] FIXME
   [6] https://bugs.freenetproject.org/view.php?id=6559
+  [7] https://en.wikipedia.org/wiki/Hamcrest
