@@ -41,7 +41,6 @@ DeleteOwnIdentityPage.DeleteIdentityBox.Header=Confirmar exclusão de identidade
 DeleteOwnIdentityPage.DeleteIdentityBox.Text1=Você está prestes a excluir a identidade '${nickname}', quer mesmo isso?
 DeleteOwnIdentityPage.DeleteIdentityBox.Text2=Você pode querer fazer backup de sua inserção URI para uso posterior!
 DeleteOwnIdentityPage.IdentityDeleted.Header=Sucesso
-DeleteOwnIdentityPage.IdentityDeleted.Text=A identidade foi excluída.
 EditOwnIdentityPage.EditIdentityBox.Contexts=Contextos
 EditOwnIdentityPage.EditIdentityBox.Header=Editar identidade '${nickname}'
 EditOwnIdentityPage.EditIdentityBox.InsertUri=Inserir URI (MANTENHA ISSO EM SEGREDO!)

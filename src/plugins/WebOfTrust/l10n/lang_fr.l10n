@@ -46,7 +46,6 @@ DeleteOwnIdentityPage.DeleteIdentityBox.Header=Confirmer la suppression de l'ide
 DeleteOwnIdentityPage.DeleteIdentityBox.Text1=Vous êtes sur le point de supprimer l'identité « ${nickname} », êtes-vous certain ?
 DeleteOwnIdentityPage.DeleteIdentityBox.Text2=Vous devriez sauvegarder son URI d'insertion pour une utilisation ultérieure !
 DeleteOwnIdentityPage.IdentityDeleted.Header=Réussi
-DeleteOwnIdentityPage.IdentityDeleted.Text=L'identité a été supprimée.
 EditOwnIdentityPage.EditIdentityBox.Contexts=Contextes
 EditOwnIdentityPage.EditIdentityBox.Header=Modifier l'identité « ${nickname} »
 EditOwnIdentityPage.EditIdentityBox.InsertUri=URI d'insertion (LA GARDER SECRÈTE )

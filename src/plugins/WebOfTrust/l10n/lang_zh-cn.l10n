@@ -47,7 +47,6 @@ DeleteOwnIdentityPage.DeleteIdentityBox.Header=确认删除身份
 DeleteOwnIdentityPage.DeleteIdentityBox.Text1=你确定要删除身份“${nickname}”？你真的确定？
 DeleteOwnIdentityPage.DeleteIdentityBox.Text2=你可能想备份嵌入 URI 供以后使用!
 DeleteOwnIdentityPage.IdentityDeleted.Header=成功
-DeleteOwnIdentityPage.IdentityDeleted.Text=身份已删除。
 EditOwnIdentityPage.EditIdentityBox.Contexts=上下文
 EditOwnIdentityPage.EditIdentityBox.Header=编辑身份“${nickname}”。
 EditOwnIdentityPage.EditIdentityBox.InsertUri=嵌入 URI (保持机密!)

@@ -47,7 +47,6 @@ DeleteOwnIdentityPage.DeleteIdentityBox.Header=Potwierdź kasowanie tożsamości
 DeleteOwnIdentityPage.DeleteIdentityBox.Text1=Chcesz skasować tożsamość '${nickname}', jesteś pewien?
 DeleteOwnIdentityPage.DeleteIdentityBox.Text2=Być może chcesz zachować kopię URI aby skorzystać z niej w przyszłości!
 DeleteOwnIdentityPage.IdentityDeleted.Header=Sukces
-DeleteOwnIdentityPage.IdentityDeleted.Text=Tożsamość została skasowana.
 EditOwnIdentityPage.EditIdentityBox.Contexts=Konteksty
 EditOwnIdentityPage.EditIdentityBox.Header=Edytuj tożsamość '${nickname}'
 EditOwnIdentityPage.EditIdentityBox.InsertUri=Włóż URI (ZACHOWAJ TO W TAJEMNICY!)
