@@ -1,6 +1,12 @@
 Web of Trust Version 0.4.4 build0018
 ------------------------------------------------------------------------
 
+TLDR:
+  Measurements [1] of removing Trust values show an average execution
+  time of 1.7 seconds, which previously was 49 seconds
+  = a speed improvement of factor 28.
+
+
 SUMMARY AND OUTLOOK (detailed changelog is below):
 
 NOTICE: According to TheSeeker, his machines have been seized by the US
@@ -43,8 +49,8 @@ improvements:
   block the web interface from responding during the whole time.
   This build ships an incremental Score recomputation algorithm for 
   these situations - which should be a lot faster:
-  Measurements [1] show an average execution time of 1.7 seconds = a 
-  speed improvement of factor 28.
+  Measurements [1] show an average execution time of 1.7 seconds, which
+  previously was 49 seconds = a speed improvement of factor 28.
   As there was an incremental recomputation code for non-distrust Trust 
   changes already, Score recomputation is fully incremental now.
 
@@ -424,13 +430,13 @@ Thanks to:
 
 
 Links:
-  [1] FIXME
+  [1] http://localhost:8888/CHK@DPyogjdlfKp1rUavVANbwRH2NTM7Anq~7dpFA3azdqo,CJ968vmM890poA1FNi7MXlB3-r6zMxv6fytmXPlf7d4,AAMC--8/WoT-benchmark-build0016-commit-3edbad7a70-vs-build0018.png
       Produced using this GnuPlot script:
       https://gist.github.com/xor-freenet/33b7a17db0d3b80b842e
   [2] https://bugs.freenetproject.org/view.php?id=6648
   [3] https://bugs.freenetproject.org/view.php?id=3816
   [4] https://bugs.freenetproject.org/view.php?id=5748
       https://bugs.freenetproject.org/view.php?id=6247
-  [5] FIXME
+  [5] http://localhost:8888/CHK@iCe9WZKq52Esq73iRePhdQiu63nyKrHC7RwS8pP1TaA,sh0ODWAyYOuoHd85Llfr7pF2Sy-mnZwavkx3Lz7puuQ,AAMC--8/WoT-trust-value-histogram-2015-07-23.png
   [6] https://bugs.freenetproject.org/view.php?id=6559
   [7] https://en.wikipedia.org/wiki/Hamcrest
