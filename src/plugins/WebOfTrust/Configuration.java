@@ -17,6 +17,8 @@ import freenet.support.codeshortification.IfNull;
  * in the database. Integer configuration values are stored separately because they might be needed very often per second and we should
  * save the time of converting String to Integer.
  * 
+ * TODO: Code quality: The function names often lack the "WithoutCommit" suffix.
+ * 
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
@@ -25,7 +27,11 @@ public final class Configuration extends Persistent {
 
 	/**
 	 * At startup, we defragment the db4o database after this interval has expired.
-	 * TODO: Code quality: Make configurable. */
+	 * TODO: Code quality: Make configurable.
+	 * 
+	 * ATTENTION: If it ever becomes possible to set this to "infinite", for example in a
+	 * user-accessible configuration menu, please ensure that
+	 * {@link #scheduleDefragmentationWithoutCommit()} is updated to work with that. */
 	public final static transient long DEFAULT_DEFRAG_INTERVAL = TimeUnit.DAYS.toMillis(7);
 
 	/**
@@ -218,6 +224,20 @@ public final class Configuration extends Persistent {
 	public Date getLastDefragDate() {
 		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return (Date)mLastDefragDate.clone(); // Clone it because date is mutable
+	}
+	
+	/**
+	 * Schedules a defragmentation of the database at the next restart of WoT.
+	 * Not only for maintenance purposes but also for security:
+	 * After {@link WebOfTrust#deleteOwnIdentity(String)}, it is a good idea to close holes in the
+	 * database structures to erase leftover data of the deleted {@link OwnIdentity}. */
+	void scheduleDefragmentationWithoutCommit() {
+		// Date is a db4o primitive type so activation depth of 1 is enough. We also don't need
+		// to delete because of that, db4o will do it automatically.
+		checkedActivate(1);
+		// checkedDelete(mLastDefragDate);
+		
+		mLastDefragDate = new Date(0);
 	}
 
 	public void updateLastDefragDate() {

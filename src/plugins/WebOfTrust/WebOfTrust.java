@@ -4922,6 +4922,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 					mFetcher.storeStartFetchCommandWithoutCommit(newIdentity);
 				
 				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, newIdentity);
+				
+				// It is a good idea to close holes in the database structures to erase leftover
+				// data of the deleted OwnIdentity. 
+				mConfig.scheduleDefragmentationWithoutCommit();
+				mConfig.storeWithoutCommit();
 
 				// This function messes with the score graph manually so it is a good idea to check whether it is intact before and afterwards.
 				assert(computeAllScoresWithoutCommit());

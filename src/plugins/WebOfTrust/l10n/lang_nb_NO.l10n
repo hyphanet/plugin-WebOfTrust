@@ -23,7 +23,6 @@ DeleteOwnIdentityPage.DeleteIdentityBox.Header=Bekreft identitetssletting
 DeleteOwnIdentityPage.DeleteIdentityBox.Text1=Du kommer til å slette identiteten '${nickname}', er du sikker ?
 DeleteOwnIdentityPage.DeleteIdentityBox.Text2=Du burde ta backup av den sin innsettelse URI for senere bruk!
 DeleteOwnIdentityPage.IdentityDeleted.Header=Suksess
-DeleteOwnIdentityPage.IdentityDeleted.Text=Identiteten var slettet.
 EditOwnIdentityPage.EditIdentityBox.Contexts=Sammenhenger
 EditOwnIdentityPage.EditIdentityBox.Header=Editer identiteten '${nickname}'
 EditOwnIdentityPage.EditIdentityBox.InsertUri=Innsettelse URI (HOLD DETTE HEMMELIG!)

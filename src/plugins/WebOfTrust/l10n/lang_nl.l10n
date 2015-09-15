@@ -46,7 +46,6 @@ DeleteOwnIdentityPage.DeleteIdentityBox.Header=Bevestig verwijderen pseudoniem
 DeleteOwnIdentityPage.DeleteIdentityBox.Text1=Je staat op het punt om het pseudoniem '${nickname}' te verwijderen. Weet je het zeker?
 DeleteOwnIdentityPage.DeleteIdentityBox.Text2=Het is aan te raden om de insert URI op een veilige plaats op te slaan voor later gebruik!
 DeleteOwnIdentityPage.IdentityDeleted.Header=Geslaagd
-DeleteOwnIdentityPage.IdentityDeleted.Text=Het pseudoniem is verwijderd.
 EditOwnIdentityPage.EditIdentityBox.Contexts=Contexten
 EditOwnIdentityPage.EditIdentityBox.Header=Bewerk pseudoniem '${nickname}'
 EditOwnIdentityPage.EditIdentityBox.InsertUri=Insert URI (Houd deze geheim!)

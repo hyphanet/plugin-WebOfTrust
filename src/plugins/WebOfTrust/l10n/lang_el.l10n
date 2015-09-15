@@ -47,7 +47,6 @@ DeleteOwnIdentityPage.DeleteIdentityBox.Header=Επιβεβαίωση διαγρ
 DeleteOwnIdentityPage.DeleteIdentityBox.Text1=Πρόκειται να διαγράψετε την ταυτότητα '${nickname}', είστε βέβαιοι;
 DeleteOwnIdentityPage.DeleteIdentityBox.Text2=Μπορεί να θελήσετε να πάρετε αντίγραφο ασφαλείας του insert URI για μεταγενέστερη χρήση!
 DeleteOwnIdentityPage.IdentityDeleted.Header=Επιτυχία
-DeleteOwnIdentityPage.IdentityDeleted.Text=Η ταυτότητα διαγράφηκε.
 EditOwnIdentityPage.EditIdentityBox.Contexts=Πλαίσιο
 EditOwnIdentityPage.EditIdentityBox.Header=Επεξεργασία ταυτότητας '${nickname}'
 EditOwnIdentityPage.EditIdentityBox.InsertUri=Εισαγωγή URI (ΚΡΑΤΗΣΤΕ ΤΟ ΜΥΣΤΙΚΟ!)

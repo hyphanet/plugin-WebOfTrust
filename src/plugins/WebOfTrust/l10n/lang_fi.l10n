@@ -47,7 +47,6 @@ DeleteOwnIdentityPage.DeleteIdentityBox.Header=Vahvista identiteetin poisto
 DeleteOwnIdentityPage.DeleteIdentityBox.Text1=Olet poistamassa identiteetin ’${nickname}’, oletko varma?
 DeleteOwnIdentityPage.DeleteIdentityBox.Text2=Saatat haluta varmuuskopioida sen lisätyn Internet-resurssitunnuksen myöhempää käyttöä varten!
 DeleteOwnIdentityPage.IdentityDeleted.Header=Onnistui
-DeleteOwnIdentityPage.IdentityDeleted.Text=Identiteetti poistettiin.
 EditOwnIdentityPage.EditIdentityBox.Contexts=Asiayhteydet
 EditOwnIdentityPage.EditIdentityBox.Header=Muokkaa identiteettiä '${nickname}'
 EditOwnIdentityPage.EditIdentityBox.InsertUri=Lisää Internet-resurssitunnus (PIDÄ TÄMÄ SALASSA!)

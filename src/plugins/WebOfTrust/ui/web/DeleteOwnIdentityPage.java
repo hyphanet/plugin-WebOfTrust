@@ -35,7 +35,11 @@ public class DeleteOwnIdentityPage extends WebPageImpl {
 				mToadlet.logOut(mContext);
 				
 				HTMLNode box = addContentBox(l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Header"));
-				box.addChild("#", l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text"));
+				box.addChild("p", l10n().getString("DeleteOwnIdentityPage.IdentityDeleted.Text1"));
+
+				l10n().addL10nSubstitution(box.addChild("p"),
+					"DeleteOwnIdentityPage.IdentityDeleted.Text2", 
+					new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
 				
 				// Cast because the casted version does not throw RedirectException.
 				((LoginWebInterfaceToadlet)mWebInterface.getToadlet(LoginWebInterfaceToadlet.class))

@@ -24,7 +24,6 @@ DeleteOwnIdentityPage.DeleteIdentityBox.Header=Személyazonosság törlésének 
 DeleteOwnIdentityPage.DeleteIdentityBox.Text1=A '${nickname}' személy törlését szeretné, biztos benne?
 DeleteOwnIdentityPage.DeleteIdentityBox.Text2=Talán szeretné eltenni a beillesztő URI-t egy későbbi felhasználásra!
 DeleteOwnIdentityPage.IdentityDeleted.Header=Siker
-DeleteOwnIdentityPage.IdentityDeleted.Text=A személy törlésre került
 EditOwnIdentityPage.EditIdentityBox.Contexts=Konteksztus
 EditOwnIdentityPage.EditIdentityBox.Header='${nickname}' személy szerkesztése
 EditOwnIdentityPage.EditIdentityBox.InsertUri=URI beillesztése (TARSA TITOKBAN!)

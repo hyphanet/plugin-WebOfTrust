@@ -46,7 +46,6 @@ DeleteOwnIdentityPage.DeleteIdentityBox.Header=Confermare la cancellazione dell'
 DeleteOwnIdentityPage.DeleteIdentityBox.Text1=State per cancellare l'identità '${nickname}', siete sicuri?
 DeleteOwnIdentityPage.DeleteIdentityBox.Text2=Potreste volere fare una copia di sicurezza delle sue chiavi per un utilizzo successivo!
 DeleteOwnIdentityPage.IdentityDeleted.Header=Successo
-DeleteOwnIdentityPage.IdentityDeleted.Text=L'identità è stata cancellata.
 EditOwnIdentityPage.EditIdentityBox.Contexts=Contesti
 EditOwnIdentityPage.EditIdentityBox.Header=Modificare l'identità '${nickname}'
 EditOwnIdentityPage.EditIdentityBox.InsertUri=URI di inserimento (MANTENERE SEGRETO!)
