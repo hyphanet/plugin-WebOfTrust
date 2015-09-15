@@ -17,6 +17,8 @@ import freenet.support.codeshortification.IfNull;
  * in the database. Integer configuration values are stored separately because they might be needed very often per second and we should
  * save the time of converting String to Integer.
  * 
+ * TODO: Code quality: The function names often lack the "WithoutCommit" suffix.
+ * 
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
