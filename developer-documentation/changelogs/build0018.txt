@@ -11,32 +11,32 @@ IMPORTANT STUFF:
 
 NOTICE: According to TheSeeker, his machines have been seized by the US
 government. This gives the government access to his WoT / FMS
-identities, his freesites, etc. Please update your trust values.
+identities, his freesites, etc. Please update your Trust values.
 He was a seed-identity until ~2 years ago, and thus might have received
-a trust value of 100 from you automatically if you created your
+a Trust value of 100 from you automatically if you created your
 identities back then.
 (He says this was due to stuff *not* related to Freenet, and that he
 was neither intentionally committing a crime nor being aware of
 unintentionally having illegal things on his computers.)
 
-NOTICE: While this release has not yet been bundled with a new Freenet 
-release, it can be acquired a lot easier than previous non-bundled 
+NOTICE: While this release has not yet been bundled with a new Freenet
+release, it can be acquired a lot easier than previous non-bundled
 ones:
 1) Update your Freenet to the testing version using the shell command
    "./update.sh testing" on Linux or "update.cmd testing" on Windows.
-2) Unload the "WebOfTrust" plugin and load the "WebOfTrust Testing 
-   Versions" plugin. Please do first read the description for the 
+2) Unload the "WebOfTrust" plugin and load the "WebOfTrust Testing
+   Versions" plugin. Please do first read the description for the
    security implications!
 3) If you had already done step 2 previously, i.e. are already running
    the previous testing release build0017, you need to restart Freenet
    or unload and re-load the plugin for getting the update: Freenet will
    only check for updates of the testing version when the plugin
    is reloaded.
-Once Freenet build 1471 is released, step 1 will not be necessary 
+Once Freenet build 1471 is released, step 1 will not be necessary
 anymore.
 You will also get this release someday even if you do not switch to the
 testing versions. It will just take longer: Non-testing releases are
-shipped together with regular Freenet releases; and Freenet releases do 
+shipped together with regular Freenet releases; and Freenet releases do
 not happen as often as WoT releases.
 
 
@@ -45,31 +45,31 @@ SUMMARY AND OUTLOOK (detailed changelog is below):
 This WoT version finally ships some of the long awaited core performance
 improvements:
 
-- Previous builds would fall back to "full Score re-computation" upon 
-  Trust changes which cause "distrust": Removal of a Trust value, 
-  changing a Trust value from above zero to zero or negative, or adding 
+- Previous builds would fall back to "full Score re-computation" upon
+  Trust changes which cause "distrust": Removal of a Trust value,
+  changing a Trust value from above zero to zero or negative, or adding
   a zero or below zero Trust value. The full re-computation was a
-  *very* slow piece of code as it basically recalculates the whole 
+  *very* slow piece of code as it basically recalculates the whole
   Score database. It usually took ~ 1 minute, or even 10 minutes on some
-  machines. This was made even worse by the fact that it happened not 
-  only for local Trust changes but also for remote ones. Also, due to 
-  unfortunate current limitations of the database code [4], it would 
+  machines. This was made even worse by the fact that it happened not
+  only for local Trust changes but also for remote ones. Also, due to
+  unfortunate current limitations of the database code [4], it would
   block the web interface from responding during the whole time.
-  This build ships an incremental Score re-computation algorithm for 
+  This build ships an incremental Score re-computation algorithm for
   these situations - which should be a lot faster:
   Measurements [1] show an average execution time of 1.7 seconds, which
   previously was 49 seconds = a speed improvement of factor 28.
   As there was an incremental re-computation code for non-distrust Trust
   changes already, Score re-computation is fully incremental now.
 
-- Restarting of WoT / your computer usually caused:
+- In previous versions, restarting WoT usually caused:
     1) a defragmentation of the database.
-    2) a full Score recomputation (to prevent bugs in the existing 
-       incremental Score computation code from causing wrong values to 
+    2) a full Score re-computation (to prevent bugs in the existing
+       incremental Score computation code from causing wrong values to
        exist for a long time).
   This has been changed to:
     1) Defrag only happens once a week.
-    2) Full Score recomputation only happens once every 4 weeks.
+    2) Full Score re-computation only happens once every 4 weeks.
   As a consequence, startup should be a lot faster.
   It now takes ~2 minutes on my machine.
 
@@ -82,80 +82,78 @@ faster, please test without any client applications.
 
 Next steps of development will be:
 
-- While the average execution time of 1.7 seconds of the new incremental 
-  Score computation algorithm is acceptable, its worst case execution 
-  time of above 60 seconds is not.
-  It is difficult to judge how frequently the worst case happens, as the 
-  benchmark which was conducted had to be synthetic: The operations 
-  which cause the new code to run are quite rare with network dumps, so 
-  real Trust changes couldn't be used as a benchmarks.
-  It thus can be hoped that the worst case is a "worst case of a worst 
-  case" and rarely happens on the real network.
+- While the average execution time of 1.7 seconds of the new incremental
+  Score computation algorithm is acceptable, its measured worst case
+  execution time of above 60 seconds is not.
+  It is difficult to judge how frequently the worst case happens, as the
+  benchmark which was conducted had to be synthetic: The operations
+  which cause the new code to run are quite rare in network dumps, so
+  real world Trust changes couldn't be used as a benchmarks.
+  It thus can be hoped that the worst case is a "worst case of a worst
+  case" and very rarely happens on the real network.
   To determine how often it happens, the next build will ship additions
-  to the "Statistics" page to monitor the worst case [2]. (The average 
+  to the "Statistics" page to monitor the worst case [2]. (The average
   case was already added to the statistics, search for "distrust".)
-  If it happens to often, there is still hope: During the months of
+  If it happens too often, there is still hope: During the months of
   development of the new code, quite a few ideas for further improvement
-  arose. Part of those are completely new algorithms, and thus they're 
-  not implemented yet but will have to wait until we have measurements 
-  to show whether the effort of rewriting this yet once more is 
+  arose. Part of those are completely new algorithms, and thus they're
+  not implemented yet but will have to wait until we have measurements
+  to show whether the effort of rewriting this yet once more is
   indicated.
 
 - The improved startup time of ~2 minutes is still too much.
-  It is caused by the fact that WoT will currently subscribe to the USKs 
+  It is caused by the fact that WoT will currently subscribe to the USKs
   of *all* trusted Identities - currently over 11 000!
-  This is not only inacceptable from a startup point of view, but also 
-  from a network-load perspective - it causes a O(N^2) network-wide 
+  This is not only unacceptable from a startup point of view, but also
+  from a network-load perspective - it causes a O(N²) network-wide
   load; and also slows down each individual node significantly.
-  Hence, the algorithm will be changed to only subscribe to the USKs of 
-  directly trusted identities; and to fetch non-directly-trusted ones in 
+  Hence, the algorithm will be changed to only subscribe to the USKs of
+  directly trusted identities; and to fetch non-directly-trusted ones in
   a more sparse, opportunistic approach. See [3].
+  This is likely the primary goal of the next release.
 
-- The new incremental distrust computation code was the subject of my 
-  bachelor's thesis. It therefore yielded not only the new algorithm, 
-  but also a very long document which describes the old algorithm and 
+- The new incremental distrust computation algorithm was the subject of
+  my bachelor's thesis. Therefore not only the new code was written,
+  but also a very long document which describes the old algorithm and
   the steps towards the new one.
-  This thesis' document has turned out to be well-suited to become a 
+  This thesis' document has turned out to be well-suited to become a
   "WoT developer's manual", and I plan to release it as such soon.
-  I will wait with that until university has graded it (ETA: October) 
-  for slightly selfish reasons: I don't want to risk getting negative 
-  opinions on it before I know for sure that I passed - that'd only 
-  cause needless panic. I hope this is only slightly selfish as a  
-  non-paniced xor is a happy xor and a happy xor will produce more
+  I will wait with that until university has graded it (ETA: October)
+  for slightly selfish reasons: I don't want to risk getting negative
+  opinions on it before I know for sure that I passed - that'd only
+  cause needless panic. I hope this is only "slightly" selfish as a
+  not-in-panic xor is a happy xor and a happy xor will produce more
   WoT code :)
-  I will announce the document on the usual channels once it is 
-  available.
+  I will announce the document on FMS / IRC / my flog / the mailing list
+  once it is available.
 
 
-CHANGELOG - prefixed with the bugtracker issue number:
+CHANGELOG - prefixed with the bug tracker issue number:
 
 - 0006605: [Performance] Prevent using ObjectContainer.activate() if
            already activated to sufficient depth (xor)
-  
+
   "Activation" is a technical term of the db4o database which WoT uses.
   It is similar to a "join" in relational databases:
   For example, activating a Trust object will load the identities which
   gave / received the Trust value. This involves disk IO, and therefore
   is an expensive operation.
-  
-  When an object is already activated, and then the activate() function
-  is called again, db4o should do nothing in theory.
+
+  When an object is already activated, and then  db4o's activate()
+  function is called again, db4o should do nothing in theory.
   Profiling has shown that this is not the case unfortunately, it
   takes db4o quite a bit of time to determine that nothing needs to
   be done.
-  
+
   Thus code has been added to WoT to prevent activating stuff twice.
-  
+
   The performance impact of this has not been measured, but it should
   help quite a bit: All getter functions of WoT classes have activation
   code; and when doing stuff with objects one often calls more than
   one getter on each object.
 
 - 0006621: [Usability] Update translations (operhiem1)
-  
-  Huge thanks to the volunteers on Transifex for providing these,
-  and to operhiem1 for managing Transifex.
-  
+
   10 files changed, 106 insertions(+), 55 deletions(-)
   de    | 22 +++++++++++-----------
   el    | 28 +++++++++++++++++++++++-----
@@ -167,28 +165,31 @@ CHANGELOG - prefixed with the bugtracker issue number:
   pt_BR | 14 +++++++++-----
   ru    | 22 ++++++----------------
   zh-cn | 16 ++++++++++++++--
-  
+
   (The fact that some languages received more removals than additions
   is due to changed English source strings which were not translated
   yet.)
 
+  Huge thanks to the volunteers on Transifex for providing these,
+  and to operhiem1 for managing Transifex.
+
 - 0006610: [Code quality] Add command line utility for dumping Trust
            histogram (xor)
-  
+
   WoT now has another user interface: The "wotutil.sh" terminal tool.
-  
-  One of its features is to gather statistics about trust value
-  distribution. This shall be of use for statistical evaluations.
-  
+
+  One of its features is to gather statistics about the Trust network.
+  This shall be of use for statistical evaluations.
+
   It already yielded a discovery [5]:
   The Trust value distribution is not "smooth". There are certain
   discrete steps of Trust values such as 75 which occur a lot more
   often than ones which would seem less "natural" to humans.
-  
+
   It can be speculated that a reason for this is UI design in WoT
   client applications such as Sone which encourages discrete steps
   instead of small +/- 1 changes.
-  
+
   If you are a client application developer, please consider changing
   your UI to encourage +/- 1 steps.
   The WoT algorithm supports the full input range of [-100, +100], and
@@ -197,84 +198,84 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
 - 0006617: [Code quality] WOTUtil: Add feature for doing database
            integrity test and recomputing all Scores (xor)
-  
+
   Since Score computation is fully incremental now (as explained in the
   summary at the beginning of the changelog), wrong Scores caused by
   bugs will persist for a long time.
-  
+
   To be able to detect and fix this, the aforementioned "wotutil.sh"
   has an option "-testAndRepair" which does a full re-computation
   (and an integrity test of the database schema).
-  
+
   You shouldn't need to run this in normal operation as WoT will do
   a full re-computation every 4 weeks.
   It is meant mostly as a tool for developers to be able to validate
   success of test runs.
-  
+
   Nevertheless, users might help testing by doing this sometimes.
 
 - 0006618: [Code quality] StatisticsPage: Show date of last defrag /
            verification of Scores (xor)
-  
+
   Since full Score re-computation and database defragmentation have been
   changed from happening every startup to every few days (as explained
   in the summary at the beginning of the changelog), the new code to
   only run them every few days might have bugs.
-  
+
   To assist users with noticing these bugs, the dates when those
   maintenance operations last happened are displayed on the "Statistics"
   page.
 
 - 0006627: [Bugs] Trying to load new databases with old WOT versions can
            break them (xor)
-  
+
   The structure of WoT databases ("database schema") is versioned. The
   version is changed if the structure changes. To ensure that old
   versions of WoT do not load databases with a newer structure version,
   there has always been code in WoT which makes it refuse loading a
   newer database.
-  
+
   Unfortunately, in WoT versions prior to this one, this code was
-  bugged. The databases *were* being loaded, which caused corruption
-  if you tried to start an old WoT with a new database.
-  
+  bugged. Even though WoT refused to start and showed an error message,
+  the database *was* being loaded, which could cause corruption.
+
   This has now been fixed, so WoT versions starting from this one will
   correctly refuse to load newer databases.
-  
+
   However, old versions such as the previous one cannot be fixed as
   they're out in the public already.
-  And since this version does change the database structure, the
+  And since this new version does change the database structure, the
   previous one *will* cause corruption. (You'll at least notice if your
   database is corrupted, WoT will crash at startup. I can write code to
   repair such databases if you don't have a backup; please ask me then.)
-  
+
   Thus, please do *NOT* try to downgrade this release to build0017 or
   before!
 
 - 0005994: [Security] Schedule defragmentation after deletion of an
            OwnIdentity (xor)
-  
+
   Databases are complex structures. Thus, deleting data from them might
   not actually erase it from disk. The free space might be kept as-is
   until something else fills it.
-  
+
   To prevent leaking of deleted user identities, a defragmentation is
   scheduled after the user deletes an identity.
   This will happen at the next restart of WoT.
-  
+
   NOTICE: In general, WoT is not yet safe against leaking data to disk.
   It for example does not yet encrypt its database if Freenet is
   configured for encryption. Freenet will hopefully soon notice the
   user about this, see [6].
-  
+
 - 0006607: [Security] deleteOwnIdentity() will cause the replacement
            non-own Identity to be fetched even if it is distrusted (xor)
-  
+
   When the user deletes one of his local identities, it is not actually
   deleted but converted to a non-local one. (This is for security
-  reasons: Other local identities might have assigned trust to it,
+  reasons: Other local identities might have assigned Trust to it,
   which should not get deleted.)
-  
+
   This code had a bug which would cause the deleted identity to continue
   to be downloaded no matter whether it was trusted or not.
   While distrusting one of your own identities after deleting it for
@@ -282,64 +283,64 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
 - 0005757: [Performance] Get rid of using computeAllScoresWithoutCommit
            whereever possible (xor)
-  
+
   This is the new incremental distrust computation code which was
   described in the summary at the beginning of the changelog.
 
 - 0006636: [Performance] computeRankFromScratch() should
            opportunistically compute ranks and put them into a cache
            (xor)
-  
+
   As explained in the summary at the beginning of the changelog, the
   new incremental distrust computation code has a high worst-case
   runtime.
   To alleviate the worst-case, this algorithmic optimization has been
-  appplied already. It is of a complex nature and thus beyond
-  explaining here.
-  
+  applied already. It is of a complex nature and thus beyond explaining
+  here.
+
   Once my aforementioned bachelor's thesis has been published, you
   will be able to realize that this optimization is one of those
   suggested in the "Outlook" section of the thesis.
   Reading the thesis will then explain this optimization.
-  
+
   The measurements at [1] aim to show how much this optimization helps.
   It is labeled as "revision 2" there; the version before it (which is
   the thesis' original code) is labeled as "revision 1".
 
 - 0005962: [Performance] Don't defragment at every startup, defragment
            every 7 days (xor)
-  
+
   As explained in the summary at the beginning of the changelog.
-  
+
 - 0006616: [Performance] Don't run verifyAndCorrectStoredScores() at
            every startup, run it once every 28 days (xor)
-  
+
   As explained in the summary at the beginning of the changelog.
 
 - 0006631: [Code quality] Provide development versions of WOT via fred
            USK plugin updater (xor)
-  
+
   As explained in the summary at the beginning of the changelog.
   Some more information:
-  
+
   These are compiled by myself instead of being compiled by the release
   manager. So instead of on a dedicated high-security system which is
   only booted for releases, they're compiled on a regular development
   machine which is in daily online use.
-  They're downloaded from my main USK which is used for my flog and 
+  They're downloaded from my main USK which is used for my flog and
   WoT identity, and thus hooked up to the network quite often.
   These both are inherently less secure.
-  
+
   With regards to quality testing, I plan to keep the same standards as
   with regular releases. I will test new code before deployment just as
   I always did. The releases will be packaged with a "buildXXXX" number
   as regular releases, and also be announced as such.
-  
+
   So basically, this release channel has the main goal of allowing me to
   do releases myself without paying the security price of giving me
   access to the main Freenet release keys.
-  This is necessary as Freenet releases happen less often than WoT
-  releases nowadays.
+  This is necessary as nowadays Freenet releases happen less often than
+  WoT releases.
   It provides the side effect of allowing many users to provide testing
   without big hassle so the release gets well-tested before it is put
   onto the main network.
@@ -348,19 +349,18 @@ CHANGELOG about stuff only interesting for developers:
 
 - 0006620: [Code quality] Add Hamcrest to junit-build classpath (pull
            request 32) (operhiem1)
-  
+
   Hamcrest is a framework complementary to JUnit [7].
   It may be used for easing unit test development.
 
-  Thanks to operhiem1 for this!
+  Thanks to operhiem1 for wiring it in to WoT!
 
 - 0006609: [Performance] Add synthetic benchmark for improvements of
            issue 5757 (xor)
-  
-  Multiple attempts have been conducted to benchmark the Score
-  computation improvements which have been explained in the summary
-  at the beginning of this changelog:
-  
+
+  Multiple attempts have been conducted to benchmark the aforementioned
+  Score computation improvements:
+
   - Class WOTUtil's function benchmarkRemoveTrustDestructive():
     This can be used upon a regular WoT database, i.e. a dump of the
     real network, to measure the performance of the function for
@@ -368,8 +368,9 @@ CHANGELOG about stuff only interesting for developers:
     It does so by removing random Trust values one-by-one, and measuring
     the time it takes for each.
     This specifically tests the new code as described in the changelog's
-    summary, and thus is what was used for producing the plot [1].
-    
+    summary, and thus is what was used for producing the benchmarks [1]
+    which were cited there.
+
   - Class ScoreComputationBenchmark:
     It aims to simulate the topology of the Trust graph as measured on
     the real network using WOTUtil's new histogram features.
@@ -380,33 +381,33 @@ CHANGELOG about stuff only interesting for developers:
     make the unit tests more realistic: They do use random Trust graphs
     already, but the probability distribution was chosen arbitrarily,
     not from measurements.
-  
+
   A more detailed elaboration of the benchmarks can be studied in my
   bachelor's thesis once it is published.
 
 - 0005882: [Core] computeAllScoresWithoutCommit() return value should be
            false when the IdentityFetcher state was wrong (xor)
-  
+
   computeAllScoresWithoutCommit() is the full Score re-computation
   function which the summary of the changelog talks about.
-  
+
   It not only serves the purpose of re-computing stuff, but also of
   *validating* correctness of the existing database contents. This is
   used heavily in assert()s, and thus also in unit tests.
-  
+
   It previously did not check the correctness of the instructions given
   to the IdentityFetcher of whether it should fetch each of the
   known Identities or not.
   Now it also validates whether the IdentityFetcher has been correctly
   told to fetch/ignore Identities.
-  
+
   This means that the new Score computation code is also tested to
   correctly feed the IdentityFetcher with commands.
 
 - 0006608: [Code quality] IdentityFetcher should have a
            "network dump mode" where it will also download old editions
            (xor)
-  
+
   By default, the IdentityFetcher will try to only fetch the latest
   edition of each known Identity.
   A network dump using the IdentityFileDiskQueue thus is a snapshot of a
@@ -414,22 +415,22 @@ CHANGELOG about stuff only interesting for developers:
   temporal nature of Trust values being changed around by users.
   This is a problem if you want to test/benchmark things which happen
   across longer timespans.
-  
+
   Hence the new flag IdentityFetcher.DEBUG__NETWORK_DUMP_MODE can be set
   to true to make the IdentityFetcher try to download some *old*
   editions as well.
-  
+
   Unfortunately, my test run of a handful of hours showed that most old
-  editions have fallen out of the network. IIRC, less than 100
+  editions could have fallen out of the network. IIRC, less than 100
   Identities were discovered, even though we have over 11 000 nowadays.
   I did not have very much patience though (less than half a day), so
   you might give this a try yourself.
 
 - 0006596: [Bugs] Add workaround for db4o bug (xor)
-  
+
   This one is too boring to explain in detail here.
   What can be said is that assert()s have been added to make developer's
-  notice if they use programming patterns which might trigger the db4o
+  notice if they use programming patterns which might trigger this db4o
   bug.
 
 - 0006647: [Code quality] Provide changelog template (xor)
@@ -439,9 +440,9 @@ CHANGELOG about stuff only interesting for developers:
 
 Thanks to:
   - All volunteers on Transifex for updating many translations.
-  - ArneBab for the ideas about graph topology modelling in
+  - ArneBab for the ideas about graph topology modeling in
     ScoreComputationBenchmark.
-  - operhiem1 for coordinating Transifex
+  - operhiem1 for coordinating Transifex.
 
 
 Links:
