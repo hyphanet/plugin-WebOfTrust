@@ -120,7 +120,7 @@ Next steps of development will be:
   "WoT developer's manual", and I plan to release it as such soon.
   I will wait with that until university has graded it (ETA: October)
   for slightly selfish reasons: I don't want to risk getting negative
-  opinions on it before I know for sure that I passed - that'd only
+  opinions on it before I know for sure whether I passed - that'd only
   cause needless panic. I hope this is only "slightly" selfish as a
   not-in-panic xor is a happy xor and a happy xor will produce more
   WoT code :)
