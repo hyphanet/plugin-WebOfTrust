@@ -7,11 +7,11 @@ TLDR:
   = a speed improvement of factor 28.
 
 
-SUMMARY AND OUTLOOK (detailed changelog is below):
+IMPORTANT STUFF:
 
 NOTICE: According to TheSeeker, his machines have been seized by the US
-government. This gives the governemnt access to his WoT / FMS
-identities, his Freesites, etc. Please update your trust values.
+government. This gives the government access to his WoT / FMS
+identities, his freesites, etc. Please update your trust values.
 He was a seed-identity until ~2 years ago, and thus might have received
 a trust value of 100 from you automatically if you created your
 identities back then.
@@ -27,14 +27,22 @@ ones:
 2) Unload the "WebOfTrust" plugin and load the "WebOfTrust Testing 
    Versions" plugin. Please do first read the description for the 
    security implications!
+3) If you had already done step 2 previously, i.e. are already running
+   the previous testing release build0017, you need to restart Freenet
+   or unload and re-load the plugin for getting the update: Freenet will
+   only check for updates of the testing version when the plugin
+   is reloaded.
 Once Freenet build 1471 is released, step 1 will not be necessary 
 anymore.
-You will also get this release someday if you do not switch to the 
-testing  branch. It will just take longer: Non-testing releases are 
+You will also get this release someday even if you do not switch to the
+testing versions. It will just take longer: Non-testing releases are
 shipped together with regular Freenet releases; and Freenet releases do 
 not happen as often as WoT releases.
 
-This WoT version finally ships some of the long awaited core performance 
+
+SUMMARY AND OUTLOOK (detailed changelog is below):
+
+This WoT version finally ships some of the long awaited core performance
 improvements:
 
 - Previous builds would fall back to "full Score re-computation" upon 
@@ -42,17 +50,17 @@ improvements:
   changing a Trust value from above zero to zero or negative, or adding 
   a zero or below zero Trust value. The full re-computation was a
   *very* slow piece of code as it basically recalculates the whole 
-  Score database. It usually took ~ 1 minute, or even 10 minutes on some 
+  Score database. It usually took ~ 1 minute, or even 10 minutes on some
   machines. This was made even worse by the fact that it happened not 
   only for local Trust changes but also for remote ones. Also, due to 
   unfortunate current limitations of the database code [4], it would 
   block the web interface from responding during the whole time.
-  This build ships an incremental Score recomputation algorithm for 
+  This build ships an incremental Score re-computation algorithm for 
   these situations - which should be a lot faster:
   Measurements [1] show an average execution time of 1.7 seconds, which
   previously was 49 seconds = a speed improvement of factor 28.
-  As there was an incremental recomputation code for non-distrust Trust 
-  changes already, Score recomputation is fully incremental now.
+  As there was an incremental re-computation code for non-distrust Trust
+  changes already, Score re-computation is fully incremental now.
 
 - Restarting of WoT / your computer usually caused:
     1) a defragmentation of the database.
@@ -64,6 +72,13 @@ improvements:
     2) Full Score recomputation only happens once every 4 weeks.
   As a consequence, startup should be a lot faster.
   It now takes ~2 minutes on my machine.
+
+NOTICE: WoT client applications which were not yet updated to use the
+new "event-notifications" API (see build0015 changelog) can put a very
+high load on WoT. For example Sone currently downloads almost the whole
+WoT database every 60 seconds [8].
+So if you want to get a realistic grasp of whether this WoT release is
+faster, please test without any client applications.
 
 Next steps of development will be:
 
@@ -440,3 +455,4 @@ Links:
   [5] http://localhost:8888/CHK@iCe9WZKq52Esq73iRePhdQiu63nyKrHC7RwS8pP1TaA,sh0ODWAyYOuoHd85Llfr7pF2Sy-mnZwavkx3Lz7puuQ,AAMC--8/WoT-trust-value-histogram-2015-07-23.png
   [6] https://bugs.freenetproject.org/view.php?id=6559
   [7] https://en.wikipedia.org/wiki/Hamcrest
+  [8] https://github.com/Bombe/Sone/pull/11
