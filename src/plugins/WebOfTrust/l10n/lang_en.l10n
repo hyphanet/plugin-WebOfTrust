@@ -1,7 +1,7 @@
 Common.Never=Never
 Common.No=No
 Common.SizeLimitExceededException=The length limit of ${limit} was exceeded.
-Common.UnknownIdentityExceptionDescription=The identity which you tried to access does not exist anymore. If it was one of your own identities, you might have deleted it - then you need to log in with a different one. If it was a remote identity, it might have been deleted due to missing trust. Its ID was: ${identityID} (keep this private if you don't want to reveal who you are).  
+Common.UnknownIdentityExceptionDescription=The identity which you tried to access does not exist anymore. If it was one of your own identities, you might have deleted it - then you need to log in with a different one. If it was an identity of someone else, it might have been deleted due to missing trust. Its ID was: ${identityID} (keep this private if you don't want to reveal who you are).
 Common.UnknownIdentityExceptionTitle=Unknown identity
 CommonWebUtils.daysAgo=${days}d ago
 CommonWebUtils.daysHoursAgo=${days}d ${hours}h ago
