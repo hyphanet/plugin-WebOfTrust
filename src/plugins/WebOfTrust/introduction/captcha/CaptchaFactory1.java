@@ -16,10 +16,14 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzleFactory;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.introduction.captcha.kaptcha.Constants;
 import plugins.WebOfTrust.introduction.captcha.kaptcha.impl.DefaultKaptcha;
 import plugins.WebOfTrust.introduction.captcha.kaptcha.util.Config;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.io.Closer;
+
+import plugins.WebOfTrust.introduction.captcha.RandomizedDistortion;
+import plugins.WebOfTrust.introduction.captcha.RandomizedWordRenderer;
 
 /**
  * First implementation of a captcha factory.
@@ -37,7 +41,10 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 		ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1024); /* TODO: find out the maximum size of the captchas and put it here */
 		try {
 			DefaultKaptcha captcha = new DefaultKaptcha();
-			captcha.setConfig(new Config(new Properties()));
+			Properties prop = new Properties();
+			prop.setProperty(Constants.KAPTCHA_OBSCURIFICATOR_IMPL, RandomizedDistortion.class.getName());
+			prop.setProperty(Constants.KAPTCHA_WORDRENDERER_IMPL, RandomizedWordRenderer.class.getName());
+			captcha.setConfig(new Config(prop));
 			String text = captcha.createText();
 			BufferedImage img = captcha.createImage(text);
 			ImageIO.write(img, "jpg", out);
