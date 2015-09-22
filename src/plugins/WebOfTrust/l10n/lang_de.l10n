@@ -152,7 +152,7 @@ StatisticsPage.IdentityFileQueueBox.FinishedFiles=Fertige Dateien:
 StatisticsPage.IdentityFileQueueBox.Header=Warteschlange für Identitäts-Dateien
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Dateien in Bearbeitung: 
 StatisticsPage.IdentityFileQueueBox.QueuedFiles=Wartende Dateien: 
-StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Insgesamt eingefügte (\= heruntergeladene) Dateien: 
+StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Insgesamt eingefügte (= heruntergeladene) Dateien: 
 StatisticsPage.MaintenanceBox.Header=Wartung
 StatisticsPage.MaintenanceBox.LastDefrag=Letzte Defragmentierung der Datenbank: ${lastTime} (Zeitplan: alle ${interval})
 StatisticsPage.MaintenanceBox.LastScoreVerification=Letzte Überprüfung der inkrementell berechneten Vertrauenswerte: ${lastTime} (Zeitplan: alle ${interval})
