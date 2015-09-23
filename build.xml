@@ -145,12 +145,19 @@
 		</jar>
 	</target>
 
-	<target name="junit" depends="unit-build" if="unit.dependencies" unless="${test.skip}"
+	<target name="junit" depends="unit-build" unless="${test.skip}"
 			description="Runs all unit tests. Options:&#10;
 		        - Set test.skip=true to skip&#10;
 		        - Set test.class=&lt;test class&gt; (e.g. test.class=plugins.WebOfTrust.WoTTest) to run a single test)&#10;
 		        - Set test.benchmark=true to run benchmarks.&#10;
 		        - Set test.unreliable=true to run tests which may fail on slow machines.">
+		
+		<fail unless="${unit.dependencies}" message="One of the unit test dependencies not found:&#10;
+			${junit.location}&#10;
+			${hamcrest.location}&#10;
+			Use parameter -Dtest.skip=true to compile without running the self-tests.&#10;
+			WARNING: Web of Trust uses lots of comprehensive tests, changing the code without&#10;
+			running them is a very bad idea!"/>
 		
 		<!-- Regular non-benchmark unit tests. -->
 		<junit printsummary="yes" fork="yes" haltonfailure="yes" unless:true="${test.benchmark}">
@@ -220,6 +227,7 @@
 	<!-- ================================================== -->
 	<target name="dist" depends="clean,compile,junit"
 		description="generate the distribution" >
+		
 		<jar jarfile="${dist}/WebOfTrust.jar" duplicate="fail">
 			<manifest>
 				<attribute name="Plugin-Main-Class" value="plugins.WebOfTrust.WebOfTrust"/>
