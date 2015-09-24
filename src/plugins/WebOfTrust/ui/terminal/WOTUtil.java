@@ -4,6 +4,7 @@
 package plugins.WebOfTrust.ui.terminal;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -203,8 +204,12 @@ public final class WOTUtil {
 				printSyntax();
 				return 1;
 			}
-		
-			wot = new WebOfTrust(args[1]);
+			
+			String databaseFile = args[1];
+			if(!new File(databaseFile).isFile())
+				throw new FileNotFoundException(databaseFile);
+			
+			wot = new WebOfTrust(databaseFile);
 			
 			System.out.println("Checking database for corruption...");
 			
