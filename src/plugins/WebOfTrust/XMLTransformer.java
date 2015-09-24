@@ -358,6 +358,10 @@ public final class XMLTransformer {
 			if(result.identityPublishesTrustList) {
 				final Element trustListElement = (Element)identityElement.getElementsByTagName("TrustList").item(0);
 				final NodeList trustList = trustListElement.getElementsByTagName("Trust");
+				
+				if(trustList.getLength() > MAX_IDENTITY_XML_TRUSTEE_AMOUNT)
+					throw new Exception("Too many trust values: " + trustList.getLength());
+				
 				result.identityTrustList = new ArrayList<ParsedIdentityXML.TrustListEntry>(trustList.getLength() + 1);
 				for(int i = 0; i < trustList.getLength(); ++i) {
 					Element trustElement = (Element)trustList.item(i);
@@ -586,7 +590,7 @@ public final class XMLTransformer {
 						Logger.normal(this, "Not marking edition as parsing failed, we have already fetched a new one (" + 
 								identity.getEdition() + "):" + identityURI);
 					}
-					Logger.normal(this, "Parsing identity XML failed gracefully for " + identityURI, e);
+					Logger.warning(this, "Parsing identity XML failed gracefully for " + identityURI, e);
 				}
 				catch(UnknownIdentityException uie) {
 					Logger.error(this, "Parsing identity XML failed and marking the edition as ParsingFailed also did not work - UnknownIdentityException for: "
