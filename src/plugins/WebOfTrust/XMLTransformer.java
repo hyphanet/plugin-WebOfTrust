@@ -358,6 +358,10 @@ public final class XMLTransformer {
 			if(result.identityPublishesTrustList) {
 				final Element trustListElement = (Element)identityElement.getElementsByTagName("TrustList").item(0);
 				final NodeList trustList = trustListElement.getElementsByTagName("Trust");
+				
+				if(trustList.getLength() > MAX_IDENTITY_XML_TRUSTEE_AMOUNT)
+					throw new Exception("Too many trust values: " + trustList.getLength());
+				
 				result.identityTrustList = new ArrayList<ParsedIdentityXML.TrustListEntry>(trustList.getLength() + 1);
 				for(int i = 0; i < trustList.getLength(); ++i) {
 					Element trustElement = (Element)trustList.item(i);
