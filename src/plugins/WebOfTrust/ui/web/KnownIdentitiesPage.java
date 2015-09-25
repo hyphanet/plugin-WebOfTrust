@@ -279,7 +279,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		    return;
 		}
 		
-		final ObjectSet<Identity> allIdentities
+		ObjectSet<Identity> allIdentities
 		    = mWebOfTrust.getAllIdentitiesFilteredAndSorted(ownId, nickFilter, sortInstruction);
 		
 	    Iterator<Identity> identities;
@@ -296,6 +296,12 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		    // page if we are not on the last page.
 		    page = getPageCount(allIdentities.size()) - 1;
 		    indexOfFirstIdentity = page * IDENTITIES_PER_PAGE;
+		    
+		    // TODO: Performance: Don't re-query this from the database once the issue which caused
+		    // this workaround is fixed: https://bugs.freenetproject.org/view.php?id=6646
+		    allIdentities
+		    	= mWebOfTrust.getAllIdentitiesFilteredAndSorted(ownId, nickFilter, sortInstruction);
+		    
 		    identities = allIdentities.listIterator(indexOfFirstIdentity);
 		}
 		
@@ -451,8 +457,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	
 	/** @return Count of pages we would paginate into for the given total amount of identities. */
     private static int getPageCount(final int identityCount) {
-       return identityCount / IDENTITIES_PER_PAGE
-              + ((identityCount % IDENTITIES_PER_PAGE > 0) ? 1 : 0);
+       int result = identityCount / IDENTITIES_PER_PAGE;
+       result    += ((identityCount % IDENTITIES_PER_PAGE > 0) ? 1 : 0);
+       result     = (result == 0 ? 1 : result);
+       return result;
     }
     
 	/**
