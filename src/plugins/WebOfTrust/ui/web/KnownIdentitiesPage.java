@@ -457,8 +457,10 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	
 	/** @return Count of pages we would paginate into for the given total amount of identities. */
     private static int getPageCount(final int identityCount) {
-       return identityCount / IDENTITIES_PER_PAGE
-              + ((identityCount % IDENTITIES_PER_PAGE > 0) ? 1 : 0);
+       int result = identityCount / IDENTITIES_PER_PAGE;
+       result    += ((identityCount % IDENTITIES_PER_PAGE > 0) ? 1 : 0);
+       result     = (result == 0 ? 1 : result);
+       return result;
     }
     
 	/**
