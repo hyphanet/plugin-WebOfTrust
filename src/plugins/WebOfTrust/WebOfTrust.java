@@ -282,10 +282,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			// Identity files flow through the following pipe:
 			//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
-			// Thus, we start the pipe's daemons in reverse order to ensure that the receiving ones
-			// are available before the ones which fill the pipe.
-			mIdentityFileProcessor.start();
+			// Thus, in theory, we should want to start the pipe's daemons in reverse order to
+			// ensure that the receiving ones are available before the ones which fill the pipe.
+			// But nevertheless we don't actually start the IdentityFileProcessor now:
+			// The following IdentityFetcher.start() would feed it with files before this startup
+			// function has completed, so its identity file processing would slow down startup.
+			// Hence we'll start it at the end of this function.
+			/* mIdentityFileProcessor.start(); */
+			
 			/* mIdentityFileQueue.start(); */    // Not necessary, has no thread.
+			
 			mFetcher.start();
 
 			// maybeVerifyAndCorrectStoredScores() must be called after the IdentityFetcher was
@@ -319,6 +325,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 				mDebugFCPClient = DebugFCPClient.construct(this);
 				mDebugFCPClient.start();
 			}
+			
+			// Start at the very end to ensure that its processing doesn't slow down startup.
+			mIdentityFileProcessor.start();
 			
 			Logger.normal(this, "Web Of Trust plugin starting up completed.");
 		}
