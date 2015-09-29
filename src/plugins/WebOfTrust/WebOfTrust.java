@@ -18,6 +18,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import plugins.WebOfTrust.Identity.FetchState;
@@ -203,8 +204,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 	private long mFullScoreRecomputationMilliseconds = 0;
 	private int mIncrementalScoreRecomputationDueToTrustCount = 0;
 	private int mIncrementalScoreRecomputationDueToDistrustCount = 0;
+	private int mIncrementalScoreRecomputationDueToDistrustCountSlow = 0;
 	private long mIncrementalScoreRecomputationDueToTrustNanos = 0;
 	private long mIncrementalScoreRecomputationDueToDistrustNanos = 0;
+	private long mIncrementalScoreRecomputationDueToDistrustNanosSlow = 0;
 
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
@@ -4275,11 +4278,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 			
 			updateScoresAfterDistrustWithoutCommit(distrusted);
+			time.stop();
 			
 			mFullScoreComputationNeeded = false;
 	
 			++mIncrementalScoreRecomputationDueToDistrustCount;
 			mIncrementalScoreRecomputationDueToDistrustNanos += time.getNanos();
+			
+			if(time.getNanos() > TimeUnit.SECONDS.toNanos(10)) {
+				++mIncrementalScoreRecomputationDueToDistrustCountSlow;
+				mIncrementalScoreRecomputationDueToDistrustNanosSlow += time.getNanos();
+			}
 		}
 		
 		if(logMINOR) {
@@ -5555,6 +5564,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 	public int getNumberOfIncrementalScoreRecomputationDueToDistrust() {
 		return mIncrementalScoreRecomputationDueToDistrustCount;
 	}
+	
+	public int getNumberOfSlowIncrementalScoreRecomputationDueToDistrust() {
+		return mIncrementalScoreRecomputationDueToDistrustCountSlow;
+	}
 
 	public synchronized double getAverageTimeForIncrementalScoreRecomputationDueToTrust() {
 		return (double)mIncrementalScoreRecomputationDueToTrustNanos / 
@@ -5571,6 +5584,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 			  ?  mIncrementalScoreRecomputationDueToDistrustCount : 1)
 			);
 	}
+	
+	public synchronized double getAverageTimeForSlowIncrementalScoreRecomputationDueToDistrust() {
+		return (double)mIncrementalScoreRecomputationDueToDistrustNanosSlow / 
+			(1000d * 1000d * 1000d *
+				(mIncrementalScoreRecomputationDueToDistrustCountSlow != 0
+			  ?  mIncrementalScoreRecomputationDueToDistrustCountSlow : 1)
+			);
+	}
+
 
     /**
      * Tests whether two WoT are equal.
