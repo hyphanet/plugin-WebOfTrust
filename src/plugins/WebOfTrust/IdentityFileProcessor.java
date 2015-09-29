@@ -129,6 +129,10 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 	/** Must be called during startup of WOT */
 	void start() {
 		mQueue.registerEventHandler(this);
+		// In theory, the queue might contain files already, so we should triggerExecution() to
+		// process them. But registerEventHandler() does that automatically for us if there are
+		// files in the queue.
+		/* triggerExecution(); */
 	}
 
 	/**

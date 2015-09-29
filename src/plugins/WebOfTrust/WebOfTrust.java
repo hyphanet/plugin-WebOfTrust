@@ -282,10 +282,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			// Identity files flow through the following pipe:
 			//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
-			// Thus, we start the pipe's daemons in reverse order to ensure that the receiving ones
-			// are available before the ones which fill the pipe.
-			mIdentityFileProcessor.start();
+			// Thus, in theory, we should want to start the pipe's daemons in reverse order to
+			// ensure that the receiving ones are available before the ones which fill the pipe.
+			// But nevertheless we don't actually start the IdentityFileProcessor now:
+			// The following IdentityFetcher.start() would feed it with files before this startup
+			// function has completed, so its identity file processing would slow down startup.
+			// Hence we'll start it at the end of this function.
+			/* mIdentityFileProcessor.start(); */
+			
 			/* mIdentityFileQueue.start(); */    // Not necessary, has no thread.
+			
 			mFetcher.start();
 
 			// maybeVerifyAndCorrectStoredScores() must be called after the IdentityFetcher was
@@ -319,6 +325,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 				mDebugFCPClient = DebugFCPClient.construct(this);
 				mDebugFCPClient.start();
 			}
+			
+			// Start at the very end to ensure that its processing doesn't slow down startup.
+			mIdentityFileProcessor.start();
 			
 			Logger.normal(this, "Web Of Trust plugin starting up completed.");
 		}
@@ -371,16 +380,27 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		// Identity files flow through the following pipe:
 		//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
-		// Thus, we start the pipe's daemons in reverse order to ensure that the receiving ones
-		// are available before the ones which fill the pipe.
-		mIdentityFileProcessor.start();
-		/* mIdentityFileQueue.start(); */	// Not necessary, has no thread.
+		// Thus, in theory, we should want to start the pipe's daemons in reverse order to
+		// ensure that the receiving ones are available before the ones which fill the pipe.
+		// But nevertheless we don't actually start the IdentityFileProcessor now:
+		// The following IdentityFetcher.start() would feed it with files before this startup
+		// function has completed, so its identity file processing would slow down startup.
+		// (This isn't actually the case at the current state of this constructor since this
+		// function is intended for unit tests only and thus the IdentityFetcher won't actually
+		// fetch anything, but future amendments might change that.)
+		// Hence we'll start it at the end of this function.
+		/* mIdentityFileProcessor.start(); */
+		
+		/* mIdentityFileQueue.start(); */    // Not necessary, has no thread.
+		
 		mFetcher.start();
-
 
 		mFCPInterface = new FCPInterface(this);
 		
 		setLanguage(LANGUAGE.getDefault()); // Even without UI, WOT will use l10n for Exceptions, so we need a language. Normally the node calls this for us.
+		
+		// Start at the very end to ensure that its processing doesn't slow down startup.
+		mIdentityFileProcessor.start();
 	}
 	
 	File getUserDataDirectory() {

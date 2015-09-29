@@ -78,7 +78,15 @@ public interface IdentityFileQueue {
 
 	/**
 	 * Registers a {@link BackgroundJob} whose {@link BackgroundJob#triggerExecution()} shall be
-	 * called by the queue once an element is available for the job to {@link #poll()}.<br> */
+	 * called by the queue once an element is available for the job to {@link #poll()}.<br><br>
+	 * 
+	 * Will also trigger the execution of the handler if the queue already contains files. This
+	 * can happen if the queue is capable of preserving files across restarts, or if this function
+	 * is called after {@link #add(IdentityFileStream)}. Thus it should be safe to call this
+	 * function in a lazy manner, i.e. after starting things which fill the queue.<br>
+	 * Nevertheless, to ensure that developers do not completely forget about registering event
+	 * handlers, implementations of {@link #add(IdentityFileStream)} may assert(false) or log an
+	 * error if {@link #add(IdentityFileStream)} is called before this function. */
 	public void registerEventHandler(BackgroundJob handler);
 
 	/**

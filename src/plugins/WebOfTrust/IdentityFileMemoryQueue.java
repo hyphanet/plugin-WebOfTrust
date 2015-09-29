@@ -38,8 +38,30 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 			
 			if(mEventHandler != null)
 				mEventHandler.triggerExecution();
-			else
+			else {
+				// The IdentityFetcher might fetch files during its start() already, and call this
+				// function to enqueue fetched files. However, IdentityFileProcessor.start(), which
+				// would register it as the event handler which is missing here, is called *after*
+				// IdentityFetcher.start(). This is to prevent identity file processing from slowing
+				// down WoT startup.
+				// Thus having not an event handler yet is not an error, which is why the below
+				// assert() is commented out.
+				// TODO: Code quality: Once https://bugs.freenetproject.org/view.php?id=6674 has
+				// been fixed, we could split IdentityFileProcessor.start() into register() and
+				// start(): Register would be what start() was previously, i.e. register the event
+				// handler so we're not missing it here anymore. start() would be what was demanded
+				// by the bugtracker entry, i.e. enable IdentityFileProcessor.triggerExecution().
+				// IdentityFileProcessor.register() could then be called before
+				// IdentityFetcher.start(), and IdentityFileProcessor.start() afterwards. It then
+				// wouldn't matter if register() is called before IdentityFetcher.start():
+				// This IdentityFileMemoryQueue could not cause the processor to process the files
+				// which the IdentityFetcher adds, as IdentityFileProcessor.triggerExecution() would
+				// only work after start().
+				// So overall, we could then enable this assert() for robustness.
+				/*
 				assert(false);
+				*/
+			}
 		} catch(RuntimeException e) {
 			++mStatistics.mFailedFiles;
 			assert(false) : e;
