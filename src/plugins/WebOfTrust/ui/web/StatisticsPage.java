@@ -72,6 +72,8 @@ public class StatisticsPage extends WebPageImpl {
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalTrustRecomputationTime") + mWebOfTrust.getAverageTimeForIncrementalScoreRecomputationDueToTrust()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalDistrustRecomputations") + mWebOfTrust.getNumberOfIncrementalScoreRecomputationDueToDistrust()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalDistrustRecomputationTime") + mWebOfTrust.getAverageTimeForIncrementalScoreRecomputationDueToDistrust()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalDistrustRecomputationsSlow") + mWebOfTrust.getNumberOfSlowIncrementalScoreRecomputationDueToDistrust()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalDistrustRecomputationTimeSlow") + mWebOfTrust.getAverageTimeForSlowIncrementalScoreRecomputationDueToDistrust()));
 		IntroductionPuzzleStore puzzleStore = mWebOfTrust.getIntroductionPuzzleStore();
 		synchronized(puzzleStore) {
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.UnsolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(false)));
