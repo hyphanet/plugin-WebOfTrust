@@ -122,12 +122,15 @@ public abstract class AbstractFullNodeTest
         mWebOfTrust.getSubscriptionManager().stop();
     }
     
-    @After public final void tearDownNode() {
+    @After public final void testDatabaseIntegrityAfterTermination() {
         // We cannot use exit because then JUnit will complain "Forked Java VM exited abnormally.".
         /* mNode.exit("JUnit tearDown()"); */
         
         // ... So instead, we use what exit() does internally before it terminates the VM.
         mNode.park();
+        
+        assertTrue(mWebOfTrust.isTerminated());
+        assertTrue(mWebOfTrust.verifyDatabaseIntegrity());
     }
 
     @Override
