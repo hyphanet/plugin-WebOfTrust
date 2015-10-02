@@ -123,11 +123,12 @@ public abstract class AbstractFullNodeTest
     }
     
     @After public final void testDatabaseIntegrityAfterTermination() {
-        // We cannot use exit because then JUnit will complain "Forked Java VM exited abnormally.".
+        // We cannot use Node.exit() because it would terminate the whole JVM.
+        // TODO: Code quality: Once fred supports shutting down a Node without killing the JVM,
+        // use that instead of only unloading WoT. https://bugs.freenetproject.org/view.php?id=6683
         /* mNode.exit("JUnit tearDown()"); */
         
-        // ... So instead, we use what exit() does internally before it terminates the VM.
-        mNode.park();
+        mNode.getPluginManager().killPlugin(mWebOfTrust, Long.MAX_VALUE);
         
         assertTrue(mWebOfTrust.isTerminated());
         assertTrue(mWebOfTrust.verifyDatabaseIntegrity());
