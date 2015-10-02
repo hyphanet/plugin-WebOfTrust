@@ -235,9 +235,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			/* TODO: This can be used for clean copies of the database to get rid of corrupted internal db4o structures. 
 			/* We should provide an option on the web interface to run this once during next startup and switch to the cloned database */
-			// cloneDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME), new File(getUserDataDirectory(), DATABASE_FILENAME + ".clone"));
+			// cloneDatabase(getDatabaseFile(), new File(getUserDataDirectory(), DATABASE_FILENAME + ".clone"));
 			
-			mDB = openDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME));
+			mDB = openDatabase(getDatabaseFile());
 			
 			mConfig = getOrCreateConfig();
 			
@@ -409,7 +409,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// Start at the very end to ensure that its processing doesn't slow down startup.
 		mIdentityFileProcessor.start();
 	}
-	
+
+	File getDatabaseFile() {
+		return new File(getUserDataDirectory(), DATABASE_FILENAME);
+	}
+
 	File getUserDataDirectory() {
         final File wotDirectory = new File(mPR.getNode().getUserDir(), WebOfTrustInterface.WOT_NAME);
         
@@ -728,7 +732,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 		if(databaseFormatVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
-					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
+					+ getDatabaseFile() + ". Contact the developers if you really need your old data.");
 	}
 	
 	/**
