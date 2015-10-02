@@ -128,7 +128,9 @@ public abstract class AbstractFullNodeTest
         // use that instead of only unloading WoT. https://bugs.freenetproject.org/view.php?id=6683
         /* mNode.exit("JUnit tearDown()"); */
         
+        File database = mWebOfTrust.getDatabaseFile();
         mNode.getPluginManager().killPlugin(mWebOfTrust, Long.MAX_VALUE);
+        mWebOfTrust = null;
         
         // The following commented-out assert would yield a false failure:
         // - setUpNode() already called terminate() upon various subsystems of WoT.
@@ -139,7 +141,9 @@ public abstract class AbstractFullNodeTest
         // TODO: Code quality: Find a way to avoid this so we can enable the assert.
         /* assertTrue(mWebOfTrust.isTerminated()); */
         
-        assertTrue(mWebOfTrust.verifyDatabaseIntegrity());
+        WebOfTrust reopened = new WebOfTrust(database.toString());
+        assertTrue(reopened.verifyDatabaseIntegrity());
+        reopened.terminate();
     }
 
     @Override
