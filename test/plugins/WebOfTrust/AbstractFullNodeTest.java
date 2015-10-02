@@ -143,6 +143,7 @@ public abstract class AbstractFullNodeTest
         
         WebOfTrust reopened = new WebOfTrust(database.toString());
         assertTrue(reopened.verifyDatabaseIntegrity());
+        assertTrue(reopened.verifyAndCorrectStoredScores());
         reopened.terminate();
     }
 
