@@ -14,15 +14,10 @@ import java.util.Random;
 
 import junit.framework.TestCase;
 
-import org.junit.Ignore;
 import org.junit.rules.TemporaryFolder;
 
-import plugins.WebOfTrust.Trust.TrustID;
-import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
-import plugins.WebOfTrust.exceptions.UnknownIdentityException;
-import plugins.WebOfTrust.util.RandomGrabHashSet;
 
 import com.db4o.ObjectSet;
 
