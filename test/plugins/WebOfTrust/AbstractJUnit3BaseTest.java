@@ -86,6 +86,14 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		super.tearDown();
 		
 		mWoT.terminate();
+		assertTrue(mWoT.isTerminated());
+		mWoT = null;
+		
+		WebOfTrust reopened = new WebOfTrust(getDatabaseFilename());
+		assertTrue(reopened.verifyDatabaseIntegrity());
+		assertTrue(reopened.verifyAndCorrectStoredScores());
+		reopened.terminate();
+		assertTrue(reopened.isTerminated());
 		
 		new File(getDatabaseFilename()).delete();
 	}
