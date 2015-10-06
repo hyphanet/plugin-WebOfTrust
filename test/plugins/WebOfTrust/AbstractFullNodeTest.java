@@ -12,6 +12,7 @@ import java.net.MalformedURLException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Test;
 
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import freenet.crypt.RandomSource;
@@ -20,7 +21,9 @@ import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.NodeStarter.TestNodeParameters;
+import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.PluginInfoWrapper;
+import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
@@ -121,7 +124,36 @@ public abstract class AbstractFullNodeTest
         mWebOfTrust.getIdentityFetcher().stop();
         mWebOfTrust.getSubscriptionManager().stop();
     }
-    
+
+    /**
+     * Tests whether unloading the WoT plugin using {@link PluginManager#killPlugin(FredPlugin,
+     * long)} works:
+     * - Checks whether the PluginManager reports 0 running plugins afterwards.
+     * - Checks whether {@link WebOfTrust#isTerminated()} reports successful shutdown. */
+    @Test
+    public final void testTerminate() {
+        PluginManager pm = mNode.getPluginManager();
+        
+        // Before doing the actual test of killPlugin(...); assertTrue(mWebOfTrust.isTerminated()),
+        // we must restart WoT. Instead this would happen:
+        // - setUpNode() already called terminate() upon various subsystems of WoT.
+        // - When killPlugin() calls WebOfTrust.terminate(), that function will try to terminate()
+        //   those subsystems again. This will fail because they are terminated already.
+        // - WebOfTrust.terminate() will mark termination as failed due to subsystem termination
+        //   failure. Thus, isTerminated() will return false.
+        pm.killPlugin(mWebOfTrust, Long.MAX_VALUE);
+        mWebOfTrust = null;
+        assertEquals(0, pm.getPlugins().size());
+        mWebOfTrust
+            = (WebOfTrust)pm.startPluginFile(System.getProperty("WOT_test_jar"), false).getPlugin();
+        assertEquals(1, pm.getPlugins().size());
+        
+        // The actual test
+        mNode.getPluginManager().killPlugin(mWebOfTrust, Long.MAX_VALUE);
+        assertEquals(0, pm.getPlugins().size());
+        assertTrue(mWebOfTrust.isTerminated());
+    }
+
     @After
     @Override
     public final void testDatabaseIntegrityAfterTermination() {
@@ -140,7 +172,14 @@ public abstract class AbstractFullNodeTest
         //   those subsystems again. This will fail because they are terminated already.
         // - WebOfTrust.terminate() will mark termination as failed due to subsystem termination
         //   failure. Thus, isTerminated() will return false.
-        // TODO: Code quality: Find a way to avoid this so we can enable the assert.
+        // The compensation for having this assert commented out is the above function
+        // testTerminate().
+        // TODO: Code quality: It would nevertheless be a good idea to find a way to enable this
+        // assert since testTerminate() does not cause load upon the subsystems of WoT. This
+        // function here however is an @After test, so it will be run after the child test classes'
+        // tests, which can cause sophisticated load. An alternate solution would be to find a way
+        // to make testTerminate() cause the subsystem threads to all run, in parallel of
+        // terminate(). 
         /* assertTrue(mWebOfTrust.isTerminated()); */
         
         WebOfTrust reopened = new WebOfTrust(database.toString());
