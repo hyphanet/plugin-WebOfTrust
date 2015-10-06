@@ -113,6 +113,37 @@ public abstract class AbstractJUnit4BaseTest {
     	}
     }
 
+    @After public void testDatabaseIntegrityAfterTermination() {
+        WebOfTrust wot = getWebOfTrust();
+        if(wot == null) // For testSetupUncaughtExceptionHandler() for example.
+            return;
+        
+        // We cannot use Node.exit() because it would terminate the whole JVM.
+        // TODO: Code quality: Once fred supports shutting down a Node without killing the JVM,
+        // use that instead of only unloading WoT. https://bugs.freenetproject.org/view.php?id=6683
+        /* mNode.exit("JUnit tearDown()"); */
+        
+        File database = wot.getDatabaseFile();
+        wot.terminate();
+        assertTrue(wot.isTerminated());
+        wot = null;
+        
+        // The following commented-out assert would yield a false failure:
+        // - setUpNode() already called terminate() upon various subsystems of WoT.
+        // - When killPlugin() calls WebOfTrust.terminate(), that function will try to terminate()
+        //   those subsystems again. This will fail because they are terminated already.
+        // - WebOfTrust.terminate() will mark termination as failed due to subsystem termination
+        //   failure. Thus, isTerminated() will return false.
+        // TODO: Code quality: Find a way to avoid this so we can enable the assert.
+        /* assertTrue(mWebOfTrust.isTerminated()); */
+        
+        WebOfTrust reopened = new WebOfTrust(database.toString());
+        assertTrue(reopened.verifyDatabaseIntegrity());
+        assertTrue(reopened.verifyAndCorrectStoredScores());
+        reopened.terminate();
+        assertTrue(reopened.isTerminated());
+    }
+
     /**
      * Adds identities with random request URIs to the database.
      * Their state will be as if they have never been fetched: They won't have a nickname, edition

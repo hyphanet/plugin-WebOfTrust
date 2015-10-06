@@ -122,7 +122,9 @@ public abstract class AbstractFullNodeTest
         mWebOfTrust.getSubscriptionManager().stop();
     }
     
-    @After public final void testDatabaseIntegrityAfterTermination() {
+    @After
+    @Override
+    public final void testDatabaseIntegrityAfterTermination() {
         // We cannot use Node.exit() because it would terminate the whole JVM.
         // TODO: Code quality: Once fred supports shutting down a Node without killing the JVM,
         // use that instead of only unloading WoT. https://bugs.freenetproject.org/view.php?id=6683
