@@ -14,15 +14,10 @@ import java.util.Random;
 
 import junit.framework.TestCase;
 
-import org.junit.Ignore;
 import org.junit.rules.TemporaryFolder;
 
-import plugins.WebOfTrust.Trust.TrustID;
-import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
-import plugins.WebOfTrust.exceptions.UnknownIdentityException;
-import plugins.WebOfTrust.util.RandomGrabHashSet;
 
 import com.db4o.ObjectSet;
 
@@ -91,6 +86,14 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		super.tearDown();
 		
 		mWoT.terminate();
+		assertTrue(mWoT.isTerminated());
+		mWoT = null;
+		
+		WebOfTrust reopened = new WebOfTrust(getDatabaseFilename());
+		assertTrue(reopened.verifyDatabaseIntegrity());
+		assertTrue(reopened.verifyAndCorrectStoredScores());
+		reopened.terminate();
+		assertTrue(reopened.isTerminated());
 		
 		new File(getDatabaseFilename()).delete();
 	}

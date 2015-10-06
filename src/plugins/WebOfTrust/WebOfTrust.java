@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import plugins.WebOfTrust.Identity.FetchState;
@@ -119,6 +120,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/* References from the plugin itself */
 	
 	/* Database & configuration of the plugin */
+	private File mDatabaseFile;
 	private ExtObjectContainer mDB;
 	private Configuration mConfig;
 	private IntroductionPuzzleStore mPuzzleStore;
@@ -199,6 +201,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 	
 	private DebugFCPClient mDebugFCPClient;
 	
+	/** @see #isTerminated() */
+	private volatile boolean mIsTerminated = false;
+
 	/* Statistics */
 	private int mFullScoreRecomputationCount = 0;
 	private long mFullScoreRecomputationMilliseconds = 0;
@@ -231,9 +236,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			/* TODO: This can be used for clean copies of the database to get rid of corrupted internal db4o structures. 
 			/* We should provide an option on the web interface to run this once during next startup and switch to the cloned database */
-			// cloneDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME), new File(getUserDataDirectory(), DATABASE_FILENAME + ".clone"));
+			// cloneDatabase(getDatabaseFile(), new File(getUserDataDirectory(), DATABASE_FILENAME + ".clone"));
 			
-			mDB = openDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME));
+			mDB = openDatabase(getDatabaseFile());
 			
 			mConfig = getOrCreateConfig();
 			
@@ -356,7 +361,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * @param databaseFilename The filename of the database.
 	 */
 	public WebOfTrust(String databaseFilename) {
-		mDB = openDatabase(new File(databaseFilename));
+		setDatabaseFile(new File(databaseFilename));
+		mDB = openDatabase(getDatabaseFile());
+		
 		mConfig = getOrCreateConfig();
 		
 		if(mConfig.getDatabaseFormatVersion() != WebOfTrust.DATABASE_FORMAT_VERSION)
@@ -405,7 +412,20 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// Start at the very end to ensure that its processing doesn't slow down startup.
 		mIdentityFileProcessor.start();
 	}
-	
+
+	File getDatabaseFile() {
+		if(mDatabaseFile == null)
+			setDatabaseFile(new File(getUserDataDirectory(), DATABASE_FILENAME));
+		
+		return mDatabaseFile;
+	}
+
+	/** ATTENTION: Only for being used once during construction, not for changing the file. */
+	private void setDatabaseFile(File databaseFile) {
+		assert(mDatabaseFile == null);
+		mDatabaseFile = databaseFile;
+	}
+
 	File getUserDataDirectory() {
         final File wotDirectory = new File(mPR.getNode().getUserDir(), WebOfTrustInterface.WOT_NAME);
         
@@ -724,7 +744,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 		if(databaseFormatVersion != WebOfTrust.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
-					+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
+					+ getDatabaseFile() + ". Contact the developers if you really need your old data.");
 	}
 	
 	/**
@@ -2048,6 +2068,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 	public void terminate() {
 		Logger.normal(this, "Web Of Trust plugin terminating ...");
 		
+		assert(!mIsTerminated);
+
+		// This use of AtomicBoolean instead of boolean is not due to the threading features:
+		// Local classes may not access non-final fields of the containing function - but we want
+		// them to able able to change this boolean, so it cannot be final. Thus we need a pointer
+		// to a modifiable boolean, and AtomicBoolean is that.
+		final AtomicBoolean success = new AtomicBoolean(true);
+		
         // TODO: Code quality: The way this parallelizes shutdown of subsystems is ugly:
         // BackgroundJob, which many of the subsystems use, already has both async terminate() and
         // synchronous waitForTermination() which could be used to parallelize shutdown.
@@ -2080,6 +2108,7 @@ public final class WebOfTrust extends WebOfTrustInterface
                     // the next build. Change it back to the Java7-style catch(). 
 
                     Logger.error(this, "Error during termination.", e);
+                    success.set(false);
                 } finally {
                     latch.get().countDown();
                 }
@@ -2133,6 +2162,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 					mIdentityFileProcessor.waitForTermination(Long.MAX_VALUE);
 				} catch (InterruptedException e) {
 					Logger.error(this, "ShutdownThread should not be interrupted!", e);
+					success.set(false);
 				}
 			}
 		}});
@@ -2156,6 +2186,7 @@ public final class WebOfTrust extends WebOfTrustInterface
         } catch(InterruptedException e1) {
             // We ARE a shutdown function, it doesn't make any sense to request us to shutdown.
             Logger.error(this, "Termination function requested to terminate!", e1);
+            success.set(false);
         }
 		
 		// Must be terminated after anything is down which can modify the database
@@ -2177,6 +2208,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 		} catch(Exception e) {
 			Logger.error(this, "Error during termination.", e);
+			success.set(false);
 		}
 		
 		
@@ -2195,9 +2227,22 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 		catch(Exception e) {
 			Logger.error(this, "Error during termination.", e);
+			success.set(false);
 		}
 
+		mIsTerminated = success.get();
+		
 		Logger.normal(this, "Web Of Trust plugin terminated.");
+	}
+
+	/**
+	 * Returns true if {@link #terminate()} was called already <b>and</b> completed without errors.
+	 * The latter is an important distinction: To conform with best practices of implementing
+	 * Freenet plugin API, {@link #terminate()} will <b>not</b> throw upon errors but only log them.
+	 * Hence, in cases where the {@link Logger} output is mostly ignored, such as unit tests, this
+	 * function may serve as a way of ensuring proper shutdown. */
+	public boolean isTerminated() {
+		return mIsTerminated;
 	}
 
     /**

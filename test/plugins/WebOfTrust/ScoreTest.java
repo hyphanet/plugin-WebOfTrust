@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 
 /**
@@ -27,8 +28,14 @@ public class ScoreTest extends AbstractJUnit3BaseTest {
 	protected void setUp() throws Exception {
 		super.setUp();
 		
-		a = new OwnIdentity(mWoT, insertUriA, "A", true); a.storeAndCommit();
-		b = new OwnIdentity(mWoT, insertUriB, "B", true); b.storeAndCommit();
+		a = mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, null);
+		b = mWoT.createOwnIdentity(new FreenetURI(insertUriB), "B", true, null);
+		
+		// Not used for our purposes. Merely justifies the Score object whose creation is our
+		// actual goal. This justification is done to prevent failure of
+		// assertTrue(mWoT.verifyAndCorrectStoredScores()), which will be run after the tests
+		// by AbstractJUnit3BaseTest.tearDown().
+		Trust trust = new Trust(mWoT, a, b, (byte)100, ""); trust.storeWithoutCommit();
 		
 		Score score = new Score(mWoT, a,b,100,1,40); score.storeWithoutCommit();
 		Persistent.checkedCommit(mWoT.getDatabase(), this);

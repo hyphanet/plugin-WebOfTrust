@@ -644,7 +644,6 @@ public class TickerDelayedBackgroundJobTest extends AbstractJUnit4BaseTest {
     }
 
     @Override protected WebOfTrust getWebOfTrust() {
-        fail("Not implemented");
         return null;
     }
 }
