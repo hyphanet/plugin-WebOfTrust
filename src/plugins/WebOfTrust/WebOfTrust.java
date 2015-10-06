@@ -120,6 +120,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/* References from the plugin itself */
 	
 	/* Database & configuration of the plugin */
+	private File mDatabaseFile;
 	private ExtObjectContainer mDB;
 	private Configuration mConfig;
 	private IntroductionPuzzleStore mPuzzleStore;
@@ -360,7 +361,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * @param databaseFilename The filename of the database.
 	 */
 	public WebOfTrust(String databaseFilename) {
-		mDB = openDatabase(new File(databaseFilename));
+		setDatabaseFile(new File(databaseFilename));
+		mDB = openDatabase(getDatabaseFile());
+		
 		mConfig = getOrCreateConfig();
 		
 		if(mConfig.getDatabaseFormatVersion() != WebOfTrust.DATABASE_FORMAT_VERSION)
@@ -411,7 +414,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 
 	File getDatabaseFile() {
-		return new File(getUserDataDirectory(), DATABASE_FILENAME);
+		if(mDatabaseFile == null)
+			setDatabaseFile(new File(getUserDataDirectory(), DATABASE_FILENAME));
+		
+		return mDatabaseFile;
+	}
+
+	/** ATTENTION: Only for being used once during construction, not for changing the file. */
+	private void setDatabaseFile(File databaseFile) {
+		assert(mDatabaseFile == null);
+		mDatabaseFile = databaseFile;
 	}
 
 	File getUserDataDirectory() {
