@@ -16,6 +16,7 @@ import org.junit.Test;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.util.StopWatch;
 import freenet.support.TimeUtil;
 
@@ -49,7 +50,7 @@ public final class RankComputationTest extends AbstractJUnit4BaseTest {
 	}
 
 	@Test public void testAndBenchmarkRankComputationImplementations()
-			throws MalformedURLException, InvalidParameterException {
+			throws MalformedURLException, InvalidParameterException, NotTrustedException {
 		
 		int ownIdentityCount = 2;
 		int identityCount = 100;
