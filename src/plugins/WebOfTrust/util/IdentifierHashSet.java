@@ -104,4 +104,19 @@ final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 
 	}
 
+	@Override public int hashCode() {
+		return map.keySet().hashCode();
+	}
+
+	@Override public boolean equals(Object obj) {
+		if(!(obj instanceof IdentifierHashSet)) {
+			throw new IllegalArgumentException(
+				"IdentifierHashSet.equals() can only compare to objects of type IdentifierHashSet");
+		}
+		
+		IdentifierHashSet<?> other = (IdentifierHashSet<?>)obj;
+		
+		return map.keySet().equals(other.map.keySet());
+	}
+
 }
