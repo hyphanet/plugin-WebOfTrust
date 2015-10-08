@@ -3,19 +3,84 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.util;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
+import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import plugins.WebOfTrust.AbstractJUnit4BaseTest;
+import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Persistent;
+import plugins.WebOfTrust.Trust;
+import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
 
 /** Tests {@link IdentifierHashSet}. */
-public final class IdentifierHashSetTest {
+public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
-	@Before public void setUp() {
+	WebOfTrust mWebOfTrust;
+
+	List<List<? extends Persistent>> mUniques = new ArrayList<List<? extends Persistent>>();
+	List<List<? extends Persistent>> mDuplicates = new ArrayList<List<? extends Persistent>>();
+
+
+	@Before public void setUp()
+			throws InvalidParameterException, NotTrustedException, MalformedURLException {
+		
+		mWebOfTrust = constructEmptyWebOfTrust();
+		
+		// Compute mUniques
+		
+		List<Identity> identities = new ArrayList<Identity>(addRandomIdentities(5));
+		List<Trust> trusts = new ArrayList<Trust>(addRandomTrustValues(identities, 25));
+		
+		mUniques.add(identities);
+		mUniques.add(trusts);
+		
+		// Compute mDuplicates
+		
+		List<Identity> identityDuplicates = new ArrayList<Identity>(identities.size() * 2 + 1);
+		List<Trust> trustDuplicates = new ArrayList<Trust>(trusts.size() * 2 + 1);
+		
+		for(Identity i : identities) {
+			Identity clone = i.clone();
+			Identity modifiedClone = i.clone();
+			modifiedClone.forceSetEdition(i.getEdition() + 1);
+			
+			// The central motivation behind using IdentifierHashSet instead of HashSet is that
+			// Identity.equals() / Trust.equals() / Score.equals() do not only compare the ID of
+			// the objects, but also their state. So using them with HashSet would not work because
+			// they would return false for clone()s with a modified object state, and thus cause
+			// the set to store clones even though it should not.
+			// Thus, to ensure that we properly test IdentifierHashSet, we have to feed the set
+			// with clones which purposefully cause equals() to return false.
+			assertFalse(i.equals(modifiedClone));
+			assertTrue(i.equals(clone));
+			
+			identityDuplicates.add(clone);
+			identityDuplicates.add(modifiedClone);
+		}
+
+		for(Trust t : trusts) {
+			Trust clone = t.clone();
+			Trust modifiedClone = t.clone();
+			modifiedClone.forceSetTrusterEdition(t.getTrusterEdition() + 1);
+			
+			assertFalse(t.equals(modifiedClone));
+			assertTrue(t.equals(clone));
+			
+			trustDuplicates.add(clone);
+			trustDuplicates.add(modifiedClone);
+		}
+		
+		mDuplicates.add(identityDuplicates);
+		mDuplicates.add(trustDuplicates);
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#add(Persistent)}. */
@@ -91,6 +156,11 @@ public final class IdentifierHashSetTest {
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#equals(Object)}. */
 	@Test public final void testEqualsObject() {
 		fail("Not yet implemented");
+	}
+
+	@Override
+	protected WebOfTrust getWebOfTrust() {
+		return mWebOfTrust;
 	}
 
 }
