@@ -1156,6 +1156,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 	
 	/**
+	 * ATTENTION: Please resolve the TODOs in this function before putting it to use.
+	 * 
 	 * Does not do proper synchronization! Only use it in single-thread-mode during startup.
 	 * 
 	 * Creates a clone of the source database by reading all objects of it into memory and then writing them out to the target database.
@@ -1187,7 +1189,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// in the target database while the source is still open. This did not work: Identity objects disappeared magically, resulting
 			// in Trust objects .storeWithoutCommit throwing "Mandatory object not found" on their associated identities.
 			
-			// FIXME: Clone the Configuration object
+			// TODO: Clone the Configuration object
+			
+			// TODO: These are unsafe usages of HashSet: Identity/Trust/Score have equals()
+			// functions which are not suitable for using with sets because they do not only compare
+			// object IDs  but also state/version of the objects.
+			// Replacing with IdentityHashSet would be the first idea, but thats not the desired
+			// use of what we do here: This function aims to be resistant against corrupted
+			// databases, so it must be able to deal with duplicates of Identity/Trust/Score
+			// objects. Thus, please use class IdentitifierHashSet.
 			
 			final HashSet<Identity> allIdentities = new HashSet<Identity>(original.getAllIdentities());
 			final HashSet<Trust> allTrusts = new HashSet<Trust>(original.getAllTrusts());
