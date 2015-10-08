@@ -15,97 +15,81 @@ import plugins.WebOfTrust.Persistent;
 /** Tests {@link IdentifierHashSet}. */
 public final class IdentifierHashSetTest {
 
-	@Before
-	public void setUp() {
+	@Before public void setUp() {
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#add(Persistent)}. */
-	@Test
-	public final void testAdd() {
+	@Test public final void testAdd() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#addAll(Collection)}. */
-	@Test
-	public final void testAddAll() {
+	@Test public final void testAddAll() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#clear()}. */
-	@Test
-	public final void testClear() {
+	@Test public final void testClear() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#contains(Object)}. */
-	@Test
-	public final void testContains() {
+	@Test public final void testContains() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#containsAll(Collection)}. */
-	@Test
-	public final void testContainsAll() {
+	@Test public final void testContainsAll() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#isEmpty()}. */
-	@Test
-	public final void testIsEmpty() {
+	@Test public final void testIsEmpty() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#iterator()}. */
-	@Test
-	public final void testIterator() {
+	@Test public final void testIterator() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#remove(Object)}. */
-	@Test
-	public final void testRemove() {
+	@Test public final void testRemove() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#removeAll(Collection)}. */
-	@Test
-	public final void testRemoveAll() {
+	@Test public final void testRemoveAll() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#retainAll(Collection)}. */
-	@Test
-	public final void testRetainAll() {
+	@Test public final void testRetainAll() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#size()}. */
-	@Test
-	public final void testSize() {
+	@Test public final void testSize() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#toArray()}. */
-	@Test
-	public final void testToArray() {
+	@Test public final void testToArray() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#toArray(T[])}. */
-	@Test
-	public final void testToArrayTArray() {
+	@Test public final void testToArrayTArray() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#hashCode()}. */
-	@Test
-	public final void testHashCode() {
+	@Test public final void testHashCode() {
 		fail("Not yet implemented");
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#equals(Object)}. */
-	@Test
-	public final void testEqualsObject() {
+	@Test public final void testEqualsObject() {
 		fail("Not yet implemented");
 	}
 
