@@ -29,9 +29,7 @@ import plugins.WebOfTrust.Trust;
  * the given {@link Persistent} object's identity only from the value of their
  * {@link Persistent#getID()}.<br>
  * I.e. it will behave like a {@link HashSet} with type {@link String}, to which the IDs of the
- * Persistent objects are added.
- * 
- * FIXME: The whole of this class was not tested yet. */
+ * Persistent objects are added. */
 final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 
 	private final HashMap<String, T> map = new HashMap<String, T>();
