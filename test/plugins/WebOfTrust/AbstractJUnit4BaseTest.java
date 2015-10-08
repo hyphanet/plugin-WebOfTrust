@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -204,8 +205,9 @@ public abstract class AbstractJUnit4BaseTest {
      *
      * @throws InvalidParameterException    Upon test failure. Don't catch this, let it hit JUnit.
      */
-    protected void addRandomTrustValues(final ArrayList<Identity> identities, final int trustCount)
-            throws InvalidParameterException {
+    protected ArrayList<Trust> addRandomTrustValues(
+            final List<Identity> identities, final int trustCount)
+            throws InvalidParameterException, NotTrustedException {
         
         assert(trustCount < identities.size()*(identities.size()-1))
             : "There can only be a single trust value between each pair of identities. The amount"
@@ -213,6 +215,8 @@ public abstract class AbstractJUnit4BaseTest {
             + " higher than this value then this function would run into an infinite loop.";
         
         final int identityCount = identities.size();
+        
+        ArrayList<Trust> result = new ArrayList<Trust>(trustCount + 1);
         
         getWebOfTrust().beginTrustListImport();
         for(int i=0; i < trustCount; ++i) {
@@ -236,9 +240,13 @@ public abstract class AbstractJUnit4BaseTest {
             
             getWebOfTrust().setTrustWithoutCommit(truster, trustee, getRandomTrustValue(),
                 getRandomLatinString(mRandom.nextInt(Trust.MAX_TRUST_COMMENT_LENGTH+1)));
+            
+            result.add(getWebOfTrust().getTrust(truster, trustee));
         }
         getWebOfTrust().finishTrustListImport();
         Persistent.checkedCommit(getWebOfTrust().getDatabase(), this);
+        
+        return result;
     }
 
     /**
