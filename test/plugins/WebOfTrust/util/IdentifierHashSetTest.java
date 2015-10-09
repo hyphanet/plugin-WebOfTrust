@@ -81,11 +81,22 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		
 		mDuplicates.add(identityDuplicates);
 		mDuplicates.add(trustDuplicates);
+		
+		assertEquals(mUniques.size(), mDuplicates.size());
+		assertEquals(mUniques.get(0).get(0).getClass(), mDuplicates.get(0).get(0).getClass());
+		assertEquals(mUniques.get(1).get(0).getClass(), mDuplicates.get(1).get(0).getClass());
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#add(Persistent)}. */
 	@Test public final void testAdd() {
-		fail("Not yet implemented");
+		for(int i=0; i < mUniques.size(); ++i) {
+			List<? extends Persistent> uniques = mUniques.get(i);
+			List<? extends Persistent> duplicates = mDuplicates.get(i);
+			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+			
+			for(Persistent u : uniques)    assertTrue(h.add(u));
+			for(Persistent d : duplicates) assertFalse(h.add(d));
+		}
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#addAll(Collection)}. */
