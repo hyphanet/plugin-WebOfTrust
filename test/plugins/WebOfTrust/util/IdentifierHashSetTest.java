@@ -38,7 +38,7 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		// Compute mUniques
 		
 		List<Identity> identities = new ArrayList<Identity>(addRandomIdentities(5));
-		List<Trust> trusts = new ArrayList<Trust>(addRandomTrustValues(identities, 25));
+		List<Trust> trusts = new ArrayList<Trust>(addRandomTrustValues(identities, 15));
 		
 		mUniques.add(identities);
 		mUniques.add(trusts);
