@@ -34,6 +34,9 @@ final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 
 	private final HashMap<String, T> map = new HashMap<String, T>();
 
+	/**
+	 * {@inheritDoc}
+	 * @throws NullPointerException If parameter e is null. */
 	@Override public boolean add(T e) {
 		return map.put(e.getID(), e) == null;
 	}

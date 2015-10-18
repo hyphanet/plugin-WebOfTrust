@@ -97,6 +97,15 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			for(Persistent u : uniques)    assertTrue(h.add(u));
 			for(Persistent d : duplicates) assertFalse(h.add(d));
 		}
+		
+		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+		try {
+			assertNotNull(h);
+			h.add(null);
+			fail("Adding null should not be allowed");
+		} catch(NullPointerException e) {
+			// Success
+		}
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#addAll(Collection)}. */
