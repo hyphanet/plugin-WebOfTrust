@@ -162,7 +162,37 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#clear()}. */
 	@Test public final void testClear() {
-		fail("Not yet implemented");
+		// Since it is difficult to test clear() in an isolated way, i.e. by only assuming clear()
+		// works, it relies upon not only one other function, but 3: addAll(), contains(), size().
+		// The probability of all of those 3 not working properly at once to hide errors in clear()
+		// is low.
+		// Also, we additionally test whether those functions work.
+		
+		for(int i=0; i < mUniques.size(); ++i) {
+			List<? extends Persistent> uniques = mUniques.get(i);
+			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+			
+			assertTrue(h.addAll(uniques));
+			// Test that every element of uniques is now refused before we clear().
+			assertFalse(h.addAll(uniques));
+			
+			assertEquals(uniques.size(), h.size());
+			h.clear();
+			assertEquals(0, h.size());
+			
+			// Test that every element of uniques is now accepted again after clear().
+			// Check add() return value instead of addAll(): addAll() would return true if adding
+			// succeeded for *any* of the elements. But we want to test whether it succeeds for
+			// *all* of them. Also, we want to check whether contains() correctly returns false.
+			for(Persistent p : uniques) {
+				assertFalse(h.contains(p));
+				assertTrue(h.add(p));
+				assertTrue(h.contains(p));
+			}
+		}
+		
+		// Test whether clear() upon empty set does not throw.
+		new IdentifierHashSet<Persistent>().clear();
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#contains(Object)}. */
