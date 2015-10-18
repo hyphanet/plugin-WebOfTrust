@@ -45,8 +45,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		
 		// Compute mDuplicates
 		
-		List<Identity> identityDuplicates = new ArrayList<Identity>(identities.size() * 2 + 1);
-		List<Trust> trustDuplicates = new ArrayList<Trust>(trusts.size() * 2 + 1);
+		List<Identity> identityDuplicates = new ArrayList<Identity>(identities.size() * 3 + 1);
+		List<Trust> trustDuplicates = new ArrayList<Trust>(trusts.size() * 3 + 1);
 		
 		for(Identity i : identities) {
 			Identity clone = i.clone();
@@ -65,6 +65,11 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			
 			identityDuplicates.add(clone);
 			identityDuplicates.add(modifiedClone);
+			
+			// For purposes of testing IdentifierHashSet.add() / addAll(), it is also interesting
+			// to know whether they correctly refuse the same object which was already added.
+			assertTrue(i.equals(i));
+			identityDuplicates.add(i);
 		}
 
 		for(Trust t : trusts) {
@@ -77,6 +82,9 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			
 			trustDuplicates.add(clone);
 			trustDuplicates.add(modifiedClone);
+			
+			assertTrue(t.equals(t));
+			trustDuplicates.add(t);
 		}
 		
 		mDuplicates.add(identityDuplicates);
