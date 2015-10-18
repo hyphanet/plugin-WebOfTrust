@@ -26,7 +26,26 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
 	WebOfTrust mWebOfTrust;
 
+	/**
+	 * Each slot of the outer list is one "test dataset":
+	 * Iterating over the outer lists will yield inner lists of different subclasses of Persistent
+	 * each. I.e. for each inner list, the subclass is the same for the contained objects. Among
+	 * different inner lists, the subclass of contained Persistent objects changes.
+	 * Each inner list should contain a set of unique objects of its class.
+	 * "Unique" means that {@link IdentifierHashSet#add(Persistent)} should return true for each
+	 * when adding all of them to a single set.*/
 	List<List<? extends Persistent>> mUniques = new ArrayList<List<? extends Persistent>>();
+
+	/**
+	 * The nesting of the lists is the same as at {@link #mUniques}: Each slot of the outer list
+	 * is one "test dataset".
+	 * The difference is that each of the inner lists contains duplicates of elements which the list
+	 * with the same index at {@link #mUniques} contains.
+	 * Duplicates means:
+	 * - Clones of the equivalent {@link #mUniques} object.
+	 * - Clones with state modified to make {@link Persistent#equals(Object)} return false, such as
+	 *   changing the {@link Identity#getEdition()}.
+	 * - The very same object as in {@link #mUniques}. */
 	List<List<? extends Persistent>> mDuplicates = new ArrayList<List<? extends Persistent>>();
 
 
