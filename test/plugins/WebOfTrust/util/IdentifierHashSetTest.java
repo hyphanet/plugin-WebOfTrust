@@ -112,6 +112,7 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		assertEquals(mUniques.size(), mDuplicates.size());
 		assertEquals(mUniques.get(0).get(0).getClass(), mDuplicates.get(0).get(0).getClass());
 		assertEquals(mUniques.get(1).get(0).getClass(), mDuplicates.get(1).get(0).getClass());
+		assertNotEquals(mUniques.get(1).get(0).getClass(), mDuplicates.get(0).get(0).getClass());
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#add(Persistent)}. */
