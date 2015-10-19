@@ -197,7 +197,29 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#contains(Object)}. */
 	@Test public final void testContains() {
-		fail("Not yet implemented");
+		for(int i=0; i < mUniques.size(); ++i) {
+			List<? extends Persistent> uniques = mUniques.get(i);
+			List<? extends Persistent> duplicates = mDuplicates.get(i);
+			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+			
+			for(Persistent u : uniques) {
+				assertFalse(h.contains(u));
+				assertTrue(h.add(u));
+				assertTrue(h.contains(u));
+			}
+			
+			for(Persistent d : duplicates)
+				assertTrue(h.contains(d));
+		}
+		
+		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+		try {
+			assertNotNull(h);
+			h.contains(null);
+			fail("contains(null) should not be allowed");
+		} catch(NullPointerException e) {
+			// Success
+		}
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#containsAll(Collection)}. */
