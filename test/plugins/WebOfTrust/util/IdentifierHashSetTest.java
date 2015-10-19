@@ -293,7 +293,25 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#iterator()}. */
 	@Test public final void testIterator() {
-		fail("Not yet implemented");
+		for(int i = 0; i < mUniques.size(); ++i) {
+			List<? extends Persistent> uniques = mUniques.get(i);
+			List<? extends Persistent> duplicates = mDuplicates.get(i);
+			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+			
+			assertTrue(h.addAll(uniques));
+			assertFalse(h.addAll(duplicates));
+			
+			ArrayList<Persistent> fromIterator
+				= new ArrayList<Persistent>(uniques.size() + 1);
+			
+			for(Persistent p : h)
+				fromIterator.add(p);
+			
+			assertEquals(uniques.size(), fromIterator.size());
+			// This is O(N^2), but it should run in reasonable time since setUp() does not create a
+			// huge data set.
+			assertTrue(fromIterator.containsAll(uniques));
+		}
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#remove(Object)}. */
