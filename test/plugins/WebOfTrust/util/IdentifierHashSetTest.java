@@ -258,7 +258,37 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#isEmpty()}. */
 	@Test public final void testIsEmpty() {
-		fail("Not yet implemented");
+		for(int i=0; i < mUniques.size(); ++i) {
+			List<? extends Persistent> uniques = mUniques.get(i);
+			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+			
+			assertTrue(h.isEmpty());
+			assertTrue(h.addAll(uniques));
+			assertFalse(h.isEmpty());
+			h.clear();
+			assertTrue(h.isEmpty());
+			
+			for(Persistent u : uniques) {
+				assertTrue(h.add(u));
+				assertFalse(h.isEmpty());
+			}
+			
+			for(Persistent u : uniques) {
+				assertFalse(h.isEmpty());
+				assertTrue(h.remove(u));
+			}
+			
+			assertTrue(h.isEmpty());
+		}
+		
+		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+		assertNotNull(h);
+		try {
+			h.add(null);
+			fail("Adding null should not be allowed");
+		} catch(NullPointerException e) {
+			assertTrue(h.isEmpty());
+		}
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#iterator()}. */
