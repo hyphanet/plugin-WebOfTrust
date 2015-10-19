@@ -127,8 +127,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		}
 		
 		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+		assertNotNull(h);
 		try {
-			assertNotNull(h);
 			h.add(null);
 			fail("Adding null should not be allowed");
 		} catch(NullPointerException e) {
@@ -150,9 +150,9 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
 		ArrayList<Persistent> containsNull = new ArrayList<Persistent>();
 		containsNull.add(null);
+		assertNotNull(h);
+		assertTrue(containsNull.contains(null));
 		try {
-			assertNotNull(h);
-			assertTrue(containsNull.contains(null));
 			h.addAll(containsNull);
 			fail("Adding null should not be allowed");
 		} catch(NullPointerException e) {
@@ -213,8 +213,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		}
 		
 		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+		assertNotNull(h);
 		try {
-			assertNotNull(h);
 			h.contains(null);
 			fail("contains(null) should not be allowed");
 		} catch(NullPointerException e) {
