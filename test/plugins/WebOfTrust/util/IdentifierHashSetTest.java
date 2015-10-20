@@ -492,7 +492,54 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#hashCode()}. */
 	@Test public final void testHashCode() {
-		fail("Not yet implemented");
+		final int emptyHashCode = mEmptyIdentifierHashSet.hashCode();
+		
+		assertEquals(emptyHashCode, mEmptyIdentifierHashSet.hashCode()); // Idempotent?
+		
+		for(int i=0; i < mUniques.size(); ++i) {
+			List<? extends Persistent> uniques = mUniques.get(i);
+			List<? extends Persistent> otherUniques = mOtherUniques.get(i);
+			List<? extends Persistent> duplicates = mDuplicates.get(i);
+			IdentifierHashSet<Persistent> h1 = new IdentifierHashSet<Persistent>();
+			IdentifierHashSet<Persistent> h2 = new IdentifierHashSet<Persistent>();
+			
+			assertEquals(emptyHashCode, h1.hashCode());
+			assertEquals(emptyHashCode, h2.hashCode());
+			assertTrue(h1.addAll(uniques));
+			assertTrue(h2.addAll(duplicates));
+			assertNotEquals(emptyHashCode, h1.hashCode());
+			assertNotEquals(emptyHashCode, h2.hashCode());
+			assertEquals(h1.hashCode(), h2.hashCode());
+			
+			h1.remove(otherUniques.get(0));
+			assertEquals(h1.hashCode(), h2.hashCode());
+			
+			h1.remove(duplicates.get(0));
+			assertNotEquals(h1.hashCode(), h2.hashCode());
+			
+			h1.add(duplicates.get(0));
+			assertEquals(h1.hashCode(), h2.hashCode());
+			
+			IdentifierHashSet<Persistent> h3 = new IdentifierHashSet<Persistent>();
+			h3.addAll(h1);
+			assertEquals(h1.hashCode(), h3.hashCode());
+			h3.addAll(h2);
+			assertEquals(h1.hashCode(), h3.hashCode());
+		}
+		
+		try {
+			mEmptyIdentifierHashSet.add(null);
+			fail("Adding null should not be allowed");
+		} catch(NullPointerException e) {
+			assertEquals(emptyHashCode, mEmptyIdentifierHashSet.hashCode());
+		}
+		
+		try {
+			mEmptyIdentifierHashSet.remove(null);
+			fail("Removing null should not be allowed");
+		} catch(NullPointerException e) {
+			assertEquals(emptyHashCode, mEmptyIdentifierHashSet.hashCode());
+		}
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#equals(Object)}. */
