@@ -472,7 +472,12 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#toArray()}. */
 	@Test public final void testToArray() {
-		fail("Not yet implemented");
+		try {
+			mEmptyIdentifierHashSet.toArray();
+			fail("When implementing toArray(), please also implement this test for it!");
+		} catch(UnsupportedOperationException e) {
+			assertEquals("Not implemented yet.", e.getMessage());
+		}
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#toArray(T[])}. */
