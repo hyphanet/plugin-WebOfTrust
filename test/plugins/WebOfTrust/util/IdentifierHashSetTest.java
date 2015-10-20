@@ -346,7 +346,41 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#removeAll(Collection)}. */
 	@Test public final void testRemoveAll() {
-		fail("Not yet implemented");
+		for(int i=0; i < mUniques.size(); ++i) {
+			List<? extends Persistent> uniques = mUniques.get(i);
+			List<? extends Persistent> duplicates = mDuplicates.get(i);
+			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+			
+			assertTrue(h.addAll(uniques));
+			assertFalse(h.isEmpty());
+			assertEquals(uniques.size(), h.size());
+			assertTrue(h.removeAll(uniques));
+			assertTrue(h.isEmpty());
+			assertEquals(0, h.size());
+			
+			assertTrue(h.addAll(uniques));
+			assertFalse(h.isEmpty());
+			assertEquals(uniques.size(), h.size());
+			assertTrue(h.removeAll(duplicates));
+			assertTrue(h.isEmpty());
+			assertEquals(0, h.size());
+			
+			assertFalse(h.removeAll(uniques));
+			assertTrue(h.isEmpty());
+			assertEquals(0, h.size());
+		}
+		
+		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+		ArrayList<Persistent> containsNull = new ArrayList<Persistent>();
+		containsNull.add(null);
+		assertNotNull(h);
+		assertTrue(containsNull.contains(null));
+		try {
+			h.removeAll(containsNull);
+			fail("removeAll(containing null) should not be allowed!");
+		} catch(NullPointerException e) {
+			// Success
+		}
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#retainAll(Collection)}. */
