@@ -327,7 +327,33 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#remove(Object)}. */
 	@Test public final void testRemove() {
-		fail("Not yet implemented");
+		for(int i=0; i < mUniques.size(); ++i) {
+			List<? extends Persistent> uniques = mUniques.get(i);
+			List<? extends Persistent> duplicates = mDuplicates.get(i);
+			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+			
+			for(Persistent u : uniques)    assertTrue(h.add(u));
+			for(Persistent u : uniques)    assertTrue(h.remove(u));
+			
+			assertEquals(0, h.size());
+			assertTrue(h.isEmpty());
+			
+			assertTrue(h.addAll(duplicates));
+			
+			for(Persistent u : uniques)    assertTrue(h.remove(u));
+			
+			assertEquals(0, h.size());
+			assertTrue(h.isEmpty());
+		}
+		
+		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+		assertNotNull(h);
+		try {
+			h.remove(null);
+			fail("remove(null) should not be allowed");
+		} catch(NullPointerException e) {
+			// Success
+		}
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#removeAll(Collection)}. */
