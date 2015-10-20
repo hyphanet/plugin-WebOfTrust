@@ -413,7 +413,61 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#size()}. */
 	@Test public final void testSize() {
-		fail("Not yet implemented");
+		for(int i=0; i < mUniques.size(); ++i) {
+			List<? extends Persistent> uniques = mUniques.get(i);
+			List<? extends Persistent> otherUniques = mOtherUniques.get(i);
+			List<? extends Persistent> duplicates = mDuplicates.get(i);
+			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
+			
+			assertEquals(0, h.size());
+			assertTrue(h.addAll(uniques));
+			assertFalse(h.isEmpty());
+			assertEquals(uniques.size(), h.size());
+			
+			assertFalse(h.addAll(duplicates));
+			assertFalse(h.removeAll(otherUniques));
+			assertFalse(h.isEmpty());
+			assertEquals(uniques.size(), h.size());
+			
+			h.clear();
+			assertTrue(h.isEmpty());
+			assertEquals(0, h.size());
+			
+			int size = 0;
+			
+			for(Persistent u : uniques) {
+				assertEquals(size, h.size());
+				assertTrue(h.add(u));
+				assertEquals(++size, h.size());
+			}
+			
+			assertFalse(h.isEmpty());
+			
+			for(Persistent u : uniques) {
+				assertEquals(size, h.size());
+				assertTrue(h.remove(u));
+				assertEquals(--size, h.size());
+			}
+			
+			assertTrue(h.isEmpty());
+			assertEquals(0, h.size());
+			
+			h.remove(duplicates.get(0));
+			assertTrue(h.isEmpty());
+			assertEquals(0, h.size());
+			
+			h.removeAll(uniques);
+			assertTrue(h.isEmpty());
+			assertEquals(0, h.size());
+		}
+		
+		try {
+			mEmptyIdentifierHashSet.add(null);
+			fail("Adding null should not be allowed");
+		} catch(NullPointerException e) {
+			assertTrue(mEmptyIdentifierHashSet.isEmpty());
+			assertEquals(0, mEmptyIdentifierHashSet.size());
+		}
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#toArray()}. */
