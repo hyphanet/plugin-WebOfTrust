@@ -37,6 +37,9 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 	 * when adding all of them to a single set.*/
 	List<List<? extends Persistent>> mUniques = new ArrayList<List<? extends Persistent>>();
 
+	/** Same as {@link #mUniques}, just different random objects */
+	List<List<? extends Persistent>> mOtherUniques = new ArrayList<List<? extends Persistent>>();
+
 	/**
 	 * The nesting of the lists is the same as at {@link #mUniques}: Each slot of the outer list
 	 * is one "test dataset".
@@ -68,6 +71,14 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		
 		mUniques.add(identities);
 		mUniques.add(trusts);
+		
+		// Compute mOtherUniques
+		
+		List<Identity> otherIdentities = new ArrayList<Identity>(addRandomIdentities(5));
+		List<Trust> otherTrusts = new ArrayList<Trust>(addRandomTrustValues(otherIdentities, 15));
+		
+		mOtherUniques.add(otherIdentities);
+		mOtherUniques.add(otherTrusts);
 		
 		// Compute mDuplicates
 		
@@ -144,12 +155,14 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 	@Test public final void testAddAll() {
 		for(int i=0; i < mUniques.size(); ++i) {
 			List<? extends Persistent> uniques = mUniques.get(i);
+			List<? extends Persistent> otherUniques = mOtherUniques.get(i);
 			List<? extends Persistent> duplicates = mDuplicates.get(i);
 			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
 			
 			assertTrue(h.addAll(uniques));
 			assertFalse(h.addAll(uniques));
 			assertFalse(h.addAll(duplicates));
+			assertTrue(h.addAll(otherUniques)); // Check whether it still accepts new stuff
 		}
 		
 		try {
@@ -318,10 +331,17 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 	@Test public final void testRemove() {
 		for(int i=0; i < mUniques.size(); ++i) {
 			List<? extends Persistent> uniques = mUniques.get(i);
+			List<? extends Persistent> otherUniques = mOtherUniques.get(i);
 			List<? extends Persistent> duplicates = mDuplicates.get(i);
 			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
 			
-			for(Persistent u : uniques)    assertTrue(h.add(u));
+			for(Persistent u : uniques)        assertTrue(h.add(u));
+			for(Persistent ou : otherUniques)  assertFalse(h.remove(ou));
+			
+			// Check that removal of the not-even-added otherUniques didn't have any effect
+			assertEquals(uniques.size(), h.size()); 
+			assertFalse(h.isEmpty());
+			
 			for(Persistent u : uniques)    assertTrue(h.remove(u));
 			
 			assertEquals(0, h.size());
@@ -347,10 +367,12 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 	@Test public final void testRemoveAll() {
 		for(int i=0; i < mUniques.size(); ++i) {
 			List<? extends Persistent> uniques = mUniques.get(i);
+			List<? extends Persistent> otherUniques = mOtherUniques.get(i);
 			List<? extends Persistent> duplicates = mDuplicates.get(i);
 			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
 			
 			assertTrue(h.addAll(uniques));
+			assertFalse(h.removeAll(otherUniques)); // Must not have any effect
 			assertFalse(h.isEmpty());
 			assertEquals(uniques.size(), h.size());
 			assertTrue(h.removeAll(uniques));
