@@ -108,10 +108,13 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		assertEquals(mUniques.get(1).get(0).getClass(), mDuplicates.get(1).get(0).getClass());
 		assertNotEquals(mUniques.get(1).get(0).getClass(), mDuplicates.get(0).get(0).getClass());
 		
+		// Compute mEmptyIdentifierHashSet
 		
 		mEmptyIdentifierHashSet = new IdentifierHashSet<Persistent>();
 		// Important to not confuse catch(NullPointerException) in following tests.
 		assertNotNull(mEmptyIdentifierHashSet);
+		
+		// Compute mContainsNull
 		
 		mContainsNull.add(null);
 		assertTrue(mContainsNull.contains(null));
