@@ -38,7 +38,13 @@ final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 	 * {@inheritDoc}
 	 * @throws NullPointerException If parameter e is null. */
 	@Override public boolean add(T e) {
-		return map.put(e.getID(), e) == null;
+		String id = e.getID();
+		if(map.containsKey(id))
+			return false;
+		
+		boolean notContained = map.put(id, e) == null;
+		assert(notContained);
+		return true;
 	}
 
 	@Override public boolean addAll(Collection<? extends T> c) {
