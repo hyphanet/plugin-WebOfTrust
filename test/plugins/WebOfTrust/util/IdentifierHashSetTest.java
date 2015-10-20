@@ -65,11 +65,10 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		
 		// Compute mDuplicates
 		
-		List<Identity> identityDuplicates = new ArrayList<Identity>(identities.size() * 2 + 1);
-		List<Trust> trustDuplicates = new ArrayList<Trust>(trusts.size() * 2 + 1);
+		List<Identity> identityDuplicates = new ArrayList<Identity>(identities.size() + 1);
+		List<Trust> trustDuplicates = new ArrayList<Trust>(trusts.size() + 1);
 		
 		for(Identity i : identities) {
-			Identity clone = i.clone();
 			Identity modifiedClone = i.clone();
 			modifiedClone.forceSetEdition(i.getEdition() + 1);
 			
@@ -81,33 +80,15 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			// Thus, to ensure that we properly test IdentifierHashSet, we have to feed the set
 			// with clones which purposefully cause equals() to return false.
 			assertFalse(i.equals(modifiedClone));
-			assertTrue(i.equals(clone));
-			
-			identityDuplicates.add(clone);
 			identityDuplicates.add(modifiedClone);
-			
-			// Do NOT add the original one: The main purpose of IdentifierHashSet is to ensure that
-			// clones, i.e. "duplicates", are considered as equal to the original one.
-			// Thus for example remove(duplicate) should also remove the original.
-			// So the tests we do should be done with duplicates only, to not cause false success.
-			/* assertTrue(i.equals(i));
-			   identityDuplicates.add(i); */
 		}
 
 		for(Trust t : trusts) {
-			Trust clone = t.clone();
 			Trust modifiedClone = t.clone();
 			modifiedClone.forceSetTrusterEdition(t.getTrusterEdition() + 1);
 			
 			assertFalse(t.equals(modifiedClone));
-			assertTrue(t.equals(clone));
-			
-			trustDuplicates.add(clone);
 			trustDuplicates.add(modifiedClone);
-			
-			// Same as above
-			/* assertTrue(t.equals(t));
-			   trustDuplicates.add(t); */
 		}
 		
 		Collections.shuffle(identityDuplicates, mRandom);
