@@ -401,7 +401,14 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#retainAll(Collection)}. */
 	@Test public final void testRetainAll() {
-		fail("Not yet implemented");
+		// retainAll() was not implemented yet, so we only test whether it still is not.
+		try {
+			mEmptyIdentifierHashSet.retainAll(new ArrayList<Persistent>());
+			fail("When implementing retainAll(), please also implement this test for it!");
+		} catch(UnsupportedOperationException e) {
+			// Success
+			assertEquals("Not implemented yet.", e.getMessage());
+		}
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#size()}. */
