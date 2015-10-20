@@ -269,10 +269,12 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 	@Test public final void testIsEmpty() {
 		for(int i=0; i < mUniques.size(); ++i) {
 			List<? extends Persistent> uniques = mUniques.get(i);
+			List<? extends Persistent> duplicates = mDuplicates.get(i);
 			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
 			
 			assertTrue(h.isEmpty());
-			assertTrue(h.addAll(uniques));
+			assertTrue(h.addAll(duplicates));
+			assertFalse(h.addAll(uniques));
 			assertFalse(h.isEmpty());
 			h.clear();
 			assertTrue(h.isEmpty());
