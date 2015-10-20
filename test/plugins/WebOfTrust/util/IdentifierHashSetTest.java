@@ -71,6 +71,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		
 		mUniques.add(identities);
 		mUniques.add(trusts);
+		assertEquals(5, mUniques.get(0).size());
+		assertEquals(15, mUniques.get(1).size());
 		
 		// Compute mOtherUniques
 		
@@ -79,6 +81,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		
 		mOtherUniques.add(otherIdentities);
 		mOtherUniques.add(otherTrusts);
+		assertEquals(5, mOtherUniques.get(0).size());
+		assertEquals(15, mOtherUniques.get(1).size());
 		
 		// Compute mDuplicates
 		
@@ -113,6 +117,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		
 		mDuplicates.add(identityDuplicates);
 		mDuplicates.add(trustDuplicates);
+		assertEquals(mUniques.get(0).size(), mDuplicates.get(0).size());
+		assertEquals(mUniques.get(1).size(), mDuplicates.get(1).size());
 		
 		assertEquals(mUniques.size(), mDuplicates.size());
 		assertEquals(mUniques.get(0).get(0).getClass(), mDuplicates.get(0).get(0).getClass());
