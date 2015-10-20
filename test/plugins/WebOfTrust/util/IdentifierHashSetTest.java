@@ -49,6 +49,12 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 	 * - The very same object as in {@link #mUniques}. */
 	List<List<? extends Persistent>> mDuplicates = new ArrayList<List<? extends Persistent>>();
 
+	/** Contains an element which is null. */
+	final List<Persistent> mContainsNull = new ArrayList<Persistent>();
+
+	/** Contains nothing. */
+	IdentifierHashSet<Persistent> mEmptyIdentifierHashSet;
+
 
 	@Before public void setUp()
 			throws InvalidParameterException, NotTrustedException, MalformedURLException {
@@ -101,6 +107,14 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		assertEquals(mUniques.get(0).get(0).getClass(), mDuplicates.get(0).get(0).getClass());
 		assertEquals(mUniques.get(1).get(0).getClass(), mDuplicates.get(1).get(0).getClass());
 		assertNotEquals(mUniques.get(1).get(0).getClass(), mDuplicates.get(0).get(0).getClass());
+		
+		
+		mEmptyIdentifierHashSet = new IdentifierHashSet<Persistent>();
+		// Important to not confuse catch(NullPointerException) in following tests.
+		assertNotNull(mEmptyIdentifierHashSet);
+		
+		mContainsNull.add(null);
+		assertTrue(mContainsNull.contains(null));
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#add(Persistent)}. */
@@ -115,10 +129,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			for(Persistent d : duplicates) assertFalse(h.add(d));
 		}
 		
-		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
-		assertNotNull(h);
 		try {
-			h.add(null);
+			mEmptyIdentifierHashSet.add(null);
 			fail("Adding null should not be allowed");
 		} catch(NullPointerException e) {
 			// Success
@@ -137,13 +149,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			assertFalse(h.addAll(duplicates));
 		}
 		
-		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
-		ArrayList<Persistent> containsNull = new ArrayList<Persistent>();
-		containsNull.add(null);
-		assertNotNull(h);
-		assertTrue(containsNull.contains(null));
 		try {
-			h.addAll(containsNull);
+			mEmptyIdentifierHashSet.addAll(mContainsNull);
 			fail("Adding null should not be allowed");
 		} catch(NullPointerException e) {
 			// Success
@@ -182,7 +189,7 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		}
 		
 		// Test whether clear() upon empty set does not throw.
-		new IdentifierHashSet<Persistent>().clear();
+		mEmptyIdentifierHashSet.clear();
 	}
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#contains(Object)}. */
@@ -202,10 +209,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 				assertTrue(h.contains(d));
 		}
 		
-		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
-		assertNotNull(h);
 		try {
-			h.contains(null);
+			mEmptyIdentifierHashSet.contains(null);
 			fail("contains(null) should not be allowed");
 		} catch(NullPointerException e) {
 			// Success
@@ -233,13 +238,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			assertFalse(h.containsAll(duplicates));			
 		}
 		
-		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
-		ArrayList<Persistent> containsNull = new ArrayList<Persistent>();
-		containsNull.add(null);
-		assertNotNull(h);
-		assertTrue(containsNull.contains(null));
 		try {
-			h.containsAll(containsNull);
+			mEmptyIdentifierHashSet.containsAll(mContainsNull);
 			fail("containsAll() with null element should not be allowed!");
 		} catch(NullPointerException e) {
 			// Success
@@ -273,13 +273,11 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			assertTrue(h.isEmpty());
 		}
 		
-		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
-		assertNotNull(h);
 		try {
-			h.add(null);
+			mEmptyIdentifierHashSet.add(null);
 			fail("Adding null should not be allowed");
 		} catch(NullPointerException e) {
-			assertTrue(h.isEmpty());
+			assertTrue(mEmptyIdentifierHashSet.isEmpty());
 		}
 	}
 
@@ -334,10 +332,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			assertTrue(h.isEmpty());
 		}
 		
-		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
-		assertNotNull(h);
 		try {
-			h.remove(null);
+			mEmptyIdentifierHashSet.remove(null);
 			fail("remove(null) should not be allowed");
 		} catch(NullPointerException e) {
 			// Success
@@ -370,13 +366,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			assertEquals(0, h.size());
 		}
 		
-		IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
-		ArrayList<Persistent> containsNull = new ArrayList<Persistent>();
-		containsNull.add(null);
-		assertNotNull(h);
-		assertTrue(containsNull.contains(null));
 		try {
-			h.removeAll(containsNull);
+			mEmptyIdentifierHashSet.removeAll(mContainsNull);
 			fail("removeAll(containing null) should not be allowed!");
 		} catch(NullPointerException e) {
 			// Success
