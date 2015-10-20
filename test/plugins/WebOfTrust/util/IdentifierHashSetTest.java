@@ -291,7 +291,11 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
 			
 			assertTrue(h.addAll(uniques));
+			
+			// See below "Notice" for why we do these
 			assertFalse(h.addAll(duplicates));
+			for(Persistent d : duplicates)
+				assertFalse(h.add(d));
 			
 			ArrayList<Persistent> fromIterator
 				= new ArrayList<Persistent>(uniques.size() + 1);
@@ -302,6 +306,9 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			assertEquals(uniques.size(), fromIterator.size());
 			// This is O(N^2), but it should run in reasonable time since setUp() does not create a
 			// huge data set.
+			// Notice: This also ensures that addAll(duplicates) / add(duplicate) did not wrongly
+			// replace the originals with the duplicates even though they returned false (this
+			// bug did exist!)
 			assertTrue(fromIterator.containsAll(uniques));
 		}
 	}
