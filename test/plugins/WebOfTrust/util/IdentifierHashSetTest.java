@@ -8,6 +8,7 @@ import static org.junit.Assert.*;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Before;
@@ -64,8 +65,8 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		
 		// Compute mDuplicates
 		
-		List<Identity> identityDuplicates = new ArrayList<Identity>(identities.size() * 3 + 1);
-		List<Trust> trustDuplicates = new ArrayList<Trust>(trusts.size() * 3 + 1);
+		List<Identity> identityDuplicates = new ArrayList<Identity>(identities.size() * 2 + 1);
+		List<Trust> trustDuplicates = new ArrayList<Trust>(trusts.size() * 2 + 1);
 		
 		for(Identity i : identities) {
 			Identity clone = i.clone();
@@ -85,10 +86,12 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			identityDuplicates.add(clone);
 			identityDuplicates.add(modifiedClone);
 			
-			// For purposes of testing IdentifierHashSet.add() / addAll(), it is also interesting
-			// to know whether they correctly refuse the same object which was already added.
-			assertTrue(i.equals(i));
-			identityDuplicates.add(i);
+			// Do NOT add the original one: The main purpose of IdentifierHashSet is to ensure that
+			// clones, i.e. "duplicates", are considered as equal to the original one.
+			// Thus for example remove(duplicate) should also remove the original.
+			// So the tests we do should be done with duplicates only, to not cause false success.
+			/* assertTrue(i.equals(i));
+			   identityDuplicates.add(i); */
 		}
 
 		for(Trust t : trusts) {
@@ -102,9 +105,13 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			trustDuplicates.add(clone);
 			trustDuplicates.add(modifiedClone);
 			
-			assertTrue(t.equals(t));
-			trustDuplicates.add(t);
+			// Same as above
+			/* assertTrue(t.equals(t));
+			   trustDuplicates.add(t); */
 		}
+		
+		Collections.shuffle(identityDuplicates, mRandom);
+		Collections.shuffle(trustDuplicates, mRandom);
 		
 		mDuplicates.add(identityDuplicates);
 		mDuplicates.add(trustDuplicates);
@@ -123,6 +130,7 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
 			
 			for(Persistent u : uniques)    assertTrue(h.add(u));
+			for(Persistent u : uniques)    assertFalse(h.add(u));
 			for(Persistent d : duplicates) assertFalse(h.add(d));
 		}
 		
@@ -144,6 +152,7 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			IdentifierHashSet<Persistent> h = new IdentifierHashSet<Persistent>();
 			
 			assertTrue(h.addAll(uniques));
+			assertFalse(h.addAll(uniques));
 			assertFalse(h.addAll(duplicates));
 		}
 		
