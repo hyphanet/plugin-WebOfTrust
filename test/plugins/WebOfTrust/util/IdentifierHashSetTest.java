@@ -515,6 +515,7 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 			assertTrue(h2.addAll(duplicates));
 			assertNotEquals(emptyHashCode, h1.hashCode());
 			assertNotEquals(emptyHashCode, h2.hashCode());
+			assertEquals(h1.hashCode(), h1.hashCode()); // Stable?
 			assertEquals(h1.hashCode(), h2.hashCode());
 			
 			assertFalse(h1.remove(otherUniques.get(0)));
