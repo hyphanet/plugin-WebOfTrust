@@ -551,7 +551,48 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 
 	/** Tests {@link plugins.WebOfTrust.util.IdentifierHashSet#equals(Object)}. */
 	@Test public final void testEqualsObject() {
-		fail("Not yet implemented");
+		assertEquals(mEmptyIdentifierHashSet, mEmptyIdentifierHashSet); // "Reflexive" property
+		
+		for(int i=0; i < mUniques.size(); ++i) {
+			List<? extends Persistent> uniques = mUniques.get(i);
+			List<? extends Persistent> otherUniques = mOtherUniques.get(i);
+			List<? extends Persistent> duplicates = mDuplicates.get(i);
+			IdentifierHashSet<Persistent> h1 = new IdentifierHashSet<Persistent>();
+			IdentifierHashSet<Persistent> h2 = new IdentifierHashSet<Persistent>();
+			
+			assertEquals(mEmptyIdentifierHashSet, h1);
+			assertEquals(mEmptyIdentifierHashSet, h2);
+			assertTrue(h1.addAll(uniques));
+			assertTrue(h2.addAll(duplicates));
+			assertNotEquals(mEmptyIdentifierHashSet, h1);
+			assertNotEquals(mEmptyIdentifierHashSet, h2);
+			assertEquals(h1, h2);
+			assertEquals(h2, h1); // "Symmetric" property of equals()
+			
+			assertFalse(h1.remove(otherUniques.get(0)));
+			assertEquals(h1, h2);
+			
+			assertTrue(h1.remove(duplicates.get(0)));
+			assertNotEquals(h1, h2);
+			
+			assertTrue(h1.add(duplicates.get(0)));
+			assertEquals(h1, h2);
+			
+			IdentifierHashSet<Persistent> h3 = new IdentifierHashSet<Persistent>();
+			assertTrue(h3.addAll(h1));
+			assertEquals(h1, h2);
+			assertEquals(h2, h3);
+			assertEquals(h1, h3); // "Transitive" property
+			assertFalse(h3.addAll(h2));
+			// "Consistent" property; also test the above addAll()
+			assertEquals(h1, h2);  
+			assertEquals(h2, h3);
+			assertEquals(h1, h3);
+		}
+		
+		assertNotEquals(mEmptyIdentifierHashSet, null); // Object.equals() demands this as well.
+		
+		assertNotEquals(mEmptyIdentifierHashSet, new Object());
 	}
 
 	@Override
