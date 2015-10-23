@@ -29,7 +29,17 @@ import plugins.WebOfTrust.Trust;
  * the given {@link Persistent} object's identity only from the value of their
  * {@link Persistent#getID()}.<br>
  * I.e. it will behave like a {@link HashSet} with type {@link String}, to which the IDs of the
- * Persistent objects are added. */
+ * Persistent objects are added.
+ * 
+ * FIXME: For {@link #add(Persistent)} etc., JavaDoc the main difference to the regular Set
+ * behavior: Here element.equals() is NOT the defining thing which decides whether something is
+ * added, removed, etc. add() will only check {@link Persistent#getID()}'s equals(). This is
+ * probably OK with the Set specification as it allows implementations to refuse adding certain
+ * elements. But according to the specification, we might actually have to throw if we refuse one,
+ * which we don't do currently. So this would require changing the current code, and I'm not sure
+ * whether it still would be suitable for WoT's purposes then :| If it is not, maybe just don't
+ * explicitly implement interface Set, i.e. use the same functions, but remove the "implements"
+ * declaration. */
 final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 
 	private final HashMap<String, T> map = new HashMap<String, T>();
