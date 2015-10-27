@@ -126,9 +126,13 @@ final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 	}
 
 	@Override public boolean equals(Object obj) {
+		if(obj == null)
+			return false;
+		
 		if(!(obj instanceof IdentifierHashSet)) {
-			throw new IllegalArgumentException(
-				"IdentifierHashSet.equals() can only compare to objects of type IdentifierHashSet");
+			assert(false)
+				: "IdentifierHashSet.equals() can only compare to type IdentifierHashSet";
+			return false;
 		}
 		
 		IdentifierHashSet<?> other = (IdentifierHashSet<?>)obj;

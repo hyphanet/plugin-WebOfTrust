@@ -592,7 +592,12 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		
 		assertNotEquals(mEmptyIdentifierHashSet, null); // Object.equals() demands this as well.
 		
-		assertNotEquals(mEmptyIdentifierHashSet, new Object());
+		try {
+			mEmptyIdentifierHashSet.equals(new Object());
+			fail();
+		} catch(AssertionError e) {
+			// Expected.
+		}
 	}
 
 	@Override
