@@ -129,6 +129,9 @@ final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 		if(obj == null)
 			return false;
 		
+		if(obj == this)
+			return true;
+		
 		if(!(obj instanceof IdentifierHashSet)) {
 			assert(false)
 				: "IdentifierHashSet.equals() can only compare to type IdentifierHashSet";
