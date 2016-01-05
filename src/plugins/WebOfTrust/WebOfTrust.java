@@ -228,6 +228,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 	@Override
 	public void runPlugin(PluginRespirator myPR) {
 		try {
+			if(true) throw new UnsupportedOperationException(
+			    "The code of this branch is not finished yet, please do not use it: "
+			  + "It will *gradually* change the scheme of the database, and having databases of "
+			  + "half-finished changes in the wild will make debugging difficult.");
+			
 			Logger.normal(this, "Web Of Trust plugin version " + Version.getMarketingVersion() + " starting up...");
 			
 			/* Catpcha generation needs headless mode on linux */
