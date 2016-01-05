@@ -107,7 +107,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/** Package-private method to allow unit tests to bypass some assert()s */
 	
 	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
-	public static final int DATABASE_FORMAT_VERSION = 7;
+	public static final int DATABASE_FORMAT_VERSION = 8;
 	
 	
 
@@ -735,7 +735,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					case 4: upgradeDatabaseFormatVersion4(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
                     case 5: upgradeDatabaseFormatVersion12345(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
 					case 6: upgradeDatabaseFormatVersion6(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
-					case 7: break;
+					case 7: upgradeDatabaseFormatVersion7(); mConfig.setDatabaseFormatVersion(++databaseFormatVersion);
+					case 8: break;
 					default:
 						throw new UnsupportedOperationException("Your database is newer than this WOT version! Please upgrade WOT.");
 				}
@@ -997,6 +998,20 @@ public final class WebOfTrust extends WebOfTrustInterface
 		mConfig.updateLastDefragDate();
 		mConfig.updateLastVerificationOfScoresDate();
 		mConfig.storeWithoutCommit();
+	}
+
+	/**
+	 * Upgrades database format version 6 to version 7.<br><br>
+	 *
+	 * FIXME: Implement to be able to handle changes of
+	 * https://bugs.freenetproject.org/view.php?id=3816
+	 * Also write Javadoc of what this function does then. */
+	private void upgradeDatabaseFormatVersion7() {
+		throw new UnsupportedOperationException(
+		    "The code of this branch is not finished yet, please do not use it: "
+		  + "It will *gradually* change the scheme of the database, and having databases of "
+		  + "half-finished changes in the wild will make debugging difficult. "
+		  + "Also, it lacks code to upgrade existing databases to the new format.");
 	}
 
 	/**
