@@ -40,7 +40,7 @@ import plugins.WebOfTrust.Trust;
  * whether it still would be suitable for WoT's purposes then :| If it is not, maybe just don't
  * explicitly implement interface Set, i.e. use the same functions, but remove the "implements"
  * declaration. */
-final class IdentifierHashSet<T extends Persistent> implements Set<T> {
+public final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 
 	private final HashMap<String, T> map = new HashMap<String, T>();
 
