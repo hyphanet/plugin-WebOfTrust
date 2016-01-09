@@ -42,7 +42,15 @@ import plugins.WebOfTrust.Trust;
  * declaration. */
 public final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 
-	private final HashMap<String, T> map = new HashMap<String, T>();
+	private final HashMap<String, T> map;
+
+	public IdentifierHashSet() {
+		map = new HashMap<String, T>();
+	}
+
+	public IdentifierHashSet(int initialCapacity) {
+		map = new HashMap<String, T>(initialCapacity);
+	}
 
 	/**
 	 * {@inheritDoc}
