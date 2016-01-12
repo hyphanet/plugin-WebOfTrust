@@ -52,6 +52,11 @@ public final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 		map = new HashMap<String, T>(initialCapacity);
 	}
 
+	public IdentifierHashSet(Collection<T> c) {
+		map = new HashMap<String, T>(Math.max(((int)(c.size()/0.75f)) + 1, 16));
+		addAll(c);
+	}
+
 	/**
 	 * {@inheritDoc}
 	 * @throws NullPointerException If parameter e is null. */
