@@ -1204,19 +1204,19 @@ public final class WebOfTrust extends WebOfTrustInterface
 				= new IdentifierHashSet<Score>(original.getAllScores());
 			
 			for(Identity identity : allIdentities) {
-				identity.checkedActivate(16);
+				identity.activateFully();
 				identity.mWebOfTrust = null;
 				identity.mDB = null;
 			}
 			
 			for(Trust trust : allTrusts) {
-				trust.checkedActivate(16);
+				trust.activateFully();
 				trust.mWebOfTrust = null;
 				trust.mDB = null;
 			}
 			
 			for(Score score : allScores) {
-				score.checkedActivate(16);
+				score.activateFully();
 				score.mWebOfTrust = null;
 				score.mDB = null;
 			}
