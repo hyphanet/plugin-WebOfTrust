@@ -42,6 +42,7 @@ import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import plugins.WebOfTrust.ui.web.WebInterface;
+import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.StopWatch;
 
 import com.db4o.Db4o;
@@ -1191,17 +1192,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			// TODO: Clone the Configuration object
 			
-			// TODO: These are unsafe usages of HashSet: Identity/Trust/Score have equals()
-			// functions which are not suitable for using with sets because they do not only compare
-			// object IDs  but also state/version of the objects.
-			// Replacing with IdentityHashSet would be the first idea, but thats not the desired
-			// use of what we do here: This function aims to be resistant against corrupted
-			// databases, so it must be able to deal with duplicates of Identity/Trust/Score
-			// objects. Thus, please use class IdentitifierHashSet.
+			// This function aims to be resistant against corrupted databases, so it must be able to
+			// deal with duplicates of Identity/Trust/Score objects. Thus, it uses class
+			// IdentitifierHashSet for deduplication.
 			
-			final HashSet<Identity> allIdentities = new HashSet<Identity>(original.getAllIdentities());
-			final HashSet<Trust> allTrusts = new HashSet<Trust>(original.getAllTrusts());
-			final HashSet<Score> allScores = new HashSet<Score>(original.getAllScores());
+			final IdentifierHashSet<Identity> allIdentities
+				= new IdentifierHashSet<Identity>(original.getAllIdentities());
+			final IdentifierHashSet<Trust> allTrusts
+				= new IdentifierHashSet<Trust>(original.getAllTrusts());
+			final IdentifierHashSet<Score> allScores
+				= new IdentifierHashSet<Score>(original.getAllScores());
 			
 			for(Identity identity : allIdentities) {
 				identity.checkedActivate(16);
