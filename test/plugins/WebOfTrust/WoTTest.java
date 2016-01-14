@@ -23,6 +23,10 @@ import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 
 /**
+ * Tests class {@link WebOfTrust}.
+ * 
+ * TODO: Code quality: Rename to WebOfTrustTest.
+ * 
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
