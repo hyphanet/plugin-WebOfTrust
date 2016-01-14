@@ -146,6 +146,19 @@ public abstract class AbstractJUnit4BaseTest {
     }
 
     /**
+     * Returns the union of {@link #addRandomOwnIdentities(int)} and
+     * {@link #addRandomIdentities(int)}. */
+    protected ArrayList<Identity> addRandomIdentities(int ownIdentityCount, int nonOwnIdentityCount)
+            throws MalformedURLException, InvalidParameterException {
+        
+        ArrayList<Identity> result
+            = new ArrayList<Identity>(ownIdentityCount + nonOwnIdentityCount);
+        result.addAll(addRandomOwnIdentities(ownIdentityCount));
+        result.addAll(addRandomIdentities(nonOwnIdentityCount));
+        return result;
+    }
+
+    /**
      * Adds identities with random request URIs to the database.
      * Their state will be as if they have never been fetched: They won't have a nickname, edition
      * will be 0, etc.
