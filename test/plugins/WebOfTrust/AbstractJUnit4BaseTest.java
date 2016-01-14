@@ -165,6 +165,11 @@ public abstract class AbstractJUnit4BaseTest {
      * 
      * TODO: Make sure that this function also adds random contexts & publish trust list flags.
      * 
+     * NOTICE: In tests where you need {@link Score} objects to exist, you should ensure that there
+     * are also {@link OwnIdentity} objects, because only they can cause Score objects to be
+     * created.
+     * Use {@link #addRandomIdentities(int, int)} to create both non-own and own identities.
+     * 
      * @param count Amount of identities to add
      * @return An {@link ArrayList} which contains all added identities.
      */
