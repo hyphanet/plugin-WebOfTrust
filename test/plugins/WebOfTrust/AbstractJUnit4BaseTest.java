@@ -18,7 +18,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import plugins.WebOfTrust.Trust.TrustID;
@@ -48,7 +47,7 @@ public abstract class AbstractJUnit4BaseTest {
     public final TemporaryFolder mTempFolder = new TemporaryFolder();
     
     /** @see #setupUncaughtExceptionHandler() */
-    private final AtomicReference<Throwable> uncaughtException
+    protected final AtomicReference<Throwable> uncaughtException
         = new AtomicReference<Throwable>(null);
     
     
@@ -78,18 +77,6 @@ public abstract class AbstractJUnit4BaseTest {
         Throwable t = uncaughtException.get();
         if(t != null)
             fail(t.toString());
-    }
-    
-    /** @see #setupUncaughtExceptionHandler() */
-    @Test public void testSetupUncaughtExceptionHandler() throws InterruptedException {
-        Thread t = new Thread(new Runnable() {@Override public void run() {
-            throw new RuntimeException();
-        }});
-        t.start();
-        t.join();
-        assertNotEquals(null, uncaughtException.get());
-        // Set back to null so testUncaughtExceptions() does not fail
-        uncaughtException.set(null);
     }
 
     /**

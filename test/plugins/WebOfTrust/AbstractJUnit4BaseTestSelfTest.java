@@ -4,6 +4,7 @@
 package plugins.WebOfTrust;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.net.MalformedURLException;
 
@@ -21,15 +22,25 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
  * {@link AbstractJUnit4BaseTest} to class {@link WebOfTrust} - namely the functions for generating
  * random {@link Identity} / {@link Trust} / {@link Score} objects. That would mean that many of
  * the test functions in this class here could become tests for regular code instead of being
- * tests for other unit test code.
- * 
- * FIXME: Move existing self-tests of {@link AbstractJUnit4BaseTest} from that class to this one. */
+ * tests for other unit test code. */
 public class AbstractJUnit4BaseTestSelfTest extends AbstractJUnit4BaseTest {
 
     private WebOfTrust mWebOfTrust;
 
     @Before public void setUp() {
         mWebOfTrust = constructEmptyWebOfTrust();
+    }
+
+    /** @see #setupUncaughtExceptionHandler() */
+    @Test public void testSetupUncaughtExceptionHandler() throws InterruptedException {
+        Thread t = new Thread(new Runnable() {@Override public void run() {
+            throw new RuntimeException();
+        }});
+        t.start();
+        t.join();
+        assertNotEquals(null, uncaughtException.get());
+        // Set back to null so testUncaughtExceptions() does not fail
+        uncaughtException.set(null);
     }
 
     /** Tests {@link #addRandomIdentities(int, int)}. */
