@@ -1349,7 +1349,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/**
 	 * Debug function for deleting duplicate identities etc. which might have been created due to bugs :)
 	 */
-	private synchronized void deleteDuplicateObjects() {
+	synchronized void deleteDuplicateObjects() {
 		synchronized(mPuzzleStore) { // Needed for deleteWithoutCommit(Identity)
 		synchronized(mFetcher) { // Needed for deleteWithoutCommit(Identity)
 		synchronized(mSubscriptionManager) { // Needed for deleteWithoutCommit(Identity)
