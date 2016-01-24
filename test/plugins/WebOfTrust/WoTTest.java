@@ -24,8 +24,12 @@ import freenet.support.CurrentTimeUTC;
 
 /**
  * Tests class {@link WebOfTrust}.
+ * NOTICE: {@link WebOfTrustTest} also tests that class. It is pending to be merged with this one.
  * 
- * TODO: Code quality: Rename to WebOfTrustTest.
+ * TODO: Code quality: As part of moving from {@link AbstractJUnit3BaseTest} as base class to
+ * {@link AbstractJUnit4BaseTest}, rename to {@link WebOfTrustTest} to match the class name which
+ * is being tested. Notice: {@link WebOfTrustTest} already exists with JUnit4-based code. So do the
+ * renaming by frist merging the code of the other class into this one.
  * 
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
