@@ -265,7 +265,7 @@ public final class WOTUtil {
 			
 			wot = new WebOfTrust(databaseFile);
 			
-			System.out.println("Checking database for corruption...");
+			System.err.println("Checking database for corruption...");
 			
 			if(!wot.verifyDatabaseIntegrity() || !wot.verifyAndCorrectStoredScores()) {
 				System.err.println("Damaged database, exiting!");
