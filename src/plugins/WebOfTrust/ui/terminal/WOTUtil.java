@@ -245,6 +245,7 @@ public final class WOTUtil {
 		err.println("    ATTENTION: OUTPUT_GNUPLOT will be appended to, not overwritten.");
 		err.println("    Push ENTER to exit for pause. Resume by restarting with same parameters.");
 		err.println("    Deterministic execution by SEED is not supported with resume.");
+		err.println("WOTUtil -fcp INPUT_DATABASE Message=WOT_FCP_CALL key1=value1 key2=value2 ...");
 		err.println("WOTUtil -testAndRepair INPUT_DATABASE");
 		err.println("WOTUtil -trustValueHistogram INPUT_DATABASE");
 		err.println("WOTUtil -trusteeCountHistogram INPUT_DATABASE");
@@ -284,6 +285,21 @@ public final class WOTUtil {
 					return 1;
 				}
 				benchmarkRemoveTrustDestructive(wot, new File(args[2]), Long.parseLong(args[3]));
+			} else if(args[0].equalsIgnoreCase("-fcp")) {
+				FCPPluginMessage message = FCPPluginMessage.construct();
+				for(String keyValuePair : Arrays.copyOfRange(args, 2, args.length)) {
+					String[] kv = keyValuePair.split("[=]", 2);
+					if(kv.length != 2 || kv[0].length() < 1) {
+						printSyntax();
+						return 1;
+					}
+					message.params.putOverwrite(kv[0], kv[1]);
+				}
+				System.err.println("Sending FCP message:");
+				System.err.print(message);
+				System.err.println("WoT's FCP reply follows...");
+				System.err.println("");
+				System.out.print(fcpCall(wot, message));
 			} else {
 				printSyntax();
 				return 1;
