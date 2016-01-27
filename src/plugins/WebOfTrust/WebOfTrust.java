@@ -5506,8 +5506,7 @@ public final class WebOfTrust extends WebOfTrustInterface
         return mIntroductionServer;
     }
 
-	@Override
-	protected FCPInterface getFCPInterface() {
+	@Override public FCPInterface getFCPInterface() {
 		return mFCPInterface;
 	}
 

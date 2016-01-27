@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
+import java.util.UUID;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Trust;
@@ -22,9 +23,13 @@ import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import plugins.WebOfTrust.util.StopWatch;
 
 import com.db4o.ObjectSet;
+
+import freenet.clients.fcp.FCPPluginConnection;
+import freenet.clients.fcp.FCPPluginMessage;
 
 /**
  * Command-line tool for maintenance and analysis of WOT databases.
@@ -81,6 +86,55 @@ public final class WOTUtil {
 		
 		System.out.println("Full recomputations: " + wot.getNumberOfFullScoreRecomputations());
 		output.close();
+	}
+	
+	/**
+	 * Sends a {@link FCPPluginMessage} to the {@link FCPInterface} of the given {@link WebOfTrust}
+	 * and returns the reply {@link FCPPluginMessage}.<br><br>
+	 * 
+	 * ATTENTION: This will not work for FCP API calls which cause WoT to send FCP replies
+	 * asynchronously. This for example applies to the event-notifications API, i.e. you must not
+	 * use "Message=Subscribe" (in the {@link FCPPluginMessage#params}). */
+	public static FCPPluginMessage fcpCall(WebOfTrust wot, FCPPluginMessage message) {
+		@SuppressWarnings("serial")
+		class NoConnectionException extends UnsupportedOperationException {
+			public NoConnectionException() {
+				super("WOTUtil doesn't support FCP calls which require a FCPPluginConnection!");
+			}
+		}
+		
+		FCPPluginConnection connection = new FCPPluginConnection() {
+			@Override public FCPPluginMessage sendSynchronous(FCPPluginMessage message,
+					long timeoutNanoSeconds) throws IOException, InterruptedException {
+				throw new NoConnectionException();
+			}
+			
+			@Override public FCPPluginMessage sendSynchronous(SendDirection direction,
+					FCPPluginMessage message, long timeoutNanoSeconds) throws IOException,
+					InterruptedException {
+				throw new NoConnectionException();
+			}
+			
+			@Override public void send(FCPPluginMessage message) throws IOException {
+				throw new NoConnectionException();
+			}
+			
+			@Override public void send(SendDirection direction, FCPPluginMessage message)
+					throws IOException {
+				throw new NoConnectionException();
+			}
+			
+			@Override public UUID getID() {
+				throw new NoConnectionException();
+			}
+		};
+		
+		// The message handler implements FredPluginFCPMessageHandler.ServerSideFCPMessageHandler.
+		// The standard use of it is: Input message is passed, reply message is returned.
+		// The connection is *not* used then. It is only used if the server wants to asynchronously
+		// send another message in the future.
+		// So we can safely pass our fake connection which doesn't work, it likely won't be used.
+		return wot.getFCPInterface().handlePluginFCPMessage(connection, message);
 	}
 
 	private static ArrayList<TrustID> getTrustsRandomized(WebOfTrust wot, Random random) {
