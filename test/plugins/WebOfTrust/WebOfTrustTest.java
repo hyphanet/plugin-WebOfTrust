@@ -51,11 +51,8 @@ public class WebOfTrustTest extends AbstractJUnit4BaseTest {
 		
 		IdentifierHashSet<Identity> idDuplicateCheck = new IdentifierHashSet<Identity>(10 * 2);
 		boolean noDuplicates = true;
-		for(Identity i : mWebOfTrust.getAllIdentities()) {
+		for(Identity i : mWebOfTrust.getAllIdentities())
 			noDuplicates &= idDuplicateCheck.add(i);
-			if(!noDuplicates)
-				break;
-		}
 		assertFalse(noDuplicates);
 		
 		// FIXME: Check Scores / Trusts
