@@ -55,7 +55,17 @@ public class WebOfTrustTest extends AbstractJUnit4BaseTest {
 			noDuplicates &= idDuplicateCheck.add(i);
 		assertFalse(noDuplicates);
 		
-		// FIXME: Check Scores / Trusts
+		IdentifierHashSet<Trust> trustDuplicateCheck = new IdentifierHashSet<Trust>(5 * 2);
+		noDuplicates = true;
+		for(Trust t : mWebOfTrust.getAllTrusts())
+			noDuplicates &= trustDuplicateCheck.add(t);
+		assertFalse(noDuplicates);
+		
+		IdentifierHashSet<Score> scoreDuplicateCheck = new IdentifierHashSet<Score>(20 * 2);
+		noDuplicates = true;
+		for(Score s : mWebOfTrust.getAllScores())
+			noDuplicates &= scoreDuplicateCheck.add(s);
+		assertFalse(noDuplicates);
 		
 		mWebOfTrust.deleteDuplicateObjects();
 	
@@ -63,7 +73,13 @@ public class WebOfTrustTest extends AbstractJUnit4BaseTest {
 		for(Identity i : mWebOfTrust.getAllIdentities())
 			assertTrue(idDuplicateCheck.add(i));
 		
-		// FIXME: Check Scores / Trusts
+		trustDuplicateCheck = new IdentifierHashSet<Trust>(5 * 2);
+		for(Trust t : mWebOfTrust.getAllTrusts())
+			assertTrue(trustDuplicateCheck.add(t));
+		
+		scoreDuplicateCheck = new IdentifierHashSet<Score>(5 * 2);
+		for(Score s : mWebOfTrust.getAllScores())
+			assertTrue(scoreDuplicateCheck.add(s));
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
