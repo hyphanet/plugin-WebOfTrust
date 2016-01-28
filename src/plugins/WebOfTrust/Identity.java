@@ -1184,8 +1184,10 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	
 	/**
 	 * You have to lock the WoT and the IntroductionPuzzleStore before calling this function.
-	 * @param identity
-	 */
+	 * 
+	 * ATTENTION: This does not delete objects which reference the Identity, such as {@link Trust}
+	 * or {@link Score} objects! In general, {@link WebOfTrust#deleteWithoutCommit(Identity)} should
+	 * be used for deleting Identity objects instead. */
 	@Override
 	protected void deleteWithoutCommit() {
 		try {
