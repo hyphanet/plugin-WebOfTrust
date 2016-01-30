@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -72,14 +73,17 @@ public class WebOfTrustTest extends AbstractJUnit4BaseTest {
 		idDuplicateCheck = new IdentifierHashSet<Identity>(10 * 2);
 		for(Identity i : mWebOfTrust.getAllIdentities())
 			assertTrue(idDuplicateCheck.add(i));
+		assertEquals(new IdentifierHashSet<Identity>(identities), idDuplicateCheck);
 		
 		trustDuplicateCheck = new IdentifierHashSet<Trust>(5 * 2);
 		for(Trust t : mWebOfTrust.getAllTrusts())
 			assertTrue(trustDuplicateCheck.add(t));
+		assertEquals(new IdentifierHashSet<Trust>(trusts), trustDuplicateCheck);
 		
 		scoreDuplicateCheck = new IdentifierHashSet<Score>(5 * 2);
 		for(Score s : mWebOfTrust.getAllScores())
 			assertTrue(scoreDuplicateCheck.add(s));
+		assertEquals(new IdentifierHashSet<Score>(scores), scoreDuplicateCheck);
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
