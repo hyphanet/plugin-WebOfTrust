@@ -1348,7 +1348,26 @@ public final class WebOfTrust extends WebOfTrustInterface
 	
 	/**
 	 * Debug function for deleting duplicate identities etc. which might have been created due to bugs :)
-	 */
+	 * 
+	 * @deprecated
+	 *    This should be converted to a function which only detects duplicate objects, not deletes
+	 *    them: It is run with debug logging only anyway, so it will not be a benefit to the users.
+	 *    Also, issues which cause duplicate objects should be fixed instead of being worked around
+	 *    by having a function which deletes them.
+	 *    Ideally, the function would throw or return false if there are duplicate objects, and the
+	 *    callers would prevent startup of WoT then.
+	 *    Before this can be done, please however convert all callers of this function to work with
+	 *    the new behavior. This especially applies to the upgrade code for old database formats
+	 *    which uses this function - it can likely be removed if the newer database format versions
+	 *    were deployed in an official release a long time ago already.
+	 *    Alternate solution: Amend startupDatabaseIntegrityTest() of all classes which require
+	 *    uniqueness to check whether another object with the same ID exists. This should be
+	 *    benchmarked though as O(N) queries for an ID could be very slow if the database queries
+	 *    are slow. It would certainly be the more clean solution since uniqueness is an integrity
+	 *    issue and thus should be handled in each class' integrity test.
+	 *    FIXME: While you're at it, notice that this function also lacks code to check for
+	 *    duplicates of {@link IntroductionPuzzle} objects. */
+	@Deprecated
 	synchronized void deleteDuplicateObjects() {
 		synchronized(mPuzzleStore) { // Needed for deleteWithoutCommit(Identity)
 		synchronized(mFetcher) { // Needed for deleteWithoutCommit(Identity)
