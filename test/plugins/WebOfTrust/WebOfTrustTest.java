@@ -38,16 +38,34 @@ public class WebOfTrustTest extends AbstractJUnit4BaseTest {
 		ArrayList<Trust> trusts = addRandomTrustValues(identities, 5);
 		ObjectSet<Score> scores = mWebOfTrust.getAllScores();
 		
-		Score duplicateScore = scores.get(0).clone();
-		// The identities are also duplicates, so we need to store them to prevent
-		// Persistent.throwIfNotStored() from complaining
-		duplicateScore.getTruster().storeWithoutCommit();
-		duplicateScore.getTrustee().storeWithoutCommit();
-		duplicateScore.storeWithoutCommit();
-		Trust duplicateTrust = trusts.get(0).clone();
-		duplicateTrust.getTruster().storeWithoutCommit();
-		duplicateTrust.getTrustee().storeWithoutCommit();
-		duplicateTrust.storeWithoutCommit();
+		// We now produce duplicates.
+		// We do so by copying an Identity and *all* its related Trusts and Scores. We don't just
+		// copy a single Trust/Score to allow the following test:
+		// After deleting the duplicates, we want to compare whether the database matches what it
+		// was before creating them.
+		// This wouldn't work if the duplicate-deletion code deleted the original Identity and the
+		// duplicate didn't have all its Trusts/Scores.
+		Identity identity = identities.get(0);
+		Identity duplicate = identity.clone();
+		duplicate.storeWithoutCommit();
+		for(Trust t : mWebOfTrust.getGivenTrusts(identity)) {
+			new Trust(mWebOfTrust, duplicate, t.getTrustee(), t.getValue(), t.getComment())
+				.storeWithoutCommit();
+		}
+		for(Trust t : mWebOfTrust.getReceivedTrusts(identity)) {
+			new Trust(mWebOfTrust, t.getTruster(), duplicate, t.getValue(), t.getComment())
+				.storeWithoutCommit();
+		}
+		if(identity instanceof OwnIdentity) {
+			for(Score s : mWebOfTrust.getGivenScores((OwnIdentity)identity)) {
+				new Score(mWebOfTrust, (OwnIdentity)duplicate, s.getTrustee(), s.getScore(),
+					s.getRank(), s.getCapacity()).storeWithoutCommit();
+			}
+		}
+		for(Score s : mWebOfTrust.getScores(identity)) {
+			new Score(mWebOfTrust, s.getTruster(), duplicate, s.getScore(), s.getRank(),
+				s.getCapacity()).storeWithoutCommit();
+		}
 		Persistent.checkedCommit(mWebOfTrust.getDatabase(), this);
 		
 		IdentifierHashSet<Identity> idDuplicateCheck = new IdentifierHashSet<Identity>(10 * 2);
