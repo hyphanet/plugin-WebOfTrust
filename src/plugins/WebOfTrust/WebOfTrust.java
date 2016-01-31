@@ -1349,6 +1349,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 	/**
 	 * Debug function for deleting duplicate identities etc. which might have been created due to bugs :)
 	 * 
+	 * ATTENTION: Must be called before the {@link SubscriptionManager} is initialized: It doesn't
+	 * leave the SubscriptionManager event database in a correct state. Initialization of the
+	 * SubscrptionManager will flush its database and fix that.
+	 * 
+	 * ATTENTION: This function can cause OutOfMemoryError since it puts all existing Identity /
+	 * Trust / Score objects in large HashSets instead of iterating over the result of a database
+	 * query (which would ensure that already processed ones can be garbage-collected). This
+	 * approach was chosen intentionally to keep the code simple, as it shall be used for debugging
+	 * purposes only anyway.
+	 * 
 	 * @deprecated
 	 *    This should be converted to a function which only detects duplicate objects, not deletes
 	 *    them: It is run with debug logging only anyway, so it will not be a benefit to the users.
@@ -1369,79 +1379,71 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 *    duplicates of {@link IntroductionPuzzle} objects. */
 	@Deprecated
 	synchronized void deleteDuplicateObjects() {
-		synchronized(mPuzzleStore) { // Needed for deleteWithoutCommit(Identity)
-		synchronized(mFetcher) { // Needed for deleteWithoutCommit(Identity)
-		synchronized(mSubscriptionManager) { // Needed for deleteWithoutCommit(Identity)
+		if(logDEBUG) Logger.debug(this, "deleteDuplicateObjects() ...");
+		
+		synchronized(mPuzzleStore) { // Needed for deleteWithoutCommit(Identity) etc.
+		synchronized(mFetcher) { // Needed for deleteWithoutCommit(Identity) etc.
+		synchronized(mSubscriptionManager) { // Needed for deleteWithoutCommit(Identity) etc.
 		synchronized(Persistent.transactionLock(mDB)) {
 		try {
-			HashSet<String> deleted = new HashSet<String>();
-
-			if(logDEBUG) Logger.debug(this, "Searching for duplicate identities ...");
-
-			for(Identity identity : getAllIdentities()) {
-				Query q = mDB.query();
-				q.constrain(Identity.class);
-				q.descend("mID").constrain(identity.getID());
-				q.constrain(identity).identity().not();
-				ObjectSet<Identity> duplicates = new Persistent.InitializingObjectSet<Identity>(this, q);
-				for(Identity duplicate : duplicates) {
-					if(deleted.contains(duplicate.getID()) == false) {
-						Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
-						deleteWithoutCommit(duplicate);
-						Persistent.checkedCommit(mDB, this);
-					}
-				}
-				deleted.add(identity.getID());
-			}
-			Persistent.checkedCommit(mDB, this);
+			// The database of computed Scores might be wrong due to the duplicates, so we
+			// recompute it if there were any duplicates.
+			boolean recomputeScores = false;
 			
-			if(logDEBUG) Logger.debug(this, "Finished searching for duplicate identities.");
+			// deleteWithoutCommit(i) would call beginTrustListImport(), and that function contains
+			// assert()s which would throw due to the duplicate Identitys/Trusts/Scores. So we
+			// emulate beginTrustListImport() by setting the following variable, which will prevent
+			// deleteWithoutCommit(i) from calling beginTrustListImport().
+			mTrustListImportInProgress = true;
+			
+			IdentifierHashSet<Identity> identitySet = new IdentifierHashSet<Identity>();
+			for(Identity i : getAllIdentities()) {
+				if(!identitySet.add(i)) {
+					Logger.error(this, "Deleting duplicate Identity: " + i);
+					deleteWithoutCommit(i);
+					recomputeScores = true;
+				}
+			}
+			
+			// Delete duplicate Trusts *after* Identitys: If there is a duplicate of an Identity,
+			// we want to keep its Trusts when deleting the duplicate Identity. If the Trusts were
+			// deleted before deleting Identitys, it could happen that we deleted the Trusts of the
+			// Identity which is kept when deleting the duplicate Identity, resulting in loss of all
+			// its Trusts.
+			IdentifierHashSet<Trust> trustSet = new IdentifierHashSet<Trust>();
+			for(Trust t : getAllTrusts()) {
+				if(!trustSet.add(t)) {
+					Logger.error(this, "Deleting duplicate trust: " + t);
+					t.deleteWithoutCommit();
+					recomputeScores = true;
+				}
+			}
+			
+			IdentifierHashSet<Score> scoreSet = new IdentifierHashSet<Score>();
+			for(Score s : getAllScores()) {
+				if(!scoreSet.add(s)) {
+					Logger.error(this, "Deleting duplicate Score: " + s);
+					s.deleteWithoutCommit();
+					recomputeScores = true;
+				}
+			}
+			
+			// We couldn't have set mFullScoreComputationNeeded earlier, that would have caused
+			// failing assert() in callees.
+			mFullScoreComputationNeeded = recomputeScores; 
+			finishTrustListImport();
+			
+			Persistent.checkedCommit(mDB, this);
 		}
 		catch(RuntimeException e) {
-			Persistent.checkedRollback(mDB, this, e);
+			abortTrustListImport(e);
 		}
 		} // synchronized(Persistent.transactionLock(mDB)) {
 		} // synchronized(mSubscriptionManager) {
 		} // synchronized(mFetcher) { 
 		} // synchronized(mPuzzleStore) {
-
-		// synchronized(this) { // For computeAllScoresWithoutCommit() / removeTrustWithoutCommit(). Done at function level already.
-		synchronized(mFetcher) { // For computeAllScoresWithoutCommit() / removeTrustWithoutCommit()
-		synchronized(mSubscriptionManager) { // For computeAllScoresWithoutCommit() / removeTrustWithoutCommit()
-		synchronized(Persistent.transactionLock(mDB)) {
-		try {
-		if(logDEBUG) Logger.debug(this, "Searching for duplicate Trust objects ...");
-
-		boolean duplicateTrustFound = false;
-		for(OwnIdentity truster : getAllOwnIdentities()) {
-			HashSet<String> givenTo = new HashSet<String>();
-
-			for(Trust trust : getGivenTrusts(truster)) {
-				if(givenTo.contains(trust.getTrustee().getID()) == false)
-					givenTo.add(trust.getTrustee().getID());
-				else {
-					Logger.error(this, "Deleting duplicate given trust:" + trust);
-					removeTrustWithoutCommit(trust);
-					duplicateTrustFound = true;
-				}
-			}
-		}
 		
-		if(duplicateTrustFound) {
-			computeAllScoresWithoutCommit();
-		}
-		
-		Persistent.checkedCommit(mDB, this);
-		if(logDEBUG) Logger.debug(this, "Finished searching for duplicate trust objects.");
-		}
-		catch(RuntimeException e) {
-			Persistent.checkedRollback(mDB, this, e);
-		}
-		} // synchronized(Persistent.transactionLock(mDB)) {
-		} // synchronized(mSubscriptionManager) {
-		} // synchronized(mFetcher) { 
-		
-		/* TODO: Also delete duplicate score */
+		if(logDEBUG) Logger.debug(this, "deleteDuplicateObjects() finished.");
 	}
 	
 	/**
