@@ -669,7 +669,7 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 	 * @throws InvalidParameterException If the nickname contains invalid characters, is empty or longer than MAX_NICKNAME_LENGTH characters.
 	 */
 	public final void setNickname(String newNickname) throws InvalidParameterException {
-		IfNull.thenThrow("Nickname is null");		
+		IfNull.thenThrow(newNickname, "Nickname is null");
 		newNickname = newNickname.trim();
 		
 		validateNickname(newNickname);
