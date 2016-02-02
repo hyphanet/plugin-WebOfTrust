@@ -62,16 +62,16 @@ public class StatisticsPage extends WebPageImpl {
 		synchronized(mWebOfTrust) {
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.OwnIdentities") + ": " + mWebOfTrust.getAllOwnIdentities().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.KnownIdentities") + ": " + mWebOfTrust.getAllNonOwnIdentities().size()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.UnfetchedIdentities") + mWebOfTrust.getNumberOfUnfetchedIdentities()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.UnfetchedIdentities") + " " + mWebOfTrust.getNumberOfUnfetchedIdentities()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FetchProgress", "editionCount", Long.toString(getEditionSum()))));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.TrustRelationships") + ": " + mWebOfTrust.getAllTrusts().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.ScoreRelationships") + ": " + mWebOfTrust.getAllScores().size()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputations") + ": " + mWebOfTrust.getNumberOfFullScoreRecomputations()));
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.FullRecomputationTime") + ": " + mWebOfTrust.getAverageFullScoreRecomputationTime()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalTrustRecomputations") + mWebOfTrust.getNumberOfIncrementalScoreRecomputationDueToTrust()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalTrustRecomputationTime") + mWebOfTrust.getAverageTimeForIncrementalScoreRecomputationDueToTrust()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalDistrustRecomputations") + mWebOfTrust.getNumberOfIncrementalScoreRecomputationDueToDistrust()));
-		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalDistrustRecomputationTime") + mWebOfTrust.getAverageTimeForIncrementalScoreRecomputationDueToDistrust()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalTrustRecomputations") + " " + mWebOfTrust.getNumberOfIncrementalScoreRecomputationDueToTrust()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalTrustRecomputationTime") + " " + mWebOfTrust.getAverageTimeForIncrementalScoreRecomputationDueToTrust()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalDistrustRecomputations") + " " + mWebOfTrust.getNumberOfIncrementalScoreRecomputationDueToDistrust()));
+		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.IncrementalDistrustRecomputationTime") + " " + mWebOfTrust.getAverageTimeForIncrementalScoreRecomputationDueToDistrust()));
 		IntroductionPuzzleStore puzzleStore = mWebOfTrust.getIntroductionPuzzleStore();
 		synchronized(puzzleStore) {
 		list.addChild(new HTMLNode("li", l10n().getString("StatisticsPage.SummaryBox.UnsolvedOwnCaptchas") + ": " + puzzleStore.getOwnCatpchaAmount(false)));
@@ -113,19 +113,19 @@ public class StatisticsPage extends WebPageImpl {
 		IdentityFileQueueStatistics stats = mWebOfTrust.getIdentityFileQueue().getStatistics();
 
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "AverageQueuedFilesPerHour")
-			+ stats.getAverageQueuedFilesPerHour()));
+			+ " " + stats.getAverageQueuedFilesPerHour()));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "TotalQueuedFiles")
-			+ stats.mTotalQueuedFiles));
+			+ " " + stats.mTotalQueuedFiles));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "QueuedFiles")
-			+ stats.mQueuedFiles));
+			+ " " + stats.mQueuedFiles));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "ProcessingFiles")
-			+ stats.mProcessingFiles));
+			+ " " + stats.mProcessingFiles));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "FinishedFiles")
-			+ stats.mFinishedFiles));
+			+ " " + stats.mFinishedFiles));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "DeduplicatedFiles")
-			+ stats.mDeduplicatedFiles));
+			+ " " + stats.mDeduplicatedFiles));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "FailedFiles")
-			+ stats.mFailedFiles));
+			+ " " + stats.mFailedFiles));
 		
 		box.addChild(list);
 	}
@@ -137,17 +137,17 @@ public class StatisticsPage extends WebPageImpl {
 		IdentityFileProcessor.Statistics stats
 			= mWebOfTrust.getIdentityFileProcessor().getStatistics();
 
-		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "ProcessedFiles")
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "ProcessedFiles") + " "
 			+ stats.mProcessedFiles));
 
-		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "FailedFiles")
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "FailedFiles") + " "
 			+ stats.mFailedFiles));
 
-		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "TotalProcessingTime")
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "TotalProcessingTime") + " "
 			+ TimeUtil.formatTime(TimeUnit.NANOSECONDS.toMillis(stats.mProcessingTimeNanoseconds))));
 		
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "AverageProcessingTimeSecs")
-			+ stats.getAverageXMLImportTime()));
+			+ " " + stats.getAverageXMLImportTime()));
 		
 		box.addChild(list);
 	}
