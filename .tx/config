@@ -1,0 +1,12 @@
+[main]
+host = https://www.transifex.com
+
+[freenet.weboftrust]
+file_filter = src/plugins/WebOfTrust/l10n/lang_<lang>.l10n
+source_file = src/plugins/WebOfTrust/l10n/lang_en.l10n
+source_lang = en
+trans.nb_NO = src/plugins/WebOfTrust/l10n/lang_nb-no.l10n
+trans.pt_BR = src/plugins/WebOfTrust/l10n/lang_pt-br.l10n
+trans.zh_CN = src/plugins/WebOfTrust/l10n/lang_zh-cn.l10n
+type = UNICODEPROPERTIES
+
