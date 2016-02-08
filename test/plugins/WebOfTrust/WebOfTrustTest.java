@@ -48,13 +48,16 @@ public class WebOfTrustTest extends AbstractJUnit4BaseTest {
 		Identity identity = identities.get(0);
 		Identity duplicate = identity.clone();
 		duplicate.storeWithoutCommit();
+		boolean identityHadNoTrusts = true;
 		for(Trust t : mWebOfTrust.getGivenTrusts(identity)) {
 			new Trust(mWebOfTrust, duplicate, t.getTrustee(), t.getValue(), t.getComment())
 				.storeWithoutCommit();
+			identityHadNoTrusts = false;
 		}
 		for(Trust t : mWebOfTrust.getReceivedTrusts(identity)) {
 			new Trust(mWebOfTrust, t.getTruster(), duplicate, t.getValue(), t.getComment())
 				.storeWithoutCommit();
+			identityHadNoTrusts = false;
 		}
 		if(identity instanceof OwnIdentity) {
 			for(Score s : mWebOfTrust.getGivenScores((OwnIdentity)identity)) {
@@ -78,7 +81,10 @@ public class WebOfTrustTest extends AbstractJUnit4BaseTest {
 		noDuplicates = true;
 		for(Trust t : mWebOfTrust.getAllTrusts())
 			noDuplicates &= trustDuplicateCheck.add(t);
-		assertFalse(noDuplicates);
+		// Normally we would just assertTrue(noDuplicates == false), but since we generate the Trust
+		// graph randomly, it is possible that the Identity we duplicated had no Trusts, and
+		// therefore we failed to generate duplicate Trusts in this test run.
+		assertTrue(noDuplicates == false || identityHadNoTrusts);
 		
 		IdentifierHashSet<Score> scoreDuplicateCheck = new IdentifierHashSet<Score>(20 * 2);
 		noDuplicates = true;
