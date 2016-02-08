@@ -214,7 +214,7 @@ public abstract class AbstractJUnit4BaseTest {
             final List<Identity> identities, final int trustCount)
             throws InvalidParameterException, NotTrustedException {
         
-        assert(trustCount < identities.size()*(identities.size()-1))
+        assert(trustCount <= identities.size()*(identities.size()-1))
             : "There can only be a single trust value between each pair of identities. The amount"
             + " of such pairs is identities * (identities-1). If you could use a trustCount which is"
             + " higher than this value then this function would run into an infinite loop.";
