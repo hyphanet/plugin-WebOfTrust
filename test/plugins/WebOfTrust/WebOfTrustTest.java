@@ -36,7 +36,19 @@ public class WebOfTrustTest extends AbstractJUnit4BaseTest {
 		
 		ArrayList<Identity> identities = addRandomIdentities(2, 10);
 		ArrayList<Trust> trusts = addRandomTrustValues(identities, 5);
-		ObjectSet<Score> scores = mWebOfTrust.getAllScores();
+		// Don't keep an ObjectSet, but rather an ArrayList to avoid random changes of the ObjectSet
+		// due to db4o bugs which do happen if we use the ObjectSet long after doing all our
+		// modifications of the database. This would cause the last line of the test to fail:
+		//     assertEquals(new IdentifierHashSet<Score>(scores), scoreDuplicateCheck);
+		// TODO: Investigate whether a newer db4o version fixes this. To do so, change this variable
+		// to store the original ObjectSet, and repeat the test many times with both the old and
+		// new db4o version, like this:
+		// ant clean ; i=0 ;
+		// while ant -Dtest.skip=false -Dtest.class=plugins.WebOfTrust.WebOfTrustTest junit ; do
+		//     echo $((++i)) ;
+		// done
+		// Bugtracker entry: https://bugs.freenetproject.org/view.php?id=6819
+		ArrayList<Score> scores = new ArrayList<Score>(mWebOfTrust.getAllScores());
 		
 		// We now produce duplicates.
 		// We do so by copying an Identity and *all* its related Trusts and Scores. We don't just
