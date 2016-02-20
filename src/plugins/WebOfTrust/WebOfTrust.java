@@ -3394,8 +3394,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// used to amend a non-sorting queue to be able to handle the few cases of MAX_VALUE which
 		// need sorting?
 		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
-		// Use IdentityHashSet because Identity.equals() compares more than needed.
-		IdentityHashSet<Identity> seen = new IdentityHashSet<Identity>();
+		IdentifierHashSet<Identity> seen = new IdentifierHashSet<Identity>();
 		
 		final int sourceRank;
 		try {
