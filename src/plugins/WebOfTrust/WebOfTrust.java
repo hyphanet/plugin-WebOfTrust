@@ -3736,7 +3736,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// used to amend a non-sorting queue to be able to handle the few cases of MAX_VALUE which
 		// need sorting?
 		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
-		// Use IdentityHashSet because Identity.equals() compares more than needed.
+		// Notice:
+		// - Regular HashSets cannot be used for the reasons explained at class IdentifierHashSet.
+		// - IdentityHashSet is not related to class Identity, but to the fact that it compares
+		//   object identity ("==") instead of equals().
+		// - To avoid the above misconception, IdentifierHashSet would be more well-placed here.
+		///  But profiling has shown that it would be significantly slower, since class Identity
+		//   needs to do db4o object activation to compute getID(). (Once we move to SQL, this won't
+		//   be relevant anymore, and the code can be changed to IdentifierHashSet: SQL queries will
+		//   usually return fully initialized objects and thus require no activation.)
 		IdentityHashSet<Identity> seen = new IdentityHashSet<Identity>();
 		
 		Integer sourceRank = rankCache.get(new ScoreID(source, source).toString());
