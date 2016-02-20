@@ -1369,7 +1369,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 *    Before this can be done, please however convert all callers of this function to work with
 	 *    the new behavior. This especially applies to the upgrade code for old database formats
 	 *    which uses this function - it can likely be removed if the newer database format versions
-	 *    were deployed in an official release a long time ago already.
+	 *    were deployed in an official release a long time ago already. (Edit: Actually I think it
+	 *    doesn't use this function, I think it merely links it from the JavaDoc.)
 	 *    Alternate solution: Amend startupDatabaseIntegrityTest() of all classes which require
 	 *    uniqueness to check whether another object with the same ID exists. This should be
 	 *    benchmarked though as O(N) queries for an ID could be very slow if the database queries
