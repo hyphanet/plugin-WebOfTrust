@@ -1351,7 +1351,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * ATTENTION: Must be called before the {@link SubscriptionManager} is initialized: It doesn't
 	 * leave the SubscriptionManager event database in a correct state. Initialization of the
-	 * SubscrptionManager will flush its database and fix that.
+	 * SubscriptionManager will flush its database and fix that.
 	 * 
 	 * ATTENTION: This function can cause OutOfMemoryError since it puts all existing Identity /
 	 * Trust / Score objects in large HashSets instead of iterating over the result of a database
