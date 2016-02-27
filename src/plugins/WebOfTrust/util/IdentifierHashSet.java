@@ -18,7 +18,7 @@ import plugins.WebOfTrust.Trust;
  * Certain classes which extend {@link Persistent}, such as {@link Identity}, {@link Trust} and
  * {@link Score}, provide an {@link Object#equals(Object)} implementation which does not only
  * compare whether the same "entity" is represented by two objects, but also whether its "version"
- * is the same:<br>
+ * is the same:<br> FIXME: Document at {@link Persistent#equals(Object)}.
  * For example, there can usually only be one {@link Trust} object between each pair of
  * {@link Identity} objects, and thus a pair of two {@link Identity} objects uniquely identifies
  * a Trust "entity". Nevertheless, {@link Trust#equals(Object)} will also return false when
