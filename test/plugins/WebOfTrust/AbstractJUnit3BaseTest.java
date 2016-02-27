@@ -18,6 +18,7 @@ import org.junit.rules.TemporaryFolder;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
+import plugins.WebOfTrust.util.IdentifierHashSet;
 
 import com.db4o.ObjectSet;
 
@@ -290,6 +291,13 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		Persistent.checkedCommit(mWoT.getDatabase(), this);
 	}
 
+	/**
+	 * NOTICE: HashSet is generally not safe for use with {@link Identity} due to the implementation
+	 * of {@link Identity#equals(Object)}. For an explanation, see class {@link IdentifierHashSet}.
+	 * This function can return a HashSet safely, as each returned Identity should be unique and
+	 * thus the problems of equality checks cannot arise.<br>
+	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
+	 * {@link Identity#equals(Object)}. */
 	protected HashSet<Identity> cloneAllIdentities() {
 		final ObjectSet<Identity> identities = mWoT.getAllIdentities();
 		final HashSet<Identity> clones = new HashSet<Identity>(identities.size() * 2);
@@ -303,6 +311,13 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		return clones;
 	}
 	
+	/**
+	 * NOTICE: HashSet is generally not safe for use with {@link Trust} due to the implementation
+	 * of {@link Trust#equals(Object)}. For an explanation, see class {@link IdentifierHashSet}.
+	 * This function can return a HashSet safely, as each returned Trust should be unique and
+	 * thus the problems of equality checks cannot arise.<br>
+	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
+	 * {@link Trust#equals(Object)}. */
 	protected HashSet<Trust> cloneAllTrusts() {
 		final ObjectSet<Trust> trusts = mWoT.getAllTrusts();
 		final HashSet<Trust> clones = new HashSet<Trust>(trusts.size() * 2);
@@ -316,6 +331,13 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		return clones;
 	}
 	
+	/**
+	 * NOTICE: HashSet is generally not safe for use with {@link Score} due to the implementation
+	 * of {@link Score#equals(Object)}. For an explanation, see class {@link IdentifierHashSet}.
+	 * This function can return a HashSet safely, as each returned Score should be unique and
+	 * thus the problems of equality checks cannot arise.<br>
+	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
+	 * {@link Score#equals(Object)}. */
 	protected HashSet<Score> cloneAllScores() {
 		final ObjectSet<Score> scores = mWoT.getAllScores();
 		final HashSet<Score> clones = new HashSet<Score>(scores.size() * 2);
