@@ -1,0 +1,43 @@
+Web of Trust Version 0.4.4 build0019
+------------------------------------------------------------------------
+
+SUMMARY AND OUTLOOK (detailed changelog is below):
+
+Summary blah blah. Blah blah reference to link [1].
+
+Outlook blah blah.
+
+
+CHANGELOG - prefixed with the bugtracker issue number:
+
+- 0000001: title_of_issue_1.............................................
+           more_lines_of_title..........................................
+  
+  Blah.
+  Blah.
+
+- 0000002: .............................................................
+           .............................................................
+  0000003: .............................................................
+           .............................................................
+  
+  Blah.
+  Blah.
+
+
+CHANGELOG about stuff only interesting for developers:
+
+- 0000004: .............................................................
+           .............................................................
+  
+  Blah.
+  Blah.
+
+
+Thanks to:
+  - Person1
+  - Person2
+
+
+Links:
+  [1] https://...
