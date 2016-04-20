@@ -3,16 +3,47 @@ Web of Trust Version 0.4.4 build0019
 
 SUMMARY AND OUTLOOK (detailed changelog is below):
 
-Summary blah blah. Blah blah reference to link [1].
+As the previous build was mostly new code to improve performance, the
+main focus of this release shall be bugfixes and unit tests.
+Alternating between new code and maintenance hopefully guarantees the
+quality of the codebase to flourish.
+To not give you a boring release without apparent changes, the build
+also ships improvements of the user interface.
 
-Outlook blah blah.
+FIXME: Summarize the actual changes which have been outlined above.
+
+
+Outlook for the next build: The missing piece in the "first round" of
+the most promising performance improvements is planned to ship in the
+next build:
+Currently, WoT creates an USK subscription for all of the known
+identities, which amounts to over 14 000. This puts very heavy load on a
+typical Freenet node.
+The fix will address this by only subscribing to the identities which
+the user has assigned trust to. The other identities will only be
+fetched "on-demand" when WoT learns by gossip that they surely have
+published a new edition.
+For details of the planned algorithm, see [1].
+
+Work on this shall being immediately, but it may take some months as
+I've been volunteer since December and thus cannot provide as much time
+as an employee anymore.
+This is because Freenet has run out of funds. I am currently not seeking
+a different job at the hope of being able to acquire funding for Freenet
+so I can resume work. This can continue for some months, as my family
+needs some help from me anyway and I get food in return, but I cannot
+live off my family's gratitude forever.
+So if you want to help the project, please consider donating:
+    https://freenetproject.org/
+Scroll down to see the fundraising progress bar.
+Bitcoin is also accepted in case you want to stay semi-anonymous!
 
 
 CHANGELOG - prefixed with the bugtracker issue number:
 
 - 0000001: title_of_issue_1.............................................
            more_lines_of_title..........................................
-  
+
   Blah.
   Blah.
 
@@ -40,4 +71,4 @@ Thanks to:
 
 
 Links:
-  [1] https://...
+  [1] https://bugs.freenetproject.org/view.php?id=3816
