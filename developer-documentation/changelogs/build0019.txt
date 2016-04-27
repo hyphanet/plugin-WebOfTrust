@@ -40,6 +40,27 @@ Scroll down to see the fundraising progress bar.
 Bitcoin is also accepted in case you want to stay semi-anonymous!
 
 
+HOW TO INSTALL:
+
+While this release has not yet been bundled with a new Freenet
+release, it can be acquired a lot easier than previous non-bundled
+ones:
+1) Unload the "WebOfTrust" plugin and load the "WebOfTrust Testing
+   Versions" plugin. Please do first read the description for the
+   security implications!
+2) If you had already done step 1 previously, i.e. are already running
+   a previous testing release, you need to restart Freenet or unload
+   and re-load the plugin for getting the update: Freenet will only
+   check for updates of the testing version when the plugin is
+   restarted.
+You will also get this release someday even if you do not switch to the
+testing versions. It will just take longer: Non-testing releases are
+shipped together with regular Freenet releases; and Freenet releases do
+not happen as often as WoT releases.
+So once Freenet build 1473 is released, no action will be needed
+anymore, your node will update WoT automatically.
+
+
 CHANGELOG - prefixed with the bugtracker issue number:
 
 - 0000001: title_of_issue_1.............................................
