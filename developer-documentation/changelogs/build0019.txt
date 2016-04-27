@@ -8,7 +8,8 @@ main focus of this release shall be bugfixes and unit tests.
 Alternating between new code and maintenance hopefully guarantees the
 quality of the codebase to flourish.
 To not give you a boring release without apparent changes, the build
-also ships improvements of the user interface.
+also ships improvements of the user interface; and an optimization of
+startup time.
 
 FIXME: Summarize the actual changes which have been outlined above.
 
