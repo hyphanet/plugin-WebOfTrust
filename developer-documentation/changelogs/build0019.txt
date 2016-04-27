@@ -77,6 +77,25 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
   Blah.
 
+- 0006653: [Bugs] IdentityFileProcessor can get triggered during early startup, slows it down (xor) - resolved.
+- 0006565: [Usability] Statistics page l10n: "Average time for full score re-computation" string lacks unit (seconds) (xor) - resolved.
+- 0006722: [Security] FIXME
+- 0006615: [Security] TheSeeker's machines are compromised. Maybe write code to remove Trust to his old seed (xor) - assigned.
+- 0006818: [Usability] Process issues on Transifex (xor) - resolved.
+- 0006817: [Bugs] Fix Norwegian Bokmål and Portuguese (Brazil) translations to work (xor) - resolved.
+- 0006816: [Usability] Update translations from Transifex, add new ones (xor) - resolved.
+- 0006569: [Usability] L10n: Backport improvements at German l10n to English (xor) - resolved.
+- 0006648: [Performance] StatisticsPage: Add statistics to monitor worst case runtime of new distrust computation (xor) - resolved.
+- 0006640: [Bugs] KnownIdentitiesPage: IndexOutOfBoundsException when searching (xor) - resolved.
+- 0006663: [Performance] Enforce maximum numer of trust values when importing trust lists (xor) - resolved.
+- 0006812: [Features] wotutil.sh: Allow usage of FCP API (xor) - resolved.
+- 0006651: [Bugs] "wotutil.sh -testAndRepair" says "Database OK!" if the database file did not exist, should fail (xor) - resolved.
+- 0004901: [Web Interface] Fix l10n glitches (xor) - resolved.
+- 0006568: [Usability] L10n: Instead of "contexts", use "services" (xor) - resolved.
+- 0006214: [Usability] L10n: Get rid of technical terms "Insert / Request URI" (xor) - resolved.
+- 0006570: [Usability] L10n: Instead of "Trust" / "Score", use "Trust" and "Computed trust" (xor) - resolved.
+- 0006409: [Web Interface] when logged in the option “Create new Identity” seems strange. (xor) - resolved.
+
 
 CHANGELOG about stuff only interesting for developers:
 
@@ -85,6 +104,17 @@ CHANGELOG about stuff only interesting for developers:
   
   Blah.
   Blah.
+
+- 0006557: [Code quality] Ant: Builder silently won't run unit tests if there is no JUnit installed, should instead abort with error message (xor) - resolved.
+- 0006671: [Code quality] XMLTransformer: Log parsing failures as warning instead of normal so developers notice them (xor) - resolved.
+- 0006596: [Bugs] Add workaround for db4o bug (xor) - resolved.
+- 0006686: [Code quality] Unit tests: Check WebOfTrust.verifyAndCorrectStoredScores() when finished (xor) - resolved.
+- 0006682: [Code quality] Unit tests: Check WebOfTrust.isTerminated() when finished (xor) - resolved.
+- 0006588: [Code quality] Unit tests: Check WebOfTrust.verifyDatabaseIntegrity() when finished (xor) - resolved.
+- 0006814: [Code quality] Identity.setNickname(): Provide more descriptive Exception message if given nickname is null (xor) - resolved.
+- 0006815: [Code quality] l10n: Add config for Transifex command line tool "tx" (xor) - resolved.
+- 0006594: [Bugs] Invalid usage of HashMap/*Set with objects of subtypes of Persistent (xor) - assigned.
+- 0006797: [Bugs] IntroductionClient etc. use HashSet<> on stuff which might not be safe for it (xor) - assigned.
 
 
 Thanks to:
