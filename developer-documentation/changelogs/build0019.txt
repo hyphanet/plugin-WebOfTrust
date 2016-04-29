@@ -105,6 +105,7 @@ CHANGELOG about stuff only interesting for developers:
   Blah.
   Blah.
 
+- 0006840: [Code quality] Provide xor's WoT bachelor thesis as a developer's manual (xor) - resolved.
 - 0006557: [Code quality] Ant: Builder silently won't run unit tests if there is no JUnit installed, should instead abort with error message (xor) - resolved.
 - 0006671: [Code quality] XMLTransformer: Log parsing failures as warning instead of normal so developers notice them (xor) - resolved.
 - 0006596: [Bugs] Add workaround for db4o bug (xor) - resolved.
