@@ -10,6 +10,14 @@ quality of the codebase to flourish.
 To not give you a boring release without apparent changes, the build
 also ships improvements of the user interface; and an optimization of
 startup time.
+For developers, there is a special goodie available: I have released
+my bachelor's thesis about last year's WoT performance work.
+The thesis contains a large introduction which explains how WoT works.
+As it is intended for an audience with no prior Freenet-related
+knowledge, it shall be considered as the WoT core developer's manual.
+There are also open algorithmic questions outlined in the thesis
+- so if you want to do some computer science, please have a look at it,
+feedback is welcome.
 
 FIXME: Summarize the actual changes which have been outlined above.
 
