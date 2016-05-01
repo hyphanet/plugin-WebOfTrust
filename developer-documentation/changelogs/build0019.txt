@@ -95,6 +95,7 @@ CHANGELOG - prefixed with the bugtracker issue number:
 - 0006812: [Features] wotutil.sh: Allow usage of FCP API (xor)
 - 0006651: [Bugs] "wotutil.sh -testAndRepair" says "Database OK!" if the database file did not exist, should fail (xor)
 - 0006640: [Bugs] KnownIdentitiesPage: IndexOutOfBoundsException when searching (xor)
+- 0006596: [Bugs] Add workaround for db4o bug (xor)
 
 
 CHANGELOG about stuff only interesting for developers:
@@ -108,7 +109,6 @@ CHANGELOG about stuff only interesting for developers:
 - 0006840: [Code quality] Provide xor's WoT bachelor thesis as a developer's manual (xor)
 - 0006557: [Code quality] Ant: Builder silently won't run unit tests if there is no JUnit installed, should instead abort with error message (xor)
 - 0006671: [Code quality] XMLTransformer: Log parsing failures as warning instead of normal so developers notice them (xor)
-- 0006596: [Bugs] Add workaround for db4o bug (xor)
 - 0006686: [Code quality] Unit tests: Check WebOfTrust.verifyAndCorrectStoredScores() when finished (xor)
 - 0006682: [Code quality] Unit tests: Check WebOfTrust.isTerminated() when finished (xor)
 - 0006588: [Code quality] Unit tests: Check WebOfTrust.verifyDatabaseIntegrity() when finished (xor)
