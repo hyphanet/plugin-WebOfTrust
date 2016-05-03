@@ -140,7 +140,13 @@ CHANGELOG - prefixed with the bugtracker issue number:
 - 0006818: [Usability] Process issues on Transifex (xor)
 - 0006812: [Features] wotutil.sh: Allow usage of FCP API (xor)
 - 0006651: [Bugs] "wotutil.sh -testAndRepair" says "Database OK!" if the database file did not exist, should fail (xor)
-- 0006640: [Bugs] KnownIdentitiesPage: IndexOutOfBoundsException when searching (xor)
+- 0006640: [Bugs] KnownIdentitiesPage: IndexOutOfBoundsException when
+           searching (xor)
+
+  On the 'Other people's identities' page, the search function could
+  cause an error due to an IndexOutOfBoundsException.
+  This has been fixed.
+
 - 0006596: [Bugs] Add workaround for db4o bug (xor)
 
 
