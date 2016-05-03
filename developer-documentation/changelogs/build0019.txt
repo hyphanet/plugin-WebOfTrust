@@ -85,7 +85,21 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
   Blah.
 
-- 0006653: [Bugs] IdentityFileProcessor can get triggered during early startup, slows it down (xor)
+- 0006653: [Bugs] IdentityFileProcessor can get triggered during early
+           startup, slows it down (xor)
+
+  The previous build's changelog promised an improved startup time of
+  WoT of 2 minutes.
+  Unfortunately, in practice, a bug could cause this to become over 20
+  minutes.
+
+  This bug has been fixed, and startup times of 2 minutes should in fact
+  be possible now.
+
+  This is of course still too much. The next build's work shall reduce
+  this to almost zero startup time.
+  See https://bugs.freenetproject.org/view.php?id=3816
+
 - 0006663: [Performance] Enforce maximum numer of trust values when importing trust lists (xor)
 - 0006648: [Performance] StatisticsPage: Add statistics to monitor worst case runtime of new distrust computation (xor)
 - 0006615: [Security] TheSeeker's machines are compromised. Maybe write code to remove Trust to his old seed (xor)
