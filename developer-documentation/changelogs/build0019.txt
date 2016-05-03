@@ -100,7 +100,31 @@ CHANGELOG - prefixed with the bugtracker issue number:
   this to almost zero startup time.
   See https://bugs.freenetproject.org/view.php?id=3816
 
-- 0006663: [Performance] Enforce maximum numer of trust values when importing trust lists (xor)
+- 0006663: [Performance] Enforce maximum numer of trust values when
+           importing trust lists (xor)
+
+  When WoT uploads trust lists to the network, there is a limit of 512
+  trust values. If you set more trust values than 512, only 512 of them
+  will be exported.
+
+  Unfortunately, this limit was not enforced when importing trust lists
+  which were downloaded from the network. Thus, a malicious user could
+  upload trust lists with much more trust values to conduct a denial of
+  service attack on the network.
+  Luckily, this was not a real security issue, since there was still
+  an indirect limit:
+  The file size of trust lists was properly limited to 1 MB.
+  Still, a lot of trust values can fit in 1 MB, which is why this caused
+  noticeable performance issues.
+
+  This build fixes import to ignore trust lists with more than 512
+  entries.
+  This could have an impact on 3rd party clients such as LCWoT: If they
+  only ever produce trust lists that large, their identities will be
+  ignored by WoT.
+  Thus, if you're an author of a 3rd party client, please fix it to
+  limit the amount of exported trust values to 512.
+
 - 0006648: [Performance] StatisticsPage: Add statistics to monitor worst case runtime of new distrust computation (xor)
 - 0006615: [Security] TheSeeker's machines are compromised. Maybe write code to remove Trust to his old seed (xor)
 - 0006722: [Security] FIXME
