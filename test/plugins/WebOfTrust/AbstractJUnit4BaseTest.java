@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,7 +26,11 @@ import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.RandomGrabHashSet;
+
+import com.db4o.ObjectSet;
+
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
@@ -468,6 +473,72 @@ public abstract class AbstractJUnit4BaseTest {
                     + "avg. seconds: "
                     + (((double)eventDurations[i])/eventIterations[i]) / (1000*1000*1000));
         }
+    }
+
+    /**
+     * NOTICE: HashSet is generally not safe for use with {@link Identity} due to the implementation
+     * of {@link Identity#equals(Object)}. For an explanation, see class {@link IdentifierHashSet}.
+     * This function can return a HashSet safely, as each returned Identity should be unique and
+     * thus the problems of equality checks cannot arise.<br>
+     * However, when doing anything with the returned HashSet, please be aware of the behavior of
+     * {@link Identity#equals(Object)}. */
+    protected HashSet<Identity> getAllIdentities() {
+        final ObjectSet<Identity> identities = getWebOfTrust().getAllIdentities();
+        final HashSet<Identity> result = new HashSet<Identity>(identities.size() * 2);
+        
+        for(Identity identity : identities) {
+            // It is critical to ensure we don't overwrite a potential duplicate in the set, because
+            // the calling unit test code typically wants to detect duplicates as they are a bug.
+            // Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
+            // the object was already in the HashSet.
+            assertTrue(result.add(identity));
+        }
+        
+        return result;
+    }
+
+    /**
+     * NOTICE: HashSet is generally not safe for use with {@link Trust} due to the implementation
+     * of {@link Trust#equals(Object)}. For an explanation, see class {@link IdentifierHashSet}.
+     * This function can return a HashSet safely, as each returned Trust should be unique and
+     * thus the problems of equality checks cannot arise.<br>
+     * However, when doing anything with the returned HashSet, please be aware of the behavior of
+     * {@link Trust#equals(Object)}. */
+    protected HashSet<Trust> getAllTrusts() {
+        final ObjectSet<Trust> trusts = getWebOfTrust().getAllTrusts();
+        final HashSet<Trust> result = new HashSet<Trust>(trusts.size() * 2);
+        
+        for(Trust trust : trusts) {
+            // It is critical to ensure we don't overwrite a potential duplicate in the set, because
+            // the calling unit test code typically wants to detect duplicates as they are a bug.
+            // Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
+            // the object was already in the HashSet.
+            assertTrue(result.add(trust));
+        }
+        
+        return result;
+    }
+
+    /**
+     * NOTICE: HashSet is generally not safe for use with {@link Score} due to the implementation
+     * of {@link Score#equals(Object)}. For an explanation, see class {@link IdentifierHashSet}.
+     * This function can return a HashSet safely, as each returned Score should be unique and
+     * thus the problems of equality checks cannot arise.<br>
+     * However, when doing anything with the returned HashSet, please be aware of the behavior of
+     * {@link Score#equals(Object)}. */
+    protected HashSet<Score> getAllScores() {
+        final ObjectSet<Score> scores = getWebOfTrust().getAllScores();
+        final HashSet<Score> result = new HashSet<Score>(scores.size() * 2);
+        
+        for(Score score : scores) {
+            // It is critical to ensure we don't overwrite a potential duplicate in the set, because
+            // the calling unit test code typically wants to detect duplicates as they are a bug.
+            // Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
+            // the object was already in the HashSet.
+            assertTrue(result.add(score));
+        }
+        
+        return result;
     }
 
     /**
