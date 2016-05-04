@@ -1168,9 +1168,9 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO));
 		mWoT.deleteOwnIdentity(identityToConvert.getID());
 
-		assertEquals(oldIdentities, new HashSet<Identity>(mWoT.getAllIdentities()));
-		assertEquals(oldTrusts, new HashSet<Trust>(mWoT.getAllTrusts()));
-		assertEquals(oldScores, new HashSet<Score>(mWoT.getAllScores()));
+		assertEquals(oldIdentities, getAllIdentities());
+		assertEquals(oldTrusts, getAllTrusts());
+		assertEquals(oldScores, getAllScores());
 	}
 
 	/**
