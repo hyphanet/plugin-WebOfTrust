@@ -319,7 +319,10 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * This function can return a HashSet safely, as each returned Identity should be unique and
 	 * thus the problems of equality checks cannot arise.<br>
 	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
-	 * {@link Identity#equals(Object)}. */
+	 * {@link Identity#equals(Object)}.
+	 * 
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllIdentities()} instead. */
+	@Deprecated
 	protected HashSet<Identity> getAllIdentities() {
 		final ObjectSet<Identity> identities = mWoT.getAllIdentities();
 		final HashSet<Identity> result = new HashSet<Identity>(identities.size() * 2);
@@ -363,7 +366,10 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * This function can return a HashSet safely, as each returned Trust should be unique and
 	 * thus the problems of equality checks cannot arise.<br>
 	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
-	 * {@link Trust#equals(Object)}. */
+	 * {@link Trust#equals(Object)}.
+	 * 
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllTrusts()} instead. */
+	@Deprecated
 	protected HashSet<Trust> getAllTrusts() {
 		final ObjectSet<Trust> trusts = mWoT.getAllTrusts();
 		final HashSet<Trust> result = new HashSet<Trust>(trusts.size() * 2);
@@ -407,7 +413,10 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * This function can return a HashSet safely, as each returned Score should be unique and
 	 * thus the problems of equality checks cannot arise.<br>
 	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
-	 * {@link Score#equals(Object)}. */
+	 * {@link Score#equals(Object)}.
+	 * 
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllScores()} instead. */
+	@Deprecated
 	protected HashSet<Score> getAllScores() {
 		final ObjectSet<Score> scores = mWoT.getAllScores();
 		final HashSet<Score> result = new HashSet<Score>(scores.size() * 2);
