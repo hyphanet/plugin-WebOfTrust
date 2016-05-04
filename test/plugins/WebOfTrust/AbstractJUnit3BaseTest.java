@@ -303,8 +303,10 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		final HashSet<Identity> clones = new HashSet<Identity>(identities.size() * 2);
 		
 		for(Identity identity : identities) {
-			// We assertTrue upon the return value of HashSet.add() because it will return false if the identity was already in the HashSet:
-			// Each identity should only exist once!
+			// It is critical to ensure we don't overwrite a potential duplicate in the set, because
+			// the calling unit test code typically wants to detect duplicates as they are a bug.
+			// Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
+			// the object was already in the HashSet.
 			assertTrue(clones.add(identity.clone()));
 		}
 
@@ -323,8 +325,10 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		final HashSet<Trust> clones = new HashSet<Trust>(trusts.size() * 2);
 		
 		for(Trust trust : trusts) {
-			// We assertTrue upon the return value of HashSet.add() because it will return false if the Trust was already in the HashSet:
-			// Each Trust should only exist once!
+			// It is critical to ensure we don't overwrite a potential duplicate in the set, because
+			// the calling unit test code typically wants to detect duplicates as they are a bug.
+			// Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
+			// the object was already in the HashSet.
 			assertTrue(clones.add(trust.clone()));
 		}
 
@@ -343,8 +347,10 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		final HashSet<Score> clones = new HashSet<Score>(scores.size() * 2);
 		
 		for(Score score : scores) {
-			// We assertTrue upon the return value of HashSet.add() because it will return false if the Score was already in the HashSet:
-			// Each Score should only exist once!
+			// It is critical to ensure we don't overwrite a potential duplicate in the set, because
+			// the calling unit test code typically wants to detect duplicates as they are a bug.
+			// Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
+			// the object was already in the HashSet.
 			assertTrue(clones.add(score.clone()));
 		}
 		
