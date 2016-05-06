@@ -199,7 +199,28 @@ CHANGELOG about stuff only interesting for developers:
 
   If you want to skip the tests, use "ant -Dtest.skip=true".
 
-- 0006588: [Code quality] Unit tests: Check WebOfTrust.verifyDatabaseIntegrity() when finished (xor)
+- 0006588: [Code quality] Unit tests: Check
+           WebOfTrust.verifyDatabaseIntegrity() when finished (xor)
+
+  This is a test which checks whether the contents of the database
+  match the database schema.
+  It verifies not only structural integrity, but also semantic
+  correctness. This can be things such as "is the modification date of
+  this Identity *before* the creation date?".
+  The test is implemented by calling the startupDatabaseIntegrityTest()
+  functions on all objects which extend class Persistent. See those
+  functions for what is tested.
+
+  By calling the database integrity test from the base-classes for all
+  unit tests, it is now run at the end of every unit test - even those
+  which are not related to the database schema at first glance.
+  This should ensure quite a bit of general shotgun testing.
+
+  That's a necessary insurance due to the general complexity of
+  enforcing a database schema in db4o, which does not have any schema
+  checks of its own: The only thing which ensures the schema is obeyed
+  is WoT code, so it's easy for new developers to cause damage.
+
 - 0006686: [Code quality] Unit tests: Check WebOfTrust.verifyAndCorrectStoredScores() when finished (xor)
 - 0006682: [Code quality] Unit tests: Check WebOfTrust.isTerminated() when finished (xor)
 - 0006594: [Bugs] Invalid usage of HashMap/*Set with objects of subtypes of Persistent (xor)
