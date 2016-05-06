@@ -177,7 +177,28 @@ CHANGELOG about stuff only interesting for developers:
   Please make sure to first read the manual at the beginning of the
   tool's Python source code.
 
-- 0006557: [Code quality] Ant: Builder silently won't run unit tests if there is no JUnit installed, should instead abort with error message (xor)
+- 0006557: [Code quality] Ant: Builder silently won't run unit tests if
+           there is no JUnit installed, should instead abort with error
+           message (xor)
+
+  When compiling WoT with the standard command line "ant", it will not
+  only compile, but also by default run the unit tests.
+  As new developers typically have different machines than the existing
+  ones, this gives us a good feedback on whether the tests succeed in
+  different environments.
+
+  Unfortunately, new developers are also likely to forget installing
+  JUnit 4 and Hamcrest, which are the requirement for the tests.
+
+  If the dependencies were not found, the old code just didn't run the
+  unit tests then, there was no error message - a rather severe
+  breakage :(
+  It will abort the whole compilation now.
+  Thus, if you want to ensure good testing of WoT, please consider
+  checking whether the unit tests do run now.
+
+  If you want to skip the tests, use "ant -Dtest.skip=true".
+
 - 0006588: [Code quality] Unit tests: Check WebOfTrust.verifyDatabaseIntegrity() when finished (xor)
 - 0006686: [Code quality] Unit tests: Check WebOfTrust.verifyAndCorrectStoredScores() when finished (xor)
 - 0006682: [Code quality] Unit tests: Check WebOfTrust.isTerminated() when finished (xor)
