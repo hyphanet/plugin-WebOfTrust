@@ -159,7 +159,24 @@ CHANGELOG about stuff only interesting for developers:
   Blah.
 
 - 0006840: [Code quality] Provide xor's WoT bachelor thesis as a developer's manual (xor)
-- 0006815: [Code quality] l10n: Add config for Transifex command line tool "tx" (xor)
+- 0006815: [Code quality] l10n: Add config for Transifex command line
+           tool "tx" (xor)
+
+  Translations nowadays are being managed on a collaborative website:
+  https://www.transifex.com/
+
+  They offer a command line tool called "tx" for downloading and
+  uploading translations. The tool is open source and available in
+  package management of Ubuntu for example.
+  Hence a configuration file for the tool was added to the WoT
+  repository. It can be found in the ".tx" directory where tx expects
+  it.
+
+  To use the tool, it is recommended to use the "transifex-pull" script
+  from our scripts repository: https://github.com/freenet/scripts
+  Please make sure to first read the manual at the beginning of the
+  tool's Python source code.
+
 - 0006557: [Code quality] Ant: Builder silently won't run unit tests if there is no JUnit installed, should instead abort with error message (xor)
 - 0006588: [Code quality] Unit tests: Check WebOfTrust.verifyDatabaseIntegrity() when finished (xor)
 - 0006686: [Code quality] Unit tests: Check WebOfTrust.verifyAndCorrectStoredScores() when finished (xor)
