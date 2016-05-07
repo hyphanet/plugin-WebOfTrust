@@ -221,7 +221,26 @@ CHANGELOG about stuff only interesting for developers:
   checks of its own: The only thing which ensures the schema is obeyed
   is WoT code, so it's easy for new developers to cause damage.
 
-- 0006686: [Code quality] Unit tests: Check WebOfTrust.verifyAndCorrectStoredScores() when finished (xor)
+- 0006686: [Code quality] Unit tests: Check
+           WebOfTrust.verifyAndCorrectStoredScores() when finished (xor)
+
+  One of the main jobs of WoT is to accumulate the trust ratings which
+  identities give to each other.
+  For identities which have not received a direct trust rating of the
+  user, it  will use the trust values of remote peers to calculate a
+  Score value. The Score is a weighted average which acts as a
+  replacement for missing direct trust ratings of the user.
+  Thus, Scores are the central "output" of WoT, and their correctness is
+  very important.
+
+  The function verifyAndCorrectStoredScores() validates the correctness
+  of the whole Score database using the reference algorithm.
+  By calling this function from the base-classes of all unit tests, it
+  is now run at the end of every test.
+  As the reference implementation is not used in practice, but was
+  replaced by a faster algorithm in build0018, this kind of shotgun
+  testing ensures that the optimized algorithm works properly.
+
 - 0006682: [Code quality] Unit tests: Check WebOfTrust.isTerminated() when finished (xor)
 - 0006594: [Bugs] Invalid usage of HashMap/*Set with objects of subtypes of Persistent (xor)
 - 0006797: [Bugs] IntroductionClient etc. use HashSet<> on stuff which might not be safe for it (xor)
