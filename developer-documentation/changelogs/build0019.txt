@@ -290,7 +290,19 @@ CHANGELOG about stuff only interesting for developers:
   FIXME: The actual code for this is not finished and merged yet!
 
 - 0006797: [Bugs] IntroductionClient etc. use HashSet<> on stuff which might not be safe for it (xor)
-- 0006671: [Code quality] XMLTransformer: Log parsing failures as warning instead of normal so developers notice them (xor)
+- 0006671: [Code quality] XMLTransformer: Log parsing failures as
+           warning instead of normal so developers notice them (xor)
+
+  WoT publishes and downloads its data as XML to the network. As we
+  already have the experimental alternative implementation of LCWoT
+  available thanks to digger3, it's possible that there are
+  incompatibilities between the XML which WoT and LCWoT produce.
+
+  Thus, the log level of XML parsing failures was raised from NORMAL to
+  WARNING. This ensures they will be noticed during test runs:
+  The developer documentation recommends to search the logs for messages
+  of priority WARNING and ERROR after test runs.
+
 - 0006814: [Code quality] Identity.setNickname(): Provide more descriptive Exception message if given nickname is null (xor)
 
 
