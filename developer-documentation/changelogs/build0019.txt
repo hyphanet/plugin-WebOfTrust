@@ -303,10 +303,17 @@ CHANGELOG about stuff only interesting for developers:
   The developer documentation recommends to search the logs for messages
   of priority WARNING and ERROR after test runs.
 
-- 0006814: [Code quality] Identity.setNickname(): Provide more descriptive Exception message if given nickname is null (xor)
+- 0006814: [Code quality] Identity.setNickname(): Provide more
+           descriptive Exception message if given nickname is null (Ademan)
+
+  The message was misleading previously, as we did not actually check
+  whether the given nickname is null. The NullPointerException was
+  merely being thrown implicitly due to nickname.trim() failing.
+  Thanks to Ademan for this fix!
 
 
 Thanks to:
+  - Ademan
   - Person1
   - Person2
 
