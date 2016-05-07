@@ -245,7 +245,20 @@ CHANGELOG about stuff only interesting for developers:
   replaced by a faster algorithm in build0018, this kind of shotgun
   testing ensures that the optimized algorithm works properly.
 
-- 0006682: [Code quality] Unit tests: Check WebOfTrust.isTerminated() when finished (xor)
+- 0006682: [Code quality] Unit tests: Check WebOfTrust.isTerminated()
+           when finished (xor)
+
+  WoT has many different subsystems which run on a thread of their own.
+  During shutdown, hypothetical threading issues such as deadlocks could
+  prevent shutdown of some subsystems.
+  This would be difficult to notice by the user: To make sure that
+  terminating Freenet is always possible, shutting down WoT may not
+  abort with an error message.
+
+  So to ensure shutdown works properly, code was added to the
+  base-classes of all unit tests. At the end of every test, it will
+  check whether the subsystems reported successful sutdown.
+
 - 0006594: [Bugs] Invalid usage of HashMap/*Set with objects of subtypes of Persistent (xor)
 - 0006797: [Bugs] IntroductionClient etc. use HashSet<> on stuff which might not be safe for it (xor)
 - 0006671: [Code quality] XMLTransformer: Log parsing failures as warning instead of normal so developers notice them (xor)
