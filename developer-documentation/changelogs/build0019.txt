@@ -56,6 +56,10 @@ ones:
 1) Unload the "WebOfTrust" plugin and load the "WebOfTrust Testing
    Versions" plugin. Please do first read the description for the
    security implications!
+   WARNING: When sending data to the network, WoT will include which
+   version you are using. Thus, if you are a very early tester, it may
+   become easier for attackers to correlate which identities belong to
+   you, as there may be very few people using the new release.
 2) If you had already done step 1 previously, i.e. are already running
    a previous testing release, you need to restart Freenet or unload
    and re-load the plugin for getting the update: Freenet will only
