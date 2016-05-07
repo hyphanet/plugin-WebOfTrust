@@ -259,7 +259,36 @@ CHANGELOG about stuff only interesting for developers:
   base-classes of all unit tests. At the end of every test, it will
   check whether the subsystems reported successful sutdown.
 
-- 0006594: [Bugs] Invalid usage of HashMap/*Set with objects of subtypes of Persistent (xor)
+- 0006594: [Bugs] Invalid usage of HashMap/*Set with objects of
+           subtypes of Persistent (xor)
+
+  Child classes of Persistent, such as Identity / Trust / Score,
+  typically have a hashCode() and equals() function, so they are
+  eligible for being used with hash tables.
+  However, there is a pitfall: The equals() function does not only
+  compare whether the entity behind the object is the same. It also
+  compares the current state of the object.
+  For example, an Identity objects represents the entity of a single
+  person. This person is always the same. But the state of an Identity
+  object also includes things such as the list of WoT applications the
+  identity uses. These things may change over time.
+  Hence, equals() may return false if it is used to compare multiple
+  different versions of the same identity.
+  The consequence of that is that code which uses HashSets together with
+  multiple versions of identities will cause multiple entries in the
+  HashSets when there should only be one.
+  The same applies to class HashMap when objects of class Persistent are
+  used as key, their ID should be used instead.
+
+  To fix this, class IdentifierHashSet was implemented. This class only
+  considers the ID of the objects for determining equality.
+  All code which uses HashSet was reviewed and fixed to use the new
+  class instead where necessary.
+  The code which uses class HashMap was reviewed to use the ID of
+  Persistent objects as key where necessary.
+
+  FIXME: The actual code for this is not finished and merged yet!
+
 - 0006797: [Bugs] IntroductionClient etc. use HashSet<> on stuff which might not be safe for it (xor)
 - 0006671: [Code quality] XMLTransformer: Log parsing failures as warning instead of normal so developers notice them (xor)
 - 0006814: [Code quality] Identity.setNickname(): Provide more descriptive Exception message if given nickname is null (xor)
