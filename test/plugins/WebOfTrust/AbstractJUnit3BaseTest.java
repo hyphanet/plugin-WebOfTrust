@@ -399,12 +399,18 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * {@link Persistent#equals(Object)} implementations. */
 	protected <T extends Persistent> HashSet<T> newHashSetFromUniqueObjects(ObjectSet<T> set) {
 		final HashSet<T> result = new HashSet<T>(set.size() * 2);
+		final IdentifierHashSet<T> uniquenessTest = new IdentifierHashSet<T>(set.size() * 2);
 		
 		for(T object : set) {
-			// It is critical to ensure we don't overwrite a potential duplicate in the set, because
-			// the calling unit test code typically wants to detect duplicates as they are a bug.
-			// Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
-			// the object was already in the HashSet.
+			// Self-test: Check whether the calling code really delivered a set with unique objects.
+			// We need to test this with an IdentifierHashSet due to the aforementioned issues of
+			// Persistent.equals().
+			assert(uniquenessTest.add(object));
+			// Also, it is critical to ensure we don't just overwrite a potential duplicate in the
+			// set, because the calling unit test code typically wants to detect duplicates as they
+			// are usually bugs.
+			// This is implicitly checked by the above assert already. But we get the return value
+			// for free - so let's just test it.
 			assertTrue(result.add(object));
 		}
 		
