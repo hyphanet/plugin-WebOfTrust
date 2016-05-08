@@ -324,18 +324,7 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllIdentities()} instead. */
 	@Deprecated
 	protected HashSet<Identity> getAllIdentities() {
-		final ObjectSet<Identity> identities = mWoT.getAllIdentities();
-		final HashSet<Identity> result = new HashSet<Identity>(identities.size() * 2);
-		
-		for(Identity identity : identities) {
-			// It is critical to ensure we don't overwrite a potential duplicate in the set, because
-			// the calling unit test code typically wants to detect duplicates as they are a bug.
-			// Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
-			// the object was already in the HashSet.
-			assertTrue(result.add(identity));
-		}
-
-		return result;
+		return newHashSetFromUniqueObjects(mWoT.getAllIdentities());
 	}
 
 	/**
@@ -371,18 +360,7 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllTrusts()} instead. */
 	@Deprecated
 	protected HashSet<Trust> getAllTrusts() {
-		final ObjectSet<Trust> trusts = mWoT.getAllTrusts();
-		final HashSet<Trust> result = new HashSet<Trust>(trusts.size() * 2);
-		
-		for(Trust trust : trusts) {
-			// It is critical to ensure we don't overwrite a potential duplicate in the set, because
-			// the calling unit test code typically wants to detect duplicates as they are a bug.
-			// Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
-			// the object was already in the HashSet.
-			assertTrue(result.add(trust));
-		}
-
-		return result;
+		return newHashSetFromUniqueObjects(mWoT.getAllTrusts());
 	}
 
 	/**
@@ -418,15 +396,28 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllScores()} instead. */
 	@Deprecated
 	protected HashSet<Score> getAllScores() {
-		final ObjectSet<Score> scores = mWoT.getAllScores();
-		final HashSet<Score> result = new HashSet<Score>(scores.size() * 2);
+		return newHashSetFromUniqueObjects(mWoT.getAllScores());
+	}
+
+	/**
+	 * NOTICE: HashSet is generally not safe for use with {@link Persistent} due to the
+	 * implementations of {@link Persistent#equals(Object)} in many of its child classes:
+	 * They typically compare not only object identity but also object state. Thus multiple
+	 * instances of the same object with different state could enter HashSets. For a detailed
+	 * explanation, see class {@link IdentifierHashSet}.<br>
+	 * This function can return a HashSet safely, as the passed set must only contain unique
+	 * instances of the objects and thus the problems of equality checks cannot arise.<br>
+	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
+	 * {@link Persistent#equals(Object)} implementations. */
+	protected <T extends Persistent> HashSet<T> newHashSetFromUniqueObjects(ObjectSet<T> set) {
+		final HashSet<T> result = new HashSet<T>(set.size() * 2);
 		
-		for(Score score : scores) {
+		for(T object : set) {
 			// It is critical to ensure we don't overwrite a potential duplicate in the set, because
 			// the calling unit test code typically wants to detect duplicates as they are a bug.
 			// Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
 			// the object was already in the HashSet.
-			assertTrue(result.add(score));
+			assertTrue(result.add(object));
 		}
 		
 		return result;
