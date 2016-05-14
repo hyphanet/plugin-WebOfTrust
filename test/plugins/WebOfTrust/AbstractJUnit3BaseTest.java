@@ -293,12 +293,8 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	}
 
 	/**
-	 * NOTICE: HashSet is generally not safe for use with {@link Identity} due to the implementation
-	 * of {@link Identity#equals(Object)}. For an explanation, see class {@link IdentifierHashSet}.
-	 * This function can return a HashSet safely, as each returned Identity should be unique and
-	 * thus the problems of equality checks cannot arise.<br>
-	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
-	 * {@link Identity#equals(Object)}. */
+	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+	 * information about using the returned HashSet. */
 	protected HashSet<Identity> cloneAllIdentities() {
 		return newHashSetFromUniqueObjects(mWoT.getAllIdentities(), true);
 	}
@@ -314,12 +310,8 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	}
 
 	/**
-	 * NOTICE: HashSet is generally not safe for use with {@link Trust} due to the implementation
-	 * of {@link Trust#equals(Object)}. For an explanation, see class {@link IdentifierHashSet}.
-	 * This function can return a HashSet safely, as each returned Trust should be unique and
-	 * thus the problems of equality checks cannot arise.<br>
-	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
-	 * {@link Trust#equals(Object)}. */
+	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+	 * information about using the returned HashSet. */
 	protected HashSet<Trust> cloneAllTrusts() {
 		return newHashSetFromUniqueObjects(mWoT.getAllTrusts(), true);
 	}
@@ -335,12 +327,8 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	}
 
 	/**
-	 * NOTICE: HashSet is generally not safe for use with {@link Score} due to the implementation
-	 * of {@link Score#equals(Object)}. For an explanation, see class {@link IdentifierHashSet}.
-	 * This function can return a HashSet safely, as each returned Score should be unique and
-	 * thus the problems of equality checks cannot arise.<br>
-	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
-	 * {@link Score#equals(Object)}. */
+	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+	 * information about using the returned HashSet. */
 	protected HashSet<Score> cloneAllScores() {
 		return newHashSetFromUniqueObjects(mWoT.getAllScores(), true);
 	}
