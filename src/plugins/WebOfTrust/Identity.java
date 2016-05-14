@@ -17,6 +17,7 @@ import java.util.UUID;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.util.Base32;
+import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.support.Base64;
@@ -34,7 +35,7 @@ import freenet.support.codeshortification.IfNull;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class Identity extends Persistent implements Cloneable, EventSource {
+public class Identity extends Persistent implements ReallyCloneable<Identity>, EventSource {
 
 	/** @see Serializable */
 	private static transient final long serialVersionUID = 1L;
@@ -1106,9 +1107,11 @@ public class Identity extends Persistent implements Cloneable, EventSource {
 			throw new IllegalStateException(e); 
 		}
 	}
-	
 
-	
+	@Override public Identity cloneP() {
+		return clone();
+	}
+
 	/**
 	 * Stores this identity in the database without committing the transaction
 	 * You must synchronize on the WoT, on the identity and then on the database when using this function!

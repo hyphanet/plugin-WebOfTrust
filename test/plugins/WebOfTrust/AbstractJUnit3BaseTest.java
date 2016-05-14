@@ -19,6 +19,7 @@ import org.junit.rules.TemporaryFolder;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.util.IdentifierHashSet;
+import plugins.WebOfTrust.util.ReallyCloneable;
 
 import com.db4o.ObjectSet;
 
@@ -299,18 +300,7 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
 	 * {@link Identity#equals(Object)}. */
 	protected HashSet<Identity> cloneAllIdentities() {
-		final ObjectSet<Identity> identities = mWoT.getAllIdentities();
-		final HashSet<Identity> clones = new HashSet<Identity>(identities.size() * 2);
-		
-		for(Identity identity : identities) {
-			// It is critical to ensure we don't overwrite a potential duplicate in the set, because
-			// the calling unit test code typically wants to detect duplicates as they are a bug.
-			// Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
-			// the object was already in the HashSet.
-			assertTrue(clones.add(identity.clone()));
-		}
-
-		return clones;
+		return newHashSetFromUniqueObjects(mWoT.getAllIdentities(), true);
 	}
 
 	/**
@@ -331,18 +321,7 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
 	 * {@link Trust#equals(Object)}. */
 	protected HashSet<Trust> cloneAllTrusts() {
-		final ObjectSet<Trust> trusts = mWoT.getAllTrusts();
-		final HashSet<Trust> clones = new HashSet<Trust>(trusts.size() * 2);
-		
-		for(Trust trust : trusts) {
-			// It is critical to ensure we don't overwrite a potential duplicate in the set, because
-			// the calling unit test code typically wants to detect duplicates as they are a bug.
-			// Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
-			// the object was already in the HashSet.
-			assertTrue(clones.add(trust.clone()));
-		}
-
-		return clones;
+		return newHashSetFromUniqueObjects(mWoT.getAllTrusts(), true);
 	}
 
 	/**
@@ -363,18 +342,7 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
 	 * {@link Score#equals(Object)}. */
 	protected HashSet<Score> cloneAllScores() {
-		final ObjectSet<Score> scores = mWoT.getAllScores();
-		final HashSet<Score> clones = new HashSet<Score>(scores.size() * 2);
-		
-		for(Score score : scores) {
-			// It is critical to ensure we don't overwrite a potential duplicate in the set, because
-			// the calling unit test code typically wants to detect duplicates as they are a bug.
-			// Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
-			// the object was already in the HashSet.
-			assertTrue(clones.add(score.clone()));
-		}
-		
-		return clones;
+		return newHashSetFromUniqueObjects(mWoT.getAllScores(), true);
 	}
 
 	/**
@@ -387,6 +355,13 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		return newHashSetFromUniqueObjects(mWoT.getAllScores());
 	}
 
+	/** Calls {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} with returnClones = false */
+	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
+			ObjectSet<T> set) {
+		
+		return newHashSetFromUniqueObjects(set, false);
+	}
+
 	/**
 	 * NOTICE: HashSet is generally not safe for use with {@link Persistent} due to the
 	 * implementations of {@link Persistent#equals(Object)} in many of its child classes:
@@ -397,11 +372,16 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * instances of the objects and thus the problems of equality checks cannot arise.<br>
 	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
 	 * {@link Persistent#equals(Object)} implementations. */
-	protected <T extends Persistent> HashSet<T> newHashSetFromUniqueObjects(ObjectSet<T> set) {
+	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
+			ObjectSet<T> set, boolean returnClones) {
+		
 		final HashSet<T> result = new HashSet<T>(set.size() * 2);
 		final IdentifierHashSet<T> uniquenessTest = new IdentifierHashSet<T>(set.size() * 2);
 		
 		for(T object : set) {
+			if(returnClones)
+				object = object.cloneP();
+			
 			// Self-test: Check whether the calling code really delivered a set with unique objects.
 			// We need to test this with an IdentifierHashSet due to the aforementioned issues of
 			// Persistent.equals().

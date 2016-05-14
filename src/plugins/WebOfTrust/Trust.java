@@ -13,6 +13,7 @@ import java.util.UUID;
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.util.AssertUtil;
+import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.StringValidityChecker;
 
@@ -22,7 +23,7 @@ import freenet.support.StringValidityChecker;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Trust extends Persistent implements Cloneable, EventSource {
+public final class Trust extends Persistent implements ReallyCloneable<Trust>, EventSource {
 	
 	/** @see Serializable */
 	private static transient final long serialVersionUID = 1L;
@@ -454,6 +455,10 @@ public final class Trust extends Persistent implements Cloneable, EventSource {
 		} catch (InvalidParameterException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override public Trust cloneP() {
+		return clone();
 	}
 
 	@Override
