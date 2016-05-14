@@ -304,8 +304,8 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet)} provides important information about
-	 * using the returned HashSet.
+	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+	 * information about using the returned HashSet.
 	 * 
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllIdentities()} instead. */
 	@Deprecated
@@ -325,8 +325,8 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet)} provides important information about
-	 * using the returned HashSet.
+	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+	 * information about using the returned HashSet.
 	 * 
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllTrusts()} instead. */
 	@Deprecated
@@ -346,8 +346,8 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet)} provides important information about
-	 * using the returned HashSet.
+	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+	 * information about using the returned HashSet.
 	 * 
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllScores()} instead. */
 	@Deprecated
