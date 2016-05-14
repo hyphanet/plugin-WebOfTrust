@@ -355,7 +355,11 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		return newHashSetFromUniqueObjects(mWoT.getAllScores());
 	}
 
-	/** Calls {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} with returnClones = false */
+	/**
+	 * Calls {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} with returnClones = false
+	 * 
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#newHashSetFromUniqueObjects(ObjectSet)} */
+	@Deprecated
 	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
 			ObjectSet<T> set) {
 		
@@ -371,7 +375,11 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * This function can return a HashSet safely, as the passed set must only contain unique
 	 * instances of the objects and thus the problems of equality checks cannot arise.<br>
 	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
-	 * {@link Persistent#equals(Object)} implementations. */
+	 * {@link Persistent#equals(Object)} implementations.
+	 * 
+	 * @deprecated
+	 *     Use {@link AbstractJUnit4BaseTest#newHashSetFromUniqueObjects(ObjectSet, boolean)} */
+	@Deprecated
 	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
 			ObjectSet<T> set, boolean returnClones) {
 		

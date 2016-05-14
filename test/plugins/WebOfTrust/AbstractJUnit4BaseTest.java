@@ -28,6 +28,7 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.RandomGrabHashSet;
+import plugins.WebOfTrust.util.ReallyCloneable;
 
 import com.db4o.ObjectSet;
 
@@ -536,6 +537,48 @@ public abstract class AbstractJUnit4BaseTest {
             // Thus we assertTrue() upon the return value of HashSet.add(), it will return false if
             // the object was already in the HashSet.
             assertTrue(result.add(score));
+        }
+        
+        return result;
+    }
+
+    /** Calls {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} with returnClones = false */
+    protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
+            ObjectSet<T> set) {
+        
+        return newHashSetFromUniqueObjects(set, false);
+    }
+
+    /**
+     * NOTICE: HashSet is generally not safe for use with {@link Persistent} due to the
+     * implementations of {@link Persistent#equals(Object)} in many of its child classes:
+     * They typically compare not only object identity but also object state. Thus multiple
+     * instances of the same object with different state could enter HashSets. For a detailed
+     * explanation, see class {@link IdentifierHashSet}.<br>
+     * This function can return a HashSet safely, as the passed set must only contain unique
+     * instances of the objects and thus the problems of equality checks cannot arise.<br>
+     * However, when doing anything with the returned HashSet, please be aware of the behavior of
+     * {@link Persistent#equals(Object)} implementations. */
+    protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
+            ObjectSet<T> set, boolean returnClones) {
+        
+        final HashSet<T> result = new HashSet<T>(set.size() * 2);
+        final IdentifierHashSet<T> uniquenessTest = new IdentifierHashSet<T>(set.size() * 2);
+        
+        for(T object : set) {
+            if(returnClones)
+                object = object.cloneP();
+            
+            // Self-test: Check whether the calling code really delivered a set with unique objects.
+            // We need to test this with an IdentifierHashSet due to the aforementioned issues of
+            // Persistent.equals().
+            assert(uniquenessTest.add(object));
+            // Also, it is critical to ensure we don't just overwrite a potential duplicate in the
+            // set, because the calling unit test code typically wants to detect duplicates as they
+            // are usually bugs.
+            // This is implicitly checked by the above assert already. But we get the return value
+            // for free - so let's just test it.
+            assertTrue(result.add(object));
         }
         
         return result;
