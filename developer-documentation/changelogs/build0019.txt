@@ -143,7 +143,19 @@ CHANGELOG - prefixed with the bugtracker issue number:
 - 0006409: [Usability] L10n: when logged in the option “Create new Identity” seems strange. (xor)
 - 0006818: [Usability] Process issues on Transifex (xor)
 - 0006812: [Features] wotutil.sh: Allow usage of FCP API (xor)
-- 0006651: [Bugs] "wotutil.sh -testAndRepair" says "Database OK!" if the database file did not exist, should fail (xor)
+- 0006651: [Bugs] "wotutil.sh -testAndRepair" says "Database OK!" if
+           the database file did not exist, should fail (xor)
+
+  build0018 had added "wotutil.sh" as a new command line user interface
+  for offline use of WoT databases, i.e. without running WoT in a
+  Freenet node.
+  It allows analytics and maintenance operations.
+
+  The "-testAndRepair" command checks the database for inconsistencies.
+  Unfortunately, it had a bug which caused it to consider the database
+  file not existing as "the database is healthy!".
+  This has been fixed to show an error message now.
+
 - 0006640: [Bugs] KnownIdentitiesPage: IndexOutOfBoundsException when
            searching (xor)
 
