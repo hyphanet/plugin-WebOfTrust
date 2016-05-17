@@ -143,6 +143,25 @@ CHANGELOG - prefixed with the bugtracker issue number:
 - 0006409: [Usability] L10n: when logged in the option “Create new Identity” seems strange. (xor)
 - 0006818: [Usability] Process issues on Transifex (xor)
 - 0006812: [Features] wotutil.sh: Allow usage of FCP API (xor)
+
+  build0018 had added "wotutil.sh" as a new command line user interface
+  for offline use of WoT databases, i.e. without running WoT in a
+  Freenet node.
+  It allows analytics and maintenance operations.
+
+  The tool now supports using most of the WoT FCP API on the terminal.
+  As FCP is the intended main API for building applications on top
+  of WoT, this allows usage of most of the WoT API on the terminal.
+  "Most of" means that the event-notifications FCP message "Subscribe"
+  is not supported. This is necessary because "Subscribe" is
+  asynchronous, i.e. the replies will be delivered in the future.
+  wotutil.sh bypasses the network layer, so asynchronous replies are not
+  possible.
+
+  Please do notice that this does *not* allow connecting to a WoT
+  running inside of Freenet. It instead allows simulating FCP by
+  directly loading the data from a closed WoT database on disk.
+
 - 0006651: [Bugs] "wotutil.sh -testAndRepair" says "Database OK!" if
            the database file did not exist, should fail (xor)
 
