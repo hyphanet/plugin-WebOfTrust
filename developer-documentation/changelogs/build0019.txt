@@ -162,7 +162,46 @@ CHANGELOG about stuff only interesting for developers:
   Blah.
   Blah.
 
-- 0006840: [Code quality] Provide xor's WoT bachelor thesis as a developer's manual (xor)
+- 0006840: [Code quality] Provide xor's WoT bachelor thesis as a
+           developer's manual (xor)
+
+  My past year's Freenet work of improving the core algorithm of WoT had
+  been recycled into my bachelor's thesis.
+  It did pass examination by the university, and now is contained in the
+  WoT source code at:
+    developer-documentation/core-developers-manual/
+    OadSFfF-version1.2-non-print-edition.pdf
+
+  Besides explaining last year's work, it has another purpose:
+  Since the thesis aims to require no prior Freenet-related knowledge,
+  it provides a pretty thorough explanation of how WoT works.
+  Thus, you may consider it as the WoT core developer's manual.
+
+  Beyond getting to know how WoT works, it would be of scientific
+  benefit for the project if you do read it:
+  The end of the thesis describes how the algorithm might be further
+  improved by investigating what can be considered as a whole class of
+  algorithms. I have not heard about such a class of algorithms being
+  identified and named by science yet. But this might be merely due to
+  lack of my knowledge.
+  So I hope that someone knows if this class of algorithms has already
+  been discovered and analyzed by other people. This could help us a lot
+  to further improve WoT with algorithms which are specially crafted to
+  be fast at this  type of problem.
+  EDIT: Meanwhile, Bert Massop already remarked that this may very well
+  be the class to solve the "dynamic single-source shortest-paths
+  problem"! There may still be some benefit in thinking about this
+  though, as the paper he cited sounds like there could still be better
+  solutions to the problem than what it provides. The paper is called:
+    Roditty, L., & Zwick, U. (2011). On dynamic shortest paths problems.
+    Algorithmica, 61(2), 389-401.
+
+  Feedback for improvement of the document is welcome:
+  Besides some layout changes it is still identical to what I handed in
+  at university.
+  Thus, it may contain many stupid mistakes caused by pre-deadline
+  caffeine intoxication.
+
 - 0006815: [Code quality] l10n: Add config for Transifex command line
            tool "tx" (xor)
 
@@ -314,9 +353,7 @@ CHANGELOG about stuff only interesting for developers:
 
 Thanks to:
   - Ademan
-  - Person1
-  - Person2
-
+  - Bert Massop
 
 Links:
   [1] https://bugs.freenetproject.org/view.php?id=3816
