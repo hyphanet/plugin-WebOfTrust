@@ -22,7 +22,7 @@ import freenet.support.io.FileUtil;
 /**
  * Wrapper class for storing an {@link IdentityFileStream} to disk via {@link Serializable}.
  * This is used to write and read the files of the {@link IdentityFileDiskQueue}. */
-final class IdentityFile implements Serializable {
+public final class IdentityFile implements Serializable {
 	public static transient final String FILE_EXTENSION = ".wot-identity";
 	
 	private static final long serialVersionUID = 4L;
