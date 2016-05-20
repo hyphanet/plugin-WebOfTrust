@@ -70,28 +70,18 @@ import freenet.support.io.FileUtil;
 public final class IdentityFile {
 	public static transient final String FILE_EXTENSION = ".wot-identity";
 	
-	private static final long serialVersionUID = 4L;
+	public static transient final int FILE_FORMAT_VERSION = 5;
 
 	/** @see #getURI() */
-	private final String mURI;
+	private final FreenetURI mURI;
 
 	/** @see IdentityFileStream#mXMLInputStream */
 	public final byte[] mXML;
-	
-	/**
-	 * Java serialization does not verify data integrity, so we do it ourselves with this hash.<br>
-	 * This is a good idea since:<br>
-	 * - At startup, we do not flush files enqueued in the {@link IdentityFileDiskQueue}. They might
-	 *   have been corrupted due to a crash.<br>
-	 * - {@link IdentityFileDiskQueue} does not use file locking, so the user might interfere with
-	 *   the files in parallel. */
-	private final int mHashCode;
 
 
 	private IdentityFile(FreenetURI uri, byte[] xml) {
-		mURI = uri.toString();
+		mURI = uri;
 		mXML = xml;
-		mHashCode = hashCodeRecompute();
 	}
 
 	static IdentityFile read(IdentityFileStream source) {
@@ -158,24 +148,10 @@ public final class IdentityFile {
 
 	/** @see IdentityFileStream#mURI */
 	public FreenetURI getURI() {
-		try {
-			return new FreenetURI(mURI);
-		} catch (MalformedURLException e) {
-			// We always set mURI via FreenetURI.toString(), so it should always be valid.
-			throw new RuntimeException("SHOULD NEVER HAPPEN", e);
-		}
+		return mURI;
 	}
 
 	@Override public int hashCode() {
-		return mHashCode;
-	}
-
-	private int hashCodeRecompute() {
-		// Use Arrays.hashCode(), not String.hashCode() or even FreenetURI.hashCode(), to avoid
-		// caching:
-		// We use the hash code to validate integrity of serialized data, so it must always be
-		// recomputed.
-		return Arrays.hashCode(mURI.toCharArray())
-			 ^ Arrays.hashCode(mXML);
+		return mURI.hashCode() ^ Arrays.hashCode(mXML);
 	}
 }
