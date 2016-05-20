@@ -107,17 +107,25 @@ public final class IdentityFile {
 	}
 
 	public void write(File file) {
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
+		// Metadata
+		sfs.setHeader("IdentityFile");
+		sfs.put("FileFormatVersion", FILE_FORMAT_VERSION);
+		// Data
+		sfs.putOverwrite("SourceURI", mURI.toString());
+		sfs.put("Checksum", hashCode());
+		// XML follows after SimpleFieldSet dump
+		sfs.setEndMarker("XMLFollows");
+		
 		FileOutputStream fos = null;
-		ObjectOutputStream ous = null;
 		
 		try {
 			fos = new FileOutputStream(file);
-			ous = new ObjectOutputStream(fos);
-			ous.writeObject(this);
+			sfs.writeTo(fos);
+			fos.write(mXML);
 		} catch(IOException e) {
 			throw new RuntimeException(e);
 		} finally {
-			Closer.close(ous);
 			Closer.close(fos);
 		}
 	}
