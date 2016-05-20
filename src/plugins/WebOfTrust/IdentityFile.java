@@ -132,24 +132,44 @@ public final class IdentityFile {
 
 	public static IdentityFile read(File source) {
 		FileInputStream fis = null;
-		ObjectInputStream ois = null;
+		LineReadingInputStream lris = null;
+		ByteArrayOutputStream xmlBos = null;
 		
 		try {
 			fis = new FileInputStream(source);
-			ois = new ObjectInputStream(fis);
-			final IdentityFile deserialized = (IdentityFile)ois.readObject();
-			assert(deserialized != null) : "Not an IdentityFile: " + source;
+			lris = new LineReadingInputStream(fis);
 			
-			if(deserialized.hashCode() != deserialized.hashCodeRecompute())
-				throw new IOException("Checksum mismatch: " + source);
+			SimpleFieldSet sfs
+				= new SimpleFieldSet(lris, Integer.MAX_VALUE, 4096, true, false, true);
+			
+			String[] headers = sfs.getHeader();
+			if(headers == null || !headers[0].equals("IdentityFile"))
+				throw new IOException("Unexpected file type: IdentityFile header not found!");
+			
+			if(sfs.getInt("FileFormatVersion") != FILE_FORMAT_VERSION) {
+				throw new IOException(
+					"Unknown file format version: " + sfs.getInt("FileFormatVersion"));
+			}
+			
+			FreenetURI uri = new FreenetURI(sfs.getString("SourceURI"));
+			
+			xmlBos = new ByteArrayOutputStream(lris.available());
+			FileUtil.copy(lris, xmlBos, -1);
+			assert(xmlBos.size() <= XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE);
+
+			final IdentityFile deserialized = new IdentityFile(uri, xmlBos.toByteArray());
+			
+			if(deserialized.hashCode() != sfs.getInt("Checksum"))
+				throw new IOException("Checksum mismatch!");
 			
 			return deserialized;
 		} catch(IOException e) {
 			throw new RuntimeException(e);
-		} catch (ClassNotFoundException e) {
+		} catch(FSParseException e) {
 			throw new RuntimeException(e);
 		} finally {
-			Closer.close(ois);
+			Closer.close(xmlBos);
+			Closer.close(lris);
 			Closer.close(fis);
 		}
 	}
