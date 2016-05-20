@@ -8,16 +8,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.net.MalformedURLException;
 import java.util.Arrays;
 
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
+import freenet.clients.fcp.FCPConnectionInputHandler;
 import freenet.keys.FreenetURI;
+import freenet.node.FSParseException;
+import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.LineReadingInputStream;
 
 /**
  * Serializer and parser class for storing an {@link IdentityFileStream} to disk and reading
