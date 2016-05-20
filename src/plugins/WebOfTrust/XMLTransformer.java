@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -64,6 +65,10 @@ import freenet.support.Logger;
 public final class XMLTransformer {
 
 	private static final int XML_FORMAT_VERSION = 1;
+	
+	private static final String XML_CHARSET_NAME = "UTF-8";
+	
+	public static final Charset XML_CHARSET = Charset.forName(XML_CHARSET_NAME);
 	
 	private static final int INTRODUCTION_XML_FORMAT_VERSION = 1; 
 	
@@ -151,7 +156,7 @@ public final class XMLTransformer {
 			mDOM = mDocumentBuilder.getDOMImplementation();
 
 			mSerializer = TransformerFactory.newInstance().newTransformer();
-			mSerializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+			mSerializer.setOutputProperty(OutputKeys.ENCODING, XML_CHARSET_NAME);
 			mSerializer.setOutputProperty(OutputKeys.INDENT, "yes"); // TODO: Disable as soon as bug 0004850 is fixed.
 			mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
 			
