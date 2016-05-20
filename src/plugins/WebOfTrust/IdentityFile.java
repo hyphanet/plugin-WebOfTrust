@@ -20,9 +20,54 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**
- * Wrapper class for storing an {@link IdentityFileStream} to disk via {@link Serializable}.
- * This is used to write and read the files of the {@link IdentityFileDiskQueue}. */
-public final class IdentityFile implements Serializable {
+ * Serializer and parser class for storing an {@link IdentityFileStream} to disk and reading
+ * IdentityFile objects back into memory.
+ * This is used to write and read the files of the {@link IdentityFileDiskQueue}.
+ * The higher level purpose is to store XML files we've downloaded from the network until we have
+ * time to process them with the {@link IdentityFileProcessor}. Storage is necessary because the
+ * downloading is usually faster than processing, and thus we must prevent exhausting the memory.
+ * 
+ * FILE FORMAT EXAMPLE:
+ * 
+ * # IdentityFile
+ * FileFormatVersion=5
+ * Checksum=841698827
+ * SourceURI=USK@...
+ * XMLFollows
+ * <?xml version="1.1" encoding="UTF-8" standalone="no"?>
+ * <WebOfTrust Version="...">
+ * <Identity Name="..." PublishesTrustList="..." Version="...">
+ * ...
+ * </Identity>
+ * </WebOfTrust>
+ * 
+ * REASONS FOR CHOICE OF FILE FORMAT:
+ * 
+ * The human readable file format is a combination of {@link SimpleFieldSet} and XML:
+ * - Files start with a SimpleFieldSet with metadata about the file. SimpleFieldSet is used for
+ *   human readability and simple parsing.
+ * - Right after the SimpleFieldSet follows the raw XML as fetched from the public WoT network.
+ * 
+ * This is the same way as FCP handles binary attachments to FCP messages:
+ * It first ships a SimpleFieldSet, and the binary attachment follows after the end marker of
+ * the SimpleFieldSet. See class {@link FCPConnectionInputHandler}.
+ *
+ * The XML is treated like a binary attachment of the SFS because we cannot add the metadata to the
+ * XML itself instead of keeping it in the SFS:
+ * This would require us to parse the XML first. But parsing of data from the network shall happen
+ * when we actually process the IdentityFiles, not when we store them. Thus we instead store the XML
+ * as a "binary" attachment of a different file format.
+ * Postponing the XML parsing is necessary because we want to punish publishers of corrupt XML. To
+ * be able to punish them, we need access to the main WoT database. But we do not have access to the 
+ * main database at the stage of writing IdentityFiles, so we cannot mark XML files as "parsing
+ * failed" there.
+ * And last but not least, we don't want access to the main database to ensure that
+ * {@link IdentityFileDiskQueue} does not have to wait for any database table locks. 
+ * It's a bit complex decision, but overall it keeps the {@link IdentityFileDiskQueue} separate from
+ * the main WoT database and thus allows it to be very fast.
+ * Remember: Speed is critical because Freenet can deliver files very quickly which can cause us to
+ * run out of memory if we don't dump them to disk soon enough. */
+public final class IdentityFile {
 	public static transient final String FILE_EXTENSION = ".wot-identity";
 	
 	private static final long serialVersionUID = 4L;
