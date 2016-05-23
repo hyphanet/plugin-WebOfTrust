@@ -70,7 +70,7 @@ import freenet.support.io.LineReadingInputStream;
 public final class IdentityFile {
 	public static transient final String FILE_EXTENSION = ".wot-identity";
 	
-	public static transient final int FILE_FORMAT_VERSION = 5;
+	public static transient final int FILE_FORMAT_VERSION = 6;
 
 	/** @see #getURI() */
 	private final FreenetURI mURI;
