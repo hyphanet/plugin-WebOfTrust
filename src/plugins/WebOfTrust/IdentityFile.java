@@ -30,7 +30,7 @@ import freenet.support.io.LineReadingInputStream;
  * FILE FORMAT EXAMPLE:
  * 
  * # IdentityFile
- * FileFormatVersion=6
+ * Version=6
  * CRC32=cdef9876
  * SourceURI=USK@...
  * DataLength=1400
@@ -111,7 +111,7 @@ public final class IdentityFile {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		// Metadata
 		sfs.setHeader("IdentityFile");
-		sfs.put("FileFormatVersion", FILE_FORMAT_VERSION);
+		sfs.put("Version", FILE_FORMAT_VERSION);
 		// Data
 		sfs.putOverwrite("SourceURI", mURI.toString());
 		sfs.putOverwrite("CRC32", Long.toHexString(crc32()));
@@ -148,10 +148,8 @@ public final class IdentityFile {
 			if(headers == null || !headers[0].equals("IdentityFile"))
 				throw new IOException("Unexpected file type: IdentityFile header not found!");
 			
-			if(sfs.getInt("FileFormatVersion") != FILE_FORMAT_VERSION) {
-				throw new IOException(
-					"Unknown file format version: " + sfs.getInt("FileFormatVersion"));
-			}
+			if(sfs.getInt("Version") != FILE_FORMAT_VERSION) {
+				throw new IOException("Unknown file format version: " + sfs.getInt("Version"));
 			
 			FreenetURI uri = new FreenetURI(sfs.getString("SourceURI"));
 			
