@@ -148,7 +148,7 @@ final class IdentityFile {
 			if(headers == null || !headers[0].equals("IdentityFile"))
 				throw new IOException("Unexpected file type: IdentityFile header not found!");
 			
-			if(sfs.getInt("Version") != FILE_FORMAT_VERSION) {
+			if(sfs.getInt("Version") != FILE_FORMAT_VERSION)
 				throw new IOException("Unknown file format version: " + sfs.getInt("Version"));
 			
 			FreenetURI uri = new FreenetURI(sfs.getString("SourceURI"));
