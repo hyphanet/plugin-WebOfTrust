@@ -8,7 +8,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.zip.CRC32;
 
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import freenet.clients.fcp.FCPConnectionInputHandler;
@@ -31,7 +31,7 @@ import freenet.support.io.LineReadingInputStream;
  * 
  * # IdentityFile
  * FileFormatVersion=5
- * Checksum=841698827
+ * CRC32=cdef9876
  * SourceURI=USK@...
  * Data
  * <?xml version="1.1" encoding="UTF-8" standalone="no"?>
@@ -113,7 +113,7 @@ public final class IdentityFile {
 		sfs.put("FileFormatVersion", FILE_FORMAT_VERSION);
 		// Data
 		sfs.putOverwrite("SourceURI", mURI.toString());
-		sfs.put("Checksum", hashCode());
+		sfs.putOverwrite("CRC32", Long.toHexString(crc32()));
 		sfs.put("DataLength", mXML.length); // Same format as FCP messages with Data attachment
 		// XML follows after SimpleFieldSet dump
 		sfs.setEndMarker("Data"); // Same format as FCP messages with Data attachment
@@ -162,8 +162,9 @@ public final class IdentityFile {
 
 			final IdentityFile deserialized = new IdentityFile(uri, xmlBos.toByteArray());
 			
-			if(deserialized.hashCode() != sfs.getInt("Checksum"))
-				throw new IOException("Checksum mismatch!");
+			long expectedCRC = Long.parseLong(sfs.getString("CRC32"), 16);
+			if(deserialized.crc32() != expectedCRC)
+				throw new IOException("CRC mismatch!");
 			
 			return deserialized;
 		} catch(IOException e) {
@@ -182,7 +183,15 @@ public final class IdentityFile {
 		return mURI;
 	}
 
+	public long crc32() {
+		CRC32 crc = new CRC32();
+		crc.update(mURI.toString().getBytes(XMLTransformer.XML_CHARSET));
+		crc.update(mXML);
+		return crc.getValue();
+	}
+
+	/** Same as {@link #crc32()}. Use that one instead for always getting non-negative values. */
 	@Override public int hashCode() {
-		return mURI.hashCode() ^ Arrays.hashCode(mXML);
+		return (int)crc32();
 	}
 }
