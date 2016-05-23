@@ -33,7 +33,7 @@ import freenet.support.io.LineReadingInputStream;
  * FileFormatVersion=5
  * Checksum=841698827
  * SourceURI=USK@...
- * XMLFollows
+ * Data
  * <?xml version="1.1" encoding="UTF-8" standalone="no"?>
  * <WebOfTrust Version="...">
  * <Identity Name="..." PublishesTrustList="..." Version="...">
@@ -114,8 +114,9 @@ public final class IdentityFile {
 		// Data
 		sfs.putOverwrite("SourceURI", mURI.toString());
 		sfs.put("Checksum", hashCode());
+		sfs.put("DataLength", mXML.length); // Same format as FCP messages with Data attachment
 		// XML follows after SimpleFieldSet dump
-		sfs.setEndMarker("XMLFollows");
+		sfs.setEndMarker("Data"); // Same format as FCP messages with Data attachment
 		
 		FileOutputStream fos = null;
 		
@@ -153,9 +154,11 @@ public final class IdentityFile {
 			
 			FreenetURI uri = new FreenetURI(sfs.getString("SourceURI"));
 			
-			xmlBos = new ByteArrayOutputStream(lris.available());
-			FileUtil.copy(lris, xmlBos, -1);
-			assert(xmlBos.size() <= XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE);
+			int xmlLength = sfs.getInt("DataLength");
+			assert(xmlLength > 0 && xmlLength <= XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE);
+			assert(xmlLength == lris.available());
+			xmlBos = new ByteArrayOutputStream(xmlLength);
+			FileUtil.copy(lris, xmlBos, xmlLength);
 
 			final IdentityFile deserialized = new IdentityFile(uri, xmlBos.toByteArray());
 			
