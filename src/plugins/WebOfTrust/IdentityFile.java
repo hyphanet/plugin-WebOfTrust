@@ -30,9 +30,10 @@ import freenet.support.io.LineReadingInputStream;
  * FILE FORMAT EXAMPLE:
  * 
  * # IdentityFile
- * FileFormatVersion=5
+ * FileFormatVersion=6
  * CRC32=cdef9876
  * SourceURI=USK@...
+ * DataLength=1400
  * Data
  * <?xml version="1.1" encoding="UTF-8" standalone="no"?>
  * <WebOfTrust Version="...">
