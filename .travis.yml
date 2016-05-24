@@ -1,0 +1,35 @@
+language: java
+
+# We need Ubuntu 14.04 due to very new JUnit API which WoT needs
+sudo: required
+dist: trusty
+
+addons:
+  apt:
+    packages:
+    - ant
+    - ant-optional
+    - junit4
+    - libhamcrest-java
+  # TODO: Code quality: Remove this workaround for https://github.com/travis-ci/travis-ci/issues/5227
+  hostname: freenet-plugin-WebOfTrust
+
+cache:
+  apt: true
+  directories:
+  - $TRAVIS_BUILD_DIR/../fred/
+
+before_install:
+  - cd "$TRAVIS_BUILD_DIR"/..
+  - if [ ! -e fred/src ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch fred ; else cd fred ; git pull ; cd .. ; fi
+  - if [ ! -e fred/lib/bcprov-jdk15on-154.jar ]; then cd fred/lib ; wget -c --no-check-certificate https://bouncycastle.org/download/bcprov-jdk15on-154.jar; cd ../.. ; fi
+  - cd fred/lib ; rm -f bcprov.jar ; ln -s bcprov-jdk15on-154.jar bcprov.jar ; cd ../..
+  - cd fred && ant clean && ant -Dlib.contrib.get=true -Dtest.skip=true && cd ..
+  - cd "$TRAVIS_BUILD_DIR"
+
+script: ant
+
+jdk:
+  - oraclejdk8
+  - oraclejdk7
+  - openjdk7
