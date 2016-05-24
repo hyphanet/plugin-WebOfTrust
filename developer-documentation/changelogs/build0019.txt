@@ -162,11 +162,6 @@ CHANGELOG - prefixed with the bugtracker issue number:
   running inside of Freenet. It instead allows simulating FCP by
   directly loading the data from a closed WoT database on disk.
 
-- 0006847: [Code quality] wotutil.sh: Allow dumping IdentityFile Java
-           serialization to text (ArneBab, xor)
-
-  FIXME
-
 - 0006651: [Bugs] "wotutil.sh -testAndRepair" says "Database OK!" if
            the database file did not exist, should fail (xor)
 
@@ -255,6 +250,11 @@ CHANGELOG about stuff only interesting for developers:
   from our scripts repository: https://github.com/freenet/scripts
   Please make sure to first read the manual at the beginning of the
   tool's Python source code.
+
+- 0006846: [Code quality] Use a human readable file format for
+           serializing Identity XML files to disk (ArneBab, xor)
+
+  FIXME
 
 - 0006557: [Code quality] Ant: Builder silently won't run unit tests if
            there is no JUnit installed, should instead abort with error
