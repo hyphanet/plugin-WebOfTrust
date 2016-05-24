@@ -12,13 +12,14 @@ addons:
 cache:
   apt: true
   directories:
-  - fred/
+  - "$TRAVIS_BUILD_DIR"/../fred/
 
 before_install:
+  - cd "$TRAVIS_BUILD_DIR"/..
   - if [ ! -e fred/src ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch fred ; else cd fred ; git pull ; cd .. ; fi
-  - mkdir -p fred/lib/freenet/
   - if [ ! -e fred/lib/bcprov-jdk15on-154.jar ]; then cd fred/lib ; wget -c --no-check-certificate https://bouncycastle.org/download/bcprov-jdk15on-154.jar; cd ../.. ; fi
   - cd fred && ant clean && ant -Dlib.contrib.get=true -Dtest.skip=true && cd ..
+  - cd "$TRAVIS_BUILD_DIR"
 
 script: ant
 
