@@ -13,7 +13,6 @@ cache:
   apt: true
   directories:
   - fred/
-  - fred/lib/
 
 before_install:
   - if [ ! -e fred/src ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch fred ; else cd fred ; git pull ; cd .. ; fi
