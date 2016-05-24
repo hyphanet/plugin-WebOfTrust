@@ -1,6 +1,9 @@
 language: java
 
-sudo: false
+# We need Ubuntu 14.04 due to very new JUnit API which WoT needs
+sudo: required
+dist: trusty
+
 addons:
   apt:
     packages:
