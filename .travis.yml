@@ -12,12 +12,17 @@ addons:
 cache:
   apt: true
   directories:
-  - lib/
+  - fred/
+  - fred/lib/
 
 before_install:
-  - mkdir -p lib/freenet/ && cd lib/ && if [ ! -e bcprov-jdk15on-154.jar ]; then wget -c --no-check-certificate https://bouncycastle.org/download/bcprov-jdk15on-154.jar; fi ; cd ..
+  - mkdir -p fred/lib/freenet/
+  - if [ ! -e fred/lib/bcprov-jdk15on-154.jar ]; then cd fred/lib ; wget -c --no-check-certificate https://bouncycastle.org/download/bcprov-jdk15on-154.jar; cd ../.. ; fi
+  - if [ ! -e fred/src ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch fred ; fi
+  - cd fred ; git pull ; cd ..
+  - if [ ! -e fred/dist/freenet.jar ]; then cd fred ; ant -Dlib.contrib.get=true -Dtest.skip=true ; cd .. ; fi
 
-script: ant -Dlib.contrib.get=true
+script: ant
 
 jdk:
   - oraclejdk8
