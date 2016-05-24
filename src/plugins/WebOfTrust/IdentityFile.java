@@ -123,7 +123,12 @@ final class IdentityFile {
 		
 		try {
 			fos = new FileOutputStream(file);
+			
+			// TODO: Code quality: Add a function to SimpleFieldSet for writing with a custom
+			// Charset and pass XMLTransformer.XML_CHARSET as Charset.
+			assert(XMLTransformer.XML_CHARSET.name().equals("UTF-8"));
 			sfs.writeTo(fos);
+			
 			fos.write(mXML);
 		} catch(IOException e) {
 			throw new RuntimeException(e);
