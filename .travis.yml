@@ -19,7 +19,7 @@ before_install:
   - mkdir -p fred/lib/freenet/
   - if [ ! -e fred/lib/bcprov-jdk15on-154.jar ]; then cd fred/lib ; wget -c --no-check-certificate https://bouncycastle.org/download/bcprov-jdk15on-154.jar; cd ../.. ; fi
   - if [ ! -e fred/src ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch fred ; else cd fred ; git pull ; cd .. ; fi
-  - if [ ! -e fred/dist/freenet.jar ]; then cd fred ; ant -Dlib.contrib.get=true -Dtest.skip=true ; cd .. ; fi
+  - cd fred && ant clean && ant -Dlib.contrib.get=true -Dtest.skip=true && cd ..
 
 script: ant
 
