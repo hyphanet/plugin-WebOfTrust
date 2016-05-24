@@ -233,6 +233,11 @@ CHANGELOG about stuff only interesting for developers:
   Thus, it may contain many stupid mistakes caused by pre-deadline
   caffeine intoxication.
 
+- 0006849: [Code quality] Allow Java 7 features to be used in the code
+           (xor)
+
+  FIXME
+
 - 0006815: [Code quality] l10n: Add config for Transifex command line
            tool "tx" (xor)
 
