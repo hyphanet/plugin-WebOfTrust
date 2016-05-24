@@ -8,45 +8,81 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.net.MalformedURLException;
-import java.util.Arrays;
+import java.util.zip.CRC32;
 
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
+import freenet.clients.fcp.FCPConnectionInputHandler;
 import freenet.keys.FreenetURI;
+import freenet.node.FSParseException;
+import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.LineReadingInputStream;
 
 /**
- * Wrapper class for storing an {@link IdentityFileStream} to disk via {@link Serializable}.
- * This is used to write and read the files of the {@link IdentityFileDiskQueue}. */
-public final class IdentityFile implements Serializable {
+ * Serializer and parser class for storing an {@link IdentityFileStream} to disk and reading
+ * IdentityFile objects back into memory.
+ * This is used to write and read the files of the {@link IdentityFileDiskQueue}.
+ * The higher level purpose is to store XML files we've downloaded from the network until we have
+ * time to process them with the {@link IdentityFileProcessor}. Storage is necessary because the
+ * downloading is usually faster than processing, and thus we must prevent exhausting the memory.
+ * 
+ * FILE FORMAT EXAMPLE:
+ * 
+ * # IdentityFile
+ * Version=6
+ * CRC32=cdef9876
+ * SourceURI=USK@...
+ * DataLength=1400
+ * Data
+ * <?xml version="1.1" encoding="UTF-8" standalone="no"?>
+ * <WebOfTrust Version="...">
+ * <Identity Name="..." PublishesTrustList="..." Version="...">
+ * ...
+ * </Identity>
+ * </WebOfTrust>
+ * 
+ * REASONS FOR CHOICE OF FILE FORMAT:
+ * 
+ * The human readable file format is a combination of {@link SimpleFieldSet} and XML:
+ * - Files start with a SimpleFieldSet with metadata about the file. SimpleFieldSet is used for
+ *   human readability and simple parsing.
+ * - Right after the SimpleFieldSet follows the raw XML as fetched from the public WoT network.
+ * 
+ * This is the same way as FCP handles binary attachments to FCP messages:
+ * It first ships a SimpleFieldSet, and the binary attachment follows after the end marker of
+ * the SimpleFieldSet. See class {@link FCPConnectionInputHandler}.
+ *
+ * The XML is treated like a binary attachment of the SFS because we cannot add the metadata to the
+ * XML itself instead of keeping it in the SFS:
+ * This would require us to parse the XML first. But parsing of data from the network shall happen
+ * when we actually process the IdentityFiles, not when we store them. Thus we instead store the XML
+ * as a "binary" attachment of a different file format.
+ * Postponing the XML parsing is necessary because we want to punish publishers of corrupt XML. To
+ * be able to punish them, we need access to the main WoT database. But we do not have access to the 
+ * main database at the stage of writing IdentityFiles, so we cannot mark XML files as "parsing
+ * failed" there.
+ * And last but not least, we don't want access to the main database to ensure that
+ * {@link IdentityFileDiskQueue} does not have to wait for any database table locks. 
+ * It's a bit complex decision, but overall it keeps the {@link IdentityFileDiskQueue} separate from
+ * the main WoT database and thus allows it to be very fast.
+ * Remember: Speed is critical because Freenet can deliver files very quickly which can cause us to
+ * run out of memory if we don't dump them to disk soon enough. */
+final class IdentityFile {
 	public static transient final String FILE_EXTENSION = ".wot-identity";
 	
-	private static final long serialVersionUID = 4L;
+	public static transient final int FILE_FORMAT_VERSION = 6;
 
 	/** @see #getURI() */
-	private final String mURI;
+	private final FreenetURI mURI;
 
 	/** @see IdentityFileStream#mXMLInputStream */
 	public final byte[] mXML;
-	
-	/**
-	 * Java serialization does not verify data integrity, so we do it ourselves with this hash.<br>
-	 * This is a good idea since:<br>
-	 * - At startup, we do not flush files enqueued in the {@link IdentityFileDiskQueue}. They might
-	 *   have been corrupted due to a crash.<br>
-	 * - {@link IdentityFileDiskQueue} does not use file locking, so the user might interfere with
-	 *   the files in parallel. */
-	private final int mHashCode;
 
 
 	private IdentityFile(FreenetURI uri, byte[] xml) {
-		mURI = uri.toString();
+		mURI = uri;
 		mXML = xml;
-		mHashCode = hashCodeRecompute();
 	}
 
 	static IdentityFile read(IdentityFileStream source) {
@@ -72,65 +108,94 @@ public final class IdentityFile implements Serializable {
 	}
 
 	public void write(File file) {
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
+		// Metadata
+		sfs.setHeader("IdentityFile");
+		sfs.put("Version", FILE_FORMAT_VERSION);
+		// Data
+		sfs.putOverwrite("SourceURI", mURI.toString());
+		sfs.putOverwrite("CRC32", Long.toHexString(crc32()));
+		sfs.put("DataLength", mXML.length); // Same format as FCP messages with Data attachment
+		// XML follows after SimpleFieldSet dump
+		sfs.setEndMarker("Data"); // Same format as FCP messages with Data attachment
+		
 		FileOutputStream fos = null;
-		ObjectOutputStream ous = null;
 		
 		try {
 			fos = new FileOutputStream(file);
-			ous = new ObjectOutputStream(fos);
-			ous.writeObject(this);
+			
+			// TODO: Code quality: Add a function to SimpleFieldSet for writing with a custom
+			// Charset and pass XMLTransformer.XML_CHARSET as Charset.
+			assert(XMLTransformer.XML_CHARSET.name().equals("UTF-8"));
+			sfs.writeTo(fos);
+			
+			fos.write(mXML);
 		} catch(IOException e) {
 			throw new RuntimeException(e);
 		} finally {
-			Closer.close(ous);
 			Closer.close(fos);
 		}
 	}
 
 	public static IdentityFile read(File source) {
 		FileInputStream fis = null;
-		ObjectInputStream ois = null;
+		LineReadingInputStream lris = null;
+		ByteArrayOutputStream xmlBos = null;
 		
 		try {
 			fis = new FileInputStream(source);
-			ois = new ObjectInputStream(fis);
-			final IdentityFile deserialized = (IdentityFile)ois.readObject();
-			assert(deserialized != null) : "Not an IdentityFile: " + source;
+			lris = new LineReadingInputStream(fis);
 			
-			if(deserialized.hashCode() != deserialized.hashCodeRecompute())
-				throw new IOException("Checksum mismatch: " + source);
+			SimpleFieldSet sfs
+				= new SimpleFieldSet(lris, Integer.MAX_VALUE, 4096, true, false, true);
+			
+			String[] headers = sfs.getHeader();
+			if(headers == null || !headers[0].equals("IdentityFile"))
+				throw new IOException("Unexpected file type: IdentityFile header not found!");
+			
+			if(sfs.getInt("Version") != FILE_FORMAT_VERSION)
+				throw new IOException("Unknown file format version: " + sfs.getInt("Version"));
+			
+			FreenetURI uri = new FreenetURI(sfs.getString("SourceURI"));
+			
+			int xmlLength = sfs.getInt("DataLength");
+			assert(xmlLength > 0 && xmlLength <= XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE);
+			assert(xmlLength == lris.available());
+			xmlBos = new ByteArrayOutputStream(xmlLength);
+			FileUtil.copy(lris, xmlBos, xmlLength);
+
+			final IdentityFile deserialized = new IdentityFile(uri, xmlBos.toByteArray());
+			
+			long expectedCRC = Long.parseLong(sfs.getString("CRC32"), 16);
+			if(deserialized.crc32() != expectedCRC)
+				throw new IOException("CRC mismatch!");
 			
 			return deserialized;
 		} catch(IOException e) {
 			throw new RuntimeException(e);
-		} catch (ClassNotFoundException e) {
+		} catch(FSParseException e) {
 			throw new RuntimeException(e);
 		} finally {
-			Closer.close(ois);
+			Closer.close(xmlBos);
+			Closer.close(lris);
 			Closer.close(fis);
 		}
 	}
 
 	/** @see IdentityFileStream#mURI */
 	public FreenetURI getURI() {
-		try {
-			return new FreenetURI(mURI);
-		} catch (MalformedURLException e) {
-			// We always set mURI via FreenetURI.toString(), so it should always be valid.
-			throw new RuntimeException("SHOULD NEVER HAPPEN", e);
-		}
+		return mURI;
 	}
 
+	public long crc32() {
+		CRC32 crc = new CRC32();
+		crc.update(mURI.toString().getBytes(XMLTransformer.XML_CHARSET));
+		crc.update(mXML);
+		return crc.getValue();
+	}
+
+	/** Same as {@link #crc32()}. Use that one instead for always getting non-negative values. */
 	@Override public int hashCode() {
-		return mHashCode;
-	}
-
-	private int hashCodeRecompute() {
-		// Use Arrays.hashCode(), not String.hashCode() or even FreenetURI.hashCode(), to avoid
-		// caching:
-		// We use the hash code to validate integrity of serialized data, so it must always be
-		// recomputed.
-		return Arrays.hashCode(mURI.toCharArray())
-			 ^ Arrays.hashCode(mXML);
+		return (int)crc32();
 	}
 }

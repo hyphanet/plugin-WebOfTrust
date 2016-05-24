@@ -8,7 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,7 +18,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import plugins.WebOfTrust.Identity;
-import plugins.WebOfTrust.IdentityFile;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.WebOfTrust;
@@ -89,22 +87,7 @@ public final class WOTUtil {
 		System.out.println("Full recomputations: " + wot.getNumberOfFullScoreRecomputations());
 		output.close();
 	}
-
-	/**
-	 * Reads an {@link IdentityFile} from disk and dumps it in a human readable format to terminal.
-	 * This is a necessary feature since IdentityFiles are serialized using Java serialization, for
-	 * which not every programming language provides a deserialization library.
-	 * 
-	 * NOTICE: The checksum of the file is also checked implicitly by
-	 * {@link IdentityFile#read(File)} */
-	public static void dumpIdentityFile(File fileName) {
-		IdentityFile file = IdentityFile.read(fileName);
-		
-		System.out.println(file.getURI());
-		System.out.println();
-		System.out.print(new String(file.mXML, Charset.forName("UTF-8")));
-	}
-
+	
 	/**
 	 * Sends a {@link FCPPluginMessage} to the {@link FCPInterface} of the given {@link WebOfTrust}
 	 * and returns the reply {@link FCPPluginMessage}.<br><br>
@@ -263,7 +246,6 @@ public final class WOTUtil {
 		err.println("    Push ENTER to exit for pause. Resume by restarting with same parameters.");
 		err.println("    Deterministic execution by SEED is not supported with resume.");
 		err.println("WOTUtil -fcp INPUT_DATABASE Message=WOT_FCP_CALL key1=value1 key2=value2 ...");
-		err.println("WOTUtil -dumpIdentityFile INPUT_FILE");
 		err.println("WOTUtil -testAndRepair INPUT_DATABASE");
 		err.println("WOTUtil -trustValueHistogram INPUT_DATABASE");
 		err.println("WOTUtil -trusteeCountHistogram INPUT_DATABASE");
@@ -281,15 +263,6 @@ public final class WOTUtil {
 			String databaseFile = args[1];
 			if(!new File(databaseFile).isFile())
 				throw new FileNotFoundException(databaseFile);
-			
-			if(args[0].equalsIgnoreCase("-dumpIdentityFile")) {
-				if(args.length != 2) {
-					printSyntax();
-					return 1;
-				}
-				dumpIdentityFile(new File(databaseFile));
-				return 0; // Success
-			}
 			
 			wot = new WebOfTrust(databaseFile);
 			
