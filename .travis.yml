@@ -11,6 +11,8 @@ addons:
     - ant-optional
     - junit4
     - libhamcrest-java
+  # TODO: Code quality: Remove this workaround for https://github.com/travis-ci/travis-ci/issues/5227
+  hostname: freenet-plugin-WebOfTrust
 
 cache:
   apt: true
