@@ -238,6 +238,10 @@ CHANGELOG about stuff only interesting for developers:
 
   FIXME
 
+- 0006760: [Code quality] Use Travis CI (nextgens, xor)
+
+  FIXME
+
 - 0006815: [Code quality] l10n: Add config for Transifex command line
            tool "tx" (xor)
 
@@ -394,7 +398,9 @@ CHANGELOG about stuff only interesting for developers:
 
 Thanks to:
   - Ademan
+  - ArneBab
   - Bert Massop
+  - nextgens
 
 Links:
   [1] https://bugs.freenetproject.org/view.php?id=3816
