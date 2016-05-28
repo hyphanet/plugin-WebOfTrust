@@ -507,8 +507,9 @@ public abstract class AbstractJUnit4BaseTest {
      * They typically compare not only object identity but also object state. Thus multiple
      * instances of the same object with different state could enter HashSets. For a detailed
      * explanation, see class {@link IdentifierHashSet}.<br>
-     * This function can return a HashSet safely, as the passed set must only contain unique
-     * instances of the objects and thus the problems of equality checks cannot arise.<br>
+     * This function can return a HashSet safely, as it validates whether the passed list only
+     * contains unique instances of the objects and thus the problems of equality checks cannot
+     * arise. The function guarantees that it will cause test failure if duplicates are passed.<br>
      * However, when doing anything with the returned HashSet, please be aware of the behavior of
      * {@link Persistent#equals(Object)} implementations. */
     protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
