@@ -29,9 +29,6 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.RandomGrabHashSet;
 import plugins.WebOfTrust.util.ReallyCloneable;
-
-import com.db4o.ObjectSet;
-
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
@@ -477,29 +474,29 @@ public abstract class AbstractJUnit4BaseTest {
     }
 
     /**
-     * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+     * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
      * information about using the returned HashSet. */
     protected HashSet<Identity> getAllIdentities() {
         return newHashSetFromUniqueObjects(getWebOfTrust().getAllIdentities());
     }
 
     /**
-     * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+     * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
      * information about using the returned HashSet. */
     protected HashSet<Trust> getAllTrusts() {
         return newHashSetFromUniqueObjects(getWebOfTrust().getAllTrusts());
     }
 
     /**
-     * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+     * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
      * information about using the returned HashSet. */
     protected HashSet<Score> getAllScores() {
         return newHashSetFromUniqueObjects(getWebOfTrust().getAllScores());
     }
 
-    /** Calls {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} with returnClones = false */
+    /** Calls {@link #newHashSetFromUniqueObjects(List, boolean)} with returnClones = false */
     protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
-            ObjectSet<T> set) {
+            List<T> set) {
         
         return newHashSetFromUniqueObjects(set, false);
     }
@@ -515,7 +512,7 @@ public abstract class AbstractJUnit4BaseTest {
      * However, when doing anything with the returned HashSet, please be aware of the behavior of
      * {@link Persistent#equals(Object)} implementations. */
     protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
-            ObjectSet<T> set, boolean returnClones) {
+            List<T> set, boolean returnClones) {
         
         final HashSet<T> result = new HashSet<T>(set.size() * 2);
         final IdentifierHashSet<T> uniquenessTest = new IdentifierHashSet<T>(set.size() * 2);

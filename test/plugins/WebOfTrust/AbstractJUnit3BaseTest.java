@@ -10,6 +10,7 @@ import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 
 import junit.framework.TestCase;
@@ -20,9 +21,6 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.ReallyCloneable;
-
-import com.db4o.ObjectSet;
-
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
@@ -293,14 +291,14 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+	 * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
 	 * information about using the returned HashSet. */
 	protected HashSet<Identity> cloneAllIdentities() {
 		return newHashSetFromUniqueObjects(mWoT.getAllIdentities(), true);
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+	 * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
 	 * information about using the returned HashSet.
 	 * 
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllIdentities()} instead. */
@@ -310,14 +308,14 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+	 * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
 	 * information about using the returned HashSet. */
 	protected HashSet<Trust> cloneAllTrusts() {
 		return newHashSetFromUniqueObjects(mWoT.getAllTrusts(), true);
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+	 * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
 	 * information about using the returned HashSet.
 	 * 
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllTrusts()} instead. */
@@ -327,14 +325,14 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+	 * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
 	 * information about using the returned HashSet. */
 	protected HashSet<Score> cloneAllScores() {
 		return newHashSetFromUniqueObjects(mWoT.getAllScores(), true);
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} provides important
+	 * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
 	 * information about using the returned HashSet.
 	 * 
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllScores()} instead. */
@@ -344,12 +342,12 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	}
 
 	/**
-	 * Calls {@link #newHashSetFromUniqueObjects(ObjectSet, boolean)} with returnClones = false
+	 * Calls {@link #newHashSetFromUniqueObjects(List, boolean)} with returnClones = false
 	 * 
-	 * @deprecated Use {@link AbstractJUnit4BaseTest#newHashSetFromUniqueObjects(ObjectSet)} */
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#newHashSetFromUniqueObjects(List)} */
 	@Deprecated
 	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
-			ObjectSet<T> set) {
+			List<T> set) {
 		
 		return newHashSetFromUniqueObjects(set, false);
 	}
@@ -366,10 +364,10 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * {@link Persistent#equals(Object)} implementations.
 	 * 
 	 * @deprecated
-	 *     Use {@link AbstractJUnit4BaseTest#newHashSetFromUniqueObjects(ObjectSet, boolean)} */
+	 *     Use {@link AbstractJUnit4BaseTest#newHashSetFromUniqueObjects(List, boolean)} */
 	@Deprecated
 	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
-			ObjectSet<T> set, boolean returnClones) {
+			List<T> set, boolean returnClones) {
 		
 		final HashSet<T> result = new HashSet<T>(set.size() * 2);
 		final IdentifierHashSet<T> uniquenessTest = new IdentifierHashSet<T>(set.size() * 2);
