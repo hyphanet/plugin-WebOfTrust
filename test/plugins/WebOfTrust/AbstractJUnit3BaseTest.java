@@ -377,10 +377,10 @@ public class AbstractJUnit3BaseTest extends TestCase {
 			if(returnClones)
 				object = object.cloneP();
 			
-			// Self-test: Check whether the calling code really delivered a set with unique objects.
+			// Check whether the calling code delivered a list of unique objects.
 			// We need to test this with an IdentifierHashSet due to the aforementioned issues of
 			// Persistent.equals().
-			assert(uniquenessTest.add(object));
+			assertTrue(uniquenessTest.add(object));
 			// Also, it is critical to ensure we don't just overwrite a potential duplicate in the
 			// set, because the calling unit test code typically wants to detect duplicates as they
 			// are usually bugs.
