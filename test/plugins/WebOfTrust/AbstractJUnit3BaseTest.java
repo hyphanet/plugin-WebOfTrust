@@ -347,9 +347,9 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#listToSetWithDuplicateCheck(List)} */
 	@Deprecated
 	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
-			List<T> set) {
+			List<T> list) {
 		
-		return listToSetWithDuplicateCheck(set, false);
+		return listToSetWithDuplicateCheck(list, false);
 	}
 
 	/**
@@ -368,12 +368,12 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 *     Use {@link AbstractJUnit4BaseTest#listToSetWithDuplicateCheck(List, boolean)} */
 	@Deprecated
 	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
-			List<T> set, boolean returnClones) {
+			List<T> list, boolean returnClones) {
 		
-		final HashSet<T> result = new HashSet<T>(set.size() * 2);
-		final IdentifierHashSet<T> uniquenessTest = new IdentifierHashSet<T>(set.size() * 2);
+		final HashSet<T> result = new HashSet<T>(list.size() * 2);
+		final IdentifierHashSet<T> uniquenessTest = new IdentifierHashSet<T>(list.size() * 2);
 		
-		for(T object : set) {
+		for(T object : list) {
 			if(returnClones)
 				object = object.cloneP();
 			

@@ -496,9 +496,9 @@ public abstract class AbstractJUnit4BaseTest {
 
     /** Calls {@link #listToSetWithDuplicateCheck(List, boolean)} with returnClones = false */
     protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
-            List<T> set) {
+            List<T> list) {
         
-        return listToSetWithDuplicateCheck(set, false);
+        return listToSetWithDuplicateCheck(list, false);
     }
 
     /**
@@ -513,12 +513,12 @@ public abstract class AbstractJUnit4BaseTest {
      * However, when doing anything with the returned HashSet, please be aware of the behavior of
      * {@link Persistent#equals(Object)} implementations. */
     protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
-            List<T> set, boolean returnClones) {
+            List<T> list, boolean returnClones) {
         
-        final HashSet<T> result = new HashSet<T>(set.size() * 2);
-        final IdentifierHashSet<T> uniquenessTest = new IdentifierHashSet<T>(set.size() * 2);
+        final HashSet<T> result = new HashSet<T>(list.size() * 2);
+        final IdentifierHashSet<T> uniquenessTest = new IdentifierHashSet<T>(list.size() * 2);
         
-        for(T object : set) {
+        for(T object : list) {
             if(returnClones)
                 object = object.cloneP();
             
