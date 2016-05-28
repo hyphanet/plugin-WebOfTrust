@@ -291,65 +291,65 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
+	 * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
 	 * information about using the returned HashSet. */
 	protected HashSet<Identity> cloneAllIdentities() {
-		return newHashSetFromUniqueObjects(mWoT.getAllIdentities(), true);
+		return listToSetWithDuplicateCheck(mWoT.getAllIdentities(), true);
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
+	 * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
 	 * information about using the returned HashSet.
 	 * 
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllIdentities()} instead. */
 	@Deprecated
 	protected HashSet<Identity> getAllIdentities() {
-		return newHashSetFromUniqueObjects(mWoT.getAllIdentities());
+		return listToSetWithDuplicateCheck(mWoT.getAllIdentities());
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
+	 * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
 	 * information about using the returned HashSet. */
 	protected HashSet<Trust> cloneAllTrusts() {
-		return newHashSetFromUniqueObjects(mWoT.getAllTrusts(), true);
+		return listToSetWithDuplicateCheck(mWoT.getAllTrusts(), true);
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
+	 * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
 	 * information about using the returned HashSet.
 	 * 
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllTrusts()} instead. */
 	@Deprecated
 	protected HashSet<Trust> getAllTrusts() {
-		return newHashSetFromUniqueObjects(mWoT.getAllTrusts());
+		return listToSetWithDuplicateCheck(mWoT.getAllTrusts());
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
+	 * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
 	 * information about using the returned HashSet. */
 	protected HashSet<Score> cloneAllScores() {
-		return newHashSetFromUniqueObjects(mWoT.getAllScores(), true);
+		return listToSetWithDuplicateCheck(mWoT.getAllScores(), true);
 	}
 
 	/**
-	 * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
+	 * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
 	 * information about using the returned HashSet.
 	 * 
 	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllScores()} instead. */
 	@Deprecated
 	protected HashSet<Score> getAllScores() {
-		return newHashSetFromUniqueObjects(mWoT.getAllScores());
+		return listToSetWithDuplicateCheck(mWoT.getAllScores());
 	}
 
 	/**
-	 * Calls {@link #newHashSetFromUniqueObjects(List, boolean)} with returnClones = false
+	 * Calls {@link #listToSetWithDuplicateCheck(List, boolean)} with returnClones = false
 	 * 
-	 * @deprecated Use {@link AbstractJUnit4BaseTest#newHashSetFromUniqueObjects(List)} */
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#listToSetWithDuplicateCheck(List)} */
 	@Deprecated
-	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
+	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
 			List<T> set) {
 		
-		return newHashSetFromUniqueObjects(set, false);
+		return listToSetWithDuplicateCheck(set, false);
 	}
 
 	/**
@@ -364,9 +364,9 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * {@link Persistent#equals(Object)} implementations.
 	 * 
 	 * @deprecated
-	 *     Use {@link AbstractJUnit4BaseTest#newHashSetFromUniqueObjects(List, boolean)} */
+	 *     Use {@link AbstractJUnit4BaseTest#listToSetWithDuplicateCheck(List, boolean)} */
 	@Deprecated
-	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
+	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
 			List<T> set, boolean returnClones) {
 		
 		final HashSet<T> result = new HashSet<T>(set.size() * 2);

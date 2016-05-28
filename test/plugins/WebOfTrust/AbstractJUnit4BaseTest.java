@@ -474,31 +474,31 @@ public abstract class AbstractJUnit4BaseTest {
     }
 
     /**
-     * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
+     * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
      * information about using the returned HashSet. */
     protected HashSet<Identity> getAllIdentities() {
-        return newHashSetFromUniqueObjects(getWebOfTrust().getAllIdentities());
+        return listToSetWithDuplicateCheck(getWebOfTrust().getAllIdentities());
     }
 
     /**
-     * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
+     * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
      * information about using the returned HashSet. */
     protected HashSet<Trust> getAllTrusts() {
-        return newHashSetFromUniqueObjects(getWebOfTrust().getAllTrusts());
+        return listToSetWithDuplicateCheck(getWebOfTrust().getAllTrusts());
     }
 
     /**
-     * NOTICE: {@link #newHashSetFromUniqueObjects(List, boolean)} provides important
+     * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
      * information about using the returned HashSet. */
     protected HashSet<Score> getAllScores() {
-        return newHashSetFromUniqueObjects(getWebOfTrust().getAllScores());
+        return listToSetWithDuplicateCheck(getWebOfTrust().getAllScores());
     }
 
-    /** Calls {@link #newHashSetFromUniqueObjects(List, boolean)} with returnClones = false */
-    protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
+    /** Calls {@link #listToSetWithDuplicateCheck(List, boolean)} with returnClones = false */
+    protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
             List<T> set) {
         
-        return newHashSetFromUniqueObjects(set, false);
+        return listToSetWithDuplicateCheck(set, false);
     }
 
     /**
@@ -511,7 +511,7 @@ public abstract class AbstractJUnit4BaseTest {
      * instances of the objects and thus the problems of equality checks cannot arise.<br>
      * However, when doing anything with the returned HashSet, please be aware of the behavior of
      * {@link Persistent#equals(Object)} implementations. */
-    protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> newHashSetFromUniqueObjects(
+    protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
             List<T> set, boolean returnClones) {
         
         final HashSet<T> result = new HashSet<T>(set.size() * 2);
