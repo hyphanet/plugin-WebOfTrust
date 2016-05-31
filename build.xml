@@ -206,6 +206,11 @@
 				<pathelement location="${cobertura.location}" if:true="${test.coverage}"/>
 			</classpath>
 
+			<!-- Workaround for Cobertura failing on Java 7 with:
+				   "Expecting a stackmap frame at branch target [...]"
+			     TODO: Remove if not necessary anymore. Added on 2016-05-31. -->
+			<jvmarg if:true="${test.coverage}" value="-XX:-UseSplitVerifier"/>
+			
 			<assertions><enable/></assertions>
 			<formatter type="plain" usefile="false"/>
 			<test if="test.class" name="${test.class}"/>
