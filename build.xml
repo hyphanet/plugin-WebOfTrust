@@ -203,6 +203,7 @@
 				<pathelement location="${build-test-jar}"/>
 				<pathelement location="${junit.location}"/>
 				<pathelement location="${hamcrest.location}"/>
+				<pathelement location="${cobertura.location}" if:true="${test.coverage}"/>
 			</classpath>
 
 			<assertions><enable/></assertions>
@@ -224,11 +225,19 @@
 				</zipfileset>
 			</batchtest>
 			
+			<sysproperty key="net.sourceforge.cobertura.datafile"
+				file="${build-test-coverage}/cobertura.ser" if:true="${test.coverage}"/>
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
 			<jvmarg value="-Djava.awt.headless=true"/>
 			<!-- Pass the name of the JAR to the tests so they can load it into a fred instance -->
 			<jvmarg value="-DWOT_test_jar=${build-test-jar}"/>
 		</junit>
+		
+		<cobertura-report if:true="${test.coverage}" unless:true="${test.benchmark}"
+			srcdir="${src}"
+			datafile="${build-test-coverage}/cobertura.ser"
+			destdir="${build-test-coverage}/html"
+			format="html"/>
 		
 		<!-- Benchmarks. They need assertions disabled so they're a task of their own. -->
 		<!-- Also, we set showoutput="true" so you get live output as benchmarks take a long time -->
