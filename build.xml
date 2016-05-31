@@ -36,6 +36,10 @@
 		<pathelement location="${freenet-cvs-snapshot.location}"/>
 	</path>
 
+	<path id="cobertura.path">
+		<pathelement location="${cobertura.location}"/>
+	</path>
+
 	<presetdef name="javac">
 		<!--
 		Workaround for ant 1.8 misfeature. TODO: Remove when ant fixes this.
@@ -126,7 +130,7 @@
 		</and>
 	</condition>
 
-	<target name="unit-build" depends="compile" if="unit.dependencies">
+	<target name="junit-compile" depends="compile" if="unit.dependencies">
 		<javac srcdir="test/" destdir="${build-test}/test" debug="on" optimize="on"
 				source="${source-version}" target="${target-version}" >
 			
@@ -139,6 +143,32 @@
 			<compilerarg value="-Xlint"/>
 			<include name="**/*.java"/>
 		</javac>
+		
+		<!-- Copy main non-test classes to tests so we can produce a full working WoT JAR -->
+		<copy todir="${build-test}/test" overwrite="false">
+			<fileset dir="${build}/"/>
+		</copy>
+	</target>
+	
+	<target name="junit-inject-cobertura" depends="clean, junit-compile"
+			if="${test.coverage}" unless="${test.benchmark}">
+		
+		<fail unless:true="${cobertura.present}" message="${cobertura.location} not found!"/>
+		
+		<taskdef classpathref="cobertura.path" resource="tasks.properties"/>
+		
+		<cobertura-instrument datafile="${build-test-coverage}/cobertura.ser">
+			<fileset dir="${build-test}/test">
+				<include name="**/*.class" />
+				<!-- kaptcha is a third-party library -->
+				<exclude name="plugins/WebOfTrust/introduction/captcha/kaptcha/**/*"/>
+				<exclude name="**/*Test*.class"/>
+				<exclude name="**/*Benchmark*.class"/>
+			</fileset>
+		</cobertura-instrument>
+	</target>
+	
+	<target name="junit-package" depends="junit-compile, junit-inject-cobertura">
 		<jar jarfile="${build-test-jar}" duplicate="fail">
 			<manifest>
 				<attribute name="Plugin-Main-Class" value="plugins.WebOfTrust.WebOfTrust"/>
@@ -146,12 +176,12 @@
 			<fileset dir="src/" casesensitive="no">
 				<include name="*.txt"/> <!-- Include the GPL -->
 			</fileset>
-			<fileset dir="${build}/"/>
+			
 			<fileset dir="${build-test}/test/"/> <!-- Separate directory to exclude the JAR -->
 		</jar>
 	</target>
 
-	<target name="junit" depends="unit-build" unless="${test.skip}"
+	<target name="junit" depends="junit-package" unless="${test.skip}"
 			description="Runs all unit tests. Options:&#10;
 		        - Set test.coverage=true to analyze test coverage&#10;
 		        - Set test.skip=true to skip&#10;
