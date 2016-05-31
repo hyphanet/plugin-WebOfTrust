@@ -14,6 +14,7 @@
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
 	<property name="build-test-jar" location="${build-test}/WebOfTrust-with-unit-tests.jar"/>
+	<property name="build-test-coverage" location="test-coverage/"/>
 	<property name="dist" location="dist/"/>
 	<property name="src" location="src/"/>
 	<property name="javadoc" location="javadoc/"/>
@@ -69,6 +70,7 @@
 		<mkdir dir="${build}"/>
 		<mkdir dir="${build-test}"/>
 		<mkdir dir="${build-test}/test"/>
+		<mkdir dir="${build-test-coverage}"/>
 		<mkdir dir="${dist}"/>
 		<echo message="Using ${freenet-cvs-snapshot.location} as freenet-cvs-snapshot.jar"/>
 		<echo message="Using ${freenet-ext.location} as freenet-ext.jar"/>
@@ -255,6 +257,7 @@
 	<target name="clean" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node.">
 		<delete dir="${build}"/>
 		<delete dir="${build-test}"/>
+		<delete dir="${build-test-coverage}"/>
 		<delete dir="${dist}"/>
 		<delete file="${debug-node-WebOfTrust-plugin.location}"/>
 	</target>
