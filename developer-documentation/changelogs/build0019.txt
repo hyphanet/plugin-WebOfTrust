@@ -238,6 +238,11 @@ CHANGELOG about stuff only interesting for developers:
 
   FIXME
 
+- 0006861: [Code quality] Ant builder: Support analyzing test coverage
+           with Cobertura (xor)
+
+  FIXME
+
 - 0006760: [Code quality] Use Travis CI (nextgens, xor)
 
   FIXME
