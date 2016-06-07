@@ -545,16 +545,17 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		for(OwnIdentity ownId : mOwnIdentities.subList(1, mOwnIdentities.size())) {
 			IntroductionPuzzle p;
 			
+			// Non-own and unsolved - these are what the tested query shall return.
 			p = constructPuzzleOf(ownId);
 			mPuzzleStore.storeAndCommit(p);
 			unsolvedPuzzles.add(p.clone());
 			
-			// non own but solved
+			// Non-own but solved.
 			p = constructPuzzleOf(ownId);
 			p.setSolved(mOwnIdentities.get(0), "blehblah");
 			mPuzzleStore.storeAndCommit(p);
 			
-			// unsolved but own one
+			// Unsolved but own one.
 			p = constructOwnPuzzleOf(ownId);
 			mPuzzleStore.storeAndCommit(p);
 		}
