@@ -599,7 +599,8 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		
 		flushCaches();
 		// TODO: As soon as we have more puzzle types, test them here
-		assertEquals(new HashSet<IntroductionPuzzle>(uninsertedSolvedPuzzles), new HashSet<IntroductionPuzzle>(mPuzzleStore.getUninsertedSolvedPuzzles()));
+		assertEquals(listToSetWithDuplicateCheck(uninsertedSolvedPuzzles),
+		             listToSetWithDuplicateCheck(mPuzzleStore.getUninsertedSolvedPuzzles()));
 	}
 
 	public void testGetOwnCatpchaAmount() throws IOException {
