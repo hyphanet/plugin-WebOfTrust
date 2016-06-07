@@ -283,6 +283,9 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	}
 
     void testWhetherReceivedDataMatchesMainDatabase() {
+        // No need to use listToSetWithDuplicateCheck():
+        // We create the HashSets from HashMaps where the keys are the objects' IDs. Using the IDs
+        // as keys prevents duplicates already. We thus only do a cheaper duplicate check below.
         HashSet<Identity> receivedIdentities = new HashSet<Identity>(mReceivedIdentities.values());
         HashSet<Trust> receivedTrusts = new HashSet<Trust>(mReceivedTrusts.values());
         HashSet<Score> receivedScores = new HashSet<Score>(mReceivedScores.values());
