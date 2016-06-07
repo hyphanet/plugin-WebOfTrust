@@ -250,7 +250,32 @@ CHANGELOG about stuff only interesting for developers:
 
 - 0006760: [Code quality] Use Travis CI (nextgens, xor)
 
-  FIXME
+  Travis CI is a cloud service which does the following when a developer
+  files a new pull request:
+  - It runs the unit tests on the branch the developer submitted.
+  - It does a temporary merge of the submitted branch into the target
+    branch and also runs the unit tests there.
+    This is the "CI" part: Continous integration means continous
+    testing of whether the branches of multiple developers integrate
+    cleanly into the main repository.
+  - The test runs are done on multiple JREs:
+    * Oracle Java 7
+    * Oracle Java 8
+    * OpenJDK 7
+  - The success/failure of the test runs are shown at GitHub in the pull
+    request. The log files can also be viewed.
+  - The tests are repeated if you push new commits to the branch.
+
+  Not only does this enforce that unit tests are monitored, but it can
+  also help developers with slow computers or lack of JUnit:
+  If you cannot run the tests yourself, you may submit a pull request
+  marked as "don't merge yet" just to get the test results.
+  In my experience, GitHub even triggers Travis CI as soon as you open
+  the site for creating a pull request. Thus you don't need to submit it
+  immediately if you first want to check for test failures.
+  Travis CI notably is a widely used service, so Google may help you
+  with plenty of documentation about things such as how to trigger more
+  test runs.
 
 - 0006815: [Code quality] l10n: Add config for Transifex command line
            tool "tx" (xor)
