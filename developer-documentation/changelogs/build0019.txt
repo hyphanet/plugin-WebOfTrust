@@ -237,7 +237,11 @@ CHANGELOG about stuff only interesting for developers:
 - 0006849: [Code quality] Allow Java 7 features to be used in the code
            (xor)
 
-  FIXME
+  Freenet build 1473 switched from Java 6 to Java 7 as the minimal
+  required Java version. As a consequence, this now also applies to WoT.
+
+  As a positive consequence, developers can now benefit from the new
+  language features and API of Java 7.
 
 - 0006861: [Code quality] Ant builder: Support analyzing test coverage
            with Cobertura (xor)
