@@ -445,7 +445,10 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		
 		flushCaches();
 		
-		assertEquals(new HashSet<IntroductionPuzzle>(ofToday), new HashSet<IntroductionPuzzle>(mPuzzleStore.getOfTodayByInserter(mOwnIdentities.get(0))));
+		List<IntroductionPuzzle> query = mPuzzleStore.getOfTodayByInserter(mOwnIdentities.get(0));
+		
+		assertEquals(listToSetWithDuplicateCheck(ofToday),
+		             listToSetWithDuplicateCheck(query));
 	}
 
 	public void testGetByInserterDateIndex() throws UnknownPuzzleException, UnknownIdentityException {
