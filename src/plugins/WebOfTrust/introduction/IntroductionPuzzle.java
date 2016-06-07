@@ -18,6 +18,7 @@ import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrustInterface;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
+import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
@@ -28,7 +29,7 @@ import freenet.support.TimeUtil;
  * of already existing identities. This is the only way to get onto the web of trust if you do not know someone who will add you manually.
  */
 @SuppressWarnings("serial")
-public class IntroductionPuzzle extends Persistent implements Cloneable {
+public class IntroductionPuzzle extends Persistent implements ReallyCloneable<IntroductionPuzzle> {
 	
 	public static enum PuzzleType { Captcha };
 	
@@ -460,7 +461,11 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		copy.initializeTransient(mWebOfTrust);
 		return copy;
 	}
-	
+
+	@Override public IntroductionPuzzle cloneP() {
+		return clone();
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if(o == this)
