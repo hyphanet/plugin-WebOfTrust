@@ -4,7 +4,8 @@ Web of Trust Version 0.4.4 build0019
 SUMMARY AND OUTLOOK (detailed changelog is below):
 
 As the previous build was mostly new code to improve performance, the
-main focus of this release shall be bugfixes and unit tests.
+main focus of this release shall be bugfixes and many new tools for
+developers.
 Alternating between new code and maintenance hopefully guarantees the
 quality of the codebase to flourish.
 To not give you a boring release without apparent changes, the build
