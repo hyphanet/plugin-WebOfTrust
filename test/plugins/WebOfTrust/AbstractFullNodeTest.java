@@ -96,6 +96,7 @@ public abstract class AbstractFullNodeTest
         params.useSlashdotCache = false;
         params.ipAddressOverride = null;
         params.enableFCP = true;
+        params.enablePlugins = true;
 
         if(!sGlobalTestInitDone) {
             // NodeStarter.createTestNode() will throw if we do not do this before
