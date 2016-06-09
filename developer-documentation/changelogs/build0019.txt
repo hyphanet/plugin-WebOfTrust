@@ -246,7 +246,42 @@ CHANGELOG about stuff only interesting for developers:
 - 0006861: [Code quality] Ant builder: Support analyzing test coverage
            with Cobertura (xor)
 
-  FIXME
+  Cobertura is a tool which injects its own code during the unit tests
+  to analyze which code of the WoT core is called during test runs.
+  This yields HTML output which contains things such as:
+  - a view of the source code with the lines being color-coded as:
+    red = untested, green = tested.
+  - a percentage of how many lines of code are covered by the tests.
+  - a percentage of how many code paths (if() etc) are covered by the
+    tests.
+  - bonus (static?) analysis: the "average McCabe's cyclomatic code
+    complexity for all methods." = average number of code paths. This
+    can be used to find giant functions which need to be split up.
+  - the above statistics both for the whole repository and also for each
+    package and class.
+
+  I've amended the Ant builders of fred and Web of Trust to optionally
+  use Cobertura and provide the HTML output at ./test-coverage/html.
+
+  As dependency you only need to install the standard Ubuntu "cobertura"
+  package. Alternatively, put a cobertura.jar into /usr/share/java/
+  It can then be executed by:
+    ant -Dtest.coverage=true
+  You can also compute test coverage as caused by only a specific single
+  unit test class:
+    ant -Dtest.coverage=true -Dtest.class=packageName.ClassName
+
+  For fred, the code is pending as a pull request:
+    https://github.com/freenet/fred/pull/553
+
+  Here are the current analysis results for fred and WoT:
+    Summary of analysis:
+      Freenet core: http://i.imgur.com/xTuZwBv.png
+      Web of Trust: http://i.imgur.com/Ht1pQbj.png
+
+    Detailed HTML output (you need Freenet for those links):
+      Freenet core: http://127.0.0.1:8888/CHK@ukoL~NGt6t0p9VRJ7RATO0vxlGVr0mBvL0qB164A4Y8,DbjfwdzSP7hDN11-s20k79tRURobCRtyZyVGppVH1ZY,AAMC--8/test-coverage-fred_testing-build-1474-pre1-122-g5baa142/index.html
+      Web of Trust: http://127.0.0.1:8888/CHK@PmCkInFQYV4pMk~hf4D3cS7KPQWobQVMLY3kRaXnqh4,x2gH3qBymq4fbayvZbudvD9EXWG9J6OuIR41iFUvxCc,AAMC--8/test-coverage-WebOfTrust_build0018-147-gae56c33/index.html
 
 - 0006760: [Code quality] Use Travis CI (nextgens, xor)
 
