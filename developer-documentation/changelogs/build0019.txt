@@ -333,7 +333,32 @@ CHANGELOG about stuff only interesting for developers:
 - 0006846: [Code quality] Use a human readable file format for
            serializing Identity XML files to disk (ArneBab, xor)
 
-  FIXME
+  The core network traffic of WoT is upload and download of "Identity
+  XML files". These contain things such as the name of your identity,
+  the applications it uses (Sone, Freemail, etc.), and the trust values
+  you have chosen to publish.
+  WoT downloads those files for all known and trusted identities.
+
+  As download from the network is usually faster than processing the
+  files, they will be queued to disk before processing.
+  Class IdentityFileDiskQueue can be configured to archive the files
+  after processing so they can be used for scientific or debugging
+  purposes. For example, you can run an offline instance of WoT and feed
+  its Identity file queue with previously archived files to reproduce
+  bugs.
+
+  To ease those developer purposes, the format of the files has been
+  changed from Java serialization to a human readable file format.
+  The file format is based on fred's class SimpleFieldSet, which is the
+  foundation of the Freenet client protocol (FCP). Thus, if a FCP
+  library is available in your favorite programming language, it shall
+  be easy for you to write a parser for the new file format.
+
+  For an explanation of the file format, see: https://github.com/freenet/plugin-WebOfTrust/blob/3aff914346079760fa2e5921c30633e6f44c49a0/src/plugins/WebOfTrust/IdentityFile.java#L22-L70
+  For an explanation of how to repeat test runs using the queue, see: https://bugs.freenetproject.org/view.php?id=6873
+  For FCP libraries in various programming languages, see: https://wiki.freenetproject.org/Projects
+
+  Thanks to ArneBab for making me realize this feature is a good idea!
 
 - 0006557: [Code quality] Ant: Builder silently won't run unit tests if
            there is no JUnit installed, should instead abort with error
