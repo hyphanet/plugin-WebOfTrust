@@ -134,15 +134,30 @@ CHANGELOG - prefixed with the bugtracker issue number:
 - 0006615: [Security] TheSeeker's machines are compromised. Maybe write code to remove Trust to his old seed (xor)
 - 0006722: [Security] FIXME
 
-- 0006817: [Bugs] Fix Norwegian Bokmål and Portuguese (Brazil)
+- 0006816: [Usability] Update translations from Transifex, add new ones (xor)
+  0006817: [Bugs] Fix Norwegian Bokmål and Portuguese (Brazil)
            translations to work (xor)
 
-  These translations were added in the previous WoT release.
-  When you configured the Freenet web interface to those languages, WoT
-  would just continue to show up in English.
-  This has been fixed.
+  New translations:
+    Croatian
+    Bokmål (Norwegian)
+    Portuguese as spoken in Brazil
+    Portuguese as spoken in Portugal
 
-- 0006816: [Usability] Update translations from Transifex, add new ones (xor)
+  Updated translations:
+    lang_de.l10n    |  30 ++---
+    lang_el.l10n    | 126 ++++-----------------
+    lang_en.l10n    |  32 +++---
+    lang_es.l10n    | 271 +++++++++++++++++++++++----------------------
+    lang_fi.l10n    | 102 -----------------
+    lang_fr.l10n    | 206 +++++++++++++++++-----------------
+    lang_hu.l10n    |  72 ------------
+    lang_it.l10n    | 127 +++++----------------
+    lang_nl.l10n    | 109 ++----------------
+    lang_pl.l10n    |  97 ----------------
+    lang_ru.l10n    |  65 ++---------
+    lang_zh-cn.l10n | 225 +++++++++++++++++++------------------
+
 - 0006569: [Usability] L10n: Backport improvements at German l10n to English (xor)
 - 0006570: [Usability] L10n: Instead of "Trust" / "Score", use "Trust" and "Computed trust" (xor)
 - 0006214: [Usability] L10n: Get rid of technical terms "Insert / Request URI" (xor)
