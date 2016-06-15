@@ -181,6 +181,8 @@ CHANGELOG - prefixed with the bugtracker issue number:
     lang_ru.l10n    |  65 ++---------
     lang_zh-cn.l10n | 225 +++++++++++++++++++------------------
 
+  Huge thanks to the many translators on Transifex!
+
 - 0006569: [Usability] L10n: Backport improvements at German l10n to English (xor)
 - 0006570: [Usability] L10n: Instead of "Trust" / "Score", use "Trust" and "Computed trust" (xor)
 - 0006214: [Usability] L10n: Get rid of technical terms "Insert / Request URI" (xor)
@@ -542,6 +544,7 @@ Thanks to:
   - ArneBab
   - Bert Massop
   - nextgens
+  - The many translators on Transifex
 
 Links:
   [1] https://bugs.freenetproject.org/view.php?id=3816
