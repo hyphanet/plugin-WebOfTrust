@@ -254,6 +254,19 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
 - 0006596: [Bugs] Add workaround for db4o bug (xor)
 
+  This fixes potentially showing wrong information on the last page of
+  the "Other people's identities" menu (previously "Known anonymous
+  identities").
+
+  It is difficult to say whether this did happen in practice, it was
+  triggered by a db4o bug which is too complex to justify doing an
+  analysis of when it would happen.
+  If it did happen, it should at least have only affected the UI, not
+  the actual database contents.
+
+  If you are a developer and have assertions enabled, it also fixes
+  AssertionError happening on that page. Notice that assertions slow
+  down WoT very much, so you should only enable them for test runs.
 
 CHANGELOG about stuff only interesting for developers:
 
