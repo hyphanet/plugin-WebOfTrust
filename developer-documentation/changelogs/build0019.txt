@@ -183,14 +183,35 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
   Huge thanks to the many translators on Transifex!
 
-- 0006569: [Usability] L10n: Backport improvements at German l10n to English (xor)
-- 0006570: [Usability] L10n: Instead of "Trust" / "Score", use "Trust" and "Computed trust" (xor)
-- 0006214: [Usability] L10n: Get rid of technical terms "Insert / Request URI" (xor)
-- 0006568: [Usability] L10n: Instead of "contexts", use "services" (xor)
-- 0006565: [Usability] Statistics page l10n: "Average time for full score re-computation" string lacks unit (seconds) (xor)
-- 0004901: [Usability] L10n: Fix glitches (xor)
-- 0006409: [Usability] L10n: when logged in the option “Create new Identity” seems strange. (xor)
-- 0006818: [Usability] Process issues on Transifex (xor)
+- 0006569: [Usability] L10n: Backport improvements at German l10n to
+           English (xor)
+  0006570: [Usability] L10n: Instead of "Trust" / "Score", use "Trust"
+           and "Computed trust" (xor)
+  0006214: [Usability] L10n: Get rid of technical terms "Insert /
+           Request URI" (xor)
+  0006568: [Usability] L10n: Instead of "contexts", use "services"
+           (xor)
+  0006565: [Usability] Statistics page l10n: "Average time for full
+           score re-computation" string lacks unit (seconds) (xor)
+  0004901: [Usability] L10n: Fix glitches (xor)
+  0006409: [Usability] L10n: when logged in the option “Create new
+           Identity” seems strange. (xor)
+  0006818: [Usability] Process issues on Transifex (xor)
+
+  In the last release, the German translation had received a full review
+  & revamp. As I'm German, this means that it can be considered a
+  reference translation now.
+  Due to the large amount of improvements, it was decided to not
+  immediately port them to English in the previous release.
+  Thus this WoT release now ships the same improvements to the English
+  l10n.
+
+  The amount of improvements would be too large to explain here.
+  You can check the differences on GitHub: https://github.com/freenet/plugin-WebOfTrust/compare/freenet:build0018...freenet:3aff914346079760fa2e5921c30633e6f44c49a0
+
+  Click "Files changed", then "39 changed files", then
+  "src/plugins/WebOfTrust/l10n/lang_en.l10n".
+
 - 0006812: [Features] wotutil.sh: Allow usage of FCP API (xor)
 
   build0018 had added "wotutil.sh" as a new command line user interface
