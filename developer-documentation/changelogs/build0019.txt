@@ -76,20 +76,6 @@ anymore, your node will update WoT automatically.
 
 CHANGELOG - prefixed with the bugtracker issue number:
 
-- 0000001: title_of_issue_1.............................................
-           more_lines_of_title..........................................
-
-  Blah.
-  Blah.
-
-- 0000002: .............................................................
-           .............................................................
-  0000003: .............................................................
-           .............................................................
-  
-  Blah.
-  Blah.
-
 - 0006653: [Bugs] IdentityFileProcessor can get triggered during early
            startup, slows it down (xor)
 
@@ -269,12 +255,6 @@ CHANGELOG - prefixed with the bugtracker issue number:
   down WoT very much, so you should only enable them for test runs.
 
 CHANGELOG about stuff only interesting for developers:
-
-- 0000004: .............................................................
-           .............................................................
-
-  Blah.
-  Blah.
 
 - 0006840: [Code quality] Provide xor's WoT bachelor thesis as a
            developer's manual (xor)
