@@ -123,29 +123,6 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
 - 0006648: [Performance] StatisticsPage: Add statistics to monitor worst case runtime of new distrust computation (xor)
 
-- 0006615: [Security] TheSeeker's machines are compromised. Write code
-           to remove Trust to his old seed (xor)
-
-  TheSeeker has voluntarily told the Freenet community that the police
-  has seized his computers. He says that this was not related to his
-  Freenet activities, and that what he is being accused of was not an
-  intentional criminial activity he did himself. He says this rather was
-  something the software he was running did in an automated way.
-  We still welcome him as part of the Freenet volunteer team as he has
-  contributed over many years and does seem to be a nice person who is
-  unlikely to intentionally commit crime.
-
-  Nevertheless, action must be taken with regards to WoT:
-  An identity of his was a seed identity, and the hard disks which the
-  police have seized contain the passwords to access this identity.
-  As WoT assigns a trust value of 100 to seeds by default, the trust
-  value to his compromised identity must be removed by this WoT release.
-  Trust values which you have manually assigned to that identity should
-  *not* be removed. It will only remove those with the default comment
-  which says "Automatically assigned trust to a seed identity."
-
-  FIXME: Provide the URI of the identity
-
 - 0006722: [Security] FIXME
 
 - 0006816: [Usability] Update translations from Transifex, add new ones (xor)
