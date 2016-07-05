@@ -121,7 +121,36 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Thus, if you're an author of a 3rd party client, please fix it to
   limit the amount of exported trust values to 512.
 
-- 0006648: [Performance] StatisticsPage: Add statistics to monitor worst case runtime of new distrust computation (xor)
+- 0006648: [Performance] StatisticsPage: Add statistics to monitor
+           worst case runtime of new distrust computation (xor)
+
+  The previous release delivery a rewrite of the core WoT algorithm to
+  be fully incremental. This was subject of the bachelor's thesis which
+  this build ships as PDF.
+  While the algorithm shows a sufficiently quick average runtime, the
+  mathematical theory indicates a potential worst case runtime which
+  would not be acceptable.
+  It is unclear whether and how often the worst case will happen with
+  the real network - this depends a lot on the network topology and
+  usage patterns.
+  To investigate whether further optimization of the algorithm would be
+  worthwhile, this build adds statistics to measure how often the worst
+  case happens during normal operation of WoT.
+
+  If you want to help this investigation, please provide the following
+  statistics from the "Community / Statistics" menu:
+  - Number of incremental trust value re-computations due to new
+    distrust
+  - Number of incremental trust value re-computations due to new
+    distrust - only of those which took more than 10 seconds
+  - Average seconds for incremental trust value re-computation due to
+    new distrust
+  - Average seconds for incremental trust value re-computation due to
+    new distrust - only of those which took more than 10 seconds
+
+  Please ensure your WoT has been running for at least a day before you
+  provide the stats. Ideally keep it running for as long as you can.
+  Thank you!
 
 - 0006722: [Security] FIXME
 
