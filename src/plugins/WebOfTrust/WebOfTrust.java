@@ -1738,13 +1738,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// workaround is fixed: https://bugs.freenetproject.org/view.php?id=6646
 			final ObjectSet<Identity> allIdentities = getAllIdentities();
 			
+			// Key = Identity.getID(); Value = Rank of the identity
 			// At the end of the loop body, this table will be filled with the ranks of all identities which are visible for treeOwner.
 			// An identity is visible if there is a trust chain from the owner to it.
 			// The rank is the distance in trust steps from the treeOwner.			
 			// So the treeOwner is rank 0, the trustees of the treeOwner are rank 1 and so on.
 			// (The initial size is specified as twice the possible maximal amount of entries to
 			// ensure that the HashMap does not have to be grown.)
-			final HashMap<Identity, Integer> rankValues = new HashMap<Identity, Integer>(allIdentities.size() * 2);
+			final HashMap<String, Integer> rankValues
+				= new HashMap<String, Integer>(allIdentities.size() * 2);
 			
 			// Compute the rank values
 			{
@@ -1775,10 +1777,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 					Score selfScore = getScore(treeOwner, treeOwner);
 					
 					if(selfScore.getRank() >= 0) { // It can only give it's rank if it has a valid one
-						rankValues.put(treeOwner, selfScore.getRank());
+						rankValues.put(treeOwner.getID(), selfScore.getRank());
 						unprocessedTrusters.addLast(treeOwner);
 					} else {
-						rankValues.put(treeOwner, null);
+						rankValues.put(treeOwner.getID(), null);
 					}
 				} catch(NotInTrustTreeException e) {
 					// This only happens in unit tests.
@@ -1787,7 +1789,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				while(!unprocessedTrusters.isEmpty()) {
 					final Identity truster = unprocessedTrusters.removeFirst();
 	
-					final Integer trusterRank = rankValues.get(truster);
+					final Integer trusterRank = rankValues.get(truster.getID());
 					
 					// The truster cannot give his rank to his trustees because he has none (or infinite), they receive no rank at all.
 					if(trusterRank == null || trusterRank == Integer.MAX_VALUE) {
@@ -1799,16 +1801,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 					
 					for(Trust trust : getGivenTrusts(truster)) {
 						final Identity trustee = trust.getTrustee();
-						final Integer oldTrusteeRank = rankValues.get(trustee);
+						final Integer oldTrusteeRank = rankValues.get(trustee.getID());
 						
 						
 						if(oldTrusteeRank == null) { // The trustee was not processed yet
 							if(trust.getValue() > 0) {
-								rankValues.put(trustee, trusteeRank);
+								rankValues.put(trustee.getID(), trusteeRank);
 								unprocessedTrusters.addLast(trustee);
 							}
 							else
-								rankValues.put(trustee, Integer.MAX_VALUE);
+								rankValues.put(trustee.getID(), Integer.MAX_VALUE);
 						} else {
 							// Breadth first search will process all rank one identities are processed before any rank two identities, etc.
 							assert(oldTrusteeRank == Integer.MAX_VALUE || trusteeRank >= oldTrusteeRank);
@@ -1826,7 +1828,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 										+ "the current rank of Integer.MAX_VALUE.";
 								} catch(NotTrustedException e) {
 									if(trust.getValue() > 0) {
-										rankValues.put(trustee, trusteeRank);
+										rankValues.put(trustee.getID(), trusteeRank);
 										unprocessedTrusters.addLast(trustee);
 									}
 								}
@@ -1843,7 +1845,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// The score of an identity is the sum of all weighted trust values it has received.
 				// Each trust value is weighted with the capacity of the truster - the capacity decays with increasing rank.
 				Integer targetScore;
-				final Integer targetRank = rankValues.get(target);
+				final Integer targetRank = rankValues.get(target.getID());
 				
 				/* RankComputationTest does this as a unit test for us
 				 * 
@@ -1866,7 +1868,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 							targetScore = 0;
 							for(Trust receivedTrust : getReceivedTrusts(target)) {
 								final Identity truster = receivedTrust.getTruster();
-								final Integer trusterRank = rankValues.get(truster);
+								final Integer trusterRank = rankValues.get(truster.getID());
 								
 								// The capacity is a weight function for trust values which are given from an identity:
 								// The higher the rank, the less the capacity.
