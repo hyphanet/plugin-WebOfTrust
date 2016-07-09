@@ -1194,7 +1194,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			// This function aims to be resistant against corrupted databases, so it must be able to
 			// deal with duplicates of Identity/Trust/Score objects. Thus, it uses class
-			// IdentitifierHashSet for deduplication.
+			// IdentitifierHashSet for deduplication instead of IdentityHashSet.
 			
 			final IdentifierHashSet<Identity> allIdentities
 				= new IdentifierHashSet<Identity>(original.getAllIdentities());
