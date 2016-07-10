@@ -17,8 +17,6 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.util.IdentifierHashSet;
 
-import com.db4o.ObjectSet;
-
 /**
  * Tests class {@link WebOfTrust}.
  * NOTICE: {@link WoTTest} also tests that class. It is pending to be merged with this one. */
