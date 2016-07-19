@@ -7,6 +7,7 @@ source_file = src/plugins/WebOfTrust/l10n/lang_en.l10n
 source_lang = en
 trans.nb_NO = src/plugins/WebOfTrust/l10n/lang_nb-no.l10n
 trans.pt_BR = src/plugins/WebOfTrust/l10n/lang_pt-br.l10n
+trans.pt_PT = src/plugins/WebOfTrust/l10n/lang_pt-PT.l10n
 trans.zh_CN = src/plugins/WebOfTrust/l10n/lang_zh-cn.l10n
 type = UNICODEPROPERTIES
 

@@ -9,27 +9,35 @@
 	<property name="bcprov.location" location="../fred/lib/bcprov.jar"/>
 	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WebOfTrust.jar"/>
 	<property name="svn.revision" value="@custom@"/>
-	<property name="source-version" value="1.6"/>
-	<property name="target-version" value="1.6"/>
+	<property name="source-version" value="1.7"/>
+	<property name="target-version" value="1.7"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
 	<property name="build-test-jar" location="${build-test}/WebOfTrust-with-unit-tests.jar"/>
+	<property name="build-test-coverage" location="test-coverage/"/>
 	<property name="dist" location="dist/"/>
 	<property name="src" location="src/"/>
 	<property name="javadoc" location="javadoc/"/>
 	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
 	<property name="hamcrest.location" value="/usr/share/java/hamcrest-core.jar"/>
+	<property name="cobertura.location" value="/usr/share/java/cobertura.jar"/>
 	<property name="version.src" value="plugins/WebOfTrust/Version.java" />
 	<property name="version.build" value="plugins/WebOfTrust/Version.class" />
 
 	<available file="src/plugins/WebOfTrust/Version.java" property="version.present"/>
 	<available file="${junit.location}" property="junit.present"/>
 	<available file="${hamcrest.location}" property="hamcrest.present"/>
+	<available file="${cobertura.location}" property="cobertura.present"/>
+	<property name="test.coverage" unless:set="${test.coverage}" if:true="${cobertura.present}" value="true"/>
 
 	<path id="lib.path">
 		<pathelement location="${bcprov.location}"/>
 		<pathelement location="${freenet-ext.location}"/>
 		<pathelement location="${freenet-cvs-snapshot.location}"/>
+	</path>
+
+	<path id="cobertura.path">
+		<pathelement location="${cobertura.location}"/>
 	</path>
 
 	<presetdef name="javac">
@@ -69,10 +77,12 @@
 		<mkdir dir="${build}"/>
 		<mkdir dir="${build-test}"/>
 		<mkdir dir="${build-test}/test"/>
+		<mkdir dir="${build-test-coverage}"/>
 		<mkdir dir="${dist}"/>
 		<echo message="Using ${freenet-cvs-snapshot.location} as freenet-cvs-snapshot.jar"/>
 		<echo message="Using ${freenet-ext.location} as freenet-ext.jar"/>
 		<echo message="Using ${bcprov.location} as bcprov.jar"/>
+		<echo message="Using ${cobertura.location} as cobertura.jar"/>
 	</target>
 
 	<!-- ================================================== -->
@@ -120,7 +130,7 @@
 		</and>
 	</condition>
 
-	<target name="unit-build" depends="compile" if="unit.dependencies">
+	<target name="junit-compile" depends="compile" if="unit.dependencies">
 		<javac srcdir="test/" destdir="${build-test}/test" debug="on" optimize="on"
 				source="${source-version}" target="${target-version}" >
 			
@@ -133,6 +143,32 @@
 			<compilerarg value="-Xlint"/>
 			<include name="**/*.java"/>
 		</javac>
+		
+		<!-- Copy main non-test classes to tests so we can produce a full working WoT JAR -->
+		<copy todir="${build-test}/test" overwrite="false">
+			<fileset dir="${build}/"/>
+		</copy>
+	</target>
+	
+	<target name="junit-inject-cobertura" depends="clean, junit-compile"
+			if="${test.coverage}" unless="${test.benchmark}">
+		
+		<fail unless:true="${cobertura.present}" message="${cobertura.location} not found!"/>
+		
+		<taskdef classpathref="cobertura.path" resource="tasks.properties"/>
+		
+		<cobertura-instrument datafile="${build-test-coverage}/cobertura.ser">
+			<fileset dir="${build-test}/test">
+				<include name="**/*.class" />
+				<!-- kaptcha is a third-party library -->
+				<exclude name="plugins/WebOfTrust/introduction/captcha/kaptcha/**/*"/>
+				<exclude name="**/*Test*.class"/>
+				<exclude name="**/*Benchmark*.class"/>
+			</fileset>
+		</cobertura-instrument>
+	</target>
+	
+	<target name="junit-package" depends="junit-compile, junit-inject-cobertura">
 		<jar jarfile="${build-test-jar}" duplicate="fail">
 			<manifest>
 				<attribute name="Plugin-Main-Class" value="plugins.WebOfTrust.WebOfTrust"/>
@@ -140,13 +176,14 @@
 			<fileset dir="src/" casesensitive="no">
 				<include name="*.txt"/> <!-- Include the GPL -->
 			</fileset>
-			<fileset dir="${build}/"/>
+			
 			<fileset dir="${build-test}/test/"/> <!-- Separate directory to exclude the JAR -->
 		</jar>
 	</target>
 
-	<target name="junit" depends="unit-build" unless="${test.skip}"
+	<target name="junit" depends="junit-package" unless="${test.skip}"
 			description="Runs all unit tests. Options:&#10;
+		        - Set test.coverage=true to analyze test coverage&#10;
 		        - Set test.skip=true to skip&#10;
 		        - Set test.class=&lt;test class&gt; (e.g. test.class=plugins.WebOfTrust.WoTTest) to run a single test)&#10;
 		        - Set test.benchmark=true to run benchmarks.&#10;
@@ -166,8 +203,14 @@
 				<pathelement location="${build-test-jar}"/>
 				<pathelement location="${junit.location}"/>
 				<pathelement location="${hamcrest.location}"/>
+				<pathelement location="${cobertura.location}" if:true="${test.coverage}"/>
 			</classpath>
 
+			<!-- Workaround for Cobertura failing on Java 7 with:
+				   "Expecting a stackmap frame at branch target [...]"
+			     TODO: Remove if not necessary anymore. Added on 2016-05-31. -->
+			<jvmarg if:true="${test.coverage}" value="-XX:-UseSplitVerifier"/>
+			
 			<assertions><enable/></assertions>
 			<formatter type="plain" usefile="false"/>
 			<test if="test.class" name="${test.class}"/>
@@ -187,11 +230,19 @@
 				</zipfileset>
 			</batchtest>
 			
+			<sysproperty key="net.sourceforge.cobertura.datafile"
+				file="${build-test-coverage}/cobertura.ser" if:true="${test.coverage}"/>
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
 			<jvmarg value="-Djava.awt.headless=true"/>
 			<!-- Pass the name of the JAR to the tests so they can load it into a fred instance -->
 			<jvmarg value="-DWOT_test_jar=${build-test-jar}"/>
 		</junit>
+		
+		<cobertura-report if:true="${test.coverage}" unless:true="${test.benchmark}"
+			srcdir="${src}"
+			datafile="${build-test-coverage}/cobertura.ser"
+			destdir="${build-test-coverage}/html"
+			format="html"/>
 		
 		<!-- Benchmarks. They need assertions disabled so they're a task of their own. -->
 		<!-- Also, we set showoutput="true" so you get live output as benchmarks take a long time -->
@@ -255,6 +306,7 @@
 	<target name="clean" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node.">
 		<delete dir="${build}"/>
 		<delete dir="${build-test}"/>
+		<delete dir="${build-test-coverage}"/>
 		<delete dir="${dist}"/>
 		<delete file="${debug-node-WebOfTrust-plugin.location}"/>
 	</target>
