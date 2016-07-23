@@ -22,7 +22,6 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.terminal.WOTUtil;
 import plugins.WebOfTrust.util.StopWatch;
-import freenet.crypt.DummyRandomSource;
 
 public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
 
