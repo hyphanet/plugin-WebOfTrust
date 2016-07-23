@@ -138,6 +138,10 @@ public final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 		return map.keySet().hashCode();
 	}
 
+	/**
+	 * ATTENTION: This is not compliant to {@link Set#equals(Object)}.
+	 * For example, it will return false for any given Object which is not an IdentifierHashSet,
+	 * even if the Object is a {@link Set}. */
 	@Override public boolean equals(Object obj) {
 		if(obj == null)
 			return false;
