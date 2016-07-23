@@ -11,6 +11,7 @@ import java.util.StringTokenizer;
 import java.util.UUID;
 
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.support.CurrentTimeUTC;
 
 
@@ -22,7 +23,7 @@ import freenet.support.CurrentTimeUTC;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Score extends Persistent implements Cloneable, EventSource {
+public final class Score extends Persistent implements ReallyCloneable<Score>, EventSource {
 	
 	/** @see Serializable */
 	private static transient final long serialVersionUID = 1L;
@@ -397,6 +398,10 @@ public final class Score extends Persistent implements Cloneable, EventSource {
 		clone.setCreationDate(getCreationDate());
 		clone.mLastChangedDate = (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 		return clone;
+	}
+
+	@Override public Score cloneP() {
+		return clone();
 	}
 
 	@Override

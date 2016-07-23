@@ -10,6 +10,7 @@ import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 
 import junit.framework.TestCase;
@@ -18,9 +19,8 @@ import org.junit.rules.TemporaryFolder;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
-
-import com.db4o.ObjectSet;
-
+import plugins.WebOfTrust.util.IdentifierHashSet;
+import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
@@ -290,43 +290,106 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		Persistent.checkedCommit(mWoT.getDatabase(), this);
 	}
 
+	/**
+	 * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
+	 * information about using the returned HashSet. */
 	protected HashSet<Identity> cloneAllIdentities() {
-		final ObjectSet<Identity> identities = mWoT.getAllIdentities();
-		final HashSet<Identity> clones = new HashSet<Identity>(identities.size() * 2);
-		
-		for(Identity identity : identities) {
-			// We assertTrue upon the return value of HashSet.add() because it will return false if the identity was already in the HashSet:
-			// Each identity should only exist once!
-			assertTrue(clones.add(identity.clone()));
-		}
-
-		return clones;
+		return listToSetWithDuplicateCheck(mWoT.getAllIdentities(), true);
 	}
-	
+
+	/**
+	 * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
+	 * information about using the returned HashSet.
+	 * 
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllIdentities()} instead. */
+	@Deprecated
+	protected HashSet<Identity> getAllIdentities() {
+		return listToSetWithDuplicateCheck(mWoT.getAllIdentities());
+	}
+
+	/**
+	 * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
+	 * information about using the returned HashSet. */
 	protected HashSet<Trust> cloneAllTrusts() {
-		final ObjectSet<Trust> trusts = mWoT.getAllTrusts();
-		final HashSet<Trust> clones = new HashSet<Trust>(trusts.size() * 2);
-		
-		for(Trust trust : trusts) {
-			// We assertTrue upon the return value of HashSet.add() because it will return false if the Trust was already in the HashSet:
-			// Each Trust should only exist once!
-			assertTrue(clones.add(trust.clone()));
-		}
-
-		return clones;
+		return listToSetWithDuplicateCheck(mWoT.getAllTrusts(), true);
 	}
-	
+
+	/**
+	 * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
+	 * information about using the returned HashSet.
+	 * 
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllTrusts()} instead. */
+	@Deprecated
+	protected HashSet<Trust> getAllTrusts() {
+		return listToSetWithDuplicateCheck(mWoT.getAllTrusts());
+	}
+
+	/**
+	 * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
+	 * information about using the returned HashSet. */
 	protected HashSet<Score> cloneAllScores() {
-		final ObjectSet<Score> scores = mWoT.getAllScores();
-		final HashSet<Score> clones = new HashSet<Score>(scores.size() * 2);
+		return listToSetWithDuplicateCheck(mWoT.getAllScores(), true);
+	}
+
+	/**
+	 * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
+	 * information about using the returned HashSet.
+	 * 
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#getAllScores()} instead. */
+	@Deprecated
+	protected HashSet<Score> getAllScores() {
+		return listToSetWithDuplicateCheck(mWoT.getAllScores());
+	}
+
+	/**
+	 * Calls {@link #listToSetWithDuplicateCheck(List, boolean)} with returnClones = false
+	 * 
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#listToSetWithDuplicateCheck(List)} */
+	@Deprecated
+	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
+			List<T> list) {
 		
-		for(Score score : scores) {
-			// We assertTrue upon the return value of HashSet.add() because it will return false if the Score was already in the HashSet:
-			// Each Score should only exist once!
-			assertTrue(clones.add(score.clone()));
+		return listToSetWithDuplicateCheck(list, false);
+	}
+
+	/**
+	 * NOTICE: HashSet is generally not safe for use with {@link Persistent} due to the
+	 * implementations of {@link Persistent#equals(Object)} in many of its child classes:
+	 * They typically compare not only object identity but also object state. Thus multiple
+	 * instances of the same object with different state could enter HashSets. For a detailed
+	 * explanation, see class {@link IdentifierHashSet}.<br>
+	 * This function can return a HashSet safely, as it validates whether the passed list only
+	 * contains unique instances of the objects and thus the problems of equality checks cannot
+	 * arise. The function guarantees that it will cause test failure if duplicates are passed.<br>
+	 * However, when doing anything with the returned HashSet, please be aware of the behavior of
+	 * {@link Persistent#equals(Object)} implementations.
+	 * 
+	 * @deprecated
+	 *     Use {@link AbstractJUnit4BaseTest#listToSetWithDuplicateCheck(List, boolean)} */
+	@Deprecated
+	protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
+			List<T> list, boolean returnClones) {
+		
+		final HashSet<T> result = new HashSet<T>(list.size() * 2);
+		final IdentifierHashSet<T> uniquenessTest = new IdentifierHashSet<T>(list.size() * 2);
+		
+		for(T object : list) {
+			if(returnClones)
+				object = object.cloneP();
+			
+			// Check whether the calling code delivered a list of unique objects.
+			// We need to test this with an IdentifierHashSet due to the aforementioned issues of
+			// Persistent.equals().
+			assertTrue(uniquenessTest.add(object));
+			// Also, it is critical to ensure we don't just overwrite a potential duplicate in the
+			// set, because the calling unit test code typically wants to detect duplicates as they
+			// are usually bugs.
+			// This is implicitly checked by the above assert already. But we get the return value
+			// for free - so let's just test it.
+			assertTrue(result.add(object));
 		}
 		
-		return clones;
+		return result;
 	}
 
 	/**

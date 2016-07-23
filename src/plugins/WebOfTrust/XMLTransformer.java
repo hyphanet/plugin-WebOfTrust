@@ -321,10 +321,6 @@ public final class XMLTransformer {
 		ArrayList<String> identityContexts = null;
 		HashMap<String, String> identityProperties = null;
 		ArrayList<TrustListEntry> identityTrustList = null;
-		
-		public ParsedIdentityXML() {
-			
-		}
 	}
 	
 	/**

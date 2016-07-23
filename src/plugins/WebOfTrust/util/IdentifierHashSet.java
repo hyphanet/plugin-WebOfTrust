@@ -18,7 +18,7 @@ import plugins.WebOfTrust.Trust;
  * Certain classes which extend {@link Persistent}, such as {@link Identity}, {@link Trust} and
  * {@link Score}, provide an {@link Object#equals(Object)} implementation which does not only
  * compare whether the same "entity" is represented by two objects, but also whether its "version"
- * is the same:<br>
+ * is the same:<br> FIXME: Document at {@link Persistent#equals(Object)}.
  * For example, there can usually only be one {@link Trust} object between each pair of
  * {@link Identity} objects, and thus a pair of two {@link Identity} objects uniquely identifies
  * a Trust "entity". Nevertheless, {@link Trust#equals(Object)} will also return false when
@@ -31,13 +31,43 @@ import plugins.WebOfTrust.Trust;
  * I.e. it will behave like a {@link HashSet} with type {@link String}, to which the IDs of the
  * Persistent objects are added.
  * 
- * FIXME: The whole of this class was not tested yet. */
-final class IdentifierHashSet<T extends Persistent> implements Set<T> {
+ * FIXME: For {@link #add(Persistent)} etc., JavaDoc the main difference to the regular Set
+ * behavior: Here element.equals() is NOT the defining thing which decides whether something is
+ * added, removed, etc. add() will only check {@link Persistent#getID()}'s equals(). This is
+ * probably OK with the Set specification as it allows implementations to refuse adding certain
+ * elements. But according to the specification, we might actually have to throw if we refuse one,
+ * which we don't do currently. So this would require changing the current code, and I'm not sure
+ * whether it still would be suitable for WoT's purposes then :| If it is not, maybe just don't
+ * explicitly implement interface Set, i.e. use the same functions, but remove the "implements"
+ * declaration. */
+public final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 
-	private final HashMap<String, T> map = new HashMap<String, T>();
+	private final HashMap<String, T> map;
 
+	public IdentifierHashSet() {
+		map = new HashMap<String, T>();
+	}
+
+	public IdentifierHashSet(int initialCapacity) {
+		map = new HashMap<String, T>(initialCapacity);
+	}
+
+	public IdentifierHashSet(Collection<T> c) {
+		map = new HashMap<String, T>(Math.max(((int)(c.size()/0.75f)) + 1, 16));
+		addAll(c);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @throws NullPointerException If parameter e is null. */
 	@Override public boolean add(T e) {
-		return map.put(e.getID(), e) == null;
+		String id = e.getID();
+		if(map.containsKey(id))
+			return false;
+		
+		boolean notContained = map.put(id, e) == null;
+		assert(notContained);
+		return true;
 	}
 
 	@Override public boolean addAll(Collection<? extends T> c) {
@@ -102,6 +132,32 @@ final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 	@Override public <T> T[] toArray(T[] a) {
 		throw new UnsupportedOperationException("Not implemented yet.");
 
+	}
+
+	@Override public int hashCode() {
+		return map.keySet().hashCode();
+	}
+
+	/**
+	 * ATTENTION: This is not compliant to {@link Set#equals(Object)}.
+	 * For example, it will return false for any given Object which is not an IdentifierHashSet,
+	 * even if the Object is a {@link Set}. */
+	@Override public boolean equals(Object obj) {
+		if(obj == null)
+			return false;
+		
+		if(obj == this)
+			return true;
+		
+		if(!(obj instanceof IdentifierHashSet)) {
+			assert(false)
+				: "IdentifierHashSet.equals() can only compare to type IdentifierHashSet";
+			return false;
+		}
+		
+		IdentifierHashSet<?> other = (IdentifierHashSet<?>)obj;
+		
+		return map.keySet().equals(other.map.keySet());
 	}
 
 }

@@ -42,6 +42,7 @@ import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import plugins.WebOfTrust.ui.web.WebInterface;
+import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.StopWatch;
 
 import com.db4o.Db4o;
@@ -1156,6 +1157,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 	
 	/**
+	 * ATTENTION: Please resolve the TODOs in this function before putting it to use.
+	 * 
 	 * Does not do proper synchronization! Only use it in single-thread-mode during startup.
 	 * 
 	 * Creates a clone of the source database by reading all objects of it into memory and then writing them out to the target database.
@@ -1187,26 +1190,33 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// in the target database while the source is still open. This did not work: Identity objects disappeared magically, resulting
 			// in Trust objects .storeWithoutCommit throwing "Mandatory object not found" on their associated identities.
 			
-			// FIXME: Clone the Configuration object
+			// TODO: Clone the Configuration object
 			
-			final HashSet<Identity> allIdentities = new HashSet<Identity>(original.getAllIdentities());
-			final HashSet<Trust> allTrusts = new HashSet<Trust>(original.getAllTrusts());
-			final HashSet<Score> allScores = new HashSet<Score>(original.getAllScores());
+			// This function aims to be resistant against corrupted databases, so it must be able to
+			// deal with duplicates of Identity/Trust/Score objects. Thus, it uses class
+			// IdentitifierHashSet for deduplication instead of IdentityHashSet.
+			
+			final IdentifierHashSet<Identity> allIdentities
+				= new IdentifierHashSet<Identity>(original.getAllIdentities());
+			final IdentifierHashSet<Trust> allTrusts
+				= new IdentifierHashSet<Trust>(original.getAllTrusts());
+			final IdentifierHashSet<Score> allScores
+				= new IdentifierHashSet<Score>(original.getAllScores());
 			
 			for(Identity identity : allIdentities) {
-				identity.checkedActivate(16);
+				identity.activateFully();
 				identity.mWebOfTrust = null;
 				identity.mDB = null;
 			}
 			
 			for(Trust trust : allTrusts) {
-				trust.checkedActivate(16);
+				trust.activateFully();
 				trust.mWebOfTrust = null;
 				trust.mDB = null;
 			}
 			
 			for(Score score : allScores) {
-				score.checkedActivate(16);
+				score.activateFully();
 				score.mWebOfTrust = null;
 				score.mDB = null;
 			}
@@ -1338,81 +1348,103 @@ public final class WebOfTrust extends WebOfTrustInterface
 	
 	/**
 	 * Debug function for deleting duplicate identities etc. which might have been created due to bugs :)
-	 */
-	private synchronized void deleteDuplicateObjects() {
-		synchronized(mPuzzleStore) { // Needed for deleteWithoutCommit(Identity)
-		synchronized(mFetcher) { // Needed for deleteWithoutCommit(Identity)
-		synchronized(mSubscriptionManager) { // Needed for deleteWithoutCommit(Identity)
+	 * 
+	 * ATTENTION: Must be called before the {@link SubscriptionManager} is initialized: It doesn't
+	 * leave the SubscriptionManager event database in a correct state. Initialization of the
+	 * SubscriptionManager will flush its database and fix that.
+	 * 
+	 * ATTENTION: This function can cause OutOfMemoryError since it puts all existing Identity /
+	 * Trust / Score objects in large HashSets instead of iterating over the result of a database
+	 * query (which would ensure that already processed ones can be garbage-collected). This
+	 * approach was chosen intentionally to keep the code simple, as it shall be used for debugging
+	 * purposes only anyway.
+	 * 
+	 * @deprecated
+	 *    This should be converted to a function which only detects duplicate objects, not deletes
+	 *    them: It is run with debug logging only anyway, so it will not be a benefit to the users.
+	 *    Also, issues which cause duplicate objects should be fixed instead of being worked around
+	 *    by having a function which deletes them.
+	 *    Ideally, the function would throw or return false if there are duplicate objects, and the
+	 *    callers would prevent startup of WoT then.
+	 *    Before this can be done, please however convert all callers of this function to work with
+	 *    the new behavior. This especially applies to the upgrade code for old database formats
+	 *    which uses this function - it can likely be removed if the newer database format versions
+	 *    were deployed in an official release a long time ago already. (Edit: Actually I think it
+	 *    doesn't use this function, I think it merely links it from the JavaDoc.)
+	 *    Alternate solution: Amend startupDatabaseIntegrityTest() of all classes which require
+	 *    uniqueness to check whether another object with the same ID exists. This should be
+	 *    benchmarked though as O(N) queries for an ID could be very slow if the database queries
+	 *    are slow. It would certainly be the more clean solution since uniqueness is an integrity
+	 *    issue and thus should be handled in each class' integrity test.
+	 *    FIXME: While you're at it, notice that this function also lacks code to check for
+	 *    duplicates of {@link IntroductionPuzzle} objects. */
+	@Deprecated
+	synchronized void deleteDuplicateObjects() {
+		if(logDEBUG) Logger.debug(this, "deleteDuplicateObjects() ...");
+		
+		synchronized(mPuzzleStore) { // Needed for deleteWithoutCommit(Identity) etc.
+		synchronized(mFetcher) { // Needed for deleteWithoutCommit(Identity) etc.
+		synchronized(mSubscriptionManager) { // Needed for deleteWithoutCommit(Identity) etc.
 		synchronized(Persistent.transactionLock(mDB)) {
 		try {
-			HashSet<String> deleted = new HashSet<String>();
-
-			if(logDEBUG) Logger.debug(this, "Searching for duplicate identities ...");
-
-			for(Identity identity : getAllIdentities()) {
-				Query q = mDB.query();
-				q.constrain(Identity.class);
-				q.descend("mID").constrain(identity.getID());
-				q.constrain(identity).identity().not();
-				ObjectSet<Identity> duplicates = new Persistent.InitializingObjectSet<Identity>(this, q);
-				for(Identity duplicate : duplicates) {
-					if(deleted.contains(duplicate.getID()) == false) {
-						Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
-						deleteWithoutCommit(duplicate);
-						Persistent.checkedCommit(mDB, this);
-					}
-				}
-				deleted.add(identity.getID());
-			}
-			Persistent.checkedCommit(mDB, this);
+			// The database of computed Scores might be wrong due to the duplicates, so we
+			// recompute it if there were any duplicates.
+			boolean recomputeScores = false;
 			
-			if(logDEBUG) Logger.debug(this, "Finished searching for duplicate identities.");
+			// deleteWithoutCommit(i) would call beginTrustListImport(), and that function contains
+			// assert()s which would throw due to the duplicate Identitys/Trusts/Scores. So we
+			// emulate beginTrustListImport() by setting the following variable, which will prevent
+			// deleteWithoutCommit(i) from calling beginTrustListImport().
+			mTrustListImportInProgress = true;
+			
+			IdentifierHashSet<Identity> identitySet = new IdentifierHashSet<Identity>();
+			for(Identity i : getAllIdentities()) {
+				if(!identitySet.add(i)) {
+					Logger.error(this, "Deleting duplicate Identity: " + i);
+					deleteWithoutCommit(i);
+					recomputeScores = true;
+				}
+			}
+			
+			// Delete duplicate Trusts *after* Identitys: If there is a duplicate of an Identity,
+			// we want to keep its Trusts when deleting the duplicate Identity. If the Trusts were
+			// deleted before deleting Identitys, it could happen that we deleted the Trusts of the
+			// Identity which is kept when deleting the duplicate Identity, resulting in loss of all
+			// its Trusts.
+			IdentifierHashSet<Trust> trustSet = new IdentifierHashSet<Trust>();
+			for(Trust t : getAllTrusts()) {
+				if(!trustSet.add(t)) {
+					Logger.error(this, "Deleting duplicate trust: " + t);
+					t.deleteWithoutCommit();
+					recomputeScores = true;
+				}
+			}
+			
+			IdentifierHashSet<Score> scoreSet = new IdentifierHashSet<Score>();
+			for(Score s : getAllScores()) {
+				if(!scoreSet.add(s)) {
+					Logger.error(this, "Deleting duplicate Score: " + s);
+					s.deleteWithoutCommit();
+					recomputeScores = true;
+				}
+			}
+			
+			// We couldn't have set mFullScoreComputationNeeded earlier, that would have caused
+			// failing assert() in callees.
+			mFullScoreComputationNeeded = recomputeScores; 
+			finishTrustListImport();
+			
+			Persistent.checkedCommit(mDB, this);
 		}
 		catch(RuntimeException e) {
-			Persistent.checkedRollback(mDB, this, e);
+			abortTrustListImport(e);
 		}
 		} // synchronized(Persistent.transactionLock(mDB)) {
 		} // synchronized(mSubscriptionManager) {
 		} // synchronized(mFetcher) { 
 		} // synchronized(mPuzzleStore) {
-
-		// synchronized(this) { // For computeAllScoresWithoutCommit() / removeTrustWithoutCommit(). Done at function level already.
-		synchronized(mFetcher) { // For computeAllScoresWithoutCommit() / removeTrustWithoutCommit()
-		synchronized(mSubscriptionManager) { // For computeAllScoresWithoutCommit() / removeTrustWithoutCommit()
-		synchronized(Persistent.transactionLock(mDB)) {
-		try {
-		if(logDEBUG) Logger.debug(this, "Searching for duplicate Trust objects ...");
-
-		boolean duplicateTrustFound = false;
-		for(OwnIdentity truster : getAllOwnIdentities()) {
-			HashSet<String> givenTo = new HashSet<String>();
-
-			for(Trust trust : getGivenTrusts(truster)) {
-				if(givenTo.contains(trust.getTrustee().getID()) == false)
-					givenTo.add(trust.getTrustee().getID());
-				else {
-					Logger.error(this, "Deleting duplicate given trust:" + trust);
-					removeTrustWithoutCommit(trust);
-					duplicateTrustFound = true;
-				}
-			}
-		}
 		
-		if(duplicateTrustFound) {
-			computeAllScoresWithoutCommit();
-		}
-		
-		Persistent.checkedCommit(mDB, this);
-		if(logDEBUG) Logger.debug(this, "Finished searching for duplicate trust objects.");
-		}
-		catch(RuntimeException e) {
-			Persistent.checkedRollback(mDB, this, e);
-		}
-		} // synchronized(Persistent.transactionLock(mDB)) {
-		} // synchronized(mSubscriptionManager) {
-		} // synchronized(mFetcher) { 
-		
-		/* TODO: Also delete duplicate score */
+		if(logDEBUG) Logger.debug(this, "deleteDuplicateObjects() finished.");
 	}
 	
 	/**
@@ -1706,13 +1738,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// workaround is fixed: https://bugs.freenetproject.org/view.php?id=6646
 			final ObjectSet<Identity> allIdentities = getAllIdentities();
 			
+			// Key = Identity.getID(); Value = Rank of the identity
 			// At the end of the loop body, this table will be filled with the ranks of all identities which are visible for treeOwner.
 			// An identity is visible if there is a trust chain from the owner to it.
 			// The rank is the distance in trust steps from the treeOwner.			
 			// So the treeOwner is rank 0, the trustees of the treeOwner are rank 1 and so on.
 			// (The initial size is specified as twice the possible maximal amount of entries to
 			// ensure that the HashMap does not have to be grown.)
-			final HashMap<Identity, Integer> rankValues = new HashMap<Identity, Integer>(allIdentities.size() * 2);
+			final HashMap<String, Integer> rankValues
+				= new HashMap<String, Integer>(allIdentities.size() * 2);
 			
 			// Compute the rank values
 			{
@@ -1743,10 +1777,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 					Score selfScore = getScore(treeOwner, treeOwner);
 					
 					if(selfScore.getRank() >= 0) { // It can only give it's rank if it has a valid one
-						rankValues.put(treeOwner, selfScore.getRank());
+						rankValues.put(treeOwner.getID(), selfScore.getRank());
 						unprocessedTrusters.addLast(treeOwner);
 					} else {
-						rankValues.put(treeOwner, null);
+						rankValues.put(treeOwner.getID(), null);
 					}
 				} catch(NotInTrustTreeException e) {
 					// This only happens in unit tests.
@@ -1755,7 +1789,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				while(!unprocessedTrusters.isEmpty()) {
 					final Identity truster = unprocessedTrusters.removeFirst();
 	
-					final Integer trusterRank = rankValues.get(truster);
+					final Integer trusterRank = rankValues.get(truster.getID());
 					
 					// The truster cannot give his rank to his trustees because he has none (or infinite), they receive no rank at all.
 					if(trusterRank == null || trusterRank == Integer.MAX_VALUE) {
@@ -1767,16 +1801,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 					
 					for(Trust trust : getGivenTrusts(truster)) {
 						final Identity trustee = trust.getTrustee();
-						final Integer oldTrusteeRank = rankValues.get(trustee);
+						final Integer oldTrusteeRank = rankValues.get(trustee.getID());
 						
 						
 						if(oldTrusteeRank == null) { // The trustee was not processed yet
 							if(trust.getValue() > 0) {
-								rankValues.put(trustee, trusteeRank);
+								rankValues.put(trustee.getID(), trusteeRank);
 								unprocessedTrusters.addLast(trustee);
 							}
 							else
-								rankValues.put(trustee, Integer.MAX_VALUE);
+								rankValues.put(trustee.getID(), Integer.MAX_VALUE);
 						} else {
 							// Breadth first search will process all rank one identities are processed before any rank two identities, etc.
 							assert(oldTrusteeRank == Integer.MAX_VALUE || trusteeRank >= oldTrusteeRank);
@@ -1794,7 +1828,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 										+ "the current rank of Integer.MAX_VALUE.";
 								} catch(NotTrustedException e) {
 									if(trust.getValue() > 0) {
-										rankValues.put(trustee, trusteeRank);
+										rankValues.put(trustee.getID(), trusteeRank);
 										unprocessedTrusters.addLast(trustee);
 									}
 								}
@@ -1811,7 +1845,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// The score of an identity is the sum of all weighted trust values it has received.
 				// Each trust value is weighted with the capacity of the truster - the capacity decays with increasing rank.
 				Integer targetScore;
-				final Integer targetRank = rankValues.get(target);
+				final Integer targetRank = rankValues.get(target.getID());
 				
 				/* RankComputationTest does this as a unit test for us
 				 * 
@@ -1834,7 +1868,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 							targetScore = 0;
 							for(Trust receivedTrust : getReceivedTrusts(target)) {
 								final Identity truster = receivedTrust.getTruster();
-								final Integer trusterRank = rankValues.get(truster);
+								final Integer trusterRank = rankValues.get(truster.getID());
 								
 								// The capacity is a weight function for trust values which are given from an identity:
 								// The higher the rank, the less the capacity.
@@ -3362,8 +3396,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// used to amend a non-sorting queue to be able to handle the few cases of MAX_VALUE which
 		// need sorting?
 		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
-		// Use IdentityHashSet because Identity.equals() compares more than needed.
-		IdentityHashSet<Identity> seen = new IdentityHashSet<Identity>();
+		IdentifierHashSet<Identity> seen = new IdentifierHashSet<Identity>();
 		
 		final int sourceRank;
 		try {
@@ -3705,7 +3738,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// used to amend a non-sorting queue to be able to handle the few cases of MAX_VALUE which
 		// need sorting?
 		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>();
-		// Use IdentityHashSet because Identity.equals() compares more than needed.
+		// Notice:
+		// - Regular HashSets cannot be used for the reasons explained at class IdentifierHashSet.
+		// - IdentityHashSet is not related to class Identity, but to the fact that it compares
+		//   object identity ("==") instead of equals().
+		// - To avoid the above misconception, IdentifierHashSet would be more well-placed here.
+		///  But profiling has shown that it would be significantly slower, since class Identity
+		//   needs to do db4o object activation to compute getID(). (Once we move to SQL, this won't
+		//   be relevant anymore, and the code can be changed to IdentifierHashSet: SQL queries will
+		//   usually return fully initialized objects and thus require no activation.)
 		IdentityHashSet<Identity> seen = new IdentityHashSet<Identity>();
 		
 		Integer sourceRank = rankCache.get(new ScoreID(source, source).toString());

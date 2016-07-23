@@ -283,14 +283,24 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 	}
 
     void testWhetherReceivedDataMatchesMainDatabase() {
-        assertEquals(new HashSet<Identity>(mWebOfTrust.getAllIdentities()),
-		             new HashSet<Identity>(mReceivedIdentities.values()));
-		
-		assertEquals(new HashSet<Trust>(mWebOfTrust.getAllTrusts()),
-		             new HashSet<Trust>(mReceivedTrusts.values()));
-		
-		assertEquals(new HashSet<Score>(mWebOfTrust.getAllScores()),
-		             new HashSet<Score>(mReceivedScores.values()));
+        // No need to use listToSetWithDuplicateCheck():
+        // We create the HashSets from HashMaps where the keys are the objects' IDs. Using the IDs
+        // as keys prevents duplicates already. We thus only do a cheaper duplicate check below.
+        HashSet<Identity> receivedIdentities = new HashSet<Identity>(mReceivedIdentities.values());
+        HashSet<Trust> receivedTrusts = new HashSet<Trust>(mReceivedTrusts.values());
+        HashSet<Score> receivedScores = new HashSet<Score>(mReceivedScores.values());
+        
+        // Self-tests: Detect if the maps contained duplicates
+        assert(mReceivedIdentities.size() == receivedIdentities.size());
+        assert(mReceivedTrusts.size() == receivedTrusts.size());
+        assert(mReceivedScores.size() == receivedScores.size());
+        
+        // Actual tests.
+        // Notice: This not only compares the IDs of the Identities/Trusts/Scores, but also should
+        // compare all other fields which are sent by FCP. See their equals() implementations.
+        assertEquals(getAllIdentities(), receivedIdentities);
+        assertEquals(getAllTrusts(), receivedTrusts);
+        assertEquals(getAllScores(), receivedScores);
     }
 	
 	void subscribeAndSynchronize(final String type)

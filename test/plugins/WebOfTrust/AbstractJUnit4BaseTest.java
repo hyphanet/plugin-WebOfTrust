@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -17,7 +19,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import plugins.WebOfTrust.Trust.TrustID;
@@ -25,7 +26,9 @@ import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.RandomGrabHashSet;
+import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
@@ -47,7 +50,7 @@ public abstract class AbstractJUnit4BaseTest {
     public final TemporaryFolder mTempFolder = new TemporaryFolder();
     
     /** @see #setupUncaughtExceptionHandler() */
-    private final AtomicReference<Throwable> uncaughtException
+    protected final AtomicReference<Throwable> uncaughtException
         = new AtomicReference<Throwable>(null);
     
     
@@ -77,18 +80,6 @@ public abstract class AbstractJUnit4BaseTest {
         Throwable t = uncaughtException.get();
         if(t != null)
             fail(t.toString());
-    }
-    
-    /** @see #setupUncaughtExceptionHandler() */
-    @Test public void testSetupUncaughtExceptionHandler() throws InterruptedException {
-        Thread t = new Thread(new Runnable() {@Override public void run() {
-            throw new RuntimeException();
-        }});
-        t.start();
-        t.join();
-        assertNotEquals(null, uncaughtException.get());
-        // Set back to null so testUncaughtExceptions() does not fail
-        uncaughtException.set(null);
     }
 
     /**
@@ -145,11 +136,29 @@ public abstract class AbstractJUnit4BaseTest {
     }
 
     /**
+     * Returns the union of {@link #addRandomOwnIdentities(int)} and
+     * {@link #addRandomIdentities(int)}. */
+    protected ArrayList<Identity> addRandomIdentities(int ownIdentityCount, int nonOwnIdentityCount)
+            throws MalformedURLException, InvalidParameterException {
+        
+        ArrayList<Identity> result
+            = new ArrayList<Identity>(ownIdentityCount + nonOwnIdentityCount);
+        result.addAll(addRandomOwnIdentities(ownIdentityCount));
+        result.addAll(addRandomIdentities(nonOwnIdentityCount));
+        return result;
+    }
+
+    /**
      * Adds identities with random request URIs to the database.
      * Their state will be as if they have never been fetched: They won't have a nickname, edition
      * will be 0, etc.
      * 
      * TODO: Make sure that this function also adds random contexts & publish trust list flags.
+     * 
+     * NOTICE: In tests where you need {@link Score} objects to exist, you should ensure that there
+     * are also {@link OwnIdentity} objects, because only they can cause Score objects to be
+     * created.
+     * Use {@link #addRandomIdentities(int, int)} to create both non-own and own identities.
      * 
      * @param count Amount of identities to add
      * @return An {@link ArrayList} which contains all added identities.
@@ -204,15 +213,18 @@ public abstract class AbstractJUnit4BaseTest {
      *
      * @throws InvalidParameterException    Upon test failure. Don't catch this, let it hit JUnit.
      */
-    protected void addRandomTrustValues(final ArrayList<Identity> identities, final int trustCount)
-            throws InvalidParameterException {
+    protected ArrayList<Trust> addRandomTrustValues(
+            final List<Identity> identities, final int trustCount)
+            throws InvalidParameterException, NotTrustedException {
         
-        assert(trustCount < identities.size()*(identities.size()-1))
+        assert(trustCount <= identities.size()*(identities.size()-1))
             : "There can only be a single trust value between each pair of identities. The amount"
             + " of such pairs is identities * (identities-1). If you could use a trustCount which is"
             + " higher than this value then this function would run into an infinite loop.";
         
         final int identityCount = identities.size();
+        
+        ArrayList<Trust> result = new ArrayList<Trust>(trustCount + 1);
         
         getWebOfTrust().beginTrustListImport();
         for(int i=0; i < trustCount; ++i) {
@@ -236,9 +248,13 @@ public abstract class AbstractJUnit4BaseTest {
             
             getWebOfTrust().setTrustWithoutCommit(truster, trustee, getRandomTrustValue(),
                 getRandomLatinString(mRandom.nextInt(Trust.MAX_TRUST_COMMENT_LENGTH+1)));
+            
+            result.add(getWebOfTrust().getTrust(truster, trustee));
         }
         getWebOfTrust().finishTrustListImport();
         Persistent.checkedCommit(getWebOfTrust().getDatabase(), this);
+        
+        return result;
     }
 
     /**
@@ -455,6 +471,70 @@ public abstract class AbstractJUnit4BaseTest {
                     + "avg. seconds: "
                     + (((double)eventDurations[i])/eventIterations[i]) / (1000*1000*1000));
         }
+    }
+
+    /**
+     * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
+     * information about using the returned HashSet. */
+    protected HashSet<Identity> getAllIdentities() {
+        return listToSetWithDuplicateCheck(getWebOfTrust().getAllIdentities());
+    }
+
+    /**
+     * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
+     * information about using the returned HashSet. */
+    protected HashSet<Trust> getAllTrusts() {
+        return listToSetWithDuplicateCheck(getWebOfTrust().getAllTrusts());
+    }
+
+    /**
+     * NOTICE: {@link #listToSetWithDuplicateCheck(List, boolean)} provides important
+     * information about using the returned HashSet. */
+    protected HashSet<Score> getAllScores() {
+        return listToSetWithDuplicateCheck(getWebOfTrust().getAllScores());
+    }
+
+    /** Calls {@link #listToSetWithDuplicateCheck(List, boolean)} with returnClones = false */
+    protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
+            List<T> list) {
+        
+        return listToSetWithDuplicateCheck(list, false);
+    }
+
+    /**
+     * NOTICE: HashSet is generally not safe for use with {@link Persistent} due to the
+     * implementations of {@link Persistent#equals(Object)} in many of its child classes:
+     * They typically compare not only object identity but also object state. Thus multiple
+     * instances of the same object with different state could enter HashSets. For a detailed
+     * explanation, see class {@link IdentifierHashSet}.<br>
+     * This function can return a HashSet safely, as it validates whether the passed list only
+     * contains unique instances of the objects and thus the problems of equality checks cannot
+     * arise. The function guarantees that it will cause test failure if duplicates are passed.<br>
+     * However, when doing anything with the returned HashSet, please be aware of the behavior of
+     * {@link Persistent#equals(Object)} implementations. */
+    protected <T extends Persistent & ReallyCloneable<T>> HashSet<T> listToSetWithDuplicateCheck(
+            List<T> list, boolean returnClones) {
+        
+        final HashSet<T> result = new HashSet<T>(list.size() * 2);
+        final IdentifierHashSet<T> uniquenessTest = new IdentifierHashSet<T>(list.size() * 2);
+        
+        for(T object : list) {
+            if(returnClones)
+                object = object.cloneP();
+            
+            // Check whether the calling code delivered a list of unique objects.
+            // We need to test this with an IdentifierHashSet due to the aforementioned issues of
+            // Persistent.equals().
+            assertTrue(uniquenessTest.add(object));
+            // Also, it is critical to ensure we don't just overwrite a potential duplicate in the
+            // set, because the calling unit test code typically wants to detect duplicates as they
+            // are usually bugs.
+            // This is implicitly checked by the above assert already. But we get the return value
+            // for free - so let's just test it.
+            assertTrue(result.add(object));
+        }
+        
+        return result;
     }
 
     /**

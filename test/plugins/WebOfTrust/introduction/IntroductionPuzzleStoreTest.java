@@ -8,12 +8,10 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
 import plugins.WebOfTrust.AbstractJUnit3BaseTest;
-import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.DuplicatePuzzleException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
@@ -347,9 +345,21 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		}
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void testGetUninsertedOwnPuzzlesByInserter() throws IOException {
-		final List<OwnIntroductionPuzzle> uninsertedPuzzles0 = deepCopy(generateNewPuzzles(mOwnIdentities.get(0)));
-		final List<OwnIntroductionPuzzle> uninsertedPuzzles1 = deepCopy(generateNewPuzzles(mOwnIdentities.get(1)));
+		// We need those Lists to implement ReallyCloneable<> for listToSetWithDuplicateCheck().
+		// OwnIntroductionPuzzle cannot implement ReallyCloneable<OwnIntroduction> because the
+		// parent class IntroductionPuzzle already implements ReallyCloneable<IntroductionPuzzle>.
+		// So we do a '@SuppressWarnings({ "unchecked", "rawtypes" })' cast from
+		// List<OwnIdentroductionPuzzle> to List<IntroductionPuzzle>.
+		// TODO: Code quality: Can the generics of ReallyCloneable or listToSetWithDuplicateCheck()
+		// be improved to avoid having to do this unchecked raw cast?
+		// Also fix this at testGetUnsolvedByInserter() then.
+		List<IntroductionPuzzle> uninsertedPuzzles0
+			= (List)deepCopy(generateNewPuzzles(mOwnIdentities.get(0)));
+		List<IntroductionPuzzle> uninsertedPuzzles1
+			= (List)deepCopy(generateNewPuzzles(mOwnIdentities.get(1)));
+		
 		List<OwnIntroductionPuzzle> insertedPuzzles0 = generateNewPuzzles(mOwnIdentities.get(0));
 		List<OwnIntroductionPuzzle> insertedPuzzles1 = generateNewPuzzles(mOwnIdentities.get(1));
 		
@@ -368,13 +378,25 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		
 		flushCaches();
 		
-		assertEquals(new HashSet<OwnIntroductionPuzzle>(uninsertedPuzzles0), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUninsertedOwnPuzzlesByInserter(mOwnIdentities.get(0))));
-		assertEquals(new HashSet<OwnIntroductionPuzzle>(uninsertedPuzzles1), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUninsertedOwnPuzzlesByInserter(mOwnIdentities.get(1))));
+		List<IntroductionPuzzle> query0
+			= (List)mPuzzleStore.getUninsertedOwnPuzzlesByInserter(mOwnIdentities.get(0));
+		List<IntroductionPuzzle> query1
+			= (List)mPuzzleStore.getUninsertedOwnPuzzlesByInserter(mOwnIdentities.get(1));
+		
+		assertEquals(listToSetWithDuplicateCheck(uninsertedPuzzles0),
+		             listToSetWithDuplicateCheck(query0));
+		assertEquals(listToSetWithDuplicateCheck(uninsertedPuzzles1),
+		             listToSetWithDuplicateCheck(query1));
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void testGetUnsolvedByInserter() throws IOException {
-		final List<OwnIntroductionPuzzle> unsolvedPuzzles0 = deepCopy(generateNewPuzzles(mOwnIdentities.get(0)));
-		final List<OwnIntroductionPuzzle> unsolvedPuzzles1 = deepCopy(generateNewPuzzles(mOwnIdentities.get(1)));
+		// See testGetUninsertedOwnPuzzlesByInserter() for the reasons of this cast.
+		List<IntroductionPuzzle> unsolvedPuzzles0
+			= (List)deepCopy(generateNewPuzzles(mOwnIdentities.get(0)));
+		List<IntroductionPuzzle> unsolvedPuzzles1
+			= (List)deepCopy(generateNewPuzzles(mOwnIdentities.get(1)));
+		
 		List<OwnIntroductionPuzzle> solvedPuzzles0 = generateNewPuzzles(mOwnIdentities.get(0));
 		List<OwnIntroductionPuzzle> solvedPuzzles1 = generateNewPuzzles(mOwnIdentities.get(1));
 		
@@ -393,8 +415,15 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		
 		flushCaches();
 		
-		assertEquals(new HashSet<OwnIntroductionPuzzle>(unsolvedPuzzles0), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUnsolvedByInserter(mOwnIdentities.get(0))));
-		assertEquals(new HashSet<OwnIntroductionPuzzle>(unsolvedPuzzles1), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUnsolvedByInserter(mOwnIdentities.get(1))));
+		List<IntroductionPuzzle> query0
+			= (List)mPuzzleStore.getUnsolvedByInserter(mOwnIdentities.get(0));
+		List<IntroductionPuzzle> query1
+			= (List)mPuzzleStore.getUnsolvedByInserter(mOwnIdentities.get(1));
+		
+		assertEquals(listToSetWithDuplicateCheck(unsolvedPuzzles0),
+		             listToSetWithDuplicateCheck(query0));
+		assertEquals(listToSetWithDuplicateCheck(unsolvedPuzzles1),
+		             listToSetWithDuplicateCheck(query1));
 	}
 
 	public void testGetOfTodayByInserter() throws IOException { 
@@ -415,7 +444,10 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		
 		flushCaches();
 		
-		assertEquals(new HashSet<IntroductionPuzzle>(ofToday), new HashSet<IntroductionPuzzle>(mPuzzleStore.getOfTodayByInserter(mOwnIdentities.get(0))));
+		List<IntroductionPuzzle> query = mPuzzleStore.getOfTodayByInserter(mOwnIdentities.get(0));
+		
+		assertEquals(listToSetWithDuplicateCheck(ofToday),
+		             listToSetWithDuplicateCheck(query));
 	}
 
 	public void testGetByInserterDateIndex() throws UnknownPuzzleException, UnknownIdentityException {
@@ -512,16 +544,17 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		for(OwnIdentity ownId : mOwnIdentities.subList(1, mOwnIdentities.size())) {
 			IntroductionPuzzle p;
 			
+			// Non-own and unsolved - these are what the tested query shall return.
 			p = constructPuzzleOf(ownId);
 			mPuzzleStore.storeAndCommit(p);
 			unsolvedPuzzles.add(p.clone());
 			
-			// non own but solved
+			// Non-own but solved.
 			p = constructPuzzleOf(ownId);
 			p.setSolved(mOwnIdentities.get(0), "blehblah");
 			mPuzzleStore.storeAndCommit(p);
 			
-			// unsolved but own one
+			// Unsolved but own one.
 			p = constructOwnPuzzleOf(ownId);
 			mPuzzleStore.storeAndCommit(p);
 		}
@@ -529,7 +562,10 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		flushCaches();
 
 		// TODO: As soon as we have more puzzle types, test them here
-		assertEquals(new HashSet<IntroductionPuzzle>(unsolvedPuzzles), new HashSet<IntroductionPuzzle>(mPuzzleStore.getUnsolvedPuzzles(PuzzleType.Captcha)));
+		List<IntroductionPuzzle> query = mPuzzleStore.getUnsolvedPuzzles(PuzzleType.Captcha);
+		
+		assertEquals(listToSetWithDuplicateCheck(unsolvedPuzzles),
+		             listToSetWithDuplicateCheck(query));
 	}
 
 	public void testGetUninsertedSolvedPuzzles() throws IOException {
@@ -562,7 +598,8 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		
 		flushCaches();
 		// TODO: As soon as we have more puzzle types, test them here
-		assertEquals(new HashSet<IntroductionPuzzle>(uninsertedSolvedPuzzles), new HashSet<IntroductionPuzzle>(mPuzzleStore.getUninsertedSolvedPuzzles()));
+		assertEquals(listToSetWithDuplicateCheck(uninsertedSolvedPuzzles),
+		             listToSetWithDuplicateCheck(mPuzzleStore.getUninsertedSolvedPuzzles()));
 	}
 
 	public void testGetOwnCatpchaAmount() throws IOException {

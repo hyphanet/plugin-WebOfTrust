@@ -26,6 +26,7 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.TransferThread;
 
 import com.db4o.ObjectSet;
@@ -236,8 +237,8 @@ public final class IntroductionClient extends TransferThread  {
 		synchronized(mPuzzleStore) {
 		    final OwnIdentity user = mWoT.getOwnIdentityByID(ownIdentityID);
 			final ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedPuzzles(puzzleType);
-			final HashSet<Identity> resultHasPuzzleFrom
-			    = new HashSet<Identity>(count * 2 /* It will grow at 75% load -> Make it larger */);
+			final IdentifierHashSet<Identity> resultHasPuzzleFrom
+			    = new IdentifierHashSet<Identity>(count * 2 /* It will grow at 75% load -> Make it larger */);
 
 			for(final IntroductionPuzzle puzzle : puzzles) {
 				try {
