@@ -539,8 +539,6 @@ CHANGELOG about stuff only interesting for developers:
   The code which uses class HashMap was reviewed to use the ID of
   Persistent objects as key where necessary.
 
-  FIXME: The actual code for this is not finished and merged yet!
-
 - 0006797: [Bugs] IntroductionClient etc. use HashSet<> on stuff which might not be safe for it (xor)
 - 0006671: [Code quality] XMLTransformer: Log parsing failures as
            warning instead of normal so developers notice them (xor)
