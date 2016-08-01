@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.introduction.captcha;
 
+import static java.lang.Math.max;
+
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,13 +39,16 @@ import freenet.support.io.Closer;
  *
  */
 public class CaptchaFactory1 extends IntroductionPuzzleFactory {
-	
+
+	/** Determined by generating 10000 captchas using {@link #main(String[])}. */
+	public static final int ESTIMATED_MAX_BYTE_SIZE = 4096;
+
 	private static class Captcha {
 		byte[] jpeg;
 		String text;
 		
 		Captcha() throws IOException {
-			ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1024); /* TODO: find out the maximum size of the captchas and put it here */
+			ByteArrayOutputStream out = new ByteArrayOutputStream(ESTIMATED_MAX_BYTE_SIZE);
 			try {
 				DefaultKaptcha captcha = new DefaultKaptcha();
 				Properties prop = new Properties();
@@ -87,6 +92,7 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 		int amount = Integer.parseInt(args[0]);
 		Path outputDir = Paths.get(args[1]);
 		HashSet<String> alreadyCreated = new HashSet<>(amount * 2);
+		int maxSize = 0;
 		
 		while(--amount >= 0) {
 			Captcha c = new Captcha();
@@ -95,8 +101,12 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 				continue;
 			}
 			
+			maxSize = max(maxSize, c.jpeg.length);
+			
 			Path out = outputDir.resolve(c.text + ".jpg");
 			Files.write(out, c.jpeg, StandardOpenOption.CREATE_NEW /* Throws if existing */);
 		}
+		
+		System.out.println("Largest byte size: " + maxSize);
 	}
 }
