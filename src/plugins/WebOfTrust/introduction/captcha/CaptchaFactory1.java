@@ -37,11 +37,11 @@ import plugins.WebOfTrust.introduction.captcha.RandomizedWordRenderer;
 public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 	
 	private class Captcha {
-		ByteArrayOutputStream out;
+		byte[] jpeg;
 		String text;
 		
 		Captcha() throws IOException {
-			out = new ByteArrayOutputStream(10 * 1024); /* TODO: find out the maximum size of the captchas and put it here */
+			ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1024); /* TODO: find out the maximum size of the captchas and put it here */
 			try {
 				DefaultKaptcha captcha = new DefaultKaptcha();
 				Properties prop = new Properties();
@@ -51,6 +51,7 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 				text = captcha.createText();
 				BufferedImage img = captcha.createImage(text);
 				ImageIO.write(img, "jpg", out);
+				jpeg = out.toByteArray();
 			} finally {
 				Closer.close(out);
 			}
@@ -60,20 +61,15 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 	@Override
 	public OwnIntroductionPuzzle generatePuzzle(IntroductionPuzzleStore store, OwnIdentity inserter) throws IOException {
 		Captcha c = new Captcha();
-		ByteArrayOutputStream out = c.out;
-		try {
+
 			String text = c.text;
 			Date dateOfInsertion = CurrentTimeUTC.get();
 			synchronized(store) {
-				OwnIntroductionPuzzle puzzle = new OwnIntroductionPuzzle(store.getWebOfTrust(), inserter, PuzzleType.Captcha, "image/jpeg", out.toByteArray(), text, 
+				OwnIntroductionPuzzle puzzle = new OwnIntroductionPuzzle(store.getWebOfTrust(), inserter, PuzzleType.Captcha, "image/jpeg", c.jpeg, text, 
 						dateOfInsertion, store.getFreeIndex(inserter, dateOfInsertion));
 				
 				store.storeAndCommit(puzzle);
 				return puzzle;
 			}
-		}
-		finally {
-			Closer.close(out);
-		}
 	}
 }
