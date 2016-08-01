@@ -43,14 +43,14 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 		Captcha() throws IOException {
 			out = new ByteArrayOutputStream(10 * 1024); /* TODO: find out the maximum size of the captchas and put it here */
 			try {
-			DefaultKaptcha captcha = new DefaultKaptcha();
-			Properties prop = new Properties();
-			prop.setProperty(Constants.KAPTCHA_OBSCURIFICATOR_IMPL, RandomizedDistortion.class.getName());
-			prop.setProperty(Constants.KAPTCHA_WORDRENDERER_IMPL, RandomizedWordRenderer.class.getName());
-			captcha.setConfig(new Config(prop));
-			text = captcha.createText();
-			BufferedImage img = captcha.createImage(text);
-			ImageIO.write(img, "jpg", out);
+				DefaultKaptcha captcha = new DefaultKaptcha();
+				Properties prop = new Properties();
+				prop.setProperty(Constants.KAPTCHA_OBSCURIFICATOR_IMPL, RandomizedDistortion.class.getName());
+				prop.setProperty(Constants.KAPTCHA_WORDRENDERER_IMPL, RandomizedWordRenderer.class.getName());
+				captcha.setConfig(new Config(prop));
+				text = captcha.createText();
+				BufferedImage img = captcha.createImage(text);
+				ImageIO.write(img, "jpg", out);
 			} finally {
 				Closer.close(out);
 			}
