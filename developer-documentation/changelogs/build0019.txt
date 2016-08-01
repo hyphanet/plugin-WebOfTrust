@@ -1,0 +1,593 @@
+Web of Trust Version 0.4.4 build0019
+------------------------------------------------------------------------
+
+SUMMARY AND OUTLOOK (detailed changelog is below):
+
+As the previous build was mostly new code to improve performance, the
+main focus of this release shall be bugfixes, UI improvements and many
+new tools for developers.
+Alternating between new code and maintenance hopefully guarantees the
+quality of the codebase to flourish.
+To not give you a boring release without apparent changes, the build
+also ships a bugfix / optimization of startup time and a minor general
+performance improvement. There are 4 new translations and 12 updated
+ones.
+
+For developers, there is a special goodie available: I have released
+my bachelor's thesis about last year's WoT performance work.
+The thesis contains a large introduction which explains how WoT works.
+As it is intended for an audience with no prior Freenet-related
+knowledge, it shall be considered as the WoT core developer's manual.
+There are also open algorithmic questions outlined in the thesis - so if
+you want to do some computer science, please have a look at it, feedback
+is welcome.
+There are also:
+- new command line operations.
+- unit test framework improvements, most notably code to analyze test
+  coverage.
+- a simplification of an on-disk fileformat.
+
+
+Outlook for the next build: The missing piece in the "first round" of
+the most promising performance improvements is planned to ship in the
+next build:
+Currently, WoT creates an USK subscription for all of the known
+identities, which amounts to over 14 000. This puts very heavy load on a
+typical Freenet node.
+The fix will address this by only subscribing to the identities which
+the user has assigned trust to. The other identities will only be
+fetched "on-demand" when WoT learns by gossip that they surely have
+published a new edition.
+For details of the planned algorithm, see [1].
+
+Work on this shall being immediately, but it may take some months as
+I've been volunteer since December and thus cannot provide as much time
+as an employee anymore.
+This is because Freenet has run out of funds. I am currently not seeking
+a different job at the hope of being able to acquire funding for Freenet
+so I can resume work. This can continue for some months, as my family
+needs some help from me anyway and I get food in return, but I cannot
+live off my family's gratitude forever.
+So if you want to help the project, please consider donating:
+    https://freenetproject.org/
+Scroll down to see the fundraising progress bar.
+Bitcoin is also accepted in case you want to stay semi-anonymous!
+
+
+HOW TO INSTALL:
+
+While this release has not yet been bundled with a new Freenet
+release, it can be acquired a lot easier than previous non-bundled
+ones:
+1) Unload the "WebOfTrust" plugin and load the "WebOfTrust Testing
+   Versions" plugin. Please do first read the description for the
+   security implications!
+   WARNING: When sending data to the network, WoT will include which
+   version you are using. Thus, if you are a very early tester, it may
+   become easier for attackers to correlate which identities belong to
+   you, as there may be very few people using the new release.
+2) If you had already done step 1 previously, i.e. are already running
+   a previous testing release, you need to restart Freenet or unload
+   and re-load the plugin for getting the update: Freenet will only
+   check for updates of the testing version when the plugin is
+   restarted.
+You will also get this release someday even if you do not switch to the
+testing versions. It will just take longer: Non-testing releases are
+shipped together with regular Freenet releases; and Freenet releases do
+not happen as often as WoT releases.
+So once Freenet build 1473 is released, no action will be needed
+anymore, your node will update WoT automatically.
+
+
+CHANGELOG - prefixed with the bugtracker issue number:
+
+- 0006653: [Bugs] IdentityFileProcessor can get triggered during early
+           startup, slows it down (xor)
+
+  The previous build's changelog promised an improved startup time of
+  WoT of 2 minutes.
+  Unfortunately, in practice, a bug could cause this to become over 20
+  minutes.
+
+  This bug has been fixed, and startup times of 2 minutes should in fact
+  be possible now.
+
+  This is of course still too much. The next build's work shall reduce
+  this to almost zero startup time.
+  See https://bugs.freenetproject.org/view.php?id=3816
+
+- 0006663: [Performance] Enforce maximum numer of trust values when
+           importing trust lists (xor)
+
+  When WoT uploads trust lists to the network, there is a limit of 512
+  trust values. If you set more trust values than 512, only 512 of them
+  will be exported.
+
+  Unfortunately, this limit was not enforced when importing trust lists
+  which were downloaded from the network. Thus, a malicious user could
+  upload trust lists with much more trust values to conduct a denial of
+  service attack on the network.
+  Luckily, this was not a real security issue, since there was still
+  an indirect limit:
+  The file size of trust lists was properly limited to 1 MB.
+  Still, a lot of trust values can fit in 1 MB, which is why this caused
+  noticeable performance issues.
+
+  This build fixes import to ignore trust lists with more than 512
+  entries.
+  This could have an impact on 3rd party clients such as LCWoT: If they
+  only ever produce trust lists that large, their identities will be
+  ignored by WoT.
+  Thus, if you're an author of a 3rd party client, please fix it to
+  limit the amount of exported trust values to 512.
+
+- 0006648: [Performance] StatisticsPage: Add statistics to monitor
+           worst case runtime of new distrust computation (xor)
+
+  The previous release delivery a rewrite of the core WoT algorithm to
+  be fully incremental. This was subject of the bachelor's thesis which
+  this build ships as PDF.
+  While the algorithm shows a sufficiently quick average runtime, the
+  mathematical theory indicates a potential worst case runtime which
+  would not be acceptable.
+  It is unclear whether and how often the worst case will happen with
+  the real network - this depends a lot on the network topology and
+  usage patterns.
+  To investigate whether further optimization of the algorithm would be
+  worthwhile, this build adds statistics to measure how often the worst
+  case happens during normal operation of WoT.
+
+  If you want to help this investigation, please provide the following
+  statistics from the "Community / Statistics" menu:
+  - Number of incremental trust value re-computations due to new
+    distrust
+  - Number of incremental trust value re-computations due to new
+    distrust - only of those which took more than 10 seconds
+  - Average seconds for incremental trust value re-computation due to
+    new distrust
+  - Average seconds for incremental trust value re-computation due to
+    new distrust - only of those which took more than 10 seconds
+
+  Please ensure your WoT has been running for at least a day before you
+  provide the stats. Ideally keep it running for as long as you can.
+  Thank you!
+
+- 0006722: [Security] Improve captchas by randomization (bertm)
+
+  Existing captchas were insecure: cracking was possible in under 1
+  second on an average PC, without the use of any advanced techniques,
+  by means of best pattern match incremental generation.
+
+  This fix introduces a new WordRenderer and GimpyEngine for the
+  Kaptcha library that randomize:
+  - Horizontal inter-glyph separation
+  - Vertical glyph alignment
+  - Glyph rotation
+  - Twirl filter parameters (angle)
+  - Ripple filter parameters (amplitude, wavelength)
+  - Water filter parameters (centre, radius)
+
+  Efforts have been made to keep the captchas readable by humans. The
+  resulting captchas should not be much harder to read, but are far more
+  difficult to crack by means of simple pattern matching.
+
+  Also, for developers, code has been added to create arbitrary amounts
+  of captcha JPG files on disk to examine what the captchas look like.
+  See JavaDoc of function main() of class CaptchaFactory1.
+
+- 0006816: [Usability] Update translations from Transifex, add new ones (xor)
+  0006817: [Bugs] Fix Norwegian Bokmål and Portuguese (Brazil)
+           translations to work (xor)
+
+  New translations:
+    Croatian
+    Bokmål (Norwegian)
+    Portuguese as spoken in Brazil
+    Portuguese as spoken in Portugal
+
+  Updated translations:
+    lang_de.l10n    |  30 ++---
+    lang_el.l10n    | 126 ++++-----------------
+    lang_en.l10n    |  32 +++---
+    lang_es.l10n    | 271 +++++++++++++++++++++++----------------------
+    lang_fi.l10n    | 102 -----------------
+    lang_fr.l10n    | 206 +++++++++++++++++-----------------
+    lang_hu.l10n    |  72 ------------
+    lang_it.l10n    | 127 +++++----------------
+    lang_nl.l10n    | 109 ++----------------
+    lang_pl.l10n    |  97 ----------------
+    lang_ru.l10n    |  65 ++---------
+    lang_zh-cn.l10n | 225 +++++++++++++++++++------------------
+
+  Huge thanks to the many translators on Transifex!
+
+- 0006569: [Usability] L10n: Backport improvements at German l10n to
+           English (xor)
+  0006570: [Usability] L10n: Instead of "Trust" / "Score", use "Trust"
+           and "Computed trust" (xor)
+  0006214: [Usability] L10n: Get rid of technical terms "Insert /
+           Request URI" (xor)
+  0006568: [Usability] L10n: Instead of "contexts", use "services"
+           (xor)
+  0006565: [Usability] Statistics page l10n: "Average time for full
+           score re-computation" string lacks unit (seconds) (xor)
+  0004901: [Usability] L10n: Fix glitches (xor)
+  0006409: [Usability] L10n: when logged in the option “Create new
+           Identity” seems strange. (xor)
+  0006818: [Usability] Process issues on Transifex (xor)
+
+  In the last release, the German translation had received a full review
+  & revamp. As I'm German, this means that it can be considered a
+  reference translation now.
+  Due to the large amount of improvements, it was decided to not
+  immediately port them to English in the previous release.
+  Thus this WoT release now ships the same improvements to the English
+  l10n.
+
+  The amount of improvements would be too large to explain here.
+  You can check the differences on GitHub: https://github.com/freenet/plugin-WebOfTrust/compare/freenet:build0018...freenet:3aff914346079760fa2e5921c30633e6f44c49a0
+
+  Click "Files changed", then "39 changed files", then
+  "src/plugins/WebOfTrust/l10n/lang_en.l10n".
+
+- 0006812: [Features] wotutil.sh: Allow usage of FCP API (xor)
+
+  build0018 had added "wotutil.sh" as a new command line user interface
+  for offline use of WoT databases, i.e. without running WoT in a
+  Freenet node.
+  It allows analytics and maintenance operations.
+
+  The tool now supports using most of the WoT FCP API on the terminal.
+  As FCP is the intended main API for building applications on top
+  of WoT, this allows usage of most of the WoT API on the terminal.
+  "Most of" means that the event-notifications FCP message "Subscribe"
+  is not supported. This is necessary because "Subscribe" is
+  asynchronous, i.e. the replies will be delivered in the future.
+  wotutil.sh bypasses the network layer, so asynchronous replies are not
+  possible.
+
+  Please do notice that this does *not* allow connecting to a WoT
+  running inside of Freenet. It instead allows simulating FCP by
+  directly loading the data from a closed WoT database on disk.
+
+- 0006651: [Bugs] "wotutil.sh -testAndRepair" says "Database OK!" if
+           the database file did not exist, should fail (xor)
+
+  build0018 had added "wotutil.sh" as a new command line user interface
+  for offline use of WoT databases, i.e. without running WoT in a
+  Freenet node.
+  It allows analytics and maintenance operations.
+
+  The "-testAndRepair" command checks the database for inconsistencies.
+  Unfortunately, it had a bug which caused it to consider the database
+  file not existing as "the database is healthy!".
+  This has been fixed to show an error message now.
+
+- 0006640: [Bugs] KnownIdentitiesPage: IndexOutOfBoundsException when
+           searching (xor)
+
+  On the 'Other people's identities' page, the search function could
+  cause an error due to an IndexOutOfBoundsException.
+  This has been fixed.
+
+- 0006596: [Bugs] Add workaround for db4o bug (xor)
+
+  This fixes potentially showing wrong information on the last page of
+  the "Other people's identities" menu (previously "Known anonymous
+  identities").
+
+  It is difficult to say whether this did happen in practice, it was
+  triggered by a db4o bug which is too complex to justify doing an
+  analysis of when it would happen.
+  If it did happen, it should at least have only affected the UI, not
+  the actual database contents.
+
+  If you are a developer and have assertions enabled, it also fixes
+  AssertionError happening on that page. Notice that assertions slow
+  down WoT very much, so you should only enable them for test runs.
+
+CHANGELOG about stuff only interesting for developers:
+
+- 0006840: [Code quality] Provide xor's WoT bachelor thesis as a
+           developer's manual (xor)
+
+  My past year's Freenet work of improving the core algorithm of WoT had
+  been recycled into my bachelor's thesis.
+  It did pass examination by the university, and now is contained in the
+  WoT source code at:
+    developer-documentation/core-developers-manual/
+    OadSFfF-version1.2-non-print-edition.pdf
+
+  Besides explaining last year's work, it has another purpose:
+  Since the thesis aims to require no prior Freenet-related knowledge,
+  it provides a pretty thorough explanation of how WoT works.
+  Thus, you may consider it as the WoT core developer's manual.
+
+  Beyond getting to know how WoT works, it would be of scientific
+  benefit for the project if you do read it:
+  The end of the thesis describes how the algorithm might be further
+  improved by investigating what can be considered as a whole class of
+  algorithms. I have not heard about such a class of algorithms being
+  identified and named by science yet. But this might be merely due to
+  lack of my knowledge.
+  So I hope that someone knows if this class of algorithms has already
+  been discovered and analyzed by other people. This could help us a lot
+  to further improve WoT with algorithms which are specially crafted to
+  be fast at this  type of problem.
+  EDIT: Meanwhile, Bert Massop already remarked that this may very well
+  be the class to solve the "dynamic single-source shortest-paths
+  problem"! There may still be some benefit in thinking about this
+  though, as the paper he cited sounds like there could still be better
+  solutions to the problem than what it provides. The paper is called:
+    Roditty, L., & Zwick, U. (2011). On dynamic shortest paths problems.
+    Algorithmica, 61(2), 389-401.
+
+  Feedback for improvement of the document is welcome:
+  Besides some layout changes it is still identical to what I handed in
+  at university.
+  Thus, it may contain many stupid mistakes caused by pre-deadline
+  caffeine intoxication.
+
+- 0006849: [Code quality] Allow Java 7 features to be used in the code
+           (xor)
+
+  Freenet build 1473 switched from Java 6 to Java 7 as the minimal
+  required Java version. As a consequence, this now also applies to WoT.
+
+  As a positive consequence, developers can now benefit from the new
+  language features and API of Java 7.
+
+- 0006861: [Code quality] Ant builder: Support analyzing test coverage
+           with Cobertura (xor)
+
+  Cobertura is a tool which injects its own code during the unit tests
+  to analyze which code of the WoT core is called during test runs.
+  This yields HTML output which contains things such as:
+  - a view of the source code with the lines being color-coded as:
+    red = untested, green = tested.
+  - a percentage of how many lines of code are covered by the tests.
+  - a percentage of how many code paths (if() etc) are covered by the
+    tests.
+  - bonus (static?) analysis: the "average McCabe's cyclomatic code
+    complexity for all methods." = average number of code paths. This
+    can be used to find giant functions which need to be split up.
+  - the above statistics both for the whole repository and also for each
+    package and class.
+
+  I've amended the Ant builders of fred and Web of Trust to optionally
+  use Cobertura and provide the HTML output at ./test-coverage/html.
+
+  As dependency you only need to install the standard Ubuntu "cobertura"
+  package. Alternatively, put a cobertura.jar into /usr/share/java/
+  It can then be executed by:
+    ant -Dtest.coverage=true
+  You can also compute test coverage as caused by only a specific single
+  unit test class:
+    ant -Dtest.coverage=true -Dtest.class=packageName.ClassName
+
+  For fred, the code is pending as a pull request:
+    https://github.com/freenet/fred/pull/553
+
+  Here are the current analysis results for fred and WoT:
+    Summary of analysis:
+      Freenet core: http://i.imgur.com/xTuZwBv.png
+      Web of Trust: http://i.imgur.com/Ht1pQbj.png
+
+    Detailed HTML output (you need Freenet for those links):
+      Freenet core: http://127.0.0.1:8888/CHK@ukoL~NGt6t0p9VRJ7RATO0vxlGVr0mBvL0qB164A4Y8,DbjfwdzSP7hDN11-s20k79tRURobCRtyZyVGppVH1ZY,AAMC--8/test-coverage-fred_testing-build-1474-pre1-122-g5baa142/index.html
+      Web of Trust: http://127.0.0.1:8888/CHK@PmCkInFQYV4pMk~hf4D3cS7KPQWobQVMLY3kRaXnqh4,x2gH3qBymq4fbayvZbudvD9EXWG9J6OuIR41iFUvxCc,AAMC--8/test-coverage-WebOfTrust_build0018-147-gae56c33/index.html
+
+- 0006760: [Code quality] Use Travis CI (nextgens, xor)
+
+  Travis CI is a cloud service which does the following when a developer
+  files a new pull request:
+  - It runs the unit tests on the branch the developer submitted.
+  - It does a temporary merge of the submitted branch into the target
+    branch and also runs the unit tests there.
+    This is the "CI" part: Continous integration means continous
+    testing of whether the branches of multiple developers integrate
+    cleanly into the main repository.
+  - The test runs are done on multiple JREs:
+    * Oracle Java 7
+    * Oracle Java 8
+    * OpenJDK 7
+  - The success/failure of the test runs are shown at GitHub in the pull
+    request. The log files can also be viewed.
+  - The tests are repeated if you push new commits to the branch.
+
+  Not only does this enforce that unit tests are monitored, but it can
+  also help developers with slow computers or lack of JUnit:
+  If you cannot run the tests yourself, you may submit a pull request
+  marked as "don't merge yet" just to get the test results.
+  In my experience, GitHub even triggers Travis CI as soon as you open
+  the site for creating a pull request. Thus you don't need to submit it
+  immediately if you first want to check for test failures.
+  Travis CI notably is a widely used service, so Google may help you
+  with plenty of documentation about things such as how to trigger more
+  test runs.
+
+- 0006815: [Code quality] l10n: Add config for Transifex command line
+           tool "tx" (xor)
+
+  Translations nowadays are being managed on a collaborative website:
+  https://www.transifex.com/
+
+  They offer a command line tool called "tx" for downloading and
+  uploading translations. The tool is open source and available in
+  package management of Ubuntu for example.
+  Hence a configuration file for the tool was added to the WoT
+  repository. It can be found in the ".tx" directory where tx expects
+  it.
+
+  To use the tool, it is recommended to use the "transifex-pull" script
+  from our scripts repository: https://github.com/freenet/scripts
+  Please make sure to first read the manual at the beginning of the
+  tool's Python source code.
+
+- 0006846: [Code quality] Use a human readable file format for
+           serializing Identity XML files to disk (ArneBab, xor)
+
+  The core network traffic of WoT is upload and download of "Identity
+  XML files". These contain things such as the name of your identity,
+  the applications it uses (Sone, Freemail, etc.), and the trust values
+  you have chosen to publish.
+  WoT downloads those files for all known and trusted identities.
+
+  As download from the network is usually faster than processing the
+  files, they will be queued to disk before processing.
+  Class IdentityFileDiskQueue can be configured to archive the files
+  after processing so they can be used for scientific or debugging
+  purposes. For example, you can run an offline instance of WoT and feed
+  its Identity file queue with previously archived files to reproduce
+  bugs.
+
+  To ease those developer purposes, the format of the files has been
+  changed from Java serialization to a human readable file format.
+  The file format is based on fred's class SimpleFieldSet, which is the
+  foundation of the Freenet client protocol (FCP). Thus, if a FCP
+  library is available in your favorite programming language, it shall
+  be easy for you to write a parser for the new file format.
+
+  For an explanation of the file format, see: https://github.com/freenet/plugin-WebOfTrust/blob/3aff914346079760fa2e5921c30633e6f44c49a0/src/plugins/WebOfTrust/IdentityFile.java#L22-L70
+  For an explanation of how to repeat test runs using the queue, see: https://bugs.freenetproject.org/view.php?id=6873
+  For FCP libraries in various programming languages, see: https://wiki.freenetproject.org/Projects
+
+  Thanks to ArneBab for making me realize this feature is a good idea!
+
+- 0006557: [Code quality] Ant: Builder silently won't run unit tests if
+           there is no JUnit installed, should instead abort with error
+           message (xor)
+
+  When compiling WoT with the standard command line "ant", it will not
+  only compile, but also by default run the unit tests.
+  As new developers typically have different machines than the existing
+  ones, this gives us a good feedback on whether the tests succeed in
+  different environments.
+
+  Unfortunately, new developers are also likely to forget installing
+  JUnit 4 and Hamcrest, which are the requirement for the tests.
+
+  If the dependencies were not found, the old code just didn't run the
+  unit tests then, there was no error message - a rather severe
+  breakage :(
+  It will abort the whole compilation now.
+  Thus, if you want to ensure good testing of WoT, please consider
+  checking whether the unit tests do run now.
+
+  If you want to skip the tests, use "ant -Dtest.skip=true".
+
+- 0006588: [Code quality] Unit tests: Check
+           WebOfTrust.verifyDatabaseIntegrity() when finished (xor)
+
+  This is a test which checks whether the contents of the database
+  match the database schema.
+  It verifies not only structural integrity, but also semantic
+  correctness. This can be things such as "is the modification date of
+  this Identity *before* the creation date?".
+  The test is implemented by calling the startupDatabaseIntegrityTest()
+  functions on all objects which extend class Persistent. See those
+  functions for what is tested.
+
+  By calling the database integrity test from the base-classes for all
+  unit tests, it is now run at the end of every unit test - even those
+  which are not related to the database schema at first glance.
+  This should ensure quite a bit of general shotgun testing.
+
+  That's a necessary insurance due to the general complexity of
+  enforcing a database schema in db4o, which does not have any schema
+  checks of its own: The only thing which ensures the schema is obeyed
+  is WoT code, so it's easy for new developers to cause damage.
+
+- 0006686: [Code quality] Unit tests: Check
+           WebOfTrust.verifyAndCorrectStoredScores() when finished (xor)
+
+  One of the main jobs of WoT is to accumulate the trust ratings which
+  identities give to each other.
+  For identities which have not received a direct trust rating of the
+  user, it  will use the trust values of remote peers to calculate a
+  Score value. The Score is a weighted average which acts as a
+  replacement for missing direct trust ratings of the user.
+  Thus, Scores are the central "output" of WoT, and their correctness is
+  very important.
+
+  The function verifyAndCorrectStoredScores() validates the correctness
+  of the whole Score database using the reference algorithm.
+  By calling this function from the base-classes of all unit tests, it
+  is now run at the end of every test.
+  As the reference implementation is not used in practice, but was
+  replaced by a faster algorithm in build0018, this kind of shotgun
+  testing ensures that the optimized algorithm works properly.
+
+- 0006682: [Code quality] Unit tests: Check WebOfTrust.isTerminated()
+           when finished (xor)
+
+  WoT has many different subsystems which run on a thread of their own.
+  During shutdown, hypothetical threading issues such as deadlocks could
+  prevent shutdown of some subsystems.
+  This would be difficult to notice by the user: To make sure that
+  terminating Freenet is always possible, shutting down WoT may not
+  abort with an error message.
+
+  So to ensure shutdown works properly, code was added to the
+  base-classes of all unit tests. At the end of every test, it will
+  check whether the subsystems reported successful sutdown.
+
+- 0006594: [Bugs] Invalid usage of HashMap/*Set with objects of
+           subtypes of Persistent (xor)
+
+  Child classes of Persistent, such as Identity / Trust / Score,
+  typically have a hashCode() and equals() function, so they are
+  eligible for being used with hash tables.
+  However, there is a pitfall: The equals() function does not only
+  compare whether the entity behind the object is the same. It also
+  compares the current state of the object.
+  For example, an Identity objects represents the entity of a single
+  person. This person is always the same. But the state of an Identity
+  object also includes things such as the list of WoT applications the
+  identity uses. These things may change over time.
+  Hence, equals() may return false if it is used to compare multiple
+  different versions of the same identity.
+  The consequence of that is that code which uses HashSets together with
+  multiple versions of identities will cause multiple entries in the
+  HashSets when there should only be one.
+  The same applies to class HashMap when objects of class Persistent are
+  used as key, their ID should be used instead.
+
+  To fix this, class IdentifierHashSet was implemented. This class only
+  considers the ID of the objects for determining equality.
+  All code which uses HashSet was reviewed and fixed to use the new
+  class instead where necessary.
+  The code which uses class HashMap was reviewed to use the ID of
+  Persistent objects as key where necessary.
+
+- 0006671: [Code quality] XMLTransformer: Log parsing failures as
+           warning instead of normal so developers notice them (xor)
+
+  WoT publishes and downloads its data as XML to the network. As we
+  already have the experimental alternative implementation of LCWoT
+  available thanks to digger3, it's possible that there are
+  incompatibilities between the XML which WoT and LCWoT produce.
+
+  Thus, the log level of XML parsing failures was raised from NORMAL to
+  WARNING. This ensures they will be noticed during test runs:
+  The developer documentation recommends to search the logs for messages
+  of priority WARNING and ERROR after test runs.
+
+- 0006814: [Code quality] Identity.setNickname(): Provide more
+           descriptive Exception message if given nickname is null (Ademan)
+
+  The message was misleading previously, as we did not actually check
+  whether the given nickname is null. The NullPointerException was
+  merely being thrown implicitly due to nickname.trim() failing.
+  Thanks to Ademan for this fix!
+
+
+Thanks to:
+  - Ademan
+  - ArneBab
+  - Bert Massop
+  - nextgens
+  - The many translators on Transifex
+
+Links:
+  [1] https://bugs.freenetproject.org/view.php?id=3816
