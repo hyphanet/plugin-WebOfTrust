@@ -16,18 +16,15 @@ import java.util.Properties;
 import javax.imageio.ImageIO;
 
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleFactory;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
-import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.introduction.captcha.kaptcha.Constants;
 import plugins.WebOfTrust.introduction.captcha.kaptcha.impl.DefaultKaptcha;
 import plugins.WebOfTrust.introduction.captcha.kaptcha.util.Config;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.io.Closer;
-
-import plugins.WebOfTrust.introduction.captcha.RandomizedDistortion;
-import plugins.WebOfTrust.introduction.captcha.RandomizedWordRenderer;
 
 /**
  * First implementation of a captcha factory.
