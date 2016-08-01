@@ -152,7 +152,28 @@ CHANGELOG - prefixed with the bugtracker issue number:
   provide the stats. Ideally keep it running for as long as you can.
   Thank you!
 
-- 0006722: [Security] FIXME
+- 0006722: [Security] Improve captchas by randomization (bertm)
+
+  Existing captchas were insecure: cracking was possible in under 1
+  second on an average PC, without the use of any advanced techniques,
+  by means of best pattern match incremental generation.
+
+  This fix introduces a new WordRenderer and GimpyEngine for the
+  Kaptcha library that randomize:
+  - Horizontal inter-glyph separation
+  - Vertical glyph alignment
+  - Glyph rotation
+  - Twirl filter parameters (angle)
+  - Ripple filter parameters (amplitude, wavelength)
+  - Water filter parameters (centre, radius)
+
+  Efforts have been made to keep the captchas readable by humans. The
+  resulting captchas should not be much harder to read, but are far more
+  difficult to crack by means of simple pattern matching.
+
+  Also, for developers, code has been added to create arbitrary amounts
+  of captcha JPG files on disk to examine what the captchas look like.
+  See JavaDoc of function main() of class CaptchaFactory1.
 
 - 0006816: [Usability] Update translations from Transifex, add new ones (xor)
   0006817: [Bugs] Fix Norwegian Bokmål and Portuguese (Brazil)
