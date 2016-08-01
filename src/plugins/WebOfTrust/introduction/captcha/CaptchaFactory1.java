@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Properties;
 
 import javax.imageio.ImageIO;
@@ -85,9 +86,15 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 		
 		int amount = Integer.parseInt(args[0]);
 		Path outputDir = Paths.get(args[1]);
+		HashSet<String> alreadyCreated = new HashSet<>(amount * 2);
 		
 		while(--amount >= 0) {
 			Captcha c = new Captcha();
+			if(!alreadyCreated.add(c.text)) {
+				++amount;
+				continue;
+			}
+			
 			Path out = outputDir.resolve(c.text + ".jpg");
 			Files.write(out, c.jpeg, StandardOpenOption.CREATE_NEW /* Throws if existing */);
 		}
