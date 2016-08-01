@@ -35,20 +35,34 @@ import plugins.WebOfTrust.introduction.captcha.RandomizedWordRenderer;
  *
  */
 public class CaptchaFactory1 extends IntroductionPuzzleFactory {
-
-	@Override
-	public OwnIntroductionPuzzle generatePuzzle(IntroductionPuzzleStore store, OwnIdentity inserter) throws IOException {
-		ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1024); /* TODO: find out the maximum size of the captchas and put it here */
-		try {
+	
+	private class Captcha {
+		ByteArrayOutputStream out;
+		String text;
+		
+		Captcha() throws IOException {
+			out = new ByteArrayOutputStream(10 * 1024); /* TODO: find out the maximum size of the captchas and put it here */
+			try {
 			DefaultKaptcha captcha = new DefaultKaptcha();
 			Properties prop = new Properties();
 			prop.setProperty(Constants.KAPTCHA_OBSCURIFICATOR_IMPL, RandomizedDistortion.class.getName());
 			prop.setProperty(Constants.KAPTCHA_WORDRENDERER_IMPL, RandomizedWordRenderer.class.getName());
 			captcha.setConfig(new Config(prop));
-			String text = captcha.createText();
+			text = captcha.createText();
 			BufferedImage img = captcha.createImage(text);
 			ImageIO.write(img, "jpg", out);
-			
+			} finally {
+				Closer.close(out);
+			}
+		}
+	}
+
+	@Override
+	public OwnIntroductionPuzzle generatePuzzle(IntroductionPuzzleStore store, OwnIdentity inserter) throws IOException {
+		Captcha c = new Captcha();
+		ByteArrayOutputStream out = c.out;
+		try {
+			String text = c.text;
 			Date dateOfInsertion = CurrentTimeUTC.get();
 			synchronized(store) {
 				OwnIntroductionPuzzle puzzle = new OwnIntroductionPuzzle(store.getWebOfTrust(), inserter, PuzzleType.Captcha, "image/jpeg", out.toByteArray(), text, 
