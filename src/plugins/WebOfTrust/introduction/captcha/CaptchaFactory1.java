@@ -68,11 +68,9 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 	@Override
 	public OwnIntroductionPuzzle generatePuzzle(IntroductionPuzzleStore store, OwnIdentity inserter) throws IOException {
 		Captcha c = new Captcha();
-
-		String text = c.text;
 		Date dateOfInsertion = CurrentTimeUTC.get();
 		synchronized(store) {
-			OwnIntroductionPuzzle puzzle = new OwnIntroductionPuzzle(store.getWebOfTrust(), inserter, PuzzleType.Captcha, "image/jpeg", c.jpeg, text, 
+			OwnIntroductionPuzzle puzzle = new OwnIntroductionPuzzle(store.getWebOfTrust(), inserter, PuzzleType.Captcha, "image/jpeg", c.jpeg, c.text, 
 				dateOfInsertion, store.getFreeIndex(inserter, dateOfInsertion));
 
 			store.storeAndCommit(puzzle);
