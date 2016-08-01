@@ -6,6 +6,10 @@ package plugins.WebOfTrust.introduction.captcha;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Date;
 import java.util.Properties;
 
@@ -36,7 +40,7 @@ import plugins.WebOfTrust.introduction.captcha.RandomizedWordRenderer;
  */
 public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 	
-	private class Captcha {
+	private static class Captcha {
 		byte[] jpeg;
 		String text;
 		
@@ -71,5 +75,24 @@ public class CaptchaFactory1 extends IntroductionPuzzleFactory {
 				store.storeAndCommit(puzzle);
 				return puzzle;
 			}
+	}
+
+	/**
+	 * Run with:
+	 * java -classpath ../fred/dist/freenet.jar:dist/WebOfTrust.jar
+	 *     plugins.WebOfTrust.introduction.captcha.CaptchaFactory1 NUMBER_OF_CAPTCHAS OUTPUT_DIR
+	 */
+	public static void main(String[] args) throws IOException {
+		if(args.length != 2)
+			throw new IllegalArgumentException("Need arguments: NUMBER_OF_CAPTCHAS OUTPUT_DIR");
+		
+		int amount = Integer.parseInt(args[0]);
+		Path outputDir = Paths.get(args[1]);
+		
+		while(--amount >= 0) {
+			Captcha c = new Captcha();
+			Path out = outputDir.resolve(c.text + ".jpg");
+			Files.write(out, c.jpeg, StandardOpenOption.CREATE_NEW /* Throws if existing */);
+		}
 	}
 }
