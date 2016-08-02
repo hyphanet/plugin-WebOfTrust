@@ -291,6 +291,7 @@ CHANGELOG - prefixed with the bugtracker issue number:
   AssertionError happening on that page. Notice that assertions slow
   down WoT very much, so you should only enable them for test runs.
 
+
 CHANGELOG about stuff only interesting for developers:
 
 - 0006840: [Code quality] Provide xor's WoT bachelor thesis as a
@@ -593,4 +594,3 @@ Thanks to:
   - Bert Massop
   - nextgens
   - The many translators on Transifex
-
