@@ -38,7 +38,8 @@ The fix will address this by only subscribing to the identities which
 the user has assigned trust to. The other identities will only be
 fetched "on-demand" when WoT learns by gossip that they surely have
 published a new edition.
-For details of the planned algorithm, see [1].
+For details of the planned algorithm, see:
+  https://bugs.freenetproject.org/view.php?id=3816
 
 In other news:
 Please excuse that this release took very long to be developed.
@@ -593,5 +594,3 @@ Thanks to:
   - nextgens
   - The many translators on Transifex
 
-Links:
-  [1] https://bugs.freenetproject.org/view.php?id=3816
