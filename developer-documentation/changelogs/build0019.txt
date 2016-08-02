@@ -40,15 +40,21 @@ fetched "on-demand" when WoT learns by gossip that they surely have
 published a new edition.
 For details of the planned algorithm, see [1].
 
-Work on this shall being immediately, but it may take some months as
-I've been volunteer since December and thus cannot provide as much time
-as an employee anymore.
-This is because Freenet has run out of funds. I am currently not seeking
-a different job at the hope of being able to acquire funding for Freenet
-so I can resume work. This can continue for some months, as my family
-needs some help from me anyway and I get food in return, but I cannot
-live off my family's gratitude forever.
-So if you want to help the project, please consider donating:
+In other news:
+Please excuse that this release took very long to be developed.
+I've been a volunteer since December and thus currently cannot provide as
+much time as I could when I was being an employee.
+This is because Freenet had run out of money.  Luckily we've recently got a
+donation which will fund 1 year of development. I have not got a different job
+at the hope of being able to return to Freenet, so if the community decides to
+allow me to continue being an employee, I'll do my best to provide more
+frequent WoT releases again :)
+And even if not, I'll cut down the target size for the upcoming release: This
+release was planned to resolve 12 issues, and it ended up having to resolve
+31. So the next release will be aimed at ~ 6 issues to take less time.
+
+If you want to help the project to avoid a half-a-year funding gap from
+happening again, please consider donating:
     https://freenetproject.org/
 Scroll down to see the fundraising progress bar.
 Bitcoin is also accepted in case you want to stay semi-anonymous!
