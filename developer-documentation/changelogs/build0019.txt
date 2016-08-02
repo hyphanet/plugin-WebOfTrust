@@ -568,8 +568,8 @@ CHANGELOG about stuff only interesting for developers:
 - 0006671: [Code quality] XMLTransformer: Log parsing failures as
            warning instead of normal so developers notice them (xor)
 
-  WoT publishes and downloads its data as XML to the network. As we
-  already have the experimental alternative implementation of LCWoT
+  WoT transfers its data using XML across the network.
+  As we already have the experimental alternative implementation of LCWoT
   available thanks to digger3, it's possible that there are
   incompatibilities between the XML which WoT and LCWoT produce.
 
