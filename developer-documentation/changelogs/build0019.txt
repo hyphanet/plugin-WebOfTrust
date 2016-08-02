@@ -1,4 +1,4 @@
-Web of Trust Version 0.4.4 build0019
+Web of Trust Version 0.4.5 build0019
 ------------------------------------------------------------------------
 
 SUMMARY AND OUTLOOK (detailed changelog is below):
