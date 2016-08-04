@@ -1390,8 +1390,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 		synchronized(Persistent.transactionLock(mDB)) {
 		try {
 			// The database of computed Scores might be wrong due to the duplicates, so we
-			// recompute it if there were any duplicates.
-			boolean recomputeScores = false;
+			// will need to recompute it if there were any duplicates. Thus we track if there were:
+			boolean anythingChanged = false;
 			
 			// deleteWithoutCommit(i) would call beginTrustListImport(), and that function contains
 			// assert()s which would throw due to the duplicate Identitys/Trusts/Scores. So we
@@ -1404,7 +1404,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				if(!identitySet.add(i)) {
 					Logger.error(this, "Deleting duplicate Identity: " + i);
 					deleteWithoutCommit(i);
-					recomputeScores = true;
+					anythingChanged = true;
 				}
 			}
 			
@@ -1418,7 +1418,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				if(!trustSet.add(t)) {
 					Logger.error(this, "Deleting duplicate trust: " + t);
 					t.deleteWithoutCommit();
-					recomputeScores = true;
+					anythingChanged = true;
 				}
 			}
 			
@@ -1427,14 +1427,22 @@ public final class WebOfTrust extends WebOfTrustInterface
 				if(!scoreSet.add(s)) {
 					Logger.error(this, "Deleting duplicate Score: " + s);
 					s.deleteWithoutCommit();
-					recomputeScores = true;
+					anythingChanged = true;
 				}
 			}
 			
-			// We couldn't have set mFullScoreComputationNeeded earlier, that would have caused
-			// failing assert() in callees.
-			mFullScoreComputationNeeded = recomputeScores; 
-			finishTrustListImport();
+			if(anythingChanged) {
+				// We couldn't have set mFullScoreComputationNeeded earlier, that would have caused
+				// failing assert() in callees.
+				mFullScoreComputationNeeded = true;
+				finishTrustListImport();
+			} else {
+				// Emulate finishTrustListImport() by just setting this to false instead of calling
+				// finishTrustListImport(): This avoids finishTrustListImport() doing an
+				// expensive assert(computeAllScoresWithoutCommit()).
+				// - We didn't change anything, so there is no need to do expensive tests.
+				mTrustListImportInProgress = false;
+			}
 			
 			Persistent.checkedCommit(mDB, this);
 		}
