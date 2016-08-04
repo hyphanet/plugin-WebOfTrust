@@ -281,13 +281,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 			
 			mInserter = new IdentityInserter(this);
-					
-			
-			// We only do this if debug logging is enabled since the integrity verification cannot repair anything anyway,
-			// if the user does not read his logs there is no need to check the integrity.
-			// TODO: Do this once every few startups and notify the user in the web ui if errors are found.
-			if(logDEBUG)
-				verifyDatabaseIntegrity();
 			
 			// Identity files flow through the following pipe:
 			//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
@@ -302,10 +295,19 @@ public final class WebOfTrust extends WebOfTrustInterface
 			/* mIdentityFileQueue.start(); */    // Not necessary, has no thread.
 			
 			mFetcher.start();
-
-			// maybeVerifyAndCorrectStoredScores() must be called after the IdentityFetcher was
-			// started because it will verify its state.
+			
+			
+			// verifyDatabaseIntegrity() and maybeVerifyAndCorrectStoredScores() must be called
+			// after the IdentityFetcher was started because they might verify its state.
+			
+			// We only do this if debug logging is enabled since the integrity verification cannot repair anything anyway,
+			// if the user does not read his logs there is no need to check the integrity.
+			// TODO: Do this once every few startups and notify the user in the web ui if errors are found.
+			if(logDEBUG)
+				verifyDatabaseIntegrity();
+			
 			maybeVerifyAndCorrectStoredScores();
+			
 						
 			// Database is up now, integrity is checked. We can start to actually do stuff
 			
