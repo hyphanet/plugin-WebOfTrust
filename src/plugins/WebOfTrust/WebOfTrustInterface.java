@@ -41,11 +41,11 @@ public abstract class WebOfTrustInterface {
 	 * the Freenet development team provides a list of seed identities - each of them is one of the developers.
 	 */
 	static final String[] SEED_IDENTITIES = new String[] { 
-		"USK@QeTBVWTwBldfI-lrF~xf0nqFVDdQoSUghT~PvhyJ1NE,OjEywGD063La2H-IihD7iYtZm3rC0BP6UTvvwyF5Zh4,AQACAAE/WebOfTrust/1502", // xor
+		"USK@QeTBVWTwBldfI-lrF~xf0nqFVDdQoSUghT~PvhyJ1NE,OjEywGD063La2H-IihD7iYtZm3rC0BP6UTvvwyF5Zh4,AQACAAE/WebOfTrust/1524", // xor
 		"USK@z9dv7wqsxIBCiFLW7VijMGXD9Gl-EXAqBAwzQ4aq26s,4Uvc~Fjw3i9toGeQuBkDARUV5mF7OTKoAhqOA9LpNdo,AQACAAE/WebOfTrust/5156", // Toad
-		"USK@o2~q8EMoBkCNEgzLUL97hLPdddco9ix1oAnEa~VzZtg,X~vTpL2LSyKvwQoYBx~eleI2RF6QzYJpzuenfcKDKBM,AQACAAE/WebOfTrust/15723", // Bombe
-		"USK@D3MrAR-AVMqKJRjXnpKW2guW9z1mw5GZ9BB15mYVkVc,xgddjFHx2S~5U6PeFkwqO5V~1gZngFLoM-xaoMKSBI8,AQACAAE/WebOfTrust/8137", // zidel
-		"USK@nmTkFmn0Akz1-G9iIN2w6lsQEAfWkpQw3ckOxtwMh2Q,Du9GQxGDj0Nax4zN9-ANTPetx-GxOoWaRf6Gq6Nbh1o,AQACAAE/WebOfTrust/7437", // operhiem1
+		"USK@o2~q8EMoBkCNEgzLUL97hLPdddco9ix1oAnEa~VzZtg,X~vTpL2LSyKvwQoYBx~eleI2RF6QzYJpzuenfcKDKBM,AQACAAE/WebOfTrust/17330", // Bombe
+		"USK@D3MrAR-AVMqKJRjXnpKW2guW9z1mw5GZ9BB15mYVkVc,xgddjFHx2S~5U6PeFkwqO5V~1gZngFLoM-xaoMKSBI8,AQACAAE/WebOfTrust/8231", // zidel
+		"USK@nmTkFmn0Akz1-G9iIN2w6lsQEAfWkpQw3ckOxtwMh2Q,Du9GQxGDj0Nax4zN9-ANTPetx-GxOoWaRf6Gq6Nbh1o,AQACAAE/WebOfTrust/9141", // operhiem1
 	};
 	
 	abstract public List<Identity> getAllIdentities();
