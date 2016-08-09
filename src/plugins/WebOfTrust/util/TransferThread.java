@@ -38,7 +38,8 @@ import freenet.support.io.TempBucketFactory;
  * 
  * @author xor
  */
-public abstract class TransferThread implements PrioRunnable, ClientGetCallback, ClientPutCallback {
+public abstract class TransferThread implements
+		Daemon, PrioRunnable, ClientGetCallback, ClientPutCallback {
 	
 	protected final Node mNode;
 	protected final HighLevelSimpleClient mClient;
@@ -68,7 +69,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	 * Tells this TransferThread to start it's execution. You have to call this after constructing an object of an implementing class - it must not
 	 * be called in the constructors of implementing classes.
 	 */
-	public void start() {
+	@Override public void start() {
 		Logger.debug(this, "Starting...");
 
         // We don't need to reliably protect against this, triggerExecution() will do nothing if we
@@ -203,7 +204,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 		}
 	}
 	
-	public void terminate() {
+	@Override public void terminate() {
 		Logger.debug(this, "Terminating...");
 
         // We don't need a reliable guard against calling this twice, what we do is non-destructive
