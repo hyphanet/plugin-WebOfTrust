@@ -26,6 +26,7 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.TransferThread;
 
@@ -64,7 +65,7 @@ import freenet.support.io.ResumeFailedException;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public final class IntroductionClient extends TransferThread  {
+public final class IntroductionClient extends TransferThread implements Daemon {
 	
 	private static final int STARTUP_DELAY = 3 * 60 * 1000;
 	private static final int THREAD_PERIOD = 1 * 60 * 60 * 1000; 
