@@ -20,6 +20,7 @@ import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.introduction.captcha.CaptchaFactory1;
+import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.TransferThread;
 
 import com.db4o.ObjectSet;
@@ -54,7 +55,7 @@ import freenet.support.io.ResumeFailedException;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public final class IntroductionServer extends TransferThread {
+public final class IntroductionServer extends TransferThread implements Daemon {
 	
 	private static final int STARTUP_DELAY = 5 * 60 * 1000;
 	private static final int THREAD_PERIOD = 60 * 60 * 1000;
