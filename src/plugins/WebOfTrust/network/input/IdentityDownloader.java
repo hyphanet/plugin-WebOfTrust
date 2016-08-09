@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
-public interface IdentityDownloader {
+import plugins.WebOfTrust.util.Daemon;
+
+public interface IdentityDownloader extends Daemon {
 
 }
