@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Random;
 
+import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.TransferThread;
 
 import com.db4o.ext.ExtObjectContainer;
@@ -42,7 +43,7 @@ import freenet.support.io.ResumeFailedException;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class IdentityInserter extends TransferThread {
+public final class IdentityInserter extends TransferThread implements Daemon {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
 	
