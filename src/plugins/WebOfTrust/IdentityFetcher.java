@@ -14,6 +14,7 @@ import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.network.input.IdentityDownloader;
+import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob;
@@ -61,7 +62,7 @@ import freenet.support.io.NativeThread;
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
 public final class IdentityFetcher implements
-		IdentityDownloader, USKRetrieverCallback, PrioRunnable {
+		IdentityDownloader, Daemon, USKRetrieverCallback, PrioRunnable {
 	
     /**
      * Will be used as delay for the {@link DelayedBackgroundJob} which schedules processing of
@@ -719,7 +720,7 @@ public final class IdentityFetcher implements
 	/**
 	 * Deletes all existing commands using {@link #deleteAllCommands()}. Enables usage of {@link #scheduleCommandProcessing()}.
 	 */
-	protected void start() {
+	@Override public void start() {
         Logger.normal(this, "start()...");
 
         synchronized (mWoT) {
@@ -868,6 +869,10 @@ public final class IdentityFetcher implements
 		}
 		
         Logger.normal(this, "stop() finished.");
+	}
+
+	@Override public void terminate() {
+		stop();
 	}
 
 	/**
