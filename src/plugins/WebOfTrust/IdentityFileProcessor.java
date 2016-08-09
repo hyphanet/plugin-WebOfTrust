@@ -6,6 +6,7 @@ package plugins.WebOfTrust;
 import java.util.concurrent.TimeUnit;
 
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
+import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
@@ -30,7 +31,7 @@ import freenet.support.io.NativeThread.PriorityLevel;
  * been queued, it makes sense to first wait for a short delay as new editions might arrive to
  * replace the old one. 
  */
-public final class IdentityFileProcessor implements DelayedBackgroundJob {
+public final class IdentityFileProcessor implements Daemon, DelayedBackgroundJob {
 	/**
 	 * We wait for this delay before processing to give some time for deduplication.<br><br>
 	 * 
@@ -127,7 +128,7 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 	}
 
 	/** Must be called during startup of WOT */
-	void start() {
+	@Override public void start() {
 		mQueue.registerEventHandler(this);
 		// In theory, the queue might contain files already, so we should triggerExecution() to
 		// process them. But registerEventHandler() does that automatically for us if there are
