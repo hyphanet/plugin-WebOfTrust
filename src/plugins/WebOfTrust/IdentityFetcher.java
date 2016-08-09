@@ -13,6 +13,7 @@ import java.util.HashMap;
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.network.input.IdentityDownloader;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob;
@@ -59,7 +60,8 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable {
+public final class IdentityFetcher implements
+		IdentityDownloader, USKRetrieverCallback, PrioRunnable {
 	
     /**
      * Will be used as delay for the {@link DelayedBackgroundJob} which schedules processing of
