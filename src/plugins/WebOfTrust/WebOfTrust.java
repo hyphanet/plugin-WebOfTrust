@@ -2183,6 +2183,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		final ArrayList<ShutdownThread> shutdownThreads = new ArrayList<ShutdownThread>(8); 
 		
+		// TODO: Code quality: Most of the things we call stop() etc. upon in the below mini
+		// classes implement interface Daemon nowadays.
+		// Thus we could simplify the boilerplate code below to only consist of:
+		// - an array of type Daemon which contains things such as mFCPInterface, mWebInterface, ...
+		// - a loop to consume the array and create the ShutdownThread mini ojects from it.
+		
 		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
 			if(mFCPInterface != null)
 				mFCPInterface.stop();
