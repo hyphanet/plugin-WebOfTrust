@@ -3,6 +3,9 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.util.jobs;
 
+import plugins.WebOfTrust.IdentityFetcher;
+import plugins.WebOfTrust.util.Daemon;
+
 /**
  * A background job that can be triggered to run, for example for performing maintenance jobs.
  *
@@ -10,6 +13,12 @@ package plugins.WebOfTrust.util.jobs;
  * job is executed at any particular moment, i.e. a single background job must always appear to
  * be run sequentially. Unless terminated, all triggers must eventually followed by an execution
  * of the background job.
+ * 
+ * TODO: Code quality: Should implement {@link Daemon}. This requires adding a start() function.
+ * The implementations then need to be changed to ensure that {@link #triggerExecution()} will not
+ * have any effect before start() was called - and this would be a very useful change because some
+ * code such as {@link IdentityFetcher} already contains complex logic as a fix for having no
+ * such start() here. 
  *
  * @author bertm
  */
