@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 import plugins.WebOfTrust.ui.fcp.FCPInterface.FCPCallFailedException;
+import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
@@ -79,7 +80,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public final class SubscriptionManager implements PrioRunnable {
+public final class SubscriptionManager implements Daemon, PrioRunnable {
 	
 	@SuppressWarnings("serial")
 	public static final class Client extends Persistent {
@@ -1999,7 +2000,7 @@ public final class SubscriptionManager implements PrioRunnable {
 	 * and pre-shutdown callbacks which the {@link BackgroundJob} calls upon us so we can do
 	 * our own initialization / cleanup.
 	 */
-	protected synchronized void start() {
+	@Override public synchronized void start() {
 		Logger.normal(this, "start()...");
 
         // This is thread-safe guard against concurrent multiple calls to start() / stop() since
@@ -2103,6 +2104,9 @@ public final class SubscriptionManager implements PrioRunnable {
 		Logger.normal(this, "stop() finished.");
 	}
 
+	@Override public void terminate() {
+		stop();
+	}
 
     // Public getters for statistics
 
