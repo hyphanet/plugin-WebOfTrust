@@ -20,9 +20,8 @@ import plugins.WebOfTrust.util.Daemon;
  * This notably is only a small subset of the total set of {@link Identity}s.
  * That's necessary because USK subscriptions are expensive, they create a constant load of
  * polling on the network.
- * The lack of this class subscribing to all {@link Identity}s is compensated by the other
- * implementations of {@link IdentityDownloader} which deal with the rest of them in a less
- * expensive manner. */
+ * The lack of this class subscribing to all {@link Identity}s is compensated by
+ * {@link IdentityDownloaderSlow} which deals with the rest of them in a less expensive manner. */
 class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 
 	public IdentityDownloaderFast() {
