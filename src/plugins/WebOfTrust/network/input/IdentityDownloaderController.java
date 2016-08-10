@@ -19,17 +19,23 @@ import plugins.WebOfTrust.util.Daemon;
  * @see IdentityDownloaderSlow
  */
 public class IdentityDownloaderController implements IdentityDownloader, Daemon {
+	
+	private final IdentityDownloaderFast mFastDownloader;
+	private final IdentityDownloaderSlow mSlowDownloader;
 
 	public IdentityDownloaderController() {
-		// FIXME
+		mFastDownloader = new IdentityDownloaderFast();
+		mSlowDownloader = new IdentityDownloaderSlow();
 	}
 
 	@Override public void start() {
-		// FIXME
+		mFastDownloader.start();
+		mSlowDownloader.start();
 	}
 
 	@Override public void terminate() {
-		// FIXME
+		mFastDownloader.terminate();
+		mSlowDownloader.terminate();
 	}
 
 	@Override public void storeStartFetchCommandWithoutCommit(Identity identity) {
