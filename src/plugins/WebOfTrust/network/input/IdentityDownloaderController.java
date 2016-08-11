@@ -64,15 +64,18 @@ public class IdentityDownloaderController implements IdentityDownloader, Daemon 
 	}
 
 	@Override public void storeStartFetchCommandWithoutCommit(Identity identity) {
-		// FIXME
+		for(IdentityDownloader d : mDownloaders)
+			d.storeStartFetchCommandWithoutCommit(identity);
 	}
 
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
-		// FIXME
+		for(IdentityDownloader d : mDownloaders)
+			d.storeAbortFetchCommandWithoutCommit(identity);
 	}
 
 	@Override public void storeUpdateEditionHintCommandWithoutCommit(String identityID) {
-		// FIXME
+		for(IdentityDownloader d : mDownloaders)
+			d.storeUpdateEditionHintCommandWithoutCommit(identityID);
 	}
 
 }
