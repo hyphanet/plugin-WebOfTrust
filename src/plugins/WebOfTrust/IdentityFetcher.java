@@ -14,6 +14,7 @@ import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.network.input.IdentityDownloader;
+import plugins.WebOfTrust.network.input.IdentityDownloaderController;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
@@ -54,6 +55,12 @@ import freenet.support.io.NativeThread;
  *	synchronized(instance of IntroductionPuzzleStore) {
  *	synchronized(instance of IdentityFetcher) {
  *	synchronized(Persistent.transactionLock(instance of ObjectContainer)) {
+ *
+ * FIXME: Change this class to synchronize upon the {@link IdentityDownloaderController} instead of
+ * upon itself. Also make {@link WebOfTrust#getIdentityFetcher()} return the
+ * {@link IdentityDownloaderController} instead so the rest of WoT locks upon it.
+ * Further, {@link WebOfTrust#mFetcher} needs to be changed to hold the controller instead so
+ * the private stuff of class WebOfTrust locks upon that one as well.
  * 
  * TODO: Code quality: Rename to IdentityFileFetcher to match the naming of
  * {@link IdentityFileQueue} and {@link IdentityFileProcessor}. Notice that this needs to be done
