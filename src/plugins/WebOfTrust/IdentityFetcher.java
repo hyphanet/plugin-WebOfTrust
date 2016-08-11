@@ -142,7 +142,7 @@ public final class IdentityFetcher implements
 	 * 
 	 * @param myWoT A reference to a {@link WebOfTrust}
 	 */
-	protected IdentityFetcher(WebOfTrust myWoT, PluginRespirator respirator,
+	public IdentityFetcher(WebOfTrust myWoT, PluginRespirator respirator,
 			IdentityFileQueue queue) {
 		mWoT = myWoT;
 		mQueue = queue;

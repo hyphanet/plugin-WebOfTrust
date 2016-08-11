@@ -4,7 +4,11 @@
 package plugins.WebOfTrust.network.input;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.IdentityFetcher;
+import plugins.WebOfTrust.IdentityFileQueue;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
+import freenet.pluginmanager.PluginRespirator;
 
 
 /**
@@ -19,23 +23,44 @@ import plugins.WebOfTrust.util.Daemon;
  * @see IdentityDownloaderSlow
  */
 public class IdentityDownloaderController implements IdentityDownloader, Daemon {
-	
-	private final IdentityDownloaderFast mFastDownloader;
-	private final IdentityDownloaderSlow mSlowDownloader;
 
-	public IdentityDownloaderController() {
-		mFastDownloader = new IdentityDownloaderFast();
-		mSlowDownloader = new IdentityDownloaderSlow();
+	/**
+	 * If true, use class {@link IdentityFetcher} instead of {@link IdentityDownloaderFast} and
+	 * {@link IdentityDownloaderSlow}.
+	 * 
+	 * ATTENTION: Use true for testing purposes only:
+	 * {@link IdentityFetcher} subscribes to the USKs of ALL trustworthy {@link Identity}s.
+	 * Thus, it is very reliable but also very slow and a very high load on the network.
+	 * 
+	 * FIXME: Change to true once {@link IdentityDownloaderFast} and {@link IdentityDownloaderSlow}
+	 * are actually implemented. */
+	public static final boolean USE_LEGACY_REFERENCE_IMPLEMENTATION = true;
+
+
+	private final IdentityDownloader[] mDownloaders;
+
+
+	public IdentityDownloaderController(WebOfTrust wot, PluginRespirator pr, IdentityFileQueue q) {
+		if(!USE_LEGACY_REFERENCE_IMPLEMENTATION) {
+			mDownloaders = new IdentityDownloader[] {
+				new IdentityDownloaderFast(),
+				new IdentityDownloaderSlow(),
+			};
+		} else {
+			mDownloaders = new IdentityDownloader[] {
+				new IdentityFetcher(wot, pr, q)
+			};
+		}
 	}
 
 	@Override public void start() {
-		mFastDownloader.start();
-		mSlowDownloader.start();
+		for(IdentityDownloader d : mDownloaders)
+			d.start();
 	}
 
 	@Override public void terminate() {
-		mFastDownloader.terminate();
-		mSlowDownloader.terminate();
+		for(IdentityDownloader d : mDownloaders)
+			d.terminate();
 	}
 
 	@Override public void storeStartFetchCommandWithoutCommit(Identity identity) {
