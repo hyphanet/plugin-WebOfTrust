@@ -4,6 +4,7 @@
 package plugins.WebOfTrust.network.input;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
@@ -19,7 +20,10 @@ import plugins.WebOfTrust.util.Daemon;
  * databases.
  * (This already is a requirement of the implementation of at least
  * {@link WebOfTrust#deleteWithoutCommit(Identity)} but possibly also of other stuff. Further,
- * it will possibly allow decoupling of table locks in a future SQL port of WoT.) */
+ * it will possibly allow decoupling of table locks in a future SQL port of WoT.)
+ * 
+ * FIXME: Review the whole of class {@link IdentityFetcher} for any important JavaDoc such as the
+ * above "ATTENTION" and add it to this interface. */
 public interface IdentityDownloader extends Daemon {
 
 	/**
