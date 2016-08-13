@@ -143,12 +143,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 	private IdentityInserter mInserter;
 	
 	/**
-	 * Fetches identities when it is told to do so by the plugin:
-	 * - At startup, all known identities are fetched
-	 * - When a new identity is received from a trust list it is fetched
-	 * - When a new identity is received by the IntrouductionServer it is fetched
-	 * - When an identity is manually added it is also fetched.
-	 * - ...
+	 * Fetches remote {@link Identity}s when it is told to do so by the plugin.
+	 * This is usually the case when {@link #shouldFetchIdentity(Identity)} is true.
 	 * 
 	 * The fetched identity files will be enqueued in the {@link #mIdentityFileQueue} for processing
 	 * by the {@link #mIdentityFileProcessor}. */
