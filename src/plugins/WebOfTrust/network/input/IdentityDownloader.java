@@ -51,4 +51,10 @@ public interface IdentityDownloader extends Daemon {
 	 * @param identityID See {@link Identity#getID()}. */
 	void storeUpdateEditionHintCommandWithoutCommit(String identityID);
 
+	/**
+	 * ATTENTION: For debugging purposes only.
+	 * 
+	 * Specifically: {@link WebOfTrust#checkForDatabaseLeaks()} uses this for debugging. */
+	void deleteAllCommands();
+
 }

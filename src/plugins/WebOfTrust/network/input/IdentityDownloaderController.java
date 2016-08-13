@@ -78,4 +78,9 @@ public class IdentityDownloaderController implements IdentityDownloader, Daemon 
 			d.storeUpdateEditionHintCommandWithoutCommit(identityID);
 	}
 
+	@Override public void deleteAllCommands() {
+		for(IdentityDownloader d : mDownloaders)
+			d.deleteAllCommands();
+	}
+
 }

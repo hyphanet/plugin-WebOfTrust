@@ -43,4 +43,8 @@ public class IdentityDownloaderSlow implements IdentityDownloader, Daemon {
 		// FIXME
 	}
 
+	@Override public void deleteAllCommands() {
+		// FIXME
+	}
+
 }

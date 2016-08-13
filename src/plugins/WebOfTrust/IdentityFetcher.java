@@ -330,10 +330,7 @@ public final class IdentityFetcher implements
 		return mRequests.containsKey(identityID);
 	}
 
-	/**
-	 * ATTENTION: Outside classes should only use this for debugging purposes such as {@link WebOfTrust#checkForDatabaseLeaks()}.
-	 */
-	synchronized void deleteAllCommands() {
+	@Override public synchronized void deleteAllCommands() {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				if(logDEBUG) Logger.debug(this, "Deleting all identity fetcher commands ...");
