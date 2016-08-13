@@ -54,6 +54,24 @@ public interface IdentityDownloader extends Daemon {
 	/**
 	 * ATTENTION: For debugging purposes only.
 	 * 
+	 * Returns the effective state of whether the downloader will download an {@link Identity}
+	 * = returns what was last instructed to this downloader using
+	 * {@link #storeStartFetchCommandWithoutCommit(Identity)}
+	 * or {@link #storeAbortFetchCommandWithoutCommit(Identity)}:
+	 * True if the last command was one for starting the fetch, false if it was for stopping it.
+	 * 
+	 * This considers both queued commands as well as already processed commands.
+	 * It will also check for contradictory commands in the command queue which would be a bug
+	 * (= both start and stop command at once).
+	 *
+	 * You must synchronize upon this IdentityDownloader while calling this function.
+	 * 
+	 * @param identityID See {@link Identity#getID()}. */
+	boolean getShouldFetchState(String identityID);
+
+	/**
+	 * ATTENTION: For debugging purposes only.
+	 * 
 	 * Specifically: {@link WebOfTrust#checkForDatabaseLeaks()} uses this for debugging. */
 	void deleteAllCommands();
 

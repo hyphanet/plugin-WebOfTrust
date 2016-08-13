@@ -3,12 +3,15 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
+import java.util.ArrayList;
+
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.Logger;
 
 
 /**
@@ -76,6 +79,29 @@ public class IdentityDownloaderController implements IdentityDownloader, Daemon 
 	@Override public void storeUpdateEditionHintCommandWithoutCommit(String identityID) {
 		for(IdentityDownloader d : mDownloaders)
 			d.storeUpdateEditionHintCommandWithoutCommit(identityID);
+	}
+
+	@Override public boolean getShouldFetchState(String identityID) {
+		ArrayList<Boolean> shouldFetch = new ArrayList<Boolean>();
+		
+		for(IdentityDownloader d : mDownloaders)
+			shouldFetch.add(d.getShouldFetchState(identityID));
+		
+		// Normally this should be an assert() but the parent interface specifies this whole
+		// function to be for debugging purposes only so we can be very careful.
+		if(shouldFetch.contains(!shouldFetch.get(0)) == false) {
+			Logger.error(this, "My downloaders don't return the same getShouldFetchState("
+			                   + identityID + ") each: ");
+			
+			for(IdentityDownloader d : mDownloaders) {
+				Logger.error(this, d + " getShouldFetchState(): "
+				                     + d.getShouldFetchState(identityID));
+			}
+			
+			assert(false);
+		}
+		
+		return shouldFetch.contains(true);
 	}
 
 	@Override public void deleteAllCommands() {

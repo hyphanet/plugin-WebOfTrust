@@ -284,15 +284,7 @@ public final class IdentityFetcher implements
 		return new Persistent.InitializingObjectSet<IdentityFetcher.IdentityFetcherCommand>(mWoT, q);
 	}
 
-	/**
-	 * Returns the effective state of whether the fetcher will fetch an identity.
-	 * This considers both queued commands as well as already processed commands.
-	 * It will also check for contradictory commands (= both start and stop command at once).
-	 * 
-	 * For debugging purposes only.
-	 * 
-	 * You must synchronize upon this IdentityFetcher while calling this function. */
-	final boolean getShouldFetchState(final String identityID) {
+	@Override public final boolean getShouldFetchState(final String identityID) {
 		boolean abortFetchScheduled = false;
 		try {
 			getCommand(AbortFetchCommand.class, identityID);

@@ -43,6 +43,11 @@ public class IdentityDownloaderSlow implements IdentityDownloader, Daemon {
 		// FIXME
 	}
 
+	@Override public boolean getShouldFetchState(String identityID) {
+		// FIXME
+		return false;
+	}
+
 	@Override public void deleteAllCommands() {
 		// FIXME
 	}
