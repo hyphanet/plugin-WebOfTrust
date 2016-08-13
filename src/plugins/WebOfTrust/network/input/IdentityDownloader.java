@@ -19,8 +19,10 @@ import plugins.WebOfTrust.util.Daemon;
  * objects from the database does not need to have take care of the IdentityDownloaders'
  * databases.
  * (This already is a requirement of the implementation of at least
- * {@link WebOfTrust#deleteWithoutCommit(Identity)} but possibly also of other stuff. Further,
- * it will possibly allow decoupling of table locks in a future SQL port of WoT.)
+ * {@link WebOfTrust#deleteWithoutCommit(Identity)}, {@link WebOfTrust#deleteOwnIdentity(String)}
+ * and {@link WebOfTrust#restoreOwnIdentityWithoutCommit(freenet.keys.FreenetURI)}
+ * but possibly also of other stuff. Further, it will possibly allow decoupling of table locks in a
+ * future SQL port of WoT.)
  * 
  * FIXME: Review the whole of class {@link IdentityFetcher} for any important JavaDoc such as the
  * above "ATTENTION" and add it to this interface. */

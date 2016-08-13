@@ -38,6 +38,8 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.IntroductionServer;
 import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
+import plugins.WebOfTrust.network.input.IdentityDownloader;
+import plugins.WebOfTrust.network.input.IdentityDownloaderController;
 import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
@@ -147,8 +149,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * This is usually the case when {@link #shouldFetchIdentity(Identity)} is true.
 	 * 
 	 * The fetched identity files will be enqueued in the {@link #mIdentityFileQueue} for processing
-	 * by the {@link #mIdentityFileProcessor}. */
-	private IdentityFetcher mFetcher;
+	 * by the {@link #mIdentityFileProcessor}.
+	 * 
+	 * TODO: Code quality: Rename to mIdentityDownloader - used to be an IdentityFetcher, hence the
+	 * current name. When doing that, please also search the whole class for instances of the
+	 * string "IdentityFetcher" and change them to "IdentityDownloader" as well. */
+	private IdentityDownloader mFetcher;
 	
 	/**
 	 * After {@link #mFetcher} has fetched an identity file, it is queued in this queue
@@ -274,7 +280,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 			mIdentityFileProcessor = new IdentityFileProcessor(
 				mIdentityFileQueue, mPR.getNode().getTicker(), mXMLTransformer);
 
-			mFetcher = new IdentityFetcher(this, getPluginRespirator(), mIdentityFileQueue);
+			mFetcher
+				= new IdentityDownloaderController(this, getPluginRespirator(), mIdentityFileQueue);
 
 
 			// Please ensure that no threads are using the IntroductionPuzzleStore / IdentityFetcher / SubscriptionManager while this is executing.
@@ -288,7 +295,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// Thus, in theory, we should want to start the pipe's daemons in reverse order to
 			// ensure that the receiving ones are available before the ones which fill the pipe.
 			// But nevertheless we don't actually start the IdentityFileProcessor now:
-			// The following IdentityFetcher.start() would feed it with files before this startup
+			// The following mFetcher.start() would feed it with files before this startup
 			// function has completed, so its identity file processing would slow down startup.
 			// Hence we'll start it at the end of this function.
 			/* mIdentityFileProcessor.start(); */
@@ -389,15 +396,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		mIdentityFileProcessor
 			= new IdentityFileProcessor(mIdentityFileQueue, null, mXMLTransformer);
-
-		mFetcher = new IdentityFetcher(this, null, mIdentityFileQueue);
+		
+		mFetcher = new IdentityDownloaderController(this, null, mIdentityFileQueue);
 		
 		// Identity files flow through the following pipe:
 		//     mFetcher -> mIdentityFileQueue -> mIdentityFileProcessor
 		// Thus, in theory, we should want to start the pipe's daemons in reverse order to
 		// ensure that the receiving ones are available before the ones which fill the pipe.
 		// But nevertheless we don't actually start the IdentityFileProcessor now:
-		// The following IdentityFetcher.start() would feed it with files before this startup
+		// The following mFetcher.start() would feed it with files before this startup
 		// function has completed, so its identity file processing would slow down startup.
 		// (This isn't actually the case at the current state of this constructor since this
 		// function is intended for unit tests only and thus the IdentityFetcher won't actually
@@ -1044,7 +1051,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 		}
 		
-		Logger.normal(this, "checkForDatabaseLeaks(): Deleting all IdentityFetcher commands...");
+		Logger.normal(this, "checkForDatabaseLeaks(): Deleting all IdentityDownloader commands...");
 		mFetcher.deleteAllCommands();
 		
 		Logger.normal(this, "checkForDatabaseLeaks(): Deleting all SubscriptionManager clients...");
@@ -2212,7 +2219,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
 			if(mFetcher != null)
-				mFetcher.stop();
+				mFetcher.terminate();
 		}});
 		
 		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
@@ -2653,7 +2660,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// NOTICE:
 				// If the fetcher did store a db4o object reference to the identity, we would have to trigger command processing
 				// now to prevent leakage of the identity object.
-				// But the fetcher does NOT store a db4o object reference to the given identity. It stores its ID as String only.
+				// But as specified by interface IdentityDownloader, the fetcher does NOT store a db4o object reference to the given identity. It stores its ID as String only.
 				// Therefore, it is OK that the fetcher does not immediately process the commands now.
 			}
 		
@@ -5060,7 +5067,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// NOTICE:
 				// If the fetcher did store a db4o object reference to the identity, we would have to trigger command processing
 				// now to prevent leakage of the identity object.
-				// But the fetcher does NOT store a db4o object reference to the given identity. It stores its ID as String only.
+				// But as specified by interface IdentityDownloader, the fetcher does NOT store a db4o object reference to the given identity. It stores its ID as String only.
 				// Therefore, it is OK that the fetcher does not immediately process the commands now.
 
 				oldIdentity.deleteWithoutCommit();
@@ -5225,7 +5232,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// NOTICE:
 					// If the fetcher did store a db4o object reference to the identity, we would have to trigger command processing
 					// now to prevent leakage of the identity object.
-					// But the fetcher does NOT store a db4o object reference to the given identity. It stores its ID as String only.
+					// But as specified by interface IdentityDownloader, the fetcher does NOT store a db4o object reference to the given identity. It stores its ID as String only.
 					// Therefore, it is OK that the fetcher does not immediately process the commands now.
 					
 					oldIdentity.deleteWithoutCommit();
@@ -5547,7 +5554,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return mSubscriptionManager;
 	}
 	
-	IdentityFetcher getIdentityFetcher() {
+	/**
+	 * TODO: Code quality: Rename to getIdentityDownloader(). (Used to be an IdentityFetcher, hence
+	 * the current name.) */
+	IdentityDownloader getIdentityFetcher() {
 		return mFetcher;
 	}
 	
