@@ -9,7 +9,17 @@ import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
 
-/** Downloads {@link Identity} objects from the P2P network. */
+/**
+ * Downloads {@link Identity} objects from the P2P network.
+ * 
+ * ATTENTION: Implementations must NOT store a object references to {@link Identity} objects
+ * inside of their db4o database. They should only store indirect references such as
+ * {@link Identity#getID()}. This ensures that unrelated code which deletes {@link Identity}
+ * objects from the database does not need to have take care of the IdentityDownloaders'
+ * databases.
+ * (This already is a requirement of the implementation of at least
+ * {@link WebOfTrust#deleteWithoutCommit(Identity)} but possibly also of other stuff. Further,
+ * it will possibly allow decoupling of table locks in a future SQL port of WoT.) */
 public interface IdentityDownloader extends Daemon {
 
 	/**
@@ -17,8 +27,8 @@ public interface IdentityDownloader extends Daemon {
 	 * changes from false to true for the given {@link Identity}. This is usually the case when
 	 * *any* {@link OwnIdentity} has rated it as trustworthy enough for us to download it.
 	 * 
-	 * FIXME: Only require {@link Identity#getID()} as parameter. Implementations likely don't need
-	 * anything except the ID. */
+	 * FIXME: Only require {@link Identity#getID()} as parameter to enforce the "ATTENTION" at the
+	 * JavaDoc of this interface. Implementations likely don't need anything but the ID anyway. */
 	void storeStartFetchCommandWithoutCommit(Identity identity);
 
 	/**
@@ -26,8 +36,8 @@ public interface IdentityDownloader extends Daemon {
 	 * changes from true to false for the given {@link Identity}. This is usually the case when not
 	 * even one {@link OwnIdentity} has rated it as trustworthy enough for us to download it.
 	 * 
-	 * FIXME: Only require {@link Identity#getID()} as parameter. Implementations likely don't need
-	 * anything except the ID. */
+	 * FIXME: Only require {@link Identity#getID()} as parameter to enforce the "ATTENTION" at the
+	 * JavaDoc of this interface. Implementations likely don't need anything but the ID anyway. */
 	void storeAbortFetchCommandWithoutCommit(Identity identity);
 
 	/**
