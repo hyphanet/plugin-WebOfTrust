@@ -22,6 +22,14 @@ import freenet.support.Logger;
  * {@link Identity}s.
  * Thus, this class exists to encapsulate instances of the both of them in a single object.
  * 
+ * <b>Locking:</b>
+ * All implementations of {@link IdentityDownloader} MUST synchronize their database transactions
+ * upon {@link WebOfTrust#getIdentityDownloaderController()}, NOT upon themselves. This is to allow 
+ * the IdentityDownloaderController to be the central lock in case multiple types of
+ * IdentityDownloader are running in parallel. That in turn allows the WoT core to not have to
+ * synchronize upon whichever specific {@link IdentityDownloader} implementations are being used
+ * currently. It can instead just synchronize upon the single IdentityDownloaderController instance.
+ * 
  * @see IdentityDownloaderFast
  * @see IdentityDownloaderSlow
  */

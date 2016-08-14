@@ -24,6 +24,15 @@ import plugins.WebOfTrust.util.Daemon;
  * but possibly also of other stuff. Further, it will possibly allow decoupling of table locks in a
  * future SQL port of WoT.)
  * 
+ * <b>Locking:</b>
+ * All implementations of IdentityDownloader MUST synchronize their database transactions upon
+ * {@link WebOfTrust#getIdentityDownloaderController()}, NOT upon themselves. This is to allow the
+ * {@link IdentityDownloaderController} to be the central lock in case multiple types of
+ * IdentityDownloader are running in parallel. That in turn allows the WoT core to not have to
+ * synchronize upon whichever specific IdentityDownloader implementations are being used
+ * currently. It can instead just synchronize upon the single {@link IdentityDownloaderController}
+ * instance.
+ * 
  * FIXME: Review the whole of class {@link IdentityFetcher} for any important JavaDoc such as the
  * above "ATTENTION" and add it to this interface. */
 public interface IdentityDownloader extends Daemon {

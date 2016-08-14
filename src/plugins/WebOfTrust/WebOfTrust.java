@@ -154,7 +154,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * TODO: Code quality: Rename to mIdentityDownloader - used to be an IdentityFetcher, hence the
 	 * current name. When doing that, please also search the whole class for instances of the
 	 * string "IdentityFetcher" and change them to "IdentityDownloader" as well. */
-	private IdentityDownloader mFetcher;
+	private IdentityDownloaderController mFetcher;
 	
 	/**
 	 * After {@link #mFetcher} has fetched an identity file, it is queued in this queue
@@ -5553,14 +5553,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 	public SubscriptionManager getSubscriptionManager() {
 		return mSubscriptionManager;
 	}
-	
-	/**
-	 * TODO: Code quality: Rename to getIdentityDownloader(). (Used to be an IdentityFetcher, hence
-	 * the current name.) */
-	IdentityDownloader getIdentityFetcher() {
+
+	/** @deprecated Use {@link #getIdentityDownloaderController()} instead */
+	@Deprecated
+	IdentityDownloaderController getIdentityFetcher() {
+		return getIdentityDownloaderController();
+	}
+
+	public IdentityDownloaderController getIdentityDownloaderController() {
 		return mFetcher;
 	}
-	
+
 	public IdentityFileQueue getIdentityFileQueue() {
 		return mIdentityFileQueue;
 	}
