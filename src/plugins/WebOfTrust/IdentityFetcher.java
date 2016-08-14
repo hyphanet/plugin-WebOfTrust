@@ -665,16 +665,17 @@ public final class IdentityFetcher implements
 	
 	private void abortFetch(String identityID) {
 		synchronized(mLock) {
-		USKRetriever retriever = mRequests.remove(identityID);
-
-		if(retriever == null) {
-			Logger.error(this, "Aborting fetch failed (no fetch found) for identity " + identityID);
-			return;
-		}
-			
-		if(logDEBUG) Logger.debug(this, "Aborting fetch for identity " + identityID);
-		retriever.cancel(mClientContext);
-		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
+			USKRetriever retriever = mRequests.remove(identityID);
+	
+			if(retriever == null) {
+				Logger.error(
+					this, "Aborting fetch failed (no fetch found) for identity " + identityID);
+				return;
+			}
+				
+			if(logDEBUG) Logger.debug(this, "Aborting fetch for identity " + identityID);
+			retriever.cancel(mClientContext);
+			mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
 		}
 	}
 	
