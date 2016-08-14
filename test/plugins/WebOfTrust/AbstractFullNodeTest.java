@@ -122,7 +122,7 @@ public abstract class AbstractFullNodeTest
         mWebOfTrust.getIntroductionClient().terminate();
         mWebOfTrust.getIntroductionServer().terminate();
         mWebOfTrust.getIdentityInserter().terminate();
-        mWebOfTrust.getIdentityFetcher().stop();
+        mWebOfTrust.getIdentityDownloaderController().terminate();
         mWebOfTrust.getSubscriptionManager().stop();
     }
 
@@ -216,7 +216,7 @@ public abstract class AbstractFullNodeTest
         // Also, taking all those locks at once for proper anti-deadlock order.
         synchronized(mWebOfTrust) {
         synchronized(mWebOfTrust.getIntroductionPuzzleStore()) {
-        synchronized(mWebOfTrust.getIdentityFetcher()) {
+        synchronized(mWebOfTrust.getIdentityDownloaderController()) {
         synchronized(mWebOfTrust.getSubscriptionManager()) {
         synchronized(Persistent.transactionLock(mWebOfTrust.getDatabase()))  {
 
