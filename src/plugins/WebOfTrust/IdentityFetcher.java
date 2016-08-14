@@ -53,14 +53,14 @@ import freenet.support.io.NativeThread;
  * The locking order must be:
  * 	synchronized(instance of WebOfTrust) {
  *	synchronized(instance of IntroductionPuzzleStore) {
- *	synchronized(instance of IdentityFetcher) {
+ *	synchronized(instance of IdentityDownloaderController (instead of IdentityFetcher.this!) ) {
  *	synchronized(Persistent.transactionLock(instance of ObjectContainer)) {
  *
- * FIXME: Change this class to synchronize upon the {@link IdentityDownloaderController} instead of
- * upon itself. Also make {@link WebOfTrust#getIdentityFetcher()} return the
- * {@link IdentityDownloaderController} instead so the rest of WoT locks upon it.
- * Further, {@link WebOfTrust#mFetcher} needs to be changed to hold the controller instead so
- * the private stuff of class WebOfTrust locks upon that one as well.
+ * ATTENTION: You must NOT synchronize upon IdentityFetcher.this! You must always synchronize
+ * upon WoT's {@link IdentityDownloaderController} instead! This is because the IdentityFetcher is
+ * NOT the main fetcher class of WoT upon which other subsystem synchronizes. The other subsystems
+ * upon an instance of class {@link IdentityDownloaderController}. The same lock must be used
+ * everywhere, so this class here must not synchronize upon itself.
  * 
  * TODO: Code quality: Rename to IdentityFileFetcher to match the naming of
  * {@link IdentityFileQueue} and {@link IdentityFileProcessor}. Notice that this needs to be done
@@ -93,6 +93,8 @@ public final class IdentityFetcher implements
 
 	private final WebOfTrust mWoT;
 	
+	private final IdentityDownloaderController mLock;
+
 	private final ExtObjectContainer mDB;
 	
 	private final USKManager mUSKManager;
@@ -150,8 +152,9 @@ public final class IdentityFetcher implements
 	 * @param myWoT A reference to a {@link WebOfTrust}
 	 */
 	public IdentityFetcher(WebOfTrust myWoT, PluginRespirator respirator,
-			IdentityFileQueue queue) {
+			IdentityFileQueue queue, IdentityDownloaderController controller) {
 		mWoT = myWoT;
+		mLock = controller;
 		mQueue = queue;
 		
 		mDB = mWoT.getDatabase();
@@ -322,7 +325,8 @@ public final class IdentityFetcher implements
 		return mRequests.containsKey(identityID);
 	}
 
-	@Override public synchronized void deleteAllCommands() {
+	@Override public void deleteAllCommands() {
+		synchronized(mLock) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				if(logDEBUG) Logger.debug(this, "Deleting all identity fetcher commands ...");
@@ -342,6 +346,7 @@ public final class IdentityFetcher implements
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
+		}
 	}
 	
     /**
@@ -349,7 +354,7 @@ public final class IdentityFetcher implements
      * This function does neither lock the database nor commit the transaction. You have to surround
      * it with:<br><code>
      * synchronized(instance of WebOfTrust) {
-     * synchronized(instance of IdentityFetcher) {
+     * synchronized(instance of IdentityDownloaderController) {
      * synchronized(Persistent.transactionLock(mDB)) {
      *     try { ... storeStartFetchCommandWithoutCommit(id); Persistent.checkedCommit(mDB, this); }
      *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
@@ -364,7 +369,7 @@ public final class IdentityFetcher implements
      * Synchronization:<br>
      * This function does neither lock the database nor commit the transaction. You have to surround
      * it with:<br><code>
-     * synchronized(instance of IdentityFetcher) {
+     * synchronized(instance of IdentityDownloaderController) {
      * synchronized(Persistent.transactionLock(mDB)) {
      *     try { ... storeStartFetchCommandWithoutCommit(id); Persistent.checkedCommit(mDB, this); }
      *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
@@ -397,7 +402,7 @@ public final class IdentityFetcher implements
      * This function does neither lock the database nor commit the transaction. You have to surround
      * it with:<br><code>
      * synchronized(instance of WebOfTrust) {
-     * synchronized(instance of IdentityFetcher) {
+     * synchronized(instance of IdentityDownloaderController) {
      * synchronized(Persistent.transactionLock(mDB)) {
      *     try { ... storeAbortFetchCommandWithoutCommit(id); Persistent.checkedCommit(mDB, this); }
      *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
@@ -460,7 +465,7 @@ public final class IdentityFetcher implements
      * Synchronization:<br>
      * This function does neither lock the database nor commit the transaction. You have to surround
      * it with:<br><code>
-     * synchronized(instance of IdentityFetcher) {
+     * synchronized(instance of IdentityDownloaderController) {
      * synchronized(Persistent.transactionLock(mDB)) {
      *     try { ... storeUpdateEditionHintCommandWithoutCommit(id); ... 
      *               Persistent.checkedCommit(mDB, this); }
@@ -519,7 +524,7 @@ public final class IdentityFetcher implements
 	    final Thread thread = Thread.currentThread();
 
 		synchronized(mWoT) { // Lock needed because we do getIdentityByID() in fetch()
-		synchronized(this) {
+		synchronized(mLock) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try  {
 				if(logDEBUG) Logger.debug(this, "Processing identity fetcher commands ...");
@@ -599,7 +604,8 @@ public final class IdentityFetcher implements
 	 * 
 	 * @param identity the Identity to fetch
 	 */
-	private synchronized void fetch(Identity identity) throws Exception {
+	private void fetch(Identity identity) throws Exception {
+		synchronized(mLock) {
 			USKRetriever retriever = mRequests.get(identity.getID());
 
 			USK usk;
@@ -623,12 +629,13 @@ public final class IdentityFetcher implements
 
 			if(!DEBUG__NETWORK_DUMP_MODE)
 				mUSKManager.hintUpdate(usk, identity.getLatestEditionHint(), mClientContext);
+		}
 	}
 	
 	/**
 	 * Has to be called when the edition hint of the given identity was updated. Tells the USKManager about the new hint.
 	 * 
-	 * You have to synchronize on the WebOfTrust and then on this IdentityFetcher before calling this function!
+	 * You have to synchronize on the WebOfTrust and then on mLock before calling this function!
 	 * 
 	 * @throws Exception 
 	 */
@@ -656,7 +663,8 @@ public final class IdentityFetcher implements
 		}
 	}
 	
-	private synchronized void abortFetch(String identityID) {
+	private void abortFetch(String identityID) {
+		synchronized(mLock) {
 		USKRetriever retriever = mRequests.remove(identityID);
 
 		if(retriever == null) {
@@ -667,6 +675,7 @@ public final class IdentityFetcher implements
 		if(logDEBUG) Logger.debug(this, "Aborting fetch for identity " + identityID);
 		retriever.cancel(mClientContext);
 		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
+		}
 	}
 	
 	/**
@@ -720,14 +729,14 @@ public final class IdentityFetcher implements
         Logger.normal(this, "start()...");
 
         synchronized (mWoT) {
-        synchronized (this) {
+        synchronized (mLock) {
 
          // This is thread-safe guard against concurrent multiple calls to start() / stop() since
-         // stop() does not modify the job and start() is synchronized. 
+         // stop() does not modify the job and start() is synchronized(mLock). 
          if(mJob != MockDelayedBackgroundJob.DEFAULT)
              throw new IllegalStateException("start() was already called!");
 
-         // This must be called while synchronized on this IdentityFetcher, and the lock must be
+         // This must be called while synchronized on mLock, and the lock must be
          // held until mJob is set:
          // Holding the lock prevents IdentityFetcherCommands from being created before
          // scheduleCommandProcessing() is made functioning by setting mJob.
@@ -780,7 +789,7 @@ public final class IdentityFetcher implements
         mJob = new TickerDelayedBackgroundJob(
             jobRunnable, "WoT IdentityFetcher", PROCESS_COMMANDS_DELAY, ticker);
         
-        } // synchronized(this)
+        } // synchronized(mLock)
         } // synchronized(mWoT)
 
         Logger.normal(this, "start() finished.");
@@ -789,18 +798,17 @@ public final class IdentityFetcher implements
 	/**
      * Stops all running requests.<br><br>
      * 
-     * Notice: Not synchronized so it can be run in parallel with {@link #run()}. This will allow it
-     * to call {@link DelayedBackgroundJob#terminate()} while run() is executing, which calls
-     * {@link Thread#interrupt()} on the run()-thread to cause it to exit quickly.
-	 */
+     * Notice: Not synchronized(mLock) so it can be run in parallel with {@link #run()}. This will
+     * allow it to call {@link DelayedBackgroundJob#terminate()} while run() is executing, which
+     * calls {@link Thread#interrupt()} on the run()-thread to cause it to exit quickly. */
 	protected void stop() {
         Logger.normal(this, "stop()...");
 
 		if(logDEBUG) Logger.debug(this, "Trying to stop all requests");
 		
 		// The following code intentionally does NOT write to the mJob variable so it does not have
-		// to use synchronized(this). We do not want to synchronize because:
-		// 1) run() is synchronized(this), so we would not get the lock until run() is finished.
+		// to use synchronized(mLock). We do not want to synchronize because:
+		// 1) run() is synchronized(mLock), so we would not get the lock until run() is finished.
 		//    But we want to call mJob.terminate() immediately while run() is still executing to
 		//    make it call Thread.interrupt() upon run() to speed up its termination. So we
 		//    shouldn't require acquisition of the lock before terminate().
@@ -829,8 +837,8 @@ public final class IdentityFetcher implements
 		mJob.terminate();
         try {
             // We must wait without timeout since we need to cancel our requests at the core of
-            // Freenet (see below synchronized(this)) and the job thread might create requests until
-            // it is terminated.
+            // Freenet (see below synchronized(mLock)) and the job thread might create requests
+            // until it is terminated.
             mJob.waitForTermination(Long.MAX_VALUE);
         } catch (InterruptedException e) {
             // We are a shutdown function, there is no sense in sending a shutdown signal to us.
@@ -843,11 +851,11 @@ public final class IdentityFetcher implements
         // - start() is not possible anymore
         // - run() can only be executed by mJob, and it will not do so after waitForTermination().
         // 
-        // Nevertheless, all access to mRequests needs to be guarded by synchronized(this):
+        // Nevertheless, all access to mRequests needs to be guarded by synchronized(mLock):
         // - It is also accessed by our Freenet callback handlers which might be called by fred at
         //   arbitrary points in time.
         // - stop() can be called multiple times in parallel.
-		synchronized(this) {
+		synchronized(mLock) {
 		USKRetriever[] retrievers = mRequests.values().toArray(new USKRetriever[mRequests.size()]);		
 		int counter = 0;		 
 		for(USKRetriever r : retrievers) {

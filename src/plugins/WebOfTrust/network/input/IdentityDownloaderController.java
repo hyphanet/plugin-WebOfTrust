@@ -51,7 +51,7 @@ public class IdentityDownloaderController implements IdentityDownloader, Daemon 
 			};
 		} else {
 			mDownloaders = new IdentityDownloader[] {
-				new IdentityFetcher(wot, pr, q)
+				new IdentityFetcher(wot, pr, q, this)
 			};
 		}
 	}
