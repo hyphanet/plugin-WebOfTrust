@@ -329,7 +329,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			mInserter.start();
 
-			mIntroductionServer = new IntroductionServer(this, mFetcher);
+			mIntroductionServer = new IntroductionServer(this);
 			mIntroductionServer.start();
 			
 			mIntroductionClient = new IntroductionClient(this);

@@ -14,7 +14,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import plugins.WebOfTrust.Identity;
-import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
@@ -104,7 +103,7 @@ public final class IntroductionServer extends TransferThread implements Daemon {
 	/**
 	 * Creates an IntroductionServer
 	 */
-	public IntroductionServer(final WebOfTrust myWoT, final IdentityFetcher myFetcher) {
+	public IntroductionServer(final WebOfTrust myWoT) {
 		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Introduction Server");
 		
 		mWoT = myWoT;
