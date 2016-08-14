@@ -68,7 +68,7 @@ import freenet.support.io.LineReadingInputStream;
  * the main WoT database and thus allows it to be very fast.
  * Remember: Speed is critical because Freenet can deliver files very quickly which can cause us to
  * run out of memory if we don't dump them to disk soon enough. */
-final class IdentityFile {
+public final class IdentityFile {
 	public static transient final String FILE_EXTENSION = ".wot-identity";
 	
 	public static transient final int FILE_FORMAT_VERSION = 6;

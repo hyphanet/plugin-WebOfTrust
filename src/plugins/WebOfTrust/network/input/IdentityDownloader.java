@@ -5,6 +5,9 @@ package plugins.WebOfTrust.network.input;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
+import plugins.WebOfTrust.IdentityFile;
+import plugins.WebOfTrust.IdentityFileProcessor;
+import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
@@ -12,6 +15,8 @@ import plugins.WebOfTrust.util.Daemon;
 
 /**
  * Downloads {@link Identity} objects from the P2P network.
+ * They are then fed as {@link IdentityFile} to the {@link IdentityFileQueue}, which is consumed by
+ * the {@link IdentityFileProcessor}.
  * 
  * ATTENTION: Implementations must NOT store a object references to {@link Identity} objects
  * inside of their db4o database. They should only store indirect references such as
