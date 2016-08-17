@@ -97,7 +97,7 @@ public class IdentityDownloaderController implements IdentityDownloader, Daemon 
 		
 		// Normally this should be an assert() but the parent interface specifies this whole
 		// function to be for debugging purposes only so we can be very careful.
-		if(shouldFetch.contains(!shouldFetch.get(0)) == false) {
+		if(shouldFetch.contains(!shouldFetch.get(0))) {
 			Logger.error(this, "My downloaders don't return the same getShouldFetchState("
 			                   + identityID + ") each: ");
 			
