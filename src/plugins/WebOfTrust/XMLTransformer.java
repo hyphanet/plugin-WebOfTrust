@@ -44,6 +44,7 @@ import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
+import plugins.WebOfTrust.network.input.IdentityDownloaderController;
 
 import com.db4o.ext.ExtObjectContainer;
 
@@ -539,7 +540,7 @@ public final class XMLTransformer {
 							mWoT.removeTrustWithoutCommit(trust); // Also takes care of SubscriptionManager
 						}
 
-						IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
+						IdentityDownloaderController identityFetcher = mWoT.getIdentityFetcher();
 						if(positiveScore) {
 							for(String id : identitiesWithUpdatedEditionHint)
 								identityFetcher.storeUpdateEditionHintCommandWithoutCommit(id);
@@ -663,10 +664,8 @@ public final class XMLTransformer {
 
 		identityURI = new FreenetURI(identityElement.getAttribute("URI"));
 		
-		final IdentityFetcher identityFetcher = mWoT.getIdentityFetcher();
-		
 		synchronized(mWoT) {
-		synchronized(identityFetcher) {
+		synchronized(mWoT.getIdentityFetcher()) {
 		synchronized(mSubscriptionManager) {
 			if(!puzzleOwner.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT))
 				throw new InvalidParameterException("Trying to import an identity identroduction for an own identity which does not allow introduction.");
@@ -699,8 +698,9 @@ public final class XMLTransformer {
 						mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");// Also takes care of SubscriptionManager
 					}
 					
-					// setTrustWithoutCommit() does this for us.
-					// identityFetcher.storeStartFetchCommandWithoutCommit(newIdentity.getID());
+					// setTrustWithoutCommit() does this for us, no need to do it ourself:
+					//   mWoT.getIdentityFetcher()
+					//       .storeStartFetchCommandWithoutCommit(newIdentity.getID());
 
 					newIdentity.checkedCommit(this);
 				}
