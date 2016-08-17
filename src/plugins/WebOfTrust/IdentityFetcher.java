@@ -67,7 +67,9 @@ import freenet.support.io.NativeThread;
  * together with db4o schema evolution since this class stores member classes inside db4o.
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
+ * @deprecated Use {@link IdentityDownloaderController} instead
  */
+@Deprecated
 public final class IdentityFetcher implements
 		IdentityDownloader, Daemon, USKRetrieverCallback, PrioRunnable {
 	
