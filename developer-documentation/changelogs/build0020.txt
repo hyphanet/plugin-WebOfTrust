@@ -33,6 +33,26 @@ CHANGELOG about stuff only interesting for developers:
   Blah.
   Blah.
 
+- 0006891: Make code for downloading identities modular to allow
+           alternate implementations
+
+  With the implementation of issue 0003816 (Redesign the IdentityFetcher
+  to get rid of the network wide O(n²) fetch count), the goal was not
+  only to replace the old IdentityFetcher with a new implementation, but
+  also to keep the old codebase working so it can be used as something
+  to test the new codebase against.
+
+  Therefore an interface "IdentityDownloader" was extracted
+  from IdentityFetcher; and a class "IdentityDownloaderController" was
+  introduced which can run one or multiple different implementations of
+  IdentityDownloader.
+  This can be the old IdentityFetcher, the current new implementation,
+  or possible future alternate ones.
+
+  So if you want to provide another implementation with possible
+  improvements over the heuristics of the one this release ships, go
+  ahead, it should be easy :)
+
 
 Thanks to:
   - Person1
