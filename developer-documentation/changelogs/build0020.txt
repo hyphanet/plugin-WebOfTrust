@@ -24,6 +24,23 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
   Blah.
 
+- 0006835: Merge random nickname improvement (ArneBab)
+
+  Some very short name templates such as "D" or "CNR" were removed to
+  make the names more pleasant.
+
+  Further the wizard for creating identities has been changed to remove
+  the following warning:
+     "If you don't like it please do not reload the page to generate
+      another random name - this also reveals something about your
+      preferences!"
+
+  It was removed because:
+  - it's nice if users can have a name which they identify with.
+  - it seems very difficult for an attacker to even find a place where
+    statistics about the name preferences of someone could be
+    acquired. Without stats, it is impossible to take good guesses which
+    random nicknames belong to whom.
 
 CHANGELOG about stuff only interesting for developers:
 
@@ -35,9 +52,7 @@ CHANGELOG about stuff only interesting for developers:
 
 
 Thanks to:
-  - Person1
-  - Person2
-
+  - ArneBab
 
 Links:
   [1] https://...
