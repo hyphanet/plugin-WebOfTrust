@@ -12,6 +12,7 @@ import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
+import freenet.keys.FreenetURI;
 
 /**
  * Downloads {@link Identity} objects from the P2P network.
@@ -64,10 +65,10 @@ public interface IdentityDownloader extends Daemon {
 	 * Called by {@link WebOfTrust} when we've downloaded the list of {@link Trust} values of a
 	 * remote {@link Identity} and as a bonus payload have received an "edition hint" for another
 	 * {@link Identity} it has assigned a {@link Trust} to. An edition hint is the number of the
-	 * latest edition of the given {@link Identity} as claimed by a remote identity. We can try to
-	 * download the hint and if it is indeed downloadable, we are lucky - but it may very well be a
-	 * lie. In that case, to avoid DoS, we must discard it and try the next lower hint we received
-	 * from someone else.
+	 * latest {@link FreenetURI#getEdition()} of the given {@link Identity} as claimed by a remote
+	 * identity. We can try to download the hint and if it is indeed downloadable, we are lucky
+	 * - but it may very well be a lie. In that case, to avoid DoS, we must discard it and try the
+	 * next lower hint we received from someone else.
 	 *
 	 * FIXME: The edition hint is currently stored in the {@link Identity#getLatestEditionHint()}
 	 * of the given {@link Identity}. Instead, this function should receive it as a parameter and
