@@ -84,9 +84,13 @@ public class IdentityDownloaderController implements IdentityDownloader, Daemon 
 			d.storeAbortFetchCommandWithoutCommit(identity);
 	}
 
-	@Override public void storeUpdateEditionHintCommandWithoutCommit(String identityID) {
+	@Override public void storeUpdateEditionHintCommandWithoutCommit(
+			String fromIdentityID, String aboutIdentityID, long edition) {
+		
+		assert(edition >= 0);
+		
 		for(IdentityDownloader d : mDownloaders)
-			d.storeUpdateEditionHintCommandWithoutCommit(identityID);
+			d.storeUpdateEditionHintCommandWithoutCommit(fromIdentityID, aboutIdentityID, edition);
 	}
 
 	@Override public boolean getShouldFetchState(String identityID) {

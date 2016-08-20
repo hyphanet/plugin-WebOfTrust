@@ -44,7 +44,9 @@ class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 		// FIXME
 	}
 
-	@Override public void storeUpdateEditionHintCommandWithoutCommit(String identityID) {
+	@Override public void storeUpdateEditionHintCommandWithoutCommit(
+			String fromIdentityID, String aboutIdentityID, long edition) {
+		
 		// FIXME
 	}
 

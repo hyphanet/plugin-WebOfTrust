@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.Math.max;
+
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.TimeZone;
@@ -492,12 +493,8 @@ public final class XMLTransformer {
 							catch(NotInTrustTreeException e) { }
 						}
 						
-						
-						HashSet<String>	identitiesWithUpdatedEditionHint = null;
-
-						if(positiveScore) {
-							identitiesWithUpdatedEditionHint = new HashSet<String>(xmlData.identityTrustList.size() * 2);
-						}
+						HashMap<String, Long> editionHints
+							= new HashMap<>(xmlData.identityTrustList.size() * 2);
 
 						for(final ParsedIdentityXML.TrustListEntry trustListEntry : xmlData.identityTrustList) {
 							final FreenetURI trusteeURI = trustListEntry.mTrusteeURI;
@@ -507,9 +504,60 @@ public final class XMLTransformer {
 							Identity trustee = null;
 							try {
 								trustee = mWoT.getIdentityByURI(trusteeURI);
+								
+								// Here would be the place where we decide whether to accept
+								// the edition hints of the identity or discard them in case it is
+								// not trustworthy enough. But we don't, we accept them all.
+								// This is to guarnatee "stability" of Score computation.
+								// Explanation follows:
+								// At first thought, we would decide that we must only accept the
+								// edition hints if positiveScore == true: The central goal of WoT
+								// is to stop downloading spam, and spam is anything which an
+								// identity with positiveScore == false links. So the edition hints
+								// would be spam as well then.
+								// But: There are imaginable situations where an identity has a
+								// negative Score just because we downloaded a single malicious
+								// distruster of it before a much larger network of legitimate
+								// trusters of it. It further is possible that the only way for the
+								// wrongly distrusted identity's trusters to be downloaded is if we
+								// use the edition hints it provides for its trusters. So for the
+								// wrongly distrusted identity to be able to become trusted, we must
+								// accept its hints. ("Look, those people trust me, download them!")
+								// In other words: Score computation is supposed to be *stable*.
+								// Stable means that the results of it should be independent of the
+								// order in which Trust values are obtained as input.
+								// To get a stable Score computation in terms of trust value import,
+								// this class imports identities not only if positiveScore == true,
+								// but also if positiveCapacity == true.
+								// So we apply the same principle upon edition hints: We must not
+								// only accept hints if positiveScore == true, but also if
+								// hasCapacity == true.
+								// (The deciding thing is the "positiveCapacity == true" check, you
+								// can validate that this helps with pen and paper. Or see the
+								// "testStability" functions in class WoTTest.)
+								// In our case, one of positiveScore and hasCapacity will be always
+								// true, so we don't have to check them at all:
+								// We already only runt his function if
+								//     mWebOfTrust.shouldFetchIdentity() == true
+								// which only happens if:
+								assert(hasCapacity || positiveScore);
+								
+								if(trusteeURI.getEdition() >= 0) {
+									Long previous = editionHints.put(
+										trustee.getID(), trusteeURI.getEdition());
+									
+									assert(previous == null);
+								} else {
+									// FIXME: Either punish the publisher of the XML for providing
+									// bogus data OR have this be a valid contion:
+									// Amend the code which generates XML to use editions of -1
+									// to signal that an identity wasn't downloaded at all yet.
+								}
+								
+								// Legacy codepath for class IdentityFetcher
 								if(positiveScore) {
 									if(trustee.setNewEditionHint(trusteeURI.getEdition())) {
-										identitiesWithUpdatedEditionHint.add(trustee.getID());
+										editionHints.put(trustee.getID(), trusteeURI.getEdition());
 										trustee.storeWithoutCommit();
 										
 										// We don't notify clients about this: The edition hint is not very useful to them.
@@ -523,6 +571,19 @@ public final class XMLTransformer {
 										trustee = new Identity(mWoT, trusteeURI, null, false);
 										trustee.storeWithoutCommit();
 										mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, trustee);
+										
+										// We must always store a hint for new identities even
+										// if their truster has indicated he doesn't know their
+										// edition by setting it to -1:
+										// IdentityDownladerFast will not create an USK subscription
+										// for identities with rank > 1, so the only way we can
+										// ever download them for the first time is through a hint
+										// to IdentityDownloaderSlow.
+										// So even if we got no valid hint, we store one of 0.
+										Long hint = max(0,  trusteeURI.getEdition());
+										Long previous = editionHints.put(trustee.getID(), hint);
+										assert(previous == null);
+										
 										Logger.normal(this, "New identity received via trust list: " + identity);
 									} catch(MalformedURLException urlEx) {
 										// Logging the exception does NOT log the actual malformed URL so we do it manually.
@@ -540,13 +601,15 @@ public final class XMLTransformer {
 							mWoT.removeTrustWithoutCommit(trust); // Also takes care of SubscriptionManager
 						}
 
-						IdentityDownloaderController identityFetcher = mWoT.getIdentityFetcher();
-						if(positiveScore) {
-							for(String id : identitiesWithUpdatedEditionHint)
-								identityFetcher.storeUpdateEditionHintCommandWithoutCommit(id);
-
-							// We do not have to store fetch commands for new identities here, setTrustWithoutCommit does it.
+						IdentityDownloaderController idc = mWoT.getIdentityDownloaderController();
+						for(Entry<String, Long> e : editionHints.entrySet()) {
+							idc.storeUpdateEditionHintCommandWithoutCommit(
+								identity.getID(), e.getKey(), e.getValue());
 						}
+
+						//if(positiveScore) {
+							// We do not have to store fetch commands for new identities here, setTrustWithoutCommit does it.
+						//}
 					} else if(!xmlData.identityPublishesTrustList && didPublishTrustListPreviously && !(identity instanceof OwnIdentity)) {
 						// If it does not publish a trust list anymore, we delete all trust values it has given.
 						for(Trust trust : mWoT.getGivenTrusts(identity))

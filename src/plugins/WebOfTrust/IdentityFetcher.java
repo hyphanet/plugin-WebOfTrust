@@ -12,6 +12,7 @@ import java.util.HashMap;
 
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
+import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.network.input.IdentityDownloader;
 import plugins.WebOfTrust.network.input.IdentityDownloaderController;
@@ -475,20 +476,62 @@ public final class IdentityFetcher implements
      * }}
      * </code>
      */
-	public void storeUpdateEditionHintCommandWithoutCommit(String identityID) {
-		if(logDEBUG) Logger.debug(this, "Update edition hint command received for " + identityID);
+	public void storeUpdateEditionHintCommandWithoutCommit(String fromIdentityID,
+			String aboutIdentityID, long edition) {
+		
+		// XMLTransformer will nowadays pass edition hints if the giver of the hint has a positive
+		// Score OR positive capacity.
+		// Before this class here was deprecated in favor of the new IdentityDownloader
+		// implementations, XMLTransformer used to only pass edition hints of the giver had a
+		// positive Score - NOT if it merely had a positive capacity.
+		// To ensure this old implementation here keeps its behavior as of before the adaption of 
+		// XMLTransformer to the IdentityDownloader rewrites, it will now check whether the giver of
+		// the hint has a positive Score and return if it does not.
+		// In other words: The checks in the following scope have been part of XMLTransformer
+		// previously and were moved here as part of its modifications for IdentityDownloader.
+		{
+			Identity fromIdentity;
+			
+			try {
+				fromIdentity = mWoT.getIdentityByID(fromIdentityID);
+			} catch (UnknownIdentityException e) {
+				throw new RuntimeException(e);
+			}
+			
+			boolean fromPositiveScore = false;
+			
+			if(fromIdentity instanceof OwnIdentity) {
+				// Importing of OwnIdentities is always allowed
+				fromPositiveScore = true;
+			} else {
+				try {
+					fromPositiveScore = mWoT.getBestScore(fromIdentity) > 0;
+				}
+				catch(NotInTrustTreeException e) { }
+			}
+			
+			// FIXME: Do a test run to ensure this doesn't always wrongly return, it should still
+			// accept many hints.
+			
+			if(!fromPositiveScore)
+				return;
+		}
+		
+		
+		if(logDEBUG)
+			Logger.debug(this, "Update edition hint command received for " + aboutIdentityID);
 		
 		try {
-			getCommand(AbortFetchCommand.class, identityID);
+			getCommand(AbortFetchCommand.class, aboutIdentityID);
 			Logger.error(this, "Update edition hint command is useless, an abort fetch command is queued!");
 		}
 		catch(NoSuchCommandException e1) {
 			try {
-				getCommand(UpdateEditionHintCommand.class, identityID);
+				getCommand(UpdateEditionHintCommand.class, aboutIdentityID);
 				if(logDEBUG) Logger.debug(this, "Update edition hint command already in queue!");
 			}
 			catch(NoSuchCommandException e2) {
-				final UpdateEditionHintCommand cmd = new UpdateEditionHintCommand(identityID);
+				final UpdateEditionHintCommand cmd = new UpdateEditionHintCommand(aboutIdentityID);
 				cmd.initializeTransient(mWoT);
 				cmd.storeWithoutCommit();
 				scheduleCommandProcessing();
