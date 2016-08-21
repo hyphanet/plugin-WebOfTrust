@@ -16,7 +16,6 @@ import java.util.Map.Entry;
 import java.util.UUID;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
-import plugins.WebOfTrust.network.input.IdentityDownloader;
 import plugins.WebOfTrust.util.Base32;
 import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.keys.FreenetURI;
@@ -93,12 +92,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	protected FetchState mCurrentEditionFetchState;
 	
 	/** When obtaining identities through other people's trust lists instead of identity introduction, we store the edition number they have
-	 * specified and pass it as a hint to the USKManager.
-	 * 
-	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeUpdateEditionHintCommandWithoutCommit(String, String,
-	 *     long)} */
-	@Deprecated
+	 * specified and pass it as a hint to the USKManager. */
 	protected long mLatestEditionHint;
 	
 	/** @see #getLastFetchedDate() */
@@ -472,12 +466,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 			updated();
 		}
 	}
-
-	/**
-	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeUpdateEditionHintCommandWithoutCommit(String, String,
-	 *     long)} */
-	@Deprecated
+	
 	public final long getLatestEditionHint() {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		return mLatestEditionHint;
@@ -490,10 +479,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * fetched anymore.
 	 * 
 	 * @return True, if the given hint was newer than the already stored one. You have to tell the {@link IdentityFetcher} about that then.
-	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeUpdateEditionHintCommandWithoutCommit(String, String,
-	 *     long)} */
-	@Deprecated
+	 */
 	protected final boolean setNewEditionHint(long newLatestEditionHint) {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		
@@ -510,11 +496,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * ATTENTION: Only use this when you need to construct arbitrary Identity objects - for example when writing an FCP parser.
 	 * It won't guarantee semantic integrity of the identity object, for example it allows lowering of the edition hint.
 	 * Instead, use {@link #setNewEditionHint(long)} whenever possible.
-	 * 
-	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeUpdateEditionHintCommandWithoutCommit(String, String,
-	 *     long)} */
-	@Deprecated
+	 */
 	public void forceSetNewEditionHint(long newLatestEditionHint) {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		mLatestEditionHint = newLatestEditionHint;

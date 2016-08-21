@@ -475,23 +475,20 @@ public final class IdentityFetcher implements
      * }}
      * </code>
      */
-	public void storeUpdateEditionHintCommandWithoutCommit(String fromIdentityID,
-			String aboutIdentityID, long edition) {
-		
-		if(logDEBUG)
-			Logger.debug(this, "Update edition hint command received for " + aboutIdentityID);
+	public void storeUpdateEditionHintCommandWithoutCommit(String identityID) {
+		if(logDEBUG) Logger.debug(this, "Update edition hint command received for " + identityID);
 		
 		try {
-			getCommand(AbortFetchCommand.class, aboutIdentityID);
+			getCommand(AbortFetchCommand.class, identityID);
 			Logger.error(this, "Update edition hint command is useless, an abort fetch command is queued!");
 		}
 		catch(NoSuchCommandException e1) {
 			try {
-				getCommand(UpdateEditionHintCommand.class, aboutIdentityID);
+				getCommand(UpdateEditionHintCommand.class, identityID);
 				if(logDEBUG) Logger.debug(this, "Update edition hint command already in queue!");
 			}
 			catch(NoSuchCommandException e2) {
-				final UpdateEditionHintCommand cmd = new UpdateEditionHintCommand(aboutIdentityID);
+				final UpdateEditionHintCommand cmd = new UpdateEditionHintCommand(identityID);
 				cmd.initializeTransient(mWoT);
 				cmd.storeWithoutCommit();
 				scheduleCommandProcessing();
