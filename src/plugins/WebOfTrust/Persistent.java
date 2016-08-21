@@ -169,7 +169,12 @@ public abstract class Persistent implements Serializable {
 		mWebOfTrust = myWebOfTrust;
 		mDB = db;
 	}
-	
+
+	/** @return See {@link #initializeTransient(WebOfTrustInterface)}. */
+	public final WebOfTrustInterface getWebOfTrust() {
+		return mWebOfTrust;
+	}
+
 	/**
 	 * Returns the lock for creating a transaction.
 	 * A proper transaction typically looks like this:
