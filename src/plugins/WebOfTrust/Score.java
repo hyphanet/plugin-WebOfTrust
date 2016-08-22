@@ -3,6 +3,9 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.util.Arrays.binarySearch;
+import static plugins.WebOfTrust.WebOfTrust.VALID_CAPACITIES;
+
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -306,9 +309,9 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	 * Sets how much points the trusted Identity can add to its trustees score.
 	 */
 	protected synchronized void setCapacity(int newCapacity) {
-		if(newCapacity < 0)
-			throw new IllegalArgumentException("Negative capacities are not allowed.");
-		
+		if(binarySearch(VALID_CAPACITIES, newCapacity) < 0)
+			throw new IllegalArgumentException("Illegal capacity: " + newCapacity);
+
 		checkedActivate(1); // int/Date is a db4o primitive type so 1 is enough
 		
 		if(newCapacity == mCapacity)

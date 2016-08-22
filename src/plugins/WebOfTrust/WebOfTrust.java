@@ -3,6 +3,9 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.util.Arrays.copyOfRange;
+import static java.util.Arrays.sort;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -1679,6 +1682,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 			1	// Every identity above rank 5 can give 1 point
 	};			// Identities with no rank or rank of Integer.MAX_VALUE have zero capacity.
 	
+
+	/**
+	 * Same as {@link #capacities} except:
+	 * - the legal value of 0 is included.
+	 * - it is sorted in ascending order. */
+	static final int[] VALID_CAPACITIES = copyOfRange(capacities, 0, capacities.length + 1);
+
+	static {
+		// TODO: Code quality: Java 8: Inline into variable declaration using lambda expressions.
+		sort(VALID_CAPACITIES);
+	}
+
 	/**
 	 * Computes the capacity of a truster. The capacity is a weight function in percent which is used to decide how much
 	 * trust points an identity can add to the score of identities which it has assigned trust values to.
