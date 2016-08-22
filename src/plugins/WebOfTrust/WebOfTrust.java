@@ -1639,7 +1639,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 	
 	
-	/** Capacity is the maximum amount of points an identity can give to an other by trusting it. 
+	/**
+	 * Capacity is the maximum amount of {@link Score#getScore() Score value} points an
+	 * {@link Identity} can give to an other one by trusting it, see
+	 * {@link #computeScoreValue(OwnIdentity, Identity)}.
+	 * 
+	 * When considering the {@link Score#getRank() rank} of an Identity as index to this array, the
+	 * value at a given slot shall be the capacity of the Identity.
+	 * The array is sorted in descending order: The capacity decreases with increasing rank.
+	 * 
+	 * Identitys which have no rank or a rank of {@link Integer#MAX_VALUE} are considered as
+	 * having a capacity of 0. That value is not included in this array.
 	 * 
 	 * Values choice :
 	 * Advogato Trust metric recommends that values decrease by rounded 2.5 times.
