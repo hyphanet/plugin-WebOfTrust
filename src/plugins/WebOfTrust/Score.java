@@ -20,6 +20,9 @@ import freenet.support.CurrentTimeUTC;
  * A score is the actual rating of how much an identity can be trusted from the point of view of the OwnIdentity which owns the score.
  * If the Score is negative, the identity is considered malicious, if it is zero or positive, it is trusted. 
  * 
+ * TODO: Performance: Scores are not entered by the user, they are only ever computed by WoT on
+ * its own. Thus convert all if() checks of proper input values to asserts().
+ *
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
