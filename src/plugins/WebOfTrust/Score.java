@@ -274,6 +274,12 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 
 	/**
 	 * Sets the distance of how far the trusted Identity is from the truster, measured in minimal steps of {@link Trust} values.
+	 * 
+	 * TODO: Code quality: Ranks of -1 are currently allowed so Score objects with a rank of "none"
+	 * can be symbolically created for Score computation purposes at class {@link WebOfTrust}.
+	 * -1 doesn't make much sense because a rank is a distance and distances should be strictly
+	 * positive. Thus consider whether the Score computation code can be changed to not require
+	 * -1 to be allowed, and then disallow it if possible. 
 	 */
 	protected synchronized void setRank(int newRank) {		
 		if(newRank < -1)

@@ -73,16 +73,16 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		// All integer values are allowed.
 		int[] goodValues = { Integer.MIN_VALUE, -2, -1, 0, 1, 2, Integer.MAX_VALUE };
-		// Anything >= 0 is allowed.
-		int[] goodRanks = { 0, 1, 2, Integer.MAX_VALUE  };
+		// Anything >= -1 is allowed.
+		int[] goodRanks = { -1, 0, 1, 2, Integer.MAX_VALUE  };
 		// Only those specific values are legal. Same as WebOfTrust.capacities.
 		// We intentionally don't use the same array object here to ensure people who change it will
 		// notice that this test fails and should be reviewed for whether the rest of it still makes
 		// sense with the new capacity values.
 		int[] goodCapacities = { 0, 1, 2, 6, 16, 40, 100 };
 
-		// Anything < 0 is illegal
-		int[] badRanks = new int[] { Integer.MIN_VALUE, -2, -1 } ;
+		// Anything < -1 is illegal
+		int[] badRanks = new int[] { Integer.MIN_VALUE, -3, -2 } ;
 		// Anything not in goodCapacities is illegal
 		int[] badCapacities = new int[] { Integer.MIN_VALUE, -2, -1, 3, 7, 101, Integer.MAX_VALUE };
 		
