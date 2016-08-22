@@ -1667,7 +1667,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			6,	// So on...
 			2,
 			1	// Every identity above rank 5 can give 1 point
-	};			// Identities with negative score have zero capacity
+	};			// Identities with no rank or rank of Integer.MAX_VALUE have zero capacity.
 	
 	/**
 	 * Computes the capacity of a truster. The capacity is a weight function in percent which is used to decide how much
