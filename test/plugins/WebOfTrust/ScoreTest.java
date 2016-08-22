@@ -110,14 +110,14 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 					for(int badRank : badRanks) {
 						try {
 							new Score(wot, truster, trustee, value, badRank, capacity);
-							fail();
+							fail("Rank: " + badRank);
 						} catch(IllegalArgumentException e) {}
 					}
 					
 					for(int badCapacity : badCapacities) {
 						try {
 							new Score(wot, truster, trustee, value, rank, badCapacity);
-							fail();
+							fail("Capacity: " + badCapacity);
 						} catch(IllegalArgumentException e) {}
 					}
 				}
