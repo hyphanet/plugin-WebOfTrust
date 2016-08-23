@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.System.identityHashCode;
 import static org.junit.Assert.*;
 
 import java.net.MalformedURLException;
@@ -122,6 +123,33 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 				}
 			}
 		}
+	}
+
+	@Test public void testHashCode() throws MalformedURLException, InvalidParameterException {
+		WebOfTrustInterface wot = mWebOfTrust;
+		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
+		Identity trustee = addRandomIdentities(1).get(0);
+		
+		Score s1 = new Score(wot, truster, trustee, 100, 2, 16);
+		assertNotEquals(identityHashCode(s1), s1.hashCode());
+		assertEquals(s1.getID().hashCode(), s1.hashCode());
+		assertNotEquals(identityHashCode(s1.getID().hashCode()), s1.getID().hashCode());
+		
+		Score s2 = new Score(wot, truster, trustee, 100, 2, 16);
+		assertEquals(s1.hashCode(), s2.hashCode());
+		s2 = null;
+		
+		Score s3 = new Score(wot, truster, trustee, 101, 3, 6);
+		assertEquals(s1.hashCode(), s3.hashCode());
+		s3 = null;
+		
+		Score s4 = new Score(wot, truster, addRandomIdentities(1).get(0), 100, 2, 16);
+		assertNotEquals(s1.hashCode(), s4.hashCode());
+		s4 = null;
+		
+		Score s5 = new Score(wot, addRandomOwnIdentities(1).get(0), trustee, 100, 2, 16);
+		assertNotEquals(s1.hashCode(), s5.hashCode());
+		s5 = null;
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
