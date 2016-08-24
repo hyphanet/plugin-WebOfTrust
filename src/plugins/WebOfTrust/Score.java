@@ -198,7 +198,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	@Override
 	public String toString() {
 	    activateFully();
-		return "[Score: " + super.toString()
+		return "[" + super.toString()
 		     + "; mID: " + mID
 		     + "; mValue: " + mValue
 		     + "; mRank: " + mRank

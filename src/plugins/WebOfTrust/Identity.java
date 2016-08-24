@@ -977,7 +977,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	@Override
 	public String toString() {
 		activateFully(); 
-		return "[Identity: " + super.toString()
+		return "[" + super.toString()
 		     + "; mID: " + mID
 		     + "; mRequestURIString: " + mRequestURIString
 		     + "; mRequestURI: " + mRequestURI

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.System.identityHashCode;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -495,6 +497,8 @@ public abstract class Persistent implements Serializable {
 	 */
 	@Override
 	public String toString() {
+		final String clazz = getClass().getSimpleName(); 
+		final String objectID = Integer.toHexString(identityHashCode(this));
 		final String databaseID;
 		
 		if(mDB == null)
@@ -504,10 +508,10 @@ public abstract class Persistent implements Serializable {
 			if(oi == null)
 				databaseID = "object not stored";
 			else
-				databaseID = Long.toString(oi.getInternalID());
+				databaseID = Long.toHexString(oi.getInternalID());
 		}
 		
-		return super.toString() + " (databaseID: " + databaseID + ")";
+		return clazz + ": objectID: " + objectID + "; databaseID: " + databaseID;
 	}
 	
 	/**

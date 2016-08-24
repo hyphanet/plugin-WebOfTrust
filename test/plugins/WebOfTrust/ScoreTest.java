@@ -163,27 +163,14 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		long db4oID = wot.getDatabase().getObjectInfo(s).getInternalID();
 		
 		String expected =
-			  "[Score: plugins.WebOfTrust.Score@" + Integer.toHexString(objectID)
-			+ " (databaseID: " + Long.toString(db4oID) + ")"
+			  "[Score: objectID: " + Integer.toHexString(objectID)
+			+ "; databaseID: " + Long.toHexString(db4oID)
 			+ "; mID: " + truster.getID() + "@" + trustee.getID()
 			+ "; mValue: " + 100
 			+ "; mRank: " + 2
 			+ "; mCapacity: " + 16
 			+ "]";
 		
-		// FIXME: This fails due to the part which should be the objectID mismatching, which shows
-		// a bug:
-		// When I wrote Persistent.toString(), I assumed Object.toString() would return the
-		// identityHashCode(). But instead it uses the hashCode() implementation of the class
-		// itself, i.e. Score.hashCode(). This returns the hashCode of getID(). So two things are
-		// wrong:
-		// - the information is redundant since we already have the ID in the toString() text.
-		// - the actual identityHashCode() is missing. This is important to have because db4o
-		//   recycles objects so we *need* to know it for debugging purposes.
-		// So to fix this, change Persistent.toString() to use identityHashCode(), not
-		// Object.toString().
-		// Also, while you're at it, change Persistent.toString() to encode *both* the objectID and
-		// db4oID as hex.
 		assertEquals(expected, s.toString());
 	}
 

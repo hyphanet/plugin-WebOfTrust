@@ -248,7 +248,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	@Override
 	public String toString() {
 	    activateFully();
-		return "[Trust: " + super.toString()
+		return "[" + super.toString()
 		     + "; mID: " + mID
 		     + "; mValue:" + mValue
              + "; mTrusterTrustListEdition: " + mTrusterTrustListEdition
