@@ -174,6 +174,46 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(expected, s.toString());
 	}
 
+	/** Copy-paste of {@link #testGetTrustee()} */
+	@Test public void testGetTruster() throws MalformedURLException, InvalidParameterException {
+		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
+		OwnIdentity trustee = addRandomOwnIdentities(1).get(0);
+		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		
+		assertNotNull(s.getTruster());
+		
+		// Check for potential truster/trustee mixup
+		assertNotSame(trustee, s.getTruster());
+		assertNotEquals(trustee, s.getTruster());
+		
+		// Check whether Persistent.initializeTransient() is called on truster
+		assertSame(mWebOfTrust, s.getTruster().getWebOfTrust());
+		
+		// Actual functionality check at the end - doing the other checks before eases debugging
+		assertEquals(truster, s.getTruster());
+		assertSame(truster, s.getTruster());
+	}
+
+	/** Copy-paste of {@link #testGetTruster()} */
+	@Test public void testGetTrustee() throws MalformedURLException, InvalidParameterException {
+		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
+		OwnIdentity trustee = addRandomOwnIdentities(1).get(0);
+		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		
+		assertNotNull(s.getTrustee());
+		
+		// Check for potential truster/trustee mixup
+		assertNotSame(truster, s.getTrustee());
+		assertNotEquals(truster, s.getTrustee());
+		
+		// Check whether Persistent.initializeTransient() is called on trustee
+		assertSame(mWebOfTrust, s.getTrustee().getWebOfTrust());
+		
+		// Actual functionality check at the end - doing the other checks before eases debugging
+		assertEquals(trustee, s.getTrustee());
+		assertSame(trustee, s.getTrustee());
+	}
+
 	@Override protected WebOfTrust getWebOfTrust() {
 		return mWebOfTrust;
 	}
