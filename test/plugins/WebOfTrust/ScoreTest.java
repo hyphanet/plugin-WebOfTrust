@@ -214,6 +214,22 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		assertSame(trustee, s.getTrustee());
 	}
 
+	@Test public void testGetID() throws MalformedURLException, InvalidParameterException {
+		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
+		OwnIdentity trustee = addRandomOwnIdentities(1).get(0);
+		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		
+		assertNotNull(s.getID());
+		
+		// Check for potential truster/trustee mixup
+		assertNotEquals(trustee.getID() + "@" + truster.getID(), s.getID());
+		
+		assertEquals(truster.getID() + "@" + trustee.getID(), s.getID());
+		
+		// Test caching
+		assertSame(s.getID(), s.getID());
+	}
+
 	@Override protected WebOfTrust getWebOfTrust() {
 		return mWebOfTrust;
 	}
