@@ -230,6 +230,26 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		assertSame(s.getID(), s.getID());
 	}
 
+	@Test public void testGetScore() throws MalformedURLException, InvalidParameterException {
+		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
+		Identity trustee = addRandomIdentities(1).get(0);
+		
+		int rank = 2;
+		int capacity = 16;
+		int score;
+		do {
+			score = mRandom.nextInt();
+		} while(score == rank || score == capacity); // Prevent bogus detection of mixups
+		
+		Score s = new Score(mWebOfTrust, truster, trustee, score, rank, capacity);
+		
+		// Test for mixups
+		assertNotEquals(rank, s.getScore());
+		assertNotEquals(capacity, s.getScore());
+		
+		assertEquals(score, s.getScore());
+	}
+
 	@Override protected WebOfTrust getWebOfTrust() {
 		return mWebOfTrust;
 	}
