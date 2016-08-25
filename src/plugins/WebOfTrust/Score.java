@@ -244,11 +244,15 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		mID = new ScoreID(getTruster(), getTrustee()).toString();
 	}
 
+	/** @deprecated Use {@link #getValue()} */
+	@Deprecated public int getScore() {
+		return getValue();
+	}
+
 	/**
 	 * @return the numeric value of this Score
 	 */
-	/* XXX: Rename to getValue */
-	public synchronized int getScore() {
+	public synchronized int getValue() {
 		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mValue;
 	}
