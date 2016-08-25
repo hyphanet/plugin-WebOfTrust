@@ -20,6 +20,10 @@ import freenet.support.StringValidityChecker;
 /**
  * A trust relationship between two Identities.
  * 
+ * Concurrency:
+ * Trust does not provide locking of its own.
+ * Reads and writes upon Trust objects must be secured by synchronizing on the {@link WebOfTrust}.
+ * 
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
@@ -291,7 +295,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	}
 
 	/** @return value Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. */
-	public synchronized byte getValue() {
+	public byte getValue() {
 		checkedActivate(1); // byte is a db4o primitive type so 1 is enough
 		return mValue;
 	}
@@ -300,7 +304,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	 * @param newValue Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. 
 	 * @throws InvalidParameterException if value isn't in the range
 	 */
-	protected synchronized void setValue(byte newValue) throws InvalidParameterException {
+	protected void setValue(byte newValue) throws InvalidParameterException {
 		// TODO: Use l10n Trust.InvalidValue
 		if(newValue < -100 || newValue > 100) 
 			throw new InvalidParameterException("Invalid trust value ("+ newValue +"). Trust values must be in range of -100 to +100.");
@@ -314,7 +318,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	}
 
 	/** @return The comment associated to this Trust relationship. */
-	public synchronized String getComment() {
+	public String getComment() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mComment;
 	}
@@ -322,7 +326,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	/**
 	 * @param newComment Comment on this trust relationship.
 	 */
-	protected synchronized void setComment(String newComment) throws InvalidParameterException {
+	protected void setComment(String newComment) throws InvalidParameterException {
 		assert(newComment != null);
 		
 		newComment = newComment != null ? newComment.trim() : "";
@@ -344,12 +348,12 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 		}
 	}
 	
-	public synchronized Date getDateOfCreation() {
+	public Date getDateOfCreation() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mCreationDate.clone();	// Clone it because date is mutable
 	}
 	
-	public synchronized Date getDateOfLastChange() {
+	public Date getDateOfLastChange() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 	}
@@ -358,12 +362,12 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	 * Called by the XMLTransformer when a new trust list of the truster has been imported. Stores the edition number of the trust list in this trust object.
 	 * For an explanation for what this is needed please read the description of {@link #mTrusterTrustListEdition}.
 	 */
-	protected synchronized void trusterEditionUpdated() {
+	protected void trusterEditionUpdated() {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		mTrusterTrustListEdition = getTruster().getEdition();
 	}
 	
-	public synchronized long getTrusterEdition() {
+	public long getTrusterEdition() {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		return mTrusterTrustListEdition;
 	}
