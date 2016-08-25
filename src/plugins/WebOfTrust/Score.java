@@ -23,6 +23,10 @@ import freenet.support.CurrentTimeUTC;
  * A score is the actual rating of how much an identity can be trusted from the point of view of the OwnIdentity which owns the score.
  * If the Score is negative, the identity is considered malicious, if it is zero or positive, it is trusted. 
  * 
+ * Concurrency:
+ * Score does not provide locking of its own.
+ * Reads and writes upon Score objects must be secured by synchronizing on the {@link WebOfTrust}.
+ * 
  * TODO: Performance: Scores are not entered by the user, they are only ever computed by WoT on
  * its own. Thus convert all if() checks of proper input values to asserts().
  *
@@ -252,7 +256,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	/**
 	 * @return the numeric value of this Score
 	 */
-	public synchronized int getValue() {
+	public int getValue() {
 		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mValue;
 	}
@@ -260,7 +264,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	/**
 	 * Sets the numeric value of this Score.
 	 */
-	protected synchronized void setValue(int newValue) {
+	protected void setValue(int newValue) {
 		checkedActivate(1); // int/Date is a db4o primitive type so 1 is enough
 		
 		if(mValue == newValue)
@@ -274,7 +278,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	 * @return The minimal distance in steps of {@link Trust} values from the truster to the trustee
 	 * @see WebOfTrust#computeRankFromScratch()
 	 */
-	public synchronized int getRank() {
+	public int getRank() {
 		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mRank;
 	}
@@ -288,7 +292,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	 * positive. Thus consider whether the Score computation code can be changed to not require
 	 * -1 to be allowed, and then disallow it if possible. 
 	 */
-	protected synchronized void setRank(int newRank) {		
+	protected void setRank(int newRank) {		
 		if(newRank < -1)
 			throw new IllegalArgumentException("Illegal rank.");
 		
@@ -304,7 +308,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	/**
 	 * @return how much points the trusted Identity can add to its trustees score
 	 */
-	public synchronized int getCapacity() {
+	public int getCapacity() {
 		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mCapacity;
 	}
@@ -312,7 +316,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	/**
 	 * Sets how much points the trusted Identity can add to its trustees score.
 	 */
-	protected synchronized void setCapacity(int newCapacity) {
+	protected void setCapacity(int newCapacity) {
 		if(binarySearch(VALID_CAPACITIES, newCapacity) < 0)
 			throw new IllegalArgumentException("Illegal capacity: " + newCapacity);
 
@@ -329,7 +333,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	 * Gets the {@link Date} when this score object was created. The date of creation does never change for an existing score object, so if the value, rank
 	 * or capacity of a score changes then its date of creation stays constant.
 	 */
-	public synchronized Date getDateOfCreation() {
+	public Date getDateOfCreation() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mCreationDate.clone();	// Clone it because date is mutable
 	}
@@ -337,7 +341,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	/**
 	 * Gets the {@link Date} when the value, capacity or rank of this score was last changed.
 	 */
-	public synchronized Date getDateOfLastChange() {
+	public Date getDateOfLastChange() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 	}
