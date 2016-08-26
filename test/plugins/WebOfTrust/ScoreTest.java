@@ -233,6 +233,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		assertSame(s.getID(), s.getID());
 	}
 
+	/** Copy-paste of {@link #testGetRank()} */
 	@Test public void testGetValue() throws MalformedURLException, InvalidParameterException {
 		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
 		Identity trustee = addRandomIdentities(1).get(0);
@@ -284,6 +285,30 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		s.setValue(s.getValue() - 1);
 		assertNotEquals(oldDate, s.getDateOfLastChange());
 		assertTrue(oldDate.before(s.getDateOfLastChange()));
+	}
+
+	/** Copy-paste of {@link #testGetValue()} */
+	@Test public void testGetRank() throws MalformedURLException, InvalidParameterException {
+		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
+		Identity trustee = addRandomIdentities(1).get(0);
+		
+		int value = 100;
+		int rank;
+		int capacity = 16;
+	
+		do {
+			// - Anything >= -1 is allowed.
+			// - Add nextInt(1) because nextInt(Integer.MAX_VALUE) will only return MAX_VALUE - 1.
+			rank = -1 + mRandom.nextInt(Integer.MAX_VALUE) + mRandom.nextInt(1);
+		} while(rank == value || rank == capacity); // Prevent bogus detection of mixups
+		
+		Score s = new Score(mWebOfTrust, truster, trustee, value, rank, capacity);
+		
+		// Test for mixups
+		assertNotEquals(value, s.getRank());
+		assertNotEquals(capacity, s.getRank());
+		
+		assertEquals(rank, s.getRank());
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
