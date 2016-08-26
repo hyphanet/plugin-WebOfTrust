@@ -6,6 +6,7 @@ package plugins.WebOfTrust;
 import static java.lang.System.identityHashCode;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
+import static plugins.WebOfTrust.WebOfTrust.VALID_CAPACITIES;
 
 import java.net.MalformedURLException;
 import java.util.Date;
@@ -233,7 +234,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		assertSame(s.getID(), s.getID());
 	}
 
-	/** {@link #testGetRank()} is a copy-paste of this. */
+	/** {@link #testGetRank()} and {@link #testGetCapacity()} are copy-pastes of this. */
 	@Test public void testGetValue() throws MalformedURLException, InvalidParameterException {
 		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
 		Identity trustee = addRandomIdentities(1).get(0);
@@ -363,6 +364,28 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		s.setRank(s.getRank() - 1);
 		assertNotEquals(oldDate, s.getDateOfLastChange());
 		assertTrue(oldDate.before(s.getDateOfLastChange()));
+	}
+
+	/** Copy-paste of {@link #testGetValue()} */
+	@Test public void testGetCapacity() throws MalformedURLException, InvalidParameterException {
+		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
+		Identity trustee = addRandomIdentities(1).get(0);
+		
+		int value = -1;
+		int rank = -1; // No need to match capacity currently, not enforced by class Score yet.
+		int capacity = VALID_CAPACITIES[mRandom.nextInt(VALID_CAPACITIES.length)];
+		
+		// Prevent bogus detection of mixups.
+		// No need to re-randomize if equals: Our value/rank are currently not in VALID_CAPACITIES. 
+		assert(capacity != value && capacity != rank);
+		
+		Score s = new Score(mWebOfTrust, truster, trustee, value, rank, capacity);
+		
+		// Test for mixups
+		assertNotEquals(value, s.getCapacity());
+		assertNotEquals(rank, s.getCapacity());
+		
+		assertEquals(capacity, s.getCapacity());
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
