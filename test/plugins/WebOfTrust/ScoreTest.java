@@ -177,7 +177,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(expected, s.toString());
 	}
 
-	/** Copy-paste of {@link #testGetTrustee()} */
+	/** {@link #testGetTrustee()} is a copy-paste of this */
 	@Test public void testGetTruster() throws MalformedURLException, InvalidParameterException {
 		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
 		OwnIdentity trustee = addRandomOwnIdentities(1).get(0);
@@ -233,7 +233,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		assertSame(s.getID(), s.getID());
 	}
 
-	/** Copy-paste of {@link #testGetRank()} */
+	/** {@link #testGetRank()} is a copy-paste of this. */
 	@Test public void testGetValue() throws MalformedURLException, InvalidParameterException {
 		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
 		Identity trustee = addRandomIdentities(1).get(0);
