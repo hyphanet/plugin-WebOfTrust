@@ -254,6 +254,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(value, s.getValue());
 	}
 
+	/** {@link #testSetRankInt()} is a copy-paste of this. */
 	@Test public void testSetValueInt()
 			throws MalformedURLException, InvalidParameterException, InterruptedException {
 		
@@ -309,6 +310,59 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		assertNotEquals(capacity, s.getRank());
 		
 		assertEquals(rank, s.getRank());
+	}
+
+	/** Amended copy-paste of {@link #testSetValueInt()} */
+	@Test public void testSetRankInt()
+			throws MalformedURLException, InvalidParameterException, InterruptedException {
+		
+		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
+		Identity trustee = addRandomIdentities(1).get(0);
+		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		
+		// Test whether setRank() accepts all allowed ranks.
+		
+		// Anything >= -1 is allowed.
+		int[] goodRanks = { -1, 0, 1, 2, Integer.MAX_VALUE  };
+		
+		for(int rank : goodRanks) {
+			s.setRank(rank);
+			assertEquals(rank, s.getRank());
+		}
+		
+		// Anything < -1 is illegal
+		int[] badRanks = new int[] { Integer.MIN_VALUE, -3, -2 } ;
+		
+		for(int rank : badRanks) {
+			int oldRank = s.getRank();
+			
+			try {
+				s.setRank(rank);
+				fail();
+			} catch(IllegalArgumentException e) {}
+			
+			assertEquals(oldRank, s.getRank());
+		}
+		
+		// Test updating of date of last change
+		
+		Date oldDate = s.getDateOfLastChange();
+		
+		do {
+			sleep(1);
+		} while(oldDate.equals(CurrentTimeUTC.get()));
+		
+		s.setRank(s.getRank());
+		assertEquals(oldDate, s.getDateOfLastChange());
+		
+		try {
+			s.setRank(badRanks[0]);
+		} catch(IllegalArgumentException e) {}
+		assertEquals(oldDate, s.getDateOfLastChange());
+		
+		s.setRank(s.getRank() - 1);
+		assertNotEquals(oldDate, s.getDateOfLastChange());
+		assertTrue(oldDate.before(s.getDateOfLastChange()));
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
