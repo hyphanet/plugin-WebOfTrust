@@ -4,14 +4,17 @@
 package plugins.WebOfTrust;
 
 import static java.lang.System.identityHashCode;
+import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
 
 import java.net.MalformedURLException;
+import java.util.Date;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import freenet.support.CurrentTimeUTC;
 
 /** Tests {@link Score}. */
 public class ScoreTest extends AbstractJUnit4BaseTest {
@@ -248,6 +251,39 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		assertNotEquals(capacity, s.getValue());
 		
 		assertEquals(value, s.getValue());
+	}
+
+	@Test public void testSetValueInt()
+			throws MalformedURLException, InvalidParameterException, InterruptedException {
+		
+		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
+		Identity trustee = addRandomIdentities(1).get(0);
+		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		
+		// Test whether setValue() accepts all allowed values.
+		
+		// All integer values are allowed.
+		int[] goodValues = { Integer.MIN_VALUE, -2, -1, 0, 1, 2, Integer.MAX_VALUE };
+		
+		for(int value : goodValues) {
+			s.setValue(value);
+			assertEquals(value, s.getValue());
+		}
+		
+		// Test updating of date of last change
+		
+		Date oldDate = s.getDateOfLastChange();
+		
+		do {
+			sleep(1);
+		} while(oldDate.equals(CurrentTimeUTC.get()));
+		
+		s.setValue(s.getValue());
+		assertEquals(oldDate, s.getDateOfLastChange());
+		
+		s.setValue(s.getValue() - 1);
+		assertNotEquals(oldDate, s.getDateOfLastChange());
+		assertTrue(oldDate.before(s.getDateOfLastChange()));
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
