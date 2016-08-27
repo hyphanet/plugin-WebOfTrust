@@ -4,9 +4,9 @@
 package plugins.WebOfTrust;
 
 import static java.lang.System.identityHashCode;
-import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
 import static plugins.WebOfTrust.WebOfTrust.VALID_CAPACITIES;
+import static plugins.WebOfTrust.util.DateUtil.waitUntilCurrentTimeUTCIsAfter;
 
 import java.net.MalformedURLException;
 import java.util.Date;
@@ -268,11 +268,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		// Test updating of date of last change
 		
 		Date oldDate = s.getDateOfLastChange();
-		
-		do {
-			sleep(1);
-		} while(oldDate.equals(CurrentTimeUTC.get()));
-		
+		waitUntilCurrentTimeUTCIsAfter(oldDate);
 		s.setValue(s.getValue());
 		assertEquals(oldDate, s.getDateOfLastChange());
 		
@@ -333,11 +329,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		// Test updating of date of last change
 		
 		Date oldDate = s.getDateOfLastChange();
-		
-		do {
-			sleep(1);
-		} while(oldDate.equals(CurrentTimeUTC.get()));
-		
+		waitUntilCurrentTimeUTCIsAfter(oldDate);
 		s.setRank(s.getRank());
 		assertEquals(oldDate, s.getDateOfLastChange());
 		
@@ -406,11 +398,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		// Test updating of date of last change
 		
 		Date oldDate = s.getDateOfLastChange();
-		
-		do {
-			sleep(1);
-		} while(oldDate.equals(CurrentTimeUTC.get()));
-		
+		waitUntilCurrentTimeUTCIsAfter(oldDate);
 		s.setCapacity(s.getCapacity());
 		assertEquals(oldDate, s.getDateOfLastChange());
 		
