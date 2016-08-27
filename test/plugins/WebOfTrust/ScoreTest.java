@@ -255,7 +255,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(value, s.getValue());
 	}
 
-	/** {@link #testSetRankInt()} is a copy-paste of this. */
+	/** {@link #testSetRankInt()} and {@link #testSetCapacityInt()} are copy-pastes of this. */
 	@Test public void testSetValueInt()
 			throws MalformedURLException, InvalidParameterException, InterruptedException {
 		
@@ -386,6 +386,64 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		assertNotEquals(rank, s.getCapacity());
 		
 		assertEquals(capacity, s.getCapacity());
+	}
+	
+	/**
+	 * Copy-paste of {@link #testSetRankInt()}, which itself is an amended copy-paste of
+	 * {@link #testSetValueInt()} */
+	@Test public void testSetCapacityInt()
+			throws MalformedURLException, InvalidParameterException, InterruptedException {
+		
+		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
+		Identity trustee = addRandomIdentities(1).get(0);
+		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		
+		// Test whether setCapacity() accepts all allowed capacities.
+		
+		// Only those specific values are legal. Same as WebOfTrust.VALID_CAPACITIES.
+		// We intentionally don't use the same array object here to ensure people who change it will
+		// notice that this test fails and should be reviewed for whether the rest of it still makes
+		// sense with the new capacity values.
+		int[] goodCapacities = { 0, 1, 2, 6, 16, 40, 100 };
+		
+		for(int capacity : goodCapacities) {
+			s.setCapacity(capacity);
+			assertEquals(capacity, s.getCapacity());
+		}
+		
+		// Anything not in goodCapacities is illegal
+		int[] badCapacities = new int[] { Integer.MIN_VALUE, -2, -1, 3, 7, 101, Integer.MAX_VALUE };
+		
+		for(int capacity : badCapacities) {
+			int oldCapacity = s.getCapacity();
+			
+			try {
+				s.setCapacity(capacity);
+				fail();
+			} catch(IllegalArgumentException e) {}
+			
+			assertEquals(oldCapacity, s.getCapacity());
+		}
+		
+		// Test updating of date of last change
+		
+		Date oldDate = s.getDateOfLastChange();
+		
+		do {
+			sleep(1);
+		} while(oldDate.equals(CurrentTimeUTC.get()));
+		
+		s.setCapacity(s.getCapacity());
+		assertEquals(oldDate, s.getDateOfLastChange());
+		
+		try {
+			s.setCapacity(badCapacities[0]);
+		} catch(IllegalArgumentException e) {}
+		assertEquals(oldDate, s.getDateOfLastChange());
+		
+		s.setCapacity(goodCapacities[0]);
+		assertNotEquals(oldDate, s.getDateOfLastChange());
+		assertTrue(oldDate.before(s.getDateOfLastChange()));
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
