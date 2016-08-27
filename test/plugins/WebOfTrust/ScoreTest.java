@@ -22,17 +22,20 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 
 	/** A random WebOfTrust: Random {@link OwnIdentity}s, {@link Trust}s, {@link Score}s */
 	private WebOfTrust mWebOfTrust;
+	
+	private OwnIdentity truster;
+	
+	private Identity trustee;
+	
 
-	@Before public void setUp() {
+	@Before public void setUp() throws MalformedURLException, InvalidParameterException {
 		mWebOfTrust = constructEmptyWebOfTrust();
+		truster = addRandomOwnIdentities(1).get(0);
+		trustee = addRandomIdentities(1).get(0);
 	}
 
-	@Test public void testScoreWebOfTrustInterfaceOwnIdentityIdentityIntIntInt()
-			throws MalformedURLException, InvalidParameterException {
-		
+	@Test public void testScoreWebOfTrustInterfaceOwnIdentityIdentityIntIntInt() {
 		WebOfTrustInterface wot = mWebOfTrust;
-		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
-		Identity trustee = addRandomIdentities(1).get(0);
 		
 		// Test basic valid construction
 		
@@ -131,8 +134,6 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 
 	@Test public void testHashCode() throws MalformedURLException, InvalidParameterException {
 		WebOfTrustInterface wot = mWebOfTrust;
-		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
-		Identity trustee = addRandomIdentities(1).get(0);
 		
 		Score s1 = new Score(wot, truster, trustee, 100, 2, 16);
 		assertNotEquals(identityHashCode(s1), s1.hashCode());
@@ -156,10 +157,8 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		s5 = null;
 	}
 
-	@Test public void testToString() throws MalformedURLException, InvalidParameterException {
+	@Test public void testToString() {
 		WebOfTrustInterface wot = mWebOfTrust;
-		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
-		Identity trustee = addRandomIdentities(1).get(0);
 		Score s = new Score(wot, truster, trustee, 100, 2, 16);
 		s.storeWithoutCommit();
 		
@@ -235,10 +234,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 	}
 
 	/** {@link #testGetRank()} and {@link #testGetCapacity()} are copy-pastes of this. */
-	@Test public void testGetValue() throws MalformedURLException, InvalidParameterException {
-		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
-		Identity trustee = addRandomIdentities(1).get(0);
-		
+	@Test public void testGetValue() {
 		int rank = 2;
 		int capacity = 16;
 		int value;
@@ -256,11 +252,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 	}
 
 	/** {@link #testSetRankInt()} and {@link #testSetCapacityInt()} are copy-pastes of this. */
-	@Test public void testSetValueInt()
-			throws MalformedURLException, InvalidParameterException, InterruptedException {
-		
-		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
-		Identity trustee = addRandomIdentities(1).get(0);
+	@Test public void testSetValueInt() throws InterruptedException {
 		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
 		
 		// Test whether setValue() accepts all allowed values.
@@ -290,10 +282,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 	}
 
 	/** Copy-paste of {@link #testGetValue()} */
-	@Test public void testGetRank() throws MalformedURLException, InvalidParameterException {
-		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
-		Identity trustee = addRandomIdentities(1).get(0);
-		
+	@Test public void testGetRank() {
 		int value = 100;
 		int rank;
 		int capacity = 16;
@@ -314,11 +303,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 	}
 
 	/** Amended copy-paste of {@link #testSetValueInt()} */
-	@Test public void testSetRankInt()
-			throws MalformedURLException, InvalidParameterException, InterruptedException {
-		
-		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
-		Identity trustee = addRandomIdentities(1).get(0);
+	@Test public void testSetRankInt() throws InterruptedException {
 		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
 		
 		// Test whether setRank() accepts all allowed ranks.
@@ -367,10 +352,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 	}
 
 	/** Copy-paste of {@link #testGetValue()} */
-	@Test public void testGetCapacity() throws MalformedURLException, InvalidParameterException {
-		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
-		Identity trustee = addRandomIdentities(1).get(0);
-		
+	@Test public void testGetCapacity() {
 		int value = -1;
 		int rank = -1; // No need to match capacity currently, not enforced by class Score yet.
 		int capacity = VALID_CAPACITIES[mRandom.nextInt(VALID_CAPACITIES.length)];
@@ -391,11 +373,7 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 	/**
 	 * Copy-paste of {@link #testSetRankInt()}, which itself is an amended copy-paste of
 	 * {@link #testSetValueInt()} */
-	@Test public void testSetCapacityInt()
-			throws MalformedURLException, InvalidParameterException, InterruptedException {
-		
-		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
-		Identity trustee = addRandomIdentities(1).get(0);
+	@Test public void testSetCapacityInt() throws InterruptedException {
 		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
 		
 		// Test whether setCapacity() accepts all allowed capacities.
