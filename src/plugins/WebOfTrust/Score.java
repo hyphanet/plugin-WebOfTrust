@@ -328,16 +328,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		mCapacity = newCapacity;
 		mLastChangedDate = CurrentTimeUTC.get();
 	}
-	
-	/**
-	 * Gets the {@link Date} when this score object was created. The date of creation does never change for an existing score object, so if the value, rank
-	 * or capacity of a score changes then its date of creation stays constant.
-	 */
-	public Date getDateOfCreation() {
-		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		return (Date)mCreationDate.clone();	// Clone it because date is mutable
-	}
-	
+
 	/**
 	 * Gets the {@link Date} when the value, capacity or rank of this score was last changed.
 	 */

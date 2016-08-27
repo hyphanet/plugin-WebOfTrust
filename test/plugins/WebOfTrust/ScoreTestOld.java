@@ -114,7 +114,7 @@ public class ScoreTestOld extends AbstractJUnit3BaseTest {
 		
 		do {
 			Thread.sleep(1);
-		} while(score.getDateOfCreation().equals(CurrentTimeUTC.get()));
+		} while(score.getCreationDate().equals(CurrentTimeUTC.get()));
 		
 		final Score equalScore = new Score(mWoT, score.getTruster().clone(), score.getTrustee().clone(), score.getScore(), score.getRank(), score.getCapacity());
 		
