@@ -4,6 +4,7 @@
 package plugins.WebOfTrust;
 
 import static java.lang.System.identityHashCode;
+import static java.util.UUID.randomUUID;
 import static org.junit.Assert.*;
 import static plugins.WebOfTrust.WebOfTrust.VALID_CAPACITIES;
 import static plugins.WebOfTrust.util.DateUtil.waitUntilCurrentTimeUTCIsAfter;
@@ -410,6 +411,64 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		s.setCapacity(goodCapacities[0]);
 		assertNotEquals(oldDate, s.getDateOfLastChange());
 		assertTrue(oldDate.before(s.getDateOfLastChange()));
+	}
+	
+	@Test public void testGetDateOfLastChange() throws Exception {
+		Date beforeCreation = CurrentTimeUTC.get();
+		
+		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		
+		assertNotNull(s.getDateOfLastChange());
+		assertNotSame("Date is a mutable class, so the getter should return clones.",
+			s.getDateOfLastChange(), s.getDateOfLastChange());
+
+		Date lastChange = s.getDateOfLastChange();
+		assertTrue(lastChange.after(beforeCreation) || lastChange.equals(beforeCreation));
+		
+		assertEquals(s.getCreationDate(), lastChange);
+		
+		// Test whether functions in Score don't accidentally modify the date
+		
+		lastChange = s.getDateOfLastChange();
+		waitUntilCurrentTimeUTCIsAfter(lastChange);
+		s.activateFully();
+		s.clone();
+		s.cloneP();
+		s.equals(new Score(mWebOfTrust, truster, trustee, 100, 2, 16));
+		s.getCapacity();
+		s.getDateOfLastChange();
+		s.getID();
+		s.getRank();
+		s.getTrustee();
+		s.getTruster();
+		s.getValue();
+		s.getVersionID();
+		s.hashCode();
+		// EventSource.setVersionID() is used by SubscriptionManager even when no actual changes
+		// happened to the the content of the object. So it must NOT update the date of last change.
+		s.setVersionID(randomUUID());
+		s.startupDatabaseIntegrityTest();
+		s.storeWithoutCommit();
+		s.toString();
+		s.serialize(); // Score.writeObject() can be accessed by this function of the parent class
+		assertEquals(lastChange, s.getDateOfLastChange());
+		
+		// Test whether the Date is updated when it should be
+		
+		lastChange = s.getDateOfLastChange();
+		waitUntilCurrentTimeUTCIsAfter(lastChange);
+		s.setCapacity(40);
+		assertTrue(s.getDateOfLastChange().after(lastChange));
+		
+		lastChange = s.getDateOfLastChange();
+		waitUntilCurrentTimeUTCIsAfter(lastChange);
+		s.setRank(1);
+		assertTrue(s.getDateOfLastChange().after(lastChange));
+		
+		lastChange = s.getDateOfLastChange();
+		waitUntilCurrentTimeUTCIsAfter(lastChange);
+		s.setValue(50);
+		assertTrue(s.getDateOfLastChange().after(lastChange));
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
