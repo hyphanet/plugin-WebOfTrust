@@ -21,6 +21,8 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
+import com.db4o.ext.ExtObjectContainer;
+
 import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -575,4 +577,17 @@ public abstract class AbstractJUnit4BaseTest {
             s[i] = (char)('a' + mRandom.nextInt(26));
         return new String(s);
     }
+
+	protected void flushCaches() {
+		System.gc();
+		System.runFinalization();
+		WebOfTrust wot = getWebOfTrust();
+		if(wot != null) {
+			ExtObjectContainer db = wot.getDatabase();
+			Persistent.checkedRollback(db, this, null);
+			db.purge();
+		}
+		System.gc();
+		System.runFinalization();
+	}
 }
