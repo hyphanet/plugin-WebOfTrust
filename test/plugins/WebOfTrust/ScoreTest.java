@@ -19,6 +19,10 @@ import org.junit.Test;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+
+import com.db4o.ext.ExtObjectContainer;
+
 import freenet.support.CurrentTimeUTC;
 
 /** Tests {@link Score}. */
@@ -533,6 +537,59 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		score.activateFully();
 		assertTrue(mWebOfTrust.getDatabase().isActive(score));
 		assertEquals(expectedActivationDepth, score.getActivationDepth());
+	}
+
+	@Test public void testStoreWithoutCommit()
+			throws NotInTrustTreeException, InterruptedException, UnknownIdentityException,
+			       MalformedURLException, InvalidParameterException {
+		
+		ExtObjectContainer db = mWebOfTrust.getDatabase();
+		
+		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		s.setVersionID(randomUUID()); // Remove when resolving fix request at Score.getVersionID()
+		Score expectedScore = s.clone();
+		s.storeWithoutCommit();
+		Persistent.checkedCommit(db, this);
+		s = null;
+		flushCaches();
+		// Notice: The truster / truster objects have been decoupled from db4o by flushCaches().
+		// So we need to re-query them from the database to ensure they match the ones db4o will
+		// give us on the Score object when we query it from the database again.
+		truster = mWebOfTrust.getOwnIdentityByID(truster.getID());
+		trustee = mWebOfTrust.getIdentityByID(trustee.getID());
+		
+		waitUntilCurrentTimeUTCIsAfter(expectedScore.getCreationDate());
+		waitUntilCurrentTimeUTCIsAfter(expectedScore.getDateOfLastChange());
+		
+		s = mWebOfTrust.getScore(truster, trustee);
+		assertTrue(s.startupDatabaseIntegrityTestBoolean());
+		assertEquals(expectedScore, s);
+		// The following are not checked by Score.equals(), so we do it on our own.
+		assertEquals(expectedScore.getCreationDate(), s.getCreationDate());
+		assertEquals(expectedScore.getDateOfLastChange(), s.getDateOfLastChange());
+		assertEquals(expectedScore.getVersionID(), s.getVersionID());
+		assertSame(truster, s.getTruster());
+		assertSame(trustee, s.getTrustee());
+		
+		// Prevent failure of AbstractJUnit4BaseTest.testDatabaseIntegrityAfterTermination() due
+		// to the Score not making sense because there are no Trust values to justify it. 
+		s.deleteWithoutCommit();
+		Persistent.checkedCommit(db, this);
+		
+		// Test whether storeWithoutCommit() refuses identities which are not stored yet.
+
+		OwnIdentity unstoredIdentity
+			= new OwnIdentity(mWebOfTrust, getRandomInsertURI(), "a", false);
+		
+		try {
+			new Score(mWebOfTrust, unstoredIdentity, trustee, 100, 2, 16).storeWithoutCommit();
+			fail();
+		} catch(AssertionError e) {}
+		
+		try {
+			new Score(mWebOfTrust, truster, unstoredIdentity, 100, 2, 16).storeWithoutCommit();
+			fail();
+		} catch(AssertionError e) {}
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {

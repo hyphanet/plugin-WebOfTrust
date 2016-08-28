@@ -464,7 +464,11 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
     /** {@inheritDoc} */
     @Override public UUID getVersionID() {
         checkedActivate(1);
-        // FIXME: Validate whether this yields proper results using an event-notifications FCP dump
+        // FIXME: Validate whether this yields proper results using an event-notifications FCP dump.
+        // Also consider to initialize the member variable at object creation (and when loading
+        // old databases) to ensure that the value of mVersionID stays the same after retrieving
+        // a previously stored object from the database. If you do that, then please adapt
+        // ScoreTest.testStoreWithoutCommit() to not initialize using setVersionID().
         return mVersionID != null ? UUID.fromString(mVersionID) : UUID.randomUUID();
     }
 }
