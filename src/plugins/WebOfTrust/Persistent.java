@@ -214,7 +214,14 @@ public abstract class Persistent implements Serializable {
 		checkedActivate(this, depth);
 		mActivatedUpTo = depth;
 	}
-	
+
+	/**
+	 * For testing purposes only.
+	 * @see #mActivatedUpTo */
+	final int getActivationDepth() {
+		return mActivatedUpTo;
+	}
+
 	/**
 	 * Activate this object to full depth so that all members are active.
 	 * 

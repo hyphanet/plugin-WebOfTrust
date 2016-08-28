@@ -9,13 +9,16 @@ import static org.junit.Assert.*;
 import static plugins.WebOfTrust.WebOfTrust.VALID_CAPACITIES;
 import static plugins.WebOfTrust.util.DateUtil.waitUntilCurrentTimeUTCIsAfter;
 
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
+import java.util.Arrays;
 import java.util.Date;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import freenet.support.CurrentTimeUTC;
 
 /** Tests {@link Score}. */
@@ -469,6 +472,67 @@ public class ScoreTest extends AbstractJUnit4BaseTest {
 		waitUntilCurrentTimeUTCIsAfter(lastChange);
 		s.setValue(50);
 		assertTrue(s.getDateOfLastChange().after(lastChange));
+	}
+	
+	@Test public void testActivateFully() throws NotInTrustTreeException {
+		// activateFully() is difficult to test:
+		// Intuitively we would use the following algorithm:
+		//    Check mWebOfTrust.getDatabase().isActive(score).
+		//    If yes, check isActive() for all member variables of Score.
+		//    If yes, check for members of members, and so on.
+		// Unfortunately, db4o has bugs such as HashMaps not being properly activated if you start
+		// activating them with a too low depth and then activate with a higher one afterwards.
+		// You need to activate them to the necessary depth with the *first* call to activate().
+		// So whether a particular implementation of activateFully() is sufficient depends a lot
+		// on the particular member types of the class.
+		// (Also, WoT by default operates with a default activation depth of 1. Testing
+		// activateFully() would currently require changing Persistent.DEFAULT_ACTIVATION_DEPTH to 0
+		// and recompiling.)
+		// Thus, this test here is not a real test:
+		// We merely aim at notifying developers that they should manually tweak and test
+		// activateFully() whenever they add new member variables to the class.
+		// So what this test does is:
+		// - having a hardcoded list of all current fields of the class.
+		// - checking whether the list of actual fields matches that.
+		// - if not, notifying the developer to review & test activateFully() and update the
+		//   hardcoded list.
+		
+		Field[] scoreFieldObjects = Score.class.getDeclaredFields();
+		String[] scoreFields = new String[scoreFieldObjects.length];
+		
+		for(int i = 0; i < scoreFieldObjects.length; ++i)
+			scoreFields[i] = scoreFieldObjects[i].toGenericString();
+		
+		Arrays.sort(scoreFields);
+		
+		String[] expectedScoreFields = {
+			"private final plugins.WebOfTrust.Identity plugins.WebOfTrust.Score.mTrustee",
+			"private final plugins.WebOfTrust.OwnIdentity plugins.WebOfTrust.Score.mTruster",
+			"private int plugins.WebOfTrust.Score.mCapacity",
+			"private int plugins.WebOfTrust.Score.mRank",
+			"private int plugins.WebOfTrust.Score.mValue",
+			"private java.lang.String plugins.WebOfTrust.Score.mID",
+			"private java.lang.String plugins.WebOfTrust.Score.mVersionID",
+			"private java.util.Date plugins.WebOfTrust.Score.mLastChangedDate",
+			"private static final transient long plugins.WebOfTrust.Score.serialVersionUID",
+			"static final boolean plugins.WebOfTrust.Score.$assertionsDisabled"
+		};
+		
+		assertArrayEquals(
+			  "It seems you have changed the fields of class Score. Please review activateFully() "
+			+ "for whether it uses sufficient activation depth for its given fields. "
+			+ "If activateFully() is correct, update the list of expected fields and the expected "
+			+ "activation depth in this test. Also, test activateFully() carefully in a manual "
+			+ "fashion, automated testing is not possible. See the source code of this test for an "
+			+ "explanation.",
+			expectedScoreFields, scoreFields);
+		
+		int expectedActivationDepth = 1;
+		
+		Score score = mWebOfTrust.getScore(truster, truster);
+		score.activateFully();
+		assertTrue(mWebOfTrust.getDatabase().isActive(score));
+		assertEquals(expectedActivationDepth, score.getActivationDepth());
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
