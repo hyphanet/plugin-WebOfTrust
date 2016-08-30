@@ -608,6 +608,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		assertEquals(s, s);
 		assertEquals(s, equalScore);
+		assertEquals(equalScore, s);
 		
 		Object[] inequalObjects = {
 			new Object(),
@@ -619,8 +620,10 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			new Score(w, truster, trustee, value, rank, capacity-1),
 		};
 		
-		for(Object other : inequalObjects)
+		for(Object other : inequalObjects) {
 			assertNotEquals(s, other);
+			assertNotEquals(other, s);
+		}
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
