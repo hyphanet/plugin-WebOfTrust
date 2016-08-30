@@ -597,30 +597,30 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		WebOfTrust w = mWebOfTrust;
 		trustee = addRandomOwnIdentities(1).get(0);
-		final Score score = new Score(w, truster, trustee, 100, 3, 2);
+		final Score s = new Score(w, truster, trustee, 100, 3, 2);
 		
 		do {
 			Thread.sleep(1);
-		} while(score.getCreationDate().equals(CurrentTimeUTC.get()));
+		} while(s.getCreationDate().equals(CurrentTimeUTC.get()));
 		
-		final Score equalScore = new Score(w, score.getTruster().clone(), score.getTrustee().clone(), score.getScore(), score.getRank(), score.getCapacity());
+		final Score equalScore = new Score(w, s.getTruster().clone(), s.getTrustee().clone(), s.getScore(), s.getRank(), s.getCapacity());
 		
-		assertEquals(score, score);
-		assertEquals(score, equalScore);
+		assertEquals(s, s);
+		assertEquals(s, equalScore);
 		
 		
 		final Object[] inequalObjects = new Object[] {
 			new Object(),
-			new Score(w, (OwnIdentity)score.getTrustee(), score.getTruster(), score.getScore(), score.getRank(), score.getCapacity()),
-			new Score(w, score.getTruster(), score.getTruster(), score.getScore(), score.getRank(), score.getCapacity()),
-			new Score(w, (OwnIdentity)score.getTrustee(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()),
-			new Score(w, score.getTruster(), score.getTrustee(), score.getScore()+1, score.getRank(), score.getCapacity()),
-			new Score(w, score.getTruster(), score.getTrustee(), score.getScore(), score.getRank()+1, score.getCapacity()),
-			new Score(w, score.getTruster(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()-1),
+			new Score(w, (OwnIdentity)s.getTrustee(), s.getTruster(), s.getScore(), s.getRank(), s.getCapacity()),
+			new Score(w, s.getTruster(), s.getTruster(), s.getScore(), s.getRank(), s.getCapacity()),
+			new Score(w, (OwnIdentity)s.getTrustee(), s.getTrustee(), s.getScore(), s.getRank(), s.getCapacity()),
+			new Score(w, s.getTruster(), s.getTrustee(), s.getScore()+1, s.getRank(), s.getCapacity()),
+			new Score(w, s.getTruster(), s.getTrustee(), s.getScore(), s.getRank()+1, s.getCapacity()),
+			new Score(w, s.getTruster(), s.getTrustee(), s.getScore(), s.getRank(), s.getCapacity()-1),
 		};
 		
 		for(Object other : inequalObjects) {
-			assertFalse(score.equals(other));
+			assertFalse(s.equals(other));
 		}
 	}
 
