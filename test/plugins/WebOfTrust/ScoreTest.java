@@ -592,8 +592,12 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		} catch(AssertionError e) {}
 	}
 
-	public void testEquals() throws InterruptedException {
-		final Score score = new Score(mWoT, a, b, 100, 3, 2);
+	@Test public void testEquals()
+			throws InterruptedException, MalformedURLException, InvalidParameterException {
+		
+		WebOfTrust mWoT = mWebOfTrust;
+		trustee = addRandomOwnIdentities(1).get(0);
+		final Score score = new Score(mWoT, truster, trustee, 100, 3, 2);
 		
 		do {
 			Thread.sleep(1);
