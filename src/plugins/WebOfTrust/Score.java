@@ -357,6 +357,11 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 			checkedStore();
 		}
 		catch(final RuntimeException e) {
+			// TODO: Code quality: We very likely don't need to catch/throw/rollback here:
+			// The defining nature of "WithoutCommit"-functions is that they are meant to be used
+			// inside of a larger database transaction block. Any transaction block *must* have
+			// a try/catch/rollback wrapper of its own.
+			// Please check the callers nevertheless and remove it if possible.
 			checkedRollbackAndThrow(e);
 		}
 	}
