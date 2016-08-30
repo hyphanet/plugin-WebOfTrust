@@ -597,11 +597,14 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		WebOfTrust w = mWebOfTrust;
 		trustee = addRandomOwnIdentities(1).get(0);
-		final Score s = new Score(w, truster, trustee, 100, 3, 2);
+		int value = 100;
+		int rank = 3;
+		int capacity = 2;
+		final Score s = new Score(w, truster, trustee, value, rank, capacity);
 		
 		waitUntilCurrentTimeUTCIsAfter(s.getCreationDate());
 		
-		final Score equalScore = new Score(w, s.getTruster().clone(), s.getTrustee().clone(), s.getScore(), s.getRank(), s.getCapacity());
+		final Score equalScore = new Score(w, s.getTruster().clone(), s.getTrustee().clone(), value, rank, capacity);
 		
 		assertEquals(s, s);
 		assertEquals(s, equalScore);
@@ -609,12 +612,12 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		final Object[] inequalObjects = new Object[] {
 			new Object(),
-			new Score(w, (OwnIdentity)s.getTrustee(), s.getTruster(), s.getScore(), s.getRank(), s.getCapacity()),
-			new Score(w, s.getTruster(), s.getTruster(), s.getScore(), s.getRank(), s.getCapacity()),
-			new Score(w, (OwnIdentity)s.getTrustee(), s.getTrustee(), s.getScore(), s.getRank(), s.getCapacity()),
-			new Score(w, s.getTruster(), s.getTrustee(), s.getScore()+1, s.getRank(), s.getCapacity()),
-			new Score(w, s.getTruster(), s.getTrustee(), s.getScore(), s.getRank()+1, s.getCapacity()),
-			new Score(w, s.getTruster(), s.getTrustee(), s.getScore(), s.getRank(), s.getCapacity()-1),
+			new Score(w, (OwnIdentity)s.getTrustee(), s.getTruster(), value, rank, capacity),
+			new Score(w, s.getTruster(), s.getTruster(), value, rank, capacity),
+			new Score(w, (OwnIdentity)s.getTrustee(), s.getTrustee(), value, rank, capacity),
+			new Score(w, s.getTruster(), s.getTrustee(), value+1, rank, capacity),
+			new Score(w, s.getTruster(), s.getTrustee(), value, rank+1, capacity),
+			new Score(w, s.getTruster(), s.getTrustee(), value, rank, capacity-1),
 		};
 		
 		for(Object other : inequalObjects) {
