@@ -599,9 +599,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		trustee = addRandomOwnIdentities(1).get(0);
 		final Score s = new Score(w, truster, trustee, 100, 3, 2);
 		
-		do {
-			Thread.sleep(1);
-		} while(s.getCreationDate().equals(CurrentTimeUTC.get()));
+		waitUntilCurrentTimeUTCIsAfter(s.getCreationDate());
 		
 		final Score equalScore = new Score(w, s.getTruster().clone(), s.getTrustee().clone(), s.getScore(), s.getRank(), s.getCapacity());
 		
