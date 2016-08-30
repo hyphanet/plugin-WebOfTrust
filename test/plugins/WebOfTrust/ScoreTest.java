@@ -616,7 +616,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			new Score(mWoT, (OwnIdentity)score.getTrustee(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()),
 			new Score(mWoT, score.getTruster(), score.getTrustee(), score.getScore()+1, score.getRank(), score.getCapacity()),
 			new Score(mWoT, score.getTruster(), score.getTrustee(), score.getScore(), score.getRank()+1, score.getCapacity()),
-			new Score(mWoT, score.getTruster(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()+1),
+			new Score(mWoT, score.getTruster(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()-1),
 		};
 		
 		for(Object other : inequalObjects) {
