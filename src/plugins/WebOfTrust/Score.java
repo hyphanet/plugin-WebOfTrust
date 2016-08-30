@@ -408,6 +408,8 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		final Score clone = new Score(mWebOfTrust, getTruster().clone(), getTrustee().clone(), getScore(), getRank(), getCapacity());
 		clone.setCreationDate(getCreationDate());
 		clone.mLastChangedDate = (Date)mLastChangedDate.clone();	// Clone it because date is mutable
+		if(mVersionID != null)
+			clone.mVersionID = mVersionID; // No need to clone, String is immutable
 		return clone;
 	}
 
@@ -467,8 +469,9 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
         // FIXME: Validate whether this yields proper results using an event-notifications FCP dump.
         // Also consider to initialize the member variable at object creation (and when loading
         // old databases) to ensure that the value of mVersionID stays the same after retrieving
-        // a previously stored object from the database. If you do that, then please adapt
-        // ScoreTest.testStoreWithoutCommit() to not initialize using setVersionID().
+        // a previously stored object from the database. If you do that, then please:
+        // - adapt ScoreTest.testStoreWithoutCommit() to not initialize using setVersionID().
+        // - adapt clone() to remove the then not needed "if(mVersionID != null)" check.
         return mVersionID != null ? UUID.fromString(mVersionID) : UUID.randomUUID();
     }
 }
