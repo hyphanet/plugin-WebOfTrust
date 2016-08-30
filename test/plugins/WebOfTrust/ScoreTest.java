@@ -26,7 +26,7 @@ import com.db4o.ext.ExtObjectContainer;
 import freenet.support.CurrentTimeUTC;
 
 /** Tests {@link Score}. */
-public class ScoreTest extends AbstractJUnit4BaseTest {
+public final class ScoreTest extends AbstractJUnit4BaseTest {
 
 	/** A random WebOfTrust: Random {@link OwnIdentity}s, {@link Trust}s, {@link Score}s */
 	private WebOfTrust mWebOfTrust;

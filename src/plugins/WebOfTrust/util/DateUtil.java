@@ -9,7 +9,7 @@ import java.util.Date;
 
 import freenet.support.CurrentTimeUTC;
 
-public class DateUtil {
+public final class DateUtil {
 
 	/** Waits until CurrentTimeUTC.get().after(future) == true */
 	public static void waitUntilCurrentTimeUTCIsAfter(Date future) throws InterruptedException {
