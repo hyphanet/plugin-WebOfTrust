@@ -600,17 +600,16 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		int value = 100;
 		int rank = 3;
 		int capacity = 2;
-		final Score s = new Score(w, truster, trustee, value, rank, capacity);
+		Score s = new Score(w, truster, trustee, value, rank, capacity);
 		
 		waitUntilCurrentTimeUTCIsAfter(s.getCreationDate());
 		
-		final Score equalScore = new Score(w, truster.clone(), trustee.clone(), value, rank, capacity);
+		Score equalScore = new Score(w, truster.clone(), trustee.clone(), value, rank, capacity);
 		
 		assertEquals(s, s);
 		assertEquals(s, equalScore);
 		
-		
-		final Object[] inequalObjects = new Object[] {
+		Object[] inequalObjects = {
 			new Object(),
 			new Score(w, (OwnIdentity)trustee, truster, value, rank, capacity),
 			new Score(w, truster, truster, value, rank, capacity),
@@ -620,9 +619,8 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			new Score(w, truster, trustee, value, rank, capacity-1),
 		};
 		
-		for(Object other : inequalObjects) {
-			assertFalse(s.equals(other));
-		}
+		for(Object other : inequalObjects)
+			assertNotEquals(s, other);
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
