@@ -592,6 +592,34 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		} catch(AssertionError e) {}
 	}
 
+	public void testEquals() throws InterruptedException {
+		final Score score = new Score(mWoT, a, b, 100, 3, 2);
+		
+		do {
+			Thread.sleep(1);
+		} while(score.getCreationDate().equals(CurrentTimeUTC.get()));
+		
+		final Score equalScore = new Score(mWoT, score.getTruster().clone(), score.getTrustee().clone(), score.getScore(), score.getRank(), score.getCapacity());
+		
+		assertEquals(score, score);
+		assertEquals(score, equalScore);
+		
+		
+		final Object[] inequalObjects = new Object[] {
+			new Object(),
+			new Score(mWoT, (OwnIdentity)score.getTrustee(), score.getTruster(), score.getScore(), score.getRank(), score.getCapacity()),
+			new Score(mWoT, score.getTruster(), score.getTruster(), score.getScore(), score.getRank(), score.getCapacity()),
+			new Score(mWoT, (OwnIdentity)score.getTrustee(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()),
+			new Score(mWoT, score.getTruster(), score.getTrustee(), score.getScore()+1, score.getRank(), score.getCapacity()),
+			new Score(mWoT, score.getTruster(), score.getTrustee(), score.getScore(), score.getRank()+1, score.getCapacity()),
+			new Score(mWoT, score.getTruster(), score.getTrustee(), score.getScore(), score.getRank(), score.getCapacity()+1),
+		};
+		
+		for(Object other : inequalObjects) {
+			assertFalse(score.equals(other));
+		}
+	}
+
 	@Override protected WebOfTrust getWebOfTrust() {
 		return mWebOfTrust;
 	}
