@@ -33,7 +33,7 @@ import freenet.support.Logger;
  * @see IdentityDownloaderFast
  * @see IdentityDownloaderSlow
  */
-public class IdentityDownloaderController implements IdentityDownloader, Daemon {
+public final class IdentityDownloaderController implements IdentityDownloader, Daemon {
 
 	/**
 	 * If true, use class {@link IdentityFetcher} instead of {@link IdentityDownloaderFast} and

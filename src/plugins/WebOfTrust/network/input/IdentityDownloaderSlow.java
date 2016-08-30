@@ -17,7 +17,7 @@ import plugins.WebOfTrust.util.Daemon;
  * 
  * This class only deals with the {@link Identity}s which {@link IdentityDownloaderFast} does not
  * download, so in combination the both of these classes download all {@link Identity}s. */
-public class IdentityDownloaderSlow implements IdentityDownloader, Daemon {
+public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon {
 
 	public IdentityDownloaderSlow() {
 		// FIXME

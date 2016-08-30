@@ -22,7 +22,7 @@ import plugins.WebOfTrust.util.Daemon;
  * polling on the network.
  * The lack of this class subscribing to all {@link Identity}s is compensated by
  * {@link IdentityDownloaderSlow} which deals with the rest of them in a less expensive manner. */
-class IdentityDownloaderFast implements IdentityDownloader, Daemon {
+final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 
 	public IdentityDownloaderFast() {
 		// FIXME
