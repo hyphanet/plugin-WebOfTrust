@@ -1010,6 +1010,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * https://bugs.freenetproject.org/view.php?id=3816
 	 * Also write Javadoc of what this function does then. */
 	private void upgradeDatabaseFormatVersion7() {
+		// IdentityFetcher is not being used during normal operation anymore, its only ever used
+		// for debugging (see IdentityDownloaderController.USE_LEGACY_REFERENCE_IMPLEMENTATION).
+		// As the IdentityFetcher only deletes its commands at startup, not at shutdown, old
+		// databases may contain stale IdentityFetcherCommand objects which wouldn't get deleted
+		// without starting the legacy IdentityFetcher.
+		// Thus we delete them manually now.
+		Logger.normal(this, "Deleting commands of the legacy IdentityFetcher ...");
+		IdentityFetcher f = new IdentityFetcher(this, null, null, mFetcher);
+		f.deleteAllCommands();
+		Logger.normal(this, "Deleting commands of the legacy IdentityFetcher finished.");
+		
 		throw new UnsupportedOperationException(
 		    "The code of this branch is not finished yet, please do not use it: "
 		  + "It will *gradually* change the scheme of the database, and having databases of "

@@ -48,6 +48,8 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 	 * objects from the database during shutdown, it only deletes them at startup. So if you use
 	 * this for debugging purposes even only once, be aware that you might permanently clutter your
 	 * database with stale objects. Thus you should prefer using this upon temporary databases only.
+	 * For how to manually get rid of the stale objects see
+	 * {@link WebOfTrust#upgradeDatabaseFormatVersion7}.
 	 * 
 	 * FIXME: Change to true once {@link IdentityDownloaderFast} and {@link IdentityDownloaderSlow}
 	 * are actually implemented. */
