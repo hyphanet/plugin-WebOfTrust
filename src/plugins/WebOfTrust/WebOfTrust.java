@@ -38,7 +38,7 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.IntroductionServer;
 import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
-import plugins.WebOfTrust.network.input.IdentityDownloader;
+import plugins.WebOfTrust.network.input.EditionHint;
 import plugins.WebOfTrust.network.input.IdentityDownloaderController;
 import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
@@ -496,6 +496,7 @@ public final class WebOfTrust extends WebOfTrustInterface
         	SubscriptionManager.IdentityChangedNotification.class,
         	SubscriptionManager.ScoreChangedNotification.class,
         	SubscriptionManager.TrustChangedNotification.class,
+        	EditionHint.class,
         	IntroductionPuzzle.class,
         	OwnIntroductionPuzzle.class
         };
