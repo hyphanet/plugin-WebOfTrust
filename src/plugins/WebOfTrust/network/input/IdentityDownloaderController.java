@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
+import plugins.WebOfTrust.IdentityFetcher.IdentityFetcherCommand;
 import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
@@ -39,9 +40,14 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 	 * If true, use class {@link IdentityFetcher} instead of {@link IdentityDownloaderFast} and
 	 * {@link IdentityDownloaderSlow}.
 	 * 
-	 * ATTENTION: Use true for testing purposes only:
+	 * ATTENTION:
+	 * 1) Use true for testing purposes only:
 	 * {@link IdentityFetcher} subscribes to the USKs of ALL trustworthy {@link Identity}s.
 	 * Thus, it is very reliable but also very slow and a very high load on the network.
+	 * 2) {@link IdentityFetcher} will not delete its obsolete {@link IdentityFetcherCommand}
+	 * objects from the database during shutdown, it only deletes them at startup. So if you use
+	 * this for debugging purposes even only once, be aware that you might permanently clutter your
+	 * database with stale objects. Thus you should prefer using this upon temporary databases only.
 	 * 
 	 * FIXME: Change to true once {@link IdentityDownloaderFast} and {@link IdentityDownloaderSlow}
 	 * are actually implemented. */
