@@ -73,4 +73,11 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// FIXME: Implement.
 	}
 
+	/**
+	 * Activates to depth 1 which is the maximal depth of all getter functions.
+	 * You must adjust this when introducing new member variables! */
+	@Override protected void activateFully() {
+		checkedActivate(1);
+	}
+
 }
