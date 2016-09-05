@@ -9,6 +9,7 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Trust;
+import plugins.WebOfTrust.WebOfTrust;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 
@@ -70,7 +71,42 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	}
 
 	@Override public void startupDatabaseIntegrityTest() throws Exception {
-		// FIXME: Implement.
+		activateFully();
+		
+		IdentityID.constructAndValidateFromString(mFromIdentityID);
+		
+		IdentityID.constructAndValidateFromString(mAboutIdentityID);
+		
+		if(mFromIdentityID.equals(mAboutIdentityID)) {
+			throw new IllegalStateException(
+				"mFromIdentityID == mAboutIdentityID: " + mFromIdentityID);
+		}
+		
+		if(mEdition < 0)
+			throw new IllegalStateException("mEdition < 0: " + mEdition);
+		
+		// mWebOfTrust is of type WebOfTrustInterface which doesn't contain special functions of
+		// the specific implementation which we need for testing our stuff - so we cast to the
+		// implementation.
+		// This is ok to do here: This function being a debug one for the specific implementation
+		// is fine to depend on technical details of it.
+		WebOfTrust wot = ((WebOfTrust)mWebOfTrust);
+		
+		Identity from = wot.getIdentityByID(mFromIdentityID);
+		Identity about = wot.getIdentityByID(mAboutIdentityID);
+		
+		if(wot.getBestCapacity(from) == 0) {
+			throw new IllegalStateException(
+				"Identity which isn't allowed to store hints has stored one: " + this);
+		}
+		
+		if(mEdition <= about.getEdition())
+			throw new IllegalStateException("Hint is obsolete: " + this);
+		
+		// The legacy hinting implementation Identity.getLatestEditionHint() stores only the highest
+		// edition hint we received from any identity with a Score of > 0.
+		if(mEdition > about.getLatestEditionHint() && wot.getBestScore(from) > 0)
+			throw new IllegalStateException("Legacy getLatestEditionHint() too low for: " + about);
 	}
 
 	/**
@@ -78,6 +114,11 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * You must adjust this when introducing new member variables! */
 	@Override protected void activateFully() {
 		checkedActivate(1);
+	}
+
+	@Override public String toString() {
+		// FIXME: Implement.
+		return super.toString();
 	}
 
 }
