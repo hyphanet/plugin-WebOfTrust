@@ -6,6 +6,7 @@ package plugins.WebOfTrust.network.input;
 import java.io.Serializable;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Trust;
 import freenet.keys.FreenetURI;
@@ -34,6 +35,29 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	/** @see Serializable */
 	private static final long serialVersionUID = 1L;
 
+
+	private final String mFromIdentityID;
+
+	private final String mAboutIdentityID;
+
+	private final long mEdition;
+
+
+	EditionHint(final String fromIdentityID, final String aboutIdentityID, long edition) {
+		IdentityID.constructAndValidateFromString(fromIdentityID);
+		IdentityID.constructAndValidateFromString(aboutIdentityID);
+		if(fromIdentityID.equals(aboutIdentityID)) {
+			throw new IllegalArgumentException(
+				"Identity is trying to assign edition hint to itself, ID: " + fromIdentityID);
+		}
+		
+		if(edition < 0)
+			throw new IllegalArgumentException("Invalid edition: " + edition);
+		
+		mFromIdentityID = fromIdentityID;
+		mAboutIdentityID = aboutIdentityID;
+		mEdition = edition;
+	}
 
 	@Override public int compareTo(EditionHint o) {
 		// FIXME: Implement.
