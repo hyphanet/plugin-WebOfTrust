@@ -110,17 +110,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	@Override public void startupDatabaseIntegrityTest() throws Exception {
 		activateFully();
 		
-		IdentityID.constructAndValidateFromString(mSourceIdentityID);
-		
-		IdentityID.constructAndValidateFromString(mTargetIdentityID);
-		
-		if(mSourceIdentityID.equals(mTargetIdentityID)) {
-			throw new IllegalStateException(
-				"mSourceIdentityID == mTargetIdentityID: " + mSourceIdentityID);
-		}
-		
-		if(mEdition < 0)
-			throw new IllegalStateException("mEdition < 0: " + mEdition);
+		constructSecure(mSourceIdentityID, mTargetIdentityID, mEdition);
 		
 		// mWebOfTrust is of type WebOfTrustInterface which doesn't contain special functions of
 		// the specific implementation which we need for testing our stuff - so we cast to the
