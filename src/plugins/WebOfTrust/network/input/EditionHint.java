@@ -80,6 +80,23 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		mEdition = edition;
 	}
 
+	String getSourceIdentityID() {
+		// String is a db4o primitive type so 1 is enough even though it is a reference type
+		checkedActivate(1);
+		return mSourceIdentityID;
+	}
+
+	String getTargetIdentityID() {
+		// String is a db4o primitive type so 1 is enough even though it is a reference type
+		checkedActivate(1);
+		return mTargetIdentityID;
+	}
+
+	long getEdition() {
+		checkedActivate(1);
+		return mEdition;
+	}
+
 	@Override public int compareTo(EditionHint o) {
 		// FIXME: Implement.
 		return 0;
