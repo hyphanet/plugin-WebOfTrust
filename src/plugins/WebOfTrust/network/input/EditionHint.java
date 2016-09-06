@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
+import static plugins.WebOfTrust.util.AssertUtil.assertDidNotThrow;
+
 import java.io.Serializable;
 
 import plugins.WebOfTrust.Identity;
@@ -44,7 +46,10 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	private final long mEdition;
 
 
-	EditionHint(final String fromIdentityID, final String aboutIdentityID, long edition) {
+	/** Factory with parameter validation */
+	static EditionHint constructSecure(
+			String fromIdentityID, String aboutIdentityID, long edition) {
+		
 		IdentityID.constructAndValidateFromString(fromIdentityID);
 		IdentityID.constructAndValidateFromString(aboutIdentityID);
 		if(fromIdentityID.equals(aboutIdentityID)) {
@@ -55,6 +60,21 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		if(edition < 0)
 			throw new IllegalArgumentException("Invalid edition: " + edition);
 		
+		return new EditionHint(fromIdentityID, aboutIdentityID, edition);
+	}
+
+	/** Factory WITHOUT parameter validation */
+	static EditionHint construcInsecure(
+			final String fromIdentityID, final String aboutIdentityID, final long edition) {
+		
+		assertDidNotThrow(new Runnable() { @Override public void run() {
+			constructSecure(fromIdentityID, aboutIdentityID, edition);
+		}});
+		
+		return new EditionHint(fromIdentityID, aboutIdentityID, edition);
+	}
+
+	private EditionHint(String fromIdentityID, String aboutIdentityID, long edition) {
 		mFromIdentityID = fromIdentityID;
 		mAboutIdentityID = aboutIdentityID;
 		mEdition = edition;
