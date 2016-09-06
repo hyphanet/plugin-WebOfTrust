@@ -39,44 +39,44 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	private static final long serialVersionUID = 1L;
 
 
-	private final String mFromIdentityID;
+	private final String mSourceIdentityID;
 
-	private final String mAboutIdentityID;
+	private final String mTargetIdentityID;
 
 	private final long mEdition;
 
 
 	/** Factory with parameter validation */
 	static EditionHint constructSecure(
-			String fromIdentityID, String aboutIdentityID, long edition) {
+			String sourceIdentityID, String targetIdentityID, long edition) {
 		
-		IdentityID.constructAndValidateFromString(fromIdentityID);
-		IdentityID.constructAndValidateFromString(aboutIdentityID);
-		if(fromIdentityID.equals(aboutIdentityID)) {
+		IdentityID.constructAndValidateFromString(sourceIdentityID);
+		IdentityID.constructAndValidateFromString(targetIdentityID);
+		if(sourceIdentityID.equals(targetIdentityID)) {
 			throw new IllegalArgumentException(
-				"Identity is trying to assign edition hint to itself, ID: " + fromIdentityID);
+				"Identity is trying to assign edition hint to itself, ID: " + sourceIdentityID);
 		}
 		
 		if(edition < 0)
 			throw new IllegalArgumentException("Invalid edition: " + edition);
 		
-		return new EditionHint(fromIdentityID, aboutIdentityID, edition);
+		return new EditionHint(sourceIdentityID, targetIdentityID, edition);
 	}
 
 	/** Factory WITHOUT parameter validation */
 	static EditionHint construcInsecure(
-			final String fromIdentityID, final String aboutIdentityID, final long edition) {
+			final String sourceIdentityID, final String targetIdentityID, final long edition) {
 		
 		assertDidNotThrow(new Runnable() { @Override public void run() {
-			constructSecure(fromIdentityID, aboutIdentityID, edition);
+			constructSecure(sourceIdentityID, targetIdentityID, edition);
 		}});
 		
-		return new EditionHint(fromIdentityID, aboutIdentityID, edition);
+		return new EditionHint(sourceIdentityID, targetIdentityID, edition);
 	}
 
-	private EditionHint(String fromIdentityID, String aboutIdentityID, long edition) {
-		mFromIdentityID = fromIdentityID;
-		mAboutIdentityID = aboutIdentityID;
+	private EditionHint(String sourceIdentityID, String targetIdentityID, long edition) {
+		mSourceIdentityID = sourceIdentityID;
+		mTargetIdentityID = targetIdentityID;
 		mEdition = edition;
 	}
 
@@ -93,13 +93,13 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	@Override public void startupDatabaseIntegrityTest() throws Exception {
 		activateFully();
 		
-		IdentityID.constructAndValidateFromString(mFromIdentityID);
+		IdentityID.constructAndValidateFromString(mSourceIdentityID);
 		
-		IdentityID.constructAndValidateFromString(mAboutIdentityID);
+		IdentityID.constructAndValidateFromString(mTargetIdentityID);
 		
-		if(mFromIdentityID.equals(mAboutIdentityID)) {
+		if(mSourceIdentityID.equals(mTargetIdentityID)) {
 			throw new IllegalStateException(
-				"mFromIdentityID == mAboutIdentityID: " + mFromIdentityID);
+				"mSourceIdentityID == mTargetIdentityID: " + mSourceIdentityID);
 		}
 		
 		if(mEdition < 0)
@@ -112,21 +112,21 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// is fine to depend on technical details of it.
 		WebOfTrust wot = ((WebOfTrust)mWebOfTrust);
 		
-		Identity from = wot.getIdentityByID(mFromIdentityID);
-		Identity about = wot.getIdentityByID(mAboutIdentityID);
+		Identity source = wot.getIdentityByID(mSourceIdentityID);
+		Identity target = wot.getIdentityByID(mTargetIdentityID);
 		
-		if(wot.getBestCapacity(from) == 0) {
+		if(wot.getBestCapacity(source) == 0) {
 			throw new IllegalStateException(
 				"Identity which isn't allowed to store hints has stored one: " + this);
 		}
 		
-		if(mEdition <= about.getEdition())
+		if(mEdition <= target.getEdition())
 			throw new IllegalStateException("Hint is obsolete: " + this);
 		
 		// The legacy hinting implementation Identity.getLatestEditionHint() stores only the highest
 		// edition hint we received from any identity with a Score of > 0.
-		if(mEdition > about.getLatestEditionHint() && wot.getBestScore(from) > 0)
-			throw new IllegalStateException("Legacy getLatestEditionHint() too low for: " + about);
+		if(mEdition > target.getLatestEditionHint() && wot.getBestScore(source) > 0)
+			throw new IllegalStateException("Legacy getLatestEditionHint() too low for: " + target);
 	}
 
 	/**
