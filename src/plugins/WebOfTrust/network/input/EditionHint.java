@@ -11,6 +11,7 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Trust;
+import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.WebOfTrust;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -42,6 +43,10 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	private final String mSourceIdentityID;
 
 	private final String mTargetIdentityID;
+	
+	/** @see #getID() */
+	@IndexedField
+	private final String mID;
 
 	private final long mEdition;
 
@@ -78,6 +83,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		mSourceIdentityID = sourceIdentityID;
 		mTargetIdentityID = targetIdentityID;
 		mEdition = edition;
+		mID = new TrustID(mSourceIdentityID, mTargetIdentityID).toString();
 	}
 
 	String getSourceIdentityID() {
@@ -102,15 +108,22 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return 0;
 	}
 
+	/** Equals: <code>new TrustID(getSourceIdentityID(), getTargetIdentityID()).toString()</code> */
 	@Override public String getID() {
-		// FIXME: Implement.
-		return null;
+		// String is a db4o primitive type so 1 is enough even though it is a reference type
+		checkedActivate(1);
+		return mID;
 	}
 
 	@Override public void startupDatabaseIntegrityTest() throws Exception {
 		activateFully();
 		
-		constructSecure(mSourceIdentityID, mTargetIdentityID, mEdition);
+		// Will throw if any of the three passed member variables is invalid.
+		// mID is generated from them, so we keep the returned object to validate it.
+		EditionHint this2 = constructSecure(mSourceIdentityID, mTargetIdentityID, mEdition);
+		
+		if(!mID.equals(this2.mID))
+			throw new IllegalStateException("mID invalid: " + this);
 		
 		// mWebOfTrust is of type WebOfTrustInterface which doesn't contain special functions of
 		// the specific implementation which we need for testing our stuff - so we cast to the
@@ -134,6 +147,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// edition hint we received from any identity with a Score of > 0.
 		if(mEdition > target.getLatestEditionHint() && wot.getBestScore(source) > 0)
 			throw new IllegalStateException("Legacy getLatestEditionHint() too low for: " + target);
+		
+		// FIXME: Once IdentityDownloader has a query function for obtaining an EditionHint by mID,
+		// check whether there is only one edition hint for the given ID.
 	}
 
 	/**
@@ -146,6 +162,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	@Override public String toString() {
 		activateFully();
 		return "[EditionHint: " + super.toString()
+		     + "; mID: " + mID
 		     + "; mSourceIdentityID: " + mSourceIdentityID
 		     + "; mTargetIdentityID: " + mTargetIdentityID
 		     + "; mEdition: " + mEdition
