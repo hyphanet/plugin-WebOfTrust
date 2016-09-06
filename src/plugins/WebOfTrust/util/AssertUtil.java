@@ -15,6 +15,8 @@ public final class AssertUtil {
      * A regular Java assert could only consume boolean-returning functions.<br><br>
      * 
      * The {@link Throwable} will be passed as message to the assert, it will not be thrown.<br>
+     * 
+     * TODO: Code quality: Java 8: Change to use lambda expressions or function pointers + varargs
      */
     public static final void assertDidNotThrow(final Runnable r) {
         boolean execute = false;
