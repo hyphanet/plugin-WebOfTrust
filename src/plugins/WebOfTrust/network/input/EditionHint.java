@@ -144,8 +144,12 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	}
 
 	@Override public String toString() {
-		// FIXME: Implement.
-		return super.toString();
+		activateFully();
+		return "[EditionHint: " + super.toString()
+		     + "; mSourceIdentityID: " + mSourceIdentityID
+		     + "; mTargetIdentityID: " + mTargetIdentityID
+		     + "; mEdition: " + mEdition
+		     + "]";
 	}
 
 }
