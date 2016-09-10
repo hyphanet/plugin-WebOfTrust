@@ -626,6 +626,12 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			assertNotEquals(s, other);
 			assertNotEquals(other, s);
 		}
+		
+		waitUntilCurrentTimeUTCIsAfter(equalScore.getDateOfLastChange());
+		s.setValue(value - 1);
+		s.setValue(value);
+		assertNotEquals(equalScore.getDateOfLastChange(), s.getDateOfLastChange());
+		assertEquals("Modification of date of last change shouldn't matter", equalScore, s);
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
