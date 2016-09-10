@@ -610,6 +610,8 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(s, equalScore);
 		assertEquals(equalScore, s);
 		
+		assertNotEquals(equalScore, null);
+		
 		Object[] inequalObjects = {
 			new Object(),
 			new Score(w, (OwnIdentity)trustee, truster, value, rank, capacity),
