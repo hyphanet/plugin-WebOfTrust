@@ -603,10 +603,13 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		Score s = new Score(w, truster, trustee, value, rank, capacity);
 		Score equalScore = new Score(w, truster.clone(), trustee.clone(), value, rank, capacity);
 		
+		// "Reflexive" property of equals()
 		assertEquals(s, s);
+		// Basic functionality of equals() and "symmetric" property
 		assertEquals(s, equalScore);
 		assertEquals(equalScore, s);
 		
+		// Handling of invalid objects
 		assertNotEquals(equalScore, null);
 		
 		Object[] inequalObjects = {
