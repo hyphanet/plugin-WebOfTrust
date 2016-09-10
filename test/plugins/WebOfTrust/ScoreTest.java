@@ -601,9 +601,6 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		int rank = 3;
 		int capacity = 2;
 		Score s = new Score(w, truster, trustee, value, rank, capacity);
-		
-		waitUntilCurrentTimeUTCIsAfter(s.getCreationDate());
-		
 		Score equalScore = new Score(w, truster.clone(), trustee.clone(), value, rank, capacity);
 		
 		assertEquals(s, s);
@@ -632,6 +629,11 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		s.setValue(value);
 		assertNotEquals(equalScore.getDateOfLastChange(), s.getDateOfLastChange());
 		assertEquals("Modification of date of last change shouldn't matter", equalScore, s);
+		
+		waitUntilCurrentTimeUTCIsAfter(equalScore.getCreationDate());
+		s = new Score(w, truster, trustee, value, rank, capacity);
+		assertNotEquals(equalScore.getCreationDate(), s.getCreationDate());
+		assertEquals("Modification of date of creation shouldn't matter", equalScore, s);
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
