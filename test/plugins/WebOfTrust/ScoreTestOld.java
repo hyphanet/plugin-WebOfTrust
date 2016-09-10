@@ -43,22 +43,7 @@ public class ScoreTestOld extends AbstractJUnit3BaseTest {
 		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
 		flushCaches();
 	}
-	
-	public void testClone() throws NotInTrustTreeException, IllegalArgumentException, IllegalAccessException, InterruptedException {
-		final Score original = mWoT.getScore(a, b);
-		
-		Thread.sleep(10); // Score contains Date mLastChangedDate which might not get properly cloned.
-		assertFalse(CurrentTimeUTC.get().equals(original.getDateOfLastChange()));
-		
-		final Score clone = original.clone();
-		
-		assertEquals(original, clone);
-		assertNotSame(original, clone);
-		
-		testClone(Persistent.class, original, clone);
-		testClone(Score.class, original, clone);
-	}
-	
+
 	public void testSerializeDeserialize() throws NotInTrustTreeException {
 		final Score original = mWoT.getScore(a, b);
 		final Score deserialized = (Score)Persistent.deserialize(mWoT, original.serialize());
