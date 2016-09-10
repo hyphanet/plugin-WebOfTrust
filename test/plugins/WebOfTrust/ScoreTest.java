@@ -645,6 +645,10 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertNotEquals(equalScore.getCreationDate(), s.getCreationDate());
 		assertEquals("Modification of date of creation shouldn't matter", equalScore, s);
 		
+		s.setVersionID(randomUUID());
+		assertNotEquals(equalScore.getVersionID(), s.getVersionID());
+		assertEquals("Modification of versionID shouldn't matter", equalScore, s);
+		
 		// Score.equals() should only compare the ID of the truster/trustee, not their equals().
 		s.getTruster().setEdition(s.getTruster().getEdition() + 1);
 		assertNotEquals(equalScore.getTruster(), s.getTruster());
