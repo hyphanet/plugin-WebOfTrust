@@ -608,7 +608,14 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		// Basic functionality of equals() and "symmetric" property
 		assertEquals(s, equalScore);
 		assertEquals(equalScore, s);
-		
+		// "Transitive" property of equals
+		Score equalScore2 = new Score(w, truster.clone(), trustee.clone(), value, rank, capacity);
+		assertTrue(s.equals(equalScore));
+		assertTrue(equalScore.equals(equalScore2));
+		assertTrue(s.equals(equalScore2));
+		// "Consistent" property of equals
+		assertTrue(s.equals(equalScore));
+		assertTrue(s.equals(equalScore));
 		// Handling of invalid objects
 		assertNotEquals(equalScore, null);
 		
