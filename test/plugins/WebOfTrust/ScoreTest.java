@@ -664,8 +664,15 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		final Score original = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
 		
+		// Force date of creation and date of last change to mismatch:
+		// clone() might mix them up by accident, we want to test that.
+		waitUntilCurrentTimeUTCIsAfter(original.getCreationDate());
+		original.setValue(101);
+		original.setValue(100);
+		assertTrue(original.getCreationDate().before(original.getDateOfLastChange()));
+
+		// Force all dates to be in the past to ensure their cloning gets tested.
 		waitUntilCurrentTimeUTCIsAfter(original.getDateOfLastChange());
-		assert(original.getCreationDate().equals(original.getDateOfLastChange()));
 		
 		// The mVersionID member variable is initialized to null by the constructor which also
 		// is the default value of type UUID. So a clone() implementation which forgets to copy
