@@ -664,8 +664,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		final Score original = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
 		
-		Thread.sleep(10); // Score contains Date mLastChangedDate which might not get properly cloned.
-		assertFalse(CurrentTimeUTC.get().equals(original.getDateOfLastChange()));
+		waitUntilCurrentTimeUTCIsAfter(original.getDateOfLastChange());
 		
 		final Score clone = original.clone();
 		
