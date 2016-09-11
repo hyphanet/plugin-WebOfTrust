@@ -667,6 +667,13 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		waitUntilCurrentTimeUTCIsAfter(original.getDateOfLastChange());
 		assert(original.getCreationDate().equals(original.getDateOfLastChange()));
 		
+		// The mVersionID member variable is initialized to null by the constructor which also
+		// is the default value of type UUID. So a clone() implementation which forgets to copy
+		// the field would appear to be working if we tested with null: The constructor would
+		// initialize to the default null which would be the same as the original null.
+		// So let's use a random UUID.
+		original.setVersionID(randomUUID());
+		
 		final Score clone = original.clone();
 		
 		assertEquals(original, clone);
