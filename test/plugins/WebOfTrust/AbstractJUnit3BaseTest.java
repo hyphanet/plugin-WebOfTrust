@@ -116,6 +116,8 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 */
 	@Deprecated
 	protected void testClone(Class<?> clazz, Object original, Object clone) throws IllegalArgumentException, IllegalAccessException {
+		assertNotSame(original, clone);
+		
 		for(Field field : clazz.getDeclaredFields()) {
 			field.setAccessible(true);
 			if(!field.getType().isArray()) {

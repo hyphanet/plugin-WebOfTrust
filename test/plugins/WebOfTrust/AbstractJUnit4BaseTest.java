@@ -612,6 +612,8 @@ public abstract class AbstractJUnit4BaseTest {
 	protected static void testClone(Class<?> clazz, Object original, Object clone)
 			throws IllegalArgumentException, IllegalAccessException {
 		
+		assertNotSame(original, clone);
+		
 		for(Field field : clazz.getDeclaredFields()) {
 			field.setAccessible(true);
 			if(!field.getType().isArray()) {
