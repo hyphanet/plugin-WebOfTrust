@@ -432,7 +432,8 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		Date lastChange = s.getDateOfLastChange();
 		assertTrue(lastChange.after(beforeCreation) || lastChange.equals(beforeCreation));
 		
-		assertEquals(s.getCreationDate(), lastChange);
+		final Date creation = (Date) s.getCreationDate().clone();
+		assertEquals(creation, lastChange);
 		
 		// Test whether functions in Score don't accidentally modify the date
 		
@@ -476,6 +477,8 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		waitUntilCurrentTimeUTCIsAfter(lastChange);
 		s.setValue(50);
 		assertTrue(s.getDateOfLastChange().after(lastChange));
+		
+		assertEquals("Update must not mix up creation/lastChange", creation, s.getCreationDate());
 	}
 	
 	@Test public void testActivateFully() throws NotInTrustTreeException {
