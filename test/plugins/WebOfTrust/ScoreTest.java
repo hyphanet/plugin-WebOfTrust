@@ -688,10 +688,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		original.setVersionID(randomUUID());
 		
 		final Score clone = original.clone();
-		
-		assertEquals(original, clone);
-		assertNotSame(original, clone);
-		
+
 		// Test whether clone() maybe wrongly called setters upon the original instead of the clone
 		assertEquals(originalDuplicate, original);
 		assertEquals(originalCreation, original.getCreationDate());
@@ -699,6 +696,11 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		testClone(Persistent.class, original, clone);
 		testClone(Score.class, original, clone);
+		
+		// Bonus checks:
+		// Should be covered by testClone() already but we've got equals() so let's use it
+		assertEquals(original, clone);
+		assertNotSame(original, clone);
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
