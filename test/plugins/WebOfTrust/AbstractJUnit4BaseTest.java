@@ -609,7 +609,9 @@ public abstract class AbstractJUnit4BaseTest {
 	 * @param original The original object.
 	 * @param clone A result of <code>original.clone();</code>
 	 */
-	protected void testClone(Class<?> clazz, Object original, Object clone) throws IllegalArgumentException, IllegalAccessException {
+	protected static void testClone(Class<?> clazz, Object original, Object clone)
+			throws IllegalArgumentException, IllegalAccessException {
+		
 		for(Field field : clazz.getDeclaredFields()) {
 			field.setAccessible(true);
 			if(!field.getType().isArray()) {
