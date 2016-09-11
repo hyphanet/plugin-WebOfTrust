@@ -665,17 +665,20 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			throws NotInTrustTreeException, IllegalArgumentException,
 			       IllegalAccessException, InterruptedException {
 		
-		final Score original = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		final Score original          = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		final Score originalDuplicate = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		final Date originalCreation   = original.getCreationDate();
 		
 		// Force date of creation and date of last change to mismatch:
 		// clone() might mix them up by accident, we want to test that.
 		waitUntilCurrentTimeUTCIsAfter(original.getCreationDate());
 		original.setValue(101);
 		original.setValue(100);
-		assertTrue(original.getCreationDate().before(original.getDateOfLastChange()));
+		final Date originalLastChange = original.getDateOfLastChange();
+		assertTrue(original.getCreationDate().before(originalLastChange));
 
 		// Force all dates to be in the past to ensure their cloning gets tested.
-		waitUntilCurrentTimeUTCIsAfter(original.getDateOfLastChange());
+		waitUntilCurrentTimeUTCIsAfter(originalLastChange);
 		
 		// The mVersionID member variable is initialized to null by the constructor which also
 		// is the default value of type UUID. So a clone() implementation which forgets to copy
@@ -688,6 +691,11 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		assertEquals(original, clone);
 		assertNotSame(original, clone);
+		
+		// Test whether clone() maybe wrongly called setters upon the original instead of the clone
+		assertEquals(originalDuplicate, original);
+		assertEquals(originalCreation, original.getCreationDate());
+		assertEquals(originalLastChange, original.getDateOfLastChange());
 		
 		testClone(Persistent.class, original, clone);
 		testClone(Score.class, original, clone);
