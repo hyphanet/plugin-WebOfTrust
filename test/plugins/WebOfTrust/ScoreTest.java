@@ -696,10 +696,6 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		testClone(Persistent.class, original, clone);
 		testClone(Score.class, original, clone);
-		
-		// Bonus checks:
-		// Should be covered by testClone() already but we've got equals() so let's use it
-		assertEquals(original, clone);
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {

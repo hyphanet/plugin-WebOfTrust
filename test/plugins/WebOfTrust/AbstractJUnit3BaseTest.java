@@ -147,6 +147,10 @@ public class AbstractJUnit3BaseTest extends TestCase {
 					assertNull(field.toGenericString(), clonedField); // assertNotSame would fail if both are null because null and null are the same
 			}
 		}
+		
+		// Bonus check:
+		// We did check all fields manually already but we've got equals() so let's use it
+		assertEquals(original, clone);
 	}
 	
 	/**
