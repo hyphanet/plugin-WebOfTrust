@@ -662,7 +662,12 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(equalScore, s);
 	}
 
-	@Test public void testClone()
+	private interface ScoreCloner {
+		Score clone(Score s);
+	}
+
+	// TODO: Code quality: Java 8: Consume function pointer, change callers to use lambda expression
+	private void testClone(ScoreCloner cloner)
 			throws NotInTrustTreeException, IllegalArgumentException,
 			       IllegalAccessException, InterruptedException {
 		
@@ -689,7 +694,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		final UUID originalVersionID = randomUUID();
 		original.setVersionID(originalVersionID);
 		
-		final Score clone = original.clone();
+		final Score clone = cloner.clone(original);
 
 		// Test whether clone() maybe wrongly called setters upon the original instead of the clone
 		
@@ -703,6 +708,36 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		testClone(Persistent.class, original, clone);
 		testClone(Score.class, original, clone);
+	}
+
+	@Test public void testClone()
+			throws IllegalArgumentException, IllegalAccessException, NotInTrustTreeException,
+			       InterruptedException {
+		
+		testClone(new ScoreCloner() {
+			@Override public Score clone(Score s) {
+				return s.clone();
+			}
+		});
+	}
+
+	@Test public void testCloneP()
+			throws IllegalArgumentException, IllegalAccessException, NotInTrustTreeException,
+			       InterruptedException {
+		
+		// TODO: Code quality: Mockito:
+		// The only job of cloneP() is to return what clone() returns. This can be easily checked
+		// with Mockito:
+		// Create a mock Score object whose clone() always returns a specific Score object.
+		// Then check whether cloneP() indeed returns the same Score object.
+		// - Once you implement that, please remove the whole ScoreCloner interface and revert
+		// testClone(ScoreCloner) to just be testClone() and call clone() directly there.
+	
+		testClone(new ScoreCloner() {
+			@Override public Score clone(Score s) {
+				return s.cloneP();
+			}
+		});
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
