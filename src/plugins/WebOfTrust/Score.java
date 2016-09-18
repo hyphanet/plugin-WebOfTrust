@@ -440,8 +440,8 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		if(mRank < -1)
 			throw new IllegalStateException("Invalid rank: " + mRank);
 	
-		if(mCapacity < 0)
-			throw new IllegalStateException("Negative capacity: " + mCapacity);
+		if(binarySearch(VALID_CAPACITIES, mCapacity) < 0)
+			throw new IllegalStateException("Illegal capacity: " + mCapacity);
 		
 		if(mLastChangedDate == null)
 			throw new NullPointerException("mLastChangedDate==null");
