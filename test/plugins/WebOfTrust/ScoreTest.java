@@ -11,6 +11,7 @@ import static plugins.WebOfTrust.util.DateUtil.waitUntilCurrentTimeUTCIsAfter;
 
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.UUID;
@@ -36,6 +37,9 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 	
 	private Identity trustee;
 	
+	/** Anything not in {@link WebOfTrust#VALID_CAPACITIES} is illegal */
+	private static final int[] badCapacities
+		= { Integer.MIN_VALUE, -2, -1, 3, 7, 101, Integer.MAX_VALUE };
 
 	@Before public void setUp() throws MalformedURLException, InvalidParameterException {
 		mWebOfTrust = constructEmptyWebOfTrust();
@@ -99,8 +103,8 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 
 		// Anything < -1 is illegal
 		int[] badRanks = new int[] { Integer.MIN_VALUE, -3, -2 } ;
-		// Anything not in goodCapacities is illegal
-		int[] badCapacities = new int[] { Integer.MIN_VALUE, -2, -1, 3, 7, 101, Integer.MAX_VALUE };
+		// Changed to be a member variable. TODO: Code quality: Move the above as well
+		/* int[] badCapacities; */
 		
 		// Score has 3 separate setters for rank, value and capacity. This means that as a design
 		// decision, it does not check whether the whole combination of value/rank/capacity does
@@ -738,6 +742,42 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 				return s.cloneP();
 			}
 		});
+	}
+
+	/** TODO: Code quality: Use in more places of this class to eliminate code duplication */
+	private Score getValidScore() {
+		return new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+	}
+
+	private Field intrudePrivateField(String name) throws NoSuchFieldException, SecurityException {
+		Field f = Score.class.getDeclaredField(name);
+		f.setAccessible(true);
+		return f;
+	}
+
+	@Test public void testStartupDatabaseIntegrityTest() throws Exception {
+		// Shouldn't throw upon a valid Score object
+		getValidScore().startupDatabaseIntegrityTest();
+		
+		// Now test whether it throws upon invalid Score objects
+		
+		final ArrayList<Score> invalidScores = new ArrayList<Score>(9);
+		Field f;
+		Score s;
+		
+		for(int badCapacity : badCapacities) {
+			f = intrudePrivateField("mCapacity");
+			s = getValidScore();
+			f.setInt(s, badCapacity);
+			invalidScores.add(s);
+		}
+		
+		for(Score i : invalidScores) {
+			try {
+				i.startupDatabaseIntegrityTest();
+				fail("startupDatabaseIntegrityTest() didn't throw on invalid Score: " + i);
+			} catch(Exception e) { }
+		}
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
