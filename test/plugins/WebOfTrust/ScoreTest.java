@@ -786,6 +786,18 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			invalidScores.add(s);
 		}
 		
+		Date[] badLastChangeDates = {
+			null,
+			new Date(CurrentTimeUTC.getInMillis() - 1), // Before creation
+		};
+		
+		for(Date badDate : badLastChangeDates) {
+			f = intrudePrivateField("mLastChangedDate");
+			s = getValidScore();
+			f.set(s, badDate);
+			invalidScores.add(s);
+		}
+		
 		for(Score i : invalidScores) {
 			try {
 				i.startupDatabaseIntegrityTest();
