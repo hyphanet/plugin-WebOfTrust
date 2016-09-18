@@ -124,6 +124,12 @@ public abstract class Persistent implements Serializable {
 	
 	/**
 	 * This function has to be implemented by all child classes. It is executed by startup on all persistent objects to test their integrity.
+	 * 
+	 * TODO: Code quality: Provide an implementation here as well to check mCreationDate. We should
+	 * keep this abstract though so people are forced to implement it in child classes. Thus maybe
+	 * use a different name for the implementation here and only notify people to call it by
+	 * mentioning it in the JavaDoc. Or use a "register()"-pattern to allow people to register
+	 * different types of test-functions in a static{} code block.
 	 */
 	public abstract void startupDatabaseIntegrityTest() throws Exception;
 	
