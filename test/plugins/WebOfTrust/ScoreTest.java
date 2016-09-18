@@ -13,6 +13,7 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -685,14 +686,20 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		// the field would appear to be working if we tested with null: The constructor would
 		// initialize to the default null which would be the same as the original null.
 		// So let's use a random UUID.
-		original.setVersionID(randomUUID());
+		final UUID originalVersionID = randomUUID();
+		original.setVersionID(originalVersionID);
 		
 		final Score clone = original.clone();
 
 		// Test whether clone() maybe wrongly called setters upon the original instead of the clone
+		
 		assertEquals(originalDuplicate, original);
+		// The following members are not compared by equals()
 		assertEquals(originalCreation, original.getCreationDate());
 		assertEquals(originalLastChange, original.getDateOfLastChange());
+		assertEquals(originalVersionID, original.getVersionID());
+		
+		// Actually test clone()
 		
 		testClone(Persistent.class, original, clone);
 		testClone(Score.class, original, clone);
