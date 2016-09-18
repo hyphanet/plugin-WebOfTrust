@@ -19,6 +19,7 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 
+import plugins.WebOfTrust.Score.ScoreID;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
@@ -769,6 +770,19 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			f = intrudePrivateField("mCapacity");
 			s = getValidScore();
 			f.setInt(s, badCapacity);
+			invalidScores.add(s);
+		}
+		
+		String[] badIDs = {
+			null,
+			"blah",
+			new ScoreID(addRandomOwnIdentities(1).get(0), addRandomIdentities(1).get(0)).toString()
+		};
+		
+		for(String badID : badIDs) {
+			f = intrudePrivateField("mID");
+			s = getValidScore();
+			f.set(s, badID);
 			invalidScores.add(s);
 		}
 		

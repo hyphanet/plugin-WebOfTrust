@@ -192,6 +192,9 @@ public abstract class AbstractJUnit4BaseTest {
      * The OwnIdentitys are stored in the WOT database, and the original (= non-cloned) objects are
      * returned in an {@link ArrayList}.
      * 
+     * TODO: Code quality: Extract addRandomOwnIdentity() to create a single one, we need that
+     * frequently. Search for callers of addRandomOwnIdentities(1) and make them use it.
+     * 
      * @throws MalformedURLException        Upon test failure. Don't catch this, let it hit JUnit.
      * @throws InvalidParameterException    Upon test failure. Don't catch this, let it hit JUnit.
      */
