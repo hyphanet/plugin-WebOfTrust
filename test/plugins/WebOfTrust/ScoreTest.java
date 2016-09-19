@@ -42,6 +42,10 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 	private static final int[] badCapacities
 		= { Integer.MIN_VALUE, -2, -1, 3, 7, 101, Integer.MAX_VALUE };
 
+	/** Anything < -1 is illegal */
+	private static final int[] badRanks = { Integer.MIN_VALUE, -3, -2 };
+
+
 	@Before public void setUp() throws MalformedURLException, InvalidParameterException {
 		mWebOfTrust = constructEmptyWebOfTrust();
 		truster = addRandomOwnIdentities(1).get(0);
@@ -101,11 +105,10 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		// notice that this test fails and should be reviewed for whether the rest of it still makes
 		// sense with the new capacity values.
 		int[] goodCapacities = { 0, 1, 2, 6, 16, 40, 100 };
-
-		// Anything < -1 is illegal
-		int[] badRanks = new int[] { Integer.MIN_VALUE, -3, -2 } ;
-		// Changed to be a member variable. TODO: Code quality: Move the above as well
-		/* int[] badCapacities; */
+		
+		// Changed to be member variables. TODO: Code quality: Move the above as well
+		/* int[] badRanks = ...; */
+		/* int[] badCapacities = ...; */
 		
 		// Score has 3 separate setters for rank, value and capacity. This means that as a design
 		// decision, it does not check whether the whole combination of value/rank/capacity does
@@ -765,6 +768,13 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		final ArrayList<Score> invalidScores = new ArrayList<Score>(9);
 		Field f;
 		Score s;
+		
+		for(int badRank : badRanks) {
+			f = intrudePrivateField("mRank");
+			s = getValidScore();
+			f.setInt(s, badRank);
+			invalidScores.add(s);
+		}
 		
 		for(int badCapacity : badCapacities) {
 			f = intrudePrivateField("mCapacity");
