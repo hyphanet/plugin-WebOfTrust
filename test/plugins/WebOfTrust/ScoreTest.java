@@ -779,6 +779,10 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		f.set(s, null);
 		invalidScores.add(s);
 		
+		// All integer values of mValue are legal, so no need to test this field.
+		/* f = intrudePrivateField("mValue"); */
+		/* ... */
+		
 		for(int badRank : badRanks) {
 			f = intrudePrivateField("mRank");
 			s = getValidScore();
