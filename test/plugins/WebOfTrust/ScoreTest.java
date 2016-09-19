@@ -748,7 +748,11 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		});
 	}
 
-	/** TODO: Code quality: Use in more places of this class to eliminate code duplication */
+	/**
+	 * The truster and trustee of the returned Score will always be {@link #truster} and
+	 * and {@link #trustee} (which some callers do depend on!).
+	 * 
+	 * TODO: Code quality: Use in more places of this class to eliminate code duplication */
 	private Score getValidScore() {
 		return new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
 	}
@@ -819,6 +823,20 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			f = intrudePrivateField("mLastChangedDate");
 			s = getValidScore();
 			f.set(s, badDate);
+			invalidScores.add(s);
+		}
+		
+		String goodVersionID = randomUUID().toString();
+		String[] badVersionIDs = {
+			/* null, */    // This *is* allowed currently.
+			goodVersionID.substring(0, goodVersionID.length() - 1),
+			getValidScore().getID() // They're both called "ID" so developers might mix them up
+		};
+		
+		for(String badVersionID : badVersionIDs) {
+			f = intrudePrivateField("mVersionID");
+			s = getValidScore();
+			f.set(s, badVersionID);
 			invalidScores.add(s);
 		}
 		
