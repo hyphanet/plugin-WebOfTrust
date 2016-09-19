@@ -829,7 +829,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		String goodVersionID = randomUUID().toString();
 		String[] badVersionIDs = {
 			/* null, */    // This *is* allowed currently.
-			goodVersionID.substring(0, goodVersionID.length() - 1),
+			goodVersionID.substring(0, goodVersionID.length() - 12),
 			getValidScore().getID() // They're both called "ID" so developers might mix them up
 		};
 		
