@@ -451,6 +451,15 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		
 		if(mLastChangedDate.after(CurrentTimeUTC.get()))
 			throw new IllegalStateException("mLastChangedDate is in the future: " + mLastChangedDate);
+		
+		// mVersionID may indeed be null currently.
+		if(mVersionID != null) {
+			try {
+				UUID.fromString(mVersionID);
+			} catch (IllegalArgumentException e) {
+				throw new IllegalStateException("Invalid mVersionID: " + mVersionID);
+			}
+		}
 	}
 	
 	/** @see Persistent#serialize() */
