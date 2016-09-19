@@ -769,6 +769,11 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		Field f;
 		Score s;
 		
+		f = intrudePrivateField("mTruster");
+		s = getValidScore();
+		f.set(s, null);
+		invalidScores.add(s);
+		
 		f = intrudePrivateField("mTrustee");
 		s = getValidScore();
 		f.set(s, null);
