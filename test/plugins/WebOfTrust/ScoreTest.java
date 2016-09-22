@@ -52,6 +52,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		trustee = addRandomIdentities(1).get(0);
 	}
 
+	/** Tests {@link Score#Score(WebOfTrustInterface, OwnIdentity, Identity, int, int, int)}. */
 	@Test public void testScoreWebOfTrustInterfaceOwnIdentityIdentityIntIntInt() {
 		WebOfTrustInterface wot = mWebOfTrust;
 		
@@ -149,6 +150,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		}
 	}
 
+	/** Tests {@link Score#hashCode()}. */
 	@Test public void testHashCode() throws MalformedURLException, InvalidParameterException {
 		WebOfTrustInterface wot = mWebOfTrust;
 		
@@ -174,6 +176,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		s5 = null;
 	}
 
+	/** Tests {@link Score#toString()}. */
 	@Test public void testToString() {
 		WebOfTrustInterface wot = mWebOfTrust;
 		Score s = new Score(wot, truster, trustee, 100, 2, 16);
@@ -194,7 +197,9 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(expected, s.toString());
 	}
 
-	/** {@link #testGetTrustee()} is a copy-paste of this */
+	/**
+	 * Tests {@link Score#getTruster()}.
+	 * {@link #testGetTrustee()} is a copy-paste of this. */
 	@Test public void testGetTruster() throws MalformedURLException, InvalidParameterException {
 		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
 		OwnIdentity trustee = addRandomOwnIdentities(1).get(0);
@@ -214,7 +219,9 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertSame(truster, s.getTruster());
 	}
 
-	/** Copy-paste of {@link #testGetTruster()} */
+	/**
+	 * Tests {@link Score#getTrustee()}.
+	 * Copy-paste of {@link #testGetTruster()}. */
 	@Test public void testGetTrustee() throws MalformedURLException, InvalidParameterException {
 		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
 		OwnIdentity trustee = addRandomOwnIdentities(1).get(0);
@@ -234,6 +241,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertSame(trustee, s.getTrustee());
 	}
 
+	/** Tests {@link Score#getID()}. */
 	@Test public void testGetID() throws MalformedURLException, InvalidParameterException {
 		OwnIdentity truster = addRandomOwnIdentities(1).get(0);
 		OwnIdentity trustee = addRandomOwnIdentities(1).get(0);
@@ -250,7 +258,9 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertSame(s.getID(), s.getID());
 	}
 
-	/** {@link #testGetRank()} and {@link #testGetCapacity()} are copy-pastes of this. */
+	/**
+	 * Tests {@link Score#getValue()}.
+	 * {@link #testGetRank()} and {@link #testGetCapacity()} are copy-pastes of this. */
 	@Test public void testGetValue() {
 		int rank = 2;
 		int capacity = 16;
@@ -268,7 +278,9 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(value, s.getValue());
 	}
 
-	/** {@link #testSetRankInt()} and {@link #testSetCapacityInt()} are copy-pastes of this. */
+	/**
+	 * Tests {@link Score#setValue(int)}.
+	 * {@link #testSetRankInt()} and {@link #testSetCapacityInt()} are copy-pastes of this. */
 	@Test public void testSetValueInt() throws InterruptedException {
 		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
 		
@@ -294,7 +306,9 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertTrue(oldDate.before(s.getDateOfLastChange()));
 	}
 
-	/** Copy-paste of {@link #testGetValue()} */
+	/**
+	 * Tests {@link Score#getRank()}.
+	 * Copy-paste of {@link #testGetValue()}. */
 	@Test public void testGetRank() {
 		int value = 100;
 		int rank;
@@ -315,7 +329,9 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(rank, s.getRank());
 	}
 
-	/** Amended copy-paste of {@link #testSetValueInt()} */
+	/**
+	 * Tests {@link Score#setRank(int)}.
+	 * Amended copy-paste of {@link #testSetValueInt()}. */
 	@Test public void testSetRankInt() throws InterruptedException {
 		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
 		
@@ -360,7 +376,9 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertTrue(oldDate.before(s.getDateOfLastChange()));
 	}
 
-	/** Copy-paste of {@link #testGetValue()} */
+	/**
+	 * Tests {@link Score#getCapacity()}.
+	 * Copy-paste of {@link #testGetValue()}. */
 	@Test public void testGetCapacity() {
 		int value = -1;
 		int rank = -1; // No need to match capacity currently, not enforced by class Score yet.
@@ -380,6 +398,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 	}
 	
 	/**
+	 * Tests {@link Score#setCapacity(int)}.
 	 * Copy-paste of {@link #testSetRankInt()}, which itself is an amended copy-paste of
 	 * {@link #testSetValueInt()} */
 	@Test public void testSetCapacityInt() throws InterruptedException {
@@ -429,6 +448,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertTrue(oldDate.before(s.getDateOfLastChange()));
 	}
 	
+	/** Tests {@link Score#getDateOfLastChange()}. */
 	@Test public void testGetDateOfLastChange() throws Exception {
 		Date beforeCreation = CurrentTimeUTC.get();
 		
@@ -490,6 +510,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals("Update must not mix up creation/lastChange", creation, s.getCreationDate());
 	}
 	
+	/** Tests {@link Score#activateFully()}. */
 	@Test public void testActivateFully() throws NotInTrustTreeException {
 		// activateFully() is difficult to test:
 		// Intuitively we would use the following algorithm:
@@ -551,6 +572,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(expectedActivationDepth, score.getActivationDepth());
 	}
 
+	/** Tests {@link Score#storeWithoutCommit()}. */
 	@Test public void testStoreWithoutCommit()
 			throws NotInTrustTreeException, InterruptedException, UnknownIdentityException,
 			       MalformedURLException, InvalidParameterException {
@@ -604,6 +626,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		} catch(AssertionError e) {}
 	}
 
+	/** Tests {@link Score#equals(Object)}. */
 	@Test public void testEquals()
 			throws InterruptedException, MalformedURLException, InvalidParameterException {
 		
@@ -670,11 +693,14 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(equalScore, s);
 	}
 
+	/** For {@link #testClone(Class, Object, Object)}. */
 	private interface ScoreCloner {
 		Score clone(Score s);
 	}
 
-	// TODO: Code quality: Java 8: Consume function pointer, change callers to use lambda expression
+	/**
+	 * Backend of {@link #testClone()} and {@link #testCloneP()}.
+	 * TODO: Code quality: Java 8: Consume function pointer, change callers to use lambda expr.  */
 	private void testClone(ScoreCloner cloner)
 			throws NotInTrustTreeException, IllegalArgumentException,
 			       IllegalAccessException, InterruptedException {
@@ -718,6 +744,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		testClone(Score.class, original, clone);
 	}
 
+	/** Tests {@link Score#clone()}. */
 	@Test public void testClone()
 			throws IllegalArgumentException, IllegalAccessException, NotInTrustTreeException,
 			       InterruptedException {
@@ -729,6 +756,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		});
 	}
 
+	/** Tests {@link Score#cloneP()}. */
 	@Test public void testCloneP()
 			throws IllegalArgumentException, IllegalAccessException, NotInTrustTreeException,
 			       InterruptedException {
@@ -757,12 +785,14 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		return new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
 	}
 
+	/** For {@link #testStartupDatabaseIntegrityTest()}. */
 	private Field intrudePrivateField(String name) throws NoSuchFieldException, SecurityException {
 		Field f = Score.class.getDeclaredField(name);
 		f.setAccessible(true);
 		return f;
 	}
 
+	/** Tests {@link Score#startupDatabaseIntegrityTest()} */
 	@Test public void testStartupDatabaseIntegrityTest() throws Exception {
 		// Shouldn't throw upon a valid Score object
 		getValidScore().startupDatabaseIntegrityTest();
