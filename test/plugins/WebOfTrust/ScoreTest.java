@@ -882,7 +882,9 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 
 	/**
 	 * Test for {@link Score#writeObject(java.io.ObjectOutputStream)}.
-	 * Amended copy-paste of {@link #testStoreWithoutCommit()}. */
+	 * Amended copy-paste of {@link #testStoreWithoutCommit()}.
+	 * 
+	 * @see #testWriteObjectObjectOutputStream2() Alternative implementation. */
 	@Test public void testWriteObjectObjectOutputStream() throws InterruptedException {
 		Score s = getValidScore();
 		s.setVersionID(randomUUID()); // Remove when resolving fix request at Score.getVersionID()
@@ -906,6 +908,21 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertNotSame(trustee, s.getTrustee());
 		assertEquals(truster, s.getTruster());
 		assertEquals(trustee, s.getTrustee());
+	}
+
+	/**
+	 * Test for {@link Score#writeObject(java.io.ObjectOutputStream)}.
+	 * 
+	 * @see #testWriteObjectObjectOutputStream() Alternative implementation. */
+	@Test public void testWriteObjectObjectOutputStream2()
+			throws InterruptedException, IllegalArgumentException, IllegalAccessException,
+			       NotInTrustTreeException {
+		
+		testClone(new ScoreCloner() {
+			@Override public Score clone(Score s) {
+				return (Score) Persistent.deserialize(mWebOfTrust, s.serialize());
+			}
+		});
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
