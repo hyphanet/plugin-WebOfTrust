@@ -52,6 +52,26 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		trustee = addRandomIdentities(1).get(0);
 	}
 
+	/**
+	 * Tests {@link ScoreID#ScoreID(Identity, Identity)}.
+	 * (We cannot put this into a member class "ScoreIDTest" because Ant needs to exclude
+	 * member classes from the JUnit test input for technical reasons) */
+	@Test public void testScoreIDIdentityIdentity() {
+		try {
+			new ScoreID(null, trustee);
+			fail();
+		} catch(NullPointerException e) {}
+
+		try {
+			new ScoreID(truster, null);
+			fail();
+		} catch(NullPointerException e) {}
+
+		ScoreID id = new ScoreID(truster, trustee);
+		String expected = truster.getID() + "@" + trustee.getID();
+		assertEquals(id.toString(), expected);
+	}
+
 	/** Tests {@link Score#Score(WebOfTrustInterface, OwnIdentity, Identity, int, int, int)}. */
 	@Test public void testScoreWebOfTrustInterfaceOwnIdentityIdentityIntIntInt() {
 		WebOfTrustInterface wot = mWebOfTrust;
