@@ -617,13 +617,15 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		OwnIdentity unstoredIdentity
 			= new OwnIdentity(mWebOfTrust, getRandomInsertURI(), "a", false);
 		
+		Score s2 = new Score(mWebOfTrust, unstoredIdentity, trustee, 100, 2, 16);
 		try {
-			new Score(mWebOfTrust, unstoredIdentity, trustee, 100, 2, 16).storeWithoutCommit();
+			s2.storeWithoutCommit();
 			fail();
 		} catch(AssertionError e) {}
 		
+		Score s3 = new Score(mWebOfTrust, truster, unstoredIdentity, 100, 2, 16);
 		try {
-			new Score(mWebOfTrust, truster, unstoredIdentity, 100, 2, 16).storeWithoutCommit();
+			s3.storeWithoutCommit();
 			fail();
 		} catch(AssertionError e) {}
 	}
