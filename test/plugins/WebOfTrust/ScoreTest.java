@@ -71,6 +71,45 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		String expected = truster.getID() + "@" + trustee.getID();
 		assertEquals(id.toString(), expected);
 	}
+	
+	/** Tests {@link ScoreID#constructAndValidate(Score, String)}  */
+	@Test public void testScoreIDconstructAndValidateScoreString()
+			throws MalformedURLException, InvalidParameterException {
+		
+		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		String id = s.getID();
+		
+		// Try invalid parameters
+		
+		try {
+			ScoreID.constructAndValidate(s, null);
+			fail();
+		} catch(NullPointerException e) {}
+
+		try {
+			ScoreID.constructAndValidate(null, id);
+			fail();
+		} catch(NullPointerException e) {}
+		
+		String invalidID = id.substring(0, id.length() - 1);
+		try {
+			ScoreID.constructAndValidate(s, invalidID);
+			fail();
+		} catch(RuntimeException e) {}
+		
+		String mismatchingID = new Score(mWebOfTrust, addRandomOwnIdentities(1).get(0),
+			addRandomIdentities(1).get(0), 100, 2, 16).getID();
+		
+		try {
+			ScoreID.constructAndValidate(s, mismatchingID);
+			fail();
+		} catch(RuntimeException e) {}
+
+		// Try valid parameters
+		
+		ScoreID sid = ScoreID.constructAndValidate(s, id);
+		assertEquals(s.getID(), sid.toString());
+	}
 
 	/** Tests {@link Score#Score(WebOfTrustInterface, OwnIdentity, Identity, int, int, int)}. */
 	@Test public void testScoreWebOfTrustInterfaceOwnIdentityIdentityIntIntInt() {
