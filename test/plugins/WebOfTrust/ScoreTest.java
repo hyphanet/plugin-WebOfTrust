@@ -942,6 +942,24 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		/* assertNotSame(id, s.getVersionID()); */
 	}
 
+	/** Tests {@link Score#getVersionID()}. */
+	@Test public void testGetVersionID() {
+		Score s = getValidScore();
+		
+		assertNotNull(s.getVersionID());
+		// getVersionID() is indeed currently implemented to not always be idempotent:
+		// Score doesn't store a version ID before one is set and will return a random one in
+		// every call to getVersionID().
+		// This may change when the FIXME in getVersionID() is resolved.
+		assertNotEquals(s.getVersionID(), s.getVersionID());
+		
+		UUID id = randomUUID();
+		s.setVersionID(id);
+		// Once a certain version ID was set, it is stored and must not change anymore.
+		assertEquals(id, s.getVersionID());
+		assertEquals(id, s.getVersionID());
+	}
+
 	@Override protected WebOfTrust getWebOfTrust() {
 		return mWebOfTrust;
 	}
