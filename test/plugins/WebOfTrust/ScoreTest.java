@@ -953,6 +953,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		try {
 			s.setVersionID(null);
+			fail();
 		} catch(NullPointerException e) {}
 		
 		assertNotEquals(null, s.getVersionID());
