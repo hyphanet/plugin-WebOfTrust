@@ -111,6 +111,17 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(s.getID(), sid.toString());
 	}
 
+	/** Tests {@link ScoreID#toString()}. */
+	@Test public void testScoreIDToString() {
+		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
+		String expected = truster.getID() + '@' + trustee.getID();
+		
+		assertNotEquals(expected, new ScoreID(trustee, truster).toString());
+		assertEquals(expected,    new ScoreID(truster, trustee).toString());
+		
+		assertEquals(expected, ScoreID.constructAndValidate(s, expected).toString());
+	}
+
 	/** Tests {@link Score#Score(WebOfTrustInterface, OwnIdentity, Identity, int, int, int)}. */
 	@Test public void testScoreWebOfTrustInterfaceOwnIdentityIdentityIntIntInt() {
 		WebOfTrustInterface wot = mWebOfTrust;
