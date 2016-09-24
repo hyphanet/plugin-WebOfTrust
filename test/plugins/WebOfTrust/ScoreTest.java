@@ -925,6 +925,23 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		});
 	}
 
+	/** Test for {@link Score#setVersionID(UUID)}. */
+	@Test public void testSetVersionIDUUID() {
+		Score s = getValidScore();
+		
+		try {
+			s.setVersionID(null);
+		} catch(NullPointerException e) {}
+		
+		assertNotEquals(null, s.getVersionID());
+		
+		UUID id = randomUUID();
+		s.setVersionID(id);
+		assertEquals(id, s.getVersionID());
+		// UUID is immutable so this is not required.
+		/* assertNotSame(id, s.getVersionID()); */
+	}
+
 	@Override protected WebOfTrust getWebOfTrust() {
 		return mWebOfTrust;
 	}
