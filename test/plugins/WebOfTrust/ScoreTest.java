@@ -572,7 +572,9 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(expectedActivationDepth, score.getActivationDepth());
 	}
 
-	/** Tests {@link Score#storeWithoutCommit()}. */
+	/**
+	 * Tests {@link Score#storeWithoutCommit()}.
+	 * {@link #testWriteObjectObjectOutputStream()} is an amended copy-paste of this. */
 	@Test public void testStoreWithoutCommit()
 			throws NotInTrustTreeException, InterruptedException, UnknownIdentityException,
 			       MalformedURLException, InvalidParameterException {
@@ -876,6 +878,34 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 				fail("startupDatabaseIntegrityTest() didn't throw on invalid Score: " + i);
 			} catch(Exception e) { }
 		}
+	}
+
+	/**
+	 * Test for {@link Score#writeObject(java.io.ObjectOutputStream)}.
+	 * Amended copy-paste of {@link #testStoreWithoutCommit()}. */
+	@Test public void testWriteObjectObjectOutputStream() throws InterruptedException {
+		Score s = getValidScore();
+		s.setVersionID(randomUUID()); // Remove when resolving fix request at Score.getVersionID()
+		Score expectedScore = s.clone();
+		
+		byte[] serialized = s.serialize(); // Public interface for writeObject()
+		s = null;
+		
+		waitUntilCurrentTimeUTCIsAfter(expectedScore.getCreationDate());
+		waitUntilCurrentTimeUTCIsAfter(expectedScore.getDateOfLastChange());
+		
+		s = (Score) Persistent.deserialize(mWebOfTrust, serialized);
+		assertTrue(s.startupDatabaseIntegrityTestBoolean());
+		assertEquals(expectedScore, s);
+		// The following are not checked by Score.equals(), so we do it on our own.
+		assertEquals(expectedScore.getCreationDate(), s.getCreationDate());
+		assertEquals(expectedScore.getDateOfLastChange(), s.getDateOfLastChange());
+		assertEquals(expectedScore.getVersionID(), s.getVersionID());
+		// Java serialization has no global memory for re-using objects like db4o
+		assertNotSame(truster, s.getTruster());
+		assertNotSame(trustee, s.getTrustee());
+		assertEquals(truster, s.getTruster());
+		assertEquals(trustee, s.getTrustee());
 	}
 
 	@Override protected WebOfTrust getWebOfTrust() {
