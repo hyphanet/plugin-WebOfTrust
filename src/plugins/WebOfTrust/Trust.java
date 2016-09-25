@@ -123,7 +123,14 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	 * Its purpose is to allow validation of TrustIDs which we obtain from the database or from the network.
 	 * 
 	 * TODO: This was added after we already had manual ID-generation / checking in the code everywhere. Use this class instead. 
-	 */
+	 * 
+	 * TODO: Code quality: Ensure that callers notice the constructAndValidate() functions by
+	 * making all constructors private and exposing them only through a constructInsecure()
+	 * factories as well. While doing that check whether the callers do use the
+	 * constructAndValidate() functions whenever they should, and also whether they do not when they
+	 * don't need to (because non-validating constructors are a lot faster).
+	 * And rename the constructAndValidate() to constructSecure() to have coherent, short naming
+	 * everywhere. */
 	public static final class TrustID {
 		
 		private static final int MAX_TRUST_ID_LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
