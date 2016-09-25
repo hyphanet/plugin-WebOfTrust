@@ -178,9 +178,20 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 			if(tokenizer.hasMoreTokens())
 				throw new IllegalArgumentException("TrustID has too many tokens: " + id);
 		}
-		
+
+		/**
+		 * Validates whether the ID is of valid format and contains valid Freenet routing keys,
+		 * i.e. a valid {@link Identity#getID()} pair to describe a truster/trustee.
+		 * Does not check whether the database actually contains the given truster/trustee! */
+		public static TrustID constructAndValidate(String id) {
+			return new TrustID(id);
+		}
+
+		/**
+		 * Same as {@link #constructAndValidate(String)} but also checks whether the ID matches the
+		 * ID of the given Trust. */
 		public static TrustID constructAndValidate(Trust trust, String id) {
-			final TrustID trustID = new TrustID(id);
+			final TrustID trustID = constructAndValidate(id);
 			
 			if(!trust.getTruster().getID().equals(trustID.mTrusterID))
 				throw new RuntimeException("Truster ID mismatch for Trust " + trust + ": TrustID is " + id);

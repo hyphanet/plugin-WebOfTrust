@@ -140,9 +140,20 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 			if(tokenizer.hasMoreTokens())
 				throw new IllegalArgumentException("ScoreID has too many tokens: " + id);
 		}
-		
+
+		/**
+		 * Validates whether the ID is of valid format and contains valid Freenet routing keys,
+		 * i.e. a valid {@link Identity#getID()} pair to describe a truster/trustee.
+		 * Does not check whether the database actually contains the given truster/trustee! */
+		public static ScoreID constructAndValidate(String id) {
+			return new ScoreID(id);
+		}
+
+		/**
+		 * Same as {@link #constructAndValidate(String)} but also checks whether the ID matches the
+		 * ID of the given Score. */
 		public static ScoreID constructAndValidate(Score score, String id) {
-			final ScoreID scoreID = new ScoreID(id);
+			final ScoreID scoreID = constructAndValidate(id);
 			if(!score.getTruster().getID().equals(scoreID.mTrusterID))
 				throw new RuntimeException("Truster ID mismatch for Score " + score + ": ScoreID is " + id);
 			
