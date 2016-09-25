@@ -169,7 +169,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 			mTrusteeID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
 
 			if(tokenizer.hasMoreTokens())
-				throw new IllegalArgumentException("Invalid MessageID: " + id);
+				throw new IllegalArgumentException("TrustID has too many tokens: " + id);
 		}
 		
 		public static TrustID constructAndValidate(Trust trust, String id) {
