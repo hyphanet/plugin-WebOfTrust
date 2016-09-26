@@ -26,6 +26,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ext.ExtObjectContainer;
 
+import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
 
 /** Tests {@link Score}. */
@@ -71,7 +72,49 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		String expected = truster.getID() + "@" + trustee.getID();
 		assertEquals(id.toString(), expected);
 	}
-	
+
+	/** Tests {@link ScoreID#constructAndValidate(String)}. */
+	@Test public void testScoreIDconstructAndValidateString() {
+		// Try invalid IDs
+		
+		try {
+			ScoreID.constructAndValidate(null);
+			fail("Null is not a valid ID");
+		} catch(NullPointerException e) {}
+
+		final String validID
+			=   Base64.encode(truster.getRequestURI().getRoutingKey()) + '@'
+			  + Base64.encode(trustee.getRequestURI().getRoutingKey());
+		
+		final String wrongEncoding
+			=   Base64.encodeStandard(truster.getRequestURI().getRoutingKey()) + '@'
+			  + Base64.encodeStandard(trustee.getRequestURI().getRoutingKey());
+		
+		final String[] invalidIDs = {
+			"",
+			wrongEncoding,
+			validID.substring(1),
+			validID.substring(0, validID.length()-1),
+			validID + validID.charAt(validID.length()-1),
+			validID.charAt(0) + validID,
+			validID.replace("@", "")
+		};
+		
+		for(String invalidID : invalidIDs) {
+			try {
+				ScoreID.constructAndValidate(invalidID);
+				fail("Must not be accepted: " + invalidID);
+			} catch(IllegalArgumentException e) {}
+		}
+		
+		// Try valid IDs
+		
+		ScoreID parsed = ScoreID.constructAndValidate(validID);
+		assertEquals(validID, parsed.toString());
+		assertEquals(truster.getID(), parsed.getTrusterID());
+		assertEquals(trustee.getID(), parsed.getTrusteeID());
+	}
+
 	/** Tests {@link ScoreID#constructAndValidate(Score, String)}  */
 	@Test public void testScoreIDconstructAndValidateScoreString()
 			throws MalformedURLException, InvalidParameterException {

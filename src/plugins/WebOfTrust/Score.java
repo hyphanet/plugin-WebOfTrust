@@ -162,7 +162,15 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 			
 			return scoreID;
 		}
-		
+
+		public String getTrusterID() {
+			return mTrusterID;
+		}
+
+		public String getTrusteeID() {
+			return mTrusteeID;
+		}
+
 		@Override
 		public final String toString() {
 			return mID;
