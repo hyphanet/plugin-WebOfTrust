@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.UUID;
 
@@ -172,8 +173,12 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 
 			final StringTokenizer tokenizer = new StringTokenizer(id, "@");
 
+			try {
 			mTrusterID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
 			mTrusteeID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
+			} catch(NoSuchElementException e) {
+				throw new IllegalArgumentException("TrustID has too few tokens: " + id);
+			}
 
 			if(tokenizer.hasMoreTokens())
 				throw new IllegalArgumentException("TrustID has too many tokens: " + id);

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.UUID;
 
@@ -133,9 +134,13 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 			mID = id;
 
 			final StringTokenizer tokenizer = new StringTokenizer(id, "@");
-
+			
+			try {
 			mTrusterID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
 			mTrusteeID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
+			} catch(NoSuchElementException e) {
+				throw new IllegalArgumentException("ScoreID has too few tokens: " + id);
+			}
 
 			if(tokenizer.hasMoreTokens())
 				throw new IllegalArgumentException("ScoreID has too many tokens: " + id);
