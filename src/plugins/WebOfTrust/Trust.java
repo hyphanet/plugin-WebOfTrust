@@ -134,7 +134,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	 * everywhere. */
 	public static final class TrustID {
 		
-		private static final int MAX_TRUST_ID_LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
+		private static final int LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
 		
 		private final String mID;
 		private final String mTrusterID;
@@ -166,8 +166,8 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
         }
 
 		private TrustID(String id) {
-			if(id.length() > MAX_TRUST_ID_LENGTH)
-				throw new IllegalArgumentException("ID is too long, length: " + id.length());
+			if(id.length() != LENGTH)
+				throw new IllegalArgumentException("ID has wrong length: " + id.length());
 
 			mID = id;
 

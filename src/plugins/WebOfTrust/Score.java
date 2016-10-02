@@ -115,7 +115,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	 * everywhere. */
 	protected static final class ScoreID {
 		
-		private static final int MAX_SCORE_ID_LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
+		private static final int LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
 		
 		private final String mID;
 		private final String mTrusterID;
@@ -128,8 +128,8 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		}
 		
 		private ScoreID(String id) {
-			if(id.length() > MAX_SCORE_ID_LENGTH)
-				throw new IllegalArgumentException("ID is too long, length: " + id.length());
+			if(id.length() != LENGTH)
+				throw new IllegalArgumentException("ID has wrong length: " + id.length());
 
 			mID = id;
 
