@@ -15,6 +15,7 @@ import java.util.StringTokenizer;
 import java.util.UUID;
 
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.support.CurrentTimeUTC;
 
@@ -103,6 +104,9 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	 * We store the IDs as Strings instead for fast queries.
 	 * 
 	 * Its purpose is to allow validation of ScoreIDs which we obtain from the database or from the network.
+	 * 
+	 * TODO: Code quality: This could probably be an extension of class {@link TrustID}; the format
+	 * of the IDs is the same and this is unlikely to change in the future.
 	 * 
 	 * TODO: This was added after we already had manual ID-generation / checking in the code everywhere. Use this class instead. 
 	 * 
