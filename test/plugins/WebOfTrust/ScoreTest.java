@@ -154,6 +154,20 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(s.getID(), sid.toString());
 	}
 
+	/** Tests {@link ScoreID#getTrusterID()}. */ 
+	@Test public void testScoreIDGetTrusterID() {
+		ScoreID[] ids = {
+			new ScoreID(truster, trustee),
+			ScoreID.constructAndValidate(truster.getID() + "@" + trustee.getID()),
+			ScoreID.constructAndValidate(getValidScore(), getValidScore().getID())
+		};
+		
+		for(ScoreID id : ids) {
+			assertNotEquals(trustee.getID(), id.getTrusterID());
+			assertEquals(truster.getID(), id.getTrusterID());
+		}
+	}
+
 	/** Tests {@link ScoreID#toString()}. */
 	@Test public void testScoreIDToString() {
 		Score s = new Score(mWebOfTrust, truster, trustee, 100, 2, 16);
