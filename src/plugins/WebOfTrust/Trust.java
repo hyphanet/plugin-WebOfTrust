@@ -131,7 +131,9 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	 * constructAndValidate() functions whenever they should, and also whether they do not when they
 	 * don't need to (because non-validating constructors are a lot faster).
 	 * And rename the constructAndValidate() to constructSecure() to have coherent, short naming
-	 * everywhere. */
+	 * everywhere.
+	 * 
+	 * FIXME: Override hashCode() to keep compliance w.r.t. equals() */
 	public static final class TrustID {
 		
 		private static final int LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;

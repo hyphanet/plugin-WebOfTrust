@@ -116,7 +116,9 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	 * constructAndValidate() functions whenever they should, and also whether they do not when they
 	 * don't need to (because non-validating constructors are a lot faster).
 	 * And rename the constructAndValidate() to constructSecure() to have coherent, short naming
-	 * everywhere. */
+	 * everywhere.
+	 * 
+	 * FIXME: Override hashCode() to keep compliance w.r.t. equals() */
 	protected static final class ScoreID {
 		
 		private static final int LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
