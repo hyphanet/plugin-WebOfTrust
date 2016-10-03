@@ -197,6 +197,44 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals(expected, ScoreID.constructAndValidate(s, expected).toString());
 	}
 
+	/** Tests {@link ScoreID#equals(Object)}. */
+	@Test public void testScoreIDEquals() throws MalformedURLException, InvalidParameterException {
+		ScoreID id1 = new ScoreID(truster, trustee);
+		ScoreID id2 = new ScoreID(truster.clone(), trustee.clone());
+		ScoreID id3 = new ScoreID(truster.clone(), trustee.clone());
+		ScoreID idWithDifferentTruster = new ScoreID(
+			addRandomOwnIdentities(1).get(0),
+			trustee);
+		ScoreID idWithDifferentTrustee = new ScoreID(
+			truster,
+			addRandomIdentities(1).get(0));
+		ScoreID invertedID = new ScoreID(trustee.clone(), truster.clone());
+		
+		// Repeat tests twice upon the same objects to check for "consistent" property of equals
+		for(int i=0; i < 2; ++i) {
+			// Basic functionality of equals()
+			assertEquals(id1, id2);
+			assertNotEquals(id1, idWithDifferentTruster);
+			assertNotEquals(id1, idWithDifferentTrustee);
+			assertNotEquals(id1, invertedID);
+			
+			// "Reflexive" property of equals
+			assertEquals(id1, id1);
+			// "Symmetric" property of equals
+			assertEquals(id1, id2);
+			assertEquals(id2, id1);
+			assertNotEquals(idWithDifferentTruster, id1);
+			assertNotEquals(idWithDifferentTrustee, id1);
+			assertNotEquals(invertedID, id1);
+			// "Transitive" property of equals
+			assertEquals(id1, id2);
+			assertEquals(id2, id3);
+			assertEquals(id1, id3);
+			// Null handling
+			assertFalse(id1.equals(null));
+		}
+	}
+
 	/** Tests {@link Score#Score(WebOfTrustInterface, OwnIdentity, Identity, int, int, int)}. */
 	@Test public void testScoreWebOfTrustInterfaceOwnIdentityIdentityIntIntInt() {
 		WebOfTrustInterface wot = mWebOfTrust;
