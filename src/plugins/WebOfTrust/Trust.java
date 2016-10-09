@@ -131,9 +131,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	 * constructAndValidate() functions whenever they should, and also whether they do not when they
 	 * don't need to (because non-validating constructors are a lot faster).
 	 * And rename the constructAndValidate() to constructSecure() to have coherent, short naming
-	 * everywhere.
-	 * 
-	 * FIXME: Override hashCode() to keep compliance w.r.t. equals() */
+	 * everywhere. */
 	public static final class TrustID {
 		
 		private static final int LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
@@ -232,7 +230,13 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 			
 			return false;
 		}
-		
+
+		@Override public int hashCode() {
+			// Must not use the default implementation because equals() isn't the default either.
+			// It is questionable whether objects of this class should be inserted into hash tables
+			// anyway, maybe better to insert the IDs as strings to avoid excessive object creation.
+			throw new UnsupportedOperationException("Not implemented yet!");
+		}
 	}
 
 

@@ -259,6 +259,13 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 			return false;
 		}
 
+		@Override public int hashCode() {
+			// Must not use the default implementation because equals() isn't the default either.
+			// It is questionable whether objects of this class should be inserted into hash tables
+			// anyway, maybe better to insert the IDs as strings to avoid excessive object creation.
+			throw new UnsupportedOperationException("Not implemented yet!");
+		}
+
 		/**
 		 * Gets the routing key to which this ID is equivalent.
 		 * 
