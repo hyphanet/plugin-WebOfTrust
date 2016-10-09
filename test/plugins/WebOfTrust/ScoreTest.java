@@ -61,12 +61,12 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		try {
 			new ScoreID(null, trustee);
 			fail();
-		} catch(NullPointerException e) {}
+		} catch(NullPointerException expected) {}
 
 		try {
 			new ScoreID(truster, null);
 			fail();
-		} catch(NullPointerException e) {}
+		} catch(NullPointerException expected) {}
 
 		ScoreID id = new ScoreID(truster, trustee);
 		String expected = truster.getID() + "@" + trustee.getID();
@@ -79,8 +79,8 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		try {
 			ScoreID.constructAndValidate(null);
-			fail("Null is not a valid ID");
-		} catch(NullPointerException e) {}
+			fail();
+		} catch(NullPointerException expected) {}
 
 		final String validID
 			=   Base64.encode(truster.getRequestURI().getRoutingKey()) + '@'
@@ -104,7 +104,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			try {
 				ScoreID.constructAndValidate(invalidID);
 				fail("Must not be accepted: " + invalidID);
-			} catch(IllegalArgumentException e) {}
+			} catch(IllegalArgumentException expected) {}
 		}
 		
 		// Try valid IDs
@@ -127,18 +127,18 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		try {
 			ScoreID.constructAndValidate(s, null);
 			fail();
-		} catch(NullPointerException e) {}
+		} catch(NullPointerException expected) {}
 
 		try {
 			ScoreID.constructAndValidate(null, id);
 			fail();
-		} catch(NullPointerException e) {}
+		} catch(NullPointerException expected) {}
 		
 		String invalidID = id.substring(0, id.length() - 1);
 		try {
 			ScoreID.constructAndValidate(s, invalidID);
 			fail();
-		} catch(RuntimeException e) {}
+		} catch(RuntimeException expected) {}
 		
 		String mismatchingID = new Score(mWebOfTrust, addRandomOwnIdentities(1).get(0),
 			addRandomIdentities(1).get(0), 100, 2, 16).getID();
@@ -146,7 +146,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		try {
 			ScoreID.constructAndValidate(s, mismatchingID);
 			fail();
-		} catch(RuntimeException e) {}
+		} catch(RuntimeException expected) {}
 
 		// Try valid parameters
 		
@@ -268,17 +268,17 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		try {
 			new Score(null, truster, trustee, 100, 2, 16);
 			fail();
-		} catch(NullPointerException e) {}
+		} catch(NullPointerException expected) {}
 		
 		try {
 			new Score(wot,   null,   trustee, 100, 2, 16);
 			fail();
-		} catch(NullPointerException e) {}
+		} catch(NullPointerException expected) {}
 		
 		try {
 			new Score(wot,   truster, null,   100, 2, 16);
 			fail();
-		} catch(NullPointerException e) {}
+		} catch(NullPointerException expected) {}
 		
 		// Allow special case of an OwnIdentity assigning a score to itself.
 		// This is used for Score computation at class WebOfTrust
@@ -329,14 +329,14 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 						try {
 							new Score(wot, truster, trustee, value, badRank, capacity);
 							fail("Rank: " + badRank);
-						} catch(IllegalArgumentException e) {}
+						} catch(IllegalArgumentException expected) {}
 					}
 					
 					for(int badCapacity : badCapacities) {
 						try {
 							new Score(wot, truster, trustee, value, rank, badCapacity);
 							fail("Capacity: " + badCapacity);
-						} catch(IllegalArgumentException e) {}
+						} catch(IllegalArgumentException expected) {}
 					}
 				}
 			}
@@ -547,7 +547,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			try {
 				s.setRank(rank);
 				fail();
-			} catch(IllegalArgumentException e) {}
+			} catch(IllegalArgumentException expected) {}
 			
 			assertEquals(oldRank, s.getRank());
 		}
@@ -561,7 +561,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		try {
 			s.setRank(badRanks[0]);
-		} catch(IllegalArgumentException e) {}
+		} catch(IllegalArgumentException expected) {}
 		assertEquals(oldDate, s.getDateOfLastChange());
 		
 		s.setRank(s.getRank() - 1);
@@ -619,7 +619,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			try {
 				s.setCapacity(capacity);
 				fail();
-			} catch(IllegalArgumentException e) {}
+			} catch(IllegalArgumentException expected) {}
 			
 			assertEquals(oldCapacity, s.getCapacity());
 		}
@@ -633,7 +633,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		try {
 			s.setCapacity(badCapacities[0]);
-		} catch(IllegalArgumentException e) {}
+		} catch(IllegalArgumentException expected) {}
 		assertEquals(oldDate, s.getDateOfLastChange());
 		
 		s.setCapacity(goodCapacities[0]);
@@ -814,13 +814,13 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		try {
 			s2.storeWithoutCommit();
 			fail();
-		} catch(AssertionError e) {}
+		} catch(AssertionError expected) {}
 		
 		Score s3 = new Score(mWebOfTrust, truster, unstoredIdentity, 100, 2, 16);
 		try {
 			s3.storeWithoutCommit();
 			fail();
-		} catch(AssertionError e) {}
+		} catch(AssertionError expected) {}
 	}
 
 	/** Tests {@link Score#equals(Object)}. */
@@ -1071,7 +1071,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			try {
 				i.startupDatabaseIntegrityTest();
 				fail("startupDatabaseIntegrityTest() didn't throw on invalid Score: " + i);
-			} catch(Exception e) { }
+			} catch(Exception expected) {}
 		}
 	}
 
@@ -1127,7 +1127,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		try {
 			s.setVersionID(null);
 			fail();
-		} catch(NullPointerException e) {}
+		} catch(NullPointerException expected) {}
 		
 		assertNotEquals(null, s.getVersionID());
 		
