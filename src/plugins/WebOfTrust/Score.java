@@ -229,9 +229,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		setRank(myRank);
 		setCapacity(myCapacity);
 		
-		// setValue() etc. might not set this if the value matches the defaults.
-		if(mLastChangedDate == null)
-			mLastChangedDate = CurrentTimeUTC.get();
+		mLastChangedDate = (Date)mCreationDate.clone();	// Clone it because date is mutable
 	}
 	
 	@Override
