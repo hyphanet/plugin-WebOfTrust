@@ -235,6 +235,16 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		}
 	}
 
+	/** Tests {@link ScoreID#hashCode()}. */
+	@Test public void testScoreIDHashCode() {
+		ScoreID id = new ScoreID(truster, trustee);
+		
+		try {
+			id.hashCode();
+			fail();
+		} catch(UnsupportedOperationException expected) {}
+	}
+
 	/** Tests {@link Score#Score(WebOfTrustInterface, OwnIdentity, Identity, int, int, int)}. */
 	@Test public void testScoreWebOfTrustInterfaceOwnIdentityIdentityIntIntInt() {
 		WebOfTrustInterface wot = mWebOfTrust;
