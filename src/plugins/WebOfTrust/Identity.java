@@ -166,8 +166,8 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		 * Checks whether it is valid Base64-encoding.
 		 */
 		private IdentityID(String id) {
-			if(id.length() > LENGTH)
-				throw new IllegalArgumentException("ID is too long, length: " + id.length());
+			if(id.length() != LENGTH)
+				throw new IllegalArgumentException("ID has wrong length: " + id.length());
 			
 			try {
 				mRoutingKey = Base64.decode(id);
