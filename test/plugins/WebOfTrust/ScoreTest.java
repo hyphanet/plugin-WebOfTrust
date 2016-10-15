@@ -233,6 +233,14 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			assertEquals(id1, id3);
 			// Null handling
 			assertFalse(id1.equals(null));
+			
+			// Special case: ScoreID.equals() also supports comparing to String objects
+			// - Only test basic functionality there as the implementation uses the underlying
+			//   String.equals() anyway which is supposed to work properly.
+			assertEquals(id1, id2.toString());
+			assertNotEquals(id1, idWithDifferentTruster.toString());
+			assertNotEquals(id1, idWithDifferentTrustee.toString());
+			assertNotEquals(id1, invertedID.toString());
 		}
 	}
 
