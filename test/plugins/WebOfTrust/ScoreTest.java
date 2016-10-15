@@ -98,7 +98,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			validID.substring(0, validID.length()-1),
 			validID + validID.charAt(validID.length()-1),
 			validID.charAt(0) + validID,
-			validID.replace("@", "")
+			validID.replace("@", "a")
 		};
 		
 		for(String invalidID : invalidIDs) {
