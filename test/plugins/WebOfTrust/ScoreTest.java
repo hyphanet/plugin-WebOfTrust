@@ -5,6 +5,7 @@ package plugins.WebOfTrust;
 
 import static java.lang.System.identityHashCode;
 import static java.util.UUID.randomUUID;
+import static java.util.concurrent.TimeUnit.DAYS;
 import static org.junit.Assert.*;
 import static plugins.WebOfTrust.WebOfTrust.VALID_CAPACITIES;
 import static plugins.WebOfTrust.util.DateUtil.waitUntilCurrentTimeUTCIsAfter;
@@ -1044,6 +1045,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		Date[] badLastChangeDates = {
 			null,
 			new Date(CurrentTimeUTC.getInMillis() - 1), // Before creation
+			new Date(CurrentTimeUTC.getInMillis() + DAYS.toMillis(10)) // In future
 		};
 		
 		for(Date badDate : badLastChangeDates) {
