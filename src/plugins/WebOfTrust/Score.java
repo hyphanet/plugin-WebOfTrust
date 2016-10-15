@@ -463,13 +463,17 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 
 	@Override
 	public void startupDatabaseIntegrityTest() throws Exception {
-		activateFully();
+		// Don't use activateFully() yet so the below two if()s can actually hit:
+		// activateFully() would throw if mTruster/mTrustee are null.
+		checkedActivate(1);
 		
 		if(mTruster == null)
 			throw new NullPointerException("mTruster==null");
 		
 		if(mTrustee == null)
 			throw new NullPointerException("mTrustee==null");
+		
+		activateFully();
 		
 		if(mID == null)
 			throw new NullPointerException("mID==null");
