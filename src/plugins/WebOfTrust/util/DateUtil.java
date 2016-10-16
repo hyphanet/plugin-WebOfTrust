@@ -28,7 +28,7 @@ public final class DateUtil {
 	 * FIXME: Unit test!
 	 * 
 	 * TODO: Code quality: Apache Java Commons: Replace with function DateUtils.round() */
-	public static final Date rountToNearestDay(Date date) {
+	public static final Date roundToNearestDay(Date date) {
 		GregorianCalendar calendar = new GregorianCalendar(UTC);
 		// We must not use setTime(date) in case the date is not UTC.
 		calendar.setTimeInMillis(date.getTime());
