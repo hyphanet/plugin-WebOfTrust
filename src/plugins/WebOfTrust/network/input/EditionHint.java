@@ -108,7 +108,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * The next fallback sorting key after this one is {@link #mSourceScore}.
 	 * It is also ensured that fallback will actually happen:
 	 * There are only 7 distinct capacities, see {@link WebOfTrust#capacities}. */
-	private final int mSourceCapacity;
+	private final byte mSourceCapacity;
 
 	/**
 	 * Rounded {@link WebOfTrust#getBestScore(Identity)} of the {@link Identity} which gave us the
@@ -124,7 +124,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * As there are many distinct Score values, the Score is rounded to one of the 3 values
 	 * {-1, 0, 1} to ensure we have a chance to actually fallback to {@link #mEdition} as sorting
 	 * key: We need to make sure that we try downloading higher editions first. */
-	private final int mSourceScore;
+	private final byte mSourceScore;
 
 	/**
 	 * The actual edition hint itself.
