@@ -172,16 +172,22 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 			mID = id;
 
 			final StringTokenizer tokenizer = new StringTokenizer(id, "@");
-
+			
+			String rawTrusterID;
+			String rawTrusteeID;
+			
 			try {
-			mTrusterID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
-			mTrusteeID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
+				 rawTrusterID = tokenizer.nextToken();
+				 rawTrusteeID = tokenizer.nextToken();
 			} catch(NoSuchElementException e) {
 				throw new IllegalArgumentException("TrustID has too few tokens: " + id);
 			}
-
+			
 			if(tokenizer.hasMoreTokens())
 				throw new IllegalArgumentException("TrustID has too many tokens: " + id);
+			
+			mTrusterID = IdentityID.constructAndValidateFromString(rawTrusterID).toString();
+			mTrusteeID = IdentityID.constructAndValidateFromString(rawTrusteeID).toString();
 		}
 
 		/**
