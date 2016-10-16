@@ -75,10 +75,15 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * The Identitys which have received a direct {@link Trust} of an {@link OwnIdentity} are
 	 * constantly being polled for new editions by the {@link IdentityDownloaderFast}, so their
 	 * hints are most up to date and should be downloaded first. Sorting by capacity ensures this as
-	 * they will have the highest capacity: Capacity is higher for lower {@link Score#getRank()}, so
+	 * they will have the highest capacity: Capacity is a direct function of {@link Score#getRank()}
+	 * (see {@link WebOfTrust#capacities}) - it higher for lower {@link Score#getRank()}, so
 	 * the higher it is, the closer an identity is to the users {@link OwnIdentity}s in the
 	 * {@link Trust} graph. For identities directly being trusted by an OwnIdentity, the capacity
 	 * will be the highest.
+	 * Also as sorting by capacity means sorting by rank, we sort the download order like the
+	 * shells of an onion where each shell is a rank step, or in other words: We represent the
+	 * topology of the social graph through which the edition hints flow. This hopefully might
+	 * ensure fast propagation of hints across the social graph.
 	 * 
 	 * Also notice:
 	 * Normally, we would naively say the next sorting key after {@link #mDate} should be
@@ -87,18 +92,22 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * Identity, its Score will be always have the same value as the  Trust, so it will always be in
 	 * range [-100, 100].
 	 * Remote identities can get much higher Scores than that because their Score is the sum of
-	 * their Trusts weighted by the trusters' capacities. So with those higher than 100 Scores they
+	 * their Trusts weighted by the trusters' capacities. So with those Scores above 100 they
 	 * could always win against OwnIdentiys. But the hints of trustees of OwnIdentitys are much more 
 	 * valuable due to the USK subscriptions of {@link IdentityDownloaderFast} - which is why
 	 * we sort by capacity first as aforementioned.
 	 * 
-	 * Furthermore, sorting by capacity might ensure the most "stable" behavior of WoT - where
-	 * "stable" means that the results of {@link Score} computation should not depend on order of
-	 * download:
+	 * Furthermore, sorting by capacity is critical to ensure the most "stable" behavior of WoT
+	 * - where "stable" means that the results of {@link Score} computation should not depend on
+	 * order of download:
 	 * The higher the capacity of an Identity, the more voting power it has in {@link Score}
 	 * computation. As identities with higher capacity can give higher capacity = voting power to
 	 * their trustees, by preferring to download hints with higher capacity, we prefer to download
-	 * the identities with the highest potential voting power first. */
+	 * the identities with the highest potential voting power first.
+	 * 
+	 * The next fallback sorting key after this one is {@link #mSourceScore}.
+	 * It is also ensured that fallback will actually happen:
+	 * There are only 7 distinct capacities, see {@link WebOfTrust#capacities}. */
 	private final int mSourceCapacity;
 
 	/**
