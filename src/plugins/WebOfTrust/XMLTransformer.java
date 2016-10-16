@@ -162,6 +162,8 @@ public final class XMLTransformer {
 			mSerializer.setOutputProperty(OutputKeys.INDENT, "yes"); // TODO: Disable as soon as bug 0004850 is fixed.
 			mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
 			
+			// TODO: Code quality: Move to DateUtil, see its function toStringYYYYMMDD().
+			// Also search codebase for other occurrences of SimpleDateFormat and move them as well.
 			mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 			mDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 		}

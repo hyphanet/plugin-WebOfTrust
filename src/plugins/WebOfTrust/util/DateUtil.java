@@ -6,6 +6,7 @@ package plugins.WebOfTrust.util;
 import static freenet.support.TimeUtil.setTimeToZero;
 import static java.util.concurrent.TimeUnit.HOURS;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -18,6 +19,19 @@ public final class DateUtil {
 
 	/** FIXME: Is this thread safe? */
 	private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+	
+	/**
+	 * NOT thread-safe according to JavaDoc of SimpleDateFormat, you must synchronize on
+	 * DateUtil.class when using this!
+	 * TODO: Code quality: Apache Java Commons: Use FastDateFormat, StackExchange says it is
+	 * thread safe */
+	private static final SimpleDateFormat dateFormatShort = new SimpleDateFormat("yyyyMMdd");
+
+	static {
+		synchronized(DateUtil.class) {
+			dateFormatShort.setTimeZone(UTC);
+		}
+	}
 
 	/**
 	 * Rounds the given Date to the nearest day while setting all fields below the day such as
@@ -44,6 +58,13 @@ public final class DateUtil {
 		assert(result.before(setTimeToZero(new Date(date.getTime() + HOURS.toMillis(12) + 1))));
 		
 		return result;
+	}
+	
+	/** Does NOT round! Use {@link #roundToNearestDay(Date)} first if you want that. */
+	public static final String toStringYYYYMMDD(Date utcDate) {
+		synchronized(DateUtil.class) {
+			return dateFormatShort.format(utcDate);
+		}
 	}
 
 }
