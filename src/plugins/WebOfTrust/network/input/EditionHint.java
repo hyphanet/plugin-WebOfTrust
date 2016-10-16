@@ -68,7 +68,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * - by the above also avoid malicious identities from inserting very many hints to always win
 	 *   in the sorting.
 	 * 
-	 * @see #compareTo(EditionHint) */
+	 * @see #compareTo_ReferenceImplementation(EditionHint) */
 	private final Date mDate;
 
 	/**
@@ -113,7 +113,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * It is also ensured that fallback will actually happen:
 	 * There are only 7 distinct capacities, see {@link WebOfTrust#capacities}.
 	 * 
-	 * @see #compareTo(EditionHint) */
+	 * @see #compareTo_ReferenceImplementation(EditionHint) */
 	private final byte mSourceCapacity;
 
 	/**
@@ -134,7 +134,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * We need to make sure that we try downloading higher editions first as a low edition is
 	 * worthless if a higher one exists.
 	 * 
-	 * @see #compareTo(EditionHint) */
+	 * @see #compareTo_ReferenceImplementation(EditionHint) */
 	private final byte mSourceScore;
 
 	/**
@@ -144,8 +144,28 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * 
 	 * Notice: We only sort by edition if {@link #mTargetIdentityID} is equal for the two
 	 * EditionHint objects at comparison. Editions of different identities are completely unrelated,
-	 * it wouldn't make any sense to compare them. */
+	 * it wouldn't make any sense to compare them.
+	 *
+	 * @see #compareTo_ReferenceImplementation(EditionHint) */
 	private final long mEdition;
+
+	/**
+	 * A concatenation of the multiple sorting keys used by
+	 * {@link #compareTo_ReferenceImplementation(EditionHint)} which shall result in the same
+	 * sorting order when using {@link String#compareTo(String)} to sort upon this single field
+	 * instead.
+	 * 
+	 * This is for allowing fast database queries using db4o:
+	 * db4o only supports one-dimensional indexes, i.e. indexes upon a single field so we must
+	 * combine the multiple sorting keys into one single variable.
+	 * 
+	 * (The most efficient storage for this would be byte[], but IIRC db4o does not handle that as
+	 * well as String.)
+	 * 
+	 * @see #compareTo_ReferenceImplementation(EditionHint)
+	 * @see #compareTo(EditionHint) */
+	@IndexedField
+	private final String mPriority;
 
 
 	/** Factory with parameter validation */
@@ -203,6 +223,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		mSourceCapacity = (byte)sourceCapacity;
 		mSourceScore = sourceScore >= 0 ? (byte)1 : (byte)-1;
 		mEdition = edition;
+		mPriority = computePriority(date, sourceCapacity, sourceScore, targetIdentityID, edition);
 		mID = new TrustID(mSourceIdentityID, mTargetIdentityID).toString();
 	}
 
@@ -223,8 +244,34 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return mEdition;
 	}
 
+	private static String computePriority(
+			Date date, int sourceCapacity, int sourceScore, String targetID, long edition) {
+		
+		// FIXME: Implement
+		return null;
+	}
+
+	private String getPriority() {
+		// String is a db4o primitive type so 1 is enough even though it is a reference type
+		checkedActivate(1);
+		return mPriority;
+	}
+
 	/** Returns the sort ordering which the {@link IdentityDownloader} should use. */
 	@Override public int compareTo(EditionHint o) {
+		checkedActivate(1);
+		int result = getPriority().compareTo(o.getPriority());
+		assert(result == compareTo_ReferenceImplementation(o));
+		return result;
+	}
+
+	/**
+	 * For testing purposes:
+	 * Same as {@link #compareTo(EditionHint)} but does not the {@link #mPriority} sorting key.
+	 * It instead compares the member variables from which the sorting key should be build using
+	 * {@link #computePriority(Date, int, int, String, long)}.
+	 * This can be used to test the validity of the sorting key. */
+	int compareTo_ReferenceImplementation(EditionHint o) {
 		this.activateFully();
 		o.activateFully();
 		
