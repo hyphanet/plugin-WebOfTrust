@@ -111,17 +111,25 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	private final int mSourceCapacity;
 
 	/**
-	 * {@link WebOfTrust#getBestScore(Identity)} of the {@link Identity} which gave us the hint.
-	 * For hints with equal {@link #mSourceCapacity}, this shall be the fallback sorting key
+	 * Rounded {@link WebOfTrust#getBestScore(Identity)} of the {@link Identity} which gave us the
+	 * hint. For hints with equal {@link #mSourceCapacity}, this shall be the fallback sorting key
 	 * to determine which ones to download first: Hints with higher Score must be downloaded first.
 	 * 
 	 * As hints are accepted from any {@link Identity} with a {@link Score#getCapacity()} > 0,
 	 * hints will also be accepted from Identitys with a negative Score. As a negative Score
 	 * generally means "this identity is rated as a spammer by the community", we must be very
 	 * careful with the hints we received from them. So by having some level of sorting based on the
-	 * Score, we ensure that non-spammers are preferred. */
+	 * Score, we ensure that non-spammers are preferred.
+	 * 
+	 * As there are many distinct Score values, the Score is rounded to one of the 3 values
+	 * {-1, 0, 1} to ensure we have a chance to actually fallback to {@link #mEdition} as sorting
+	 * key: We need to make sure that we try downloading higher editions first. */
 	private final int mSourceScore;
 
+	/**
+	 * The actual edition hint itself.
+	 * This is the final fallback sorting key after we sorted hints by {@link #mDate},
+	 * {@link #mSourceCapacity} and {@link #mSourceScore} and all of them were equal. */
 	private final long mEdition;
 
 
