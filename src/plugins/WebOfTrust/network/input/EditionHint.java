@@ -66,7 +66,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * two Date being equal is very low, this is rounded to the nearest day to:
 	 * - ensure that the fallback sorting actually has a chance to happen. 
 	 * - by the above also avoid malicious identities from inserting very many hints to always win
-	 *   in the sorting. */
+	 *   in the sorting.
+	 * 
+	 * @see #compareTo(EditionHint) */
 	private final Date mDate;
 
 	/**
@@ -109,7 +111,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * 
 	 * The next fallback sorting key after this one is {@link #mSourceScore}.
 	 * It is also ensured that fallback will actually happen:
-	 * There are only 7 distinct capacities, see {@link WebOfTrust#capacities}. */
+	 * There are only 7 distinct capacities, see {@link WebOfTrust#capacities}.
+	 * 
+	 * @see #compareTo(EditionHint) */
 	private final byte mSourceCapacity;
 
 	/**
@@ -128,13 +132,19 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * a distrusted or trusted Identity. Reducing the amount of distinct values is needed to ensure
 	 * we have a chance to actually fallback to {@link #mEdition} as sorting key:
 	 * We need to make sure that we try downloading higher editions first as a low edition is
-	 * worthless if a higher one exists. */
+	 * worthless if a higher one exists.
+	 * 
+	 * @see #compareTo(EditionHint) */
 	private final byte mSourceScore;
 
 	/**
 	 * The actual edition hint itself.
 	 * This is the final fallback sorting key after we sorted hints by {@link #mDate},
-	 * {@link #mSourceCapacity} and {@link #mSourceScore} and all of them were equal. */
+	 * {@link #mSourceCapacity} and {@link #mSourceScore} and all of them were equal.
+	 * 
+	 * Notice: We only sort by edition if {@link #mTargetIdentityID} is equal for the two
+	 * EditionHint objects at comparison. Editions of different identities are completely unrelated,
+	 * it wouldn't make any sense to compare them. */
 	private final long mEdition;
 
 
@@ -213,9 +223,27 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return mEdition;
 	}
 
+	/** Returns the sort ordering which the {@link IdentityDownloader} should use. */
 	@Override public int compareTo(EditionHint o) {
-		// FIXME: Implement.
-		return 0;
+		this.activateFully();
+		o.activateFully();
+		
+		int dateCompared = mDate.compareTo(o.mDate);
+		if(dateCompared != 0)
+			return dateCompared;
+		
+		int capacityCompared = Byte.compare(mSourceCapacity, o.mSourceCapacity);
+		if(capacityCompared != 0)
+			return capacityCompared;
+		
+		int scoreCompared = Byte.compare(mSourceScore, o.mSourceScore);
+		if(scoreCompared != 0)
+			return scoreCompared;
+
+		if(mTargetIdentityID.equals(o.mTargetIdentityID))
+			return Long.compare(mEdition, o.mEdition);
+		else
+			return 0; // No sense in comparing edition of different target identities
 	}
 
 	/** Equals: <code>new TrustID(getSourceIdentityID(), getTargetIdentityID()).toString()</code> */
