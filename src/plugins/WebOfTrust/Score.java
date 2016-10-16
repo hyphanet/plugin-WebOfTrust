@@ -149,11 +149,11 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 				throw new IllegalArgumentException("ScoreID has too few tokens: " + id);
 			}
 			
-			mTrusterID = IdentityID.constructAndValidateFromString(rawTrusterID).toString();
-			mTrusteeID = IdentityID.constructAndValidateFromString(rawTrusteeID).toString();
-
 			if(tokenizer.hasMoreTokens())
 				throw new IllegalArgumentException("ScoreID has too many tokens: " + id);
+			
+			mTrusterID = IdentityID.constructAndValidateFromString(rawTrusterID).toString();
+			mTrusteeID = IdentityID.constructAndValidateFromString(rawTrusteeID).toString();
 		}
 
 		/**

@@ -91,6 +91,10 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			=   Base64.encodeStandard(truster.getRequestURI().getRoutingKey()) + '@'
 			  + Base64.encodeStandard(trustee.getRequestURI().getRoutingKey());
 		
+		final char[] tooManyTokens = validID.toCharArray();
+		tooManyTokens[1] = '@';
+		tooManyTokens[3] = '@';
+		
 		final String[] invalidIDs = {
 			"",
 			wrongEncoding,
@@ -98,7 +102,8 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			validID.substring(0, validID.length()-1),
 			validID + validID.charAt(validID.length()-1),
 			validID.charAt(0) + validID,
-			validID.replace("@", "a")
+			validID.replace("@", "a"), // Not enough tokens
+			new String(tooManyTokens)
 		};
 		
 		for(String invalidID : invalidIDs) {
