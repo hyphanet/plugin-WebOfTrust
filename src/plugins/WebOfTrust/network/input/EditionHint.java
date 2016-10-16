@@ -3,7 +3,6 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
-import static java.lang.Integer.signum;
 import static plugins.WebOfTrust.util.AssertUtil.assertDidNotThrow;
 import static plugins.WebOfTrust.util.DateUtil.roundToNearestDay;
 
@@ -124,9 +123,12 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * careful with the hints we received from them. So by having some level of sorting based on the
 	 * Score, we ensure that non-spammers are preferred.
 	 * 
-	 * As there are many distinct Score values, the Score is rounded to one of the 3 values
-	 * {-1, 0, 1} to ensure we have a chance to actually fallback to {@link #mEdition} as sorting
-	 * key: We need to make sure that we try downloading higher editions first. */
+	 * As there are many distinct Score values, the Score is rounded to one of the two values
+	 * {-1, 1} to merely represent whether the Score was < 0 or >= 0, i.e. whether the source is
+	 * a distrusted or trusted Identity. Reducing the amount of distinct values is needed to ensure
+	 * we have a chance to actually fallback to {@link #mEdition} as sorting key:
+	 * We need to make sure that we try downloading higher editions first as a low edition is
+	 * worthless if a higher one exists. */
 	private final byte mSourceScore;
 
 	/**
@@ -189,7 +191,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		mTargetIdentityID = targetIdentityID;
 		mDate = roundToNearestDay(date);
 		mSourceCapacity = (byte)sourceCapacity;
-		mSourceScore = (byte)signum(sourceScore);
+		mSourceScore = sourceScore >= 0 ? (byte)1 : (byte)-1;
 		mEdition = edition;
 		mID = new TrustID(mSourceIdentityID, mTargetIdentityID).toString();
 	}
