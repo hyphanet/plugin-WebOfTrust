@@ -3,7 +3,9 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
+import static java.lang.Integer.signum;
 import static plugins.WebOfTrust.util.AssertUtil.assertDidNotThrow;
+import static plugins.WebOfTrust.util.DateUtil.roundToNearestDay;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -18,6 +20,7 @@ import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.WebOfTrust;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.support.CurrentTimeUTC;
 
 /**
  * An EditionHint advertises the latest {@link FreenetURI#getEdition() USK edition} an
@@ -135,7 +138,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 
 	/** Factory with parameter validation */
 	static EditionHint constructSecure(
-			String sourceIdentityID, String targetIdentityID, long edition) {
+			String sourceIdentityID, String targetIdentityID, Date date, int sourceCapacity,
+			int sourceScore, long edition) {
 		
 		IdentityID.constructAndValidateFromString(sourceIdentityID);
 		IdentityID.constructAndValidateFromString(targetIdentityID);
@@ -144,26 +148,48 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 				"Identity is trying to assign edition hint to itself, ID: " + sourceIdentityID);
 		}
 		
+		if(date.after(CurrentTimeUTC.get()))
+			throw new IllegalArgumentException("Invalid date: " + date);
+		
+		// Hints should only be accepted if the capacity is > 0. Also, the capacity should be in
+		// the valid range of WebOfTrust.capacities.
+		// TODO: Code quality: Use WebOfTrust.VALID_CAPCITIES once branch
+		// issue-0006895-full-tests-for-Score is merged
+		if(sourceCapacity < 1 || sourceCapacity > 100)
+			throw new IllegalArgumentException("Invalid capacity: " + sourceCapacity);
+		
+		// Cannot validate the score: All values of int are acceptable Score values.
+
 		if(edition < 0)
 			throw new IllegalArgumentException("Invalid edition: " + edition);
 		
-		return new EditionHint(sourceIdentityID, targetIdentityID, edition);
+		return new EditionHint(
+			sourceIdentityID, targetIdentityID, date, sourceCapacity, sourceScore, edition);
 	}
 
 	/** Factory WITHOUT parameter validation */
 	static EditionHint construcInsecure(
-			final String sourceIdentityID, final String targetIdentityID, final long edition) {
+			final String sourceIdentityID, final String targetIdentityID, final Date date,
+			final int sourceCapacity, final int sourceScore, final long edition) {
 		
 		assertDidNotThrow(new Runnable() { @Override public void run() {
-			constructSecure(sourceIdentityID, targetIdentityID, edition);
+			constructSecure(
+				sourceIdentityID, targetIdentityID, date, sourceCapacity, sourceScore, edition);
 		}});
 		
-		return new EditionHint(sourceIdentityID, targetIdentityID, edition);
+		return new EditionHint(
+			sourceIdentityID, targetIdentityID, date, sourceCapacity, sourceScore, edition);
 	}
 
-	private EditionHint(String sourceIdentityID, String targetIdentityID, long edition) {
+	private EditionHint(
+			String sourceIdentityID, String targetIdentityID, Date date, int sourceCapacity,
+			int sourceScore, long edition) {
+		
 		mSourceIdentityID = sourceIdentityID;
 		mTargetIdentityID = targetIdentityID;
+		mDate = roundToNearestDay(date);
+		mSourceCapacity = (byte)sourceCapacity;
+		mSourceScore = (byte)signum(sourceScore);
 		mEdition = edition;
 		mID = new TrustID(mSourceIdentityID, mTargetIdentityID).toString();
 	}
@@ -202,7 +228,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		
 		// Will throw if any of the three passed member variables is invalid.
 		// mID is generated from them, so we keep the returned object to validate it.
-		EditionHint this2 = constructSecure(mSourceIdentityID, mTargetIdentityID, mEdition);
+		EditionHint this2 = constructSecure(
+			mSourceIdentityID, mTargetIdentityID, mDate, mSourceCapacity, mSourceScore, mEdition);
 		
 		if(!mID.equals(this2.mID))
 			throw new IllegalStateException("mID invalid: " + this);
