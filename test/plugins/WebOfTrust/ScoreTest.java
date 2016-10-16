@@ -146,11 +146,21 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 			fail();
 		} catch(RuntimeException expected) {}
 		
-		String mismatchingID = new Score(mWebOfTrust, addRandomOwnIdentities(1).get(0),
-			addRandomIdentities(1).get(0), 100, 2, 16).getID();
+		OwnIdentity mismatchingTruster = addRandomOwnIdentities(1).get(0);
+		Identity mismatchingTrustee = addRandomIdentities(1).get(0);
+		
+		String mismatchingID1
+			= new Score(mWebOfTrust, mismatchingTruster, trustee, 100, 2, 16).getID();
+		String mismatchingID2
+			= new Score(mWebOfTrust, truster, mismatchingTrustee, 100, 2, 16).getID();
 		
 		try {
-			ScoreID.constructAndValidate(s, mismatchingID);
+			ScoreID.constructAndValidate(s, mismatchingID1);
+			fail();
+		} catch(RuntimeException expected) {}
+		
+		try {
+			ScoreID.constructAndValidate(s, mismatchingID2);
 			fail();
 		} catch(RuntimeException expected) {}
 
