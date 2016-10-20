@@ -223,7 +223,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		mSourceCapacity = (byte)sourceCapacity;
 		mSourceScore = sourceScore >= 0 ? (byte)1 : (byte)-1;
 		mEdition = edition;
-		mPriority = computePriority(date, sourceCapacity, sourceScore, targetIdentityID, edition);
+		
+		mPriority
+			= computePriority(mDate, mSourceCapacity, mSourceScore, mTargetIdentityID, mEdition);
 		mID = new TrustID(mSourceIdentityID, mTargetIdentityID).toString();
 	}
 
