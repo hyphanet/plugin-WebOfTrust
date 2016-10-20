@@ -1695,7 +1695,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Of course, as soon as he will start to give trust, he will put more
 	 * people at rank 1 and enlarge his WoT.
 	 */
-	protected static final int capacities[] = {
+	public static final int capacities[] = {
 			100,// Rank 0 : Own identities
 			40,	// Rank 1 : Identities directly trusted by ownIdenties
 			16, // Rank 2 : Identities trusted by rank 1 identities
