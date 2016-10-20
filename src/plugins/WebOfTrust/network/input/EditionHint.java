@@ -3,8 +3,10 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
+import static java.lang.String.format;
 import static plugins.WebOfTrust.util.AssertUtil.assertDidNotThrow;
 import static plugins.WebOfTrust.util.DateUtil.roundToNearestDay;
+import static plugins.WebOfTrust.util.DateUtil.toStringYYYYMMDD;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -247,10 +249,25 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	}
 
 	private static String computePriority(
-			Date date, int sourceCapacity, int sourceScore, String targetID, long edition) {
+			Date roundedDate, byte capacity, int roundedScore, String targetID, long edition) {
 		
-		// FIXME: Implement
-		return null;
+		assert(roundedDate.equals(roundToNearestDay(roundedDate)));
+		assert(capacity >= 1 && capacity <= 100);
+		assert(roundedScore == -1 || roundedScore == 1);
+		assert(edition >= 0);
+		
+		int length = 8 + 3 + 1 + IdentityID.LENGTH + 19;
+		
+		StringBuilder sb = new StringBuilder(length);
+		sb.append(toStringYYYYMMDD(roundedDate));
+		sb.append(format("%03d", capacity));
+		sb.append(format("%d", roundedScore == -1 ? 0 : 1));
+		sb.append(targetID);
+		sb.append(format("%019d", edition));
+		
+		assert(sb.capacity() == length);
+		
+		return sb.toString();
 	}
 
 	private String getPriority() {
@@ -289,10 +306,52 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		if(scoreCompared != 0)
 			return scoreCompared;
 
+		// The commented-out code was deferred to allow the fast non-reference compareTo() to work
+		// - which is based upon String sorting on the string returned by computePriority() and
+		// stored in mPriority.
+		// The commented-out code is what we would do here if the mPriority member variable wasn't
+		// supposed to be used for fast sorting instead of using this function.
+		// We instead do what comes after it the commented out trick as a "mathematical" trick to
+		// have the same resulting sort order both when using this reference implementation AND when
+		// sorting on mPriority.
+		// After you've read the optimized computePriority() to see how mPriority is initialized
+		// you may understand the difference between the commented-out code and what we actually do:
+		// The commented-out code would always return 0 if the Identity IDs are non-equal because it
+		// makes no sense to compare edition numbers for different identities AND we don't care
+		// about the IDs of the identities as a sorting key, they're just random letters.
+		// The actual non-commented-out code WILL return the result of the comparison of the
+		// IDs even though they are just random stuff:
+		// This is necessary because sorting on mPriority will also have to do that:
+		// mPriority is just a flat string. If we want to prevent sorting on mEdition for different
+		// identities, we must somehow trick the String sorting functions to not compare the edition
+		// contained in the String if the two compared Strings involve different identities. This is
+		// established by putting the identity ID into the mPriority String *before* the edition.
+		// So if the IDs are non-equal, the String comparison function will return before reaching
+		// the edition. AND: Because String's compareTo() is inaware of the meaning of our strings,
+		// it will return the result of comparing the ID substrings
+		// - so overall we must do that here in the non-optimized (= non-String based) sorting
+		// function as well.
+		// For completeness, it shall be noted that it doesn't hurt if we unnecessarily "prioritize"
+		// identities by their IDs by sorting on it: The IDs are actually the hash of their pubkey,
+		// so to find an ID suitable for attacking the sorting to get higher priority, one has to
+		// invert a cryptographic hash function - and not being invertable is a central goal of such
+		// functions.
+		// FIXME: Code quality: Re-hash the ID together with a local random seed to prevent this
+		// attack completely - currently only finding an ID with a short prefix of "aaaaa..." might
+		// be enough to get priority over most identities.
+		
+		/*
 		if(mTargetIdentityID.equals(o.mTargetIdentityID))
 			return Long.compare(mEdition, o.mEdition);
 		else
 			return 0; // No sense in comparing edition of different target identities
+		*/
+		
+		int targetIDCompared = mTargetIdentityID.compareTo(o.mTargetIdentityID);
+		if(targetIDCompared != 0)
+			return targetIDCompared;
+		
+		return Long.compare(mEdition, o.mEdition);
 	}
 
 	/** Equals: <code>new TrustID(getSourceIdentityID(), getTargetIdentityID()).toString()</code> */
