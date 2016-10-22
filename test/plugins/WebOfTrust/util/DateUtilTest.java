@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.util;
 
+import static java.lang.Math.abs;
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MILLISECOND;
@@ -15,11 +16,16 @@ import static org.junit.Assert.*;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import plugins.WebOfTrust.AbstractJUnit4BaseTest;
+import plugins.WebOfTrust.WebOfTrust;
+import freenet.support.TimeUtil;
+
 /** Tests {@link DateUtil}.  */
-public final class DateUtilTest {
+public final class DateUtilTest extends AbstractJUnit4BaseTest {
 
 	/** Tests {@link DateUtil#roundToNearestDay(Date)} */
 	@Test public final void testRoundToNearestDay() {
@@ -68,6 +74,20 @@ public final class DateUtilTest {
 		assertEquals(0,      c.get(MINUTE));
 		assertEquals(0,      c.get(SECOND));
 		assertEquals(0,      c.get(MILLISECOND));
+		
+		// Step 3: Test with random Date.
+		
+		Date date = new Date(abs(mRandom.nextLong()));
+		Date result = DateUtil.roundToNearestDay(date);
+		
+		assertNotSame(date, result);
+		assertTrue(result.after(TimeUtil.setTimeToZero(date)));
+		assertTrue(result.before(
+			TimeUtil.setTimeToZero(new Date(date.getTime() + TimeUnit.HOURS.toMillis(12) + 1))));
+	}
+
+	@Override protected final WebOfTrust getWebOfTrust() {
+		return null;
 	}
 
 }

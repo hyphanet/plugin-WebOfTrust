@@ -3,9 +3,6 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.util;
 
-import static freenet.support.TimeUtil.setTimeToZero;
-import static java.util.concurrent.TimeUnit.HOURS;
-
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -52,10 +49,6 @@ public final class DateUtil {
 		calendar.set(Calendar.SECOND, 0);
 		calendar.set(Calendar.MILLISECOND, 0);
 		Date result = calendar.getTime();
-		
-		assert(result != date) : "Date objects should not be re-used for code quality reasons";
-		assert(result.after(setTimeToZero(date)));
-		assert(result.before(setTimeToZero(new Date(date.getTime() + HOURS.toMillis(12) + 1))));
 		
 		return result;
 	}
