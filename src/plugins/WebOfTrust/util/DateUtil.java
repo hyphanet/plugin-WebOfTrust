@@ -43,8 +43,8 @@ public final class DateUtil {
 		GregorianCalendar calendar = new GregorianCalendar(UTC);
 		// We must not use setTime(date) in case the date is not UTC.
 		calendar.setTimeInMillis(date.getTime());
-		calendar.add(Calendar.HOUR, 12);
-		calendar.set(Calendar.HOUR, 0);
+		calendar.add(Calendar.HOUR_OF_DAY, 12);
+		calendar.set(Calendar.HOUR_OF_DAY, 0);
 		calendar.set(Calendar.MINUTE, 0);
 		calendar.set(Calendar.SECOND, 0);
 		calendar.set(Calendar.MILLISECOND, 0);
