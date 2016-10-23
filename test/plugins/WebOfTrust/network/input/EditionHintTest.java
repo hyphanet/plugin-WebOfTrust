@@ -109,6 +109,17 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 		
 		assertEquals(sortedWithReference1, sortedWithCompareTo1);
 		
+		// Testing sorting actually is not perfectly strict: It may not hit all combinations of
+		// compareTo() and thus in testing did not catch all bugs.
+		// So now we test compareTo() upon all possible combinations of two of our EditionHint
+		// objects.
+		for(EditionHint h1 : unsorted) {
+			for(EditionHint h2 : unsorted) {
+				assertEquals(
+					h1.compareTo_ReferenceImplementation(h2),
+					h1.compareTo(h2));
+			}
+		}
 		
 		// FIXME: Add EditionHints with varying irrelevant parameters and test whether this doesn't
 		// change the sorting.
