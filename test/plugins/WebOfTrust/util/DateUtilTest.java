@@ -16,7 +16,6 @@ import static org.junit.Assert.*;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
@@ -75,14 +74,29 @@ public final class DateUtilTest extends AbstractJUnit4BaseTest {
 		assertEquals(0,      c.get(SECOND));
 		assertEquals(0,      c.get(MILLISECOND));
 		
-		// Step 3: Test with random Date.
+		// Step 3: Test with random Dates
 		
-		Date date = new Date(abs(mRandom.nextLong()));
-		Date result = DateUtil.roundToNearestDay(date);
+		c = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
 		
-		assertNotSame(date, result);
-		assertTrue(result.compareTo(TimeUtil.setTimeToZero(date)) >= 0);
-		assertTrue(result.before(new Date(date.getTime() + TimeUnit.HOURS.toMillis(12) + 1)));
+		for(int i = 0; i < 10000; ++i) {
+			notRounded = new Date(abs(mRandom.nextLong()));
+			rounded = DateUtil.roundToNearestDay(notRounded);
+			
+			assertNotSame(notRounded, rounded);
+			
+			c.setTime(TimeUtil.setTimeToZero(notRounded));
+			Date lowerBoundary = c.getTime();
+			c.add(DAY_OF_MONTH, 1);
+			Date upperBoundary = c.getTime();
+			
+			long distanceFromLowerBoundary = notRounded.getTime() - lowerBoundary.getTime();
+			long distanceFromUpperBoundary = upperBoundary.getTime() - notRounded.getTime();
+			
+			if(distanceFromLowerBoundary < distanceFromUpperBoundary)
+				assertEquals(lowerBoundary, rounded);
+			else
+				assertEquals(upperBoundary, rounded);
+		}
 	}
 
 	@Override protected final WebOfTrust getWebOfTrust() {
