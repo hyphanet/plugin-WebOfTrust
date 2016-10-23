@@ -82,8 +82,7 @@ public final class DateUtilTest extends AbstractJUnit4BaseTest {
 		
 		assertNotSame(date, result);
 		assertTrue(result.compareTo(TimeUtil.setTimeToZero(date)) >= 0);
-		assertTrue(result.before(
-			TimeUtil.setTimeToZero(new Date(date.getTime() + TimeUnit.HOURS.toMillis(12) + 1))));
+		assertTrue(result.before(new Date(date.getTime() + TimeUnit.HOURS.toMillis(12) + 1)));
 	}
 
 	@Override protected final WebOfTrust getWebOfTrust() {
