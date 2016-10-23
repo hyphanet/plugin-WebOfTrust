@@ -40,6 +40,11 @@ import freenet.support.CurrentTimeUTC;
  * (Also, keeping an USK up to date requires a constant polling load on the network, so with M
  * identities, there would be O(M) polls on the network repeating at some time interval forever.)
  * 
+ * FIXME: Make {@link Persistent#startupDatabaseIntegrityTest()} of the class which manages
+ * {@link EditionHint} objects check whether their sorting order according to
+ * {@link #compareTo(EditionHint)} does adhere to the order of using
+ * {@link #compareTo_ReferenceImplementation(EditionHint)} instead.
+ * 
  * @see IdentityDownloader#storeUpdateEditionHintCommandWithoutCommit(String, String, long) */
 public final class EditionHint extends Persistent implements Comparable<EditionHint> {
 
@@ -279,9 +284,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	/** Returns the sort ordering which the {@link IdentityDownloader} should use. */
 	@Override public int compareTo(EditionHint o) {
 		checkedActivate(1);
-		int result = getPriority().compareTo(o.getPriority());
-		assert(result == compareTo_ReferenceImplementation(o));
-		return result;
+		return getPriority().compareTo(o.getPriority());
 	}
 
 	/**
