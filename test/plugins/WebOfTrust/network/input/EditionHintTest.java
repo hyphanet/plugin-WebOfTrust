@@ -84,6 +84,7 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 								sourceScore,
 								edition
 							);
+							h.initializeTransient(mWebOfTrust);
 							unsorted.add(h);
 						}
 					}
