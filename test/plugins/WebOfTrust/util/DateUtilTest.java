@@ -4,6 +4,7 @@
 package plugins.WebOfTrust.util;
 
 import static java.lang.Math.abs;
+import static java.lang.String.format;
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MILLISECOND;
@@ -96,6 +97,24 @@ public final class DateUtilTest extends AbstractJUnit4BaseTest {
 				assertEquals(lowerBoundary, rounded);
 			else
 				assertEquals(upperBoundary, rounded);
+		}
+	}
+
+	/** Tests {@link DateUtil#toStringYYYYMMDD(Date)}. */
+	@Test public final void testToStringYYYYMMDD() {
+		GregorianCalendar c = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+		for(int i = 0; i < 10000; ++i) { 
+			Date date = new Date(abs(mRandom.nextLong()));
+			c.setTime(date);
+			String expected
+				= format("%04d%02d%02d",
+					c.get(YEAR),
+					c.get(MONTH) + 1 /* 0-based! */,
+					c.get(DAY_OF_MONTH));
+			
+			String actual = DateUtil.toStringYYYYMMDD(date);
+			
+			assertEquals(expected, actual);
 		}
 	}
 
