@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
+import static java.lang.Integer.signum;
 import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static org.junit.Assert.*;
@@ -115,9 +116,12 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 		// objects.
 		for(EditionHint h1 : unsorted) {
 			for(EditionHint h2 : unsorted) {
+				// Optimized underlying compareTo() implementations may not always return -1 or 1 in
+				// the case of smaller/greater but for example the difference of the first
+				// differing character of a String, see String.compareTo(). Thus use signum().
 				assertEquals(
-					h1.compareTo_ReferenceImplementation(h2),
-					h1.compareTo(h2));
+					signum(h1.compareTo_ReferenceImplementation(h2)),
+					signum(h1.compareTo(h2)));
 			}
 		}
 		
