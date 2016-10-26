@@ -9,7 +9,6 @@ import static java.util.concurrent.TimeUnit.HOURS;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 
@@ -125,8 +124,42 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 			}
 		}
 		
-		// FIXME: Add EditionHints with varying irrelevant parameters and test whether this doesn't
-		// change the sorting.
+		// Step 3: Vary the fields which are irrelevant for sorting (= only the sourceIdentity
+		// field) and check whether the sorting is the same as of they were constant
+
+		// Outer loop = Vary fields which *are* relevant
+		for(Identity targetIdentity : targetIdentities) {
+			for(Date date : dates) {
+				for(int sourceCapacity : capacities) {
+					for(int sourceScore : scores) {
+						for(long edition : editions) {
+							EditionHint previous = null;
+							
+							// Inner loop = Vary fields which are not relevant
+							for(Identity sourceIdentity : sourceIdentities) {
+								EditionHint h =  EditionHint.constructSecure(
+									sourceIdentity.getID(),
+									targetIdentity.getID(),
+									date,
+									sourceCapacity,
+									sourceScore,
+									edition
+								);
+								h.initializeTransient(mWebOfTrust);
+								
+								if(previous != null) {
+									// compareTo() should say all are equal for the whole chain
+									assertEquals(0, previous.compareTo_ReferenceImplementation(h));
+									assertEquals(0, previous.compareTo(h));
+								}
+								
+								previous = h;
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	@Override
