@@ -54,7 +54,7 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 			// Use steps of one third of a day to get multiple entries for the same day:
 			// compareTo() sorting should be based upon the dates rounded to the day, hours should
 			// be irrelevant. So we want collisions of days.
-			dates[i] = new Date(now.getTime() - HOURS.toMillis(24 / 3));
+			dates[i] = new Date(now.getTime() - HOURS.toMillis(i * 24/3));
 		}
 		
 		int[] capacities = WebOfTrust.capacities;
