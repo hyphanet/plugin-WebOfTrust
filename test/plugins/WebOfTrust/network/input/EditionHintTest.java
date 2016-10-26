@@ -64,8 +64,8 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 		long[] editions = { 0, 1, 2, 3, Long.MAX_VALUE };
 		
 		int potentialCombinations = 
-			  sourceIdentities.size() * targetIdentities.size() * dates.length * capacities.length
-				* scores.length * editions.length;
+			  targetIdentities.size() * dates.length * capacities.length * scores.length
+			* editions.length;
 		
 		ArrayList<EditionHint> unsorted = new ArrayList<>(potentialCombinations);
 		
@@ -91,6 +91,8 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 				}
 			}
 		}
+		
+		assert(unsorted.size() == potentialCombinations);
 		
 		ArrayList<EditionHint> sortedWithReference1 = new ArrayList<>(unsorted);
 		ArrayList<EditionHint> sortedWithCompareTo1 = new ArrayList<>(unsorted);
