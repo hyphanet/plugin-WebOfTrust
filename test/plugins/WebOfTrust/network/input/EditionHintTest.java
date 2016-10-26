@@ -72,14 +72,14 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 		
 		// Step 2: Sort EditionHints of which only the fields relevant for sorting are varied.
 		
-		for(Identity targetIdentityID : targetIdentities) {
+		for(Identity targetIdentity : targetIdentities) {
 			for(Date date : dates) {
 				for(int sourceCapacity : capacities) {
 					for(int sourceScore : scores) {
 						for(long edition : editions) {
 							EditionHint h =  EditionHint.constructSecure(
 								sourceIdentities.get(0).getID(),
-								targetIdentityID.getID(),
+								targetIdentity.getID(),
 								date,
 								sourceCapacity,
 								sourceScore,
