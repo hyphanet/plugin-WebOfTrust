@@ -95,6 +95,9 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 	@Override public void storeUpdateEditionHintCommandWithoutCommit(
 			String fromIdentityID, String aboutIdentityID, long edition) {
 		
+		// FIXME:
+		// We should really use EditionHint.constructSecure() to validate the hint instead.
+		// Or just change the function signature to consume an EditionHint object in the first place
 		assert(edition >= 0);
 		
 		for(IdentityDownloader d : mDownloaders)

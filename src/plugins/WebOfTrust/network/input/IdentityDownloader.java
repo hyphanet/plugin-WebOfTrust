@@ -70,6 +70,8 @@ public interface IdentityDownloader extends Daemon {
 	 * - but it may very well be a lie. In that case, to avoid DoS, we must discard it and try the
 	 * next lower hint we received from someone else.
 	 * 
+	 * FIXME: Change function signature to consume an EditionHint object
+	 * 
 	 * @param fromIdentityID {@link Identity#getID()} of the Identity which gave us the hint.
 	 * @param aboutIdentityID {@link Identity#getID()} of the Identity about which the hint is.
 	 * @param edition The actual hint, see {@link FreenetURI#getEdition()}. */
