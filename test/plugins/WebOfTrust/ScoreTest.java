@@ -277,9 +277,9 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		
 		assert(WebOfTrust.capacities[2] == 16);
 		Score s1 = new Score(wot, truster, trustee, 100, 2, 16);
-		assertEquals(wot,     s1.getWebOfTrust());
-		assertEquals(truster, s1.getTruster());
-		assertEquals(trustee, s1.getTrustee());
+		assertSame(wot,       s1.getWebOfTrust());
+		assertSame(truster,   s1.getTruster());
+		assertSame(trustee,   s1.getTrustee());
 		assertEquals(100,     s1.getScore());
 		assertEquals(2,       s1.getRank());
 		assertEquals(16,      s1.getCapacity());
@@ -308,8 +308,8 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		// This is used for Score computation at class WebOfTrust
 		assert(WebOfTrust.capacities[0] == 100);
 		Score s2 = new Score(wot, truster, truster, 100, 0, 100);
-		assertEquals(truster, s2.getTruster());
-		assertEquals(truster, s2.getTrustee());
+		assertSame(truster, s2.getTruster());
+		assertSame(truster, s2.getTrustee());
 		s2 = null;
 		
 		// Test integer params
