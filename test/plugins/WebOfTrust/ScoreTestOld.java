@@ -58,17 +58,6 @@ public class ScoreTestOld extends AbstractJUnit3BaseTest {
 		assertEquals(original.getTrustee(), deserialized.getTrustee());	// Score.equals() only checks the ID
 	}
 
-	public void testScoreCreation() throws NotInTrustTreeException {
-		
-		Score score = mWoT.getScore(a, b);
-		
-		assertTrue(score.getScore() == 100);
-		assertTrue(score.getRank() == 1);
-		assertTrue(score.getCapacity() == 40);
-		assertTrue(score.getTruster() == a);
-		assertTrue(score.getTrustee() == b);
-	}
-	
 	// TODO: Move to WoTTest
 	public void testScorePersistence() throws MalformedURLException, UnknownIdentityException, NotInTrustTreeException {
 		a = mWoT.getOwnIdentityByURI(requestUriA);
