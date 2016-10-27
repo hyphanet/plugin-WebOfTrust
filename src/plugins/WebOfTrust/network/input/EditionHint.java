@@ -424,7 +424,11 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		     + "; mID: " + mID
 		     + "; mSourceIdentityID: " + mSourceIdentityID
 		     + "; mTargetIdentityID: " + mTargetIdentityID
+		     + "; mDate: " + mDate
+		     + "; mSourceCapacity: " + mSourceCapacity
+		     + "; mSourceScore: " + mSourceScore
 		     + "; mEdition: " + mEdition
+		     + "; mPriority: " + mPriority
 		     + "]";
 	}
 
