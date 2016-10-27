@@ -233,15 +233,6 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		
 		mPriority
 			= computePriority(mDate, mSourceCapacity, mSourceScore, mTargetIdentityID, mEdition);
-		
-		// FIXME: A given sourceIdentity can give multiple hints to a given targetIdentity.
-		// So this type of ID allows multiple EditionHint objects to exist with the same ID.
-		// Is this OK with regards to the general contract of IDs in WoT? Or should we append the
-		// edition to ensure unique IDs? Would that then be needed for any frequent queries or
-		// should we just get rid of mID/getID() because no query will use it?
-		// If we do append the edition, we nevertheless might need to introduce a field with the
-		// same content as this one: When we receive a new hint from a given identity to
-		// a given identity, we may need a fast way of querying the old hint to replace it.
 		mID = new TrustID(mSourceIdentityID, mTargetIdentityID).toString();
 	}
 
