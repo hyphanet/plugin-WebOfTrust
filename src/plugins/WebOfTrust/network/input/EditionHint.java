@@ -367,13 +367,30 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	@Override public void startupDatabaseIntegrityTest() throws Exception {
 		activateFully();
 		
-		// Will throw if any of the three passed member variables is invalid.
-		// mID is generated from them, so we keep the returned object to validate it.
+		// Will throw if any of the passed member variables is invalid.
+		// mID and mPriority are computed from them, we will check them against the returned object.
 		EditionHint this2 = constructSecure(
 			mSourceIdentityID, mTargetIdentityID, mDate, mSourceCapacity, mSourceScore, mEdition);
 		
 		if(!mID.equals(this2.mID))
-			throw new IllegalStateException("mID invalid: " + this);
+			throw new IllegalStateException("mID is invalid: " + this);
+		
+		if(!mPriority.equals(this2.mPriority))
+			throw new IllegalStateException("mPriority is invalid: " + this);
+		
+		// While we now know that the member variables are valid from calling constructSecure(),
+		// calling that cannot check whether they've also been rounded as they should as it does
+		// expect unrounded input. So we need to check the rounding:
+		
+		if(!mDate.equals(roundToNearestDay(mDate)))
+			throw new IllegalStateException("mDate is not rounded: " + this);
+		
+		// No need to check capacity for proper rounding: It is not supposed to be rounded as there
+		// are only 6 different ones anyway (technically 7 but we don't accept capacity == 0 here).
+		// See WebOfTrust.capacities.
+		
+		if(mSourceScore != -1 && mSourceScore != 1)
+			throw new IllegalStateException("mSourceScore is not rounded: " + this);
 		
 		// mWebOfTrust is of type WebOfTrustInterface which doesn't contain special functions of
 		// the specific implementation which we need for testing our stuff - so we cast to the
@@ -385,6 +402,10 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		Identity source = wot.getIdentityByID(mSourceIdentityID);
 		Identity target = wot.getIdentityByID(mTargetIdentityID);
 		
+		// Don't check whether the capacity is still the same as we stored:
+		// For performance the IdentityDownloaderSlow implementation will likely not update all
+		// hints on granular capacity changes, it will only update them if the capacity changes
+		// significantly, i.e. from > 0 to == 0.
 		if(wot.getBestCapacity(source) == 0) {
 			throw new IllegalStateException(
 				"Identity which isn't allowed to store hints has stored one: " + this);
