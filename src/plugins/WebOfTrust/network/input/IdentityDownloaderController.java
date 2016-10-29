@@ -92,16 +92,9 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 			d.storeAbortFetchCommandWithoutCommit(identity);
 	}
 
-	@Override public void storeNewEditionHintCommandWithoutCommit(
-			String fromIdentityID, String aboutIdentityID, long edition) {
-		
-		// FIXME:
-		// We should really use EditionHint.constructSecure() to validate the hint instead.
-		// Or just change the function signature to consume an EditionHint object in the first place
-		assert(edition >= 0);
-		
+	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint hint) {
 		for(IdentityDownloader d : mDownloaders)
-			d.storeNewEditionHintCommandWithoutCommit(fromIdentityID, aboutIdentityID, edition);
+			d.storeNewEditionHintCommandWithoutCommit(hint);
 	}
 
 	@Override public boolean getShouldFetchState(String identityID) {

@@ -45,12 +45,14 @@ import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
+import plugins.WebOfTrust.network.input.EditionHint;
 import plugins.WebOfTrust.network.input.IdentityDownloaderController;
 
 import com.db4o.ext.ExtObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 
@@ -480,6 +482,19 @@ public final class XMLTransformer {
 						boolean positiveScore = false;
 						boolean hasCapacity = false;
 						
+						// We need the actual values for constructing EditionHint objects.
+						Integer bestScore = null;
+						Integer bestCapacity = null;
+						
+						try {
+							bestScore = mWoT.getBestScore(identity);
+							// Capacity is stored inside Score objects so if the call before threw
+							// then the following would also throw.
+							// So we don't need a separate try/catch for the following.
+							bestCapacity = mWoT.getBestCapacity(identity);
+						}
+						catch(NotInTrustTreeException e) { }
+						
 						// TODO: getBestScore/getBestCapacity should always yield a positive result because we store a positive score object for an OwnIdentity
 						// upon creation. The only case where it could not exist might be restoreOwnIdentity() ... check that. If it is created there as well,
 						// remove the additional check here.
@@ -487,14 +502,34 @@ public final class XMLTransformer {
 							// Importing of OwnIdentities is always allowed
 							positiveScore = true;
 							hasCapacity = true;
+							
+							// If these never fail, then the above TODO can be considered as
+							// resolved. Then we can remove the whole special case of this if()
+							// handling OwnIdentities separately: The else{} can remain and will
+							// always do what this special branch used to do.
+							assert(bestScore != null && bestScore > 0) : bestScore;
+							assert(bestCapacity != null && bestCapacity > 0) : bestCapacity;
 						} else {
+							if(bestScore != null) {
+								assert(bestCapacity != null);
+								positiveScore = bestScore > 0;
+								hasCapacity = bestCapacity > 0;
+							} else
+								assert(bestCapacity == null);
+							
+							// FIXME: This is a copy of the old version of the code above code
+							// amended with assert()s. It serves as a paranoia check to figure out
+							// whether I refactored the above code correctly.
+							// Please remove if the assertions never fail.
 							try {
-								positiveScore = mWoT.getBestScore(identity) > 0;
-								hasCapacity = mWoT.getBestCapacity(identity) > 0;
+								assert(positiveScore == mWoT.getBestScore(identity) > 0);
+								assert(hasCapacity == mWoT.getBestCapacity(identity) > 0);
 							}
 							catch(NotInTrustTreeException e) { }
 						}
 						
+						// Key = Identity ID of the Identity which the hint is about.
+						// Value = The actual hint
 						HashMap<String, Long> editionHints
 							= new HashMap<>(xmlData.identityTrustList.size() * 2);
 
@@ -603,10 +638,19 @@ public final class XMLTransformer {
 							mWoT.removeTrustWithoutCommit(trust); // Also takes care of SubscriptionManager
 						}
 
+						// Feed EditionHints to the IdentityDownloaderController
 						IdentityDownloaderController idc = mWoT.getIdentityDownloaderController();
+						assert(bestCapacity != null && bestCapacity > 0) : bestCapacity;
+						assert(bestScore != null) : bestScore;
 						for(Entry<String, Long> e : editionHints.entrySet()) {
-							idc.storeNewEditionHintCommandWithoutCommit(
-								identity.getID(), e.getKey(), e.getValue());
+							EditionHint h = EditionHint.constructSecure(
+								identity.getID(),
+								e.getKey(),
+								CurrentTimeUTC.get(), /* FIXME: Propagate in the XML */
+								bestCapacity,
+								bestScore,
+								e.getValue());
+							idc.storeNewEditionHintCommandWithoutCommit(h);
 						}
 
 						//if(positiveScore) {

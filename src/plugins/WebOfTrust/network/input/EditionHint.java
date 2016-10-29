@@ -45,7 +45,7 @@ import freenet.support.CurrentTimeUTC;
  * {@link #compareTo(EditionHint)} does adhere to the order of using
  * {@link #compareTo_ReferenceImplementation(EditionHint)} instead.
  * 
- * @see IdentityDownloader#storeNewEditionHintCommandWithoutCommit(String, String, long) */
+ * @see IdentityDownloader#storeNewEditionHintCommandWithoutCommit(EditionHint) */
 public final class EditionHint extends Persistent implements Comparable<EditionHint> {
 
 	/** @see Serializable */
@@ -176,7 +176,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 
 
 	/** Factory with parameter validation */
-	static EditionHint constructSecure(
+	public static EditionHint constructSecure(
 			String sourceIdentityID, String targetIdentityID, Date date, int sourceCapacity,
 			int sourceScore, long edition) {
 		
@@ -236,13 +236,13 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		mID = new TrustID(mSourceIdentityID, mTargetIdentityID).toString();
 	}
 
-	String getSourceIdentityID() {
+	public String getSourceIdentityID() {
 		// String is a db4o primitive type so 1 is enough even though it is a reference type
 		checkedActivate(1);
 		return mSourceIdentityID;
 	}
 
-	String getTargetIdentityID() {
+	public String getTargetIdentityID() {
 		// String is a db4o primitive type so 1 is enough even though it is a reference type
 		checkedActivate(1);
 		return mTargetIdentityID;

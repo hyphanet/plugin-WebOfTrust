@@ -14,6 +14,7 @@ import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.network.input.EditionHint;
 import plugins.WebOfTrust.network.input.IdentityDownloader;
 import plugins.WebOfTrust.network.input.IdentityDownloaderController;
 import plugins.WebOfTrust.util.Daemon;
@@ -476,8 +477,7 @@ public final class IdentityFetcher implements
      * }}
      * </code>
      */
-	public void storeNewEditionHintCommandWithoutCommit(String fromIdentityID,
-			String aboutIdentityID, long edition) {
+	public void storeNewEditionHintCommandWithoutCommit(EditionHint hint) {
 		
 		// XMLTransformer will nowadays pass edition hints if the giver of the hint has a positive
 		// Score OR positive capacity.
@@ -493,7 +493,7 @@ public final class IdentityFetcher implements
 			Identity fromIdentity;
 			
 			try {
-				fromIdentity = mWoT.getIdentityByID(fromIdentityID);
+				fromIdentity = mWoT.getIdentityByID(hint.getSourceIdentityID());
 			} catch (UnknownIdentityException e) {
 				throw new RuntimeException(e);
 			}
@@ -518,20 +518,23 @@ public final class IdentityFetcher implements
 		}
 		
 		
-		if(logDEBUG)
-			Logger.debug(this, "Update edition hint command received for " + aboutIdentityID);
+		if(logDEBUG) {
+			Logger.debug(
+				this, "Update edition hint command received for " + hint.getTargetIdentityID());
+		}
 		
 		try {
-			getCommand(AbortFetchCommand.class, aboutIdentityID);
+			getCommand(AbortFetchCommand.class, hint.getTargetIdentityID());
 			Logger.error(this, "Update edition hint command is useless, an abort fetch command is queued!");
 		}
 		catch(NoSuchCommandException e1) {
 			try {
-				getCommand(UpdateEditionHintCommand.class, aboutIdentityID);
+				getCommand(UpdateEditionHintCommand.class, hint.getTargetIdentityID());
 				if(logDEBUG) Logger.debug(this, "Update edition hint command already in queue!");
 			}
 			catch(NoSuchCommandException e2) {
-				final UpdateEditionHintCommand cmd = new UpdateEditionHintCommand(aboutIdentityID);
+				final UpdateEditionHintCommand cmd
+					= new UpdateEditionHintCommand(hint.getTargetIdentityID());
 				cmd.initializeTransient(mWoT);
 				cmd.storeWithoutCommit();
 				scheduleCommandProcessing();

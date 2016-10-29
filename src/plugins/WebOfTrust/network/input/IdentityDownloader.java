@@ -63,20 +63,13 @@ public interface IdentityDownloader extends Daemon {
 
 	/**
 	 * Called by {@link WebOfTrust} when we've downloaded the list of {@link Trust} values of a
-	 * remote {@link Identity} and as a bonus payload have received an "edition hint" for another
-	 * {@link Identity} it has assigned a {@link Trust} to. An edition hint is the number of the
-	 * latest {@link FreenetURI#getEdition()} of the given {@link Identity} as claimed by a remote
-	 * identity. We can try to download the hint and if it is indeed downloadable, we are lucky
-	 * - but it may very well be a lie. In that case, to avoid DoS, we must discard it and try the
-	 * next lower hint we received from someone else.
-	 * 
-	 * FIXME: Change function signature to consume an EditionHint object
-	 * 
-	 * @param fromIdentityID {@link Identity#getID()} of the Identity which gave us the hint.
-	 * @param aboutIdentityID {@link Identity#getID()} of the Identity about which the hint is.
-	 * @param edition The actual hint, see {@link FreenetURI#getEdition()}. */
-	void storeNewEditionHintCommandWithoutCommit(
-		String fromIdentityID, String aboutIdentityID, long edition);
+	 * remote {@link Identity} and as a bonus payload have received an {@link EditionHint} for
+	 * another {@link Identity} it has assigned a {@link Trust} to. An edition hint is the number of
+	 * the latest {@link FreenetURI#getEdition()} of the given {@link Identity} as claimed by a
+	 * remote identity. We can try to download the hint and if it is indeed downloadable, we are
+	 * lucky - but it may very well be a lie. In that case, to avoid DoS, we must discard it and try
+	 * the next lower hint we received from someone else. */
+	void storeNewEditionHintCommandWithoutCommit(EditionHint hint);
 
 	/**
 	 * ATTENTION: For debugging purposes only.

@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import java.util.UUID;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.network.input.EditionHint;
 import plugins.WebOfTrust.network.input.IdentityDownloader;
 import plugins.WebOfTrust.util.Base32;
 import plugins.WebOfTrust.util.ReallyCloneable;
@@ -96,8 +97,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * specified and pass it as a hint to the USKManager.
 	 * 
 	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(String, String,
-	 *     long)} */
+	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(EditionHint)} */
 	@Deprecated
 	protected long mLatestEditionHint;
 	
@@ -475,8 +475,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 
 	/**
 	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(String, String,
-	 *     long)} */
+	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(EditionHint)} */
 	@Deprecated
 	public final long getLatestEditionHint() {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
@@ -491,8 +490,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * 
 	 * @return True, if the given hint was newer than the already stored one. You have to tell the {@link IdentityFetcher} about that then.
 	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(String, String,
-	 *     long)} */
+	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(EditionHint)} */
 	@Deprecated
 	protected final boolean setNewEditionHint(long newLatestEditionHint) {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
@@ -512,8 +510,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * Instead, use {@link #setNewEditionHint(long)} whenever possible.
 	 * 
 	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(String, String,
-	 *     long)} */
+	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(EditionHint)} */
 	@Deprecated
 	public void forceSetNewEditionHint(long newLatestEditionHint) {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
