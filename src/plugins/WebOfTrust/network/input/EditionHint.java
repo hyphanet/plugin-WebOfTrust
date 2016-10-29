@@ -334,14 +334,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// it will return the result of comparing the ID substrings
 		// - so overall we must do that here in the non-optimized (= non-String based) sorting
 		// function as well.
-		// For completeness, it shall be noted that it doesn't hurt if we unnecessarily "prioritize"
-		// identities by their IDs by sorting on it: The IDs are actually the hash of their pubkey,
-		// so to find an ID suitable for attacking the sorting to get higher priority, one has to
-		// invert a cryptographic hash function - and not being invertable is a central goal of such
-		// functions.
-		// FIXME: Code quality: Re-hash the ID together with a local random seed to prevent this
-		// attack completely - currently only finding an ID with a short prefix of "aaaaa..." might
-		// be enough to get priority over most identities.
+		// FIXME: SECURITY: Re-hash the ID together with a local random seed to prevent attackers
+		// from malicious brute forcing pubkey generation to get a hash with prefix "aaaa..." to
+		// boost priority of their identity.
 		
 		/*
 		if(mTargetIdentityID.equals(o.mTargetIdentityID))
