@@ -92,7 +92,7 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 			d.storeAbortFetchCommandWithoutCommit(identity);
 	}
 
-	@Override public void storeUpdateEditionHintCommandWithoutCommit(
+	@Override public void storeNewEditionHintCommandWithoutCommit(
 			String fromIdentityID, String aboutIdentityID, long edition) {
 		
 		// FIXME:
@@ -101,7 +101,7 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 		assert(edition >= 0);
 		
 		for(IdentityDownloader d : mDownloaders)
-			d.storeUpdateEditionHintCommandWithoutCommit(fromIdentityID, aboutIdentityID, edition);
+			d.storeNewEditionHintCommandWithoutCommit(fromIdentityID, aboutIdentityID, edition);
 	}
 
 	@Override public boolean getShouldFetchState(String identityID) {

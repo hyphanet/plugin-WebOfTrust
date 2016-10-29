@@ -10,7 +10,7 @@ import plugins.WebOfTrust.util.Daemon;
  * Uses USK edition hints to download {@link Identity}s from the network for which we have a
  * significant confidence that a certain edition exists.
  * For an explanation of what an edition hint is, see
- * {@link IdentityDownloader#storeUpdateEditionHintCommandWithoutCommit(String, String, long)}.
+ * {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(String, String, long)}.
  * 
  * The downloads happen as a direct SSK request, and thus don't cause as much network load as the
  * USK subscriptions which {@link IdentityDownloaderFast} would do.
@@ -39,7 +39,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		// FIXME
 	}
 
-	@Override public void storeUpdateEditionHintCommandWithoutCommit(
+	@Override public void storeNewEditionHintCommandWithoutCommit(
 			String fromIdentityID, String aboutIdentityID, long edition) {
 		
 		// FIXME

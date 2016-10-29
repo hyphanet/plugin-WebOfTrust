@@ -45,7 +45,7 @@ import freenet.support.CurrentTimeUTC;
  * {@link #compareTo(EditionHint)} does adhere to the order of using
  * {@link #compareTo_ReferenceImplementation(EditionHint)} instead.
  * 
- * @see IdentityDownloader#storeUpdateEditionHintCommandWithoutCommit(String, String, long) */
+ * @see IdentityDownloader#storeNewEditionHintCommandWithoutCommit(String, String, long) */
 public final class EditionHint extends Persistent implements Comparable<EditionHint> {
 
 	/** @see Serializable */

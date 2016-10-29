@@ -470,13 +470,13 @@ public final class IdentityFetcher implements
      * it with:<br><code>
      * synchronized(instance of IdentityDownloaderController) {
      * synchronized(Persistent.transactionLock(mDB)) {
-     *     try { ... storeUpdateEditionHintCommandWithoutCommit(id); ... 
+     *     try { ... storeNewEditionHintWithoutCommit(id); ... 
      *               Persistent.checkedCommit(mDB, this); }
      *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
      * }}
      * </code>
      */
-	public void storeUpdateEditionHintCommandWithoutCommit(String fromIdentityID,
+	public void storeNewEditionHintCommandWithoutCommit(String fromIdentityID,
 			String aboutIdentityID, long edition) {
 		
 		// XMLTransformer will nowadays pass edition hints if the giver of the hint has a positive

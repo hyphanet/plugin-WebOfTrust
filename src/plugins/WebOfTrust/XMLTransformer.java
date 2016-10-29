@@ -605,7 +605,7 @@ public final class XMLTransformer {
 
 						IdentityDownloaderController idc = mWoT.getIdentityDownloaderController();
 						for(Entry<String, Long> e : editionHints.entrySet()) {
-							idc.storeUpdateEditionHintCommandWithoutCommit(
+							idc.storeNewEditionHintCommandWithoutCommit(
 								identity.getID(), e.getKey(), e.getValue());
 						}
 

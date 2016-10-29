@@ -75,7 +75,7 @@ public interface IdentityDownloader extends Daemon {
 	 * @param fromIdentityID {@link Identity#getID()} of the Identity which gave us the hint.
 	 * @param aboutIdentityID {@link Identity#getID()} of the Identity about which the hint is.
 	 * @param edition The actual hint, see {@link FreenetURI#getEdition()}. */
-	void storeUpdateEditionHintCommandWithoutCommit(
+	void storeNewEditionHintCommandWithoutCommit(
 		String fromIdentityID, String aboutIdentityID, long edition);
 
 	/**

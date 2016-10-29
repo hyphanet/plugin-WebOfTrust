@@ -96,7 +96,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * specified and pass it as a hint to the USKManager.
 	 * 
 	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeUpdateEditionHintCommandWithoutCommit(String, String,
+	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(String, String,
 	 *     long)} */
 	@Deprecated
 	protected long mLatestEditionHint;
@@ -475,7 +475,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 
 	/**
 	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeUpdateEditionHintCommandWithoutCommit(String, String,
+	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(String, String,
 	 *     long)} */
 	@Deprecated
 	public final long getLatestEditionHint() {
@@ -491,7 +491,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * 
 	 * @return True, if the given hint was newer than the already stored one. You have to tell the {@link IdentityFetcher} about that then.
 	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeUpdateEditionHintCommandWithoutCommit(String, String,
+	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(String, String,
 	 *     long)} */
 	@Deprecated
 	protected final boolean setNewEditionHint(long newLatestEditionHint) {
@@ -512,7 +512,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * Instead, use {@link #setNewEditionHint(long)} whenever possible.
 	 * 
 	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeUpdateEditionHintCommandWithoutCommit(String, String,
+	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(String, String,
 	 *     long)} */
 	@Deprecated
 	public void forceSetNewEditionHint(long newLatestEditionHint) {
