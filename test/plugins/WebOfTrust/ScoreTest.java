@@ -1126,6 +1126,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		// Java serialization has no global memory for re-using objects like db4o
 		assertNotSame(truster, s.getTruster());
 		assertNotSame(trustee, s.getTrustee());
+		// Score.equals() only compares their ID, not their equals(), so let's check it
 		assertEquals(truster, s.getTruster());
 		assertEquals(trustee, s.getTrustee());
 	}

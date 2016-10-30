@@ -44,20 +44,6 @@ public class ScoreTestOld extends AbstractJUnit3BaseTest {
 		flushCaches();
 	}
 
-	public void testSerializeDeserialize() throws NotInTrustTreeException {
-		final Score original = mWoT.getScore(a, b);
-		final Score deserialized = (Score)Persistent.deserialize(mWoT, original.serialize());
-		
-		assertNotSame(original, deserialized);
-		assertEquals(original, deserialized);
-		
-		assertNotSame(original.getTruster(), deserialized.getTruster());
-		assertEquals(original.getTruster(), deserialized.getTruster());	// Score.equals() only checks the ID
-		
-		assertNotSame(original.getTrustee(), deserialized.getTrustee());
-		assertEquals(original.getTrustee(), deserialized.getTrustee());	// Score.equals() only checks the ID
-	}
-
 	// TODO: Move to WoTTest
 	public void testScorePersistence() throws MalformedURLException, UnknownIdentityException, NotInTrustTreeException {
 		a = mWoT.getOwnIdentityByURI(requestUriA);
