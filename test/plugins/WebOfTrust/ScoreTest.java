@@ -791,6 +791,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 
 	/**
 	 * Tests {@link Score#storeWithoutCommit()}.
+	 * Also implicitly tests {@link WebOfTrust#getScore(OwnIdentity, Identity)}.
 	 * {@link #testWriteObjectObjectOutputStream()} is an amended copy-paste of this. */
 	@Test public void testStoreWithoutCommit()
 			throws NotInTrustTreeException, InterruptedException, UnknownIdentityException,

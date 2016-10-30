@@ -44,29 +44,4 @@ public class ScoreTestOld extends AbstractJUnit3BaseTest {
 		flushCaches();
 	}
 
-	// TODO: Move to WoTTest
-	public void testScorePersistence() throws MalformedURLException, UnknownIdentityException, NotInTrustTreeException {
-		a = mWoT.getOwnIdentityByURI(requestUriA);
-		b = mWoT.getOwnIdentityByURI(requestUriB);
-		final Score originalScore = mWoT.getScore(a, b);
-		
-		originalScore.checkedActivate(10);
-		
-		mWoT.terminate();
-		mWoT = null;
-		
-		flushCaches();
-		
-		mWoT = new WebOfTrust(getDatabaseFilename());
-		a = mWoT.getOwnIdentityByURI(requestUriA);
-		b = mWoT.getOwnIdentityByURI(requestUriB);
-		final Score score = mWoT.getScore(a, b);
-		
-		originalScore.initializeTransient(mWoT); // Prevent DatabaseClosedException in .equals()
-		
-		assertSame(score, mWoT.getScore(a, b));
-		assertNotSame(score, originalScore);
-		assertEquals(originalScore, score);
-	}
-
 }

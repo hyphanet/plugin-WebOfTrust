@@ -120,6 +120,17 @@ public class WebOfTrustTest extends AbstractJUnit4BaseTest {
 		assertEquals(new IdentifierHashSet<Score>(scores), scoreDuplicateCheck);
 	}
 
+	/**
+	 * Currently empty because {@link ScoreTest#testStoreWithoutCommit()} covers most of what
+	 * this test should do.
+	 * TODO: Code quality: Test things which the above doesn't cover. This might for example be:
+	 * - whether getScore() does throw upon duplicate Score objects.
+	 * - whether getScore() works if unrelated Score objects exist.
+	 * For more ideas see the output of Cobertura (can be run with "ant -Dtest.coverage=true") */
+	@Test public void testGetScoreOwnIdentityIdentity() {
+		
+	}
+
 	@Override protected WebOfTrust getWebOfTrust() {
 		return mWebOfTrust;
 	}
