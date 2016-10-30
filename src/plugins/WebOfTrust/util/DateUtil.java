@@ -21,6 +21,8 @@ public final class DateUtil {
 			if(waitTime >= 0)
 				Thread.sleep(max(1, waitTime));
 		}
+		
+		assert(CurrentTimeUTC.get().after(future));
 	}
 
 }
