@@ -469,12 +469,13 @@ public final class IdentityFetcher implements
      * Synchronization:<br>
      * This function does neither lock the database nor commit the transaction. You have to surround
      * it with:<br><code>
+     * synchronized(instance of WebofTrust) {
      * synchronized(instance of IdentityDownloaderController) {
      * synchronized(Persistent.transactionLock(mDB)) {
      *     try { ... storeNewEditionHintWithoutCommit(id); ... 
      *               Persistent.checkedCommit(mDB, this); }
      *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
-     * }}
+     * }}}
      * </code>
      */
 	public void storeNewEditionHintCommandWithoutCommit(EditionHint hint) {
@@ -487,6 +488,8 @@ public final class IdentityFetcher implements
 		// To ensure this old implementation here keeps its behavior as of before the adaption of 
 		// XMLTransformer to the IdentityDownloader rewrites, it will now check whether the giver of
 		// the hint has a positive Score and return if it does not.
+		// Also, XMLTransformer nowadays passes all hints, not just the ones which are higher than
+		// the previously known one. So we also check that to discard non-higher ones.
 		// In other words: The checks in the following scope have been part of XMLTransformer
 		// previously and were moved here as part of its modifications for IdentityDownloader.
 		{
@@ -515,6 +518,26 @@ public final class IdentityFetcher implements
 			
 			if(!fromPositiveScore)
 				return;
+			
+			Identity toIdentity;
+			try {
+				toIdentity = mWoT.getIdentityByID(hint.getTargetIdentityID());
+			} catch(UnknownIdentityException e) {
+				throw new RuntimeException(e);
+			}
+			
+			// This class only deals with the highest known hint, so if the one we just got isn't
+			// higher than the previous one we return.
+			// This is attackable by publishing wrongly too high hints - but it's what the class has
+			// always been like, and remember:
+			// The goal here is to preserve the original legacy functionality.
+			if(!toIdentity.setNewEditionHint(hint.getEdition()))
+				return;
+			
+			toIdentity.storeWithoutCommit();
+			
+			// We don't notify clients about this: The edition hint is not very useful to them.
+			// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(trustee, trustee);
 		}
 		
 		

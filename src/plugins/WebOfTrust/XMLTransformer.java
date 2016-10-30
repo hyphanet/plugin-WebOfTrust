@@ -574,7 +574,7 @@ public final class XMLTransformer {
 								// "testStability" functions in class WoTTest.)
 								// In our case, one of positiveScore and hasCapacity will be always
 								// true, so we don't have to check them at all:
-								// We already only runt his function if
+								// We already only run his function if
 								//     mWebOfTrust.shouldFetchIdentity() == true
 								// which only happens if:
 								assert(hasCapacity || positiveScore);
@@ -589,18 +589,7 @@ public final class XMLTransformer {
 									// bogus data OR have this be a valid contion:
 									// Amend the code which generates XML to use editions of -1
 									// to signal that an identity wasn't downloaded at all yet.
-								}
-								
-								// Legacy codepath for class IdentityFetcher
-								if(positiveScore) {
-									if(trustee.setNewEditionHint(trusteeURI.getEdition())) {
-										editionHints.put(trustee.getID(), trusteeURI.getEdition());
-										trustee.storeWithoutCommit();
-										
-										// We don't notify clients about this: The edition hint is not very useful to them.
-										// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(trustee, trustee);
-									}
-								}
+								}								
 							}
 							catch(UnknownIdentityException e) {
 								if(hasCapacity) { /* We only create trustees if the truster has capacity to rate them. */

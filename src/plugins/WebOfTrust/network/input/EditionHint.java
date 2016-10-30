@@ -248,7 +248,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return mTargetIdentityID;
 	}
 
-	long getEdition() {
+	public long getEdition() {
 		checkedActivate(1);
 		return mEdition;
 	}
