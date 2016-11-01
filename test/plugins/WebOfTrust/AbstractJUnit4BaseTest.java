@@ -8,6 +8,9 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -20,6 +23,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+
+import com.db4o.ext.ExtObjectContainer;
 
 import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
@@ -186,6 +191,9 @@ public abstract class AbstractJUnit4BaseTest {
      * 
      * The OwnIdentitys are stored in the WOT database, and the original (= non-cloned) objects are
      * returned in an {@link ArrayList}.
+     * 
+     * TODO: Code quality: Extract addRandomOwnIdentity() to create a single one, we need that
+     * frequently. Search for callers of addRandomOwnIdentities(1) and make them use it.
      * 
      * @throws MalformedURLException        Upon test failure. Don't catch this, let it hit JUnit.
      * @throws InvalidParameterException    Upon test failure. Don't catch this, let it hit JUnit.
@@ -575,4 +583,72 @@ public abstract class AbstractJUnit4BaseTest {
             s[i] = (char)('a' + mRandom.nextInt(26));
         return new String(s);
     }
+
+	protected void flushCaches() {
+		System.gc();
+		System.runFinalization();
+		WebOfTrust wot = getWebOfTrust();
+		if(wot != null) {
+			ExtObjectContainer db = wot.getDatabase();
+			Persistent.checkedRollback(db, this, null);
+			db.purge();
+		}
+		System.gc();
+		System.runFinalization();
+	}
+
+	/**
+	 * Uses reflection to check assertEquals() and assertNotSame() on all member fields of an original and its clone().
+	 * Does not check assertNotSame() for:
+	 * - enum field
+	 * - String fields
+	 * - transient fields
+	 * 
+	 * ATTENTION: Only checks the fields of the given clazz, NOT of its parent class.
+	 * If you need to test the fields of an object of class B with parent class A, you should call this two times:
+	 * Once with clazz set to A and once for B.
+	 * 
+	 * @param class The clazz whose fields to check. The given original and clone must be an instance of this or a subclass of it. 
+	 * @param original The original object.
+	 * @param clone A result of <code>original.clone();</code>
+	 */
+	protected static void testClone(Class<?> clazz, Object original, Object clone)
+			throws IllegalArgumentException, IllegalAccessException {
+		
+		assertNotSame(original, clone);
+		
+		for(Field field : clazz.getDeclaredFields()) {
+			field.setAccessible(true);
+			if(!field.getType().isArray()) {
+				assertEquals(field.toGenericString(), field.get(original), field.get(clone));
+			} else { // We need to check it deeply if it is an array
+				// Its not possible to cast primitive arrays such as byte[] to Object[]
+				// Therefore, we must store them as Object which is possible, and then use Array.get()
+				final Object originalArray = field.get(original);
+				final Object clonedArray = field.get(clone);
+				
+				assertEquals(Array.getLength(originalArray), Array.getLength(clonedArray));
+				for(int i=0; i < Array.getLength(originalArray); ++i) {
+					testClone(originalArray.getClass(), Array.get(originalArray, i), Array.get(clonedArray, i));
+				}
+			}
+				
+			
+			if(!field.getType().isEnum() // Enum objects exist only once
+				&& field.getType() != String.class // Strings are interned and therefore might also exist only once
+				&& !Modifier.isTransient(field.getModifiers())) // Persistent.mWebOfTurst/mDB are transient field which have the same value everywhere
+			{
+				final Object originalField = field.get(original);
+				final Object clonedField = field.get(clone);
+				if(originalField != null)
+					assertNotSame(field.toGenericString(), originalField, clonedField);
+				else
+					assertNull(field.toGenericString(), clonedField); // assertNotSame would fail if both are null because null and null are the same
+			}
+		}
+		
+		// Bonus check:
+		// We did check all fields manually already but we've got equals() so let's use it
+		assertEquals(original, clone);
+	}
 }

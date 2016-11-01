@@ -3,14 +3,19 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.util.Arrays.binarySearch;
+import static plugins.WebOfTrust.WebOfTrust.VALID_CAPACITIES;
+
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.UUID;
 
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.support.CurrentTimeUTC;
 
@@ -20,6 +25,13 @@ import freenet.support.CurrentTimeUTC;
  * A score is the actual rating of how much an identity can be trusted from the point of view of the OwnIdentity which owns the score.
  * If the Score is negative, the identity is considered malicious, if it is zero or positive, it is trusted. 
  * 
+ * Concurrency:
+ * Score does not provide locking of its own.
+ * Reads and writes upon Score objects must be secured by synchronizing on the {@link WebOfTrust}.
+ * 
+ * TODO: Performance: Scores are not entered by the user, they are only ever computed by WoT on
+ * its own. Thus convert all if() checks of proper input values to asserts().
+ *
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
@@ -93,11 +105,21 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	 * 
 	 * Its purpose is to allow validation of ScoreIDs which we obtain from the database or from the network.
 	 * 
+	 * TODO: Code quality: This could probably be an extension of class {@link TrustID}; the format
+	 * of the IDs is the same and this is unlikely to change in the future.
+	 * 
 	 * TODO: This was added after we already had manual ID-generation / checking in the code everywhere. Use this class instead. 
-	 */
+	 * 
+	 * TODO: Code quality: Ensure that callers notice the constructAndValidate() functions by
+	 * making all constructors private and exposing them only through a constructInsecure()
+	 * factories as well. While doing that check whether the callers do use the
+	 * constructAndValidate() functions whenever they should, and also whether they do not when they
+	 * don't need to (because non-validating constructors are a lot faster).
+	 * And rename the constructAndValidate() to constructSecure() to have coherent, short naming
+	 * everywhere. */
 	protected static final class ScoreID {
 		
-		private static final int MAX_SCORE_ID_LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
+		private static final int LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
 		
 		private final String mID;
 		private final String mTrusterID;
@@ -110,22 +132,43 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		}
 		
 		private ScoreID(String id) {
-			if(id.length() > MAX_SCORE_ID_LENGTH)
-				throw new IllegalArgumentException("ID is too long, length: " + id.length());
+			if(id.length() != LENGTH)
+				throw new IllegalArgumentException("ID has wrong length: " + id.length());
 
 			mID = id;
 
 			final StringTokenizer tokenizer = new StringTokenizer(id, "@");
-
-			mTrusterID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
-			mTrusteeID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
-
+			
+			String rawTrusterID;
+			String rawTrusteeID;
+			
+			try {
+				 rawTrusterID = tokenizer.nextToken();
+				 rawTrusteeID = tokenizer.nextToken();
+			} catch(NoSuchElementException e) {
+				throw new IllegalArgumentException("ScoreID has too few tokens: " + id);
+			}
+			
 			if(tokenizer.hasMoreTokens())
-				throw new IllegalArgumentException("Invalid MessageID: " + id);
+				throw new IllegalArgumentException("ScoreID has too many tokens: " + id);
+			
+			mTrusterID = IdentityID.constructAndValidateFromString(rawTrusterID).toString();
+			mTrusteeID = IdentityID.constructAndValidateFromString(rawTrusteeID).toString();
 		}
-		
+
+		/**
+		 * Validates whether the ID is of valid format and contains valid Freenet routing keys,
+		 * i.e. a valid {@link Identity#getID()} pair to describe a truster/trustee.
+		 * Does not check whether the database actually contains the given truster/trustee! */
+		public static ScoreID constructAndValidate(String id) {
+			return new ScoreID(id);
+		}
+
+		/**
+		 * Same as {@link #constructAndValidate(String)} but also checks whether the ID matches the
+		 * ID of the given Score. */
 		public static ScoreID constructAndValidate(Score score, String id) {
-			final ScoreID scoreID = new ScoreID(id);
+			final ScoreID scoreID = constructAndValidate(id);
 			if(!score.getTruster().getID().equals(scoreID.mTrusterID))
 				throw new RuntimeException("Truster ID mismatch for Score " + score + ": ScoreID is " + id);
 			
@@ -134,7 +177,15 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 			
 			return scoreID;
 		}
-		
+
+		public String getTrusterID() {
+			return mTrusterID;
+		}
+
+		public String getTrusteeID() {
+			return mTrusteeID;
+		}
+
 		@Override
 		public final String toString() {
 			return mID;
@@ -150,7 +201,13 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 			
 			return false;
 		}
-		
+
+		@Override public int hashCode() {
+			// Must not use the default implementation because equals() isn't the default either.
+			// It is questionable whether objects of this class should be inserted into hash tables
+			// anyway, maybe better to insert the IDs as strings to avoid excessive object creation.
+			throw new UnsupportedOperationException("Not implemented yet!");
+		}
 	}
 
 	/**
@@ -178,9 +235,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		setRank(myRank);
 		setCapacity(myCapacity);
 		
-		// setValue() etc. might not set this if the value matches the defaults.
-		if(mLastChangedDate == null)
-			mLastChangedDate = CurrentTimeUTC.get();
+		mLastChangedDate = (Date)mCreationDate.clone();	// Clone it because date is mutable
 	}
 	
 	@Override
@@ -192,7 +247,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	@Override
 	public String toString() {
 	    activateFully();
-		return "[Score: " + super.toString()
+		return "[" + super.toString()
 		     + "; mID: " + mID
 		     + "; mValue: " + mValue
 		     + "; mRank: " + mRank
@@ -238,11 +293,15 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		mID = new ScoreID(getTruster(), getTrustee()).toString();
 	}
 
+	/** @deprecated Use {@link #getValue()} */
+	@Deprecated public int getScore() {
+		return getValue();
+	}
+
 	/**
 	 * @return the numeric value of this Score
 	 */
-	/* XXX: Rename to getValue */
-	public synchronized int getScore() {
+	public int getValue() {
 		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mValue;
 	}
@@ -250,7 +309,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	/**
 	 * Sets the numeric value of this Score.
 	 */
-	protected synchronized void setValue(int newValue) {
+	protected void setValue(int newValue) {
 		checkedActivate(1); // int/Date is a db4o primitive type so 1 is enough
 		
 		if(mValue == newValue)
@@ -264,15 +323,21 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	 * @return The minimal distance in steps of {@link Trust} values from the truster to the trustee
 	 * @see WebOfTrust#computeRankFromScratch()
 	 */
-	public synchronized int getRank() {
+	public int getRank() {
 		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mRank;
 	}
 
 	/**
 	 * Sets the distance of how far the trusted Identity is from the truster, measured in minimal steps of {@link Trust} values.
+	 * 
+	 * TODO: Code quality: Ranks of -1 are currently allowed so Score objects with a rank of "none"
+	 * can be symbolically created for Score computation purposes at class {@link WebOfTrust}.
+	 * -1 doesn't make much sense because a rank is a distance and distances should be strictly
+	 * positive. Thus consider whether the Score computation code can be changed to not require
+	 * -1 to be allowed, and then disallow it if possible. 
 	 */
-	protected synchronized void setRank(int newRank) {		
+	protected void setRank(int newRank) {		
 		if(newRank < -1)
 			throw new IllegalArgumentException("Illegal rank.");
 		
@@ -288,7 +353,7 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	/**
 	 * @return how much points the trusted Identity can add to its trustees score
 	 */
-	public synchronized int getCapacity() {
+	public int getCapacity() {
 		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mCapacity;
 	}
@@ -296,10 +361,10 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 	/**
 	 * Sets how much points the trusted Identity can add to its trustees score.
 	 */
-	protected synchronized void setCapacity(int newCapacity) {
-		if(newCapacity < 0)
-			throw new IllegalArgumentException("Negative capacities are not allowed.");
-		
+	protected void setCapacity(int newCapacity) {
+		if(binarySearch(VALID_CAPACITIES, newCapacity) < 0)
+			throw new IllegalArgumentException("Illegal capacity: " + newCapacity);
+
 		checkedActivate(1); // int/Date is a db4o primitive type so 1 is enough
 		
 		if(newCapacity == mCapacity)
@@ -308,20 +373,11 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		mCapacity = newCapacity;
 		mLastChangedDate = CurrentTimeUTC.get();
 	}
-	
-	/**
-	 * Gets the {@link Date} when this score object was created. The date of creation does never change for an existing score object, so if the value, rank
-	 * or capacity of a score changes then its date of creation stays constant.
-	 */
-	public synchronized Date getDateOfCreation() {
-		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		return (Date)mCreationDate.clone();	// Clone it because date is mutable
-	}
-	
+
 	/**
 	 * Gets the {@link Date} when the value, capacity or rank of this score was last changed.
 	 */
-	public synchronized Date getDateOfLastChange() {
+	public Date getDateOfLastChange() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 	}
@@ -346,6 +402,11 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 			checkedStore();
 		}
 		catch(final RuntimeException e) {
+			// TODO: Code quality: We very likely don't need to catch/throw/rollback here:
+			// The defining nature of "WithoutCommit"-functions is that they are meant to be used
+			// inside of a larger database transaction block. Any transaction block *must* have
+			// a try/catch/rollback wrapper of its own.
+			// Please check the callers nevertheless and remove it if possible.
 			checkedRollbackAndThrow(e);
 		}
 	}
@@ -397,6 +458,8 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		final Score clone = new Score(mWebOfTrust, getTruster().clone(), getTrustee().clone(), getScore(), getRank(), getCapacity());
 		clone.setCreationDate(getCreationDate());
 		clone.mLastChangedDate = (Date)mLastChangedDate.clone();	// Clone it because date is mutable
+		if(mVersionID != null)
+			clone.mVersionID = mVersionID; // No need to clone, String is immutable
 		return clone;
 	}
 
@@ -406,13 +469,17 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 
 	@Override
 	public void startupDatabaseIntegrityTest() throws Exception {
-		activateFully();
+		// Don't use activateFully() yet so the below two if()s can actually hit:
+		// activateFully() would throw if mTruster/mTrustee are null.
+		checkedActivate(1);
 		
 		if(mTruster == null)
 			throw new NullPointerException("mTruster==null");
 		
 		if(mTrustee == null)
 			throw new NullPointerException("mTrustee==null");
+		
+		activateFully();
 		
 		if(mID == null)
 			throw new NullPointerException("mID==null");
@@ -422,8 +489,8 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		if(mRank < -1)
 			throw new IllegalStateException("Invalid rank: " + mRank);
 	
-		if(mCapacity < 0)
-			throw new IllegalStateException("Negative capacity: " + mCapacity);
+		if(binarySearch(VALID_CAPACITIES, mCapacity) < 0)
+			throw new IllegalStateException("Illegal capacity: " + mCapacity);
 		
 		if(mLastChangedDate == null)
 			throw new NullPointerException("mLastChangedDate==null");
@@ -433,6 +500,15 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
 		
 		if(mLastChangedDate.after(CurrentTimeUTC.get()))
 			throw new IllegalStateException("mLastChangedDate is in the future: " + mLastChangedDate);
+		
+		// mVersionID may indeed be null currently.
+		if(mVersionID != null) {
+			try {
+				UUID.fromString(mVersionID);
+			} catch (IllegalArgumentException e) {
+				throw new IllegalStateException("Invalid mVersionID: " + mVersionID);
+			}
+		}
 	}
 	
 	/** @see Persistent#serialize() */
@@ -453,7 +529,12 @@ public final class Score extends Persistent implements ReallyCloneable<Score>, E
     /** {@inheritDoc} */
     @Override public UUID getVersionID() {
         checkedActivate(1);
-        // FIXME: Validate whether this yields proper results using an event-notifications FCP dump
+        // FIXME: Validate whether this yields proper results using an event-notifications FCP dump.
+        // Also consider to initialize the member variable at object creation (and when loading
+        // old databases) to ensure that the value of mVersionID stays the same after retrieving
+        // a previously stored object from the database. If you do that, then please:
+        // - adapt ScoreTest.testStoreWithoutCommit() to not initialize using setVersionID().
+        // - adapt clone() to remove the then not needed "if(mVersionID != null)" check.
         return mVersionID != null ? UUID.fromString(mVersionID) : UUID.randomUUID();
     }
 }
