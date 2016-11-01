@@ -13,6 +13,7 @@ import java.util.Date;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
@@ -51,6 +52,18 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	/** @see Serializable */
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * The legacy implementation class {@link IdentityFetcher} will use hints from {@link Identity}s
+	 * if merely their {@link Score#getScore()} is > 0, ignoring the {@link Score#getCapacity()}.
+	 * The new implementation of {@link IdentityDownloaderSlow} requires their capacity to be > 0.
+	 * To allow this class to refuse hints of Identitys with too low capacities when not running
+	 * the legacy implementation we need to check whether we're running the legacy implementation.
+	 * 
+	 * (We do not check whether the Score is > 0 for the legacy implementation, it shall do that
+	 * on its own. Our focus is mostly ensuring strict behavior for the new implementation, we don't
+	 * care much about the legacy one.) */
+	private static final int MIN_CAPACITY
+		= IdentityDownloaderController.USE_LEGACY_REFERENCE_IMPLEMENTATION ? 0 : 1;
 
 	private final String mSourceIdentityID;
 
@@ -190,11 +203,11 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		if(date.after(CurrentTimeUTC.get()))
 			throw new IllegalArgumentException("Invalid date: " + date);
 		
-		// Hints should only be accepted if the capacity is > 0. Also, the capacity should be in
-		// the valid range of WebOfTrust.capacities.
+		// Hints should only be accepted if the capacity is >= MIN_CAPACITY.
+		// Also, the capacity should be in the valid range of WebOfTrust.capacities.
 		// TODO: Code quality: Use WebOfTrust.VALID_CAPCITIES once branch
 		// issue-0006895-full-tests-for-Score is merged
-		if(sourceCapacity < 1 || sourceCapacity > 100)
+		if(sourceCapacity < MIN_CAPACITY || sourceCapacity > 100)
 			throw new IllegalArgumentException("Invalid capacity: " + sourceCapacity);
 		
 		// Cannot validate the score: All values of int are acceptable Score values.
@@ -257,7 +270,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 			Date roundedDate, byte capacity, int roundedScore, String targetID, long edition) {
 		
 		assert(roundedDate.equals(roundToNearestDay(roundedDate)));
-		assert(capacity >= 1 && capacity <= 100);
+		assert(capacity >= MIN_CAPACITY && capacity <= 100);
 		assert(roundedScore == -1 || roundedScore == 1);
 		assert(edition >= 0);
 		
@@ -401,6 +414,10 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// For performance the IdentityDownloaderSlow implementation will likely not update all
 		// hints on granular capacity changes, it will only update them if the capacity changes
 		// significantly, i.e. from > 0 to == 0.
+		// (Notice: If IdentityDownloaderController.USE_LEGACY_REFERENCE_IMPLEMENTATION is true,
+		// MIN_CAPACITY is 0 and theoretically the below would be legal then. But the legacy
+		// implementation does NOT store EditionHint objects to the database, so this whole
+		// function shouldn't be called with it.)
 		if(wot.getBestCapacity(source) == 0) {
 			throw new IllegalStateException(
 				"Identity which isn't allowed to store hints has stored one: " + this);
