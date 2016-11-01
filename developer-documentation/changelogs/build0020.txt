@@ -44,11 +44,38 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
 CHANGELOG about stuff only interesting for developers:
 
-- 0000004: .............................................................
-           .............................................................
+- 0006895: (Almost) Full unit test coverage for class Score
 
-  Blah.
-  Blah.
+  Thanks to the Cobertura test coverage analysis tool which WoT supports
+  since the previous release, efforts have begun towards achieving 100%
+  test coverage in WoT.
+
+  Thus as a first step this release delivers a rewrite of the test for
+  class Score, which is one of the most important core classes.
+  It has got 94% line coverage and 89 % branch coverage.
+  Previously line coverage of this was 75%, branch coverage 58%.
+  The new test is 1190 lines long itself, the old one was merely 138.
+  So while the old test did have a high coverage level, it probably
+  didn't check most of the behavior of the stuff it happened to cause
+  to execute - remember: coverage percentages only say what is executed,
+  not whether it is actually tested.
+  When designing the new test I tried to test every aspect of the code
+  no matter how unlikely to fail it seems.
+  This gives us good insurance against future bogus modifications, which
+  could for example happen when we migrate from db4o to a different
+  database.
+
+  Irrelevant but interesting random statistics: The tested class itself
+  is 540 lines of code. So the metric for how long full unit tests are
+  typically may be "twice as much as the tested code itself."
+
+  The few missing percents are due to not testing deprecated code; and
+  due to the fact that the Ant builder of WoT does not support Mockito
+  yet - without it we cannot cause the internal failures required to
+  cover the remaining branches.
+  A bug has been filed to address this in the future:
+  https://bugs.freenetproject.org/view.php?id=6915
+
 
 
 Thanks to:
