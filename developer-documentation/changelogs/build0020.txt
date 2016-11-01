@@ -65,17 +65,39 @@ CHANGELOG about stuff only interesting for developers:
   could for example happen when we migrate from db4o to a different
   database.
 
-  Irrelevant but interesting random statistics: The tested class itself
-  is 540 lines of code. So the metric for how long full unit tests are
-  typically may be "twice as much as the tested code itself."
-
-  The few missing percents are due to not testing deprecated code; and
-  due to the fact that the Ant builder of WoT does not support Mockito
-  yet - without it we cannot cause the internal failures required to
-  cover the remaining branches.
+  The few percents which are missing towards 100% are due to not testing
+  deprecated code; and due to the fact that the Ant builder of WoT does
+  not support Mockito yet - without it we cannot cause the internal
+  failures required to cover the remaining branches.
   A bug has been filed to address this in the future:
   https://bugs.freenetproject.org/view.php?id=6915
 
+  As a result of reviewing and testing almost every aspect of class
+  Score, various non-critical bugs in Score and other core classes were
+  detected and fixed:
+  - Minor performance improvement: Remove useless synchronization of all
+    the getters / setters at Score and Trust
+  - Make IdentityID / TrustID / ScoreID detect too short IDs
+  - Remove incompliant hashCode() there
+  - Unify toString() of core classe to get coherent logging
+  - Fix creation date of Score not always being strictly equal to date
+    of modification after creation
+  - Provide replacement for deprecated function at Score
+  - Score.setCapacity(): Check whether capacity is legal
+  - Score.getDateOfCreation(): Remove duplicate function
+  - Score.clone(): Fix to copy mVersionID
+  - Score.startupDatabaseIntegrityTest(): Check mCapacity and mVersionID
+  - Main class WebOfTrust: Document what capacities are, provide array
+    with all valid ones
+  - DateUtil: New class to provide waitUntilCurrentTimeUTCIsAfter(),
+    useful for unit tests
+  - AbstractJUnit4BaseTest: Migrate more functions from the JUnit 3
+    predecessor of this class
+
+  Irrelevant but interesting random statistics: The tested class Score
+  itself is 540 lines of code. Comparing that to the 1190 lines of
+  test code for it shows that the metric for how long full unit tests
+  are typically may be "twice as much as the tested code itself."
 
 
 Thanks to:
