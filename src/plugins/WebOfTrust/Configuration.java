@@ -5,11 +5,14 @@ package plugins.WebOfTrust;
 
 import static java.util.Arrays.copyOf;
 
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.Logger;
 import freenet.support.codeshortification.IfNull;
 
 /* ATTENTION: This code is a duplicate of plugins.Freetalk.Config. Any changes there should also be done here! */
@@ -285,7 +288,16 @@ public final class Configuration extends Persistent {
 			throw new IllegalStateException("mConstantRandomPad must never be changed!");
 		
 		mConstantRandomPad = new byte[256 /* desired bit count */ / 8];
-		mWebOfTrust.getPluginRespirator().getNode().secureRandom.nextBytes(mConstantRandomPad);
+		
+		SecureRandom r;
+		PluginRespirator pr = mWebOfTrust.getPluginRespirator();
+		if(pr != null) {
+			r = pr.getNode().secureRandom;
+		} else {
+			Logger.warning(this, "PluginRespirator == null, should only happen in unit tests!");
+			r = new SecureRandom();
+		}
+		r.nextBytes(mConstantRandomPad);
 	}
 
 	/**
