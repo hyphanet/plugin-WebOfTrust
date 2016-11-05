@@ -473,6 +473,13 @@ public final class Configuration extends Persistent {
 				"Wrong mConstantRandomPad length: " + mConstantRandomPad.length);
 		}
 		
+		boolean hasNonDefaultMember = false;
+		for(int i = 0; i < mConstantRandomPad.length; ++i)
+			hasNonDefaultMember |= (mConstantRandomPad[i] != 0);
+		
+		if(!hasNonDefaultMember)
+			throw new IllegalStateException("mConstantRandomPad is not initialized!!");
+		
 		if(mIntParams == null)
 			throw new NullPointerException("mIntParams==null");
 		
