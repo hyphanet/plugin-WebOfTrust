@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.util.Arrays.copyOf;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
@@ -59,6 +61,9 @@ public final class Configuration extends Persistent {
 	 * {@link #DEFAULT_VERIFY_SCORES_INTERVAL}.
 	 */
 	private Date mLastVerificationOfScoresDate;
+	
+	/** @see #getConstantRandomPad() */
+	private byte[] mConstantRandomPad;
 
 	/**
 	 * The {@link HashMap} that contains all {@link String} configuration parameters
@@ -85,6 +90,8 @@ public final class Configuration extends Persistent {
 	 * Creates a new Config object and stores the default values in it.
 	 */
 	protected Configuration(WebOfTrust myWebOfTrust) {
+		initializeTransient(myWebOfTrust);
+		
 		mDatabaseFormatVersion = WebOfTrust.DATABASE_FORMAT_VERSION;
 		
 		// This constructor can be assumed to be called upon first time use of WOT.
@@ -93,10 +100,11 @@ public final class Configuration extends Persistent {
 		// huge startup delays.
 		mLastDefragDate = CurrentTimeUTC.get();
 		mLastVerificationOfScoresDate = CurrentTimeUTC.get();
+		initializeConstantRandomPad();
 		
 		mStringParams = new HashMap<String, String>();
 		mIntParams = new HashMap<String, Integer>();
-		initializeTransient(myWebOfTrust);
+		
 		setDefaultValues(false);
 	}
 	
@@ -264,6 +272,39 @@ public final class Configuration extends Persistent {
 	}
 
 	/**
+	 * Populates the member variable {@link #mConstantRandomPad} which was added in version 7.
+	 * Please make that variable final once you remove this function. */
+	void upgradeDatabaseFormatVersion7() {
+		initializeConstantRandomPad();
+	}
+
+	/** @see #getConstantRandomPad() */
+	private void initializeConstantRandomPad() {
+		checkedActivate(1);
+		if(mConstantRandomPad != null)
+			throw new IllegalStateException("mConstantRandomPad must never be changed!");
+		
+		mConstantRandomPad = new byte[256 /* desired bit count */ / 8];
+		mWebOfTrust.getPluginRespirator().getNode().secureRandom.nextBytes(mConstantRandomPad);
+	}
+
+	/**
+	 * Returns 256 bit (32 bytes) of secure entropy which are generated at first use of the database
+	 * and then stay the same for ever even across restarts
+	 *  - thus they must NOT be visible to remote peers!
+	 * 
+	 * Can be used with persistent in-database hash-based data structures to secure them against
+	 * remote hash collision attacks:
+	 * To ensure attackers cannot maliciously cause collisions xor the hash with this pad to make it
+	 * difficult for attackers to guess the hash.
+	 * 
+	 * The returned array is a copy of the original one, you're free to modify it as you please. */
+	public byte[] getConstantRandomPad() {
+		checkedActivate(1);
+		return copyOf(mConstantRandomPad, mConstantRandomPad.length);
+	}
+
+	/**
 	 * Sets a String configuration parameter. You have to call storeAndCommit to write it to disk.
 	 * 
 	 * @param key Name of the config parameter.
@@ -415,7 +456,11 @@ public final class Configuration extends Persistent {
 			                               + mLastVerificationOfScoresDate);
 		}
 		
-
+		if(mConstantRandomPad.length != 32) {
+			throw new IllegalStateException(
+				"Wrong mConstantRandomPad length: " + mConstantRandomPad.length);
+		}
+		
 		if(mIntParams == null)
 			throw new NullPointerException("mIntParams==null");
 		

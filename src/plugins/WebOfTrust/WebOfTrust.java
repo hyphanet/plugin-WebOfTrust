@@ -1022,6 +1022,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 		f.deleteAllCommands();
 		Logger.normal(this, "Deleting commands of the legacy IdentityFetcher finished.");
 		
+		mConfig.upgradeDatabaseFormatVersion7();
+		mConfig.storeAndCommit();
+		
 		throw new UnsupportedOperationException(
 		    "The code of this branch is not finished yet, please do not use it: "
 		  + "It will *gradually* change the scheme of the database, and having databases of "
