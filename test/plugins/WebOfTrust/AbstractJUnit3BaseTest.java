@@ -398,8 +398,9 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	public void testSelf() {
 		
 	}
-	
-	protected void flushCaches() {
+
+	/** @deprecated Use {@link AbstractJUnit4BaseTest#flushCaches()} */
+	@Deprecated protected void flushCaches() {
 		System.gc();
 		System.runFinalization();
 		if(mWoT != null) {

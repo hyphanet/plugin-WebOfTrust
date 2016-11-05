@@ -575,4 +575,16 @@ public abstract class AbstractJUnit4BaseTest {
             s[i] = (char)('a' + mRandom.nextInt(26));
         return new String(s);
     }
+
+    protected void flushCaches() {
+        System.gc();
+        System.runFinalization();
+        WebOfTrust wot = getWebOfTrust();
+        if(wot != null) {
+            Persistent.checkedRollback(wot.getDatabase(), this, null);
+            wot.getDatabase().purge();
+        }
+        System.gc();
+        System.runFinalization();
+    }
 }
