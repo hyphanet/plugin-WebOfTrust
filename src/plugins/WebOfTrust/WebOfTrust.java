@@ -424,7 +424,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		mIdentityFileProcessor.start();
 	}
 
-	File getDatabaseFile() {
+	public File getDatabaseFile() {
 		if(mDatabaseFile == null)
 			setDatabaseFile(new File(getUserDataDirectory(), DATABASE_FILENAME));
 		

@@ -8,6 +8,8 @@ import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static org.junit.Assert.*;
 
+import java.io.File;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -18,6 +20,9 @@ import org.junit.Test;
 import plugins.WebOfTrust.AbstractJUnit4BaseTest;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 
 /** Tests {@link EditionHint}. */
@@ -28,6 +33,70 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 
 	@Before public void setUp() {
 		mWebOfTrust = constructEmptyWebOfTrust();
+	}
+
+	/**
+	 * Tests {@link EditionHint#encryptIdentityID(WebOfTrust, String)} and
+	 * {@link EditionHint#decryptIdentityID(WebOfTrust, String)}.
+	 * 
+	 * (As a consequence {@link #testDencryptIdentityIDWebOfTrustString()} is empty.) */
+	@Test public final void testEncryptIdentityIDWebOfTrustString() throws UnknownIdentityException,
+			MalformedURLException, InvalidParameterException {
+		
+		File database;
+		FreenetURI requestURI;
+		String id;
+		String encryptedID;
+		// Test basic encrypt/decrypt cycle
+		{
+			database = mWebOfTrust.getDatabaseFile();
+			Identity identity = addRandomIdentities(1).get(0);
+			requestURI = identity.getRequestURI();
+			
+			id = identity.getID();
+			encryptedID = EditionHint.encryptIdentityID(mWebOfTrust, id);
+			String decryptedID = EditionHint.decryptIdentityID(mWebOfTrust, encryptedID);
+			
+			assertNotEquals(id, encryptedID);
+			assertEquals(id, decryptedID);
+			
+			mWebOfTrust.terminate();
+			mWebOfTrust = null;
+		}
+		
+		// Test whether decryption works across restarts
+		{
+			mWebOfTrust = new WebOfTrust(database.toString());
+			Identity identity = mWebOfTrust.getIdentityByURI(requestURI);
+			assertEquals(id, identity.getID());
+			
+			assertEquals(identity.getID(), EditionHint.decryptIdentityID(mWebOfTrust, encryptedID));
+			
+			// Bonus checks: Encryption should also work the same
+			assertEquals(encryptedID, EditionHint.encryptIdentityID(mWebOfTrust, identity.getID()));
+			
+			mWebOfTrust.terminate();
+			mWebOfTrust = null;
+		}
+		
+		// Test whether encryption with a different WebOfTrust instance uses a different key as it
+		// is supposed to.
+		{
+			mWebOfTrust = constructEmptyWebOfTrust();
+			Identity identity = mWebOfTrust.addIdentity(requestURI.toString());
+			assertEquals(id, identity.getID());
+			
+			assertNotEquals(encryptedID,
+				EditionHint.encryptIdentityID(mWebOfTrust, identity.getID()));
+		}
+	}
+
+	/**
+	 * Does nothing:
+	 * {@link EditionHint#decryptIdentityID(WebOfTrust, String)} is implicitly tested by 
+	 * {@link #testEncryptIdentityIDWebOfTrustString()} as well. */
+	@Test public final void testDecryptIdentityIDWebOfTrustString() {
+		
 	}
 
 	/**
