@@ -73,6 +73,12 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		return new InitializingObjectSet<EditionHint>(mWoT, q);
 	}
 
+	private ObjectSet<EditionHint> getAllEditionHints() {
+		Query q = mDB.query();
+		q.constrain(EditionHint.class);
+		return new InitializingObjectSet<EditionHint>(mWoT, q);
+	}
+
 	@Override public void deleteAllCommands() {
 		// FIXME
 	}
