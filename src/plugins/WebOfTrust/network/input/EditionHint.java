@@ -44,11 +44,6 @@ import freenet.support.IllegalBase64Exception;
  * (Also, keeping an USK up to date requires a constant polling load on the network, so with M
  * identities, there would be O(M) polls on the network repeating at some time interval forever.)
  * 
- * FIXME: Make {@link Persistent#startupDatabaseIntegrityTest()} of the class which manages
- * {@link EditionHint} objects check whether their sorting order according to
- * {@link #compareTo(EditionHint)} does adhere to the order of using
- * {@link #compareTo_ReferenceImplementation(EditionHint)} instead.
- * 
  * @see IdentityDownloader#storeNewEditionHintCommandWithoutCommit(EditionHint) */
 public final class EditionHint extends Persistent implements Comparable<EditionHint> {
 

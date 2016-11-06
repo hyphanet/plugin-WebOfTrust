@@ -3,9 +3,11 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
+import static java.util.Collections.sort;
 import static java.util.Objects.requireNonNull;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.Comparator;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
@@ -15,6 +17,8 @@ import plugins.WebOfTrust.util.Daemon;
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
+
+import freenet.support.Logger;
 
 /**
  * Uses USK edition hints to download {@link Identity}s from the network for which we have a
@@ -31,7 +35,15 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	private final WebOfTrust mWoT;
 	
 	private final ExtObjectContainer mDB;
-	
+
+	private static transient volatile boolean logDEBUG = false;
+
+	private static transient volatile boolean logMINOR = false;
+
+	static {
+		Logger.registerClass(IdentityDownloaderSlow.class);
+	}
+
 
 	public IdentityDownloaderSlow(WebOfTrust wot) {
 		requireNonNull(wot);
@@ -41,7 +53,10 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	}
 
 	@Override public void start() {
-		// FIXME
+		// FIXME: Implement
+		
+		if(logDEBUG)
+			testDatabaseIntegrity();
 	}
 
 	@Override public void terminate() {
@@ -83,4 +98,21 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		// FIXME
 	}
 
+	private void testDatabaseIntegrity() {
+		ObjectSet<EditionHint> queueSortedByDb4o = getQueue();
+		ArrayList<EditionHint> queueSortedWithReferenceImpl = new ArrayList<>(getAllEditionHints());
+		
+		sort(queueSortedWithReferenceImpl, new Comparator<EditionHint>() {
+			@Override public int compare(EditionHint h1, EditionHint h2) {
+				return h1.compareTo_ReferenceImplementation(h2);
+			}
+		});
+		
+		if(!queueSortedWithReferenceImpl.equals(queueSortedByDb4o)) {
+			Logger.error(this, "Sorting EditionHints by mPriority returns wrong order: ");
+			
+			for(EditionHint h : queueSortedByDb4o)
+				Logger.error(this, h.toString());
+		}
+	}
 }
