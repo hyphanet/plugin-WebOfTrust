@@ -4,6 +4,7 @@
 package plugins.WebOfTrust.network.input;
 
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static plugins.WebOfTrust.util.AssertUtil.assertDidNotThrow;
 import static plugins.WebOfTrust.util.DateUtil.roundToNearestDay;
 import static plugins.WebOfTrust.util.DateUtil.toStringYYYYMMDD;
@@ -22,7 +23,9 @@ import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.WebOfTrust;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.IllegalBase64Exception;
 
 /**
  * An EditionHint advertises the latest {@link FreenetURI#getEdition() USK edition} an
@@ -190,8 +193,10 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 
 	/** Factory with parameter validation */
 	public static EditionHint constructSecure(
-			String sourceIdentityID, String targetIdentityID, Date date, int sourceCapacity,
-			int sourceScore, long edition) {
+			WebOfTrust wot, String sourceIdentityID, String targetIdentityID, Date date,
+			int sourceCapacity, int sourceScore, long edition) {
+		
+		requireNonNull(wot);
 		
 		IdentityID.constructAndValidateFromString(sourceIdentityID);
 		IdentityID.constructAndValidateFromString(targetIdentityID);
@@ -216,27 +221,28 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 			throw new IllegalArgumentException("Invalid edition: " + edition);
 		
 		return new EditionHint(
-			sourceIdentityID, targetIdentityID, date, sourceCapacity, sourceScore, edition);
+			wot, sourceIdentityID, targetIdentityID, date, sourceCapacity, sourceScore, edition);
 	}
 
 	/** Factory WITHOUT parameter validation */
 	static EditionHint construcInsecure(
-			final String sourceIdentityID, final String targetIdentityID, final Date date,
-			final int sourceCapacity, final int sourceScore, final long edition) {
+			final WebOfTrust wot, final String sourceIdentityID, final String targetIdentityID,
+			final Date date, final int sourceCapacity, final int sourceScore, final long edition) {
 		
 		assertDidNotThrow(new Runnable() { @Override public void run() {
-			constructSecure(
-				sourceIdentityID, targetIdentityID, date, sourceCapacity, sourceScore, edition);
+			constructSecure(wot, sourceIdentityID, targetIdentityID, date, sourceCapacity,
+				sourceScore, edition);
 		}});
 		
 		return new EditionHint(
-			sourceIdentityID, targetIdentityID, date, sourceCapacity, sourceScore, edition);
+			wot, sourceIdentityID, targetIdentityID, date, sourceCapacity, sourceScore, edition);
 	}
 
 	private EditionHint(
-			String sourceIdentityID, String targetIdentityID, Date date, int sourceCapacity,
-			int sourceScore, long edition) {
+			WebOfTrust wot, String sourceIdentityID, String targetIdentityID, Date date,
+			int sourceCapacity, int sourceScore, long edition) {
 		
+		initializeTransient(wot);
 		mSourceIdentityID = sourceIdentityID;
 		mTargetIdentityID = targetIdentityID;
 		mDate = roundToNearestDay(date);
@@ -244,8 +250,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		mSourceScore = sourceScore >= 0 ? (byte)1 : (byte)-1;
 		mEdition = edition;
 		
-		mPriority
-			= computePriority(mDate, mSourceCapacity, mSourceScore, mTargetIdentityID, mEdition);
+		mPriority = computePriority(
+			wot, mDate, mSourceCapacity, mSourceScore, mTargetIdentityID, mEdition);
 		mID = new TrustID(mSourceIdentityID, mTargetIdentityID).toString();
 	}
 
@@ -266,13 +272,24 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return mEdition;
 	}
 
-	private static String computePriority(
-			Date roundedDate, byte capacity, int roundedScore, String targetID, long edition) {
+	private static String computePriority(WebOfTrust wot, Date roundedDate, byte capacity,
+			int roundedScore, String targetID, long edition) {
 		
 		assert(roundedDate.equals(roundToNearestDay(roundedDate)));
 		assert(capacity >= MIN_CAPACITY && capacity <= 100);
 		assert(roundedScore == -1 || roundedScore == 1);
 		assert(edition >= 0);
+		
+		// We want to include the targetID in the result String to be compliant with
+		// compareTo_ReferenceImplementation()'s desire of not falling back to the edition as
+		// sorting key for Identities with different IDs.
+		// Unfortunately, this also has the side-effect that IDs such as "aaaaaa..." have a higher
+		// priority than "b...".  As the targetID is the Identity.getID() of a *remote* Identity,
+		// and is the hash of their self-generated public key, this would allow attackers to
+		// bruteforce public-key generation to get an ID of "aaaa..." in order to maliciously get
+		// a higher priority.
+		// To prevent that, we encrypt the ID with a local, non-public random pad.
+		targetID = encryptIdentityID(wot, targetID);
 		
 		int length = 8 + 3 + 1 + IdentityID.LENGTH + 19;
 		
@@ -286,6 +303,30 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		assert(sb.capacity() == length);
 		
 		return sb.toString();
+	}
+
+	static String encryptIdentityID(WebOfTrust keyProvider, String id) {
+		byte[] idBytes;
+		try {
+			// TODO: Code quality: Move to class IdentityID
+			idBytes = Base64.decode(id);
+		} catch (IllegalBase64Exception e) {
+			throw new RuntimeException(e);
+		}
+		
+		byte[] pad = keyProvider.getConfig().getConstantRandomPad();
+		if(idBytes.length > pad.length)
+			throw new IllegalArgumentException("getConstantRandomPad() too small: " + pad.length);
+		
+		for(int i = 0; i < idBytes.length; ++i)
+			idBytes[i] ^= pad[i];
+		
+		// TODO: Code quality: Move to class IdentityID
+		return Base64.encode(idBytes);
+	}
+
+	static String decryptIdentityID(WebOfTrust keyProvider, String id) {
+		return encryptIdentityID(keyProvider, id);
 	}
 
 	private String getPriority() {
@@ -304,7 +345,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * For testing purposes:
 	 * Same as {@link #compareTo(EditionHint)} but does not the {@link #mPriority} sorting key.
 	 * It instead compares the member variables from which the sorting key should be build using
-	 * {@link #computePriority(Date, int, int, String, long)}.
+	 * {@link #computePriority(WebOfTrust, Date, int, int, String, long)}.
 	 * This can be used to test the validity of the sorting key. */
 	int compareTo_ReferenceImplementation(EditionHint o) {
 		this.activateFully();
@@ -327,8 +368,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// stored in mPriority.
 		// The commented-out code is what we would do here if the mPriority member variable wasn't
 		// supposed to be used for fast sorting instead of using this function.
-		// We instead do what comes after it the commented out trick as a "mathematical" trick to
-		// have the same resulting sort order both when using this reference implementation AND when
+		// We instead do what comes after the commented-out code as a "mathematical" trick to have
+		// the same resulting sort order both when using this reference implementation AND when
 		// sorting on mPriority.
 		// After you've read the optimized computePriority() to see how mPriority is initialized
 		// you may understand the difference between the commented-out code and what we actually do:
@@ -347,9 +388,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// it will return the result of comparing the ID substrings
 		// - so overall we must do that here in the non-optimized (= non-String based) sorting
 		// function as well.
-		// FIXME: SECURITY: Re-hash the ID together with a local random seed to prevent attackers
-		// from malicious brute forcing pubkey generation to get a hash with prefix "aaaa..." to
-		// boost priority of their identity.
+		// Notice: We don't use the actual ID but encrypt it with a persistent, random key to
+		// to prevent attackers from maliciously brute forcing pubkey generation to get a hash with
+		// prefix "aaaa..." to boost priority of their identity.
 		
 		/*
 		if(mTargetIdentityID.equals(o.mTargetIdentityID))
@@ -358,7 +399,11 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 			return 0; // No sense in comparing edition of different target identities
 		*/
 		
-		int targetIDCompared = mTargetIdentityID.compareTo(o.mTargetIdentityID);
+		WebOfTrust keyProvider = (WebOfTrust)mWebOfTrust;
+		String encryptedID1 = encryptIdentityID(keyProvider,   mTargetIdentityID);
+		String encryptedID2 = encryptIdentityID(keyProvider, o.mTargetIdentityID);
+		
+		int targetIDCompared = encryptedID1.compareTo(encryptedID2);
 		if(targetIDCompared != 0)
 			return targetIDCompared;
 		
@@ -377,8 +422,10 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		
 		// Will throw if any of the passed member variables is invalid.
 		// mID and mPriority are computed from them, we will check them against the returned object.
-		EditionHint this2 = constructSecure(
-			mSourceIdentityID, mTargetIdentityID, mDate, mSourceCapacity, mSourceScore, mEdition);
+		// (The cast from webOfTrustInterface to WebOfTrust is valid because the whole existence
+		// of this function is a detail of the implementation, so we may cast the WoT to it.)
+		EditionHint this2 = constructSecure((WebOfTrust)mWebOfTrust, mSourceIdentityID,
+			mTargetIdentityID, mDate, mSourceCapacity, mSourceScore, mEdition);
 		
 		if(!mID.equals(this2.mID))
 			throw new IllegalStateException("mID is invalid: " + this);

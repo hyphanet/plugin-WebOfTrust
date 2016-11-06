@@ -77,6 +77,7 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 					for(int sourceScore : scores) {
 						for(long edition : editions) {
 							EditionHint h =  EditionHint.constructSecure(
+								mWebOfTrust,
 								sourceIdentities.get(0).getID(),
 								targetIdentity.getID(),
 								date,
@@ -140,6 +141,7 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 							// Inner loop = Vary fields which are not relevant
 							for(Identity sourceIdentity : sourceIdentities) {
 								EditionHint h =  EditionHint.constructSecure(
+									mWebOfTrust,
 									sourceIdentity.getID(),
 									targetIdentity.getID(),
 									date,

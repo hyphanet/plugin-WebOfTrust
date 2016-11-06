@@ -633,6 +633,7 @@ public final class XMLTransformer {
 						assert(bestScore != null) : bestScore;
 						for(Entry<String, Long> e : editionHints.entrySet()) {
 							EditionHint h = EditionHint.constructSecure(
+								mWoT,
 								identity.getID(),
 								e.getKey(),
 								CurrentTimeUTC.get(), /* FIXME: Propagate in the XML */
