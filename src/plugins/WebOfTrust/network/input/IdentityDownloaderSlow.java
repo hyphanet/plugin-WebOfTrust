@@ -55,14 +55,22 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	}
 
 	@Override public void start() {
+		Logger.normal(this, "start() ...");
+		
 		// FIXME: Implement
 		
 		if(logDEBUG)
 			testDatabaseIntegrity();
+		
+		Logger.normal(this, "start() finished.");
 	}
 
 	@Override public void terminate() {
-		// FIXME
+		Logger.normal(this, "terminate() ...");
+		
+		// FIXME: Implement
+		
+		Logger.normal(this, "terminate() finished.");
 	}
 
 	@Override public void storeStartFetchCommandWithoutCommit(Identity identity) {
