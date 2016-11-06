@@ -12,6 +12,8 @@ import java.util.Comparator;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.exceptions.DuplicateObjectException;
+import plugins.WebOfTrust.exceptions.UnknownEditionHintException;
 import plugins.WebOfTrust.util.Daemon;
 
 import com.db4o.ObjectSet;
@@ -89,6 +91,22 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
 		return new InitializingObjectSet<EditionHint>(mWoT, q);
+	}
+
+	private EditionHint getEditionHintByID(String id) throws UnknownEditionHintException {
+		Query query = mDB.query();
+		query.constrain(EditionHint.class);
+		query.descend("mID").constrain(id);
+		ObjectSet<EditionHint> result = new InitializingObjectSet<>(mWoT, query);
+		
+		switch(result.size()) {
+			case 1:
+				EditionHint hint = result.next();
+				assert(hint.getID().equals(id));
+				return hint;
+			case 0:  throw new UnknownEditionHintException(id);
+			default: throw new DuplicateObjectException(id);
+		}
 	}
 
 	private ObjectSet<EditionHint> getQueue() {
