@@ -63,7 +63,7 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 		if(!USE_LEGACY_REFERENCE_IMPLEMENTATION) {
 			mDownloaders = new IdentityDownloader[] {
 				new IdentityDownloaderFast(),
-				new IdentityDownloaderSlow(),
+				new IdentityDownloaderSlow(wot),
 			};
 		} else {
 			mDownloaders = new IdentityDownloader[] {

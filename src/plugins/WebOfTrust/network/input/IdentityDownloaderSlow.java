@@ -3,8 +3,18 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.Objects;
+
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Persistent.InitializingObjectSet;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
+
+import com.db4o.ObjectSet;
+import com.db4o.ext.ExtObjectContainer;
+import com.db4o.query.Query;
 
 /**
  * Uses USK edition hints to download {@link Identity}s from the network for which we have a
@@ -17,9 +27,17 @@ import plugins.WebOfTrust.util.Daemon;
  * This class only deals with the {@link Identity}s which {@link IdentityDownloaderFast} does not
  * download, so in combination the both of these classes download all {@link Identity}s. */
 public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon {
+	
+	private final WebOfTrust mWoT;
+	
+	private final ExtObjectContainer mDB;
+	
 
-	public IdentityDownloaderSlow() {
-		// FIXME
+	public IdentityDownloaderSlow(WebOfTrust wot) {
+		requireNonNull(wot);
+		
+		mWoT = wot;
+		mDB = mWoT.getDatabase();
 	}
 
 	@Override public void start() {
@@ -46,6 +64,13 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	@Override public boolean getShouldFetchState(String identityID) {
 		// FIXME
 		return false;
+	}
+
+	private ObjectSet<EditionHint> getQueue() {
+		Query q = mDB.query();
+		q.constrain(EditionHint.class);
+		q.descend("mPriority").orderDescending();
+		return new InitializingObjectSet<EditionHint>(mWoT, q);
 	}
 
 	@Override public void deleteAllCommands() {
