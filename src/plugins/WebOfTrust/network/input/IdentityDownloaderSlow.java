@@ -90,7 +90,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	private ObjectSet<EditionHint> getAllEditionHints() {
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
-		return new InitializingObjectSet<EditionHint>(mWoT, q);
+		return new InitializingObjectSet<>(mWoT, q);
 	}
 
 	private EditionHint getEditionHintByID(String id) throws UnknownEditionHintException {
@@ -113,7 +113,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
 		q.descend("mPriority").orderDescending();
-		return new InitializingObjectSet<EditionHint>(mWoT, q);
+		return new InitializingObjectSet<>(mWoT, q);
 	}
 
 	private void testDatabaseIntegrity() {
