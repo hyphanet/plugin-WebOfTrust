@@ -21,6 +21,8 @@ import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.exceptions.DuplicateObjectException;
+import plugins.WebOfTrust.exceptions.UnknownEditionHintException;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.support.Base64;
@@ -425,6 +427,17 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		if(!mID.equals(this2.mID))
 			throw new IllegalStateException("mID is invalid: " + this);
 		
+		// Check for whether there is only one hint with our mID
+		try {
+			EditionHint queried
+				= new IdentityDownloaderSlow((WebOfTrust)mWebOfTrust).getEditionHintByID(mID);
+			
+			if(queried != this)
+				throw new RuntimeException("getEditionHintByID() returned wrong hint for: " + mID);
+		} catch(DuplicateObjectException | UnknownEditionHintException e) {
+			throw new IllegalStateException(e);
+		}
+		
 		if(!mPriority.equals(this2.mPriority))
 			throw new IllegalStateException("mPriority is invalid: " + this);
 		
@@ -472,9 +485,6 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// edition hint we received from any identity with a Score of > 0.
 		if(mEdition > target.getLatestEditionHint() && wot.getBestScore(source) > 0)
 			throw new IllegalStateException("Legacy getLatestEditionHint() too low for: " + target);
-		
-		// FIXME: Once IdentityDownloader has a query function for obtaining an EditionHint by mID,
-		// check whether there is only one edition hint for the given ID.
 	}
 
 	/**

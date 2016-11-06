@@ -93,7 +93,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		return new InitializingObjectSet<>(mWoT, q);
 	}
 
-	private EditionHint getEditionHintByID(String id) throws UnknownEditionHintException {
+	EditionHint getEditionHintByID(String id) throws UnknownEditionHintException {
 		Query query = mDB.query();
 		query.constrain(EditionHint.class);
 		query.descend("mID").constrain(id);
