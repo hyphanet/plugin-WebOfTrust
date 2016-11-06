@@ -80,12 +80,9 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		// FIXME
 		return false;
 	}
-
-	private ObjectSet<EditionHint> getQueue() {
-		Query q = mDB.query();
-		q.constrain(EditionHint.class);
-		q.descend("mPriority").orderDescending();
-		return new InitializingObjectSet<EditionHint>(mWoT, q);
+	
+	@Override public void deleteAllCommands() {
+		// FIXME
 	}
 
 	private ObjectSet<EditionHint> getAllEditionHints() {
@@ -94,8 +91,11 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		return new InitializingObjectSet<EditionHint>(mWoT, q);
 	}
 
-	@Override public void deleteAllCommands() {
-		// FIXME
+	private ObjectSet<EditionHint> getQueue() {
+		Query q = mDB.query();
+		q.constrain(EditionHint.class);
+		q.descend("mPriority").orderDescending();
+		return new InitializingObjectSet<EditionHint>(mWoT, q);
 	}
 
 	private void testDatabaseIntegrity() {
