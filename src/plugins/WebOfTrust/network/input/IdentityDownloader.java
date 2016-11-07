@@ -105,7 +105,11 @@ public interface IdentityDownloader extends Daemon {
 	 * It will also check for contradictory commands in the command queue which would be a bug
 	 * (= both start and stop command at once).
 	 *
-	 * You must synchronize upon this IdentityDownloader while calling this function.
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
 	 * 
 	 * @param identityID See {@link Identity#getID()}. */
 	boolean getShouldFetchState(String identityID);

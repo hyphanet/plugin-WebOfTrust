@@ -153,10 +153,19 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	}
 
 	@Override public boolean getShouldFetchState(String identityID) {
-		// FIXME
-		return false;
+		if(getEditionHintsByTargetIdentityID(identityID).size() > 0)
+			return true;
+		
+		// We don't explicitly keep track of which identities are *not* wanted, instead
+		// storeNewEditionHintCommandWithoutCommit() will do a "shouldFetchIdentity()" check
+		// whenever it is called, so we just do it here as well:
+		try {
+			return mWoT.shouldFetchIdentity(mWoT.getIdentityByID(identityID));
+		} catch (UnknownIdentityException e) {
+			throw new RuntimeException(e);
+		}
 	}
-	
+
 	@Override public void deleteAllCommands() {
 		// FIXME
 	}
