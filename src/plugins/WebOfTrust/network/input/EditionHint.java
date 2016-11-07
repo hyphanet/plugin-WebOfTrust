@@ -46,6 +46,11 @@ import freenet.support.IllegalBase64Exception;
  * (Also, keeping an USK up to date requires a constant polling load on the network, so with M
  * identities, there would be O(M) polls on the network repeating at some time interval forever.)
  * 
+ * The in-database storage of EditionHint objects is typically managed by class
+ * {@link IdentityDownloaderSlow}, other classes shall not interfere with the ones in the database.
+ * Other classes may create unstored instances and pass them to {@link IdentityDownloaderSlow} for
+ * letting it decide about their storage.
+ * 
  * @see IdentityDownloader#storeNewEditionHintCommandWithoutCommit(EditionHint) */
 public final class EditionHint extends Persistent implements Comparable<EditionHint> {
 
