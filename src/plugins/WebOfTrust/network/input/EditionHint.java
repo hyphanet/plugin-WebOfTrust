@@ -67,6 +67,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 
 	private final String mSourceIdentityID;
 
+	@IndexedField
 	private final String mTargetIdentityID;
 	
 	/** @see #getID() */

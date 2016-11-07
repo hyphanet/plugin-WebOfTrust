@@ -167,6 +167,14 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	}
 
 	/** You must synchronize upon {@link #mLock} when using this! */
+	private ObjectSet<EditionHint> getEditionHintsByTargetIdentityID(String id) {
+		Query q = mDB.query();
+		q.constrain(EditionHint.class);
+		q.descend("mTargetIdentityID").constrain(id);
+		return new InitializingObjectSet<>(mWoT, q);
+	}
+
+	/** You must synchronize upon {@link #mLock} when using this! */
 	private ObjectSet<EditionHint> getQueue() {
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
