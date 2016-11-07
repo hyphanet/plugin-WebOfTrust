@@ -82,7 +82,26 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	}
 
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
-		// FIXME
+		Logger.normal(this, "storeAbortFetchCommandWithoutCommit(" + identity + ") ...");
+		
+		for(EditionHint h : getEditionHintsByTargetIdentityID(identity.getID())) {
+			if(logMINOR)
+				Logger.minor(this, "Deleting " + h);
+			
+			h.deleteWithoutCommit();
+		}
+		
+		// We intentionally don't tell the network request thread to abort already running requests:
+		// A single running request for a hint doesn't cause any further request when it finishes.
+		// So we will only do O(constant number of concurrent requests) = O(1) requests of unwanted
+		// data, which is the lowest imaginable amount above 0 and thus acceptable.
+		// And most importantly: The XMLTransformer will ignore data of unwanted identities anyway.
+		// Not canceling requests spares us from having to implement a in-database "command queue"
+		// for the network thread: We couldn't cancel the requests right away on this thread here
+		// because the transaction isn't committed yet and may be aborted after we return. We would
+		// then have wrongly canceled a request which should still be running.
+		
+		Logger.normal(this, "storeAbortFetchCommandWithoutCommit() finished");
 	}
 
 	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint newHint) {
