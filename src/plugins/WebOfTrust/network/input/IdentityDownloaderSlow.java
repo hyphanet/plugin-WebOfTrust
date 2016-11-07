@@ -36,6 +36,8 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	
 	private final WebOfTrust mWoT;
 	
+	private final IdentityDownloaderController mLock;
+	
 	private final ExtObjectContainer mDB;
 
 	private static transient volatile boolean logDEBUG = false;
@@ -51,6 +53,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		requireNonNull(wot);
 		
 		mWoT = wot;
+		mLock = mWoT.getIdentityDownloaderController();
 		mDB = mWoT.getDatabase();
 	}
 
@@ -95,12 +98,14 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		// FIXME
 	}
 
+	/** You must synchronize upon {@link #mLock} when using this! */
 	private ObjectSet<EditionHint> getAllEditionHints() {
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
 		return new InitializingObjectSet<>(mWoT, q);
 	}
 
+	/** You must synchronize upon {@link #mLock} when using this! */
 	EditionHint getEditionHintByID(String id) throws UnknownEditionHintException {
 		Query query = mDB.query();
 		query.constrain(EditionHint.class);
@@ -117,6 +122,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		}
 	}
 
+	/** You must synchronize upon {@link #mLock} when using this! */
 	private ObjectSet<EditionHint> getQueue() {
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
@@ -125,6 +131,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	}
 
 	private void testDatabaseIntegrity() {
+		synchronized(mLock) {
 		ObjectSet<EditionHint> queueSortedByDb4o = getQueue();
 		ArrayList<EditionHint> queueSortedWithReferenceImpl = new ArrayList<>(getAllEditionHints());
 		
@@ -139,6 +146,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 			
 			for(EditionHint h : queueSortedByDb4o)
 				Logger.error(this, h.toString());
+		}
 		}
 	}
 }
