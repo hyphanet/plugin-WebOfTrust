@@ -49,7 +49,14 @@ public interface IdentityDownloader extends Daemon {
 	 * *any* {@link OwnIdentity} has rated it as trustworthy enough for us to download it.
 	 * 
 	 * FIXME: Only require {@link Identity#getID()} as parameter to enforce the "ATTENTION" at the
-	 * JavaDoc of this interface. Implementations likely don't need anything but the ID anyway. */
+	 * JavaDoc of this interface. Implementations likely don't need anything but the ID anyway.
+	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) */
 	void storeStartFetchCommandWithoutCommit(Identity identity);
 
 	/**
@@ -58,7 +65,14 @@ public interface IdentityDownloader extends Daemon {
 	 * even one {@link OwnIdentity} has rated it as trustworthy enough for us to download it.
 	 * 
 	 * FIXME: Only require {@link Identity#getID()} as parameter to enforce the "ATTENTION" at the
-	 * JavaDoc of this interface. Implementations likely don't need anything but the ID anyway. */
+	 * JavaDoc of this interface. Implementations likely don't need anything but the ID anyway.
+	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) */
 	void storeAbortFetchCommandWithoutCommit(Identity identity);
 
 	/**
@@ -73,8 +87,9 @@ public interface IdentityDownloader extends Daemon {
 	 * Synchronization:
 	 * This function is guaranteed to be called while the following locks are being held in the
 	 * given order:
-	 * - The {@link WebOfTrust}.
-	 * - The {@link WebOfTrust#getIdentityDownloaderController()}. */
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) */
 	void storeNewEditionHintCommandWithoutCommit(EditionHint hint);
 
 	/**
