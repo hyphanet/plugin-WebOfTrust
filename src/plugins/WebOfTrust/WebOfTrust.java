@@ -2821,7 +2821,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * @return Returns true if the identity has any capacity > 0, any score >= 0 or if it is an own identity.
 	 */
-    boolean shouldFetchIdentity(final Identity identity) {
+    public boolean shouldFetchIdentity(final Identity identity) {
 		if(identity instanceof OwnIdentity) {
 			// TODO: Performance: Get rid of the self-score check and just return true.
 			// See main TODO at WoTTest.testSetTrust1().

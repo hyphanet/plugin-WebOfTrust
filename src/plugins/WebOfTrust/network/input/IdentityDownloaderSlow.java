@@ -14,6 +14,7 @@ import plugins.WebOfTrust.Persistent.InitializingObjectSet;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 import plugins.WebOfTrust.exceptions.UnknownEditionHintException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.Daemon;
 
 import com.db4o.ObjectSet;
@@ -88,6 +89,19 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		// Class EditionHint should enforce this in theory, but it has a legacy codepath which
 		// doesn't, so we better check whether the enforcement works.
 		assert(newHint.getSourceCapacity() > 0);
+		
+		try {
+			Identity target = mWoT.getIdentityByID(newHint.getID());
+			
+			// FIXME: I'm rather sure that XMLTransformer won't check this, but please validate it
+			if(!mWoT.shouldFetchIdentity(target)) {
+				Logger.normal(this, "Received hint for non-trusted target, discarding: " + newHint);
+				return;
+			}
+		} catch(UnknownIdentityException e) {
+			// Should not happen
+			throw new RuntimeException(e);
+		}
 		
 		try {
 			EditionHint oldHint = getEditionHintByID(newHint.getID());

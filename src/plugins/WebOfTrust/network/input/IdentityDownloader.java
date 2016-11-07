@@ -68,7 +68,13 @@ public interface IdentityDownloader extends Daemon {
 	 * the latest {@link FreenetURI#getEdition()} of the given {@link Identity} as claimed by a
 	 * remote identity. We can try to download the hint and if it is indeed downloadable, we are
 	 * lucky - but it may very well be a lie. In that case, to avoid DoS, we must discard it and try
-	 * the next lower hint we received from someone else. */
+	 * the next lower hint we received from someone else.
+	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * - The {@link WebOfTrust}.
+	 * - The {@link WebOfTrust#getIdentityDownloaderController()}. */
 	void storeNewEditionHintCommandWithoutCommit(EditionHint hint);
 
 	/**
