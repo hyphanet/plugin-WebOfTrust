@@ -264,6 +264,11 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return mTargetIdentityID;
 	}
 
+	public byte getSourceCapacity() {
+		checkedActivate(1);
+		return mSourceCapacity;
+	}
+
 	public long getEdition() {
 		checkedActivate(1);
 		return mEdition;
@@ -492,6 +497,16 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * You must adjust this when introducing new member variables! */
 	@Override protected void activateFully() {
 		checkedActivate(1);
+	}
+
+	@Override protected void storeWithoutCommit() {
+		activateFully();
+		super.storeWithoutCommit();
+	}
+
+	@Override protected void deleteWithoutCommit() {
+		activateFully();
+		super.deleteWithoutCommit();
 	}
 
 	@Override public String toString() {

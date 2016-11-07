@@ -390,6 +390,12 @@ public abstract class Persistent implements Serializable {
 	 * } 
 	 */
 	protected void storeWithoutCommit() {
+		// TODO: Code quality: Use activateFully() and get rid of the depth parameter of the 
+		// function we call here, or at least make it private:
+		// The existence of the depth-consuming function makes child classes likely to use the
+		// depth consuming function instead of this one, and that makes them duplicate the depth
+		// constant in their code base; i.e. they have to not only specify it at their
+		// activateFully() override, but also at their storeWithoutCommit().
 		storeWithoutCommit(1);
 	}
 	
@@ -422,6 +428,12 @@ public abstract class Persistent implements Serializable {
 	 * } 
 	 */
 	protected void deleteWithoutCommit() {
+		// TODO: Code quality: Use activateFully() and get rid of the depth parameter of the 
+		// function we call here, or at least make it private:
+		// The existence of the depth-consuming function makes child classes likely to use the
+		// depth consuming function instead of this one, and that makes them duplicate the depth
+		// constant in their code base; i.e. they have to not only specify it at their
+		// activateFully() override, but also at their deleteWithoutCommit().
 		deleteWithoutCommit(1);
 	}
 	

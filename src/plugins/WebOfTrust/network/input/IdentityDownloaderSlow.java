@@ -84,9 +84,39 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		// FIXME
 	}
 
-	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint hint) {
+	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint newHint) {
+		// Class EditionHint should enforce this in theory, but it has a legacy codepath which
+		// doesn't, so we better check whether the enforcement works.
+		assert(newHint.getSourceCapacity() > 0);
 		
-		// FIXME
+		try {
+			EditionHint oldHint = getEditionHintByID(newHint.getID());
+			assert(oldHint.getSourceIdentityID().equals(newHint.getSourceIdentityID()));
+			assert(oldHint.getTargetIdentityID().equals(newHint.getTargetIdentityID()));
+			
+			long oldEdition = oldHint.getEdition();
+			long newEdition = newHint.getEdition();
+			
+			if(newEdition < oldEdition) {
+				// FIXME: Track this in a counter and punish hint publishers if they do it too often
+				Logger.warning(this, "Received hint older than current, discarding:");
+				Logger.warning(this, "oldHint: " + oldHint);
+				Logger.warning(this, "newHint: " + newHint);
+				return;
+			} else if(newEdition == oldEdition) {
+				// FIXME: Decide whether we can handle this in the callers
+				Logger.warning(this, "Received same hint as currently stored, bug?");
+				Logger.warning(this, "oldHint: " + oldHint);
+				Logger.warning(this, "newHint: " + newHint);
+				return;
+			}
+			
+			oldHint.deleteWithoutCommit();
+		} catch(UnknownEditionHintException e) {}
+		
+		newHint.storeWithoutCommit();
+		
+		// FIXME: Wakup network request thread.
 	}
 
 	@Override public boolean getShouldFetchState(String identityID) {
