@@ -112,7 +112,7 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * @param class The clazz whose fields to check. The given original and clone must be an instance of this or a subclass of it. 
 	 * @param original The original object.
 	 * @param clone A result of <code>original.clone();</code>
-	 * @deprecated Use {@link AbstractJUnit3BaseTest#testClone(Class, Object, Object)}
+	 * @deprecated Use {@link AbstractJUnit4BaseTest#testClone(Class, Object, Object)}
 	 */
 	@Deprecated
 	protected void testClone(Class<?> clazz, Object original, Object clone) throws IllegalArgumentException, IllegalAccessException {
