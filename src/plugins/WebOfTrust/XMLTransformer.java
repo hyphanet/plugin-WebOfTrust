@@ -269,6 +269,12 @@ public final class XMLTransformer {
 								"of " + identity + ": Trust value from " + trust.getTruster() + "");
 
 					Element trustElement = xmlDoc.createElement("Trust");
+					// FIXME: Take into account the getTrustee().getCurrentEditionFetchState() to
+					// avoid publishing edition hints for editions which don't exist yet.
+					// Encapsulate this by adding a function "getLastFetchedURI()" to class Identity
+					// Also think about how much of the currently existing edition hints on the
+					// network before these changes are wrong, i.e. of editions which don't exist
+					// yet. If this applies to most of them we might need some compatibility code.
 					trustElement.setAttribute("Identity", trust.getTrustee().getRequestURI().toString());
 					trustElement.setAttribute("Value", Byte.toString(trust.getValue()));
 					trustElement.setAttribute("Comment", trust.getComment());
