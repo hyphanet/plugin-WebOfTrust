@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.System.identityHashCode;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -122,6 +124,12 @@ public abstract class Persistent implements Serializable {
 	
 	/**
 	 * This function has to be implemented by all child classes. It is executed by startup on all persistent objects to test their integrity.
+	 * 
+	 * TODO: Code quality: Provide an implementation here as well to check mCreationDate. We should
+	 * keep this abstract though so people are forced to implement it in child classes. Thus maybe
+	 * use a different name for the implementation here and only notify people to call it by
+	 * mentioning it in the JavaDoc. Or use a "register()"-pattern to allow people to register
+	 * different types of test-functions in a static{} code block.
 	 */
 	public abstract void startupDatabaseIntegrityTest() throws Exception;
 	
@@ -169,7 +177,12 @@ public abstract class Persistent implements Serializable {
 		mWebOfTrust = myWebOfTrust;
 		mDB = db;
 	}
-	
+
+	/** @return See {@link #initializeTransient(WebOfTrustInterface)}. */
+	public final WebOfTrustInterface getWebOfTrust() {
+		return mWebOfTrust;
+	}
+
 	/**
 	 * Returns the lock for creating a transaction.
 	 * A proper transaction typically looks like this:
@@ -207,7 +220,14 @@ public abstract class Persistent implements Serializable {
 		checkedActivate(this, depth);
 		mActivatedUpTo = depth;
 	}
-	
+
+	/**
+	 * For testing purposes only.
+	 * @see #mActivatedUpTo */
+	final int getActivationDepth() {
+		return mActivatedUpTo;
+	}
+
 	/**
 	 * Activate this object to full depth so that all members are active.
 	 * 
@@ -502,6 +522,8 @@ public abstract class Persistent implements Serializable {
 	 */
 	@Override
 	public String toString() {
+		final String clazz = getClass().getSimpleName(); 
+		final String objectID = Integer.toHexString(identityHashCode(this));
 		final String databaseID;
 		
 		if(mDB == null)
@@ -511,10 +533,10 @@ public abstract class Persistent implements Serializable {
 			if(oi == null)
 				databaseID = "object not stored";
 			else
-				databaseID = Long.toString(oi.getInternalID());
+				databaseID = Long.toHexString(oi.getInternalID());
 		}
 		
-		return super.toString() + " (databaseID: " + databaseID + ")";
+		return clazz + ": objectID: " + objectID + "; databaseID: " + databaseID;
 	}
 	
 	/**

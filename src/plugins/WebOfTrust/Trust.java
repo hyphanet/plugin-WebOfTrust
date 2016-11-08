@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.UUID;
 
@@ -19,6 +20,10 @@ import freenet.support.StringValidityChecker;
 
 /**
  * A trust relationship between two Identities.
+ * 
+ * Concurrency:
+ * Trust does not provide locking of its own.
+ * Reads and writes upon Trust objects must be secured by synchronizing on the {@link WebOfTrust}.
  * 
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
@@ -119,10 +124,17 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	 * Its purpose is to allow validation of TrustIDs which we obtain from the database or from the network.
 	 * 
 	 * TODO: This was added after we already had manual ID-generation / checking in the code everywhere. Use this class instead. 
-	 */
+	 * 
+	 * TODO: Code quality: Ensure that callers notice the constructAndValidate() functions by
+	 * making all constructors private and exposing them only through a constructInsecure()
+	 * factories as well. While doing that check whether the callers do use the
+	 * constructAndValidate() functions whenever they should, and also whether they do not when they
+	 * don't need to (because non-validating constructors are a lot faster).
+	 * And rename the constructAndValidate() to constructSecure() to have coherent, short naming
+	 * everywhere. */
 	public static final class TrustID {
 		
-		private static final int MAX_TRUST_ID_LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
+		private static final int LENGTH = IdentityID.LENGTH + "@".length() + IdentityID.LENGTH;
 		
 		private final String mID;
 		private final String mTrusterID;
@@ -154,22 +166,43 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
         }
 
 		private TrustID(String id) {
-			if(id.length() > MAX_TRUST_ID_LENGTH)
-				throw new IllegalArgumentException("ID is too long, length: " + id.length());
+			if(id.length() != LENGTH)
+				throw new IllegalArgumentException("ID has wrong length: " + id.length());
 
 			mID = id;
 
 			final StringTokenizer tokenizer = new StringTokenizer(id, "@");
-
-			mTrusterID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
-			mTrusteeID = IdentityID.constructAndValidateFromString(tokenizer.nextToken()).toString();
-
+			
+			String rawTrusterID;
+			String rawTrusteeID;
+			
+			try {
+				 rawTrusterID = tokenizer.nextToken();
+				 rawTrusteeID = tokenizer.nextToken();
+			} catch(NoSuchElementException e) {
+				throw new IllegalArgumentException("TrustID has too few tokens: " + id);
+			}
+			
 			if(tokenizer.hasMoreTokens())
-				throw new IllegalArgumentException("Invalid MessageID: " + id);
+				throw new IllegalArgumentException("TrustID has too many tokens: " + id);
+			
+			mTrusterID = IdentityID.constructAndValidateFromString(rawTrusterID).toString();
+			mTrusteeID = IdentityID.constructAndValidateFromString(rawTrusteeID).toString();
 		}
-		
+
+		/**
+		 * Validates whether the ID is of valid format and contains valid Freenet routing keys,
+		 * i.e. a valid {@link Identity#getID()} pair to describe a truster/trustee.
+		 * Does not check whether the database actually contains the given truster/trustee! */
+		public static TrustID constructAndValidate(String id) {
+			return new TrustID(id);
+		}
+
+		/**
+		 * Same as {@link #constructAndValidate(String)} but also checks whether the ID matches the
+		 * ID of the given Trust. */
 		public static TrustID constructAndValidate(Trust trust, String id) {
-			final TrustID trustID = new TrustID(id);
+			final TrustID trustID = constructAndValidate(id);
 			
 			if(!trust.getTruster().getID().equals(trustID.mTrusterID))
 				throw new RuntimeException("Truster ID mismatch for Trust " + trust + ": TrustID is " + id);
@@ -203,7 +236,13 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 			
 			return false;
 		}
-		
+
+		@Override public int hashCode() {
+			// Must not use the default implementation because equals() isn't the default either.
+			// It is questionable whether objects of this class should be inserted into hash tables
+			// anyway, maybe better to insert the IDs as strings to avoid excessive object creation.
+			throw new UnsupportedOperationException("Not implemented yet!");
+		}
 	}
 
 
@@ -248,7 +287,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	@Override
 	public String toString() {
 	    activateFully();
-		return "[Trust: " + super.toString()
+		return "[" + super.toString()
 		     + "; mID: " + mID
 		     + "; mValue:" + mValue
              + "; mTrusterTrustListEdition: " + mTrusterTrustListEdition
@@ -291,7 +330,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	}
 
 	/** @return value Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. */
-	public synchronized byte getValue() {
+	public byte getValue() {
 		checkedActivate(1); // byte is a db4o primitive type so 1 is enough
 		return mValue;
 	}
@@ -300,7 +339,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	 * @param newValue Numeric value of this trust relationship. The allowed range is -100 to +100, including both limits. 0 counts as positive. 
 	 * @throws InvalidParameterException if value isn't in the range
 	 */
-	protected synchronized void setValue(byte newValue) throws InvalidParameterException {
+	protected void setValue(byte newValue) throws InvalidParameterException {
 		// TODO: Use l10n Trust.InvalidValue
 		if(newValue < -100 || newValue > 100) 
 			throw new InvalidParameterException("Invalid trust value ("+ newValue +"). Trust values must be in range of -100 to +100.");
@@ -314,7 +353,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	}
 
 	/** @return The comment associated to this Trust relationship. */
-	public synchronized String getComment() {
+	public String getComment() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mComment;
 	}
@@ -322,7 +361,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	/**
 	 * @param newComment Comment on this trust relationship.
 	 */
-	protected synchronized void setComment(String newComment) throws InvalidParameterException {
+	protected void setComment(String newComment) throws InvalidParameterException {
 		assert(newComment != null);
 		
 		newComment = newComment != null ? newComment.trim() : "";
@@ -344,12 +383,12 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 		}
 	}
 	
-	public synchronized Date getDateOfCreation() {
+	public Date getDateOfCreation() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mCreationDate.clone();	// Clone it because date is mutable
 	}
 	
-	public synchronized Date getDateOfLastChange() {
+	public Date getDateOfLastChange() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 	}
@@ -358,12 +397,12 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	 * Called by the XMLTransformer when a new trust list of the truster has been imported. Stores the edition number of the trust list in this trust object.
 	 * For an explanation for what this is needed please read the description of {@link #mTrusterTrustListEdition}.
 	 */
-	protected synchronized void trusterEditionUpdated() {
+	protected void trusterEditionUpdated() {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		mTrusterTrustListEdition = getTruster().getEdition();
 	}
 	
-	public synchronized long getTrusterEdition() {
+	public long getTrusterEdition() {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		return mTrusterTrustListEdition;
 	}

@@ -3,12 +3,15 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.util;
 
+import static java.lang.Math.max;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
+import freenet.support.CurrentTimeUTC;
 import freenet.support.TimeUtil;
 
 /** Tools for use with {@link Date}s. */
@@ -58,6 +61,20 @@ public final class DateUtil {
 		synchronized(DateUtil.class) {
 			return dateFormatShort.format(utcDate);
 		}
+	}
+
+	/** Waits until CurrentTimeUTC.get().after(future) == true */
+	public static void waitUntilCurrentTimeUTCIsAfter(Date future) throws InterruptedException {
+		for(	long currentTime = CurrentTimeUTC.getInMillis();
+				currentTime <= future.getTime();
+				currentTime = CurrentTimeUTC.getInMillis()) {
+			
+			long waitTime = future.getTime() - currentTime;
+			if(waitTime >= 0)
+				Thread.sleep(max(1, waitTime));
+		}
+		
+		assert(CurrentTimeUTC.get().after(future));
 	}
 
 }

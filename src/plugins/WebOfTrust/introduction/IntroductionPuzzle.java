@@ -448,7 +448,10 @@ public class IntroductionPuzzle extends Persistent implements ReallyCloneable<In
 	 * {@link DebugFCPClient} once puzzles are shipped by event-notifications. */
 	@Override
 	public String toString() {
-		return "[" + super.toString() + ": mID:" + mID + "; mDayOfInsertion: " + mDayOfInsertion + "; mRequestURI: " + getRequestURI().toString() + "]";
+		return "[" + super.toString()
+		     + "; mID:" + mID
+		     + "; mDayOfInsertion: " + mDayOfInsertion
+		     + "; mRequestURI: " + getRequestURI().toString() + "]";
 	}
 	
 	@Override

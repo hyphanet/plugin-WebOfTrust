@@ -112,8 +112,12 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * @param class The clazz whose fields to check. The given original and clone must be an instance of this or a subclass of it. 
 	 * @param original The original object.
 	 * @param clone A result of <code>original.clone();</code>
+	 * @deprecated Use {@link AbstractJUnit3BaseTest#testClone(Class, Object, Object)}
 	 */
+	@Deprecated
 	protected void testClone(Class<?> clazz, Object original, Object clone) throws IllegalArgumentException, IllegalAccessException {
+		assertNotSame(original, clone);
+		
 		for(Field field : clazz.getDeclaredFields()) {
 			field.setAccessible(true);
 			if(!field.getType().isArray()) {
@@ -143,6 +147,10 @@ public class AbstractJUnit3BaseTest extends TestCase {
 					assertNull(field.toGenericString(), clonedField); // assertNotSame would fail if both are null because null and null are the same
 			}
 		}
+		
+		// Bonus check:
+		// We did check all fields manually already but we've got equals() so let's use it
+		assertEquals(original, clone);
 	}
 	
 	/**

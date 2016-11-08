@@ -391,7 +391,9 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 
 		@Override
 		public String toString() {
-			return super.toString() + " { Type=" + getType() + "; FCP ID=" + getFCP_ID() + " }"; 
+			return "[" + super.toString()
+			     + "; Type: " + getType()
+			     + "; FCP ID: " + getFCP_ID() + "]"; 
 		}
 	}
 	
@@ -646,7 +648,9 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 
 		@Override
 		public String toString() {
-			return super.toString() + " { ID=" + getID() + "; Client=" + getClient() + " }";
+			return "[" + super.toString()
+			     + "; ID: " + getID()
+			     + "; Client: " + getClient() + "]";
 		}
 	}
 	
@@ -852,7 +856,9 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 
 		@Override
 		public String toString() {
-			return super.toString() + " { oldObject=" + getOldObject() + "; newObject=" + getNewObject() + " }";
+			return "[" + super.toString()
+			     + "; oldObject: " + getOldObject()
+			     + "; newObject: " + getNewObject() + "]";
 		}
 	}
 	
@@ -921,7 +927,8 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
         
         @Override
         public String toString() {
-            return super.toString() + " { mVersionID=" + getID() + " }";
+            return "[" + super.toString()
+                 + "; mVersionID: " + getID() + "]";
         }
 	}
 

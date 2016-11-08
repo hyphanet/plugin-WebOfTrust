@@ -172,8 +172,8 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		 * Checks whether it is valid Base64-encoding.
 		 */
 		private IdentityID(String id) {
-			if(id.length() > LENGTH)
-				throw new IllegalArgumentException("ID is too long, length: " + id.length());
+			if(id.length() != LENGTH)
+				throw new IllegalArgumentException("ID has wrong length: " + id.length());
 			
 			try {
 				mRoutingKey = Base64.decode(id);
@@ -263,6 +263,13 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 				return mID.equals((String)o);
 			
 			return false;
+		}
+
+		@Override public int hashCode() {
+			// Must not use the default implementation because equals() isn't the default either.
+			// It is questionable whether objects of this class should be inserted into hash tables
+			// anyway, maybe better to insert the IDs as strings to avoid excessive object creation.
+			throw new UnsupportedOperationException("Not implemented yet!");
 		}
 
 		/**
@@ -992,7 +999,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	@Override
 	public String toString() {
 		activateFully(); 
-		return "[Identity: " + super.toString()
+		return "[" + super.toString()
 		     + "; mID: " + mID
 		     + "; mRequestURIString: " + mRequestURIString
 		     + "; mRequestURI: " + mRequestURI
