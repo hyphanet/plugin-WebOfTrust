@@ -1028,6 +1028,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 		mConfig.upgradeDatabaseFormatVersion7();
 		mConfig.storeAndCommit();
 		
+		// FIXME: Cause re-download of all Identities to bootstrap the database with objects of the
+		// new class EditionHint.
+		// Our existing data isn't sufficient for that: We previously only stored the highest known
+		// edition hint, which can be used for DoS by publishing a too high one. Class EditionHint
+		// fixes this by having one EditionHint object for each single edition from a single
+		// truster. But we don't have "Truster -> EditionHint" information in the old database, we
+		// only have the highest hint. So we need to re-download all trust lists.
+		// This should be implemented by Identity.markForRefetch() on all Identitys. But before
+		// doing so you need to adapt markForRefetch() to work with the changes of this branch; i.e
+		// to make it work together with IdentityDownloaderFast / IdentityDownloaderSlow.
+		
 		throw new UnsupportedOperationException(
 		    "The code of this branch is not finished yet, please do not use it: "
 		  + "It will *gradually* change the scheme of the database, and having databases of "
