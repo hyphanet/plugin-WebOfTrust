@@ -444,7 +444,26 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
             // to the enum and long which we set in the following code.
             /* checkedDelete(mRequestURIString); */
             mRequestURIString = requestURI.setSuggestedEdition(newEdition).toString();
+			
+			// FIXME: The following code line is confusing: After having fetched a new editon,
+			// XMLTransformer doesn't increment the edition before calling this function, it passes
+			// the fetched edition. So one could think it is a bug that we set "NotFetched" here and
+			// we should set "Fetched" instead.
+			// But in fact there also is a function called "onFetched()" which XMLTransformer uses
+			// to set the fetch state to "Fetched" - which it does multiple screens afterwards,
+			// which makes it so confusing.
+			// To fix the confusion, get rid of the excess functions and unify things to only have
+			// a function which BOTH consumes the new edition AND the new FetchState. This ensures
+			// that callers don't forget to update the fetch state, and that the code is more
+			// readable.
+			// Please carefully review all related code while doing that: The fetch state and
+			// edition numbers are used in quite a few places, the side effects may be complex.
+			// Notice: It is possible that something related to this is the cause for the bug of
+			// always re-importing the XML of OwnIdentities after every insert which causes them to
+			// lose any trustees above the 512 limit. If it indeed is, please document it as fixed
+			// in the bugtracker / changelog after having fixed it.
 			mCurrentEditionFetchState = FetchState.NotFetched;
+			
 			if (newEdition > mLatestEditionHint) {
 				// Do not call setNewEditionHint() to prevent confusing logging.
 				mLatestEditionHint = newEdition;
