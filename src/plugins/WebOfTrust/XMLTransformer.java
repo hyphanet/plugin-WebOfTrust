@@ -433,19 +433,23 @@ public final class XMLTransformer {
                 return;
             }
 			
-			long newEdition = identityURI.getEdition();
-			if(identity.getEdition() > newEdition) {
-				if(logDEBUG) Logger.debug(this, "Fetched an older edition: current == " + identity.getEdition() + "; fetched == " + identityURI.getEdition());
-				return;
-			} else if(identity.getEdition() == newEdition) {
-				if(identity.getCurrentEditionFetchState() == FetchState.Fetched) {
-					if(logDEBUG) Logger.debug(this, "Fetched current edition which is marked as fetched already, not importing: " + identityURI);
+			final long newEdition = identityURI.getEdition();
+			if(newEdition <= identity.getLastFetchedEdition()) {
+				if(identity.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
+					Logger.warning(this,
+						  "Fetched obsolete edition, bug? Allowing import nevertheless because "
+						+ "current one is marked as ParsingFailed: This may not be a bug if you "
+						+ "intentionally cause re-fetching for cleanup after parser bugfixes! "
+						+ "edition: " + newEdition + "; " + identity);
+					
+					// Don't return, proceed to import it, maybe parsing works now.
+				} else {
+					Logger.error(this,
+						"Fetched obsolete edition, bug? edition: " + newEdition + "; " + identity);
 					return;
-				} else if(identity.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
-					Logger.normal(this, "Re-fetched current-edition which was marked as parsing failed: " + identityURI);
 				}
 			}
-				
+			
 			// We throw parse errors AFTER checking the edition number: If this XML was outdated anyway, we don't have to throw.
 			if(xmlData.parseError != null)
 				throw xmlData.parseError;
