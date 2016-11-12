@@ -394,11 +394,40 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	/**
 	 * Get the edition number of the request URI of this identity.
 	 * Safe to be called without any additional synchronization.
-	 */
+	 * @deprecated
+	 *    FIXME: This does not take account for the FetchState. Some callers might need a different
+	 *    edition depending on the FetchState, for example {@link #getLastFetchedEdition()}.
+	 *    -> Replace this with more specific getters such as the just mentioned one to prevent
+	 *    callers from forgetting to take account for this. */
+	@Deprecated
 	public final long getEdition() {
 		return getRequestURI().getEdition();
 	}
-	
+
+	/**
+	 * Returns the last edition we know for sure it exists because we downloaded it.
+	 * Notice: Will also return that edition if parsing failed for it.
+	 * 
+	 * If no edition has ever been downloaded, returns -1. */
+	public final long getLastFetchedEdition() {
+		long edition = getEdition();
+		FetchState state = getCurrentEditionFetchState();
+		switch(state) {
+			case Fetched:
+			case ParsingFailed:
+				return edition;
+			case NotFetched:
+				assert(edition >= 0) : "0 is the first possible edition";
+				if(edition == 0)
+					return -1;
+				
+				return edition - 1;
+			default:
+				assert(false);
+				throw new UnsupportedOperationException("Unknown FetchState:" + state);
+		}
+	}
+
 	public final FetchState getCurrentEditionFetchState() {
 		checkedActivate(1);
 		return mCurrentEditionFetchState;

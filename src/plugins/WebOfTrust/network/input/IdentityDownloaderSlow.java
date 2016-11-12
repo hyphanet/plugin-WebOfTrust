@@ -112,6 +112,12 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		try {
 			Identity target = mWoT.getIdentityByID(newHint.getID());
 			
+			if(target.getLastFetchedEdition() >= newHint.getEdition()) {
+				if(logMINOR)
+					Logger.minor(this, "Received obsolete hint, discarding: " + newHint);
+				return;
+			}
+			
 			// FIXME: I'm rather sure that XMLTransformer won't check this, but please validate it
 			if(!mWoT.shouldFetchIdentity(target)) {
 				Logger.normal(this, "Received hint for non-trusted target, discarding: " + newHint);
