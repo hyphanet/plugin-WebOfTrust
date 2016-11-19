@@ -634,8 +634,10 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * If it was not fetched, decreases the edition of the identity by one.
 	 * 
 	 * Called by the {@link WebOfTrust} when the {@link Score} of an identity changes from negative or 0 to > 0 to make the {@link IdentityFetcher} re-download it's
-	 * current trust list. This is necessary because we do not create the trusted identities of someone if he has a negative score. 
-	 */
+	 * current trust list. This is necessary because we do not create the trusted identities of someone if he has a negative score.
+	 * 
+	 * FIXME: Rename to onRefetchRequired() to be coherent with the other functions related to the
+	 * edition / fetch state. */
 	protected void markForRefetch() {
 		checkedActivate(1);
 		// checkedActivate(mCurrentEditionFetchState, 1); not needed, it has no members
