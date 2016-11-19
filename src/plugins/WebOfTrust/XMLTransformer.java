@@ -457,7 +457,6 @@ public final class XMLTransformer {
 			
 			synchronized(Persistent.transactionLock(mDB)) {
 				try { // Transaction rollback block
-					identity.setEdition(newEdition); // The identity constructor only takes the edition number as a hint, so we must store it explicitly.
 					boolean didPublishTrustListPreviously = identity.doesPublishTrustList();
 					identity.setPublishTrustList(xmlData.identityPublishesTrustList);
 					
@@ -663,7 +662,7 @@ public final class XMLTransformer {
 					}
 
 					mWoT.finishTrustListImport();
-					identity.onFetched(); // Marks the identity as parsed successfully
+					identity.onFetchedAndParsedSuccessfully(newEdition);
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
 					identity.storeAndCommit();
 				}
