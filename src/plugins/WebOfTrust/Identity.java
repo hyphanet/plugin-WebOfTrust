@@ -482,7 +482,14 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * 
 	 * @param newEdition A long representing the last fetched version of this identity.
 	 * @throws InvalidParameterException If the new edition is less than the current one. TODO: Evaluate whether we shouldn't be throwing a RuntimeException instead
+	 * @deprecated
+	 *     Previously this function was usually being called in combination with functions for
+	 *     updating the {@link #mCurrentEditionFetchState}.  This is confusing and prone to
+	 *     forgetting on calling one of the both. Thus please nowadays use
+	 *     {@link #onFetchedAndParsedSuccessfully(long)} or {@link #onParsingFailed()} or
+	 *     {@link #markForRefetch()} to update both the edition and fetch state at once.
 	 */
+	@Deprecated
 	protected void setEdition(long newEdition) throws InvalidParameterException {
         // If we did not call checkedActivate(), db4o would not notice and not store the modified
         // mRequestURIString - But checkedActivate() is done by the following getRequestURI()
