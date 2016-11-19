@@ -406,7 +406,8 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 
 	/**
 	 * Returns the last edition we know for sure it exists because we downloaded it.
-	 * Notice: Will also return that edition if parsing failed for it.
+	 * Notice: Will also return that edition if parsing failed for it. If you don't want this,
+	 * use {@link #getLastFetchedMaybeValidEdition()}.
 	 * 
 	 * If no edition has ever been downloaded, returns -1. */
 	public final long getLastFetchedEdition() {
@@ -416,6 +417,35 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 			case Fetched:
 			case ParsingFailed:
 				return edition;
+			case NotFetched:
+				assert(edition >= 0) : "0 is the first possible edition";
+				if(edition == 0)
+					return -1;
+				
+				return edition - 1;
+			default:
+				assert(false);
+				throw new UnsupportedOperationException("Unknown FetchState:" + state);
+		}
+	}
+
+	/**
+	 * Returns the last edition we downloaded if parsing succeeded for it.
+	 * Otherwise returns the previous edition.
+	 * Notice: If the Identity has published multiple editions in sequence for all of which parsing
+	 * failed, this edition may not be parseable as well - hence the "maybe" in the name.
+	 * 
+	 * FIXME: This is not satisfying. Add storage to this class to store the last actually valid
+	 * edition. This will be very useful to punish identities for publishing invalid editions.
+	 * 
+	 * If no edition has ever been downloaded and parsed successfully, returns -1. */
+	public final long getLastFetchedMaybeValidEdition() {
+		long edition = getEdition();
+		FetchState state = getCurrentEditionFetchState();
+		switch(state) {
+			case Fetched:
+				return edition;
+			case ParsingFailed:
 			case NotFetched:
 				assert(edition >= 0) : "0 is the first possible edition";
 				if(edition == 0)
