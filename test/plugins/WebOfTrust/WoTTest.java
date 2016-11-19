@@ -1097,6 +1097,8 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		// For own identities, all information stored on the network is also stored in the local database
 		// - A re-fetch of the current edition is NOT needed.
 		oldOwnIdentity.onFetchedAndParsedSuccessfully(10);
+		assert(oldOwnIdentity.getEdition() == 10);
+		assert(oldOwnIdentity.getCurrentEditionFetchState() == FetchState.Fetched);
 		
 		oldOwnIdentity.storeAndCommit();
 		
