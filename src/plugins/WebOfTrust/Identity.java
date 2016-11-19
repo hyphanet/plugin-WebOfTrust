@@ -419,10 +419,10 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 				return edition;
 			case NotFetched:
 				assert(edition >= 0) : "0 is the first possible edition";
-				if(edition == 0)
-					return -1;
+				if(edition > 0)
+					return edition - 1;
 				
-				return edition - 1;
+				return -1;
 			default:
 				assert(false);
 				throw new UnsupportedOperationException("Unknown FetchState:" + state);
@@ -448,10 +448,10 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 			case ParsingFailed:
 			case NotFetched:
 				assert(edition >= 0) : "0 is the first possible edition";
-				if(edition == 0)
-					return -1;
+				if(edition > 0)
+					return edition - 1;
 				
-				return edition - 1;
+				return -1;
 			default:
 				assert(false);
 				throw new UnsupportedOperationException("Unknown FetchState:" + state);
@@ -1342,6 +1342,10 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		} catch (MalformedURLException e) {
             throw new IllegalStateException("Request URI is invalid: " + e);
 		}
+		
+		// Not checked by testAndNormalizeRequestURI()
+		if(requestURI.getEdition() < 0)
+			throw new IllegalStateException("Edition is below 0: " + requestURI.getEdition());
 		
         if(!mID.equals(IdentityID.constructAndValidateFromURI(requestURI).toString()))
             throw new IllegalStateException("ID does not match request URI!");
