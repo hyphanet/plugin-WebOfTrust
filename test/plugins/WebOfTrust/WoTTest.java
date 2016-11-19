@@ -1197,8 +1197,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		// Test whether capacity 0 to > 0 change causes an already fetched edition to be refetched
 		
 		mWoT.setTrust(truster, trustee, (byte) 0, "should cause capacity 0");
-		trustee.setEdition(1);
-		trustee.onFetched();
+		trustee.onFetchedAndParsedSuccessfully(1);
 		trustee.storeAndCommit();
 		Score score = mWoT.getScore(truster, trustee);
 		assertEquals(0, score.getCapacity());
