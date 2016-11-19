@@ -699,7 +699,8 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		}
 		
 		// Activation is also needed so db4o stores the writes.
-		// 1 is a sufficient depth because all those variables are primitive types to db4o
+		// 1 is a sufficient depth because all those variables are primitive types to db4o.
+		// This also means we don't have to call deleteWithoutCommit() on the old values.
 		checkedActivate(1);
 		mRequestURIString = getRequestURI().setSuggestedEdition(edition).toString();
 		mCurrentEditionFetchState = FetchState.Fetched;
