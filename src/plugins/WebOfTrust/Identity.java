@@ -685,7 +685,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * - {@link #getLastFetchedDate()}
 	 * - {@link #getLastChangeDate()}
 	 * - {@link #getLatestEditionHint()} */
-	protected final void onFetchedAndParsedSuccessfully(long edition) {
+	protected void onFetchedAndParsedSuccessfully(long edition) {
 		if(edition < 0)
 			throw new IllegalArgumentException("Invalid edition, must be >= 0: " + edition);
 		

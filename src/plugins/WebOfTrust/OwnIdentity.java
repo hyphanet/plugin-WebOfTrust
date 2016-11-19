@@ -185,8 +185,16 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 			throw new MalformedURLException("Invalid identity insert URI: " + e + ", URI was: " + uri.toString());
 		}
 	}
-	
-	
+
+	@Override protected final void onFetchedAndParsedSuccessfully(long edition) {
+		// Will throw for us if the edition is invalid, so we don't check it here.
+		super.onFetchedAndParsedSuccessfully(edition);
+		
+		// String is a db4o primitive type so 1 is enough and we don't have to delete the old one.
+		checkedActivate(1);
+		mInsertURIString = getInsertURI().setSuggestedEdition(edition).toString();
+	}
+
 	@Override
 	protected final void setEdition(long edition) throws InvalidParameterException {
 		super.setEdition(edition);
