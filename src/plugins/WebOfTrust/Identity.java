@@ -466,7 +466,8 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	/**
 	 * ATTENTION: Only use this when you need to construct arbitrary Identity objects - for example when writing an FCP parser.
 	 * It won't guarantee semantic integrity of the identity object because it does not update related things such as the date when it was fetched.
-	 * Instead, use the event handlers such as {@link #onFetched()}, {@link #onFetched(Date)} and {@link #onParsingFailed()}.
+	 * Instead, use the event handlers such as {@link #onFetchedAndParsedSuccessfully(long)},
+	 * {@link #onFetched(Date)} and {@link #onParsingFailed()}.
 	 * 
 	 * @param fetchState The desired fetch state.
 	 */
@@ -664,17 +665,62 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	
 	/**
 	 * Has to be called when the identity was fetched and parsed successfully. Must not be called before setEdition!
-	 */
+	 * @deprecated
+	 *     Use {@link #onFetchedAndParsedSuccessfully(long)} instead so you don't have to call this
+	 *     in combination with {@link #setEdition(long)}. */
+	@Deprecated
 	protected final void onFetched() {
 		onFetched(CurrentTimeUTC.get());
 	}
-	
+
+	/**
+	 * Shall be called when we downloaded a new edition of this Identity and parsing of it
+	 * succeeded.
+	 * 
+	 * Updates the affected related values:
+	 * - {@link #getRequestURI()}
+	 * - {@link #getLastFetchedEdition()}
+	 * - {@link #getLastFetchedMaybeValidEdition()}
+	 * - {@link #getCurrentEditionFetchState()}
+	 * - {@link #getLastFetchedDate()}
+	 * - {@link #getLastChangeDate()}
+	 * - {@link #getLatestEditionHint()} */
+	protected final void onFetchedAndParsedSuccessfully(long edition) {
+		if(edition < 0)
+			throw new IllegalArgumentException("Invalid edition, must be >= 0: " + edition);
+		
+		// Don't even accept the "==" case: While it is a valid concern to re-download an edition
+		// for some purposes (Identity wasn't eligible to cast Trust votes but is now), this should
+		// be done by first marking it as *not* fetched.
+		if(edition <= getLastFetchedEdition()) {
+			throw new IllegalStateException(
+				"onFetched() called for old edition! Passed edition: " + edition
+				+ "; Last fetched edition: " + getLastFetchedEdition());
+		}
+		
+		// Activation is also needed so db4o stores the writes.
+		// 1 is a sufficient depth because all those variables are primitive types to db4o
+		checkedActivate(1);
+		mRequestURIString = getRequestURI().setSuggestedEdition(edition).toString();
+		mCurrentEditionFetchState = FetchState.Fetched;
+		mLastFetchedDate = CurrentTimeUTC.get();
+		updated();
+		
+		if(edition > mLatestEditionHint) {
+			// Do not call setNewEditionHint() to prevent confusing logging.
+			mLatestEditionHint = edition;
+		}
+	}
+
 	/**
 	 * Can be used for restoring the last-fetched date from a copy of the identity.
-	 * When an identity is fetched in normal operation, please use the version without a parameter. 
+	 * When an identity is fetched in normal operation, please use
+	 * {@link #onFetchedAndParsedSuccessfully(long)}. 
 	 * 
 	 * Must not be called before setEdition!
-	 */
+	 * 
+	 * @deprecated FIXME: Rename to forceSetLastFetchedDate() */
+	@Deprecated
 	protected final void onFetched(Date fetchDate) {
 		checkedActivate(1);
 		
@@ -688,7 +734,10 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	
 	/**
 	 * Has to be called when the identity was fetched and parsing failed. Must not be called before setEdition!
+	 * 
+	 * @deprecated FIXME: Rename to onFetchedAndParsedUnsuccessfully(), consume edition as param
 	 */
+	@Deprecated
 	protected final void onParsingFailed() {
 		checkedActivate(1);
 		
