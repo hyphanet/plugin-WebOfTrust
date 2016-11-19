@@ -911,6 +911,8 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		// The insert URI we pass to restoreOwnIdentity provides a higher edition number.
 		oldNonOwnIdentity.setEdition(10);
 		oldNonOwnIdentity.onFetched();
+		assert(oldNonOwnIdentity.getEdition() == 10);
+		assert(oldNonOwnIdentity.getCurrentEditionFetchState() == FetchState.Fetched);
 		
 		oldNonOwnIdentity.storeAndCommit();
 		
