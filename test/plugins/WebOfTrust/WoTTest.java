@@ -855,6 +855,8 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		// full trust list of a non-own identity. We need to re-fetch the current trust list therefore.
 		oldNonOwnIdentity.setEdition(10);
 		oldNonOwnIdentity.onFetched();
+		assert(oldNonOwnIdentity.getEdition() == 10);
+		assert(oldNonOwnIdentity.getCurrentEditionFetchState() == FetchState.Fetched);
 		
 		oldNonOwnIdentity.storeAndCommit();
 		
