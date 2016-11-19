@@ -1092,11 +1092,10 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		oldOwnIdentity.setProperty("testProperty1", "testValue1");
 		oldOwnIdentity.setProperty("testProperty2", "testValue2");
 		
-		// FetchState.Fetched should be copied to the non-own Identity:
+		// Edition and FetchState should be copied to the non-own Identity:
 		// For own identities, all information stored on the network is also stored in the local database
 		// - A re-fetch of the current edition is NOT needed.
-		oldOwnIdentity.setEdition(10);
-		oldOwnIdentity.onFetched();
+		oldOwnIdentity.onFetchedAndParsedSuccessfully(10);
 		
 		oldOwnIdentity.storeAndCommit();
 		
