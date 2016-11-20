@@ -751,11 +751,11 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		assert(a.getCreationDate().after(b.getCreationDate()));
 		assert(b.getCreationDate().after(c.getCreationDate()));
 		
-		a.onFetched();
+		a.onFetchedAndParsedSuccessfully(0);
 		waitUntilCurrentTimeUTCIsAfter(a.getLastFetchedDate());
-		b.onFetched();
+		b.onFetchedAndParsedSuccessfully(0);
 		waitUntilCurrentTimeUTCIsAfter(b.getLastFetchedDate());
-		c.onFetched();
+		c.onFetchedAndParsedSuccessfully(0);
 		
 		// Descending sort order by getLastFetchedDate(): c, b, a
 		// - which is what we will want the code under test to use. Notice that this is different
@@ -791,7 +791,8 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 			assertFalse(abc.hasNext());
 		}
 		
-		a.onFetched(); a.storeAndCommit();
+		a.onFetchedAndParsedSuccessfully(0);
+		a.storeAndCommit();
 		
 		assert(a.getLastFetchedDate().after(c.getLastFetchedDate()));
 		assert(c.getLastFetchedDate().after(b.getLastFetchedDate()));
