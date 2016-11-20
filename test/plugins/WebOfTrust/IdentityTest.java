@@ -260,13 +260,13 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 	public final void testGetCurrentEditionFetchState() {
 		assertEquals(FetchState.NotFetched, identity.getCurrentEditionFetchState());
 		
-		identity.onFetched();
+		identity.onFetchedAndParsedSuccessfully(identity.getNextEdition());
 		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
 		
 		identity.onParsingFailed();
 		assertEquals(FetchState.ParsingFailed, identity.getCurrentEditionFetchState());
 		
-		identity.onFetched();
+		identity.onFetchedAndParsedSuccessfully(identity.getNextEdition());
 		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
 		identity.markForRefetch();
 		assertEquals(FetchState.NotFetched, identity.getCurrentEditionFetchState());
