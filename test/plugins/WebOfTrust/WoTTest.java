@@ -742,6 +742,10 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		Identity b = new Identity(mWoT, requestUriB, "B", true); waitUntilCurrentTimeUTCIsAfter(a.getLastFetchedDate()); b.onFetched(); b.storeAndCommit();
 		Identity c = new Identity(mWoT, requestUriC, "C", true); waitUntilCurrentTimeUTCIsAfter(b.getLastFetchedDate()); c.onFetched(); c.storeAndCommit();
 
+		// Expected sort order by getLastFetchedDate()
+		assert(c.getLastFetchedDate().after(b.getLastFetchedDate()));
+		assert(b.getLastFetchedDate().after(a.getLastFetchedDate()));
+		
 		mWoT.setTrust(o, a, (byte)0, "");
 		mWoT.setTrust(o, b, (byte)1, "");
 		mWoT.setTrust(o, c, (byte)2, "");
@@ -755,6 +759,9 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		}
 		
 		a.onFetched(); a.storeAndCommit();
+		
+		assert(a.getLastFetchedDate().after(c.getLastFetchedDate()));
+		assert(c.getLastFetchedDate().after(b.getLastFetchedDate()));
 		
 		{
 			ObjectSet<Trust> abc = mWoT.getGivenTrustsSortedDescendingByLastSeen(o);
