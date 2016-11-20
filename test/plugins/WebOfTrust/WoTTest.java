@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static plugins.WebOfTrust.util.DateUtil.waitUntilCurrentTimeUTCIsAfter;
+
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -736,10 +738,10 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 	public void testGetGivenTrustsSortedDescendingByLastSeen() throws MalformedURLException, InvalidParameterException, InterruptedException {
 		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
 
-		Identity a = new Identity(mWoT, requestUriA, "A", true); Thread.sleep(10); a.onFetched(); a.storeAndCommit();
-		Identity b = new Identity(mWoT, requestUriB, "B", true); Thread.sleep(10); b.onFetched(); b.storeAndCommit();
-		Identity c = new Identity(mWoT, requestUriC, "C", true); Thread.sleep(10); c.onFetched(); c.storeAndCommit();
-		
+		Identity a = new Identity(mWoT, requestUriA, "A", true); waitUntilCurrentTimeUTCIsAfter(a.getCreationDate());    a.onFetched(); a.storeAndCommit();
+		Identity b = new Identity(mWoT, requestUriB, "B", true); waitUntilCurrentTimeUTCIsAfter(a.getLastFetchedDate()); b.onFetched(); b.storeAndCommit();
+		Identity c = new Identity(mWoT, requestUriC, "C", true); waitUntilCurrentTimeUTCIsAfter(b.getLastFetchedDate()); c.onFetched(); c.storeAndCommit();
+
 		mWoT.setTrust(o, a, (byte)0, "");
 		mWoT.setTrust(o, b, (byte)1, "");
 		mWoT.setTrust(o, c, (byte)2, "");
