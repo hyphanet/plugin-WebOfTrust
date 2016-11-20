@@ -735,16 +735,49 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		assertTrue("B score: " + scoreB, scoreB > 0);
 	}
 	
+	/**
+	 * Tests {@link WebOfTrust#getGivenTrustsSortedDescendingByLastSeen(Identity)}
+	 * for sorting descending by {@link Identity#getLastFetchedDate()}. */
 	public void testGetGivenTrustsSortedDescendingByLastSeen() throws MalformedURLException, InvalidParameterException, InterruptedException {
 		OwnIdentity o = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "O", true, "Test"); // Tree owner
 
-		Identity a = new Identity(mWoT, requestUriA, "A", true); waitUntilCurrentTimeUTCIsAfter(a.getCreationDate());    a.onFetched(); a.storeAndCommit();
-		Identity b = new Identity(mWoT, requestUriB, "B", true); waitUntilCurrentTimeUTCIsAfter(a.getLastFetchedDate()); b.onFetched(); b.storeAndCommit();
-		Identity c = new Identity(mWoT, requestUriC, "C", true); waitUntilCurrentTimeUTCIsAfter(b.getLastFetchedDate()); c.onFetched(); c.storeAndCommit();
-
-		// Expected sort order by getLastFetchedDate()
+		Identity c = new Identity(mWoT, requestUriC, "C", true);
+		waitUntilCurrentTimeUTCIsAfter(c.getCreationDate());
+		Identity b = new Identity(mWoT, requestUriB, "B", true);
+		waitUntilCurrentTimeUTCIsAfter(b.getCreationDate());
+		Identity a = new Identity(mWoT, requestUriA, "A", true);
+		
+		// Descending sort order by getCreationDate(): a, b, c
+		assert(a.getCreationDate().after(b.getCreationDate()));
+		assert(b.getCreationDate().after(c.getCreationDate()));
+		
+		a.onFetched();
+		waitUntilCurrentTimeUTCIsAfter(a.getLastFetchedDate());
+		b.onFetched();
+		waitUntilCurrentTimeUTCIsAfter(b.getLastFetchedDate());
+		c.onFetched();
+		
+		// Descending sort order by getLastFetchedDate(): c, b, a
+		// - which is what we will want the code under test to use. Notice that this is different
+		// from the sort order by getCreationDate() we checked for before and to the one by
+		// getLastChangeDate() we will check for afterwards. This ensures we test for accidentally
+		// using those as sort order instead of the desired getLastFetchedDate().
 		assert(c.getLastFetchedDate().after(b.getLastFetchedDate()));
 		assert(b.getLastFetchedDate().after(a.getLastFetchedDate()));
+
+		c.updated();
+		waitUntilCurrentTimeUTCIsAfter(c.getLastChangeDate());
+		b.updated();
+		waitUntilCurrentTimeUTCIsAfter(b.getLastChangeDate());
+		a.updated();
+
+		// Descending sort order by getLastChangeDate(): a, b, c
+		assert(a.getLastChangeDate().after(b.getLastChangeDate()));
+		assert(b.getLastChangeDate().after(c.getLastChangeDate()));
+		
+		c.storeAndCommit();
+		b.storeAndCommit();
+		a.storeAndCommit();
 		
 		mWoT.setTrust(o, a, (byte)0, "");
 		mWoT.setTrust(o, b, (byte)1, "");
