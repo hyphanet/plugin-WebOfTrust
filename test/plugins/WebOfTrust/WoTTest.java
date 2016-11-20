@@ -907,10 +907,10 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 	public void testRestoreOwnIdentity_NewEdition() throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
 		final Identity oldNonOwnIdentity = new Identity(mWoT, requestUriO, "TestNickname", true);
 		
-		// FetchState.Fetched should NOT be copied to the OwnIdentity:
+		// Edition and FetchState should NOT be copied to the OwnIdentity:
 		// The insert URI we pass to restoreOwnIdentity provides a higher edition number.
-		oldNonOwnIdentity.setEdition(10);
-		oldNonOwnIdentity.onFetched();
+		// FIXME: Use OwnIdentity.onInserted() once it exists
+		oldNonOwnIdentity.onFetchedAndParsedSuccessfully(10);
 		assert(oldNonOwnIdentity.getEdition() == 10);
 		assert(oldNonOwnIdentity.getCurrentEditionFetchState() == FetchState.Fetched);
 		
