@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.Math.min;
+
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -402,6 +404,22 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	@Deprecated
 	public final long getEdition() {
 		return getRequestURI().getEdition();
+	}
+
+	/**
+	 * Returns the next edition which the Identity will publish.
+	 * If no edition has ever been published, this is 0.
+	 * Otherwise, it is {@link #getLastFetchedEdition()} + 1.
+	 * 
+	 * Notice: Even if the last downloaded edition was marked with {@link FetchState#ParsingFailed},
+	 * this will return the one after it. I.e. editions for which parsing failed should normally
+	 * not be downloaded again.
+	 * 
+	 * FIXME: Unit test behavior for {@link OwnIdentity}. */
+	public final long getNextEdition() {
+		// Adding 1 is valid even if no edition has been fetched because it will return -1 then:
+		// -1 + 1 = 0, which is the first valid edition.
+		return min(Long.MAX_VALUE - 1, getLastFetchedEdition()) + 1;
 	}
 
 	/**
