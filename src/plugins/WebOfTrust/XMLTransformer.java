@@ -684,7 +684,7 @@ public final class XMLTransformer {
 				try {
 					final Identity identity = mWoT.getIdentityByURI(identityURI);
 					final long newEdition = identityURI.getEdition();
-					if(identity.getEdition() <= newEdition) {
+					if(newEdition > identity.getLastFetchedEdition()) {
 						Logger.normal(this, "Marking edition as parsing failed: " + identityURI);
 						try {
 							identity.setEdition(newEdition);
@@ -697,8 +697,16 @@ public final class XMLTransformer {
 						// We don't notify the SubscriptionManager here since there is not really any new information about the identity because parsing failed.
 						identity.storeAndCommit();
 					} else {
-						Logger.normal(this, "Not marking edition as parsing failed, we have already fetched a new one (" + 
-								identity.getEdition() + "):" + identityURI);
+						// This is bad:
+						// - Editions we already fetched shouldn't be fetched again, that is most
+						//   certainly a bug or an attack already (this excludes the case of
+						//   Identity.markForRefetch() because it marks the editions as not fetched)
+						// - If it happens with editions for which parsing fails it looks even more
+						//   like an attack.
+						Logger.error(this,
+						    "Received an edition which we already have AND parsing of it failed! "
+						  + "We should neither download nor parse already processed editions! "
+						  + "edition: " + newEdition + "; " + identity);
 					}
 					Logger.warning(this, "Parsing identity XML failed gracefully for " + identityURI, e);
 				}
