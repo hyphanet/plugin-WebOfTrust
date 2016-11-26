@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static plugins.WebOfTrust.util.DateUtil.waitUntilCurrentTimeUTCIsAfter;
+
 import java.net.MalformedURLException;
 import java.util.Date;
 
@@ -287,7 +289,7 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 			}
 			public void update() throws InterruptedException {
 				self = identity.getLastChangeDate();
-				Thread.sleep(10); // Make sure CurrentTimeUTC.get() changes.
+				waitUntilCurrentTimeUTCIsAfter(self);
 			}
 			@Override
 			public boolean equals(Object other) {
