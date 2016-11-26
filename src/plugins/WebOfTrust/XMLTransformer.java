@@ -686,14 +686,7 @@ public final class XMLTransformer {
 					final long newEdition = identityURI.getEdition();
 					if(newEdition > identity.getLastFetchedEdition()) {
 						Logger.normal(this, "Marking edition as parsing failed: " + identityURI);
-						try {
-							identity.setEdition(newEdition);
-						} catch (InvalidParameterException e1) {
-							// Would only happen if newEdition < current edition.
-							// We have validated the opposite.
-							throw new RuntimeException(e1);
-						}
-						identity.onParsingFailed();
+						identity.onFetchedAndParsingFailed(newEdition);
 						// We don't notify the SubscriptionManager here since there is not really any new information about the identity because parsing failed.
 						identity.storeAndCommit();
 					} else {
