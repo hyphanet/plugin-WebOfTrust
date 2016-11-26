@@ -276,11 +276,11 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 
 	public final void testSetEdition() throws InvalidParameterException, InterruptedException {
 		// Test preconditions
+		identity.onFetchedAndParsedSuccessfully(0);
 		assertEquals(0, identity.getEdition());
 		assertEquals(identity.getEdition(), identity.getRequestURI().getEdition());
 		assertEquals(23, requestUri.getEdition());
 		assertEquals(requestUri.getEdition(), identity.getLatestEditionHint());
-		identity.onFetched();
 		@Ignore
 		class OldLastChangedDate {
 			Date self;
@@ -336,7 +336,7 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		
 		// Test setEdition(currentEdition) - should not touch the edition hint.
 		assertEquals(50, identity.getLatestEditionHint());
-		identity.onFetched();
+		identity.onFetchedAndParsedSuccessfully(24);
 		oldLastChangedDate.update();
 		identity.setEdition(identity.getEdition());
 		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
