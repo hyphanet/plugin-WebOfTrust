@@ -265,7 +265,7 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		identity.onFetchedAndParsedSuccessfully(identity.getNextEdition());
 		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
 		
-		identity.onParsingFailed();
+		identity.onFetchedAndParsingFailed(identity.getNextEdition());
 		assertEquals(FetchState.ParsingFailed, identity.getCurrentEditionFetchState());
 		
 		identity.onFetchedAndParsedSuccessfully(identity.getNextEdition());
