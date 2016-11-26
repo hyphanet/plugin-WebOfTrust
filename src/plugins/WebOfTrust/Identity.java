@@ -703,6 +703,10 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * - {@link #getLastChangeDate()}
 	 * - {@link #getLatestEditionHint()} */
 	protected void onFetchedAndParsedSuccessfully(long edition) {
+		onFetched(edition, true);
+	}
+
+	protected void onFetched(long edition, boolean parsingSucceeded) {
 		if(edition < 0)
 			throw new IllegalArgumentException("Invalid edition, must be >= 0: " + edition);
 		
@@ -720,7 +724,8 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		// This also means we don't have to call deleteWithoutCommit() on the old values.
 		checkedActivate(1);
 		mRequestURIString = getRequestURI().setSuggestedEdition(edition).toString();
-		mCurrentEditionFetchState = FetchState.Fetched;
+		mCurrentEditionFetchState
+			= parsingSucceeded ? FetchState.Fetched : FetchState.ParsingFailed;
 		mLastFetchedDate = CurrentTimeUTC.get();
 		updated();
 		
