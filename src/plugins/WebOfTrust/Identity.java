@@ -689,16 +689,6 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		checkedActivate(1);  // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 	}
-	
-	/**
-	 * Has to be called when the identity was fetched and parsed successfully. Must not be called before setEdition!
-	 * @deprecated
-	 *     Use {@link #onFetchedAndParsedSuccessfully(long)} instead so you don't have to call this
-	 *     in combination with {@link #setEdition(long)}. */
-	@Deprecated
-	protected final void onFetched() {
-		onFetched(CurrentTimeUTC.get());
-	}
 
 	/**
 	 * Shall be called when we downloaded a new edition of this Identity and parsing of it
