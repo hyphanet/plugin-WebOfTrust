@@ -690,9 +690,23 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		return (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 	}
 
+	/** @see #onFetched(long, boolean) */
+	protected final void onFetchedAndParsedSuccessfully(long edition) {
+		onFetched(edition, true);
+	}
+
+	/** @see #onFetched(long, boolean) */
+	protected final void onFetchedAndParsingFailed(long edition) {
+		onFetched(edition, false);
+	}
+
 	/**
-	 * Shall be called when we downloaded a new edition of this Identity and parsing of it
-	 * succeeded.
+	 * Shall be called when we downloaded a new edition of this Identity and tried parsing it.
+	 * 
+	 * You should typically instead use one of the two following wrappers as they are more
+	 * self-explanatory by including the boolean in their name:
+	 * - {@link #onFetchedAndParsedSuccessfully(long)}
+	 * - {@link #onFetchedAndParsingFailed(long)}
 	 * 
 	 * Updates the affected related values:
 	 * - {@link #getRequestURI()}
@@ -702,10 +716,6 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * - {@link #getLastFetchedDate()}
 	 * - {@link #getLastChangeDate()}
 	 * - {@link #getLatestEditionHint()} */
-	protected void onFetchedAndParsedSuccessfully(long edition) {
-		onFetched(edition, true);
-	}
-
 	protected void onFetched(long edition, boolean parsingSucceeded) {
 		if(edition < 0)
 			throw new IllegalArgumentException("Invalid edition, must be >= 0: " + edition);
@@ -757,9 +767,9 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	
 	/**
 	 * Has to be called when the identity was fetched and parsing failed. Must not be called before setEdition!
-	 * 
-	 * @deprecated FIXME: Rename to onFetchedAndParsedUnsuccessfully(), consume edition as param
-	 */
+	 * @deprecated
+	 *     Use {@link #onFetchedAndParsingFailed(long)} instead so you don't have to call
+	 *     {@link #setEdition(long)} and hence also cannot forget to call it. */
 	@Deprecated
 	protected final void onParsingFailed() {
 		checkedActivate(1);
