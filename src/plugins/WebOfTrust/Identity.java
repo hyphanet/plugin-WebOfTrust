@@ -495,7 +495,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * ATTENTION: Only use this when you need to construct arbitrary Identity objects - for example when writing an FCP parser.
 	 * It won't guarantee semantic integrity of the identity object because it does not update related things such as the date when it was fetched.
 	 * Instead, use the event handlers such as {@link #onFetchedAndParsedSuccessfully(long)},
-	 * {@link #onFetched(Date)} and {@link #onParsingFailed()}.
+	 * {@link #onFetched(Date)} and {@link #onFetchedAndParsingFailed(long)}.
 	 * 
 	 * @param fetchState The desired fetch state.
 	 */
@@ -514,8 +514,8 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 *     Previously this function was usually being called in combination with functions for
 	 *     updating the {@link #mCurrentEditionFetchState}.  This is confusing and prone to
 	 *     forgetting on calling one of the both. Thus please nowadays use
-	 *     {@link #onFetchedAndParsedSuccessfully(long)} or {@link #onParsingFailed()} or
-	 *     {@link #markForRefetch()} to update both the edition and fetch state at once.
+	 *     {@link #onFetchedAndParsedSuccessfully(long)} or {@link #onFetchedAndParsingFailed(long)}
+	 *     or {@link #markForRefetch()} to update both the edition and fetch state at once.
 	 */
 	@Deprecated
 	protected void setEdition(long newEdition) throws InvalidParameterException {
@@ -771,23 +771,6 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		
 		// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive */
 		mLastFetchedDate = (Date)fetchDate.clone();	// Clone it because date is mutable
-		
-		updated();
-	}
-	
-	/**
-	 * Has to be called when the identity was fetched and parsing failed. Must not be called before setEdition!
-	 * @deprecated
-	 *     Use {@link #onFetchedAndParsingFailed(long)} instead so you don't have to call
-	 *     {@link #setEdition(long)} and hence also cannot forget to call it. */
-	@Deprecated
-	protected final void onParsingFailed() {
-		checkedActivate(1);
-		
-		mCurrentEditionFetchState = FetchState.ParsingFailed;
-		
-		// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive */
-		mLastFetchedDate = CurrentTimeUTC.get();
 		
 		updated();
 	}
