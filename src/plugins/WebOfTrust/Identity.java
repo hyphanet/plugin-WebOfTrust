@@ -476,6 +476,16 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		}
 	}
 
+	/**
+	 * FIXME: Can we deprecate or rename this? The concept of a "current" edition plus its fetch
+	 * state shouldn't exist externally anymore once the deprecated {@link #getEdition()} is
+	 * removed; we'll nowadays instead externally provide getters for different editions depending
+	 * on the fetch state,  i.e. {@link #getLastFetchedEdition()},
+	 * {@link #getLastFetchedMaybeValidEdition()}, {@link #getNextEdition()}.
+	 * It would avoid confusion if the callers don't have to both query an edition *and* its fetch
+	 * state because they couldn't forget about considering the fetch state then.
+	 * Also see {@link IdentityTest#testGetCurrentEditionFetchState()} for why "current" doesn't
+	 * make a lot of sense in between the new getters - it doesn't fit their naming pattern. */
 	public final FetchState getCurrentEditionFetchState() {
 		checkedActivate(1);
 		return mCurrentEditionFetchState;
