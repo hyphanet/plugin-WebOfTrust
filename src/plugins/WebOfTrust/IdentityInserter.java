@@ -203,27 +203,17 @@ public final class IdentityInserter extends TransferThread implements Daemon {
 	@Override
     public void onSuccess(BaseClientPutter state)
 	{
-		Logger.normal(this, "Successful insert of identity: " + state.getURI());
+		FreenetURI uri = state.getURI();
+		Logger.normal(this, "Successful insert of identity: " + uri);
 		
 		try {
 			synchronized(mWoT) {
 			synchronized(mSubscriptionManager) {
 			synchronized(Persistent.transactionLock(mDB)) {
-				OwnIdentity identity = mWoT.getOwnIdentityByURI(state.getURI());
+				OwnIdentity identity = mWoT.getOwnIdentityByURI(uri);
 				final OwnIdentity oldIdentity = identity.clone();
 				try {
-					try {
-						identity.setEdition(state.getURI().getEdition());
-					} catch(InvalidParameterException e) {
-						// This sometimes happens. The reason is probably that the IdentityFetcher fetches it before onSuccess() is called and setEdition()
-						// won't accept lower edition numbers.
-						// We must catch it because insert) only increments the edition number if getLastInsertDate().after(new Date(0)) - which can
-						// only be the case if we ALWAYS call updateLastInsertDate().
-						// TODO: Check whether this can be prevented.
-						Logger.error(this, "setEdition() failed with URI/edition " + state.getURI() + "; current stored edition: " + identity.getEdition());
-						
-					}
-					identity.updateLastInsertDate();
+					identity.onInserted(uri.getEdition());
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
 					identity.storeAndCommit();
 				} catch(RuntimeException e) {
