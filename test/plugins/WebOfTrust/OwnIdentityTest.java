@@ -88,18 +88,20 @@ public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 		// of being copied.
 		
 		waitUntilCurrentTimeUTCIsAfter(original.getCreationDate());
-		original.onFetchedAndParsedSuccessfully(9);
-		assertTrue(original.getLastFetchedDate().after(original.getCreationDate()));
-		
-		waitUntilCurrentTimeUTCIsAfter(original.getLastFetchedDate());
-		original.onInserted(10);
-		assertEquals(10, original.getLastFetchedEdition());
-		assertEquals(10, original.getLatestEditionHint());
-		assertTrue(original.getLastInsertDate().after(original.getLastFetchedDate()));
+		original.onInserted(9);
+		assertEquals(9, original.getLastFetchedEdition());
+		assertEquals(9, original.getLatestEditionHint());
+		assertTrue(original.getLastInsertDate().after(original.getCreationDate()));
 		
 		waitUntilCurrentTimeUTCIsAfter(original.getLastInsertDate());
+		original.onFetchedAndParsedSuccessfully(10);
+		assertEquals(10, original.getLastFetchedEdition());
+		assertEquals(10, original.getLatestEditionHint());
+		assertTrue(original.getLastFetchedDate().after(original.getLastInsertDate()));
+		
+		waitUntilCurrentTimeUTCIsAfter(original.getLastFetchedDate());
 		original.updated();
-		assertTrue(original.getLastChangeDate().after(original.getLastInsertDate()));
+		assertTrue(original.getLastChangeDate().after(original.getLastFetchedDate()));
 		
 		waitUntilCurrentTimeUTCIsAfter(original.getLastChangeDate());
 		
