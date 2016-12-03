@@ -95,6 +95,8 @@ public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 		original.setEdition(10); // Make sure to use a non-default edition
 		original.setNewEditionHint(10); // Make sure to use a non-default edition hint
 		original.updateLastInsertDate();
+		assertEquals(10, original.getLastFetchedEdition());
+		assertEquals(10, original.getLatestEditionHint());
 		assertTrue(original.getLastInsertDate().after(original.getLastFetchedDate()));
 		
 		waitUntilCurrentTimeUTCIsAfter(original.getLastInsertDate());
