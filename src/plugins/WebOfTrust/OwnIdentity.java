@@ -283,13 +283,47 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	
 	/**
 	 * Sets the last insertion date of this OwnIdentity to current time in UTC.
+	 * @deprecated
+	 *     This function must only be used together with {@link #setEdition(long)}.
+	 *     Having to call two functions after an insert is prone to forgetting to call one of them.
+	 *     Thus please instead use {@link #onInserted(long)} which does both these things.
 	 */
+	@Deprecated
 	protected final void updateLastInsertDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		// checkedDelete(mLastInsertDate); /* Not stored because db4o considers it as a primitive */
 		mLastInsertDate = CurrentTimeUTC.get();
 	}
 
+	/**
+	 * Updates the value of {@link #getLastInsertDate()} and calls
+	 * {@link #onFetchedAndParsedSuccessfully(long)} */
+	protected final void onInserted(long edition) {
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
+		// checkedDelete(mLastInsertDate); /* Not stored because db4o considers it as a primitive */
+		mLastInsertDate = CurrentTimeUTC.get();
+		
+		try {
+			onFetchedAndParsedSuccessfully(edition);
+		} catch(IllegalStateException e) {
+			Logger.error(this,
+			    "onFetchedAndParsedSuccessfully() failed in onInserted(), likely because we got "
+			  + "an edition which was fetched already. This might be caused by the race condition "
+			  + "of the IdentityDownloader receiving the onFetched() callback before "
+			  + "the OwnIdentity received the onInserted() callback. this: " + this, e);
+			
+			// We not throw it out because otherwise the next IdentityInserter.insert() would fail
+			// to increments the edition number and try to insert to an already existing URI:
+			// It only increments the edition if getLastInsertDate().after(new Date(0)) - which can
+			// only be the case if we ALWAYS update the last insert date even if this failure
+			// happens. But our update to it would have no effect if we threw this out because it
+			// would cause the whole transaction to be rolled back by the caller.
+			// FIXME: Perhaps prevent this race condition by having the new IdentityDownloader
+			// implementations *not* download an OwnIdentity if no restore is in progress.
+			// This may be difficult though: There's also the on-disk IdentityFile queue which might
+			// still contain data from the previous run.
+		}
+	}
 
 	/**
 	 * Checks whether two OwnIdentity objects are equal.
