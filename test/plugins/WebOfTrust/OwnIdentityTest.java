@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static plugins.WebOfTrust.util.DateUtil.waitUntilCurrentTimeUTCIsAfter;
+
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
@@ -79,15 +81,31 @@ public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 	 */
 	public void testClone() throws MalformedURLException, InvalidParameterException, InterruptedException, IllegalArgumentException, IllegalAccessException {
 		final OwnIdentity original = new OwnIdentity(mWoT, getRandomSSKPair()[0], getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH), true);
+		
+		// Besides ensuring non-default values for the various getters, we ensure that all Dates
+		// are different so we can test for them being mixed up. We also ensure that
+		// CurrentTimeUTC.get() is in the past so we can detect if a Date is re-initialized instead
+		// of being copied.
+		
+		waitUntilCurrentTimeUTCIsAfter(original.getCreationDate());
+		original.onFetchedAndParsedSuccessfully(9);
+		assertTrue(original.getLastFetchedDate().after(original.getCreationDate()));
+		
+		waitUntilCurrentTimeUTCIsAfter(original.getLastFetchedDate());
 		original.setEdition(10); // Make sure to use a non-default edition
 		original.setNewEditionHint(10); // Make sure to use a non-default edition hint
 		original.updateLastInsertDate();
+		assertTrue(original.getLastInsertDate().after(original.getLastFetchedDate()));
+		
+		waitUntilCurrentTimeUTCIsAfter(original.getLastInsertDate());
+		original.updated();
+		assertTrue(original.getLastChangeDate().after(original.getLastInsertDate()));
+		
+		waitUntilCurrentTimeUTCIsAfter(original.getLastChangeDate());
+		
         original.addContext(getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH));
         original.setProperty(getRandomLatinString(Identity.MAX_PROPERTY_NAME_LENGTH),
                              getRandomLatinString(Identity.MAX_PROPERTY_VALUE_LENGTH));
-		
-		Thread.sleep(10); // Identity contains Date mLastChangedDate which might not get properly cloned.
-		assertFalse(CurrentTimeUTC.get().equals(original.getLastChangeDate()));
 		
 		final OwnIdentity clone = original.clone();
 		
