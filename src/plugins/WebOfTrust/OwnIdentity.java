@@ -293,20 +293,6 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastInsertDate.clone();	// Clone it because date is mutable
 	}
-	
-	/**
-	 * Sets the last insertion date of this OwnIdentity to current time in UTC.
-	 * @deprecated
-	 *     This function must only be used together with {@link #setEdition(long)}.
-	 *     Having to call two functions after an insert is prone to forgetting to call one of them.
-	 *     Thus please instead use {@link #onInserted(long)} which does both these things.
-	 */
-	@Deprecated
-	protected final void updateLastInsertDate() {
-		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		// checkedDelete(mLastInsertDate); /* Not stored because db4o considers it as a primitive */
-		mLastInsertDate = CurrentTimeUTC.get();
-	}
 
 	/**
 	 * Updates the value of {@link #getLastInsertDate()} and calls
