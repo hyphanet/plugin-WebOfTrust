@@ -266,11 +266,24 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive */
 		mLastFetchedDate = fetchedDate != null ? (Date)fetchedDate.clone() : new Date(0);	// Clone it because date is mutable
 		
-		// This is not really necessary because needsInsert() returns false if mCurrentEditionFetchState == NotFetched
-		// However, we still do it because the user might have specified URIs with old edition numbers: Then the IdentityInserter would
-		// start insertion the old trust lists immediately after the first one was fetched. With the last insert date being set to current
-		// time, this is less likely to happen because the identity inserter has a minimal delay between last insert and next insert.
-		updateLastInsertDate();
+		// Make sure we do not re-insert the empty version of this OwnIdentity before the
+		// restoring procedure has downloaded anything.
+		// Technically this is not really necessary because needsInsert() returns false if
+		// mCurrentEditionFetchState == NotFetched, which we did just set and will stay like that
+		// until we downloaded something.
+		// However, we still do it anyway because the user might have wrongly told us a very old
+		// edition number: If we fetch a too old edition as first step of restoring, then the
+		// mCurrentEditionFetchState would be changed to Fetched, which means that the edition would
+		// become eligible for inserting.
+		// The IdentityInserter would then upload it to the highest USK slot, causing restoring to
+		// result in the OwnIdentity being overwritten with very old data completely.
+		// To prevent this, we setmLastInsertDatet to current time, which prevents the
+		// IdentityInserter from uploading a new edition for a while.
+		// This hopefully gives the restoring code time to acquire a second, newer edition.
+		// TODO: Code quality: Enforce this more strictly. This will become possible once we not
+		// only keep track of a mLastInsertDate, but also of a "mNextInsertDate". Set the next
+		// insert date to infinity then.
+		mLastInsertDate = CurrentTimeUTC.get();
 	}
 
 	/**
