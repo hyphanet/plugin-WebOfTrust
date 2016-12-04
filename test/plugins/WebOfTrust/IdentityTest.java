@@ -73,7 +73,11 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 	 */
 	public void testClone() throws MalformedURLException, InvalidParameterException, IllegalArgumentException, IllegalAccessException, InterruptedException {
 		final Identity original = new Identity(mWoT, getRandomSSKPair()[1], getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
-		original.setEdition(10); // Make sure to use a non-default edition
+		
+		waitUntilCurrentTimeUTCIsAfter(original.getCreationDate());
+		original.onFetchedAndParsedSuccessfully(10);
+		assertTrue(original.getLastFetchedDate().after(original.getCreationDate()));
+		
 		original.setNewEditionHint(20); // Make sure to use a non-default edition hint
 		original.addContext(getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH));
 		original.setProperty(getRandomLatinString(Identity.MAX_PROPERTY_NAME_LENGTH),
