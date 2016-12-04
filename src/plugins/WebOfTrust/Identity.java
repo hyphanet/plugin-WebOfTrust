@@ -1265,6 +1265,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 			clone.setNewEditionHint(getLatestEditionHint());
 			clone.setCreationDate(getCreationDate());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
+			clone.mLastFetchedDate = (Date)mLastFetchedDate.clone();
 			clone.mLatestEditionHint = getLatestEditionHint(); // Don't use the setter since it won't lower the current edition hint.
 			clone.setContexts(getContexts());
 			clone.setProperties(getProperties());
