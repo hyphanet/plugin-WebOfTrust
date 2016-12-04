@@ -95,6 +95,8 @@ public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 		
 		waitUntilCurrentTimeUTCIsAfter(original.getLastInsertDate());
 		original.onFetchedAndParsedSuccessfully(10);
+		// FIXME: Code quality: Add OwnIdentity.getLastInsertedEdition() to make this more obvious.
+		// Then also wire it in to class IdentityInserter.
 		assertEquals(10, original.getLastFetchedEdition());
 		assertEquals(10, original.getLatestEditionHint());
 		assertTrue(original.getLastFetchedDate().after(original.getLastInsertDate()));
