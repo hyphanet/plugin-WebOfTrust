@@ -78,13 +78,16 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		original.onFetchedAndParsedSuccessfully(10);
 		assertTrue(original.getLastFetchedDate().after(original.getCreationDate()));
 		
+		waitUntilCurrentTimeUTCIsAfter(original.getLastFetchedDate());
+		original.updated();
+		assertTrue(original.getLastChangeDate().after(original.getLastFetchedDate()));
+		
+		waitUntilCurrentTimeUTCIsAfter(original.getLastChangeDate());
+		
 		original.setNewEditionHint(20); // Make sure to use a non-default edition hint
 		original.addContext(getRandomLatinString(Identity.MAX_CONTEXT_NAME_LENGTH));
 		original.setProperty(getRandomLatinString(Identity.MAX_PROPERTY_NAME_LENGTH),
 		                     getRandomLatinString(Identity.MAX_PROPERTY_VALUE_LENGTH));
-		
-		
-		waitUntilCurrentTimeUTCIsAfter(original.getLastChangeDate());
 		
 		final Identity clone = original.clone();
 		
