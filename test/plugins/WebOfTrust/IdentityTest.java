@@ -83,8 +83,8 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		original.setProperty(getRandomLatinString(Identity.MAX_PROPERTY_NAME_LENGTH),
 		                     getRandomLatinString(Identity.MAX_PROPERTY_VALUE_LENGTH));
 		
-		Thread.sleep(10); // Identity contains Date mLastChangedDate which might not get properly cloned.
-		assertFalse(CurrentTimeUTC.get().equals(original.getLastChangeDate()));
+		
+		waitUntilCurrentTimeUTCIsAfter(original.getLastChangeDate());
 		
 		final Identity clone = original.clone();
 		
