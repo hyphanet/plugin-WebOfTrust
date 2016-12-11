@@ -407,16 +407,18 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	}
 
 	/**
-	 * Returns the next edition which the Identity will publish.
+	 * Returns the next edition which the Identity will likely publish.
 	 * If no edition has ever been published, this is 0.
 	 * Otherwise, it is {@link #getLastFetchedEdition()} + 1.
+	 * 
+	 * Notice: This does *not* take {@link EditionHint}s into account!
 	 * 
 	 * Notice: Even if the last downloaded edition was marked with {@link FetchState#ParsingFailed},
 	 * this will return the one after it. I.e. editions for which parsing failed should normally
 	 * not be downloaded again.
 	 * 
 	 * FIXME: Unit test behavior for {@link OwnIdentity}. */
-	public final long getNextEdition() {
+	public final long getNextEditionToFetch() {
 		// Adding 1 is valid even if no edition has been fetched because it will return -1 then:
 		// -1 + 1 = 0, which is the first valid edition.
 		return min(Long.MAX_VALUE - 1, getLastFetchedEdition()) + 1;
@@ -481,7 +483,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * state shouldn't exist externally anymore once the deprecated {@link #getEdition()} is
 	 * removed; we'll nowadays instead externally provide getters for different editions depending
 	 * on the fetch state,  i.e. {@link #getLastFetchedEdition()},
-	 * {@link #getLastFetchedMaybeValidEdition()}, {@link #getNextEdition()}.
+	 * {@link #getLastFetchedMaybeValidEdition()}, {@link #getNextEditionToFetch()}.
 	 * It would avoid confusion if the callers don't have to both query an edition *and* its fetch
 	 * state because they couldn't forget about considering the fetch state then.
 	 * Also see {@link IdentityTest#testGetCurrentEditionFetchState()} for why "current" doesn't

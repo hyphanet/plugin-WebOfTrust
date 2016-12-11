@@ -270,35 +270,35 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		assertEquals(-1, identity.getLastFetchedEdition());
 		assertEquals(-1, identity.getLastFetchedMaybeValidEdition());
 		assertEquals(FetchState.NotFetched, identity.getCurrentEditionFetchState());
-		assertEquals(0, identity.getNextEdition());
+		assertEquals(0, identity.getNextEditionToFetch());
 		
-		identity.onFetchedAndParsedSuccessfully(identity.getNextEdition());
+		identity.onFetchedAndParsedSuccessfully(identity.getNextEditionToFetch());
 		assertEquals(0, identity.getLastFetchedEdition());
 		assertEquals(0, identity.getLastFetchedMaybeValidEdition());
 		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
-		assertEquals(1, identity.getNextEdition());
+		assertEquals(1, identity.getNextEditionToFetch());
 		
-		identity.onFetchedAndParsingFailed(identity.getNextEdition());
+		identity.onFetchedAndParsingFailed(identity.getNextEditionToFetch());
 		assertEquals(1, identity.getLastFetchedEdition());
 		assertEquals(0, identity.getLastFetchedMaybeValidEdition());
 		assertEquals(FetchState.ParsingFailed, identity.getCurrentEditionFetchState());
-		assertEquals(2, identity.getNextEdition());
+		assertEquals(2, identity.getNextEditionToFetch());
 		
-		identity.onFetchedAndParsedSuccessfully(identity.getNextEdition());
+		identity.onFetchedAndParsedSuccessfully(identity.getNextEditionToFetch());
 		assertEquals(2, identity.getLastFetchedEdition());
 		assertEquals(2, identity.getLastFetchedMaybeValidEdition());
 		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
-		assertEquals(3, identity.getNextEdition());
+		assertEquals(3, identity.getNextEditionToFetch());
 		identity.markForRefetch();
 		assertEquals(1, identity.getLastFetchedEdition());
 		assertEquals(1, identity.getLastFetchedMaybeValidEdition());
 		assertEquals(FetchState.NotFetched, identity.getCurrentEditionFetchState());
-		assertEquals(2, identity.getNextEdition());
-		identity.onFetchedAndParsedSuccessfully(identity.getNextEdition());
+		assertEquals(2, identity.getNextEditionToFetch());
+		identity.onFetchedAndParsedSuccessfully(identity.getNextEditionToFetch());
 		assertEquals(2, identity.getLastFetchedEdition());
 		assertEquals(2, identity.getLastFetchedMaybeValidEdition());
 		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
-		assertEquals(3, identity.getNextEdition());
+		assertEquals(3, identity.getNextEditionToFetch());
 	}
 
 	public final void testSetEdition() throws InvalidParameterException, InterruptedException {
