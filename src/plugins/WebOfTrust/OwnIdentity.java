@@ -295,6 +295,37 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	}
 
 	/**
+	 * Returns the next edition which the {@link IdentityInserter} should upload.
+	 * 
+	 * @throws IllegalStateException
+	 *     If no edition should be inserted according to {@link #needsInsert()} or
+	 *     {@link #isRestoreInProgress()}, or if the maximum edition has been reached. */
+	public final long getNextEditionToInsert() {
+		if(!needsInsert()) {
+			throw new IllegalStateException(
+				"The next edition to insert cannot be computed if needsInsert() is false!");
+		}
+		
+		// While restoring isn't finished we don't know what the last edition was so it is crucial
+		// we don't insert before. This is implicitly checked by needsInsert() above, but let's keep
+		// an assert here as insurance against someone wrongly removing the needsInsert() check for
+		// reasons such as wanting the actual return value in unit tests.
+		// FIXME: Move this to a unit test.
+		assert(!isRestoreInProgress());
+		
+		long edition = getEdition();
+		
+		if(getLastInsertDate().after(new Date(0))) {
+			++edition;
+			
+			if(edition < 0)
+				throw new IllegalStateException("Maximum edition was inserted already!");
+		}
+		
+		return edition;
+	}
+
+	/**
 	 * Updates the value of {@link #getLastInsertDate()} and calls
 	 * {@link #onFetchedAndParsedSuccessfully(long)} */
 	protected final void onInserted(long edition) {

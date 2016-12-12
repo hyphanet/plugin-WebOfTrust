@@ -411,6 +411,9 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * If no edition has ever been published, this is 0.
 	 * Otherwise, it is {@link #getLastFetchedEdition()} + 1.
 	 * 
+	 * ATTENTION: For {@link OwnIdentity}s, this does NOT determine the next edition which they
+	 * should insert! Use {@link OwnIdentity#getNextEditionToInsert()} instead.
+	 * 
 	 * Notice: This does *not* take {@link EditionHint}s into account!
 	 * 
 	 * Notice: Even if the last downloaded edition was marked with {@link FetchState#ParsingFailed},

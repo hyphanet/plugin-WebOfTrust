@@ -177,10 +177,7 @@ public final class IdentityInserter extends TransferThread implements Daemon {
 			os.close(); os = null;
 			tempB.setReadOnly();
 		
-			long edition = identity.getEdition();
-			if(identity.getLastInsertDate().after(new Date(0)))
-				++edition;
-			
+			long edition = identity.getNextEditionToInsert();
 			InsertBlock ib = new InsertBlock(tempB, null, identity.getInsertURI().setSuggestedEdition(edition));
 			InsertContext ictx = mClient.getInsertContext(true);
 			
