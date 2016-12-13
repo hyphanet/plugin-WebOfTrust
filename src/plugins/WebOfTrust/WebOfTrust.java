@@ -2541,7 +2541,8 @@ public final class WebOfTrust extends WebOfTrustInterface
                     @Override public int compare(Identity i1, Identity i2) {
                         i1.initializeTransient(WebOfTrust.this);
                         i2.initializeTransient(WebOfTrust.this);
-                        return LongJava6.compare(i1.getEdition(), i2.getEdition());
+                        return LongJava6.compare(
+                            i1.getLastFetchedEdition(), i2.getLastFetchedEdition());
                     }
                 });
                 break;
@@ -2551,7 +2552,8 @@ public final class WebOfTrust extends WebOfTrustInterface
                     @Override public int compare(Identity i1, Identity i2) {
                         i1.initializeTransient(WebOfTrust.this);
                         i2.initializeTransient(WebOfTrust.this);
-                        return -LongJava6.compare(i1.getEdition(), i2.getEdition());
+                        return -LongJava6.compare(
+                            i1.getLastFetchedEdition(), i2.getLastFetchedEdition());
                     }
                 });
                 break;
