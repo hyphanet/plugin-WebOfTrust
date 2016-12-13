@@ -756,35 +756,14 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		mLastFetchedDate = (when != null) ? (Date)when.clone() : CurrentTimeUTC.get();
 		// FIXME: Should we use the mLastFetchedDate as modification Date as well?
 		// The old implementation of onFetched(Date) didn't do that, is there any good reason
-		// for that?
+		// for that? Commit 7307da56882b3b81b912a5da23d91076a0a87713 added the old function
+		// and mentioned no reason in the commit message, so it was likely not very intentional.
 		updated();
 		
 		if(edition > mLatestEditionHint) {
 			// Do not call setNewEditionHint() to prevent confusing logging.
 			mLatestEditionHint = edition;
 		}
-	}
-
-	/**
-	 * Can be used for restoring the last-fetched date from a copy of the identity.
-	 * When an identity is fetched in normal operation, please use
-	 * {@link #onFetchedAndParsedSuccessfully(long)}. 
-	 * 
-	 * Must not be called before setEdition!
-	 * 
-	 * @deprecated
-	 *     Use {@link #onFetched(long, boolean, Date)} instead of setEdition() and this
-	 *     function. This ensures you cannot forget to call setEdition(). */
-	@Deprecated
-	protected final void onFetched(Date fetchDate) {
-		checkedActivate(1);
-		
-		mCurrentEditionFetchState = FetchState.Fetched;
-		
-		// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive */
-		mLastFetchedDate = (Date)fetchDate.clone();	// Clone it because date is mutable
-		
-		updated();
 	}
 
 	/**
