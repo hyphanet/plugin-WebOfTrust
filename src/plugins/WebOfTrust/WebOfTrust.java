@@ -5037,6 +5037,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 							+ oldIdentity.getCurrentEditionFetchState());
 				}
 				
+				newIdentity.forceSetNewEditionHint(oldIdentity.getLatestEditionHint());
 
 				newIdentity.storeWithoutCommit();
 
