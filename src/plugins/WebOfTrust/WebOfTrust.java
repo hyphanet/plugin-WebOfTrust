@@ -5009,21 +5009,34 @@ public final class WebOfTrust extends WebOfTrustInterface
 				newIdentity.setContexts(oldIdentity.getContexts());
 				newIdentity.setProperties(oldIdentity.getProperties());
 				
-				try {
-					newIdentity.setEdition(oldIdentity.getEdition());
-				} catch (InvalidParameterException e) { // The data was taken from old identity so this shouldn't happen
-					throw new RuntimeException(e);
+				switch(oldIdentity.getCurrentEditionFetchState()) {
+					case Fetched:
+						newIdentity.onFetched(
+							oldIdentity.getEdition(), true, oldIdentity.getLastFetchedDate());
+						break;
+					case ParsingFailed:
+						newIdentity.onFetched(
+							oldIdentity.getEdition(), false, oldIdentity.getLastFetchedDate());
+						break;
+					case NotFetched:
+						// This FetchState means that an unfinished restore was in progress.
+						// When adding an OwnIdentity for restoring, the user may specify an edition
+						// so we must preserve it.
+						assert(oldIdentity.isRestoreInProgress());
+						assert(oldIdentity.getLastFetchedDate().equals(new Date(0)));
+						newIdentity.forceSetEdition(oldIdentity.getEdition());
+						
+						// No need to copy those, their default will match
+						assert(newIdentity.getCurrentEditionFetchState().equals(
+							oldIdentity.getCurrentEditionFetchState()));
+						assert(newIdentity.getLastFetchedDate().equals(
+							oldIdentity.getLastFetchedDate()));
+						break;
+					default:
+						throw new UnsupportedOperationException("Unknown FetchState: "
+							+ oldIdentity.getCurrentEditionFetchState());
 				}
 				
-				// In theory we do not need to re-fetch the current trust list edition:
-				// The trust list of an own identity is always stored completely in the database, i.e. all trustees exist.
-				// HOWEVER if the user had used the restoreOwnIdentity feature and then used this function, it might be the case that
-				// the current edition of the old OwndIdentity was not fetched yet.
-				// So we set the fetch state to FetchState.Fetched if the oldIdentity's fetch state was like that as well.
-				if(oldIdentity.getCurrentEditionFetchState() == FetchState.Fetched) {
-					newIdentity.onFetched(oldIdentity.getLastFetchedDate());
-				}
-				// An else to set the fetch state to FetchState.NotFetched is not necessary, newIdentity.setEdition() did that already.
 
 				newIdentity.storeWithoutCommit();
 
