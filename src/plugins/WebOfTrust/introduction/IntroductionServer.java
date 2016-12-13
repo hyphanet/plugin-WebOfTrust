@@ -268,10 +268,11 @@ public final class IntroductionServer extends TransferThread implements Daemon {
 		
 		assert(!puzzle.wasInserted());
 		
-		RandomAccessBucket tempB = mTBF.makeBucket(XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE + 1);
+		RandomAccessBucket tempB = null;
 		OutputStream os = null;
 		
 		try {
+			tempB = mTBF.makeBucket(XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE + 1);
 			os = tempB.getOutputStream();
 			mWoT.getXMLTransformer().exportIntroductionPuzzle(puzzle, os); /* Provides synchronization on the puzzle */
 			Closer.close(os); os = null;

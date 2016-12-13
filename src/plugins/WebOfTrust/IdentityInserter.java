@@ -168,10 +168,11 @@ public final class IdentityInserter extends TransferThread implements Daemon {
 	 * @throws IOException 
 	 */
 	private void insert(OwnIdentity identity) throws IOException {
-		RandomAccessBucket tempB = mTBF.makeBucket(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE + 1);  
+		RandomAccessBucket tempB = null;
 		OutputStream os = null;
 
 		try {
+			tempB = mTBF.makeBucket(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE + 1);
 			os = tempB.getOutputStream();
 			mWoT.getXMLTransformer().exportOwnIdentity(identity, os);
 			os.close(); os = null;
