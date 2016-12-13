@@ -705,14 +705,14 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		return (Date)mLastChangedDate.clone();	// Clone it because date is mutable
 	}
 
-	/** @see #onFetched(long, boolean) */
+	/** @see #onFetched(long, boolean, Date) */
 	protected final void onFetchedAndParsedSuccessfully(long edition) {
-		onFetched(edition, true);
+		onFetched(edition, true, null);
 	}
 
-	/** @see #onFetched(long, boolean) */
+	/** @see #onFetched(long, boolean, Date) */
 	protected final void onFetchedAndParsingFailed(long edition) {
-		onFetched(edition, false);
+		onFetched(edition, false, null);
 	}
 
 	/**
@@ -731,7 +731,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * - {@link #getLastFetchedDate()}
 	 * - {@link #getLastChangeDate()}
 	 * - {@link #getLatestEditionHint()} */
-	protected void onFetched(long edition, boolean parsingSucceeded) {
+	protected void onFetched(long edition, boolean parsingSucceeded, Date when) {
 		if(edition < 0)
 			throw new IllegalArgumentException("Invalid edition, must be >= 0: " + edition);
 		
@@ -748,10 +748,15 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		// 1 is a sufficient depth because all those variables are primitive types to db4o.
 		// This also means we don't have to call deleteWithoutCommit() on the old values.
 		checkedActivate(1);
+		
 		mRequestURIString = getRequestURI().setSuggestedEdition(edition).toString();
 		mCurrentEditionFetchState
 			= parsingSucceeded ? FetchState.Fetched : FetchState.ParsingFailed;
-		mLastFetchedDate = CurrentTimeUTC.get();
+		
+		mLastFetchedDate = (when != null) ? (Date)when.clone() : CurrentTimeUTC.get();
+		// FIXME: Should we use the mLastFetchedDate as modification Date as well?
+		// The old implementation of onFetched(Date) didn't do that, is there any good reason
+		// for that?
 		updated();
 		
 		if(edition > mLatestEditionHint) {
@@ -767,7 +772,9 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * 
 	 * Must not be called before setEdition!
 	 * 
-	 * @deprecated FIXME: Rename to forceSetLastFetchedDate() */
+	 * @deprecated
+	 *     Use {@link #onFetched(long, boolean, Date)} instead of setEdition() and this
+	 *     function. This ensures you cannot forget to call setEdition(). */
 	@Deprecated
 	protected final void onFetched(Date fetchDate) {
 		checkedActivate(1);

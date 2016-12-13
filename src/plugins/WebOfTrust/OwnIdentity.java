@@ -186,9 +186,9 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		}
 	}
 
-	@Override protected final void onFetched(long edition, boolean parsingSucceeded) {
+	@Override protected final void onFetched(long edition, boolean parsingSucceeded, Date when) {
 		// Will throw for us if the edition is invalid, so we don't check it here.
-		super.onFetched(edition, parsingSucceeded);
+		super.onFetched(edition, parsingSucceeded, when);
 		
 		// String is a db4o primitive type so 1 is enough and we don't have to delete the old one.
 		checkedActivate(1);
