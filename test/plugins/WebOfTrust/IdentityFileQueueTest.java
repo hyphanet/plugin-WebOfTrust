@@ -3,7 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -151,8 +151,15 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 
 		WebOfTrust wot1 = constructEmptyWebOfTrust();
 		WebOfTrust wot2 = constructEmptyWebOfTrust();
-		
-		assertEquals(wot1, wot2);
+
+		// The final goal of this test is to achieve assertEquals(mWebOfTrust, wot1) and
+		// assertEquals(mWebOfTrust, wot2) just by passing the contents of mWebOfTrust to wot1
+		// and wot2 as IdentityFiles through the different IdentityFileQueue implementations
+		// (or in other words:  by simulating network traffic from mWebOfTrust to wot1/wot2).
+		// Thus let's do a self-test to ensure that the equals case is NOT already met before,
+		// i.e. to validate that setUp() generated a valid *non*-empty mWebOfTrust.
+		assertNotEquals(mWebOfTrust, wot1);
+		assertNotEquals(mWebOfTrust, wot2);
 
 		// Copy the OwnIdentitys from the source WOT to our test WOTs to ensure that trust lists
 		// are being imported.
@@ -160,7 +167,15 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 			wot1.restoreOwnIdentity(ownId.getInsertURI());
 			wot2.restoreOwnIdentity(ownId.getInsertURI());
 		}
-
+		
+		// Similar to the above self-test: Check whether setUp() correctly added more than just
+		// the OwnIdentitys because we had to manually copy them over and they thus cannot serve
+		// as test data.
+		assertNotEquals(mWebOfTrust, wot1);
+		assertNotEquals(mWebOfTrust, wot2);
+		
+		// Actual test follows ...
+		
 		IdentityFileQueue queue1 = new IdentityFileMemoryQueue();
 		IdentityFileQueue queue2 = new IdentityFileDiskQueue(mTempFolder.newFolder());
 		
