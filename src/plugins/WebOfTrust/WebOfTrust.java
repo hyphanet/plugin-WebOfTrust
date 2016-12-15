@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.Math.max;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Arrays.sort;
 
@@ -5218,7 +5219,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 					identity = new OwnIdentity(this, insertFreenetURI, oldIdentity.getNickname(), oldIdentity.doesPublishTrustList());
 					
 					/* We re-fetch the most recent edition to make sure all trustees are imported */
-					edition = Math.max(edition, oldIdentity.getEdition());
+					edition = max(edition, oldIdentity.getLastFetchedEdition());
 					identity.restoreEdition(edition, oldIdentity.getLastFetchedDate());
 				
 					identity.setContexts(oldIdentity.getContexts());
