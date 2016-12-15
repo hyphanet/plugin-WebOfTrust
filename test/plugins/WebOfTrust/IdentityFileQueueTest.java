@@ -69,18 +69,25 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 		
 		mWebOfTrust = constructEmptyWebOfTrust();
 
-		// Our goal is to populate mIdentityFiles1/2 with this many files for each OwnIdentity.
-		final int identityFileCount = 50;
-		
 		// Now we generate a random Identity/Trust/Score graph.
 		// We need a full copy of the trust graph as IdentityFiles. Exporting IdentityFiles is only
 		// possible for OwnIdentity, not for regular Identity, so we only generate OwnIdentitys.
 		final int ownIdentityCount = 5;
-		// A complete graph would be (identity count)² Trust values.
-		// An Identity cannot trust itself, and addRandomTrustValues() runs into an infinite loop
-		// if the graph is full, so we need to lower this significantly.
-		final int newTrustsPerFile
-			= (ownIdentityCount*ownIdentityCount) / (identityFileCount*2);
+		
+		final int newTrustsPerFile = 3;
+		
+		// Our goal is to populate mIdentityFiles1/mIdentityFiles2 with identityFileCount
+		// IdentityFileStreams for each OwnIdentity.
+		// To make the file contents differ, we will call addRandomTrustValues(newTrustsPerFile)
+		// at each iteration of generating the files, so for an amount of identityFileCount times.
+		// But addRandomTrustValues() would run into an infinite loop if we added more trusts than
+		// can possibly exist given the number of identities. So the value of identityFileCount must
+		// be limited by the number of trust values which are allowed to exist:
+		// The upper boundary of possible trust values is (ownIdentityCount*(ownIdentityCount-1))
+		// because each identity can trust each other identity except itself.
+		final int identityFileCount = (ownIdentityCount*(ownIdentityCount-1)) / newTrustsPerFile;
+		assert(identityFileCount > 5);
+		
 		// Would be used for doRandomChangesToWOT(), but we cannot do that in the current
 		// implementation, see below.
 		/* final int eventCount = 10; */
@@ -140,6 +147,14 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 				mIdentityFiles2.add(new IdentityFileStream(identity.getRequestURI(), bis2));
 			}
 		}
+		
+		// Paranoid self-tests because an old version of the above code failed to generate Trusts
+		assertTrue(mWebOfTrust.getAllOwnIdentities().size() > 0);
+		assertTrue(mWebOfTrust.getAllTrusts().size() > 0);
+		assertTrue(mWebOfTrust.getAllScores().size() > 0);
+		assertEquals(ownIdentityCount, mWebOfTrust.getAllOwnIdentities().size());
+		assertEquals(newTrustsPerFile * identityFileCount, mWebOfTrust.getAllTrusts().size());
+		assertEquals(ownIdentityCount * ownIdentityCount, mWebOfTrust.getAllScores().size());
 	}
 
 	@Test public void testByComparingResultsOfTwoImplementations()
