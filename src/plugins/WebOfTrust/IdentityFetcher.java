@@ -716,12 +716,8 @@ public final class IdentityFetcher implements
 			if(mRequests.get(identity.getID()) == null)
 				throw new UnknownIdentityException("updateEdtitionHint() called for an identity which is not being fetched: " + identityID);
 
-			USK usk;
-
-			if(identity.getCurrentEditionFetchState() != FetchState.NotFetched) // Do not refetch if parsing failed!
-				usk = USK.create(identity.getRequestURI().setSuggestedEdition(identity.getEdition() + 1));
-			else
-				usk = USK.create(identity.getRequestURI());
+			USK usk = USK.create(identity.getRequestURI().setSuggestedEdition(
+				identity.getNextEditionToFetch()));
 
 			long editionHint = identity.getLatestEditionHint();
 
