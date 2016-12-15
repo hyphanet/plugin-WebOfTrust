@@ -72,7 +72,7 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 		// Now we generate a random Identity/Trust/Score graph.
 		// We need a full copy of the trust graph as IdentityFiles. Exporting IdentityFiles is only
 		// possible for OwnIdentity, not for regular Identity, so we only generate OwnIdentitys.
-		final int ownIdentityCount = 5;
+		final int ownIdentityCount = 10;
 		
 		final int newTrustsPerFile = 3;
 		
@@ -86,7 +86,7 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 		// The upper boundary of possible trust values is (ownIdentityCount*(ownIdentityCount-1))
 		// because each identity can trust each other identity except itself.
 		final int identityFileCount = (ownIdentityCount*(ownIdentityCount-1)) / newTrustsPerFile;
-		assert(identityFileCount > 5);
+		assert(identityFileCount >= 30);
 		
 		// Would be used for doRandomChangesToWOT(), but we cannot do that in the current
 		// implementation, see below.
