@@ -4,6 +4,7 @@
 package plugins.WebOfTrust.ui.web;
 
 import static freenet.support.TimeUtil.formatTime;
+import static java.lang.Math.max;
 import static plugins.WebOfTrust.Configuration.DEFAULT_DEFRAG_INTERVAL;
 import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
 import static plugins.WebOfTrust.ui.web.CommonWebUtils.formatTimeDelta;
@@ -103,7 +104,7 @@ public class StatisticsPage extends WebPageImpl {
 	private long getEditionSum() {
 		long editionSum = 0;
 		for(Identity identity : mWebOfTrust.getAllIdentities()) {
-			editionSum += identity.getEdition();
+			editionSum += max(identity.getLastFetchedEdition(), 0);
 		}
 		return editionSum;
 	}
