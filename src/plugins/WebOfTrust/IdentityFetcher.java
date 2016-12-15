@@ -679,13 +679,10 @@ public final class IdentityFetcher implements
 		synchronized(mLock) {
 			USKRetriever retriever = mRequests.get(identity.getID());
 
-			USK usk;
-
-			if(identity.getCurrentEditionFetchState() != FetchState.NotFetched) // Do not refetch if parsing failed!
-				usk = USK.create(identity.getRequestURI().setSuggestedEdition(identity.getEdition() + 1));
-			else {
-				usk = USK.create(identity.getRequestURI());
-
+			USK usk = USK.create(identity.getRequestURI().setSuggestedEdition(
+				identity.getNextEditionToFetch()));
+			
+			if(identity.getCurrentEditionFetchState() == FetchState.NotFetched) {
 				if(retriever != null) {
 					// The identity has a new "mandatory" edition number stored which we must fetch, so we restart the request because the edition number might
 					// be lower than the last one which the USKRetriever has fetched.
