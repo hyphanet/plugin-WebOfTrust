@@ -122,7 +122,8 @@ public class IdentityFileQueueTest extends AbstractJUnit4BaseTest {
 				// Before creating the file, we increment the edition of the identity to ensure that
 				// the edition deduplication code of IdentityFileDiskQueue doesn't wrongly
 				// deduplicate the newer files with older ones.
-				identity.setEdition(identity.getEdition() + 1);
+				identity.updated(); // Necessary for getNextEditionToInsert() to not throw
+				identity.onInserted(identity.getNextEditionToInsert());
 				identity.storeAndCommit();
 				
 				// testByComparingResultsOfTwoImplementations() will use WebOfTrust.equals() to
