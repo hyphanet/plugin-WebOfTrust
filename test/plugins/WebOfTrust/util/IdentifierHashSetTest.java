@@ -48,7 +48,7 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 	 * Duplicates means:
 	 * - Clones of the equivalent {@link #mUniques} object.
 	 * - Clones with state modified to make {@link Persistent#equals(Object)} return false, such as
-	 *   changing the {@link Identity#getEdition()}.
+	 *   changing the flag {@link Identity#doesPublishTrustList()}.
 	 * - The very same object as in {@link #mUniques}. */
 	List<List<? extends Persistent>> mDuplicates = new ArrayList<List<? extends Persistent>>();
 
@@ -91,7 +91,7 @@ public final class IdentifierHashSetTest extends AbstractJUnit4BaseTest {
 		
 		for(Identity i : identities) {
 			Identity modifiedClone = i.clone();
-			modifiedClone.forceSetEdition(i.getEdition() + 1);
+			modifiedClone.setPublishTrustList(!modifiedClone.doesPublishTrustList());
 			
 			// The central motivation behind using IdentifierHashSet instead of HashSet is that
 			// Identity.equals() / Trust.equals() / Score.equals() do not only compare the ID of
