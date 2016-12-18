@@ -107,10 +107,13 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 	}
 	
 	public void testConstructors() throws MalformedURLException, InvalidParameterException {
-		final Identity identity = new Identity(mWoT, "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/-1",
+		final Identity identity = new Identity(mWoT, "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/-5",
 				getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
 		
-		assertEquals(0, identity.getEdition());
+		assertEquals(FetchState.NotFetched, identity.getCurrentEditionFetchState());
+		assertEquals(-1, identity.getLastFetchedEdition());
+		assertEquals(-1, identity.getLastFetchedMaybeValidEdition());
+		assertEquals(0, identity.getNextEditionToFetch());
 		assertEquals(0, identity.getLatestEditionHint());
 	}
 	
