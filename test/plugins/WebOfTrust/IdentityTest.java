@@ -107,14 +107,28 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 	}
 	
 	public void testConstructors() throws MalformedURLException, InvalidParameterException {
-		final Identity identity = new Identity(mWoT, "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/-5",
-				getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true);
+		String nickname = getRandomLatinString(Identity.MAX_NICKNAME_LENGTH);
+		String uri = "USK@sdFxM0Z4zx4-gXhGwzXAVYvOUi6NRfdGbyJa797bNAg,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQACAAE/WebOfTrust/5";
+		
+		final Identity identity = new Identity(mWoT, uri, nickname, true);
+		
+		assertSame(mWoT, identity.getWebOfTrust());
+		
+		assertEquals(new FreenetURI(uri).setSuggestedEdition(0), identity.getRequestURI());
 		
 		assertEquals(FetchState.NotFetched, identity.getCurrentEditionFetchState());
 		assertEquals(-1, identity.getLastFetchedEdition());
 		assertEquals(-1, identity.getLastFetchedMaybeValidEdition());
 		assertEquals(0, identity.getNextEditionToFetch());
-		assertEquals(0, identity.getLatestEditionHint());
+		assertEquals(5, identity.getLatestEditionHint());
+		
+		assertEquals(nickname, identity.getNickname());
+		
+		assertEquals(true, identity.doesPublishTrustList());
+		
+		// TODO: Code quality: Test the other constructor(s), currently only tested implicitely by
+		// being called by the one we just tested.
+		// TODO: Code quality: Test with different / invalid parameters
 	}
 	
 	public void testInsertRequestUriMixup() throws InvalidParameterException {		
