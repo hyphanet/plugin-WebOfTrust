@@ -90,6 +90,9 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		// actually insert the identity. It won't insert it if the current edition is not marked as fetched to prevent inserts when restoring an
 		// own identity.
 		mCurrentEditionFetchState = FetchState.Fetched;
+		// Don't keep it at the default "new Date(0)", that would indicate a FetchState of
+		// NotFetched and thus wouldn't match the fact that we just set it to Fetched.
+		mLastFetchedDate = (Date)mCreationDate.clone(); // Clone it because date is mutable
 		
 		// Don't check for mNickname == null to allow restoring of own identities
 	}
