@@ -356,6 +356,11 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 			// This may be difficult though: There's also the on-disk IdentityFile queue which might
 			// still contain data from the previous run.
 		}
+
+		// To prevent needsInsert() from wrongly reporting that an insert is due, we must ensure
+		// this matches mLastInsertDate by the millisecond
+		// - thus we set it after onFetchedAndParsedSuccessfully() as it also changes it. 
+		mLastChangedDate = (Date)mLastInsertDate.clone();
 	}
 
 	/**
