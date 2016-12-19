@@ -418,9 +418,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * 
 	 * Notice: Even if the last downloaded edition was marked with {@link FetchState#ParsingFailed},
 	 * this will return the one after it. I.e. editions for which parsing failed should normally
-	 * not be downloaded again.
-	 * 
-	 * FIXME: Unit test behavior for {@link OwnIdentity}. */
+	 * not be downloaded again. */
 	public final long getNextEditionToFetch() {
 		// Adding 1 is valid even if no edition has been fetched because it will return -1 then:
 		// -1 + 1 = 0, which is the first valid edition.

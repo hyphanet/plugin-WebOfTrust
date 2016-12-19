@@ -7,7 +7,9 @@ import static plugins.WebOfTrust.util.DateUtil.waitUntilCurrentTimeUTCIsAfter;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Date;
 
+import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
@@ -127,5 +129,103 @@ public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 		
 		assertNotSame(original, deserialized);
 		assertEquals(original, deserialized);
+	}
+
+	/**
+	 * Tests {@link OwnIdentity#getNextEditionToInsert()}.
+	 * Also tests {@link Identity#getNextEditionToFetch()} which we inherited from the parent class:
+	 * In the parent class it is about the request URI, but OwnIdentity also has the insert URI and
+	 * edition. As the parent function isn't aware of that we should check whether getNextEdition()
+	 * still returns reasonable information in the context of looking at an OwnIdentity. */
+	public void testGetNextEditionToInsert()
+			throws MalformedURLException, InvalidParameterException, InterruptedException {
+		
+		OwnIdentity o = addRandomOwnIdentities(1).get(0);
+		
+		// Test state before first insert
+		
+		assertTrue(o.needsInsert());
+		assertFalse(o.isRestoreInProgress());
+		// No restore in progress -> Don't re-import what we will insert, mark it as fetched already
+		// Or from the perspective of other local OwnIdentity identities, i.e. viewing this local
+		// OwnIdentity as a non-own remote one:
+		// Inserts of this OwnIdentity should be transparent to the other ones, it should look as
+		// if the fetch has happened before the insert already. (Because we obviously *have* the
+		// data already since it is the user's input.)
+		assertEquals(0, o.getLastFetchedEdition());
+		assertEquals(FetchState.Fetched, o.getCurrentEditionFetchState());
+		assertEquals(o.getCreationDate(), o.getLastFetchedDate());
+		assertEquals(new Date(0), o.getLastInsertDate());
+		assertEquals(0, o.getNextEditionToInsert());
+		assertEquals(1, o.getNextEditionToFetch());
+		
+		// Test state after insert of edition 0
+		
+		Date approxInsertDate = CurrentTimeUTC.get();
+		o.onInserted(0);
+		assertFalse(o.needsInsert());
+		assertFalse(o.isRestoreInProgress());
+		assertEquals(0, o.getLastFetchedEdition());
+		assertEquals(FetchState.Fetched, o.getCurrentEditionFetchState());
+		assertEquals(o.getCreationDate(), o.getLastFetchedDate());
+		assertTrue(o.getLastInsertDate().getTime() >= approxInsertDate.getTime());
+		try {
+			o.getNextEditionToInsert();
+			fail("Should throw before getLastChangeDate().after(getLastInsertDate())!");
+		} catch(IllegalStateException e) {}
+		waitUntilCurrentTimeUTCIsAfter(o.getLastInsertDate());
+		o.updated();
+		assertTrue(o.needsInsert());
+		assertEquals(1, o.getNextEditionToInsert());
+		assertEquals(1, o.getNextEditionToFetch());
+		
+		// Test state after insert of edition 1
+		
+		Date previousInsertDate = o.getLastInsertDate();
+		waitUntilCurrentTimeUTCIsAfter(previousInsertDate);
+		o.onInserted(1);
+		assertFalse(o.needsInsert());
+		assertFalse(o.isRestoreInProgress());
+		assertEquals(1, o.getLastFetchedEdition());
+		assertEquals(FetchState.Fetched, o.getCurrentEditionFetchState());
+		assertTrue(o.getLastFetchedDate().getTime() == o.getLastInsertDate().getTime());
+		assertTrue(o.getLastInsertDate().getTime()  >= previousInsertDate.getTime());
+		try {
+			o.getNextEditionToInsert();
+			fail("Should throw before getLastChangeDate().after(getLastInsertDate())!");
+		} catch(IllegalStateException e) {}
+		waitUntilCurrentTimeUTCIsAfter(o.getLastInsertDate());
+		o.updated();
+		assertTrue(o.needsInsert());
+		assertEquals(2, o.getNextEditionToInsert());
+		assertEquals(2, o.getNextEditionToFetch());
+
+		// Test what happens if we suddenly *fetch* an edition of the OwnIdentity now.
+		// This could happen if the USK code supplies us with more than one edition when restoring,
+		// or if the user (for whatever reason) runs multiple WoT instances with the same identity.
+		
+		try {
+			o.onFetchedAndParsedSuccessfully(1);
+			fail("Shouldn't accept an edition we already inserted!");
+		} catch(IllegalStateException e) {}
+
+
+		previousInsertDate = o.getLastInsertDate();
+		waitUntilCurrentTimeUTCIsAfter(previousInsertDate);
+		o.onFetchedAndParsedSuccessfully(2);
+		// onFetchedAndParsedSuccessfully() calls updated(), which means needsInsert() will always
+		// return true here.
+		// FIXME: This means that every restore of an OwnIdentity will cause an insert right after
+		// the restore - Should we prevent that? Also see the below FIXME. 
+		assertTrue(o.needsInsert());
+		assertFalse(o.isRestoreInProgress());
+		assertEquals(2, o.getLastFetchedEdition());
+		assertEquals(FetchState.Fetched, o.getCurrentEditionFetchState());
+		assertTrue(o.getLastFetchedDate().getTime() >= previousInsertDate.getTime());
+		// FIXME: onFetchedAndParsedSuccessfully() does not currently update the getLastInsertDate()
+		// Like the above FIXME, this may cause a reinsert after a restore.
+		assertTrue(o.getLastInsertDate().getTime() == previousInsertDate.getTime());
+		assertEquals(3, o.getNextEditionToInsert());
+		assertEquals(3, o.getNextEditionToFetch());
 	}
 }
