@@ -752,11 +752,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 			= parsingSucceeded ? FetchState.Fetched : FetchState.ParsingFailed;
 		
 		mLastFetchedDate = (when != null) ? (Date)when.clone() : CurrentTimeUTC.get();
-		// FIXME: Should we use the mLastFetchedDate as modification Date as well?
-		// The old implementation of onFetched(Date) didn't do that, is there any good reason
-		// for that? Commit 7307da56882b3b81b912a5da23d91076a0a87713 added the old function
-		// and mentioned no reason in the commit message, so it was likely not very intentional.
-		updated();
+		mLastChangedDate = (Date)mLastFetchedDate.clone();
 		
 		if(edition > mLatestEditionHint) {
 			// Do not call setNewEditionHint() to prevent confusing logging.

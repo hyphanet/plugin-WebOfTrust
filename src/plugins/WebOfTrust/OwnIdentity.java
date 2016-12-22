@@ -336,13 +336,21 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		// checkedDelete(mLastInsertDate); /* Not stored because db4o considers it as a primitive */
 		mLastInsertDate = CurrentTimeUTC.get();
 		
+		// We update the edition, URI, mLastFetchedDate, etc. by just pretending a fetch happened.
 		try {
-			onFetchedAndParsedSuccessfully(edition);
+			// To prevent needsInsert() from wrongly reporting that an insert is due, we must ensure
+			// the mLastChangedDate matches mLastInsertDate by the millisecond.
+			// - thus instead of the regular onFetchedAndParsedSuccessfully() we use the special
+			// onFetched*() version which consumes a Date.
+			// This also ensures that the mLastFetchedDate will be the same as well, which makes
+			// sense because the edition being marked as fetched is a consequence of the insert,
+			// so it should have the same Date as well.
+			onFetched(edition, true, mLastInsertDate);
 		} catch(IllegalStateException e) {
 			Logger.error(this,
-			    "onFetchedAndParsedSuccessfully() failed in onInserted(), likely because we got "
+			    "onFetched() failed in onInserted(), likely because we got "
 			  + "an edition which was fetched already. This might be caused by the race condition "
-			  + "of the IdentityDownloader receiving the onFetched() callback before "
+			  + "of the IdentityDownloader receiving the 'USK was fetched' callback before "
 			  + "the OwnIdentity received the onInserted() callback. this: " + this, e);
 			
 			// We not throw it out because otherwise the next IdentityInserter.insert() would fail
@@ -356,11 +364,6 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 			// This may be difficult though: There's also the on-disk IdentityFile queue which might
 			// still contain data from the previous run.
 		}
-
-		// To prevent needsInsert() from wrongly reporting that an insert is due, we must ensure
-		// this matches mLastInsertDate by the millisecond
-		// - thus we set it after onFetchedAndParsedSuccessfully() as it also changes it. 
-		mLastChangedDate = (Date)mLastInsertDate.clone();
 	}
 
 	/**
