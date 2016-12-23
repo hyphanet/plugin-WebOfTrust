@@ -353,6 +353,9 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 			  + "of the IdentityDownloader receiving the 'USK was fetched' callback before "
 			  + "the OwnIdentity received the onInserted() callback. this: " + this, e);
 			
+			// For unit tests
+			assert(false) : e;
+			
 			// We not throw it out because otherwise the next IdentityInserter.insert() would fail
 			// to increments the edition number and try to insert to an already existing URI:
 			// It only increments the edition if getLastInsertDate().after(new Date(0)) - which can
