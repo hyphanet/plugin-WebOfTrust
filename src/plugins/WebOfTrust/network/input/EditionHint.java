@@ -489,7 +489,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 				"Identity which isn't allowed to store hints has stored one: " + this);
 		}
 		
-		if(mEdition <= target.getEdition())
+		if(mEdition <= target.getLastFetchedEdition())
 			throw new IllegalStateException("Hint is obsolete: " + this);
 		
 		// The legacy hinting implementation Identity.getLatestEditionHint() stores only the highest
