@@ -336,8 +336,20 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		// checkedDelete(mLastInsertDate); /* Not stored because db4o considers it as a primitive */
 		mLastInsertDate = CurrentTimeUTC.get();
 		
-		// We update the edition, URI, mLastFetchedDate, etc. by just pretending a fetch happened.
+		// We update the edition, URI, mLastFetchedDate, etc. by just pretending a fetch happened
+		// by calling onFetched().
 		try {
+			if(edition == 0) {
+				// 0 being the first edition to insert is a special case:
+				// The edition will have to be marked as fetched already at creation of this
+				// OwnIdentity (to distinguish from a restore being in progress).
+				// But we want to call onFetched(), and it would throw if the edition was marked as
+				// fetched, so we mark it as not fetched before calling onFetched().
+				assert(getLastFetchedEdition() == 0);
+				assert(mCurrentEditionFetchState == FetchState.Fetched);
+				mCurrentEditionFetchState = FetchState.NotFetched;
+			}
+				
 			// To prevent needsInsert() from wrongly reporting that an insert is due, we must ensure
 			// the mLastChangedDate matches mLastInsertDate by the millisecond.
 			// - thus instead of the regular onFetchedAndParsedSuccessfully() we use the special
