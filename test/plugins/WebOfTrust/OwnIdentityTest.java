@@ -167,7 +167,7 @@ public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 		assertFalse(o.isRestoreInProgress());
 		assertEquals(0, o.getLastFetchedEdition());
 		assertEquals(FetchState.Fetched, o.getCurrentEditionFetchState());
-		assertEquals(o.getCreationDate(), o.getLastFetchedDate());
+		assertTrue(o.getLastFetchedDate().getTime() == o.getLastInsertDate().getTime());
 		assertTrue(o.getLastInsertDate().getTime() >= approxInsertDate.getTime());
 		try {
 			o.getNextEditionToInsert();
