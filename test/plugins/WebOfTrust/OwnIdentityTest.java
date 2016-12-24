@@ -34,7 +34,28 @@ public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 		final OwnIdentity identity = new OwnIdentity(mWoT, "SSK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/",
 				getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH), true);
 		
-		assertEquals(0, identity.getEdition());
+		assertEquals(0, identity.getNextEditionToInsert());
+		// The natural state of an OwnIdentity is to have its next edition to be inserted always be
+		// marked as FetchState.Fetched before it is even inserted and thus couldn't really have
+		// been fetched yet. This ensures multiple things:
+		// - in the case of not even have inserted the first edition 0 yet, it makes sense because
+		//   the OwnIdentity does exist locally already and contains data. Consider this especially
+		//   from the perspective of another local user which views the OwnIdentity as a non-own
+		//   one: He'll see a nickname, trust values, etc., and they couldn't be known if not a
+		//   single edition was fetched yet.
+		// - the IdentityDownloader might download the edition once we insert it. Having marked it
+		//   as fetched already before ensures it won't be imported. And that ensures that we don't
+		//   overwrite the trust list with the shortened version which was published on the network
+		//   (there is a size limit so trust values might be left out).
+		// - To distinguish an OwnIdentity which is pending to be restored from a normal one, the
+		//   ones which are being restored are having their current edition marked as NotFetched,
+		//   and the normal ones as Fetched. This also makes sense: Restoring is the same as not
+		//   having fetched the identity yet and wanting to do so.
+		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
+		assertEquals(0, identity.getLastFetchedEdition());
+		assertEquals(0, identity.getLastFetchedMaybeValidEdition());
+		assertEquals(1, identity.getNextEditionToFetch());
+		
 		assertEquals(0, identity.getLatestEditionHint());
 	}
 
