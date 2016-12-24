@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static plugins.WebOfTrust.WebOfTrustInterface.WOT_NAME;
 import static plugins.WebOfTrust.util.DateUtil.waitUntilCurrentTimeUTCIsAfter;
 
 import java.net.MalformedURLException;
@@ -31,8 +32,19 @@ public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 	private final String insertURIStringSSKPlain = "SSK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/";
 
 	public void testConstructors() throws MalformedURLException, InvalidParameterException {
-		final OwnIdentity identity = new OwnIdentity(mWoT, "SSK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/",
-				getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH), true);
+		String uri = "SSK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/";
+		String nickname = getRandomLatinString(OwnIdentity.MAX_NICKNAME_LENGTH);
+		boolean publishesTrustList = true;
+		
+		OwnIdentity identity = new OwnIdentity(mWoT, uri, nickname, publishesTrustList);
+		
+		assertSame(mWoT, identity.getWebOfTrust());
+		
+		FreenetURI wotURI
+			= new FreenetURI(uri).setKeyType("USK").setDocName(WOT_NAME).setSuggestedEdition(0);
+		FreenetURI requestURI = wotURI.deriveRequestURIFromInsertURI();
+		assertEquals(wotURI, identity.getInsertURI());
+		assertEquals(requestURI, identity.getRequestURI());
 		
 		assertEquals(0, identity.getNextEditionToInsert());
 		// The natural state of an OwnIdentity is to have its next edition to be inserted always be
@@ -57,6 +69,14 @@ public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 		assertEquals(1, identity.getNextEditionToFetch());
 		
 		assertEquals(0, identity.getLatestEditionHint());
+		
+		assertEquals(nickname, identity.getNickname());
+		
+		assertEquals(publishesTrustList, identity.doesPublishTrustList());
+		
+		// TODO: Code quality: Test the other constructor(s), currently only tested implicitly by
+		// being called by the one we just tested.
+		// TODO: Code quality: Test with different / invalid parameters
 	}
 
 	public void testConstructorURIProcessing() throws MalformedURLException, InvalidParameterException {
