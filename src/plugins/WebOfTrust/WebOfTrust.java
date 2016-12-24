@@ -5014,12 +5014,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 				switch(oldIdentity.getCurrentEditionFetchState()) {
 					case Fetched:
-						newIdentity.onFetched(
-							oldIdentity.getEdition(), true, oldIdentity.getLastFetchedDate());
+						newIdentity.onFetched(oldIdentity.getLastFetchedEdition(), true,
+							oldIdentity.getLastFetchedDate());
 						break;
 					case ParsingFailed:
-						newIdentity.onFetched(
-							oldIdentity.getEdition(), false, oldIdentity.getLastFetchedDate());
+						newIdentity.onFetched(oldIdentity.getLastFetchedEdition(), false,
+							oldIdentity.getLastFetchedDate());
 						break;
 					case NotFetched:
 						// This FetchState means that an unfinished restore was in progress.
@@ -5027,7 +5027,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 						// so we must preserve it.
 						assert(oldIdentity.isRestoreInProgress());
 						assert(oldIdentity.getLastFetchedDate().equals(new Date(0)));
-						newIdentity.forceSetEdition(oldIdentity.getEdition());
+						newIdentity.forceSetEdition(oldIdentity.getNextEditionToFetch());
 						
 						// No need to copy those, their default will match
 						assert(newIdentity.getCurrentEditionFetchState().equals(
