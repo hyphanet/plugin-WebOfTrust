@@ -399,7 +399,15 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	 */
 	protected void trusterEditionUpdated() {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
-		mTrusterTrustListEdition = getTruster().getEdition();
+		
+		// I've considered adding some obvious asserts but they wouldn't make sense here:
+		// - assert(the edition did actually change) wouldn't work because the function is just
+		//   called by every call to WebOfTrust.setTrust(), which a lot of times doesn't mean the
+		//   edition changed (e.g. when the user manually sets a trust, or when unit tests call it)
+		// - assert(getTruster().getCurrentEditionFetchState() == Fetched) wouldn't work because
+		//   unit tests often create Identitys without marking them as fetched.
+		
+		mTrusterTrustListEdition = getTruster().getLastFetchedEdition();
 	}
 	
 	public long getTrusterEdition() {
