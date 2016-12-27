@@ -533,9 +533,24 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 		if(mLastChangedDate.after(CurrentTimeUTC.get()))
 			throw new IllegalStateException("mLastChangedDate is in the future");
 		
-		if(mTrusterTrustListEdition != getTruster().getEdition() && getTruster().getCurrentEditionFetchState() == Identity.FetchState.Fetched
-				&& !(getTruster() instanceof OwnIdentity)) // We do not update mTrusterTrustListEdition for OwnIdentities, they do not need it.
-			throw new IllegalStateException("mTrusterTrustListEdition is invalid: " + mTrusterTrustListEdition);
+		// Check whether mTrusterTrustListEdition matches the edition of the Truster which we
+		// last imported.
+		// Purpose of the && is to not throw in those special cases:
+		// 1st:
+		//   getLastFetchedEdition() will also return editions for which the FetchState is
+		//   ParsingFailed, but for those Trusts are not imported, so we must not throw for them
+		//   and thus must only throw if the fetch state is Fetched.
+		//   (Using getLastFetchedMaybeValidEdition() wouldn't work because there is no guarantee
+		//   that it actually matches what is stored in the database, hence the 'Maybe')
+		// 2nd:
+		//    We do not update mTrusterTrustListEdition for OwnIdentities, they do not need it.
+		if(mTrusterTrustListEdition != getTruster().getLastFetchedEdition()
+		        && getTruster().getCurrentEditionFetchState() == Identity.FetchState.Fetched
+		        && !(getTruster() instanceof OwnIdentity)) {
+			
+			throw new IllegalStateException(
+				"mTrusterTrustListEdition is invalid: " + mTrusterTrustListEdition);
+		}
 	}
 	
 	/** @see Persistent#serialize() */
