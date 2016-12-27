@@ -482,6 +482,9 @@ public final class XMLTransformer {
 						Logger.warning(this, "setProperties() failed", e);
 					}
 				
+					// Must be called before importing Trust values because that will cause calls to
+					// Trust.trusterEditionUpdated() which needs to know the newEdition.
+					identity.onFetchedAndParsedSuccessfully(newEdition);
 					
 					mWoT.beginTrustListImport(); // We delete the old list if !identityPublishesTrustList and it did publish one earlier => we always call this. 
 					
@@ -662,7 +665,6 @@ public final class XMLTransformer {
 					}
 
 					mWoT.finishTrustListImport();
-					identity.onFetchedAndParsedSuccessfully(newEdition);
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
 					identity.storeAndCommit();
 				}
