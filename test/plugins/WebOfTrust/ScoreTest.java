@@ -907,10 +907,10 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		assertEquals("Modification of versionID shouldn't matter", equalScore, s);
 		
 		// Score.equals() should only compare the ID of the truster/trustee, not their equals().
-		s.getTruster().setEdition(s.getTruster().getEdition() + 1);
+		s.getTruster().onFetchedAndParsedSuccessfully(s.getTruster().getNextEditionToFetch());
 		assertNotEquals(equalScore.getTruster(), s.getTruster());
 		assertEquals(equalScore, s);
-		s.getTrustee().setEdition(s.getTrustee().getEdition() + 1);
+		s.getTrustee().onFetchedAndParsedSuccessfully(s.getTrustee().getNextEditionToFetch());
 		assertNotEquals(equalScore.getTrustee(), s.getTrustee());
 		assertEquals(equalScore, s);
 	}
