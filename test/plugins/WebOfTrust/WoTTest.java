@@ -864,8 +864,11 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		
 		// End of initTrustTree copy
 
-		assertEquals("The edition of the supplied URI can be used because the owner of the identity supplied it.", insertURI.getEdition(), restored.getEdition());
-		assertEquals("Edition hint should be equal to the edition.", restored.getEdition(), restored.getLatestEditionHint());
+		assertEquals(
+			"The edition of the URI can be used because the owner of the identity supplied it.",
+			insertURI.getEdition(), restored.getNextEditionToFetch());
+		assertEquals("Edition hint should be equal to the edition.",
+			restored.getNextEditionToFetch(), restored.getLatestEditionHint());
 		assertEquals("The current edition should be marked as not fetched.", FetchState.NotFetched, restored.getCurrentEditionFetchState());
 		assertEquals("The current edition should NOT be marked for inserting.", false, restored.needsInsert());
 		
