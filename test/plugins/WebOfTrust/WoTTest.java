@@ -1143,7 +1143,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		// - A re-fetch of the current edition is NOT needed.
 		oldOwnIdentity.onFetchedAndParsedSuccessfully(10);
 		assert(oldOwnIdentity.getCurrentEditionFetchState() == FetchState.Fetched);
-		assert(oldOwnIdentity.getEdition() == 10);
+		assert(oldOwnIdentity.getLastFetchedEdition() == 10);
 		assert(oldOwnIdentity.getLatestEditionHint() == 10);
 		
 		oldOwnIdentity.storeAndCommit();
@@ -1167,7 +1167,8 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		// End of initTrustTree copy
 		
 		assertEquals(oldOwnIdentity.getRequestURI(), replacementNonOwnIdentity.getRequestURI());
-		assertEquals(oldOwnIdentity.getEdition(), replacementNonOwnIdentity.getEdition());
+		assertEquals(oldOwnIdentity.getLastFetchedEdition(),
+		  replacementNonOwnIdentity.getLastFetchedEdition());
 		assertEquals(oldOwnIdentity.getLatestEditionHint(),
 		  replacementNonOwnIdentity.getLatestEditionHint());
 		assertEquals("We always store the full trust list of own identities, current edition does not have to be re-fetched", FetchState.Fetched, replacementNonOwnIdentity.getCurrentEditionFetchState());
