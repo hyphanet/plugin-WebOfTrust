@@ -1089,7 +1089,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		flushCaches();
 		final Identity replacementNonOwnIdentity = mWoT.getIdentityByURI(insertUriO);
 		
-		assertEquals(5, replacementNonOwnIdentity.getEdition());
+		assertEquals(5, replacementNonOwnIdentity.getNextEditionToFetch());
 		assertEquals(5, replacementNonOwnIdentity.getLatestEditionHint());
 		assertEquals(FetchState.NotFetched, replacementNonOwnIdentity.getCurrentEditionFetchState());
 		
