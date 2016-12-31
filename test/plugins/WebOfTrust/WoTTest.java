@@ -955,7 +955,6 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		
 		// Edition and FetchState should NOT be copied to the OwnIdentity:
 		// The insert URI we pass to restoreOwnIdentity provides a higher edition number.
-		// FIXME: Use OwnIdentity.onInserted() once it exists
 		oldNonOwnIdentity.onFetchedAndParsedSuccessfully(10);
 		assert(oldNonOwnIdentity.getEdition() == 10);
 		assert(oldNonOwnIdentity.getCurrentEditionFetchState() == FetchState.Fetched);
@@ -1134,7 +1133,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 	 *  NOTICE: {@link testRestoreOwnIdentity_ExistingAsDanglingNonOwnIdentityAlready} is similar to this function. Also apply improvements there if possible.
 	 */
 	public void testDeleteOwnIdentity_Dangling() throws MalformedURLException, UnknownIdentityException, InvalidParameterException {
-		final Identity oldOwnIdentity = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "TestNickname", true, "testContext0");
+		final OwnIdentity oldOwnIdentity = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "TestNickname", true, "testContext0");
 		
 		oldOwnIdentity.addContext("testContext1");
 		oldOwnIdentity.addContext("testContext2");
@@ -1144,7 +1143,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		// Edition and FetchState should be copied to the non-own Identity:
 		// For own identities, all information stored on the network is also stored in the local database
 		// - A re-fetch of the current edition is NOT needed.
-		oldOwnIdentity.onFetchedAndParsedSuccessfully(10);
+		oldOwnIdentity.onInserted(10);
 		assert(oldOwnIdentity.getCurrentEditionFetchState() == FetchState.Fetched);
 		assert(oldOwnIdentity.getLastFetchedEdition() == 10);
 		assert(oldOwnIdentity.getLatestEditionHint() == 10);
