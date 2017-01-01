@@ -955,8 +955,8 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		
 		// Edition and FetchState should NOT be copied to the OwnIdentity:
 		// The insert URI we pass to restoreOwnIdentity provides a higher edition number.
-		oldNonOwnIdentity.onFetchedAndParsedSuccessfully(10);
-		assert(oldNonOwnIdentity.getEdition() == 10);
+		oldNonOwnIdentity.onFetchedAndParsedSuccessfully(3);
+		assert(oldNonOwnIdentity.getNextEditionToFetch() == 4);
 		assert(oldNonOwnIdentity.getCurrentEditionFetchState() == FetchState.Fetched);
 		
 		oldNonOwnIdentity.storeAndCommit();
@@ -966,7 +966,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		flushCaches();
 		final OwnIdentity restoredOwnIdentity = mWoT.getOwnIdentityByURI(requestUriO);
 		
-		assertEquals(11, restoredOwnIdentity.getEdition());
+		assertEquals(11, restoredOwnIdentity.getNextEditionToFetch());
 		assertEquals(11, restoredOwnIdentity.getLatestEditionHint());
 		assertEquals(FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
 		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
