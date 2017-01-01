@@ -1257,12 +1257,12 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		trustee.storeAndCommit();
 		Score score = mWoT.getScore(truster, trustee);
 		assertEquals(0, score.getCapacity());
-		assertEquals(1, trustee.getEdition());
+		assertEquals(2, trustee.getNextEditionToFetch());
 		assertEquals(FetchState.Fetched, trustee.getCurrentEditionFetchState());
 		
 		mWoT.setTrust(truster, trustee, (byte) 1, "should cause capacity > 0");
 		assertTrue(score.getCapacity() > 0);
-		assertEquals(1, trustee.getEdition());
+		assertEquals(1, trustee.getNextEditionToFetch());
 		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
 		
 		// Test whether capacity 0 to > 0 causes edition to be decreased if the current edition
@@ -1270,12 +1270,12 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		
 		mWoT.setTrust(truster, trustee, (byte) 0, "should cause capacity 0");
 		assertEquals(0, score.getCapacity());
-		assertEquals(1, trustee.getEdition());
+		assertEquals(1, trustee.getNextEditionToFetch());
 		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
 		
 		mWoT.setTrust(truster, trustee, (byte) 1, "should cause capacity > 0");
 		assertTrue(score.getCapacity() > 0);
-		assertEquals(0, trustee.getEdition());
+		assertEquals(0, trustee.getNextEditionToFetch());
 		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
 		
 		// Test whether edition is not wrongly decreased to being negative (which would be an
@@ -1283,12 +1283,12 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		
 		mWoT.setTrust(truster, trustee, (byte) 0, "should cause capacity 0");
 		assertEquals(0, score.getCapacity());
-		assertEquals(0, trustee.getEdition());
+		assertEquals(0, trustee.getNextEditionToFetch());
 		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
 		
 		mWoT.setTrust(truster, trustee, (byte) 1, "should cause capacity > 0");
 		assertTrue(score.getCapacity() > 0);
-		assertEquals(0, trustee.getEdition());
+		assertEquals(0, trustee.getNextEditionToFetch());
 		assertEquals(FetchState.NotFetched, trustee.getCurrentEditionFetchState());
 	}
 }
