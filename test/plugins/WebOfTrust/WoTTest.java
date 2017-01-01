@@ -900,7 +900,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		// FetchState.Fetched should NOT be copied to the OwnIdentity: In cases of low trust we do not store the
 		// full trust list of a non-own identity. We need to re-fetch the current trust list therefore.
 		oldNonOwnIdentity.onFetchedAndParsedSuccessfully(10);
-		assert(oldNonOwnIdentity.getEdition() == 10);
+		assert(oldNonOwnIdentity.getLastFetchedEdition() == 10);
 		assert(oldNonOwnIdentity.getCurrentEditionFetchState() == FetchState.Fetched);
 		
 		oldNonOwnIdentity.storeAndCommit();
@@ -930,7 +930,10 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		// End of initTrustTree copy
 		
 		assertEquals(oldNonOwnIdentity.getRequestURI(), restoredOwnIdentity.getRequestURI());
-		assertEquals("An obsolete edition in the insert URI should not overwrite a higher edition in the known request URI", oldNonOwnIdentity.getEdition(), restoredOwnIdentity.getEdition());
+		// An obsolete edition in the insert URI should not overwrite a higher edition in the known
+		// request URI
+		assertEquals(oldNonOwnIdentity.getLastFetchedEdition(),
+		           restoredOwnIdentity.getLastFetchedEdition());
 		assertEquals(oldNonOwnIdentity.getLatestEditionHint(), restoredOwnIdentity.getLatestEditionHint());
 		assertEquals("We don't always store the full trust list of non-own identities, current edition should be re-fetched", FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
 		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
