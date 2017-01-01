@@ -931,7 +931,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		
 		assertEquals(oldNonOwnIdentity.getRequestURI(), restoredOwnIdentity.getRequestURI());
 		assertEquals("An obsolete edition in the insert URI should not overwrite a higher edition in the known request URI", oldNonOwnIdentity.getEdition(), restoredOwnIdentity.getEdition());
-		assertEquals(restoredOwnIdentity.getEdition(), restoredOwnIdentity.getLatestEditionHint());
+		assertEquals(oldNonOwnIdentity.getLatestEditionHint(), restoredOwnIdentity.getLatestEditionHint());
 		assertEquals("We don't always store the full trust list of non-own identities, current edition should be re-fetched", FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
 		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
 		
