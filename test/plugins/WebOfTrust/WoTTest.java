@@ -967,7 +967,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		final OwnIdentity restoredOwnIdentity = mWoT.getOwnIdentityByURI(requestUriO);
 		
 		assertEquals(11, restoredOwnIdentity.getEdition());
-		assertEquals(restoredOwnIdentity.getEdition(), restoredOwnIdentity.getLatestEditionHint());
+		assertEquals(11, restoredOwnIdentity.getLatestEditionHint());
 		assertEquals(FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
 		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
 		
