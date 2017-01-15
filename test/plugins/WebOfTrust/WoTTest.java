@@ -964,9 +964,9 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		           restoredOwnIdentity.getLastChangeDate());
 		assertEquals(oldNonOwnIdentity.getLastFetchedDate(),
 		           restoredOwnIdentity.getLastFetchedDate());
-		
-		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
-				(CurrentTimeUTC.getInMillis() - restoredOwnIdentity.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
+		// The last insert date of the identity should be set to current time to prevent reinsert of
+		// old editions
+		assertTrue(restoredOwnIdentity.getLastInsertDate().after(beforeRestore));
 		
 		assertEquals(oldNonOwnIdentity.getNickname(), restoredOwnIdentity.getNickname());
 		assertEquals(oldNonOwnIdentity.doesPublishTrustList(), restoredOwnIdentity.doesPublishTrustList());
