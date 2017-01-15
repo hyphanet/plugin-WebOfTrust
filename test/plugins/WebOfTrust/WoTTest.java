@@ -1136,7 +1136,10 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 	 * 
 	 *  NOTICE: {@link testRestoreOwnIdentity_ExistingAsDanglingNonOwnIdentityAlready} is similar to this function. Also apply improvements there if possible.
 	 */
-	public void testDeleteOwnIdentity_Dangling() throws MalformedURLException, UnknownIdentityException, InvalidParameterException {
+	public void testDeleteOwnIdentity_Dangling()
+			throws MalformedURLException, UnknownIdentityException, InvalidParameterException,
+			       InterruptedException {
+		
 		final OwnIdentity oldOwnIdentity = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "TestNickname", true, "testContext0");
 		
 		oldOwnIdentity.addContext("testContext1");
@@ -1153,6 +1156,18 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		assert(oldOwnIdentity.getLatestEditionHint() == 10);
 		
 		oldOwnIdentity.storeAndCommit();
+		
+		// The replacement Identity should preserve some Dates in a reasonable fashion. It might
+		// wrongly instead use the current time for them. To be able to test for that, ensure the
+		// current time is after all dates of the original OwnIdentity.
+		waitUntilCurrentTimeUTCIsAfter(oldOwnIdentity.getCreationDate());
+		waitUntilCurrentTimeUTCIsAfter(oldOwnIdentity.getLastChangeDate());
+		waitUntilCurrentTimeUTCIsAfter(oldOwnIdentity.getLastInsertDate());
+		waitUntilCurrentTimeUTCIsAfter(oldOwnIdentity.getLastFetchedDate());
+		// Preserve the current time and wait until it has passed so we can test whether the dates
+		// of the replacement are wrongly initialized to the current time of the deletion.
+		final Date beforeDeletion = CurrentTimeUTC.get();
+		waitUntilCurrentTimeUTCIsAfter(beforeDeletion);
 		
 		mWoT.deleteOwnIdentity(oldOwnIdentity.getID());
 		
@@ -1179,7 +1194,17 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		  replacementNonOwnIdentity.getLatestEditionHint());
 		assertEquals("We always store the full trust list of own identities, current edition does not have to be re-fetched", FetchState.Fetched, replacementNonOwnIdentity.getCurrentEditionFetchState());
 		
-		assertEquals(oldOwnIdentity.getLastFetchedDate(), replacementNonOwnIdentity.getLastFetchedDate());
+		// Check dates for the most simple error of initializing them with the current time.
+		assertFalse(replacementNonOwnIdentity.getCreationDate().after(beforeDeletion));
+		assertFalse(replacementNonOwnIdentity.getLastChangeDate().after(beforeDeletion));
+		assertFalse(replacementNonOwnIdentity.getLastFetchedDate().after(beforeDeletion));
+		// More precise Date checks
+		assertEquals(oldOwnIdentity.getCreationDate(),
+		  replacementNonOwnIdentity.getCreationDate());
+		assertEquals(oldOwnIdentity.getLastChangeDate(),
+		  replacementNonOwnIdentity.getLastChangeDate());
+		assertEquals(oldOwnIdentity.getLastFetchedDate(),
+		  replacementNonOwnIdentity.getLastFetchedDate());
 		
 		assertEquals(oldOwnIdentity.getNickname(), replacementNonOwnIdentity.getNickname());
 		assertEquals(oldOwnIdentity.doesPublishTrustList(), replacementNonOwnIdentity.doesPublishTrustList());
