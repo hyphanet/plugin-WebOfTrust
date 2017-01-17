@@ -836,10 +836,16 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 	 * Test for {@link restoreOwnIdentity}: No identity with the given ID exists.
 	 */
 	public void testRestoreOwnIdentity_Nonexistent()
-	        throws MalformedURLException, InvalidParameterException, UnknownIdentityException,
-	        NotInTrustTreeException {
-	    
+			throws MalformedURLException, InvalidParameterException, UnknownIdentityException,
+			       NotInTrustTreeException, InterruptedException {
+		
 		final FreenetURI insertURI = new FreenetURI("USK@ZTeIa1g4T3OYCdUFfHrFSlRnt5coeFFDCIZxWSb7abs,ZP4aASnyZax8nYOvCOlUebegsmbGQIXfVzw7iyOsXEc,AQECAAE/WebOfTrust/10");
+		
+		
+		// Preserve the current time and wait until it has passed so we can test whether the Dates
+		// of the restore are correctly initialized to current time of the restore.
+		final Date beforeRestore = CurrentTimeUTC.get();
+		waitUntilCurrentTimeUTCIsAfter(beforeRestore);
 		
 		mWoT.restoreOwnIdentity(insertURI);
 		
@@ -872,9 +878,12 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		assertEquals("The current edition should be marked as not fetched.", FetchState.NotFetched, restored.getCurrentEditionFetchState());
 		assertEquals("The current edition should NOT be marked for inserting.", false, restored.needsInsert());
 		
+		assertTrue(restored.getCreationDate().after(beforeRestore));
+		assertTrue(restored.getLastChangeDate().after(beforeRestore));
 		assertEquals("The identity was not fetched yet so the last-fetched date should be zero.", new Date(0), restored.getLastFetchedDate());
-		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
-				(CurrentTimeUTC.getInMillis() - restored.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
+		// The last insert date of the identity should be set to current time to prevent reinsert of
+		// old editions
+		assertTrue(restored.getLastInsertDate().after(beforeRestore));
 		
 		assertEquals("We cannot know the nickname yet", null, restored.getNickname());
 		assertEquals("We should assume the identity does not insert a trust list for as long as we don't know", false, restored.doesPublishTrustList());
