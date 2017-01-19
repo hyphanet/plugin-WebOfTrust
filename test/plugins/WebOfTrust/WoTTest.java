@@ -1116,9 +1116,24 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 	 * - At the point of execution, the identity exists as non-own Identity but the current edition was not fetched yet.
 	 * - Then restoreOwnIdentity is called upon the unfetched Identity.
 	 */
-	public void testRestoreOwnIdentity_Unfetched() throws InvalidParameterException, MalformedURLException, UnknownIdentityException, NotInTrustTreeException {
+	public void testRestoreOwnIdentity_Unfetched()
+			throws InvalidParameterException, MalformedURLException, UnknownIdentityException,
+			       NotInTrustTreeException, InterruptedException {
+		
 		// addIdentity should set the FetchState of the identity to NotFetched as desired by this test
 		mWoT.addIdentity(requestUriO);
+		Identity i = mWoT.getIdentityByURI(requestUriO);
+		assertEquals(new Date(0), i.getLastFetchedDate());
+		
+		// The replacement OwnIdentity should preserve some Dates in a reasonable fashion. It might
+		// wrongly instead use the current time for them. To be able to test for that, ensure the
+		// current time is after all dates of the original Identity.
+		waitUntilCurrentTimeUTCIsAfter(i.getCreationDate());
+		waitUntilCurrentTimeUTCIsAfter(i.getLastChangeDate());
+		// Preserve the current time and wait until it has passed so we can test whether the dates
+		// of the replacement are wrongly initialized to the current time of the restore.
+		final Date beforeRestore = CurrentTimeUTC.get();
+		waitUntilCurrentTimeUTCIsAfter(beforeRestore);
 		
 		// We use an edition which is lower than the edition of the old identity so we can test whether the too-low edition
 		// does not overwrite the known latest edition.
@@ -1132,9 +1147,18 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		assertEquals(FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
 		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
 		
-		assertEquals("The identity was not fetched yet so the last-fetched date should be zero.", new Date(0), restoredOwnIdentity.getLastFetchedDate());
-		assertTrue("The last insert date of the identity should be set to current time to prevent reinsert of old editions", 
-				(CurrentTimeUTC.getInMillis() - restoredOwnIdentity.getLastInsertDate().getTime()) < 10*1000); // Allow some delta to compensate execution time between restoreOwnIdentity() and this line.
+		// Check dates for the most simple error of initializing them with the current time.
+		assertFalse(restoredOwnIdentity.getCreationDate().after(beforeRestore));
+		assertFalse(restoredOwnIdentity.getLastChangeDate().after(beforeRestore));
+		assertFalse(restoredOwnIdentity.getLastFetchedDate().after(beforeRestore));
+		// More precise Date checks
+		assertEquals(i.getCreationDate(), restoredOwnIdentity.getCreationDate());
+		assertEquals(i.getLastChangeDate(), restoredOwnIdentity.getLastChangeDate());
+		// The identity was not fetched yet so the last-fetched date should be zero.
+		assertEquals(new Date(0), restoredOwnIdentity.getLastFetchedDate());
+		// The last insert date of the identity should be set to current time to prevent reinsert of
+		// old editions
+		assertTrue(restoredOwnIdentity.getLastInsertDate().after(beforeRestore));
 	}
 	
 	/**
