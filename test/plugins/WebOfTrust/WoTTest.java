@@ -1125,6 +1125,16 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		Identity i = mWoT.getIdentityByURI(requestUriO);
 		assertEquals(new Date(0), i.getLastFetchedDate());
 		
+		// Ensure the edition is higher than what we pass to restoreOwnIdentity() to test whether
+		// the unfetched higher edition of the non-own Identity does not override the lower one
+		// passed to restoreOwnIdentity().
+		// This must be tested for the case of the user restoring an identity with a wrongly too
+		// high edition which doesn't actually exist, and then realizing it doesn't get fetched and
+		// thus deleting the identity and trying to restore it with the correct lower edition.
+		i.forceSetEdition(10);
+		assert(i.getCurrentEditionFetchState() == FetchState.NotFetched);
+		i.storeAndCommit();
+		
 		// The replacement OwnIdentity should preserve some Dates in a reasonable fashion. It might
 		// wrongly instead use the current time for them. To be able to test for that, ensure the
 		// current time is after all dates of the original Identity.
@@ -1135,15 +1145,13 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		final Date beforeRestore = CurrentTimeUTC.get();
 		waitUntilCurrentTimeUTCIsAfter(beforeRestore);
 		
-		// We use an edition which is lower than the edition of the old identity so we can test whether the too-low edition
-		// does not overwrite the known latest edition.
 		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(5));
 		
 		flushCaches();
 		final OwnIdentity restoredOwnIdentity = mWoT.getOwnIdentityByURI(requestUriO);
 		
 		assertEquals(5, restoredOwnIdentity.getNextEditionToFetch());
-		assertEquals(5, restoredOwnIdentity.getLatestEditionHint());
+		assertEquals(10, restoredOwnIdentity.getLatestEditionHint());
 		assertEquals(FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
 		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
 		
