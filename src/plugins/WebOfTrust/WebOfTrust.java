@@ -5225,6 +5225,23 @@ public final class WebOfTrust extends WebOfTrustInterface
 					identity.setContexts(oldIdentity.getContexts());
 					identity.setProperties(oldIdentity.getProperties());
 					
+					// Notice: The lastFetchedDate and lastInsertDate were already handled by the
+					// above call to restoreEdition().
+					// Preserving the Dates isn't very precise as restoring an OwnIdentity usually
+					// means the user has just created a fresh database and the dates aren't
+					// propagated across the network and thus wrong in the non-own Identity.
+					// But we still do so because:
+					// - future implementations of IdentityDownloader may propagate an estimate
+					//   of the Dates on the network to allow people to easily notice if someone
+					//   creates a fake identity with the same name as a much older one.
+					// - it ensures the lastFetchedDate which we did already preserve above because
+					//   the non-own Identity may have been fetched already cannot be before the
+					//   creationDate, which would cause the startup database integrity test of the
+					//   OwnIdentity to fail because the creationDate being after lastFetchedDate
+					//   doesn't make any sense.
+					identity.setCreationDate(oldIdentity.getCreationDate());
+					identity.forceSetLastChangeDate(oldIdentity.getLastChangeDate());
+					
 					identity.storeWithoutCommit();
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
 					initTrustTreeWithoutCommit(identity);

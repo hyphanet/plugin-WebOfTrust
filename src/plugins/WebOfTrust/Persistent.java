@@ -499,6 +499,9 @@ public abstract class Persistent implements Serializable {
 	/**
 	 * ATTENTION: Only use this in clone():
 	 * For debugging purposes, the creation Date shall tell clearly when this object was created, it should never change.
+	 * 
+	 * TODO: Code quality: Rename to forceSetCreationDate() to match WoT's naming convention for
+	 * dangerous setters.
 	 */
 	protected void setCreationDate(final Date creationDate) {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough

@@ -1133,6 +1133,17 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		mLastChangedDate = CurrentTimeUTC.get();
 	}
 
+	/**
+	 * ATTENTION: Only use this when you need to construct arbitrary Identity objects - for example
+	 * when restoring an Identity from the network. It won't guarantee semantic integrity of the
+	 * Identity object, for example it may allow decreasing the Date.
+	 * Instead use {@link #updated()} whenever possible. */
+	public final void forceSetLastChangeDate(Date lastChangedDate) {
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
+		// checkedDelete(mLastChangedDate); // Not stored because db4o considers it as a primitive
+		mLastChangedDate = (Date)lastChangedDate.clone();
+	}
+
 	/** @return A String containing everything which {@link #equals(Object)} would compare. */
 	@Override
 	public String toString() {
