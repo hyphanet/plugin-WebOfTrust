@@ -5012,6 +5012,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 				newIdentity.setContexts(oldIdentity.getContexts());
 				newIdentity.setProperties(oldIdentity.getProperties());
 				
+				newIdentity.setCreationDate(oldIdentity.getCreationDate());
+				// lastFetchedDate and lastChangeDate are handled by the below switch() (the latter
+				// is in some cases done implicitly by onFetched()).
+				
 				switch(oldIdentity.getCurrentEditionFetchState()) {
 					case Fetched:
 						newIdentity.onFetched(oldIdentity.getLastFetchedEdition(), true,

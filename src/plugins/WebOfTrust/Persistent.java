@@ -27,6 +27,7 @@ import com.db4o.ext.ExtObjectSet;
 import com.db4o.ext.ObjectInfo;
 import com.db4o.query.Query;
 
+import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -497,8 +498,15 @@ public abstract class Persistent implements Serializable {
 	}
 	
 	/**
-	 * ATTENTION: Only use this in clone():
-	 * For debugging purposes, the creation Date shall tell clearly when this object was created, it should never change.
+	 * ATTENTION: Only use this in {@link #clone()},
+	 * {@link WebOfTrust#restoreOwnIdentity(FreenetURI)} and
+	 * {@link WebOfTrust#deleteOwnIdentity(String)}:
+	 * For debugging purposes, the creation Date shall tell clearly when this object was created, it
+	 * should never change if possible.
+	 * (The exceptions like {@link #clone()} are allowed to keep the creation date making sense when
+	 * copying objects of subclasses which contain other dates such as last modification date:
+	 * The creation date shouldn't be after the other dates of an object as that wouldn't make any
+	 * sense, so it is sometimes necessary to preserve it when cloning / copying subclasses.)
 	 * 
 	 * TODO: Code quality: Rename to forceSetCreationDate() to match WoT's naming convention for
 	 * dangerous setters.
