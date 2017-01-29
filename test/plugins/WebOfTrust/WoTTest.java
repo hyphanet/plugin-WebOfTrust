@@ -1184,6 +1184,11 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(5));
 		final OwnIdentity oldOwnIdentity = mWoT.getOwnIdentityByURI(insertUriO);
 		
+		// Make getLastChangeDate() distinct so we can test for mixups
+		waitUntilCurrentTimeUTCIsAfter(oldOwnIdentity.getCreationDate());
+		oldOwnIdentity.updated();
+		oldOwnIdentity.storeAndCommit();
+		
 		// The replacement Identity should preserve some Dates in a reasonable fashion. It might
 		// wrongly instead use the current time for them. To be able to test for that, ensure the
 		// current time is after all dates of the original OwnIdentity.
