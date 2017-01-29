@@ -1262,6 +1262,9 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		
 		final OwnIdentity oldOwnIdentity = mWoT.createOwnIdentity(new FreenetURI(insertUriO), "TestNickname", true, "testContext0");
 		
+		// Ensure that Dates are distinct so we can check for mixups
+		waitUntilCurrentTimeUTCIsAfter(oldOwnIdentity.getCreationDate());
+		
 		oldOwnIdentity.addContext("testContext1");
 		oldOwnIdentity.addContext("testContext2");
 		oldOwnIdentity.setProperty("testProperty1", "testValue1");
@@ -1274,6 +1277,9 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		assert(oldOwnIdentity.getCurrentEditionFetchState() == FetchState.Fetched);
 		assert(oldOwnIdentity.getLastFetchedEdition() == 10);
 		assert(oldOwnIdentity.getLatestEditionHint() == 10);
+		
+		waitUntilCurrentTimeUTCIsAfter(oldOwnIdentity.getLastFetchedDate());
+		oldOwnIdentity.updated(); // Make getLastChangeDate() distinct
 		
 		oldOwnIdentity.storeAndCommit();
 		
@@ -1321,7 +1327,9 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		// More precise Date checks
 		assertEquals(oldOwnIdentity.getCreationDate(),
 		  replacementNonOwnIdentity.getCreationDate());
-		assertEquals(oldOwnIdentity.getLastChangeDate(),
+		// New LastChangeDate must equal old LastFetchDate because for non-own Identitys manual
+		// changes are not possible, they can only be changed by being fetched.
+		assertEquals(oldOwnIdentity.getLastFetchedDate(),
 		  replacementNonOwnIdentity.getLastChangeDate());
 		assertEquals(oldOwnIdentity.getLastFetchedDate(),
 		  replacementNonOwnIdentity.getLastFetchedDate());
