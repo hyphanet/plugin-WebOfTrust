@@ -904,6 +904,9 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		
 		final Identity oldNonOwnIdentity = new Identity(mWoT, requestUriO, "TestNickname", true);
 		
+		// Make Dates distinct so we can test for mixups
+		waitUntilCurrentTimeUTCIsAfter(oldNonOwnIdentity.getCreationDate());
+		
 		oldNonOwnIdentity.addContext("testContext1");
 		oldNonOwnIdentity.addContext("testContext2");
 		oldNonOwnIdentity.setProperty("testProperty1", "testValue1");
@@ -914,6 +917,9 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		oldNonOwnIdentity.onFetchedAndParsedSuccessfully(10);
 		assert(oldNonOwnIdentity.getLastFetchedEdition() == 10);
 		assert(oldNonOwnIdentity.getCurrentEditionFetchState() == FetchState.Fetched);
+		
+		waitUntilCurrentTimeUTCIsAfter(oldNonOwnIdentity.getLastFetchedDate());
+		oldNonOwnIdentity.updated(); // Make getLastChangeDate() distinct
 		
 		oldNonOwnIdentity.storeAndCommit();
 		
