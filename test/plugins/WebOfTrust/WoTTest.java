@@ -1175,11 +1175,26 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 	 * - Unfortunately, at the point of execution {@link WebOfTrust.restoreOwnIdentity()}, the identity was unknown, therefore marked for fetching but never fetched yet.
 	 * - Then deleteOwnIdentity is called with the unfetched OwnIdentity as parameter.
 	 */
-	public void testDeleteOwnIdentity_Unfetched() throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
+	public void testDeleteOwnIdentity_Unfetched()
+			throws MalformedURLException, InvalidParameterException, UnknownIdentityException,
+			       InterruptedException {
+		
 		// Restoring a unknown identity should mark the FetchState as NotFetched as this test desires
 		// Further, it is a nice special case to immediately delete a restored identity.
 		mWoT.restoreOwnIdentity(new FreenetURI(insertUriO).setSuggestedEdition(5));
 		final OwnIdentity oldOwnIdentity = mWoT.getOwnIdentityByURI(insertUriO);
+		
+		// The replacement Identity should preserve some Dates in a reasonable fashion. It might
+		// wrongly instead use the current time for them. To be able to test for that, ensure the
+		// current time is after all dates of the original OwnIdentity.
+		waitUntilCurrentTimeUTCIsAfter(oldOwnIdentity.getCreationDate());
+		waitUntilCurrentTimeUTCIsAfter(oldOwnIdentity.getLastChangeDate());
+		waitUntilCurrentTimeUTCIsAfter(oldOwnIdentity.getLastInsertDate());
+		waitUntilCurrentTimeUTCIsAfter(oldOwnIdentity.getLastFetchedDate());
+		// Preserve the current time and wait until it has passed so we can test whether the dates
+		// of the replacement are wrongly initialized to the current time of the deletion.
+		final Date beforeDeletion = CurrentTimeUTC.get();
+		waitUntilCurrentTimeUTCIsAfter(beforeDeletion);
 		
 		mWoT.deleteOwnIdentity(oldOwnIdentity.getID());
 		
@@ -1190,6 +1205,20 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		assertEquals(5, replacementNonOwnIdentity.getLatestEditionHint());
 		assertEquals(FetchState.NotFetched, replacementNonOwnIdentity.getCurrentEditionFetchState());
 		
+		// Check dates for the most simple error of initializing them with the current time.
+		assertFalse(replacementNonOwnIdentity.getCreationDate().after(beforeDeletion));
+		assertFalse(replacementNonOwnIdentity.getLastChangeDate().after(beforeDeletion));
+		assertFalse(replacementNonOwnIdentity.getLastFetchedDate().after(beforeDeletion));
+		// More precise Date checks
+		assertEquals(oldOwnIdentity.getCreationDate(),
+		  replacementNonOwnIdentity.getCreationDate());
+		// Notice: At first look, one would say that the LastChangeDate of the replacement needs to
+		// equal the CreationDate of the original because the Identity wasn't fetched yet and thus
+		// cannot have been changed.
+		// But: It could have been fetched already and then marked as being unfetched by Score
+		// computation calling Identity.markForRefetch().
+		assertEquals(oldOwnIdentity.getLastChangeDate(),
+		  replacementNonOwnIdentity.getLastChangeDate());
 		assertEquals(new Date(0), replacementNonOwnIdentity.getLastFetchedDate());
 	}
 	
