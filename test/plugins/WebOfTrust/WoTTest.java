@@ -1137,6 +1137,9 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		Identity i = mWoT.getIdentityByURI(requestUriO);
 		assertEquals(new Date(0), i.getLastFetchedDate());
 		
+		waitUntilCurrentTimeUTCIsAfter(i.getCreationDate());
+		i.updated(); // Make getLastChangeDate() distinct so we can test for mixups.
+		
 		// Ensure the edition is higher than what we pass to restoreOwnIdentity() to test whether
 		// the unfetched higher edition of the non-own Identity does not override the lower one
 		// passed to restoreOwnIdentity().
