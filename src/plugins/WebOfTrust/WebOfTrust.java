@@ -5038,6 +5038,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 							oldIdentity.getCurrentEditionFetchState()));
 						assert(newIdentity.getLastFetchedDate().equals(
 							oldIdentity.getLastFetchedDate()));
+						
+						// In the above cases we did this implicitely by onFetched(), but we don't
+						// use it here so we must do it manually.
+						newIdentity.forceSetLastChangeDate(oldIdentity.getLastChangeDate());
 						break;
 					default:
 						throw new UnsupportedOperationException("Unknown FetchState: "
