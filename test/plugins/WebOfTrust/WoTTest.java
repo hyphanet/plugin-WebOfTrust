@@ -1000,11 +1000,17 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		
 		final Identity oldNonOwnIdentity = new Identity(mWoT, requestUriO, "TestNickname", true);
 		
+		// Make Dates distinct so we can test for mixups
+		waitUntilCurrentTimeUTCIsAfter(oldNonOwnIdentity.getCreationDate());
+		
 		// Edition and FetchState should NOT be copied to the OwnIdentity:
 		// The insert URI we pass to restoreOwnIdentity provides a higher edition number.
 		oldNonOwnIdentity.onFetchedAndParsedSuccessfully(3);
 		assert(oldNonOwnIdentity.getNextEditionToFetch() == 4);
 		assert(oldNonOwnIdentity.getCurrentEditionFetchState() == FetchState.Fetched);
+		
+		waitUntilCurrentTimeUTCIsAfter(oldNonOwnIdentity.getLastFetchedDate());
+		oldNonOwnIdentity.updated(); // Make getLastChangeDate() distinct
 		
 		oldNonOwnIdentity.storeAndCommit();
 		
