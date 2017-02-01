@@ -1139,15 +1139,6 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		
 		waitUntilCurrentTimeUTCIsAfter(i.getCreationDate());
 		i.updated(); // Make getLastChangeDate() distinct so we can test for mixups.
-		
-		// Ensure the edition is higher than what we pass to restoreOwnIdentity() to test whether
-		// the unfetched higher edition of the non-own Identity does not override the lower one
-		// passed to restoreOwnIdentity().
-		// This must be tested for the case of the user restoring an identity with a wrongly too
-		// high edition which doesn't actually exist, and then realizing it doesn't get fetched and
-		// thus deleting the identity and trying to restore it with the correct lower edition.
-		i.forceSetEdition(10);
-		assert(i.getCurrentEditionFetchState() == FetchState.NotFetched);
 		i.storeAndCommit();
 		
 		// The replacement OwnIdentity should preserve some Dates in a reasonable fashion. It might
@@ -1166,7 +1157,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		final OwnIdentity restoredOwnIdentity = mWoT.getOwnIdentityByURI(requestUriO);
 		
 		assertEquals(5, restoredOwnIdentity.getNextEditionToFetch());
-		assertEquals(10, restoredOwnIdentity.getLatestEditionHint());
+		assertEquals(5, restoredOwnIdentity.getLatestEditionHint());
 		assertEquals(FetchState.NotFetched, restoredOwnIdentity.getCurrentEditionFetchState());
 		assertFalse("Since the current edition needs to be re-fetched we should NOT insert it", restoredOwnIdentity.needsInsert());
 		
@@ -1221,7 +1212,16 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		flushCaches();
 		final Identity replacementNonOwnIdentity = mWoT.getIdentityByURI(insertUriO);
 		
-		assertEquals(5, replacementNonOwnIdentity.getNextEditionToFetch());
+		// The edition 5 which we had passed to restoreOwnIdentity() must not be used:
+		// It might not be fetchable anymore because it fell out of the network, so it must be
+		// possible for the user to notice that and try again with a lower edition.
+		// Before being able to call restoreOwnIdentity() again with a lower edition, the user must
+		// use deleteOwnIdentity(). So if deleteOwnIdentity() preserved the bogus edition, the
+		// database would be permanently damaged because restoreOwnIdentity() afterwards would
+		// re-use the unfetchable edition of the replacement non-own Identity.
+		// So it must not preserve it.
+		assertEquals(0, replacementNonOwnIdentity.getNextEditionToFetch());
+		// We can use 5 as a hint however as hints are thrown away after they failed to fetch.
 		assertEquals(5, replacementNonOwnIdentity.getLatestEditionHint());
 		assertEquals(FetchState.NotFetched, replacementNonOwnIdentity.getCurrentEditionFetchState());
 		
