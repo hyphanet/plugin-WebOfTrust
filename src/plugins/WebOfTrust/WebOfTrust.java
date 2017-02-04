@@ -5029,9 +5029,19 @@ public final class WebOfTrust extends WebOfTrustInterface
 						// This FetchState means that an unfinished restore was in progress.
 						// When adding an OwnIdentity for restoring, the user may specify an edition
 						// so we must preserve it.
+						// However we must *not* use it as next edition to fetch, we must only use
+						// it as hint:
+						// If the edition the user specified when restoring has already fallen out
+						// of the network and restoring thus never completes, it must stay possible
+						// to retry with a lower edition by deleting the OwnIdentity and restoring
+						// it again with the lower edition.
+						// If we didn't allow that, restoring with a too high edition would
+						// permanently damage the database: When the user would restore again, the
+						// surrogate Identity which this function here had created would contain
+						// the bogus edition, and the code for restoring would see that and use it.
 						assert(oldIdentity.isRestoreInProgress());
 						assert(oldIdentity.getLastFetchedDate().equals(new Date(0)));
-						newIdentity.forceSetEdition(oldIdentity.getNextEditionToFetch());
+						newIdentity.setNewEditionHint(oldIdentity.getNextEditionToFetch());
 						
 						// No need to copy those, their default will match
 						assert(newIdentity.getCurrentEditionFetchState().equals(
