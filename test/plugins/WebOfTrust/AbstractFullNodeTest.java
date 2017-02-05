@@ -115,6 +115,15 @@ public abstract class AbstractFullNodeTest
         PluginInfoWrapper wotWrapper = 
             mNode.getPluginManager().startPluginFile(wotFilename, false);
         
+        // startPluginFile() will NOT throw if starting the plugin fails, i.e. if
+        // WebOftrust.runPlugin() throws an exception.
+        // Thus we use this hack to detect that.
+        // TODO: Code quality:
+        // - Add a throwing startPlugin...() to fred and use it.
+        // - Add JavaDoc to startPluginFile() (and potentially other startPlugin...()) to document
+        //   that they don't throw.
+        assertTrue(mNode.getPluginManager().isPluginLoaded(wotWrapper.getPluginClassName()));
+        
         mWebOfTrust = (WebOfTrust) wotWrapper.getPlugin();
         
         // Prevent unit tests from having to do thread synchronization by terminating all WOT
