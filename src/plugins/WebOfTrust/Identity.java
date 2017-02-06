@@ -1257,7 +1257,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 			Identity clone = new Identity(mWebOfTrust, getRequestURI(), getNickname(), doesPublishTrustList());
 			
 			activateFully(); // For performance only
-			clone.setEdition(getEdition());
+			clone.forceSetEdition(getEdition());
 			clone.setNewEditionHint(getLatestEditionHint());
 			clone.setCreationDate(getCreationDate());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
