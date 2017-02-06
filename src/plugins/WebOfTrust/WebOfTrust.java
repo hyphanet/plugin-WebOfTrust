@@ -2144,12 +2144,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 						throw new RuntimeException(e); // Should never happen since we are synchronized on the WOT
 					}
 				} else {
-					try {
-						existingSeed.setEdition(new FreenetURI(seedURI).getEdition());
-						mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldExistingSeed, existingSeed);
+					long edition = new FreenetURI(seedURI).getEdition();
+					
+					if(existingSeed.getNextEditionToFetch() < edition) {
+						existingSeed.forceSetEdition(edition);
+						existingSeed.forceSetCurrentEditionFetchState(FetchState.NotFetched);
+						
+						mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(
+							oldExistingSeed, existingSeed);
 						existingSeed.storeAndCommit();
-					} catch(InvalidParameterException e) {
-						/* We already have the latest edition stored */
 					}
 				}
 			}
@@ -2158,7 +2161,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 					final Identity newSeed = new Identity(this, seedURI, null, true);
 					// We have to explicitly set the edition number because the constructor only considers the given edition as a hint.
 					if(!IdentityFetcher.DEBUG__NETWORK_DUMP_MODE)
-						newSeed.setEdition(new FreenetURI(seedURI).getEdition());
+						newSeed.forceSetEdition(new FreenetURI(seedURI).getEdition());
 					else {
 						Logger.warning(this, "IdentityFetcher.DEBUG__NETWORK_DUMP_MODE == true: "
 							+ "Using seed edition 0!");
