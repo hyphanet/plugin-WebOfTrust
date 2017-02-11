@@ -435,7 +435,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 			
 			activateFully(); // For performance only
 			
-			clone.setEdition(getEdition());
+			clone.forceSetEdition(getEdition());
 			clone.setNewEditionHint(getLatestEditionHint());
 			clone.setCreationDate(getCreationDate());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();
