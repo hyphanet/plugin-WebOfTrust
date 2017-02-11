@@ -5205,10 +5205,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 */
 	public OwnIdentity restoreOwnIdentityWithoutCommit(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
 		Logger.normal(this, "restoreOwnIdentity(): Starting... ");
-		
-		OwnIdentity identity;
 
 		try {
+			OwnIdentity identity;
 			long edition = 0;
 			
 			try {
