@@ -261,11 +261,17 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	
 	/**
 	 * Sets the edition to the given edition and marks it for re-fetching. Used for restoring own identities.
+	 * 
+	 * ATTENTION: Does NOT call {@link #setCreationDate(Date)} and
+	 * {@link #forceSetLastChangeDate(Date)}, you have to do that on your own!
+	 *
 	 * @param fetchedDate The date when the given edition was fetched. Null if it was not fetched yet.
 	 */
-	protected final void restoreEdition(long edition, Date fetchedDate) throws InvalidParameterException {
-		setEdition(edition);
+	protected final void restoreEdition(long edition, Date fetchedDate) {
 		checkedActivate(1);
+		
+		forceSetEdition(edition);
+		
 		mCurrentEditionFetchState = FetchState.NotFetched;
 		
 		// checkedDelete(mLastFetchedDate); /* Not stored because db4o considers it as a primitive */

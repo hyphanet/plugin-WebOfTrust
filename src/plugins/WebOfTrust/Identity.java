@@ -576,6 +576,9 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * Instead, use {@link #setEdition(long)} whenever possible.
 	 */
 	public void forceSetEdition(final long newEdition) {
+		if(newEdition < 0)
+			throw new IllegalArgumentException("Invalid edition: " + newEdition);
+		
         // If we did not call checkedActivate(), db4o would not notice and not store the modified
         // mRequestURIString - But checkedActivate() is done by the following getRequestURI()
         // already, so we do not call it again here.
