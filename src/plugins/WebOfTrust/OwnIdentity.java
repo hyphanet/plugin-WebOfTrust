@@ -198,6 +198,8 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		mInsertURIString = getInsertURI().setSuggestedEdition(edition).toString();
 	}
 
+	/** @deprecated See {@link Identity#getEdition()} */
+	@Deprecated
 	@Override
 	protected final void setEdition(long edition) throws InvalidParameterException {
 		super.setEdition(edition);
