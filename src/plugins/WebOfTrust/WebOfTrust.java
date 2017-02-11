@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.Math.abs;
 import static java.lang.Math.max;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Arrays.sort;
@@ -5211,7 +5212,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 				long edition = 0;
 				
 				try {
-					edition = Math.max(edition, insertFreenetURI.getEdition());
+					// A negative sign in an USK edition indicates that Freenet should try to fetch
+					// the latest edition before showing something to the user.
+					// This is irrelevant in our case as we will try to fetch the latest edition
+					// anyway, so we can just take the absolute value.
+					// Taking the max(edition, abs(...)) afterwards is necessary because abs()
+					// will the negative return Long.MIN_VALUE if the passed value was MIN_VALUE.
+					edition = max(edition, abs(insertFreenetURI.getEdition()));
 				} catch(IllegalStateException e) {
 					// The user supplied URI did not have an edition specified
 				}
