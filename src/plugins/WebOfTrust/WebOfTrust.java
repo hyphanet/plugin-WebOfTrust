@@ -5374,7 +5374,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				Logger.normal(this, "restoreOwnIdentity(): Finished.");
 				return identity;
 			}
-			catch(RuntimeException e) {
+			catch(RuntimeException | MalformedURLException | InvalidParameterException e) {
 				if(mTrustListImportInProgress) { // We don't execute beginTrustListImport() in all code paths of this function
 					// Does rollback for us. The outside will do another duplicate rollback() because the JavaDoc tells it to.
 					// But thats acceptable to keep the transaction code pattern the same everywhere.
@@ -5400,8 +5400,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 				Persistent.checkedCommit(mDB, this);
 				return identity.clone();
 			}
-			catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			catch(RuntimeException | MalformedURLException | InvalidParameterException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this,
+					new RuntimeException(e) /* Doesn't accept non-runtime Exception as param */ );
 				throw e; // The compiler doesn't know that the above function throws, so it would complain about a missing return statement without this.
 			}
 		}
