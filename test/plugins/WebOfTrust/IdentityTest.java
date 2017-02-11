@@ -279,7 +279,7 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		// - it should be stored as an edition hint as we cannot be sure whether the edition really exists because
 		// identity URIs are usually obtained from not trustworthy sources.
 		assertEquals(0, identity.getEdition());
-		identity.setEdition(10);
+		identity.onFetchedAndParsedSuccessfully(10);
 		assertEquals(10, identity.getEdition());
 	}
 	
