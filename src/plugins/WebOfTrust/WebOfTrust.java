@@ -5208,189 +5208,188 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		OwnIdentity identity;
 
+		try {
+			long edition = 0;
+			
 			try {
-				long edition = 0;
+				// A negative sign in an USK edition indicates that Freenet should try to fetch
+				// the latest edition before showing something to the user.
+				// This is irrelevant in our case as we will try to fetch the latest edition
+				// anyway, so we can just take the absolute value.
+				// Taking the max(edition, abs(...)) afterwards is necessary because abs()
+				// will the negative return Long.MIN_VALUE if the passed value was MIN_VALUE.
+				edition = max(edition, abs(insertFreenetURI.getEdition()));
+			} catch(IllegalStateException e) {
+				// The user supplied URI did not have an edition specified
+			}
+			
+			try { // Try replacing an existing non-own version of the identity with an OwnIdentity
+				Identity oldIdentity = getIdentityByURI(insertFreenetURI);
 				
-				try {
-					// A negative sign in an USK edition indicates that Freenet should try to fetch
-					// the latest edition before showing something to the user.
-					// This is irrelevant in our case as we will try to fetch the latest edition
-					// anyway, so we can just take the absolute value.
-					// Taking the max(edition, abs(...)) afterwards is necessary because abs()
-					// will the negative return Long.MIN_VALUE if the passed value was MIN_VALUE.
-					edition = max(edition, abs(insertFreenetURI.getEdition()));
-				} catch(IllegalStateException e) {
-					// The user supplied URI did not have an edition specified
+				if(oldIdentity instanceof OwnIdentity) {
+					throw new InvalidParameterException(
+					    getBaseL10n().getString("Exceptions.WebOfTrust.restoreOwnIdentityWithoutCommit.IllegalParameterException.OwnIdentityExistsAlready",
+					        "nickname", oldIdentity.getShortestUniqueNickname()
+					    )
+					);
 				}
 				
-				try { // Try replacing an existing non-own version of the identity with an OwnIdentity
-					Identity oldIdentity = getIdentityByURI(insertFreenetURI);
-					
-					if(oldIdentity instanceof OwnIdentity) {
-						throw new InvalidParameterException(
-						    getBaseL10n().getString("Exceptions.WebOfTrust.restoreOwnIdentityWithoutCommit.IllegalParameterException.OwnIdentityExistsAlready",
-						        "nickname", oldIdentity.getShortestUniqueNickname()
-						    )
-						);
-					}
-					
-					Logger.normal(this, "Restoring an already known identity from Freenet: " + oldIdentity);
-					
-					// Normally, one would expect beginTrustListImport() to happen close to the actual trust list changes later on in this function.
-					// But beginTrustListImport() contains an assert(computeAllScoresWithoutCommit()) and that call to the score computation reference
-					// implementation will fail if two identities with the same ID exist.
-					// This would be the case later on - we cannot delete the non-own version of the OwnIdentity before we modified the trust graph
-					// but we must also store the own version to be able to modify the trust graph.
-					beginTrustListImport();
-					
-					// We already have fetched this identity as a stranger's one. We need to update the database.
-					identity = new OwnIdentity(this, insertFreenetURI, oldIdentity.getNickname(), oldIdentity.doesPublishTrustList());
-					
-					/* We re-fetch the most recent edition to make sure all trustees are imported */
-					edition = max(edition, oldIdentity.getLastFetchedEdition());
-					identity.restoreEdition(edition, oldIdentity.getLastFetchedDate());
+				Logger.normal(this, "Restoring an already known identity from Freenet: " + oldIdentity);
 				
-					identity.setContexts(oldIdentity.getContexts());
-					identity.setProperties(oldIdentity.getProperties());
+				// Normally, one would expect beginTrustListImport() to happen close to the actual trust list changes later on in this function.
+				// But beginTrustListImport() contains an assert(computeAllScoresWithoutCommit()) and that call to the score computation reference
+				// implementation will fail if two identities with the same ID exist.
+				// This would be the case later on - we cannot delete the non-own version of the OwnIdentity before we modified the trust graph
+				// but we must also store the own version to be able to modify the trust graph.
+				beginTrustListImport();
+				
+				// We already have fetched this identity as a stranger's one. We need to update the database.
+				identity = new OwnIdentity(this, insertFreenetURI, oldIdentity.getNickname(), oldIdentity.doesPublishTrustList());
+				
+				/* We re-fetch the most recent edition to make sure all trustees are imported */
+				edition = max(edition, oldIdentity.getLastFetchedEdition());
+				identity.restoreEdition(edition, oldIdentity.getLastFetchedDate());
+			
+				identity.setContexts(oldIdentity.getContexts());
+				identity.setProperties(oldIdentity.getProperties());
+				
+				// Notice: The lastFetchedDate and lastInsertDate were already handled by the
+				// above call to restoreEdition().
+				// Preserving the Dates isn't very precise as restoring an OwnIdentity usually
+				// means the user has just created a fresh database and the dates aren't
+				// propagated across the network and thus wrong in the non-own Identity.
+				// But we still do so because:
+				// - future implementations of IdentityDownloader may propagate an estimate
+				//   of the Dates on the network to allow people to easily notice if someone
+				//   creates a fake identity with the same name as a much older one.
+				// - it ensures the lastFetchedDate which we did already preserve above because
+				//   the non-own Identity may have been fetched already cannot be before the
+				//   creationDate, which would cause the startup database integrity test of the
+				//   OwnIdentity to fail because the creationDate being after lastFetchedDate
+				//   doesn't make any sense.
+				identity.setCreationDate(oldIdentity.getCreationDate());
+				identity.forceSetLastChangeDate(oldIdentity.getLastChangeDate());
+				
+				identity.storeWithoutCommit();
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
+				initTrustTreeWithoutCommit(identity);
+
+				// Copy all received trusts.
+				// We don't have to modify them because they are user-assigned values and the assignment
+				// of the user does not change just because the type of the identity changes.
+				for(Trust oldReceivedTrust : getReceivedTrusts(oldIdentity)) {
+					Trust newReceivedTrust = new Trust(this, oldReceivedTrust.getTruster(), identity,
+							oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
 					
-					// Notice: The lastFetchedDate and lastInsertDate were already handled by the
-					// above call to restoreEdition().
-					// Preserving the Dates isn't very precise as restoring an OwnIdentity usually
-					// means the user has just created a fresh database and the dates aren't
-					// propagated across the network and thus wrong in the non-own Identity.
-					// But we still do so because:
-					// - future implementations of IdentityDownloader may propagate an estimate
-					//   of the Dates on the network to allow people to easily notice if someone
-					//   creates a fake identity with the same name as a much older one.
-					// - it ensures the lastFetchedDate which we did already preserve above because
-					//   the non-own Identity may have been fetched already cannot be before the
-					//   creationDate, which would cause the startup database integrity test of the
-					//   OwnIdentity to fail because the creationDate being after lastFetchedDate
-					//   doesn't make any sense.
-					identity.setCreationDate(oldIdentity.getCreationDate());
-					identity.forceSetLastChangeDate(oldIdentity.getLastChangeDate());
+					// The following assert() cannot be added because it would always fail:
+					// It would implicitly trigger oldIdentity.equals(identity) which is not the case:
+					// Certain member values such as the edition might not be equal.
+					/* assert(newReceivedTrust.equals(oldReceivedTrust)); */
 					
-					identity.storeWithoutCommit();
-					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
-					initTrustTreeWithoutCommit(identity);
+					oldReceivedTrust.deleteWithoutCommit();
+					newReceivedTrust.storeWithoutCommit();
+				}
+				
+				assert(getReceivedTrusts(oldIdentity).size() == 0);
 	
-					// Copy all received trusts.
-					// We don't have to modify them because they are user-assigned values and the assignment
-					// of the user does not change just because the type of the identity changes.
-					for(Trust oldReceivedTrust : getReceivedTrusts(oldIdentity)) {
-						Trust newReceivedTrust = new Trust(this, oldReceivedTrust.getTruster(), identity,
-								oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
-						
-						// The following assert() cannot be added because it would always fail:
-						// It would implicitly trigger oldIdentity.equals(identity) which is not the case:
-						// Certain member values such as the edition might not be equal.
-						/* assert(newReceivedTrust.equals(oldReceivedTrust)); */
-						
-						oldReceivedTrust.deleteWithoutCommit();
-						newReceivedTrust.storeWithoutCommit();
-					}
+				// Copy all received scores.
+				// We don't have to modify them because the rating of the identity from the perspective of a
+				// different own identity should NOT be dependent upon whether it is an own identity or not.
+				for(Score oldScore : getScores(oldIdentity)) {
+					Score newScore = new Score(this, oldScore.getTruster(), identity, oldScore.getScore(),
+							oldScore.getRank(), oldScore.getCapacity());
 					
-					assert(getReceivedTrusts(oldIdentity).size() == 0);
-		
-					// Copy all received scores.
-					// We don't have to modify them because the rating of the identity from the perspective of a
-					// different own identity should NOT be dependent upon whether it is an own identity or not.
-					for(Score oldScore : getScores(oldIdentity)) {
-						Score newScore = new Score(this, oldScore.getTruster(), identity, oldScore.getScore(),
-								oldScore.getRank(), oldScore.getCapacity());
-						
-						// The following assert() cannot be added because it would always fail:
-						// It would implicitly trigger oldIdentity.equals(identity) which is not the case:
-						// Certain member values such as the edition might not be equal.
-						/* assert(newScore.equals(oldScore)); */
-						
-						oldScore.deleteWithoutCommit();
-						newScore.storeWithoutCommit();
-						
-						// Nothing has changed about the actual score so we do not notify.
-						// mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, newScore);
-					}
+					// The following assert() cannot be added because it would always fail:
+					// It would implicitly trigger oldIdentity.equals(identity) which is not the case:
+					// Certain member values such as the edition might not be equal.
+					/* assert(newScore.equals(oldScore)); */
 					
-					assert(getScores(oldIdentity).size() == 0);
+					oldScore.deleteWithoutCommit();
+					newScore.storeWithoutCommit();
 					
-					// What we do NOT have to deal with is the given scores of the old identity:
-					// Given scores do NOT exist for non-own identities, so there are no old ones to update.
-					// Of cause there WILL be scores because it is an own identity now.
-					// They will be created automatically when updating the given trusts
-					// - so thats what we will do now.
-					
-					// Copy all given trusts at first instead of using removeTrustWithoutCommit()
-					// and immediately afterwards setTrustWithoutCommit() because those functions
-					// would be confused by both the OwnIdentity and non-own Identity object being
-					// in the database at the same time.
-					// Thus we will first delete the non-own Identity and then re-set the trusts.
-					final ObjectSet<Trust> oldGivenTrusts = getGivenTrusts(oldIdentity);
-					
-					// TODO: No need to copy after this is fixed:
-					// https://bugs.freenetproject.org/view.php?id=6596
-					final ArrayList<Trust> oldGivenTrustsCopy
-						= new ArrayList<Trust>(oldGivenTrusts);
-					
-					for(Trust oldGivenTrust : oldGivenTrusts)
-						oldGivenTrust.deleteWithoutCommit();
-					
-					assert(getGivenTrusts(oldIdentity).size() == 0);
-					
-					// We do not call finishTrustListImport() now: It might trigger execution of computeAllScoresWithoutCommit
-					// which would re-create scores of the old identity. We later call it AFTER deleting the old identity.
-					/* finishTrustListImport(); */
-		
-					mPuzzleStore.onIdentityDeletion(oldIdentity);
-					mFetcher.storeAbortFetchCommandWithoutCommit(oldIdentity);
-					// NOTICE:
-					// If the fetcher did store a db4o object reference to the identity, we would have to trigger command processing
-					// now to prevent leakage of the identity object.
-					// But as specified by interface IdentityDownloader, the fetcher does NOT store a db4o object reference to the given identity. It stores its ID as String only.
-					// Therefore, it is OK that the fetcher does not immediately process the commands now.
-					
-					oldIdentity.deleteWithoutCommit();
-					
-					// Update all given trusts. This will also cause given scores to be computed,
-					// which is why we had not set them yet.
-					// FIXME: Performance: This could maybe be optimized by setting
-					// mFullScoreComputationNeeded to true. Do benchmarks.
-					for(Trust givenTrust : oldGivenTrustsCopy)
-						setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
-					
-					mFetcher.storeStartFetchCommandWithoutCommit(identity);
-					
-					finishTrustListImport();
-				} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
-					identity = new OwnIdentity(this, insertFreenetURI, null, false);
-					
-					Logger.normal(this, "Restoring not-yet-known identity from Freenet: " + identity);
-					
-					identity.restoreEdition(edition, null);
-					
-					// Store the new identity
-					identity.storeWithoutCommit();
-					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
-					
-					initTrustTreeWithoutCommit(identity);
-					mFetcher.storeStartFetchCommandWithoutCommit(identity);
+					// Nothing has changed about the actual score so we do not notify.
+					// mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, newScore);
 				}
-
-				// This function messes with the trust graph manually so it is a good idea to check whether it is intact afterwards.
-				assert(computeAllScoresWithoutCommit());
 				
-				Logger.normal(this, "restoreOwnIdentity(): Finished.");
-				return identity;
-			}
-			catch(RuntimeException | MalformedURLException | InvalidParameterException e) {
-				if(mTrustListImportInProgress) { // We don't execute beginTrustListImport() in all code paths of this function
-					// Does rollback for us. The outside will do another duplicate rollback() because the JavaDoc tells it to.
-					// But thats acceptable to keep the transaction code pattern the same everywhere.
-					abortTrustListImport(e); 
-				}
-				// The callers of this function are obliged to do Persistent.checkedRollbackAndThrow() for us, so we can and must throw the exception out.
-				throw e;
+				assert(getScores(oldIdentity).size() == 0);
+				
+				// What we do NOT have to deal with is the given scores of the old identity:
+				// Given scores do NOT exist for non-own identities, so there are no old ones to update.
+				// Of cause there WILL be scores because it is an own identity now.
+				// They will be created automatically when updating the given trusts
+				// - so thats what we will do now.
+				
+				// Copy all given trusts at first instead of using removeTrustWithoutCommit()
+				// and immediately afterwards setTrustWithoutCommit() because those functions
+				// would be confused by both the OwnIdentity and non-own Identity object being
+				// in the database at the same time.
+				// Thus we will first delete the non-own Identity and then re-set the trusts.
+				final ObjectSet<Trust> oldGivenTrusts = getGivenTrusts(oldIdentity);
+				
+				// TODO: No need to copy after this is fixed:
+				// https://bugs.freenetproject.org/view.php?id=6596
+				final ArrayList<Trust> oldGivenTrustsCopy
+					= new ArrayList<Trust>(oldGivenTrusts);
+				
+				for(Trust oldGivenTrust : oldGivenTrusts)
+					oldGivenTrust.deleteWithoutCommit();
+				
+				assert(getGivenTrusts(oldIdentity).size() == 0);
+				
+				// We do not call finishTrustListImport() now: It might trigger execution of computeAllScoresWithoutCommit
+				// which would re-create scores of the old identity. We later call it AFTER deleting the old identity.
+				/* finishTrustListImport(); */
+	
+				mPuzzleStore.onIdentityDeletion(oldIdentity);
+				mFetcher.storeAbortFetchCommandWithoutCommit(oldIdentity);
+				// NOTICE:
+				// If the fetcher did store a db4o object reference to the identity, we would have to trigger command processing
+				// now to prevent leakage of the identity object.
+				// But as specified by interface IdentityDownloader, the fetcher does NOT store a db4o object reference to the given identity. It stores its ID as String only.
+				// Therefore, it is OK that the fetcher does not immediately process the commands now.
+				
+				oldIdentity.deleteWithoutCommit();
+				
+				// Update all given trusts. This will also cause given scores to be computed,
+				// which is why we had not set them yet.
+				// FIXME: Performance: This could maybe be optimized by setting
+				// mFullScoreComputationNeeded to true. Do benchmarks.
+				for(Trust givenTrust : oldGivenTrustsCopy)
+					setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
+				
+				mFetcher.storeStartFetchCommandWithoutCommit(identity);
+				
+				finishTrustListImport();
+			} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
+				identity = new OwnIdentity(this, insertFreenetURI, null, false);
+				
+				Logger.normal(this, "Restoring not-yet-known identity from Freenet: " + identity);
+				
+				identity.restoreEdition(edition, null);
+				
+				// Store the new identity
+				identity.storeWithoutCommit();
+				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
+				
+				initTrustTreeWithoutCommit(identity);
+				mFetcher.storeStartFetchCommandWithoutCommit(identity);
 			}
 
+			// This function messes with the trust graph manually so it is a good idea to check whether it is intact afterwards.
+			assert(computeAllScoresWithoutCommit());
+			
+			Logger.normal(this, "restoreOwnIdentity(): Finished.");
+			return identity;
+		}
+		catch(RuntimeException | MalformedURLException | InvalidParameterException e) {
+			if(mTrustListImportInProgress) { // We don't execute beginTrustListImport() in all code paths of this function
+				// Does rollback for us. The outside will do another duplicate rollback() because the JavaDoc tells it to.
+				// But thats acceptable to keep the transaction code pattern the same everywhere.
+				abortTrustListImport(e); 
+			}
+			// The callers of this function are obliged to do Persistent.checkedRollbackAndThrow() for us, so we can and must throw the exception out.
+			throw e;
+		}
 	}
 	
 	/**
