@@ -225,8 +225,12 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	/**
 	 * ATTENTION: Only use this when you need to construct arbitrary Identity objects - for example when writing an FCP parser.
 	 * It won't guarantee semantic integrity of the identity object, for example it allows lowering of the edition and doesn't correct the FetchState.
-	 * Instead, use {@link #setEdition(long)} whenever possible.
-	 */
+	 * Instead, when possible use one of:
+	 * - {@link #onInserted(long)}
+	 * - {@link #restoreEdition(long, Date)} 
+	 * - {@link #onFetchedAndParsedSuccessfully(long)}
+	 * - {@link #onFetchedAndParsingFailed(long)}
+	 * - {@link #onFetched(long, boolean, Date)}. */
 	@Override
 	public void forceSetEdition(final long newEdition) {
 		super.forceSetEdition(newEdition);

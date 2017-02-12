@@ -573,8 +573,11 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	/**
 	 * ATTENTION: Only use this when you need to construct arbitrary Identity objects - for example when writing an FCP parser.
 	 * It won't guarantee semantic integrity of the identity object, for example it allows lowering of the edition.
-	 * Instead, use {@link #setEdition(long)} whenever possible.
-	 */
+	 * Instead, when possible use one of:
+	 * - {@link #onFetchedAndParsedSuccessfully(long)}
+	 * - {@link #onFetchedAndParsingFailed(long)}
+	 * - {@link #onFetched(long, boolean, Date)}.
+	 * - {@link #markForRefetch()} */
 	public void forceSetEdition(final long newEdition) {
 		if(newEdition < 0)
 			throw new IllegalArgumentException("Invalid edition: " + newEdition);
