@@ -318,7 +318,14 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		assertEquals(3, identity.getNextEditionToFetch());
 	}
 
-	public final void testSetEdition() throws InvalidParameterException, InterruptedException {
+	/**
+	 * TODO: Code quality: This used to test the function Identity.setEdition() which has been
+	 * removed in favor of the rewrite {@link Identity#onFetchedAndParsedSuccessfully(long)}.
+	 * The test was changed to use the new function without reconsidering what it tests.
+	 * Review the replacement function and adapt the test to be more suitable for it. */
+	public final void testOnFetchedAndParsedSuccessfullyLong()
+			throws InvalidParameterException, InterruptedException {
+		
 		// Test preconditions
 		identity.onFetchedAndParsedSuccessfully(0);
 		assertEquals(0, identity.getEdition());
@@ -342,18 +349,19 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		};
 		OldLastChangedDate oldLastChangedDate = new OldLastChangedDate();
 		
-		// Test fetching of a new edition while edition hint stays valid and fetch state gets invalidated
-		identity.setEdition(10);
+		// Test fetching of a new edition while edition hint stays valid
+		identity.onFetchedAndParsedSuccessfully(10);
 		assertEquals(10, identity.getEdition());
 		assertEquals(identity.getEdition(), identity.getRequestURI().getEdition());
 		assertEquals(23, identity.getLatestEditionHint());
-		assertEquals(FetchState.NotFetched, identity.getCurrentEditionFetchState());
+		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
 		assertFalse(oldLastChangedDate.equals(identity.getLastChangeDate()));
 		// Test done.
 		
 		// Test fetching of a new edition which invalidates the edition hint
 		oldLastChangedDate.update();
-		identity.setEdition(24);
+		identity.onFetchedAndParsedSuccessfully(24);
+		assertEquals(24, identity.getLastFetchedEdition());
 		assertEquals(24, identity.getLatestEditionHint());
 		assertFalse(oldLastChangedDate.equals(identity.getLastChangeDate()));
 		// Test done.
@@ -368,26 +376,15 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		// Test whether decreasing of edition is correctly disallowed
 		oldLastChangedDate.update();
 		try {
-			identity.setEdition(23);
-			fail("Decreasing the edition should not be allowed");
-		} catch(InvalidParameterException e) {
+			identity.onFetchedAndParsedSuccessfully(24);
+			fail("Decreasing/refetching the edition should not be allowed");
+		} catch(IllegalStateException e) {
+			assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
 			assertEquals(24, identity.getEdition());
 			assertEquals(identity.getEdition(), identity.getRequestURI().getEdition());
 			assertEquals(50, identity.getLatestEditionHint());
 			assertTrue(oldLastChangedDate.equals(identity.getLastChangeDate()));
 		}
-		// Test done.
-		
-		// Test setEdition(currentEdition) - should not touch the edition hint.
-		assertEquals(50, identity.getLatestEditionHint());
-		identity.onFetchedAndParsedSuccessfully(24);
-		oldLastChangedDate.update();
-		identity.setEdition(identity.getEdition());
-		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
-		assertEquals(24, identity.getEdition());
-		assertEquals(identity.getEdition(), identity.getRequestURI().getEdition());
-		assertEquals(50, identity.getLatestEditionHint());
-		assertTrue(oldLastChangedDate.equals(identity.getLastChangeDate()));
 		// Test done.
 	}
 	
