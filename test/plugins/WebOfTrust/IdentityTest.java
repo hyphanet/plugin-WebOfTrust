@@ -328,8 +328,8 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		
 		// Test preconditions
 		identity.onFetchedAndParsedSuccessfully(0);
-		assertEquals(0, identity.getRawEdition());
-		assertEquals(identity.getRawEdition(), identity.getRequestURI().getEdition());
+		assertEquals(0, identity.getLastFetchedEdition());
+		assertEquals(0, identity.getRequestURI().getEdition());
 		assertEquals(23, requestUri.getEdition());
 		assertEquals(requestUri.getEdition(), identity.getLatestEditionHint());
 		@Ignore
@@ -351,8 +351,8 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		
 		// Test fetching of a new edition while edition hint stays valid
 		identity.onFetchedAndParsedSuccessfully(10);
-		assertEquals(10, identity.getRawEdition());
-		assertEquals(identity.getRawEdition(), identity.getRequestURI().getEdition());
+		assertEquals(10, identity.getLastFetchedEdition());
+		assertEquals(10, identity.getRequestURI().getEdition());
 		assertEquals(23, identity.getLatestEditionHint());
 		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
 		assertFalse(oldLastChangedDate.equals(identity.getLastChangeDate()));
@@ -380,8 +380,8 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 			fail("Decreasing/refetching the edition should not be allowed");
 		} catch(IllegalStateException e) {
 			assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
-			assertEquals(24, identity.getRawEdition());
-			assertEquals(identity.getRawEdition(), identity.getRequestURI().getEdition());
+			assertEquals(24, identity.getLastFetchedEdition());
+			assertEquals(24, identity.getRequestURI().getEdition());
 			assertEquals(50, identity.getLatestEditionHint());
 			assertTrue(oldLastChangedDate.equals(identity.getLastChangeDate()));
 		}
