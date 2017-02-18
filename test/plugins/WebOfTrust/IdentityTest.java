@@ -273,7 +273,7 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		assertNotSame(uriWithProperEdition, identity.getRequestURI());
 	}
 	
-	public final void testGetEdition() throws InvalidParameterException {
+	public final void testGetRawEdition() throws InvalidParameterException {
 		assertEquals(23, requestUri.getSuggestedEdition());
 		// The edition which is passed in during construction of the identity MUST NOT be stored as the current edition
 		// - it should be stored as an edition hint as we cannot be sure whether the edition really exists because
