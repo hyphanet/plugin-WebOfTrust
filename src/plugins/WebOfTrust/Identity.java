@@ -395,12 +395,22 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 
 	/**
 	 * Get the edition number of the request URI of this identity.
-	 * Safe to be called without any additional synchronization.
+	 * 
+	 * ATTENTION: This does NOT take the {@link #getCurrentEditionFetchState()} into consideration.
+	 * I.e. the returned edition can have any FetchState - it may OR may not have been fetched yet
+	 * OR parsing might have failed.
+	 * For a more robust and readable codebase thus please whenever possible instead use one of:
+	 * - {@link #getLastFetchedEdition()}
+	 * - {@link #getLastFetchedMaybeValidEdition()}
+	 * - {@link #getNextEditionToFetch()}
+	 * - {@link OwnIdentity#getNextEditionToInsert()} (for {@link OwnIdentity} objects only)
+	 * 
 	 * @deprecated
-	 *    FIXME: This does not take account for the FetchState. Some callers might need a different
-	 *    edition depending on the FetchState, for example {@link #getLastFetchedEdition()}.
-	 *    -> Replace this with more specific getters such as the just mentioned one to prevent
-	 *    callers from forgetting to take account for this. */
+	 *    TODO: Code quality: Replace usages of this with the more specific getters as mentioned in
+	 *    the main JavaDoc text and remove this function afterwards. If it is not possible to
+	 *    replace all usages, perhaps at least make this function private.
+	 *    Afterwards please have a look at the FIXME at {@link #getCurrentEditionFetchState()}
+	 *    which proposes what to change about that function then. */
 	@Deprecated
 	public final long getRawEdition() {
 		return getRequestURI().getEdition();
