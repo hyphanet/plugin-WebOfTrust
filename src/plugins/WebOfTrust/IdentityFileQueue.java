@@ -18,7 +18,7 @@ import freenet.support.CurrentTimeUTC;
  * between fetching and processing.<br><br>
  * 
  * The primary key of each data file is the combination of the {@link Identity} which published it,
- * and the {@link Identity#getEdition() edition} (= version) of the file (Notice: These are
+ * and the {@link Identity#getRawEdition() edition} (= version) of the file (Notice: These are
  * implicitly identified by a single {@link FreenetURI} object in the function signatures).
  * For each such primary key, one file can exist in the queue.<br><br>
  * 

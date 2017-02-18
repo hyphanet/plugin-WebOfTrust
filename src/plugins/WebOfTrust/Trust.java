@@ -275,7 +275,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 		setComment(comment);
 		
 		mLastChangedDate = (Date)mCreationDate.clone();	// Clone it because date is mutable
-		mTrusterTrustListEdition = truster.getEdition(); 
+		mTrusterTrustListEdition = truster.getRawEdition(); 
 	}
 	
 	@Override

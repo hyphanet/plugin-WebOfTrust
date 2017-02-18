@@ -402,7 +402,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 *    -> Replace this with more specific getters such as the just mentioned one to prevent
 	 *    callers from forgetting to take account for this. */
 	@Deprecated
-	public final long getEdition() {
+	public final long getRawEdition() {
 		return getRequestURI().getEdition();
 	}
 
@@ -432,7 +432,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * 
 	 * If no edition has ever been downloaded, returns -1. */
 	public final long getLastFetchedEdition() {
-		long edition = getEdition();
+		long edition = getRawEdition();
 		FetchState state = getCurrentEditionFetchState();
 		switch(state) {
 			case Fetched:
@@ -461,7 +461,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * 
 	 * If no edition has ever been downloaded and parsed successfully, returns -1. */
 	public final long getLastFetchedMaybeValidEdition() {
-		long edition = getEdition();
+		long edition = getRawEdition();
 		FetchState state = getCurrentEditionFetchState();
 		switch(state) {
 			case Fetched:
@@ -481,7 +481,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 
 	/**
 	 * FIXME: Can we deprecate or rename this? The concept of a "current" edition plus its fetch
-	 * state shouldn't exist externally anymore once the deprecated {@link #getEdition()} is
+	 * state shouldn't exist externally anymore once the deprecated {@link #getRawEdition()} is
 	 * removed; we'll nowadays instead externally provide getters for different editions depending
 	 * on the fetch state,  i.e. {@link #getLastFetchedEdition()},
 	 * {@link #getLastFetchedMaybeValidEdition()}, {@link #getNextEditionToFetch()}.
@@ -1200,7 +1200,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 			Identity clone = new Identity(mWebOfTrust, getRequestURI(), getNickname(), doesPublishTrustList());
 			
 			activateFully(); // For performance only
-			clone.forceSetEdition(getEdition());
+			clone.forceSetEdition(getRawEdition());
 			clone.setNewEditionHint(getLatestEditionHint());
 			clone.setCreationDate(getCreationDate());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();

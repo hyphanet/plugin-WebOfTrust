@@ -496,7 +496,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	 *     I = zero-padded integer counting up from 0, to tell the precise order in which queued
 	 *         files were processed. The padding is for nice sorting in the file manager.<br>
 	 *     HASH = the ID of the {@link Identity}.<br>
-	 *     E = the {@link Identity#getEdition() edition} of the identity file, as a zero-padded long
+	 *     E = the {@link Identity#getRawEdition() edition} of the identity file, as a zero-padded long
 	 *         integer.<br><br>
 	 * 
 	 * Notice: The filenames contain more information than WOT needs for general purposes of future

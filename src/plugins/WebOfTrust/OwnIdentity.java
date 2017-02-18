@@ -304,7 +304,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		// FIXME: Move this to a unit test.
 		assert(!isRestoreInProgress());
 		
-		long edition = getEdition();
+		long edition = getRawEdition();
 		
 		if(getLastInsertDate().after(new Date(0))) {
 			++edition;
@@ -421,7 +421,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 			
 			activateFully(); // For performance only
 			
-			clone.forceSetEdition(getEdition());
+			clone.forceSetEdition(getRawEdition());
 			clone.setNewEditionHint(getLatestEditionHint());
 			clone.setCreationDate(getCreationDate());
 			clone.mCurrentEditionFetchState = getCurrentEditionFetchState();

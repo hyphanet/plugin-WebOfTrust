@@ -278,9 +278,9 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		// The edition which is passed in during construction of the identity MUST NOT be stored as the current edition
 		// - it should be stored as an edition hint as we cannot be sure whether the edition really exists because
 		// identity URIs are usually obtained from not trustworthy sources.
-		assertEquals(0, identity.getEdition());
+		assertEquals(0, identity.getRawEdition());
 		identity.onFetchedAndParsedSuccessfully(10);
-		assertEquals(10, identity.getEdition());
+		assertEquals(10, identity.getRawEdition());
 	}
 	
 	public final void testGetCurrentEditionFetchState() {
@@ -328,8 +328,8 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		
 		// Test preconditions
 		identity.onFetchedAndParsedSuccessfully(0);
-		assertEquals(0, identity.getEdition());
-		assertEquals(identity.getEdition(), identity.getRequestURI().getEdition());
+		assertEquals(0, identity.getRawEdition());
+		assertEquals(identity.getRawEdition(), identity.getRequestURI().getEdition());
 		assertEquals(23, requestUri.getEdition());
 		assertEquals(requestUri.getEdition(), identity.getLatestEditionHint());
 		@Ignore
@@ -351,8 +351,8 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		
 		// Test fetching of a new edition while edition hint stays valid
 		identity.onFetchedAndParsedSuccessfully(10);
-		assertEquals(10, identity.getEdition());
-		assertEquals(identity.getEdition(), identity.getRequestURI().getEdition());
+		assertEquals(10, identity.getRawEdition());
+		assertEquals(identity.getRawEdition(), identity.getRequestURI().getEdition());
 		assertEquals(23, identity.getLatestEditionHint());
 		assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
 		assertFalse(oldLastChangedDate.equals(identity.getLastChangeDate()));
@@ -380,8 +380,8 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 			fail("Decreasing/refetching the edition should not be allowed");
 		} catch(IllegalStateException e) {
 			assertEquals(FetchState.Fetched, identity.getCurrentEditionFetchState());
-			assertEquals(24, identity.getEdition());
-			assertEquals(identity.getEdition(), identity.getRequestURI().getEdition());
+			assertEquals(24, identity.getRawEdition());
+			assertEquals(identity.getRawEdition(), identity.getRequestURI().getEdition());
 			assertEquals(50, identity.getLatestEditionHint());
 			assertTrue(oldLastChangedDate.equals(identity.getLastChangeDate()));
 		}
