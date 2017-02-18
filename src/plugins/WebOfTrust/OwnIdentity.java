@@ -198,30 +198,6 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		mInsertURIString = getInsertURI().setSuggestedEdition(edition).toString();
 	}
 
-	/** @deprecated See {@link Identity#getEdition()} */
-	@Deprecated
-	@Override
-	protected final void setEdition(long edition) throws InvalidParameterException {
-		super.setEdition(edition);
-		
-		checkedActivate(1);
-        // Enums are a db4o primitive type, and thus automatically deleted. This also applies
-        // to the String mInsertURIString which we set in the following code.
-        /* checkedDelete(mCurrentEditionFetchState); */
-        mCurrentEditionFetchState = FetchState.Fetched;
-
-        final FreenetURI insertURI = getInsertURI();
-        final long oldEdition = insertURI.getEdition();
-
-        assert !(edition < oldEdition)
-            : "super.setEdition() should have thrown when trying to decrease the edition";
-
-        if (edition > oldEdition) {
-            mInsertURIString = insertURI.setSuggestedEdition(edition).toString();
-            updated();
-        }
-	}
-	
 	/**
 	 * ATTENTION: Only use this when you need to construct arbitrary Identity objects - for example when writing an FCP parser.
 	 * It won't guarantee semantic integrity of the identity object, for example it allows lowering of the edition and doesn't correct the FetchState.

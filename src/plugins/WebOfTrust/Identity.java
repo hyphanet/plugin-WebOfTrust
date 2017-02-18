@@ -508,69 +508,6 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	}
 
 	/**
-	 * Sets the edition of the last fetched version of this identity.
-	 * That number is published in trustLists to limit the number of editions a newbie has to fetch before he actually gets ans Identity.
-	 * 
-	 * @param newEdition A long representing the last fetched version of this identity.
-	 * @throws InvalidParameterException If the new edition is less than the current one. TODO: Evaluate whether we shouldn't be throwing a RuntimeException instead
-	 * @deprecated
-	 *     Previously this function was usually being called in combination with functions for
-	 *     updating the {@link #mCurrentEditionFetchState}.  This is confusing and prone to
-	 *     forgetting on calling one of the both. Thus please nowadays use
-	 *     {@link #onFetchedAndParsedSuccessfully(long)} or {@link #onFetchedAndParsingFailed(long)}
-	 *     or {@link #markForRefetch()} to update both the edition and fetch state at once.
-	 */
-	@Deprecated
-	protected void setEdition(long newEdition) throws InvalidParameterException {
-        // If we did not call checkedActivate(), db4o would not notice and not store the modified
-        // mRequestURIString - But checkedActivate() is done by the following getRequestURI()
-        // already, so we do not call it again here.
-        /* checkedActivate(1); */
-        final FreenetURI requestURI = getRequestURI();
-
-		// checkedActivate(mCurrentEditionFetchState, 1); is not needed, has no members
-		// checkedActivate(mLatestEditionHint, 1); is not needed, long is a db4o primitive type 
-		
-        long currentEdition = requestURI.getEdition();
-		
-		if (newEdition < currentEdition) {
-			throw new InvalidParameterException("The edition of an identity cannot be lowered.");
-		}
-		
-		if (newEdition > currentEdition) {
-            // String is a db4o primitive type, and thus automatically deleted. This also applies
-            // to the enum and long which we set in the following code.
-            /* checkedDelete(mRequestURIString); */
-            mRequestURIString = requestURI.setSuggestedEdition(newEdition).toString();
-			
-			// FIXME: The following code line is confusing: After having fetched a new editon,
-			// XMLTransformer doesn't increment the edition before calling this function, it passes
-			// the fetched edition. So one could think it is a bug that we set "NotFetched" here and
-			// we should set "Fetched" instead.
-			// But in fact there also is a function called "onFetched()" which XMLTransformer uses
-			// to set the fetch state to "Fetched" - which it does multiple screens afterwards,
-			// which makes it so confusing.
-			// To fix the confusion, get rid of the excess functions and unify things to only have
-			// a function which BOTH consumes the new edition AND the new FetchState. This ensures
-			// that callers don't forget to update the fetch state, and that the code is more
-			// readable.
-			// Please carefully review all related code while doing that: The fetch state and
-			// edition numbers are used in quite a few places, the side effects may be complex.
-			// Notice: It is possible that something related to this is the cause for the bug of
-			// always re-importing the XML of OwnIdentities after every insert which causes them to
-			// lose any trustees above the 512 limit. If it indeed is, please document it as fixed
-			// in the bugtracker / changelog after having fixed it.
-			mCurrentEditionFetchState = FetchState.NotFetched;
-			
-			if (newEdition > mLatestEditionHint) {
-				// Do not call setNewEditionHint() to prevent confusing logging.
-				mLatestEditionHint = newEdition;
-			}
-			updated();
-		}
-	}
-
-	/**
 	 * ATTENTION: Only use this when you need to construct arbitrary Identity objects - for example when writing an FCP parser.
 	 * It won't guarantee semantic integrity of the identity object, for example it allows lowering of the edition.
 	 * Instead, when possible use one of:
