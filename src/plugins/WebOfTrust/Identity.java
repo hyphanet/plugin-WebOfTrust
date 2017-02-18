@@ -409,7 +409,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 *    TODO: Code quality: Replace usages of this with the more specific getters as mentioned in
 	 *    the main JavaDoc text and remove this function afterwards. If it is not possible to
 	 *    replace all usages, perhaps at least make this function private.
-	 *    Afterwards please have a look at the FIXME at {@link #getCurrentEditionFetchState()}
+	 *    Afterwards please have a look at the TODO at {@link #getCurrentEditionFetchState()}
 	 *    which proposes what to change about that function then. */
 	@Deprecated
 	public final long getRawEdition() {
@@ -490,15 +490,24 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	}
 
 	/**
-	 * FIXME: Can we deprecate or rename this? The concept of a "current" edition plus its fetch
-	 * state shouldn't exist externally anymore once the deprecated {@link #getRawEdition()} is
-	 * removed; we'll nowadays instead externally provide getters for different editions depending
-	 * on the fetch state,  i.e. {@link #getLastFetchedEdition()},
-	 * {@link #getLastFetchedMaybeValidEdition()}, {@link #getNextEditionToFetch()}.
-	 * It would avoid confusion if the callers don't have to both query an edition *and* its fetch
-	 * state because they couldn't forget about considering the fetch state then.
-	 * Also see {@link IdentityTest#testGetCurrentEditionFetchState()} for why "current" doesn't
-	 * make a lot of sense in between the new getters - it doesn't fit their naming pattern. */
+	 * Returns the {@link FetchState} of the {@link #getRawEdition()}.
+	 * 
+	 * TODO: Code quality: Deprecate or remove this once {@link #getRawEdition()} has been
+	 * removed. If that function has to stay, rename this one here to something like
+	 * "getRawEditionFetchState()" to match the name of the other function. Also see
+	 * {@link IdentityTest#testGetCurrentEditionFetchState()} for why "current" doesn't
+	 * make a lot of sense in between the new getters (they're listed below) - it doesn't fit their
+	 * naming pattern. 
+	 * If the other function is made private, consider making this one here private as well.
+	 * The concept of a "current" edition plus its fetch state shouldn't exist externally anymore
+	 * once the deprecated {@link #getRawEdition()} is removed; we nowadays instead externally
+	 * provide getters for different editions depending on the fetch state,  i.e.:
+	 * - {@link #getLastFetchedEdition()}
+	 * - {@link #getLastFetchedMaybeValidEdition()}
+	 * - {@link #getNextEditionToFetch()}
+	 * - {@link OwnIdentity#getNextEditionToInsert()} (for {@link OwnIdentity} objects only).
+	 * It will avoid confusion if the callers don't have to both query {@link #getRawEdition()}
+	 * *and* its fetch state because they then cannot forget about considering the fetch state. */
 	public final FetchState getCurrentEditionFetchState() {
 		checkedActivate(1);
 		return mCurrentEditionFetchState;
