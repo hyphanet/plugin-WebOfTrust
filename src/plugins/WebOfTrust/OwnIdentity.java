@@ -301,7 +301,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		// we don't insert before. This is implicitly checked by needsInsert() above, but let's keep
 		// an assert here as insurance against someone wrongly removing the needsInsert() check for
 		// reasons such as wanting the actual return value in unit tests.
-		// FIXME: Move this to a unit test.
+		// TODO: Code quality: Move this to a unit test.
 		assert(!isRestoreInProgress());
 		
 		long edition = getRawEdition();
