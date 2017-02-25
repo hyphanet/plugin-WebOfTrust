@@ -1024,7 +1024,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// Thus we delete them manually now.
 		Logger.normal(this, "Deleting commands of the legacy IdentityFetcher ...");
 		IdentityFetcher f = new IdentityFetcher(this, null, null, mFetcher);
-		f.deleteAllCommands();
+		f.deleteAllCommandsWithoutCommit();
 		Logger.normal(this, "Deleting commands of the legacy IdentityFetcher finished.");
 		
 		mConfig.upgradeDatabaseFormatVersion7();

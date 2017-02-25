@@ -333,17 +333,7 @@ public final class IdentityFetcher implements
 		synchronized(mLock) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				if(logDEBUG) Logger.debug(this, "Deleting all identity fetcher commands ...");
-				
-				int amount = 0;
-				
-				for(IdentityFetcherCommand command : getCommands(IdentityFetcherCommand.class)) {
-					command.deleteWithoutCommit();
-					++amount;
-				}
-				
-				if(logDEBUG) Logger.debug(this, "Deleted " + amount + " commands.");
-				
+				deleteAllCommandsWithoutCommit();
 				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
@@ -352,7 +342,20 @@ public final class IdentityFetcher implements
 		}
 		}
 	}
-	
+
+	void deleteAllCommandsWithoutCommit() {
+		if(logDEBUG) Logger.debug(this, "Deleting all identity fetcher commands ...");
+		
+		int amount = 0;
+		
+		for(IdentityFetcherCommand command : getCommands(IdentityFetcherCommand.class)) {
+			command.deleteWithoutCommit();
+			++amount;
+		}
+		
+		if(logDEBUG) Logger.debug(this, "Deleted " + amount + " commands.");
+	}
+
     /**
      * Synchronization:<br>
      * This function does neither lock the database nor commit the transaction. You have to surround
