@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.Math.max;
+
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -13,9 +15,11 @@ import java.util.UUID;
 
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.network.input.EditionHint;
 import plugins.WebOfTrust.util.AssertUtil;
 import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
 /**
@@ -109,6 +113,11 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	// db4o uses the index on mTruster instead of the index on mTrusterTrustListEditon, so we don't create that index.
 	// @IndexedField
 	private long mTrusterTrustListEdition;
+
+	/**
+	 * FIXME: Populate at {@link WebOfTrust#upgradeDatabaseFormatVersion7()}
+	 * @see #getTrusteeEdition() */
+	private long mTrusteeTrustListEdition;
 
     /** An {@link UUID} set by {@link EventSource#setVersionID(UUID)}. See its JavaDoc for an
      *  explanation of the purpose.<br>
@@ -275,7 +284,12 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 		setComment(comment);
 		
 		mLastChangedDate = (Date)mCreationDate.clone();	// Clone it because date is mutable
+		
 		mTrusterTrustListEdition = truster.getRawEdition(); 
+		// FIXME: Populate with the edition hint received by the truster. Or maybe require the
+		// XMLTransformer to call setTrusteeTrustListEdition() so we don't have to adapt all
+		// callers of this constructor?
+		mTrusteeTrustListEdition = -1;
 	}
 	
 	@Override
@@ -424,7 +438,52 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 		checkedActivate(1);
 		mTrusterTrustListEdition = trusterEdition;
 	}
-	
+
+	/**
+	 * Gets the latest edition of the trustee which the truster claims to have seen.
+	 * See {@link EditionHint}.
+	 * A value of -1 is returned if the truster wasn't able to download the Identity yet.
+	 * 
+	 * We intentionally duplicate this information here instead of only keeping it in EditionHint
+	 * objects: {@link EditionHint} objects only exist while we have an intention to download
+	 * the truster, they are the download queue. So they will for example be deleted when the
+	 * trustee is distrusted and shouldn't be downloaded anymore.
+	 * As the trustee might become trusted again, we need a way to be able to restore the
+	 * EditionHint objects in the future - and that is this value here. */
+	long getTrusteeEdition()  {
+		checkedActivate(1);
+		return mTrusteeTrustListEdition;
+	}
+
+	/** @see #getTrusteeEdition() */
+	void setTrusteeEdition(long trusteeEdition) {
+		checkedActivate(1);
+		
+		// A negative edition is valid: It may indicate that the truster wasn't able to download
+		// the trustee yet; he merely has been told that the trustee may exist.
+		// We normalize it to -1 though.
+		trusteeEdition = max(-1, trusteeEdition);
+		
+		if(trusteeEdition < mTrusteeTrustListEdition) {
+			// FIXME: Count this event and punish the identity if it happens too often
+			// FIXME: This may in fact happen legally if the trustee was distrusted and then
+			// re-trusted at the truster's WoT - then markForRefetch() is called on the Identity,
+			// which may decrease its edition. We could perhaps not punish if the difference between
+			// the old and the new hint is only 1, but I think it may be possible for
+			// markForRefetch() to be called multiple times if the user changes his opinion about
+			// whether he trusts the identity multiple times.
+			Logger.warning(this, "Identity is trying to decrease an edition hint: "
+				+ "old hint: " + mTrusteeTrustListEdition
+				+ "; new hint: " + trusteeEdition
+				+ "; source: " + getTruster()
+				+ "; target: " + getTrustee()
+				);
+			return;
+		}
+		
+		mTrusteeTrustListEdition = trusteeEdition;
+	}
+
 	/**
 	 * {@inheritDoc}
 	 */
