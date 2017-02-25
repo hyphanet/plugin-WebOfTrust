@@ -1028,7 +1028,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		Logger.normal(this, "Deleting commands of the legacy IdentityFetcher finished.");
 		
 		mConfig.upgradeDatabaseFormatVersion7();
-		mConfig.storeAndCommit();
+		mConfig.storeWithoutCommit();
 		
 		// FIXME: Cause re-download of all Identities to bootstrap the database with objects of the
 		// new class EditionHint.
