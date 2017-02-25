@@ -269,13 +269,26 @@ public final class XMLTransformer {
 								"of " + identity + ": Trust value from " + trust.getTruster() + "");
 
 					Element trustElement = xmlDoc.createElement("Trust");
-					// FIXME: Take into account the getTrustee().getCurrentEditionFetchState() to
-					// avoid publishing edition hints for editions which don't exist yet.
-					// Encapsulate this by adding a function "getLastFetchedURI()" to class Identity
-					// Also think about how much of the currently existing edition hints on the
-					// network before these changes are wrong, i.e. of editions which don't exist
-					// yet. If this applies to most of them we might need some compatibility code.
-					trustElement.setAttribute("Identity", trust.getTrustee().getRequestURI().toString());
+					
+					Identity trustee = trust.getTrustee();
+					// FIXME: The previous version of this code did NOT use
+					// getLastFetchedMaybeValidEdition(), but just getRawEdition() (by using
+					// getRequestURI().toString() for obtaining the URI including the hint).
+					// As a consequence, old hints on the network are always > 0, whether the new
+					// hints can be -1 to indicate that we weren't able to fetch the identity yet.
+					// Thus the upcoming code for punishing identitites for publishing wrong hints
+					// could cause bogus punishing in the case of old hints of the edition 0 if
+					// the identity subject to the hint actually wasn't inserted by its creator yet
+					// (which is possible, nothing blocks you from uploading a captcha solution
+					// which links an unfetchable USK).
+					// The most correct, academic fix for this would be to introduce a new XML
+					// format version so we can detect the old hints and be more lax with punishment
+					// for them. This may be a significant piece of work though. Perhaps just
+					// instead have the punishment code ignore edition 0 for a year?
+					long editionHint = trustee.getLastFetchedMaybeValidEdition();
+					FreenetURI uri = trustee.getRequestURI().setSuggestedEdition(editionHint);
+
+					trustElement.setAttribute("Identity", uri.toString());
 					trustElement.setAttribute("Value", Byte.toString(trust.getValue()));
 					trustElement.setAttribute("Comment", trust.getComment());
 					trustListElement.appendChild(trustElement);
