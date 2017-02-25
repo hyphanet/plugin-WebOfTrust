@@ -114,9 +114,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	// @IndexedField
 	private long mTrusterTrustListEdition;
 
-	/**
-	 * FIXME: Populate at {@link WebOfTrust#upgradeDatabaseFormatVersion7()}
-	 * @see #getTrusteeEdition() */
+	/** @see #getTrusteeEdition() */
 	private long mTrusteeTrustListEdition;
 
     /** An {@link UUID} set by {@link EventSource#setVersionID(UUID)}. See its JavaDoc for an
@@ -482,6 +480,19 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 		}
 		
 		mTrusteeTrustListEdition = trusteeEdition;
+	}
+	
+	void upgradeDatabaseFormatVersion7() {
+		checkedActivate(1);
+		// Trust objects now store a copy of the edition hint of the trustee from the truster.
+		// This is needed in case an identity becomes distrusted and re-trusted, see
+		// the JavaDoc of Trust.getTrusteeEdition().
+		// We can't populate this value with a real hint because we didn't store individual
+		// edition hints previously, we only stored the highest one of all trusters.
+		// So we initialize it to "-1" which indicates that the truster hasn't been able to
+		// download the trustee yet.
+		// (We cannot use setTrusteeEdition(), would throw because decreasing isn't legal)
+		mTrusteeTrustListEdition = -1;
 	}
 
 	/**

@@ -1041,6 +1041,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// doing so you need to adapt markForRefetch() to work with the changes of this branch; i.e
 		// to make it work together with IdentityDownloaderFast / IdentityDownloaderSlow.
 		
+		for(Trust t : getAllTrusts()) {
+			t.upgradeDatabaseFormatVersion7();
+			t.storeWithoutCommit();
+		}
+		
 		throw new UnsupportedOperationException(
 		    "The code of this branch is not finished yet, please do not use it: "
 		  + "It will *gradually* change the scheme of the database, and having databases of "
