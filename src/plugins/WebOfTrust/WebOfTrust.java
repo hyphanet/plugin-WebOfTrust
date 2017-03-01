@@ -3159,17 +3159,23 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
 	 * }}}}
 	 * 
+	 * TODO: Performance: This function did not previously return the Trust object like it does now.
+	 * Review all the callers for whether getTrust() calls there can be removed in favor of the
+	 * returned object.
+	 * 
 	 * @param truster The Identity that gives the trust
 	 * @param trustee The Identity that receives the trust
 	 * @param newValue Numeric value of the trust
 	 * @param newComment A comment to explain the given value
 	 * @throws InvalidParameterException if a given parameter isn't valid, see {@link Trust} for details on accepted values.
 	 */
-	protected void setTrustWithoutCommit(Identity truster, Identity trustee, byte newValue, String newComment)
-		throws InvalidParameterException {
+	protected Trust setTrustWithoutCommit(
+		Identity truster, Identity trustee, byte newValue, String newComment)
+			throws InvalidParameterException {
 		
+		Trust trust;
 		try { // Check if we are updating an existing trust value
-			final Trust trust = getTrust(truster, trustee);
+			trust = getTrust(truster, trustee);
 			final Trust oldTrust = trust.clone();
 			trust.trusterEditionUpdated();
 			trust.setComment(newComment);
@@ -3188,7 +3194,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				updateScoresWithoutCommit(oldTrust, trust);
 			}
 		} catch (NotTrustedException e) {
-			final Trust trust = new Trust(this, truster, trustee, newValue, newComment);
+			trust = new Trust(this, truster, trustee, newValue, newComment);
 			trust.storeWithoutCommit();
 			mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(null, trust);
 			if(logDEBUG) Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
@@ -3201,6 +3207,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// TODO: Mabye notify clients about this. IMHO it would create too much notifications on trust list import so we don't.
 		// As soon as we have notification-coalescing we might do it.
 		// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(truster);
+		
+		return trust;
 	}
 	
 	/**
