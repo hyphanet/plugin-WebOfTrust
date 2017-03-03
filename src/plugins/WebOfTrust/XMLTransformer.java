@@ -560,6 +560,7 @@ public final class XMLTransformer {
 
 						for(final ParsedIdentityXML.TrustListEntry trustListEntry : xmlData.identityTrustList) {
 							final FreenetURI trusteeURI = trustListEntry.mTrusteeURI;
+							final long editionHint = trusteeURI.getEdition();
 							final byte trustValue = trustListEntry.mTrustValue;
 							final String trustComment = trustListEntry.mTrustComment;
 
@@ -604,9 +605,8 @@ public final class XMLTransformer {
 								// which only happens if:
 								assert(hasCapacity || positiveScore);
 								
-								if(trusteeURI.getEdition() >= 0) {
-									Long previous = editionHints.put(
-										trustee.getID(), trusteeURI.getEdition());
+								if(editionHint >= 0) {
+									Long previous = editionHints.put(trustee.getID(), editionHint);
 									
 									assert(previous == null);
 								} else {
@@ -631,7 +631,7 @@ public final class XMLTransformer {
 										// ever download them for the first time is through a hint
 										// to IdentityDownloaderSlow.
 										// So even if we got no valid hint, we store one of 0.
-										Long hint = max(0,  trusteeURI.getEdition());
+										Long hint = max(0,  editionHint);
 										Long previous = editionHints.put(trustee.getID(), hint);
 										assert(previous == null);
 										
