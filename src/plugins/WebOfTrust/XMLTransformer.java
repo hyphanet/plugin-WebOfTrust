@@ -610,10 +610,10 @@ public final class XMLTransformer {
 									
 									assert(previous == null);
 								} else {
-									// FIXME: Either punish the publisher of the XML for providing
-									// bogus data OR have this be a valid contion:
-									// Amend the code which generates XML to use editions of -1
-									// to signal that an identity wasn't downloaded at all yet.
+									// A negative hint is valid, it means that the publisher wasn't
+									// able to download the identity yet and thus we shouldn't
+									// instruct the IdentityDownloader to try - which is why we do
+									// not store a hint.
 								}								
 							}
 							catch(UnknownIdentityException e) {
@@ -631,6 +631,10 @@ public final class XMLTransformer {
 										// ever download them for the first time is through a hint
 										// to IdentityDownloaderSlow.
 										// So even if we got no valid hint, we store one of 0.
+										// FIXME: Perhaps do indeed NOT store a hint because if the
+										// truster has indicated that he wasn't able to download
+										// it we shouldn't waste our bandwidth and instead just wait
+										// for a hint which says that it *was* downloadable.
 										Long hint = max(0,  editionHint);
 										Long previous = editionHints.put(trustee.getID(), hint);
 										assert(previous == null);
