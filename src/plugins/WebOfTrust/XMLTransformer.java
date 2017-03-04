@@ -623,21 +623,11 @@ public final class XMLTransformer {
 										trustee.storeWithoutCommit();
 										mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, trustee);
 										
-										// We must always store a hint for new identities even
-										// if their truster has indicated he doesn't know their
-										// edition by setting it to -1:
-										// IdentityDownladerFast will not create an USK subscription
-										// for identities with rank > 1, so the only way we can
-										// ever download them for the first time is through a hint
-										// to IdentityDownloaderSlow.
-										// So even if we got no valid hint, we store one of 0.
-										// FIXME: Perhaps do indeed NOT store a hint because if the
-										// truster has indicated that he wasn't able to download
-										// it we shouldn't waste our bandwidth and instead just wait
-										// for a hint which says that it *was* downloadable.
-										Long hint = max(0,  editionHint);
-										Long previous = editionHints.put(trustee.getID(), hint);
-										assert(previous == null);
+										if(editionHint >= 0) {
+											Long previous
+												= editionHints.put(trustee.getID(), editionHint);
+											assert(previous == null);
+										}
 										
 										Logger.normal(this, "New identity received via trust list: " + identity);
 									} catch(MalformedURLException urlEx) {
