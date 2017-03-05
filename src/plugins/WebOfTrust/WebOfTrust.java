@@ -1738,6 +1738,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 			1	// Every identity above rank 5 can give 1 point
 	};			// Identities with no rank or rank of Integer.MAX_VALUE have zero capacity.
 	
+	/** ATTENTION: This const is maybe NOT used everywhere, it may be hardcoded in some places! */
+	public static final int OWN_IDENTITY_RANK = 0;
+
+	/** ATTENTION: This const is maybe NOT used everywhere, it may be hardcoded in some places! */
+	public static final int OWN_IDENTITY_CAPACITY = capacities[OWN_IDENTITY_RANK];
+
+	/** ATTENTION: This const is maybe NOT used everywhere, it may be hardcoded in some places! */
+	public static final int OWN_IDENTITY_SCORE = Integer.MAX_VALUE;
 
 	/**
 	 * Same as {@link #capacities} except:
@@ -3314,7 +3322,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 			Logger.error(this, "initTrustTreeWithoutCommit called even though there is already one for " + identity);
 			return;
 		} catch (NotInTrustTreeException e) {
-			final Score score = new Score(this, identity, identity, Integer.MAX_VALUE, 0, 100);
+			final Score score = new Score(this, identity, identity, OWN_IDENTITY_SCORE,
+				OWN_IDENTITY_RANK, OWN_IDENTITY_CAPACITY);
 			score.storeWithoutCommit();
 			mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(null, score);
 		}
