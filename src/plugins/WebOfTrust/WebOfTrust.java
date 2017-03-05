@@ -3173,11 +3173,23 @@ public final class WebOfTrust extends WebOfTrustInterface
 		Identity truster, Identity trustee, byte newValue, String newComment)
 			throws InvalidParameterException {
 		
+		return setTrustWithoutCommit(truster, trustee, -1, newValue, newComment);
+	}
+
+	/**
+	 * @see #setTrustWithoutCommit(Identity, Identity, byte, String)
+	 * @param trusteeEditionHint See {@link Trust#setTrusteeEdition(long)} */
+	Trust setTrustWithoutCommit(Identity truster, Identity trustee, long trusteeEditionHint,
+			byte newValue, String newComment)
+				throws InvalidParameterException {
+		
 		Trust trust;
 		try { // Check if we are updating an existing trust value
 			trust = getTrust(truster, trustee);
 			final Trust oldTrust = trust.clone();
 			trust.trusterEditionUpdated();
+			// Must be called before Score updates to ensure it is visible to IdentityDownloader
+			trust.setTrusteeEdition(trusteeEditionHint);
 			trust.setComment(newComment);
 			final boolean valueChanged = trust.getValue() != newValue; 
 			
@@ -3195,6 +3207,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 		} catch (NotTrustedException e) {
 			trust = new Trust(this, truster, trustee, newValue, newComment);
+			trust.setTrusteeEdition(trusteeEditionHint);
 			trust.storeWithoutCommit();
 			mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(null, trust);
 			if(logDEBUG) Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
