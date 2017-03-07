@@ -638,8 +638,11 @@ public final class XMLTransformer {
 								}
 							}
 
-							if(trustee != null)
-								mWoT.setTrustWithoutCommit(identity, trustee, trustValue, trustComment); // Also takes care of SubscriptionManager
+							if(trustee != null) {
+								// Also takes care of notifying the SubscriptionManager
+								mWoT.setTrustWithoutCommit(
+									identity, trustee, editionHint, trustValue, trustComment);
+							}
 						}
 
 						for(Trust trust : mWoT.getGivenTrustsOfDifferentEdition(identity, identityURI.getEdition())) {
@@ -813,8 +816,30 @@ public final class XMLTransformer {
 					catch(NotTrustedException ex) {
 						// 0 trust will not allow the import of other new identities for the new identity because the trust list import code will only create
 						// new identities if the score of an identity is > 0, not if it is equal to 0.
-						mWoT.setTrustWithoutCommit(puzzleOwner, newIdentity, (byte)0, "Trust received by solving a captcha.");// Also takes care of SubscriptionManager
+						mWoT.setTrustWithoutCommit(
+							puzzleOwner,
+							newIdentity,
+							// This normally stores is the edition hint of *remote* trusters. In our
+							// case the truster is local so we can populate it with the edition hint
+							// of the truster as we normally compute it in exportOwnIdentity().
+							// Notably, for security reasons we do NOT use the hint of the puzzle
+							// solver: It is possible for an attacker to solve a puzzle for an
+							// identity without being the owner of the identity. Thus attackers can
+							// maliciously introduce identities with a bogus edition and we thus
+							// should make sure to not claim this hint is of our own.
+							newIdentity.getLastFetchedMaybeValidEdition(),
+							(byte)0,
+							"Trust received by solving a captcha.");
+						
+						// setTrust...() does this for us.
+						/* mWoT.getSubscriptionManager()
+						       .storeTrustChangedNotificationWithoutCommit(...); */
 					}
+					
+					/* FIXME:
+					mWoT.getIdentityDownloaderController()
+						.storeNewEditionHintCommandWithoutCommit(EditionHint.constructSecure(...));
+					*/
 					
 					// setTrustWithoutCommit() does this for us, no need to do it ourself:
 					//   mWoT.getIdentityFetcher()
