@@ -1,0 +1,68 @@
+There are certain functions which check for errors in the database which cannot be used during normal operation of WOT.
+This is because they are very expensive or destroy the database.
+
+They can only be manually executed by developers. And as a developer you SHOULD do that periodically.
+
+Those are:
+- DEBUG logging: You should set a loglevel of "plugins.WebOfTrust:DEBUG" in your Freenet node and let WOT run for a long time with that.
+  There are some checks, for example the startup database integrity test, which only get executed if debug logging is enabled.
+  Additionally, you can set the base log level ("Minimum priority to log messages at") of your node to NONE to ensure that nothing
+  but WOT messages gets logged.
+
+- If you don't want DEBUG logging for the whole of WOT but only for certain classes, make sure to enable WARNING/ERROR logging for everything
+  at least: Set "Detailed priority thresholds" to begin with "plugins.WebOfTrust:WARNING" (this includes ERROR as it is above WARNING.
+  Add the classes for which you want to enable debug logging separated by "," after that.
+  
+  You should know for which purposes WOT uses the Freenet log levels:
+	- ERROR is only used when something is *definitely* broken. After every test run, you *must* search the logs for ERROR messages.
+
+	- WARNING is used for conditions which are unwanted but can occur due to things which we cannot control. Being a P2P network, the perfect example is that 
+	  we received data which is out of the bounds of what is allowed - that can always happen when remote people are allowed to send stuff to you. 
+	  For example the nickname of a WOT identity might contain disallowed characters.
+	  Having a separate log level for this is nice because monitoring significant WARNING logging is critical to detecting excessive amounts of invalid data,
+      which might indicate DoS or a bug in the code which checks validity.
+
+	- NORMAL is major internal or external events. They occur with low frequency so the computation of the log strings is not heavy even if NORMAL logging is
+	  Examples are creating an identity in the WOT web interface, solving a CAPTCHA, or downloading a remote identity's XML. 
+
+	- MINOR is data for debugging purposes. It occurs with high frequency and therefore has an "if(logMINOR)" guard to prevent computation of the log strings
+	  if the MINOR logging is disabled. It can be heavy amounts of logging but enabling MINOR logging should NOT change the behavior of the surrounding program.
+
+	- DEBUG logging is the same as MINOR with the primary difference that DEBUG can enable additional code paths which would not normally be executed.
+	  Those code paths typically solely exist to compute data for the logging. For WOT for example this means that it will run an additional integrity test upon
+	  the database during startup.
+
+- The class "DebugFCPClient": It is a FCP client which runs inside WOT itself. You can enable it by setting its loglevel to DEBUG,
+  either explicitly via "plugins.WebOfTrust.ui.fcp.DebugFCPClient:DEBUG" by or by setting the global loglevel of WOT to DEBUG.
+  It will connect to WOT's own FCP interface and subscribe to all types of event-notifications. It will store all identities,
+  trusts and scores it has received via event-notifications in memory. At shutdown, it will validate whether the in-memory contents
+  match what is stored in the WOT database. This allows you to test whether subscriptions work as desired.
+  It might also be useful to set the loglevels of the backend classes to DEBUG as well. Also, make sure to keep WARNING/ERROR logging for
+  everything else enabled as suggested in the previous note - there are member classes of SubscriptionManager which you want to be able
+  to log WARNING/ERROR.
+  In total, you will end up with these at "Detailed priority thresholds":
+  plugins.WebOfTrust:WARNING,plugins.WebOfTrust.ui.fcp.DebugFCPClient:DEBUG,plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation:DEBUG,plugins.WebOfTrust.SubscriptionManager:DEBUG
+  
+- WebOfTrust.checkForDatabaseLeaks(). It will delete all identities in the database which should also delete ALL other objects.
+  Then it will check whether objects of any class still exist in the database. If they do, they are leaks.
+  Ideally, you would use this on a WOT database upon which WOT has been running for quite a few days. 
+  Usually you should use this function whenever you modify what is stored in the database to make sure you don't leak stuff..
+  
+- Assertions. Use the "-ea" switch of Java to enable them. Ideally, you would sometimes do a test run which consists of:
+	* Starting WOT with a fresh database and assertions enabled
+	* Creating at least one own identity
+	* Letting WOT run over night or longer until it has fetched all on-network identities.
+	  This will generate lots of traffic on all functions of WOT and might trigger AssertionFailedError exception which
+	  should show up in the log files. You can also set a breakpoint on those exceptions in Eclipse.
+  Usually you should do an assertion test run whenever you modify the score computation algorithms since they are heavily
+  guarded by assertions.
+
+Useful breakpoints during debug test runs:
+- AssertionError: Will hit on failure of Java assert() statements. There are many useful of those in the WOT code.
+- AssertionFailedError: Will hit on failure of JUnit tests.
+- NullPointerException: Dereferencing of a pointer which is null shouldn't happen in normal code.
+- UnsupportedOperationException: This exception is typically thrown in WOT-functions which are NOT implemented. Therefore, those functions
+  should not be used. If this is thrown it indicates that they ARE being used even though they shouldn't.
+
+Other stuff useful for developers:
+- The constant "WebOfTrust.FAST_DEBUG_MODE" which reduces the execution delays of the IntroductionServer / IntroductionClient.

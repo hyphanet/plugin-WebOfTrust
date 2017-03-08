@@ -9,32 +9,39 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.NoSuchElementException;
 
 import javax.imageio.ImageIO;
+import javax.naming.SizeLimitExceededException;
 
-import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.identicon.Identicon;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
+import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.filter.ContentFilter;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
-import freenet.client.filter.ContentFilter;
 import freenet.l10n.BaseL10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
-import freenet.support.Base64;
-import freenet.support.IllegalBase64Exception;
 
 /**
  * The web interface of the WoT plugin.
@@ -49,24 +56,27 @@ public class WebInterface {
 	private final WebOfTrust mWoT;
 	private final PluginRespirator mPluginRespirator;
 	private final PageMaker mPageMaker;
+
+	/**
+	 * Used by the {@link Toadlet#showAsToadlet()} implementations of:
+	 * - {@link CreateOwnIdentityWebInterfaceToadlet}
+	 * - {@link DeleteOwnIdentityWebInterfaceToadlet}
+	 * - {@link EditOwnIdentityWebInterfaceToadlet}
+	 * - {@link IntroduceIdentityWebInterfaceToadlet}
+	 */
+	private final WebInterfaceToadlet myIdentityToadlet;
 	
-	// Visible
-	private final WebInterfaceToadlet homeToadlet;
-	private final WebInterfaceToadlet ownIdentitiesToadlet;
+	/**
+	 * Used by the {@link Toadlet#showAsToadlet()} implementation of {@link IdentityWebInterfaceToadlet}.
+	 */
 	private final WebInterfaceToadlet knownIdentitiesToadlet;
-	private final WebInterfaceToadlet configurationToadlet;
-	
-	// Invisible
-	private final WebInterfaceToadlet createIdentityToadlet;
-	private final WebInterfaceToadlet deleteOwnIdentityToadlet;
-	private final WebInterfaceToadlet editOwnIdentityToadlet;
-	private final WebInterfaceToadlet introduceIdentityToadlet;
-	private final WebInterfaceToadlet identityToadlet;
-	private final WebInterfaceToadlet getPuzzleToadlet;
-	private final WebInterfaceToadlet getIdenticonToadlet;
+
+	private final HashMap<Class<? extends WebInterfaceToadlet>, WebInterfaceToadlet> toadlets;
 
 	private final String mURI;
-	
+
+	private static final String MENU_NAME = "WebInterface.WotMenuName";
+
 	/**
 	 * Forward access to current l10n data.
 	 * 
@@ -76,257 +86,209 @@ public class WebInterface {
 	    return mWoT.getBaseL10n();
 	}
 
-	public class HomeWebInterfaceToadlet extends WebInterfaceToadlet {
+	public class StatisticsWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		protected HomeWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+		protected StatisticsWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new HomePage(this, req, context, l10n());
+			return new StatisticsPage(this, req, context);
 		}
 
 		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
+		public boolean isEnabled(ToadletContext ctx) {
+			return true;
 		}
 	}
 	
-	public class OwnIdentitiesWebInterfaceToadlet extends WebInterfaceToadlet {
+	public class MyIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
-
-		protected OwnIdentitiesWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+		protected MyIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new OwnIdentitiesPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException, UnknownIdentityException {
+			return new MyIdentityPage(this, req, context);
 		}
 	}
 	
 	public class KnownIdentitiesWebInterfaceToadlet extends WebInterfaceToadlet {
-
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
 
 		protected KnownIdentitiesWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
 		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException, UnknownIdentityException {
+			return new KnownIdentitiesPage(this, req, context);
+		}
+	}
+
+	public class LoginWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected LoginWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new KnownIdentitiesPage(this, req, context, l10n());
+			return new LogInPage(this, req, context);
+		}
+
+		/** Log an user in from a POST and redirect to the BoardsPage */
+		@Override
+		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException, SizeLimitExceededException, NoSuchElementException {
+			if(!ctx.checkFullAccess(this))
+				return;
+
+			if(!checkAntiCSRFToken(request, ctx))
+				return;
+
+			final String ID = request.getPartAsStringThrowing("OwnIdentityID", IdentityID.LENGTH);
+			assert ID.length() == IdentityID.LENGTH;
+
+			try {
+		        // TODO: Performance: The synchronized() can be removed after this is fixed:
+		        // https://bugs.freenetproject.org/view.php?id=6247
+			    synchronized(mWoT) {
+			        final OwnIdentity ownIdentity = mWoT.getOwnIdentityByID(ID);
+			        sessionManager.createSession(ownIdentity.getID(), ctx);
+			    }
+			} catch(UnknownIdentityException e) {
+				Logger.error(this.getClass(), "Attempted to log in to unknown identity. Was it deleted?", e);
+				writeTemporaryRedirect(ctx, "Unknown identity", path());
+				return;
+			}
+
+			try {
+				/**
+				 * "redirect-target" is a node-relative target after successful login. It is encoded but the URI
+				 * constructor should decode.
+				 * @see LogInPage
+				 *
+				 * The limit of 64 characters is arbitrary.
+				 */
+				URI raw = new URI(request.getPartAsStringFailsafe("redirect-target", 64));
+				// Use only the path, query, and fragment. Stay on the node's scheme, host, and port.
+				URI target = new URI(null, null, raw.getPath(), raw.getQuery(), raw.getFragment());
+				writeTemporaryRedirect(ctx, "Login successful", target.toString());
+			} catch (URISyntaxException e) {
+				writeInternalError(e, ctx);
+			}
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return !sessionManager.sessionExists(ctx);
 		}
 	}
 	
-	public class ConfigWebInterfaceToadlet extends WebInterfaceToadlet {
+	class LogOutWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
-
-		protected ConfigWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+		protected LogOutWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new ConfigurationPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			// TODO: Secure log out against malicious links (by using POST with form password instead of GET)
+			//       At the moment it is just a link and unsecured i.e. no form password check etc.
+			//       Bugtracker entry for this: https://bugs.freenetproject.org/view.php?id=6238
+			logOut(context);
+			throw new RedirectException(getToadlet(LoginWebInterfaceToadlet.class).getURI());
 		}
+		
 	}
 
-	public class CreateIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
+	public class CreateOwnIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
-
-		protected CreateIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+		protected CreateOwnIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			return new CreateIdentityPage(this, req, context, l10n());
+			return new CreateOwnIdentityWizardPage(this, req, context);
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return ownIdentitiesToadlet;
+			// TODO: The myIdentityToadlet won't be visible if no OwnIdentity is logged in. Is it a good idea to return it then? Probably not.
+			// Then we should instead use the LogInWebInterfaceToadlet as a menu entry (= return value) because when nobody is logged in, that is
+			// the way to access this CreateOwnIdentityWebInterfaceToadlet.
+			// However, it is not possible to check whether someone is logged in in this function because it does not get a ToadletContext.
+			return myIdentityToadlet;
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return true;
 		}
 	}
 
 	public class DeleteOwnIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
-
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
 
 		protected DeleteOwnIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new DeleteOwnIdentityPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
+			return new DeleteOwnIdentityPage(this, req, context);
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return ownIdentitiesToadlet;
+			return myIdentityToadlet;
 		}
 	}
 
 	public class EditOwnIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
-
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
 
 		protected EditOwnIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new EditOwnIdentityPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
+			return new EditOwnIdentityPage(this, req, context);
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return ownIdentitiesToadlet;
+			return myIdentityToadlet;
 		}
 	}
 
 	public class IntroduceIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
-
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
 
 		protected IntroduceIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new IntroduceIdentityPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
+			return new IntroduceIdentityPage(this, req, context);
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return ownIdentitiesToadlet;
+			return myIdentityToadlet;
 		}
 	}
 	
 	public class IdentityWebInterfaceToadlet extends WebInterfaceToadlet {
-
-		@Override
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
-				throws ToadletContextClosedException, IOException,
-				RedirectException {
-			super.handleMethodGET(uri, req, ctx);
-		}
-
-		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request,
-				ToadletContext ctx) throws ToadletContextClosedException,
-				IOException, RedirectException {
-			super.handleMethodPOST(uri, request, ctx);
-		}
 
 		protected IdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
 		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return new IdentityPage(this, req, context, l10n());
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException, RedirectException {
+			return new IdentityPage(this, req, context);
 		}
 		
 		@Override
@@ -342,16 +304,37 @@ public class WebInterface {
 			super(client, wi, core, pageTitle);
 		}
 
+		public URI getURI(String puzzleID) {
+			final URI baseURI = getURI();
+			
+			try {
+				// The parameter which is baseURI.getPath() may not be null, otherwise the last directory is stripped.
+				return baseURI.resolve(new URI(null, null, baseURI.getPath(), "PuzzleID=" + puzzleID, null));
+			} catch (URISyntaxException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		@Override
 		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 
 			// ATTENTION: The same code is used in Freetalk's WebInterface.java. Please synchronize any changes which happen there.
 			
+		    if(!ctx.checkFullAccess(this))
+		        return;
+		    
 			Bucket dataBucket = null;
 			Bucket output = core.tempBucketFactory.makeBucket(-1);
 			InputStream filterInput = null;
 			OutputStream filterOutput = null;
 			try {
-				final IntroductionPuzzle puzzle = mWoT.getIntroductionPuzzleStore().getByID(req.getParam("PuzzleID"));
+			    final IntroductionPuzzleStore puzzleStore = mWoT.getIntroductionPuzzleStore();
+				final IntroductionPuzzle puzzle;
+		        // TODO: Performance: The synchronized() and clone() can be removed after this is
+				// fixed: https://bugs.freenetproject.org/view.php?id=6247
+				synchronized(puzzleStore) {
+				    puzzle = puzzleStore.getByID(req.getParam("PuzzleID")).clone();
+				}
 				
 				final String mimeType = puzzle.getMimeType();
 				
@@ -383,9 +366,9 @@ public class WebInterface {
 			}
 		}
 		
+		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
-			// Not expected to make it here...
-			return new HomePage(this, req, context, l10n());
+			return new ErrorPage(this, req, context, new RuntimeException("This Toadlet does not offer HTML."));
 		}
 	}
 
@@ -401,6 +384,9 @@ public class WebInterface {
 		@Override
 		@SuppressWarnings("synthetic-access")
 		public void handleMethodGET(URI uri, HTTPRequest httpRequest, ToadletContext toadletContext) throws ToadletContextClosedException, IOException {
+		    if(!toadletContext.checkFullAccess(this))
+		        return;
+			
 			String identityId = httpRequest.getParam("identity");
 			int width = 128;
 			int height = 128;
@@ -418,7 +404,7 @@ public class WebInterface {
 			}
 			ByteArrayOutputStream imageOutputStream = null;
 			try {
-				RenderedImage identiconImage = new Identicon(Identity.getRoutingKeyFromID(identityId)).render(width, height);
+				RenderedImage identiconImage = new Identicon(IdentityID.constructAndValidateFromString(identityId).getRoutingKey()).render(width, height);
 				imageOutputStream = new ByteArrayOutputStream();
 				ImageIO.write(identiconImage, "png", imageOutputStream);
 				Bucket imageBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, imageOutputStream.toByteArray());
@@ -435,9 +421,22 @@ public class WebInterface {
 		 */
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws UnknownIdentityException {
-			return null;
+			return new ErrorPage(this, req, context, new RuntimeException("This Toadlet does not offer HTML."));
 		}
 
+	}
+
+	/**
+	 * @return Null if the Freenet web interface is disabled, a valid WOT WebInterface otherwise.
+	 */
+	public static WebInterface constructIfEnabled(WebOfTrust myWoT, String uri) {
+	    if(myWoT.getPluginRespirator().getNode().config
+	        .get("fproxy").getBoolean("enabled") == false) {
+	        
+	        return null;
+	    }
+	    
+	    return new WebInterface(myWoT, uri);
 	}
 
 	public WebInterface(WebOfTrust myWoT, String uri) {
@@ -447,40 +446,84 @@ public class WebInterface {
 		mPluginRespirator = mWoT.getPluginRespirator();
 		ToadletContainer container = mPluginRespirator.getToadletContainer();
 		mPageMaker = mPluginRespirator.getPageMaker();
-		
-		mPageMaker.addNavigationCategory(mURI+"/", "WebInterface.WotMenuName", "WebInterface.WotMenuName.Tooltip", mWoT, mPluginRespirator.getNode().pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk") ? 2 : 1);
-		
-		// Visible pages
-		
-		homeToadlet = new HomeWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "");
-		ownIdentitiesToadlet = new OwnIdentitiesWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "OwnIdentities");
-		knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "KnownIdentities");
-		configurationToadlet = new ConfigWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "Configuration");
-		
-		container.register(homeToadlet, "WebInterface.WotMenuName", mURI+"/", true, "WebInterface.WotMenuItem.Home", "WebInterface.WotMenuItem.Home.Tooltip", false, null);
-		container.register(ownIdentitiesToadlet, "WebInterface.WotMenuName", mURI + "/OwnIdentities", true, "WebInterface.WotMenuItem.OwnIdentities", "WebInterface.WotMenuItem.OwnIdentities.Tooltip", false, null);
-		container.register(knownIdentitiesToadlet, "WebInterface.WotMenuName", mURI + "/KnownIdentities", true, "WebInterface.WotMenuItem.KnownIdentities", "WebInterface.WotMenuItem.KnownIdentities.Tooltip", false, null);
-		container.register(configurationToadlet, "WebInterface.WotMenuName", mURI + "/Configuration", true, "WebInterface.WotMenuItem.Configuration", "WebInterface.WotMenuItem.Configuration.Tooltip", false, null);
-		
-		// Invisible pages
-		
-		createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "CreateIdentity");
-		deleteOwnIdentityToadlet = new DeleteOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "DeleteOwnIdentity");
-		editOwnIdentityToadlet = new EditOwnIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "EditOwnIdentity");
-		introduceIdentityToadlet = new IntroduceIdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "IntroduceIdentity");
-		identityToadlet = new IdentityWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "ShowIdentity");
-		getPuzzleToadlet = new GetPuzzleWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "GetPuzzle");
-		getIdenticonToadlet = new GetIdenticonWebInterfaceToadlet(null, this, mWoT.getPluginRespirator().getNode().clientCore, "GetIdenticon");
 
-		container.register(createIdentityToadlet, null, mURI + "/CreateIdentity", true, false);
-		container.register(deleteOwnIdentityToadlet, null, mURI + "/DeleteOwnIdentity", true, false);
-		container.register(editOwnIdentityToadlet, null, mURI + "/EditOwnIdentity", true, false);
-		container.register(introduceIdentityToadlet, null, mURI + "/IntroduceIdentity", true, false);
-		container.register(identityToadlet, null, mURI + "/ShowIdentity", true, false);
-		container.register(getPuzzleToadlet, null, mURI + "/GetPuzzle", true, false);
-		container.register(getIdenticonToadlet, null, mURI + "/GetIdenticon", true, false);
+		mPageMaker.addNavigationCategory(mURI+"/", MENU_NAME, MENU_NAME + ".Tooltip", mWoT, mPluginRespirator.getNode().pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk") ? 2 : 1);
+
+		final NodeClientCore core = mWoT.getPluginRespirator().getNode().clientCore;
+
+		/*
+		 * These are WebInterfaceToadlets instead of Toadlets because the package-scope pageTitle is used to look up
+		 * the menu localization keys.
+		 *
+		 * Pages listed in the menu:
+		 */
+
+		myIdentityToadlet = new MyIdentityWebInterfaceToadlet(null, this, core, "MyIdentity");
+		knownIdentitiesToadlet = new KnownIdentitiesWebInterfaceToadlet(null, this, core, "KnownIdentities");
+
+		ArrayList<WebInterfaceToadlet> listed = new ArrayList<WebInterfaceToadlet>(Arrays.asList(
+			new LoginWebInterfaceToadlet(null, this, core, "LogIn"),
+			myIdentityToadlet,
+			knownIdentitiesToadlet,
+			new StatisticsWebInterfaceToadlet(null, this, core, "Statistics"),
+			new LogOutWebInterfaceToadlet(null, this, core, "LogOut")
+		));
+
+		// Register homepage at the root. This catches any otherwise unmatched request because it is registered first.
+		container.register(myIdentityToadlet, null, mURI + "/", true, true);
+		
+		toadlets = new HashMap<Class<? extends WebInterfaceToadlet>, WebInterfaceToadlet>();
+
+		for (WebInterfaceToadlet toadlet : listed) {
+			registerMenu(container, toadlet);
+			toadlets.put(toadlet.getClass(), toadlet);
+		}
+
+		// Pages not listed in the menu:
+
+		ArrayList<WebInterfaceToadlet> unlisted = new ArrayList<WebInterfaceToadlet>(Arrays.asList(
+			new CreateOwnIdentityWebInterfaceToadlet(null, this, core, "CreateOwnIdentity"),
+			new DeleteOwnIdentityWebInterfaceToadlet(null, this, core, "DeleteOwnIdentity"),
+			new EditOwnIdentityWebInterfaceToadlet(null, this, core, "EditOwnIdentity"),
+			new IntroduceIdentityWebInterfaceToadlet(null, this, core, "IntroduceIdentity"),
+			new IdentityWebInterfaceToadlet(null, this, core, "ShowIdentity"),
+			new GetPuzzleWebInterfaceToadlet(null, this, core, "GetPuzzle"),
+			new GetIdenticonWebInterfaceToadlet(null, this, core, "GetIdenticon")
+		));
+
+		for (WebInterfaceToadlet toadlet : unlisted) {
+			registerHidden(container, toadlet);
+			toadlets.put(toadlet.getClass(), toadlet);
+		}
+
+	}
+
+	/**
+	 * Register the given Toadlet as fullAccessOnly at its .path() and list it in the menu.<br/>
+	 * The menu item is "WebInterface.WotMenuItem." followed by the pageTitle.<br/>
+	 * The tooltip is the same followed by ".Tooltip".<br/>
+	 * @param container to register with.
+	 * @param toadlet to register.
+	 */
+	private void registerMenu(ToadletContainer container, WebInterfaceToadlet toadlet) {
+		container.register(toadlet, MENU_NAME, toadlet.path(), true,
+		    "WebInterface.WotMenuItem." + toadlet.pageTitle,
+		    "WebInterface.WotMenuItem." + toadlet.pageTitle + ".Tooltip", true, toadlet);
+	}
+
+	/**
+	 * Register the given Toadlet as fullAccessOnly at its .path() without listing it in the menu.
+	 * @param container to register with.
+	 * @param toadlet to register.
+	 */
+	private void registerHidden(ToadletContainer container, Toadlet toadlet) {
+		container.register(toadlet, null, toadlet.path(), true, true);
 	}
 	
+	public WebInterfaceToadlet getToadlet(Class<? extends Toadlet> clazz) {
+		return toadlets.get(clazz);
+	}
+
 	public String getURI() {
 		return mURI;
 	}
@@ -495,19 +538,9 @@ public class WebInterface {
 	
 	public void unload() {
 		ToadletContainer container = mPluginRespirator.getToadletContainer();
-		for(Toadlet t : new Toadlet[] { 
-				homeToadlet,
-				ownIdentitiesToadlet,
-				knownIdentitiesToadlet,
-				configurationToadlet,
-				createIdentityToadlet,
-				deleteOwnIdentityToadlet,
-				editOwnIdentityToadlet,
-				introduceIdentityToadlet,
-				identityToadlet,
-				getPuzzleToadlet,
-				getIdenticonToadlet
-		}) container.unregister(t);
-		mPageMaker.removeNavigationCategory("WebInterface.WotMenuName");
+		for(Toadlet t : toadlets.values()) {
+			container.unregister(t);
+		}
+		mPageMaker.removeNavigationCategory(MENU_NAME);
 	}
 }

@@ -10,10 +10,15 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
-import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.Score;
+import plugins.WebOfTrust.Trust;
+import plugins.WebOfTrust.WebOfTrustInterface;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
+import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
@@ -23,13 +28,15 @@ import freenet.support.TimeUtil;
  * An introduction puzzle is a puzzle (for example a CAPTCHA) which can be solved by a new identity to get onto the trust list
  * of already existing identities. This is the only way to get onto the web of trust if you do not know someone who will add you manually.
  */
-public class IntroductionPuzzle extends Persistent implements Cloneable {
+@SuppressWarnings("serial")
+public class IntroductionPuzzle extends Persistent implements ReallyCloneable<IntroductionPuzzle> {
 	
 	public static enum PuzzleType { Captcha };
 	
 	public static transient final String INTRODUCTION_CONTEXT = "Introduction";
 	public static transient final int MINIMAL_SOLUTION_LENGTH = 5;
 	public static transient final int MAXIMAL_SOLUTION_LENGTH = 10;
+	public static transient final int MAXIMAL_ID_LENGTH = 36 /* UUID length */ + 1 /* "@" character */ + IdentityID.LENGTH;
 	
 	protected static transient final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	
@@ -116,7 +123,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	 * @param newType
 	 * @param newData
 	 */
-	public IntroductionPuzzle(WebOfTrust myWebOfTrust, Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData,
+	public IntroductionPuzzle(WebOfTrustInterface myWebOfTrust, Identity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData,
 			Date myDateOfInsertion, Date myExpirationDate, int myIndex) {
 		
 		initializeTransient(myWebOfTrust);
@@ -129,6 +136,9 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		
 		if(newID == null)
 			throw new NullPointerException("No puzzle ID specified");
+		
+		if(newID.length() > MAXIMAL_ID_LENGTH)
+			throw new IllegalArgumentException("Puzzle ID is too long:" + newID.length());
 
 		if(!newID.endsWith(newInserter.getID()))
 			throw new IllegalArgumentException("Invalid puzzle ID, does not end with inserter ID: " + newID);
@@ -166,9 +176,9 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		mType = newType;
 		mMimeType = newMimeType;
 		mDayOfInsertion = TimeUtil.setTimeToZero(myDateOfInsertion).getTime();
-		mValidUntilDate = myExpirationDate;
+		mValidUntilDate = (Date)myExpirationDate.clone();	// Clone it because date is mutable
 		mIndex = myIndex;
-		mData = newData;
+		mData = Arrays.copyOf(newData, newData.length);
 		mWasSolved = false; mSolution = null; mSolver = null;
 		mWasInserted = false;
 	}
@@ -185,7 +195,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 			dayOfInsertion = mDateFormat.format(dateOfInsertion);
 		}
 		FreenetURI baseURI = inserter.getRequestURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WebOfTrust.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index);
+		baseURI = baseURI.setDocName(WebOfTrustInterface.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + index);
 		return baseURI.setMetaString(null);
 	}
 	
@@ -228,6 +238,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 				split("[|]")[2];
 	}
 	
+	@Override
 	public String getID() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
@@ -261,7 +272,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 	
 	public Date getValidUntilDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		return mValidUntilDate;
+		return (Date)mValidUntilDate.clone();	// Clone it because date is mutable
 	}
 	
 	public int getIndex() {
@@ -327,7 +338,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		if(mSolution == null)
 			throw new IllegalStateException("The puzzle is not solved.");
 		
-		return new FreenetURI("KSK",	WebOfTrust.WOT_NAME + "|" +
+		return new FreenetURI("KSK",	WebOfTrustInterface.WOT_NAME + "|" +
 										INTRODUCTION_CONTEXT + "|" +
 										mID + "|" +
 										mSolution);
@@ -349,6 +360,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		mWasInserted = true;
 	}
 	
+	@Override
 	protected void storeWithoutCommit() {
 		try {		
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
@@ -363,6 +375,7 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		}
 	}
 	
+	@Override
 	protected void deleteWithoutCommit() {
 		super.deleteWithoutCommit();
 	}
@@ -425,21 +438,37 @@ public class IntroductionPuzzle extends Persistent implements Cloneable {
 		}
 	}
 
+	/**
+	 * TODO: Code quality: This should be unified to have the same output format as the equivalent
+	 * function in {@link OwnIdentity} / {@link Identity} / {@link Trust} / {@link Score}.
+	 * Especially should it be changed to output precisely what {@link #equals(Object)} would
+	 * compare. Don't forget to add the same JavaDoc to {@link #equals(Object)} about that as is
+	 * present in the aforementioned classes.<br>
+	 * Matching the compared values of {@link #equals(Object)} will be useful for
+	 * {@link DebugFCPClient} once puzzles are shipped by event-notifications. */
 	@Override
 	public String toString() {
-		return "[" + super.toString() + ": mID:" + mID + "; mDayOfInsertion: " + mDayOfInsertion + "; mRequestURI: " + getRequestURI().toString() + "]";
+		return "[" + super.toString()
+		     + "; mID:" + mID
+		     + "; mDayOfInsertion: " + mDayOfInsertion
+		     + "; mRequestURI: " + getRequestURI().toString() + "]";
 	}
 	
 	@Override
 	public IntroductionPuzzle clone() {
 		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
-		final IntroductionPuzzle copy = new IntroductionPuzzle(mWebOfTrust, getInserter(), getID(), getType(), getMimeType(), getData(), getDateOfInsertion(), getValidUntilDate(), getIndex());
-		if(wasSolved()) copy.setSolved((OwnIdentity)getSolver(), getSolution());
+		final IntroductionPuzzle copy = new IntroductionPuzzle(mWebOfTrust, getInserter().clone(), getID(), getType(), getMimeType(), getData(), getDateOfInsertion(), getValidUntilDate(), getIndex());
+		copy.setCreationDate(getCreationDate());
+		if(wasSolved()) copy.setSolved(((OwnIdentity)getSolver()).clone(), getSolution());
 		if(wasInserted()) copy.setInserted();
 		copy.initializeTransient(mWebOfTrust);
 		return copy;
 	}
-	
+
+	@Override public IntroductionPuzzle cloneP() {
+		return clone();
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if(o == this)

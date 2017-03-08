@@ -24,5 +24,9 @@ public class NotInTrustTreeException extends Exception {
 	public NotInTrustTreeException(Identity truster, Identity trustee) {
 		super(trustee + " is not in the trust treee of " + truster);
 	}
+	
+	public NotInTrustTreeException(String id) {
+		super("There is no Score with ID " + id);
+	}
 
 }

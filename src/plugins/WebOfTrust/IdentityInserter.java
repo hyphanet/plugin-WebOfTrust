@@ -11,24 +11,30 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Random;
 
-import com.db4o.ObjectContainer;
+import plugins.WebOfTrust.util.TransferThread;
+
+import com.db4o.ext.ExtObjectContainer;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
-import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Inserts OwnIdentities to Freenet when they need it.
@@ -39,17 +45,18 @@ import freenet.support.io.NativeThread;
 public final class IdentityInserter extends TransferThread {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 10 * 60 * 1000;
 	
 	/**
 	 * The minimal time for which an identity must not have changed before we insert it.
 	 */
-	private static final int MIN_DELAY_BEFORE_INSERT = 15 * 60 * 1000;
+    private static final int MIN_DELAY_BEFORE_INSERT = 1 /* hours */ * 60 * 60 * 1000;
 	
 	/**
 	 * The maximal delay for which an identity insert can be delayed (relative to the last insert) due to continuous changes.
 	 */
-	private static final int MAX_DELAY_BEFORE_INSERT = 30 * 60 * 1000;
+    private static final int MAX_DELAY_BEFORE_INSERT = 3 /* hours */ * 60 * 60 * 1000;
+
+    private static final int THREAD_PERIOD = MAX_DELAY_BEFORE_INSERT / 2;
 	
 	/**
 	 * The amount of time after which we insert a new edition of an identity even though it did not change.
@@ -58,6 +65,10 @@ public final class IdentityInserter extends TransferThread {
 	
 	
 	private WebOfTrust mWoT;
+	
+	private SubscriptionManager mSubscriptionManager;
+	
+	private ExtObjectContainer mDB;
 
 	/** Random number generator */
 	private Random mRandom;
@@ -80,6 +91,8 @@ public final class IdentityInserter extends TransferThread {
 	public IdentityInserter(WebOfTrust myWoT) {
 		super(myWoT.getPluginRespirator().getNode(), myWoT.getPluginRespirator().getHLSimpleClient(), "WoT Identity Inserter");
 		mWoT = myWoT;
+		mSubscriptionManager = mWoT.getSubscriptionManager();
+		mDB = mWoT.getDatabase();
 		mRandom = mWoT.getPluginRespirator().getNode().fastWeakRandom;
 	}
 	
@@ -97,6 +110,15 @@ public final class IdentityInserter extends TransferThread {
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
+
+    /** {@inheritDoc} */
+    @Override public RequestClient getRequestClient() {
+        // Testing shows that this is also called for inserts, not only for requests.
+        // For symmetry, we use the same RequestClient as the one IdentityFetcher uses:
+        // Identity fetches and inserts belong together, so it makes sense to use the same
+        // RequestClient for them.
+        return mWoT.getRequestClient();
+    }
 
 	@Override
 	protected long getStartupDelay() {
@@ -145,7 +167,7 @@ public final class IdentityInserter extends TransferThread {
 	 * @throws IOException 
 	 */
 	private void insert(OwnIdentity identity) throws IOException {
-		Bucket tempB = mTBF.makeBucket(64 * 1024); /* TODO: Tweak */  
+		RandomAccessBucket tempB = mTBF.makeBucket(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE + 1);  
 		OutputStream os = null;
 
 		try {
@@ -161,7 +183,8 @@ public final class IdentityInserter extends TransferThread {
 			InsertBlock ib = new InsertBlock(tempB, null, identity.getInsertURI().setSuggestedEdition(edition));
 			InsertContext ictx = mClient.getInsertContext(true);
 			
-			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+			ClientPutter pu = mClient.insert(
+			    ib, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 			addInsert(pu);
 			tempB = null;
 			
@@ -176,13 +199,18 @@ public final class IdentityInserter extends TransferThread {
 		}
 	}
 	
-	public void onSuccess(BaseClientPutter state, ObjectContainer container)
+	@Override
+    public void onSuccess(BaseClientPutter state)
 	{
-		if(logDEBUG) Logger.debug(this, "Successful insert of identity: " + state.getURI());
+		Logger.normal(this, "Successful insert of identity: " + state.getURI());
 		
 		try {
 			synchronized(mWoT) {
+			synchronized(mSubscriptionManager) {
+			synchronized(Persistent.transactionLock(mDB)) {
 				OwnIdentity identity = mWoT.getOwnIdentityByURI(state.getURI());
+				final OwnIdentity oldIdentity = identity.clone();
+				try {
 					try {
 						identity.setEdition(state.getURI().getEdition());
 					} catch(InvalidParameterException e) {
@@ -195,7 +223,14 @@ public final class IdentityInserter extends TransferThread {
 						
 					}
 					identity.updateLastInsertDate();
+					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
 					identity.storeAndCommit();
+				} catch(RuntimeException e) {
+					Persistent.checkedRollbackAndThrow(mDB, this, e);
+				}
+				
+			}
+			}
 			}
 		}
 		catch(Exception e)
@@ -208,10 +243,11 @@ public final class IdentityInserter extends TransferThread {
 		}
 	}
 
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) 
+	@Override
+    public void onFailure(InsertException e, BaseClientPutter state) 
 	{
 		try {
-			if(e.getMode() == InsertException.CANCELLED) {
+			if(e.getMode() == InsertExceptionMode.CANCELLED) {
 				if(logDEBUG) Logger.debug(this, "Insert cancelled: " + state.getURI());
 			}
 			else {
@@ -231,19 +267,34 @@ public final class IdentityInserter extends TransferThread {
 	
 	/* Not needed functions from the ClientCallback interface */
 	
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) { }
-
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
-	
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
-
-	public void onMajorProgress(ObjectContainer container) { }
-
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) { }
+	@Override
+    public void onFailure(FetchException e, ClientGetter state) { }
 
 	@Override
-	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
-			ObjectContainer container) {
+    public void onFetchable(BaseClientPutter state) { }
+	
+	@Override
+    public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
+
+    /**
+     * Should not be called since this class does not create persistent requests.<br>
+     * Will throw an exception since the interface specification requires it to do some stuff,
+     * which it does not do.<br>
+     * Parent interface JavaDoc follows:<br><br>
+     * {@inheritDoc}
+     */
+    @Override public void onResume(final ClientContext context) throws ResumeFailedException {
+        final ResumeFailedException error = new ResumeFailedException(
+            "onResume() called even though this class does not create persistent requests");
+        Logger.error(this, error.getMessage(), error /* Add exception for logging stack trace */);
+        throw error;
+    }
+
+	@Override
+    public void onSuccess(FetchResult result, ClientGetter state) { }
+
+	@Override
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();
 		throw new UnsupportedOperationException();
 	}

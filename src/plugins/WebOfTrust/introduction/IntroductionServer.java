@@ -20,26 +20,31 @@ import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.introduction.captcha.CaptchaFactory1;
+import plugins.WebOfTrust.util.TransferThread;
 
-import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
-import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * This class provides identity announcement for new identities; It uploads puzzles in certain time intervals and checks whether they
@@ -51,7 +56,7 @@ import freenet.support.io.NativeThread;
  */
 public final class IntroductionServer extends TransferThread {
 	
-	private static final int STARTUP_DELAY = WebOfTrust.FAST_DEBUG_MODE ? (10 * 1000) : (5 * 60 * 1000);
+	private static final int STARTUP_DELAY = 5 * 60 * 1000;
 	private static final int THREAD_PERIOD = 60 * 60 * 1000;
 
 	/** The name of the property we use to announce in identities how many puzzles they insert */
@@ -130,10 +135,16 @@ public final class IntroductionServer extends TransferThread {
 		return new ArrayList<BaseClientPutter>(DEFAULT_PUZZLE_COUNT * 5 + 1); /* Just assume that there are 5 identities */
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
-	
+
+	/** {@inheritDoc} */
+    @Override public RequestClient getRequestClient() {
+        return mPuzzleStore.getRequestClient();
+    }
+
 	@Override
 	protected long getStartupDelay() {
 		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
@@ -189,11 +200,13 @@ public final class IntroductionServer extends TransferThread {
 			for(final OwnIntroductionPuzzle p : puzzles) {
 				try {
 				final FetchContext fetchContext = mClient.getFetchContext();
+				fetchContext.maxArchiveLevels = 0; // Because archives can become huge and WOT does not use them, we should disallow them. See JavaDoc of the variable.
 				// -1 means retry forever. Does make sense here: After 2 retries the fetches go into the cooldown queue, ULPRs are used. So if someone inserts
 				// the puzzle solution during that, we might get to know it.
 				fetchContext.maxSplitfileBlockRetries = -1;
 				fetchContext.maxNonSplitfileRetries = -1;
-				final ClientGetter g = mClient.fetch(p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE, mPuzzleStore.getRequestClient(),
+				final ClientGetter g = mClient.fetch(
+                    p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE,
 						this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS); 
 				addFetch(g);
 				if(logDEBUG) Logger.debug(this, "Trying to fetch captcha solution for " + p.getRequestURI() + " at " + p.getSolutionURI().toString());
@@ -255,7 +268,7 @@ public final class IntroductionServer extends TransferThread {
 		
 		assert(!puzzle.wasInserted());
 		
-		Bucket tempB = mTBF.makeBucket(XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE);
+		RandomAccessBucket tempB = mTBF.makeBucket(XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE + 1);
 		OutputStream os = null;
 		
 		try {
@@ -266,8 +279,9 @@ public final class IntroductionServer extends TransferThread {
 
 			final InsertBlock ib = new InsertBlock(tempB, null, puzzle.getInsertURI());
 			final InsertContext ictx = mClient.getInsertContext(true);
-
-			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+			
+			final ClientPutter pu = mClient.insert(
+			    ib, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 			addInsert(pu);
 			tempB = null;
 
@@ -282,7 +296,8 @@ public final class IntroductionServer extends TransferThread {
 	/** 
 	 * Called when a puzzle was successfully inserted.
 	 */
-	public void onSuccess(final BaseClientPutter state, final ObjectContainer container)
+	@Override
+    public void onSuccess(final BaseClientPutter state)
 	{
 		if(logDEBUG) Logger.debug(this, "Successful insert of puzzle: " + state.getURI());
 		
@@ -307,12 +322,13 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Called when the insertion of a puzzle failed.
 	 */
-	public void onFailure(final InsertException e, final BaseClientPutter state, final ObjectContainer container) 
+	@Override
+    public void onFailure(final InsertException e, final BaseClientPutter state) 
 	{
 		try {
-			if(e.getMode() == InsertException.CANCELLED)
+			if(e.getMode() == InsertExceptionMode.CANCELLED) {
 				if(logDEBUG) Logger.debug(this, "Insert cancelled: " + state.getURI());
-			else if(e.getMode() == InsertException.COLLISION) {
+			} else if(e.getMode() == InsertExceptionMode.COLLISION) {
 				// TODO: Investigate why this happens.
 				Logger.warning(this, "Insert of puzzle collided, marking as inserted: " + state.getURI(), e);
 				
@@ -344,7 +360,8 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Called when a puzzle solution is successfully fetched. We then add the identity which solved the puzzle.
 	 */
-	public void onSuccess(final FetchResult result, final ClientGetter state, final ObjectContainer container) {
+	@Override
+    public void onSuccess(final FetchResult result, final ClientGetter state) {
 		Logger.normal(this, "Fetched puzzle solution: " + state.getURI());
 		
 		Bucket bucket = null;
@@ -398,9 +415,10 @@ public final class IntroductionServer extends TransferThread {
 	/**
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 */
-	public void onFailure(final FetchException e, final ClientGetter state, final ObjectContainer container) {
+	@Override
+    public void onFailure(final FetchException e, final ClientGetter state) {
 		try {
-			if(e.getMode() == FetchException.CANCELLED) {
+			if(e.getMode() == FetchExceptionMode.CANCELLED) {
 				if(logDEBUG) Logger.debug(this, "Fetch cancelled: " + state.getURI());
 			}
 			else {
@@ -416,19 +434,30 @@ public final class IntroductionServer extends TransferThread {
 	/* Not needed functions from the ClientCallback interface */
 	
 	/** Only called by inserts */
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {}
+	@Override
+    public void onFetchable(BaseClientPutter state) {}
 
 	/** Only called by inserts */
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {}
-
-	/** Called when freenet.async thinks that the request should be serialized to disk, if it is a persistent request. */
-	public void onMajorProgress(ObjectContainer container) {}
+	@Override
+    public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
 
 	@Override
-	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
-			ObjectContainer container) {
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();
 		throw new UnsupportedOperationException();
 	}
 
+    /**
+     * Should not be called since this class does not create persistent requests.<br>
+     * Will throw an exception since the interface specification requires it to do some stuff,
+     * which it does not do.<br>
+     * Parent interface JavaDoc follows:<br><br>
+     * {@inheritDoc}
+     */
+    @Override public void onResume(final ClientContext context) throws ResumeFailedException {
+        final ResumeFailedException error = new ResumeFailedException(
+            "onResume() called even though this class does not create persistent requests");
+        Logger.error(this, error.getMessage(), error /* Add exception for logging stack trace */);
+        throw error;
+    }
 }

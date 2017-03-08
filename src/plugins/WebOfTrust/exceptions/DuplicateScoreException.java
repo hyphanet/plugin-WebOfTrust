@@ -19,4 +19,8 @@ public class DuplicateScoreException extends RuntimeException {
 	public DuplicateScoreException(Identity truster, Identity trustee, int amount) {
 		super("Duplicate score from " + truster + " to " + trustee + "; "+ amount + " copies exist.");
 	}
+
+	public DuplicateScoreException(String id, int amount) {
+		super("Duplicate score with ID " + id + "; "+ amount + " copies exist.");
+	}
 }

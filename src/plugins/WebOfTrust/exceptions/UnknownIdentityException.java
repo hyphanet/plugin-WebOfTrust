@@ -18,5 +18,9 @@ public class UnknownIdentityException extends Exception {
 	public UnknownIdentityException(String message) {
 		super(message);
 	}
+	
+	public String getIdentityID() {
+		return getMessage();
+	}
 
 }

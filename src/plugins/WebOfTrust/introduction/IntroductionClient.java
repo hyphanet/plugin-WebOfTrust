@@ -17,6 +17,7 @@ import javax.xml.transform.TransformerException;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
@@ -25,28 +26,34 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
+import plugins.WebOfTrust.util.IdentifierHashSet;
+import plugins.WebOfTrust.util.TransferThread;
 
-import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
-import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 
 /**
@@ -59,7 +66,7 @@ import freenet.support.io.NativeThread;
  */
 public final class IntroductionClient extends TransferThread  {
 	
-	private static final int STARTUP_DELAY = WebOfTrust.FAST_DEBUG_MODE ? (30 * 1000) : (3 * 60 * 1000);
+	private static final int STARTUP_DELAY = 3 * 60 * 1000;
 	private static final int THREAD_PERIOD = 1 * 60 * 60 * 1000; 
 	
 	/**
@@ -72,9 +79,8 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/**
 	 * The amount of concurrent puzzle requests to aim for.
-	 * TODO: Decrease to 10 as soon as there are enough identities in the WoT
 	 */
-	public static final int PUZZLE_REQUEST_COUNT = 20;
+	public static final int PUZZLE_REQUEST_COUNT = 10;
 	
 	/** How many unsolved puzzles do we try to accumulate? */
 	public static final int PUZZLE_POOL_SIZE = 40;
@@ -109,6 +115,8 @@ public final class IntroductionClient extends TransferThread  {
 	 */
 	private final LRUQueue<String> mIdentities = new LRUQueue<String>(); // A suitable default size might be PUZZLE_POOL_SIZE + 1
 	
+	/** Key = {@link IntroductionPuzzle#getID()}
+	 *        (or {@link IntroductionPuzzle#getIDFromSolutionURI(FreenetURI)}) */
 	private HashSet<String> mBeingInsertedPuzzleSolutions = new HashSet<String>();
 	
 	public static final int IDENTITIES_LRU_QUEUE_SIZE_LIMIT = 512;
@@ -144,9 +152,15 @@ public final class IntroductionClient extends TransferThread  {
 		return new HashSet<BaseClientPutter>(PUZZLE_REQUEST_COUNT * 2); /* TODO: profile & tweak */
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
+
+	/** {@inheritDoc} */
+    @Override public RequestClient getRequestClient() {
+        return mPuzzleStore.getRequestClient();
+    }
 
 	@Override
 	protected long getStartupDelay() {
@@ -167,11 +181,16 @@ public final class IntroductionClient extends TransferThread  {
 	@Override
 	protected void iterate() {
 		
+	    // TODO: Performance: The synchronized(this) can likely be removed since TransferThread
+	    // should never execute iterate() multiple times concurrently.
 		synchronized(this) {
 			long time = CurrentTimeUTC.getInMillis();
+			long timeSinceLastIteration = (time - mLastIterationTime);
 			
-			if((time - mLastIterationTime) <= MINIMAL_SLEEP_TIME)
+			if(timeSinceLastIteration < MINIMAL_SLEEP_TIME) {
+			    nextIteration(MINIMAL_SLEEP_TIME - timeSinceLastIteration);
 				return;
+			}
 			
 			mLastIterationTime = time;
 		}
@@ -187,22 +206,40 @@ public final class IntroductionClient extends TransferThread  {
 	}
 	
 	/**
-	 * Use this function in the UI to get a list of puzzles for the user to solve.
+	 * Use this function in the UI to get a list of puzzles for the user to solve.<br><br>
 	 * 
-	 * The locking policy when using this function is that we do not lock anything while parsing the returned list - it's not a problem if a single 
-	 * puzzle gets deleted while the user is solving it.
+	 * You do not have to lock any parts of the database while parsing the returned list:<br>
+	 * This function returns clone()s of the {@link IntroductionPuzzle} objects, not the actual
+	 * ones stored in the database.<br>
+	 * TODO: Performance: Don't return clones and also maybe remove the internal synchronized()
+	 * after this is fixed: https://bugs.freenetproject.org/view.php?id=6247
+	 * 
+	 * @param ownIdentityID The value of {@link OwnIdentity#getID()} of the {@link OwnIdentity}
+	 *                      which will solve the returned puzzles.<br>
+	 *                      Used for selecting the puzzles which are from an {@link Identity} which:
+	 *                      <br>
+	 *                      - has a good {@link Score} from the perspective of the
+	 *                        {@link OwnIdentity}.<br>
+	 *                      - does not already trust the {@link OwnIdentity} anyway.
+	 * @throws UnknownIdentityException If there is no {@link OwnIdentity} matching the given
+	 *                                  ownIdentityID.
 	 */
-	public List<IntroductionPuzzle> getPuzzles(final OwnIdentity user, final PuzzleType puzzleType, final int count) {
+	public List<IntroductionPuzzle> getPuzzles(
+	        final String ownIdentityID, final PuzzleType puzzleType, final int count)
+	            throws UnknownIdentityException {
+	    
 		final ArrayList<IntroductionPuzzle> result = new ArrayList<IntroductionPuzzle>(count + 1);
-		final HashSet<Identity> resultHasPuzzleFrom = new HashSet<Identity>(count * 2); /* Have some room so we do not hit the load factor */
 		
 		/* Deadlocks could occur without the lock on WoT because the loop calls functions which lock the WoT - if something else started to
 		 * execute (while we have already locked the puzzle store) which locks the WoT and waits for the puzzle store to become available
 		 * until it releases the WoT. */
 		synchronized(mWoT) {
 		synchronized(mPuzzleStore) {
+		    final OwnIdentity user = mWoT.getOwnIdentityByID(ownIdentityID);
 			final ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUnsolvedPuzzles(puzzleType);
-			 
+			final IdentifierHashSet<Identity> resultHasPuzzleFrom
+			    = new IdentifierHashSet<Identity>(count * 2 /* It will grow at 75% load -> Make it larger */);
+
 			for(final IntroductionPuzzle puzzle : puzzles) {
 				try {
 					/* TODO: Maybe also check whether the user has already solved puzzles of the identity which inserted this one */ 
@@ -215,7 +252,7 @@ public final class IntroductionClient extends TransferThread  {
 								/* We are already on this identity's trust list so there is no use in solving another puzzle from it */
 							}
 							catch(NotTrustedException e) {
-								result.add(puzzle);
+								result.add(puzzle.clone());
 								resultHasPuzzleFrom.add(puzzle.getInserter());
 								if(result.size() == count)
 									break;
@@ -230,6 +267,10 @@ public final class IntroductionClient extends TransferThread  {
 		}
 		}
 		
+        // TODO: Performance: iterate() not only deals with downloading more puzzles but
+        // also with inserts, deleting expired puzzles, etc. Instead we should have an
+        // event-driven loop for each and only trigger the one for downloading
+        // new puzzles here.
 		nextIteration();
 		
 		return result;
@@ -242,17 +283,24 @@ public final class IntroductionClient extends TransferThread  {
 	 * 
 	 * @throws InvalidParameterException If the puzzle was already solved.
 	 * @throws RuntimeException If the identity or the puzzle was deleted already.
+	 *                          TODO: Code quality: Throw {@link UnknownIdentityException} and
+	 *                          {@link UnknownPuzzleException} instead.
 	 */
-	public void solvePuzzle(OwnIdentity solver, IntroductionPuzzle puzzle, final String solution) throws InvalidParameterException {
+	public void solvePuzzle(
+	        final String solverOwnIdentityID, final String puzzleID, final String solution)
+	            throws InvalidParameterException {
+	    
 		synchronized(mWoT) {
+            final OwnIdentity solver;
 			try {
-				solver = mWoT.getOwnIdentityByID(solver.getID());
+				solver = mWoT.getOwnIdentityByID(solverOwnIdentityID);
 			} catch(UnknownIdentityException e) {
 				throw new RuntimeException("Your own identity was deleted already.");
 			}
 		synchronized(mPuzzleStore) {
+            final IntroductionPuzzle puzzle;
 			try {
-				puzzle = mPuzzleStore.getByID(puzzle.getID());
+				puzzle = mPuzzleStore.getByID(puzzleID);
 			} catch (UnknownPuzzleException e) {
 				throw new RuntimeException("The solved puzzle was deleted already.");
 			}
@@ -263,12 +311,13 @@ public final class IntroductionClient extends TransferThread  {
 		}
 		}
 		
-		try {
-			insertPuzzleSolution(puzzle);
-		}
-		catch(Exception e) {
-			Logger.error(this, "insertPuzzleSolution() failed.", e);
-		}
+        // We may not call insertPuzzleSolution() directly here because the parent class
+        // TransferThread requires that only iterate() creates new transfers. So we schedule
+        // iterate() to be executed instead.
+        // TODO: Performance: iterate() not only deals with inserting puzzle solutions but
+        // also with downloading puzzles, deleting expired puzzles, etc. Instead we should have an
+        // event-driven loop for each and only trigger the one for inserting solutions here.
+        nextIteration();
 	}
 
 	/**
@@ -283,43 +332,53 @@ public final class IntroductionClient extends TransferThread  {
 			return;
 		}
 		
+		/*
+		 * We do not stop fetching new puzzles once the puzzle pool is full by purpose:
+		 * We want the available puzzles to be as new as possible so there is a high chance of the inserter of them still being online.
+		 * This decrease the latency of the solution arriving at the inserter and therefore speeds up introduction.
+		 * (Notice: If the puzzle pool contains an amount of PUZZLE_POOL_SIZE puzzles already and new fetches finish,
+		 * the oldest puzzles will be deleted automatically. So the pool won't grow beyond the size limit.)
+		 */
+		// if(mPuzzleStore.getNonOwnCaptchaAmount(false) >= PUZZLE_POOL_SIZE) return; 
+		
 		Logger.normal(this, "Trying to start more fetches, current amount: " + fetchCount);
 		
 		final int newRequestCount = PUZZLE_REQUEST_COUNT - fetchCount;
 		
-		/* Normally we would lock the whole WoT here because we iterate over a list returned by it. But because it is not a severe
-		 * problem if we download a puzzle of an identity which has been deleted or so we do not do that. */
-		final ObjectSet<Identity> allIdentities;
+        // TODO: Performance: The synchronized() upon mWoT can maybe be removed after this is fixed:
+        // https://bugs.freenetproject.org/view.php?id=6247
 		synchronized(mWoT) {
-			allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
-		}
+		ObjectSet<Identity> allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
+		
 		final ArrayList<Identity> identitiesToDownloadFrom = new ArrayList<Identity>(PUZZLE_REQUEST_COUNT + 1);
 		
 		/* Download puzzles from identities from which we have not downloaded for a certain period. This is ensured by
 		 * keeping the last few hundred identities stored in a FIFO with fixed length, named mIdentities. */
 		
-		/* Normally we would have to lock the WoT here first so that no deadlock happens if something else locks the mIdentities and
-		 * waits for the WoT until it unlocks them. BUT nothing else in this class locks mIdentities and then the WoT */
-		synchronized(mIdentities) {
-			for(final Identity i : allIdentities) {
-				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
-				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT) && !mIdentities.contains(i.getID()))  {
-					try {
-						if(mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)
-							identitiesToDownloadFrom.add(i);
-					}
-					catch(NotInTrustTreeException e) { }
-				}
-	
-				if(identitiesToDownloadFrom.size() >= newRequestCount)
-					break;
-			}
+		for(final Identity i : allIdentities) {
+		    /* TODO: Create a "boolean providesIntroduction" in Identity to use a database query
+		     * instead of this */ 
+		    if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)
+		            && !mIdentities.contains(i.getID()))  {
+		        try {
+		            if(mWoT.getBestScore(i) >= MINIMUM_SCORE_FOR_PUZZLE_DOWNLOAD)
+		                identitiesToDownloadFrom.add(i);
+		        }
+		        catch(NotInTrustTreeException e) { }
+		    }
+
+		    if(identitiesToDownloadFrom.size() >= newRequestCount)
+		        break;
 		}
 		
 		/* If we run out of identities to download from, flush the list of identities of which we have downloaded puzzles from */
 		if(identitiesToDownloadFrom.size() == 0) {
 			mIdentities.clear(); /* We probably have less updated identities today than the size of the LRUQueue, empty it */
 
+			// TODO: Performance: Don't re-query this from the database once the issue which caused
+			// this workaround is fixed: https://bugs.freenetproject.org/view.php?id=6646
+			allIdentities = mWoT.getAllNonOwnIdentitiesSortedByModification();
+			
 			for(final Identity i : allIdentities) {
 				/* TODO: Create a "boolean providesIntroduction" in Identity to use a database query instead of this */ 
 				if(i.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT))  {
@@ -342,6 +401,7 @@ public final class IntroductionClient extends TransferThread  {
 				Logger.error(this, "Starting puzzle download failed for " + i, e);
 			}
 		}
+		} // synchronized(mWoT)
 		
 		Logger.normal(this, "Finished starting more fetches. Amount of fetches now: " + fetchCount());
 	}
@@ -351,6 +411,11 @@ public final class IntroductionClient extends TransferThread  {
 	 * taken <b>before</b> the mPuzzleStore-lock which this function also takes.
 	 */
 	private synchronized void insertSolutions() {
+	    // TODO: Performance: The synchronized() upon mWoT can maybe be removed after this is fixed:
+	    // https://bugs.freenetproject.org/view.php?id=6247
+	    // (IntroductionPuzzle objects contain references to Identity objects, and mWoT is the
+	    // synchronization domain of Identity objects)
+	    synchronized(mWoT) {
 		synchronized(mPuzzleStore) {
 			final ObjectSet<IntroductionPuzzle> puzzles = mPuzzleStore.getUninsertedSolvedPuzzles();
 			
@@ -362,22 +427,24 @@ public final class IntroductionClient extends TransferThread  {
 					Logger.error(this, "Inserting solution for " + p + " failed.");
 				}
 			}
-		}
+		}}
 	}
 	
 	/**
 	 * Checks whether the given puzzle is currently being inserted.
 	 * If not, starts an insert for it and marks it as currently being inserted in the HashSet of this IntroductionClient.
 	 * 
-	 * Synchronized because it accesses the mBeingInsertedPuzzleSolutions HashSet.
+     * You must synchronize upon this IntroductionClient when calling this function.
 	 */
-	private synchronized void insertPuzzleSolution(final IntroductionPuzzle puzzle) throws IOException, TransformerException, InsertException {
+	private void insertPuzzleSolution(final IntroductionPuzzle puzzle)
+	        throws IOException, TransformerException, InsertException {
+	    
 		if(mBeingInsertedPuzzleSolutions.contains(puzzle.getID())) 
 			return;
 		
 		assert(!puzzle.wasInserted());
 		
-		Bucket tempB = mTBF.makeBucket(1024); /* TODO: Set to a reasonable value */
+		RandomAccessBucket tempB = mTBF.makeBucket(XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE + 1);
 		OutputStream os = null;
 		
 		try {
@@ -391,7 +458,8 @@ public final class IntroductionClient extends TransferThread  {
 
 			final InsertContext ictx = mClient.getInsertContext(true);
 			
-			final ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+			final ClientPutter pu = mClient.insert(
+			    ib, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 			addInsert(pu); // Takes care of mBeingInsertedPuzleSolutions for us.
 			tempB = null;
 			
@@ -405,13 +473,14 @@ public final class IntroductionClient extends TransferThread  {
 		
 	/**
 	 * Finds a random index of a puzzle from the inserter which we did not download yet and downloads it.
+	 * You must synchronize upon this IntroductionClient when calling this function.
 	 */
-	private synchronized void downloadPuzzle(final Identity inserter) throws FetchException {
+	private void downloadPuzzle(final Identity inserter) throws FetchException {
 		downloadPuzzle(inserter, mRandom.nextInt(IntroductionServer.getIdentityPuzzleCount(inserter))); 
 	}
 	
 	/**
-	 * Not synchronized because its caller is synchronized already.
+	 * You must synchronize upon this IntroductionClient when calling this function.
 	 */
 	private void downloadPuzzle(final Identity inserter, int index) throws FetchException {
 		final int inserterPuzzleCount = IntroductionServer.getIdentityPuzzleCount(inserter);
@@ -445,29 +514,32 @@ public final class IntroductionClient extends TransferThread  {
 			}
 		}
 		
-		/* Attention: Do not lock the WoT here before locking mIdentities because there is another synchronized(mIdentities) in this class
-		 * which locks the WoT inside the mIdentities-lock */
-		synchronized(mIdentities) {
-			// mIdentities contains up to IDENTITIES_LRU_QUEUE_SIZE_LIMIT identities of which we have recently downloaded puzzles. This queue is used to ensure
-			// that we download puzzles from different identities and not always from the same ones. 
-			// The oldest identity falls out of the LRUQueue if it has reached it size limit and therefore puzzle downloads from that one are allowed again.
-			// It is only checked in downloadPuzzles() whether puzzle downloads are allowed because we DO download multiple puzzles per identity, up to the limit
-			// of MAX_PUZZLES_PER_IDENTITY - the onSuccess() starts download of the next one by calling this function here usually.
-				
-			if(mIdentities.size() >= IDENTITIES_LRU_QUEUE_SIZE_LIMIT) {
-				// We do not call pop() now already because if the given identity is already in the pipeline then downloading a puzzle from it should NOT cause
-				// a different identity to fall out - the given identity should be moved to the top and the others should stay in the pipeline. Therefore we
-				// do a contains() check... 
-				if(!mIdentities.contains(inserter.getID())) {
-					mIdentities.pop();
-				}
-			}
-			
-			mIdentities.push(inserter.getID()); // put this identity at the beginning of the LRUQueue
+		
+		// mIdentities contains up to IDENTITIES_LRU_QUEUE_SIZE_LIMIT identities of which we have
+		// recently downloaded puzzles. This queue is used to ensure that we download puzzles from
+		// different identities and not always from the same ones. 
+		// The oldest identity falls out of the LRUQueue if it has reached it size limit and
+		// therefore puzzle downloads from that one are allowed again.
+		// It is only checked in downloadPuzzles() whether puzzle downloads are allowed because we
+		// DO download multiple puzzles per identity, up to the limit of MAX_PUZZLES_PER_IDENTITY
+		// - the onSuccess() starts download of the next one by calling this function here usually.
+
+		if(mIdentities.size() >= IDENTITIES_LRU_QUEUE_SIZE_LIMIT) {
+		    // We do not call pop() now already because if the given identity is already in the
+		    // pipeline then downloading a puzzle from it should NOT cause a different identity to
+		    // fall out - the given identity should be moved to the top and the others should stay
+		    // in the pipeline. Therefore we do a contains() check... 
+		    if(!mIdentities.contains(inserter.getID())) {
+		        mIdentities.pop();
+		    }
 		}
+
+		mIdentities.push(inserter.getID()); // put this identity at the beginning of the LRUQueue
+		
 		
 		final FreenetURI uri = IntroductionPuzzle.generateRequestURI(inserter, currentDate, index);		
 		final FetchContext fetchContext = mClient.getFetchContext();
+		fetchContext.maxArchiveLevels = 0; // Because archives can become huge and WOT does not use them, we should disallow them. See JavaDoc of the variable.
 		// The retry-count does not include the first attempt. We only try once because we do not know whether that identity was online to insert puzzles today.
 		fetchContext.maxSplitfileBlockRetries = 0;
 		fetchContext.maxNonSplitfileRetries = 0;
@@ -481,7 +553,7 @@ public final class IntroductionClient extends TransferThread  {
 		// Use the SubscriptionManager (its in its own branch currently) for allowing clients to subscribe to puzzles and only raise the priority if a client
 		// is subscribed.
 		final short fetchPriority = puzzleStoreIsTooEmpty() ? RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS : RequestStarter.UPDATE_PRIORITY_CLASS;
-		final ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE, mPuzzleStore.getRequestClient(), 
+		final ClientGetter g = mClient.fetch(uri, XMLTransformer.MAX_INTRODUCTIONPUZZLE_BYTE_SIZE,
 				this, fetchContext, fetchPriority);
 		addFetch(g);
 		
@@ -496,7 +568,8 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Called when a puzzle is successfully fetched.
 	 */
-	public void onSuccess(final FetchResult result, final ClientGetter state, final ObjectContainer container) {
+	@Override
+    public void onSuccess(final FetchResult result, final ClientGetter state) {
 		Logger.normal(this, "Fetched puzzle: " + state.getURI());
 		
 		Bucket bucket = null;
@@ -506,8 +579,14 @@ public final class IntroductionClient extends TransferThread  {
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
 			
-			final IntroductionPuzzle puzzle = mWoT.getXMLTransformer().importIntroductionPuzzle(state.getURI(), inputStream);
-			downloadPuzzle(puzzle.getInserter());
+			mWoT.getXMLTransformer().importIntroductionPuzzle(state.getURI(), inputStream);
+			// The parent class TransferThread forbids us to create transfers in onSuccess(), so
+			// this had to be commented out.
+			// Downloading a second puzzle from one inserter was more of heuristics than an actual
+			// need anyway: Solving multiple puzzles of one identity is not useful, you can only
+			// get into its trust list once. This was being done nevertheless in case someone wanted
+			// to introduce multiple identities at once, but that is a pretty rare usecase IMHO.
+			/* downloadPuzzle(puzzle.getInserter()); */
 		}
 		catch (Exception e) { 
 			Logger.error(this, "Parsing failed for "+ state.getURI(), e);
@@ -523,9 +602,10 @@ public final class IntroductionClient extends TransferThread  {
 	 * Called when the node can't fetch a file OR when there is a newer edition.
 	 * In our case, called when there is no puzzle available.
 	 */
-	public void onFailure(final FetchException e, final ClientGetter state, final ObjectContainer container) {
+	@Override
+    public void onFailure(final FetchException e, final ClientGetter state) {
 		try {
-			if(e.getMode() == FetchException.CANCELLED) {
+			if(e.getMode() == FetchExceptionMode.CANCELLED) {
 				if(logDEBUG) Logger.debug(this, "Fetch cancelled: " + state.getURI());
 			}
 			else if(e.isDNF()) {
@@ -535,8 +615,11 @@ public final class IntroductionClient extends TransferThread  {
 				 *  wait for the next time-based iteration of the puzzle fetch loop to avoid wasting CPU cycles. */ 
 	
 				if(puzzleStoreIsTooEmpty()) {
-					// TODO: Use nextIteration here. This requires fixing it to allow us cause an execution even if we are below the minimal sleep time
-					downloadPuzzles();
+				    // TODO: Performance: iterate() not only deals with downloading more puzzles but
+				    // also with inserts, deleting expired puzzles, etc. Instead we should have an
+				    // event-driven loop for each and only trigger the one for downloading
+				    // new puzzles here.
+					nextIteration();
 				}
 			} else if (e.isFatal()) {
 				Logger.error(this, "Downloading puzzle failed: " + state.getURI(), e);
@@ -571,7 +654,8 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Called when a puzzle solution is successfully inserted.
 	 */
-	public void onSuccess(final BaseClientPutter state, final ObjectContainer container)
+	@Override
+    public void onSuccess(final BaseClientPutter state)
 	{
 		Logger.normal(this, "Successful insert of puzzle solution: " + state.getURI());
 		
@@ -586,14 +670,15 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * Calling when inserting a puzzle solution failed.
 	 */
-	public void onFailure(final InsertException e, final BaseClientPutter state, final ObjectContainer container)
+	@Override
+    public void onFailure(final InsertException e, final BaseClientPutter state)
 	{
 		/* No synchronization because the worst thing which can happen is that we insert it again */
 		
 		try {
-			if(e.getMode() == InsertException.CANCELLED)
+			if(e.getMode() == InsertExceptionMode.CANCELLED)
 				if(logDEBUG) Logger.debug(this, "Insert cancelled: " + state.getURI());
-			else if(e.getMode() == InsertException.COLLISION) {
+			else if(e.getMode() == InsertExceptionMode.COLLISION) {
 				Logger.normal(this, "Insert of puzzle solution collided, puzzle was solved already, marking as inserted: " + state.getURI());
 				markPuzzleSolutionAsInserted(state);
 			}
@@ -611,14 +696,12 @@ public final class IntroductionClient extends TransferThread  {
 	/* Not needed functions from the ClientCallback interface */
 
 	/** Only called by inserts */
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {}
+	@Override
+    public void onFetchable(BaseClientPutter state) {}
 
 	/** Only called by inserts */
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {}
-
-	/** Called when freenet.async thinks that the request should be serialized to
-	 * disk, if it is a persistent request. */
-	public void onMajorProgress(ObjectContainer container) {}
+	@Override
+    public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {}
 	
 	
 	@Override
@@ -637,8 +720,9 @@ public final class IntroductionClient extends TransferThread  {
 				throw new RuntimeException("Already in HashSet: uri: " + uri + "; id: " + id);
 		} catch(RuntimeException e) { // Also for exceptions which might happen in getIDFromSolutionURI etc.
 			Logger.error(this, "Unable to add puzzle ID to the list of running inserts.", e);
+		} finally {
+		    super.addInsert(p);
 		}
-		super.addInsert(p);
 	}
 	
 	@Override
@@ -652,15 +736,29 @@ public final class IntroductionClient extends TransferThread  {
 			//	throw new RuntimeException("Not in HashSet: uri: " + uri + "; id: " + id);
 		} catch(RuntimeException e) { // Also for exceptions which might happen in getIDFromSolutionURI etc.
 			Logger.error(this, "Unable to remove puzzle ID from list of running inserts.", e);
+		} finally {
+		    super.removeInsert(p);
 		}
-		super.removeInsert(p);
 	}
 
 	@Override
-	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
-			ObjectContainer container) {
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();
 		throw new UnsupportedOperationException();
 	}
+
+    /**
+     * Should not be called since this class does not create persistent requests.<br>
+     * Will throw an exception since the interface specification requires it to do some stuff,
+     * which it does not do.<br>
+     * Parent interface JavaDoc follows:<br><br>
+     * {@inheritDoc}
+     */
+    @Override public void onResume(final ClientContext context) throws ResumeFailedException {
+        final ResumeFailedException error = new ResumeFailedException(
+            "onResume() called even though this class does not create persistent requests");
+        Logger.error(this, error.getMessage(), error /* Add exception for logging stack trace */);
+        throw error;
+    }
 
 }

@@ -6,68 +6,66 @@ package plugins.WebOfTrust.ui.web;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
-import plugins.WebOfTrust.introduction.IntroductionServer;
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
-import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 
 /**
- * The page where users can edit their own identities.
+ * The page where users can edit the currently logged in {@link OwnIdentity}.
  * 
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class EditOwnIdentityPage extends WebPageImpl {
 	
-	private final OwnIdentity mIdentity;
+    private OwnIdentity mIdentity;
 
-	public EditOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) throws UnknownIdentityException {
-		super(toadlet, myRequest, context, _baseL10n);
+	/**
+	 * @throws RedirectException If the {@link Session} has expired. 
+	 */
+	public EditOwnIdentityPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws UnknownIdentityException, RedirectException {
+		super(toadlet, myRequest, context, true);
 		
-		mIdentity = wot.getOwnIdentityByID(request.getPartAsString("id", 128));
+		// super.mLoggedInOwnIdentity is final, but we need to replace the identity in make().
+		// Thus, copy it to our own member variable so we can modify it.
+		mIdentity = super.mLoggedInOwnIdentity;
 	}
 	
-	public void make() {
-		synchronized(wot) {
-			if(request.isPartSet("Edit")) {
+	@Override
+	public void make(final boolean mayWrite) {
+			if(mayWrite && mRequest.isPartSet("Edit")) {
+				final boolean newPublishTrustList = mRequest.getPartAsStringFailsafe("PublishTrustList", 4).equals("true");
+				final boolean newPublishPuzzles = mRequest.getPartAsStringFailsafe("PublishPuzzles", 4).equals("true");
+				
 				try {
-					mIdentity.setPublishTrustList(request.isPartSet("PublishTrustList") && 
-						request.getPartAsString("PublishTrustList", 6).equals("true"));
+					mWebOfTrust.setPublishTrustList(mIdentity.getID(), newPublishTrustList);
+					mWebOfTrust.setPublishIntroductionPuzzles(mIdentity.getID(), newPublishTrustList && newPublishPuzzles);
 
-					if(mIdentity.doesPublishTrustList() && request.isPartSet("PublishPuzzles") && 
-							request.getPartAsString("PublishPuzzles", 6).equals("true")) {
-						
-						mIdentity.addContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
-						mIdentity.setProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY, Integer.toString(IntroductionServer.DEFAULT_PUZZLE_COUNT));
-					}
-					else {
-						mIdentity.removeContext(IntroductionPuzzle.INTRODUCTION_CONTEXT);
-						mIdentity.removeProperty(IntroductionServer.PUZZLE_COUNT_PROPERTY);
-					}
-					
-					try {
-						mIdentity.throwIfNotStored();
-					} catch(RuntimeException e) {
-						throw new RuntimeException("Your identity was deleted already");
-					}
-					
-					mIdentity.storeAndCommit();
-					
+                    // Update the identity to get the latest state so we display the changed version
+                    // in the UI properly.
+                    // TODO: Performance: This can be removed once the TODO at
+                    // WebPageImpl.getLoggedInOwnIdentityFromHTTPSession() of not cloning the
+                    // OwnIdentity has been been resolved. If we didn't clone it, the database would
+                    // apply the updates to it as it would be the same object as was updated by the
+                    // above setPublish...()
+                    synchronized (mWebOfTrust) {
+                        mIdentity = mWebOfTrust.getOwnIdentityByID(mIdentity.getID()).clone();
+                    }
+
 		            HTMLNode aBox = addContentBox(l10n().getString("EditOwnIdentityPage.SettingsSaved.Header"));
 		            aBox.addChild("p", l10n().getString("EditOwnIdentityPage.SettingsSaved.Text"));
 				}
 				catch(Exception e) {
-					addErrorBox(l10n().getString("EditOwnIdentityPage.SettingsSaveFailed"), e);
-				}	
+					new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
+				}
 			}
 
 			HTMLNode box = addContentBox(l10n().getString("EditOwnIdentityPage.EditIdentityBox.Header", "nickname", mIdentity.getNickname()));
 			
-			HTMLNode createForm = pr.addFormChild(box, uri, "EditIdentity");
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "id", mIdentity.getID()});
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "EditIdentity"});
+			HTMLNode createForm = pr.addFormChild(box, uri.toString(), "EditIdentity");
 			
 			createForm.addChild("p", new String[] { "style" }, new String[] { "font-size: x-small" },
 					l10n().getString("EditOwnIdentityPage.EditIdentityBox.RequestUri") + ": " + mIdentity.getRequestURI().toString());
@@ -97,6 +95,5 @@ public class EditOwnIdentityPage extends WebPageImpl {
 				p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "PublishPuzzles", "true"});
 			
 			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Edit", l10n().getString("EditOwnIdentityPage.EditIdentityBox.SaveButton") });
-		}
 	}
 }

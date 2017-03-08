@@ -1,3 +1,6 @@
+/* This code is part of WoT, a plugin for Freenet. It is distributed 
+ * under the GNU General Public License, version 2 (or at your option
+ * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.introduction;
 
 import java.io.IOException;
@@ -5,26 +8,30 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
-import plugins.WebOfTrust.DatabaseBasedTest;
+import plugins.WebOfTrust.AbstractJUnit3BaseTest;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.DuplicatePuzzleException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.introduction.captcha.CaptchaFactory1;
+import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 
-public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
+/**
+ * @author xor (xor@freenetproject.org)
+ */
+public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 
 	private IntroductionPuzzleStore mPuzzleStore;
 	private List<IntroductionPuzzleFactory> mPuzzleFactories;
 	private List<OwnIdentity> mOwnIdentities;
 	private OwnIdentity mOwnIdentity;
 	
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		
@@ -35,14 +42,17 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		mPuzzleFactories = Collections.unmodifiableList(mPuzzleFactories);
 		assertEquals(1, mPuzzleFactories.size());
 		
-		final String uriA = "SSK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/";
-		final String uriB = "SSK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/";
-		final String uriC = "SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/";
+		// final String requestUriA = "SSK@JbL1YKGe7Db5nOKiCfepqzsYVHM6Wky1fy1nxGj1OiY,UWICDLtymysOXSO7LDgUDQtVfvx9434BiyJB0TtvxRc,AQACAAE/WebOfTrust";
+		final String insertUriA = "SSK@AIF07w9GVcz70eciE8CoKpGbAv9wAxrUx8ZhDxm8~6Ve,UWICDLtymysOXSO7LDgUDQtVfvx9434BiyJB0TtvxRc,AQECAAE/WebOfTrust";
+		// final String requestUriB = "SSK@LXT92Bbip~qlYtepgKjBDwnbBcNrGD9S8jUDzSF64XA,uC-6AoFB4laXLBsr2Eee8mw7BlrXbqQXvDJj~i8BM68,AQACAAE/WebOfTrust";
+		final String insertUriB = "SSK@ZyR14uN74EFIL6EwIOcCifj17d5Z-l7lpJdfYNEeT4Y,uC-6AoFB4laXLBsr2Eee8mw7BlrXbqQXvDJj~i8BM68,AQECAAE/WebOfTrust";
+		// final String requestUriC = "SSK@DFbvyoJPnUnNB4akjLfdSpxBB8tvHhZ3AZ7AP3TlzzE,l6xQzhaW2QtKA2MbWvjSFesx3XSLMDwCyP8qRTmOh1k,AQACAAE/WebOfTrust";
+		final String insertUriC = "SSK@ct973RBN~JX1LmHRsZqP2w181V3gOixrun~7a6BqguE,l6xQzhaW2QtKA2MbWvjSFesx3XSLMDwCyP8qRTmOh1k,AQECAAE/WebOfTrust";
 		
 		mOwnIdentities = new ArrayList<OwnIdentity>();
-		mOwnIdentities.add(mWoT.createOwnIdentity(uriA, uriA, "B", true, "Test"));
-		mOwnIdentities.add(mWoT.createOwnIdentity(uriB, uriB, "B", true, "Test"));
-		mOwnIdentities.add(mWoT.createOwnIdentity(uriC, uriC, "C", true, "Test"));
+		mOwnIdentities.add(mWoT.createOwnIdentity(new FreenetURI(insertUriA), "A", true, "Test"));
+		mOwnIdentities.add(mWoT.createOwnIdentity(new FreenetURI(insertUriB), "B", true, "Test"));
+		mOwnIdentities.add(mWoT.createOwnIdentity(new FreenetURI(insertUriC), "C", true, "Test"));
 		mOwnIdentities = Collections.unmodifiableList(mOwnIdentities);
 		
 		mOwnIdentity = mOwnIdentities.get(0);
@@ -85,6 +95,8 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 	
 	/**
 	 * Constructs a puzzle of the given identity with the given expiration date. Does not store the puzzle in the database.
+	 * 
+	 * NOTICE: A copypasta of this function exists as {@link IntroductionPuzzleTest#constructPuzzleWithExpirationDate(OwnIdentity, Date)
 	 */
 	private IntroductionPuzzle constructPuzzleWithExpirationDate(OwnIdentity identity, Date dateOfExpiration) {
 		final Date dateOfInsertion = new Date(dateOfExpiration.getTime() - IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000);
@@ -128,6 +140,9 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		return constructPuzzleWithExpirationDate(identity, new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));
 	}
 	
+	/**
+	 * NOTICE: A copypasta of this function exists as {@link IntroductionPuzzleTest#constructPuzzle()}
+	 */
 	private IntroductionPuzzle constructPuzzle() {
 		return constructPuzzleWithExpirationDate(mOwnIdentity, new Date(CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000));
 	}
@@ -149,7 +164,9 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		assertEquals(puzzleCountB, mPuzzleStore.getUninsertedOwnPuzzlesByInserter(b).size());
 	}
 
-	public void testDeleteExpiredPuzzles() throws UnknownPuzzleException, IOException {
+	public void testDeleteExpiredPuzzles()
+	        throws UnknownPuzzleException, IOException, InterruptedException {
+	    
 		final List<IntroductionPuzzle> deletedPuzzles = new ArrayList<IntroductionPuzzle>();
 		final Date expirationDate = new Date(CurrentTimeUTC.getInMillis() + 500);
 		deletedPuzzles.add(constructPuzzleWithExpirationDate(mOwnIdentity, expirationDate));
@@ -159,9 +176,7 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		final List<OwnIntroductionPuzzle> notDeletedPuzzles = generateNewPuzzles(mOwnIdentity);
 		
 		while(CurrentTimeUTC.get().before(expirationDate)) {
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) { }
+		    Thread.sleep(500);
 		}
 
 		mPuzzleStore.deleteExpiredPuzzles();
@@ -216,7 +231,7 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		final List<OwnIntroductionPuzzle> deletedPuzzles = generateNewPuzzles(a);
 		final int puzzleCountB = generateNewPuzzles(b).size();
 		
-		mWoT.deleteIdentity(a);
+		mWoT.deleteOwnIdentity(a.getID());
 		flushCaches();
 		
 		// We should not query for the puzzle count of the identity to ensure that we catch puzzles whose owner has become null as well.
@@ -330,9 +345,21 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		}
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void testGetUninsertedOwnPuzzlesByInserter() throws IOException {
-		final List<OwnIntroductionPuzzle> uninsertedPuzzles0 = deepCopy(generateNewPuzzles(mOwnIdentities.get(0)));
-		final List<OwnIntroductionPuzzle> uninsertedPuzzles1 = deepCopy(generateNewPuzzles(mOwnIdentities.get(1)));
+		// We need those Lists to implement ReallyCloneable<> for listToSetWithDuplicateCheck().
+		// OwnIntroductionPuzzle cannot implement ReallyCloneable<OwnIntroduction> because the
+		// parent class IntroductionPuzzle already implements ReallyCloneable<IntroductionPuzzle>.
+		// So we do a '@SuppressWarnings({ "unchecked", "rawtypes" })' cast from
+		// List<OwnIdentroductionPuzzle> to List<IntroductionPuzzle>.
+		// TODO: Code quality: Can the generics of ReallyCloneable or listToSetWithDuplicateCheck()
+		// be improved to avoid having to do this unchecked raw cast?
+		// Also fix this at testGetUnsolvedByInserter() then.
+		List<IntroductionPuzzle> uninsertedPuzzles0
+			= (List)deepCopy(generateNewPuzzles(mOwnIdentities.get(0)));
+		List<IntroductionPuzzle> uninsertedPuzzles1
+			= (List)deepCopy(generateNewPuzzles(mOwnIdentities.get(1)));
+		
 		List<OwnIntroductionPuzzle> insertedPuzzles0 = generateNewPuzzles(mOwnIdentities.get(0));
 		List<OwnIntroductionPuzzle> insertedPuzzles1 = generateNewPuzzles(mOwnIdentities.get(1));
 		
@@ -351,13 +378,25 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		
 		flushCaches();
 		
-		assertEquals(new HashSet<OwnIntroductionPuzzle>(uninsertedPuzzles0), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUninsertedOwnPuzzlesByInserter(mOwnIdentities.get(0))));
-		assertEquals(new HashSet<OwnIntroductionPuzzle>(uninsertedPuzzles1), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUninsertedOwnPuzzlesByInserter(mOwnIdentities.get(1))));
+		List<IntroductionPuzzle> query0
+			= (List)mPuzzleStore.getUninsertedOwnPuzzlesByInserter(mOwnIdentities.get(0));
+		List<IntroductionPuzzle> query1
+			= (List)mPuzzleStore.getUninsertedOwnPuzzlesByInserter(mOwnIdentities.get(1));
+		
+		assertEquals(listToSetWithDuplicateCheck(uninsertedPuzzles0),
+		             listToSetWithDuplicateCheck(query0));
+		assertEquals(listToSetWithDuplicateCheck(uninsertedPuzzles1),
+		             listToSetWithDuplicateCheck(query1));
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void testGetUnsolvedByInserter() throws IOException {
-		final List<OwnIntroductionPuzzle> unsolvedPuzzles0 = deepCopy(generateNewPuzzles(mOwnIdentities.get(0)));
-		final List<OwnIntroductionPuzzle> unsolvedPuzzles1 = deepCopy(generateNewPuzzles(mOwnIdentities.get(1)));
+		// See testGetUninsertedOwnPuzzlesByInserter() for the reasons of this cast.
+		List<IntroductionPuzzle> unsolvedPuzzles0
+			= (List)deepCopy(generateNewPuzzles(mOwnIdentities.get(0)));
+		List<IntroductionPuzzle> unsolvedPuzzles1
+			= (List)deepCopy(generateNewPuzzles(mOwnIdentities.get(1)));
+		
 		List<OwnIntroductionPuzzle> solvedPuzzles0 = generateNewPuzzles(mOwnIdentities.get(0));
 		List<OwnIntroductionPuzzle> solvedPuzzles1 = generateNewPuzzles(mOwnIdentities.get(1));
 		
@@ -376,8 +415,15 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		
 		flushCaches();
 		
-		assertEquals(new HashSet<OwnIntroductionPuzzle>(unsolvedPuzzles0), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUnsolvedByInserter(mOwnIdentities.get(0))));
-		assertEquals(new HashSet<OwnIntroductionPuzzle>(unsolvedPuzzles1), new HashSet<OwnIntroductionPuzzle>(mPuzzleStore.getUnsolvedByInserter(mOwnIdentities.get(1))));
+		List<IntroductionPuzzle> query0
+			= (List)mPuzzleStore.getUnsolvedByInserter(mOwnIdentities.get(0));
+		List<IntroductionPuzzle> query1
+			= (List)mPuzzleStore.getUnsolvedByInserter(mOwnIdentities.get(1));
+		
+		assertEquals(listToSetWithDuplicateCheck(unsolvedPuzzles0),
+		             listToSetWithDuplicateCheck(query0));
+		assertEquals(listToSetWithDuplicateCheck(unsolvedPuzzles1),
+		             listToSetWithDuplicateCheck(query1));
 	}
 
 	public void testGetOfTodayByInserter() throws IOException { 
@@ -398,10 +444,13 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		
 		flushCaches();
 		
-		assertEquals(new HashSet<IntroductionPuzzle>(ofToday), new HashSet<IntroductionPuzzle>(mPuzzleStore.getOfTodayByInserter(mOwnIdentities.get(0))));
+		List<IntroductionPuzzle> query = mPuzzleStore.getOfTodayByInserter(mOwnIdentities.get(0));
+		
+		assertEquals(listToSetWithDuplicateCheck(ofToday),
+		             listToSetWithDuplicateCheck(query));
 	}
 
-	public void testGetByInserterDateIndex() throws UnknownPuzzleException {
+	public void testGetByInserterDateIndex() throws UnknownPuzzleException, UnknownIdentityException {
 		final Date today = CurrentTimeUTC.get();
 		final Date yesterday = new Date (CurrentTimeUTC.getInMillis() - 24 * 60 * 60 * 1000);
 		final Date tomorrow = new Date (CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000);
@@ -423,29 +472,32 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		flushCaches();
 		
 		for(IntroductionPuzzle p : puzzles) {
-			assertEquals(p, mPuzzleStore.getByInserterDateIndex(p.getInserter(), p.getDateOfInsertion(), p.getIndex()));
+			// We have to re-query the identity because the cloned puzzle also only contains a clone of the identity.
+			final OwnIdentity inserter = mWoT.getOwnIdentityByID(p.getInserter().getID());
+			
+			assertEquals(p, mPuzzleStore.getByInserterDateIndex(inserter, p.getDateOfInsertion(), p.getIndex()));
 
 			try {
 				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(mOwnIdentities.get(mOwnIdentities.size()-1), p.getDateOfInsertion(), p.getIndex()));
 			} catch(UnknownPuzzleException e) {}
 			
 			try {
-				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(p.getInserter(), tomorrow, p.getIndex()));
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(inserter, tomorrow, p.getIndex()));
 			} catch(UnknownPuzzleException e) {}
 			
 			try {
-				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(p.getInserter(), p.getDateOfInsertion(), 2));
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(inserter, p.getDateOfInsertion(), 2));
 			} catch(UnknownPuzzleException e) {}
 			
-			mPuzzleStore.storeAndCommit(constructOwnPuzzleWithDateAndIndex((OwnIdentity)p.getInserter(), p.getDateOfInsertion(), p.getIndex()));
+			mPuzzleStore.storeAndCommit(constructOwnPuzzleWithDateAndIndex(inserter, p.getDateOfInsertion(), p.getIndex()));
 			try {
-				mPuzzleStore.getByInserterDateIndex(p.getInserter(), p.getDateOfInsertion(), p.getIndex());
+				mPuzzleStore.getByInserterDateIndex(inserter, p.getDateOfInsertion(), p.getIndex());
 				fail("Duplicate-Exception should have been thrown.");
 			} catch(DuplicatePuzzleException e) {}
 		}
 	}
 
-	public void testGetOwnPuzzleByInserterDateIndex() throws UnknownPuzzleException {
+	public void testGetOwnPuzzleByInserterDateIndex() throws UnknownPuzzleException, UnknownIdentityException {
 		final Date today = CurrentTimeUTC.get();
 		final Date yesterday = new Date (CurrentTimeUTC.getInMillis() - 24 * 60 * 60 * 1000);
 		final Date tomorrow = new Date (CurrentTimeUTC.getInMillis() + 24 * 60 * 60 * 1000);
@@ -467,18 +519,21 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		flushCaches();
 		
 		for(OwnIntroductionPuzzle p : puzzles) {
-			assertEquals(p, mPuzzleStore.getOwnPuzzleByInserterDateIndex((OwnIdentity)p.getInserter(), p.getDateOfInsertion(), p.getIndex()));
+			// We have to re-query the identity because the cloned puzzle also only contains a clone of the identity.
+			final OwnIdentity inserter = mWoT.getOwnIdentityByID(p.getInserter().getID());
+			
+			assertEquals(p, mPuzzleStore.getOwnPuzzleByInserterDateIndex(inserter, p.getDateOfInsertion(), p.getIndex()));
 
 			try {
 				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(mOwnIdentities.get(mOwnIdentities.size()-1), p.getDateOfInsertion(), p.getIndex()));
 			} catch(UnknownPuzzleException e) {}
 			
 			try {
-				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(p.getInserter(), tomorrow, p.getIndex()));
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(inserter, tomorrow, p.getIndex()));
 			} catch(UnknownPuzzleException e) {}
 			
 			try {
-				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(p.getInserter(), p.getDateOfInsertion(), 2));
+				fail("Puzzle should not exist:" + mPuzzleStore.getByInserterDateIndex(inserter, p.getDateOfInsertion(), 2));
 			} catch(UnknownPuzzleException e) {}
 		}
 	}
@@ -489,16 +544,17 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		for(OwnIdentity ownId : mOwnIdentities.subList(1, mOwnIdentities.size())) {
 			IntroductionPuzzle p;
 			
+			// Non-own and unsolved - these are what the tested query shall return.
 			p = constructPuzzleOf(ownId);
 			mPuzzleStore.storeAndCommit(p);
 			unsolvedPuzzles.add(p.clone());
 			
-			// non own but solved
+			// Non-own but solved.
 			p = constructPuzzleOf(ownId);
 			p.setSolved(mOwnIdentities.get(0), "blehblah");
 			mPuzzleStore.storeAndCommit(p);
 			
-			// unsolved but own one
+			// Unsolved but own one.
 			p = constructOwnPuzzleOf(ownId);
 			mPuzzleStore.storeAndCommit(p);
 		}
@@ -506,7 +562,10 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		flushCaches();
 
 		// TODO: As soon as we have more puzzle types, test them here
-		assertEquals(new HashSet<IntroductionPuzzle>(unsolvedPuzzles), new HashSet<IntroductionPuzzle>(mPuzzleStore.getUnsolvedPuzzles(PuzzleType.Captcha)));
+		List<IntroductionPuzzle> query = mPuzzleStore.getUnsolvedPuzzles(PuzzleType.Captcha);
+		
+		assertEquals(listToSetWithDuplicateCheck(unsolvedPuzzles),
+		             listToSetWithDuplicateCheck(query));
 	}
 
 	public void testGetUninsertedSolvedPuzzles() throws IOException {
@@ -539,7 +598,8 @@ public final class IntroductionPuzzleStoreTest extends DatabaseBasedTest {
 		
 		flushCaches();
 		// TODO: As soon as we have more puzzle types, test them here
-		assertEquals(new HashSet<IntroductionPuzzle>(uninsertedSolvedPuzzles), new HashSet<IntroductionPuzzle>(mPuzzleStore.getUninsertedSolvedPuzzles()));
+		assertEquals(listToSetWithDuplicateCheck(uninsertedSolvedPuzzles),
+		             listToSetWithDuplicateCheck(mPuzzleStore.getUninsertedSolvedPuzzles()));
 	}
 
 	public void testGetOwnCatpchaAmount() throws IOException {

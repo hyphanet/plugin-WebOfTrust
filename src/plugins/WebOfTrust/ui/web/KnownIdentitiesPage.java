@@ -4,28 +4,30 @@
 package plugins.WebOfTrust.ui.web;
 
 import java.util.Date;
+import java.util.Iterator;
 import java.util.TreeMap;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.exceptions.DuplicateScoreException;
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import com.db4o.ObjectSet;
 
+import freenet.clients.http.InfoboxNode;
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
-import freenet.l10n.BaseL10n;
-import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 
@@ -36,10 +38,11 @@ import freenet.support.api.HTTPRequest;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 public class KnownIdentitiesPage extends WebPageImpl {
-
-	private final String identitiesPageURI;
+	
+	public static final int IDENTITIES_PER_PAGE = 15;
 	
 	private static enum SortBy {
+	    Edition,
 		Nickname,
 		Score,
 		LocalTrust
@@ -50,18 +53,25 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	 * 
 	 * @param toadlet A reference to the {@link WebInterfaceToadlet} which created the page, used to get resources the page needs.
 	 * @param myRequest The request sent by the user.
+	 * @throws RedirectException If the {@link Session} has expired. 
+	 * @throws UnknownIdentityException If the owner of the {@link Session} does not exist anymore.
 	 */
-	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context, BaseL10n _baseL10n) {
-		super(toadlet, myRequest, context, _baseL10n);
-		identitiesPageURI = toadlet.webInterface.getURI() + "/ShowIdentity";
+	public KnownIdentitiesPage(WebInterfaceToadlet toadlet, HTTPRequest myRequest, ToadletContext context) throws RedirectException, UnknownIdentityException {
+		super(toadlet, myRequest, context, true);
 	}
 
-	public void make() {
-		final boolean addIdentity = request.isPartSet("AddIdentity");
+	@Override
+	public void make(final boolean mayWrite) {
+		if(mLoggedInOwnIdentity.isRestoreInProgress()) {
+			makeRestoreInProgressWarning();
+			return;
+		}
 		
-		if(addIdentity) {
+		final boolean addIdentity = mRequest.isPartSet("AddIdentity");
+		
+		if(mayWrite && addIdentity) {
 			try {
-				wot.addIdentity(request.getPartAsStringFailsafe("IdentityURI", 1024));
+				mWebOfTrust.addIdentity(mRequest.getPartAsStringFailsafe("IdentityURI", 1024));
 				HTMLNode successBox = addContentBox(l10n().getString("KnownIdentitiesPage.AddIdentity.Success.Header"));
 				successBox.addChild("#", l10n().getString("KnownIdentitiesPage.AddIdentity.Success.Text"));
 			}
@@ -70,10 +80,8 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 		
-		if(request.isPartSet("SetTrust")) {
-			String trusterID = request.getPartAsStringFailsafe("OwnerID", 128);
-		
-			for(String part : request.getParts()) {
+		if(mayWrite && mRequest.isPartSet("SetTrust")) {
+			for(String part : mRequest.getParts()) {
 				if(!part.startsWith("SetTrustOf"))
 					continue;
 
@@ -83,19 +91,26 @@ public class KnownIdentitiesPage extends WebPageImpl {
 
 				try { 
 					if(addIdentity) { // Add a single identity and set its trust value
-						trusteeID = Identity.getIDFromURI(new FreenetURI(request.getPartAsStringFailsafe("IdentityURI", 1024)));
-						value = request.getPartAsStringFailsafe("Value", 4).trim();
-						comment = request.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);				 	
+						trusteeID = IdentityID.constructAndValidateFromURI(new FreenetURI(mRequest.getPartAsStringFailsafe("IdentityURI", 1024))).toString();
+						value = mRequest.getPartAsStringFailsafe("Value", 4).trim();
+						comment = mRequest.getPartAsStringFailsafe("Comment", Trust.MAX_TRUST_COMMENT_LENGTH + 1);				 	
 					} else { // Change multiple trust values via the known-identities-list
-						trusteeID = request.getPartAsStringFailsafe(part, 128);
-						value = request.getPartAsStringFailsafe("Value" + trusteeID, 4).trim();
-						comment = request.getPartAsStringFailsafe("Comment" + trusteeID, Trust.MAX_TRUST_COMMENT_LENGTH + 1);
+						trusteeID = mRequest.getPartAsStringFailsafe(part, 128);
+						value = mRequest.getPartAsStringFailsafe("Value" + trusteeID, 4).trim();
+						comment = mRequest.getPartAsStringFailsafe("Comment" + trusteeID, Trust.MAX_TRUST_COMMENT_LENGTH + 1);
 					}
 
 					if(value.equals(""))
-						wot.removeTrust(trusterID, trusteeID);
-					else
-						wot.setTrust(trusterID, trusteeID, Byte.parseByte(value), comment);
+						mWebOfTrust.removeTrust(mLoggedInOwnIdentity.getID(), trusteeID);
+					else {
+						mWebOfTrust.setTrust(mLoggedInOwnIdentity.getID(), trusteeID,
+						                     Byte.parseByte(value), comment);
+					}
+					
+					if(addIdentity && (value.equals("") || Byte.parseByte(value) < 0)) {
+						addErrorBox(l10n().getString("KnownIdentitiesPage.AddIdentity.NoTrustWarning.Header"), 
+								l10n().getString("KnownIdentitiesPage.AddIdentity.NoTrustWarning.Text"));
+					}
 				} catch(NumberFormatException e) {
 					addErrorBox(l10n().getString("KnownIdentitiesPage.SetTrust.Failed"), l10n().getString("Trust.InvalidValue"));
 				} catch(InvalidParameterException e) {
@@ -106,57 +121,22 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 		}
 
-		OwnIdentity treeOwner = null;
-		int nbOwnIdentities = 1;
-		String ownerID = request.getPartAsStringFailsafe("OwnerID", 128);
 		
-		if(!ownerID.equals("")) {
-			try {
-				treeOwner = wot.getOwnIdentityByID(ownerID);
-			} catch (Exception e) {
-				Logger.error(this, "Error while selecting the OwnIdentity", e);
-				addErrorBox(l10n().getString("KnownIdentitiesPage.SelectOwnIdentity.Failed"), e);
-			}
-		} else {
-			synchronized(wot) {
-				ObjectSet<OwnIdentity> allOwnIdentities = wot.getAllOwnIdentities();
-				nbOwnIdentities = allOwnIdentities.size();
-				if(nbOwnIdentities == 1)
-					treeOwner = allOwnIdentities.next();
-			}
-		}
-			
-		makeAddIdentityForm(treeOwner);
-
-		if(treeOwner != null) {
-			try {
-				makeKnownIdentitiesList(treeOwner);
-			} catch (Exception e) {
-				Logger.error(this, "Error", e);
-				addErrorBox("Error", e);
-			}
-		} else if(nbOwnIdentities > 1)
-			makeSelectTreeOwnerForm();
-		else
-			makeNoOwnIdentityWarning();
+		makeKnownIdentitiesList();
+		makeAddIdentityForm(); // Put this after makeKnownIdentitiesList() so clicking through pages of the known identities list doesn't involve scrolling.
 	}
 	
 	/**
 	 * Makes a form where the user can enter the requestURI of an Identity he knows.
-	 * 
-	 * @param pr a reference to the {@link PluginRespirator}
-	 * @param treeOwner The owner of the known identity list. Not used for adding the identity but for showing the known identity list properly after adding.
 	 */
-	private void makeAddIdentityForm(OwnIdentity treeOwner) {
+	private void makeAddIdentityForm() {
 		
 		// TODO Add trust value and comment fields and make them mandatory
 		// The user should only add an identity he trusts
 		HTMLNode addBoxContent = addContentBox(l10n().getString("KnownIdentitiesPage.AddIdentity.Header"));
 	
-		HTMLNode createForm = pr.addFormChild(addBoxContent, uri, "AddIdentity");
-		if(treeOwner != null)
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
-		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "AddIdentity" });
+		HTMLNode createForm = pr.addFormChild(addBoxContent, uri.toString(), "AddIdentity");
+
 		createForm.addChild("span", new String[] {"title", "style"}, 
 				new String[] { 
 		            l10n().getString("KnownIdentitiesPage.AddIdentity.IdentityURI.Tooltip"), 
@@ -166,42 +146,24 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		createForm.addChild("input", new String[] {"type", "name", "size"}, new String[] {"text", "IdentityURI", "70"});
 		createForm.addChild("br");
 		
-		if(treeOwner != null) {
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrust", "true"});
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrustOf", "void"});
-			
-			createForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ")
-				.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Value", "4", "" });
-			
-			createForm.addChild("span", " " + l10n().getString("KnownIdentitiesPage.AddIdentity.Comment") + ": ")
-				.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Comment", "20", "" });
-			
-			createForm.addChild("br");
-		}
+		
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrust", "true"});
+		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "SetTrustOf", "void"});
+
+		createForm.addChild("span", l10n().getString("KnownIdentitiesPage.AddIdentity.Trust") + ": ")
+		.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Value", "4", "" });
+
+		createForm.addChild("span", " " + l10n().getString("KnownIdentitiesPage.AddIdentity.Comment") + ": ")
+		.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "Comment", "20", "" });
+
+		createForm.addChild("br");
+		
 		
 		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "AddIdentity", l10n().getString("KnownIdentitiesPage.AddIdentity.AddButton") });
 	}
-
-	private void makeNoOwnIdentityWarning() {
-		addErrorBox(l10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Header"), l10n().getString("KnownIdentitiesPage.NoOwnIdentityWarning.Text"));
-	}
 	
-	private void makeSelectTreeOwnerForm() {
-
-		HTMLNode listBoxContent = addContentBox(l10n().getString("KnownIdentitiesPage.SelectTreeOwner.Header"));
-		HTMLNode selectForm = pr.addFormChild(listBoxContent, uri, "ViewTree");
-		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "page", "ViewTree" });
-		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnerID");
-
-		synchronized(wot) {
-			for(OwnIdentity ownIdentity : wot.getAllOwnIdentities())
-				selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getNickname());
-		}
-
-		selectForm.addChild(
-		        "input", 
-		        new String[] { "type", "name", "value" }, 
-		        new String[] { "submit", "select", l10n().getString("KnownIdentitiesPage.SelectTreeOwner.ViewOwnersTreeButton") });
+	private void makeRestoreInProgressWarning() {
+		addErrorBox(l10n().getString("KnownIdentitiesPage.RestoreInProgressWarning.Header"), l10n().getString("KnownIdentitiesPage.RestoreInProgressWarning.Text"));
 	}
 	
 	/**
@@ -240,32 +202,36 @@ public class KnownIdentitiesPage extends WebPageImpl {
 	
 	/**
 	 * Makes the list of Identities known by the tree owner.
-	 * 
-	 * @param db a reference to the database 
-	 * @param _pr a reference to the {@link PluginRespirator}
-	 * @param treeOwner owner of the trust tree we want to display 
 	 */
-	private void makeKnownIdentitiesList(OwnIdentity treeOwner) throws DuplicateScoreException, DuplicateTrustException {
+	private void makeKnownIdentitiesList() {
 
-		String nickFilter = request.getPartAsStringFailsafe("nickfilter", 100).trim();
-		String sortBy = request.isPartSet("sortby") ? request.getPartAsStringFailsafe("sortby", 100).trim() : "Nickname";
-		String sortType = request.isPartSet("sorttype") ? request.getPartAsStringFailsafe("sorttype", 100).trim() : "Ascending";
+		String nickFilter = mRequest.getPartAsStringFailsafe("nickfilter", 100).trim();
+		String sortBy = mRequest.isPartSet("sortby") ? mRequest.getPartAsStringFailsafe("sortby", 100).trim() : "Nickname";
+		String sortType = mRequest.isPartSet("sorttype") ? mRequest.getPartAsStringFailsafe("sorttype", 100).trim() : "Ascending";
 		
+		int page = mRequest.isPartSet("page") ? Integer.parseInt(mRequest.getPartAsStringFailsafe("page", Integer.toString(Integer.MAX_VALUE).length())) : 0;
+		page = page - 1; // What we get passed is the user-friendly page number counting from 1, not 0.
+		page = Math.max(0, page); // In case no page part was set, it would be -1
 		
 		HTMLNode knownIdentitiesBox = addContentBox(l10n().getString("KnownIdentitiesPage.KnownIdentities.Header"));
-		knownIdentitiesBox = pr.addFormChild(knownIdentitiesBox, uri, "Filters").addChild("p");
-		knownIdentitiesBox.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnerID", treeOwner.getID()});
+		knownIdentitiesBox = pr.addFormChild(knownIdentitiesBox, uri.toString(), "Filters").addChild("p");
+		knownIdentitiesBox.addChild("input",
+		                            new String[] { "type",   "name", "value" },
+		                            new String[] { "hidden", "page", Integer.toString(page + 1)});
 		
 		
-		HTMLNode filtersBox = getContentBox(l10n().getString("KnownIdentitiesPage.FiltersAndSorting.Header"));
+		InfoboxNode filtersBoxNode = getContentBox(l10n().getString("KnownIdentitiesPage.FiltersAndSorting.Header"));
+		
 		{ // Filters box
-		knownIdentitiesBox.addChild(filtersBox);
+		knownIdentitiesBox.addChild(filtersBoxNode.outer);
+		HTMLNode filtersBox = filtersBoxNode.content;
 		filtersBox.addChild("#", l10n().getString("KnownIdentitiesPage.FiltersAndSorting.ShowOnlyNicksContaining") + " : ");
-		filtersBox.addChild("#", " " + l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy") + " : ");
 		filtersBox.addChild("input", new String[] {"type", "size", "name", "value"}, new String[]{"text", "15", "nickfilter", nickFilter});
 		
+		filtersBox.addChild("#", " " + l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy") + " : ");
 		HTMLNode option = filtersBox.addChild("select", new String[]{"name", "id"}, new String[]{"sortby", "sortby"});
 		TreeMap<String, String> options = new TreeMap<String, String>();
+        options.put(SortBy.Edition.toString(), l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Edition"));
 		options.put(SortBy.Nickname.toString(), l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Nickname"));
 		options.put(SortBy.Score.toString(), l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.Score"));
 		options.put(SortBy.LocalTrust.toString(), l10n().getString("KnownIdentitiesPage.FiltersAndSorting.SortIdentitiesBy.LocalTrust"));
@@ -296,19 +262,59 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		
 		WebOfTrust.SortOrder sortInstruction = WebOfTrust.SortOrder.valueOf("By" + sortBy + sortType);
 		
+		synchronized(mWebOfTrust) {
 		long currentTime = CurrentTimeUTC.getInMillis();
+		int indexOfFirstIdentity = page * IDENTITIES_PER_PAGE;
 		
-		long editionSum = 0;
-
-		synchronized(wot) {
-		for(Identity id : wot.getAllIdentitiesFilteredAndSorted(treeOwner, nickFilter, sortInstruction)) {
-			if(id == treeOwner) continue;
+		// Re-query it instead of using mLoggedInOwnIdentity because mLoggedInOwnIdentity is a
+		// clone() and thus will not work with database queries on the WebOfTrust.
+		// TODO: Performance: This can be removed once the TODO at
+		// WebPageImpl.getLoggedInOwnIdentityFromHTTPSession() of not cloning the
+		// OwnIdentity has been been resolved.
+		final OwnIdentity ownId;
+		try {
+		    ownId = mWebOfTrust.getOwnIdentityByID(mLoggedInOwnIdentity.getID());
+		} catch(UnknownIdentityException e) {
+		    new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
+		    return;
+		}
+		
+		ObjectSet<Identity> allIdentities
+		    = mWebOfTrust.getAllIdentitiesFilteredAndSorted(ownId, nickFilter, sortInstruction);
+		
+	    Iterator<Identity> identities;
+		try {
+		    identities = allIdentities.listIterator(indexOfFirstIdentity);
+		} catch(IndexOutOfBoundsException e) {
+		    // The user supplied a higher page index than there are pages. This can happen when the
+		    // user changes the search filters while not being on the first page.
+		    // We fall back to displaying the last page.
+		    // Notice: We intentionally do not prevent listIterator() from throwing by checking
+		    // the index for validity before calling listIterator(). This is because we would need
+		    // to call allIdentities.size() to check the index. This would force the database to
+		    // compute the full result set even though we only need the results up to the current
+		    // page if we are not on the last page.
+		    page = getPageCount(allIdentities.size()) - 1;
+		    indexOfFirstIdentity = page * IDENTITIES_PER_PAGE;
+		    
+		    // TODO: Performance: Don't re-query this from the database once the issue which caused
+		    // this workaround is fixed: https://bugs.freenetproject.org/view.php?id=6646
+		    allIdentities
+		    	= mWebOfTrust.getAllIdentitiesFilteredAndSorted(ownId, nickFilter, sortInstruction);
+		    
+		    identities = allIdentities.listIterator(indexOfFirstIdentity);
+		}
+		
+		for(int displayed = 0; displayed < IDENTITIES_PER_PAGE && identities.hasNext(); ++displayed) {
+			final Identity id = identities.next();
+			
+			if(id == ownId) continue;
 
 			HTMLNode row=identitiesTable.addChild("tr");
 			
 			// NickName
 			HTMLNode nameLink = row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"})
-				.addChild("a", "href", identitiesPageURI+"?id=" + id.getID());
+				.addChild("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString());
 			
 			String nickName = id.getNickname();
 			
@@ -333,7 +339,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			
 			//Score
 			try {
-				final Score score = wot.getScore((OwnIdentity)treeOwner, id);
+				final Score score = mWebOfTrust.getScore(ownId, id);
 				final int scoreValue = score.getScore();
 				final int rank = score.getRank();
 				
@@ -348,34 +354,32 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			}
 			
 			// Own Trust
-			row.addChild(getReceivedTrustCell(treeOwner, id));
+			row.addChild(getReceivedTrustCell(ownId, id));
 			
 			// Checkbox
 			row.addChild(getSetTrustCell(id));
 			
 			// Nb Trusters
+			// TODO: Do a direct link to the received-trusts part of the linked page
 			HTMLNode trustersCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-			trustersCell.addChild(new HTMLNode("a", "href", identitiesPageURI + "?id="+id.getID(),
-					Long.toString(wot.getReceivedTrusts(id).size())));
+			trustersCell.addChild(new HTMLNode("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString(),
+					Long.toString(mWebOfTrust.getReceivedTrusts(id).size())));
 			
 			// Nb Trustees
+			// TODO: Do a direct link to the given-trusts part of the linked page
 			HTMLNode trusteesCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
-			trusteesCell.addChild(new HTMLNode("a", "href", identitiesPageURI + "?id="+id.getID(),
-					Long.toString(wot.getGivenTrusts(id).size())));
+			trusteesCell.addChild(new HTMLNode("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString(),
+					Long.toString(mWebOfTrust.getGivenTrusts(id).size())));
 			
 			// TODO: Show in advanced mode only once someone finally fixes the "Switch to advanced mode" link on FProxy to work on ALL pages.
 			
-			final long edition = id.getEdition();
-			editionSum += edition;
-			row.addChild("td", "align", "center", Long.toString(edition));
+			row.addChild("td", "align", "center", Long.toString(id.getEdition()));
 			
 			row.addChild("td", "align", "center", Long.toString(id.getLatestEditionHint()));
-		}
-		}
-		
-		identitiesTable.addChild(getKnownIdentitiesListTableHeader());
-		
-		knownIdentitiesBox.addChild("#", l10n().getString("KnownIdentitiesPage.KnownIdentities.FetchProgress", "editionCount", Long.toString(editionSum)));
+	    }
+        identitiesTable.addChild(getKnownIdentitiesListTableHeader());
+        knownIdentitiesBox.addChild(getKnownIdentitiesListPageLinks(page, allIdentities.size()));
+        }
 	}
 	
 	private HTMLNode getKnownIdentitiesListTableHeader() {
@@ -395,6 +399,90 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		return row;
 	}
 	
+	/**
+	 * Gets a list of links to the pages of the known identities list. Will look like this:
+	 * 1 to 5... currentPage-5 to currentPage+5 ... lastPage-5 to lastPage
+	 * 
+	 * @param currentPage The currently displayed page, counting from 0.
+	 * @param identityCount Total amount of identities in the result set. This is used to compute the page count. TODO: Optimization: When using lazy database
+	 *                      query evaluation, the amount of identities will not be computed until we have processed the whole database query. So the 
+	 *                      computation of this parameter is expensive then and we should get rid of it. The link to the last page should be "Last" instead of
+	 *                      a numeric label then. Bugtracker entry: https://bugs.freenetproject.org/view.php?id=6245
+	 */
+	private HTMLNode getKnownIdentitiesListPageLinks(final int currentPage, final int identityCount) {
+	    final int pageCount = getPageCount(identityCount);
+		final int lastPage = pageCount-1;
+		
+		HTMLNode div = new HTMLNode("div");
+		
+		if(pageCount == 1)
+			return div;
+		
+		int lastDisplayedLink = -1;
+		
+		// Display links to first 5 pages excluding the current page.
+		for(int i = 0; i < currentPage; ) {
+			div.addChild(getSingleKnownIdentitiesListPageLink(currentPage, i));
+			lastDisplayedLink = i;
+			
+			++i; 
+			
+			if(i >= 5) { // Display 5 links at most
+				if(i < currentPage-5) // The next loop displays links starting from currentPage-5. If our next link wouldn't fall into that range, add dots.
+					div.addChild("#", "...");
+				break;
+			}
+		}
+		
+		// Display 5 links before and after current page, excluding last page.
+		for(int i = Math.max(currentPage-5, lastDisplayedLink+1); i < lastPage; ) {
+			div.addChild(getSingleKnownIdentitiesListPageLink(currentPage, i));
+			lastDisplayedLink = i;
+			
+			++i;
+			
+			if(i > currentPage+5) {
+				if(i != lastPage) // If the next link would not have been the lastPage, add "..." for the missing pages in between
+					div.addChild("#", "...");
+				break;
+			}
+		}
+		
+		// Display last page
+		if(lastDisplayedLink != lastPage)
+			div.addChild(getSingleKnownIdentitiesListPageLink(currentPage, lastPage));
+
+		return div;
+	}
+	
+	/** @return Count of pages we would paginate into for the given total amount of identities. */
+    private static int getPageCount(final int identityCount) {
+       int result = identityCount / IDENTITIES_PER_PAGE;
+       result    += ((identityCount % IDENTITIES_PER_PAGE > 0) ? 1 : 0);
+       result     = (result == 0 ? 1 : result);
+       return result;
+    }
+    
+	/**
+	 * Get a single entry in the link list to the pages of the known identities list.
+	 * 
+	 * TODO: This currently returns a button, not an actual link. We need a button instead of a link because it must submit the "Filters" form. Use CSS
+	 *       or Javascript to make it look like a link to follow the style convention of having the page list being links, not buttons.
+	 * 
+	 * @param currentPage The currently displayed page, counting from 0. Used to decide whether the link should really be a link or just a bold number,
+	 *                    which indicates which page the user is on
+	 * @param desiredPage The page to which the link shall point.
+	 */
+	private HTMLNode getSingleKnownIdentitiesListPageLink(final int currentPage, int desiredPage) {
+		final String desiredPageString = Integer.toString(desiredPage + 1);
+		
+		if(currentPage != desiredPage)
+			return new HTMLNode("input", new String[]{ "type", "name", "value" },
+			                             new String[]{ "submit", "page", desiredPageString });
+		else
+			return new HTMLNode("b", desiredPageString);
+	}
+	
 	private HTMLNode getReceivedTrustCell (OwnIdentity truster, Identity trustee) throws DuplicateTrustException {
 
 		String trustValue = "";
@@ -402,7 +490,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 		Trust trust;
 		
 		try {
-			trust = wot.getTrust(truster, trustee);
+			trust = mWebOfTrust.getTrust(truster, trustee);
 			trustValue = String.valueOf(trust.getValue());
 			trustComment = trust.getComment();
 		}

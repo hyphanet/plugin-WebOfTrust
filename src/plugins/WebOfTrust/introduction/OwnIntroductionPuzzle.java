@@ -5,17 +5,21 @@ import java.util.UUID;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.Score;
+import plugins.WebOfTrust.Trust;
+import plugins.WebOfTrust.WebOfTrustInterface;
+import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 
+@SuppressWarnings("serial")
 public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	
 	/**
 	 * For construction of a puzzle which is meant to be inserted.
 	 */
-	public OwnIntroductionPuzzle(WebOfTrust myWoT, OwnIdentity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
+	public OwnIntroductionPuzzle(WebOfTrustInterface myWoT, OwnIdentity newInserter, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
 			Date newDateOfInsertion, int myIndex) {
 		this(myWoT, newInserter, UUID.randomUUID().toString() + "@" + newInserter.getID(), newType, newMimeType, newData, newSolution, newDateOfInsertion, myIndex);
 	}
@@ -23,7 +27,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	/**
 	 * Clone() needs to set the ID.
 	 */
-	private OwnIntroductionPuzzle(WebOfTrust myWoT, OwnIdentity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
+	private OwnIntroductionPuzzle(WebOfTrustInterface myWoT, OwnIdentity newInserter, String newID, PuzzleType newType, String newMimeType, byte[] newData, String newSolution,
 			Date newDateOfInsertion, int myIndex) {
 		super(myWoT, newInserter, newID, newType, newMimeType, newData, newDateOfInsertion,
 				new Date(TimeUtil.setTimeToZero(newDateOfInsertion).getTime() + IntroductionServer.PUZZLE_INVALID_AFTER_DAYS * 24 * 60 * 60 * 1000), 
@@ -40,7 +44,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	
 	/**
 	 * Get the URI at which to insert this puzzle.
-	 * SSK@asdfasdf...|WebOfTrust.WOT_NAME|IntroductionPuzzle.INTRODUCTION_CONTEXT|yyyy-MM-dd|#
+	 * SSK@asdfasdf...|WebOfTrustInterface.WOT_NAME|IntroductionPuzzle.INTRODUCTION_CONTEXT|yyyy-MM-dd|#
 	 * 
 	 * # = index of the puzzle.
 	 */
@@ -52,7 +56,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 			dayOfInsertion = mDateFormat.format(getDateOfInsertion());
 		}
 		FreenetURI baseURI = ((OwnIdentity)getInserter()).getInsertURI().setKeyType("SSK");
-		baseURI = baseURI.setDocName(WebOfTrust.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + getIndex());
+		baseURI = baseURI.setDocName(WebOfTrustInterface.WOT_NAME + "|" + INTRODUCTION_CONTEXT + "|" + dayOfInsertion + "|" + getIndex());
 		return baseURI.setMetaString(null);
 	}
 	
@@ -100,6 +104,7 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	 * Get the Identity which solved this puzzle. It is set by the IntroductionServer when a puzzle solution to this puzzle was fetched. 
 	 * Returns null if the puzzle was solved but the parsing of the solution failed.
 	 */
+	@Override
 	public Identity getSolver() {
 		return super.getSolver();
 	}
@@ -122,11 +127,13 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	public OwnIntroductionPuzzle clone() {
 		// TODO: Optimization: If this is used often, make it use the member variables instead of the getters - do proper activation before.
 		// checkedActivate(depth) for mSolution is not needed, String is a db4o primitive type
-		final OwnIntroductionPuzzle copy = new OwnIntroductionPuzzle(mWebOfTrust, (OwnIdentity)getInserter(), getID(), getType(), getMimeType(), getData(), getSolution(), getDateOfInsertion(), getIndex());
+		final OwnIntroductionPuzzle copy = new OwnIntroductionPuzzle(mWebOfTrust, ((OwnIdentity)getInserter()).clone(), getID(), getType(), getMimeType(), getData(), getSolution(), getDateOfInsertion(), getIndex());
+		
+		copy.setCreationDate(getCreationDate());
 		
 		if(wasSolved()) {
 			if(getSolver() != null)
-				copy.setSolved(getSolver());
+				copy.setSolved(getSolver().clone());
 			else
 				copy.setSolved();
 		}
@@ -142,4 +149,16 @@ public class OwnIntroductionPuzzle extends IntroductionPuzzle {
 	public boolean equals(Object o) {
 		return super.equals(o);
 	}
+	
+    /**
+     * TODO: Code quality: This should be unified to have the same output format as the equivalent
+     * function in {@link OwnIdentity} / {@link Identity} / {@link Trust} / {@link Score}.
+     * Especially should it be changed to output precisely what {@link #equals(Object)} would
+     * compare. Don't forget to add the same JavaDoc to {@link #equals(Object)} about that as is
+     * present in the aforementioned classes.<br>
+     * Matching the compared values of {@link #equals(Object)} will be useful for
+     * {@link DebugFCPClient} once puzzles are shipped by event-notifications. */
+    @Override public String toString() {
+        return super.toString();
+    }
 }

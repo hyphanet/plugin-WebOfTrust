@@ -3,6 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.System.identityHashCode;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -21,6 +29,8 @@ import com.db4o.query.Query;
 
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
+import freenet.support.io.Closer;
 
 
 /**
@@ -32,18 +42,30 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public abstract class Persistent {
+public abstract class Persistent implements Serializable {
+	// TODO: Optimization: We do explicit activation everywhere. We could change this to 0 and test whether everything still works.
+	// Ideally, we would benchmark both 0 and 1 and make it configurable.
+	public static transient final int DEFAULT_ACTIVATION_DEPTH = 1;
 	
+	/** @see Serializable */
+	private static transient final long serialVersionUID = 1L;
+
 	/**
-	 * A reference to the {@link WebOfTrust} object with which this Persistent object is associated.
+	 * A reference to the {@link WebOfTrustInterface} object with which this Persistent object is associated.
 	 */
-	protected transient WebOfTrust mWebOfTrust;
+	protected transient WebOfTrustInterface mWebOfTrust;
 	
 	/**
 	 * A reference to the database in which this Persistent object resists.
 	 */
 	protected transient ExtObjectContainer mDB;
-	
+
+	/**
+	 * The highest value {@link #checkedActivate(int)} was called with on this object.<br>
+	 * Used to prevent multiple calls with the same value being passed to db4o. This has shown
+	 * to be a performance improvement in benchmarks - db4o seems bad at deduplicating the calls. */
+	private transient int mActivatedUpTo = 0;
+
 	
 	/**
 	 * The date when this persistent object was created. 
@@ -51,7 +73,7 @@ public abstract class Persistent {
 	 * It can be very useful for debugging purposes or sanitizing old databases.
 	 * Also it is needed in many cases for the UI.
 	 */
-	protected final Date mCreationDate = CurrentTimeUTC.get();
+	protected Date mCreationDate = CurrentTimeUTC.get();
 	
 	/**
 	 * The object used for locking transactions.
@@ -61,8 +83,8 @@ public abstract class Persistent {
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
-	protected static transient volatile boolean logDEBUG = false;
-	protected static transient volatile boolean logMINOR = false;
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
 	
 	static {
 		Logger.registerClass(Persistent.class);
@@ -96,25 +118,71 @@ public abstract class Persistent {
 	/**
 	 * This function can be used for debugging, it is executed before and after store(), delete() and commit().
 	 */
-	public static void testDatabaseIntegrity(WebOfTrust mWebOfTrust, ExtObjectContainer db) {
+	public static void testDatabaseIntegrity(WebOfTrustInterface mWebOfTrust, ExtObjectContainer db) {
 
 	}
 	
 	/**
 	 * This function has to be implemented by all child classes. It is executed by startup on all persistent objects to test their integrity.
+	 * 
+	 * TODO: Code quality: Provide an implementation here as well to check mCreationDate. We should
+	 * keep this abstract though so people are forced to implement it in child classes. Thus maybe
+	 * use a different name for the implementation here and only notify people to call it by
+	 * mentioning it in the JavaDoc. Or use a "register()"-pattern to allow people to register
+	 * different types of test-functions in a static{} code block.
 	 */
 	public abstract void startupDatabaseIntegrityTest() throws Exception;
+	
+	/**
+	 * A version of {@link #startupDatabaseIntegrityTest()} which is suitable for use in assert() statements.
+	 * 
+	 * @return True if {@link #startupDatabaseIntegrityTest()} did not throw, false if it threw an Exception.
+	 */
+	public boolean startupDatabaseIntegrityTestBoolean() {
+		try {
+			startupDatabaseIntegrityTest();
+			return true;
+		} catch(Exception e) {
+			Logger.error(this, "startupDatabaseIntegrityTestBoolean() failed", e);
+			return false;
+		}
+	}
 	
 	/**
 	 * Must be called once after obtaining this object from the database before using any getter or setter member functions
 	 * and before calling storeWithoutCommit / deleteWithoutCommit.
 	 * Transient fields are NOT stored in the database. They are references to objects such as the IdentityManager.
 	 */
-	public final void initializeTransient(final WebOfTrust myWebOfTrust) {
+	public final void initializeTransient(final WebOfTrustInterface myWebOfTrust) {
 		mWebOfTrust = myWebOfTrust;
 		mDB = mWebOfTrust.getDatabase();
 	}
-	
+
+	/**
+	 * @see #initializeTransient(WebOfTrustInterface)
+	 * @see #mActivatedUpTo */
+	final void initializeTransient(final WebOfTrustInterface myWebOfTrust,
+			final int activatedUpTo) {
+		
+		mWebOfTrust = myWebOfTrust;
+		mDB = mWebOfTrust.getDatabase();
+		mActivatedUpTo = activatedUpTo;
+	}
+
+	/**
+	 * @deprecated Only for being used when dealing with objects which are from a different object container than the passed Freetalk uses.
+	 */
+	@Deprecated
+	public final void initializeTransient(final WebOfTrustInterface myWebOfTrust, final ExtObjectContainer db) {
+		mWebOfTrust = myWebOfTrust;
+		mDB = db;
+	}
+
+	/** @return See {@link #initializeTransient(WebOfTrustInterface)}. */
+	public final WebOfTrustInterface getWebOfTrust() {
+		return mWebOfTrust;
+	}
+
 	/**
 	 * Returns the lock for creating a transaction.
 	 * A proper transaction typically looks like this:
@@ -146,7 +214,28 @@ public abstract class Persistent {
 	 * Same as a call to {@link checkedActivate(this, depth)}
 	 */
 	protected final void checkedActivate(final int depth) {
+		if(mActivatedUpTo == depth)
+			return;
+		
 		checkedActivate(this, depth);
+		mActivatedUpTo = depth;
+	}
+
+	/**
+	 * For testing purposes only.
+	 * @see #mActivatedUpTo */
+	final int getActivationDepth() {
+		return mActivatedUpTo;
+	}
+
+	/**
+	 * Activate this object to full depth so that all members are active.
+	 * 
+	 * Typically you would override this to adapt it to the maximal activation depth of all your getters.
+	 * Then you would use it in your override implementation of {@link #storeWithoutCommit()} or {@link #deleteWithoutCommit()}.
+	 */
+	protected void activateFully() {
+		checkedActivate(1);
 	}
 	
 	/**
@@ -184,8 +273,10 @@ public abstract class Persistent {
 		testDatabaseIntegrity();
 		if(mDB.isStored(object))
 			mDB.delete(object);
-		else
-			Logger.error(this, "Trying to delete a inexistent object: " + object);
+		else {
+			Logger.warning(this, "Trying to delete a nonexistent object: " + object,
+			    new RuntimeException()); // Exception added to get a stack trace
+		}
 		testDatabaseIntegrity();
 	}
 	
@@ -229,22 +320,44 @@ public abstract class Persistent {
 	}
 	
 	/**
-	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction, logs the passed exception and throws it.
+	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction and logs the passed exception. 
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
 	 * synchronized(Persistent.transactionLock(mDB)) {<br />
 	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
 	 * 	catch(RuntimeException e) { Persistent.checkedRollback(mDB, this, e); }<br />
-	 * } 
+	 * }
+	 * 
+	 * @param db The database on which the rollback shall happen.
+	 * @param loggingObject The object whose class shall appear in the Freenet log file.
+	 * @param error The Exception which triggered the rollback. Will be logged to the Freenet log file.
+	 * @param logLevel The {@link LogLevel} to use in the Freenet log file when the rollback is logged.
 	 */
-	public static final void checkedRollback(final ExtObjectContainer db, final Object loggingObject, final Throwable error) {
+	public static final void checkedRollback(final ExtObjectContainer db, final Object loggingObject, final Throwable error, LogLevel logLevel) {
 		// As of db4o 7.4 it seems necessary to call gc(); to cause rollback() to work.
 		testDatabaseIntegrity(null, db);
 		System.gc();
 		db.rollback();
 		System.gc(); 
-		Logger.error(loggingObject, "ROLLED BACK!", error);
+		Logger.logStatic(loggingObject, "ROLLED BACK!", error, logLevel);
 		testDatabaseIntegrity(null, db);
 	}
+	
+	/**
+	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction and logs the passed exception with LogLevel {@link LogLevel.ERROR}.
+	 * The call to this function must be embedded in a transaction, that is a block of:<br />
+	 * synchronized(Persistent.transactionLock(mDB)) {<br />
+	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
+	 * 	catch(RuntimeException e) { Persistent.checkedRollback(mDB, this, e); }<br />
+	 * } 
+	 * 	
+	 * @param db The database on which the rollback shall happen.
+	 * @param loggingObject The object whose class shall appear in the Freenet log file.
+	 * @param error The Exception which triggered the rollback. Will be logged to the Freenet log file.
+	 */
+	public static final void checkedRollback(final ExtObjectContainer db, final Object loggingObject, final Throwable error) {
+		checkedRollback(db, loggingObject, error, LogLevel.ERROR);
+	}
+	
 
 	/**
 	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction, logs the passed exception and throws it.
@@ -368,8 +481,28 @@ public abstract class Persistent {
 	 */
 	public final Date getCreationDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
-		return mCreationDate;
+		return (Date)mCreationDate.clone(); // Date is mutable so we clone it.
 	}
+	
+	/**
+	 * ATTENTION: Only use this in clone():
+	 * For debugging purposes, the creation Date shall tell clearly when this object was created, it should never change.
+	 */
+	protected void setCreationDate(final Date creationDate) {
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
+		// checkedDelete(mCreationDate); /* Not stored because db4o considers it as a primitive */
+		mCreationDate = (Date)creationDate.clone();
+	}
+	  
+	/**
+	 * Returns an unique identifier of this persistent object.
+	 * For any given subclass class of Persistent only one object may exist in the database which has a certain ID.
+	 * 
+	 * The ID must also be unique for subclasses of the subclass:
+	 * For example an {@link OwnIdentity} object must not use an ID which is already used by an {@link Identity} object
+	 * because Identity is the parent class of OwnIdentity.
+	 */
+	public abstract String getID();
 	
 	/**
 	 * Returns the java object ID and the database object ID of this Persistent object.
@@ -377,6 +510,8 @@ public abstract class Persistent {
 	 */
 	@Override
 	public String toString() {
+		final String clazz = getClass().getSimpleName(); 
+		final String objectID = Integer.toHexString(identityHashCode(this));
 		final String databaseID;
 		
 		if(mDB == null)
@@ -386,10 +521,10 @@ public abstract class Persistent {
 			if(oi == null)
 				databaseID = "object not stored";
 			else
-				databaseID = Long.toString(oi.getInternalID());
+				databaseID = Long.toHexString(oi.getInternalID());
 		}
 		
-		return super.toString() + " (databaseID: " + databaseID + ")";
+		return clazz + ": objectID: " + objectID + "; databaseID: " + databaseID;
 	}
 	
 	/**
@@ -398,97 +533,143 @@ public abstract class Persistent {
 	 */
 	public static final class InitializingObjectSet<Type extends Persistent> implements ObjectSet<Type> {
 		
-		private final WebOfTrust mWebOfTrust;
+		private final WebOfTrustInterface mWebOfTrust;
 		private final ObjectSet<Type> mObjectSet;
+		/**
+		 * Used to detect iterating over the same ObjectSet twice. This is a trick to notice
+		 * usage of db4o in a way which would trigger a db4o bug.
+		 * See <a href="https://bugs.freenetproject.org/view.php?id=6596">the bugtracker entry</a>.
+		 * TODO: Performance: Remove once the issue which caused this workaround is fixed:
+		 * https://bugs.freenetproject.org/view.php?id=6646 */
+		private boolean mIterated1 = false;
+		/** Same purpose as {@link #mIterated1}. */
+		private boolean mIterated2 = false;
 		
+		/**
+		 * Private because we can only safely initialize {@link Persistent#mActivatedUpTo} to
+		 * {@link Persistent#DEFAULT_ACTIVATION_DEPTH} if we can assume that all objects in the set
+		 * are the direct result from a query and thus activated up to the default depth.
+		 * (The opposite to being a "direct result from a query" is obtaining other objects from
+		 * the member variables of objects which came from a query.) */
 		@SuppressWarnings("unchecked") 	// "ObjectSet<Type> myObjectSet" won't compile against db4o-7.12 so we use the Suppress trick
-		public InitializingObjectSet(final WebOfTrust myWebOfTrust, @SuppressWarnings("rawtypes") final ObjectSet myObjectSet) {
+		private InitializingObjectSet(final WebOfTrustInterface myWebOfTrust, @SuppressWarnings("rawtypes") final ObjectSet myObjectSet) {
 			mWebOfTrust = myWebOfTrust;
 			mObjectSet = (ObjectSet<Type>)myObjectSet;
 		}
 		
-		public InitializingObjectSet(final WebOfTrust myWebOfTrust, final Query myQuery) {
+		public InitializingObjectSet(final WebOfTrustInterface myWebOfTrust, final Query myQuery) {
 			this(myWebOfTrust, myQuery.execute());
 		}
 	
+		@Override
 		public ExtObjectSet ext() {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean hasNext() {
+			assert(!mIterated2);
+			assert(mIterated1 = true);
+			
 			return mObjectSet.hasNext();
 		}
 
+		@Override
 		public Type next() {
+			assert(!mIterated2);
+			assert(mIterated1 = true);
+			
 			final Type next = mObjectSet.next();
-			next.initializeTransient(mWebOfTrust);
+			next.initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
 			return next;
 		}
 
+		@Override
 		public void reset() {
+			assert(false) : "See mIterated1";
+			
 			mObjectSet.reset();
 		}
 
+		@Override
 		public int size() {
 			return mObjectSet.size();
 		}
 
+		@Override
 		public boolean add(final Type e) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public void add(final int index, final Type element) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean addAll(final Collection<? extends Type> c) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean addAll(final int index, final Collection<? extends Type> c) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public void clear() {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean contains(final Object o) {
 			return mObjectSet.contains(o);
 		}
 
+		@Override
 		public boolean containsAll(final Collection<?> c) {
 			return mObjectSet.containsAll(c);
 		}
 
+		@Override
 		public Type get(final int index) {
 			Type object = mObjectSet.get(index);
-			object.initializeTransient(mWebOfTrust);
+			object.initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
 			return object;
 		}
 
+		@Override
 		public int indexOf(final Object o) {
 			return mObjectSet.indexOf(o);
 		}
 
+		@Override
 		public boolean isEmpty() {
 			return mObjectSet.isEmpty();
 		}
 
+		@Override
 		public final Iterator<Type> iterator() {
+			assert(!mIterated1);
+			assert(!mIterated2);
+			assert(mIterated2 = true);
+			
 			return new Iterator<Type>() {
 				final Iterator<Type> mIterator = mObjectSet.iterator(); 
 				
+				@Override
 				public boolean hasNext() {
 					return mIterator.hasNext();
 				}
 
+				@Override
 				public Type next() {
 					final Type next = mIterator.next();
-					next.initializeTransient(mWebOfTrust);
+					next.initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
 					return next;
 				}
 
+				@Override
 				public void remove() {
 					throw new UnsupportedOperationException();
 				}
@@ -496,6 +677,7 @@ public abstract class Persistent {
 			};
 		}
 
+		@Override
 		public int lastIndexOf(final Object o) {
 			return mObjectSet.lastIndexOf(o);
 		}
@@ -507,91 +689,183 @@ public abstract class Persistent {
 				 mIterator = myIterator;
 			}
 
+			@Override
 			public void add(final ListType e) {
 				throw new UnsupportedOperationException();
 			}
 
+			@Override
 			public boolean hasNext() {
 				return mIterator.hasNext();
 			}
 
+			@Override
 			public boolean hasPrevious() {
 				return mIterator.hasPrevious();
 			}
 
+			@Override
 			public ListType next() {
 				final ListType next = mIterator.next();
-				next.initializeTransient(mWebOfTrust);
+				next.initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
 				return next;
 			}
 
+			@Override
 			public int nextIndex() {
 				return mIterator.nextIndex();
 			}
 
+			@Override
 			public ListType previous() {
 				final ListType previous = mIterator.previous();
-				previous.initializeTransient(mWebOfTrust);
+				previous.initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
 				return previous;
 			}
 
+			@Override
 			public int previousIndex() {
 				return mIterator.previousIndex();
 			}
 
+			@Override
 			public void remove() {
 				throw new UnsupportedOperationException();
 			}
 
+			@Override
 			public void set(final ListType e) {
 				throw new UnsupportedOperationException();
 			}
 		}
 		
+		@Override
 		public ListIterator<Type> listIterator() {
+			assert(!mIterated1);
+			assert(!mIterated2);
+			assert(mIterated2 = true);
+			
 			return new InitializingListIterator<Type>(mObjectSet.listIterator());
 		}
 		
+		@Override
 		public ListIterator<Type> listIterator(final int index) {
+			assert(!mIterated1);
+			assert(!mIterated2);
+			assert(mIterated2 = true);
+			
 			return new InitializingListIterator<Type>(mObjectSet.listIterator(index));
 		}
 
+		@Override
 		public boolean remove(final Object o) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public Type remove(final int index) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean removeAll(final Collection<?> c) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public boolean retainAll(final Collection<?> c) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public Type set(final int index, final Type element) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public List<Type> subList(final int fromIndex, final int toIndex) {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
 		public Object[] toArray() {
-			throw new UnsupportedOperationException("ObjectSet provides array functionality already.");
+			Object[] result = mObjectSet.toArray();
+			for(Object o : result)
+				((Persistent)o).initializeTransient(mWebOfTrust, DEFAULT_ACTIVATION_DEPTH);
+			return result;
 		}
 
+		@Override
 		public <T> T[] toArray(final T[] a) {
 			throw new UnsupportedOperationException("ObjectSet provides array functionality already.");
 		}
 
+		@Override
 		public void remove() {
 			throw new UnsupportedOperationException();
 		}
 
+	}
+	
+	
+	/* Non-db4o related code */
+
+	/**
+	 * Uses standard Java serialization to convert this Object to a byte array. NOT used by db4o.
+	 * 
+	 * The purpose for this is to allow in-db4o storage of cloned {@link Identity}/{@link Trust}/{@link Score}/etc. objects:
+	 * Normally there should only be one object with a given ID in the database, if we clone a Persistent object it will have the same ID.
+	 * If we store objects as a byte[] instead of using native db4o object storage, we can store those duplcates.
+	 * 
+	 * Typically used by {@link SubscriptionManager} for being able to store clones.
+	 * 
+	 * ATTENTION: Your Persistent class must provide an implementation of the following function:
+	 * <code>private void writeObject(ObjectOutputStream stream) throws IOException;</code>
+	 * This function is not specified by an interface, it can be read up about in the <a href="http://docs.oracle.com/javase/7/docs/platform/serialization/spec/output.html#861">serialization documentation</a>.
+	 * It must properly activate the object, all of its members and all of their members:
+	 * serialize() will store all members and their members. If they are not activated, this will fail.
+	 * After that, it must call {@link ObjectOutputStream#defaultWriteObject()}.
+	 * 
+	 * @see Persistent#deserialize(WebOfTrustInterface, byte[]) The inverse function.
+	 */
+	final byte[] serialize() {
+		ByteArrayOutputStream bos = null;
+		ObjectOutputStream ous = null;
+		
+		try {
+			bos = new ByteArrayOutputStream();
+			ous = new ObjectOutputStream(bos);
+			ous.writeObject(this);	
+			ous.flush();
+			return bos.toByteArray();
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			Closer.close(ous);
+			Closer.close(bos);
+		}
+	}
+	
+	/** Inverse function of {@link #serialize()}. */
+	static final Persistent deserialize(final WebOfTrustInterface wot, final byte[] data) {
+		ByteArrayInputStream bis = null;
+		ObjectInputStream ois = null;
+		
+		try {
+			bis = new ByteArrayInputStream(data);
+			ois = new ObjectInputStream(bis);
+			final Persistent deserialized = (Persistent)ois.readObject();
+			deserialized.initializeTransient(wot);
+			assert(deserialized.startupDatabaseIntegrityTestBoolean());
+			return deserialized;
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		} finally {
+			Closer.close(ois);
+			Closer.close(bis);
+		}
 	}
 	
 }

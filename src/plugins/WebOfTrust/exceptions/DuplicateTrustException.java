@@ -3,7 +3,6 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.exceptions;
 
-import plugins.WebOfTrust.Identity;
 
 /**
  * Thrown when there are more than one Trust relationships between 
@@ -16,7 +15,7 @@ public class DuplicateTrustException extends RuntimeException {
 
 	private static final long serialVersionUID = -1;
 
-	public DuplicateTrustException(Identity truster, Identity trustee, int amount) {
-		super("Duplicate trust from " + truster + "to " + trustee + "; " + amount + " copies exist.");
+	public DuplicateTrustException(String trustID, int amount) {
+		super("Duplicate trust with ID " + trustID + "; " + amount + " copies exist.");
 	}
 }

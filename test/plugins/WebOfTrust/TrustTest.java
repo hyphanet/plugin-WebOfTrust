@@ -5,6 +5,8 @@ package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
 
+import freenet.support.CurrentTimeUTC;
+
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
@@ -14,7 +16,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class TrustTest extends DatabaseBasedTest {
+public class TrustTest extends AbstractJUnit3BaseTest {
 	
 	private String uriA = "USK@MF2Vc6FRgeFMZJ0s2l9hOop87EYWAydUZakJzL0OfV8,fQeN-RMQZsUrDha2LCJWOMFk1-EiXZxfTnBT8NEgY00,AQACAAE/WoT/0";
 	private String uriB = "USK@R3Lp2s4jdX-3Q96c0A9530qg7JsvA9vi2K0hwY9wG-4,ipkgYftRpo0StBlYkJUawZhg~SO29NZIINseUtBhEfE,AQACAAE/WoT/0";
@@ -34,6 +36,21 @@ public class TrustTest extends DatabaseBasedTest {
 		
 		// TODO: Modify the test to NOT keep a reference to the identities as member variables so the followig also garbage collects them.
 		flushCaches();
+	}
+	
+	public void testClone() throws DuplicateTrustException, NotTrustedException, IllegalArgumentException, IllegalAccessException, InterruptedException {
+		final Trust original = mWoT.getTrust(a, b);
+		
+		Thread.sleep(10); // Trust contains Date mLastChangedDate which might not get properly cloned.
+		assertFalse(CurrentTimeUTC.get().equals(original.getDateOfLastChange()));
+		
+		final Trust clone = original.clone();
+		
+		assertEquals(original, clone);
+		assertNotSame(original, clone);
+		
+		testClone(Persistent.class, original, clone);
+		testClone(Trust.class, original, clone);
 	}
 	
 	public void testConstructor() throws InvalidParameterException {		
@@ -66,6 +83,20 @@ public class TrustTest extends DatabaseBasedTest {
 			fail("Constructor allows self-referential trust values");
 		}
 		catch(InvalidParameterException e) { }
+	}
+	
+	public void testSerializeDeserialize() throws DuplicateTrustException, NotTrustedException {
+		final Trust original = mWoT.getTrust(a, b);
+		final Trust deserialized = (Trust)Persistent.deserialize(mWoT, original.serialize());
+		
+		assertNotSame(original, deserialized);
+		assertEquals(original, deserialized);
+		
+		assertNotSame(original.getTruster(), deserialized.getTruster());
+		assertEquals(original.getTruster(), deserialized.getTruster());	// Trust.equals() only checks the ID
+		
+		assertNotSame(original.getTrustee(), deserialized.getTrustee());
+		assertEquals(original.getTrustee(), deserialized.getTrustee());	// Trust.equals() only checks the ID
 	}
 
 	public void testTrust() throws DuplicateTrustException, NotTrustedException {
