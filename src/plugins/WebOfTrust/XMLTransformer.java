@@ -836,10 +836,41 @@ public final class XMLTransformer {
 						       .storeTrustChangedNotificationWithoutCommit(...); */
 					}
 					
-					/* FIXME:
+					// The edition hint we passed to setTrustWithoutCommit() is NOT the remote hint
+					// we received as part of the puzzle solution but merely the most recent edition
+					// we did locally download yet in case the identity was known before - as
+					// setTrustWithoutCommit() wants the hint to be the edition observed by the
+					// truster. The remote hint we received might be better as the solver of the
+					// puzzle likely is the same identity which the hint is about, thus we store it
+					// separately as an EditionHint object now. Those are the actual hint download
+					// queue.
+					// With regards to the data we pass to the EditionHint constructor:
+					// Technically we should say the hint source is the solver of the puzzle - but
+					// that would mean the hint would be pretty low priority because the solver has
+					// a low score due to being a new user.
+					// Thus as the solver has just provided some "proof of work" by solving a puzzle
+					// we make an exception and claim the hint came from ourselves, i.e. from the
+					// OwnIdentity who published the puzzle. We also say that it was solved at the
+					// current time, not at the time the puzzle was published.
+					// The both of this will cause the hint to have a very high priority and thus be
+					// fetched quickly - which improves the user experience of newbies as they get
+					// seen by the community very fast.
+					// It also happens to be necessary to fetch their self-provided edition hint
+					// quickly to ensure the next cycle of uploading the Identity XML of the
+					// puzzleOwner will contain the hint: It will only be eligible to be published
+					// there if we were able to fetch it already (as non-fetchable hints would waste
+					// our peers' bandwidth).
+					EditionHint h = EditionHint.constructSecure(
+						mWoT,
+						puzzleOwner.getID(),
+						newIdentity.getID(),
+						CurrentTimeUTC.get(),
+						WebOfTrust.OWN_IDENTITY_CAPACITY,
+						WebOfTrust.OWN_IDENTITY_SCORE,
+						identityURI.getEdition());
+					
 					mWoT.getIdentityDownloaderController()
-						.storeNewEditionHintCommandWithoutCommit(EditionHint.constructSecure(...));
-					*/
+					    .storeNewEditionHintCommandWithoutCommit(h);
 					
 					// setTrustWithoutCommit() does this for us, no need to do it ourself:
 					//   mWoT.getIdentityFetcher()
