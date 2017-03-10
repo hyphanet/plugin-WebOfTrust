@@ -554,6 +554,9 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 		if(getTrusterEdition() != other.getTrusterEdition())
 			return false;
 		
+		// FIXME: Consider what to do with the new getTrusteeEdition(). If we want to propagate it
+		// using SubscriptionManager we should make differences of it cause inequality.
+		
 		if(!getComment().equals(other.getComment()))
 			return false;
 		
