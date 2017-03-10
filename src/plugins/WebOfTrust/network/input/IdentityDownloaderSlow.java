@@ -32,7 +32,15 @@ import freenet.support.Logger;
  * USK subscriptions which {@link IdentityDownloaderFast} would do.
  * 
  * This class only deals with the {@link Identity}s which {@link IdentityDownloaderFast} does not
- * download, so in combination the both of these classes download all {@link Identity}s. */
+ * download, so in combination the both of these classes download all {@link Identity}s.
+ * 
+ * FIXME: Do we deduplicate hints by edition? We should do that so we don't have multiple hints for
+ * the same edition in the queue download queue - it only makes sense to download a single edition
+ * once. This space optimization is necessary because each Trust value we receive from the network
+ * ships with a hint, so there are at most O(N*512) hints where N is the number of identities.
+ * This is a very large number, in fact the Trust table is the largest table we store in
+ * the database (by number of entries, not necessarily by used space) - so it would be nice to avoid
+ * having that many EditionHint objects as well. */
 public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon {
 	
 	private final WebOfTrust mWoT;
