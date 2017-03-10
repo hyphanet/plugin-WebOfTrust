@@ -438,7 +438,9 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	}
 
 	/**
-	 * Gets the latest edition of the trustee which the truster claims to have seen.
+	 * Gets the latest edition of the trustee which the truster claims to have seen, specifically
+	 * the return value of {@link Identity#getLastFetchedMaybeValidEdition()} of the trustee as
+	 * returned on the truster's remote WoT instance.
 	 * See {@link EditionHint}.
 	 * A value of -1 is returned if the truster wasn't able to download the Identity yet.
 	 * 
