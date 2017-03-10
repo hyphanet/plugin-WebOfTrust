@@ -40,7 +40,19 @@ import freenet.support.Logger;
  * ships with a hint, so there are at most O(N*512) hints where N is the number of identities.
  * This is a very large number, in fact the Trust table is the largest table we store in
  * the database (by number of entries, not necessarily by used space) - so it would be nice to avoid
- * having that many EditionHint objects as well. */
+ * having that many EditionHint objects as well.
+ * EDIT: It may actually make sense to keep the duplicate hints: If the giver of a hint becomes
+ * distrusted we maybe should delete their hints - but this does not mean the editions they hint at
+ * are not valid. So we should try to fetch those editions by keeping the hints of other people
+ * who hinted at the same edition. If we go for that behavior we just have to delete all hints of
+ * a give edition once it is fetched by any IdentityDownloader.
+ * OTOH one goal of having EditionHint objects not reference the Identity objects directly but only
+ * contain their string IDs was to avoid having to delete them when an Identity becomes distrusted
+ * (as they only can cause a temporary disturbance of 512 bogus fetch attempts per distrusted
+ * Identity). Not only would this keep the codebase simple but also greatly reduce lock contention
+ * as the IdentityDownloaderSlow would not have to sync against the lock of the Identity database
+ * (= the WebOfTrust).
+ * We should decide which path we want to go down and act accordingly. */
 public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon {
 	
 	private final WebOfTrust mWoT;
