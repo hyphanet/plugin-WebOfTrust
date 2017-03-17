@@ -626,8 +626,14 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * Marks the current edition of this identity as not fetched if it was fetched already.
 	 * If it was not fetched, decreases the edition of the identity by one.
 	 * 
-	 * Called by the {@link WebOfTrust} when the {@link Score} of an identity changes from negative or 0 to > 0 to make the {@link IdentityFetcher} re-download it's
-	 * current trust list. This is necessary because we do not create the trusted identities of someone if he has a negative score.
+	 * Called by the {@link WebOfTrust}'s {@link Score} computation functions when the Identity's
+	 * XML was eligible for downloading but the {@link Trust} list in it wasn't eligible for import
+	 * (see {@link XMLTransformer#importIdentity(FreenetURI, java.io.InputStream)}) and has just
+	 * become eligible due to a changed Score.
+	 * Changes the {@link #getNextEditionToFetch()} to re-download the current XML to obtain the
+	 * trust list for import. Will only have an effect if you notify the {@link IdentityDownloader}
+	 * about the changed value, e.g. by calling
+	 * {@link IdentityDownloader#storeStartFetchCommandWithoutCommit(Identity)}.
 	 * 
 	 * FIXME: Rename to onRefetchRequired() to be coherent with the other functions related to the
 	 * edition / fetch state. */
