@@ -44,9 +44,14 @@ import freenet.keys.FreenetURI;
 public interface IdentityDownloader extends Daemon {
 
 	/**
-	 * Called by {@link WebOfTrust} as soon as {@link WebOfTrust#shouldFetchIdentity(Identity)}
-	 * changes from false to true for the given {@link Identity}. This is usually the case when
-	 * *any* {@link OwnIdentity} has rated it as trustworthy enough for us to download it.
+	 * Called by {@link WebOfTrust}:
+	 * - as soon as {@link WebOfTrust#shouldFetchIdentity(Identity)} changes from false to true for
+	 *   the given {@link Identity}. This is usually the case when *any* {@link OwnIdentity} has
+	 *   rated it as trustworthy enough for us to download it.
+	 * - in special cases such as creation/deletion/restoring of an OwnIdentity.
+	 * - May also be called to notify the IdentityDownloader about a changed
+	 *   {@link Identity#getNextEditionToFetch()} (e.g. due to  {@link Identity#markForRefetch()})
+	 *   even if the Identity was already eligible for fetching before.
 	 * 
 	 * FIXME: Only require {@link Identity#getID()} as parameter to enforce the "ATTENTION" at the
 	 * JavaDoc of this interface. Implementations likely don't need anything but the ID anyway.
@@ -60,9 +65,11 @@ public interface IdentityDownloader extends Daemon {
 	void storeStartFetchCommandWithoutCommit(Identity identity);
 
 	/**
-	 * Called by {@link WebOfTrust} as soon as {@link WebOfTrust#shouldFetchIdentity(Identity)}
-	 * changes from true to false for the given {@link Identity}. This is usually the case when not
-	 * even one {@link OwnIdentity} has rated it as trustworthy enough for us to download it.
+	 * Called by {@link WebOfTrust}:
+	 * - as soon as {@link WebOfTrust#shouldFetchIdentity(Identity)} changes from true to false for
+	 *   the given {@link Identity}. This is usually the case when not even one {@link OwnIdentity}
+	 *   has rated it as trustworthy enough for us to download it
+	 * - in special cases such as deletion/restoring of an OwnIdentity.
 	 * 
 	 * FIXME: Only require {@link Identity#getID()} as parameter to enforce the "ATTENTION" at the
 	 * JavaDoc of this interface. Implementations likely don't need anything but the ID anyway.
