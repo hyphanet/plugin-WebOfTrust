@@ -228,7 +228,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	}
 
 	/** Factory WITHOUT parameter validation */
-	static EditionHint construcInsecure(
+	static EditionHint constructInsecure(
 			final WebOfTrust wot, final String sourceIdentityID, final String targetIdentityID,
 			final Date date, final int sourceCapacity, final int sourceScore, final long edition) {
 		
