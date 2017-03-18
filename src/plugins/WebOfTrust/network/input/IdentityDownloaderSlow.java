@@ -212,7 +212,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	}
 
 	/** You must synchronize upon {@link #mLock} when using this! */
-	private EditionHint getEditionHintByID(String id) throws UnknownEditionHintException {
+	EditionHint getEditionHintByID(String id) throws UnknownEditionHintException {
 		Query query = mDB.query();
 		query.constrain(EditionHint.class);
 		query.descend("mID").constrain(id);
