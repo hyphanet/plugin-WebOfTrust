@@ -58,16 +58,23 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	private static final long serialVersionUID = 1L;
 
 	/**
+	 * This class' {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)} will
+	 * reject capacities below the value of this constant.
+	 * 
 	 * The legacy implementation class {@link IdentityFetcher} will use hints from {@link Identity}s
 	 * if merely their {@link Score#getScore()} is > 0, ignoring the {@link Score#getCapacity()}.
 	 * The new implementation of {@link IdentityDownloaderSlow} requires their capacity to be > 0.
-	 * To allow this class to refuse hints of Identitys with too low capacities when not running
-	 * the legacy implementation we need to check whether we're running the legacy implementation.
 	 * 
-	 * (We do not check whether the Score is > 0 for the legacy implementation, it shall do that
-	 * on its own. Our focus is mostly ensuring strict behavior for the new implementation, we don't
-	 * care much about the legacy one.) */
-	private static final int MIN_CAPACITY
+	 * This constant is initialized depending on whether we're using the legacy or the new
+	 * implementation - which is declared by
+	 * {@link IdentityDownloaderController#USE_LEGACY_REFERENCE_IMPLEMENTATION}. 
+	 * 
+	 * (NOTICE: The new implementation has no limit on the score value, only on the capacity.
+	 * Thus this class does not check whether the score > 0 limit of the legacy implementation is
+	 * obeyed, the legacy implementation shall do that on its own. This is because our focus is
+	 * mostly ensuring strict behavior for the new implementation, we don't care much about the
+	 * legacy one.) */
+	public static final int MIN_CAPACITY
 		= IdentityDownloaderController.USE_LEGACY_REFERENCE_IMPLEMENTATION ? 0 : 1;
 
 	private final String mSourceIdentityID;
@@ -194,7 +201,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	private final String mPriority;
 
 
-	/** Factory with parameter validation */
+	/** Factory with parameter validation. Also see {@link #MIN_CAPACITY}. */
 	public static EditionHint constructSecure(
 			WebOfTrust wot, String sourceIdentityID, String targetIdentityID, Date date,
 			int sourceCapacity, int sourceScore, long edition) {
