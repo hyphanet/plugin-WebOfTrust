@@ -203,8 +203,16 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		return new InitializingObjectSet<>(mWoT, q);
 	}
 
+	/** Convenient frontend for {@link #getEditionHintByID(String)} */
+	private EditionHint getEditionHint(Identity sourceIdentity, Identity targetIdentity)
+			throws UnknownEditionHintException {
+		
+		String id = new TrustID(sourceIdentity.getID(), targetIdentity.getID()).toString();
+		return getEditionHintByID(id);
+	}
+
 	/** You must synchronize upon {@link #mLock} when using this! */
-	EditionHint getEditionHintByID(String id) throws UnknownEditionHintException {
+	private EditionHint getEditionHintByID(String id) throws UnknownEditionHintException {
 		Query query = mDB.query();
 		query.constrain(EditionHint.class);
 		query.descend("mID").constrain(id);
