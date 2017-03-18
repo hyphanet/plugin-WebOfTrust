@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.util;
 
+import java.util.concurrent.Callable;
+
 /**
  * Utilities for amending the features of  the Java assert statement.
  */
@@ -33,25 +35,27 @@ public final class AssertUtil {
     }
 
     /**
-     * If Java assertions are enabled, executes the given {@link Runnable} and asserts that it
+     * If Java assertions are enabled, executes the given {@link Callable} and asserts that it
      * throws an exception of the given type.
      * Can be used as a workaround for the fact that Java assertions cannot handle exceptions.
      * 
-     * If the thrown type is wrong, the {@link Throwable} will be passed as message to the assert.
+     * If no exception is thrown, the return value of the callable will be passed as error message
+     * to the assert.
+     * If the thrown type is wrong, the {@link Exception} will be passed as error message.
      * 
      * TODO: Code quality: Java 8: Change to use lambda expressions or function pointers + varargs
      */
-    public static final void assertDidThrow(Runnable r, Class<? extends Throwable> type) {
+    public static final void assertDidThrow(Callable<?> c, Class<? extends Exception> type) {
         boolean execute = false;
         
         assert(execute = true);
         
         if(execute) {
             try {
-                r.run();
-                assert(false);
-            } catch(Throwable t) {
-                assert(type.isInstance(t)) : t;
+                Object result = c.call();
+                assert(false) : result;
+            } catch(Exception e) {
+                assert(type.isInstance(e)) : e;
             }
         }
     }
