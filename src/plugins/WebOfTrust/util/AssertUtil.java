@@ -32,4 +32,28 @@ public final class AssertUtil {
         }
     }
 
+    /**
+     * If Java assertions are enabled, executes the given {@link Runnable} and asserts that it
+     * throws an exception of the given type.
+     * Can be used as a workaround for the fact that Java assertions cannot handle exceptions.
+     * 
+     * If the thrown type is wrong, the {@link Throwable} will be passed as message to the assert.
+     * 
+     * TODO: Code quality: Java 8: Change to use lambda expressions or function pointers + varargs
+     */
+    public static final void assertDidThrow(Runnable r, Class<? extends Throwable> type) {
+        boolean execute = false;
+        
+        assert(execute = true);
+        
+        if(execute) {
+            try {
+                r.run();
+                assert(false);
+            } catch(Throwable t) {
+                assert(type.isInstance(t)) : t;
+            }
+        }
+    }
+
 }
