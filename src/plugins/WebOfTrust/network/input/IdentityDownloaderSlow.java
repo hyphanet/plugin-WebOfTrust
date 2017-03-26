@@ -275,6 +275,8 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 			
 			if(newEdition < oldEdition) {
 				// FIXME: Track this in a counter and punish hint publishers if they do it too often
+				// EDIT: It probably can happen due to Identity.markForRefetch() having been called
+				// multiple times at our remote peers.
 				Logger.warning(this, "Received hint older than current, discarding:");
 				Logger.warning(this, "oldHint: " + oldHint);
 				Logger.warning(this, "newHint: " + newHint);
