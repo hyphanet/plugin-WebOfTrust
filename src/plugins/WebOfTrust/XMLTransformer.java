@@ -3,8 +3,6 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
-import static java.lang.Math.max;
-
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.TimeZone;
@@ -553,10 +552,11 @@ public final class XMLTransformer {
 							catch(NotInTrustTreeException e) { }
 						}
 						
-						// Key = Identity ID of the Identity which the hint is about.
+						// Key = Identity which the hint is about.
 						// Value = The actual hint
-						HashMap<String, Long> editionHints
-							= new HashMap<>(xmlData.identityTrustList.size() * 2);
+						// See documentation of class IdentifierHashSet for why we don't use HashMap
+						IdentityHashMap<Identity, Long> editionHints
+							= new IdentityHashMap<>(xmlData.identityTrustList.size() * 2);
 
 						for(final ParsedIdentityXML.TrustListEntry trustListEntry : xmlData.identityTrustList) {
 							final FreenetURI trusteeURI = trustListEntry.mTrusteeURI;
@@ -606,7 +606,7 @@ public final class XMLTransformer {
 								assert(hasCapacity || positiveScore);
 								
 								if(editionHint >= 0) {
-									Long previous = editionHints.put(trustee.getID(), editionHint);
+									Long previous = editionHints.put(trustee, editionHint);
 									
 									assert(previous == null);
 								} else {
@@ -625,7 +625,7 @@ public final class XMLTransformer {
 										
 										if(editionHint >= 0) {
 											Long previous
-												= editionHints.put(trustee.getID(), editionHint);
+												= editionHints.put(trustee, editionHint);
 											assert(previous == null);
 										}
 										
@@ -653,11 +653,11 @@ public final class XMLTransformer {
 						IdentityDownloaderController idc = mWoT.getIdentityDownloaderController();
 						assert(bestCapacity != null && bestCapacity > 0) : bestCapacity;
 						assert(bestScore != null) : bestScore;
-						for(Entry<String, Long> e : editionHints.entrySet()) {
+						for(Entry<Identity, Long> e : editionHints.entrySet()) {
 							EditionHint h = EditionHint.constructSecure(
 								mWoT,
 								identity.getID(),
-								e.getKey(),
+								e.getKey().getID(),
 								CurrentTimeUTC.get(), /* FIXME: Propagate in the XML */
 								bestCapacity,
 								bestScore,
