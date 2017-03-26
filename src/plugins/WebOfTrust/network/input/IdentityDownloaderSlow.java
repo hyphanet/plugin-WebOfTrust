@@ -208,6 +208,9 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	}
 
 	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint newHint) {
+		if(logMINOR)
+			Logger.minor(this, "storeNewEditionHintCommandWithoutCommit(" + newHint + ") ...");
+		
 		// Class EditionHint should enforce this in theory, but it has a legacy codepath which
 		// doesn't, so we better check whether the enforcement works.
 		assert(newHint.getSourceCapacity() > 0);
@@ -253,12 +256,21 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 				return;
 			}
 			
+			if(logMINOR)
+				Logger.minor(this, "Deleting old hint: " + oldHint);
+			
 			oldHint.deleteWithoutCommit();
 		} catch(UnknownEditionHintException e) {}
+		
+		if(logMINOR)
+			Logger.minor(this, "Storing new hint: " + newHint);
 		
 		newHint.storeWithoutCommit();
 		
 		// FIXME: Wakup network request thread.
+		
+		if(logMINOR)
+			Logger.minor(this, "storeNewEditionHintCommandWithoutCommit() finished.");
 	}
 
 	@Override public boolean getShouldFetchState(String identityID) {
