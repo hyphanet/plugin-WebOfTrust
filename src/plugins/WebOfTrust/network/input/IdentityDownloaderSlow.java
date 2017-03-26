@@ -12,6 +12,7 @@ import java.util.concurrent.Callable;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
+import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.WebOfTrust;
@@ -21,12 +22,15 @@ import plugins.WebOfTrust.exceptions.UnknownEditionHintException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.AssertUtil;
 import plugins.WebOfTrust.util.Daemon;
+import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
+import freenet.node.PrioRunnable;
 import freenet.support.Logger;
+import freenet.support.io.NativeThread;
 
 /**
  * Uses USK edition hints to download {@link Identity}s from the network for which we have a
@@ -58,13 +62,16 @@ import freenet.support.Logger;
  * as the IdentityDownloaderSlow would not have to sync against the lock of the Identity database
  * (= the WebOfTrust).
  * We should decide which path we want to go down and act accordingly. */
-public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon {
+public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon, PrioRunnable {
 	
 	private final WebOfTrust mWoT;
 	
 	private final IdentityDownloaderController mLock;
 	
 	private final ExtObjectContainer mDB;
+	
+	/** FIXME: Document similarly to {@link SubscriptionManager#mJob} */
+	private volatile DelayedBackgroundJob mJob = null;
 
 	private static transient volatile boolean logDEBUG = false;
 
@@ -86,7 +93,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 	@Override public void start() {
 		Logger.normal(this, "start() ...");
 		
-		// FIXME: Implement
+		// FIXME: Implement similarly to SubscriptionManager.
 		
 		if(logDEBUG)
 			testDatabaseIntegrity();
@@ -94,10 +101,27 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		Logger.normal(this, "start() finished.");
 	}
 
+	/**
+	 * The actual downloader. Starts fetches for the head of {@link #getQueue()}.
+	 * 
+	 * Executed on an own thread after {@link DelayedBackgroundJob#triggerExecution()} was called.
+	 * 
+	 * FIXME: Document similarly to {@link SubscriptionManager#run()} */
+	@Override public void run() {
+		// FIXME: Implement similarly to SubscriptionManager & IntroductionClient
+	}
+
+	@Override public int getPriority() {
+		// Below NORM_PRIORITY because we are a background thread and not relevant to UI actions.
+		// Above MIN_PRIORITY because we're not merely a cleanup thread.
+		// -> LOW_PRIORITY is the only choice.
+		return NativeThread.LOW_PRIORITY;
+	}
+
 	@Override public void terminate() {
 		Logger.normal(this, "terminate() ...");
 		
-		// FIXME: Implement
+		// FIXME: Implement similarly to SubscriptionManager.
 		
 		Logger.normal(this, "terminate() finished.");
 	}
@@ -181,6 +205,9 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		// FIXME: Add handling for the case "identity instanceof OwnIdentity", e.g. when this was
 		// called by restoreOwnIdentity().
 		
+		// Wake up this.run() - the actual downloader 
+		mJob.triggerExecution();
+		
 		Logger.normal(this, "storeStartFetchCommandWithoutCommit() finished.");
 	}
 
@@ -203,6 +230,10 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		// for the network thread: We couldn't cancel the requests right away on this thread here
 		// because the transaction isn't committed yet and may be aborted after we return. We would
 		// then have wrongly canceled a request which should still be running.
+		
+		// FIXME: Should this.run(), i.e. the downloading thread, be capable of aborting pending
+		// fetches or can we just let it finish them assuming their amount is O(1) anyway?
+		/* mJob.triggerExecution(); */
 		
 		Logger.normal(this, "storeAbortFetchCommandWithoutCommit() finished");
 	}
@@ -267,7 +298,8 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		
 		newHint.storeWithoutCommit();
 		
-		// FIXME: Wakup network request thread.
+		// Wake up this.run() - the actual downloader 
+		mJob.triggerExecution();
 		
 		if(logMINOR)
 			Logger.minor(this, "storeNewEditionHintCommandWithoutCommit() finished.");
