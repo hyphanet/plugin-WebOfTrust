@@ -450,7 +450,7 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 	 * trustee is distrusted and shouldn't be downloaded anymore.
 	 * As the trustee might become trusted again, we need a way to be able to restore the
 	 * EditionHint objects in the future - and that is this value here. */
-	long getTrusteeEdition()  {
+	public long getTrusteeEdition()  {
 		checkedActivate(1);
 		return mTrusteeTrustListEdition;
 	}

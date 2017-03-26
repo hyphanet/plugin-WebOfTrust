@@ -8,13 +8,18 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.concurrent.Callable;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
+import plugins.WebOfTrust.Trust;
+import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
+import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.UnknownEditionHintException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.util.AssertUtil;
 import plugins.WebOfTrust.util.Daemon;
 
 import com.db4o.ObjectSet;
@@ -97,8 +102,86 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon 
 		Logger.normal(this, "terminate() finished.");
 	}
 
-	@Override public void storeStartFetchCommandWithoutCommit(Identity identity) {
-		// FIXME
+	@Override public void storeStartFetchCommandWithoutCommit(final Identity identity) {
+		Logger.normal(this, "storeStartFetchCommandWithoutCommit(" + identity + ") ...");
+		
+		final String identityID = identity.getID();
+		
+		for(Trust trust : mWoT.getReceivedTrusts(identity)) {
+			final long editionHint = trust.getTrusteeEdition();
+			if(editionHint < 0 || editionHint <= identity.getLastFetchedEdition())
+				continue;
+			
+			final Identity truster = trust.getTruster();
+			int trusterCapacity;
+			
+			try {
+				trusterCapacity = mWoT.getBestCapacity(truster);
+			} catch(NotInTrustTreeException e) { 
+				trusterCapacity = 0;
+			}
+			
+			if(trusterCapacity < EditionHint.MIN_CAPACITY)
+				continue;
+			
+			int trusterScore;
+			try {
+				trusterScore = mWoT.getBestScore(truster);
+			} catch(NotInTrustTreeException e) {
+				assert(EditionHint.MIN_CAPACITY > 0);
+				// This shouldn't happen as per the WoT Score computation rules:
+				// If the trusterCapacity was > 0, then the truster must have had a score.
+				// Thus it is an error in Score computation.
+				throw new RuntimeException(
+					"Illegal State: trusterCapacity > 0: " + trusterCapacity +
+					" - but truster has no Score. truster: " + truster);
+			}
+			
+			// We're using data from our database, not from the network, so we can use *Insecure().
+			EditionHint h = EditionHint.constructInsecure(
+				mWoT,
+				truster.getID(),
+				identityID,
+				/* FIXME: Transfer across the network? If yes, validate before storing at Trust
+				 * or use constructSecure() above. */
+				trust.getDateOfLastChange(),
+				trusterCapacity,
+				trusterScore,
+				editionHint);
+
+			// FIXME: This will likely fail in the case of this function having been called merely
+			// to tell us that markForRefetch() was called upon the passed identity, i.e. if the
+			// Identity *was* already eligible for fetching before the call.
+			AssertUtil.assertDidThrow(new Callable<EditionHint>() {
+				@Override public EditionHint call() throws Exception {
+					return getEditionHint(truster, identity);
+				}
+			}, UnknownEditionHintException.class);
+			
+			h.storeWithoutCommit();
+			
+			if(logMINOR)
+				Logger.minor(this, "Created EditionHint from Trust database: " + h);
+		}
+		
+		// No need to do the below: We do not store the given Trusts of an Identity while it is 
+		// not considered as trustworthy. Thus whenever the "is the trust list, and thus the edition
+		// hints, of the identity eligible for import?"-state of an Identity changes from false to
+		// true (which is also when this handler here is called), WoT calls
+		// Identity.markForRefetch() on the Identity. That will cause the trust list of the identity
+		// to be downloaded again, which causes the EditionHints to be imported from it later on.
+		// FIXME: Make the parent interface specification of this function document that it can
+		// rely on this behavior.
+		/*
+		for(Trust trust : mWoT.getGivenTrusts(identity)) {
+			... create EditionHints for trustees ... 
+		}
+		*/
+		
+		// FIXME: Add handling for the case "identity instanceof OwnIdentity", e.g. when this was
+		// called by restoreOwnIdentity().
+		
+		Logger.normal(this, "storeStartFetchCommandWithoutCommit() finished.");
 	}
 
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
