@@ -266,6 +266,16 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	}
 
 	private EditionHint(
+			WebOfTrust wot, Identity sourceIdentity, Identity targetIdentity, Date date,
+			int sourceCapacity, int sourceScore, long edition) {
+		
+		this(wot, sourceIdentity.getID(), targetIdentity.getID(), date, sourceCapacity,
+			sourceScore, edition);
+	}
+
+	/** @deprecated See {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)}*/
+	@Deprecated
+	private EditionHint(
 			WebOfTrust wot, String sourceIdentityID, String targetIdentityID, Date date,
 			int sourceCapacity, int sourceScore, long edition) {
 		
