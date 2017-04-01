@@ -256,23 +256,13 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 			final WebOfTrust wot, final Identity sourceIdentity, final Identity targetIdentity,
 			final Date date, final int sourceCapacity, final int sourceScore, final long edition) {
 		
-		return constructInsecure(wot, sourceIdentity.getID(), targetIdentity.getID(), date,
-			sourceCapacity, sourceScore, edition);
-	}
-
-	/** @deprecated See {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)}*/
-	@Deprecated
-	static EditionHint constructInsecure(
-			final WebOfTrust wot, final String sourceIdentityID, final String targetIdentityID,
-			final Date date, final int sourceCapacity, final int sourceScore, final long edition) {
-		
 		assertDidNotThrow(new Runnable() { @Override public void run() {
-			constructSecure(wot, sourceIdentityID, targetIdentityID, date, sourceCapacity,
+			constructSecure(wot, sourceIdentity, targetIdentity, date, sourceCapacity,
 				sourceScore, edition);
 		}});
 		
-		return new EditionHint(
-			wot, sourceIdentityID, targetIdentityID, date, sourceCapacity, sourceScore, edition);
+		return new EditionHint(wot, sourceIdentity.getID(), targetIdentity.getID(), date,
+			sourceCapacity, sourceScore, edition);
 	}
 
 	private EditionHint(
