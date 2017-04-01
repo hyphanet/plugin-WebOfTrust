@@ -106,9 +106,9 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 	@Test public final void testCompareTo() {
 		
 		// EditionHints consume the following input data in the constructor:
-		//     sourceIdentityID, targetIdentityID, date, sourceCapacity, sourceScore, edition.
+		//     sourceIdentity, targetIdentity, date, sourceCapacity, sourceScore, edition.
 		// Comparison should be upon:
-		//     date, sourceCapacity, sourceScore, targetIdentityID, edition
+		//     date, sourceCapacity, sourceScore, targetIdentity.getID(), edition
 		// We check sorting both for varying input values of the sorting keys as well as for
 		// changes upon irrelevant values.
 		
@@ -147,8 +147,8 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 						for(long edition : editions) {
 							EditionHint h =  EditionHint.constructSecure(
 								mWebOfTrust,
-								sourceIdentities.get(0).getID(),
-								targetIdentity.getID(),
+								sourceIdentities.get(0),
+								targetIdentity,
 								date,
 								sourceCapacity,
 								sourceScore,
@@ -211,8 +211,8 @@ public class EditionHintTest extends AbstractJUnit4BaseTest {
 							for(Identity sourceIdentity : sourceIdentities) {
 								EditionHint h =  EditionHint.constructSecure(
 									mWebOfTrust,
-									sourceIdentity.getID(),
-									targetIdentity.getID(),
+									sourceIdentity,
+									targetIdentity,
 									date,
 									sourceCapacity,
 									sourceScore,
