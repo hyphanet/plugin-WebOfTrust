@@ -203,6 +203,23 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 
 	/** Factory with parameter validation. Also see {@link #MIN_CAPACITY}. */
 	public static EditionHint constructSecure(
+			WebOfTrust wot, Identity sourceIdentity, Identity targetIdentity, Date date,
+			int sourceCapacity, int sourceScore, long edition) {
+		
+		return constructSecure(wot, sourceIdentity.getID(), targetIdentity.getID(), date,
+			sourceCapacity, sourceScore, edition);
+	}
+
+	/**
+	 * @deprecated
+	 *     FIXME Shall be replaced with the version which consumes Identity objects instead of their
+	 *     IDs so we can replace {@link #mSourceIdentityID} and especially
+	 *     {@link #mTargetIdentityID} with direct pointers to the Identity objects. This is
+	 *     necessary because {@link IdentityDownloaderSlow#run()} will need the target Identity
+	 *     object anyway to be able to obtain its {@link Identity#getRequestURI()} so it can
+	 *     actually download the URI. */
+	@Deprecated
+	public static EditionHint constructSecure(
 			WebOfTrust wot, String sourceIdentityID, String targetIdentityID, Date date,
 			int sourceCapacity, int sourceScore, long edition) {
 		
@@ -235,6 +252,16 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	}
 
 	/** Factory WITHOUT parameter validation */
+	static EditionHint constructInsecure(
+			final WebOfTrust wot, final Identity sourceIdentity, final Identity targetIdentity,
+			final Date date, final int sourceCapacity, final int sourceScore, final long edition) {
+		
+		return constructInsecure(wot, sourceIdentity.getID(), targetIdentity.getID(), date,
+			sourceCapacity, sourceScore, edition);
+	}
+
+	/** @deprecated See {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)}*/
+	@Deprecated
 	static EditionHint constructInsecure(
 			final WebOfTrust wot, final String sourceIdentityID, final String targetIdentityID,
 			final Date date, final int sourceCapacity, final int sourceScore, final long edition) {
