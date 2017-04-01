@@ -129,8 +129,6 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 	@Override public void storeStartFetchCommandWithoutCommit(final Identity identity) {
 		Logger.normal(this, "storeStartFetchCommandWithoutCommit(" + identity + ") ...");
 		
-		final String identityID = identity.getID();
-		
 		for(Trust trust : mWoT.getReceivedTrusts(identity)) {
 			final long editionHint = trust.getTrusteeEdition();
 			if(editionHint < 0 || editionHint <= identity.getLastFetchedEdition())
@@ -164,8 +162,8 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 			// We're using data from our database, not from the network, so we can use *Insecure().
 			EditionHint h = EditionHint.constructInsecure(
 				mWoT,
-				truster.getID(),
-				identityID,
+				truster,
+				identity,
 				/* FIXME: Transfer across the network? If yes, validate before storing at Trust
 				 * or use constructSecure() above. */
 				trust.getDateOfLastChange(),
