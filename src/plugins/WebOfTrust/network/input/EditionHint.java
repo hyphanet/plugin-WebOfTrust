@@ -261,8 +261,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 				sourceScore, edition);
 		}});
 		
-		return new EditionHint(wot, sourceIdentity.getID(), targetIdentity.getID(), date,
-			sourceCapacity, sourceScore, edition);
+		return new EditionHint(wot, sourceIdentity, targetIdentity, date, sourceCapacity,
+			sourceScore, edition);
 	}
 
 	private EditionHint(
