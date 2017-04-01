@@ -656,8 +656,8 @@ public final class XMLTransformer {
 						for(Entry<Identity, Long> e : editionHints.entrySet()) {
 							EditionHint h = EditionHint.constructSecure(
 								mWoT,
-								identity.getID(),
-								e.getKey().getID(),
+								identity,
+								e.getKey(),
 								CurrentTimeUTC.get(), /* FIXME: Propagate in the XML */
 								bestCapacity,
 								bestScore,
@@ -788,6 +788,17 @@ public final class XMLTransformer {
 		synchronized(mWoT) {
 		synchronized(mWoT.getIdentityFetcher()) {
 		synchronized(mSubscriptionManager) {
+			// Normally we would have to re-query the puzzleOwner because there is no guarantee that
+			// it hasn't been deleted while we weren't synchronized on the mWoT yet
+			// - but the JavaDoc currently requires callers to synchronize on the WoT anyway.
+			/*
+			try {
+				puzzleOwner = mWoT.getOwnIdentityByID(puzzleOwner.getID());
+			} catch (UnknownIdentityException e) {
+				throw new RuntimeException(e);
+			}
+			*/
+			
 			if(!puzzleOwner.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT))
 				throw new InvalidParameterException("Trying to import an identity identroduction for an own identity which does not allow introduction.");
 			
@@ -862,8 +873,8 @@ public final class XMLTransformer {
 					// our peers' bandwidth).
 					EditionHint h = EditionHint.constructSecure(
 						mWoT,
-						puzzleOwner.getID(),
-						newIdentity.getID(),
+						puzzleOwner,
+						newIdentity,
 						CurrentTimeUTC.get(),
 						WebOfTrust.OWN_IDENTITY_CAPACITY,
 						WebOfTrust.OWN_IDENTITY_SCORE,
