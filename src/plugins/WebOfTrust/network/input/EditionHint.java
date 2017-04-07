@@ -77,11 +77,20 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	public static final int MIN_CAPACITY
 		= IdentityDownloaderController.USE_LEGACY_REFERENCE_IMPLEMENTATION ? 0 : 1;
 
+	/** @deprecated See {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)}*/
+	@Deprecated
 	private final String mSourceIdentityID;
 
+	private final Identity mSourceIdentity;
+
+	/** @deprecated See {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)}*/
+	@Deprecated
 	@IndexedField
 	private final String mTargetIdentityID;
-	
+
+	@IndexedField
+	private final Identity mTargetIdentity;
+
 	/** @see #getID() */
 	@IndexedField
 	private final String mID;
@@ -292,16 +301,28 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		mID = new TrustID(mSourceIdentityID, mTargetIdentityID).toString();
 	}
 
-	public String getSourceIdentityID() {
-		// String is a db4o primitive type so 1 is enough even though it is a reference type
+	public Identity getSourceIdentity() {
 		checkedActivate(1);
-		return mSourceIdentityID;
+		mSourceIdentity.initializeTransient(mWebOfTrust);
+		return mSourceIdentity;
 	}
 
-	public String getTargetIdentityID() {
-		// String is a db4o primitive type so 1 is enough even though it is a reference type
+	/** @deprecated See {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)}*/
+	@Deprecated
+	public String getSourceIdentityID() {
+		return getSourceIdentity().getID();
+	}
+
+	public Identity getTargetIdentity() {
 		checkedActivate(1);
-		return mTargetIdentityID;
+		mTargetIdentity.initializeTransient(mWebOfTrust);
+		return mTargetIdentity;
+	}
+
+	/** @deprecated See {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)}*/
+	@Deprecated
+	public String getTargetIdentityID() {
+		return getTargetIdentity().getID();
 	}
 
 	public byte getSourceCapacity() {
