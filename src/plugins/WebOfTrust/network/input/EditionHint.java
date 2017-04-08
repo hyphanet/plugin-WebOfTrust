@@ -577,8 +577,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		activateFully();
 		return "[EditionHint: " + super.toString()
 		     + "; mID: " + mID
-		     + "; mSourceIdentityID: " + mSourceIdentityID
-		     + "; mTargetIdentityID: " + mTargetIdentityID
+		     + "; mSourceIdentity ID: " + mSourceIdentity.getID()
+		     + "; mTargetIdentity ID: " + mTargetIdentity.getID()
 		     + "; mDate: " + mDate
 		     + "; mSourceCapacity: " + mSourceCapacity
 		     + "; mSourceScore: " + mSourceScore
