@@ -496,14 +496,7 @@ public final class IdentityFetcher implements
 		// In other words: The checks in the following scope have been part of XMLTransformer
 		// previously and were moved here as part of its modifications for IdentityDownloader.
 		{
-			Identity fromIdentity;
-			
-			try {
-				fromIdentity = mWoT.getIdentityByID(hint.getSourceIdentityID());
-			} catch (UnknownIdentityException e) {
-				throw new RuntimeException(e);
-			}
-			
+			Identity fromIdentity = hint.getSourceIdentity();
 			boolean fromPositiveScore = false;
 			
 			if(fromIdentity instanceof OwnIdentity) {
