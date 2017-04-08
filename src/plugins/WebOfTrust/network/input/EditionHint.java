@@ -487,8 +487,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// mID and mPriority are computed from them, we will check them against the returned object.
 		// (The cast from webOfTrustInterface to WebOfTrust is valid because the whole existence
 		// of this function is a detail of the implementation, so we may cast the WoT to it.)
-		EditionHint this2 = constructSecure((WebOfTrust)mWebOfTrust, mSourceIdentityID,
-			mTargetIdentityID, mDate, mSourceCapacity, mSourceScore, mEdition);
+		EditionHint this2 = constructSecure((WebOfTrust)mWebOfTrust, mSourceIdentity,
+			mTargetIdentity, mDate, mSourceCapacity, mSourceScore, mEdition);
 		
 		if(!mID.equals(this2.mID))
 			throw new IllegalStateException("mID is invalid: " + this);
@@ -528,8 +528,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// is fine to depend on technical details of it.
 		WebOfTrust wot = ((WebOfTrust)mWebOfTrust);
 		
-		Identity source = wot.getIdentityByID(mSourceIdentityID);
-		Identity target = wot.getIdentityByID(mTargetIdentityID);
+		// Validated by the above constructSecure() as well.
+		Identity source = mSourceIdentity;
+		Identity target = mTargetIdentity;
 		
 		// Don't check whether the capacity is still the same as we stored:
 		// For performance the IdentityDownloaderSlow implementation will likely not update all
