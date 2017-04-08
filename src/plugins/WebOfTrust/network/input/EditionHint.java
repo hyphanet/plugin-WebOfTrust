@@ -463,8 +463,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		*/
 		
 		WebOfTrust keyProvider = (WebOfTrust)mWebOfTrust;
-		String encryptedID1 = encryptIdentityID(keyProvider,   mTargetIdentityID);
-		String encryptedID2 = encryptIdentityID(keyProvider, o.mTargetIdentityID);
+		String encryptedID1 = encryptIdentityID(keyProvider,   mTargetIdentity.getID());
+		String encryptedID2 = encryptIdentityID(keyProvider, o.mTargetIdentity.getID());
 		
 		int targetIDCompared = encryptedID1.compareTo(encryptedID2);
 		if(targetIDCompared != 0)
@@ -558,6 +558,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * You must adjust this when introducing new member variables! */
 	@Override protected void activateFully() {
 		checkedActivate(1);
+		mSourceIdentity.initializeTransient(mWebOfTrust);
+		mTargetIdentity.initializeTransient(mWebOfTrust);
 	}
 
 	@Override protected void storeWithoutCommit() {
