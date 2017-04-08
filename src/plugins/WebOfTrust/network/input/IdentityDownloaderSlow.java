@@ -355,11 +355,22 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 		}
 	}
 
-	/** You must synchronize upon {@link #mLock} when using this! */
+	/**
+	 * You must synchronize upon {@link #mLock} when using this!
+	 * @deprecated FIXME: Use {@link #getEditionHintsByTargetIdentity(Identity)} */
+	@Deprecated
 	private ObjectSet<EditionHint> getEditionHintsByTargetIdentityID(String id) {
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
 		q.descend("mTargetIdentityID").constrain(id);
+		return new InitializingObjectSet<>(mWoT, q);
+	}
+
+	/** You must synchronize upon {@link #mLock} when using this! */
+	private ObjectSet<EditionHint> getEditionHintsByTargetIdentity(Identity identity) {
+		Query q = mDB.query();
+		q.constrain(EditionHint.class);
+		q.descend("mTargetIdentity").constrain(identity).identity();
 		return new InitializingObjectSet<>(mWoT, q);
 	}
 
