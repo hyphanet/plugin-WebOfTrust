@@ -49,7 +49,7 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 		// FIXME
 	}
 
-	@Override public boolean getShouldFetchState(String identityID) {
+	@Override public boolean getShouldFetchState(Identity identity) {
 		// FIXME
 		return false;
 	}

@@ -116,10 +116,8 @@ public interface IdentityDownloader extends Daemon {
 	 * This function is guaranteed to be called while the following locks are being held in the
 	 * given order:
 	 * synchronized(Instance of WebOfTrust)
-	 * synchronized(WebOfTrust.getIdentityDownloaderController())
-	 * 
-	 * @param identityID See {@link Identity#getID()}. */
-	boolean getShouldFetchState(String identityID);
+	 * synchronized(WebOfTrust.getIdentityDownloaderController()) */
+	boolean getShouldFetchState(Identity identity);
 
 	/**
 	 * ATTENTION: For debugging purposes only.

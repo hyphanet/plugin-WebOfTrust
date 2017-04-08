@@ -291,16 +291,16 @@ public final class IdentityFetcher implements
 		return new Persistent.InitializingObjectSet<IdentityFetcher.IdentityFetcherCommand>(mWoT, q);
 	}
 
-	@Override public final boolean getShouldFetchState(final String identityID) {
+	@Override public final boolean getShouldFetchState(final Identity identity) {
 		boolean abortFetchScheduled = false;
 		try {
-			getCommand(AbortFetchCommand.class, identityID);
+			getCommand(AbortFetchCommand.class, identity.getID());
 			abortFetchScheduled = true;
 		} catch(NoSuchCommandException e) {}
 		
 		boolean startFetchScheduled = false;
 		try {
-			getCommand(StartFetchCommand.class, identityID);
+			getCommand(StartFetchCommand.class, identity.getID());
 			startFetchScheduled = true;
 		} catch(NoSuchCommandException e) {}
 		
@@ -311,10 +311,11 @@ public final class IdentityFetcher implements
 		
 		if(abortFetchScheduled) {
 			// This assert() would currently fail since storeAbortFetchCommandWithoutCommit()
-			// will currently store a command even if mRequests.containsKey(identityID) == false.
+			// will currently store a command even if
+			//     mRequests.containsKey(identity.getID()) == false.
 			// See the TODO there.
 			
-			/* assert(mRequests.containsKey(identityID)) : "Command is useless"; */
+			/* assert(mRequests.containsKey(identity.getID())) : "Command is useless"; */
 			return false;
 		}
 		
@@ -322,11 +323,11 @@ public final class IdentityFetcher implements
 			// Similar to the above: Current implementation of storeStartFetchCommandWithoutCommit()
 			// would cause this to fail
 			
-			/* assert(!mRequests.containsKey(identityID)) : "Command is useless"; */
+			/* assert(!mRequests.containsKey(identity.getID())) : "Command is useless"; */
 			return true;
 		}
 		
-		return mRequests.containsKey(identityID);
+		return mRequests.containsKey(identity.getID());
 	}
 
 	@Override public void deleteAllCommands() {

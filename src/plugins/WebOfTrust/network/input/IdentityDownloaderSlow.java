@@ -305,18 +305,14 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 			Logger.minor(this, "storeNewEditionHintCommandWithoutCommit() finished.");
 	}
 
-	@Override public boolean getShouldFetchState(String identityID) {
-		if(getEditionHintsByTargetIdentityID(identityID).size() > 0)
+	@Override public boolean getShouldFetchState(Identity identity) {
+		if(getEditionHintsByTargetIdentity(identity).size() > 0)
 			return true;
 		
 		// We don't explicitly keep track of which identities are *not* wanted, instead
 		// storeNewEditionHintCommandWithoutCommit() will do a "shouldFetchIdentity()" check
 		// whenever it is called, so we just do it here as well:
-		try {
-			return mWoT.shouldFetchIdentity(mWoT.getIdentityByID(identityID));
-		} catch (UnknownIdentityException e) {
-			throw new RuntimeException(e);
-		}
+		return mWoT.shouldFetchIdentity(identity);
 	}
 
 	@Override public void deleteAllCommands() {

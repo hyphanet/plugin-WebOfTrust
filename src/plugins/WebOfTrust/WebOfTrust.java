@@ -2049,7 +2049,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// for debugging purposes we now also check whether IdentityFetcher has the
 					// correct state.
 					
-					final boolean realOldShouldFetch = mFetcher.getShouldFetchState(target.getID());
+					final boolean realOldShouldFetch = mFetcher.getShouldFetchState(target);
 					final boolean newShouldFetch = shouldFetchIdentity(target);
 					
 					if(realOldShouldFetch != newShouldFetch) {

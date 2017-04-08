@@ -97,21 +97,21 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 			d.storeNewEditionHintCommandWithoutCommit(hint);
 	}
 
-	@Override public boolean getShouldFetchState(String identityID) {
+	@Override public boolean getShouldFetchState(Identity identity) {
 		ArrayList<Boolean> shouldFetch = new ArrayList<Boolean>();
 		
 		for(IdentityDownloader d : mDownloaders)
-			shouldFetch.add(d.getShouldFetchState(identityID));
+			shouldFetch.add(d.getShouldFetchState(identity));
 		
 		// Normally this should be an assert() but the parent interface specifies this whole
 		// function to be for debugging purposes only so we can be very careful.
 		if(shouldFetch.contains(!shouldFetch.get(0))) {
 			Logger.error(this, "My downloaders don't return the same getShouldFetchState("
-			                   + identityID + ") each: ");
+			                   + identity + ") each: ");
 			
 			for(IdentityDownloader d : mDownloaders) {
 				Logger.error(this, d + " getShouldFetchState(): "
-				                     + d.getShouldFetchState(identityID));
+				                     + d.getShouldFetchState(identity));
 			}
 			
 			assert(false);
