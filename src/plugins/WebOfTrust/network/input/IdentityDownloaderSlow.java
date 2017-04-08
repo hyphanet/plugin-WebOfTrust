@@ -266,7 +266,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 		try {
 			EditionHint oldHint = getEditionHintByID(newHint.getID());
 			assert(oldHint.getSourceIdentity() == newHint.getSourceIdentity());
-			assert(oldHint.getTargetIdentityID().equals(newHint.getTargetIdentityID()));
+			assert(oldHint.getTargetIdentity() == newHint.getTargetIdentity());
 			
 			long oldEdition = oldHint.getEdition();
 			long newEdition = newHint.getEdition();

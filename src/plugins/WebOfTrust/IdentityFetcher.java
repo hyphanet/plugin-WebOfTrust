@@ -482,6 +482,8 @@ public final class IdentityFetcher implements
      * </code>
      */
 	public void storeNewEditionHintCommandWithoutCommit(EditionHint hint) {
+		Identity fromIdentity = hint.getSourceIdentity();
+		Identity toIdentity = hint.getTargetIdentity();
 		
 		// XMLTransformer will nowadays pass edition hints if the giver of the hint has a positive
 		// Score OR positive capacity.
@@ -496,7 +498,6 @@ public final class IdentityFetcher implements
 		// In other words: The checks in the following scope have been part of XMLTransformer
 		// previously and were moved here as part of its modifications for IdentityDownloader.
 		{
-			Identity fromIdentity = hint.getSourceIdentity();
 			boolean fromPositiveScore = false;
 			
 			if(fromIdentity instanceof OwnIdentity) {
@@ -515,13 +516,6 @@ public final class IdentityFetcher implements
 			if(!fromPositiveScore)
 				return;
 			
-			Identity toIdentity;
-			try {
-				toIdentity = mWoT.getIdentityByID(hint.getTargetIdentityID());
-			} catch(UnknownIdentityException e) {
-				throw new RuntimeException(e);
-			}
-			
 			// This class only deals with the highest known hint, so if the one we just got isn't
 			// higher than the previous one we return.
 			// This is attackable by publishing wrongly too high hints - but it's what the class has
@@ -539,21 +533,21 @@ public final class IdentityFetcher implements
 		
 		if(logDEBUG) {
 			Logger.debug(
-				this, "Update edition hint command received for " + hint.getTargetIdentityID());
+				this, "Update edition hint command received for hint: " + hint);
 		}
 		
 		try {
-			getCommand(AbortFetchCommand.class, hint.getTargetIdentityID());
+			getCommand(AbortFetchCommand.class, toIdentity.getID());
 			Logger.error(this, "Update edition hint command is useless, an abort fetch command is queued!");
 		}
 		catch(NoSuchCommandException e1) {
 			try {
-				getCommand(UpdateEditionHintCommand.class, hint.getTargetIdentityID());
+				getCommand(UpdateEditionHintCommand.class, toIdentity.getID());
 				if(logDEBUG) Logger.debug(this, "Update edition hint command already in queue!");
 			}
 			catch(NoSuchCommandException e2) {
 				final UpdateEditionHintCommand cmd
-					= new UpdateEditionHintCommand(hint.getTargetIdentityID());
+					= new UpdateEditionHintCommand(toIdentity.getID());
 				cmd.initializeTransient(mWoT);
 				cmd.storeWithoutCommit();
 				scheduleCommandProcessing();

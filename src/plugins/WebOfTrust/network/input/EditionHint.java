@@ -313,12 +313,6 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return mTargetIdentity;
 	}
 
-	/** @deprecated See {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)}*/
-	@Deprecated
-	public String getTargetIdentityID() {
-		return getTargetIdentity().getID();
-	}
-
 	public byte getSourceCapacity() {
 		checkedActivate(1);
 		return mSourceCapacity;
