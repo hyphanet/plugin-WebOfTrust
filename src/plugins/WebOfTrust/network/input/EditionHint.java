@@ -184,9 +184,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * This is the final fallback sorting key after we sorted hints by {@link #mDate},
 	 * {@link #mSourceCapacity} and {@link #mSourceScore} and all of them were equal.
 	 * 
-	 * Notice: We only sort by edition if {@link #mTargetIdentityID} is equal for the two
-	 * EditionHint objects at comparison. Editions of different identities are completely unrelated,
-	 * it wouldn't make any sense to compare them.
+	 * Notice: We only sort by edition if {@link Identity#getID()} of {@link #mTargetIdentity} is
+	 * equal for the two EditionHint objects at comparison. Editions of different identities are
+	 * completely unrelated, it wouldn't make any sense to compare them.
 	 *
 	 * @see #compareTo_ReferenceImplementation(EditionHint) */
 	private final long mEdition;
@@ -444,7 +444,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// prefix "aaaa..." to boost priority of their identity.
 		
 		/*
-		if(mTargetIdentityID.equals(o.mTargetIdentityID))
+		if(mTargetIdentity.getID().equals(o.mTargetIdentity.getID()))
 			return Long.compare(mEdition, o.mEdition);
 		else
 			return 0; // No sense in comparing edition of different target identities
