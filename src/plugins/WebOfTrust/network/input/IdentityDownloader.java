@@ -9,6 +9,7 @@ import plugins.WebOfTrust.IdentityFile;
 import plugins.WebOfTrust.IdentityFileProcessor;
 import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
@@ -19,28 +20,29 @@ import freenet.keys.FreenetURI;
  * They are then fed as {@link IdentityFile} to the {@link IdentityFileQueue}, which is consumed by
  * the {@link IdentityFileProcessor}.
  * 
- * ATTENTION: Implementations must NOT store a object references to {@link Identity} objects
- * inside of their db4o database. They should only store indirect references such as
- * {@link Identity#getID()}. This ensures that unrelated code which deletes {@link Identity}
- * objects from the database does not need to have take care of the IdentityDownloaders'
- * databases.
- * (This already is a requirement of the implementation of at least
- * {@link WebOfTrust#deleteWithoutCommit(Identity)}, {@link WebOfTrust#deleteOwnIdentity(String)}
- * and {@link WebOfTrust#restoreOwnIdentityWithoutCommit(freenet.keys.FreenetURI)}
- * but possibly also of other stuff. Further, it will possibly allow decoupling of table locks in a
- * future SQL port of WoT.)
+ * FIXME: 
+ * Implementations are allowed to and do store pointers to Identity objects in their database,
+ * currently as part of {@link EditionHint} objects.
+ * Thus we must introduce a new callback which gets called before deletion of an Identity to ensure
+ * the IdentityDownloader implementations delete the objects pointing to the to-be-deleted Identity.
+ * Further at least the following functions must be amended to call the new callback:
+ * - {@link WebOfTrust#deleteWithoutCommit(Identity)}
+ * - {@link WebOfTrust#deleteOwnIdentity(String)}
+ * - {@link WebOfTrust#restoreOwnIdentityWithoutCommit(freenet.keys.FreenetURI)}
  * 
  * <b>Locking:</b>
- * All implementations of IdentityDownloader MUST synchronize their database transactions upon
- * {@link WebOfTrust#getIdentityDownloaderController()}, NOT upon themselves. This is to allow the
- * {@link IdentityDownloaderController} to be the central lock in case multiple types of
- * IdentityDownloader are running in parallel. That in turn allows the WoT core to not have to
- * synchronize upon whichever specific IdentityDownloader implementations are being used
- * currently. It can instead just synchronize upon the single {@link IdentityDownloaderController}
- * instance.
+ * Implementations  must synchronize transactions by taking the following locks in the given order:
+ * - the {@link WebOfTrust} object
+ * - the {@link WebOfTrust#getIdentityDownloaderController()} object, notably INSTEAD OF locking
+ *   upon themselves. This is to allow the {@link IdentityDownloaderController} to be the central
+ *   lock in case multiple types of IdentityDownloader are running in parallel. That in turn allows
+ *   the WoT core to not have to synchronize upon whichever specific IdentityDownloader
+ *   implementations are being used currently. It can instead just synchronize upon the single
+ *   {@link IdentityDownloaderController} instance.
+ * - the {@link Persistent#transactionLock(com.db4o.ext.ExtObjectContainer)}
  * 
- * FIXME: Review the whole of class {@link IdentityFetcher} for any important JavaDoc such as the
- * above "ATTENTION" and add it to this interface. */
+ * FIXME: Review the whole of class {@link IdentityFetcher} for any important JavaDoc and add it to
+ * this interface. */
 public interface IdentityDownloader extends Daemon {
 
 	/**
@@ -52,9 +54,6 @@ public interface IdentityDownloader extends Daemon {
 	 * - May also be called to notify the IdentityDownloader about a changed
 	 *   {@link Identity#getNextEditionToFetch()} (e.g. due to  {@link Identity#markForRefetch()})
 	 *   even if the Identity was already eligible for fetching before.
-	 * 
-	 * FIXME: Only require {@link Identity#getID()} as parameter to enforce the "ATTENTION" at the
-	 * JavaDoc of this interface. Implementations likely don't need anything but the ID anyway.
 	 * 
 	 * Synchronization:
 	 * This function is guaranteed to be called while the following locks are being held in the
@@ -70,9 +69,6 @@ public interface IdentityDownloader extends Daemon {
 	 *   the given {@link Identity}. This is usually the case when not even one {@link OwnIdentity}
 	 *   has rated it as trustworthy enough for us to download it
 	 * - in special cases such as deletion/restoring of an OwnIdentity.
-	 * 
-	 * FIXME: Only require {@link Identity#getID()} as parameter to enforce the "ATTENTION" at the
-	 * JavaDoc of this interface. Implementations likely don't need anything but the ID anyway.
 	 * 
 	 * Synchronization:
 	 * This function is guaranteed to be called while the following locks are being held in the
