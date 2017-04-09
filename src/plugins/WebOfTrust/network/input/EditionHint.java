@@ -58,8 +58,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * This class' {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)} will
-	 * reject capacities below the value of this constant.
+	 * This class' {@link #constructSecure(WebOfTrust, Identity, Identity, Date, int, int, long)}
+	 * will reject capacities below the value of this constant.
 	 * 
 	 * The legacy implementation class {@link IdentityFetcher} will use hints from {@link Identity}s
 	 * if merely their {@link Score#getScore()} is > 0, ignoring the {@link Score#getCapacity()}.
@@ -77,13 +77,13 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	public static final int MIN_CAPACITY
 		= IdentityDownloaderController.USE_LEGACY_REFERENCE_IMPLEMENTATION ? 0 : 1;
 
-	/** @deprecated See {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)}*/
+	/** @deprecated Use {@link #mSourceIdentity} */
 	@Deprecated
 	private final String mSourceIdentityID;
 
 	private final Identity mSourceIdentity;
 
-	/** @deprecated See {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)}*/
+	/** @deprecated Use {@link #mTargetIdentity} */
 	@Deprecated
 	@IndexedField
 	private final String mTargetIdentityID;
@@ -215,30 +215,13 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 			WebOfTrust wot, Identity sourceIdentity, Identity targetIdentity, Date date,
 			int sourceCapacity, int sourceScore, long edition) {
 		
-		return constructSecure(wot, sourceIdentity.getID(), targetIdentity.getID(), date,
-			sourceCapacity, sourceScore, edition);
-	}
-
-	/**
-	 * @deprecated
-	 *     FIXME Shall be replaced with the version which consumes Identity objects instead of their
-	 *     IDs so we can replace {@link #mSourceIdentityID} and especially
-	 *     {@link #mTargetIdentityID} with direct pointers to the Identity objects. This is
-	 *     necessary because {@link IdentityDownloaderSlow#run()} will need the target Identity
-	 *     object anyway to be able to obtain its {@link Identity#getRequestURI()} so it can
-	 *     actually download the URI. */
-	@Deprecated
-	public static EditionHint constructSecure(
-			WebOfTrust wot, String sourceIdentityID, String targetIdentityID, Date date,
-			int sourceCapacity, int sourceScore, long edition) {
-		
 		requireNonNull(wot);
-		
-		IdentityID.constructAndValidateFromString(sourceIdentityID);
-		IdentityID.constructAndValidateFromString(targetIdentityID);
-		if(sourceIdentityID.equals(targetIdentityID)) {
+		requireNonNull(sourceIdentity);
+		requireNonNull(targetIdentity);
+
+		if(sourceIdentity == targetIdentity) {
 			throw new IllegalArgumentException(
-				"Identity is trying to assign edition hint to itself, ID: " + sourceIdentityID);
+				"Identity is trying to assign edition hint to itself: " + sourceIdentity);
 		}
 		
 		if(date.after(CurrentTimeUTC.get()))
@@ -257,7 +240,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 			throw new IllegalArgumentException("Invalid edition: " + edition);
 		
 		return new EditionHint(
-			wot, sourceIdentityID, targetIdentityID, date, sourceCapacity, sourceScore, edition);
+			wot, sourceIdentity, targetIdentity, date, sourceCapacity, sourceScore, edition);
 	}
 
 	/** Factory WITHOUT parameter validation */
@@ -282,7 +265,10 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 			sourceScore, edition);
 	}
 
-	/** @deprecated See {@link #constructSecure(WebOfTrust, String, String, Date, int, int, long)}*/
+	/**
+	 * @deprecated
+	 *     FIXME: Make it consume Identity objects instead of their IDs and initialize 
+	 *     {@link #mSourceIdentity} and {@link #mTargetIdentity} */
 	@Deprecated
 	private EditionHint(
 			WebOfTrust wot, String sourceIdentityID, String targetIdentityID, Date date,
