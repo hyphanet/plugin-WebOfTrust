@@ -5,6 +5,7 @@ package plugins.WebOfTrust.network.input;
 
 import static java.util.Collections.sort;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -28,6 +29,7 @@ import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
+import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
@@ -64,6 +66,14 @@ import freenet.support.io.NativeThread;
  * We should decide which path we want to go down and act accordingly. */
 public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon, PrioRunnable {
 	
+	/** 
+	 * Once we have stored an {@link EditionHint} to the database, {@link #run()} is scheduled to
+	 * execute and start downloading of the pending hint queue after this delay.
+	 * As we download multiple hints in parallel, the delay is non-zero to ensure we don't have to
+	 * do multiple database queries if multiple hints arrive in a short timespan - database queries
+	 * are likely the most expensive operation. */
+	public static transient final long QUEUE_BATCHING_DELAY_MS = MINUTES.toMillis(1);
+
 	private final WebOfTrust mWoT;
 	
 	private final IdentityDownloaderController mLock;
@@ -108,7 +118,63 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 	 * 
 	 * FIXME: Document similarly to {@link SubscriptionManager#run()} */
 	@Override public void run() {
-		// FIXME: Implement similarly to SubscriptionManager & IntroductionClient
+		if(logMINOR) Logger.minor(this, "run()...");
+
+		synchronized(mWoT) {
+		synchronized(mLock) {
+			// We don't have to take a database transaction lock:
+			// We don't write anything to the database here.
+			
+			try {
+				int downloadsToSchedule = getMaxRunningDownloadCount() - getRunningDownloadCount();
+				// Check whether we actually need to do something before the loop, not just inside
+				// it: The getQueue() database query is much more expensive than the duplicate code.
+				if(downloadsToSchedule > 0) {
+					for(EditionHint h : getQueue()) {
+						if(!isDownloadInProgress(h)) {
+							download(h);
+							if(--downloadsToSchedule <= 0)
+								break;
+						}
+					}
+				}
+			} catch(RuntimeException | Error e) {
+				// Not necessary as we don't write anything to the database
+				/* Persistent.checkedRollback(mDB, this, e); */
+				
+				Logger.error(this, "Error in run()!", e);
+				mJob.triggerExecution(QUEUE_BATCHING_DELAY_MS);
+			}
+		}
+		}
+		
+		if(logMINOR) Logger.minor(this, "run() finished.");
+	}
+
+	public int getRunningDownloadCount() {
+		// Don't require callers to synchronize so we can use it from the Statistics web interface
+		synchronized(mLock) {
+			// FIXME: Implement
+			return 0;
+		}
+	}
+
+	public int getMaxRunningDownloadCount() {
+		// FIXME: Implement. Use what is configured on the fred web interface by
+		// "Maximum number of temporary  USK fetchers" (thanks to ArneBab for the idea!)
+		return 0;
+	}
+
+	private boolean isDownloadInProgress(EditionHint h) {
+		// FIXME: Implement similarly to IntroductionClient
+		return true;
+	}
+
+	private void download(EditionHint h) {
+		FreenetURI requestURI
+			= h.getTargetIdentity().getRequestURI().setSuggestedEdition(h.getEdition());
+		
+		// FIXME: Implement similarly to IntroductionClient
 	}
 
 	@Override public int getPriority() {
