@@ -212,7 +212,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
 		Logger.normal(this, "storeAbortFetchCommandWithoutCommit(" + identity + ") ...");
 		
-		for(EditionHint h : getEditionHintsByTargetIdentityID(identity.getID())) {
+		for(EditionHint h : getEditionHintsByTargetIdentity(identity)) {
 			if(logMINOR)
 				Logger.minor(this, "Deleting " + h);
 			
@@ -349,17 +349,6 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 			case 0:  throw new UnknownEditionHintException(id);
 			default: throw new DuplicateObjectException(id);
 		}
-	}
-
-	/**
-	 * You must synchronize upon {@link #mLock} when using this!
-	 * @deprecated FIXME: Use {@link #getEditionHintsByTargetIdentity(Identity)} */
-	@Deprecated
-	private ObjectSet<EditionHint> getEditionHintsByTargetIdentityID(String id) {
-		Query q = mDB.query();
-		q.constrain(EditionHint.class);
-		q.descend("mTargetIdentityID").constrain(id);
-		return new InitializingObjectSet<>(mWoT, q);
 	}
 
 	/** You must synchronize upon {@link #mLock} when using this! */
