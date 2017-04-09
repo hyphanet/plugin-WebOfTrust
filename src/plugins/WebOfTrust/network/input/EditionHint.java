@@ -261,30 +261,17 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 			WebOfTrust wot, Identity sourceIdentity, Identity targetIdentity, Date date,
 			int sourceCapacity, int sourceScore, long edition) {
 		
-		this(wot, sourceIdentity.getID(), targetIdentity.getID(), date, sourceCapacity,
-			sourceScore, edition);
-	}
-
-	/**
-	 * @deprecated
-	 *     FIXME: Make it consume Identity objects instead of their IDs and initialize 
-	 *     {@link #mSourceIdentity} and {@link #mTargetIdentity} */
-	@Deprecated
-	private EditionHint(
-			WebOfTrust wot, String sourceIdentityID, String targetIdentityID, Date date,
-			int sourceCapacity, int sourceScore, long edition) {
-		
 		initializeTransient(wot);
-		mSourceIdentityID = sourceIdentityID;
-		mTargetIdentityID = targetIdentityID;
+		mSourceIdentity = sourceIdentity;
+		mTargetIdentity = targetIdentity;
 		mDate = roundToNearestDay(date);
 		mSourceCapacity = (byte)sourceCapacity;
 		mSourceScore = sourceScore >= 0 ? (byte)1 : (byte)-1;
 		mEdition = edition;
 		
 		mPriority = computePriority(
-			wot, mDate, mSourceCapacity, mSourceScore, mTargetIdentityID, mEdition);
-		mID = new TrustID(mSourceIdentityID, mTargetIdentityID).toString();
+			wot, mDate, mSourceCapacity, mSourceScore, mTargetIdentity.getID(), mEdition);
+		mID = new TrustID(mSourceIdentity, mTargetIdentity).toString();
 	}
 
 	public Identity getSourceIdentity() {
