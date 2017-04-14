@@ -32,7 +32,9 @@ import com.db4o.query.Query;
 
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
+import freenet.node.NodeClientCore;
 import freenet.node.PrioRunnable;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
@@ -77,7 +79,9 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 	public static transient final long QUEUE_BATCHING_DELAY_MS = MINUTES.toMillis(1);
 
 	private final WebOfTrust mWoT;
-	
+
+	private final NodeClientCore mNodeClientCore;
+
 	private final IdentityDownloaderController mLock;
 	
 	private final ExtObjectContainer mDB;
@@ -100,6 +104,8 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 		requireNonNull(wot);
 		
 		mWoT = wot;
+		PluginRespirator pr = mWoT.getPluginRespirator();
+		mNodeClientCore = (pr != null ? pr.getNode().clientCore : null);
 		mLock = mWoT.getIdentityDownloaderController();
 		mDB = mWoT.getDatabase();
 		mDownloads = new HashMap<>(getMaxRunningDownloadCount() * 2);
@@ -164,11 +170,35 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 		}
 	}
 
-	/** FIXME: Show on the web interface's StatisticsPage */
+	/**
+	 * Number of SSK requests for USK {@link EditionHint}s which this downloader will do in
+	 * parallel.
+	 * 
+	 * Can be configured on the fred web interface in advanced mode at "Configuration" / "Core
+	 * settings" by the value:
+	 * "Maximum number of temporary  USK fetchers: ...
+	 * Maximum number of temporary background fetches for recently visited USKs
+	 * (e.g. freesites). Note that clients and plugins (e.g. WebOfTrust) can subscribe to USKs,
+	 * which does not count towards the limit."
+	 * 
+	 * Defaults to 64 as of 2017-04-14.
+	 * 
+	 * TODO: Performance / Code quality:
+	 * - Instead of using a fixed value ask the fred load management code how many SSK requests
+	 *   it can currently handle.
+	 * - or at least make this configurable on the WoT web interface.
+	 * 
+	 * FIXME: Show on the web interface's StatisticsPage */
 	public int getMaxRunningDownloadCount() {
-		// FIXME: Implement. Use what is configured on the fred web interface by
-		// "Maximum number of temporary  USK fetchers" (thanks to ArneBab for the idea!)
-		return 0;
+		// Valid in unit tests
+		if(mNodeClientCore == null) {
+			Logger.warning(this,
+				"getMaxRunningDownloadCount() called with mNodeClientCore == null, returning 0");
+			// Without a node it is impossible to start downloads so 0 is consistent.
+			return 0;
+		}
+		
+		return mNodeClientCore.maxBackgroundUSKFetchers();
 	}
 
 	/** Must be called while synchronized on {@link #mLock}. */
