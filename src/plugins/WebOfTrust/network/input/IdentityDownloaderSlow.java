@@ -9,6 +9,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.concurrent.Callable;
 
 import plugins.WebOfTrust.Identity;
@@ -29,6 +30,7 @@ import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
+import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
@@ -83,6 +85,8 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 	/** FIXME: Document similarly to {@link SubscriptionManager#mJob} */
 	private volatile DelayedBackgroundJob mJob = null;
 
+	private final HashMap<FreenetURI, ClientGetter> mDownloads;
+
 	private static transient volatile boolean logDEBUG = false;
 
 	private static transient volatile boolean logMINOR = false;
@@ -98,6 +102,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 		mWoT = wot;
 		mLock = mWoT.getIdentityDownloaderController();
 		mDB = mWoT.getDatabase();
+		mDownloads = new HashMap<>(getMaxRunningDownloadCount() * 2);
 	}
 
 	@Override public void start() {
@@ -151,23 +156,24 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 		if(logMINOR) Logger.minor(this, "run() finished.");
 	}
 
+	/** FIXME: Show on the web interface's StatisticsPage */
 	public int getRunningDownloadCount() {
 		// Don't require callers to synchronize so we can use it from the Statistics web interface
 		synchronized(mLock) {
-			// FIXME: Implement
-			return 0;
+			return mDownloads.size();
 		}
 	}
 
+	/** FIXME: Show on the web interface's StatisticsPage */
 	public int getMaxRunningDownloadCount() {
 		// FIXME: Implement. Use what is configured on the fred web interface by
 		// "Maximum number of temporary  USK fetchers" (thanks to ArneBab for the idea!)
 		return 0;
 	}
 
+	/** Must be called while synchronized on {@link #mLock}. */
 	private boolean isDownloadInProgress(EditionHint h) {
-		// FIXME: Implement similarly to IntroductionClient
-		return true;
+		return mDownloads.containsKey(h.getURI());
 	}
 
 	private void download(EditionHint h) {
@@ -187,6 +193,8 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 		Logger.normal(this, "terminate() ...");
 		
 		// FIXME: Implement similarly to SubscriptionManager.
+		
+		// FIXME: Terminate running ClientGetters (stored in mDownloads). See class TransferThread.
 		
 		Logger.normal(this, "terminate() finished.");
 	}
