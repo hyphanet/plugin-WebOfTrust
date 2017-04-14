@@ -171,8 +171,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 	}
 
 	private void download(EditionHint h) {
-		FreenetURI requestURI
-			= h.getTargetIdentity().getRequestURI().setSuggestedEdition(h.getEdition());
+		FreenetURI requestURI = h.getURI();
 		
 		// FIXME: Implement similarly to IntroductionClient
 	}

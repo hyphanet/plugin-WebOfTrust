@@ -287,6 +287,12 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return mEdition;
 	}
 
+	public FreenetURI getURI() {
+		checkedActivate(1);
+		mTargetIdentity.initializeTransient(mWebOfTrust);
+		return mTargetIdentity.getRequestURI().setSuggestedEdition(mEdition).sskForUSK();
+	}
+
 	private static String computePriority(WebOfTrust wot, Date roundedDate, byte capacity,
 			int roundedScore, String targetID, long edition) {
 		
