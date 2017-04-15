@@ -18,6 +18,7 @@ import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.UnknownEditionHintException;
@@ -30,6 +31,12 @@ import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
+import freenet.client.FetchContext;
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
+import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.ClientContext;
+import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
@@ -39,6 +46,7 @@ import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Uses USK edition hints to download {@link Identity}s from the network for which we have a
@@ -70,8 +78,12 @@ import freenet.support.io.NativeThread;
  * as the IdentityDownloaderSlow would not have to sync against the lock of the Identity database
  * (= the WebOfTrust).
  * We should decide which path we want to go down and act accordingly. */
-public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon, PrioRunnable {
-	
+public final class IdentityDownloaderSlow implements
+		IdentityDownloader,
+		Daemon,
+		PrioRunnable,
+		ClientGetCallback {
+
 	/** 
 	 * Once we have stored an {@link EditionHint} to the database, {@link #run()} is scheduled to
 	 * execute and start downloading of the pending hint queue after this delay.
@@ -99,6 +111,8 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 	private final WebOfTrust mWoT;
 
 	private final NodeClientCore mNodeClientCore;
+	
+	private final HighLevelSimpleClient mHighLevelSimpleClient;
 
 	private final IdentityDownloaderController mLock;
 	
@@ -124,6 +138,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 		mWoT = wot;
 		PluginRespirator pr = mWoT.getPluginRespirator();
 		mNodeClientCore = (pr != null ? pr.getNode().clientCore : null);
+		mHighLevelSimpleClient = (pr != null ? pr.getHLSimpleClient() : null);
 		mLock = mWoT.getIdentityDownloaderController();
 		mDB = mWoT.getDatabase();
 		mDownloads = new HashMap<>(getMaxRunningDownloadCount() * 2);
@@ -161,9 +176,13 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 				if(downloadsToSchedule > 0) {
 					for(EditionHint h : getQueue()) {
 						if(!isDownloadInProgress(h)) {
-							download(h);
-							if(--downloadsToSchedule <= 0)
-								break;
+							try {
+								download(h);
+								if(--downloadsToSchedule <= 0)
+									break;
+							} catch(FetchException e) {
+								Logger.error(this, "FetchException for: " + h, e);
+							}
 						}
 					}
 				}
@@ -224,10 +243,54 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 		return mDownloads.containsKey(h.getURI());
 	}
 
-	private void download(EditionHint h) {
-		FreenetURI requestURI = h.getURI();
+	/**
+	 * Must be called while synchronized on {@link #mLock}.
+	 * Must not be called if {@link #isDownloadInProgress(EditionHint)} == true.*/
+	private void download(EditionHint h) throws FetchException {
+		FreenetURI fetchURI = h.getURI();
+		assert(fetchURI.isSSK());
 		
-		// FIXME: Implement similarly to IntroductionClient
+		FetchContext fetchContext = mHighLevelSimpleClient.getFetchContext();
+		// Because archives can become huge and WOT does not use them, we should disallow them.
+		// See JavaDoc of the variable.
+		fetchContext.maxArchiveLevels = 0;
+		// EditionHints can maliciously point to inexistent editions so we only do one download
+		// attempt. (The retry-count does not include the first attempt.)
+		fetchContext.maxSplitfileBlockRetries = 0;
+		fetchContext.maxNonSplitfileRetries = 0;
+		fetchContext.maxOutputLength = XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE;
+		short fetchPriority = DOWNLOAD_PRIORITY;
+		
+		if(logMINOR)
+			Logger.minor(this, "Downloading: " + fetchURI + " from: " + h);
+		
+		ClientGetter getter = mHighLevelSimpleClient.fetch(
+			fetchURI,
+			fetchContext.maxOutputLength,
+			this,
+			fetchContext,
+			fetchPriority);
+		
+		ClientGetter g = mDownloads.put(fetchURI, getter);
+		assert(g == null);
+	}
+
+	@Override public RequestClient getRequestClient() {
+		// FIXME: Implement similarly to IdentityFetcher / IntroductionClient
+		return null;
+	}
+
+	@Override public void onSuccess(FetchResult result, ClientGetter state) {
+		// FIXME: Implement similarly to IdentityFetcher / IntroductionClient
+	}
+
+	@Override public void onFailure(FetchException e, ClientGetter state) {
+		// FIXME: Implement similarly to IdentityFetcher / IntroductionClient
+	}
+
+	@Override public void onResume(ClientContext context) throws ResumeFailedException {
+		throw new UnsupportedOperationException(
+			"onResume() called even though WoT doesn't do persistent requests?");
 	}
 
 	@Override public int getPriority() {
