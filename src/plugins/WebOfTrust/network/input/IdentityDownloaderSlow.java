@@ -34,6 +34,8 @@ import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.node.PrioRunnable;
+import freenet.node.RequestClient;
+import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
@@ -77,6 +79,14 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 	 * do multiple database queries if multiple hints arrive in a short timespan - database queries
 	 * are likely the most expensive operation. */
 	public static transient final long QUEUE_BATCHING_DELAY_MS = MINUTES.toMillis(1);
+
+	/**
+	 * Priority of network requests, relative to {@link IdentityDownloaderFast} as we use a single
+	 * {@link RequestClient} for that downloader and this one.
+	 * 
+	 * Also see the file "developer-documentation/RequestClient and priority map.txt" */
+	public static transient final short DOWNLOAD_PRIORITY
+		= RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 
 	private final WebOfTrust mWoT;
 
