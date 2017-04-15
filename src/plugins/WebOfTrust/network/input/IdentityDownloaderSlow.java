@@ -88,6 +88,14 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 	public static transient final short DOWNLOAD_PRIORITY
 		= RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 
+	/**
+	 * Priority of the {@link #run()} thread which starts downloads of the edition hint queue.
+	 * 
+	 * Below NORM_PRIORITY because we are a background thread and not relevant to UI actions.
+	 * Above MIN_PRIORITY because we're not merely a cleanup thread.
+	 * -> LOW_PRIORITY is the only choice. */
+	private static transient final int DOWNLOADER_THREAD_PRIORITY = NativeThread.LOW_PRIORITY;
+
 	private final WebOfTrust mWoT;
 
 	private final NodeClientCore mNodeClientCore;
@@ -223,10 +231,7 @@ public final class IdentityDownloaderSlow implements IdentityDownloader, Daemon,
 	}
 
 	@Override public int getPriority() {
-		// Below NORM_PRIORITY because we are a background thread and not relevant to UI actions.
-		// Above MIN_PRIORITY because we're not merely a cleanup thread.
-		// -> LOW_PRIORITY is the only choice.
-		return NativeThread.LOW_PRIORITY;
+		return DOWNLOADER_THREAD_PRIORITY;
 	}
 
 	@Override public void terminate() {
