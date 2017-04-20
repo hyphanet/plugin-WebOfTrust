@@ -52,7 +52,8 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 
 
 	public IdentityDownloaderFast() {
-		// FIXME
+		// FIXME: Implement
+		// FIXME: Initialize mRequestClient like IdentityDownloaderSlow() does it.
 	}
 
 	@Override public void start() {

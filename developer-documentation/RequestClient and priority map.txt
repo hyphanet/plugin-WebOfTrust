@@ -16,9 +16,11 @@ Fetches:
 
 
 Inserts:
-  WebOfTrust Identity USK: IMMEDIATE_SPLITFILE_PRIORITY_CLASS
-  WebOfTrust Puzzle SSK: IMMEDIATE_SPLITFILE_PRIORITY_CLASS
-  WebOfTrust Puzzle Solution KSK: IMMEDIATE_SPLITFILE_PRIORITY_CLASS
+  RequestClient WebOfTrust.mRequestClient:
+    WebOfTrust Identity USK: IMMEDIATE_SPLITFILE_PRIORITY_CLASS
+  RequestClient WebOfTrust.mPuzzleStore.mRequestClient:
+    WebOfTrust Puzzle SSK: IMMEDIATE_SPLITFILE_PRIORITY_CLASS
+    WebOfTrust Puzzle Solution KSK: IMMEDIATE_SPLITFILE_PRIORITY_CLASS
 
   Freetalk Message CHK: INTERACTIVE_PRIORITY_CLASS
   Freetalk MessageList SSK: INTERACTIVE_PRIORITY_CLASS

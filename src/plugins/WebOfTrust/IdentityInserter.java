@@ -112,12 +112,8 @@ public final class IdentityInserter extends TransferThread implements Daemon {
 		return NativeThread.LOW_PRIORITY;
 	}
 
-    /** {@inheritDoc} */
+	/** @return {@link WebOfTrust#getRequestClient()} */
     @Override public RequestClient getRequestClient() {
-        // Testing shows that this is also called for inserts, not only for requests.
-        // For symmetry, we use the same RequestClient as the one IdentityFetcher uses:
-        // Identity fetches and inserts belong together, so it makes sense to use the same
-        // RequestClient for them.
         return mWoT.getRequestClient();
     }
 

@@ -114,6 +114,9 @@ public final class IdentityDownloaderSlow implements
 	
 	private final HighLevelSimpleClient mHighLevelSimpleClient;
 
+	/** @see #getRequestClient() */
+	private final RequestClient mRequestClient;
+
 	private final IdentityDownloaderController mLock;
 	
 	private final ExtObjectContainer mDB;
@@ -139,6 +142,7 @@ public final class IdentityDownloaderSlow implements
 		PluginRespirator pr = mWoT.getPluginRespirator();
 		mNodeClientCore = (pr != null ? pr.getNode().clientCore : null);
 		mHighLevelSimpleClient = (pr != null ? pr.getHLSimpleClient() : null);
+		mRequestClient = mWoT.getRequestClient();
 		mLock = mWoT.getIdentityDownloaderController();
 		mDB = mWoT.getDatabase();
 		mDownloads = new HashMap<>(getMaxRunningDownloadCount() * 2);
@@ -275,9 +279,9 @@ public final class IdentityDownloaderSlow implements
 		assert(g == null);
 	}
 
+	/** @return {@link WebOfTrust#getRequestClient()} */
 	@Override public RequestClient getRequestClient() {
-		// FIXME: Implement similarly to IdentityFetcher / IntroductionClient
-		return null;
+		return mRequestClient;
 	}
 
 	@Override public void onSuccess(FetchResult result, ClientGetter state) {

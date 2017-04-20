@@ -106,6 +106,8 @@ public final class IdentityFetcher implements
 	/** A reference to the HighLevelSimpleClient used to talk with the node */
 	private final HighLevelSimpleClient mClient;
 	private final ClientContext mClientContext;
+
+	/** @see WebOfTrust#getRequestClient() */
 	private final RequestClient mRequestClient;
 
 	/** All current requests */
@@ -173,10 +175,6 @@ public final class IdentityFetcher implements
 			mClientContext = null;
 		}
 		
-		
-        // For symmetry, we use the same RequestClient as the one IdentityInserter uses:
-        // Identity fetches and inserts belong together, so it makes sense to use the same
-        // RequestClient for them.
 		mRequestClient = mWoT.getRequestClient();
 		
 		if(DEBUG__NETWORK_DUMP_MODE) {

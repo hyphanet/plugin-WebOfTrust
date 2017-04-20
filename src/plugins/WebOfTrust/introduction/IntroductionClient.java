@@ -158,7 +158,7 @@ public final class IntroductionClient extends TransferThread implements Daemon {
 		return NativeThread.LOW_PRIORITY;
 	}
 
-	/** {@inheritDoc} */
+	/** @return {@link IntroductionPuzzleStore#getRequestClient()} */
     @Override public RequestClient getRequestClient() {
         return mPuzzleStore.getRequestClient();
     }

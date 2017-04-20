@@ -48,6 +48,7 @@ public final class IntroductionPuzzleStore {
 	
 	private final ExtObjectContainer mDB;
 	
+	/** @see #getRequestClient() */
 	private final RequestClient mRequestClient;
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
@@ -88,18 +89,19 @@ public final class IntroductionPuzzleStore {
 	public WebOfTrust getWebOfTrust() {
 		return mWoT;
 	}
-	
-    /**
-     * @return A {@link RequestClient} which shall be used by {@link IntroductionServer} and
-     *         {@link IntroductionClient} to group their Freenet data transfers into the same
-     *         scheduling group.<br>
-     *         Puzzle fetches and inserts belong together, so it makes sense to use the same
-     *         RequestClient for them.
-     */
+
+	/**
+	 * A {@link RequestClient} which is used by {@link IntroductionPuzzle} downloaders/uploaders to
+	 * group their Freenet data transfers into a scheduling group.
+	 * There is a separate RequestClient for {@link Identity}s:
+	 * {@link WebOfTrust#getRequestClient()}.
+	 * 
+	 * See file "developer-documentation/RequestClient and priority map.txt" for an overview of
+	 * which downloaders/uploaders use which RequestClient.  */
 	protected RequestClient getRequestClient() {
 		return mRequestClient;
 	}
-	
+
 	/**
 	 * Delete puzzles which can no longer be solved because they have expired.
 	 */

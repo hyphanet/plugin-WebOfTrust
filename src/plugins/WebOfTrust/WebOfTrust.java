@@ -135,6 +135,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	
 	/** Used for exporting identities, identity introductions and introduction puzzles to XML and importing them from XML. */
 	private XMLTransformer mXMLTransformer;
+	/** @see #getRequestClient() */
 	private RequestClient mRequestClient;
 
 	/* Worker objects which actually run the plugin */
@@ -259,7 +260,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			mPuzzleStore = new IntroductionPuzzleStore(this);
 			
-			// Queried by IdentityFetcher
 			mRequestClient = new RequestClient() {
 	
 				@Override
@@ -5743,13 +5743,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 		return mFCPInterface;
 	}
 
-    /**
-     * @return A {@link RequestClient} which shall be used by {@link IdentityFetcher} and
-     *         {@link IdentityInserter} to group their Freenet data transfers into the same
-     *         scheduling group.<br>
-     *         Identity fetches and inserts belong together, so it makes sense to use the same
-     *         RequestClient for them.
-     */
+	/**
+	 * A {@link RequestClient} which is used by {@link Identity} downloaders/uploaders to group
+	 * their Freenet data transfers into a scheduling group.
+	 * There is a separate RequestClient for {@link IntroductionPuzzle}s:
+	 * {@link IntroductionPuzzleStore#getRequestClient()}.
+	 * 
+	 * See file "developer-documentation/RequestClient and priority map.txt" for an overview of
+	 * which downloaders/uploaders use which RequestClient.  */
 	public RequestClient getRequestClient() {
 		return mRequestClient;
 	}
