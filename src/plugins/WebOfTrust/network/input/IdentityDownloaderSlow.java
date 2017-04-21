@@ -7,12 +7,17 @@ import static java.util.Collections.sort;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.IdentityFile;
+import plugins.WebOfTrust.IdentityFileQueue;
+import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.Trust;
@@ -45,6 +50,8 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
+import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 import freenet.support.io.ResumeFailedException;
 
@@ -121,6 +128,9 @@ public final class IdentityDownloaderSlow implements
 	
 	private final ExtObjectContainer mDB;
 	
+	/** Fetched {@link IdentityFile}s are stored for processing at this {@link IdentityFileQueue}.*/
+	private final IdentityFileQueue mQueue;
+	
 	/** FIXME: Document similarly to {@link SubscriptionManager#mJob} */
 	private volatile DelayedBackgroundJob mJob = null;
 
@@ -145,6 +155,7 @@ public final class IdentityDownloaderSlow implements
 		mRequestClient = mWoT.getRequestClient();
 		mLock = mWoT.getIdentityDownloaderController();
 		mDB = mWoT.getDatabase();
+		mQueue = mWoT.getIdentityFileQueue();
 		mDownloads = new HashMap<>(getMaxRunningDownloadCount() * 2);
 	}
 
@@ -285,7 +296,44 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	@Override public void onSuccess(FetchResult result, ClientGetter state) {
-		// FIXME: Implement similarly to IdentityFetcher / IntroductionClient
+		FreenetURI uri = null;
+		Bucket bucket = null;
+		InputStream inputStream = null;
+		
+		try {
+			uri = state.getURI();
+			
+			if(logMINOR)
+				Logger.minor(this, "onSuccess(): Downloaded Identity: " + uri);
+			
+			bucket = result.asBucket();
+			inputStream = bucket.getInputStream();
+			
+			// IdentityFileStream currently does not need to be close()d so we don't store it
+			mQueue.add(new IdentityFileStream(uri, inputStream));
+			
+			// FIXME: Delete the EditionHint object
+		} catch (IOException | Error | RuntimeException e) {
+			Logger.error(this, "onSuccess(): Failed for URI: " + uri, e);
+		} finally {
+			Closer.close(inputStream);
+			Closer.close(bucket);
+			
+			synchronized(mLock) {
+				ClientGetter removed = (uri != null ? mDownloads.remove(uri) : null);
+				assert(state == removed);
+			}
+			
+			// Wake up this.run() to schedule a new download
+			// 
+			// TODO: Performance: Estimate how long it will take until all downloads have finished
+			// and use min(QUEUE_BATCHING_DELAY_MS, estimate) as execution delay.
+			// 
+			// FIXME: While we don't implement the above it would be nice to display the amount of
+			// running downloads on the StatisticsPage so we can see whether
+			// getMaxRunningDownloadCount() is chosen high enough.
+			mJob.triggerExecution();
+		}
 	}
 
 	@Override public void onFailure(FetchException e, ClientGetter state) {
