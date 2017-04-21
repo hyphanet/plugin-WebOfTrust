@@ -38,6 +38,7 @@ import com.db4o.query.Query;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchException.FetchExceptionMode;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
@@ -337,7 +338,59 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	@Override public void onFailure(FetchException e, ClientGetter state) {
-		// FIXME: Implement similarly to IdentityFetcher / IntroductionClient
+		FreenetURI uri = null;
+		
+		try {
+			uri = state.getURI();
+			
+			if(e.isDNF()) {
+				Logger.warning(this,
+					"Download failed with DataNotFound, bogus EditionHint? URI: " + uri);
+				
+				// Someone gave us a fake EditionHint to an edition which doesn't actually exist
+				// -> Doesn't make sense to retry.
+				deleteEditionHint(uri);
+				
+				// FIXME: Punish the publisher of the bogus hint
+			} else if(e.getMode() == FetchExceptionMode.CANCELLED) {
+				if(logMINOR)
+					Logger.minor(this, "Download cancelled: " + uri);
+					
+				// This happening is a normal part of terminate()ing -> Don't delete the hint
+			} else if(e.isDefinitelyFatal()) {
+				Logger.error(this, "Download failed fatally, possibly due to corrupt remote data: "
+					+ uri, e);
+				
+				// isDefinitelyFatal() includes post-download problems such as errors in the archive
+				// metadata so we must delete the hint to ensure it doesn't clog the download queue.
+				deleteEditionHint(uri);
+			} else if(e.isFatal()) {
+				Logger.error(this, "Download failed fatally: " + uri, e);
+				
+				// isFatal() includes temporary problems such as running out of disk space.
+				// Thus don't delete the hint so we can try downloading it again. 
+			} else {
+				Logger.warning(this, "Download failed non-fatally: " + uri, e);
+				
+				// What remains here is problems such as lack of network connectivity so we must
+				// not delete the hint as retrying will likely work.
+			}
+		} catch(Error | RuntimeException e2) {
+			Logger.error(this, "onFailure(): Double fault for: " + uri, e2);
+		} finally {
+			synchronized(mLock) {
+				ClientGetter removed = (uri != null ? mDownloads.remove(uri) : null);
+				assert(state == removed);
+			}
+			
+			// Wake up this.run() to schedule a new download
+			mJob.triggerExecution();
+		}
+	}
+
+	private void deleteEditionHint(FreenetURI uri) {
+		// FIXME: Implement. Do log the EditionHint.toString() as the callers don't have it at hand
+		// but should log it.
 	}
 
 	@Override public void onResume(ClientContext context) throws ResumeFailedException {
