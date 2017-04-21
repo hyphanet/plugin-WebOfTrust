@@ -5,10 +5,8 @@ package plugins.WebOfTrust;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Random;
 
 import plugins.WebOfTrust.util.Daemon;
