@@ -18,6 +18,7 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFile;
 import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
+import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.Trust;
@@ -67,6 +68,19 @@ import freenet.support.io.ResumeFailedException;
  * 
  * This class only deals with the {@link Identity}s which {@link IdentityDownloaderFast} does not
  * download, so in combination the both of these classes download all {@link Identity}s.
+ * FIXME: Actually "only" isn't true, it is rather "mostly": This class is unaware of the efforts of
+ * the {@link IdentityDownloaderFast} currently, i.e. it also fetches identities with are direct
+ * trustees of an {@link OwnIdentity}.
+ * We should either feed our related {@link EditionHint}s to the USK fetching fred code which the
+ * other class uses and not fetch those identities ourselves, or just blindly keep fetching them
+ * on our own here instead of relaying the EditionHints to fred's USK code.
+ * Edition hints are critically important for USK fetching either way as Freenet's date-based
+ * hinting isn't as precise.
+ * FIXME: If some overlapping continues to exist make sure to communicate
+ * {@link #onSuccess(FetchResult, ClientGetter)} and
+ * {@link #onFailure(FetchException, ClientGetter)} to the {@link IdentityDownloaderFast}, and
+ * also have that one do the same for us - this avoids both class trying to download the same stuff
+ * twice.
  * 
  * Some of the storage policy of {@link EditionHint} objects:
  * - For a given pair of an Identity as specified by {@link EditionHint#getSourceIdentity()} and an
