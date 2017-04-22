@@ -692,14 +692,16 @@ public final class IdentityDownloaderSlow implements
 		// FIXME
 	}
 
-	/** You must synchronize upon {@link #mLock} when using this! */
+	/** You must synchronize upon {@link #mWoT} and {@link #mLock} when using this! */
 	private ObjectSet<EditionHint> getAllEditionHints() {
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
 		return new InitializingObjectSet<>(mWoT, q);
 	}
 
-	/** Convenient frontend for {@link #getEditionHintByID(String)} */
+	/**
+	 * Convenient frontend for {@link #getEditionHintByID(String)}.
+	 * You must synchronize upon {@link #mWoT} and {@link #mLock} when using this! */
 	private EditionHint getEditionHint(Identity sourceIdentity, Identity targetIdentity)
 			throws UnknownEditionHintException {
 		
@@ -707,7 +709,7 @@ public final class IdentityDownloaderSlow implements
 		return getEditionHintByID(id);
 	}
 
-	/** You must synchronize upon {@link #mLock} when using this! */
+	/** You must synchronize upon {@link #mWoT} and {@link #mLock} when using this! */
 	EditionHint getEditionHintByID(String id) throws UnknownEditionHintException {
 		Query query = mDB.query();
 		query.constrain(EditionHint.class);
@@ -724,7 +726,7 @@ public final class IdentityDownloaderSlow implements
 		}
 	}
 
-	/** You must synchronize upon {@link #mLock} when using this! */
+	/** You must synchronize upon {@link #mWoT} and {@link #mLock} when using this! */
 	private ObjectSet<EditionHint> getEditionHintsBySourceIdentity(Identity identity) {
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
@@ -732,7 +734,7 @@ public final class IdentityDownloaderSlow implements
 		return new InitializingObjectSet<>(mWoT, q);
 	}
 
-	/** You must synchronize upon {@link #mLock} when using this! */
+	/** You must synchronize upon {@link #mWoT} and {@link #mLock} when using this! */
 	private ObjectSet<EditionHint> getEditionHintsByTargetIdentity(Identity identity) {
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
@@ -740,7 +742,7 @@ public final class IdentityDownloaderSlow implements
 		return new InitializingObjectSet<>(mWoT, q);
 	}
 
-	/** You must synchronize upon {@link #mLock} when using this! */
+	/** You must synchronize upon {@link #mWoT} and {@link #mLock} when using this! */
 	private ObjectSet<EditionHint> getEditionHints(Identity targetIdentity, long edition) {
 		// TODO: Performance: Once we use a database which supports multi-field indices configure it
 		// to have such an index on the fields used here.
@@ -752,7 +754,7 @@ public final class IdentityDownloaderSlow implements
 		return new InitializingObjectSet<>(mWoT, q);
 	}
 
-	/** You must synchronize upon {@link #mLock} when using this! */
+	/** You must synchronize upon {@link #mWoT} and {@link #mLock} when using this! */
 	private ObjectSet<EditionHint> getQueue() {
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
