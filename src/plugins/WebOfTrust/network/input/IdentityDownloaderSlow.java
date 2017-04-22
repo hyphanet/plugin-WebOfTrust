@@ -19,6 +19,7 @@ import plugins.WebOfTrust.IdentityFile;
 import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.Trust;
@@ -424,8 +425,45 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	private void deleteEditionHints(FreenetURI uri) {
-		// FIXME: Implement. Do log the EditionHint.toString() as the callers don't have it at hand
-		// but should log it.
+		synchronized(mWoT) {
+		synchronized(mLock) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				Identity i = null;
+				try {
+					i = mWoT.getIdentityByURI(uri);
+				} catch (UnknownIdentityException e) {
+					Logger.warning(this,
+						"deleteEditionHints() called for Identity which doesn't exist anymore!", e);
+					
+					// No need to delete anything or throw an exception:
+					// The hints will already have been deleted when the Identity was deleted.
+					return;
+				}
+				
+				long edition = uri.getEdition();
+				
+				if(logMINOR) {
+					Logger.minor(this,
+						"deleteEditionHints() for edition " + edition + " of " + i + " ...");
+				}
+				
+				for(EditionHint h: getEditionHints(i, edition)) {
+					if(logMINOR)
+						Logger.minor(this, "deleteEditionHints(): Deleting " + h);
+					h.deleteWithoutCommit();
+				}
+				
+				Persistent.checkedCommit(mDB, this);
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			} finally {
+				if(logMINOR)
+					Logger.minor(this, "deleteEditionHints() finished.");
+			}
+		}
+		}
+		}
 	}
 
 	@Override public void onResume(ClientContext context) throws ResumeFailedException {
@@ -699,6 +737,18 @@ public final class IdentityDownloaderSlow implements
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
 		q.descend("mTargetIdentity").constrain(identity).identity();
+		return new InitializingObjectSet<>(mWoT, q);
+	}
+
+	/** You must synchronize upon {@link #mLock} when using this! */
+	private ObjectSet<EditionHint> getEditionHints(Identity targetIdentity, long edition) {
+		// TODO: Performance: Once we use a database which supports multi-field indices configure it
+		// to have such an index on the fields used here.
+		
+		Query q = mDB.query();
+		q.constrain(EditionHint.class);
+		q.descend("mTargetIdentity").constrain(targetIdentity).identity();
+		q.descend("mEdition").constrain(edition);
 		return new InitializingObjectSet<>(mWoT, q);
 	}
 
