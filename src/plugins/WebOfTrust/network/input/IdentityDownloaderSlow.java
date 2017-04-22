@@ -676,6 +676,7 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	private void testDatabaseIntegrity() {
+		synchronized(mWoT) {
 		synchronized(mLock) {
 		ObjectSet<EditionHint> queueSortedByDb4o = getQueue();
 		ArrayList<EditionHint> queueSortedWithReferenceImpl = new ArrayList<>(getAllEditionHints());
@@ -691,6 +692,7 @@ public final class IdentityDownloaderSlow implements
 			
 			for(EditionHint h : queueSortedByDb4o)
 				Logger.error(this, h.toString());
+		}
 		}
 		}
 	}
