@@ -498,9 +498,23 @@ public final class IdentityDownloaderSlow implements
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
 		Logger.normal(this, "storeAbortFetchCommandWithoutCommit(" + identity + ") ...");
 		
+		// Stop fetching the Identity
 		for(EditionHint h : getEditionHintsByTargetIdentity(identity)) {
 			if(logMINOR)
-				Logger.minor(this, "Deleting " + h);
+				Logger.minor(this, "storeAbortFetchCommandWithoutCommit(): Deleting " + h);
+			
+			h.deleteWithoutCommit();
+		}
+		
+		// Also because the Identity isn't trustworthy enough to be fetched anymore we cannot trust
+		// its hints either and thus must delete them.
+		// Technically their amount is constant, i.e. O(max number of trusts per Identity), so we
+		// would only risk a constant amount of bogus fetches if we didn't do this - but
+		// getEditionHintsBySourceIdentity() needs to exist anyway for the purpose of being able
+		// to handle deletion of an Identity so we may as well just use it here, too.
+		for(EditionHint h : getEditionHintsBySourceIdentity(identity)) {
+			if(logMINOR)
+				Logger.minor(this, "storeAbortFetchCommandWithoutCommit(): Deleting " + h);
 			
 			h.deleteWithoutCommit();
 		}
@@ -635,6 +649,14 @@ public final class IdentityDownloaderSlow implements
 			case 0:  throw new UnknownEditionHintException(id);
 			default: throw new DuplicateObjectException(id);
 		}
+	}
+
+	/** You must synchronize upon {@link #mLock} when using this! */
+	private ObjectSet<EditionHint> getEditionHintsBySourceIdentity(Identity identity) {
+		Query q = mDB.query();
+		q.constrain(EditionHint.class);
+		q.descend("mSourceIdentity").constrain(identity).identity();
+		return new InitializingObjectSet<>(mWoT, q);
 	}
 
 	/** You must synchronize upon {@link #mLock} when using this! */

@@ -77,6 +77,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	public static final int MIN_CAPACITY
 		= IdentityDownloaderController.USE_LEGACY_REFERENCE_IMPLEMENTATION ? 0 : 1;
 
+	@IndexedField
 	private final Identity mSourceIdentity;
 
 	@IndexedField
