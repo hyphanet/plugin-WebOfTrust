@@ -60,6 +60,7 @@ import freenet.support.io.ResumeFailedException;
  * Uses USK edition hints to download {@link Identity}s from the network for which we have a
  * significant confidence that a certain edition exists.
  * For an explanation of what an edition hint is, see {@link EditionHint}.
+ * This class is the manager for storage of {@link EditionHint} objects.
  * 
  * The downloads happen as a direct SSK request, and thus don't cause as much network load as the
  * USK subscriptions which {@link IdentityDownloaderFast} would do.
@@ -67,25 +68,45 @@ import freenet.support.io.ResumeFailedException;
  * This class only deals with the {@link Identity}s which {@link IdentityDownloaderFast} does not
  * download, so in combination the both of these classes download all {@link Identity}s.
  * 
- * FIXME: Do we deduplicate hints by edition? We should do that so we don't have multiple hints for
- * the same edition in the queue download queue - it only makes sense to download a single edition
- * once. This space optimization is necessary because each Trust value we receive from the network
- * ships with a hint, so there are at most O(N*512) hints where N is the number of identities.
- * This is a very large number, in fact the Trust table is the largest table we store in
- * the database (by number of entries, not necessarily by used space) - so it would be nice to avoid
- * having that many EditionHint objects as well.
- * EDIT: It may actually make sense to keep the duplicate hints: If the giver of a hint becomes
- * distrusted we maybe should delete their hints - but this does not mean the editions they hint at
- * are not valid. So we should try to fetch those editions by keeping the hints of other people
- * who hinted at the same edition. If we go for that behavior we just have to delete all hints of
- * a give edition once it is fetched by any IdentityDownloader.
- * OTOH one goal of having EditionHint objects not reference the Identity objects directly but only
- * contain their string IDs was to avoid having to delete them when an Identity becomes distrusted
- * (as they only can cause a temporary disturbance of 512 bogus fetch attempts per distrusted
- * Identity). Not only would this keep the codebase simple but also greatly reduce lock contention
- * as the IdentityDownloaderSlow would not have to sync against the lock of the Identity database
- * (= the WebOfTrust).
- * We should decide which path we want to go down and act accordingly. */
+ * Some of the storage policy of {@link EditionHint} objects:
+ * - For a given pair of an Identity as specified by {@link EditionHint#getSourceIdentity()} and an
+ *   Identity as specified by {@link EditionHint#getTargetIdentity()} there can only be a single
+ *   EditionHint object stored. This is because there can only be a single latest edition of a given
+ *   targetIdentity, and the sourceIdentity thus cannot say that there are multiple.
+ * - Once an edition of a given targetIdentity is fetched, all EditionHints of that edition or a
+ *   lower one are deleted. In other words: EditionHint objects are only stored for new editions.
+ * - For a given targetIdentity, there *CAN* be multiple EditionHint objects stored for the same
+ *   edition! This is because:
+ *   * The priority/position in the download queue of all hints is affected by lots of attributes
+ *     (see {@link EditionHint#compareTo(EditionHint)}) such as especially the trustworthiness of
+ *     the sourceIdentity - and it thus is easier to just store multiple EditionHint objects for the
+ *     same edition to let the database compute the one with the highest priority by their natural
+ *     ordering than to manually decide before storing them which one has the highest priority and
+ *     not storing all others.
+ *   * Further, when a sourceIdentity is distrusted by the WebOfTrust calling
+ *     {@link #storeAbortFetchCommandWithoutCommit(Identity)}), we have to delete all EditionHints
+ *     it gave. But their editions may be valid, e.g. also hinted at by a different sourceIdentity
+ *     - so if we didn't keep all EditionHint objects for the same edition we would have to figure
+ *     out if there was a different sourceIdentity providing a hint for that edition to store
+ *     an EditionHint object for it. And we would have to do that for all trustees of the distrusted
+ *     Identity by iterating over all their received trusts - so that would be an
+ *     O(number_of_trustees_of_distrusted_identity * number_of_trusters_of_each_trustee) = O(N*N)
+ *     = O(N^2) operation.
+ *     TODO: Performance:
+ *     The complexity of this actually wouldn't be that bad s a possible future revision of this
+ *     class may implement it to save the disk space of having multiple EditionHint objects for the
+ *     same edition: One of the factors N, the number of trustees, is actually limited to a constant
+ *     value ({@link XMLTransformer#MAX_IDENTITY_XML_TRUSTEE_AMOUNT}), so the complexity may be
+ *     bearable.
+ *     It may also be worthy to trade this time for the disk space as someone becoming distrusted
+ *     should hopefully not happen very often - but the disk usage we currently have is taken all
+ *     the time, and it is in fact also O(N*512): Each truster/trustee pair constitutes an
+ *     EditionHint.
+ * More details about the EditionHint storage policy can be seen at:
+ * - {@link #storeStartFetchCommandWithoutCommit(Identity)}
+ * - {@link #storeAbortFetchCommandWithoutCommit(Identity)}
+ * - {@link #storeNewEditionHintCommandWithoutCommit(EditionHint)}
+ * - further event handlers of this class. */
 public final class IdentityDownloaderSlow implements
 		IdentityDownloader,
 		Daemon,
@@ -313,7 +334,7 @@ public final class IdentityDownloaderSlow implements
 			// IdentityFileStream currently does not need to be close()d so we don't store it
 			mQueue.add(new IdentityFileStream(uri, inputStream));
 			
-			// FIXME: Delete the EditionHint object
+			// FIXME: Delete all EditionHint objects of equal or lower edition
 		} catch (IOException | Error | RuntimeException e) {
 			Logger.error(this, "onSuccess(): Failed for URI: " + uri, e);
 		} finally {
@@ -349,7 +370,7 @@ public final class IdentityDownloaderSlow implements
 				
 				// Someone gave us a fake EditionHint to an edition which doesn't actually exist
 				// -> Doesn't make sense to retry.
-				deleteEditionHint(uri);
+				deleteEditionHints(uri);
 				
 				// FIXME: Punish the publisher of the bogus hint
 			} else if(e.getMode() == FetchExceptionMode.CANCELLED) {
@@ -363,7 +384,7 @@ public final class IdentityDownloaderSlow implements
 				
 				// isDefinitelyFatal() includes post-download problems such as errors in the archive
 				// metadata so we must delete the hint to ensure it doesn't clog the download queue.
-				deleteEditionHint(uri);
+				deleteEditionHints(uri);
 			} else if(e.isFatal()) {
 				Logger.error(this, "Download failed fatally: " + uri, e);
 				
@@ -388,7 +409,7 @@ public final class IdentityDownloaderSlow implements
 		}
 	}
 
-	private void deleteEditionHint(FreenetURI uri) {
+	private void deleteEditionHints(FreenetURI uri) {
 		// FIXME: Implement. Do log the EditionHint.toString() as the callers don't have it at hand
 		// but should log it.
 	}
@@ -693,6 +714,8 @@ public final class IdentityDownloaderSlow implements
 			for(EditionHint h : queueSortedByDb4o)
 				Logger.error(this, h.toString());
 		}
+		
+		// FIXME: Check storage policy as described by class level JavaDoc.
 		}
 		}
 	}
