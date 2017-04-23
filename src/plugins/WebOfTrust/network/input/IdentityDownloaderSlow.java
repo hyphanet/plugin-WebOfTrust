@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
 import plugins.WebOfTrust.Identity;
@@ -585,12 +586,51 @@ public final class IdentityDownloaderSlow implements
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
 		Logger.normal(this, "storeAbortFetchCommandWithoutCommit(" + identity + ") ...");
 		
-		// Stop fetching the Identity
+		boolean wasQueuedForDownload = false;
+		// Remove entries for the Identity from the hint download queue
 		for(EditionHint h : getEditionHintsByTargetIdentity(identity)) {
 			if(logMINOR)
 				Logger.minor(this, "storeAbortFetchCommandWithoutCommit(): Deleting " + h);
 			
 			h.deleteWithoutCommit();
+			wasQueuedForDownload = true;
+		}
+		
+		// We now cancel any running downloads of hints about the identity.
+		// In theory we shouldn't be doing that because we're inside a transaction which isn't
+		// committed yet and may be rolled back if anything we do afterwards throws: We would then
+		// have wrongly canceled requests which should still be running as canceling requests at
+		// fred isn't transactional and thus not rolled back.
+		// But luckily this doesn't matter:
+		// We call mJob.triggerExecution() to schedule run() to execute to start new downloads.
+		// run() will execute on a different thread with a transaction of its own, and thus can only
+		// execute once this transaction here is finished. If this transaction gets rolled back,
+		// run() will see the old, pre-rollback download queue which includes the downloads we
+		// wrongly cancelled and will just restart them.
+		if(wasQueuedForDownload) {
+			FreenetURI identityURI = identity.getRequestURI();
+			// To prevent concurrent modification of mDownloads while we iterate over it we must
+			// copy it: While we iterate over it we want to call ClientGetter.cancel() on some
+			// entries, but that will call this.onFailure() on the same thread, which will remove
+			// the relevant entries from mDownloads.
+			HashMap<FreenetURI, ClientGetter> downloads = new HashMap<>(mDownloads);
+			for(Entry<FreenetURI, ClientGetter> download : downloads.entrySet()) {
+				if(!download.getKey().equalsKeypair(identityURI))
+					continue;
+				
+				if(logMINOR) {
+					Logger.minor(this,
+						"storeAbortFetchCommandWithoutCommit(): Cancelling download: "
+							+ download.getKey());
+				}
+
+				// Schedule the download queue processing thread to start more downloads.
+				// Must be called before cancel() to ensure the aforementioned assumption about
+				// transaction rollback applies.
+				mJob.triggerExecution();
+
+				download.getValue().cancel(mNodeClientCore.clientContext);
+			}
 		}
 		
 		// Also because the Identity isn't trustworthy enough to be fetched anymore we cannot trust
@@ -605,21 +645,7 @@ public final class IdentityDownloaderSlow implements
 			
 			h.deleteWithoutCommit();
 		}
-		
-		// We intentionally don't tell the network request thread to abort already running requests:
-		// A single running request for a hint doesn't cause any further request when it finishes.
-		// So we will only do O(constant number of concurrent requests) = O(1) requests of unwanted
-		// data, which is the lowest imaginable amount above 0 and thus acceptable.
-		// And most importantly: The XMLTransformer will ignore data of unwanted identities anyway.
-		// Not canceling requests spares us from having to implement a in-database "command queue"
-		// for the network thread: We couldn't cancel the requests right away on this thread here
-		// because the transaction isn't committed yet and may be aborted after we return. We would
-		// then have wrongly canceled a request which should still be running.
-		
-		// FIXME: Should this.run(), i.e. the downloading thread, be capable of aborting pending
-		// fetches or can we just let it finish them assuming their amount is O(1) anyway?
-		/* mJob.triggerExecution(); */
-		
+
 		Logger.normal(this, "storeAbortFetchCommandWithoutCommit() finished");
 	}
 
