@@ -699,10 +699,10 @@ public final class IdentityDownloaderSlow implements
 				Logger.warning(this, "newHint: " + newHint);
 				return;
 			} else if(newEdition == oldEdition) {
-				// FIXME: Decide whether we can handle this in the callers
-				Logger.warning(this, "Received same hint as currently stored, bug?");
-				Logger.warning(this, "oldHint: " + oldHint);
-				Logger.warning(this, "newHint: " + newHint);
+				if(logMINOR) {
+					Logger.minor(this,
+						"storeNewEditionHintCommandWithoutCommit(): Hint hasn't changed, ignoring");
+				}
 				return;
 			}
 			
