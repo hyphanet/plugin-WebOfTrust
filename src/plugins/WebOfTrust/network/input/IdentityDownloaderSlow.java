@@ -651,7 +651,9 @@ public final class IdentityDownloaderSlow implements
 
 	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint newHint) {
 		if(logMINOR)
-			Logger.minor(this, "storeNewEditionHintCommandWithoutCommit(" + newHint + ") ...");
+			Logger.minor(this, "storeNewEditionHintCommandWithoutCommit()...");
+		
+		try {
 		
 		// Class EditionHint should enforce this in theory, but it has a legacy codepath which
 		// doesn't, so we better check whether the enforcement works.
@@ -662,7 +664,7 @@ public final class IdentityDownloaderSlow implements
 			
 			if(target.getLastFetchedEdition() >= newHint.getEdition()) {
 				if(logMINOR)
-					Logger.minor(this, "Received obsolete hint, discarding: " + newHint);
+					Logger.minor(this, "EditionHint is obsolete, ignoring: " + newHint);
 				return;
 			}
 			
@@ -674,7 +676,8 @@ public final class IdentityDownloaderSlow implements
 			// the input isn't its job, and deciding whether to download the target is
 			// interpretation.)
 			if(!mWoT.shouldFetchIdentity(target)) {
-				Logger.normal(this, "Received hint for non-trusted target, discarding: " + newHint);
+				if(logMINOR)
+					Logger.minor(this, "EditionHint has non-trusted target, ignoring: " + newHint);
 				return;
 			}
 		} catch(UnknownIdentityException e) {
@@ -694,34 +697,35 @@ public final class IdentityDownloaderSlow implements
 				// FIXME: Track this in a counter and punish hint publishers if they do it too often
 				// EDIT: It probably can happen due to Identity.markForRefetch() having been called
 				// multiple times at our remote peers.
-				Logger.warning(this, "Received hint older than current, discarding:");
+				Logger.warning(this, "Received EditionHint older than current hint, ignoring:");
 				Logger.warning(this, "oldHint: " + oldHint);
 				Logger.warning(this, "newHint: " + newHint);
 				return;
 			} else if(newEdition == oldEdition) {
-				if(logMINOR) {
-					Logger.minor(this,
-						"storeNewEditionHintCommandWithoutCommit(): Hint hasn't changed, ignoring");
-				}
+				if(logMINOR)
+					Logger.minor(this, "EditionHint hasn't changed, ignoring: " + newHint);
+				
 				return;
 			}
 			
 			if(logMINOR)
-				Logger.minor(this, "Deleting old hint: " + oldHint);
+				Logger.minor(this, "Deleting old EditionHint: " + oldHint);
 			
 			oldHint.deleteWithoutCommit();
 		} catch(UnknownEditionHintException e) {}
 		
 		if(logMINOR)
-			Logger.minor(this, "Storing new hint: " + newHint);
+			Logger.minor(this, "Storing new EditionHint: " + newHint);
 		
 		newHint.storeWithoutCommit();
 		
 		// Wake up this.run() - the actual downloader 
 		mJob.triggerExecution();
 		
-		if(logMINOR)
-			Logger.minor(this, "storeNewEditionHintCommandWithoutCommit() finished.");
+		} finally {
+			if(logMINOR)
+				Logger.minor(this, "storeNewEditionHintCommandWithoutCommit() finished.");
+		}
 	}
 
 	@Override public boolean getShouldFetchState(Identity identity) {
