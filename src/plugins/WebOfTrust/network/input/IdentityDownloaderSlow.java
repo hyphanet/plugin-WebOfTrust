@@ -666,7 +666,13 @@ public final class IdentityDownloaderSlow implements
 				return;
 			}
 			
-			// FIXME: I'm rather sure that XMLTransformer won't check this, but please validate it
+			// XMLTransformer, our typical caller, does checks whether the source Identity is
+			// allowed to store hints and doesn't call us if it is not - but it doesn't check
+			// whether the target Identity should be fetched so we must do that on our own.
+			// (This is because the primary validation job of the XMLTransformer is to decide
+			// whether it should accept input of the Identity which was downloaded - interpreting
+			// the input isn't its job, and deciding whether to download the target is
+			// interpretation.)
 			if(!mWoT.shouldFetchIdentity(target)) {
 				Logger.normal(this, "Received hint for non-trusted target, discarding: " + newHint);
 				return;
