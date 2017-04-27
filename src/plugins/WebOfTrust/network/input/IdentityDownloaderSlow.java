@@ -739,7 +739,36 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	@Override public void deleteAllCommands() {
-		// FIXME
+		synchronized(mWoT) {
+		synchronized(mLock) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				if(logMINOR)
+					Logger.minor(this, "deleteAllCommands()...");
+				
+				// getQueue() is a better input than getAllEditionHints():
+				// getQueue() is the central input for run() to decide what to download().
+				// If deletion of all hints returned by getQueue() results in a database leak
+				// (remember: we're being called to check for leaks), then what was leaked is
+				// likely something which getQueue() failed to supply to the downloading code
+				// - and such bugs are the most important to fix as downloading everything we're
+				// supposed to download is our main job.
+				for(EditionHint h: getQueue()) {
+					if(logMINOR)
+						Logger.minor(this, "deleteAllCommands(): Deleting " + h);
+					h.deleteWithoutCommit();
+				}
+				
+				Persistent.checkedCommit(mDB, this);
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			} finally {
+				if(logMINOR)
+					Logger.minor(this, "deleteAllCommands() finished.");
+			}
+		}
+		}
+		}
 	}
 
 	/** You must synchronize upon {@link #mWoT} and {@link #mLock} when using this! */
