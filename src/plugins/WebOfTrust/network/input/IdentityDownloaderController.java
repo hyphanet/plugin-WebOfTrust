@@ -56,20 +56,44 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 	public static final boolean USE_LEGACY_REFERENCE_IMPLEMENTATION = true;
 
 
+	private final IdentityDownloaderSlow mIdentityDownloaderSlow;
+
+	private final IdentityDownloaderFast mIdentityDownloaderFast;
+
 	private final IdentityDownloader[] mDownloaders;
 
 
 	public IdentityDownloaderController(WebOfTrust wot, PluginRespirator pr, IdentityFileQueue q) {
 		if(!USE_LEGACY_REFERENCE_IMPLEMENTATION) {
+			mIdentityDownloaderSlow = new IdentityDownloaderSlow(wot);
+			mIdentityDownloaderFast = new IdentityDownloaderFast();
 			mDownloaders = new IdentityDownloader[] {
-				new IdentityDownloaderFast(),
-				new IdentityDownloaderSlow(wot),
+				mIdentityDownloaderFast,
+				mIdentityDownloaderSlow
 			};
 		} else {
+			mIdentityDownloaderSlow = null;
+			mIdentityDownloaderFast = null;
 			mDownloaders = new IdentityDownloader[] {
 				new IdentityFetcher(wot, pr, q, this)
 			};
 		}
+	}
+
+	/**
+	 * If {@link #USE_LEGACY_REFERENCE_IMPLEMENTATION} is false, returns our
+	 * {@link IdentityDownloaderSlow}.
+	 * Otherwise returns null. */
+	public IdentityDownloaderSlow getIdentityDownloaderSlow() {
+		return mIdentityDownloaderSlow;
+	}
+
+	/**
+	 * If {@link #USE_LEGACY_REFERENCE_IMPLEMENTATION} is false, returns our
+	 * {@link IdentityDownloaderFast}.
+	 * Otherwise returns null. */
+	public IdentityDownloaderFast getIdentityDownloaderFast() {
+		return mIdentityDownloaderFast;
 	}
 
 	@Override public void start() {
