@@ -873,6 +873,10 @@ public final class IdentityDownloaderSlow implements
 		// - succeeded ones
 		// - temporarily failed ones (RouteNotFound etc.)
 		// - permanently failed ones (DataNotFound, corrupted archives, etc.)
+		// - EditionHints which we didn't actually have to download because our download order
+		//   invalidated them, i.e. we downloaded a higher edition first / downloaded better edition
+		//   hints elsewhere. This is basically what onSuccess() deletes using deleteEditionHints()
+		//   - minus one!
 		// Include those stats here and show them on the StatisticsPage.
 		
 		public IdentityDownloaderSlowStatistics() {

@@ -131,6 +131,8 @@ public class StatisticsPage extends WebPageImpl {
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "MaxRunningDownloads")
 			+ " " + stats.mMaxRunningDownloads));
 		
+		// FIXME: Show the actual download queue, or at least the head of it.
+		
 		box.addChild(list);
 	}
 
