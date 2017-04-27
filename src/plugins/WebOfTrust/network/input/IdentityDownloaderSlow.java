@@ -253,11 +253,9 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	/** FIXME: Show on the web interface's StatisticsPage */
-	public int getRunningDownloadCount() {
-		// Don't require callers to synchronize so we can use it from the Statistics web interface
-		synchronized(mLock) {
-			return mDownloads.size();
-		}
+	/** You must synchronize upon {@link #mLock} when using this! */
+	private int getRunningDownloadCount() {
+		return mDownloads.size();
 	}
 
 	/**
@@ -868,6 +866,30 @@ public final class IdentityDownloaderSlow implements
 		
 		// FIXME: Check storage policy as described by class level JavaDoc.
 		}
+		}
+	}
+
+	public final class IdentityDownloaderSlowStatistics {
+		public final int mQueuedDownloads;
+		
+		public final int mRunningDownloads;
+		
+		public final int mMaxRunningDownloads;
+		
+		// FIXME: Add code to IdentityDownloaderSlow to track finished downloads:
+		// - succeeded ones
+		// - temporarily failed ones (RouteNotFound etc.)
+		// - permanently failed ones (DataNotFound, corrupted archives, etc.)
+		// Include those stats here and show them on the StatisticsPage.
+		
+		public IdentityDownloaderSlowStatistics() {
+			synchronized(IdentityDownloaderSlow.this.mWoT) {
+			synchronized(IdentityDownloaderSlow.this.mLock) {
+				mQueuedDownloads = getQueue().size();
+				mRunningDownloads = getRunningDownloadCount();
+				mMaxRunningDownloads = getMaxRunningDownloadCount();
+			}
+			}
 		}
 	}
 }
