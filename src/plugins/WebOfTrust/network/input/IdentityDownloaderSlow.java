@@ -252,7 +252,6 @@ public final class IdentityDownloaderSlow implements
 		if(logMINOR) Logger.minor(this, "run() finished.");
 	}
 
-	/** FIXME: Show on the web interface's StatisticsPage */
 	/** You must synchronize upon {@link #mLock} when using this! */
 	private int getRunningDownloadCount() {
 		return mDownloads.size();
@@ -274,9 +273,7 @@ public final class IdentityDownloaderSlow implements
 	 * TODO: Performance / Code quality:
 	 * - Instead of using a fixed value ask the fred load management code how many SSK requests
 	 *   it can currently handle.
-	 * - or at least make this configurable on the WoT web interface.
-	 * 
-	 * FIXME: Show on the web interface's StatisticsPage */
+	 * - or at least make this configurable on the WoT web interface. */
 	public int getMaxRunningDownloadCount() {
 		// Valid in unit tests
 		if(mNodeClientCore == null) {
@@ -364,10 +361,6 @@ public final class IdentityDownloaderSlow implements
 			// 
 			// TODO: Performance: Estimate how long it will take until all downloads have finished
 			// and use min(QUEUE_BATCHING_DELAY_MS, estimate) as execution delay.
-			// 
-			// FIXME: While we don't implement the above it would be nice to display the amount of
-			// running downloads on the StatisticsPage so we can see whether
-			// getMaxRunningDownloadCount() is chosen high enough.
 			mJob.triggerExecution();
 		}
 	}

@@ -19,6 +19,8 @@ import plugins.WebOfTrust.IdentityFileQueue.IdentityFileQueueStatistics;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
+import plugins.WebOfTrust.network.input.IdentityDownloaderSlow;
+import plugins.WebOfTrust.network.input.IdentityDownloaderSlow.IdentityDownloaderSlowStatistics;
 import freenet.clients.http.ToadletContext;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
@@ -46,6 +48,7 @@ public class StatisticsPage extends WebPageImpl {
 	@Override
 	public void make(final boolean mayWrite) {
 		makeSummary();
+		makeIdentityDownloaderSlowBox();
 		makeIdentityFileQueueBox();
 		makeIdentityFileProcessorBox();
 		makeMaintenanceBox();
@@ -109,7 +112,29 @@ public class StatisticsPage extends WebPageImpl {
 		return editionSum;
 	}
 
-	public void makeIdentityFileQueueBox() {
+	private void makeIdentityDownloaderSlowBox() {
+		IdentityDownloaderSlow downloader
+			= mWebOfTrust.getIdentityDownloaderController().getIdentityDownloaderSlow();
+		
+		if(downloader == null)
+			return;
+		
+		String l10nPrefix = "StatisticsPage.IdentityDownloaderSlowBox.";
+		HTMLNode box = addContentBox(l10n().getString(l10nPrefix + "Header"));
+		HTMLNode list = new HTMLNode("ul");
+		IdentityDownloaderSlowStatistics stats = downloader.new IdentityDownloaderSlowStatistics();
+		
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "QueuedDownloads")
+			+ " " + stats.mQueuedDownloads));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "RunningDownloads")
+			+ " " + stats.mRunningDownloads));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "MaxRunningDownloads")
+			+ " " + stats.mMaxRunningDownloads));
+		
+		box.addChild(list);
+	}
+
+	private void makeIdentityFileQueueBox() {
 		String l10nPrefix = "StatisticsPage.IdentityFileQueueBox.";
 		HTMLNode box = addContentBox(l10n().getString(l10nPrefix + "Header"));
 		HTMLNode list = new HTMLNode("ul");
@@ -133,7 +158,7 @@ public class StatisticsPage extends WebPageImpl {
 		box.addChild(list);
 	}
 
-	public void makeIdentityFileProcessorBox() {
+	private void makeIdentityFileProcessorBox() {
 		String l10nPrefix = "StatisticsPage.IdentityFileProcessorBox.";
 		HTMLNode box = addContentBox(l10n().getString(l10nPrefix + "Header"));
 		HTMLNode list = new HTMLNode("ul");
@@ -155,7 +180,7 @@ public class StatisticsPage extends WebPageImpl {
 		box.addChild(list);
 	}
 
-	public void makeMaintenanceBox() {
+	private void makeMaintenanceBox() {
 		String l10nPrefix = "StatisticsPage.MaintenanceBox.";
 		HTMLNode box = addContentBox(l10n().getString(l10nPrefix + "Header"));
 		HTMLNode list = new HTMLNode("ul");
