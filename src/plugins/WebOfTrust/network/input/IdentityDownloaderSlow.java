@@ -176,6 +176,8 @@ public final class IdentityDownloaderSlow implements
 
 	private int mSucceededDownloads = 0;
 
+	private int mSkippedDownloads = 0;
+
 	private static transient volatile boolean logDEBUG = false;
 
 	private static transient volatile boolean logMINOR = false;
@@ -457,17 +459,23 @@ public final class IdentityDownloaderSlow implements
 						+ edition + " of " + i + " ...");
 				}
 				
+				int deleted = 0;
 				for(EditionHint h: getEditionHints(i, edition, downloadSucceeded)) {
 					if(logMINOR)
 						Logger.minor(this, "deleteEditionHints(): Deleting " + h);
 					h.deleteWithoutCommit();
+					++deleted;
 				}
+				assert(deleted >= 1);
 				
 				Persistent.checkedCommit(mDB, this);
 				// Must be incremented after the commit() as this class isn't stored in the database
 				// and thus this variable won't be rolled back upon failure of the transaction.
-				if(downloadSucceeded)
+				if(downloadSucceeded) {
 					++mSucceededDownloads;
+					if(deleted > 1)
+						mSkippedDownloads += deleted - 1;
+				}
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			} finally {
@@ -883,6 +891,14 @@ public final class IdentityDownloaderSlow implements
 		/** FIXME: Add to StatisticsPage */
 		public final int mSucceededDownloads;
 
+		/**
+		 * When choosing which {@link EditionHint} to download first, we sort them in a "smart"
+		 * order (see {@link EditionHint#compareTo(EditionHint)}) to hopefully download the latest
+		 * editions first so we don't need to try to download many old editions. Once we download an
+		 * edition of an Identity which is newer than some pending queued hints they will be
+		 * deleted. Deleting each thus spares us a single download which is nice. */
+		public final int mSkippedDownloads;
+
 		// FIXME: Add code to IdentityDownloaderSlow to track finished downloads:
 		// - temporarily failed ones (RouteNotFound etc.)
 		// - permanently failed ones (DataNotFound, corrupted archives, etc.)
@@ -899,6 +915,7 @@ public final class IdentityDownloaderSlow implements
 				mRunningDownloads = getRunningDownloadCount();
 				mMaxRunningDownloads = getMaxRunningDownloadCount();
 				this.mSucceededDownloads = IdentityDownloaderSlow.this.mSucceededDownloads;
+				this.mSkippedDownloads = IdentityDownloaderSlow.this.mSkippedDownloads;
 			}
 			}
 		}
