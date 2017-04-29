@@ -178,6 +178,8 @@ public final class IdentityDownloaderSlow implements
 
 	private int mSkippedDownloads = 0;
 
+	private int mFailedTemporarilyDownloads = 0;
+
 	private static transient volatile boolean logDEBUG = false;
 
 	private static transient volatile boolean logMINOR = false;
@@ -401,11 +403,19 @@ public final class IdentityDownloaderSlow implements
 				
 				// isFatal() includes temporary problems such as running out of disk space.
 				// Thus don't delete the hint so we can try downloading it again. 
+				
+				synchronized(mLock) {
+					++mFailedTemporarilyDownloads;
+				}
 			} else {
 				Logger.warning(this, "Download failed non-fatally: " + uri, e);
 				
 				// What remains here is problems such as lack of network connectivity so we must
 				// not delete the hint as retrying will likely work.
+				
+				synchronized(mLock) {
+					++mFailedTemporarilyDownloads;
+				}
 			}
 		} catch(Error | RuntimeException e2) {
 			Logger.error(this, "onFailure(): Double fault for: " + uri, e2);
@@ -899,6 +909,9 @@ public final class IdentityDownloaderSlow implements
 		 * deleted. Deleting each thus spares us a single download which is nice. */
 		public final int mSkippedDownloads;
 
+		/** E.g. lack of network connection */
+		public final int mFailedTemporarilyDownloads;
+
 		// FIXME: Add code to IdentityDownloaderSlow to track downloads:
 		// - total ever enqueued downloads
 		// - temporarily failed ones (RouteNotFound etc.)
@@ -917,6 +930,8 @@ public final class IdentityDownloaderSlow implements
 				mMaxRunningDownloads = getMaxRunningDownloadCount();
 				this.mSucceededDownloads = IdentityDownloaderSlow.this.mSucceededDownloads;
 				this.mSkippedDownloads = IdentityDownloaderSlow.this.mSkippedDownloads;
+				this.mFailedTemporarilyDownloads
+					= IdentityDownloaderSlow.this.mFailedTemporarilyDownloads;
 			}
 			}
 		}
