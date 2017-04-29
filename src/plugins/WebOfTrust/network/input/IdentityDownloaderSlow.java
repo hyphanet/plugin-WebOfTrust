@@ -899,7 +899,8 @@ public final class IdentityDownloaderSlow implements
 		 * deleted. Deleting each thus spares us a single download which is nice. */
 		public final int mSkippedDownloads;
 
-		// FIXME: Add code to IdentityDownloaderSlow to track finished downloads:
+		// FIXME: Add code to IdentityDownloaderSlow to track downloads:
+		// - total ever enqueued downloads
 		// - temporarily failed ones (RouteNotFound etc.)
 		// - permanently failed ones (DataNotFound, corrupted archives, etc.)
 		// - EditionHints which we didn't actually have to download because our download order
