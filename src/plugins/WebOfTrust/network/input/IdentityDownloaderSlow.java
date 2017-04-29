@@ -174,6 +174,8 @@ public final class IdentityDownloaderSlow implements
 
 	private final HashMap<FreenetURI, ClientGetter> mDownloads;
 
+	private int mSucceededDownloads = 0;
+
 	private static transient volatile boolean logDEBUG = false;
 
 	private static transient volatile boolean logMINOR = false;
@@ -417,15 +419,16 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	/**
-	 * If alsoDeleteAllBelow == false, deletes all {@link EditionHint}s with:
-	 *    EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
-	 * && EditionHint.getEdition() == uri.getEdition()
+	 * If downloadSucceeded == false, deletes all {@link EditionHint}s with:
+	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
+	 *   && EditionHint.getEdition() == uri.getEdition()
 	 * 
-	 * If alsoDeleteAllBelow == true, deletes all {@link EditionHint}s with:
-	 *    EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
-	 * && EditionHint.getEdition() <= uri.getEdition() 
+	 * If downloadSucceeded == true, deletes all {@link EditionHint}s with:
+	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
+	 *   && EditionHint.getEdition() <= uri.getEdition() 
+	 * and increments {@link #mSucceededDownloads}
 	 */
-	private void deleteEditionHints(FreenetURI uri, boolean alsoDeleteAllBelow) {
+	private void deleteEditionHints(FreenetURI uri, boolean downloadSucceeded) {
 		synchronized(mWoT) {
 		synchronized(mLock) {
 		synchronized(Persistent.transactionLock(mDB)) {
@@ -439,6 +442,10 @@ public final class IdentityDownloaderSlow implements
 					
 					// No need to delete anything or throw an exception:
 					// The hints will already have been deleted when the Identity was deleted.
+					
+					if(downloadSucceeded)
+						++mSucceededDownloads;
+					
 					return;
 				}
 				
@@ -446,17 +453,21 @@ public final class IdentityDownloaderSlow implements
 				
 				if(logMINOR) {
 					Logger.minor(this,
-						"deleteEditionHints() for edition" + (alsoDeleteAllBelow ? " <= " : " == ") 
+						"deleteEditionHints() for edition" + (downloadSucceeded ? " <= " : " == ") 
 						+ edition + " of " + i + " ...");
 				}
 				
-				for(EditionHint h: getEditionHints(i, edition, alsoDeleteAllBelow)) {
+				for(EditionHint h: getEditionHints(i, edition, downloadSucceeded)) {
 					if(logMINOR)
 						Logger.minor(this, "deleteEditionHints(): Deleting " + h);
 					h.deleteWithoutCommit();
 				}
 				
 				Persistent.checkedCommit(mDB, this);
+				// Must be incremented after the commit() as this class isn't stored in the database
+				// and thus this variable won't be rolled back upon failure of the transaction.
+				if(downloadSucceeded)
+					++mSucceededDownloads;
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			} finally {
@@ -868,9 +879,11 @@ public final class IdentityDownloaderSlow implements
 		public final int mRunningDownloads;
 		
 		public final int mMaxRunningDownloads;
-		
+
+		/** FIXME: Add to StatisticsPage */
+		public final int mSucceededDownloads;
+
 		// FIXME: Add code to IdentityDownloaderSlow to track finished downloads:
-		// - succeeded ones
 		// - temporarily failed ones (RouteNotFound etc.)
 		// - permanently failed ones (DataNotFound, corrupted archives, etc.)
 		// - EditionHints which we didn't actually have to download because our download order
@@ -885,6 +898,7 @@ public final class IdentityDownloaderSlow implements
 				mQueuedDownloads = getQueue().size();
 				mRunningDownloads = getRunningDownloadCount();
 				mMaxRunningDownloads = getMaxRunningDownloadCount();
+				this.mSucceededDownloads = IdentityDownloaderSlow.this.mSucceededDownloads;
 			}
 			}
 		}
