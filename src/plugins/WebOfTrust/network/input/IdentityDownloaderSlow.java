@@ -181,6 +181,8 @@ public final class IdentityDownloaderSlow implements
 	private int mFailedTemporarilyDownloads = 0;
 
 	private int mFailedPermanentlyDownloads = 0;
+	
+	private int mDataNotFoundDownloads = 0;
 
 	private static transient volatile boolean logDEBUG = false;
 
@@ -353,7 +355,7 @@ public final class IdentityDownloaderSlow implements
 			// IdentityFileStream currently does not need to be close()d so we don't store it
 			mQueue.add(new IdentityFileStream(uri, inputStream));
 			
-			deleteEditionHints(uri, true);
+			deleteEditionHints(uri, true, null);
 		} catch (IOException | Error | RuntimeException e) {
 			Logger.error(this, "onSuccess(): Failed for URI: " + uri, e);
 		} finally {
@@ -385,7 +387,7 @@ public final class IdentityDownloaderSlow implements
 				
 				// Someone gave us a fake EditionHint to an edition which doesn't actually exist
 				// -> Doesn't make sense to retry.
-				deleteEditionHints(uri, false);
+				deleteEditionHints(uri, false, e);
 				
 				// FIXME: Punish the publisher of the bogus hint
 			} else if(e.getMode() == FetchExceptionMode.CANCELLED) {
@@ -399,7 +401,7 @@ public final class IdentityDownloaderSlow implements
 				
 				// isDefinitelyFatal() includes post-download problems such as errors in the archive
 				// metadata so we must delete the hint to ensure it doesn't clog the download queue.
-				deleteEditionHints(uri, false);
+				deleteEditionHints(uri, false, e);
 			} else if(e.isFatal()) {
 				Logger.error(this, "Download failed fatally: " + uri, e);
 				
@@ -437,6 +439,8 @@ public final class IdentityDownloaderSlow implements
 	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
 	 *   && EditionHint.getEdition() == uri.getEdition()
 	 * and increments {@link #mFailedPermanentlyDownloads}.
+	 * If {@link FetchException#isDNF()} applies to failureReason, {@link #mDataNotFoundDownloads}
+	 * is also incremented.
 	 * 
 	 * If downloadSucceeded == true, deletes all {@link EditionHint}s with:
 	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
@@ -444,7 +448,11 @@ public final class IdentityDownloaderSlow implements
 	 * and increments {@link #mSucceededDownloads} and increases {@link #mSkippedDownloads}
 	 * accordingly.
 	 */
-	private void deleteEditionHints(FreenetURI uri, boolean downloadSucceeded) {
+	private void deleteEditionHints(
+			FreenetURI uri, boolean downloadSucceeded, FetchException failureReason) {
+		
+		assert(downloadSucceeded ? failureReason == null : failureReason != null);
+		
 		synchronized(mWoT) {
 		synchronized(mLock) {
 		synchronized(Persistent.transactionLock(mDB)) {
@@ -470,8 +478,11 @@ public final class IdentityDownloaderSlow implements
 					if(downloadSucceeded)
 						++mSucceededDownloads;
 					/*
-					else
+					else {
 						++mFailedPermanentlyDownloads;
+						if(failureReason.isDNF())
+							++mDataNotFoundDownloads;
+					}
 					*/
 					
 					return;
@@ -507,8 +518,11 @@ public final class IdentityDownloaderSlow implements
 					++mSucceededDownloads;
 					if(deleted > 1)
 						mSkippedDownloads += deleted - 1;
-				} else
+				} else {
 					++mFailedPermanentlyDownloads;
+					if(failureReason.isDNF())
+						++mDataNotFoundDownloads;
+				}
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			} finally {
@@ -935,8 +949,14 @@ public final class IdentityDownloaderSlow implements
 		/** E.g. lack of network connection */
 		public final int mFailedTemporarilyDownloads;
 
-		/** E.g. invalid low level file format of the downloaded data. */
+		/** E.g. invalid low level file format of the downloaded data, data not found, etc. */
 		public final int mFailedPermanentlyDownloads;
+
+		/**
+		 * The edition hints which led us to those downloads were fake, or so old that the
+		 * data already fell out of the network.
+		 * Notice that these are included in {@link #mFailedPermanentlyDownloads}. */
+		public final int mDataNotFoundDownloads;
 
 		// FIXME: Add code to IdentityDownloaderSlow to track downloads:
 		// - total ever enqueued downloads
@@ -960,6 +980,7 @@ public final class IdentityDownloaderSlow implements
 					= IdentityDownloaderSlow.this.mFailedTemporarilyDownloads;
 				this.mFailedPermanentlyDownloads
 					= IdentityDownloaderSlow.this.mFailedPermanentlyDownloads;
+				this.mDataNotFoundDownloads = IdentityDownloaderSlow.this.mDataNotFoundDownloads;
 			}
 			}
 		}
