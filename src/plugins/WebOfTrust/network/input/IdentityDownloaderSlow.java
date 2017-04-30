@@ -180,6 +180,8 @@ public final class IdentityDownloaderSlow implements
 
 	private int mFailedTemporarilyDownloads = 0;
 
+	private int mFailedPermanentlyDownloads = 0;
+
 	private static transient volatile boolean logDEBUG = false;
 
 	private static transient volatile boolean logMINOR = false;
@@ -434,6 +436,7 @@ public final class IdentityDownloaderSlow implements
 	 * If downloadSucceeded == false, deletes all {@link EditionHint}s with:
 	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
 	 *   && EditionHint.getEdition() == uri.getEdition()
+	 * and increments {@link #mFailedPermanentlyDownloads}.
 	 * 
 	 * If downloadSucceeded == true, deletes all {@link EditionHint}s with:
 	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
@@ -456,8 +459,20 @@ public final class IdentityDownloaderSlow implements
 					// No need to delete anything or throw an exception:
 					// The hints will already have been deleted when the Identity was deleted.
 					
+					// The Identity having been deleted means it was distrusted which means we don't
+					// want to download it anymore so there's no point in counting the attempt.
+					// However that only applies to failed attempts:
+					// Succeeded attempts will already have resulted in our caller onSuccess()
+					// having enqueued an IdentityFile for processing at the IdentityFileQueue.
+					// It would be confusing for readers of its statistics if there were more files
+					// enqueued than the IdentityDownloaderSlow statistics report as having been
+					// downloaded.
 					if(downloadSucceeded)
 						++mSucceededDownloads;
+					/*
+					else
+						++mFailedPermanentlyDownloads;
+					*/
 					
 					return;
 				}
@@ -492,7 +507,8 @@ public final class IdentityDownloaderSlow implements
 					++mSucceededDownloads;
 					if(deleted > 1)
 						mSkippedDownloads += deleted - 1;
-				}
+				} else
+					++mFailedPermanentlyDownloads;
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			} finally {
@@ -919,6 +935,9 @@ public final class IdentityDownloaderSlow implements
 		/** E.g. lack of network connection */
 		public final int mFailedTemporarilyDownloads;
 
+		/** E.g. invalid low level file format of the downloaded data. */
+		public final int mFailedPermanentlyDownloads;
+
 		// FIXME: Add code to IdentityDownloaderSlow to track downloads:
 		// - total ever enqueued downloads
 		// - temporarily failed ones (RouteNotFound etc.)
@@ -939,6 +958,8 @@ public final class IdentityDownloaderSlow implements
 				this.mSkippedDownloads = IdentityDownloaderSlow.this.mSkippedDownloads;
 				this.mFailedTemporarilyDownloads
 					= IdentityDownloaderSlow.this.mFailedTemporarilyDownloads;
+				this.mFailedPermanentlyDownloads
+					= IdentityDownloaderSlow.this.mFailedPermanentlyDownloads;
 			}
 			}
 		}
