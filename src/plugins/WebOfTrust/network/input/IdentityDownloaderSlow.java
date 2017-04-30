@@ -769,6 +769,7 @@ public final class IdentityDownloaderSlow implements
 				Logger.minor(this, "Deleting old EditionHint: " + oldHint);
 			
 			oldHint.deleteWithoutCommit();
+			++mSkippedDownloads;
 		} catch(UnknownEditionHintException e) {}
 		
 		if(logMINOR)
