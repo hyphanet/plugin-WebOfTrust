@@ -470,6 +470,11 @@ public final class IdentityDownloaderSlow implements
 						+ edition + " of " + i + " ...");
 				}
 				
+				// FIXME: We potentially store multiple EditionHints for each edition, thus this
+				// counter is a wrong input for our purpose of increasing mSkippedDownloads:
+				// Even if we store multiple hints for an edition we will only try downloading it
+				// once as on the first successful download this function here will delete the
+				// other hints pointing to it. Thus exclude the duplicates in this counter.
 				int deleted = 0;
 				for(EditionHint h: getEditionHints(i, edition, downloadSucceeded)) {
 					if(logMINOR)
