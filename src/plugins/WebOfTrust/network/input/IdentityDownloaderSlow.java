@@ -438,7 +438,8 @@ public final class IdentityDownloaderSlow implements
 	 * If downloadSucceeded == true, deletes all {@link EditionHint}s with:
 	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
 	 *   && EditionHint.getEdition() <= uri.getEdition() 
-	 * and increments {@link #mSucceededDownloads}
+	 * and increments {@link #mSucceededDownloads} and increases {@link #mSkippedDownloads}
+	 * accordingly.
 	 */
 	private void deleteEditionHints(FreenetURI uri, boolean downloadSucceeded) {
 		synchronized(mWoT) {
@@ -479,8 +480,9 @@ public final class IdentityDownloaderSlow implements
 				assert(deleted >= 1);
 				
 				Persistent.checkedCommit(mDB, this);
-				// Must be incremented after the commit() as this class isn't stored in the database
-				// and thus this variable won't be rolled back upon failure of the transaction.
+				// The member variables must be changed after the commit() as this class isn't
+				// stored in the database and thus they won't be rolled back upon failure of the
+				// transaction.
 				if(downloadSucceeded) {
 					++mSucceededDownloads;
 					if(deleted > 1)
