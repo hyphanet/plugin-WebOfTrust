@@ -800,8 +800,7 @@ public final class IdentityDownloaderSlow implements
 		synchronized(mLock) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				if(logMINOR)
-					Logger.minor(this, "deleteAllCommands()...");
+				Logger.warning(this, "deleteAllCommands() (NOTICE: Use only for debugging!)...");
 				
 				// getQueue() is a better input than getAllEditionHints():
 				// getQueue() is the central input for run() to decide what to download().
@@ -810,11 +809,20 @@ public final class IdentityDownloaderSlow implements
 				// likely something which getQueue() failed to supply to the downloading code
 				// - and such bugs are the most important to fix as downloading everything we're
 				// supposed to download is our main job.
+				int deleted = 0;
 				for(EditionHint h: getQueue()) {
 					if(logMINOR)
 						Logger.minor(this, "deleteAllCommands(): Deleting " + h);
 					h.deleteWithoutCommit();
+					++deleted;
 				}
+				
+				// It doesn't make much sense to try to keep the statistics up to date when a debug
+				// function like this one is used, but it makes sense to at least count the
+				// downloads as failed to ensure developers may notice on the web interface if this
+				// function is being wrongly called in a release which wasn't meant for debugging
+				// only.
+				mFailedPermanentlyDownloads += deleted;
 				
 				Persistent.checkedCommit(mDB, this);
 			} catch(RuntimeException e) {
