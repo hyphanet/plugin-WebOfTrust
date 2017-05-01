@@ -174,6 +174,8 @@ public final class IdentityDownloaderSlow implements
 
 	private final HashMap<FreenetURI, ClientGetter> mDownloads;
 
+	private int mTotalQueuedDownloadsInSession = 0;
+
 	private int mSucceededDownloads = 0;
 
 	private int mSkippedDownloads = 0;
@@ -212,8 +214,14 @@ public final class IdentityDownloaderSlow implements
 		
 		// FIXME: Implement similarly to SubscriptionManager.
 		
-		if(logDEBUG)
-			testDatabaseIntegrity();
+		synchronized(mWoT) {
+		synchronized(mLock) {
+			if(logDEBUG)
+				testDatabaseIntegrity();
+			
+			mTotalQueuedDownloadsInSession = getQueue().size();
+		}
+		}
 		
 		Logger.normal(this, "start() finished.");
 	}
@@ -612,6 +620,7 @@ public final class IdentityDownloaderSlow implements
 			}, UnknownEditionHintException.class);
 			
 			h.storeWithoutCommit();
+			++mTotalQueuedDownloadsInSession;
 			
 			if(logMINOR)
 				Logger.minor(this, "Created EditionHint from Trust database: " + h);
@@ -650,6 +659,13 @@ public final class IdentityDownloaderSlow implements
 				Logger.minor(this, "storeAbortFetchCommandWithoutCommit(): Deleting " + h);
 			
 			h.deleteWithoutCommit();
+			// We realized we don't actually need to download the Identity, so the statistics which
+			// serve as progress indicator for the UI - comparing getQueue.size() to
+			// mTotalQueuedDownloadsInSession - shouldn't include the deleted hints.
+			// (There is no variable to update for getQueue.size(), it is computed from a database
+			// query.)
+			--mTotalQueuedDownloadsInSession;
+			
 			wasQueuedForDownload = true;
 		}
 		
@@ -701,6 +717,7 @@ public final class IdentityDownloaderSlow implements
 				Logger.minor(this, "storeAbortFetchCommandWithoutCommit(): Deleting " + h);
 			
 			h.deleteWithoutCommit();
+			--mTotalQueuedDownloadsInSession;
 		}
 
 		Logger.normal(this, "storeAbortFetchCommandWithoutCommit() finished");
@@ -776,6 +793,7 @@ public final class IdentityDownloaderSlow implements
 			Logger.minor(this, "Storing new EditionHint: " + newHint);
 		
 		newHint.storeWithoutCommit();
+		++mTotalQueuedDownloadsInSession;
 		
 		// Wake up this.run() - the actual downloader 
 		mJob.triggerExecution();
@@ -940,6 +958,8 @@ public final class IdentityDownloaderSlow implements
 	public final class IdentityDownloaderSlowStatistics {
 		public final int mQueuedDownloads;
 		
+		public final int mTotalQueuedDownloadsInSession;
+		
 		public final int mRunningDownloads;
 		
 		public final int mMaxRunningDownloads;
@@ -981,6 +1001,8 @@ public final class IdentityDownloaderSlow implements
 			synchronized(IdentityDownloaderSlow.this.mWoT) {
 			synchronized(IdentityDownloaderSlow.this.mLock) {
 				mQueuedDownloads = getQueue().size();
+				this.mTotalQueuedDownloadsInSession
+					= IdentityDownloaderSlow.this.mTotalQueuedDownloadsInSession;
 				mRunningDownloads = getRunningDownloadCount();
 				mMaxRunningDownloads = getMaxRunningDownloadCount();
 				this.mSucceededDownloads = IdentityDownloaderSlow.this.mSucceededDownloads;
