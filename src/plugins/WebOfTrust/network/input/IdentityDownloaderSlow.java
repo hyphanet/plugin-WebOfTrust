@@ -964,7 +964,6 @@ public final class IdentityDownloaderSlow implements
 		
 		public final int mMaxRunningDownloads;
 
-		/** FIXME: Add to StatisticsPage */
 		public final int mSucceededDownloads;
 
 		/**
@@ -987,16 +986,7 @@ public final class IdentityDownloaderSlow implements
 		 * Notice that these are included in {@link #mFailedPermanentlyDownloads}. */
 		public final int mDataNotFoundDownloads;
 
-		// FIXME: Add code to IdentityDownloaderSlow to track downloads:
-		// - total ever enqueued downloads
-		// - temporarily failed ones (RouteNotFound etc.)
-		// - permanently failed ones (DataNotFound, corrupted archives, etc.)
-		// - EditionHints which we didn't actually have to download because our download order
-		//   invalidated them, i.e. we downloaded a higher edition first / downloaded better edition
-		//   hints elsewhere. This is basically what onSuccess() deletes using deleteEditionHints()
-		//   - minus one!
-		// Include those stats here and show them on the StatisticsPage.
-		
+
 		public IdentityDownloaderSlowStatistics() {
 			synchronized(IdentityDownloaderSlow.this.mWoT) {
 			synchronized(IdentityDownloaderSlow.this.mLock) {

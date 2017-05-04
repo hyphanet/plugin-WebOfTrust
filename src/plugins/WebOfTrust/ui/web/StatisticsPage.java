@@ -126,10 +126,22 @@ public class StatisticsPage extends WebPageImpl {
 		
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "QueuedDownloads")
 			+ " " + stats.mQueuedDownloads));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix
+			+ "TotalQueuedDownloadsInSession") + " " + stats.mTotalQueuedDownloadsInSession));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "RunningDownloads")
 			+ " " + stats.mRunningDownloads));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "MaxRunningDownloads")
 			+ " " + stats.mMaxRunningDownloads));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "SucceededDownloads")
+			+ " " + stats.mSucceededDownloads));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "SkippedDownloads")
+			+ " " + stats.mSkippedDownloads));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "FailedTemporarilyDownloads")
+			+ " " + stats.mFailedTemporarilyDownloads));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "FailedPermanentlyDownloads")
+			+ " " + stats.mFailedPermanentlyDownloads));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "DataNotFoundDownloads")
+			+ " " + stats.mDataNotFoundDownloads));
 		
 		// FIXME: Show the actual download queue, or at least the head of it.
 		
