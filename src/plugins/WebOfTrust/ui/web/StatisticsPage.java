@@ -22,6 +22,7 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow.IdentityDownloaderSlowStatistics;
 import freenet.clients.http.ToadletContext;
+import freenet.l10n.BaseL10n;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.HTMLNode;
 import freenet.support.TimeUtil;
@@ -119,33 +120,34 @@ public class StatisticsPage extends WebPageImpl {
 		if(downloader == null)
 			return;
 		
-		String l10nPrefix = "StatisticsPage.IdentityDownloaderSlowBox.";
-		HTMLNode box = addContentBox(l10n().getString(l10nPrefix + "Header"));
-		HTMLNode list = new HTMLNode("ul");
-		IdentityDownloaderSlowStatistics stats = downloader.new IdentityDownloaderSlowStatistics();
+		BaseL10n l = l10n();
+		String p = "StatisticsPage.IdentityDownloaderSlowBox.";
+		HTMLNode box = addContentBox(l10n().getString(p + "Header"));
+		HTMLNode ul = new HTMLNode("ul");
+		IdentityDownloaderSlowStatistics s = downloader.new IdentityDownloaderSlowStatistics();
 		
-		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "QueuedDownloads")
-			+ " " + stats.mQueuedDownloads));
-		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix
-			+ "TotalQueuedDownloadsInSession") + " " + stats.mTotalQueuedDownloadsInSession));
-		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "RunningDownloads")
-			+ " " + stats.mRunningDownloads));
-		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "MaxRunningDownloads")
-			+ " " + stats.mMaxRunningDownloads));
-		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "SucceededDownloads")
-			+ " " + stats.mSucceededDownloads));
-		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "SkippedDownloads")
-			+ " " + stats.mSkippedDownloads));
-		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "FailedTemporarilyDownloads")
-			+ " " + stats.mFailedTemporarilyDownloads));
-		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "FailedPermanentlyDownloads")
-			+ " " + stats.mFailedPermanentlyDownloads));
-		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "DataNotFoundDownloads")
-			+ " " + stats.mDataNotFoundDownloads));
+		ul.addChild(new HTMLNode("li", l.getString(p + "QueuedDownloads")
+			+ " " + s.mQueuedDownloads));
+		ul.addChild(new HTMLNode("li", l.getString(p + "TotalQueuedDownloadsInSession")
+			+ " " + s.mTotalQueuedDownloadsInSession));
+		ul.addChild(new HTMLNode("li", l.getString(p + "RunningDownloads")
+			+ " " + s.mRunningDownloads));
+		ul.addChild(new HTMLNode("li", l.getString(p + "MaxRunningDownloads")
+			+ " " + s.mMaxRunningDownloads));
+		ul.addChild(new HTMLNode("li", l.getString(p + "SucceededDownloads")
+			+ " " + s.mSucceededDownloads));
+		ul.addChild(new HTMLNode("li", l.getString(p + "SkippedDownloads")
+			+ " " + s.mSkippedDownloads));
+		ul.addChild(new HTMLNode("li", l.getString(p + "FailedTemporarilyDownloads")
+			+ " " + s.mFailedTemporarilyDownloads));
+		ul.addChild(new HTMLNode("li", l.getString(p + "FailedPermanentlyDownloads")
+			+ " " + s.mFailedPermanentlyDownloads));
+		ul.addChild(new HTMLNode("li", l.getString(p + "DataNotFoundDownloads")
+			+ " " + s.mDataNotFoundDownloads));
+		
+		box.addChild(ul);
 		
 		// FIXME: Show the actual download queue, or at least the head of it.
-		
-		box.addChild(list);
 	}
 
 	private void makeIdentityFileQueueBox() {
