@@ -56,6 +56,7 @@ Exceptions.WebOfTrust.restoreOwnIdentityWithoutCommit.IllegalParameterException.
 IdentityPage.ChangeTrustBox.FromOwnIdentity=Confiabilidade dada por sua identidade '${nickname}'
 IdentityPage.IdentityUriBox.Header=Endereço público da identidade '${nickname}'
 IdentityPage.IdentityUriBox.Text=O seguinte URI Freenet é um endereço dessa identidade. Se você quer dizer a outras pessoas sobre esta identidade, dê a URI para eles.
+IdentityPage.NicknameNotDownloadedYet=Ainda não baixado
 IdentityPage.ServicesBox.Header=Serviços da identidade '${nickname}'
 IdentityPage.StatisticsBox.Added=Adicionada
 IdentityPage.StatisticsBox.Header=Estatísticas sobre '${nickname}'
@@ -101,7 +102,6 @@ KnownIdentitiesPage.KnownIdentities.TableHeader.TrustAndComment=Confiança próp
 KnownIdentitiesPage.KnownIdentities.TableHeader.Trustees=Curadores
 KnownIdentitiesPage.KnownIdentities.TableHeader.Trusters=Confiadores
 KnownIdentitiesPage.KnownIdentities.Table.InfiniteRank=Nenhuma
-KnownIdentitiesPage.KnownIdentities.Table.NicknameNotDownloadedYet=Ainda não baixado
 KnownIdentitiesPage.KnownIdentities.Table.NoScore=Nenhuma
 KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton=Salvar
 KnownIdentitiesPage.RestoreInProgressWarning.Header=Restauração em andamento

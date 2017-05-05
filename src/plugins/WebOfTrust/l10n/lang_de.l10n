@@ -116,7 +116,6 @@ KnownIdentitiesPage.KnownIdentities.TableHeader.TrustAndComment=Eigenes Vertraue
 KnownIdentitiesPage.KnownIdentities.TableHeader.Trustees=Vertraute
 KnownIdentitiesPage.KnownIdentities.TableHeader.Trusters=Vertrauer
 KnownIdentitiesPage.KnownIdentities.Table.InfiniteRank=Keiner
-KnownIdentitiesPage.KnownIdentities.Table.NicknameNotDownloadedYet=Noch nicht heruntergeladen
 KnownIdentitiesPage.KnownIdentities.Table.NoScore=Keines
 KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton=Speichern
 KnownIdentitiesPage.RestoreInProgressWarning.Header=Wiederherstellung läuft

@@ -312,17 +312,13 @@ public class KnownIdentitiesPage extends WebPageImpl {
 
 			HTMLNode row=identitiesTable.addChild("tr");
 			
-			// NickName
-			HTMLNode nameLink = row.addChild("td", new String[] {"title", "style"}, new String[] {id.getRequestURI().toString(), "cursor: help;"})
-				.addChild("a", "href", IdentityPage.getURI(mWebInterface, id.getID()).toString());
-			
-			String nickName = id.getNickname();
-			
-			if(nickName != null) {
-				nameLink.addChild("#", nickName + "@" + id.getID().substring(0, 5) + "...");
-			}
-			else
-				nameLink.addChild("span", "class", "alert-error").addChild("#", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.NicknameNotDownloadedYet"));
+			// Nickname
+			// FIXME: Code quality: Check whether HTML allows us to apply the title/style attributes
+			// to the <a> returned by getLinkWithNickname() so this also works for other users of it
+			// which don't want to embed the <a> in a <td>.
+			row.addChild("td", new String[] {"title", "style"},
+			                   new String[] {id.getRequestURI().toString(), "cursor: help;"})
+			   .addChild(IdentityPage.getLinkWithNickname(mWebInterface, id));
 			
 			// Added date
 			row.addChild("td", CommonWebUtils.formatTimeDelta(currentTime - id.getAddedDate().getTime(), l10n()));

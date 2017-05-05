@@ -116,7 +116,6 @@ KnownIdentitiesPage.KnownIdentities.TableHeader.TrustAndComment=Own trust / own 
 KnownIdentitiesPage.KnownIdentities.TableHeader.Trustees=Trustees
 KnownIdentitiesPage.KnownIdentities.TableHeader.Trusters=Trusters
 KnownIdentitiesPage.KnownIdentities.Table.InfiniteRank=None
-KnownIdentitiesPage.KnownIdentities.Table.NicknameNotDownloadedYet=Not downloaded yet
 KnownIdentitiesPage.KnownIdentities.Table.NoScore=None
 KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton=Save
 KnownIdentitiesPage.RestoreInProgressWarning.Header=Restoration in progress

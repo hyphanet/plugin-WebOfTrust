@@ -58,6 +58,7 @@ Exceptions.WebOfTrust.restoreOwnIdentityWithoutCommit.IllegalParameterException.
 IdentityPage.ChangeTrustBox.FromOwnIdentity=Tillit gitt av din identitet '${nickname}'
 IdentityPage.ChangeTrustBox.Header=Endre tiltro-verdi gitt til identiteten '${nickname}'
 IdentityPage.IdentityUriBox.Header=Offentlig adresse til identiteten '${nickname}'
+IdentityPage.NicknameNotDownloadedYet=Ikke nedlastet enda
 IdentityPage.ServicesBox.Header=Tjenester tilbudt av '${nickname}'
 IdentityPage.StatisticsBox.Added=Lagt til
 IdentityPage.StatisticsBox.Header=Statistikk for '${nickname}'
@@ -105,7 +106,6 @@ KnownIdentitiesPage.KnownIdentities.TableHeader.TrustAndComment=Egen tillit / eg
 KnownIdentitiesPage.KnownIdentities.TableHeader.Trustees=De som blir trodd
 KnownIdentitiesPage.KnownIdentities.TableHeader.Trusters=De som gir tiltro
 KnownIdentitiesPage.KnownIdentities.Table.InfiniteRank=Ingen
-KnownIdentitiesPage.KnownIdentities.Table.NicknameNotDownloadedYet=Ikke nedlastet enda
 KnownIdentitiesPage.KnownIdentities.Table.NoScore=Ingen
 KnownIdentitiesPage.KnownIdentities.Table.UpdateTrustButton=Lagre
 KnownIdentitiesPage.RestoreInProgressWarning.Header=Gjenoppretting foregår
