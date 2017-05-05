@@ -66,6 +66,7 @@ Exceptions.WebOfTrust.restoreOwnIdentityWithoutCommit.IllegalParameterException.
 IdentityPage.ChangeTrustBox.FromOwnIdentity=Trust given by your identity '${nickname}'
 IdentityPage.ChangeTrustBox.Header=Change trust value given to identity '${nickname}'
 IdentityPage.IdentityUriBox.Header=Public address of identity '${nickname}'
+IdentityPage.NicknameNotDownloadedYet=Not downloaded yet
 IdentityPage.IdentityUriBox.Text=The following Freenet URI is an address of this identity. If you want to tell other people about this identity, give the URI to them.
 IdentityPage.ServicesBox.Header=Services of identity '${nickname}'
 IdentityPage.StatisticsBox.Added=Added

@@ -214,15 +214,7 @@ public class IdentityPage extends WebPageImpl {
 		for(Trust trust : trusts) {
 			HTMLNode trustRow = trustsTable.addChild("tr");
 			Identity involvedIdentity = showTrustee ? trust.getTrustee() : trust.getTruster(); 
-			
-			String nickname = involvedIdentity.getNickname();
-			HTMLNode nicknameNode;
-			if(nickname == null)
-				nicknameNode = new HTMLNode("span", "class", "alert-error").addChild("#", l10n().getString("KnownIdentitiesPage.KnownIdentities.Table.NicknameNotDownloadedYet"));
-			else
-				nicknameNode = new HTMLNode("#", nickname);
-			
-			trustRow.addChild("td").addChild("a", "href", getURI(mWebInterface, involvedIdentity.getID()).toString()).addChild(nicknameNode);
+			trustRow.addChild("td").addChild(getLinkWithNickname(mWebInterface, involvedIdentity));
 			trustRow.addChild("td", involvedIdentity.getID());
 			trustRow.addChild("td", new String[]{"align", "style"}, new String[]{"right", "background-color:" + KnownIdentitiesPage.getTrustColor(trust.getValue()) + ";"}, Byte.toString(trust.getValue()));
 			trustRow.addChild("td", trust.getComment());
@@ -237,5 +229,20 @@ public class IdentityPage extends WebPageImpl {
 		} catch (URISyntaxException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public static HTMLNode getLinkWithNickname(WebInterface webInterface, Identity identity) {
+		URI uri = getURI(webInterface, identity.getID());
+		HTMLNode link = new HTMLNode("a", "href", uri.toString());
+
+		String name = identity.getNickname();
+		if(name != null)
+			link.addChild("#", name + "@" + identity.getID().substring(0, 5) + "...");
+		else {
+			String ndy = webInterface.l10n().getString("IdentityPage.NicknameNotDownloadedYet");
+			link.addChild("span", "class", "alert-error").addChild("#", ndy);
+		}
+		
+		return link;
 	}
 }

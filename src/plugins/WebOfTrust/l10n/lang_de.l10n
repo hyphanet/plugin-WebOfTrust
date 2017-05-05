@@ -67,6 +67,7 @@ IdentityPage.ChangeTrustBox.FromOwnIdentity=Von Ihrer Identität '${nickname}' v
 IdentityPage.ChangeTrustBox.Header=An die Identität '${nickname}' vergebenen Vertrauenswert ändern
 IdentityPage.IdentityUriBox.Header=Öffentliche Adresse der Identität '${nickname}'
 IdentityPage.IdentityUriBox.Text=Die folgende Freenet URI ist eine Adresse zu dieser Identität. Wenn Sie diese Identität anderen Leuten bekannt geben möchten, geben Sie ihnen diese URI.
+IdentityPage.NicknameNotDownloadedYet=Noch nicht heruntergeladen
 IdentityPage.ServicesBox.Header=Dienste der Identität '${nickname}'
 IdentityPage.StatisticsBox.Added=Entdeckt
 IdentityPage.StatisticsBox.Header=Statistiken über '${nickname}'
