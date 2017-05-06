@@ -9,6 +9,7 @@ import static plugins.WebOfTrust.Configuration.DEFAULT_DEFRAG_INTERVAL;
 import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
 import static plugins.WebOfTrust.ui.web.CommonWebUtils.formatTimeDelta;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -19,6 +20,7 @@ import plugins.WebOfTrust.IdentityFileQueue.IdentityFileQueueStatistics;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
+import plugins.WebOfTrust.network.input.EditionHint;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow.IdentityDownloaderSlowStatistics;
 import freenet.clients.http.ToadletContext;
@@ -50,6 +52,7 @@ public class StatisticsPage extends WebPageImpl {
 	public void make(final boolean mayWrite) {
 		makeSummary();
 		makeIdentityDownloaderSlowBox();
+		makeIdentityDownloaderSlowQueueBox();
 		makeIdentityFileQueueBox();
 		makeIdentityFileProcessorBox();
 		makeMaintenanceBox();
@@ -146,8 +149,73 @@ public class StatisticsPage extends WebPageImpl {
 			+ " " + s.mDataNotFoundDownloads));
 		
 		box.addChild(ul);
+	}
+
+	private void makeIdentityDownloaderSlowQueueBox() {
+		final IdentityDownloaderSlow downloader
+			= mWebOfTrust.getIdentityDownloaderController().getIdentityDownloaderSlow();
 		
-		// FIXME: Show the actual download queue, or at least the head of it.
+		if(downloader == null)
+			return;
+		
+		final BaseL10n l = l10n();
+		final String p = "StatisticsPage.IdentityDownloaderSlowQueueBox.";
+		final HTMLNode box = addContentBox(l.getString(p + "Header"));
+		
+		class QueueTableHeader extends HTMLNode {
+			QueueTableHeader() {
+				super("tr");
+				String p2 = p + "Queue.";
+				
+				addChild("th", l.getString(p2 + "Index"));
+				// We now add columns for all fields of EditionHint which define the sort order of
+				// the EditionHints in the download queue. We add them in the same order as they
+				// define the sort order at EditionHint.compareTo().
+				addChild("th", l.getString(p2 + "Date"));
+				addChild("th", l.getString(p2 + "SourceCapacity"));
+				addChild("th", l.getString(p2 + "SourceScore"));
+				addChild("th", l.getString(p2 + "TargetIdentity"));
+				addChild("th", l.getString(p2 + "Edition"));
+				// Fields of EditionHint which don't affect the sort order.
+				addChild("th", l.getString(p2 + "SourceIdentity"));
+				// Notice: The mID and mPriority fields are intentionally not displayed as they
+				// are included in the other fields: mID is just sourceIdentityID@targetIdentityID,
+				// and mPriority defines the sort order of the queue, which we show by displaying
+				// the EditionHints in the table in the same order.
+				// (Those duplicate files serve the purpose of allowing efficient database queries.)
+			}
+		}
+		
+		HTMLNode q = box.addChild("table", "border", "0");
+		q.addChild(new QueueTableHeader());
+		
+		synchronized(mWebOfTrust) {
+		synchronized(downloader) {
+			// FIXME: Code quality: Paginate instead of having a fixed limit. Also adapt the table
+			// header's l10n then.
+			int index = 1;
+			int toDisplay = 100;
+			
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			
+			for(EditionHint h : downloader.getQueue()) {
+				q.addChild("td", Integer.toString(index));
+				q.addChild("td", dateFormat.format(h.getDate()));
+				q.addChild("td", Byte.toString(h.getSourceCapacity()));
+				q.addChild("td", Byte.toString(h.getSourceScore()));
+				q.addChild("td").addChild(IdentityPage.getLinkWithNickname(mWebInterface,
+					h.getTargetIdentity()));
+				q.addChild("td", Long.toString(h.getEdition()));
+				q.addChild("td").addChild(IdentityPage.getLinkWithNickname(mWebInterface,
+					h.getSourceIdentity()));
+				
+				if(++index > toDisplay)
+					break;
+			}
+		}
+		}
+		
+		q.addChild(new QueueTableHeader());
 	}
 
 	private void makeIdentityFileQueueBox() {

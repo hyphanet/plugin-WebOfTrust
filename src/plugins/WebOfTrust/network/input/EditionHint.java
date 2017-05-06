@@ -278,9 +278,21 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return mTargetIdentity;
 	}
 
+	public Date getDate() {
+		// Date is a db4o primitive type so 1 is enough
+		checkedActivate(1);
+		// Date is mutable so we must return a copy
+		return (Date)mDate.clone();
+	}
+
 	public byte getSourceCapacity() {
 		checkedActivate(1);
 		return mSourceCapacity;
+	}
+
+	public byte getSourceScore() {
+		checkedActivate(1);
+		return mSourceScore;
 	}
 
 	public long getEdition() {
@@ -357,7 +369,10 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return mPriority;
 	}
 
-	/** Returns the sort ordering which the {@link IdentityDownloader} should use. */
+	/**
+	 * Defines the sort ordering which the {@link IdentityDownloader} should use.
+	 * See {@link #compareTo_ReferenceImplementation(EditionHint)} for an unoptimized and thus
+	 * more self-explanatory version. */
 	@Override public int compareTo(EditionHint o) {
 		checkedActivate(1);
 		return getPriority().compareTo(o.getPriority());

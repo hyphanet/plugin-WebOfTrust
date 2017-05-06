@@ -924,7 +924,7 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	/** You must synchronize upon {@link #mWoT} and {@link #mLock} when using this! */
-	private ObjectSet<EditionHint> getQueue() {
+	public ObjectSet<EditionHint> getQueue() {
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
 		q.descend("mPriority").orderDescending();
