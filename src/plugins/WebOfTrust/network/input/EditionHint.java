@@ -55,7 +55,7 @@ import freenet.support.IllegalBase64Exception;
 public final class EditionHint extends Persistent implements Comparable<EditionHint> {
 
 	/** @see Serializable */
-	private static final long serialVersionUID = 1L;
+	private static transient final long serialVersionUID = 1L;
 
 	/**
 	 * This class' {@link #constructSecure(WebOfTrust, Identity, Identity, Date, int, int, long)}
@@ -74,7 +74,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * obeyed, the legacy implementation shall do that on its own. This is because our focus is
 	 * mostly ensuring strict behavior for the new implementation, we don't care much about the
 	 * legacy one.) */
-	public static final int MIN_CAPACITY
+	public static transient final int MIN_CAPACITY
 		= IdentityDownloaderController.USE_LEGACY_REFERENCE_IMPLEMENTATION ? 0 : 1;
 
 	@IndexedField
