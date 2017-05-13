@@ -134,7 +134,9 @@ public final class IdentityDownloaderSlow implements
 	 * execute and start downloading of the pending hint queue after this delay.
 	 * As we download multiple hints in parallel, the delay is non-zero to ensure we don't have to
 	 * do multiple database queries if multiple hints arrive in a short timespan - database queries
-	 * are likely the most expensive operation. */
+	 * are likely the most expensive operation.
+	 * FIXME: Performance: Use a delay of 0 if no downloads are running currently, i.e. if
+	 * mDownloads.size() == 0 */
 	public static transient final long QUEUE_BATCHING_DELAY_MS = MINUTES.toMillis(1);
 
 	/**
