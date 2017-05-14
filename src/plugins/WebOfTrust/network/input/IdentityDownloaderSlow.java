@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.IdentityFile;
 import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
@@ -34,6 +35,8 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.AssertUtil;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
+import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
+import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -54,6 +57,9 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
+import freenet.support.PooledExecutor;
+import freenet.support.PrioritizedTicker;
+import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
@@ -172,7 +178,7 @@ public final class IdentityDownloaderSlow implements
 	private final IdentityFileQueue mQueue;
 	
 	/** FIXME: Document similarly to {@link SubscriptionManager#mJob} */
-	private volatile DelayedBackgroundJob mJob = null;
+	private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
 
 	private final HashMap<FreenetURI, ClientGetter> mDownloads;
 
@@ -211,17 +217,70 @@ public final class IdentityDownloaderSlow implements
 		mDownloads = new HashMap<>(getMaxRunningDownloadCount() * 2);
 	}
 
+	/**
+	 * Enables processing of the download queue.
+	 * Commands enqueued before this was called will be obeyed.
+	 * 
+	 * Based on {@link SubscriptionManager#start()}, which is related to
+	 * {@link IdentityFetcher#start()}, please apply changes there as well. */
 	@Override public void start() {
 		Logger.normal(this, "start() ...");
 		
-		// FIXME: Implement similarly to SubscriptionManager.
-		
 		synchronized(mWoT) {
 		synchronized(mLock) {
+			// This is thread-safe guard against concurrent multiple calls to start() / stop() since
+			// stop() does not modify the job and start() is synchronized. 
+			if(mJob != MockDelayedBackgroundJob.DEFAULT)
+				throw new IllegalStateException("start() was already called!");
+			
 			if(logDEBUG)
 				testDatabaseIntegrity();
 			
 			mTotalQueuedDownloadsInSession = getQueue().size();
+			
+			PluginRespirator respirator = mWoT.getPluginRespirator();
+			Ticker ticker;
+			Runnable jobRunnable;
+			
+			if(respirator != null) { // We are connected to a node
+				ticker = respirator.getNode().getTicker();
+				jobRunnable = this;
+			} else { // We are inside of a unit test
+				Logger.warning(this, "No PluginRespirator available, will never run job. "
+				                   + "This should only happen in unit tests!");
+				
+				// Generate our own Ticker so we can set mJob to be a real
+				// TickerDelayedBackgroundJob. This is better than leaving it be a
+				// MockDelayedBackgroundJob because it allows us to clearly distinguish the run
+				// state (start() not called, start() called, terminate() called) by checking
+				// whether mJob is at the default or not, and if not checking the run state of mJob.
+				ticker = new PrioritizedTicker(new PooledExecutor(), 0);
+				jobRunnable = new Runnable() { @Override public void run() {
+					 // Do nothing because:
+					 // - We shouldn't do work on custom executors, we should only ever use the main
+					 //   one of the node.
+					 // - Unit tests execute instantly after loading the WoT plugin, so delayed jobs
+					 //   should not happen since their timing cannot be guaranteed to match the
+					 //   unit tests execution state.
+				}};
+			}
+			
+			// Set the volatile mJob after everything which terminate() must cleanup is initialized
+			// to ensure that terminate() can use the variable (without synchronization) to check
+			// whether cleanup will cover everything.
+			mJob = new TickerDelayedBackgroundJob(
+				jobRunnable, "WoT IdentityDownloaderSlow", QUEUE_BATCHING_DELAY_MS, ticker);
+			
+			// If downloads are enqueued from the previous session schedule run() to execute to
+			// start them.
+			if(mTotalQueuedDownloadsInSession > 0) {
+				// Use 0 as delay instead of the QUEUE_BATCHING_DELAY_MS which is > 0 as no network
+				// requests are running yet and thus batching cannot happen.
+				// (Doing triggerExecution() after the above greenlight for terminate() isn't a
+				// problem because terminate will use mJob.waitForTermination() to take account for
+				// triggerExecution() maybe being called.)
+				mJob.triggerExecution(0);
+			}
 		}
 		}
 		

@@ -9,6 +9,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
+import plugins.WebOfTrust.network.input.IdentityDownloaderSlow;
 import plugins.WebOfTrust.ui.fcp.FCPInterface.FCPCallFailedException;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
@@ -2001,12 +2002,12 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 	 * 
 	 * ATTENTION: Does NOT work in unit tests - you must manually trigger subscription processing by calling {@link #run()} there.
 	 * 
+	 * {@link IdentityDownloaderSlow#start()} is based on this, please apply changes there as well.
 	 * TODO: Code quality: start() and {@link #stop()} are partly duplicated in class
-	 * IdentityFetcher. It might thus make sense to add basic functionality of start() / stop()
-	 * to {@link BackgroundJob}. This might for example include the ability to specify pre-startup
-	 * and pre-shutdown callbacks which the {@link BackgroundJob} calls upon us so we can do
-	 * our own initialization / cleanup.
-	 */
+	 * IdentityFetcher as well. It might thus make sense to add basic functionality of start() /
+	 * stop() to {@link BackgroundJob}. This might for example include the ability to specify
+	 * pre-startup and pre-shutdown callbacks which the {@link BackgroundJob} calls upon us so we
+	 * can do our own initialization / cleanup. */
 	@Override public synchronized void start() {
 		Logger.normal(this, "start()...");
 
