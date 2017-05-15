@@ -2000,7 +2000,8 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 	 * 
 	 * You must call this before any subscriptions are created, so for example before FCP is available.
 	 * 
-	 * ATTENTION: Does NOT work in unit tests - you must manually trigger subscription processing by calling {@link #run()} there.
+	 * ATTENTION: Does NOT enable {@link #scheduleNotificationProcessing()} in unit tests - you must
+	 * manually trigger subscription processing by calling {@link #run()} there.
 	 * 
 	 * {@link IdentityDownloaderSlow#start()} is based on this, please apply changes there as well.
 	 * TODO: Code quality: start() and {@link #stop()} are partly duplicated in class
@@ -2029,9 +2030,9 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
         // scheduleNotificationProcessing().
 		deleteAllClients();
 		
-		final PluginRespirator respirator = mWoT.getPluginRespirator();
-        final Ticker ticker;
-        final Runnable jobRunnable;
+		PluginRespirator respirator = mWoT.getPluginRespirator();
+		Ticker ticker;
+		Runnable jobRunnable;
         
 		if(respirator != null) { // We are connected to a node
             ticker = respirator.getNode().getTicker();
@@ -2043,20 +2044,23 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
             // Generate our own Ticker so we can set mJob to be a real TickerDelayedBackgroundJob.
             // This is better than leaving it be a MockDelayedBackgroundJob because it allows us to
             // clearly distinguish the run state (start() not called, start() called, stop() called)
+            // by checking whether mJob is at the default or not, and if not checking the run state
+            // of it.
             ticker = new PrioritizedTicker(new PooledExecutor(), 0);
             jobRunnable = new Runnable() { @Override public void run() {
                  // Do nothing because:
                  // - We shouldn't do work on custom executors, we should only ever use the main
                  //   one of the node.
-                 // - Unit tests execute instantly after loading the WOT plugin, so delayed jobs
+                 // - Unit tests execute instantly after loading the WoT plugin, so delayed jobs
                  //   should not happen since their timing cannot be guaranteed to match the unit
                  //   tests execution state.
                };
             };
 		}
 		
-        // Set the volatile mJob after all of startup is finished to ensure that stop() can use it
-        // *without* synchronization to check whether start() was called already.
+        // Set the volatile mJob after everything which stop() must cleanup is initialized to ensure
+        // that stop() can use the variable (without synchronization) to check whether cleanup will
+        // cover everything.
         mJob = new TickerDelayedBackgroundJob(
             jobRunnable, "WoT SubscriptionManager", PROCESS_NOTIFICATIONS_DELAY, ticker);
 		
