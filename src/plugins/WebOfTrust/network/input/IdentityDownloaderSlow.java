@@ -287,6 +287,16 @@ public final class IdentityDownloaderSlow implements
 		Logger.normal(this, "start() finished.");
 	}
 
+	@Override public void terminate() {
+		Logger.normal(this, "terminate() ...");
+		
+		// FIXME: Implement similarly to SubscriptionManager.
+		
+		// FIXME: Terminate running ClientGetters (stored in mDownloads). See class TransferThread.
+		
+		Logger.normal(this, "terminate() finished.");
+	}
+
 	/**
 	 * The actual downloader. Starts fetches for the head of {@link #getQueue()}.
 	 * 
@@ -610,16 +620,6 @@ public final class IdentityDownloaderSlow implements
 
 	@Override public int getPriority() {
 		return DOWNLOADER_THREAD_PRIORITY;
-	}
-
-	@Override public void terminate() {
-		Logger.normal(this, "terminate() ...");
-		
-		// FIXME: Implement similarly to SubscriptionManager.
-		
-		// FIXME: Terminate running ClientGetters (stored in mDownloads). See class TransferThread.
-		
-		Logger.normal(this, "terminate() finished.");
 	}
 
 	@Override public void storeStartFetchCommandWithoutCommit(final Identity identity) {
