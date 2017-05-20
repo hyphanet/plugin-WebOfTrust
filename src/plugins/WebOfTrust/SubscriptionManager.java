@@ -2070,10 +2070,6 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 	/**
 	 * Shuts down this SubscriptionManager by aborting all queued notification processing and waiting for running processing to finish.
 	 * 
-	 * Notice: Not synchronized so it can be run in parallel with {@link #run()}. This will allow it
-	 * to call {@link DelayedBackgroundJob#terminate()} while run() is executing, which calls
-	 * {@link Thread#interrupt()} on the run()-thread to cause it to exit quickly.
-	 * 
 	 * {@link IdentityDownloaderSlow#stop()} is based on this, and
 	 * this is based on {@link IdentityFetcher#terminate()} - please apply changes there as well.
 	 * For how to eliminate this code duplication see the TODO at {@link #start()}. */
@@ -2085,24 +2081,24 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
         // 1) run() is synchronized(this), so we would not get the lock until run() is finished.
         //    But we want to call mJob.terminate() immediately while run() is still executing to
         //    make it call Thread.interrupt() upon run() to speed up its termination. So we
-        //    shouldn't require acquisition of the lock before terminate().
+        //    shouldn't require acquisition of the lock before mJob.terminate().
         // 2) Keeping mJob as is makes sure that start() is not possible anymore so this object can
         //    only have a single lifecycle. Recycling being impossible reduces complexity and is not
-        //    needed for normal operation of WOT anyway.
+        //    needed for normal operation of WoT anyway.
         
         
-        // Since mJob can only transition from not "not started yet" as implied by the "==" here
-        // to "started" as implied by "!=", but never backwards, and is set by start() after
-        // everything is completed, this is thread-safe against concurrent start() / stop().
+        // Since mJob can only transition from not "not started yet", as implied by the "==" here,
+        // to "started" as implied by "!=", but never backwards, is volatile, and is set by start()
+        // *after* everything is initialized, this is safe against concurrent start() / stop().
         if(mJob == MockDelayedBackgroundJob.DEFAULT)
-            throw new IllegalStateException("start() not called yet!");
+            throw new IllegalStateException("start() not called/finished yet!");
         
         // We cannot guard against concurrent stop() here since we don't synchronize, we can only
         // probabilistically detect it by assert(). Concurrent stop() is not a problem though since
         // restarting jobs is not possible: We cannot run into a situation where we accidentally
         // stop the wrong lifecycle. It can only happen that we do cleanup the cleanup which a
-        // different thread would have done, but they won't care since all used functions below will
-        // succeed silently if called multiple times.
+        // different thread would have done, but they won't care since all actions below will
+        // succeed silently if done multiple times.
         assert !mJob.isTerminated() : "stop() called already";
         
         mJob.terminate();
@@ -2120,6 +2116,8 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 	}
 
 	@Override public void terminate() {
+		// terminate() is merely a wrapper around stop() in preparation of the TODO at
+		// Daemon.terminate() which requests renaming it to stop().
 		stop();
 	}
 
