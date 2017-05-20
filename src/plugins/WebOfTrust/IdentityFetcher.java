@@ -859,11 +859,9 @@ public final class IdentityFetcher implements
 	}
 	
 	/**
-     * Stops all running requests.<br><br>
-     * 
-     * Notice: Not synchronized(mLock) so it can be run in parallel with {@link #run()}. This will
-     * allow it to call {@link DelayedBackgroundJob#terminate()} while run() is executing, which
-     * calls {@link Thread#interrupt()} on the run()-thread to cause it to exit quickly. */
+	 * Stops all running requests.
+	 * {@link SubscriptionManager#stop()} and {@link IdentityDownloaderSlow#stop()} are related to
+	 * this, please apply changes there as well. */
 	protected void stop() {
         Logger.normal(this, "stop()...");
 
@@ -874,7 +872,7 @@ public final class IdentityFetcher implements
 		// 1) run() is synchronized(mLock), so we would not get the lock until run() is finished.
 		//    But we want to call mJob.terminate() immediately while run() is still executing to
 		//    make it call Thread.interrupt() upon run() to speed up its termination. So we
-		//    shouldn't require acquisition of the lock before terminate().
+		//    shouldn't require acquisition of the lock before mJob.terminate().
 		// 2) Keeping mJob as is makes sure that start() is not possible anymore so this object can
 		//    only have a single lifecycle. Recycling needs to be impossible: If we allowed
 		//    restarting, the cleanup of the USKRetrievers at the end of this function could damage
@@ -883,18 +881,18 @@ public final class IdentityFetcher implements
 		//    same cycle 
 		
 		
-		// Since mJob can only transition from not "not started yet" as implied by the "==" here
-		// to "started" as implied by "!=", but never backwards, and is set by start() after
-		// everything is completed, this is thread-safe against concurrent start() / stop().
+		// Since mJob can only transition from not "not started yet", as implied by the "==" here,
+		// to "started" as implied by "!=", but never backwards, is volatile, and is set by start()
+		// *after* everything is initialized, this is safe against concurrent start() / stop().
 		if(mJob == MockDelayedBackgroundJob.DEFAULT)
-		    throw new IllegalStateException("start() not called yet!");
+			throw new IllegalStateException("start() not called/finished yet!");
 		
 		// We cannot guard against concurrent stop() here since we don't synchronize, we can only
 		// probabilistically detect it by assert(). Concurrent stop() is not a problem though since
 		// restarting jobs is not possible: We cannot run into a situation where we accidentally
 		// stop the wrong lifecycle. It can only happen that we do cleanup the cleanup which a
-		// different thread would have done, but they won't care since all used functions below will
-		// succeed silently if called multiple times.
+		// different thread would have done, but they won't care since all actions below will
+		// succeed silently if done multiple times.
 		assert !mJob.isTerminated() : "stop() called already";
 		
 		mJob.terminate();
@@ -939,6 +937,8 @@ public final class IdentityFetcher implements
 	}
 
 	@Override public void terminate() {
+		// terminate() is merely a wrapper around stop() in preparation of the TODO at
+		// Daemon.terminate() which requests renaming it to stop().
 		stop();
 	}
 
