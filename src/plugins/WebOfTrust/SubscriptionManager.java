@@ -2010,6 +2010,10 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 	 * pre-startup and pre-shutdown callbacks which the {@link BackgroundJob} calls upon us so we
 	 * can do our own initialization / cleanup. */
 	@Override public synchronized void start() {
+		// Synchronized even though our own thread isn't running yet to guard against concurrent
+		// startup of WoT subsystems such as IdentityFileProcessor which may feed us external
+		// callbacks during startup already.
+		
 		Logger.normal(this, "start()...");
 
         // This is thread-safe guard against concurrent multiple calls to start() / stop() since

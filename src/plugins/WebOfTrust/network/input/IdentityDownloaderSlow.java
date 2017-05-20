@@ -227,6 +227,9 @@ public final class IdentityDownloaderSlow implements
 	@Override public void start() {
 		Logger.normal(this, "start() ...");
 		
+		// Acquire locks even though our own thread isn't running yet to guard against concurrent
+		// startup of WoT subsystems such as IdentityFileProcessor which may feed us external
+		// callbacks during startup already.
 		synchronized(mWoT) {
 		synchronized(mLock) {
 			// This is thread-safe guard against concurrent multiple calls to start() / stop() since
