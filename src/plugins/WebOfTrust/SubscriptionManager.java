@@ -2073,7 +2073,10 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 	 * Notice: Not synchronized so it can be run in parallel with {@link #run()}. This will allow it
 	 * to call {@link DelayedBackgroundJob#terminate()} while run() is executing, which calls
 	 * {@link Thread#interrupt()} on the run()-thread to cause it to exit quickly.
-	 */
+	 * 
+	 * {@link IdentityDownloaderSlow#stop()} is based on this, and
+	 * this is based on {@link IdentityFetcher#terminate()} - please apply changes there as well.
+	 * For how to eliminate this code duplication see the TODO at {@link #start()}. */
 	protected void stop() {
 		Logger.normal(this, "stop()...");
 		

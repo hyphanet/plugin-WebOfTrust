@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
+import static java.lang.Thread.currentThread;
 import static java.util.Collections.sort;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -287,14 +288,84 @@ public final class IdentityDownloaderSlow implements
 		Logger.normal(this, "start() finished.");
 	}
 
+	/**
+	 * Shuts down the IdentityDownloaderSlow by aborting all running downloads and also interrupting
+	 * {@link #run()}'s efforts to enqueue more downloads.
+	 * The downloads queue will be preserved in the database for the next session. 
+	 * Blocking: Once it returns shutdown is guaranteed to be finished.
+	 * 
+	 * Based on {@link SubscriptionManager#stop()}, which is based on
+	 * {@link IdentityFetcher#stop()}, please apply changes there as well. */
+	private void stop() {
+		Logger.normal(this, "stop() ...");
+		
+		// The following code intentionally does NOT write to the mJob variable so it does not have
+		// to use synchronized(mLock). We do not want to synchronize because:
+		// 1) run() is synchronized(mLock), so we would not get the lock until run() is finished.
+		//    But we want to call mJob.terminate() immediately while run() is still executing to
+		//    make it call Thread.interrupt() upon run() to speed up its termination. So we
+		//    shouldn't require acquisition of the lock before mJob.terminate().
+		// 2) Keeping mJob as is makes sure that start() is not possible anymore so this object can
+		//    only have a single lifecycle. Recycling being impossible reduces complexity and is not
+		//    needed for normal operation of WoT anyway.
+		
+		
+		// Since mJob can only transition from not "not started yet", as implied by the "==" here,
+		// to "started" as implied by "!=", but never backwards, is volatile, and is set by start()
+		// *after* everything is initialized, this is safe against concurrent start() / stop().
+		if(mJob == MockDelayedBackgroundJob.DEFAULT)
+			throw new IllegalStateException("start() not called/finished yet!");
+		
+		// We cannot guard against concurrent stop() here since we don't synchronize, we can only
+		// probabilistically detect it by assert(). Concurrent stop() is not a problem though since
+		// restarting jobs is not possible: We cannot run into a situation where we accidentally
+		// stop the wrong lifecycle. It can only happen that we do cleanup the cleanup which a
+		// different thread would have done, but they won't care since all actions below will
+		// succeed silently if done multiple times.
+		assert !mJob.isTerminated() : "stop() called already";
+		
+		mJob.terminate();
+		try {
+			// TODO: Performance: Decrease if it doesn't interfere with plugin unloading. I would
+			// rather not though: Plugin unloading unloads the JAR of the plugin, and thus all its
+			// classes. That will probably cause havoc if threads of it are still running.
+			mJob.waitForTermination(Long.MAX_VALUE);
+		} catch (InterruptedException e) {
+			// We are a shutdown function, there is no sense in sending a shutdown signal to us.
+			Logger.error(this, "stop() should not be interrupt()ed.", e);
+		}
+		
+		// Nothing can start downloads anymore so we can now cancel the running ones.
+		// We still do need to acquire locks: Downloads may finish concurrently via the onSuccess()
+		// and onFailure() callbacks - which will access the same data structure (mDownloads) as we
+		// do now.
+		synchronized(mWoT) { // For onFailure(), see comment inside the block
+		synchronized(mLock) { // For access of mDownloads
+			// To prevent modification of mDownloads while we iterate over it we must copy it: While
+			// we iterate over it we want to call ClientGetter.cancel() on the entries, but that
+			// will call this.onFailure() on the same thread, which will remove the relevant entries
+			// from mDownloads.
+			ClientGetter[] downloads = (ClientGetter[]) mDownloads.values().toArray();
+			for(ClientGetter download : downloads) {
+				if(logMINOR)
+					Logger.minor(this, "stop(): Cancelling download: " + download.getURI());
+				
+				download.cancel(mNodeClientCore.clientContext);
+				
+				// We don't need to store the download in the queue database:
+				// The code for starting downloads doesn't remove them from the queue.
+			}
+			assert(mDownloads.size() == 0);
+		}
+		}
+		
+		Logger.normal(this, "stop() finished.");
+	}
+
 	@Override public void terminate() {
-		Logger.normal(this, "terminate() ...");
-		
-		// FIXME: Implement similarly to SubscriptionManager.
-		
-		// FIXME: Terminate running ClientGetters (stored in mDownloads). See class TransferThread.
-		
-		Logger.normal(this, "terminate() finished.");
+		// terminate() is merely a wrapper around stop() in preparation of the TODO at
+		// Daemon.terminate() which requests renaming it to stop().
+		stop();
 	}
 
 	/**
@@ -325,6 +396,11 @@ public final class IdentityDownloaderSlow implements
 							} catch(FetchException e) {
 								Logger.error(this, "FetchException for: " + h, e);
 							}
+						}
+						
+						if(currentThread().isInterrupted()) {
+							Logger.normal(this, "run(): Received interrupt, aborting.");
+							break;
 						}
 					}
 				}
