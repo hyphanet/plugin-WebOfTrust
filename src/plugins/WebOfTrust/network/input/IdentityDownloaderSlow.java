@@ -1099,9 +1099,16 @@ public final class IdentityDownloaderSlow implements
 		return new InitializingObjectSet<>(mWoT, q);
 	}
 
+	/**
+	 * Executed at startup if {@link #logDEBUG} is true, i.e. if you configure a log level of
+	 * "plugins.WebOfTrust.network.input.IdentityDownloaderSlow:DEBUG" on the fred web interface. */
 	private void testDatabaseIntegrity() {
+		Logger.debug(this, "testDatabaseIntegrity() ...");
+		
 		synchronized(mWoT) {
 		synchronized(mLock) {
+		// Check whether the download queue is sorted properly
+		
 		ObjectSet<EditionHint> queueSortedByDb4o = getQueue();
 		ArrayList<EditionHint> queueSortedWithReferenceImpl = new ArrayList<>(getAllEditionHints());
 		
@@ -1118,9 +1125,50 @@ public final class IdentityDownloaderSlow implements
 				Logger.error(this, h.toString());
 		}
 		
+		// Check whether the download queue only contains hints which are still eligible to be
+		// downloaded
+		
+		// TODO: Performance: Don't re-query this from the database once the issue which caused
+		// this workaround is fixed: https://bugs.freenetproject.org/view.php?id=6646
+		queueSortedByDb4o = getQueue();
+		for(EditionHint h : queueSortedByDb4o) {
+			// If an Identity isn't eligible for download anymore that means we consider it as not
+			// trustworthy and thus we also shouldn't use its hints.
+			if(!mWoT.shouldFetchIdentity(h.getSourceIdentity())) {
+				Logger.error(this,
+					"testDatabaseIntegrity(): Source identity is not eligible for download: " + h);
+			}
+			
+			// Storing a hint is equal to queuing the target Identity for download so it must be
+			// eligible to be downloaded.
+			if(!mWoT.shouldFetchIdentity(h.getTargetIdentity())) {
+				Logger.error(this,
+					"testDatabaseIntegrity(): Target identity is not eligible for download: " + h);
+			}
+			
+			int bestCapacity;
+			try {
+				bestCapacity = mWoT.getBestCapacity(h.getSourceIdentity());
+			} catch (NotInTrustTreeException e) {
+				bestCapacity = 0;
+			}
+			
+			if(bestCapacity < EditionHint.MIN_CAPACITY) {
+				Logger.error(this,
+					"testDatabaseIntegrity(): Source identity has insufficient capacity: " + h);
+			}
+			
+			// We intentionally do not validate whether h.getSourceCapacity() and h.getSourceScore()
+			// match what mWebOfTrust has stored in its database:
+			// EditionHints are *not* updated upon non-significant capacity / score changes, where
+			// significant means whether the result of the checks we just did check. 
+		}
+		
 		// FIXME: Check storage policy as described by class level JavaDoc.
 		}
 		}
+		
+		Logger.debug(this, "testDatabaseIntegrity() finished.");
 	}
 
 	public final class IdentityDownloaderSlowStatistics {
