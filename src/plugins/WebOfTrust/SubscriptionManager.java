@@ -1917,6 +1917,8 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 	}
 
 	/**
+	 * ATTENTION: For internal use only! TODO: Code quality: Wrap in a private class to hide it.
+	 * 
 	 * Sends out the {@link Notification} queue of each {@link Client}.
 	 * 
 	 * Typically called by the DelayedBackgroundJob {@link #mJob} on a separate thread. This is

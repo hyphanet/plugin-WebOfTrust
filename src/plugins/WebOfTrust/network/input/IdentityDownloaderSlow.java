@@ -395,11 +395,16 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	/**
+	 * ATTENTION: For internal use only! TODO: Code quality: Wrap in a private class to hide it.
+	 * 
 	 * The actual downloader. Starts fetches for the head of {@link #getQueue()}.
 	 * 
-	 * Executed on an own thread after {@link DelayedBackgroundJob#triggerExecution()} was called.
+	 * Executed on an own thread after {@link DelayedBackgroundJob#triggerExecution()} was called
+	 * on {@link #mJob}. That function is called by this class whenever the download queue changes,
+	 * namely when the event handlers of interface {@link IdentityDownloader} are called on it.
 	 * 
-	 * FIXME: Document similarly to {@link SubscriptionManager#run()} */
+	 * Respects {@link Thread#interrupt()} to speed up shutdown, which
+	 * {@link DelayedBackgroundJob#terminate()} will make use of. */
 	@Override public void run() {
 		if(logMINOR) Logger.minor(this, "run()...");
 

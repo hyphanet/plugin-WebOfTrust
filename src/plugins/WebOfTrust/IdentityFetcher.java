@@ -580,6 +580,7 @@ public final class IdentityFetcher implements
 		return NativeThread.LOW_PRIORITY;
 	}
 
+	/** ATTENTION: For internal use only! TODO: Code quality: Wrap in a private class to hide it. */
 	@Override
 	public void run() {
 	    final Thread thread = Thread.currentThread();
