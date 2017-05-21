@@ -179,8 +179,28 @@ public final class IdentityDownloaderSlow implements
 	
 	/** Fetched {@link IdentityFile}s are stored for processing at this {@link IdentityFileQueue}.*/
 	private final IdentityFileQueue mQueue;
-	
-	/** FIXME: Document similarly to {@link SubscriptionManager#mJob} */
+
+	/**
+	 * The IdentityDownloaderSlow schedules execution of its download queue processing thread
+	 * {@link #run()} on this {@link DelayedBackgroundJob}.
+	 * The execution typically is scheduled after a delay of {@link #QUEUE_BATCHING_DELAY_MS}.
+	 * 
+	 * The value distinguishes the run state of this IdentityDownloaderSlow as follows:
+	 * - Until {@link #start()} was called, defaults to {@link MockDelayedBackgroundJob#DEFAULT}
+	 *   with {@link DelayedBackgroundJob#isTerminated()} == true.
+	 * - Once {@link #start()} has been called, becomes a
+	 *   {@link TickerDelayedBackgroundJob} with {@link DelayedBackgroundJob#isTerminated()}
+	 *   == false.
+	 * - Once {@link #stop()} has been called, stays a {@link TickerDelayedBackgroundJob} but has
+	 *   {@link DelayedBackgroundJob#isTerminated()} == true for ever.
+	 * 
+	 * There can be exactly one start() - stop() lifecycle, a IdentityDownloaderSlow cannot be
+	 * recycled.
+	 * 
+	 * Volatile since {@link #stop()} needs to use it without synchronization.
+	 * 
+	 * {@link SubscriptionManager#mJob} and {@link IdentityFetcher#mJob} are related to this, please
+	 * apply changes there as well. */
 	private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
 
 	private final HashMap<FreenetURI, ClientGetter> mDownloads;

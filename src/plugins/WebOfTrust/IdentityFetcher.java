@@ -118,25 +118,25 @@ public final class IdentityFetcher implements
 	private final HashMap<String, USKRetriever> mRequests = new HashMap<String, USKRetriever>(128); /* TODO: profile & tweak */
 	
     /**
-     * The IdentityFetcher schedules execution of its command processing thread on this
-     * {@link DelayedBackgroundJob}.<br>
-     * The execution typically is scheduled after a delay of {@link #PROCESS_COMMANDS_DELAY}.<br>
-     * <br>
+     * The IdentityFetcher schedules execution of its command processing thread {@link #run()} on
+     * this {@link DelayedBackgroundJob}.
+     * The execution typically is scheduled after a delay of {@link #PROCESS_COMMANDS_DELAY}.
      * 
-     * The value distinguishes the run state of this IdentityFetcher as follows:<br>
+     * The value distinguishes the run state of this IdentityFetcher as follows:
      * - Until {@link #start()} was called, defaults to {@link MockDelayedBackgroundJob#DEFAULT}
-     *   with {@link DelayedBackgroundJob#isTerminated()} == true.<br>
+     *   with {@link DelayedBackgroundJob#isTerminated()} == true.
      * - Once {@link #start()} has been called, becomes a
      *   {@link TickerDelayedBackgroundJob} with {@link DelayedBackgroundJob#isTerminated()}
-     *   == false.<br>
+     *   == false.
      * - Once {@link #stop()} has been called, stays a {@link TickerDelayedBackgroundJob} but has
-     *   {@link DelayedBackgroundJob#isTerminated()} == true for ever.<br><br>
+     *   {@link DelayedBackgroundJob#isTerminated()} == true for ever.
      * 
      * There can be exactly one start() - stop() lifecycle, an IdentityFetcher cannot be recycled.
-     * <br><br>
      * 
      * Volatile since {@link #stop()} needs to use it without synchronization.
-     */
+     * 
+     * {@link SubscriptionManager#mJob} and {@link IdentityDownloaderSlow#mJob} are related to this,
+     * please apply changes there as well. */
     private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
 
     /** Fetched identity files are stored for processing at this {@link IdentityFileQueue}. */

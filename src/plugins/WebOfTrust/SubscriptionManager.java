@@ -1258,25 +1258,26 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 	private final ExtObjectContainer mDB;
 
 	/**
-	 * The SubscriptionManager schedules execution of its notification deployment thread on this
-	 * {@link DelayedBackgroundJob}.<br>
+	 * The SubscriptionManager schedules execution of its notification deployment thread
+	 * {@link #run()} on this {@link DelayedBackgroundJob}.
 	 * The execution typically is scheduled after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}.
-	 * <br><br>
 	 * 
-     * The value distinguishes the run state of this SubscriptionManager as follows:<br>
+     * The value distinguishes the run state of this SubscriptionManager as follows:
      * - Until {@link #start()} was called, defaults to {@link MockDelayedBackgroundJob#DEFAULT}
-     *   with {@link DelayedBackgroundJob#isTerminated()} == true.<br>
+     *   with {@link DelayedBackgroundJob#isTerminated()} == true.
      * - Once {@link #start()} has been called, becomes a
      *   {@link TickerDelayedBackgroundJob} with {@link DelayedBackgroundJob#isTerminated()}
-     *   == false.<br>
+     *   == false.
      * - Once {@link #stop()} has been called, stays a {@link TickerDelayedBackgroundJob} but has
-     *   {@link DelayedBackgroundJob#isTerminated()} == true for ever.<br><br>
+     *   {@link DelayedBackgroundJob#isTerminated()} == true for ever.
      * 
      * There can be exactly one start() - stop() lifecycle, a SubscriptionManager cannot be
-     * recycled.<br><br>
+     * recycled.
      * 
      * Volatile since {@link #stop()} needs to use it without synchronization.
-	 */
+     * 
+     * {@link IdentityDownloaderSlow#mJob} and {@link IdentityFetcher#mJob} are related to this,
+     * please apply changes there as well. */
     private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
 
 
