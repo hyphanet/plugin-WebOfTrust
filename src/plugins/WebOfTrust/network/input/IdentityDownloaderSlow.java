@@ -165,7 +165,9 @@ public final class IdentityDownloaderSlow implements
 	private final WebOfTrust mWoT;
 
 	private final NodeClientCore mNodeClientCore;
-	
+
+	private final ClientContext mClientContext;
+
 	private final HighLevelSimpleClient mHighLevelSimpleClient;
 
 	/** @see #getRequestClient() */
@@ -210,6 +212,7 @@ public final class IdentityDownloaderSlow implements
 		mWoT = wot;
 		PluginRespirator pr = mWoT.getPluginRespirator();
 		mNodeClientCore = (pr != null ? pr.getNode().clientCore : null);
+		mClientContext = (mNodeClientCore != null ? mNodeClientCore.clientContext : null);
 		mHighLevelSimpleClient = (pr != null ? pr.getHLSimpleClient() : null);
 		mRequestClient = mWoT.getRequestClient();
 		mLock = mWoT.getIdentityDownloaderController();
@@ -353,7 +356,7 @@ public final class IdentityDownloaderSlow implements
 				if(logMINOR)
 					Logger.minor(this, "stop(): Cancelling download: " + download.getURI());
 				
-				download.cancel(mNodeClientCore.clientContext);
+				download.cancel(mClientContext);
 				
 				// We don't need to store the download in the queue database:
 				// The code for starting downloads doesn't remove them from the queue.
@@ -842,7 +845,7 @@ public final class IdentityDownloaderSlow implements
 				// transaction rollback applies.
 				mJob.triggerExecution();
 
-				download.getValue().cancel(mNodeClientCore.clientContext);
+				download.getValue().cancel(mClientContext);
 			}
 		}
 		
