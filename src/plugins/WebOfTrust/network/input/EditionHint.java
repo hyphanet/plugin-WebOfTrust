@@ -59,7 +59,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 
 	/**
 	 * This class' {@link #constructSecure(WebOfTrust, Identity, Identity, Date, int, int, long)}
-	 * will reject capacities below the value of this constant.
+	 * will reject source Identitys with the given capacity being below the value of this constant.
 	 * 
 	 * The legacy implementation class {@link IdentityFetcher} will use hints from {@link Identity}s
 	 * if merely their {@link Score#getScore()} is > 0, ignoring the {@link Score#getCapacity()}.
