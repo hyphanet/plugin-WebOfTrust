@@ -22,6 +22,7 @@ import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
+import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.UnknownEditionHintException;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -506,6 +507,30 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		Identity source = mSourceIdentity;
 		Identity target = mTargetIdentity;
 		
+		// Check whether the hint is still eligible to be downloaded. It should have been deleted
+		// already if it is not.
+		
+		// If an Identity isn't eligible for download anymore that means we consider it as not
+		// trustworthy and thus we also shouldn't use its hints.
+		if(!wot.shouldFetchIdentity(source)) {
+			throw new IllegalStateException(
+				"Source identity is not eligible for download: " + this);
+		}
+		
+		// Storing a hint is equal to queuing the target Identity for download so it must be
+		// eligible to be downloaded.
+		if(!wot.shouldFetchIdentity(target)) {
+			throw new IllegalStateException(
+				"Target identity is not eligible for download: " + this);
+		}
+		
+		int bestCapacity;
+		try {
+			bestCapacity = wot.getBestCapacity(source);
+		} catch(NotInTrustTreeException e) {
+			bestCapacity = 0;
+		}
+		
 		// Don't check whether the capacity is still the same as we stored:
 		// For performance the IdentityDownloaderSlow implementation will likely not update all
 		// hints on granular capacity changes, it will only update them if the capacity changes
@@ -514,10 +539,14 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// MIN_CAPACITY is 0 and theoretically the below would be legal then. But the legacy
 		// implementation does NOT store EditionHint objects to the database, so this whole
 		// function shouldn't be called with it.)
-		if(wot.getBestCapacity(source) == 0) {
-			throw new IllegalStateException(
-				"Identity which isn't allowed to store hints has stored one: " + this);
-		}
+		if(bestCapacity == 0)
+			throw new IllegalStateException("Source identity has insufficient capacity: " + this);
+		
+		// We intentionally do not validate whether mSourceCapacity and mSourceScore
+		// match what mWebOfTrust has stored in its database:
+		// EditionHints are *not* updated upon non-significant capacity / score changes, where
+		// significant means the result of the checks we just did.
+		
 		
 		if(mEdition <= target.getLastFetchedEdition())
 			throw new IllegalStateException("Hint is obsolete: " + this);
