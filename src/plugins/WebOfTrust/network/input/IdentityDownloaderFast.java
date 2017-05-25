@@ -9,6 +9,7 @@ import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.util.Daemon;
 import freenet.client.async.USKManager;
 import freenet.node.RequestClient;
@@ -21,9 +22,7 @@ import freenet.node.RequestStarter;
  * {@link Trust#getValue()} of >= 0.
  * Further, for the purpose of {@link WebOfTrust#restoreOwnIdentity(freenet.keys.FreenetURI)},
  * all {@link OwnIdentity}s are also considered as directly trusted.
- * 
- * Thus in total, all Identitys are downloaded for which any {@link Score} exists with
- * {@link Score#getRank()} <= 1. See {@link #shouldDownload(Identity)}.
+ * See {@link #shouldDownload(Identity)}.
  * 
  * This notably is only a small subset of the total set of {@link Identity}s.
  * That's necessary because USK subscriptions are expensive, they create a constant load of
@@ -80,12 +79,31 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 		for(Score s : mWoT.getScores(identity)) {
 			// Rank 1:
 			//   The Identity is directly trusted by an OwnIdentity and thereby from our primary
-			//   target group of identities which we should download.
+			//   target group of identities which we should download - as long as the Score
+			//   considers it as trustworthy, which shouldMaybeFetchIdentity() checks.
 			// Rank 0:
 			//   The Identity is an OwnIdentity. We download it as well for the purpose of
-			//   WebOfTrust.restoreOwnIdentity().
-			if(s.getRank() <= 1)
+			//   WebOfTrust.restoreOwnIdentity(). We do also check shouldMaybeFetchIdentity() to
+			//   allow disabling of USK subscriptions once restoring is finished (not implemented
+			//   yet).
+			if(s.getRank() <= 1 && mWoT.shouldMaybeFetchIdentity(s))
 				return true;
+			
+			// Rank Integer.MAX_VALUE:
+			//   This is a special rank which is given to identities which only have received a
+			//   trust value of precisely 0 (for the purpose of ensuring that solving a single
+			//   IntroductionPuzzle only allows creation of 1 Identity). That is still considered as
+			//   download-worthy - but the rank can both have resulted from an OwnIdentity's trust
+			//   OR from a trust of a non-OwnIdentity. So we must check the trust database for that.
+			if(s.getRank() == Integer.MAX_VALUE) {
+				try {
+					Trust t = mWoT.getTrust(s.getTruster(), s.getTrustee());
+					assert(t.getValue() == 0);
+					return true;
+				} catch(NotTrustedException e) {
+					// The rank did not come from the OwnIdentity which provided the Score.
+				}
+			}
 		}
 		
 		return false;

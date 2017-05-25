@@ -2942,7 +2942,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Can be used to decide whether changing of a single Score might change the return value of
 	 * the global {@link #shouldFetchIdentity(Identity)}.
 	 */
-	private boolean shouldMaybeFetchIdentity(final Score score) {
+	public boolean shouldMaybeFetchIdentity(final Score score) {
 		Identity identity = score.getTrustee();
 		if(identity instanceof OwnIdentity) {
 			// TODO: Performance: Get rid of the self-score check and just return true.
