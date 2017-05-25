@@ -66,7 +66,7 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 	public IdentityDownloaderController(WebOfTrust wot, PluginRespirator pr, IdentityFileQueue q) {
 		if(!USE_LEGACY_REFERENCE_IMPLEMENTATION) {
 			mIdentityDownloaderSlow = new IdentityDownloaderSlow(wot);
-			mIdentityDownloaderFast = new IdentityDownloaderFast();
+			mIdentityDownloaderFast = new IdentityDownloaderFast(wot);
 			mDownloaders = new IdentityDownloader[] {
 				mIdentityDownloaderFast,
 				mIdentityDownloaderSlow

@@ -3,10 +3,12 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
+import static java.util.Objects.requireNonNull;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
 import freenet.client.async.USKManager;
 import freenet.node.RequestClient;
@@ -17,7 +19,11 @@ import freenet.node.RequestStarter;
  * 
  * Directly trusted hereby means: At least one {@link OwnIdentity} has assigned a
  * {@link Trust#getValue()} of >= 0.
- * (Or more formally correct: Any {@link Score} exists with {@link Score#getRank()} == 1.)
+ * Further, for the purpose of {@link WebOfTrust#restoreOwnIdentity(freenet.keys.FreenetURI)},
+ * all {@link OwnIdentity}s are also considered as directly trusted.
+ * 
+ * Thus in total, all Identitys are downloaded for which any {@link Score} exists with
+ * {@link Score#getRank()} <= 1. See {@link #shouldDownload(Identity)}.
  * 
  * This notably is only a small subset of the total set of {@link Identity}s.
  * That's necessary because USK subscriptions are expensive, they create a constant load of
@@ -51,8 +57,14 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 		= RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 
 
-	public IdentityDownloaderFast() {
-		// FIXME: Implement
+	private final WebOfTrust mWoT;
+
+
+	public IdentityDownloaderFast(WebOfTrust wot) {
+		requireNonNull(wot);
+		
+		mWoT = wot;
+		
 		// FIXME: Initialize mRequestClient like IdentityDownloaderSlow() does it.
 	}
 
@@ -62,6 +74,21 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 
 	@Override public void terminate() {
 		// FIXME
+	}
+
+	private boolean shouldDownload(Identity identity) {
+		for(Score s : mWoT.getScores(identity)) {
+			// Rank 1:
+			//   The Identity is directly trusted by an OwnIdentity and thereby from our primary
+			//   target group of identities which we should download.
+			// Rank 0:
+			//   The Identity is an OwnIdentity. We download it as well for the purpose of
+			//   WebOfTrust.restoreOwnIdentity().
+			if(s.getRank() <= 1)
+				return true;
+		}
+		
+		return false;
 	}
 
 	@Override public void storeStartFetchCommandWithoutCommit(Identity identity) {
