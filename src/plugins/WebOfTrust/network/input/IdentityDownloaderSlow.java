@@ -116,7 +116,7 @@ import freenet.support.io.ResumeFailedException;
  *     O(number_of_trustees_of_distrusted_identity * number_of_trusters_of_each_trustee) = O(N*N)
  *     = O(N^2) operation.
  *     TODO: Performance:
- *     The complexity of this actually wouldn't be that bad s a possible future revision of this
+ *     The complexity of this actually wouldn't be that bad so a possible future revision of this
  *     class may implement it to save the disk space of having multiple EditionHint objects for the
  *     same edition: One of the factors N, the number of trustees, is actually limited to a constant
  *     value ({@link XMLTransformer#MAX_IDENTITY_XML_TRUSTEE_AMOUNT}), so the complexity may be
@@ -129,7 +129,8 @@ import freenet.support.io.ResumeFailedException;
  * - {@link #storeStartFetchCommandWithoutCommit(Identity)}
  * - {@link #storeAbortFetchCommandWithoutCommit(Identity)}
  * - {@link #storeNewEditionHintCommandWithoutCommit(EditionHint)}
- * - further event handlers of this class. */
+ * - further event handlers of this class.
+ * - {@link #testDatabaseIntegrity()} and {@link EditionHint#startupDatabaseIntegrityTest()} */
 public final class IdentityDownloaderSlow implements
 		IdentityDownloader,
 		Daemon,
@@ -1130,7 +1131,6 @@ public final class IdentityDownloaderSlow implements
 				Logger.error(this, h.toString());
 		}
 		
-		// FIXME: Check storage policy as described by class level JavaDoc.
 		}
 		}
 		
