@@ -121,6 +121,9 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 	}
 
 	@Override public void storeStartFetchCommandWithoutCommit(Identity identity) {
+		// While a call to this function means that any OwnIdentity wants it to be downloaded
+		// indeed we do *not* know whether that desire is due to a direct trust value from any
+		// OwnIdentity. Thus we need to check with shouldDownload().
 		if(shouldDownload(identity)) {
 			// Trigger execution of the download scheduler thread to sync the running downloads with
 			// the database:
