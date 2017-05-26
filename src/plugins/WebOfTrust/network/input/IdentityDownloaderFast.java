@@ -90,16 +90,21 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 				return true;
 			
 			// Rank Integer.MAX_VALUE:
-			//   This is a special rank which is given to identities which only have received a
-			//   trust value of precisely 0 (for the purpose of ensuring that solving a single
-			//   IntroductionPuzzle only allows creation of 1 Identity). That is still considered as
-			//   download-worthy - but the rank can both have resulted from an OwnIdentity's trust
-			//   OR from a trust of a non-OwnIdentity. So we must check the trust database for that.
+			//   This is a special rank which is given to signal that an identity isn't allowed to
+			//   introduce other identities (to avoid the sybil attack). It is given to identities
+			//   which only have received a trust value of <= 0. Trust < 0 is considered as "don't
+			//   download", but trust 0 is still considered as download-worthy for the purpose of
+			//   allowing the IntroductionPuzzle mechanism: Solving a puzzle should allow an
+			//   identity to be downloaded but disallow it from introducing other identities to
+			//   ensure they need to solve puzzles as well.
+			//   This rank can both be caused by an OwnIdentity's trust OR by a trust of a non-own
+			//   Identity. So we must check the trust database both for whether the trust is from
+			//   an OwnIdentity and whether it is not < 0.
 			if(s.getRank() == Integer.MAX_VALUE) {
 				try {
 					Trust t = mWoT.getTrust(s.getTruster(), s.getTrustee());
-					assert(t.getValue() == 0);
-					return true;
+					if(!(t.getValue() < 0)) // Should download if not distrusted.
+						return true;
 				} catch(NotTrustedException e) {
 					// The rank did not come from the OwnIdentity which provided the Score.
 				}
