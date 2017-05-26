@@ -60,6 +60,8 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 	private final WebOfTrust mWoT;
 	
 	/**
+	 * Executes the {@link DownloadScheduler} on a thread of its own.
+	 * 
 	 * FIXME: Document similarly to {@link IdentityDownloaderSlow#mJob}.
 	 * FIXME: Initialize & implement. */
 	private volatile DelayedBackgroundJob mJob = null;
@@ -124,27 +126,38 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 		// While a call to this function means that any OwnIdentity wants it to be downloaded
 		// indeed we do *not* know whether that desire is due to a direct trust value from any
 		// OwnIdentity. Thus we need to check with shouldDownload().
-		if(shouldDownload(identity)) {
-			// Trigger execution of the download scheduler thread to sync the running downloads with
-			// the database:
-			// We must NOT immediately modify the set of running downloads as what fred does cannot
-			// be undone by a rollback of this pending database transaction, but it may be rolled
-			// back after this function returns and thus we would keep running a download which we
-			// shouldn't actually run.
-			// The scheduler will obtain a fresh lock on the database so any pending transacitons
-			// are guaranteed to be finished and it can assume that the database is correct
-			// and start downloads as indicated by it.
+		if(shouldDownload(identity))
 			mJob.triggerExecution();
-		}
 	}
 
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
-		// FIXME
+		// This callback is called when absolutely no OwnIdentity wants the Identity to be
+		// downloaded. Thus we don't need to do a shouldDownload() check like
+		// storeStartFetchCommandWithoutCommit(), we can instead just call triggerExecution() right
+		// away.
+		mJob.triggerExecution();
 	}
 
 	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint hint) {
 		
 		// FIXME
+	}
+
+	/**
+	 * The download scheduler thread which syncs the running downloads with the database.
+	 * One would expect this to be done on the same thread which our download scheduling callbacks
+	 * (= functions of our implemented interface {@link IdentityDownloader}) are called upon.
+	 * But we must NOT immediately modify the set of running downloads there as what fred does cannot
+	 * be undone by a rollback of the pending database transaction during which they are called
+	 * - it may be rolled back after the callbacks return and thus we could e.g. keep running
+	 * downloads which we shouldn't actually run.
+	 * This scheduler thread here will obtain a fresh lock on the database so any pending
+	 * transactions are guaranteed to be finished and it can assume that the database is correct
+	 * and safely start downloads as indicated by it. */
+	private final class DownloadScheduler implements Runnable {
+		@Override public void run() {
+			// FIXME: Implement
+		}
 	}
 
 	@Override public boolean getShouldFetchState(Identity identity) {
