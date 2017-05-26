@@ -11,6 +11,7 @@ import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.util.Daemon;
+import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 import freenet.client.async.USKManager;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
@@ -57,6 +58,11 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 
 
 	private final WebOfTrust mWoT;
+	
+	/**
+	 * FIXME: Document similarly to {@link IdentityDownloaderSlow#mJob}.
+	 * FIXME: Initialize & implement. */
+	private volatile DelayedBackgroundJob mJob = null;
 
 
 	public IdentityDownloaderFast(WebOfTrust wot) {
@@ -115,7 +121,18 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 	}
 
 	@Override public void storeStartFetchCommandWithoutCommit(Identity identity) {
-		// FIXME
+		if(shouldDownload(identity)) {
+			// Trigger execution of the download scheduler thread to sync the running downloads with
+			// the database:
+			// We must NOT immediately modify the set of running downloads as what fred does cannot
+			// be undone by a rollback of this pending database transaction, but it may be rolled
+			// back after this function returns and thus we would keep running a download which we
+			// shouldn't actually run.
+			// The scheduler will obtain a fresh lock on the database so any pending transacitons
+			// are guaranteed to be finished and it can assume that the database is correct
+			// and start downloads as indicated by it.
+			mJob.triggerExecution();
+		}
 	}
 
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
