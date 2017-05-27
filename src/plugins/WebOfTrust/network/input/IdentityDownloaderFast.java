@@ -139,8 +139,8 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 	}
 
 	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint hint) {
-		
-		// FIXME
+		// This callback isn't subject of our interest - it is completely handled by class
+		// IdentityDownloaderSlow.
 	}
 
 	/**
