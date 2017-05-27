@@ -4,15 +4,23 @@
 package plugins.WebOfTrust.network.input;
 
 import static java.util.Objects.requireNonNull;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.util.Daemon;
+import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 import freenet.client.async.USKManager;
+import freenet.client.async.USKRetriever;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 
@@ -29,7 +37,9 @@ import freenet.node.RequestStarter;
  * That's necessary because USK subscriptions are expensive, they create a constant load of
  * polling on the network.
  * The lack of this class subscribing to all {@link Identity}s is compensated by
- * {@link IdentityDownloaderSlow} which deals with the rest of them in a less expensive manner. */
+ * {@link IdentityDownloaderSlow} which deals with the rest of them in a less expensive manner.
+ * 
+ * FIXME: Add logging to callbacks and {@link DownloadScheduler#run()} */
 final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 
 	/**
@@ -58,7 +68,9 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 
 
 	private final WebOfTrust mWoT;
-	
+
+	private final IdentityDownloaderController mLock;
+
 	/**
 	 * Executes the {@link DownloadScheduler} on a thread of its own.
 	 * 
@@ -66,11 +78,14 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 	 * FIXME: Initialize & implement. */
 	private volatile DelayedBackgroundJob mJob = null;
 
+	private final HashMap<String, USKRetriever> mDownloads = new HashMap<>();
+
 
 	public IdentityDownloaderFast(WebOfTrust wot) {
 		requireNonNull(wot);
 		
 		mWoT = wot;
+		mLock = mWoT.getIdentityDownloaderController();
 		
 		// FIXME: Initialize mRequestClient like IdentityDownloaderSlow() does it.
 	}
@@ -156,8 +171,49 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 	 * and safely start downloads as indicated by it. */
 	private final class DownloadScheduler implements Runnable {
 		@Override public void run() {
-			// FIXME: Implement
+			synchronized(mWoT) {
+			synchronized(mLock) {
+				// No need to take a database transaction lock as we don't write anything to the db.
+				
+				// Determine all downloads which should be running in the end
+				IdentifierHashSet<Identity> allToDownload = new IdentifierHashSet<>();
+				for(OwnIdentity i : mWoT.getAllOwnIdentities()) {
+					for(Trust t : mWoT.getGivenTrusts(i)) {
+						if(t.getValue() >= 0)
+							allToDownload.add(t.getTrustee());
+					}
+				}
+				
+				// Now that we know which downloads should be running in the end we compare that
+				// against which ones are currently running and stop/start what's differing.
+				
+				HashSet<String> toStop = new HashSet<>(mDownloads.keySet());
+				toStop.removeAll(allToDownload.identifierSet());
+				stopDownloads(toStop);
+				
+				IdentifierHashSet<Identity> toStart = new IdentifierHashSet<>(allToDownload);
+				toStart.removeAllByIdentifier(mDownloads.keySet());
+				startDownloads(toStart);
+				
+				// TODO: Performance: Once this assert has proven to not fail, remove it to replace
+				// the above
+				//     IdentifierHashSet<Identity> toStart = new IdentifierHashSet<>(allToDownload);
+				// with:
+				//     IdentifierHashSet<Identity> toStart = allToDownload;
+				// We don't need to construct a fresh set if we don't use allToDownload anymore
+				// afterwards.
+				assert(mDownloads.keySet().equals(allToDownload.identifierSet()));
+			}
+			}
 		}
+	}
+
+	private void startDownloads(Collection<Identity> identities) {
+		// FIXME: Implement
+	}
+
+	private void stopDownloads(Collection<String> identityIDs) {
+		// FIXME: Implement
 	}
 
 	@Override public boolean getShouldFetchState(Identity identity) {

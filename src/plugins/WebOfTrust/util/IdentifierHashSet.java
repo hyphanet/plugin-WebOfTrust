@@ -31,6 +31,11 @@ import plugins.WebOfTrust.Trust;
  * I.e. it will behave like a {@link HashSet} with type {@link String}, to which the IDs of the
  * Persistent objects are added.
  * 
+ * NOTICE: In addition to the functions specified by {@link Set}, this class also provides the
+ * following functions:
+ * - {@link #identifierSet()}
+ * - {@link #removeAllByIdentifier(Collection)}
+ * 
  * FIXME: For {@link #add(Persistent)} etc., JavaDoc the main difference to the regular Set
  * behavior: Here element.equals() is NOT the defining thing which decides whether something is
  * added, removed, etc. add() will only check {@link Persistent#getID()}'s equals(). This is
@@ -160,4 +165,22 @@ public final class IdentifierHashSet<T extends Persistent> implements Set<T> {
 		return map.keySet().equals(other.map.keySet());
 	}
 
+	/**
+	 * Returns the Set of the {@link Persistent#getID()} values of the contained elements.
+	 * The returned Set is backed by this Set as specified by {@link HashMap#keySet()}. */
+	public Set<String> identifierSet() {
+		return map.keySet();
+	}
+
+	/**
+	 * Removes all elements with the given {@link Persistent#getID()} values.
+	 * Returns true if this resulted in any element being removed. */
+	public boolean removeAllByIdentifier(Collection<String> identifiers) {
+		boolean changed = false;
+		for(String id : identifiers) {
+			if(map.remove(id) != null)
+				changed = true;
+		}
+		return changed;
+	}
 }
