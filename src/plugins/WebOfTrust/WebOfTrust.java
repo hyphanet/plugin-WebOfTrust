@@ -1831,6 +1831,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		boolean returnValue = true;
 		
+		// Identitys for which we have to call mFetcher.storeStartFetchCommandWithoutCommit()
+		// We store them for being able to do this *after* updating the Scores as the fetcher
+		// demands the Score db to be valid.
+		IdentifierHashSet<Identity> needStartFetchCommand = new IdentifierHashSet<>();
+		// Same for mFetcher.storeAbortFetchCommandWithoutCommit()
+		IdentifierHashSet<Identity> needAbortFetchCommand = new IdentifierHashSet<>();
+		
 		// Scores are a rating of an identity from the view of an OwnIdentity so we compute them per OwnIdentity.
 		for(OwnIdentity treeOwner : getAllOwnIdentities()) {
 			// TODO: Performance: Move this outside the above loop once the issue which caused this
@@ -2117,20 +2124,32 @@ public final class WebOfTrust extends WebOfTrustInterface
 						// Therefore we me must store a notification nevertheless.
 						if(!oldTarget.equals(target)) // markForRefetch() will not change anything if the current edition had not been fetched yet
 							mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldTarget, target);
-
-						mFetcher.storeStartFetchCommandWithoutCommit(target);
+						
+						needAbortFetchCommand.remove(target);
+						needStartFetchCommand.add(target);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(target)) {
 						returnValue = false;
 						
 						if(logMINOR) Logger.minor(this, "Fetch status changed from true to false, aborting fetch of " + target);
-
-						mFetcher.storeAbortFetchCommandWithoutCommit(target);
+						
+						needStartFetchCommand.remove(target);
+						needAbortFetchCommand.add(target);
 					}
 				}
 			}
 		}
 		
+		for(Identity i : needAbortFetchCommand) {
+			assert(!shouldFetchIdentity(i));
+			mFetcher.storeAbortFetchCommandWithoutCommit(i);
+		}
+		
+		for(Identity i : needStartFetchCommand) {
+			assert(shouldFetchIdentity(i));
+			mFetcher.storeStartFetchCommandWithoutCommit(i);
+		}
+
 		mFullScoreComputationNeeded = false;
 		
 		++mFullScoreRecomputationCount;

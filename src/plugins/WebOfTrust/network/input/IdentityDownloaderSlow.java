@@ -733,7 +733,9 @@ public final class IdentityDownloaderSlow implements
 	@Override public void storeStartFetchCommandWithoutCommit(final Identity identity) {
 		// FIXME: This is called during Score computation but relies upon the results of it.
 		// Change interface specification to have Score computation call it after it is finished and
-		// change the implementations to do so.
+		// change the implementations to do so. Apply the same change to:
+		// - storeAbortFetchCommandWithoutCommit()
+		// - storeNewEditionHintCommandWithoutCommit
 		
 		Logger.normal(this, "storeStartFetchCommandWithoutCommit(" + identity + ") ...");
 		
