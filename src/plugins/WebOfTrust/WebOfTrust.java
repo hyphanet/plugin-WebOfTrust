@@ -1834,9 +1834,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// Identitys for which we have to call mFetcher.storeStartFetchCommandWithoutCommit()
 		// We store them for being able to do this *after* updating the Scores as the fetcher
 		// demands the Score db to be valid.
-		IdentifierHashSet<Identity> needStartFetchCommand = new IdentifierHashSet<>();
+		// (Notice: the "Identity" in IdentityHashSet refers to object equality, not to class
+		// Identity. See class IdentifierHashSet for why we must use this instead of HashSet and for
+		// why we can use it instead of IdentifierHashSet.)
+		IdentityHashSet<Identity> needStartFetchCommand = new IdentityHashSet<>();
 		// Same for mFetcher.storeAbortFetchCommandWithoutCommit()
-		IdentifierHashSet<Identity> needAbortFetchCommand = new IdentifierHashSet<>();
+		IdentityHashSet<Identity> needAbortFetchCommand = new IdentityHashSet<>();
 		
 		// Scores are a rating of an identity from the view of an OwnIdentity so we compute them per OwnIdentity.
 		for(OwnIdentity treeOwner : getAllOwnIdentities()) {

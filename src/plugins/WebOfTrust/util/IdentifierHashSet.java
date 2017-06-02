@@ -13,6 +13,8 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
+import plugins.WebOfTrust.WebOfTrust;
+import freenet.support.IdentityHashSet;
 
 /**
  * Certain classes which extend {@link Persistent}, such as {@link Identity}, {@link Trust} and
@@ -30,6 +32,22 @@ import plugins.WebOfTrust.Trust;
  * {@link Persistent#getID()}.<br>
  * I.e. it will behave like a {@link HashSet} with type {@link String}, to which the IDs of the
  * Persistent objects are added.
+ * 
+ * For performance please only use this in cases where it actually is possible that you try to add
+ * multiple different copies of the same object to the set but only want one version to stay in it.
+ * In cases where you're sure that you'll only be adding the same instance of each object instead
+ * use {@link IdentityHashSet} for increased performance:
+ * - It will spare us from actual disk IO: This class here has to call {@link Persistent#getID()}
+ *   for computing the hashCode(), which in turn has to read the ID from the database by calling
+ *   {@link Persistent#checkedActivate(int)}. IdentityHashSet will instead use
+ *   {@link System#identityHashCode(Object)} which is derived from the memory location of the object
+ *   and thus requires no disk IO at all.
+ * - identityHashCode() only has to process the 8 byte memory location instead of this class using
+ *   {@link String#hashCode()} upon e.g. the 43 byte {@link Identity#getID()} strings.
+ * TODO: Performance: Review our existing users for whether they obey this.
+ * TODO: Code quality: Review existing users of {@link IdentityHashSet} for cumbersome explanations
+ * of why it is used and make them instead point to the above JavaDoc for an explanation. For an
+ * example of a replacement comment see {@link WebOfTrust#computeAllScoresWithoutCommit()}.
  * 
  * NOTICE: In addition to the functions specified by {@link Set}, this class also provides the
  * following functions:
