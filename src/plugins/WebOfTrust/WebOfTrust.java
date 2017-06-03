@@ -4357,6 +4357,19 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 
 		if(!mFullScoreComputationNeeded && (trustWasCreated || trustWasModified)) {
+			// We've determined that the conditions are met for this function to be able to do its
+			// main job of updating the Scores so we do that now.
+			
+			// Identitys for which we have to call mFetcher.storeStartFetchCommandWithoutCommit()
+			// We store them for being able to do this *after* updating the Scores as the fetcher
+			// demands the Score db to be valid.
+			// (Notice: the "Identity" in IdentityHashSet refers to object equality, not to class
+			// Identity. See class IdentifierHashSet for why we must use this instead of HashSet and
+			// for why we can use it instead of IdentifierHashSet.)
+			IdentityHashSet<Identity> needStartFetchCommand = new IdentityHashSet<>();
+			// Same for mFetcher.storeAbortFetchCommandWithoutCommit()
+			IdentityHashSet<Identity> needAbortFetchCommand = new IdentityHashSet<>();
+			
 			for(OwnIdentity treeOwner : getAllOwnIdentities()) {
 				try {
 					// Throws to abort the update of the trustee's score: If the truster has no rank or capacity in the tree owner's view then we don't need to update the trustee's score.
@@ -4466,13 +4479,20 @@ public final class WebOfTrust extends WebOfTrustInterface
 						// Therefore we me must store a notification nevertheless.
 						if(!oldTrustee.equals(trustee)) // markForRefetch() will not change anything if the current edition had not been fetched yet
 							mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldTrustee, trustee);
-
-						mFetcher.storeStartFetchCommandWithoutCommit(trustee);
+						
+						// TODO: Performance: Can this function's core assumption of only a single
+						// Trust having changed actually result in multiple changes of the
+						// shouldFetch state? If not then we don't need to remove() and we also
+						// could change the need* variables from IdentifierHashSet to LinkedList.
+						// This also applies to the below usage of the same variables.
+						needAbortFetchCommand.remove(trustee);
+						needStartFetchCommand.add(trustee);
 					}
 					else if(oldShouldFetch && !shouldFetchIdentity(trustee)) {
 						if(logMINOR) Logger.minor(this, "Fetch status changed from true to false, aborting fetch of " + trustee);
-
-						mFetcher.storeAbortFetchCommandWithoutCommit(trustee);
+						
+						needStartFetchCommand.remove(trustee);
+						needAbortFetchCommand.add(trustee);
 					}
 					
 					// If the rank or capacity changed then the trustees might be affected because the could have inherited theirs
@@ -4491,6 +4511,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 				if(mFullScoreComputationNeeded)
 					break;
+			}
+			
+			if(!mFullScoreComputationNeeded) {
+				for(Identity i : needAbortFetchCommand) {
+					assert(!shouldFetchIdentity(i));
+					mFetcher.storeAbortFetchCommandWithoutCommit(i);
+				}
+				
+				for(Identity i : needStartFetchCommand) {
+					assert(shouldFetchIdentity(i));
+					mFetcher.storeStartFetchCommandWithoutCommit(i);
+				}
 			}
 		}
 
