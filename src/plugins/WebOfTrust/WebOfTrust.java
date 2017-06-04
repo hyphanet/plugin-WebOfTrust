@@ -4715,10 +4715,27 @@ public final class WebOfTrust extends WebOfTrustInterface
 			  + "changed capacity: " + time2);
 		}
 
-		// Update SubscriptionManager and IdentityFetcher.
-		// (Instead of having already created events while updating rank, capacity and value, we now
-		// create the events after all three components have been updated to ensure that we only
-		// create one event for each modified Score instead of three.)
+		// We now deploy event callbacks resulting from changed scores, to SubscriptionManager and
+		// IdentityFetcher.
+		// (Instead of having already created events while updating ranks, capacities and values, we
+		// now create the events after all three Score components have been updated to ensure that
+		// we only create one event for each modified Score instead of three. Further, in the case
+		// of IdentityFetcher, we anyway must do this *after* fully updating the Scores as the
+		// fetcher demands the Score db to be valid.)
+		
+		// Identitys for which we have to call the event handler
+		// mFetcher.storeStartFetchCommandWithoutCommit().
+		// We store them instead of calling the handler right away for being able to deduplicate
+		// multiple events per Identity to one for each.
+		// (This deduplication is not needed for Score events as those are deduplicated by a
+		// HashMap already.)
+		// (Notice: The "Identity" in IdentityHashSet refers to object equality, not to class
+		// Identity. See class IdentifierHashSet for why we must use this instead of HashSet and for
+		// why we can use it instead of IdentifierHashSet.)
+		IdentityHashSet<Identity> needStartFetchCommand = new IdentityHashSet<>();
+		// Same for mFetcher.storeAbortFetchCommandWithoutCommit()
+		IdentityHashSet<Identity> needAbortFetchCommand = new IdentityHashSet<>();
+		
 		for(ChangeSet<Score> changeSet : scoresWhichNeedEventNotification.values()) {
 			Score oldScore = changeSet.beforeChange;
 			Score newScore = changeSet.afterChange;
@@ -4743,16 +4760,38 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// a distrusting one and thus not cause an Identity to suddenly be wanted.
 			// Thus, if the Score was created, you might avoid executing this branch.
 			if(shouldFetchIdentity_maybeChanged) {
-				Identity target = newScore != null ? newScore.getTrustee() : oldScore.getTrustee();
+				Identity target;
 				
-				// TODO: Performance: Use a IdentityHashMap<Identity> to only do this once for
+				// TODO: Performance: Use an IdentifierHashSet<Identity> to only do this once for
 				// every Identity, i.e. not repeat it for every OwnIdentity's Score tree.
-				// As long as we don't, the IdentityFetcher will deduplicate the commands itself,
-				// but database queries are expensive.
+				// (Use IdentifierHashSet instead of IdentityHashSet to be able to avoid the
+				// getIdentityByID() before we check the set for whether we even need to do
+				// anything.)
 				// On the other hand, keeping all Identitys in memory might cause OOM, and the
 				// amount of hits this would cause is likely small: As long as WOT doesn't have
 				// a public gateway mode, the amount of OwnIdentitys can be assumed to be very small
 				// as only one real user is using WOT.
+				// Hence another possible fix may be to have the containing loop process the Scores
+				// *sorted* by Identity and keep track of the last processed Identity ID in a
+				// variable so we can avoid having to do this if() by checking whether the current
+				// identity is equal to the previous one.
+				
+				// FIXME: This if/else already prepones part of the fixes for
+				// https://bugs.freenetproject.org/view.php?id=6938
+				// - but what I did *NOT* do yet is checking whether the bug could result in
+				// corruption in practice and hence I also did NOT yet write code to repair
+				// old databases. This MUST be further investigated before release!
+				if(newScore != null)
+					target = newScore.getTrustee();
+				else {
+					try {
+						// Must re-query the identity since oldScore is a clone() and thus the
+						// getTrustee() value also is.
+						target = getIdentityByID(oldScore.getTrustee().getID());
+					} catch(UnknownIdentityException e) {
+						throw new RuntimeException(e);
+					}
+				}
 				
 				if(shouldFetchIdentity(target)) {
 					// If the capacity changed from 0 to > 0, we have to call markForRefetch(), see
@@ -4770,10 +4809,30 @@ public final class WebOfTrust extends WebOfTrustInterface
 							oldTarget, target);
 					}
 					
-					mFetcher.storeStartFetchCommandWithoutCommit(target);
-				} else
-					mFetcher.storeAbortFetchCommandWithoutCommit(target);
+					// FIXME: Performance / Code quality: Also deduplicate the above code related
+					// to markForRefetch() by moving it to the processing of needStartFetchCommand.
+					// Also check updateScoresWithoutCommit() and computeAllScoresWithoutCommit()
+					// for whether this can be done there as well.
+					
+					assert(!needAbortFetchCommand.contains(target))
+						: "shouldFetchIdentity() shouldn't change as Score computation is finished";
+					needStartFetchCommand.add(target);
+				} else {
+					assert(!needStartFetchCommand.contains(target))
+						: "shouldFetchIdentity() shouldn't change as Score computation is finished";
+					needAbortFetchCommand.add(target);
+				}
 			}
+		}
+		
+		for(Identity i : needAbortFetchCommand) {
+			assert(!shouldFetchIdentity(i));
+			mFetcher.storeAbortFetchCommandWithoutCommit(i);
+		}
+		
+		for(Identity i : needStartFetchCommand) {
+			assert(shouldFetchIdentity(i));
+			mFetcher.storeStartFetchCommandWithoutCommit(i);
 		}
 	}
 
