@@ -5085,9 +5085,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 			try {
 				identity.storeWithoutCommit();
-				mFetcher.storeStartFetchCommandWithoutCommit(identity);
 				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
 				initTrustTreeWithoutCommit(identity);
+				// Must be called when the Score db is valid, and thus after initTrustTree...()
+				mFetcher.storeStartFetchCommandWithoutCommit(identity);
 
 				beginTrustListImport();
 
