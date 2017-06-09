@@ -5492,13 +5492,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 				/* finishTrustListImport(); */
 	
 				mPuzzleStore.onIdentityDeletion(oldIdentity);
-				mFetcher.storeAbortFetchCommandWithoutCommit(oldIdentity);
-				// NOTICE:
-				// If the fetcher did store a db4o object reference to the identity, we would have to trigger command processing
-				// now to prevent leakage of the identity object.
-				// But as specified by interface IdentityDownloader, the fetcher does NOT store a db4o object reference to the given identity. It stores its ID as String only.
-				// Therefore, it is OK that the fetcher does not immediately process the commands now.
 				
+				// (mFetcher must be notified *after* updating the Score database!)
+				mFetcher.storeAbortFetchCommandWithoutCommit(oldIdentity);
+				
+				// FIXME: The new IdentityDownloader interface allows implementations to store
+				// references to Identity objects. Thus before deleting the Identity object from the
+				// database we must ensure that all references are deleted by the IdentityDownloader
+				// implementations. Review their storeAbortFetchCommandWithoutCommit() for whether
+				// this is the case. Amend the storeAbortFetchCommandWithoutCommit() JavaDoc to
+				// state that they must do so.
 				oldIdentity.deleteWithoutCommit();
 				
 				// Update all given trusts. This will also cause given scores to be computed,
@@ -5508,9 +5511,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 				for(Trust givenTrust : oldGivenTrustsCopy)
 					setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 				
-				mFetcher.storeStartFetchCommandWithoutCommit(identity);
-				
 				finishTrustListImport();
+				// Demands to be called when the Score database is valid so call it after the above
+				mFetcher.storeStartFetchCommandWithoutCommit(identity);
 			} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
 				identity = new OwnIdentity(this, insertFreenetURI, null, false);
 				
