@@ -2748,13 +2748,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			if(logDEBUG) Logger.debug(this, "Storing an abort-fetch-command...");
 			
+			// (mFetcher must be notified *after* updating the Score database!)
 			if(mFetcher != null) { // Can be null if we use this function in upgradeDB()
+				// FIXME: The new IdentityDownloader interface allows implementations to store
+				// references to Identity objects. Thus before deleting the Identity object from the
+				// database we must ensure that all references are deleted by the IdentityDownloader
+				// implementations. Review their storeAbortFetchCommandWithoutCommit() for whether
+				// this is the case. Amend the storeAbortFetchCommandWithoutCommit() JavaDoc to
+				// state that they must do so.
 				mFetcher.storeAbortFetchCommandWithoutCommit(identity);
-				// NOTICE:
-				// If the fetcher did store a db4o object reference to the identity, we would have to trigger command processing
-				// now to prevent leakage of the identity object.
-				// But as specified by interface IdentityDownloader, the fetcher does NOT store a db4o object reference to the given identity. It stores its ID as String only.
-				// Therefore, it is OK that the fetcher does not immediately process the commands now.
 			}
 		
 			if(logDEBUG) Logger.debug(this, "Deleting the identity...");
