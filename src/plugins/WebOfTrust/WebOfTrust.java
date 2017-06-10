@@ -5256,6 +5256,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 				assert(getScores(oldIdentity).size() == 0);
 
+				// Identitys for which we have to call
+				// mFetcher.storeAbortFetchCommandWithoutCommit().
+				// We store them for being able to do this *after* updating the Scores as the
+				// fetcher demands the Score db to be valid when calling its callbacks.
+				// (No need to have this be a Set: We obtain the Identities from the Scores they
+				// received from the oldIdentity, and there can only be one Score for each truster+
+				// trustee pair, duplicates aren't possible.)
+				LinkedList<Identity> needAbortFetchCommand = new LinkedList<>();
+				
 				// Delete all given scores:
 				// Non-own identities do not assign scores to other identities so we can just delete them.
 				for(Score oldScore : getGivenScores(oldIdentity)) {
@@ -5270,9 +5279,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					
 					// If the OwnIdentity which we are converting was the only source of trust to the trustee
 					// of this Score value, the should-fetch state of the trustee might change to false.
-					if(oldShouldFetchTrustee && shouldFetchIdentity(trustee) == false) {
-						mFetcher.storeAbortFetchCommandWithoutCommit(trustee);
-					}
+					if(oldShouldFetchTrustee && shouldFetchIdentity(trustee) == false)
+						needAbortFetchCommand.add(trustee);
 				}
 				
 				assert(getGivenScores(oldIdentity).size() == 0);
@@ -5303,7 +5311,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 				mPuzzleStore.onIdentityDeletion(oldIdentity);
 				
-				// (mFetcher must be notified *after* updating the Score database!)
+				for(Identity i : needAbortFetchCommand)
+					mFetcher.storeAbortFetchCommandWithoutCommit(i);
+				
 				mFetcher.storeAbortFetchCommandWithoutCommit(oldIdentity);
 				
 				// FIXME: The new IdentityDownloader interface allows implementations to store
