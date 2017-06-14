@@ -731,12 +731,6 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	@Override public void storeStartFetchCommandWithoutCommit(final Identity identity) {
-		// FIXME: This is called during Score computation but relies upon the results of it.
-		// Change interface specification to have Score computation call it after it is finished and
-		// change the implementations to do so. Apply the same change to:
-		// - storeAbortFetchCommandWithoutCommit()
-		// - storeNewEditionHintCommandWithoutCommit
-		
 		Logger.normal(this, "storeStartFetchCommandWithoutCommit(" + identity + ") ...");
 		
 		for(Trust trust : mWoT.getReceivedTrusts(identity)) {
@@ -895,6 +889,11 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint newHint) {
+		// FIXME: Ensure this is not called during Score computation, it needs the Score db to be
+		// valid and thus should only be called afterwards.
+		// Change interface specification to have Score computation call it after it is finished and
+		// change the implementations to do so.
+		
 		if(logMINOR)
 			Logger.minor(this, "storeNewEditionHintCommandWithoutCommit()...");
 		

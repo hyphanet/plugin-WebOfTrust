@@ -10,6 +10,7 @@ import plugins.WebOfTrust.IdentityFileProcessor;
 import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
+import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
@@ -50,6 +51,8 @@ public interface IdentityDownloader extends Daemon {
 	 * - as soon as {@link WebOfTrust#shouldFetchIdentity(Identity)} changes from false to true for
 	 *   the given {@link Identity}. This is usually the case when *any* {@link OwnIdentity} has
 	 *   rated it as trustworthy enough for us to download it.
+	 *   The {@link Trust} and {@link Score} database is guaranteed to be up to date when this
+	 *   function is called and thus can be used by it.
 	 * - in special cases such as creation/deletion/restoring of an OwnIdentity.
 	 * - May also be called to notify the IdentityDownloader about a changed
 	 *   {@link Identity#getNextEditionToFetch()} (e.g. due to  {@link Identity#markForRefetch()})
@@ -67,7 +70,9 @@ public interface IdentityDownloader extends Daemon {
 	 * Called by {@link WebOfTrust}:
 	 * - as soon as {@link WebOfTrust#shouldFetchIdentity(Identity)} changes from true to false for
 	 *   the given {@link Identity}. This is usually the case when not even one {@link OwnIdentity}
-	 *   has rated it as trustworthy enough for us to download it
+	 *   has rated it as trustworthy enough for us to download it.
+	 *   The {@link Trust} and {@link Score} database is guaranteed to be up to date when this
+	 *   function is called and thus can be used by it.
 	 * - in special cases such as deletion/restoring of an OwnIdentity.
 	 * 
 	 * Synchronization:
