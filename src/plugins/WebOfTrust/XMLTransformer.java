@@ -648,7 +648,12 @@ public final class XMLTransformer {
 						for(Trust trust : mWoT.getGivenTrustsOfDifferentEdition(identity, identityURI.getEdition())) {
 							mWoT.removeTrustWithoutCommit(trust); // Also takes care of SubscriptionManager
 						}
-
+						
+						// We must do this now instead of after the outer if() as we want to call
+						// storeNewEditionHintCommandWithoutCommit() below which demands the Score
+						// db to be fully valid when it is called.
+						mWoT.finishTrustListImport();
+						
 						// Feed EditionHints to the IdentityDownloaderController
 						IdentityDownloaderController idc = mWoT.getIdentityDownloaderController();
 						assert(bestCapacity != null && bestCapacity > 0) : bestCapacity;
@@ -672,9 +677,11 @@ public final class XMLTransformer {
 						// If it does not publish a trust list anymore, we delete all trust values it has given.
 						for(Trust trust : mWoT.getGivenTrusts(identity))
 							mWoT.removeTrustWithoutCommit(trust); // Also takes care of SubscriptionManager
-					}
-
-					mWoT.finishTrustListImport();
+						
+						mWoT.finishTrustListImport();
+					} else
+						mWoT.finishTrustListImport();
+					
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
 					identity.storeAndCommit();
 				}
