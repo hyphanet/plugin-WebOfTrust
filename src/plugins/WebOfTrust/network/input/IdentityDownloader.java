@@ -42,6 +42,8 @@ import freenet.keys.FreenetURI;
  *   {@link IdentityDownloaderController} instance.
  * - the {@link Persistent#transactionLock(com.db4o.ext.ExtObjectContainer)}
  * 
+ * TODO: Code quality: Rename the event handlers to "on...()".
+ *
  * FIXME: Review the whole of class {@link IdentityFetcher} for any important JavaDoc and add it to
  * this interface. */
 public interface IdentityDownloader extends Daemon {
