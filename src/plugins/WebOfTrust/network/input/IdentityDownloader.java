@@ -92,6 +92,9 @@ public interface IdentityDownloader extends Daemon {
 	 * lucky - but it may very well be a lie. In that case, to avoid DoS, we must discard it and try
 	 * the next lower hint we received from someone else.
 	 * 
+	 * The {@link Trust} and {@link Score} database is guaranteed to be up to date when this
+	 * function is called and thus can be used by it.
+	 * 
 	 * Synchronization:
 	 * This function is guaranteed to be called while the following locks are being held in the
 	 * given order:
