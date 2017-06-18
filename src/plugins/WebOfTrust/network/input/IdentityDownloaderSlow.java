@@ -976,6 +976,8 @@ public final class IdentityDownloaderSlow implements
 		// We don't explicitly keep track of which identities are *not* wanted, instead
 		// storeNewEditionHintCommandWithoutCommit() will do a "shouldFetchIdentity()" check
 		// whenever it is called, so we just do it here as well:
+		// FIXME: This function is supposed to be called during Score computation. Thus the Score
+		// database isn't valid and we cannot use shouldFetchIdentity()!
 		return mWoT.shouldFetchIdentity(identity);
 	}
 
