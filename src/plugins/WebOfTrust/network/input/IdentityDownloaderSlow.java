@@ -165,10 +165,13 @@ public final class IdentityDownloaderSlow implements
 
 	private final WebOfTrust mWoT;
 
+	/** Is null in unit tests */
 	private final NodeClientCore mNodeClientCore;
 
+	/** Is null in unit tests */
 	private final ClientContext mClientContext;
 
+	/** Is null in unit tests */
 	private final HighLevelSimpleClient mHighLevelSimpleClient;
 
 	/** @see #getRequestClient() */
@@ -232,9 +235,16 @@ public final class IdentityDownloaderSlow implements
 		
 		mWoT = wot;
 		PluginRespirator pr = mWoT.getPluginRespirator();
-		mNodeClientCore = (pr != null ? pr.getNode().clientCore : null);
-		mClientContext = (mNodeClientCore != null ? mNodeClientCore.clientContext : null);
-		mHighLevelSimpleClient = (pr != null ? pr.getHLSimpleClient() : null);
+		if(pr != null) {
+			mNodeClientCore = pr.getNode().clientCore;
+			mClientContext = mNodeClientCore.clientContext;
+			mHighLevelSimpleClient = pr.getHLSimpleClient();
+		} else { // Unit test
+			mNodeClientCore = null;
+			mClientContext = null;
+			mHighLevelSimpleClient = null;
+		}
+		
 		mRequestClient = mWoT.getRequestClient();
 		mLock = mWoT.getIdentityDownloaderController();
 		mDB = mWoT.getDatabase();
@@ -496,7 +506,7 @@ public final class IdentityDownloaderSlow implements
 		assert(fetchURI.isSSK());
 		
 		FetchContext fetchContext = mHighLevelSimpleClient.getFetchContext();
-		// Because archives can become huge and WOT does not use them, we should disallow them.
+		// Because archives can become huge and WoT does not use them, we should disallow them.
 		// See JavaDoc of the variable.
 		fetchContext.maxArchiveLevels = 0;
 		// EditionHints can maliciously point to inexistent editions so we only do one download
