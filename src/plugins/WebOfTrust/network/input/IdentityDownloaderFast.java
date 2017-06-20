@@ -19,10 +19,14 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
+import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.ClientContext;
 import freenet.client.async.USKManager;
 import freenet.client.async.USKRetriever;
+import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
+import freenet.pluginmanager.PluginRespirator;
 
 /**
  * Uses {@link USKManager} to subscribe to the USK of all "directly trusted" {@link Identity}s.
@@ -69,6 +73,18 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 
 	private final WebOfTrust mWoT;
 
+	/** Is null in unit tests */
+	private final USKManager mUSKManager;
+
+	/** Is null in unit tests */
+	private final ClientContext mClientContext;
+
+	/** Is null in unit tests */
+	private final HighLevelSimpleClient mHighLevelSimpleClient;
+
+	/** @see WebOfTrust#getRequestClient() */
+	private final RequestClient mRequestClient;
+
 	private final IdentityDownloaderController mLock;
 
 	/**
@@ -85,9 +101,21 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 		requireNonNull(wot);
 		
 		mWoT = wot;
-		mLock = mWoT.getIdentityDownloaderController();
 		
-		// FIXME: Initialize mRequestClient like IdentityDownloaderSlow() does it.
+		PluginRespirator pr = mWoT.getPluginRespirator();
+		if(pr != null) {
+			NodeClientCore clientCore = pr.getNode().clientCore;
+			mUSKManager = clientCore.uskManager;
+			mClientContext = clientCore.clientContext;
+			mHighLevelSimpleClient = pr.getHLSimpleClient();
+		} else { // Unit test
+			mUSKManager = null;
+			mClientContext = null;
+			mHighLevelSimpleClient = null;
+		}
+		
+		mRequestClient = mWoT.getRequestClient();
+		mLock = mWoT.getIdentityDownloaderController();
 	}
 
 	@Override public void start() {
