@@ -29,10 +29,12 @@ import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
+import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
+import freenet.support.io.NativeThread;
 
 /**
  * Uses {@link USKManager} to subscribe to the USK of all "directly trusted" {@link Identity}s.
@@ -75,6 +77,14 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 	 * Also see the file "developer-documentation/RequestClient and priority map.txt" */
 	public static transient final short DOWNLOAD_PRIORITY_PROGRESS
 		= RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+
+	/**
+	 * Priority of the {@link DownloadScheduler} thread which starts/stops downloads.
+	 * 
+	 * HIGH_PRIORITY instead of a lower one because we only download Identitys to which the user has
+	 * manually assigned Trust values and thus our processing is the result of UI interaction and
+	 * thereby quite important. */
+	public static transient final int DOWNLOADER_THREAD_PRIORITY = NativeThread.HIGH_PRIORITY;
 
 
 	private final WebOfTrust mWoT;
@@ -225,7 +235,7 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 	 * This scheduler thread here will obtain a fresh lock on the database so any pending
 	 * transactions are guaranteed to be finished and it can assume that the database is correct
 	 * and safely start downloads as indicated by it. */
-	private final class DownloadScheduler implements Runnable {
+	private final class DownloadScheduler implements PrioRunnable {
 		@Override public void run() {
 			synchronized(mWoT) {
 			synchronized(mLock) {
@@ -265,6 +275,10 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 				assert(mDownloads.keySet().equals(allToDownload.identifierSet()));
 			}
 			}
+		}
+
+		@Override public int getPriority() {
+			return DOWNLOADER_THREAD_PRIORITY;
 		}
 	}
 

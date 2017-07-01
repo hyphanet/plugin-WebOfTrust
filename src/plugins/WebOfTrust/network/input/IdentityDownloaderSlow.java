@@ -161,7 +161,8 @@ public final class IdentityDownloaderSlow implements
 	 * Below NORM_PRIORITY because we are a background thread and not relevant to UI actions.
 	 * Above MIN_PRIORITY because we're not merely a cleanup thread.
 	 * -> LOW_PRIORITY is the only choice. */
-	private static transient final int DOWNLOADER_THREAD_PRIORITY = NativeThread.LOW_PRIORITY;
+	public static transient final int DOWNLOADER_THREAD_PRIORITY = NativeThread.LOW_PRIORITY;
+
 
 	private final WebOfTrust mWoT;
 
@@ -406,7 +407,8 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	/**
-	 * ATTENTION: For internal use only! TODO: Code quality: Wrap in a private class to hide it.
+	 * ATTENTION: For internal use only! TODO: Code quality: Wrap in a private class to hide it,
+	 * like {@link IdentityDownloaderFast.DownloadScheduler}.
 	 * 
 	 * The actual downloader. Starts fetches for the head of {@link #getQueue()}.
 	 * 
