@@ -189,11 +189,23 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 	}
 
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
-		// This callback is called when absolutely no OwnIdentity wants the Identity to be
-		// downloaded. Thus we don't need to do a shouldDownload() check like
-		// storeStartFetchCommandWithoutCommit(), we can instead just call triggerExecution() right
-		// away.
-		mJob.triggerExecution();
+		// While a call to this function means that no OwnIdentity wants it to be downloaded
+		// we do *not* know whether the previous desire to download it was due to a direct trust
+		// value from any OwnIdentity, i.e. we don't know whether we were actually responsible
+		// for downloading it and thus whether there even could be a download to cancel.
+		// Thus we should check with mDownloads before uselessly invoking the DownloadScheduler
+		// thread for Identitys which weren interesting to us anyway.
+		// (This variable is valid to use here from a concurrency perspective as the interface
+		// specification ensures that our mLock is held while we are called - which is also the lock
+		// which guards mDownloads.)
+		if(mDownloads.containsKey(identity.getID())) {
+			// We cannot just cancel the running download here:
+			// This function is being called as part of an unfinished transaction which may still be
+			// rolled back after we return, and that would mean that the download needs to continue.
+			// Thus we need to cancel the download in a separate transaction, which is what
+			// scheduling the DownloadScheduler thread for execution hereby does.
+			mJob.triggerExecution();
+		}
 	}
 
 	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint hint) {
