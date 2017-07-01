@@ -5,6 +5,7 @@ package plugins.WebOfTrust.network.input;
 
 import static java.util.Objects.requireNonNull;
 
+import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,14 +20,19 @@ import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
+import freenet.client.FetchContext;
+import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
 import freenet.client.async.USKManager;
 import freenet.client.async.USKRetriever;
+import freenet.client.async.USKRetrieverCallback;
+import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.Logger;
 
 /**
  * Uses {@link USKManager} to subscribe to the USK of all "directly trusted" {@link Identity}s.
@@ -44,7 +50,7 @@ import freenet.pluginmanager.PluginRespirator;
  * {@link IdentityDownloaderSlow} which deals with the rest of them in a less expensive manner.
  * 
  * FIXME: Add logging to callbacks and {@link DownloadScheduler#run()} */
-final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
+final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRetrieverCallback {
 
 	/**
 	 * Priority of USK subscription network requests, relative to {@link IdentityDownloaderSlow} as
@@ -95,6 +101,15 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 	private volatile DelayedBackgroundJob mJob = null;
 
 	private final HashMap<String, USKRetriever> mDownloads = new HashMap<>();
+
+
+	private static transient volatile boolean logDEBUG = false;
+
+	private static transient volatile boolean logMINOR = false;
+
+	static {
+		Logger.registerClass(IdentityDownloaderFast.class);
+	}
 
 
 	public IdentityDownloaderFast(WebOfTrust wot) {
@@ -221,6 +236,10 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 				
 				IdentifierHashSet<Identity> toStart = new IdentifierHashSet<>(allToDownload);
 				toStart.removeAllByIdentifier(mDownloads.keySet());
+				// FIXME: Just starting the downloads which we haven't been running isn't enough
+				// - we also need to re-fetch the USK edition of Identitys which we *are* already
+				// trying to download but for which markForRefetch() had been called! See
+				// IdentityFetcher.fetch(Identity identity)
 				startDownloads(toStart);
 				
 				// TODO: Performance: Once this assert has proven to not fail, remove it to replace
@@ -236,11 +255,66 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon {
 		}
 	}
 
+	/**
+	 * Must not be called if a download is already running for one of the Identitys.
+	 * Must be called while synchronized on {@link #mWoT} and {@link #mLock}. */
 	private void startDownloads(Collection<Identity> identities) {
-		// FIXME: Implement
+		if(mUSKManager == null) {
+			Logger.warning(this, "mUSKManager == null, not downloading anything! Valid in tests.");
+			return;
+		}
+		
+		for(Identity i : identities) {
+			USK usk;
+			try {
+				usk = USK.create(i.getRequestURI().setSuggestedEdition(i.getNextEditionToFetch()));
+			} catch (MalformedURLException e) {
+				throw new RuntimeException(e); // Should not happen: getRequestURI() returns an USK.
+			}
+			
+			FetchContext fetchContext = mHighLevelSimpleClient.getFetchContext();
+			// Because archives can become huge and WoT does not use them, we should disallow them.
+			fetchContext.maxArchiveLevels = 0;
+			fetchContext.maxSplitfileBlockRetries = -1; // retry forever
+			fetchContext.maxNonSplitfileRetries = -1; // retry forever
+			fetchContext.maxOutputLength = XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE;
+			assert(fetchContext.ignoreUSKDatehints == false); // FIXME: Remove if it doesn't fail.
+			
+			// FIXME: IdentityFetcher has always been setting this priority to the polling priority.
+			// Toad likely instructed me to do so and/or saw it due to review of the code.
+			// But now that I had a look at the JavaDoc of subscribeCotent() below it looks like it
+			// could also be the PROGRESS priority, i.e. the priority for retrieving the data once
+			// we're sure an edition exists. Which one is it?!
+			// Bonus TODO: Why does subscribePriority() require specifying a priority, considering
+			// that the USKRetrieverCallback callback interface implementation we're supposed to
+			// pass to it has to implement getPollingPriorityNormal() and
+			// getPollingPriorityProgress() which it could use to obtain the priority?
+			short fetchPriority = DOWNLOAD_PRIORITY_POLLING;
+			
+			if(logMINOR)
+				Logger.minor(this, "Downloading by USK subscription: " + usk);
+			
+			USKRetriever download = mUSKManager.subscribeContent(
+				usk, this, true, fetchContext, fetchPriority, mRequestClient);
+			
+			USKRetriever existingDownload = mDownloads.put(i.getID(), download);
+			assert(existingDownload == null);
+		}
+	}
+
+	@Override public short getPollingPriorityNormal() {
+		return DOWNLOAD_PRIORITY_POLLING;
+	}
+
+	@Override public short getPollingPriorityProgress() {
+		return DOWNLOAD_PRIORITY_PROGRESS;
 	}
 
 	private void stopDownloads(Collection<String> identityIDs) {
+		// FIXME: Implement
+	}
+
+	@Override public void onFound(USK origUSK, long edition, FetchResult data) {
 		// FIXME: Implement
 	}
 
