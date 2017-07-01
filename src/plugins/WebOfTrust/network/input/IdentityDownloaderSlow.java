@@ -425,7 +425,9 @@ public final class IdentityDownloaderSlow implements
 		synchronized(mLock) {
 			// We don't have to take a database transaction lock:
 			// We don't write anything to the database here.
-			
+			// We nevertheless try/catch to re-schedule the thread for execution in case of
+			// unexpected exceptions being thrown: Keeping downloads running is important to
+			// ensure WoT keeps working, some defensive programming cannot hurt.
 			try {
 				int downloadsToSchedule = getMaxRunningDownloadCount() - getRunningDownloadCount();
 				// Check whether we actually need to do something before the loop, not just inside
@@ -452,7 +454,7 @@ public final class IdentityDownloaderSlow implements
 				// Not necessary as we don't write anything to the database
 				/* Persistent.checkedRollback(mDB, this, e); */
 				
-				Logger.error(this, "Error in run()!", e);
+				Logger.error(this, "Error in run()! Retrying later...", e);
 				mJob.triggerExecution(QUEUE_BATCHING_DELAY_MS);
 			}
 		}

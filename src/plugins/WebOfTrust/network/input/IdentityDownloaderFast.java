@@ -4,6 +4,7 @@
 package plugins.WebOfTrust.network.input;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.net.MalformedURLException;
 import java.util.Collection;
@@ -240,7 +241,10 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 			synchronized(mWoT) {
 			synchronized(mLock) {
 				// No need to take a database transaction lock as we don't write anything to the db.
-				
+				// We nevertheless try/catch to re-schedule the thread for execution in case of
+				// unexpected exceptions being thrown: Keeping downloads running is important to
+				// ensure WoT keeps working, some defensive programming cannot hurt.
+				try {
 				// Determine all downloads which should be running in the end
 				IdentifierHashSet<Identity> allToDownload = new IdentifierHashSet<>();
 				for(OwnIdentity i : mWoT.getAllOwnIdentities()) {
@@ -273,6 +277,13 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 				// We don't need to construct a fresh set if we don't use allToDownload anymore
 				// afterwards.
 				assert(mDownloads.keySet().equals(allToDownload.identifierSet()));
+				} catch(RuntimeException | Error e) {
+					// Not necessary as we don't write anything to the database
+					/* Persistent.checkedRollback(mDB, this, e); */
+					
+					Logger.error(this, "Error in DownloadScheduler.run()! Retrying later...", e);
+					mJob.triggerExecution(MINUTES.toMillis(1));
+				}
 			}
 			}
 		}
