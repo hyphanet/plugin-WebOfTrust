@@ -96,6 +96,7 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 	/**
 	 * Executes the {@link DownloadScheduler} on a thread of its own.
 	 * 
+	 * FIXME: Rename to mDownloadSchedulerThread. Consider the same for IdentityDownloaderSlow.
 	 * FIXME: Document similarly to {@link IdentityDownloaderSlow#mJob}.
 	 * FIXME: Initialize & implement. */
 	private volatile DelayedBackgroundJob mJob = null;
