@@ -18,6 +18,7 @@ import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
+import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
@@ -84,7 +85,19 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 	 * 
 	 * HIGH_PRIORITY instead of a lower one because we only download Identitys to which the user has
 	 * manually assigned Trust values and thus our processing is the result of UI interaction and
-	 * thereby quite important. */
+	 * thereby quite important.
+	 * 
+	 * TODO: Performance: Actually the trust values of an OwnIdentity can also change due to a
+	 * remote user having solved an {@link IntroductionPuzzle} - should we thus use a different
+	 * thread priority constant, or perhaps even chose priority individually for the next execution
+	 * of {@link DownloadScheduler} by introducing a member variable there to determine the return
+	 * value of {@link DownloadScheduler#getPriority()}?
+	 * This also raises the question of whether we should maybe have a batch processing delay like
+	 * {@link IdentityDownloaderSlow#QUEUE_BATCHING_DELAY_MS} which is used when we receive an
+	 * {@link #storeStartFetchCommandWithoutCommit(Identity)} callback merely due to a remove puzzle
+	 * solution.
+	 * I.e. we should execute the {@link DownloadScheduler} with a delay > 0 for remote changes in
+	 * addition to using a delay of 0 for local changes by the user as we currently do already. */
 	public static transient final int DOWNLOADER_THREAD_PRIORITY = NativeThread.HIGH_PRIORITY;
 
 
