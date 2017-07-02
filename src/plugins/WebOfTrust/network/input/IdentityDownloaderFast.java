@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
@@ -248,7 +249,19 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 	 * downloads which we shouldn't actually run.
 	 * This scheduler thread here will obtain a fresh lock on the database so any pending
 	 * transactions are guaranteed to be finished and it can assume that the database is correct
-	 * and safely start downloads as indicated by it. */
+	 * and safely start downloads as indicated by it.
+	 * 
+	 * FIXME: Currently, whenever the set of Identitys to download is changed (by the callbacks
+	 * specified in {@link IdentityDownloader}) execution of this thread is scheduled.
+	 * It does then look at all directly trusted Identitys to determine which to start/stop
+	 * downloading - it is NOT told for which the "should download?" state has changed.
+	 * Besides this being inefficient, it is buggy:
+	 * As a result it is NOT able to comply with the request of re-downloading old editions of
+	 * certain Identitys as it should do when {@link Identity#markForRefetch()} had been called for
+	 * an Identity - also see the FIXME inside.
+	 * To fix change the way the scheduler determines what to download by using a command-based
+	 * system like the old IdentityFetcher does by using
+	 * {@link IdentityFetcher.IdentityFetcherCommand}s. */
 	private final class DownloadScheduler implements PrioRunnable {
 		@Override public void run() {
 			synchronized(mWoT) {
@@ -280,6 +293,7 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 					// - we also need to re-fetch the USK edition of Identitys which we *are*
 					// already trying to download but for which markForRefetch() had been called!
 					// See IdentityFetcher.fetch(Identity identity)
+					// How to fix this is described at the above class-level JavaDoc.
 					startDownloads(toStart);
 					
 					// TODO: Performance: Once this assert has proven to not fail, remove it to
