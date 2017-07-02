@@ -245,38 +245,38 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 				// unexpected exceptions being thrown: Keeping downloads running is important to
 				// ensure WoT keeps working, some defensive programming cannot hurt.
 				try {
-				// Determine all downloads which should be running in the end
-				IdentifierHashSet<Identity> allToDownload = new IdentifierHashSet<>();
-				for(OwnIdentity i : mWoT.getAllOwnIdentities()) {
-					for(Trust t : mWoT.getGivenTrusts(i)) {
-						if(t.getValue() >= 0)
-							allToDownload.add(t.getTrustee());
+					// Determine all downloads which should be running in the end
+					IdentifierHashSet<Identity> allToDownload = new IdentifierHashSet<>();
+					for(OwnIdentity i : mWoT.getAllOwnIdentities()) {
+						for(Trust t : mWoT.getGivenTrusts(i)) {
+							if(t.getValue() >= 0)
+								allToDownload.add(t.getTrustee());
+						}
 					}
-				}
-				
-				// Now that we know which downloads should be running in the end we compare that
-				// against which ones are currently running and stop/start what's differing.
-				
-				HashSet<String> toStop = new HashSet<>(mDownloads.keySet());
-				toStop.removeAll(allToDownload.identifierSet());
-				stopDownloads(toStop);
-				
-				IdentifierHashSet<Identity> toStart = new IdentifierHashSet<>(allToDownload);
-				toStart.removeAllByIdentifier(mDownloads.keySet());
-				// FIXME: Just starting the downloads which we haven't been running isn't enough
-				// - we also need to re-fetch the USK edition of Identitys which we *are* already
-				// trying to download but for which markForRefetch() had been called! See
-				// IdentityFetcher.fetch(Identity identity)
-				startDownloads(toStart);
-				
-				// TODO: Performance: Once this assert has proven to not fail, remove it to replace
-				// the above
-				//     IdentifierHashSet<Identity> toStart = new IdentifierHashSet<>(allToDownload);
-				// with:
-				//     IdentifierHashSet<Identity> toStart = allToDownload;
-				// We don't need to construct a fresh set if we don't use allToDownload anymore
-				// afterwards.
-				assert(mDownloads.keySet().equals(allToDownload.identifierSet()));
+					
+					// Now that we know which downloads should be running in the end we compare that
+					// against which ones are currently running and stop/start what's differing.
+					
+					HashSet<String> toStop = new HashSet<>(mDownloads.keySet());
+					toStop.removeAll(allToDownload.identifierSet());
+					stopDownloads(toStop);
+					
+					IdentifierHashSet<Identity> toStart = new IdentifierHashSet<>(allToDownload);
+					toStart.removeAllByIdentifier(mDownloads.keySet());
+					// FIXME: Just starting the downloads which we haven't been running isn't enough
+					// - we also need to re-fetch the USK edition of Identitys which we *are*
+					// already trying to download but for which markForRefetch() had been called!
+					// See IdentityFetcher.fetch(Identity identity)
+					startDownloads(toStart);
+					
+					// TODO: Performance: Once this assert has proven to not fail, remove it to
+					// replace the above
+					// IdentifierHashSet<Identity> toStart = new IdentifierHashSet<>(allToDownload);
+					// with:
+					// IdentifierHashSet<Identity> toStart = allToDownload;
+					// We don't need to construct a fresh set if we don't use allToDownload anymore
+					// afterwards.
+					assert(mDownloads.keySet().equals(allToDownload.identifierSet()));
 				} catch(RuntimeException | Error e) {
 					// Not necessary as we don't write anything to the database
 					/* Persistent.checkedRollback(mDB, this, e); */
