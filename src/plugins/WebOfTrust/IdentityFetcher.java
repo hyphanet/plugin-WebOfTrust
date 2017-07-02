@@ -445,6 +445,16 @@ public final class IdentityFetcher implements
 			// Notice: When fixing this to return here, also enable the commented out assert()
 			// in getShouldFetchState(). Also deal with the other assert() in that function and
 			// the cause of it being commented out in storeStartFetchCommandWithoutCommit().
+			// EDIT 2017-07-02:
+			// Another valid reason (and the most valid) for a StartFetchCommand being enqueued
+			// even though we're fetching an Identity already could be the purpose of
+			// Identity.markForRefetch() - if markForRetch() was done the IdentityFetcher is
+			// signaled by calling its storeStartFetchCommandWithoutCommit().
+			// Thus this whole assert is potentially invalid and should be removed, probably along
+			// with the above bugtracker entry.
+			// Overall we should probably invent a more explicit mechanism of signalling
+			// markForRefetch() to the fetcher, e.g. having a separate callback
+			// "storeMarkForRefetchCommand...()".
 			/*
 			assert(mRequests.get(identity.getID()) == null)
 			    : "We have not yet processed the StartFetchCommand for the identity, so there "
