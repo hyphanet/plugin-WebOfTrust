@@ -205,10 +205,9 @@ public final class IdentityDownloaderSlow implements
 	 * Volatile since {@link #stop()} needs to use it without synchronization.
 	 * 
 	 * {@link SubscriptionManager#mJob} and {@link IdentityFetcher#mJob} are related to this, please
-	 * apply changes there as well.
-	 * 
-	 * FIXME: Rename to mDownloadSchedulerThread. */
-	private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
+	 * apply changes there as well. */
+	private volatile DelayedBackgroundJob mDownloadSchedulerThread
+		= MockDelayedBackgroundJob.DEFAULT;
 
 	private final HashMap<FreenetURI, ClientGetter> mDownloads;
 
@@ -270,8 +269,8 @@ public final class IdentityDownloaderSlow implements
 		synchronized(mWoT) {
 		synchronized(mLock) {
 			// This is thread-safe guard against concurrent multiple calls to start() / stop() since
-			// stop() does not modify the job and start() is synchronized. 
-			if(mJob != MockDelayedBackgroundJob.DEFAULT)
+			// stop() does not modify the variable and start() is synchronized. 
+			if(mDownloadSchedulerThread != MockDelayedBackgroundJob.DEFAULT)
 				throw new IllegalStateException("start() was already called!");
 			
 			if(logDEBUG)
@@ -287,14 +286,16 @@ public final class IdentityDownloaderSlow implements
 				ticker = respirator.getNode().getTicker();
 				jobRunnable = this;
 			} else { // We are inside of a unit test
-				Logger.warning(this, "No PluginRespirator available, will never run job. "
-				                   + "This should only happen in unit tests!");
+				Logger.warning(this,
+				    "No PluginRespirator available, will never run mDownloadSchedulerThread. "
+				  + "This should only happen in unit tests!");
 				
-				// Generate our own Ticker so we can set mJob to be a real
+				// Generate our own Ticker so we can set mDownloadSchedulerThread to be a real
 				// TickerDelayedBackgroundJob. This is better than leaving it be a
 				// MockDelayedBackgroundJob because it allows us to clearly distinguish the run
 				// state (start() not called, start() called, terminate() called) by checking
-				// whether mJob is at the default or not, and if not checking the run state of mJob.
+				// whether mDownloadSchedulerThread is at the default or not, and if not checking
+				// the run state of mDownloadSchedulerThread itself.
 				ticker = new PrioritizedTicker(new PooledExecutor(), 0);
 				jobRunnable = new Runnable() { @Override public void run() {
 					 // Do nothing because:
@@ -306,10 +307,10 @@ public final class IdentityDownloaderSlow implements
 				}};
 			}
 			
-			// Set the volatile mJob after everything which terminate() must cleanup is initialized
-			// to ensure that terminate() can use the variable (without synchronization) to check
-			// whether cleanup will cover everything.
-			mJob = new TickerDelayedBackgroundJob(
+			// Set the volatile mDownloadSchedulerThread after everything which terminate() must
+			// cleanup is initialized to ensure that terminate() can use the variable (without
+			// synchronization) to check whether cleanup will cover everything.
+			mDownloadSchedulerThread = new TickerDelayedBackgroundJob(
 				jobRunnable, "WoT IdentityDownloaderSlow", QUEUE_BATCHING_DELAY_MS, ticker);
 			
 			// If downloads are enqueued from the previous session schedule run() to execute to
@@ -318,9 +319,9 @@ public final class IdentityDownloaderSlow implements
 				// Use 0 as delay instead of the QUEUE_BATCHING_DELAY_MS which is > 0 as no network
 				// requests are running yet and thus batching cannot happen.
 				// (Doing triggerExecution() after the above greenlight for terminate() isn't a
-				// problem because terminate will use mJob.waitForTermination() to take account for
-				// triggerExecution() maybe being called.)
-				mJob.triggerExecution(0);
+				// problem because terminate will use mDownloadSchedulerThread.waitForTermination()
+				// to take account for triggerExecution() maybe being called concurrently.)
+				mDownloadSchedulerThread.triggerExecution(0);
 			}
 		}
 		}
@@ -339,21 +340,23 @@ public final class IdentityDownloaderSlow implements
 	private void stop() {
 		Logger.normal(this, "stop() ...");
 		
-		// The following code intentionally does NOT write to the mJob variable so it does not have
-		// to use synchronized(mLock). We do not want to synchronize because:
+		// The following code intentionally does NOT write to the mDownloadSchedulerThread variable
+		// so it does not have to use synchronized(mLock). We do not want to synchronize because:
 		// 1) run() is synchronized(mLock), so we would not get the lock until run() is finished.
-		//    But we want to call mJob.terminate() immediately while run() is still executing to
-		//    make it call Thread.interrupt() upon run() to speed up its termination. So we
-		//    shouldn't require acquisition of the lock before mJob.terminate().
-		// 2) Keeping mJob as is makes sure that start() is not possible anymore so this object can
-		//    only have a single lifecycle. Recycling being impossible reduces complexity and is not
-		//    needed for normal operation of WoT anyway.
+		//    But we want to call mDownloadSchedulerThread.terminate() immediately while run() is
+		//    still executing to make it call Thread.interrupt() upon run() to speed up its
+		//    termination. So we shouldn't require acquisition of the lock before
+		//    mDownloadSchedulerThread.terminate().
+		// 2) Keeping mDownloadSchedulerThread as is makes sure that start() is not possible anymore
+		//    so this object can only have a single lifecycle. Recycling being impossible reduces
+		//    complexity and is not needed for normal operation of WoT anyway.
 		
 		
-		// Since mJob can only transition from not "not started yet", as implied by the "==" here,
-		// to "started" as implied by "!=", but never backwards, is volatile, and is set by start()
-		// *after* everything is initialized, this is safe against concurrent start() / stop().
-		if(mJob == MockDelayedBackgroundJob.DEFAULT)
+		// Since mDownloadSchedulerThread can only transition from not "not started yet", as implied
+		// by the "==" here, to "started" as implied by "!=", but never backwards, is volatile, and
+		// is set by start() *after* everything is initialized, this is safe against concurrent
+		// start() / stop().
+		if(mDownloadSchedulerThread == MockDelayedBackgroundJob.DEFAULT)
 			throw new IllegalStateException("start() not called/finished yet!");
 		
 		// We cannot guard against concurrent stop() here since we don't synchronize, we can only
@@ -362,14 +365,14 @@ public final class IdentityDownloaderSlow implements
 		// stop the wrong lifecycle. It can only happen that we do cleanup the cleanup which a
 		// different thread would have done, but they won't care since all actions below will
 		// succeed silently if done multiple times.
-		assert !mJob.isTerminated() : "stop() called already";
+		assert !mDownloadSchedulerThread.isTerminated() : "stop() called already";
 		
-		mJob.terminate();
+		mDownloadSchedulerThread.terminate();
 		try {
 			// TODO: Performance: Decrease if it doesn't interfere with plugin unloading. I would
 			// rather not though: Plugin unloading unloads the JAR of the plugin, and thus all its
 			// classes. That will probably cause havoc if threads of it are still running.
-			mJob.waitForTermination(Long.MAX_VALUE);
+			mDownloadSchedulerThread.waitForTermination(Long.MAX_VALUE);
 		} catch (InterruptedException e) {
 			// We are a shutdown function, there is no sense in sending a shutdown signal to us.
 			Logger.error(this, "stop() should not be interrupt()ed.", e);
@@ -415,8 +418,9 @@ public final class IdentityDownloaderSlow implements
 	 * The actual downloader. Starts fetches for the head of {@link #getQueue()}.
 	 * 
 	 * Executed on an own thread after {@link DelayedBackgroundJob#triggerExecution()} was called
-	 * on {@link #mJob}. That function is called by this class whenever the download queue changes,
-	 * namely when the event handlers of interface {@link IdentityDownloader} are called on it.
+	 * on {@link #mDownloadSchedulerThread}. That function is called by this class whenever the
+	 * download queue changes, namely when the event handlers of interface
+	 * {@link IdentityDownloader} are called on it.
 	 * 
 	 * Respects {@link Thread#interrupt()} to speed up shutdown, which
 	 * {@link DelayedBackgroundJob#terminate()} will make use of. */
@@ -457,7 +461,7 @@ public final class IdentityDownloaderSlow implements
 				/* Persistent.checkedRollback(mDB, this, e); */
 				
 				Logger.error(this, "Error in run()! Retrying later...", e);
-				mJob.triggerExecution(QUEUE_BATCHING_DELAY_MS);
+				mDownloadSchedulerThread.triggerExecution(QUEUE_BATCHING_DELAY_MS);
 			}
 		}
 		}
@@ -570,11 +574,9 @@ public final class IdentityDownloaderSlow implements
 				assert(state == removed);
 			}
 			
-			// Wake up this.run() to schedule a new download
-			// 
 			// TODO: Performance: Estimate how long it will take until all downloads have finished
 			// and use min(QUEUE_BATCHING_DELAY_MS, estimate) as execution delay.
-			mJob.triggerExecution();
+			mDownloadSchedulerThread.triggerExecution();
 		}
 	}
 
@@ -632,8 +634,7 @@ public final class IdentityDownloaderSlow implements
 				assert(state == removed);
 			}
 			
-			// Wake up this.run() to schedule a new download
-			mJob.triggerExecution();
+			mDownloadSchedulerThread.triggerExecution();
 		}
 	}
 
@@ -824,8 +825,7 @@ public final class IdentityDownloaderSlow implements
 		// FIXME: Add handling for the case "identity instanceof OwnIdentity", e.g. when this was
 		// called by restoreOwnIdentity().
 		
-		// Wake up this.run() - the actual downloader 
-		mJob.triggerExecution();
+		mDownloadSchedulerThread.triggerExecution();
 		
 		Logger.normal(this, "storeStartFetchCommandWithoutCommit() finished.");
 	}
@@ -856,11 +856,12 @@ public final class IdentityDownloaderSlow implements
 		// have wrongly canceled requests which should still be running as canceling requests at
 		// fred isn't transactional and thus not rolled back.
 		// But luckily this doesn't matter:
-		// We call mJob.triggerExecution() to schedule run() to execute to start new downloads.
-		// run() will execute on a different thread with a transaction of its own, and thus can only
-		// execute once this transaction here is finished. If this transaction gets rolled back,
-		// run() will see the old, pre-rollback download queue which includes the downloads we
-		// wrongly cancelled and will just restart them.
+		// We call mDownloadSchedulerThread.triggerExecution() to start new downloads on a different
+		// thread of its own, and thus with a transaction of its own, and that thread hence can only
+		// execute once this transaction here is finished as we hold the necessary locks currently.
+		// If this transaction gets rolled back, the download scheduler thread will see the old,
+		// pre-rollback download queue which includes the downloads we wrongly cancelled and will
+		// just restart them.
 		if(wasQueuedForDownload) {
 			FreenetURI identityURI = identity.getRequestURI();
 			// To prevent concurrent modification of mDownloads while we iterate over it we must
@@ -877,11 +878,10 @@ public final class IdentityDownloaderSlow implements
 						"storeAbortFetchCommandWithoutCommit(): Cancelling download: "
 							+ download.getKey());
 				}
-
-				// Schedule the download queue processing thread to start more downloads.
+				
 				// Must be called before cancel() to ensure the aforementioned assumption about
 				// transaction rollback applies.
-				mJob.triggerExecution();
+				mDownloadSchedulerThread.triggerExecution();
 
 				download.getValue().cancel(mClientContext);
 			}
@@ -976,8 +976,7 @@ public final class IdentityDownloaderSlow implements
 		newHint.storeWithoutCommit();
 		++mTotalQueuedDownloadsInSession;
 		
-		// Wake up this.run() - the actual downloader 
-		mJob.triggerExecution();
+		mDownloadSchedulerThread.triggerExecution();
 		
 		} finally {
 			if(logMINOR)

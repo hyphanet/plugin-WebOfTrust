@@ -1277,7 +1277,9 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
      * Volatile since {@link #stop()} needs to use it without synchronization.
      * 
      * {@link IdentityDownloaderSlow#mJob} and {@link IdentityFetcher#mJob} are related to this,
-     * please apply changes there as well. */
+     * please apply changes there as well.
+     * 
+     * TODO: Code quality: Rename to mEventSenderThread or similar to make more self-explanatory. */
     private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
 
 
