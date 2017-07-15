@@ -119,12 +119,11 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 	private final IdentityDownloaderController mLock;
 
 	/**
-	 * Executes the {@link DownloadScheduler} on a thread of its own.
-	 * 
-	 * FIXME: Rename to mDownloadSchedulerThread. Consider the same for IdentityDownloaderSlow.
 	 * FIXME: Document similarly to {@link IdentityDownloaderSlow#mJob}.
-	 * FIXME: Initialize & implement. */
-	private volatile DelayedBackgroundJob mJob = null;
+	 * FIXME: Initialize & implement.
+	 * 
+	 * @see DownloadScheduler */
+	private volatile DelayedBackgroundJob mDownloadSchedulerThread = null;
 
 	private final HashMap<String, USKRetriever> mDownloads = new HashMap<>();
 
@@ -211,7 +210,7 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 		// indeed we do *not* know whether that desire is due to a direct trust value from any
 		// OwnIdentity. Thus we need to check with shouldDownload().
 		if(shouldDownload(identity))
-			mJob.triggerExecution();
+			mDownloadSchedulerThread.triggerExecution();
 	}
 
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
@@ -220,7 +219,7 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 		// value from any OwnIdentity, i.e. we don't know whether we were actually responsible
 		// for downloading it and thus whether there even could be a download to cancel.
 		// Thus we should check with mDownloads before uselessly invoking the DownloadScheduler
-		// thread for Identitys which weren interesting to us anyway.
+		// for Identitys which weren't interesting to us anyway.
 		// (This variable is valid to use here from a concurrency perspective as the interface
 		// specification ensures that our mLock is held while we are called - which is also the lock
 		// which guards mDownloads.)
@@ -228,9 +227,9 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 			// We cannot just cancel the running download here:
 			// This function is being called as part of an unfinished transaction which may still be
 			// rolled back after we return, and that would mean that the download needs to continue.
-			// Thus we need to cancel the download in a separate transaction, which is what
-			// scheduling the DownloadScheduler thread for execution hereby does.
-			mJob.triggerExecution();
+			// Thus we need to cancel the download in a separate transaction, which is what the
+			// DownloadScheduler does.
+			mDownloadSchedulerThread.triggerExecution();
 		}
 	}
 
@@ -309,7 +308,7 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 					/* Persistent.checkedRollback(mDB, this, e); */
 					
 					Logger.error(this, "Error in DownloadScheduler.run()! Retrying later...", e);
-					mJob.triggerExecution(MINUTES.toMillis(1));
+					mDownloadSchedulerThread.triggerExecution(MINUTES.toMillis(1));
 				}
 			}
 			}

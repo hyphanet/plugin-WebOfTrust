@@ -205,7 +205,9 @@ public final class IdentityDownloaderSlow implements
 	 * Volatile since {@link #stop()} needs to use it without synchronization.
 	 * 
 	 * {@link SubscriptionManager#mJob} and {@link IdentityFetcher#mJob} are related to this, please
-	 * apply changes there as well. */
+	 * apply changes there as well.
+	 * 
+	 * FIXME: Rename to mDownloadSchedulerThread. */
 	private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
 
 	private final HashMap<FreenetURI, ClientGetter> mDownloads;
