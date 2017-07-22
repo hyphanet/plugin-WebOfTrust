@@ -45,6 +45,7 @@ import plugins.WebOfTrust.introduction.IntroductionServer;
 import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
 import plugins.WebOfTrust.network.input.EditionHint;
 import plugins.WebOfTrust.network.input.IdentityDownloaderController;
+import plugins.WebOfTrust.network.input.IdentityDownloaderFast;
 import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPInterface;
@@ -485,6 +486,7 @@ public final class WebOfTrust extends WebOfTrustInterface
         	OwnIdentity.class,
         	Trust.class,
         	Score.class,
+        	IdentityDownloaderFast.DownloadSchedulerCommand.class,
         	IdentityFetcher.IdentityFetcherCommand.class,
         	IdentityFetcher.AbortFetchCommand.class,
         	IdentityFetcher.StartFetchCommand.class,
@@ -2755,7 +2757,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// database we must ensure that all references are deleted by the IdentityDownloader
 				// implementations. Review their storeAbortFetchCommandWithoutCommit() for whether
 				// this is the case. Amend the storeAbortFetchCommandWithoutCommit() JavaDoc to
-				// state that they must do so.
+				// state that they must do so. If this is not possible then ensure to execute the
+				// queue processor of the implementations after storing the commands here. This
+				// may be possible as we anyway are holding the required locks at this point
+				// probably. Further review all other similar callers of storeAbortFetchCommand...()
+				// to do the same, e.g. deleteOwnIdentity() / restoreOwnIdentity().
 				mFetcher.storeAbortFetchCommandWithoutCommit(identity);
 			}
 		

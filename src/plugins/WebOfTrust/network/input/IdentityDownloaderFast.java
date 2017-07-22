@@ -14,6 +14,7 @@ import java.util.HashSet;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
@@ -55,7 +56,10 @@ import freenet.support.io.NativeThread;
  * {@link IdentityDownloaderSlow} which deals with the rest of them in a less expensive manner.
  * 
  * FIXME: Add logging to callbacks and {@link DownloadScheduler#run()} */
-final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRetrieverCallback {
+public final class IdentityDownloaderFast implements
+		IdentityDownloader,
+		Daemon,
+		USKRetrieverCallback {
 
 	/**
 	 * Priority of USK subscription network requests, relative to {@link IdentityDownloaderSlow} as
@@ -236,6 +240,33 @@ final class IdentityDownloaderFast implements IdentityDownloader, Daemon, USKRet
 	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint hint) {
 		// This callback isn't subject of our interest - it is completely handled by class
 		// IdentityDownloaderSlow.
+	}
+
+	@SuppressWarnings("serial")
+	public static class DownloadSchedulerCommand extends Persistent {
+		@IndexedField private final Identity mIdentity;
+		
+		DownloadSchedulerCommand(WebOfTrust wot, Identity identity) {
+			assert(wot != null);
+			assert(identity != null);
+			initializeTransient(wot);
+			mIdentity = identity;
+		}
+		
+		final Identity getIdentity() {
+			checkedActivate(1);
+			mIdentity.initializeTransient(mWebOfTrust);
+			return mIdentity;
+		}
+		
+		@Override public final String getID() {
+			throw new UnsupportedOperationException("Not implemented!");
+		}
+		
+		@Override public void startupDatabaseIntegrityTest() {
+			checkedActivate(1);
+			requireNonNull(mIdentity);
+		}
 	}
 
 	/**
