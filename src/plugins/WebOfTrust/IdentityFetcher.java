@@ -185,6 +185,18 @@ public final class IdentityFetcher implements
 		}
 	}
 	
+	/**
+	 * FIXME: This should have been abstract as we only ever create instances of the child classes.
+	 * Not having to create a table for this in the database may be beneficial to d4bo.
+	 * It's likely not a good idea to change this now that there are existing databases with this
+	 * architecture already and class IdentityFetcher is legacy anyway. But what we should do is
+	 * investigate whether this design pattern was also used in other classes and lacks abstract
+	 * there as well.
+	 * One example could be the member classes of class {@link SubscriptionManager}. Their instances
+	 * are currently deleted from the database upon every restart so even if db4o has a problem
+	 * with changing non-abstract classes to abstract ones then it maybe won't matter for those as
+	 * the existing instances are deleted upon upgrade.
+	 * In any case please test changes carefully for db4o issues! */
 	@SuppressWarnings("serial")
 	public static class IdentityFetcherCommand extends Persistent {
 		

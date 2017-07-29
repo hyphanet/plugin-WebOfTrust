@@ -243,7 +243,7 @@ public final class IdentityDownloaderFast implements
 	}
 
 	@SuppressWarnings("serial")
-	public static class DownloadSchedulerCommand extends Persistent {
+	public static abstract class DownloadSchedulerCommand extends Persistent {
 		@IndexedField private final Identity mIdentity;
 		
 		DownloadSchedulerCommand(WebOfTrust wot, Identity identity) {
