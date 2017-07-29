@@ -487,6 +487,8 @@ public final class WebOfTrust extends WebOfTrustInterface
         	Trust.class,
         	Score.class,
         	IdentityDownloaderFast.DownloadSchedulerCommand.class,
+        	IdentityDownloaderFast.StartDownloadCommand.class,
+        	IdentityDownloaderFast.StopDownloadCommand.class,
         	IdentityFetcher.IdentityFetcherCommand.class,
         	IdentityFetcher.AbortFetchCommand.class,
         	IdentityFetcher.StartFetchCommand.class,

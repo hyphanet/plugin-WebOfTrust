@@ -269,6 +269,20 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
+	@SuppressWarnings("serial")
+	public static final class StartDownloadCommand extends DownloadSchedulerCommand {
+		StartDownloadCommand(WebOfTrust wot, Identity identity) {
+			super(wot, identity);
+		}
+	}
+
+	@SuppressWarnings("serial")
+	public static final class StopDownloadCommand extends DownloadSchedulerCommand {
+		StopDownloadCommand(WebOfTrust wot, Identity identity) {
+			super(wot, identity);
+		}
+	}
+
 	/**
 	 * The download scheduler thread which syncs the running downloads with the database.
 	 * One would expect this to be done on the same thread which our download scheduling callbacks
