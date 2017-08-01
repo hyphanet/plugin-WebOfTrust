@@ -15,15 +15,21 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
+import plugins.WebOfTrust.Persistent.InitializingObjectSet;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
+import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
+
+import com.db4o.ext.ExtObjectContainer;
+import com.db4o.query.Query;
+
 import freenet.client.FetchContext;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -122,6 +128,8 @@ public final class IdentityDownloaderFast implements
 
 	private final IdentityDownloaderController mLock;
 
+	private final ExtObjectContainer mDB;
+
 	/**
 	 * FIXME: Document similarly to {@link IdentityDownloaderSlow#mJob}.
 	 * FIXME: Initialize & implement.
@@ -160,6 +168,7 @@ public final class IdentityDownloaderFast implements
 		
 		mRequestClient = mWoT.getRequestClient();
 		mLock = mWoT.getIdentityDownloaderController();
+		mDB = mWoT.getDatabase();
 	}
 
 	@Override public void start() {
@@ -434,6 +443,27 @@ public final class IdentityDownloaderFast implements
 
 	@Override public void deleteAllCommands() {
 		// FIXME
+	}
+
+	private DownloadSchedulerCommand getQueuedCommand(Identity identity) {
+		Query q = mDB.query();
+		q.constrain(DownloadSchedulerCommand.class);
+		q.descend("mIdentity").constrain(identity)
+			.identity(); // Not about class Identity, refers to wanting the same object!
+		InitializingObjectSet<DownloadSchedulerCommand> result
+			= new InitializingObjectSet<>(mWoT, q);
+		
+		switch(result.size()) {
+			case 0:
+				return null;
+			case 1:
+				DownloadSchedulerCommand c = result.next();
+				assert(c.getIdentity() == identity);
+				return c;
+			default:
+				throw new DuplicateObjectException(
+					"Multiple DownloadSchedulerCommand objects stored for " + identity);
+		}
 	}
 
 }
