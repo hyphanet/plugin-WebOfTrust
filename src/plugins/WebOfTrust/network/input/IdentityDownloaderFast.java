@@ -275,6 +275,19 @@ public final class IdentityDownloaderFast implements
 		@Override public void startupDatabaseIntegrityTest() {
 			checkedActivate(1);
 			requireNonNull(mIdentity);
+			
+			// Check whether only a single DownloadSchedulerCommand exists for mIdentity by using
+			// getQueuedCommand() on mIdentity - it will throw if there is more than one.
+			
+			DownloadSchedulerCommand queriedFromDB =
+				((WebOfTrust)mWebOfTrust).getIdentityDownloaderController()
+				.getIdentityDownloaderFast().getQueuedCommand(mIdentity);
+			
+			// As we now have the return value anyway let's check it.
+			if(queriedFromDB != this) {
+				throw new RuntimeException("getQueuedCommand() returned wrong result for " + this
+					+ ": " + queriedFromDB);
+			}
 		}
 	}
 
