@@ -240,6 +240,10 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
+	// FIXME: This is NOT called if the sole direct Trust from an OwnIdenity to the given
+	// Identity is deleted but the Identity is still trusted due to indirect trusts.
+	// But in that case this fetcher is not responsible for fetching this Identity anymore!
+	// Thus we need to introduce a new callback to handle that case, e.g. "onTrustDeleted()".
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
 		// While a call to this function means that no OwnIdentity wants it to be downloaded
 		// we do *not* know whether the previous desire to download it was due to a direct trust
