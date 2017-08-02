@@ -222,8 +222,22 @@ public final class IdentityDownloaderFast implements
 		// While a call to this function means that any OwnIdentity wants it to be downloaded
 		// indeed we do *not* know whether that desire is due to a direct trust value from any
 		// OwnIdentity. Thus we need to check with shouldDownload().
-		if(shouldDownload(identity))
+		if(shouldDownload(identity)) {
+			DownloadSchedulerCommand c = getQueuedCommand(identity);
+			
+			if(c != null) {
+				if(c instanceof StartDownloadCommand)
+					return;
+				
+				if(c instanceof StopDownloadCommand)
+					c.deleteWithoutCommit();
+			}
+			
+			c = new StartDownloadCommand(mWoT, identity);
+			c.storeWithoutCommit();
+			
 			mDownloadSchedulerThread.triggerExecution();
+		}
 	}
 
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {

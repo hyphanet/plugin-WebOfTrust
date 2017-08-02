@@ -410,7 +410,7 @@ public abstract class Persistent implements Serializable {
 	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
 	 * } 
 	 */
-	protected void storeWithoutCommit() {
+	public void storeWithoutCommit() {
 		// TODO: Code quality: Use activateFully() and get rid of the depth parameter of the 
 		// function we call here, or at least make it private:
 		// The existence of the depth-consuming function makes child classes likely to use the
@@ -448,7 +448,7 @@ public abstract class Persistent implements Serializable {
 	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
 	 * } 
 	 */
-	protected void deleteWithoutCommit() {
+	public void deleteWithoutCommit() {
 		// TODO: Code quality: Use activateFully() and get rid of the depth parameter of the 
 		// function we call here, or at least make it private:
 		// The existence of the depth-consuming function makes child classes likely to use the
