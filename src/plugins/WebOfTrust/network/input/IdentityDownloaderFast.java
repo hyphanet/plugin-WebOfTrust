@@ -245,6 +245,16 @@ public final class IdentityDownloaderFast implements
 	// But in that case this fetcher is not responsible for fetching this Identity anymore!
 	// Thus we need to introduce a new callback to handle that case, e.g. "onTrustDeleted()".
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
+		DownloadSchedulerCommand c = getQueuedCommand(identity);
+		
+		if(c != null) {
+			if(c instanceof StopDownloadCommand)
+				return;
+			
+			if(c instanceof StartDownloadCommand)
+				c.deleteWithoutCommit();
+		}
+		
 		// While a call to this function means that no OwnIdentity wants it to be downloaded
 		// we do *not* know whether the previous desire to download it was due to a direct trust
 		// value from any OwnIdentity, i.e. we don't know whether we were actually responsible
@@ -260,6 +270,10 @@ public final class IdentityDownloaderFast implements
 			// rolled back after we return, and that would mean that the download needs to continue.
 			// Thus we need to cancel the download in a separate transaction, which is what the
 			// DownloadScheduler does.
+			
+			new StopDownloadCommand(mWoT, identity)
+				.storeWithoutCommit();
+			
 			mDownloadSchedulerThread.triggerExecution();
 		}
 	}
