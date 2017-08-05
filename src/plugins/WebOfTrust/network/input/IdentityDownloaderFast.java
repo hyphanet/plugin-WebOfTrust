@@ -9,7 +9,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
@@ -37,6 +36,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.USKManager;
 import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
+import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 import freenet.node.PrioRunnable;
@@ -374,17 +374,31 @@ public final class IdentityDownloaderFast implements
 	 * an Identity - also see the FIXME inside.
 	 * To fix change the way the scheduler determines what to download by using a command-based
 	 * system like the old IdentityFetcher does by using
-	 * {@link IdentityFetcher.IdentityFetcherCommand}s. */
+	 * {@link IdentityFetcher.IdentityFetcherCommand}s.
+	 * EDIT: To understand this FIXME, look at the code of this class as of the previous commit
+	 * a8e8ff2e5a5e14eac66fcabcdc662d23e1a24e28. */
 	private final class DownloadScheduler implements PrioRunnable {
 		@Override public void run() {
 			synchronized(mWoT) {
 			synchronized(mLock) {
-				// No need to take a database transaction lock as we don't write anything to the db.
-				// We nevertheless try/catch to re-schedule the thread for execution in case of
-				// unexpected exceptions being thrown: Keeping downloads running is important to
-				// ensure WoT keeps working, some defensive programming cannot hurt.
+			synchronized(Persistent.transactionLock(mDB)) {
 				try {
-					// Determine all downloads which should be running in the end
+					// FIXME: Implement like the FIXME at the containing class demands.
+					
+					assert(testSelf());
+				} catch(RuntimeException | Error e) {
+					Persistent.checkedRollback(mDB, this, e);
+					
+					Logger.error(this, "Error in DownloadScheduler.run()! Retrying later...", e);
+					mDownloadSchedulerThread.triggerExecution(MINUTES.toMillis(1));
+				}
+			}
+			}
+			}
+		}
+		
+		private boolean testSelf() {
+					// Determine all downloads which should be running
 					IdentifierHashSet<Identity> allToDownload = new IdentifierHashSet<>();
 					for(OwnIdentity i : mWoT.getAllOwnIdentities()) {
 						for(Trust t : mWoT.getGivenTrusts(i)) {
@@ -393,39 +407,32 @@ public final class IdentityDownloaderFast implements
 						}
 					}
 					
-					// Now that we know which downloads should be running in the end we compare that
-					// against which ones are currently running and stop/start what's differing.
+					// Check "mDownloads.keySet().equals(allToDownload.identifierSet()))", i.e.
+					// whether we are downloading what we should be downloading, plus some more
+					// stuff.
 					
-					HashSet<String> toStop = new HashSet<>(mDownloads.keySet());
-					toStop.removeAll(allToDownload.identifierSet());
-					stopDownloads(toStop);
+					if(mDownloads.size() != allToDownload.size())
+						return false;
 					
-					IdentifierHashSet<Identity> toStart = new IdentifierHashSet<>(allToDownload);
-					toStart.removeAllByIdentifier(mDownloads.keySet());
-					// FIXME: Just starting the downloads which we haven't been running isn't enough
-					// - we also need to re-fetch the USK edition of Identitys which we *are*
-					// already trying to download but for which markForRefetch() had been called!
-					// See IdentityFetcher.fetch(Identity identity)
-					// How to fix this is described at the above class-level JavaDoc.
-					startDownloads(toStart);
+					for(Identity i : allToDownload) {
+						USKRetriever r = mDownloads.get(i.getID());
+						
+						if(r == null)
+							return false;
+						
+						// The URI with the edition which was originally passed when starting the
+						// download, not the latest found edition!
+						FreenetURI uri = r.getOriginalUSK().getURI();
+						
+						if(!uri.equalsKeypair(i.getRequestURI()))
+							return false;
+						
+						// Test whether Identity.markForRefetch() was handled.
+						if(uri.getEdition() > i.getNextEditionToFetch())
+							return false;
+					}
 					
-					// TODO: Performance: Once this assert has proven to not fail, remove it to
-					// replace the above
-					// IdentifierHashSet<Identity> toStart = new IdentifierHashSet<>(allToDownload);
-					// with:
-					// IdentifierHashSet<Identity> toStart = allToDownload;
-					// We don't need to construct a fresh set if we don't use allToDownload anymore
-					// afterwards.
-					assert(mDownloads.keySet().equals(allToDownload.identifierSet()));
-				} catch(RuntimeException | Error e) {
-					// Not necessary as we don't write anything to the database
-					/* Persistent.checkedRollback(mDB, this, e); */
-					
-					Logger.error(this, "Error in DownloadScheduler.run()! Retrying later...", e);
-					mDownloadSchedulerThread.triggerExecution(MINUTES.toMillis(1));
-				}
-			}
-			}
+					return true;
 		}
 
 		@Override public int getPriority() {
