@@ -229,8 +229,15 @@ public final class IdentityDownloaderFast implements
 				if(c instanceof StartDownloadCommand)
 					return;
 				
-				if(c instanceof StopDownloadCommand)
+				if(c instanceof StopDownloadCommand) {
 					c.deleteWithoutCommit();
+					// At first glance we'd put a "return;" here since the StopDownloadCommand
+					// wasn't processed yet and thus there'd be no need to store a
+					// StartDownloadCommand to start the download as it is still running.
+					// But a second StartDownloadCommand is also used for the purpose of handling
+					// Identity.markForRefetch() when a download is already running so we do need
+					// to store one and cannot return.
+				}
 			}
 			
 			c = new StartDownloadCommand(mWoT, identity);
@@ -251,8 +258,16 @@ public final class IdentityDownloaderFast implements
 			if(c instanceof StopDownloadCommand)
 				return;
 			
-			if(c instanceof StartDownloadCommand)
+			if(c instanceof StartDownloadCommand) {
 				c.deleteWithoutCommit();
+				// At first glance we'd put a "return;" here since the StartDownloadCommand
+				// wasn't processed yet and thus there seems to be no need to store a
+				// StopDownloadCommand to stop the download as it not seems to be running yet.
+				// But a second StartDownloadCommand is also used for the purpose of handling
+				// Identity.markForRefetch() when a download is already running so one could be
+				// running already indeed and thus we do need to store a StopDownloadCommand and
+				// cannot return.
+			}
 		}
 		
 		// While a call to this function means that no OwnIdentity wants it to be downloaded
