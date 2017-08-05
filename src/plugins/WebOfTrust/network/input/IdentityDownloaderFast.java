@@ -398,41 +398,40 @@ public final class IdentityDownloaderFast implements
 		}
 		
 		private boolean testSelf() {
-					// Determine all downloads which should be running
-					IdentifierHashSet<Identity> allToDownload = new IdentifierHashSet<>();
-					for(OwnIdentity i : mWoT.getAllOwnIdentities()) {
-						for(Trust t : mWoT.getGivenTrusts(i)) {
-							if(t.getValue() >= 0)
-								allToDownload.add(t.getTrustee());
-						}
-					}
-					
-					// Check "mDownloads.keySet().equals(allToDownload.identifierSet()))", i.e.
-					// whether we are downloading what we should be downloading, plus some more
-					// stuff.
-					
-					if(mDownloads.size() != allToDownload.size())
-						return false;
-					
-					for(Identity i : allToDownload) {
-						USKRetriever r = mDownloads.get(i.getID());
-						
-						if(r == null)
-							return false;
-						
-						// The URI with the edition which was originally passed when starting the
-						// download, not the latest found edition!
-						FreenetURI uri = r.getOriginalUSK().getURI();
-						
-						if(!uri.equalsKeypair(i.getRequestURI()))
-							return false;
-						
-						// Test whether Identity.markForRefetch() was handled.
-						if(uri.getEdition() > i.getNextEditionToFetch())
-							return false;
-					}
-					
-					return true;
+			// Determine all downloads which should be running
+			IdentifierHashSet<Identity> allToDownload = new IdentifierHashSet<>();
+			for(OwnIdentity i : mWoT.getAllOwnIdentities()) {
+				for(Trust t : mWoT.getGivenTrusts(i)) {
+					if(t.getValue() >= 0)
+						allToDownload.add(t.getTrustee());
+				}
+			}
+
+			// Check "mDownloads.keySet().equals(allToDownload.identifierSet()))", i.e. whether we
+			// are downloading what we should be downloading, plus some more stuff.
+
+			if(mDownloads.size() != allToDownload.size())
+				return false;
+
+			for(Identity i : allToDownload) {
+				USKRetriever r = mDownloads.get(i.getID());
+
+				if(r == null)
+					return false;
+
+				// The URI with the edition which was originally passed when starting the download,
+				// not the latest found edition!
+				FreenetURI uri = r.getOriginalUSK().getURI();
+
+				if(!uri.equalsKeypair(i.getRequestURI()))
+					return false;
+
+				// Test whether Identity.markForRefetch() was handled.
+				if(uri.getEdition() > i.getNextEditionToFetch())
+					return false;
+			}
+
+			return true;
 		}
 
 		@Override public int getPriority() {
