@@ -27,6 +27,7 @@ import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 
 import com.db4o.ObjectSet;
+import com.db4o.ext.Db4oException;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
@@ -407,6 +408,11 @@ public final class IdentityDownloaderFast implements
 						} catch(RuntimeException | Error e) {
 							Logger.error(this, "Processing failed for (will retry): " + c, e);
 							mDownloadSchedulerThread.triggerExecution(MINUTES.toMillis(1));
+							
+							// We shouldn't want to reach the point of committing the transaction
+							// if the database told us it had a problem, that may corrupt it.
+							if(e instanceof Db4oException)
+								throw e;
 						}
 						
 						if(thread.isInterrupted())
@@ -420,6 +426,9 @@ public final class IdentityDownloaderFast implements
 						} catch(RuntimeException | Error e) {
 							Logger.error(this, "Processing failed for (will retry): " + c, e);
 							mDownloadSchedulerThread.triggerExecution(MINUTES.toMillis(1));
+							
+							if(e instanceof Db4oException)
+								throw e;
 						}
 						
 						if(thread.isInterrupted())
