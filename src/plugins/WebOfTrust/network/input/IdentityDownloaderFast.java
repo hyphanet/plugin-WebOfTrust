@@ -7,7 +7,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 import java.net.MalformedURLException;
-import java.util.Collection;
 import java.util.HashMap;
 
 import plugins.WebOfTrust.Identity;
@@ -26,6 +25,7 @@ import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
 
+import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
@@ -528,6 +528,12 @@ public final class IdentityDownloaderFast implements
 				throw new DuplicateObjectException(
 					"Multiple DownloadSchedulerCommand objects stored for " + identity);
 		}
+	}
+
+	private <T extends DownloadSchedulerCommand> ObjectSet<T> getQueuedCommands(Class<T> type) {
+		Query q = mDB.query();
+		q.constrain(type);
+		return new InitializingObjectSet<>(mWoT, q);
 	}
 
 }
