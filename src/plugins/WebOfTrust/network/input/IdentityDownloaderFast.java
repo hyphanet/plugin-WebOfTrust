@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
+import static java.lang.Thread.currentThread;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -382,21 +383,65 @@ public final class IdentityDownloaderFast implements
 	 * system like the old IdentityFetcher does by using
 	 * {@link IdentityFetcher.IdentityFetcherCommand}s.
 	 * EDIT: To understand this FIXME, look at the code of this class as of the previous commit
-	 * a8e8ff2e5a5e14eac66fcabcdc662d23e1a24e28. */
+	 * a8e8ff2e5a5e14eac66fcabcdc662d23e1a24e28.
+	 * EDIT:  Command-based processing has been implemented. What remains to be done is to adapt
+	 * {@link IdentityDownloaderFast#startDownload(Identity)} to obey markForRefetch(). */
 	private final class DownloadScheduler implements PrioRunnable {
 		@Override public void run() {
+			Thread thread = currentThread();
+			
 			synchronized(mWoT) {
 			synchronized(mLock) {
 			synchronized(Persistent.transactionLock(mDB)) {
 				try {
-					// FIXME: Implement like the FIXME at the containing class demands.
+					if(logMINOR)
+						Logger.minor(this, "Processing DownloadSchedulerCommands ...");
 					
-					assert(testSelf());
+					for(StopDownloadCommand c : getQueuedCommands(StopDownloadCommand.class)) {
+						// Have a try/catch block for each individual download to ensure potential
+						// hacks cannot break all processing. (The outer try/catch is still required
+						// as any database transaction should be fenced by one.)
+						try {
+							stopDownload(c.getIdentity().getID());
+							c.deleteWithoutCommit();
+						} catch(RuntimeException | Error e) {
+							Logger.error(this, "Processing failed for (will retry): " + c, e);
+							mDownloadSchedulerThread.triggerExecution(MINUTES.toMillis(1));
+						}
+						
+						if(thread.isInterrupted())
+							break;
+					}
+					
+					for(StartDownloadCommand c : getQueuedCommands(StartDownloadCommand.class)) {
+						try {
+							startDownload(c.getIdentity());
+							c.deleteWithoutCommit();
+						} catch(RuntimeException | Error e) {
+							Logger.error(this, "Processing failed for (will retry): " + c, e);
+							mDownloadSchedulerThread.triggerExecution(MINUTES.toMillis(1));
+						}
+						
+						if(thread.isInterrupted())
+							break;
+					}
+					
+					// isInterrupted() does not clear the interruption flag so we can do the logging
+					// here instead of duplicating it at each of the above interruption checks.
+					if(thread.isInterrupted())
+						Logger.normal(this, "Shutdown requested, aborting command processing...");
+					else
+						assert(testSelf()); // Would fail if interrupted due to unprocessed commands
+					
+					Persistent.checkedCommit(mDB, this);
 				} catch(RuntimeException | Error e) {
 					Persistent.checkedRollback(mDB, this, e);
 					
 					Logger.error(this, "Error in DownloadScheduler.run()! Retrying later...", e);
 					mDownloadSchedulerThread.triggerExecution(MINUTES.toMillis(1));
+				} finally {
+					if(logMINOR)
+						Logger.minor(this, "Processing DownloadSchedulerCommands finished.");
 				}
 			}
 			}
