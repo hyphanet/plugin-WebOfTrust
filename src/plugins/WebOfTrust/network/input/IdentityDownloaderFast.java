@@ -336,6 +336,12 @@ public final class IdentityDownloaderFast implements
 					+ ": " + queriedFromDB);
 			}
 		}
+		
+		@Override public String toString() {
+			return "[" + super.toString()
+			     + "; mIdentity.getID(): " + getIdentity().getID()
+			     + "]";
+		}
 	}
 
 	@SuppressWarnings("serial")
