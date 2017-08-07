@@ -440,15 +440,14 @@ public final class IdentityDownloaderFast implements
 	}
 
 	/**
-	 * Must not be called if a download is already running for one of the Identitys.
+	 * Must not be called if a download is already running for the Identity.
 	 * Must be called while synchronized on {@link #mWoT} and {@link #mLock}. */
-	private void startDownloads(Collection<Identity> identities) {
+	private void startDownload(Identity i) {
 		if(mUSKManager == null) {
 			Logger.warning(this, "mUSKManager == null, not downloading anything! Valid in tests.");
 			return;
 		}
 		
-		for(Identity i : identities) {
 			USK usk;
 			try {
 				usk = USK.create(i.getRequestURI().setSuggestedEdition(i.getNextEditionToFetch()));
@@ -483,7 +482,6 @@ public final class IdentityDownloaderFast implements
 			
 			USKRetriever existingDownload = mDownloads.put(i.getID(), download);
 			assert(existingDownload == null);
-		}
 	}
 
 	@Override public short getPollingPriorityNormal() {
@@ -494,7 +492,7 @@ public final class IdentityDownloaderFast implements
 		return DOWNLOAD_PRIORITY_PROGRESS;
 	}
 
-	private void stopDownloads(Collection<String> identityIDs) {
+	private void stopDownload(String identityID) {
 		// FIXME: Implement
 	}
 
