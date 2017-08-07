@@ -448,40 +448,40 @@ public final class IdentityDownloaderFast implements
 			return;
 		}
 		
-			USK usk;
-			try {
-				usk = USK.create(i.getRequestURI().setSuggestedEdition(i.getNextEditionToFetch()));
-			} catch (MalformedURLException e) {
-				throw new RuntimeException(e); // Should not happen: getRequestURI() returns an USK.
-			}
-			
-			FetchContext fetchContext = mHighLevelSimpleClient.getFetchContext();
-			// Because archives can become huge and WoT does not use them, we should disallow them.
-			fetchContext.maxArchiveLevels = 0;
-			fetchContext.maxSplitfileBlockRetries = -1; // retry forever
-			fetchContext.maxNonSplitfileRetries = -1; // retry forever
-			fetchContext.maxOutputLength = XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE;
-			assert(fetchContext.ignoreUSKDatehints == false); // FIXME: Remove if it doesn't fail.
-			
-			// FIXME: IdentityFetcher has always been setting this priority to the polling priority.
-			// Toad likely instructed me to do so and/or saw it due to review of the code.
-			// But now that I had a look at the JavaDoc of subscribeCotent() below it looks like it
-			// could also be the PROGRESS priority, i.e. the priority for retrieving the data once
-			// we're sure an edition exists. Which one is it?!
-			// Bonus TODO: Why does subscribePriority() require specifying a priority, considering
-			// that the USKRetrieverCallback callback interface implementation we're supposed to
-			// pass to it has to implement getPollingPriorityNormal() and
-			// getPollingPriorityProgress() which it could use to obtain the priority?
-			short fetchPriority = DOWNLOAD_PRIORITY_POLLING;
-			
-			if(logMINOR)
-				Logger.minor(this, "Downloading by USK subscription: " + usk);
-			
-			USKRetriever download = mUSKManager.subscribeContent(
-				usk, this, true, fetchContext, fetchPriority, mRequestClient);
-			
-			USKRetriever existingDownload = mDownloads.put(i.getID(), download);
-			assert(existingDownload == null);
+		USK usk;
+		try {
+			usk = USK.create(i.getRequestURI().setSuggestedEdition(i.getNextEditionToFetch()));
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e); // Should not happen: getRequestURI() returns an USK.
+		}
+
+		FetchContext fetchContext = mHighLevelSimpleClient.getFetchContext();
+		// Because archives can become huge and WoT does not use them, we should disallow them.
+		fetchContext.maxArchiveLevels = 0;
+		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
+		fetchContext.maxNonSplitfileRetries = -1; // retry forever
+		fetchContext.maxOutputLength = XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE;
+		assert(fetchContext.ignoreUSKDatehints == false); // FIXME: Remove if it doesn't fail.
+
+		// FIXME: IdentityFetcher has always been setting this priority to the polling priority.
+		// Toad likely instructed me to do so and/or saw it due to review of the code.
+		// But now that I had a look at the JavaDoc of subscribeCotent() below it looks like it
+		// could also be the PROGRESS priority, i.e. the priority for retrieving the data once
+		// we're sure an edition exists. Which one is it?!
+		// Bonus TODO: Why does subscribePriority() require specifying a priority, considering
+		// that the USKRetrieverCallback callback interface implementation we're supposed to
+		// pass to it has to implement getPollingPriorityNormal() and
+		// getPollingPriorityProgress() which it could use to obtain the priority?
+		short fetchPriority = DOWNLOAD_PRIORITY_POLLING;
+
+		if(logMINOR)
+			Logger.minor(this, "Downloading by USK subscription: " + usk);
+
+		USKRetriever download = mUSKManager.subscribeContent(
+			usk, this, true, fetchContext, fetchPriority, mRequestClient);
+
+		USKRetriever existingDownload = mDownloads.put(i.getID(), download);
+		assert(existingDownload == null);
 	}
 
 	@Override public short getPollingPriorityNormal() {
