@@ -586,10 +586,29 @@ public final class IdentityDownloaderFast implements
 		return DOWNLOAD_PRIORITY_PROGRESS;
 	}
 
+	/** Must be called while synchronized on {@link #mLock}. */
 	private void stopDownload(String identityID) {
-		// FIXME: Implement. Make sure to log the latest found edition number / pending next edition
-		// to allow readers of the log of startDownload() to conclude whether processing of
-		// markForRefetch() works.
+		Logger.normal(this, "stopDownload() running for identity ID: " + identityID);
+		
+		USKRetriever retriever = mDownloads.remove(identityID);
+		
+		if(retriever == null) {
+			// Not an error: Can happen in unit tests as startDownload() won't be able to create
+			// USKRetrievers there.
+			Logger.warning(this, "stopDownload() called but there is no download!",
+				new RuntimeException("Exception not thrown, only for logging a trace!"));
+			
+			return;
+		}
+		
+		// Useful for debugging markForRefetch() handling of startDownload()
+		Logger.normal(this, "stopDownload(): URI with edition with which the request was started: "
+			+ retriever.getOriginalUSK());
+		
+		retriever.cancel(mClientContext);
+		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
+		
+		Logger.normal(this, "stopDownload() finished.");
 	}
 
 	@Override public void onFound(USK origUSK, long edition, FetchResult data) {
