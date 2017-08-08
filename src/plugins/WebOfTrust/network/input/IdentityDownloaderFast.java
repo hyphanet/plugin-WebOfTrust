@@ -14,6 +14,7 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
+import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
@@ -139,6 +140,7 @@ public final class IdentityDownloaderFast implements
 	 * @see DownloadScheduler */
 	private volatile DelayedBackgroundJob mDownloadSchedulerThread = null;
 
+	/** Key = {@link Identity#getID()}. */
 	private final HashMap<String, USKRetriever> mDownloads = new HashMap<>();
 
 
@@ -364,29 +366,13 @@ public final class IdentityDownloaderFast implements
 	 * The download scheduler thread which syncs the running downloads with the database.
 	 * One would expect this to be done on the same thread which our download scheduling callbacks
 	 * (= functions of our implemented interface {@link IdentityDownloader}) are called upon.
-	 * But we must NOT immediately modify the set of running downloads there as what fred does cannot
-	 * be undone by a rollback of the pending database transaction during which they are called
-	 * - it may be rolled back after the callbacks return and thus we could e.g. keep running
+	 * But we must NOT immediately modify the set of running downloads there as what fred does
+	 * cannot be undone by a rollback of the pending database transaction during which they are
+	 * called - it may be rolled back after the callbacks return and thus we could e.g. keep running
 	 * downloads which we shouldn't actually run.
 	 * This scheduler thread here will obtain a fresh lock on the database so any pending
 	 * transactions are guaranteed to be finished and it can assume that the database is correct
-	 * and safely start downloads as indicated by it.
-	 * 
-	 * FIXME: Currently, whenever the set of Identitys to download is changed (by the callbacks
-	 * specified in {@link IdentityDownloader}) execution of this thread is scheduled.
-	 * It does then look at all directly trusted Identitys to determine which to start/stop
-	 * downloading - it is NOT told for which the "should download?" state has changed.
-	 * Besides this being inefficient, it is buggy:
-	 * As a result it is NOT able to comply with the request of re-downloading old editions of
-	 * certain Identitys as it should do when {@link Identity#markForRefetch()} had been called for
-	 * an Identity - also see the FIXME inside.
-	 * To fix change the way the scheduler determines what to download by using a command-based
-	 * system like the old IdentityFetcher does by using
-	 * {@link IdentityFetcher.IdentityFetcherCommand}s.
-	 * EDIT: To understand this FIXME, look at the code of this class as of the previous commit
-	 * a8e8ff2e5a5e14eac66fcabcdc662d23e1a24e28.
-	 * EDIT:  Command-based processing has been implemented. What remains to be done is to adapt
-	 * {@link IdentityDownloaderFast#startDownload(Identity)} to obey markForRefetch(). */
+	 * and safely start downloads as indicated by it. */
 	private final class DownloadScheduler implements PrioRunnable {
 		@Override public void run() {
 			Thread thread = currentThread();
@@ -503,10 +489,58 @@ public final class IdentityDownloaderFast implements
 	 * Must not be called if a download is already running for the Identity.
 	 * Must be called while synchronized on {@link #mWoT} and {@link #mLock}. */
 	private void startDownload(Identity i) {
+		Logger.normal(this, "startDownload() called for: " + i);
+		
 		if(mUSKManager == null) {
-			Logger.warning(this, "mUSKManager == null, not downloading anything! Valid in tests.");
+			Logger.warning(this,
+				"startDownload(): mUSKManager == null, not downloading anything! Valid in tests.");
 			return;
 		}
+		
+		USKRetriever existingDownload = mDownloads.get(i.getID());
+		
+		// Check whether we were called due to Identity.markForRefetch().
+		// FIXME: The way we detect this is rather fragile guesswork -> write unit tests for it.
+		if(existingDownload != null) {
+			if(i.getCurrentEditionFetchState() == FetchState.NotFetched) {
+				// markForRefetch() was called to request that an edition of the Identity which we
+				// had potentially downloaded already previously is downloaded again.
+				// It signals this by setting the FetchState to NotFetched.
+				// So we must restart the request because the requested edition number might be
+				// lower than the last one which the USKRetriever has fetched.
+				
+				Logger.normal(this, "startDownload(): markForRefetch() suspected, restarting "
+				                  + "download for: " + i);
+				
+				existingDownload = null;
+				stopDownload(i.getID());
+			} else { 
+				assert(i.getCurrentEditionFetchState() == FetchState.Fetched
+				    || i.getCurrentEditionFetchState() == FetchState.ParsingFailed);
+				
+				// This valid to happen if the following sequence of events happens:
+				// 1. markForRefetch() is called and thus the Identity's FetchState becomes
+				//    NotFetched and a StartDownloadCommand is enqueued to schedule this function
+				//    here to run.
+				// 2. Before the command is processed the Identity publishes a new edition which our
+				//    existing USKRetriever finds. Processing of the downloaded edition causes the
+				//    FetchState to become Fetched.
+				// 3. The command is processed and we thus reach this point here: The FetchState is
+				//    Fetched (or ParsingFailed) but existingDownload is != null.
+				// In that case we do not need to refetch the edition:
+				// The purpose of markForRefetch() is to ensure a trust list gets imported after an
+				// Identity's trust changed from "not eligible to have its trust list imported" to
+				// "eligible to have its trust list imported". It doesn't matter *which* trust list
+				// it is, we just want the latest we can get - which was accomplished by downloading
+				// a trust list higher than what markForRefetch() processing would request now.
+				
+				Logger.normal(this, "startDownload(): markForRefetch() suspected but we already "
+				                  + "found a new edition, keeping existing download for: " + i);
+				
+				return;
+			}
+		}
+		
 		
 		USK usk;
 		try {
@@ -534,13 +568,13 @@ public final class IdentityDownloaderFast implements
 		// getPollingPriorityProgress() which it could use to obtain the priority?
 		short fetchPriority = DOWNLOAD_PRIORITY_POLLING;
 
-		if(logMINOR)
-			Logger.minor(this, "Downloading by USK subscription: " + usk);
+		Logger.normal(this, "startDownload(): Downloading by USK subscription: " + i
+		                  + "; Using URI: " + usk);
 
 		USKRetriever download = mUSKManager.subscribeContent(
 			usk, this, true, fetchContext, fetchPriority, mRequestClient);
 
-		USKRetriever existingDownload = mDownloads.put(i.getID(), download);
+		existingDownload = mDownloads.put(i.getID(), download);
 		assert(existingDownload == null);
 	}
 
@@ -553,7 +587,9 @@ public final class IdentityDownloaderFast implements
 	}
 
 	private void stopDownload(String identityID) {
-		// FIXME: Implement
+		// FIXME: Implement. Make sure to log the latest found edition number / pending next edition
+		// to allow readers of the log of startDownload() to conclude whether processing of
+		// markForRefetch() works.
 	}
 
 	@Override public void onFound(USK origUSK, long edition, FetchResult data) {

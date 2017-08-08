@@ -632,7 +632,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * become eligible due to a changed Score.
 	 * Changes the {@link #getNextEditionToFetch()} to re-download the current XML to obtain the
 	 * trust list for import. Will only have an effect if you notify the {@link IdentityDownloader}
-	 * about the changed value, e.g. by calling
+	 * about the changed value by calling
 	 * {@link IdentityDownloader#storeStartFetchCommandWithoutCommit(Identity)}.
 	 * 
 	 * FIXME: Rename to onRefetchRequired() to be coherent with the other functions related to the
