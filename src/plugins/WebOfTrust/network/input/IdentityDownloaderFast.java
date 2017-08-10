@@ -11,10 +11,9 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 
 import plugins.WebOfTrust.Identity;
-import plugins.WebOfTrust.IdentityFetcher;
+import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
-import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
@@ -64,6 +63,8 @@ import freenet.support.io.NativeThread;
  * The lack of this class subscribing to all {@link Identity}s is compensated by
  * {@link IdentityDownloaderSlow} which deals with the rest of them in a less expensive manner.
  * 
+ * FIXME: Document synchronization requirements of helper functions such as
+ * {@link #getQueuedCommands()}, {@link #getAllQueuedCommands()}, etc.
  * FIXME: Add logging to callbacks and {@link DownloadScheduler#run()} */
 public final class IdentityDownloaderFast implements
 		IdentityDownloader,
@@ -621,7 +622,29 @@ public final class IdentityDownloaderFast implements
 	}
 
 	@Override public void deleteAllCommands() {
-		// FIXME
+		synchronized(mWoT) { // DownloadSchedulerCommands point to objects of class Identity
+		synchronized(mLock) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				Logger.warning(this, "Deleting all DownloadSchedulerCommands, should only happen "
+				                   + " for debugging purposes! ...");
+				
+				int amount = 0;
+				for(DownloadSchedulerCommand c : getAllQueuedCommands()) {
+					c.deleteWithoutCommit();
+					++amount;
+				}
+				
+				Logger.warning(this, "Deleted " + amount + " DownloadSchedulerCommands.");
+				
+				Persistent.checkedCommit(mDB, this);
+			}
+			catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			}
+		}
+		}
+		}
 	}
 
 	private DownloadSchedulerCommand getQueuedCommand(Identity identity) {
@@ -649,6 +672,10 @@ public final class IdentityDownloaderFast implements
 		Query q = mDB.query();
 		q.constrain(type);
 		return new InitializingObjectSet<>(mWoT, q);
+	}
+
+	private ObjectSet<DownloadSchedulerCommand> getAllQueuedCommands() {
+		return getQueuedCommands(DownloadSchedulerCommand.class);
 	}
 
 }
