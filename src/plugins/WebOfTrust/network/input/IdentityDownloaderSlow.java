@@ -181,11 +181,11 @@ public final class IdentityDownloaderSlow implements
 	private final IdentityDownloaderController mLock;
 	
 	private final ExtObjectContainer mDB;
-	
+
 	/**
-	 * Fetched {@link IdentityFile}s are stored for processing at this {@link IdentityFileQueue}.
-	 * FIXME: Rename to mOutputQueue to make it apparent that this isn't the download queue. */
-	private final IdentityFileQueue mQueue;
+	 * When we download an {@link Identity} the resulting {@link IdentityFile} is stored for
+	 * processing at this {@link IdentityFileQueue}. */
+	private final IdentityFileQueue mOutputQueue;
 
 	/**
 	 * The IdentityDownloaderSlow schedules execution of its download queue processing thread
@@ -252,7 +252,7 @@ public final class IdentityDownloaderSlow implements
 		mRequestClient = mWoT.getRequestClient();
 		mLock = mWoT.getIdentityDownloaderController();
 		mDB = mWoT.getDatabase();
-		mQueue = mWoT.getIdentityFileQueue();
+		mOutputQueue = mWoT.getIdentityFileQueue();
 		mDownloads = new HashMap<>(getMaxRunningDownloadCount() * 2);
 	}
 
@@ -562,7 +562,7 @@ public final class IdentityDownloaderSlow implements
 			inputStream = bucket.getInputStream();
 			
 			// IdentityFileStream currently does not need to be close()d so we don't store it
-			mQueue.add(new IdentityFileStream(uri, inputStream));
+			mOutputQueue.add(new IdentityFileStream(uri, inputStream));
 			
 			deleteEditionHints(uri, true, null);
 		} catch (IOException | Error | RuntimeException e) {

@@ -141,7 +141,9 @@ public final class IdentityDownloaderFast implements
 
 	private final ExtObjectContainer mDB;
 
-	/** Fetched {@link IdentityFile}s are stored for processing at this {@link IdentityFileQueue}.*/
+	/**
+	 * When we download an {@link Identity} the resulting {@link IdentityFile} is stored for
+	 * processing at this {@link IdentityFileQueue}. */
 	private final IdentityFileQueue mOutputQueue;
 
 	/**
