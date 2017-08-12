@@ -182,7 +182,9 @@ public final class IdentityDownloaderSlow implements
 	
 	private final ExtObjectContainer mDB;
 	
-	/** Fetched {@link IdentityFile}s are stored for processing at this {@link IdentityFileQueue}.*/
+	/**
+	 * Fetched {@link IdentityFile}s are stored for processing at this {@link IdentityFileQueue}.
+	 * FIXME: Rename to mOutputQueue to make it apparent that this isn't the download queue. */
 	private final IdentityFileQueue mQueue;
 
 	/**

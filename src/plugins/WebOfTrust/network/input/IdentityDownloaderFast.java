@@ -7,11 +7,16 @@ import static java.lang.Thread.currentThread;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.FetchState;
+import plugins.WebOfTrust.IdentityFile;
+import plugins.WebOfTrust.IdentityFileQueue;
+import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
@@ -46,6 +51,8 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
+import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
 /**
@@ -134,6 +141,9 @@ public final class IdentityDownloaderFast implements
 
 	private final ExtObjectContainer mDB;
 
+	/** Fetched {@link IdentityFile}s are stored for processing at this {@link IdentityFileQueue}.*/
+	private final IdentityFileQueue mOutputQueue;
+
 	/**
 	 * FIXME: Document similarly to {@link IdentityDownloaderSlow#mJob}.
 	 * FIXME: Initialize & implement.
@@ -174,6 +184,7 @@ public final class IdentityDownloaderFast implements
 		mRequestClient = mWoT.getRequestClient();
 		mLock = mWoT.getIdentityDownloaderController();
 		mDB = mWoT.getDatabase();
+		mOutputQueue = mWoT.getIdentityFileQueue();
 	}
 
 	@Override public void start() {
@@ -613,7 +624,27 @@ public final class IdentityDownloaderFast implements
 	}
 
 	@Override public void onFound(USK origUSK, long edition, FetchResult data) {
-		// FIXME: Implement
+		Bucket bucket = null;
+		InputStream inputStream = null;
+		
+		try {
+			bucket = data.asBucket();
+			inputStream = bucket.getInputStream();
+			
+			FreenetURI realURI = origUSK.getURI().setSuggestedEdition(edition);
+			
+			if(logMINOR)
+				Logger.minor(this, "onFound(): Downloaded Identity XML: " + realURI);
+			
+			// IdentityFileStream currently does not need to be close()d so we don't store it
+			mOutputQueue.add(new IdentityFileStream(realURI, inputStream));
+		} catch(IOException | RuntimeException | Error e) {
+			Logger.error(this, "onFound(): Failed for URI: " + origUSK +
+				               "; edition: " + edition, e);
+		} finally {
+			Closer.close(inputStream);
+			Closer.close(bucket);
+		}
 	}
 
 	@Override public boolean getShouldFetchState(Identity identity) {
