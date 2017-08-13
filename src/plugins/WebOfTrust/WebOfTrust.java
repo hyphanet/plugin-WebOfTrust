@@ -1044,6 +1044,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// This should be implemented by Identity.markForRefetch() on all Identitys. But before
 		// doing so you need to adapt markForRefetch() to work with the changes of this branch; i.e
 		// to make it work together with IdentityDownloaderFast / IdentityDownloaderSlow.
+		// You also have to call mFetcher.storeStartFetchCommandWithoutCommit() as markForRefetch()
+		// demands!
 		
 		for(Trust t : getAllTrusts()) {
 			t.upgradeDatabaseFormatVersion7();
