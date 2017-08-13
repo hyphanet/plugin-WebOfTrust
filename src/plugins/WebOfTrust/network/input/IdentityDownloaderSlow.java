@@ -564,6 +564,51 @@ public final class IdentityDownloaderSlow implements
 			// IdentityFileStream currently does not need to be close()d so we don't store it
 			mOutputQueue.add(new IdentityFileStream(uri, inputStream));
 			
+			// FIXME: This deleteEditionHints() breaks the convention of not relying on any disk
+			// storage to be reliable except the database in order to keep the database consistent
+			// = it breaks the ACID properties of the database:
+			// If the IdentityFileDiskQueue gets its files deleted after the call (e.g. by the user
+			// or power loss) then we won't try downloading the hints again even though we should
+			// because the files aren't available for import anymore. This also causes
+			// WebOfTrust.db4o to not be self-contained anymore, our defrag code and users would
+			// also have to copy the queue directory for backup purposes.
+			// There are two potential fixes:
+			// 1. Ensure the IdentityFileDiskQueue does fsync before returning from the above add().
+			//    This doesn't fix the backup code though and is still not 100% theoretically
+			//    precise because it doesn't take account for other types of transactional
+			//    decoherence between the database and the IdentityFileQueue besides the already
+			//    mentioned ones, e.g. filesystem corruption which causes the queue directory to be
+			//    lost *after* the fsync. (Notice that saying "But the filesystem could also cause
+			//    corruption in the database file!" is not an argument against this: The database
+			//    implementation can contain checksums and other mechanisms to ensure the ACID
+			//    properties of transactions. Outside files such as our output queue which aren't
+			//    visible to the database code cannot be guarded by the database code.)
+			//    It also wouldn't work with IdentityFileMemoryQueue.
+			// 2. Don't do the deleteEditionHints() here but when actually importing the
+			//    IdentityFile from the IdentityFileQueue. This can be done by adding a new callback
+			//    onIdentityChanged() to IdentityDownloader which is called by WoT upon import and
+			//    whose implementation in this class then looks at the new value of
+			//    Identity.getLastFetchedEdition() to call deleteEditionHints() accordingly (make
+			//    sure to add and use a special version of it which it doesn't commit(), the
+			//    callback will likely be part of a transaction which is started by
+			//    IdentityFileProcessor and ought to be committed by it!).
+			//    Advantages of this approach would be:
+			//    - it will also allow the IdentityDownloaderFast to notice when the
+			//      IdentityDownloaderSlow has found a new edition, which is a pending FIXME already
+			//      anyway: We must implement this somehow so the other downloader doesn't
+			//      unnecessarily duplicate our efforts.
+			//    - it leaves a time window for the IdentityFileDiskQueue to extend its secondary
+			//      purpose of deduplicating editions before import to also deduplicating what we
+			//      have queued for download. I.e. it will then make the IdentityFileProcessor only
+			//      import the latest edition of multiple queued ones in case we have multiple
+			//      EditionHints queued for a single Identity with different download priorities
+			//      where the lower editions have a higher value of EditionHint.mPriority due to the
+			//      Identitys which gave them being rated as more trustworthy than the givers of the
+			//      hints of the higher editions.
+			// Thereby I would prefer the latter approach to be implemented.
+			// When doing so please consider recycling this FIXME into documentation: Don't remove
+			// the deleteEditionHints() call but comment it out, with the recycled FIXME explaining
+			// why it is commented out.
 			deleteEditionHints(uri, true, null);
 		} catch (IOException | Error | RuntimeException e) {
 			Logger.error(this, "onSuccess(): Failed for URI: " + uri, e);
