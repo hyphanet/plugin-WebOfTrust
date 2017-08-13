@@ -613,9 +613,11 @@ public final class IdentityDownloaderFast implements
 	private void stopDownload(String identityID) {
 		Logger.normal(this, "stopDownload() running for identity ID: " + identityID);
 		
-		USKRetriever retriever = mDownloads.remove(identityID);
+		USKRetriever retriever = mDownloads.get(identityID);
 		
 		if(retriever == null) {
+			assert(!mDownloads.containsKey(identityID)) : "Bugs could map the key to null";
+			
 			// Not an error: Can happen in unit tests as startDownload() won't be able to create
 			// USKRetrievers there.
 			Logger.warning(this, "stopDownload() called but there is no download!",
@@ -630,6 +632,10 @@ public final class IdentityDownloaderFast implements
 		
 		retriever.cancel(mClientContext);
 		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
+		
+		// We didn't remove() it right at the beginning instead of get() to ensure we can attempt to
+		// stop the download multiple times if something throws at the first attempt.
+		mDownloads.remove(identityID);
 		
 		Logger.normal(this, "stopDownload() finished.");
 	}
