@@ -61,7 +61,9 @@ import freenet.support.io.NativeThread;
  * Directly trusted hereby means: At least one {@link OwnIdentity} has assigned a
  * {@link Trust#getValue()} of >= 0.
  * Further, for the purpose of {@link WebOfTrust#restoreOwnIdentity(freenet.keys.FreenetURI)},
- * all {@link OwnIdentity}s are also considered as directly trusted.
+ * all {@link OwnIdentity}s are also considered as directly trusted (as long as
+ * {@link WebOfTrust#shouldFetchIdentity(Identity)} returns true for them, which it currently
+ * always does but may not do for some if we implement code to detect when restoring is finished).
  * See {@link #shouldDownload(Identity)}.
  * 
  * This notably is only a small subset of the total set of {@link Identity}s.
@@ -205,9 +207,9 @@ public final class IdentityDownloaderFast implements
 			//   considers it as trustworthy, which shouldMaybeFetchIdentity() checks.
 			// Rank 0:
 			//   The Identity is an OwnIdentity. We download it as well for the purpose of
-			//   WebOfTrust.restoreOwnIdentity(). We do also check shouldMaybeFetchIdentity() to
-			//   allow disabling of USK subscriptions once restoring is finished (not implemented
-			//   yet).
+			//   WebOfTrust.restoreOwnIdentity() as demanded by IdentityDownloaderFast's JavaDoc.
+			//   We do also check shouldMaybeFetchIdentity() to allow disabling of USK subscriptions
+			//   by that function once restoring is finished (not implemented yet).
 			if(s.getRank() <= 1 && mWoT.shouldMaybeFetchIdentity(s))
 				return true;
 			
@@ -461,6 +463,13 @@ public final class IdentityDownloaderFast implements
 			// Determine all downloads which should be running
 			IdentifierHashSet<Identity> allToDownload = new IdentifierHashSet<>();
 			for(OwnIdentity i : mWoT.getAllOwnIdentities()) {
+				// OwnIdentitys are always eligible for download for the purpose of
+				// WebOfTrust.restoreOwnIdentity() as demanded by IdentityDownloaderFast's JavaDoc.
+				// We do also check shouldFetchIdentity() to allow disabling of USK subscriptions by
+				// that function once restoring is finished (not implemented yet).
+				if(mWoT.shouldFetchIdentity(i))
+					allToDownload.add(i);
+				
 				for(Trust t : mWoT.getGivenTrusts(i)) {
 					if(t.getValue() >= 0)
 						allToDownload.add(t.getTrustee());
