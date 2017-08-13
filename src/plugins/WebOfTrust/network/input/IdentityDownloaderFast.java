@@ -650,8 +650,35 @@ public final class IdentityDownloaderFast implements
 	}
 
 	@Override public boolean getShouldFetchState(Identity identity) {
-		// FIXME
-		return false;
+		DownloadSchedulerCommand c = getQueuedCommand(identity);
+		
+		// If a command is stored then the interface specification demands that our return value is
+		// computed as if the command was already processed, i.e. we must ignore whether mDownloads
+		// contains a running download or not.
+		if(c != null) {
+			if(c instanceof StopDownloadCommand) {
+				// storeAbortFetchCommandWithoutCommit() should only store a StopDownloadCommand if
+				// a download is actually running.
+				assert(mDownloads.containsKey(identity.getID()));
+				
+				return false;
+			} else {
+				assert(c instanceof StartDownloadCommand)
+					: "There should only be two types of DownloadSchedulerCommand!";
+				
+				// This assert would currently be invalid:
+				// storeStartFetchCommandWithoutCommit() will also store a command even if a
+				// download is already running - for the purpose of handling
+				// Identity.markForRefetch().
+				/* assert(!mDownloads.containsKey(identity.getID())); */
+				
+				return true;
+			}
+		}
+		
+		// If no command is stored then the return value is determined by whether we are currently
+		// running a download as the result of already processed commands.
+		return mDownloads.containsKey(identity.getID());
 	}
 
 	@Override public void deleteAllCommands() {
