@@ -72,8 +72,6 @@ import freenet.support.io.NativeThread;
  * The lack of this class subscribing to all {@link Identity}s is compensated by
  * {@link IdentityDownloaderSlow} which deals with the rest of them in a less expensive manner.
  * 
- * FIXME: Document synchronization requirements of helper functions such as
- * {@link #getQueuedCommands()}, {@link #getAllQueuedCommands()}, etc.
  * FIXME: Add logging to callbacks and {@link DownloadScheduler#run()} */
 public final class IdentityDownloaderFast implements
 		IdentityDownloader,
@@ -139,6 +137,11 @@ public final class IdentityDownloaderFast implements
 	/** @see WebOfTrust#getRequestClient() */
 	private final RequestClient mRequestClient;
 
+	/**
+	 * Uses as lock to guard concurrent read/write access to {@link #mDownloads} and write access to
+	 * {@link #mDownloadSchedulerThread}.
+	 * Also uses as lock for the database table of objects of class
+	 * {@link DownloadSchedulerCommand} and its child classes. */
 	private final IdentityDownloaderController mLock;
 
 	private final ExtObjectContainer mDB;
@@ -199,6 +202,7 @@ public final class IdentityDownloaderFast implements
 		// FIXME
 	}
 
+	/** Must be called while synchronized on {@link #mWoT}. */
 	private boolean shouldDownload(Identity identity) {
 		for(Score s : mWoT.getScores(identity)) {
 			// Rank 1:
@@ -342,6 +346,12 @@ public final class IdentityDownloaderFast implements
 		// IdentityDownloaderSlow.
 	}
 
+	/**
+	 * Storage and access of these objects and their functions must be guarded by synchronizing on
+	 * {@link IdentityDownloaderFast#mWoT} (as they point to objects of class {@link Identity})
+	 * and {@link IdentityDownloaderFast#mLock} (as IdentityDownloaderFast is the class which
+	 * manages these objects and thus its main lock is the lock for the database table of objects
+	 * of this class). */
 	@SuppressWarnings("serial")
 	public static abstract class DownloadSchedulerCommand extends Persistent {
 		@IndexedField private final Identity mIdentity;
@@ -493,6 +503,7 @@ public final class IdentityDownloaderFast implements
 			}
 		}
 		
+		/** Must be called while synchronized on {@link #mWoT} and {@link #mLock}. */
 		private boolean testSelf() {
 			// Determine all downloads which should be running
 			IdentifierHashSet<Identity> allToDownload = new IdentifierHashSet<>();
@@ -756,6 +767,7 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
+	/** Must be called while synchronized on {@link #mWoT} and {@link #mLock}. */
 	private DownloadSchedulerCommand getQueuedCommand(Identity identity) {
 		Query q = mDB.query();
 		q.constrain(DownloadSchedulerCommand.class);
@@ -777,12 +789,14 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
+	/** Must be called while synchronized on {@link #mWoT} and {@link #mLock}. */
 	private <T extends DownloadSchedulerCommand> ObjectSet<T> getQueuedCommands(Class<T> type) {
 		Query q = mDB.query();
 		q.constrain(type);
 		return new InitializingObjectSet<>(mWoT, q);
 	}
 
+	/** Must be called while synchronized on {@link #mWoT} and {@link #mLock}. */
 	private ObjectSet<DownloadSchedulerCommand> getAllQueuedCommands() {
 		return getQueuedCommands(DownloadSchedulerCommand.class);
 	}
