@@ -584,6 +584,7 @@ public final class IdentityDownloaderSlow implements
 			//    properties of transactions. Outside files such as our output queue which aren't
 			//    visible to the database code cannot be guarded by the database code.)
 			//    It also wouldn't work with IdentityFileMemoryQueue.
+			//    Further fsync is an expensive operation as it prevents write caching.
 			// 2. Don't do the deleteEditionHints() here but when actually importing the
 			//    IdentityFile from the IdentityFileQueue. This can be done by adding a new callback
 			//    onIdentityChanged() to IdentityDownloader which is called by WoT upon import and
