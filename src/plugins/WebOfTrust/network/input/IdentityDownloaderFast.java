@@ -386,6 +386,16 @@ public final class IdentityDownloaderFast implements
 			     + "; mIdentity.getID(): " + getIdentity().getID()
 			     + "]";
 		}
+
+		/** Overriden for visibility only. */
+		@Override protected void storeWithoutCommit() {
+			super.storeWithoutCommit();
+		}
+
+		/** Overriden for visibility only. */
+		@Override protected void deleteWithoutCommit() {
+			super.deleteWithoutCommit();
+		}
 	}
 
 	@SuppressWarnings("serial")
