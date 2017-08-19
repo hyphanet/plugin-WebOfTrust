@@ -246,8 +246,20 @@ public final class IdentityDownloaderFast implements
 			DownloadSchedulerCommand c = getQueuedCommand(identity);
 			
 			if(c != null) {
-				if(c instanceof StartDownloadCommand)
+				if(c instanceof StartDownloadCommand) {
+					// Two or more calls to this function in a row are valid for the purpose of
+					// Identity.markForRefetch()
+					// - so we can already have a StartDownloadCommand command stored when we're
+					// called again.
+					// Hence this code is commented out.
+					/*
+					Logger.warning(this, "storeStartFetchCommandWithoutCommit(): Called more than "
+						+ "once for: " + identity,
+						new RuntimeException("Exception not thrown, for logging trace only!"));
+					*/
+					
 					return;
+				}
 				
 				if(c instanceof StopDownloadCommand) {
 					c.deleteWithoutCommit();
@@ -275,8 +287,20 @@ public final class IdentityDownloaderFast implements
 		DownloadSchedulerCommand c = getQueuedCommand(identity);
 		
 		if(c != null) {
-			if(c instanceof StopDownloadCommand)
+			if(c instanceof StopDownloadCommand) {
+				// Score computation should only call this when the "should fetch?" state changes
+				// from true to false, but it can only do so once, not twice in a row, so it
+				// shouldn't call us twice.
+				// I'm however not sure whether this is an error - I think it may be possible that
+				// the current implementation of Score computation is written in a way which can
+				// cause this to happen for valid reasons.
+				// Thus not doing an assert(false) here, only logging a warning.
+				// TODO: Investigate whether that is the case, and if not change to an assert().
+				Logger.warning(this, "storeAbortFetchCommandWithoutCommit(): Called more than "
+					+ "once for: " + identity,
+					new RuntimeException("Exception not thrown, for logging trace only!"));
 				return;
+			}
 			
 			if(c instanceof StartDownloadCommand) {
 				c.deleteWithoutCommit();
